@@ -1070,6 +1070,45 @@ const AdminHostel = () => {
               </div>
             </CardHeader>
             <CardContent>
+              <Tabs defaultValue="mark" className="space-y-4">
+                <TabsList className="inline-flex gap-1 bg-muted/60 backdrop-blur-md p-1.5 rounded-2xl border border-border/40 shadow-sm">
+                  <TabsTrigger value="mark" className="rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-primary font-medium">{bn ? 'হাজিরা দিন' : 'Mark Attendance'}</TabsTrigger>
+                  {isAdmin && (
+                    <TabsTrigger value="lock" className="rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-primary font-medium">{bn ? 'লক সেটিং' : 'Lock Settings'}</TabsTrigger>
+                  )}
+                </TabsList>
+
+                {isAdmin && (
+                  <TabsContent value="lock">
+                    <div className="p-4 rounded-xl border border-border/60 bg-card">
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <div className="flex items-center gap-2 text-sm font-semibold"><Clock className="w-4 h-4 text-primary" />{bn ? 'হাজিরা লক সেটিং' : 'Attendance Lock Settings'}</div>
+                        <div className="flex items-center gap-2">
+                          <Label className="text-xs text-muted-foreground">{bn ? 'সক্রিয়' : 'Enabled'}</Label>
+                          <Switch checked={cf.enabled} onCheckedChange={(v) => setCutoffForm({ ...cf, enabled: v })} />
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-3">{bn ? 'নির্ধারিত শুরু সময়ের আগে বা শেষ সময়ের পরে এডমিন ছাড়া অন্যরা সেই বেলার হাজিরা দিতে পারবে না। এডমিন যেকোনো তারিখের হাজিরা দিতে ও পরিবর্তন করতে পারবে।' : 'Before the start time or after the end time, non-admins cannot mark that meal. Admins can mark/edit any date.'}</p>
+                      <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
+                        {renderCutoffTimePicker('breakfast_start', bn ? 'সকাল শুরু' : 'Breakfast start')}
+                        {renderCutoffTimePicker('lunch_start', bn ? 'দুপুর শুরু' : 'Lunch start')}
+                        {renderCutoffTimePicker('dinner_start', bn ? 'রাত শুরু' : 'Dinner start')}
+                        {renderCutoffTimePicker('breakfast', bn ? 'সকাল শেষ' : 'Breakfast end')}
+                        {renderCutoffTimePicker('lunch', bn ? 'দুপুর শেষ' : 'Lunch end')}
+                        {renderCutoffTimePicker('dinner', bn ? 'রাত শেষ' : 'Dinner end')}
+                      </div>
+                      {cutoffForm && (
+                        <div className="flex justify-end mt-3">
+                          <Button size="sm" onClick={() => saveCutoffs.mutate(cf)} disabled={saveCutoffs.isPending}>
+                            <Save className="w-4 h-4 mr-1.5" />{bn ? 'সেভ করুন' : 'Save'}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+                )}
+
+                <TabsContent value="mark" className="space-y-0">
               {/* Step 1 & 2: pick meal + category */}
               <div className="flex flex-col lg:flex-row lg:items-end gap-3 mb-4 p-3 rounded-xl bg-muted/40">
                 <div className="w-full lg:w-56">
@@ -1099,34 +1138,6 @@ const AdminHostel = () => {
                 </div>
               </div>
 
-              {/* Admin-only cutoff settings */}
-              {isAdmin && (
-                <div className="mb-4 p-4 rounded-xl border border-border/60 bg-card">
-                  <div className="flex items-center justify-between gap-3 mb-3">
-                    <div className="flex items-center gap-2 text-sm font-semibold"><Clock className="w-4 h-4 text-primary" />{bn ? 'হাজিরা লক সেটিং' : 'Attendance Lock Settings'}</div>
-                    <div className="flex items-center gap-2">
-                      <Label className="text-xs text-muted-foreground">{bn ? 'সক্রিয়' : 'Enabled'}</Label>
-                      <Switch checked={cf.enabled} onCheckedChange={(v) => setCutoffForm({ ...cf, enabled: v })} />
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-3">{bn ? 'নির্ধারিত শুরু সময়ের আগে বা শেষ সময়ের পরে এডমিন ছাড়া অন্যরা সেই বেলার হাজিরা দিতে পারবে না। এডমিন যেকোনো তারিখের হাজিরা দিতে ও পরিবর্তন করতে পারবে।' : 'Before the start time or after the end time, non-admins cannot mark that meal. Admins can mark/edit any date.'}</p>
-                  <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
-                    {renderCutoffTimePicker('breakfast_start', bn ? 'সকাল শুরু' : 'Breakfast start')}
-                    {renderCutoffTimePicker('lunch_start', bn ? 'দুপুর শুরু' : 'Lunch start')}
-                    {renderCutoffTimePicker('dinner_start', bn ? 'রাত শুরু' : 'Dinner start')}
-                    {renderCutoffTimePicker('breakfast', bn ? 'সকাল শেষ' : 'Breakfast end')}
-                    {renderCutoffTimePicker('lunch', bn ? 'দুপুর শেষ' : 'Lunch end')}
-                    {renderCutoffTimePicker('dinner', bn ? 'রাত শেষ' : 'Dinner end')}
-                  </div>
-                  {cutoffForm && (
-                    <div className="flex justify-end mt-3">
-                      <Button size="sm" onClick={() => saveCutoffs.mutate(cf)} disabled={saveCutoffs.isPending}>
-                        <Save className="w-4 h-4 mr-1.5" />{bn ? 'সেভ করুন' : 'Save'}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
 
               {attLocked && (
                 <div className="mb-4 flex items-center gap-2 p-3 rounded-xl bg-destructive/10 text-destructive text-sm">
