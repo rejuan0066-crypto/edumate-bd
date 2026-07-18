@@ -2024,7 +2024,66 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
         </Dialog>
 
         {/* Attendance List */}
+        {showClassGrid ? (
+          <div>
+            {classSummaries.length === 0 ? (
+              <div className="rounded-[24px] bg-background/60 backdrop-blur-sm border border-dashed border-border/20 p-12 text-center">
+                <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                  <Users className="h-8 w-8 text-muted-foreground/30" />
+                </div>
+                <p className="text-muted-foreground">{bn ? 'এই সেশনে কোনো শ্রেণী পাওয়া যায়নি' : 'No classes found for this session'}</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                {classSummaries.map((c: any) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setSelectedClassId(c.id)}
+                    className="group relative text-left rounded-[20px] border border-border/20 bg-background/70 backdrop-blur-md p-4 sm:p-5 transition-all duration-300 hover:-translate-y-[3px] hover:shadow-[0_16px_44px_-10px_hsl(220_20%_10%/0.14)] hover:border-primary/30"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-base font-semibold text-foreground truncate">{bn ? c.name_bn : c.name}</p>
+                        {c.divName && <p className="text-[11px] text-muted-foreground truncate">{c.divName}</p>}
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary transition-colors shrink-0" />
+                    </div>
+                    <div className="mt-3 flex items-baseline gap-1">
+                      <span className="text-2xl font-bold text-foreground tabular-nums">{c.total}</span>
+                      <span className="text-[11px] text-muted-foreground">{bn ? 'ছাত্র' : 'students'}</span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20">
+                        {bn ? 'উপ' : 'P'}: {c.present}
+                      </Badge>
+                      <Badge variant="outline" className="text-[10px] bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20">
+                        {bn ? 'অনু' : 'A'}: {c.absent}
+                      </Badge>
+                      <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20">
+                        {bn ? 'দেরি' : 'L'}: {c.late}
+                      </Badge>
+                    </div>
+                    <div className="mt-2 text-[10px] text-muted-foreground">
+                      {bn ? 'চিহ্নিত' : 'Marked'}: {c.marked}/{c.total}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
         <div className="space-y-3">
+          {entityType === 'student' && selectedClassId && (
+            <button
+              type="button"
+              onClick={() => setSelectedClassId('')}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors mb-1"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              {bn ? 'শ্রেণী তালিকায় ফিরুন' : 'Back to classes'}
+            </button>
+          )}
           {filtered.map((entity: any, idx: number) => {
             const att = getAttendance(entity.id);
             const currentStatus = att?.status || '';
