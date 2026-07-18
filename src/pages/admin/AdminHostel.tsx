@@ -279,6 +279,7 @@ const AdminHostel = () => {
   const [attMeal, setAttMeal] = useState<'breakfast' | 'lunch' | 'dinner'>('breakfast');
   const [attCat, setAttCat] = useState<'student' | 'staff'>('student');
   const [attSearch, setAttSearch] = useState('');
+  const [mealSelectedClassId, setMealSelectedClassId] = useState<string | null>(null);
 
   // ─── Meal-attendance cutoff settings (lock non-admins after deadline) ─────
   type MealCutoffs = { enabled: boolean; breakfast: string; lunch: string; dinner: string; breakfast_start: string; lunch_start: string; dinner_start: string };
