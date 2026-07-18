@@ -2281,6 +2281,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
             </div>
           )}
         </div>
+        )}
         </>)}
 
         {/* Rules Dialog */}
