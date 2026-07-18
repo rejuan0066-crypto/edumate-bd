@@ -125,6 +125,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     ? (studentSubTab === 'meal' ? studentMealShift : 'full_day')
     : (staffSubTab === 'fulltime' ? 'full_day' : selectedShift);
   const [rulesDialogOpen, setRulesDialogOpen] = useState(false);
+  const [mainTab, setMainTab] = useState<'attendance' | 'settings'>('attendance');
   const [editingRule, setEditingRule] = useState<any>(null);
   const [ruleForm, setRuleForm] = useState({ name: '', name_bn: '', entity_type: 'student', config: { color: 'green', counts_as: 'present' } });
   const [dutyTimes, setDutyTimes] = useState({
