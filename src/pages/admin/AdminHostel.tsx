@@ -863,14 +863,26 @@ const AdminHostel = () => {
 
       <Tabs defaultValue="hostels" className="space-y-4">
         <div className="overflow-x-auto -mx-2 px-2">
-          <TabsList className="inline-flex w-auto min-w-full md:grid md:grid-cols-5 md:max-w-3xl gap-1 bg-muted/60 backdrop-blur-md p-1.5 rounded-2xl border border-border/40 shadow-sm">
-            <TabsTrigger value="hostels" className="rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-primary font-medium transition-all">{bn ? 'হোস্টেল' : 'Hostels'}</TabsTrigger>
-            <TabsTrigger value="rooms" className="rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-primary font-medium transition-all">{bn ? 'রুম' : 'Rooms'}</TabsTrigger>
-            <TabsTrigger value="allocations" className="rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-primary font-medium transition-all">{bn ? 'বরাদ্দ' : 'Allocations'}</TabsTrigger>
-            <TabsTrigger value="meals" className="rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-primary font-medium transition-all">{bn ? 'খাবার মেনু' : 'Meal Menu'}</TabsTrigger>
-            <TabsTrigger value="meal-attendance" className="rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-primary font-medium transition-all">{bn ? 'খাবার হাজিরা' : 'Meal Attendance'}</TabsTrigger>
+          <TabsList className="inline-flex w-auto min-w-full md:grid md:grid-cols-5 md:max-w-4xl gap-0 bg-gradient-to-b from-muted/70 to-muted/40 backdrop-blur-xl p-1 rounded-2xl border border-border/50 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] h-auto">
+            {[
+              { v: 'hostels', bn: 'হোস্টেল', en: 'Hostels', Icon: Building2 },
+              { v: 'rooms', bn: 'রুম', en: 'Rooms', Icon: BedDouble },
+              { v: 'allocations', bn: 'বরাদ্দ', en: 'Allocations', Icon: Users },
+              { v: 'meals', bn: 'খাবার মেনু', en: 'Meal Menu', Icon: UtensilsCrossed },
+              { v: 'meal-attendance', bn: 'খাবার হাজিরা', en: 'Meal Attendance', Icon: CalendarCheck },
+            ].map(({ v, bn: bnL, en, Icon }) => (
+              <TabsTrigger
+                key={v}
+                value={v}
+                className="group relative flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium tracking-tight text-muted-foreground transition-all duration-200 hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-[0_2px_8px_-2px_rgba(0,0,0,0.12),0_0_0_1px_hsl(var(--border))] data-[state=active]:font-semibold"
+              >
+                <Icon className="w-4 h-4 shrink-0 opacity-70 group-data-[state=active]:opacity-100 group-data-[state=active]:text-primary" />
+                <span className="whitespace-nowrap">{bn ? bnL : en}</span>
+              </TabsTrigger>
+            ))}
           </TabsList>
         </div>
+
 
         {/* HOSTELS TAB */}
         <TabsContent value="hostels">
@@ -1071,10 +1083,16 @@ const AdminHostel = () => {
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="mark" className="space-y-4">
-                <TabsList className="inline-flex gap-1 bg-muted/60 backdrop-blur-md p-1.5 rounded-2xl border border-border/40 shadow-sm">
-                  <TabsTrigger value="mark" className="rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-primary font-medium">{bn ? 'হাজিরা দিন' : 'Mark Attendance'}</TabsTrigger>
+                <TabsList className="inline-flex gap-0 bg-gradient-to-b from-muted/70 to-muted/40 backdrop-blur-xl p-1 rounded-2xl border border-border/50 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] h-auto">
+                  <TabsTrigger value="mark" className="group flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-muted-foreground transition-all duration-200 hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:shadow-[0_2px_8px_-2px_rgba(0,0,0,0.12),0_0_0_1px_hsl(var(--border))]">
+                    <CalendarCheck className="w-4 h-4 opacity-70 group-data-[state=active]:opacity-100" />
+                    {bn ? 'হাজিরা দিন' : 'Mark Attendance'}
+                  </TabsTrigger>
                   {isAdmin && (
-                    <TabsTrigger value="lock" className="rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-primary font-medium">{bn ? 'লক সেটিং' : 'Lock Settings'}</TabsTrigger>
+                    <TabsTrigger value="lock" className="group flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-muted-foreground transition-all duration-200 hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:shadow-[0_2px_8px_-2px_rgba(0,0,0,0.12),0_0_0_1px_hsl(var(--border))]">
+                      <Lock className="w-4 h-4 opacity-70 group-data-[state=active]:opacity-100" />
+                      {bn ? 'লক সেটিং' : 'Lock Settings'}
+                    </TabsTrigger>
                   )}
                 </TabsList>
 
