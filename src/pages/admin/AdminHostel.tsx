@@ -864,7 +864,7 @@ const AdminHostel = () => {
       <Tabs defaultValue="hostels" className="space-y-4">
         <div className="relative -mx-2 px-2">
           <div className="overflow-x-auto scrollbar-none snap-x snap-mandatory [mask-image:linear-gradient(to_right,transparent,black_16px,black_calc(100%-16px),transparent)] md:[mask-image:none]">
-            <TabsList className="inline-flex w-auto min-w-full md:grid md:grid-cols-5 md:max-w-4xl gap-1 bg-gradient-to-b from-muted/70 to-muted/40 backdrop-blur-xl p-1 rounded-2xl border border-border/50 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] h-auto">
+            <TabsList className="inline-flex w-auto min-w-full md:grid md:grid-cols-5 md:max-w-4xl gap-1.5 bg-gradient-to-b from-muted/70 to-muted/40 backdrop-blur-xl p-1.5 rounded-2xl border border-border/50 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] h-auto">
               {[
                 { v: 'hostels', bn: 'হোস্টেল', en: 'Hostels', Icon: Building2 },
                 { v: 'rooms', bn: 'রুম', en: 'Rooms', Icon: BedDouble },
@@ -875,13 +875,14 @@ const AdminHostel = () => {
                 <TabsTrigger
                   key={v}
                   value={v}
-                  className="group relative snap-start flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 rounded-xl px-2.5 md:px-4 py-2 md:py-2.5 min-w-[76px] md:min-w-0 text-[11px] md:text-sm leading-tight font-medium tracking-tight text-muted-foreground transition-all duration-200 hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-[0_2px_8px_-2px_rgba(0,0,0,0.12),0_0_0_1px_hsl(var(--border))] data-[state=active]:font-semibold"
+                  className="group relative snap-start flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 rounded-xl px-2.5 md:px-4 py-2 md:py-2.5 min-w-[76px] md:min-w-0 text-[11px] md:text-sm leading-tight font-medium tracking-tight bg-background/70 border border-border/60 text-foreground/75 shadow-sm transition-all duration-200 hover:bg-background hover:text-foreground hover:border-border hover:-translate-y-[1px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow-[0_6px_16px_-6px_hsl(var(--primary)/0.55)] data-[state=active]:font-semibold"
                 >
-                  <Icon className="w-4 h-4 md:w-4 md:h-4 shrink-0 opacity-70 group-data-[state=active]:opacity-100 group-data-[state=active]:text-primary" />
+                  <Icon className="w-4 h-4 shrink-0 opacity-80 group-data-[state=active]:opacity-100" />
                   <span className="whitespace-nowrap">{bn ? bnL : en}</span>
                 </TabsTrigger>
               ))}
             </TabsList>
+
           </div>
         </div>
 
