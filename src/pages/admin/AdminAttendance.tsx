@@ -892,6 +892,41 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     return name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
+  // Per-class summary for drill-down grid (students only)
+  const showClassGrid = entityType === 'student' && (!selectedClassId || selectedClassId === 'all');
+  const classSummaries = useMemo(() => {
+    if (entityType !== 'student') return [] as any[];
+    // Students of the current session + sub-tab (ignore class filter)
+    let base = allStudents;
+    if (studentSubTab === 'residential' || studentSubTab === 'meal') {
+      base = base.filter((s: any) => s.residence_type === 'resident');
+    }
+    if (selectedSessionYear) {
+      base = base.filter((s: any) =>
+        s.session_id === selectedSessionYear || s.session_year === selectedSessionYear
+      );
+    }
+    const attMap = new Map<string, string>();
+    attendance.forEach((a: any) => attMap.set(a.entity_id, a.status));
+    return orderedClasses
+      .map((c: any) => {
+        const studs = base.filter((s: any) => s.class_id === c.id);
+        if (studs.length === 0) return null;
+        let present = 0, absent = 0, late = 0, marked = 0;
+        studs.forEach((s: any) => {
+          const st = attMap.get(s.id);
+          if (!st) return;
+          marked++;
+          if (st === 'present') present++;
+          else if (st === 'absent') absent++;
+          else if (st === 'late') late++;
+        });
+        const div = divisions.find((d: any) => d.id === c.division_id);
+        return { id: c.id, name: c.name, name_bn: c.name_bn, divName: div ? (bn ? div.name_bn : div.name) : '', total: studs.length, present, absent, late, marked };
+      })
+      .filter(Boolean) as any[];
+  }, [entityType, allStudents, orderedClasses, divisions, selectedSessionYear, studentSubTab, attendance, bn]);
+
   const resettableStaffCategories = useMemo(() => {
     const attendanceIds = new Set(attendance.map((a: any) => a.entity_id));
 
