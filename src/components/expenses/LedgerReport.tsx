@@ -81,6 +81,7 @@ export default function LedgerReport({ bn, expenseInstitutions, categories, clea
   const [typeFilter, setTypeFilter] = useState<'all' | 'credit' | 'debit'>('all');
   const [instFilter, setInstFilter] = useState<string>('all');
   const [catFilter, setCatFilter] = useState<string>('all');
+  const [modeFilter, setModeFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'simple' | 'classic'>('simple');
   const [sources, setSources] = useState<Record<string, boolean>>({
