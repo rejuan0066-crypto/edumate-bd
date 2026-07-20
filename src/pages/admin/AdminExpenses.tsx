@@ -19,6 +19,7 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Plus, Trash2, Edit2, DollarSign, TrendingDown, TrendingUp, Wallet, Printer, FolderPlus, TagIcon, Upload, Download, Eye, ScanLine, Building2, Package, AlertTriangle, FileText, FileBarChart } from 'lucide-react';
 import ExpenseVoucherPrint from '@/components/expenses/ExpenseVoucherPrint';
+import ExpenseHierarchyReport from '@/components/expenses/ExpenseHierarchyReport';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedCounter from '@/components/expenses/AnimatedCounter';
@@ -78,7 +79,7 @@ const AdminExpenses = () => {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleteConfirmType, setDeleteConfirmType] = useState<'expense' | 'deposit'>('expense');
   const [selectedInstitutionId, setSelectedInstitutionId] = useState<string>('');
-  const [breakdownTab, setBreakdownTab] = useState<'institution' | 'category' | null>(null);
+  const [breakdownTab, setBreakdownTab] = useState<'institution' | 'category' | 'hierarchy' | null>(null);
   const [voucherExpense, setVoucherExpense] = useState<any>(null);
 
   // Dialogs
@@ -1031,6 +1032,7 @@ const AdminExpenses = () => {
                 {[
                   { value: 'institution' as const, label: bn ? 'প্রতিষ্ঠান ভিত্তিক হিসাব' : 'Institution-wise' },
                   { value: 'category' as const, label: bn ? 'ক্যাটেগরি ভিত্তিক হিসাব' : 'Category-wise' },
+                  { value: 'hierarchy' as const, label: bn ? 'ধাপে ধাপে হিসাব' : 'Hierarchy Report' },
                 ].map(tab => (
                   <button
                     key={tab.value}
@@ -1096,6 +1098,15 @@ const AdminExpenses = () => {
                     </TableBody>
                   </Table>
                 </div>
+              )}
+              {breakdownTab === 'hierarchy' && (
+                <ExpenseHierarchyReport
+                  expenses={expenses as any}
+                  bn={bn}
+                  formatNum={formatNum}
+                  cleanDesc={cleanDesc}
+                  periodLabel={selectedMonthName}
+                />
               )}
             </div>
         )}
