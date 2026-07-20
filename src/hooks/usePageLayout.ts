@@ -94,7 +94,7 @@ export const PAGE_REGISTRY: PageRegistryEntry[] = [
   },
   {
     pageId: 'expenses',
-    titleBn: 'খরচ ব্যবস্থাপনা',
+    titleBn: 'হিসাব ব্যবস্থাপনা',
     titleEn: 'Expense Management',
     icon: 'Receipt',
     route: '/admin/expenses',

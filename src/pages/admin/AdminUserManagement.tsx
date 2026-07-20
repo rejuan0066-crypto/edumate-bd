@@ -95,7 +95,7 @@ const MENU_PATHS = [
   { path: '/admin/notices', label_bn: 'নোটিশ', label_en: 'Notices' },
   { path: '/admin/students-fees', label_bn: 'ছাত্র ফি', label_en: 'Student Fees' },
   { path: '/admin/fee-receipts', label_bn: 'ফি রসিদ', label_en: 'Fee Receipts' },
-  { path: '/admin/expenses', label_bn: 'খরচ ব্যবস্থাপনা', label_en: 'Expenses' },
+  { path: '/admin/expenses', label_bn: 'হিসাব ব্যবস্থাপনা', label_en: 'Expenses' },
   { path: '/admin/donors', label_bn: 'দাতা তালিকা', label_en: 'Donors' },
   { path: '/admin/attendance', label_bn: 'হাজিরা', label_en: 'Attendance' },
   { path: '/admin/salary', label_bn: 'বেতন ব্যবস্থাপনা', label_en: 'Salary' },

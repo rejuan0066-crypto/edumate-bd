@@ -80,7 +80,7 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
   { id: 'finance', path: '/admin/students-fees', label_bn: 'আর্থিক ব্যবস্থাপনা', label_en: 'Finance', icon: 'Wallet', visible: true, sort_order: 6, children: [
     { id: 'fees', path: '/admin/students-fees', label_bn: 'ছাত্র ফি', label_en: 'Student Fees', icon: 'CreditCard', visible: true, sort_order: 0 },
     { id: 'fee-receipts', path: '/admin/fee-receipts', label_bn: 'ফি রসিদ', label_en: 'Fee Receipts', icon: 'ReceiptText', visible: true, sort_order: 1 },
-    { id: 'expenses', path: '/admin/expenses', label_bn: 'খরচ ব্যবস্থাপনা', label_en: 'Expenses', icon: 'Receipt', visible: true, sort_order: 2 },
+    { id: 'expenses', path: '/admin/expenses', label_bn: 'হিসাব ব্যবস্থাপনা', label_en: 'Expenses', icon: 'Receipt', visible: true, sort_order: 2 },
     { id: 'payments', path: '/admin/payments', label_bn: 'পেমেন্ট', label_en: 'Payments', icon: 'CreditCard', visible: true, sort_order: 3 },
     { id: 'donors', path: '/admin/donors', label_bn: 'দাতা তালিকা', label_en: 'Donor List', icon: 'Heart', visible: true, sort_order: 4 },
     { id: 'scholarships', path: '/admin/scholarships', label_bn: 'বৃত্তি ব্যবস্থাপনা', label_en: 'Scholarships', icon: 'Award', visible: true, sort_order: 4.5 },

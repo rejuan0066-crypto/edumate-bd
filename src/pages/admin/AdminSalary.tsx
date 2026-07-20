@@ -3894,7 +3894,7 @@ const AdminSalary = () => {
                   <FolderOpen className="h-4 w-4 inline mr-1 text-primary" />
                   <span className="font-semibold">{bn ? 'খরচে অটো-সেভ সেটিংস' : 'Auto-Save to Expenses Settings'}</span>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {bn ? 'বেতন পরিশোধ করলে স্বয়ংক্রিয়ভাবে খরচ ব্যবস্থাপনায় সেভ হবে। প্রতিষ্ঠান ও ক্যাটাগরি নির্বাচন করুন।' 
+                    {bn ? 'বেতন পরিশোধ করলে স্বয়ংক্রিয়ভাবে হিসাব ব্যবস্থাপনায় সেভ হবে। প্রতিষ্ঠান ও ক্যাটাগরি নির্বাচন করুন।' 
                          : 'When salary is paid, it will auto-save to expense management. Select institution & category.'}
                   </p>
                 </div>
