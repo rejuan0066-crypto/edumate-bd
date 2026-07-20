@@ -500,6 +500,7 @@ export default function LedgerReport({ bn, expenseInstitutions, categories, clea
                 <th className="border border-slate-300 px-2 py-1.5 text-left font-semibold w-40">{bn ? 'ক্যাটেগরি' : 'Category'}</th>
                 <th className="border border-slate-300 px-2 py-1.5 text-left font-semibold">{bn ? 'বিবরণ' : 'Description'}</th>
                 <th className="border border-slate-300 px-2 py-1.5 text-left font-semibold w-28">{bn ? 'রেফ' : 'Ref'}</th>
+                <th className="border border-slate-300 px-2 py-1.5 text-center font-semibold w-24">{bn ? 'পেমেন্ট মোড' : 'Mode'}</th>
                 <th className="border border-slate-300 px-2 py-1.5 text-right font-semibold w-32">{bn ? 'টাকা (৳)' : 'Amount'}</th>
               </tr>
             </thead>
