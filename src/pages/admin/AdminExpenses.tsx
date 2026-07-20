@@ -1030,7 +1030,7 @@ const AdminExpenses = () => {
             <div>
               <div className="flex flex-wrap gap-2 mb-3">
                 <button
-                  onClick={() => setBreakdownTab(prev => prev === 'hierarchy' ? null : 'hierarchy')}
+                  onClick={() => { setActiveTab(''); setBreakdownTab(prev => prev === 'hierarchy' ? null : 'hierarchy'); }}
                   className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 whitespace-nowrap ${breakdownTab === 'hierarchy' ? 'bg-primary/10 border-primary text-primary shadow-sm' : 'bg-background border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'}`}
                 >
                   {bn ? 'প্রতিষ্ঠান ভিত্তিক হিসাব' : 'Institution-wise'}
