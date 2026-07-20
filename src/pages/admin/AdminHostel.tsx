@@ -18,6 +18,7 @@ import * as XLSX from 'xlsx-js-style';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
+import { ToastAction } from '@/components/ui/toast';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { isAdminRole } from '@/lib/roles';
@@ -85,7 +86,7 @@ const AdminHostel = () => {
       cancelText: bn ? 'বাতিল' : 'Cancel',
       variant: 'warning',
     });
-    if (ok) clearAttendance.mutate({ person: { type: attCat, id: personId }, meal: attMeal });
+    if (ok) clearAttendance.mutate({ person: { type: attCat, id: personId }, meal: attMeal, personName });
   };
 
 
@@ -426,17 +427,45 @@ const AdminHostel = () => {
 
   // Clear a single person's meal attendance for the selected meal
   const clearAttendance = useMutation({
-    mutationFn: async (payload: { allocation_id?: string; person?: { type: string; id: string }; meal: 'breakfast' | 'lunch' | 'dinner' }) => {
+    mutationFn: async (payload: { allocation_id?: string; person?: { type: string; id: string }; meal: 'breakfast' | 'lunch' | 'dinner'; personName?: string }) => {
       const existing = (mealAttendance as MealAttendance[]).find(a =>
         payload.allocation_id ? a.allocation_id === payload.allocation_id : (a.person_type === payload.person?.type && a.person_id === payload.person?.id)
       );
-      if (!existing) return;
+      if (!existing) return null;
+      const prevValue = (existing as any)[payload.meal];
       const { error } = await supabase.from('hostel_meal_attendance' as any).update({ [payload.meal]: null }).eq('id', existing.id);
       if (error) throw error;
+      return { id: existing.id, meal: payload.meal, prevValue, personName: payload.personName };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['hostel-meal-attendance', attDate] }),
+    onSuccess: (ctx) => {
+      qc.invalidateQueries({ queryKey: ['hostel-meal-attendance', attDate] });
+      if (ctx && ctx.prevValue != null) {
+        toast({
+          title: bn ? 'হাজিরা মুছে ফেলা হয়েছে' : 'Attendance cleared',
+          description: ctx.personName || undefined,
+          action: (
+            <ToastAction
+              altText={bn ? 'পূর্বাবস্থায় ফিরান' : 'Undo'}
+              onClick={async () => {
+                const { error } = await supabase.from('hostel_meal_attendance' as any)
+                  .update({ [ctx.meal]: ctx.prevValue }).eq('id', ctx.id);
+                if (error) {
+                  toast({ title: bn ? 'ত্রুটি' : 'Error', description: error.message, variant: 'destructive' });
+                  return;
+                }
+                qc.invalidateQueries({ queryKey: ['hostel-meal-attendance', attDate] });
+                toast({ title: bn ? 'পূর্বাবস্থায় ফিরিয়ে আনা হয়েছে' : 'Restored' });
+              }}
+            >
+              {bn ? 'পূর্বাবস্থায় ফিরান' : 'Undo'}
+            </ToastAction>
+          ),
+        });
+      }
+    },
     onError: (e: any) => toast({ title: bn ? 'ত্রুটি' : 'Error', description: e.message, variant: 'destructive' }),
   });
+
 
   // Add an ad-hoc member (no allocation) to today's meal attendance
   const [adHocType, setAdHocType] = useState<'student' | 'staff'>('student');
