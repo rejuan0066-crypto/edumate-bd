@@ -86,7 +86,7 @@ const AdminHostel = () => {
       cancelText: bn ? 'বাতিল' : 'Cancel',
       variant: 'warning',
     });
-    if (ok) clearAttendance.mutate({ person: { type: attCat, id: personId }, meal: attMeal });
+    if (ok) clearAttendance.mutate({ person: { type: attCat, id: personId }, meal: attMeal, personName });
   };
 
 
