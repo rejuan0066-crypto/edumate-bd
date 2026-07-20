@@ -500,12 +500,13 @@ export default function LedgerReport({ bn, expenseInstitutions, categories, clea
                 <th className="border border-slate-300 px-2 py-1.5 text-left font-semibold w-40">{bn ? 'ক্যাটেগরি' : 'Category'}</th>
                 <th className="border border-slate-300 px-2 py-1.5 text-left font-semibold">{bn ? 'বিবরণ' : 'Description'}</th>
                 <th className="border border-slate-300 px-2 py-1.5 text-left font-semibold w-28">{bn ? 'রেফ' : 'Ref'}</th>
+                <th className="border border-slate-300 px-2 py-1.5 text-center font-semibold w-24">{bn ? 'পেমেন্ট মোড' : 'Mode'}</th>
                 <th className="border border-slate-300 px-2 py-1.5 text-right font-semibold w-32">{bn ? 'টাকা (৳)' : 'Amount'}</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={9} className="border border-slate-300 px-3 py-8 text-center text-slate-500">{bn ? 'কোনো তথ্য নেই' : 'No entries'}</td></tr>
+                <tr><td colSpan={10} className="border border-slate-300 px-3 py-8 text-center text-slate-500">{bn ? 'কোনো তথ্য নেই' : 'No entries'}</td></tr>
               ) : filtered.map((r, i) => (
                 <tr key={r.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
                   <td className="border border-slate-300 px-2 py-1.5 text-center tabular-nums">{i+1}</td>
@@ -522,6 +523,9 @@ export default function LedgerReport({ bn, expenseInstitutions, categories, clea
                   <td className="border border-slate-300 px-2 py-1.5 text-left truncate">{r.category}</td>
                   <td className="border border-slate-300 px-2 py-1.5 text-left">{r.description}</td>
                   <td className="border border-slate-300 px-2 py-1.5 text-left text-xs text-slate-500">{r.ref || '-'}</td>
+                  <td className="border border-slate-300 px-2 py-1.5 text-center text-xs">
+                    <span className="inline-block px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">{modeLabel(r.paymentMode, bn)}</span>
+                  </td>
                   <td className={`border border-slate-300 px-2 py-1.5 text-right tabular-nums font-medium ${r.type==='credit' ? 'text-emerald-600' : 'text-rose-600'}`}>
                     {r.type==='credit' ? '+' : '−'}৳{fmt(r.amount)}
                   </td>
@@ -529,7 +533,7 @@ export default function LedgerReport({ bn, expenseInstitutions, categories, clea
               ))}
               {filtered.length > 0 && (
                 <tr className="bg-slate-800 text-white font-bold">
-                  <td colSpan={8} className="border border-slate-700 px-3 py-2 text-right">{bn ? 'নিট ব্যালেন্স:' : 'Net Balance:'}</td>
+                  <td colSpan={9} className="border border-slate-700 px-3 py-2 text-right">{bn ? 'নিট ব্যালেন্স:' : 'Net Balance:'}</td>
                   <td className="border border-slate-700 px-3 py-2 text-right tabular-nums">৳{fmt(netBalance)}</td>
                 </tr>
               )}
