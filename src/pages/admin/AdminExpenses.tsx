@@ -1737,6 +1737,16 @@ const AdminExpenses = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Ledger Tab */}
+          <TabsContent value="ledger" className="space-y-4">
+            <LedgerReport
+              bn={bn}
+              expenseInstitutions={expenseInstitutions}
+              categories={categories as any[]}
+              cleanDesc={cleanDesc}
+            />
+          </TabsContent>
         </Tabs>
         </div>{/* end glassmorphism container */}
       </div>{/* end space-y-6 */}
