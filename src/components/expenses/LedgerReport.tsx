@@ -164,19 +164,21 @@ export default function LedgerReport({ bn, expenseInstitutions, categories, clea
           institution: bn ? (e.expense_institutions?.name_bn || '') : (e.expense_institutions?.name || ''),
           category: bn ? (e.expense_categories?.name_bn || '') : (e.expense_categories?.name || ''),
           description: cleanDesc(e.description || ''), amount: Number(e.amount || 0), ref: '',
+          paymentMode: 'other',
         });
       }
     }
     if (sources.deposit) {
       for (const d of deposits as any[]) {
         const amt = Number(d.amount || 0);
+        const mode = normalizeMode(d.source || (d.bank_details ? 'bank' : 'cash'));
         out.push({
           id: `dep-${d.id}`, date: d.deposit_date,
           type: amt >= 0 ? 'credit' : 'debit',
           source: 'deposit', sourceLabel: bn ? SOURCE_META.deposit.bn : SOURCE_META.deposit.en,
           institution: '-', category: d.source || '-',
           description: [d.bank_details, d.other_details].filter(Boolean).join(' — ') || '-',
-          amount: Math.abs(amt), ref: '',
+          amount: Math.abs(amt), ref: '', paymentMode: mode,
         });
       }
     }
@@ -190,7 +192,7 @@ export default function LedgerReport({ bn, expenseInstitutions, categories, clea
           category: bn ? (f.fee_types?.name_bn || f.fee_types?.name || '-') : (f.fee_types?.name || '-'),
           description: `${f.students?.name || '-'}${f.students?.roll_number ? ` (${f.students.roll_number})` : ''} — ${f.month || ''}${f.year ? '/' + f.year : ''}`,
           amount: Number(f.paid_amount || 0),
-          ref: f.receipt_number || '',
+          ref: f.receipt_number || '', paymentMode: 'cash',
         });
       }
     }
@@ -202,7 +204,7 @@ export default function LedgerReport({ bn, expenseInstitutions, categories, clea
           sourceLabel: bn ? SOURCE_META.salary.bn : SOURCE_META.salary.en,
           institution: '-', category: s.month_year || '-',
           description: `${s.staff?.name || '-'}${s.staff?.staff_id ? ` (${s.staff.staff_id})` : ''}`,
-          amount: Number(s.net_salary || 0), ref: '',
+          amount: Number(s.net_salary || 0), ref: '', paymentMode: 'bank',
         });
       }
     }
@@ -214,7 +216,7 @@ export default function LedgerReport({ bn, expenseInstitutions, categories, clea
           sourceLabel: bn ? SOURCE_META.donation.bn : SOURCE_META.donation.en,
           institution: '-', category: v.method || '-',
           description: v.note || '-', amount: Number(v.amount || 0),
-          ref: v.trx_id || '',
+          ref: v.trx_id || '', paymentMode: normalizeMode(v.method),
         });
       }
     }
