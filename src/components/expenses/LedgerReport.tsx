@@ -419,6 +419,17 @@ export default function LedgerReport({ bn, expenseInstitutions, categories, clea
             </Select>
           </div>
           <div>
+            <Label className="text-xs">{bn ? 'পেমেন্ট মোড' : 'Payment Mode'}</Label>
+            <Select value={modeFilter} onValueChange={setModeFilter}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{bn ? 'সব' : 'All'}</SelectItem>
+                {PAYMENT_MODES.map(m => (
+                  <SelectItem key={m} value={m}>{modeLabel(m, bn)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          <div>
             <Label className="text-xs">{bn ? 'সার্চ' : 'Search'}</Label>
             <Input value={search} onChange={e => setSearch(e.target.value)} placeholder={bn ? 'বিবরণ/রেফ' : 'Description/Ref'} />
           </div>
