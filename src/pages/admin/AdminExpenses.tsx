@@ -78,7 +78,7 @@ const AdminExpenses = () => {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleteConfirmType, setDeleteConfirmType] = useState<'expense' | 'deposit'>('expense');
   const [selectedInstitutionId, setSelectedInstitutionId] = useState<string>('');
-  const [breakdownTab, setBreakdownTab] = useState<'institution' | 'category' | null>(null);
+  const [breakdownTab, setBreakdownTab] = useState<'institution' | 'category' | 'hierarchy' | null>(null);
   const [voucherExpense, setVoucherExpense] = useState<any>(null);
 
   // Dialogs
