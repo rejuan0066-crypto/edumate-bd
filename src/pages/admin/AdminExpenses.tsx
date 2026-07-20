@@ -1068,7 +1068,7 @@ const AdminExpenses = () => {
             ].map(tab => (
               <button
                 key={tab.value}
-                onClick={() => setActiveTab(activeTab === tab.value ? '' : tab.value)}
+                onClick={() => { setBreakdownTab(null); setActiveTab(activeTab === tab.value ? '' : tab.value); }}
                 className={`flex items-center gap-2 px-6 py-2.5 rounded-2xl text-sm font-semibold transition-all whitespace-nowrap ${activeTab === tab.value
                   ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25'
                   : 'bg-white/60 dark:bg-white/10 backdrop-blur border border-emerald-200/30 dark:border-emerald-800/30 text-muted-foreground hover:text-foreground hover:shadow-md hover:border-emerald-300/50'}`}
