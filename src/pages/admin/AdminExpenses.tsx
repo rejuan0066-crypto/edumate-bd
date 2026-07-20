@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import { Plus, Trash2, Edit2, DollarSign, TrendingDown, TrendingUp, Wallet, Printer, FolderPlus, TagIcon, Upload, Download, Eye, ScanLine, Building2, Package, AlertTriangle, FileText, FileBarChart } from 'lucide-react';
 import ExpenseVoucherPrint from '@/components/expenses/ExpenseVoucherPrint';
 import ExpenseHierarchyReport from '@/components/expenses/ExpenseHierarchyReport';
+import LedgerReport from '@/components/expenses/LedgerReport';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedCounter from '@/components/expenses/AnimatedCounter';
@@ -1065,6 +1066,7 @@ const AdminExpenses = () => {
             {[
               { value: 'dashboard', label: bn ? 'হিসাব' : 'Expenses' },
               { value: 'summary', label: bn ? 'সারাংশ' : 'Summary' },
+              { value: 'ledger', label: bn ? 'লেজার' : 'Ledger' },
             ].map(tab => (
               <button
                 key={tab.value}
@@ -1734,6 +1736,16 @@ const AdminExpenses = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Ledger Tab */}
+          <TabsContent value="ledger" className="space-y-4">
+            <LedgerReport
+              bn={bn}
+              expenseInstitutions={expenseInstitutions}
+              categories={categories as any[]}
+              cleanDesc={cleanDesc}
+            />
           </TabsContent>
         </Tabs>
         </div>{/* end glassmorphism container */}
