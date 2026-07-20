@@ -533,7 +533,7 @@ export default function LedgerReport({ bn, expenseInstitutions, categories, clea
               ))}
               {filtered.length > 0 && (
                 <tr className="bg-slate-800 text-white font-bold">
-                  <td colSpan={8} className="border border-slate-700 px-3 py-2 text-right">{bn ? 'নিট ব্যালেন্স:' : 'Net Balance:'}</td>
+                  <td colSpan={9} className="border border-slate-700 px-3 py-2 text-right">{bn ? 'নিট ব্যালেন্স:' : 'Net Balance:'}</td>
                   <td className="border border-slate-700 px-3 py-2 text-right tabular-nums">৳{fmt(netBalance)}</td>
                 </tr>
               )}
