@@ -234,10 +234,11 @@ export default function LedgerReport({ bn, expenseInstitutions, categories, clea
       if (typeFilter !== 'all' && r.type !== typeFilter) return false;
       if (instFilter !== 'all' && r.institution !== selInstName) return false;
       if (catFilter !== 'all' && r.category !== selCatName) return false;
-      if (q && !(r.description.toLowerCase().includes(q) || r.ref.toLowerCase().includes(q) || r.category.toLowerCase().includes(q) || r.institution.toLowerCase().includes(q))) return false;
+      if (modeFilter !== 'all' && r.paymentMode !== modeFilter) return false;
+      if (q && !(r.description.toLowerCase().includes(q) || r.ref.toLowerCase().includes(q) || r.category.toLowerCase().includes(q) || r.institution.toLowerCase().includes(q) || r.paymentMode.toLowerCase().includes(q))) return false;
       return true;
     }).sort((a,b) => (a.date > b.date ? 1 : a.date < b.date ? -1 : 0));
-  }, [rows, typeFilter, instFilter, catFilter, search, expenseInstitutions, categories, bn]);
+  }, [rows, typeFilter, instFilter, catFilter, modeFilter, search, expenseInstitutions, categories, bn]);
 
   const totalCredit = filtered.filter(r => r.type === 'credit').reduce((s, r) => s + r.amount, 0);
   const totalDebit  = filtered.filter(r => r.type === 'debit').reduce((s, r) => s + r.amount, 0);
