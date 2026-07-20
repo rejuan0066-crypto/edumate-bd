@@ -1104,7 +1104,6 @@ const AdminExpenses = () => {
           <div className="flex flex-wrap gap-2 mb-4">
             {[
               { value: 'dashboard', label: bn ? 'হিসাব' : 'Expenses' },
-              { value: 'settings', label: bn ? 'প্রতিষ্ঠান' : 'Institutions' },
               { value: 'summary', label: bn ? 'সারাংশ' : 'Summary' },
             ].map(tab => (
               <button
