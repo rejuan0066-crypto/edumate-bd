@@ -1098,6 +1098,15 @@ const AdminExpenses = () => {
                   </Table>
                 </div>
               )}
+              {breakdownTab === 'hierarchy' && (
+                <ExpenseHierarchyReport
+                  expenses={expenses as any}
+                  bn={bn}
+                  formatNum={formatNum}
+                  cleanDesc={cleanDesc}
+                  periodLabel={selectedMonthName}
+                />
+              )}
             </div>
         )}
 
