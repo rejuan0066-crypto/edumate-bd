@@ -699,7 +699,7 @@ const AdminExpenses = () => {
     rows.push([bn ? 'হিসাব প্রতিবেদন' : 'Expense Report', selectedMonthYear]);
     rows.push([]);
     // Summary
-    rows.push([bn ? 'মোট হিসাব' : 'Total Expense', `৳${formatNum(monthlyTotalExpense)}`, bn ? 'মোট জমা' : 'Total Deposit', `৳${formatNum(monthlyTotalDeposit)}`]);
+    rows.push([bn ? 'মোট হিসাব' : 'Total Expense', `৳${formatNum(monthlyTotalExpense)}`, bn ? 'মোট টাকা আয়/উত্তোলন' : 'Total Deposit', `৳${formatNum(monthlyTotalDeposit)}`]);
     rows.push([bn ? 'পূর্ববর্তী বকেয়া' : 'Previous Arrears', `৳${formatNum(previousArrears)}`, bn ? 'ক্যাশ' : 'Cash', `৳${formatNum(monthlyCash)}`]);
     rows.push([]);
 
@@ -752,14 +752,14 @@ const AdminExpenses = () => {
     rows.push([bn ? 'ইমেইল' : 'Email', instEmail]);
     if (instOther) rows.push([bn ? 'অন্যান্য' : 'Other', instOther]);
     rows.push([]);
-    rows.push([bn ? 'জমা প্রতিবেদন' : 'Deposit Report', selectedMonthYear]);
+    rows.push([bn ? 'টাকা আয়/উত্তোলন প্রতিবেদন' : 'Deposit Report', selectedMonthYear]);
     rows.push([]);
     rows.push(['#', bn ? 'তারিখ' : 'Date', bn ? 'ব্যাংক বিবরণ' : 'Bank Details', bn ? 'অন্যান্য বিবরণ' : 'Other Details', bn ? 'উৎস' : 'Source', bn ? 'টাকা' : 'Amount']);
     deposits.forEach((d: any, i: number) => {
       rows.push([String(i + 1), d.deposit_date, d.bank_details || '-', d.other_details || '-', d.source || '-', `৳${formatNum(Number(d.amount))}`]);
     });
     rows.push([]);
-    rows.push([bn ? 'মোট জমা' : 'Total Deposit', `৳${formatNum(monthlyTotalDeposit)}`]);
+    rows.push([bn ? 'মোট টাকা আয়/উত্তোলন' : 'Total Deposit', `৳${formatNum(monthlyTotalDeposit)}`]);
 
     const csvContent = rows.map(r => r.map(c => `"${(c || '').replace(/"/g, '""')}"`).join(',')).join('\n');
     const BOM = '\uFEFF';
@@ -945,7 +945,7 @@ const AdminExpenses = () => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { label: `${filterLabel} ${bn ? 'হিসাব' : 'Expense'}`, val: totalExpenseAll, gradient: 'from-rose-500/10 via-red-400/5 to-transparent', iconBg: 'bg-gradient-to-br from-rose-500 to-red-400', icon: TrendingDown, color: 'text-rose-600 dark:text-rose-400', sparkColor: '#f43f5e' },
-            { label: `${filterLabel} ${bn ? 'জমা' : 'Deposit'}`, val: totalDepositAll, gradient: 'from-emerald-500/10 via-green-400/5 to-transparent', iconBg: 'bg-gradient-to-br from-emerald-500 to-green-400', icon: TrendingUp, color: 'text-emerald-600 dark:text-emerald-400', sparkColor: '#10b981' },
+            { label: `${filterLabel} ${bn ? 'টাকা আয়/উত্তোলন' : 'Deposit'}`, val: totalDepositAll, gradient: 'from-emerald-500/10 via-green-400/5 to-transparent', iconBg: 'bg-gradient-to-br from-emerald-500 to-green-400', icon: TrendingUp, color: 'text-emerald-600 dark:text-emerald-400', sparkColor: '#10b981' },
             { label: `${filterLabel} ${bn ? 'ক্যাশ' : 'Cash'}`, val: totalCashAll, gradient: totalCashAll >= 0 ? 'from-blue-500/10 via-sky-400/5 to-transparent' : 'from-orange-500/10 via-amber-400/5 to-transparent', iconBg: totalCashAll >= 0 ? 'bg-gradient-to-br from-blue-500 to-sky-400' : 'bg-gradient-to-br from-orange-500 to-amber-400', icon: Wallet, color: totalCashAll >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400', sparkColor: totalCashAll >= 0 ? '#3b82f6' : '#f97316' },
             { label: `${filterLabel} ${bn ? 'বকেয়া' : 'Arrears'}`, val: totalArrearsAll, gradient: totalArrearsAll > 0 ? 'from-amber-500/10 via-yellow-400/5 to-transparent' : 'from-slate-500/10 via-gray-400/5 to-transparent', iconBg: totalArrearsAll > 0 ? 'bg-gradient-to-br from-amber-500 to-yellow-400' : 'bg-gradient-to-br from-slate-400 to-gray-400', icon: DollarSign, color: totalArrearsAll > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground', sparkColor: '#f59e0b' },
           ].map((s, i) => (
@@ -1044,7 +1044,7 @@ const AdminExpenses = () => {
                   onClick={() => setActiveTab(activeTab === 'deposits' ? '' : 'deposits')}
                   className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 whitespace-nowrap ${activeTab === 'deposits' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 shadow-sm' : 'bg-background border-border text-muted-foreground hover:border-emerald-400/40 hover:text-foreground'}`}
                 >
-                  {bn ? 'জমা' : 'Deposits'}
+                  {bn ? 'টাকা আয়/উত্তোলন' : 'Deposits'}
                 </button>
                 <button
                   onClick={() => setActiveTab(activeTab === 'settings' ? '' : 'settings')}
@@ -1308,12 +1308,12 @@ const AdminExpenses = () => {
           {/* Deposits Tab */}
           <TabsContent value="deposits" className="space-y-4">
             <div className="flex flex-wrap justify-between items-center gap-2">
-              <h3 className="font-semibold">{bn ? 'জমা তালিকা' : 'Deposit List'} ({selectedMonthYear})</h3>
+              <h3 className="font-semibold">{bn ? 'টাকা আয়/উত্তোলন তালিকা' : 'Deposit List'} ({selectedMonthYear})</h3>
               <div className="flex gap-2 flex-wrap">
                 <Button size="sm" variant="outline" onClick={() => {
                   setDepositPrintEditData({
                     instName, instNameEn, instAddress, instPhone, instEmail, instOther, instLogo,
-                    reportTitle: bn ? 'জমা প্রতিবেদন' : 'Deposit Report',
+                    reportTitle: bn ? 'টাকা আয়/উত্তোলন প্রতিবেদন' : 'Deposit Report',
                     reportSubtitle: '', casherName: summaryData?.casher_name || '', principalName: summaryData?.principal_name || '', extraNote: ''
                   });
                   setDepositPrintEditMode(false);
@@ -1326,10 +1326,10 @@ const AdminExpenses = () => {
                 </Button>
                 {canAddItem && <Dialog open={depositDialog} onOpenChange={resetDepositDialog}>
                   <DialogTrigger asChild>
-                    <Button size="sm"><Plus className="w-4 h-4 mr-1" />{bn ? 'জমা যোগ' : 'Add Deposit'}</Button>
+                    <Button size="sm"><Plus className="w-4 h-4 mr-1" />{bn ? 'টাকা আয়/উত্তোলন যোগ' : 'Add Deposit'}</Button>
                   </DialogTrigger>
                   <DialogContent>
-                    <DialogHeader><DialogTitle>{editingDepositId ? (bn ? 'জমা সম্পাদনা' : 'Edit Deposit') : (bn ? 'নতুন জমা' : 'New Deposit')}</DialogTitle></DialogHeader>
+                    <DialogHeader><DialogTitle>{editingDepositId ? (bn ? 'টাকা আয়/উত্তোলন সম্পাদনা' : 'Edit Deposit') : (bn ? 'নতুন টাকা আয়/উত্তোলন' : 'New Deposit')}</DialogTitle></DialogHeader>
                     <div className="space-y-3">
                       <div>
                         <Label>{bn ? 'তারিখ' : 'Date'} *</Label>
@@ -1401,7 +1401,7 @@ const AdminExpenses = () => {
                   ))}
                   {deposits.length > 0 && (
                     <TableRow className="bg-muted/50 font-bold">
-                      <TableCell colSpan={5} className="text-right">{bn ? 'মোট জমা:' : 'Total:'}</TableCell>
+                      <TableCell colSpan={5} className="text-right">{bn ? 'মোট টাকা আয়/উত্তোলন:' : 'Total:'}</TableCell>
                       <TableCell className="text-right">৳{formatNum(monthlyTotalDeposit)}</TableCell>
                       <TableCell />
                     </TableRow>
@@ -1560,7 +1560,7 @@ const AdminExpenses = () => {
                     </div>
                     <div className="min-w-0">
                       <p className="text-lg font-bold text-primary leading-tight">৳{formatNum(monthlyTotalDeposit)}</p>
-                      <p className="text-[11px] text-muted-foreground leading-tight">{bn ? 'মোট জমা' : 'Total Deposit'}</p>
+                      <p className="text-[11px] text-muted-foreground leading-tight">{bn ? 'মোট টাকা আয়/উত্তোলন' : 'Total Deposit'}</p>
                     </div>
                   </div>
                   <div className="stat-card flex items-center gap-3">
@@ -1780,7 +1780,7 @@ const AdminExpenses = () => {
             <tr>
               <td className="border p-2 font-medium">{bn ? 'মোট হিসাব' : 'Total Expense'}</td>
               <td className="border p-2 text-right">৳{formatNum(monthlyTotalExpense)}</td>
-              <td className="border p-2 font-medium">{bn ? 'মোট জমা' : 'Total Deposit'}</td>
+              <td className="border p-2 font-medium">{bn ? 'মোট টাকা আয়/উত্তোলন' : 'Total Deposit'}</td>
               <td className="border p-2 text-right">৳{formatNum(monthlyTotalDeposit)}</td>
             </tr>
             <tr>
@@ -2395,12 +2395,12 @@ const AdminExpenses = () => {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
-              <span>{bn ? 'জমা প্রিন্ট প্রিভিউ' : 'Deposit Print Preview'}</span>
+              <span>{bn ? 'টাকা আয়/উত্তোলন প্রিন্ট প্রিভিউ' : 'Deposit Print Preview'}</span>
               <Button variant={depositPrintEditMode ? 'default' : 'outline'} size="sm" onClick={() => {
                 if (!depositPrintEditMode) {
                   setDepositPrintEditData({
                     instName, instNameEn, instAddress, instPhone, instEmail, instOther, instLogo,
-                    reportTitle: bn ? 'জমা প্রতিবেদন' : 'Deposit Report',
+                    reportTitle: bn ? 'টাকা আয়/উত্তোলন প্রতিবেদন' : 'Deposit Report',
                     reportSubtitle: '', casherName: summaryData?.casher_name || '', principalName: summaryData?.principal_name || '', extraNote: ''
                   });
                 }
@@ -2452,7 +2452,7 @@ const AdminExpenses = () => {
                 <p className="text-sm">{depositPrintEditData.instAddress || instAddress}</p>
                 <p className="text-xs">{bn ? 'ফোন' : 'Phone'}: {depositPrintEditData.instPhone || instPhone} | {bn ? 'ইমেইল' : 'Email'}: {depositPrintEditData.instEmail || instEmail}</p>
                 {(depositPrintEditData.instOther || instOther) && <p className="text-xs">{depositPrintEditData.instOther || instOther}</p>}
-                <p className="text-base font-semibold mt-2">{depositPrintEditData.reportTitle || (bn ? 'জমা প্রতিবেদন' : 'Deposit Report')}</p>
+                <p className="text-base font-semibold mt-2">{depositPrintEditData.reportTitle || (bn ? 'টাকা আয়/উত্তোলন প্রতিবেদন' : 'Deposit Report')}</p>
                 {depositPrintEditData.reportSubtitle && <p className="text-sm">{depositPrintEditData.reportSubtitle}</p>}
                 <p className="text-sm">{selectedMonthYear}</p>
               </div>
@@ -2482,7 +2482,7 @@ const AdminExpenses = () => {
                     </tr>
                   ))}
                   <tr className="font-bold bg-muted/50">
-                    <td colSpan={5} className="border p-1 text-right">{bn ? 'মোট জমা:' : 'Total:'}</td>
+                    <td colSpan={5} className="border p-1 text-right">{bn ? 'মোট টাকা আয়/উত্তোলন:' : 'Total:'}</td>
                     <td className="border p-1 text-right">৳{formatNum(monthlyTotalDeposit)}</td>
                   </tr>
                 </tbody>
@@ -2511,7 +2511,7 @@ const AdminExpenses = () => {
                 if (!content) return;
                 const win = window.open('', '_blank');
                 if (!win) return;
-                win.document.write(`<html><head><title>${bn ? 'জমা প্রতিবেদন' : 'Deposit Report'}</title><style>body{font-family:'SutonnyOMJ','Noto Sans Bengali',sans-serif;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #333;padding:4px 8px}th{background:#f0f0f0;text-align:left}.text-right{text-align:right}.text-center{text-align:center}.italic{font-style:italic}@media print{body{padding:0}}</style></head><body>${content.innerHTML}</body></html>`);
+                win.document.write(`<html><head><title>${bn ? 'টাকা আয়/উত্তোলন প্রতিবেদন' : 'Deposit Report'}</title><style>body{font-family:'SutonnyOMJ','Noto Sans Bengali',sans-serif;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #333;padding:4px 8px}th{background:#f0f0f0;text-align:left}.text-right{text-align:right}.text-center{text-align:center}.italic{font-style:italic}@media print{body{padding:0}}</style></head><body>${content.innerHTML}</body></html>`);
                 win.document.close();
                 win.focus();
                 win.print();
