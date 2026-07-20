@@ -1193,73 +1193,85 @@ const AdminExpenses = () => {
                   <h3 className="font-semibold">{bn ? 'হিসাব তালিকা' : 'Expense List'} ({selectedMonthYear})</h3>
                 </div>
 
-                {categoryExpenses.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-12">{bn ? 'কোনো হিসাব নেই' : 'No expenses'}</p>
-                ) : (
-                  <div className="space-y-3">
-                    {categoryExpenses.map((e: any, i: number) => (
-                      <motion.div
-                        key={e.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.05 }}
-                        whileHover={{ y: -4, boxShadow: '0 12px 30px rgba(16,185,129,0.12)' }}
-                        className="rounded-[20px] border border-emerald-200/20 dark:border-emerald-800/20 bg-white/70 dark:bg-white/5 backdrop-blur-lg p-4 flex items-center gap-4 transition-all"
-                      >
-                        <span className="text-xs font-bold text-muted-foreground w-6 text-center">{i + 1}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-foreground text-sm truncate">{cleanDesc(e.description)}</span>
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{getMethod(e.description)}</span>
-                          </div>
-                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                            <span>{e.expense_date}</span>
-                            <span>{e.quantity} {getUnit(e.description)}</span>
-                          </div>
-                        </div>
-                        {/* Receipt glowing dot */}
-                        <div className="flex items-center gap-1">
-                          <span className={`inline-block w-2.5 h-2.5 rounded-full ${e.has_receipt ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]' : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]'}`} />
-                          {e.has_receipt && e.receipt_url && (
-                            <Button variant="ghost" size="sm" className="text-emerald-600 p-0 h-auto text-xs" onClick={() => setReceiptPreview(e.receipt_url)}>
-                              <Eye className="w-3.5 h-3.5" />
-                            </Button>
-                          )}
-                        </div>
-                        <span className="font-bold text-foreground text-sm whitespace-nowrap">৳{formatNum(Number(e.amount))}</span>
-                        <div className="flex gap-1">
-                          <button onClick={() => setVoucherExpense(e)} className="w-8 h-8 rounded-full bg-white dark:bg-white/10 border border-blue-200/30 flex items-center justify-center shadow-sm hover:shadow-md hover:scale-110 transition-all" title={bn ? 'ভাউচার' : 'Voucher'}><FileText className="w-3.5 h-3.5 text-blue-500" /></button>
-                          {canEditItem && <button onClick={() => openEditExpense(e)} className="w-8 h-8 rounded-full bg-white dark:bg-white/10 border border-emerald-200/30 flex items-center justify-center shadow-sm hover:shadow-md hover:scale-110 transition-all"><Edit2 className="w-3.5 h-3.5 text-emerald-600" /></button>}
-                          {canDeleteItem && <button onClick={() => { setDeleteConfirmId(e.id); setDeleteConfirmType('expense'); }} className="w-8 h-8 rounded-full bg-white dark:bg-white/10 border border-rose-200/30 flex items-center justify-center shadow-sm hover:shadow-md hover:scale-110 transition-all"><Trash2 className="w-3.5 h-3.5 text-rose-500" /></button>}
-                        </div>
-                      </motion.div>
-                    ))}
-                    {/* Total bar */}
-                    <div className="rounded-2xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-200/30 p-4 flex justify-between items-center">
-                      <span className="font-semibold text-foreground">{bn ? 'মোট হিসাব:' : 'Total:'}</span>
-                      <span className="font-bold text-lg text-emerald-600">৳{formatNum(categoryExpenseTotal)}</span>
-                    </div>
-                    {/* Add Expense Button below total */}
-                    {canAddItem && (
-                      <motion.button
-                        whileHover={{ scale: 1.04, boxShadow: '0 12px 40px -6px rgba(16,185,129,0.5)' }}
-                        whileTap={{ scale: 0.92 }}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        onClick={() => {
-                          setReceiptFile(null);
-                          setEditingExpenseId(null);
-                          setExpenseForm({ ...defaultExpenseForm, institution_id: selectedInstId, category_id: selectedCategoryId });
-                          setExpenseDialog(true);
-                        }}
-                        className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-[16px] text-white text-sm font-semibold tracking-wide border border-white/20 backdrop-blur-sm transition-all duration-300"
-                        style={{ background: 'linear-gradient(135deg, hsl(160 84% 30%), hsl(160 70% 36%))', boxShadow: '0 4px 20px -4px rgba(16,185,129,0.35)' }}
-                      >
-                        <Plus className="w-5 h-5" />
-                        <span>{bn ? 'হিসাব যোগ করুন' : 'Add Expense'}</span>
-                      </motion.button>
-                    )}
-                  </div>
+                <div className="border border-slate-300 overflow-auto bg-white">
+                  <table className="w-full border-collapse text-sm text-slate-700">
+                    <thead>
+                      <tr className="bg-slate-100 border-b-2 border-slate-300">
+                        <th className="border border-slate-300 px-3 py-1.5 text-center font-semibold text-slate-800 w-12">#</th>
+                        <th className="border border-slate-300 px-3 py-1.5 text-center font-semibold text-slate-800 w-32">{bn ? 'তারিখ' : 'Date'}</th>
+                        <th className="border border-slate-300 px-3 py-1.5 text-left font-semibold text-slate-800">{bn ? 'বিবরণ' : 'Description'}</th>
+                        <th className="border border-slate-300 px-3 py-1.5 text-center font-semibold text-slate-800 w-20">{bn ? 'ভাউচার' : 'Receipt'}</th>
+                        <th className="border border-slate-300 px-3 py-1.5 text-right font-semibold text-slate-800 w-28">{bn ? 'পরিমাণ' : 'Qty'}</th>
+                        <th className="border border-slate-300 px-3 py-1.5 text-right font-semibold text-slate-800 w-36">{bn ? 'টাকা' : 'Amount'}</th>
+                        <th className="border border-slate-300 px-3 py-1.5 text-center font-semibold text-slate-800 w-28"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {categoryExpenses.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="border border-slate-300 px-3 py-8 text-center text-slate-500">
+                            {bn ? 'কোনো হিসাব নেই' : 'No expenses'}
+                          </td>
+                        </tr>
+                      ) : (
+                        <>
+                          {categoryExpenses.map((e: any, i: number) => (
+                            <tr key={e.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                              <td className="border border-slate-300 px-3 py-1.5 text-center tabular-nums">{i + 1}</td>
+                              <td className="border border-slate-300 px-3 py-1.5 text-center tabular-nums">{e.expense_date}</td>
+                              <td className="border border-slate-300 px-3 py-1.5 text-left">
+                                <div className="flex items-center gap-2">
+                                  <span className="truncate">{cleanDesc(e.description)}</span>
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 whitespace-nowrap">{getMethod(e.description)}</span>
+                                </div>
+                              </td>
+                              <td className="border border-slate-300 px-2 py-1 text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <span className={`inline-block w-2 h-2 rounded-full ${e.has_receipt ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                                  {e.has_receipt && e.receipt_url && (
+                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setReceiptPreview(e.receipt_url)}>
+                                      <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="border border-slate-300 px-3 py-1.5 text-right tabular-nums">{e.quantity} <span className="text-xs text-slate-500">{getUnit(e.description)}</span></td>
+                              <td className="border border-slate-300 px-3 py-1.5 text-right tabular-nums font-medium">৳{formatNum(Number(e.amount))}</td>
+                              <td className="border border-slate-300 px-2 py-1 text-center">
+                                <div className="flex gap-0.5 justify-center">
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setVoucherExpense(e)} title={bn ? 'ভাউচার' : 'Voucher'}><FileText className="w-3.5 h-3.5 text-blue-500" /></Button>
+                                  {canEditItem && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditExpense(e)}><Edit2 className="w-3.5 h-3.5 text-emerald-600" /></Button>}
+                                  {canDeleteItem && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setDeleteConfirmId(e.id); setDeleteConfirmType('expense'); }}><Trash2 className="w-3.5 h-3.5 text-rose-500" /></Button>}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                          <tr className="bg-slate-800 text-white font-bold">
+                            <td colSpan={5} className="border border-slate-700 px-3 py-2 text-right">{bn ? 'মোট হিসাব:' : 'Total:'}</td>
+                            <td className="border border-slate-700 px-3 py-2 text-right tabular-nums">৳{formatNum(categoryExpenseTotal)}</td>
+                            <td className="border border-slate-700 px-3 py-2"></td>
+                          </tr>
+                        </>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                {canAddItem && (
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => {
+                      setReceiptFile(null);
+                      setEditingExpenseId(null);
+                      setExpenseForm({ ...defaultExpenseForm, institution_id: selectedInstId, category_id: selectedCategoryId });
+                      setExpenseDialog(true);
+                    }}
+                    className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-[16px] text-white text-sm font-semibold tracking-wide border border-white/20 mt-3 transition-all duration-300"
+                    style={{ background: 'linear-gradient(135deg, hsl(160 84% 30%), hsl(160 70% 36%))', boxShadow: '0 4px 20px -4px rgba(16,185,129,0.35)' }}
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span>{bn ? 'হিসাব যোগ করুন' : 'Add Expense'}</span>
+                  </motion.button>
                 )}
               </div>
             )}
