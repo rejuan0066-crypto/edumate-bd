@@ -1,38 +1,52 @@
 ## লক্ষ্য
-হাজিরা পেইজে সরাসরি সব ছাত্র একসাথে না দেখিয়ে ধাপে ধাপে drill-down করা হবে:
+`/admin/expenses` (হিসাব ব্যবস্থাপনা) পেজে একটি নতুন **"লেজার / লেনদেন তালিকা"** ট্যাব যোগ করা যেখানে সব ধরনের লেনদেন এক জায়গায় দেখা যাবে — আয় (Credit) ও ব্যয় (Debit) সহ running balance।
 
-1. **ধাপ ১** — হাজিরা ট্যাবে ক্লিক করলে প্রথমে শুধু **ক্লাসের তালিকা** (card grid) দেখাবে (প্রতিটি ক্লাসে মোট ছাত্র সংখ্যা + আজকের হাজিরা summary সহ)।
-2. **ধাপ ২** — কোনো ক্লাস কার্ডে ক্লিক করলে ঐ ক্লাসের **ছাত্রদের তালিকা ও হাজিরা অপশন** (Present / Absent / Late / Leave) দেখাবে।
-3. উপরে একটি **Breadcrumb / Back button** থাকবে: `হাজিরা › ক্লাস ৬ (ছাত্র)` — যাতে সহজে ক্লাস লিস্টে ফিরে যাওয়া যায়।
+## Data Sources (5 টি টেবিল একত্রে merge)
+| উৎস | Table | টাইপ | পরিমাণ |
+|---|---|---|---|
+| হিসাব / খরচ | `expenses` | ব্যয় (Debit) | `amount` |
+| টাকা আয়/উত্তোলন | `deposits` | আয় (Credit) | `amount` |
+| ফি পেমেন্ট | `fee_payments` | আয় (Credit) | `paid_amount` |
+| বেতন পরিশোধ | `salary_records` (paid=true) | ব্যয় (Debit) | `net_amount` |
+| অন্যান্য | `verified_payments` (donations) | আয় (Credit) | `amount` |
 
-## পরিবর্তনের জায়গা
+সবগুলোকে normalize করে একটি unified row shape-এ আনব:
+```text
+{ id, date, type: 'credit'|'debit', source, institution, category, description, amount, ref }
+```
 
-- `src/pages/admin/AdminAttendance.tsx` (বা যেখানে student attendance render হচ্ছে — `AdminStudentAttendance` এর underlying component)।
-- একটি নতুন internal state: `selectedClassId | null`।
-  - `null` হলে → Class Grid দেখাবে।
-  - সেট থাকলে → বর্তমান student attendance UI দেখাবে সাথে back button।
+## UI (নতুন ট্যাব: "লেজার")
 
-## Class Grid ডিজাইন
+**অবস্থান:** `AdminExpenses.tsx`-এ `হিসাব / সারাংশ` বাটনের পাশে নতুন **"লেজার"** বাটন।
 
-- Session picker উপরে থাকবে (আগের মতোই)।
-- Responsive grid (mobile 2 col, md 3, lg 4)।
-- প্রতিটি কার্ডে:
-  - ক্লাসের নাম (BN/EN)
-  - মোট ছাত্র
-  - আজকের: উপস্থিত / অনুপস্থিত / দেরি (ছোট badge)
-  - Chevron আইকন
-- Card hover: existing enterprise style (`-translate-y-[3px]`, shadow)।
+**ফিল্টার বার (sticky, top):**
+- তারিখ রেঞ্জ (from → to; default: চলতি মাস)
+- টাইপ: সব / শুধু আয় / শুধু ব্যয়
+- উৎস multi-select: হিসাব, জমা, ফি, বেতন, অন্যান্য
+- প্রতিষ্ঠান dropdown + ক্যাটেগরি dropdown (dependent)
+- সার্চ বক্স (বিবরণ/ref-এ live filter)
 
-## স্টাফ হাজিরা
-- শুধু **ছাত্র হাজিরা**-তে এই drill-down applied হবে। Staff attendance-এ ক্লাস concept নেই, তাই unchanged।
+**View toggle (দুইটা মোড):**
+1. **সরল তালিকা** — `#, তারিখ, টাইপ (badge), উৎস, প্রতিষ্ঠান, ক্যাটেগরি, বিবরণ, টাকা`
+2. **ক্লাসিক লেজার** — `#, তারিখ, বিবরণ, ডেবিট (৳), ক্রেডিট (৳), ব্যালেন্স (৳)` তারিখ অনুসারে sort + running balance
 
-## Data
-- Class list: `classes` table (আগেই fetch হয়)।
-- আজকের summary: `attendance_records` থেকে আজকের তারিখে filter করে ক্লাস অনুযায়ী aggregate — একটি হালকা query।
-- ছাত্র লিস্ট শুধু selected class-এর জন্য fetch হবে (performance ভালো হবে)।
+**Footer summary row:** মোট আয়, মোট ব্যয়, নিট ব্যালেন্স (color-coded — সবুজ/লাল)।
 
-## Permission / URL
-- Optional: URL query `?class=<id>` sync করে refresh-এ state ধরে রাখা যাবে (nice-to-have)।
-- Existing permission gating অক্ষুণ্ণ থাকবে।
+**Styling:** বিদ্যমান Excel-style টেবিল (slate gridlines, `bg-slate-100` header, zebra rows, right-aligned amounts, tabular-nums, `bg-slate-800` total footer) মিলিয়ে।
 
-অনুমোদন দিলে কোড করা শুরু করব।
+## এক্সপোর্ট
+- **Excel** (xlsx-js-style) — বর্তমান `expense-monthly-summary` স্টাইল মেনে (corporate header + prof stripes)
+- **PDF প্রিন্ট** — বিদ্যমান `pwaPrintAdapter` দিয়ে A4 landscape; প্রতিষ্ঠানের নাম/লোগো + period + সব রো + footer summary
+
+## Technical Notes
+- নতুন ফাইল: `src/components/expenses/LedgerReport.tsx` — self-contained, receives `expenses/deposits/feePayments/salaries/verifiedPayments` props।
+- `AdminExpenses.tsx`-এ existing hooks (`useExpenses`, `useDeposits`) reuse; নতুন query hooks: `useFeePaymentsByRange`, `useSalaryPaidByRange`, `useVerifiedPaymentsByRange` (client-side filter দিয়ে period-based)।
+- কোনো DB migration/schema change লাগবে না — শুধু read।
+- Permission: existing `expenses` module permission (view) দিয়েই gated।
+- Bengali digits + `formatNum` helper reuse; date `dd/MM/yyyy` project standard।
+
+## Deliverables
+1. `src/components/expenses/LedgerReport.tsx` (নতুন)
+2. `AdminExpenses.tsx`-এ নতুন "লেজার" ট্যাব বাটন + সেকশন
+3. Excel export helper (existing pattern অনুসরণ)
+4. Print preview handler
