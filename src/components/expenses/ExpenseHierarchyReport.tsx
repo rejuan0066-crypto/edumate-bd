@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 
 interface ExpenseRow {
@@ -106,13 +106,12 @@ const ExpenseHierarchyReport = ({ expenses, bn, formatNum, cleanDesc, periodLabe
               </td>
             </tr>
           )}
-          {tree.map((inst, ii) => {
+          {tree.map((inst) => {
             const iOpen = !!openInst[inst.id];
             return (
-              <>
+              <Fragment key={`i-${inst.id}`}>
                 {/* Level 1: Institution */}
                 <tr
-                  key={`i-${inst.id}`}
                   className="bg-slate-200/70 hover:bg-slate-200 cursor-pointer font-semibold"
                   onClick={() => toggleInst(inst.id)}
                 >
@@ -134,17 +133,16 @@ const ExpenseHierarchyReport = ({ expenses, bn, formatNum, cleanDesc, periodLabe
                   const cKey = `${inst.id}::${cat.id}`;
                   const cOpen = !!openCat[cKey];
                   return (
-                    <>
+                    <Fragment key={`c-${cKey}`}>
                       {/* Level 2: Category */}
                       <tr
-                        key={`c-${cKey}`}
                         className={`${ci % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-slate-100 cursor-pointer`}
                         onClick={() => toggleCat(cKey)}
                       >
                         <td className="border border-slate-300 px-2 py-1.5 text-center align-middle">
                           {cOpen ? <ChevronDown className="w-3.5 h-3.5 inline text-slate-500" /> : <ChevronRight className="w-3.5 h-3.5 inline text-slate-500" />}
                         </td>
-                        <td className="border border-slate-300 px-3 py-1.5 text-left text-slate-700" style={{ paddingLeft: '2rem' }}>
+                        <td className="border border-slate-300 px-3 py-1.5 text-left text-slate-700" style={{ paddingLeft: '1.5rem' }}>
                           {bn ? cat.name_bn : cat.name}
                         </td>
                         <td className="border border-slate-300 px-3 py-1.5 text-left text-slate-500 text-xs">
@@ -155,14 +153,22 @@ const ExpenseHierarchyReport = ({ expenses, bn, formatNum, cleanDesc, periodLabe
                         </td>
                       </tr>
 
+                      {cOpen && cat.items.length === 0 && (
+                        <tr>
+                          <td className="border border-slate-300 px-2 py-1.5"></td>
+                          <td className="border border-slate-300 px-3 py-1.5 text-slate-400 italic" style={{ paddingLeft: '3rem' }} colSpan={3}>
+                            {bn ? 'কোনো এন্ট্রি নেই' : 'No entries'}
+                          </td>
+                        </tr>
+                      )}
                       {cOpen && cat.items.map((it, ri) => (
                         <tr
                           key={`e-${it.id}`}
                           className={ri % 2 === 0 ? 'bg-white' : 'bg-slate-50'}
                         >
                           <td className="border border-slate-300 px-2 py-1.5"></td>
-                          <td className="border border-slate-300 px-3 py-1.5 text-left text-slate-600" style={{ paddingLeft: '3.5rem' }}>
-                            {cleanDesc(it.description || '')}
+                          <td className="border border-slate-300 px-3 py-1.5 text-left text-slate-600" style={{ paddingLeft: '3rem' }}>
+                            {cleanDesc(it.description || '') || <span className="text-slate-400 italic">{bn ? 'বিবরণ নেই' : 'No description'}</span>}
                           </td>
                           <td className="border border-slate-300 px-3 py-1.5 text-left text-slate-600 tabular-nums">
                             {formatDate(it.expense_date)}
@@ -172,10 +178,10 @@ const ExpenseHierarchyReport = ({ expenses, bn, formatNum, cleanDesc, periodLabe
                           </td>
                         </tr>
                       ))}
-                    </>
+                    </Fragment>
                   );
                 })}
-              </>
+              </Fragment>
             );
           })}
           {tree.length > 0 && (

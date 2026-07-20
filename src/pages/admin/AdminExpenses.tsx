@@ -1029,19 +1029,12 @@ const AdminExpenses = () => {
         {(institutionBreakdown.length > 0 || categoryBreakdown.length > 0) && (
             <div>
               <div className="flex flex-wrap gap-2 mb-3">
-                {[
-                  { value: 'institution' as const, label: bn ? 'প্রতিষ্ঠান ভিত্তিক হিসাব' : 'Institution-wise' },
-                  { value: 'category' as const, label: bn ? 'ক্যাটেগরি ভিত্তিক হিসাব' : 'Category-wise' },
-                  { value: 'hierarchy' as const, label: bn ? 'ধাপে ধাপে হিসাব' : 'Hierarchy Report' },
-                ].map(tab => (
-                  <button
-                    key={tab.value}
-                    onClick={() => setBreakdownTab(prev => prev === tab.value ? null : tab.value)}
-                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 whitespace-nowrap ${breakdownTab === tab.value ? 'bg-primary/10 border-primary text-primary shadow-sm' : 'bg-background border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'}`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
+                <button
+                  onClick={() => setBreakdownTab(prev => prev === 'hierarchy' ? null : 'hierarchy')}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 whitespace-nowrap ${breakdownTab === 'hierarchy' ? 'bg-primary/10 border-primary text-primary shadow-sm' : 'bg-background border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'}`}
+                >
+                  {bn ? 'প্রতিষ্ঠান ভিত্তিক হিসাব' : 'Institution-wise'}
+                </button>
                 <button
                   onClick={() => { setBreakdownTab(null); setActiveTab(activeTab === 'deposits' ? '' : 'deposits'); }}
                   className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 whitespace-nowrap ${activeTab === 'deposits' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 shadow-sm' : 'bg-background border-border text-muted-foreground hover:border-emerald-400/40 hover:text-foreground'}`}
@@ -1055,50 +1048,6 @@ const AdminExpenses = () => {
                   {bn ? 'প্রতিষ্ঠান' : 'Institutions'}
                 </button>
               </div>
-              {breakdownTab === 'institution' && (
-                <div className="border rounded-lg overflow-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{bn ? 'প্রতিষ্ঠান' : 'Institution'}</TableHead>
-                        <TableHead className="text-right">{bn ? `${selectedMonthName} হিসাব` : `${selectedMonthName}`}</TableHead>
-                        <TableHead className="text-right">{`${filterLabel} ${bn ? 'হিসাব' : 'Total'}`}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {institutionBreakdown.map((p, i) => (
-                        <TableRow key={i}>
-                          <TableCell className="font-medium">{bn ? p.name_bn : p.name}</TableCell>
-                          <TableCell className="text-right text-destructive">৳{formatNum(p.monthly)}</TableCell>
-                          <TableCell className="text-right text-destructive font-semibold">৳{formatNum(p.total)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-              {breakdownTab === 'category' && (
-                <div className="border rounded-lg overflow-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{bn ? 'ক্যাটেগরি' : 'Category'}</TableHead>
-                        <TableHead className="text-right">{bn ? `${selectedMonthName} হিসাব` : `${selectedMonthName}`}</TableHead>
-                        <TableHead className="text-right">{`${filterLabel} ${bn ? 'হিসাব' : 'Total'}`}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {categoryBreakdown.map((c, i) => (
-                        <TableRow key={i}>
-                          <TableCell className="font-medium">{bn ? c.name_bn : c.name}</TableCell>
-                          <TableCell className="text-right text-destructive">৳{formatNum(c.monthly)}</TableCell>
-                          <TableCell className="text-right text-destructive font-semibold">৳{formatNum(c.total)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
               {breakdownTab === 'hierarchy' && (
                 <ExpenseHierarchyReport
                   expenses={expenses as any}
