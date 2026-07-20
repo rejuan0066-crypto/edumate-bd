@@ -506,7 +506,7 @@ export default function LedgerReport({ bn, expenseInstitutions, categories, clea
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={9} className="border border-slate-300 px-3 py-8 text-center text-slate-500">{bn ? 'কোনো তথ্য নেই' : 'No entries'}</td></tr>
+                <tr><td colSpan={10} className="border border-slate-300 px-3 py-8 text-center text-slate-500">{bn ? 'কোনো তথ্য নেই' : 'No entries'}</td></tr>
               ) : filtered.map((r, i) => (
                 <tr key={r.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
                   <td className="border border-slate-300 px-2 py-1.5 text-center tabular-nums">{i+1}</td>
