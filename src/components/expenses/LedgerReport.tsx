@@ -20,7 +20,32 @@ type Row = {
   description: string;
   amount: number;
   ref: string;
+  paymentMode: string; // cash/bank/bkash/nagad/rocket/card/other
 };
+
+const PAYMENT_MODES = ['cash', 'bank', 'bkash', 'nagad', 'rocket', 'card', 'cheque', 'other'] as const;
+const modeLabel = (m: string, bn: boolean) => {
+  const map: Record<string, [string, string]> = {
+    cash: ['নগদ', 'Cash'], bank: ['ব্যাংক', 'Bank'], bkash: ['বিকাশ', 'bKash'],
+    nagad: ['নগদ (Nagad)', 'Nagad'], rocket: ['রকেট', 'Rocket'], card: ['কার্ড', 'Card'],
+    cheque: ['চেক', 'Cheque'], other: ['অন্যান্য', 'Other'],
+  };
+  const key = (m || 'other').toLowerCase();
+  return (map[key] || [m, m])[bn ? 0 : 1];
+};
+const normalizeMode = (raw: any): string => {
+  const s = String(raw || '').toLowerCase().trim();
+  if (!s) return 'other';
+  if (s.includes('bkash') || s.includes('বিকাশ')) return 'bkash';
+  if (s.includes('nagad') || s.includes('নগদ')) return s.includes('cash') ? 'cash' : 'nagad';
+  if (s.includes('rocket') || s.includes('রকেট')) return 'rocket';
+  if (s.includes('cash') || s === 'নগদ') return 'cash';
+  if (s.includes('bank') || s.includes('ব্যাংক')) return 'bank';
+  if (s.includes('cheque') || s.includes('check') || s.includes('চেক')) return 'cheque';
+  if (s.includes('card') || s.includes('কার্ড')) return 'card';
+  return 'other';
+};
+
 
 const SOURCE_META: Record<string, { bn: string; en: string; color: string }> = {
   expense:  { bn: 'হিসাব',     en: 'Expense',  color: 'bg-rose-100 text-rose-700 border-rose-200' },
