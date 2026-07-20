@@ -1066,6 +1066,7 @@ const AdminExpenses = () => {
             {[
               { value: 'dashboard', label: bn ? 'হিসাব' : 'Expenses' },
               { value: 'summary', label: bn ? 'সারাংশ' : 'Summary' },
+              { value: 'ledger', label: bn ? 'লেজার' : 'Ledger' },
             ].map(tab => (
               <button
                 key={tab.value}
