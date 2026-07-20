@@ -429,6 +429,7 @@ export default function LedgerReport({ bn, expenseInstitutions, categories, clea
                 ))}
               </SelectContent>
             </Select>
+          </div>
           <div>
             <Label className="text-xs">{bn ? 'সার্চ' : 'Search'}</Label>
             <Input value={search} onChange={e => setSearch(e.target.value)} placeholder={bn ? 'বিবরণ/রেফ' : 'Description/Ref'} />
