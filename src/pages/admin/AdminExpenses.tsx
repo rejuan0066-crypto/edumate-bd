@@ -1348,7 +1348,7 @@ const AdminExpenses = () => {
                   <tr className="bg-slate-100 border-b-2 border-slate-300">
                     <th className="border border-slate-300 px-3 py-1.5 text-center font-semibold text-slate-800 w-12">#</th>
                     <th className="border border-slate-300 px-3 py-1.5 text-center font-semibold text-slate-800 w-32">{bn ? 'তারিখ' : 'Date'}</th>
-                    <th className="border border-slate-300 px-3 py-1.5 text-left font-semibold text-slate-800">{bn ? 'ব্যাংক' : 'Bank'}</th>
+                    <th className="border border-slate-300 px-3 py-1.5 text-left font-semibold text-slate-800">{bn ? 'ব্যাংক/অন্যান্য' : 'Bank/Other'}</th>
                     <th className="border border-slate-300 px-3 py-1.5 text-left font-semibold text-slate-800">{bn ? 'বিবরণ' : 'Details'}</th>
                     <th className="border border-slate-300 px-3 py-1.5 text-left font-semibold text-slate-800 w-32">{bn ? 'উৎস' : 'Source'}</th>
                     <th className="border border-slate-300 px-3 py-1.5 text-right font-semibold text-slate-800 w-40">{bn ? 'টাকা' : 'Amount'}</th>
