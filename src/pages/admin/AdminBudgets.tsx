@@ -175,7 +175,7 @@ const AdminBudgets = () => {
           </div>
           <div>
             <h1 className="text-2xl font-bold">{bn ? 'বাজেট ব্যবস্থাপনা' : 'Budget Management'}</h1>
-            <p className="text-sm text-muted-foreground">{bn ? 'পরিকল্পিত বনাম প্রকৃত খরচ ট্র্যাকিং' : 'Planned vs actual expense tracking'}</p>
+            <p className="text-sm text-muted-foreground">{bn ? 'পরিকল্পিত বনাম প্রকৃত হিসাব ট্র্যাকিং' : 'Planned vs actual expense tracking'}</p>
           </div>
         </div>
         {canAddItem && (

@@ -27,7 +27,7 @@ const ACTION_LABELS_BN: Record<string, string> = {
 };
 
 const TABLE_LABELS_BN: Record<string, string> = {
-  expenses: 'খরচ',
+  expenses: 'হিসাব',
   fee_payments: 'ফি পেমেন্ট',
   salary_records: 'বেতন',
   students: 'শিক্ষার্থী',
@@ -122,7 +122,7 @@ const AdminSystemLogs = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{bn ? 'সকল টেবিল' : 'All Tables'}</SelectItem>
-              <SelectItem value="expenses">{bn ? 'খরচ' : 'Expenses'}</SelectItem>
+              <SelectItem value="expenses">{bn ? 'হিসাব' : 'Expenses'}</SelectItem>
               <SelectItem value="fee_payments">{bn ? 'ফি পেমেন্ট' : 'Fee Payments'}</SelectItem>
               <SelectItem value="salary_records">{bn ? 'বেতন' : 'Salary'}</SelectItem>
               <SelectItem value="students">{bn ? 'শিক্ষার্থী' : 'Students'}</SelectItem>

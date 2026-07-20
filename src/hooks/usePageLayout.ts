@@ -99,9 +99,9 @@ export const PAGE_REGISTRY: PageRegistryEntry[] = [
     icon: 'Receipt',
     route: '/admin/expenses',
     sections: [
-      { id: 'summary', titleBn: 'খরচ সারাংশ', titleEn: 'Expense Summary', visible: true, sort_order: 0, icon: 'CreditCard' },
+      { id: 'summary', titleBn: 'হিসাব সারাংশ', titleEn: 'Expense Summary', visible: true, sort_order: 0, icon: 'CreditCard' },
       { id: 'projects', titleBn: 'প্রজেক্ট', titleEn: 'Projects', visible: true, sort_order: 1, icon: 'Layers' },
-      { id: 'entries', titleBn: 'খরচ তালিকা', titleEn: 'Expense Entries', visible: true, sort_order: 2, icon: 'FileText' },
+      { id: 'entries', titleBn: 'হিসাব তালিকা', titleEn: 'Expense Entries', visible: true, sort_order: 2, icon: 'FileText' },
     ],
   },
   {

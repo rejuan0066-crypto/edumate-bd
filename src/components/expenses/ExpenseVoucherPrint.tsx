@@ -51,7 +51,7 @@ const ExpenseVoucherPrint = ({ expense, open, onClose }: ExpenseVoucherPrintProp
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-auto">
         <DialogHeader>
-          <DialogTitle>{bn ? 'খরচ ভাউচার' : 'Expense Voucher'}</DialogTitle>
+          <DialogTitle>{bn ? 'হিসাব ভাউচার' : 'Expense Voucher'}</DialogTitle>
         </DialogHeader>
         <div id="expense-voucher-content" className="bg-white text-gray-900 p-6 rounded-lg border">
           {/* Header */}
@@ -64,7 +64,7 @@ const ExpenseVoucherPrint = ({ expense, open, onClose }: ExpenseVoucherPrintProp
             {institution?.address && <p className="text-xs text-gray-500">{institution.address}</p>}
             {institution?.phone && <p className="text-xs text-gray-500">{bn ? 'ফোন' : 'Phone'}: {institution.phone}</p>}
             <div className="mt-2 inline-block bg-emerald-100 text-emerald-800 text-sm font-bold px-4 py-1 rounded-full">
-              {bn ? 'খরচ ভাউচার' : 'EXPENSE VOUCHER'}
+              {bn ? 'হিসাব ভাউচার' : 'EXPENSE VOUCHER'}
             </div>
           </div>
 

@@ -95,7 +95,7 @@ const InventoryConsumptionReport = () => {
 
   const handleExportCSV = () => {
     const rows = [
-      [bn ? 'আইটেম' : 'Item', bn ? 'পরিমাণ' : 'Quantity', bn ? 'একক' : 'Unit', bn ? 'খরচ' : 'Cost'],
+      [bn ? 'আইটেম' : 'Item', bn ? 'পরিমাণ' : 'Quantity', bn ? 'একক' : 'Unit', bn ? 'হিসাব' : 'Cost'],
       ...consumptionData.map(d => [bn ? d.name_bn : d.name_en, String(d.qty), d.unit, `৳${d.cost}`]),
       ['', '', bn ? 'মোট' : 'Total', `৳${totalCost}`]
     ];
@@ -143,7 +143,7 @@ const InventoryConsumptionReport = () => {
                   <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `৳${(v / 1000).toFixed(0)}k`} />
                   <Tooltip
                     contentStyle={{ borderRadius: 12, border: '1px solid hsl(var(--border))', background: 'hsl(var(--background))' }}
-                    formatter={(value: number) => [`৳${value.toLocaleString('en-IN')}`, bn ? 'খরচ' : 'Cost']}
+                    formatter={(value: number) => [`৳${value.toLocaleString('en-IN')}`, bn ? 'হিসাব' : 'Cost']}
                   />
                   <Bar dataKey="cost" fill="hsl(152, 69%, 40%)" radius={[6, 6, 0, 0]} />
                 </BarChart>
@@ -163,7 +163,7 @@ const InventoryConsumptionReport = () => {
                 <TableHead>{bn ? 'আইটেম' : 'Item'}</TableHead>
                 <TableHead className="text-center">{bn ? 'ক্রয় পরিমাণ' : 'Purchased Qty'}</TableHead>
                 <TableHead className="text-center">{bn ? 'একক' : 'Unit'}</TableHead>
-                <TableHead className="text-right">{bn ? 'মোট খরচ' : 'Total Cost'}</TableHead>
+                <TableHead className="text-right">{bn ? 'মোট হিসাব' : 'Total Cost'}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

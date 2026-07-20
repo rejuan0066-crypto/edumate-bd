@@ -273,7 +273,7 @@ const AdminWidgetBuilder = () => {
                           <SelectItem value="students">{bn ? 'ছাত্র' : 'Students'}</SelectItem>
                           <SelectItem value="staff">{bn ? 'কর্মী' : 'Staff'}</SelectItem>
                           <SelectItem value="fee_payments">{bn ? 'ফি পেমেন্ট' : 'Fee Payments'}</SelectItem>
-                          <SelectItem value="expenses">{bn ? 'খরচ' : 'Expenses'}</SelectItem>
+                          <SelectItem value="expenses">{bn ? 'হিসাব' : 'Expenses'}</SelectItem>
                           <SelectItem value="donors">{bn ? 'দাতা' : 'Donors'}</SelectItem>
                           <SelectItem value="custom">{bn ? 'কাস্টম মান' : 'Custom Value'}</SelectItem>
                         </SelectContent>

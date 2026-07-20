@@ -803,7 +803,7 @@ const AdminSalary = () => {
       queryClient.invalidateQueries({ queryKey: ['salary-savings'] });
       queryClient.invalidateQueries({ queryKey: ['salary-savings-ledger'] });
       setDisburseDialog(null);
-      toast.success(bn ? 'পরিশোধ সম্পন্ন এবং খরচে যোগ হয়েছে' : 'Disbursed & added to expenses');
+      toast.success(bn ? 'পরিশোধ সম্পন্ন এবং হিসাবে যোগ হয়েছে' : 'Disbursed & added to expenses');
     },
     onError: (e: any) => toast.error(bn ? `সমস্যা: ${e.message}` : `Error: ${e.message}`),
   });
@@ -1531,14 +1531,14 @@ const AdminSalary = () => {
         });
         if (expError) {
           console.error('Expense creation error:', expError);
-          toast.warning(bn ? 'বেতন পরিশোধিত হয়েছে কিন্তু খরচে সেভ হয়নি' : 'Marked paid but expense save failed');
+          toast.warning(bn ? 'বেতন পরিশোধিত হয়েছে কিন্তু হিসাবে সেভ হয়নি' : 'Marked paid but expense save failed');
           return;
         }
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] });
-      toast.success(bn ? 'পরিশোধিত ও খরচে সেভ হয়েছে' : 'Marked as paid & saved to expenses');
+      toast.success(bn ? 'পরিশোধিত ও হিসাবে সেভ হয়েছে' : 'Marked as paid & saved to expenses');
     },
   });
 
@@ -1566,7 +1566,7 @@ const AdminSalary = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] });
-      toast.success(bn ? 'অপরিশোধিত ও খরচ থেকে সরানো হয়েছে' : 'Marked as unpaid & expense removed');
+      toast.success(bn ? 'অপরিশোধিত ও হিসাব থেকে সরানো হয়েছে' : 'Marked as unpaid & expense removed');
     },
   });
 
@@ -3590,7 +3590,7 @@ const AdminSalary = () => {
                 <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
                   <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">{disburseDialog.staff_name}</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {bn ? 'পরিশোধের পর জমা সেটআপ নিষ্ক্রিয় হবে এবং খরচ তালিকায় অটো এন্ট্রি যাবে।' : 'After payment, savings setup will be deactivated and an expense entry will be auto-created.'}
+                    {bn ? 'পরিশোধের পর জমা সেটআপ নিষ্ক্রিয় হবে এবং হিসাব তালিকায় অটো এন্ট্রি যাবে।' : 'After payment, savings setup will be deactivated and an expense entry will be auto-created.'}
                   </p>
                 </div>
                 <div>
@@ -3615,7 +3615,7 @@ const AdminSalary = () => {
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-xs">{bn ? 'খরচ ক্যাটাগরি' : 'Expense Category'}</Label>
+                  <Label className="text-xs">{bn ? 'হিসাব ক্যাটাগরি' : 'Expense Category'}</Label>
                   <Select
                     value={disburseDialog.categoryId || ''}
                     onValueChange={v => setDisburseDialog({ ...disburseDialog, categoryId: v })}
@@ -3656,7 +3656,7 @@ const AdminSalary = () => {
                   })}
                 >
                   <DollarSign className="h-4 w-4 mr-1" />
-                  {bn ? 'পরিশোধ ও খরচে যোগ করুন' : 'Disburse & Add to Expenses'}
+                  {bn ? 'পরিশোধ ও হিসাবে যোগ করুন' : 'Disburse & Add to Expenses'}
                 </Button>
               </div>
             )}
@@ -3741,7 +3741,7 @@ const AdminSalary = () => {
             <Tabs value={settingsTab} onValueChange={setSettingsTab}>
               <TabsList className="w-full">
                 <TabsTrigger value="general" className="flex-1">{bn ? 'সাধারণ' : 'General'}</TabsTrigger>
-                <TabsTrigger value="expense" className="flex-1">{bn ? 'খরচ সংযোগ' : 'Expense Link'}</TabsTrigger>
+                <TabsTrigger value="expense" className="flex-1">{bn ? 'হিসাব সংযোগ' : 'Expense Link'}</TabsTrigger>
                 <TabsTrigger value="formula" className="flex-1">{bn ? 'ফর্মুলা' : 'Formula'}</TabsTrigger>
               </TabsList>
               <TabsContent value="general" className="space-y-4 mt-4">
@@ -3892,7 +3892,7 @@ const AdminSalary = () => {
               <TabsContent value="expense" className="space-y-4 mt-4">
                 <div className="p-3 bg-muted/50 rounded-lg text-sm">
                   <FolderOpen className="h-4 w-4 inline mr-1 text-primary" />
-                  <span className="font-semibold">{bn ? 'খরচে অটো-সেভ সেটিংস' : 'Auto-Save to Expenses Settings'}</span>
+                  <span className="font-semibold">{bn ? 'হিসাবে অটো-সেভ সেটিংস' : 'Auto-Save to Expenses Settings'}</span>
                   <p className="text-xs text-muted-foreground mt-1">
                     {bn ? 'বেতন পরিশোধ করলে স্বয়ংক্রিয়ভাবে হিসাব ব্যবস্থাপনায় সেভ হবে। প্রতিষ্ঠান ও ক্যাটাগরি নির্বাচন করুন।' 
                          : 'When salary is paid, it will auto-save to expense management. Select institution & category.'}
@@ -4152,7 +4152,7 @@ const AdminSalary = () => {
             }
           }}
           title={bn ? 'পরিশোধিত করতে চান?' : 'Mark as paid?'}
-          description={bn ? 'এই বেতন রেকর্ডটি পরিশোধিত হিসেবে চিহ্নিত হবে এবং খরচে যুক্ত হবে।' : 'This salary record will be marked as paid and added to expenses.'}
+          description={bn ? 'এই বেতন রেকর্ডটি পরিশোধিত হিসেবে চিহ্নিত হবে এবং হিসাবে যুক্ত হবে।' : 'This salary record will be marked as paid and added to expenses.'}
           confirmLabel={bn ? 'হ্যাঁ, পরিশোধ করুন' : 'Yes, Mark Paid'}
           isPending={markPaidMutation.isPending}
           variant="success"
@@ -4168,7 +4168,7 @@ const AdminSalary = () => {
             }
           }}
           title={bn ? 'অপরিশোধিত করতে চান?' : 'Mark as unpaid?'}
-          description={bn ? 'এই বেতন রেকর্ডটি অপরিশোধিত হিসেবে চিহ্নিত হবে এবং সংশ্লিষ্ট খরচ থেকে সরানো হবে।' : 'This salary record will be marked as unpaid and removed from expenses.'}
+          description={bn ? 'এই বেতন রেকর্ডটি অপরিশোধিত হিসেবে চিহ্নিত হবে এবং সংশ্লিষ্ট হিসাব থেকে সরানো হবে।' : 'This salary record will be marked as unpaid and removed from expenses.'}
           confirmLabel={bn ? 'হ্যাঁ, অপরিশোধিত করুন' : 'Yes, Mark Unpaid'}
           isPending={markUnpaidMutation.isPending}
         />
@@ -4183,7 +4183,7 @@ const AdminSalary = () => {
             }
           }}
           title={bn ? 'বেতন রেকর্ড মুছবেন?' : 'Ungenerate salary record?'}
-          description={bn ? 'এই বেতন রেকর্ডটি সম্পূর্ণভাবে মুছে ফেলা হবে। পরিশোধিত হলে সংশ্লিষ্ট খরচ ও জমা এন্ট্রিও সরানো হবে। আপনি পুনরায় জেনারেট করতে পারবেন।' : 'This salary record will be permanently deleted. Linked expense and savings entries will also be removed. You can regenerate it later.'}
+          description={bn ? 'এই বেতন রেকর্ডটি সম্পূর্ণভাবে মুছে ফেলা হবে। পরিশোধিত হলে সংশ্লিষ্ট হিসাব ও জমা এন্ট্রিও সরানো হবে। আপনি পুনরায় জেনারেট করতে পারবেন।' : 'This salary record will be permanently deleted. Linked expense and savings entries will also be removed. You can regenerate it later.'}
           confirmLabel={bn ? 'হ্যাঁ, মুছুন' : 'Yes, Delete'}
           isPending={ungenerateMutation.isPending}
         />

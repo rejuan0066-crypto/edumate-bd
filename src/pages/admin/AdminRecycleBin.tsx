@@ -29,7 +29,7 @@ const TABLES: TableConfig[] = [
   { key: 'staff', label: 'Staff', labelBn: 'স্টাফ', nameField: 'name_en', nameFieldBn: 'name_bn', extraFields: [{ key: 'staff_id', label: 'ID', labelBn: 'আইডি' }] },
   { key: 'fee_types', label: 'Fee Types', labelBn: 'ফি টাইপ', nameField: 'name', nameFieldBn: 'name_bn' },
   { key: 'fee_payments', label: 'Fee Payments', labelBn: 'ফি পেমেন্ট', nameField: 'receipt_number', extraFields: [{ key: 'amount', label: 'Amount', labelBn: 'পরিমাণ' }] },
-  { key: 'expenses', label: 'Expenses', labelBn: 'খরচ', nameField: 'description', extraFields: [{ key: 'amount', label: 'Amount', labelBn: 'পরিমাণ' }] },
+  { key: 'expenses', label: 'Expenses', labelBn: 'হিসাব', nameField: 'description', extraFields: [{ key: 'amount', label: 'Amount', labelBn: 'পরিমাণ' }] },
   { key: 'donors', label: 'Donors', labelBn: 'দাতা', nameField: 'name_en', nameFieldBn: 'name_bn' },
   { key: 'notices', label: 'Notices', labelBn: 'নোটিশ', nameField: 'title', nameFieldBn: 'title_bn' },
   { key: 'library_books', label: 'Library Books', labelBn: 'লাইব্রেরি বই', nameField: 'title', nameFieldBn: 'title_bn' },
