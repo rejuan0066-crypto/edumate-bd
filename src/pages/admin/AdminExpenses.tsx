@@ -1041,13 +1041,13 @@ const AdminExpenses = () => {
                   </button>
                 ))}
                 <button
-                  onClick={() => setActiveTab(activeTab === 'deposits' ? '' : 'deposits')}
+                  onClick={() => { setBreakdownTab(null); setActiveTab(activeTab === 'deposits' ? '' : 'deposits'); }}
                   className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 whitespace-nowrap ${activeTab === 'deposits' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 shadow-sm' : 'bg-background border-border text-muted-foreground hover:border-emerald-400/40 hover:text-foreground'}`}
                 >
                   {bn ? 'টাকা আয়/উত্তোলন' : 'Deposits'}
                 </button>
                 <button
-                  onClick={() => setActiveTab(activeTab === 'settings' ? '' : 'settings')}
+                  onClick={() => { setBreakdownTab(null); setActiveTab(activeTab === 'settings' ? '' : 'settings'); }}
                   className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 whitespace-nowrap ${activeTab === 'settings' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 shadow-sm' : 'bg-background border-border text-muted-foreground hover:border-emerald-400/40 hover:text-foreground'}`}
                 >
                   {bn ? 'প্রতিষ্ঠান' : 'Institutions'}
