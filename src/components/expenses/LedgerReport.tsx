@@ -523,6 +523,9 @@ export default function LedgerReport({ bn, expenseInstitutions, categories, clea
                   <td className="border border-slate-300 px-2 py-1.5 text-left truncate">{r.category}</td>
                   <td className="border border-slate-300 px-2 py-1.5 text-left">{r.description}</td>
                   <td className="border border-slate-300 px-2 py-1.5 text-left text-xs text-slate-500">{r.ref || '-'}</td>
+                  <td className="border border-slate-300 px-2 py-1.5 text-center text-xs">
+                    <span className="inline-block px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">{modeLabel(r.paymentMode, bn)}</span>
+                  </td>
                   <td className={`border border-slate-300 px-2 py-1.5 text-right tabular-nums font-medium ${r.type==='credit' ? 'text-emerald-600' : 'text-rose-600'}`}>
                     {r.type==='credit' ? '+' : '−'}৳{fmt(r.amount)}
                   </td>
