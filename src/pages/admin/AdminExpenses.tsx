@@ -1328,46 +1328,52 @@ const AdminExpenses = () => {
               </div>
             </div>
 
-            <div className="border rounded-lg overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>#</TableHead>
-                    <TableHead>{bn ? 'তারিখ' : 'Date'}</TableHead>
-                    <TableHead>{bn ? 'ব্যাংক' : 'Bank'}</TableHead>
-                    <TableHead>{bn ? 'বিবরণ' : 'Details'}</TableHead>
-                    <TableHead>{bn ? 'উৎস' : 'Source'}</TableHead>
-                    <TableHead className="text-right">{bn ? 'টাকা' : 'Amount'}</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+            <div className="border border-slate-300 overflow-auto bg-white">
+              <table className="w-full border-collapse text-sm text-slate-700">
+                <thead>
+                  <tr className="bg-slate-100 border-b-2 border-slate-300">
+                    <th className="border border-slate-300 px-3 py-1.5 text-center font-semibold text-slate-800 w-12">#</th>
+                    <th className="border border-slate-300 px-3 py-1.5 text-center font-semibold text-slate-800 w-32">{bn ? 'তারিখ' : 'Date'}</th>
+                    <th className="border border-slate-300 px-3 py-1.5 text-left font-semibold text-slate-800">{bn ? 'ব্যাংক' : 'Bank'}</th>
+                    <th className="border border-slate-300 px-3 py-1.5 text-left font-semibold text-slate-800">{bn ? 'বিবরণ' : 'Details'}</th>
+                    <th className="border border-slate-300 px-3 py-1.5 text-left font-semibold text-slate-800 w-32">{bn ? 'উৎস' : 'Source'}</th>
+                    <th className="border border-slate-300 px-3 py-1.5 text-right font-semibold text-slate-800 w-40">{bn ? 'টাকা' : 'Amount'}</th>
+                    <th className="border border-slate-300 px-3 py-1.5 text-center font-semibold text-slate-800 w-24"></th>
+                  </tr>
+                </thead>
+                <tbody>
                   {deposits.length === 0 && (
-                    <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{bn ? 'কোনো টাকা আয়/উত্তোলন নেই' : 'No deposits'}</TableCell></TableRow>
+                    <tr>
+                      <td colSpan={7} className="border border-slate-300 px-3 py-8 text-center text-slate-500">
+                        {bn ? 'কোনো টাকা আয়/উত্তোলন নেই' : 'No deposits'}
+                      </td>
+                    </tr>
                   )}
                   {deposits.map((d: any, i: number) => (
-                    <TableRow key={d.id}>
-                      <TableCell>{i + 1}</TableCell>
-                      <TableCell>{d.deposit_date}</TableCell>
-                      <TableCell>{d.bank_details || '-'}</TableCell>
-                      <TableCell>{d.other_details || '-'}</TableCell>
-                      <TableCell>{d.source}</TableCell>
-                      <TableCell className="text-right font-medium">৳{formatNum(Number(d.amount))}</TableCell>
-                      <TableCell className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openEditDeposit(d)}><Edit2 className="w-4 h-4 text-muted-foreground" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => { setDeleteConfirmId(d.id); setDeleteConfirmType('deposit'); }}><Trash2 className="w-4 h-4 text-destructive" /></Button>
-                      </TableCell>
-                    </TableRow>
+                    <tr key={d.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                      <td className="border border-slate-300 px-3 py-1.5 text-center tabular-nums">{i + 1}</td>
+                      <td className="border border-slate-300 px-3 py-1.5 text-center tabular-nums">{d.deposit_date}</td>
+                      <td className="border border-slate-300 px-3 py-1.5 text-left">{d.bank_details || '-'}</td>
+                      <td className="border border-slate-300 px-3 py-1.5 text-left">{d.other_details || '-'}</td>
+                      <td className="border border-slate-300 px-3 py-1.5 text-left">{d.source}</td>
+                      <td className="border border-slate-300 px-3 py-1.5 text-right tabular-nums font-medium">৳{formatNum(Number(d.amount))}</td>
+                      <td className="border border-slate-300 px-2 py-1 text-center">
+                        <div className="flex gap-0.5 justify-center">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditDeposit(d)}><Edit2 className="w-3.5 h-3.5 text-slate-500" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setDeleteConfirmId(d.id); setDeleteConfirmType('deposit'); }}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                        </div>
+                      </td>
+                    </tr>
                   ))}
                   {deposits.length > 0 && (
-                    <TableRow className="bg-muted/50 font-bold">
-                      <TableCell colSpan={5} className="text-right">{bn ? 'মোট টাকা আয়/উত্তোলন:' : 'Total:'}</TableCell>
-                      <TableCell className="text-right">৳{formatNum(monthlyTotalDeposit)}</TableCell>
-                      <TableCell />
-                    </TableRow>
+                    <tr className="bg-slate-800 text-white font-bold">
+                      <td colSpan={5} className="border border-slate-700 px-3 py-2 text-right">{bn ? 'মোট টাকা আয়/উত্তোলন:' : 'Total:'}</td>
+                      <td className="border border-slate-700 px-3 py-2 text-right tabular-nums">৳{formatNum(monthlyTotalDeposit)}</td>
+                      <td className="border border-slate-700 px-3 py-2"></td>
+                    </tr>
                   )}
-                </TableBody>
-              </Table>
+                </tbody>
+              </table>
             </div>
           </TabsContent>
 
