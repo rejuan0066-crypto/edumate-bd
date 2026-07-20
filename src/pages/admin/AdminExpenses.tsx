@@ -1046,6 +1046,12 @@ const AdminExpenses = () => {
                 >
                   {bn ? 'জমা' : 'Deposits'}
                 </button>
+                <button
+                  onClick={() => setActiveTab(activeTab === 'settings' ? '' : 'settings')}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 whitespace-nowrap ${activeTab === 'settings' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 shadow-sm' : 'bg-background border-border text-muted-foreground hover:border-emerald-400/40 hover:text-foreground'}`}
+                >
+                  {bn ? 'প্রতিষ্ঠান' : 'Institutions'}
+                </button>
               </div>
               {breakdownTab === 'institution' && (
                 <div className="border rounded-lg overflow-auto">
@@ -1098,7 +1104,6 @@ const AdminExpenses = () => {
           <div className="flex flex-wrap gap-2 mb-4">
             {[
               { value: 'dashboard', label: bn ? 'হিসাব' : 'Expenses' },
-              { value: 'settings', label: bn ? 'প্রতিষ্ঠান' : 'Institutions' },
               { value: 'summary', label: bn ? 'সারাংশ' : 'Summary' },
             ].map(tab => (
               <button
