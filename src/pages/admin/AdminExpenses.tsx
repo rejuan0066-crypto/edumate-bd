@@ -1031,6 +1031,7 @@ const AdminExpenses = () => {
                 {[
                   { value: 'institution' as const, label: bn ? 'প্রতিষ্ঠান ভিত্তিক হিসাব' : 'Institution-wise' },
                   { value: 'category' as const, label: bn ? 'ক্যাটেগরি ভিত্তিক হিসাব' : 'Category-wise' },
+                  { value: 'hierarchy' as const, label: bn ? 'ধাপে ধাপে হিসাব' : 'Hierarchy Report' },
                 ].map(tab => (
                   <button
                     key={tab.value}
