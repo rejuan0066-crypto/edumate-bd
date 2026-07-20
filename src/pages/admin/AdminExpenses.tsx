@@ -1030,7 +1030,7 @@ const AdminExpenses = () => {
             <div>
               <div className="flex flex-wrap gap-2 mb-3">
                 <button
-                  onClick={() => setBreakdownTab(prev => prev === 'hierarchy' ? null : 'hierarchy')}
+                  onClick={() => { setActiveTab(''); setBreakdownTab(prev => prev === 'hierarchy' ? null : 'hierarchy'); }}
                   className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 whitespace-nowrap ${breakdownTab === 'hierarchy' ? 'bg-primary/10 border-primary text-primary shadow-sm' : 'bg-background border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'}`}
                 >
                   {bn ? 'প্রতিষ্ঠান ভিত্তিক হিসাব' : 'Institution-wise'}
@@ -1068,7 +1068,7 @@ const AdminExpenses = () => {
             ].map(tab => (
               <button
                 key={tab.value}
-                onClick={() => setActiveTab(activeTab === tab.value ? '' : tab.value)}
+                onClick={() => { setBreakdownTab(null); setActiveTab(activeTab === tab.value ? '' : tab.value); }}
                 className={`flex items-center gap-2 px-6 py-2.5 rounded-2xl text-sm font-semibold transition-all whitespace-nowrap ${activeTab === tab.value
                   ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25'
                   : 'bg-white/60 dark:bg-white/10 backdrop-blur border border-emerald-200/30 dark:border-emerald-800/30 text-muted-foreground hover:text-foreground hover:shadow-md hover:border-emerald-300/50'}`}
