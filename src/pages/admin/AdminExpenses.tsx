@@ -19,6 +19,7 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Plus, Trash2, Edit2, DollarSign, TrendingDown, TrendingUp, Wallet, Printer, FolderPlus, TagIcon, Upload, Download, Eye, ScanLine, Building2, Package, AlertTriangle, FileText, FileBarChart } from 'lucide-react';
 import ExpenseVoucherPrint from '@/components/expenses/ExpenseVoucherPrint';
+import ExpenseHierarchyReport from '@/components/expenses/ExpenseHierarchyReport';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedCounter from '@/components/expenses/AnimatedCounter';
