@@ -20,7 +20,32 @@ type Row = {
   description: string;
   amount: number;
   ref: string;
+  paymentMode: string; // cash/bank/bkash/nagad/rocket/card/other
 };
+
+const PAYMENT_MODES = ['cash', 'bank', 'bkash', 'nagad', 'rocket', 'card', 'cheque', 'other'] as const;
+const modeLabel = (m: string, bn: boolean) => {
+  const map: Record<string, [string, string]> = {
+    cash: ['নগদ', 'Cash'], bank: ['ব্যাংক', 'Bank'], bkash: ['বিকাশ', 'bKash'],
+    nagad: ['নগদ (Nagad)', 'Nagad'], rocket: ['রকেট', 'Rocket'], card: ['কার্ড', 'Card'],
+    cheque: ['চেক', 'Cheque'], other: ['অন্যান্য', 'Other'],
+  };
+  const key = (m || 'other').toLowerCase();
+  return (map[key] || [m, m])[bn ? 0 : 1];
+};
+const normalizeMode = (raw: any): string => {
+  const s = String(raw || '').toLowerCase().trim();
+  if (!s) return 'other';
+  if (s.includes('bkash') || s.includes('বিকাশ')) return 'bkash';
+  if (s.includes('nagad') || s.includes('নগদ')) return s.includes('cash') ? 'cash' : 'nagad';
+  if (s.includes('rocket') || s.includes('রকেট')) return 'rocket';
+  if (s.includes('cash') || s === 'নগদ') return 'cash';
+  if (s.includes('bank') || s.includes('ব্যাংক')) return 'bank';
+  if (s.includes('cheque') || s.includes('check') || s.includes('চেক')) return 'cheque';
+  if (s.includes('card') || s.includes('কার্ড')) return 'card';
+  return 'other';
+};
+
 
 const SOURCE_META: Record<string, { bn: string; en: string; color: string }> = {
   expense:  { bn: 'হিসাব',     en: 'Expense',  color: 'bg-rose-100 text-rose-700 border-rose-200' },
@@ -56,6 +81,7 @@ export default function LedgerReport({ bn, expenseInstitutions, categories, clea
   const [typeFilter, setTypeFilter] = useState<'all' | 'credit' | 'debit'>('all');
   const [instFilter, setInstFilter] = useState<string>('all');
   const [catFilter, setCatFilter] = useState<string>('all');
+  const [modeFilter, setModeFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'simple' | 'classic'>('simple');
   const [sources, setSources] = useState<Record<string, boolean>>({
@@ -139,19 +165,21 @@ export default function LedgerReport({ bn, expenseInstitutions, categories, clea
           institution: bn ? (e.expense_institutions?.name_bn || '') : (e.expense_institutions?.name || ''),
           category: bn ? (e.expense_categories?.name_bn || '') : (e.expense_categories?.name || ''),
           description: cleanDesc(e.description || ''), amount: Number(e.amount || 0), ref: '',
+          paymentMode: 'other',
         });
       }
     }
     if (sources.deposit) {
       for (const d of deposits as any[]) {
         const amt = Number(d.amount || 0);
+        const mode = normalizeMode(d.source || (d.bank_details ? 'bank' : 'cash'));
         out.push({
           id: `dep-${d.id}`, date: d.deposit_date,
           type: amt >= 0 ? 'credit' : 'debit',
           source: 'deposit', sourceLabel: bn ? SOURCE_META.deposit.bn : SOURCE_META.deposit.en,
           institution: '-', category: d.source || '-',
           description: [d.bank_details, d.other_details].filter(Boolean).join(' — ') || '-',
-          amount: Math.abs(amt), ref: '',
+          amount: Math.abs(amt), ref: '', paymentMode: mode,
         });
       }
     }
@@ -165,7 +193,7 @@ export default function LedgerReport({ bn, expenseInstitutions, categories, clea
           category: bn ? (f.fee_types?.name_bn || f.fee_types?.name || '-') : (f.fee_types?.name || '-'),
           description: `${f.students?.name || '-'}${f.students?.roll_number ? ` (${f.students.roll_number})` : ''} — ${f.month || ''}${f.year ? '/' + f.year : ''}`,
           amount: Number(f.paid_amount || 0),
-          ref: f.receipt_number || '',
+          ref: f.receipt_number || '', paymentMode: 'cash',
         });
       }
     }
@@ -177,7 +205,7 @@ export default function LedgerReport({ bn, expenseInstitutions, categories, clea
           sourceLabel: bn ? SOURCE_META.salary.bn : SOURCE_META.salary.en,
           institution: '-', category: s.month_year || '-',
           description: `${s.staff?.name || '-'}${s.staff?.staff_id ? ` (${s.staff.staff_id})` : ''}`,
-          amount: Number(s.net_salary || 0), ref: '',
+          amount: Number(s.net_salary || 0), ref: '', paymentMode: 'bank',
         });
       }
     }
@@ -189,7 +217,7 @@ export default function LedgerReport({ bn, expenseInstitutions, categories, clea
           sourceLabel: bn ? SOURCE_META.donation.bn : SOURCE_META.donation.en,
           institution: '-', category: v.method || '-',
           description: v.note || '-', amount: Number(v.amount || 0),
-          ref: v.trx_id || '',
+          ref: v.trx_id || '', paymentMode: normalizeMode(v.method),
         });
       }
     }
@@ -206,10 +234,11 @@ export default function LedgerReport({ bn, expenseInstitutions, categories, clea
       if (typeFilter !== 'all' && r.type !== typeFilter) return false;
       if (instFilter !== 'all' && r.institution !== selInstName) return false;
       if (catFilter !== 'all' && r.category !== selCatName) return false;
-      if (q && !(r.description.toLowerCase().includes(q) || r.ref.toLowerCase().includes(q) || r.category.toLowerCase().includes(q) || r.institution.toLowerCase().includes(q))) return false;
+      if (modeFilter !== 'all' && r.paymentMode !== modeFilter) return false;
+      if (q && !(r.description.toLowerCase().includes(q) || r.ref.toLowerCase().includes(q) || r.category.toLowerCase().includes(q) || r.institution.toLowerCase().includes(q) || r.paymentMode.toLowerCase().includes(q))) return false;
       return true;
     }).sort((a,b) => (a.date > b.date ? 1 : a.date < b.date ? -1 : 0));
-  }, [rows, typeFilter, instFilter, catFilter, search, expenseInstitutions, categories, bn]);
+  }, [rows, typeFilter, instFilter, catFilter, modeFilter, search, expenseInstitutions, categories, bn]);
 
   const totalCredit = filtered.filter(r => r.type === 'credit').reduce((s, r) => s + r.amount, 0);
   const totalDebit  = filtered.filter(r => r.type === 'debit').reduce((s, r) => s + r.amount, 0);
@@ -345,7 +374,7 @@ export default function LedgerReport({ bn, expenseInstitutions, categories, clea
           <ListFilter className="w-4 h-4 text-emerald-600" />
           {bn ? 'ফিল্টার' : 'Filters'}
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
           <div>
             <Label className="text-xs">{bn ? 'শুরু' : 'From'}</Label>
             <Input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} />
@@ -385,6 +414,18 @@ export default function LedgerReport({ bn, expenseInstitutions, categories, clea
                 <SelectItem value="all">{bn ? 'সব' : 'All'}</SelectItem>
                 {instCats.map((c: any) => (
                   <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">{bn ? 'পেমেন্ট মোড' : 'Payment Mode'}</Label>
+            <Select value={modeFilter} onValueChange={setModeFilter}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{bn ? 'সব' : 'All'}</SelectItem>
+                {PAYMENT_MODES.map(m => (
+                  <SelectItem key={m} value={m}>{modeLabel(m, bn)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
