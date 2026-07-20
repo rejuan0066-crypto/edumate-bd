@@ -24,7 +24,7 @@ import { useConfirm } from "@/contexts/ConfirmContext";
 const MODULE_OPTIONS = [
   { value: 'fee', label: 'Fee', label_bn: 'ফি', icon: CreditCard },
   { value: 'salary', label: 'Salary', label_bn: 'বেতন', icon: Wallet },
-  { value: 'expense', label: 'Expense', label_bn: 'খরচ', icon: Receipt },
+  { value: 'expense', label: 'Expense', label_bn: 'হিসাব', icon: Receipt },
   { value: 'grade', label: 'Grade', label_bn: 'গ্রেড', icon: GraduationCap },
 ];
 

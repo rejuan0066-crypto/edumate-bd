@@ -27,7 +27,7 @@ const MODULE_OPTIONS = [
   { value: 'fee', label: 'Fee', label_bn: 'ফি', icon: CreditCard },
   { value: 'result', label: 'Result', label_bn: 'ফলাফল', icon: GraduationCap },
   { value: 'salary', label: 'Salary', label_bn: 'বেতন', icon: Wallet },
-  { value: 'expense', label: 'Expense', label_bn: 'খরচ', icon: FileText },
+  { value: 'expense', label: 'Expense', label_bn: 'হিসাব', icon: FileText },
 ];
 
 const RULE_LEVELS = [

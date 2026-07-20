@@ -88,7 +88,7 @@ const FinancialAnalyticsChart = () => {
               <TrendingDown className="w-5 h-5 text-red-600" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">{bn ? 'মোট খরচ' : 'Total Expenses'}</p>
+              <p className="text-xs text-muted-foreground">{bn ? 'মোট হিসাব' : 'Total Expenses'}</p>
               <p className="text-lg font-bold text-red-700 dark:text-red-400">{fmt(totalExp)}</p>
             </div>
           </CardContent>
@@ -111,7 +111,7 @@ const FinancialAnalyticsChart = () => {
       {/* Chart */}
       <Card className="border-emerald-200/20">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">{bn ? 'ফি আদায় বনাম খরচ (গত ৬ মাস)' : 'Fees vs Expenses (Last 6 Months)'}</CardTitle>
+          <CardTitle className="text-base">{bn ? 'ফি আদায় বনাম হিসাব (গত ৬ মাস)' : 'Fees vs Expenses (Last 6 Months)'}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[280px]">
@@ -122,9 +122,9 @@ const FinancialAnalyticsChart = () => {
                 <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `৳${(v / 1000).toFixed(0)}k`} />
                 <Tooltip
                   contentStyle={{ borderRadius: 12, border: '1px solid hsl(var(--border))', background: 'hsl(var(--background))' }}
-                  formatter={(value: number, name: string) => [fmt(value), name === 'fees' ? (bn ? 'ফি আদায়' : 'Fees') : (bn ? 'খরচ' : 'Expenses')]}
+                  formatter={(value: number, name: string) => [fmt(value), name === 'fees' ? (bn ? 'ফি আদায়' : 'Fees') : (bn ? 'হিসাব' : 'Expenses')]}
                 />
-                <Legend formatter={v => v === 'fees' ? (bn ? 'ফি আদায়' : 'Fees Collected') : (bn ? 'খরচ' : 'Expenses')} />
+                <Legend formatter={v => v === 'fees' ? (bn ? 'ফি আদায়' : 'Fees Collected') : (bn ? 'হিসাব' : 'Expenses')} />
                 <Bar dataKey="fees" fill="hsl(152, 69%, 40%)" radius={[6, 6, 0, 0]} />
                 <Bar dataKey="expenses" fill="hsl(0, 72%, 51%)" radius={[6, 6, 0, 0]} />
               </BarChart>

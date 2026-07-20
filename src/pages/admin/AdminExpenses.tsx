@@ -696,10 +696,10 @@ const AdminExpenses = () => {
     rows.push([bn ? 'ইমেইল' : 'Email', instEmail]);
     if (instOther) rows.push([bn ? 'অন্যান্য' : 'Other', instOther]);
     rows.push([]);
-    rows.push([bn ? 'খরচ প্রতিবেদন' : 'Expense Report', selectedMonthYear]);
+    rows.push([bn ? 'হিসাব প্রতিবেদন' : 'Expense Report', selectedMonthYear]);
     rows.push([]);
     // Summary
-    rows.push([bn ? 'মোট খরচ' : 'Total Expense', `৳${formatNum(monthlyTotalExpense)}`, bn ? 'মোট জমা' : 'Total Deposit', `৳${formatNum(monthlyTotalDeposit)}`]);
+    rows.push([bn ? 'মোট হিসাব' : 'Total Expense', `৳${formatNum(monthlyTotalExpense)}`, bn ? 'মোট জমা' : 'Total Deposit', `৳${formatNum(monthlyTotalDeposit)}`]);
     rows.push([bn ? 'পূর্ববর্তী বকেয়া' : 'Previous Arrears', `৳${formatNum(previousArrears)}`, bn ? 'ক্যাশ' : 'Cash', `৳${formatNum(monthlyCash)}`]);
     rows.push([]);
 
@@ -723,7 +723,7 @@ const AdminExpenses = () => {
       });
     });
 
-    rows.push([bn ? 'সর্বমোট খরচ' : 'Grand Total Expense', `৳${formatNum(monthlyTotalExpense)}`]);
+    rows.push([bn ? 'সর্বমোট হিসাব' : 'Grand Total Expense', `৳${formatNum(monthlyTotalExpense)}`]);
 
     const csvContent = rows.map(r => r.map(c => `"${(c || '').replace(/"/g, '""')}"`).join(',')).join('\n');
     const BOM = '\uFEFF';
@@ -801,7 +801,7 @@ const AdminExpenses = () => {
       rows.push([]);
     });
 
-    rows.push([bn ? 'প্রকল্প মোট খরচ' : 'Project Total', `৳${formatNum(instTotal)}`]);
+    rows.push([bn ? 'প্রকল্প মোট হিসাব' : 'Project Total', `৳${formatNum(instTotal)}`]);
     const csvContent = rows.map(r => r.map(c => `"${(c || '').replace(/"/g, '""')}"`).join(',')).join('\n');
     const BOM = '\uFEFF';
     const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -912,7 +912,7 @@ const AdminExpenses = () => {
         {/* Premium Stats Cards - Monthly */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: bn ? `${selectedMonthName} খরচ` : `${selectedMonthName} Expense`, val: monthlyTotalExpense, gradient: 'from-rose-500/10 via-red-400/5 to-transparent', iconBg: 'bg-gradient-to-br from-rose-500 to-red-400', icon: TrendingDown, color: 'text-rose-600 dark:text-rose-400', sparkColor: '#f43f5e', sparkData: [3,5,4,7,6,8,monthlyTotalExpense > 0 ? 10 : 0] },
+            { label: bn ? `${selectedMonthName} হিসাব` : `${selectedMonthName} Expense`, val: monthlyTotalExpense, gradient: 'from-rose-500/10 via-red-400/5 to-transparent', iconBg: 'bg-gradient-to-br from-rose-500 to-red-400', icon: TrendingDown, color: 'text-rose-600 dark:text-rose-400', sparkColor: '#f43f5e', sparkData: [3,5,4,7,6,8,monthlyTotalExpense > 0 ? 10 : 0] },
             { label: bn ? `${selectedMonthName} জমা` : `${selectedMonthName} Deposit`, val: monthlyTotalDeposit, gradient: 'from-emerald-500/10 via-green-400/5 to-transparent', iconBg: 'bg-gradient-to-br from-emerald-500 to-green-400', icon: TrendingUp, color: 'text-emerald-600 dark:text-emerald-400', sparkColor: '#10b981', sparkData: [2,4,3,6,5,7,monthlyTotalDeposit > 0 ? 10 : 0] },
             { label: bn ? `${selectedMonthName} ক্যাশ` : `${selectedMonthName} Cash`, val: monthlyCash, gradient: monthlyCash >= 0 ? 'from-blue-500/10 via-sky-400/5 to-transparent' : 'from-orange-500/10 via-amber-400/5 to-transparent', iconBg: monthlyCash >= 0 ? 'bg-gradient-to-br from-blue-500 to-sky-400' : 'bg-gradient-to-br from-orange-500 to-amber-400', icon: Wallet, color: monthlyCash >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400', sparkColor: monthlyCash >= 0 ? '#3b82f6' : '#f97316', sparkData: [5,4,6,3,7,5,8] },
             { label: bn ? 'বকেয়া' : 'Arrears', val: totalArrears, gradient: totalArrears > 0 ? 'from-amber-500/10 via-yellow-400/5 to-transparent' : 'from-slate-500/10 via-gray-400/5 to-transparent', iconBg: totalArrears > 0 ? 'bg-gradient-to-br from-amber-500 to-yellow-400' : 'bg-gradient-to-br from-slate-400 to-gray-400', icon: DollarSign, color: totalArrears > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground', sparkColor: '#f59e0b', sparkData: [2,3,2,4,3,5,totalArrears > 0 ? 6 : 0] },
@@ -944,7 +944,7 @@ const AdminExpenses = () => {
         {/* Overall / Filtered Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: `${filterLabel} ${bn ? 'খরচ' : 'Expense'}`, val: totalExpenseAll, gradient: 'from-rose-500/10 via-red-400/5 to-transparent', iconBg: 'bg-gradient-to-br from-rose-500 to-red-400', icon: TrendingDown, color: 'text-rose-600 dark:text-rose-400', sparkColor: '#f43f5e' },
+            { label: `${filterLabel} ${bn ? 'হিসাব' : 'Expense'}`, val: totalExpenseAll, gradient: 'from-rose-500/10 via-red-400/5 to-transparent', iconBg: 'bg-gradient-to-br from-rose-500 to-red-400', icon: TrendingDown, color: 'text-rose-600 dark:text-rose-400', sparkColor: '#f43f5e' },
             { label: `${filterLabel} ${bn ? 'জমা' : 'Deposit'}`, val: totalDepositAll, gradient: 'from-emerald-500/10 via-green-400/5 to-transparent', iconBg: 'bg-gradient-to-br from-emerald-500 to-green-400', icon: TrendingUp, color: 'text-emerald-600 dark:text-emerald-400', sparkColor: '#10b981' },
             { label: `${filterLabel} ${bn ? 'ক্যাশ' : 'Cash'}`, val: totalCashAll, gradient: totalCashAll >= 0 ? 'from-blue-500/10 via-sky-400/5 to-transparent' : 'from-orange-500/10 via-amber-400/5 to-transparent', iconBg: totalCashAll >= 0 ? 'bg-gradient-to-br from-blue-500 to-sky-400' : 'bg-gradient-to-br from-orange-500 to-amber-400', icon: Wallet, color: totalCashAll >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400', sparkColor: totalCashAll >= 0 ? '#3b82f6' : '#f97316' },
             { label: `${filterLabel} ${bn ? 'বকেয়া' : 'Arrears'}`, val: totalArrearsAll, gradient: totalArrearsAll > 0 ? 'from-amber-500/10 via-yellow-400/5 to-transparent' : 'from-slate-500/10 via-gray-400/5 to-transparent', iconBg: totalArrearsAll > 0 ? 'bg-gradient-to-br from-amber-500 to-yellow-400' : 'bg-gradient-to-br from-slate-400 to-gray-400', icon: DollarSign, color: totalArrearsAll > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground', sparkColor: '#f59e0b' },
@@ -1029,8 +1029,8 @@ const AdminExpenses = () => {
             <div>
               <div className="flex flex-wrap gap-2 mb-3">
                 {[
-                  { value: 'institution' as const, label: bn ? 'প্রতিষ্ঠান ভিত্তিক খরচ' : 'Institution-wise' },
-                  { value: 'category' as const, label: bn ? 'ক্যাটেগরি ভিত্তিক খরচ' : 'Category-wise' },
+                  { value: 'institution' as const, label: bn ? 'প্রতিষ্ঠান ভিত্তিক হিসাব' : 'Institution-wise' },
+                  { value: 'category' as const, label: bn ? 'ক্যাটেগরি ভিত্তিক হিসাব' : 'Category-wise' },
                 ].map(tab => (
                   <button
                     key={tab.value}
@@ -1047,8 +1047,8 @@ const AdminExpenses = () => {
                     <TableHeader>
                       <TableRow>
                         <TableHead>{bn ? 'প্রতিষ্ঠান' : 'Institution'}</TableHead>
-                        <TableHead className="text-right">{bn ? `${selectedMonthName} খরচ` : `${selectedMonthName}`}</TableHead>
-                        <TableHead className="text-right">{`${filterLabel} ${bn ? 'খরচ' : 'Total'}`}</TableHead>
+                        <TableHead className="text-right">{bn ? `${selectedMonthName} হিসাব` : `${selectedMonthName}`}</TableHead>
+                        <TableHead className="text-right">{`${filterLabel} ${bn ? 'হিসাব' : 'Total'}`}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1069,8 +1069,8 @@ const AdminExpenses = () => {
                     <TableHeader>
                       <TableRow>
                         <TableHead>{bn ? 'ক্যাটেগরি' : 'Category'}</TableHead>
-                        <TableHead className="text-right">{bn ? `${selectedMonthName} খরচ` : `${selectedMonthName}`}</TableHead>
-                        <TableHead className="text-right">{`${filterLabel} ${bn ? 'খরচ' : 'Total'}`}</TableHead>
+                        <TableHead className="text-right">{bn ? `${selectedMonthName} হিসাব` : `${selectedMonthName}`}</TableHead>
+                        <TableHead className="text-right">{`${filterLabel} ${bn ? 'হিসাব' : 'Total'}`}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1091,7 +1091,7 @@ const AdminExpenses = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="flex flex-wrap gap-2 mb-4">
             {[
-              { value: 'dashboard', label: bn ? 'খরচ' : 'Expenses' },
+              { value: 'dashboard', label: bn ? 'হিসাব' : 'Expenses' },
               { value: 'deposits', label: bn ? 'জমা' : 'Deposits' },
               { value: 'settings', label: bn ? 'প্রতিষ্ঠান' : 'Institutions' },
               { value: 'summary', label: bn ? 'সারাংশ' : 'Summary' },
@@ -1147,7 +1147,7 @@ const AdminExpenses = () => {
                         style={{ background: 'linear-gradient(135deg, hsl(160 84% 30%), hsl(160 70% 36%))', boxShadow: '0 4px 20px -4px rgba(16,185,129,0.35)' }}
                       >
                         <Plus className="w-4 h-4" />
-                        <span>{bn ? 'খরচ যোগ করুন' : 'Add Expense'}</span>
+                        <span>{bn ? 'হিসাব যোগ করুন' : 'Add Expense'}</span>
                       </motion.button>
                     )}
                   </div>
@@ -1184,7 +1184,7 @@ const AdminExpenses = () => {
                       className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[16px] text-sm font-semibold tracking-wide text-white border border-white/20 backdrop-blur-sm transition-all duration-300"
                       style={{ background: 'linear-gradient(135deg, hsl(160 84% 30%), hsl(160 70% 36%))' , boxShadow: '0 4px 20px -4px rgba(16,185,129,0.35)' }}
                     >
-                      <Plus className="w-4 h-4" />{bn ? 'খরচ এন্ট্রি' : 'Add Expense'}
+                      <Plus className="w-4 h-4" />{bn ? 'হিসাব এন্ট্রি' : 'Add Expense'}
                     </motion.button>
                   )}
                 </div>
@@ -1220,11 +1220,11 @@ const AdminExpenses = () => {
             {selectedInstId && selectedCategoryId && (
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <h3 className="font-semibold">{bn ? 'খরচ তালিকা' : 'Expense List'} ({selectedMonthYear})</h3>
+                  <h3 className="font-semibold">{bn ? 'হিসাব তালিকা' : 'Expense List'} ({selectedMonthYear})</h3>
                 </div>
 
                 {categoryExpenses.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-12">{bn ? 'কোনো খরচ নেই' : 'No expenses'}</p>
+                  <p className="text-muted-foreground text-center py-12">{bn ? 'কোনো হিসাব নেই' : 'No expenses'}</p>
                 ) : (
                   <div className="space-y-3">
                     {categoryExpenses.map((e: any, i: number) => (
@@ -1266,7 +1266,7 @@ const AdminExpenses = () => {
                     ))}
                     {/* Total bar */}
                     <div className="rounded-2xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-200/30 p-4 flex justify-between items-center">
-                      <span className="font-semibold text-foreground">{bn ? 'মোট খরচ:' : 'Total:'}</span>
+                      <span className="font-semibold text-foreground">{bn ? 'মোট হিসাব:' : 'Total:'}</span>
                       <span className="font-bold text-lg text-emerald-600">৳{formatNum(categoryExpenseTotal)}</span>
                     </div>
                     {/* Add Expense Button below total */}
@@ -1286,7 +1286,7 @@ const AdminExpenses = () => {
                         style={{ background: 'linear-gradient(135deg, hsl(160 84% 30%), hsl(160 70% 36%))', boxShadow: '0 4px 20px -4px rgba(16,185,129,0.35)' }}
                       >
                         <Plus className="w-5 h-5" />
-                        <span>{bn ? 'খরচ যোগ করুন' : 'Add Expense'}</span>
+                        <span>{bn ? 'হিসাব যোগ করুন' : 'Add Expense'}</span>
                       </motion.button>
                     )}
                   </div>
@@ -1541,7 +1541,7 @@ const AdminExpenses = () => {
                     </div>
                     <div className="min-w-0">
                       <p className="text-lg font-bold text-destructive leading-tight">৳{formatNum(monthlyTotalExpense)}</p>
-                      <p className="text-[11px] text-muted-foreground leading-tight">{bn ? 'মোট খরচ' : 'Total Expense'}</p>
+                      <p className="text-[11px] text-muted-foreground leading-tight">{bn ? 'মোট হিসাব' : 'Total Expense'}</p>
                     </div>
                   </div>
                   <div className="stat-card flex items-center gap-3">
@@ -1760,7 +1760,7 @@ const AdminExpenses = () => {
           <p className="text-sm">{instAddress}</p>
           <p className="text-xs">{bn ? 'ফোন' : 'Phone'}: {instPhone} | {bn ? 'ইমেইল' : 'Email'}: {instEmail}</p>
           {instOther && <p className="text-xs">{instOther}</p>}
-          <p className="text-base font-semibold mt-2">{bn ? 'খরচ প্রতিবেদন' : 'Expense Report'}</p>
+          <p className="text-base font-semibold mt-2">{bn ? 'হিসাব প্রতিবেদন' : 'Expense Report'}</p>
           <p className="text-sm">{selectedMonthYear}</p>
         </div>
 
@@ -1768,7 +1768,7 @@ const AdminExpenses = () => {
         <table className="w-full border-collapse border mb-4 text-sm">
           <tbody>
             <tr>
-              <td className="border p-2 font-medium">{bn ? 'মোট খরচ' : 'Total Expense'}</td>
+              <td className="border p-2 font-medium">{bn ? 'মোট হিসাব' : 'Total Expense'}</td>
               <td className="border p-2 text-right">৳{formatNum(monthlyTotalExpense)}</td>
               <td className="border p-2 font-medium">{bn ? 'মোট জমা' : 'Total Deposit'}</td>
               <td className="border p-2 text-right">৳{formatNum(monthlyTotalDeposit)}</td>
@@ -1848,7 +1848,7 @@ const AdminExpenses = () => {
         {/* Grand Total */}
         <table className="w-full border-collapse border mb-6 text-sm">
           <tr className="font-bold bg-muted">
-            <td className="border p-2">{bn ? 'সর্বমোট খরচ' : 'Grand Total Expense'}</td>
+            <td className="border p-2">{bn ? 'সর্বমোট হিসাব' : 'Grand Total Expense'}</td>
             <td className="border p-2 text-right">৳{formatNum(monthlyTotalExpense)}</td>
           </tr>
         </table>
@@ -1871,7 +1871,7 @@ const AdminExpenses = () => {
       {/* Receipt Preview Dialog */}
       <Dialog open={expenseDialog} onOpenChange={resetExpenseDialog}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{editingExpenseId ? (bn ? 'খরচ সম্পাদনা' : 'Edit Expense') : (bn ? 'নতুন খরচ' : 'New Expense')}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingExpenseId ? (bn ? 'হিসাব সম্পাদনা' : 'Edit Expense') : (bn ? 'নতুন হিসাব' : 'New Expense')}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
               <Label>{bn ? 'প্রতিষ্ঠান' : 'Institution'} *</Label>
@@ -1947,7 +1947,7 @@ const AdminExpenses = () => {
               />
             </div>
             <div>
-              <Label>{bn ? 'খরচের মাধ্যম' : 'Expense Method'} *</Label>
+              <Label>{bn ? 'হিসাবের মাধ্যম' : 'Expense Method'} *</Label>
               <Select value={expenseForm.expense_method} onValueChange={v => setExpenseForm(f => ({ ...f, expense_method: v, expense_method_other: v === 'অন্যান্য' ? f.expense_method_other : '' }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -2227,7 +2227,7 @@ const AdminExpenses = () => {
                   setPrintEditData({
                     instName: instName, instNameEn: instNameEn, instAddress: instAddress,
                     instPhone: instPhone, instEmail: instEmail, instOther: instOther, instLogo: instLogo,
-                    reportTitle: bn ? 'প্রকল্প খরচ প্রতিবেদন' : 'Project Expense Report',
+                    reportTitle: bn ? 'প্রকল্প হিসাব প্রতিবেদন' : 'Project Expense Report',
                     reportSubtitle: '',
                     casherName: summaryData?.casher_name || '',
                     principalName: summaryData?.principal_name || '',
@@ -2288,7 +2288,7 @@ const AdminExpenses = () => {
             const dInstEmail = ed.instEmail || instEmail;
             const dInstOther = ed.instOther || instOther;
             const dInstLogo = ed.instLogo || instLogo;
-            const dReportTitle = ed.reportTitle || (bn ? 'প্রকল্প খরচ প্রতিবেদন' : 'Project Expense Report');
+            const dReportTitle = ed.reportTitle || (bn ? 'প্রকল্প হিসাব প্রতিবেদন' : 'Project Expense Report');
             const dCasher = ed.casherName || summaryData?.casher_name || (bn ? 'ক্যাশিয়ার' : 'Cashier');
             const dPrincipal = ed.principalName || summaryData?.principal_name || (bn ? 'অধ্যক্ষ' : 'Principal');
             return (
@@ -2342,7 +2342,7 @@ const AdminExpenses = () => {
                 })}
 
                 <div className="border-t-2 border-foreground pt-2 text-right font-bold text-sm">
-                  {bn ? 'প্রকল্প মোট খরচ' : 'Project Total'}: ৳{formatNum(instTotal)}
+                  {bn ? 'প্রকল্প মোট হিসাব' : 'Project Total'}: ৳{formatNum(instTotal)}
                 </div>
 
                 <div className="flex justify-between mt-12 pt-8">
