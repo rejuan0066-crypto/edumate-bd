@@ -834,7 +834,7 @@ const AdminExpenses = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-2xl font-display font-bold text-foreground tracking-tight">
-              {bn ? 'খরচ ব্যবস্থাপনা' : 'Expense Management'}
+              {bn ? 'হিসাব ব্যবস্থাপনা' : 'Expense Management'}
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">{bn ? 'আর্থিক লেনদেন পরিচালনা করুন' : 'Manage financial transactions'}</p>
           </div>

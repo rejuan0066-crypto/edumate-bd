@@ -42,7 +42,7 @@ const FORM_TYPES = [
   { value: 'fee', label: 'Fee Form', label_bn: 'ফি ফর্ম' },
   { value: 'joining', label: 'Joining Letter', label_bn: 'জয়েনিং পত্র' },
   { value: 'resign', label: 'Resign Letter', label_bn: 'পদত্যাগ পত্র' },
-  { value: 'expense', label: 'Expense Management', label_bn: 'খরচ ব্যবস্থাপনা' },
+  { value: 'expense', label: 'Expense Management', label_bn: 'হিসাব ব্যবস্থাপনা' },
   { value: 'salary', label: 'Salary Management', label_bn: 'বেতন ব্যবস্থাপনা' },
   { value: 'attendance', label: 'Attendance Management', label_bn: 'উপস্থিতি ব্যবস্থাপনা' },
 ];
@@ -123,7 +123,7 @@ const ADMIN_MENUS = [
   { value: '/admin/results', label: 'Results', label_bn: 'ফলাফল' },
   { value: '/admin/notices', label: 'Notice', label_bn: 'নোটিশ' },
   { value: '/admin/students-fees', label: 'Student Fees', label_bn: 'ছাত্র ফি' },
-  { value: '/admin/expenses', label: 'Expenses', label_bn: 'খরচ ব্যবস্থাপনা' },
+  { value: '/admin/expenses', label: 'Expenses', label_bn: 'হিসাব ব্যবস্থাপনা' },
   { value: '/admin/website', label: 'Website Control', label_bn: 'ওয়েবসাইট নিয়ন্ত্রণ' },
   { value: '/admin/designations', label: 'Designations', label_bn: 'পদবি তৈরি' },
   { value: '/admin/subjects', label: 'Subjects', label_bn: 'বিষয়সমূহ' },
