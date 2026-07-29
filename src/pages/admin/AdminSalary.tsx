@@ -475,6 +475,7 @@ const AdminSalary = () => {
         // Use shared helper — guarded by src/lib/__tests__/salaryNet.test.ts
         // against the savings/advance double-deduction regression.
         const netSalary = recomputeNetSalary(calc, {
+          overtime: calc.overtime_for_net,
           bonus: existing.bonus,
           other_allowance: existing.other_allowance,
           advance_deduction: existing.advance_deduction,
@@ -522,6 +523,7 @@ const AdminSalary = () => {
       const activeSavings = getActiveSavings(staffId);
       const savingsDed = activeSavings ? activeSavings.amount : 0;
       const netSalary = recomputeNetSalary(calc, {
+        overtime: calc.overtime_for_net,
         bonus: existing.bonus,
         other_allowance: existing.other_allowance,
         advance_deduction: existing.advance_deduction,
@@ -687,6 +689,7 @@ const AdminSalary = () => {
       remarks: record?.remarks,
       savings_deduction: savingsForNet,
       net_salary: recomputeNetSalary(liveCalc, {
+        overtime: liveCalc.overtime_for_net,
         bonus: manualBonus,
         other_allowance: manualAllow,
         advance_deduction: manualAdvance,
@@ -1231,10 +1234,11 @@ const AdminSalary = () => {
     // মাসিক বেতনের বেশি হয়ে যেত। মাসের সর্বোচ্চ কার্যদিবস ৩০ ধরে হাজিরাভিত্তিক আয়
     // মাসিক বেতনে সীমাবদ্ধ রাখা হয় (ওভারটাইম আলাদাভাবে যোগ হয়)।
     const includedOvertime = Math.round(attStats.totalOvertimeMinutes * attStats.perMinuteRate);
+    const attendanceEarningsWithoutOvertime = Math.max(0, Math.round(attStats.totalDailyEarnings) - includedOvertime);
     let earnedFromAttendance = calcBasis === 'additive'
-      ? Math.min(baseSalary + includedOvertime, Math.round(attStats.totalDailyEarnings))
+      ? Math.min(baseSalary, attendanceEarningsWithoutOvertime)
       : Math.max(0, baseSalary - absenceDeduction - lateDeduction - otherDeduction - preJoinDeduction);
-    let overtime = Math.round(attStats.totalOvertimeMinutes * attStats.perMinuteRate);
+    let overtime = includedOvertime;
 
     if (dutySettings?.extra_duty_enabled && dutySettings?.extra_duty_rate > 0) {
       // extra_duty_rate এখন প্রতি শিফটের মাসিক মোট বেতন।
@@ -1251,17 +1255,14 @@ const AdminSalary = () => {
       overtime += Math.round(dutyOvertime);
     }
 
-    // Subtractive মডেলে overtime আলাদাভাবে যোগ হয় (earnedFromAttendance এ অন্তর্ভুক্ত নয়)।
-    // overtime = per-minute overtime + extra_duty earning (যদি এনাবল থাকে)।
+    // Overtime সবসময় আলাদা লাইন আইটেম হিসেবে যোগ হয়।
+    // earned_from_attendance এ overtime অন্তর্ভুক্ত নয়, ফলে স্লিপ/শিটে double-count হওয়ার সুযোগ নেই।
 
     // Get savings deduction for this month
     const activeSavings = getActiveSavings(staffMember.id);
     const savingsDeduction = activeSavings ? activeSavings.amount : 0;
 
-    // additive মডেলে per-minute overtime ইতিমধ্যে totalDailyEarnings-এ যোগ আছে — double-count এড়াতে বাদ দিই
-    const overtimeForNet = calcBasis === 'additive'
-      ? overtime - Math.round(attStats.totalOvertimeMinutes * attStats.perMinuteRate)
-      : overtime;
+    const overtimeForNet = overtime;
 
     // জমা কর্তন ও অন্যান্য কর্তন (অগ্রিম) কেবল তখনই নিট বেতন থেকে বাদ যাবে যখন
     // মাসের সম্পূর্ণ হাজিরা দেওয়া হয়ে গেছে (অথবা মাসটি শেষ)। চলতি মাসে হাজিরা
@@ -1389,6 +1390,7 @@ const AdminSalary = () => {
         const netSalary = recomputeNetSalary(
           { net_salary: updateData.net_salary, savings_deduction: updateData.savings_deduction },
           {
+            overtime: updateData.overtime_for_net,
             bonus: updateData.bonus,
             other_allowance: updateData.other_allowance,
             advance_deduction: updateData.advance_deduction,

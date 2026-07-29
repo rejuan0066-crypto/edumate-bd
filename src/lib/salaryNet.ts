@@ -9,8 +9,10 @@
  *
  * Contract:
  *   calc.net_salary  -- already excludes attendance deductions, advance(=0
- *                       at calc-time) and savings_deduction.
- *   bonus / other_allowance / advance_deduction / savings_deduction --
+ *                       at calc-time), savings_deduction AND overtime.
+ *                       Overtime is applied explicitly via manual.overtime
+ *                       so it is always visible in the breakdown.
+ *   bonus / other_allowance / overtime / advance_deduction / savings_deduction --
  *   come from the persisted record / live config and must each be applied
  *   EXACTLY ONCE in the recomputed net.
  */
@@ -23,6 +25,7 @@ export interface CalcSnapshot {
 export interface ManualInputs {
   bonus?: number | null;
   other_allowance?: number | null;
+  overtime?: number | null;
   advance_deduction?: number | null;
   savings_deduction?: number | null;
 }
@@ -35,7 +38,7 @@ const n = (v: unknown) => Number(v || 0);
  *
  * Formula:
  *   baseWithoutSavings = calc.net_salary + calc.savings_deduction
- *   net = baseWithoutSavings + bonus + other_allowance
+ *   net = baseWithoutSavings + overtime + bonus + other_allowance
  *         - advance_deduction - savings_deduction
  *   net = max(0, net)
  */
@@ -43,6 +46,7 @@ export function recomputeNetSalary(calc: CalcSnapshot, manual: ManualInputs): nu
   const baseWithoutSavings = n(calc.net_salary) + n(calc.savings_deduction);
   const net =
     baseWithoutSavings +
+    n(manual.overtime) +
     n(manual.bonus) +
     n(manual.other_allowance) -
     n(manual.advance_deduction) -
