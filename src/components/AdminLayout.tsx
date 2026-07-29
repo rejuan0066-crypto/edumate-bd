@@ -192,7 +192,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     restoreMenuScroll(mobileMenuRef.current, true);
   }, []);
 
-  // Auto-open parent of active child on route change
+  // Auto-open parent of active child on route change, but do not override a recent manual toggle
   useEffect(() => {
     const activeParent = menuItems.find(item =>
       item.children?.some(c => {
@@ -202,8 +202,25 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           : location.pathname === c.path;
       })
     );
-    setOpenMenuId(activeParent?.path ?? null);
-  }, [location.pathname, location.search]);
+    const activePath = activeParent?.path ?? null;
+    const recentlyToggled = Date.now() - manualToggleAtRef.current < 350;
+    if (recentlyToggled) {
+      // Respect user's last manual action; only allow auto-open if it matches a path the user opened
+      if (activePath && manualOpenRef.current.has(activePath)) {
+        setOpenMenuId(activePath);
+      }
+      return;
+    }
+    // If user manually closed this exact group, keep it closed until they navigate away from it
+    if (activePath && manualClosedRef.current.has(activePath)) {
+      return;
+    }
+    // Clear manual-close record when leaving the group
+    if (activePath === null || (openMenuId && activePath !== openMenuId)) {
+      if (openMenuId) manualClosedRef.current.delete(openMenuId);
+    }
+    setOpenMenuId(activePath);
+  }, [location.pathname, location.search, menuItems, openMenuId]);
 
   // Fetch published custom forms for dynamic menu
   const { data: publishedForms = [] } = useQuery({
