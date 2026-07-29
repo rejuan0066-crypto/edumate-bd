@@ -475,6 +475,7 @@ const AdminSalary = () => {
         // Use shared helper — guarded by src/lib/__tests__/salaryNet.test.ts
         // against the savings/advance double-deduction regression.
         const netSalary = recomputeNetSalary(calc, {
+          overtime: calc.overtime_for_net,
           bonus: existing.bonus,
           other_allowance: existing.other_allowance,
           advance_deduction: existing.advance_deduction,
@@ -522,6 +523,7 @@ const AdminSalary = () => {
       const activeSavings = getActiveSavings(staffId);
       const savingsDed = activeSavings ? activeSavings.amount : 0;
       const netSalary = recomputeNetSalary(calc, {
+        overtime: calc.overtime_for_net,
         bonus: existing.bonus,
         other_allowance: existing.other_allowance,
         advance_deduction: existing.advance_deduction,
@@ -687,6 +689,7 @@ const AdminSalary = () => {
       remarks: record?.remarks,
       savings_deduction: savingsForNet,
       net_salary: recomputeNetSalary(liveCalc, {
+        overtime: liveCalc.overtime_for_net,
         bonus: manualBonus,
         other_allowance: manualAllow,
         advance_deduction: manualAdvance,
@@ -1387,6 +1390,7 @@ const AdminSalary = () => {
         const netSalary = recomputeNetSalary(
           { net_salary: updateData.net_salary, savings_deduction: updateData.savings_deduction },
           {
+            overtime: updateData.overtime_for_net,
             bonus: updateData.bonus,
             other_allowance: updateData.other_allowance,
             advance_deduction: updateData.advance_deduction,
