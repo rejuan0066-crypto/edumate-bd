@@ -3218,7 +3218,7 @@ const AdminSalary = () => {
                                 )}
                                 {rec && (
                                   <>
-                                    {canEditItem && <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setEditDialog({ ...rec, staffName: s.name_bn })}>
+                                    {canEditItem && <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setEditDialog({ ...displayRecord, id: rec.id, staffName: s.name_bn })}>
                                       <Edit2 className="h-3 w-3" />
                                     </Button>}
                                     {canEditItem && rec.status !== 'paid' && (
