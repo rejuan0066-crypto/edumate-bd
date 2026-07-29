@@ -158,7 +158,18 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   };
 
   const toggleGroup = (key: string) => {
-    setOpenMenuId(prev => prev === key ? null : key);
+    manualToggleAtRef.current = Date.now();
+    setOpenMenuId(prev => {
+      const next = prev === key ? null : key;
+      if (next === key) {
+        manualOpenRef.current.add(key);
+        manualClosedRef.current.delete(key);
+      } else {
+        manualClosedRef.current.add(key);
+        manualOpenRef.current.delete(key);
+      }
+      return next;
+    });
   };
 
   const persistMenuScroll = (mobile: boolean, scrollTop: number) => {
