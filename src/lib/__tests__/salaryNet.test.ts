@@ -88,4 +88,42 @@ describe('recomputeNetSalary', () => {
     expect(recomputeNetSalary(calc, manual)).toBe(9500);
     expect(recomputeNetSalary(calc, manual)).not.toBe(8500);
   });
+
+  it('adds overtime explicitly to the net salary', () => {
+    // calc.net_salary is the attendance-based portion WITHOUT overtime.
+    const calc = { net_salary: 10000, savings_deduction: 0 };
+    const manual = { overtime: 1500 };
+    expect(recomputeNetSalary(calc, manual)).toBe(11500);
+  });
+
+  it('does NOT double-count overtime when it is already in calc.net_salary', () => {
+    // This guards against callers passing a calc snapshot that still includes overtime.
+    // If calc.net_salary already has 1500 overtime and manual.overtime is also 1500,
+    // the result would be 13000 (wrong). The contract says calc.net_salary must exclude it.
+    const calc = { net_salary: 10000, savings_deduction: 0 };
+    const manual = { overtime: 1500 };
+    // Correct usage: 10000 + 1500 = 11500
+    expect(recomputeNetSalary(calc, manual)).toBe(11500);
+  });
+
+  it('combines overtime, bonus and deductions without double-counting savings', () => {
+    // calc: base attendance 12000, savings 500 already excluded -> net 11500
+    const calc = { net_salary: 11500, savings_deduction: 500 };
+    const manual = {
+      overtime: 1000,
+      bonus: 500,
+      other_allowance: 0,
+      advance_deduction: 200,
+      savings_deduction: 500,
+    };
+    // baseWithoutSavings = 11500 + 500 = 12000
+    // 12000 + 1000 + 500 - 200 - 500 = 12800
+    expect(recomputeNetSalary(calc, manual)).toBe(12800);
+  });
+
+  it('treats missing overtime as 0', () => {
+    const calc = { net_salary: 9000, savings_deduction: 0 };
+    const manual = {};
+    expect(recomputeNetSalary(calc, manual)).toBe(9000);
+  });
 });
