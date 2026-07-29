@@ -1145,9 +1145,9 @@ const AdminSalary = () => {
     });
     totalDailyEarnings += untouchedHolidayDays * dailyRate;
 
-    // যে দিনগুলোতে কোনো হাজিরা রেকর্ড নেই (সাপ্তাহিক ছুটি/সরকারি ছুটি/অচিহ্নিত দিন)
-    // সেগুলো এখন বেতনসহ ছুটি হিসেবে গণ্য হয় — বেতন কাটা হয় না। শুধুমাত্র স্পষ্টভাবে
-    // 'absent' চিহ্নিত দিনেই কর্তন হবে, তাই ছুটির দিনের বেতন আর হারিয়ে যায় না।
+    // যে দিনগুলোতে কোনো হাজিরা রেকর্ড নেই (সাপ্তাহিক ছুটি/সরকারি ছুটি বাদে),
+    // default হিসেবে সেগুলো অনুপস্থিত ধরা হবে — যাতে হাজিরা না দিলে মূল বেতন
+    // নিট বেতনে না চলে আসে। Admin চাইলে setting ON করে পুরোনো paid-unmarked আচরণ নিতে পারবেন।
     // Days BEFORE the staff's joining date are tracked separately (preJoinDays)
     // so pay is prorated from joining. For the CURRENT month only days up to today count.
     const [yy, mm] = monthYear.split('-').map(Number);
@@ -1166,10 +1166,9 @@ const AdminSalary = () => {
       if (paidHolidaySet.has(dateStr)) continue;
       untrackedPaidDays += 1;
     }
-    // সেটিংস: "অচিহ্নিত দিন বেতনসহ" চালু থাকলে হাজিরা-না-দেওয়া দিন বেতনসহ ছুটি হিসেবে
-    // গণ্য হয় (পুরোনো আচরণ)। বন্ধ থাকলে ঐ দিনগুলো অনুপস্থিত ধরে বেতন কাটা হয় — তখন
-    // নিট বেতন কঠোরভাবে দেওয়া উপস্থিতি অনুযায়ীই হয়।
-    const unmarkedPaid = getSetting('unmarked_days_paid')?.enabled !== false;
+    // সেটিংস: "অচিহ্নিত দিন বেতনসহ" শুধুমাত্র explicit ON থাকলে চালু।
+    // setting missing থাকলে OFF — অর্থাৎ নিট বেতন উপস্থিতি অনুযায়ী হবে।
+    const unmarkedPaid = getSetting('unmarked_days_paid')?.enabled === true;
     if (unmarkedPaid) {
       totalDailyEarnings += untrackedPaidDays * dailyRate;
     }
@@ -3903,12 +3902,12 @@ const AdminSalary = () => {
                     <Label>{bn ? 'অচিহ্নিত দিন বেতনসহ' : 'Unmarked Days Paid'}</Label>
                     <p className="text-[10px] text-muted-foreground">
                       {bn
-                        ? 'বন্ধ করলে যেসব দিনে কোনো হাজিরা দেওয়া হয়নি সেগুলো অনুপস্থিত ধরে বেতন কাটা হবে (সাপ্তাহিক/সরকারি ছুটি বাদে)'
-                        : 'Turn off to treat days without any attendance record as absent (weekly/public holidays excluded)'}
+                        ? 'চালু করলে হাজিরা-না-দেওয়া দিনগুলো বেতনসহ ধরা হবে; বন্ধ/default থাকলে অনুপস্থিত ধরে কর্তন হবে (ছুটি বাদে)'
+                        : 'Turn on to pay unmarked days; off/default treats days without attendance as absent (holidays excluded)'}
                     </p>
                   </div>
                   <Switch
-                    checked={getSetting('unmarked_days_paid')?.enabled !== false}
+                    checked={getSetting('unmarked_days_paid')?.enabled === true}
                     onCheckedChange={v => saveSettingMutation.mutate({ key: 'unmarked_days_paid', value: { enabled: v } })}
                   />
                 </div>
