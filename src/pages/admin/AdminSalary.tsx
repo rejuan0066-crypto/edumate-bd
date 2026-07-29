@@ -3761,13 +3761,31 @@ const AdminSalary = () => {
                   <Label className="text-xs">{bn ? 'মন্তব্য' : 'Remarks'}</Label>
                   <Textarea value={editDialog.remarks || ''} onChange={e => setEditDialog({ ...editDialog, remarks: e.target.value })} rows={2} />
                 </div>
-                <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg text-center">
-                  <p className="text-xs text-muted-foreground">{bn ? 'নিট বেতন' : 'Net Salary'}</p>
-                  <p className="text-xl font-bold text-emerald-700 dark:text-emerald-400">
-                    ৳{Math.max(0, (editDialog.base_salary || 0) + (editDialog.bonus || 0) + (editDialog.overtime || 0) + (editDialog.other_allowance || 0)
-                      - (editDialog.late_deduction || 0) - (editDialog.absence_deduction || 0) - (editDialog.advance_deduction || 0) - (editDialog.other_deduction || 0)).toLocaleString()}
-                  </p>
-                </div>
+                {(() => {
+                  // Savings is auto-applied on save, so the preview must show it too —
+                  // otherwise the dialog net differs from the table/slip/PDF net.
+                  const sav = Number(getActiveSavings(editDialog.staff_id)?.amount || 0);
+                  const previewNet = Math.max(0,
+                    Number(editDialog.base_salary || 0) + Number(editDialog.bonus || 0)
+                    + Number(editDialog.overtime || 0) + Number(editDialog.other_allowance || 0)
+                    - Number(editDialog.late_deduction || 0) - Number(editDialog.absence_deduction || 0)
+                    - Number(editDialog.advance_deduction || 0) - Number(editDialog.other_deduction || 0)
+                    - sav);
+                  return (
+                    <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg text-center">
+                      {sav > 0 && (
+                        <p className="text-[11px] text-muted-foreground mb-1">
+                          {bn ? 'জমা কর্তন' : 'Savings deduction'}: ৳{sav.toLocaleString()}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground">{bn ? 'নিট বেতন' : 'Net Salary'}</p>
+                      <p className="text-xl font-bold text-emerald-700 dark:text-emerald-400">
+                        ৳{previewNet.toLocaleString()}
+                      </p>
+                    </div>
+                  );
+                })()}
+
                 <Button className="w-full" onClick={() => updateMutation.mutate(editDialog)}>
                   <Save className="h-4 w-4 mr-1" /> {bn ? 'সেভ করুন' : 'Save Changes'}
                 </Button>
