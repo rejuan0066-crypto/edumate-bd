@@ -509,7 +509,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
                             }
                           }
                         }}
-                        className={`sidebar-item w-full text-left ${effectClass} ${isActive ? 'active' : ''} ${hasActiveChild ? 'has-active-child' : ''}`}
+                        className={`sidebar-item w-full text-left ${effectClass} ${isActive ? 'active' : ''} ${hasActiveChild ? 'has-active-child' : ''} ${isGroupOpen ? 'group-open' : ''}`}
                         title={!sidebarOpen && !mobile ? item.label : undefined}
                       >
                         <item.icon className="sidebar-icon w-[18px] h-[18px] shrink-0" />
@@ -578,7 +578,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
                     >
                       <item.icon className="sidebar-icon w-[18px] h-[18px] shrink-0" />
                       {(sidebarOpen || mobile) && <span className="truncate">{item.label}</span>}
-                      {isActive && (sidebarOpen || mobile) && <ChevronRight className="w-3.5 h-3.5 ml-auto shrink-0 opacity-40" />}
+                      {isActive && (sidebarOpen || mobile) && <ChevronRight className="w-4 h-4 ml-auto shrink-0 opacity-100" />}
                     </Link>
                   )}
                 </div>
