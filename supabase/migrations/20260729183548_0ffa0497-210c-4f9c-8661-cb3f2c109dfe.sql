@@ -1,0 +1,1 @@
+ALTER TABLE public.salary_records ADD COLUMN IF NOT EXISTS manual_override boolean NOT NULL DEFAULT false;

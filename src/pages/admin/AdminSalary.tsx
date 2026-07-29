@@ -487,6 +487,7 @@ const AdminSalary = () => {
           advance_deduction: Number(existing.advance_deduction || 0),
           savings_deduction: savingsDed,
           net_salary: netSalary,
+          manual_override: false,
           updated_at: new Date().toISOString(),
         }).eq('id', existing.id);
         if (error) throw error;
@@ -533,6 +534,7 @@ const AdminSalary = () => {
         advance_deduction: Number(existing.advance_deduction || 0),
         savings_deduction: savingsDed,
         net_salary: netSalary,
+        manual_override: false,
         updated_at: new Date().toISOString(),
       }).eq('id', existing.id);
       if (error) throw error;
@@ -691,6 +693,32 @@ const AdminSalary = () => {
         savings_deduction: savingsForNet,
       }),
     };
+
+    // Manual override: admin edited deductions/allowances by hand from the
+    // edit dialog — keep the saved values instead of the live recalculation.
+    if (record?.manual_override) {
+      const ovBase = Number(record.base_salary ?? liveCalc.base_salary ?? 0);
+      const ovLate = Number(record.late_deduction || 0);
+      const ovAbsence = Number(record.absence_deduction || 0);
+      const ovOther = Number(record.other_deduction || 0);
+      const ovOvertime = Number(record.overtime || 0);
+      const ovSavings = Number(record.savings_deduction ?? savingsForNet);
+      Object.assign(liveRecord, {
+        manual_override: true,
+        base_salary: ovBase,
+        late_deduction: ovLate,
+        absence_deduction: ovAbsence,
+        other_deduction: ovOther,
+        overtime: ovOvertime,
+        overtime_for_net: ovOvertime,
+        earned_from_attendance: ovBase,
+        savings_deduction: ovSavings,
+        net_salary: Math.max(0, Math.round(
+          ovBase + manualBonus + ovOvertime + manualAllow
+          - ovLate - ovAbsence - manualAdvance - ovOther - ovSavings
+        )),
+      });
+    }
 
     return {
       record: liveRecord,
@@ -1442,24 +1470,40 @@ const AdminSalary = () => {
   // Update single salary record (manual edit)
   const updateMutation = useMutation({
     mutationFn: async (record: any) => {
-      const { staffName, ...cleanRecord } = record;
-      const activeSavings = getActiveSavings(cleanRecord.staff_id);
+      const activeSavings = getActiveSavings(record.staff_id);
       const savingsDed = activeSavings ? activeSavings.amount : 0;
+      const num = (v: any) => Number(v || 0);
       const netSalary = Math.max(0,
-        Number(cleanRecord.base_salary || 0) +
-        Number(cleanRecord.bonus || 0) +
-        Number(cleanRecord.overtime || 0) +
-        Number(cleanRecord.other_allowance || 0) -
-        Number(cleanRecord.late_deduction || 0) -
-        Number(cleanRecord.absence_deduction || 0) -
-        Number(cleanRecord.advance_deduction || 0) -
-        Number(cleanRecord.other_deduction || 0) -
-        savingsDed
+        num(record.base_salary) + num(record.bonus) + num(record.overtime) + num(record.other_allowance)
+        - num(record.late_deduction) - num(record.absence_deduction)
+        - num(record.advance_deduction) - num(record.other_deduction) - savingsDed
       );
-      cleanRecord.savings_deduction = savingsDed;
-      const { error } = await supabase.from('salary_records')
-        .update({ ...cleanRecord, net_salary: Math.max(0, netSalary), updated_at: new Date().toISOString() })
-        .eq('id', cleanRecord.id);
+      // Whitelist only real columns — the dialog can be seeded from a live
+      // display snapshot that carries extra computed fields.
+      const payload: Record<string, any> = {
+        base_salary: num(record.base_salary),
+        bonus: num(record.bonus),
+        overtime: num(record.overtime),
+        overtime_for_net: num(record.overtime),
+        other_allowance: num(record.other_allowance),
+        other_allowance_note: record.other_allowance_note ?? null,
+        late_deduction: num(record.late_deduction),
+        absence_deduction: num(record.absence_deduction),
+        advance_deduction: num(record.advance_deduction),
+        other_deduction: num(record.other_deduction),
+        other_deduction_note: record.other_deduction_note ?? null,
+        savings_deduction: savingsDed,
+        earned_from_attendance: num(record.base_salary),
+        working_days: record.working_days ?? null,
+        present_days: record.present_days ?? null,
+        absent_days: record.absent_days ?? null,
+        late_days: record.late_days ?? null,
+        remarks: record.remarks ?? null,
+        manual_override: true,
+        net_salary: netSalary,
+        updated_at: new Date().toISOString(),
+      };
+      const { error } = await supabase.from('salary_records').update(payload).eq('id', record.id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -3189,7 +3233,7 @@ const AdminSalary = () => {
                                 )}
                                 {rec && (
                                   <>
-                                    {canEditItem && <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setEditDialog({ ...rec, staffName: s.name_bn })}>
+                                    {canEditItem && <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setEditDialog({ ...displayRecord, id: rec.id, staffName: s.name_bn })}>
                                       <Edit2 className="h-3 w-3" />
                                     </Button>}
                                     {canEditItem && rec.status !== 'paid' && (
