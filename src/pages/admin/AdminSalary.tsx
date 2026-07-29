@@ -2891,8 +2891,10 @@ const AdminSalary = () => {
             {/* Salary Table */}
             <Card>
               <CardContent className="p-0">
-                <div className="w-full overflow-x-auto">
-                  <table className="w-full min-w-[1180px] text-sm">
+                <div className="relative">
+                  <div className="pointer-events-none absolute right-0 top-0 bottom-2 w-10 bg-gradient-to-l from-card to-transparent rounded-r-[45px] z-10" />
+                  <div className="w-full overflow-x-auto scrollbar-thin pb-2 salary-table-scroll">
+                  <table className="w-full min-w-[1100px] text-sm">
 
                     <thead>
                       <tr className="border-b bg-muted/50">
@@ -3309,6 +3311,7 @@ const AdminSalary = () => {
                       </tfoot>
                     )}
                   </table>
+                  </div>
                 </div>
                 {filtered.length === 0 && (
                   <div className="p-8 text-center text-muted-foreground">
