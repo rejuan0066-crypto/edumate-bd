@@ -1159,12 +1159,16 @@ const AdminSalary = () => {
       if (paidHolidaySet.has(dateStr)) continue;
       untrackedPaidDays += 1;
     }
-    // additive মোডে এই ছুটির দিনগুলোর বেতন যোগ করা হয় (উপস্থিত দিনের সমান)।
-    totalDailyEarnings += untrackedPaidDays * dailyRate;
-    // অচিহ্নিত দিন আর অনুপস্থিত নয় — কর্তন শুধু স্পষ্ট 'absent' রেকর্ডে।
-    // untrackedUnmarkedDays শুধু ভ্যালিডেশন/UI-তে "সম্পূর্ণ হাজিরা দিন" সতর্কবার্তার জন্য।
+    // সেটিংস: "অচিহ্নিত দিন বেতনসহ" চালু থাকলে হাজিরা-না-দেওয়া দিন বেতনসহ ছুটি হিসেবে
+    // গণ্য হয় (পুরোনো আচরণ)। বন্ধ থাকলে ঐ দিনগুলো অনুপস্থিত ধরে বেতন কাটা হয় — তখন
+    // নিট বেতন কঠোরভাবে দেওয়া উপস্থিতি অনুযায়ীই হয়।
+    const unmarkedPaid = getSetting('unmarked_days_paid')?.enabled !== false;
+    if (unmarkedPaid) {
+      totalDailyEarnings += untrackedPaidDays * dailyRate;
+    }
     const untrackedUnmarkedDays = untrackedPaidDays;
-    const absent = recordedAbsent;
+    const absent = recordedAbsent + (unmarkedPaid ? 0 : untrackedPaidDays);
+
 
 
     return {
@@ -3885,8 +3889,24 @@ const AdminSalary = () => {
                   />
                 </div>
 
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <Label>{bn ? 'অচিহ্নিত দিন বেতনসহ' : 'Unmarked Days Paid'}</Label>
+                    <p className="text-[10px] text-muted-foreground">
+                      {bn
+                        ? 'বন্ধ করলে যেসব দিনে কোনো হাজিরা দেওয়া হয়নি সেগুলো অনুপস্থিত ধরে বেতন কাটা হবে (সাপ্তাহিক/সরকারি ছুটি বাদে)'
+                        : 'Turn off to treat days without any attendance record as absent (weekly/public holidays excluded)'}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={getSetting('unmarked_days_paid')?.enabled !== false}
+                    onCheckedChange={v => saveSettingMutation.mutate({ key: 'unmarked_days_paid', value: { enabled: v } })}
+                  />
+                </div>
+
                 <div className="p-3 border rounded-lg space-y-2">
                   <div className="flex items-center justify-between">
+
                     <div>
                       <Label>{bn ? 'বৃহস্পতিবার অর্ধদিন' : 'Thursday Half-Day'}</Label>
                       <p className="text-[10px] text-muted-foreground">
