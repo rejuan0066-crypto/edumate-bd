@@ -509,7 +509,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
                             }
                           }
                         }}
-                        className={`sidebar-item w-full text-left ${effectClass} ${isActive ? 'active' : ''} ${hasActiveChild ? 'has-active-child' : ''}`}
+                        className={`sidebar-item w-full text-left ${effectClass} ${isActive ? 'active' : ''} ${hasActiveChild ? 'has-active-child' : ''} ${isGroupOpen ? 'group-open' : ''}`}
                         title={!sidebarOpen && !mobile ? item.label : undefined}
                       >
                         <item.icon className="sidebar-icon w-[18px] h-[18px] shrink-0" />
