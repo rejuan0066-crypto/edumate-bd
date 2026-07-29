@@ -3890,7 +3890,24 @@ const AdminSalary = () => {
                 </div>
 
                 <div className="p-3 border rounded-lg space-y-2">
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <Label>{bn ? 'অচিহ্নিত দিন বেতনসহ' : 'Unmarked Days Paid'}</Label>
+                    <p className="text-[10px] text-muted-foreground">
+                      {bn
+                        ? 'বন্ধ করলে যেসব দিনে কোনো হাজিরা দেওয়া হয়নি সেগুলো অনুপস্থিত ধরে বেতন কাটা হবে (সাপ্তাহিক/সরকারি ছুটি বাদে)'
+                        : 'Turn off to treat days without any attendance record as absent (weekly/public holidays excluded)'}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={getSetting('unmarked_days_paid')?.enabled !== false}
+                    onCheckedChange={v => saveSettingMutation.mutate({ key: 'unmarked_days_paid', value: { enabled: v } })}
+                  />
+                </div>
+
+                <div className="p-3 border rounded-lg space-y-2">
                   <div className="flex items-center justify-between">
+
                     <div>
                       <Label>{bn ? 'বৃহস্পতিবার অর্ধদিন' : 'Thursday Half-Day'}</Label>
                       <p className="text-[10px] text-muted-foreground">
