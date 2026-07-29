@@ -3889,7 +3889,6 @@ const AdminSalary = () => {
                   />
                 </div>
 
-                <div className="p-3 border rounded-lg space-y-2">
                 <div className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
                     <Label>{bn ? 'অচিহ্নিত দিন বেতনসহ' : 'Unmarked Days Paid'}</Label>
