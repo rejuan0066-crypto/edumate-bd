@@ -3311,6 +3311,7 @@ const AdminSalary = () => {
                       </tfoot>
                     )}
                   </table>
+                  </div>
                 </div>
                 {filtered.length === 0 && (
                   <div className="p-8 text-center text-muted-foreground">
