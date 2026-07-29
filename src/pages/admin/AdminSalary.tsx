@@ -1470,25 +1470,40 @@ const AdminSalary = () => {
   // Update single salary record (manual edit)
   const updateMutation = useMutation({
     mutationFn: async (record: any) => {
-      const { staffName, ...cleanRecord } = record;
-      const activeSavings = getActiveSavings(cleanRecord.staff_id);
+      const activeSavings = getActiveSavings(record.staff_id);
       const savingsDed = activeSavings ? activeSavings.amount : 0;
+      const num = (v: any) => Number(v || 0);
       const netSalary = Math.max(0,
-        Number(cleanRecord.base_salary || 0) +
-        Number(cleanRecord.bonus || 0) +
-        Number(cleanRecord.overtime || 0) +
-        Number(cleanRecord.other_allowance || 0) -
-        Number(cleanRecord.late_deduction || 0) -
-        Number(cleanRecord.absence_deduction || 0) -
-        Number(cleanRecord.advance_deduction || 0) -
-        Number(cleanRecord.other_deduction || 0) -
-        savingsDed
+        num(record.base_salary) + num(record.bonus) + num(record.overtime) + num(record.other_allowance)
+        - num(record.late_deduction) - num(record.absence_deduction)
+        - num(record.advance_deduction) - num(record.other_deduction) - savingsDed
       );
-      cleanRecord.savings_deduction = savingsDed;
-      cleanRecord.manual_override = true;
-      const { error } = await supabase.from('salary_records')
-        .update({ ...cleanRecord, net_salary: Math.max(0, netSalary), updated_at: new Date().toISOString() })
-        .eq('id', cleanRecord.id);
+      // Whitelist only real columns — the dialog can be seeded from a live
+      // display snapshot that carries extra computed fields.
+      const payload: Record<string, any> = {
+        base_salary: num(record.base_salary),
+        bonus: num(record.bonus),
+        overtime: num(record.overtime),
+        overtime_for_net: num(record.overtime),
+        other_allowance: num(record.other_allowance),
+        other_allowance_note: record.other_allowance_note ?? null,
+        late_deduction: num(record.late_deduction),
+        absence_deduction: num(record.absence_deduction),
+        advance_deduction: num(record.advance_deduction),
+        other_deduction: num(record.other_deduction),
+        other_deduction_note: record.other_deduction_note ?? null,
+        savings_deduction: savingsDed,
+        earned_from_attendance: num(record.base_salary),
+        working_days: record.working_days ?? null,
+        present_days: record.present_days ?? null,
+        absent_days: record.absent_days ?? null,
+        late_days: record.late_days ?? null,
+        remarks: record.remarks ?? null,
+        manual_override: true,
+        net_salary: netSalary,
+        updated_at: new Date().toISOString(),
+      };
+      const { error } = await supabase.from('salary_records').update(payload).eq('id', record.id);
       if (error) throw error;
     },
     onSuccess: () => {
