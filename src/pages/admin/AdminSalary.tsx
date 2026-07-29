@@ -3199,7 +3199,19 @@ const AdminSalary = () => {
                               )}
                             </td>
                             <td className="px-3 py-2 text-right font-bold text-emerald-700 dark:text-emerald-400">
-                              ৳{bn ? toBnDigits(displayNet.toLocaleString()) : displayNet.toLocaleString()}{!rec ? <span className="text-[8px] ml-0.5 opacity-60">~</span> : ''}
+                              {!rec && Number(attStats.total || 0) === 0 ? (
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] border-amber-300 text-amber-600 dark:text-amber-400"
+                                  title={bn
+                                    ? 'এই মাসে এই স্টাফের কোনো হাজিরা এন্ট্রি নেই, তাই বেতন হিসাব হয়নি।'
+                                    : 'No attendance entries for this staff this month, so no salary is computed.'}
+                                >
+                                  {bn ? 'উপস্থিতি নেই' : 'No attendance'}
+                                </Badge>
+                              ) : (
+                                <>৳{bn ? toBnDigits(displayNet.toLocaleString()) : displayNet.toLocaleString()}{!rec ? <span className="text-[8px] ml-0.5 opacity-60">~</span> : ''}</>
+                              )}
                             </td>
                             <td className="px-3 py-2 text-center">
                               {rec ? (
