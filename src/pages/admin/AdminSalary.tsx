@@ -87,6 +87,13 @@ const getMonthsElapsed = (currentMonthYear: string, startMonth: string): number 
   return (cy * 12 + cm) - (sy * 12 + sm) + 1;
 };
 
+const getExpenseMonthYearFromSalaryMonth = (salaryMonthYear: string): string => {
+  const [year, month] = salaryMonthYear.split('-');
+  const monthIndex = Math.max(0, Math.min(11, Number(month) - 1));
+  const monthNamesEn = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return `${monthNamesEn[monthIndex]}-${year}`;
+};
+
 const AdminSalary = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
@@ -1568,10 +1575,8 @@ const AdminSalary = () => {
         const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID;
         const pdfUrl = `https://${projectRef}.supabase.co/functions/v1/salary-pdf`;
 
-        // Use payment date's month for expense categorization (in app timezone)
-        const todayParts = getDatePartsInTz(new Date(), appTz);
-        const paymentMonthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-        const expenseMonthYear = `${paymentMonthNames[todayParts.month]}-${todayParts.year}`;
+        // হিসাব/লেজারে বেতন অবশ্যই নির্বাচিত salary month-এই যাবে — payment date/current month নয়।
+        const expenseMonthYear = getExpenseMonthYearFromSalaryMonth(record.month_year || monthYear);
         const { error: expError } = await supabase.from('expenses').insert({
           institution_id: projectId,
           category_id: categoryId,
@@ -1608,10 +1613,12 @@ const AdminSalary = () => {
       if (record) {
         const staffMember = staff.find((s: any) => s.id === record.staff_id);
         const staffName = staffMember?.name_bn || staffMember?.name_en || 'Staff';
-        // Match by description pattern and amount
+        const expenseMonthYear = getExpenseMonthYearFromSalaryMonth(record.month_year || monthYear);
+        // Match the same staff + same salary month only; never touch another month's salary expense.
         const { error: delError } = await supabase.from('expenses')
           .update({ deleted_at: new Date().toISOString() })
           .like('description', `%${staffName}%`)
+          .eq('month_year', expenseMonthYear)
           .eq('amount', Number(record.net_salary))
           .is('deleted_at', null);
         if (delError) console.error('Expense removal error:', delError);
@@ -1633,9 +1640,11 @@ const AdminSalary = () => {
       if (record.status === 'paid') {
         const staffMember = staff.find((s: any) => s.id === record.staff_id);
         const staffName = staffMember?.name_bn || staffMember?.name_en || 'Staff';
+        const expenseMonthYear = getExpenseMonthYearFromSalaryMonth(record.month_year || monthYear);
         await supabase.from('expenses')
           .update({ deleted_at: new Date().toISOString() })
           .like('description', `%${staffName}%`)
+          .eq('month_year', expenseMonthYear)
           .eq('amount', Number(record.net_salary))
           .is('deleted_at', null);
       }
