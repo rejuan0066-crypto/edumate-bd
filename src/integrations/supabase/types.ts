@@ -7531,6 +7531,7 @@ export type Database = {
           id: string
           late_days: number | null
           late_deduction: number | null
+          manual_override: boolean
           month_year: string
           net_salary: number
           net_salary_encrypted: string | null
@@ -7586,6 +7587,7 @@ export type Database = {
           id?: string
           late_days?: number | null
           late_deduction?: number | null
+          manual_override?: boolean
           month_year: string
           net_salary?: number
           net_salary_encrypted?: string | null
@@ -7641,6 +7643,7 @@ export type Database = {
           id?: string
           late_days?: number | null
           late_deduction?: number | null
+          manual_override?: boolean
           month_year?: string
           net_salary?: number
           net_salary_encrypted?: string | null
