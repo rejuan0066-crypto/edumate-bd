@@ -1614,13 +1614,10 @@ const AdminSalary = () => {
         const staffMember = staff.find((s: any) => s.id === record.staff_id);
         const staffName = staffMember?.name_bn || staffMember?.name_en || 'Staff';
         const expenseMonthYear = getExpenseMonthYearFromSalaryMonth(record.month_year || monthYear);
-        const monthName = MONTHS.find(m => m.value === String(record.month_year || monthYear).slice(5, 7));
-        const monthLabel = bn ? monthName?.bn : monthName?.en;
         // Match the same staff + same salary month only; never touch another month's salary expense.
         const { error: delError } = await supabase.from('expenses')
           .update({ deleted_at: new Date().toISOString() })
           .like('description', `%${staffName}%`)
-          .like('description', `%${monthLabel || ''}%`)
           .eq('month_year', expenseMonthYear)
           .eq('amount', Number(record.net_salary))
           .is('deleted_at', null);
@@ -1644,12 +1641,9 @@ const AdminSalary = () => {
         const staffMember = staff.find((s: any) => s.id === record.staff_id);
         const staffName = staffMember?.name_bn || staffMember?.name_en || 'Staff';
         const expenseMonthYear = getExpenseMonthYearFromSalaryMonth(record.month_year || monthYear);
-        const monthName = MONTHS.find(m => m.value === String(record.month_year || monthYear).slice(5, 7));
-        const monthLabel = bn ? monthName?.bn : monthName?.en;
         await supabase.from('expenses')
           .update({ deleted_at: new Date().toISOString() })
           .like('description', `%${staffName}%`)
-          .like('description', `%${monthLabel || ''}%`)
           .eq('month_year', expenseMonthYear)
           .eq('amount', Number(record.net_salary))
           .is('deleted_at', null);
