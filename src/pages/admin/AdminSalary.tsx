@@ -2908,7 +2908,7 @@ const AdminSalary = () => {
                         <th className="px-3 py-2 text-right text-xs font-medium text-blue-600">{bn ? 'জমা' : 'Savings'}</th>
                         <th className="px-3 py-2 text-right text-xs font-medium text-emerald-600">{bn ? 'নিট বেতন' : 'Net'}</th>
                         <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'স্ট্যাটাস' : 'Status'}</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium sticky right-0 z-20 bg-muted/95 backdrop-blur supports-[backdrop-filter]:bg-muted/80 shadow-[-8px_0_12px_-8px_rgba(0,0,0,0.15)]">{bn ? 'অ্যাকশন' : 'Actions'}</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'অ্যাকশন' : 'Actions'}</th>
 
                       </tr>
                     </thead>
@@ -3223,7 +3223,7 @@ const AdminSalary = () => {
                                 </div>
                               )}
                             </td>
-                            <td className="px-3 py-2 text-center sticky right-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-[-8px_0_12px_-8px_rgba(0,0,0,0.12)]">
+                            <td className="px-3 py-2 text-center">
 
                               <div className="flex gap-1 justify-center">
                                 {!rec && canAddItem && (
