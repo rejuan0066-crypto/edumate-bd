@@ -7541,6 +7541,7 @@ export type Database = {
           other_deduction_note: string | null
           overtime: number | null
           overtime_for_net: number | null
+          overtime_reason: string | null
           paid_at: string | null
           paid_by: string | null
           paid_by_name: string | null
@@ -7597,6 +7598,7 @@ export type Database = {
           other_deduction_note?: string | null
           overtime?: number | null
           overtime_for_net?: number | null
+          overtime_reason?: string | null
           paid_at?: string | null
           paid_by?: string | null
           paid_by_name?: string | null
@@ -7653,6 +7655,7 @@ export type Database = {
           other_deduction_note?: string | null
           overtime?: number | null
           overtime_for_net?: number | null
+          overtime_reason?: string | null
           paid_at?: string | null
           paid_by?: string | null
           paid_by_name?: string | null
