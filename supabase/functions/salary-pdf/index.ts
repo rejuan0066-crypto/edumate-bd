@@ -233,7 +233,7 @@ Deno.serve(async (req) => {
         cell: (s) => { const d = Number(s.deductions || 0); return `<td class="c-amt">${d > 0 ? fmtNum(d) : "—"}</td>`; },
         total: () => `<td class="c-amt">${fmtNum(Number(totals?.deductions || 0))}</td>` },
       overtime: { defaultHeaderBn: "ওভারটাইম (৳)", defaultHeaderEn: "Overtime", defaultAlign: "right", defaultWeight: 7,
-        cell: (s) => `<td class="c-amt">${Number(s.overtime || 0) > 0 ? fmtNum(Number(s.overtime)) : "—"}</td>`,
+        cell: (s) => `<td class="c-amt"${s.overtime_reason ? ` title="${escapeHtml(s.overtime_reason)}"` : ''}>${Number(s.overtime || 0) > 0 ? fmtNum(Number(s.overtime)) + (s.overtime_reason ? ` <span style="color:#64748b;font-size:8px">(${escapeHtml(s.overtime_reason)})</span>` : '') : "—"}</td>`,
         total: () => `<td class="c-amt">${Number(totals?.overtime || 0) > 0 ? fmtNum(Number(totals?.overtime || 0)) : "—"}</td>` },
       deposit: { defaultHeaderBn: "জমা (৳)", defaultHeaderEn: "Deposit", defaultAlign: "right", defaultWeight: 8,
         cell: (s) => { const dep = Number(s.savings ?? s.advance ?? 0); return `<td class="c-amt">${dep > 0 ? fmtNum(dep) : "—"}</td>`; },
