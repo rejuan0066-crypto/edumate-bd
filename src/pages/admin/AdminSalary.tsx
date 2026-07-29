@@ -3,7 +3,7 @@ import { useTimeFormat, formatTimeDisplay } from '@/hooks/useTimeFormat';
 import { useAppTimezone } from '@/hooks/useAppTimezone';
 import { toIsoDateInTz, getDatePartsInTz, formatDateTimeInTz, formatDateInTz, formatTimeInTz } from '@/lib/timezone';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import AdminLayout from '@/components/AdminLayout';
+
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -2639,7 +2639,7 @@ const AdminSalary = () => {
   };
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-5">
         {/* Premium Banking-style Header */}
         <div className="relative overflow-hidden rounded-[32px] border border-emerald-900/10 dark:border-emerald-400/10 bg-gradient-to-br from-emerald-950 via-emerald-900 to-teal-900 text-white shadow-[0_20px_60px_-20px_rgba(6,78,59,0.5)]">
@@ -4401,7 +4401,7 @@ const AdminSalary = () => {
         </Dialog>
 
       </div>
-    </AdminLayout>
+    </>
   );
 };
 
