@@ -71,6 +71,10 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   const desktopMenuRef = useRef<HTMLElement | null>(null);
   const mobileMenuRef = useRef<HTMLElement | null>(null);
   const menuScrollPositionsRef = useRef({ desktop: 0, mobile: 0 });
+  // Track manual accordion toggles so route-change auto-open does not fight the user
+  const manualToggleAtRef = useRef<number>(0);
+  const manualOpenRef = useRef<Set<string>>(new Set());
+  const manualClosedRef = useRef<Set<string>>(new Set());
 
   // Fetch staff record for sidebar avatar (shared lookup: user_id → email fallback + auto-link)
   const { data: sidebarStaffPhoto } = useCurrentStaff();
