@@ -487,6 +487,7 @@ const AdminSalary = () => {
           advance_deduction: Number(existing.advance_deduction || 0),
           savings_deduction: savingsDed,
           net_salary: netSalary,
+          manual_override: false,
           updated_at: new Date().toISOString(),
         }).eq('id', existing.id);
         if (error) throw error;
