@@ -3223,7 +3223,8 @@ const AdminSalary = () => {
                                 </div>
                               )}
                             </td>
-                            <td className="px-3 py-2 text-center">
+                            <td className="px-3 py-2 text-center sticky right-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-[-8px_0_12px_-8px_rgba(0,0,0,0.12)]">
+
                               <div className="flex gap-1 justify-center">
                                 {!rec && canAddItem && (
                                   <Button
