@@ -686,6 +686,7 @@ const AdminSalary = () => {
       other_allowance_note: record?.other_allowance_note,
       advance_deduction: manualAdvance,
       other_deduction_note: record?.other_deduction_note,
+      overtime_reason: record?.overtime_reason,
       remarks: record?.remarks,
       savings_deduction: savingsForNet,
       net_salary: recomputeNetSalary(liveCalc, {
@@ -1487,6 +1488,7 @@ const AdminSalary = () => {
         bonus: num(record.bonus),
         overtime: num(record.overtime),
         overtime_for_net: num(record.overtime),
+        overtime_reason: record.overtime_reason ?? null,
         other_allowance: num(record.other_allowance),
         other_allowance_note: record.other_allowance_note ?? null,
         late_deduction: num(record.late_deduction),
@@ -1534,6 +1536,7 @@ const AdminSalary = () => {
           late_deduction: payableRecord.late_deduction,
           other_deduction: payableRecord.other_deduction,
           overtime: payableRecord.overtime,
+          overtime_reason: payableRecord.overtime_reason,
           bonus: payableRecord.bonus,
           other_allowance: payableRecord.other_allowance,
           advance_deduction: payableRecord.advance_deduction,
@@ -2166,6 +2169,7 @@ const AdminSalary = () => {
             leave: st.leave || 0,
             bonus: Number(displayRecord?.bonus || 0),
             overtime: Number(displayRecord?.overtime || 0),
+            overtime_reason: displayRecord?.overtime_reason,
             deductions: totalDed,
             advance: Number(displayRecord?.advance_deduction || 0),
             savings: snap.savingsDisplay,
@@ -2548,7 +2552,7 @@ const AdminSalary = () => {
 
               <!-- ৪. বোনাস / ওভারটাইম / ভাতা -->
               <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'বোনাস' : 'Bonus'}</span><span class="v">৳${slipNum(Number(record.bonus || 0))}</span></div>
-              <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'ওভারটাইম' : 'Overtime'}</span><span class="v">৳${slipNum(Number(record.overtime || 0))}</span></div>
+              <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'ওভারটাইম' : 'Overtime'}${record.overtime_reason ? ` <span style="color:#64748b;font-weight:400">(${record.overtime_reason})</span>` : ''}</span><span class="v">৳${slipNum(Number(record.overtime || 0))}</span></div>
               <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'অন্যান্য ডিউটি' : 'Other Duty'}${record.other_allowance_note ? ` <span style="color:#64748b;font-weight:400">(${record.other_allowance_note})</span>` : ''}</span><span class="v">৳${slipNum(Number(record.other_allowance || 0))}</span></div>
 
               <!-- যাচাই লাইন hidden by request — শুধু চূড়ান্ত যোগফল দেখাও -->
@@ -3729,6 +3733,7 @@ const AdminSalary = () => {
                   <div>
                     <Label className="text-xs">{bn ? 'ওভারটাইম' : 'Overtime'}</Label>
                     <NumberInput value={editDialog.overtime} onValueChange={n => setEditDialog({ ...editDialog, overtime: n })} />
+                    <Input className="mt-1.5" type="text" placeholder={bn ? 'কারণ/বিবরণ লিখুন' : 'Reason / note'} value={editDialog.overtime_reason || ''} onChange={e => setEditDialog({ ...editDialog, overtime_reason: e.target.value })} />
                   </div>
                   <div>
                     <Label className="text-xs">{bn ? 'অন্যান্য ডিউটি' : 'Other Duty'}</Label>
