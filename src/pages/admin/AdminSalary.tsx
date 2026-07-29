@@ -1483,6 +1483,7 @@ const AdminSalary = () => {
         savingsDed
       );
       cleanRecord.savings_deduction = savingsDed;
+      cleanRecord.manual_override = true;
       const { error } = await supabase.from('salary_records')
         .update({ ...cleanRecord, net_salary: Math.max(0, netSalary), updated_at: new Date().toISOString() })
         .eq('id', cleanRecord.id);
