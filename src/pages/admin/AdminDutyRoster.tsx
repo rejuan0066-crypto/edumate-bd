@@ -112,6 +112,7 @@ export default function AdminDutyRoster() {
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [showAll, setShowAll] = useState(false);
   const [weeklySearch, setWeeklySearch] = useState('');
+  const [showGuide, setShowGuide] = useState(true);
 
   const [shiftDialog, setShiftDialog] = useState(false);
   const [editingShift, setEditingShift] = useState<DutyShift | null>(null);
@@ -736,10 +737,54 @@ export default function AdminDutyRoster() {
           <TabsContent value="weekly" className="mt-4">
             <Card className="rounded-[38px]">
               <CardHeader>
-                <CardTitle className="text-base">কোন বারে কার কোন শিফটে ডিউটি</CardTitle>
-                <p className="text-xs text-muted-foreground">
-                  নিচের ছকে স্টাফের নামের সারিতে, বারের ঘরে শিফটের নামে <b>ক্লিক করলেই</b> ডিউটি চালু (সবুজ ✓) / বন্ধ হবে।
-                  এখানে সেট করা ডিউটি প্রতি সপ্তাহে স্বয়ংক্রিয়ভাবে প্রযোজ্য হবে; কোনো নির্দিষ্ট তারিখে ভিন্ন হলে দৈনিক হাজিরা ট্যাব থেকে বদলানো যাবে।
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <CardTitle className="text-base">কোন বারে কার কোন শিফটে ডিউটি</CardTitle>
+                  <Button size="sm" variant="outline" className="rounded-full" onClick={() => setShowGuide((v) => !v)}>
+                    {showGuide ? 'গাইড লুকান' : 'গাইড দেখুন'}
+                  </Button>
+                </div>
+
+                {showGuide && (
+                  <div className="mt-3 rounded-[24px] border border-primary/20 bg-primary/5 p-4">
+                    <p className="mb-2 text-sm font-semibold">ধাপে ধাপে সেটআপ গাইড</p>
+                    <ol className="space-y-2 text-xs text-muted-foreground">
+                      <li className="flex gap-2">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">১</span>
+                        <span>
+                          প্রথমে <b>“শিফট ও মেশিন সেটআপ”</b> ট্যাবে গিয়ে শিফট (যেমন সকাল ৯:৩০–২:০০, সন্ধ্যা) তৈরি করুন — সময়, গ্রেস মিনিট ও পে ঠিক করে দিন।
+                          {' '}
+                          <button className="underline" onClick={() => setTab('shifts')}>এখানে যান</button>
+                        </span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">২</span>
+                        <span>নিচের সার্চ বক্সে স্টাফ/শিক্ষকের <b>নাম লিখে খুঁজুন</b> — ছকে তার সারিটি দেখতে পাবেন।</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">৩</span>
+                        <span>ঐ সারিতে <b>বারের ঘরে</b> (শনিবার…শুক্রবার) শিফটের বাটনে ক্লিক করুন। ক্লিকে সবুজ ✓ হলে ঐ বারে ঐ শিফটে ডিউটি সেট হলো, আবার ক্লিকে বন্ধ।</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">৪</span>
+                        <span>পুরো সপ্তাহ একই শিফট হলে ডানপাশের <b>“সব বার (শিফট নাম)”</b> বাটনে এক ক্লিকেই সব বারে প্রয়োগ করুন।</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">৫</span>
+                        <span>এই সেটআপ প্রতি সপ্তাহে স্বয়ংক্রিয়ভাবে চলবে। কোনো নির্দিষ্ট তারিখে ব্যতিক্রম হলে <b>“দৈনিক হাজিরা”</b> ট্যাব থেকে ঐ দিনের জন্য বদলান।</span>
+                      </li>
+                    </ol>
+                    <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-primary/15 pt-3 text-[11px]">
+                      <span className="font-semibold">চিহ্ন:</span>
+                      <span className="inline-flex items-center gap-1 rounded-full border border-primary bg-primary px-2 py-0.5 text-primary-foreground">✓ শিফট</span>
+                      <span className="text-muted-foreground">= ডিউটি সেট আছে</span>
+                      <span className="inline-flex items-center gap-1 rounded-full border border-dashed border-border bg-background px-2 py-0.5 text-muted-foreground">+ শিফট</span>
+                      <span className="text-muted-foreground">= ডিউটি নেই (ক্লিক করে সেট করুন)</span>
+                    </div>
+                  </div>
+                )}
+
+                <p className="mt-3 text-xs text-muted-foreground">
+                  টিপস: প্রতিটি বাটনের উপর মাউস রাখলে ঐ স্টাফ, বার ও শিফটের সময়সহ বিস্তারিত দেখা যাবে।
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <Input
@@ -755,6 +800,7 @@ export default function AdminDutyRoster() {
                   )}
                 </div>
               </CardHeader>
+
               <CardContent className="overflow-x-auto">
                 <table className="w-full min-w-[1100px] border-separate border-spacing-y-2 text-sm">
                   <thead>
@@ -808,6 +854,11 @@ export default function AdminDutyRoster() {
                               return (
                                 <button
                                   key={sh.id}
+                                  title={
+                                    allOn
+                                      ? `${s.name_bn} — সব বারে ${sh.name_bn} শিফট বন্ধ করুন`
+                                      : `${s.name_bn} — সপ্তাহের সব বারে ${sh.name_bn} (${hhmm(sh.start_time)}–${hhmm(sh.end_time)}) শিফট প্রয়োগ করুন`
+                                  }
                                   onClick={() =>
                                     WEEKDAYS.forEach((_, wd) =>
                                       toggleTemplate.mutate({ staffId: s.id, shiftId: sh.id, wd, on: !allOn }),
