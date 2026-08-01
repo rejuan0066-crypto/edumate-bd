@@ -2302,15 +2302,82 @@ export type Database = {
           },
         ]
       }
+      duty_shift_attendance: {
+        Row: {
+          check_in_time: string | null
+          check_out_time: string | null
+          created_at: string
+          created_by: string | null
+          device_id: string | null
+          duty_date: string
+          early_exit_minutes: number
+          id: string
+          late_minutes: number
+          note: string | null
+          shift_id: string
+          source: string
+          staff_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          check_in_time?: string | null
+          check_out_time?: string | null
+          created_at?: string
+          created_by?: string | null
+          device_id?: string | null
+          duty_date: string
+          early_exit_minutes?: number
+          id?: string
+          late_minutes?: number
+          note?: string | null
+          shift_id: string
+          source?: string
+          staff_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          check_in_time?: string | null
+          check_out_time?: string | null
+          created_at?: string
+          created_by?: string | null
+          device_id?: string | null
+          duty_date?: string
+          early_exit_minutes?: number
+          id?: string
+          late_minutes?: number
+          note?: string | null
+          shift_id?: string
+          source?: string
+          staff_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "duty_shift_attendance_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "duty_shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       duty_shifts: {
         Row: {
+          attendance_mode: string
           code: string
           created_at: string
           deleted_at: string | null
+          early_exit_grace_minutes: number
           end_time: string
           grace_minutes: number
           id: string
           is_active: boolean
+          machine_close_after_minutes: number
+          machine_enabled: boolean
+          machine_open_before_minutes: number
           name_bn: string
           name_en: string | null
           notes: string | null
@@ -2321,13 +2388,18 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          attendance_mode?: string
           code: string
           created_at?: string
           deleted_at?: string | null
+          early_exit_grace_minutes?: number
           end_time?: string
           grace_minutes?: number
           id?: string
           is_active?: boolean
+          machine_close_after_minutes?: number
+          machine_enabled?: boolean
+          machine_open_before_minutes?: number
           name_bn: string
           name_en?: string | null
           notes?: string | null
@@ -2338,13 +2410,18 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          attendance_mode?: string
           code?: string
           created_at?: string
           deleted_at?: string | null
+          early_exit_grace_minutes?: number
           end_time?: string
           grace_minutes?: number
           id?: string
           is_active?: boolean
+          machine_close_after_minutes?: number
+          machine_enabled?: boolean
+          machine_open_before_minutes?: number
           name_bn?: string
           name_en?: string | null
           notes?: string | null
@@ -2355,6 +2432,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      duty_weekly_template: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          shift_id: string
+          staff_id: string
+          updated_at: string
+          weekday: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          shift_id: string
+          staff_id: string
+          updated_at?: string
+          weekday: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          shift_id?: string
+          staff_id?: string
+          updated_at?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "duty_weekly_template_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "duty_shifts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       email_delivery_log: {
         Row: {
