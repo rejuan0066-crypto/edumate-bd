@@ -340,7 +340,20 @@ export default function AdminDutyRoster() {
                           <td className="px-3 py-2">
                             <span className={`rounded-full px-2 py-1 text-xs font-medium ${st.cls}`}>{st.label}</span>
                           </td>
-                          <td className="rounded-r-[20px] px-3 py-2 text-right">{payOf(s.id) || '—'}</td>
+                          {(() => {
+                            const p = payOf(s.id);
+                            return (
+                              <td className="rounded-r-[20px] px-3 py-2 text-right">
+                                {!p.anyConfigured ? (
+                                  <span className="text-xs text-muted-foreground">পে সেটআপ নাই</span>
+                                ) : (
+                                  <span title={p.lines.map((l) => `${l.shiftName}: ${l.note}`).join(' | ')}>
+                                    {p.total || '—'}
+                                  </span>
+                                )}
+                              </td>
+                            );
+                          })()}
                         </tr>
                       );
                     })}
