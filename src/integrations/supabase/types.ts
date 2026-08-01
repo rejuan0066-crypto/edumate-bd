@@ -2261,6 +2261,60 @@ export type Database = {
         }
         Relationships: []
       }
+      duty_shifts: {
+        Row: {
+          code: string
+          created_at: string
+          deleted_at: string | null
+          end_time: string
+          grace_minutes: number
+          id: string
+          is_active: boolean
+          name_bn: string
+          name_en: string | null
+          notes: string | null
+          pay_amount: number | null
+          pay_type: string | null
+          sort_order: number
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          deleted_at?: string | null
+          end_time?: string
+          grace_minutes?: number
+          id?: string
+          is_active?: boolean
+          name_bn: string
+          name_en?: string | null
+          notes?: string | null
+          pay_amount?: number | null
+          pay_type?: string | null
+          sort_order?: number
+          start_time?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          deleted_at?: string | null
+          end_time?: string
+          grace_minutes?: number
+          id?: string
+          is_active?: boolean
+          name_bn?: string
+          name_en?: string | null
+          notes?: string | null
+          pay_amount?: number | null
+          pay_type?: string | null
+          sort_order?: number
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_delivery_log: {
         Row: {
           created_at: string
