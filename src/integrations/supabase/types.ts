@@ -2261,6 +2261,47 @@ export type Database = {
         }
         Relationships: []
       }
+      duty_roster: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          duty_date: string
+          id: string
+          note: string | null
+          shift_id: string
+          staff_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          duty_date: string
+          id?: string
+          note?: string | null
+          shift_id: string
+          staff_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          duty_date?: string
+          id?: string
+          note?: string | null
+          shift_id?: string
+          staff_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "duty_roster_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "duty_shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       duty_shifts: {
         Row: {
           code: string
