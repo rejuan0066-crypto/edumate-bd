@@ -235,6 +235,12 @@ export default function AdminDutyRoster() {
     [staff, showAll, dutyMap],
   );
 
+  const weeklyStaff = useMemo(() => {
+    const q = weeklySearch.trim();
+    return q ? staff.filter((s) => (s.name_bn || '').includes(q) || (s.staff_id || '').includes(q)) : staff;
+  }, [staff, weeklySearch]);
+
+
   // ---- mutations ----
   const toggleTemplate = useMutation({
     mutationFn: async ({ staffId, shiftId, wd, on }: { staffId: string; shiftId: string; wd: number; on: boolean }) => {
