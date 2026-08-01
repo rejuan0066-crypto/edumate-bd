@@ -111,6 +111,8 @@ export default function AdminDutyRoster() {
   const [tab, setTab] = useState('roster');
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [showAll, setShowAll] = useState(false);
+  const [weeklySearch, setWeeklySearch] = useState('');
+
   const [shiftDialog, setShiftDialog] = useState(false);
   const [editingShift, setEditingShift] = useState<DutyShift | null>(null);
   const [form, setForm] = useState<any>(emptyShift);
