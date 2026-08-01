@@ -111,6 +111,8 @@ export default function AdminDutyRoster() {
   const [tab, setTab] = useState('roster');
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [showAll, setShowAll] = useState(false);
+  const [weeklySearch, setWeeklySearch] = useState('');
+
   const [shiftDialog, setShiftDialog] = useState(false);
   const [editingShift, setEditingShift] = useState<DutyShift | null>(null);
   const [form, setForm] = useState<any>(emptyShift);
@@ -232,6 +234,12 @@ export default function AdminDutyRoster() {
     () => (showAll ? staff : staff.filter((s) => dutyCount(s.id) > 0)),
     [staff, showAll, dutyMap],
   );
+
+  const weeklyStaff = useMemo(() => {
+    const q = weeklySearch.trim();
+    return q ? staff.filter((s) => (s.name_bn || '').includes(q) || (s.staff_id || '').includes(q)) : staff;
+  }, [staff, weeklySearch]);
+
 
   // ---- mutations ----
   const toggleTemplate = useMutation({
@@ -728,23 +736,38 @@ export default function AdminDutyRoster() {
           <TabsContent value="weekly" className="mt-4">
             <Card className="rounded-[38px]">
               <CardHeader>
-                <CardTitle className="text-base">কোন বারে কার কোন ডিউটি</CardTitle>
+                <CardTitle className="text-base">কোন বারে কার কোন শিফটে ডিউটি</CardTitle>
                 <p className="text-xs text-muted-foreground">
-                  এখানে সেট করা ডিউটি প্রতি সপ্তাহে স্বয়ংক্রিয়ভাবে প্রযোজ্য হবে। কোনো নির্দিষ্ট তারিখে ভিন্ন হলে দৈনিক ট্যাব থেকে বদলানো যাবে।
+                  নিচের ছকে স্টাফের নামের সারিতে, বারের ঘরে শিফটের নামে <b>ক্লিক করলেই</b> ডিউটি চালু (সবুজ ✓) / বন্ধ হবে।
+                  এখানে সেট করা ডিউটি প্রতি সপ্তাহে স্বয়ংক্রিয়ভাবে প্রযোজ্য হবে; কোনো নির্দিষ্ট তারিখে ভিন্ন হলে দৈনিক হাজিরা ট্যাব থেকে বদলানো যাবে।
                 </p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Input
+                    value={weeklySearch}
+                    onChange={(e) => setWeeklySearch(e.target.value)}
+                    placeholder="নাম দিয়ে খুঁজুন..."
+                    className="h-9 w-56 rounded-full"
+                  />
+                  {activeShifts.length === 0 && (
+                    <Button size="sm" variant="outline" onClick={() => setTab('shifts')}>
+                      আগে শিফট তৈরি করুন
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="overflow-x-auto">
-                <table className="w-full min-w-[1000px] border-separate border-spacing-y-2 text-sm">
+                <table className="w-full min-w-[1100px] border-separate border-spacing-y-2 text-sm">
                   <thead>
                     <tr className="text-left text-xs text-muted-foreground">
                       <th className="px-3">নাম</th>
                       {WEEKDAYS.map((w) => (
-                        <th key={w} className="px-2 text-center">{w}</th>
+                        <th key={w} className="px-2 text-center">{w}বার</th>
                       ))}
+                      <th className="px-2 text-center">দ্রুত</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {staff.map((s) => (
+                    {weeklyStaff.map((s) => (
                       <tr key={s.id} className="rounded-[20px] bg-muted/30">
                         <td className="rounded-l-[20px] px-3 py-2 font-medium">{s.name_bn}</td>
                         {WEEKDAYS.map((_, wd) => (
@@ -757,15 +780,17 @@ export default function AdminDutyRoster() {
                                 return (
                                   <button
                                     key={sh.id}
+                                    title={`${s.name_bn} — ${WEEKDAYS[wd]}বার — ${sh.name_bn} (${hhmm(sh.start_time)}–${hhmm(sh.end_time)})`}
                                     onClick={() =>
                                       toggleTemplate.mutate({ staffId: s.id, shiftId: sh.id, wd, on: !on })
                                     }
-                                    className={`rounded-full px-2 py-1 text-[11px] font-medium transition ${
+                                    className={`flex w-full items-center justify-center gap-1 rounded-full border px-2 py-1 text-[11px] font-medium transition ${
                                       on
-                                        ? 'bg-primary text-primary-foreground'
-                                        : 'bg-background text-muted-foreground hover:bg-accent'
+                                        ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                                        : 'border-dashed border-border bg-background text-muted-foreground hover:border-primary/60 hover:text-foreground'
                                     }`}
                                   >
+                                    <span>{on ? '✓' : '+'}</span>
                                     {sh.name_bn}
                                   </button>
                                 );
@@ -774,13 +799,43 @@ export default function AdminDutyRoster() {
                             </div>
                           </td>
                         ))}
+                        <td className="rounded-r-[20px] px-2 py-2">
+                          <div className="flex flex-col gap-1">
+                            {activeShifts.map((sh) => {
+                              const allOn = WEEKDAYS.every((_, wd) =>
+                                templates.some((t) => t.staff_id === s.id && t.shift_id === sh.id && t.weekday === wd),
+                              );
+                              return (
+                                <button
+                                  key={sh.id}
+                                  onClick={() =>
+                                    WEEKDAYS.forEach((_, wd) =>
+                                      toggleTemplate.mutate({ staffId: s.id, shiftId: sh.id, wd, on: !allOn }),
+                                    )
+                                  }
+                                  className="rounded-full border border-border bg-background px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
+                                >
+                                  {allOn ? `সব বার বন্ধ (${sh.name_bn})` : `সব বার (${sh.name_bn})`}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </td>
                       </tr>
                     ))}
+                    {weeklyStaff.length === 0 && (
+                      <tr>
+                        <td colSpan={9} className="px-3 py-6 text-center text-muted-foreground">
+                          কোনো স্টাফ পাওয়া যায়নি
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </CardContent>
             </Card>
           </TabsContent>
+
 
           {/* ---------------- Shift settings ---------------- */}
           <TabsContent value="shifts" className="mt-4">
