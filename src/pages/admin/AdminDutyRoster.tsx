@@ -110,7 +110,7 @@ export default function AdminDutyRoster() {
     },
   });
 
-  const { data: attendance = [] } = useQuery({
+  const { data: attendance = [], isFetching: attFetching, dataUpdatedAt } = useQuery({
     queryKey: ['duty-roster-attendance', date],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -121,7 +121,25 @@ export default function AdminDutyRoster() {
       if (error) throw error;
       return data || [];
     },
+    refetchInterval: 30000,
+    refetchOnWindowFocus: true,
   });
+
+  // Live update: any attendance/roster change for this date refreshes the status instantly
+  useEffect(() => {
+    const channel = supabase
+      .channel(`duty-roster-live-${date}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance_records' }, () => {
+        qc.invalidateQueries({ queryKey: ['duty-roster-attendance', date] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'duty_roster' }, () => {
+        qc.invalidateQueries({ queryKey: ['duty-roster', date] });
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [date, qc]);
 
   const attMap = useMemo(() => {
     const m = new Map<string, any>();
