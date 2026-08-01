@@ -422,6 +422,8 @@ const App = () => (
                     <Route path="formula-builder" element={<AdminFormulaBuilder />} />
                     <Route path="student-attendance" element={<ModuleGuard menuPath="/admin/student-attendance"><AdminStudentAttendance /></ModuleGuard>} />
                     <Route path="staff-attendance" element={<ModuleGuard menuPath="/admin/staff-attendance"><AdminStaffAttendance /></ModuleGuard>} />
+                    <Route path="duty-roster" element={<AdminDutyRoster />} />
+
                     <Route path="validation-manager" element={<AdminValidationManager />} />
                     <Route path="reports" element={<AdminReports />} />
                     <Route path="staff-reports" element={<AdminStaffReports />} />
