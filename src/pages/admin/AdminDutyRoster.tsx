@@ -583,12 +583,22 @@ export default function AdminDutyRoster() {
           <TabsContent value="roster" className="mt-4">
             <Card className="rounded-[38px]">
               <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
-                <CardTitle className="text-base">{date} — ডিউটি ও হাজিরা</CardTitle>
+                <div>
+                  <CardTitle className="text-base">
+                    {format(new Date(date), 'dd/MM/yyyy')} ({WEEKDAYS[weekday]}বার) — ডিউটি ও হাজিরা
+                  </CardTitle>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    এই বারে যাদের ডিউটি সেট করা আছে শুধু তাদের নামই দেখাচ্ছে
+                    {' '}(<b>{staff.filter((s) => dutyCount(s.id) > 0).length}</b> জন)।
+                    সবাইকে দেখতে ডানের সুইচ চালু করুন।
+                  </p>
+                </div>
                 <div className="flex items-center gap-2">
                   <Label className="text-xs text-muted-foreground">ডিউটিহীন স্টাফও দেখান</Label>
                   <Switch checked={showAll} onCheckedChange={setShowAll} />
                 </div>
               </CardHeader>
+
               <CardContent className="overflow-x-auto">
                 <table className="w-full min-w-[900px] border-separate border-spacing-y-2 text-sm">
                   <thead>
@@ -725,7 +735,7 @@ export default function AdminDutyRoster() {
                       <tr>
                         <td colSpan={activeShifts.length + 3} className="px-3 py-6 text-center text-muted-foreground">
                           <div className="flex flex-col items-center gap-3">
-                            <span>আজ কারও ডিউটি নেই</span>
+                            <span>{WEEKDAYS[weekday]}বারে কারও ডিউটি সেট করা নেই — সাপ্তাহিক সেটআপে এই বারে নাম যোগ করলেই এখানে দেখাবে</span>
                             <div className="flex flex-wrap justify-center gap-2">
                               <Button size="sm" onClick={() => setTab('weekly')}>
                                 সাপ্তাহিক ডিউটি সেটআপ
