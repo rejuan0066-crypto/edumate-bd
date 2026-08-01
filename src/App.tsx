@@ -114,6 +114,8 @@ const AdminCustomFormPage = lazy(() => import("./pages/admin/AdminCustomFormPage
 const AdminModuleManager = lazy(() => import("./pages/admin/AdminModuleManager"));
 const AdminFormulaBuilder = lazy(() => import("./pages/admin/AdminFormulaBuilder"));
 const AdminAttendance = lazy(() => import("./pages/admin/AdminAttendance"));
+const AdminDutyRoster = lazy(() => import("./pages/admin/AdminDutyRoster"));
+
 const AdminStudentAttendance = lazy(() => import("./pages/admin/AdminStudentAttendance"));
 const AdminStaffAttendance = lazy(() => import("./pages/admin/AdminStaffAttendance"));
 const AdminValidationManager = lazy(() => import("./pages/admin/AdminValidationManager"));
@@ -422,6 +424,8 @@ const App = () => (
                     <Route path="formula-builder" element={<AdminFormulaBuilder />} />
                     <Route path="student-attendance" element={<ModuleGuard menuPath="/admin/student-attendance"><AdminStudentAttendance /></ModuleGuard>} />
                     <Route path="staff-attendance" element={<ModuleGuard menuPath="/admin/staff-attendance"><AdminStaffAttendance /></ModuleGuard>} />
+                    <Route path="duty-roster" element={<AdminDutyRoster />} />
+
                     <Route path="validation-manager" element={<AdminValidationManager />} />
                     <Route path="reports" element={<AdminReports />} />
                     <Route path="staff-reports" element={<AdminStaffReports />} />
