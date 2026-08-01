@@ -622,15 +622,38 @@ export default function AdminDutyRoster() {
                       return (
                         <tr key={s.id} className="rounded-[20px] bg-muted/30 align-top">
                           <td className="rounded-l-[20px] px-3 py-2 font-medium">
-                            {s.name_bn}
-                            {roster.some((r) => r.staff_id === s.id) && (
-                              <span
-                                className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-normal text-amber-800"
-                                title="সাপ্তাহিক সেটআপে নেই — শুধু এই তারিখের জন্য ডিউটি দেওয়া হয়েছে"
-                              >
-                                এই দিনের বিশেষ ডিউটি
-                              </span>
-                            )}
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span>{s.name_bn}</span>
+                              {roster.some((r) => r.staff_id === s.id) && (
+                                <>
+                                  <span
+                                    className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-normal text-amber-800"
+                                    title="সাপ্তাহিক সেটআপের বাইরে শুধু এই তারিখের জন্য ডিউটি দেওয়া হয়েছে"
+                                  >
+                                    এই দিনের বিশেষ ডিউটি
+                                  </span>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="destructive"
+                                    className="h-7 gap-1 px-2 text-xs"
+                                    disabled={setDayDuty.isPending}
+                                    title={`${s.name_bn}-এর ${format(new Date(date), 'dd/MM/yyyy')} তারিখের বিশেষ ডিউটি রিমুভ করুন`}
+                                    onClick={async () => {
+                                      const ok = await confirm({
+                                        title: 'বিশেষ ডিউটি রিমুভ করবেন?',
+                                        description: `${s.name_bn}-এর ${format(new Date(date), 'dd/MM/yyyy')} তারিখের বিশেষ ডিউটি রিমুভ হবে।`,
+                                        variant: 'destructive',
+                                      });
+                                      if (ok) setDayDuty.mutate({ staffId: s.id, shiftIds: [] });
+                                    }}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                    রিমুভ
+                                  </Button>
+                                </>
+                              )}
+                            </div>
                           </td>
                           <td className="px-3 py-2 text-muted-foreground">{s.staff_id || '—'}</td>
                           {activeShifts.map((sh) => {
