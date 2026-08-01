@@ -536,11 +536,27 @@ export default function AdminDutyRoster() {
         </Card>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList>
-            <TabsTrigger value="roster">দৈনিক হাজিরা</TabsTrigger>
-            <TabsTrigger value="weekly">সাপ্তাহিক ডিউটি</TabsTrigger>
-            <TabsTrigger value="shifts">শিফট সেটিং</TabsTrigger>
+          <TabsList className="h-auto w-full flex-wrap gap-2 rounded-[24px] bg-muted/60 p-2">
+            <TabsTrigger
+              value="roster"
+              className="rounded-[18px] px-5 py-2.5 text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg"
+            >
+              দৈনিক হাজিরা
+            </TabsTrigger>
+            <TabsTrigger
+              value="weekly"
+              className="rounded-[18px] px-5 py-2.5 text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg"
+            >
+              সাপ্তাহিক ডিউটি সেটআপ
+            </TabsTrigger>
+            <TabsTrigger
+              value="shifts"
+              className="rounded-[18px] px-5 py-2.5 text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg"
+            >
+              শিফট ও মেশিন সেটআপ
+            </TabsTrigger>
           </TabsList>
+
 
           {/* ---------------- Daily attendance ---------------- */}
           <TabsContent value="roster" className="mt-4">
@@ -687,10 +703,21 @@ export default function AdminDutyRoster() {
                     {visibleStaff.length === 0 && (
                       <tr>
                         <td colSpan={activeShifts.length + 3} className="px-3 py-6 text-center text-muted-foreground">
-                          আজ কারও ডিউটি নেই — সাপ্তাহিক ডিউটি ট্যাব থেকে সেট করুন
+                          <div className="flex flex-col items-center gap-3">
+                            <span>আজ কারও ডিউটি নেই</span>
+                            <div className="flex flex-wrap justify-center gap-2">
+                              <Button size="sm" onClick={() => setTab('weekly')}>
+                                সাপ্তাহিক ডিউটি সেটআপ
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => setTab('shifts')}>
+                                শিফট ও মেশিন সেটআপ
+                              </Button>
+                            </div>
+                          </div>
                         </td>
                       </tr>
                     )}
+
                   </tbody>
                 </table>
               </CardContent>
