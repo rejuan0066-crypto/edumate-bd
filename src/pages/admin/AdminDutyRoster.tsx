@@ -112,6 +112,7 @@ export default function AdminDutyRoster() {
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [showAll, setShowAll] = useState(false);
   const [weeklySearch, setWeeklySearch] = useState('');
+  const [showGuide, setShowGuide] = useState(true);
 
   const [shiftDialog, setShiftDialog] = useState(false);
   const [editingShift, setEditingShift] = useState<DutyShift | null>(null);
