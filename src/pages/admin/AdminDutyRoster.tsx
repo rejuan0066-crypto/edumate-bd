@@ -564,7 +564,18 @@ export default function AdminDutyRoster() {
             >
               শিফট ও মেশিন সেটআপ
             </TabsTrigger>
+            <TabsTrigger
+              value="audit"
+              className="rounded-[18px] px-5 py-2.5 text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg"
+            >
+              পরিবর্তনের লগ
+            </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="audit" className="mt-4">
+            <DutyChangeAuditTab />
+          </TabsContent>
+
 
 
           {/* ---------------- Daily attendance ---------------- */}
