@@ -15,6 +15,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { CalendarClock, Plus, Trash2, Save } from 'lucide-react';
 import { useConfirm } from '@/contexts/ConfirmContext';
+import { calcDayShiftPay } from '@/lib/dutyShiftPay';
 
 interface DutyShift {
   id: string;
