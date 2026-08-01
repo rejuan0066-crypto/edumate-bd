@@ -231,11 +231,14 @@ export default function AdminDutyRoster() {
     const duties = rosterMap.get(staffId) || [];
     const att = attMap.get(staffId);
     const hasAtt = !!att && ['present', 'late'].includes(att.status);
-    if (!hasAtt) return 0;
-    return duties.reduce((s, d) => {
-      const sh = shifts.find((x) => x.id === d.shift_id);
-      return s + (sh?.pay_amount || 0);
-    }, 0);
+    const dutyShifts = duties
+      .map((d) => shifts.find((x) => x.id === d.shift_id))
+      .filter(Boolean) as DutyShift[];
+    return calcDayShiftPay(dutyShifts, {
+      attended: hasAtt,
+      checkIn: att?.check_in_time,
+      checkOut: att?.check_out_time,
+    });
   };
 
   const totals = useMemo(() => {
@@ -245,9 +248,9 @@ export default function AdminDutyRoster() {
       if (st === 'উপস্থিত') present++;
       else if (st === 'অনুপস্থিত') absent++;
       else if (st.startsWith('ডিউটি নাই')) noDuty++;
-      pay += payOf(s.id);
+      pay += payOf(s.id).total;
     });
-    return { present, absent, noDuty, pay };
+    return { present, absent, noDuty, pay: Math.round(pay * 100) / 100 };
   }, [staff, rosterMap, attMap, shifts]);
 
   return (
