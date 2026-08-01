@@ -114,6 +114,8 @@ const AdminCustomFormPage = lazy(() => import("./pages/admin/AdminCustomFormPage
 const AdminModuleManager = lazy(() => import("./pages/admin/AdminModuleManager"));
 const AdminFormulaBuilder = lazy(() => import("./pages/admin/AdminFormulaBuilder"));
 const AdminAttendance = lazy(() => import("./pages/admin/AdminAttendance"));
+const AdminDutyRoster = lazy(() => import("./pages/admin/AdminDutyRoster"));
+
 const AdminStudentAttendance = lazy(() => import("./pages/admin/AdminStudentAttendance"));
 const AdminStaffAttendance = lazy(() => import("./pages/admin/AdminStaffAttendance"));
 const AdminValidationManager = lazy(() => import("./pages/admin/AdminValidationManager"));
