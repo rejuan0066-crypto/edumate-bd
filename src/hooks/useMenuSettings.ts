@@ -52,6 +52,7 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
     { id: 'attendance-staff', path: '/admin/staff-attendance', label_bn: 'স্টাফ উপস্থিতি', label_en: 'Staff Attendance', icon: 'CalendarCheck', visible: true, sort_order: 8 },
     { id: 'staff-reports', path: '/admin/staff-reports', label_bn: 'স্টাফ রিপোর্ট', label_en: 'Staff Reports', icon: 'BarChart3', visible: true, sort_order: 9 },
     { id: 'staff-holidays', path: '/admin/staff-holidays', label_bn: 'ছুটির ক্যালেন্ডার', label_en: 'Holiday Calendar', icon: 'CalendarDays', visible: true, sort_order: 10 },
+    { id: 'duty-roster', path: '/admin/duty-roster', label_bn: 'ডিউটি রোস্টার', label_en: 'Duty Roster', icon: 'CalendarClock', visible: true, sort_order: 11 },
   ]},
 
   // একাডেমিক
