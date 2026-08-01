@@ -261,16 +261,41 @@ export default function AdminDutyRoster() {
   };
 
   const totals = useMemo(() => {
-    let present = 0, absent = 0, noDuty = 0, pay = 0;
+    let present = 0, absent = 0, noDuty = 0, leave = 0, pay = 0;
     staff.forEach((s) => {
       const st = statusOf(s.id).label;
       if (st === 'উপস্থিত') present++;
       else if (st === 'অনুপস্থিত') absent++;
+      else if (st === 'ছুটি') leave++;
       else if (st.startsWith('ডিউটি নাই')) noDuty++;
       pay += payOf(s.id).total;
     });
-    return { present, absent, noDuty, pay: Math.round(pay * 100) / 100 };
+    return { present, absent, noDuty, leave, pay: Math.round(pay * 100) / 100 };
   }, [staff, rosterMap, attMap, shifts]);
+
+  // শিফট ভিত্তিক হিসাব
+  const shiftSummary = useMemo(() => {
+    return shifts
+      .filter((sh) => sh.is_active)
+      .map((sh) => {
+        let assigned = 0, present = 0, absent = 0, pay = 0;
+        staff.forEach((s) => {
+          const duties = rosterMap.get(s.id) || [];
+          if (!duties.some((d) => d.shift_id === sh.id)) return;
+          assigned++;
+          const att = attMap.get(s.id);
+          const hasAtt = !!att && ['present', 'late'].includes(att.status);
+          if (hasAtt) present++;
+          else if (!att || att.status !== 'leave') absent++;
+          pay += calcDayShiftPay([sh], {
+            attended: hasAtt,
+            checkIn: att?.check_in_time,
+            checkOut: att?.check_out_time,
+          }).total;
+        });
+        return { shift: sh, assigned, present, absent, pay: Math.round(pay * 100) / 100 };
+      });
+  }, [shifts, staff, rosterMap, attMap]);
 
   return (
     <AdminLayout>
@@ -285,13 +310,32 @@ export default function AdminDutyRoster() {
               <p className="text-sm text-muted-foreground">শিফট ভিত্তিক ডিউটি ও হাজিরা</p>
             </div>
           </div>
-          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-auto" />
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">
+              শেষ আপডেট: {dataUpdatedAt ? format(new Date(dataUpdatedAt), 'HH:mm:ss') : '—'}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+              disabled={attFetching}
+              onClick={() => {
+                qc.invalidateQueries({ queryKey: ['duty-roster-attendance', date] });
+                qc.invalidateQueries({ queryKey: ['duty-roster', date] });
+              }}
+            >
+              <RefreshCw className={`mr-1 h-4 w-4 ${attFetching ? 'animate-spin' : ''}`} />
+              রিফ্রেশ
+            </Button>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-auto" />
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
           {[
             { l: 'উপস্থিত', v: totals.present },
             { l: 'অনুপস্থিত', v: totals.absent },
+            { l: 'ছুটি', v: totals.leave },
             { l: 'ডিউটি নাই', v: totals.noDuty },
             { l: 'শিফট ভাতা (৳)', v: totals.pay },
           ].map((c) => (
@@ -303,6 +347,50 @@ export default function AdminDutyRoster() {
             </Card>
           ))}
         </div>
+
+        <Card className="rounded-[38px]">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">শিফট ভিত্তিক হিসাব</CardTitle>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            <table className="w-full min-w-[560px] border-separate border-spacing-y-2 text-sm">
+              <thead>
+                <tr className="text-left text-xs text-muted-foreground">
+                  <th className="px-3">শিফট</th>
+                  <th className="px-3">সময়</th>
+                  <th className="px-3 text-center">বরাদ্দ</th>
+                  <th className="px-3 text-center">উপস্থিত</th>
+                  <th className="px-3 text-center">অনুপস্থিত</th>
+                  <th className="px-3 text-right">ভাতা (৳)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {shiftSummary.map((r) => (
+                  <tr key={r.shift.id} className="rounded-[20px] bg-muted/30">
+                    <td className="rounded-l-[20px] px-3 py-2 font-medium">{r.shift.name_bn}</td>
+                    <td className="px-3 py-2 text-muted-foreground">
+                      {hhmm(r.shift.start_time)}–{hhmm(r.shift.end_time)}
+                    </td>
+                    <td className="px-3 py-2 text-center">{r.assigned}</td>
+                    <td className="px-3 py-2 text-center text-emerald-700">{r.present}</td>
+                    <td className="px-3 py-2 text-center text-rose-700">{r.absent}</td>
+                    <td className="rounded-r-[20px] px-3 py-2 text-right">
+                      {r.shift.pay_amount ? r.pay : <span className="text-xs text-muted-foreground">পে সেটআপ নাই</span>}
+                    </td>
+                  </tr>
+                ))}
+                {shiftSummary.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-3 py-4 text-center text-muted-foreground">
+                      কোনো সক্রিয় শিফট নেই
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+
 
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
