@@ -15,6 +15,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { CalendarClock, Plus, Trash2, Save } from 'lucide-react';
 import { useConfirm } from '@/contexts/ConfirmContext';
+import { calcDayShiftPay } from '@/lib/dutyShiftPay';
 
 interface DutyShift {
   id: string;
@@ -231,11 +232,14 @@ export default function AdminDutyRoster() {
     const duties = rosterMap.get(staffId) || [];
     const att = attMap.get(staffId);
     const hasAtt = !!att && ['present', 'late'].includes(att.status);
-    if (!hasAtt) return 0;
-    return duties.reduce((s, d) => {
-      const sh = shifts.find((x) => x.id === d.shift_id);
-      return s + (sh?.pay_amount || 0);
-    }, 0);
+    const dutyShifts = duties
+      .map((d) => shifts.find((x) => x.id === d.shift_id))
+      .filter(Boolean) as DutyShift[];
+    return calcDayShiftPay(dutyShifts, {
+      attended: hasAtt,
+      checkIn: att?.check_in_time,
+      checkOut: att?.check_out_time,
+    });
   };
 
   const totals = useMemo(() => {
@@ -245,9 +249,9 @@ export default function AdminDutyRoster() {
       if (st === 'উপস্থিত') present++;
       else if (st === 'অনুপস্থিত') absent++;
       else if (st.startsWith('ডিউটি নাই')) noDuty++;
-      pay += payOf(s.id);
+      pay += payOf(s.id).total;
     });
-    return { present, absent, noDuty, pay };
+    return { present, absent, noDuty, pay: Math.round(pay * 100) / 100 };
   }, [staff, rosterMap, attMap, shifts]);
 
   return (
@@ -336,7 +340,20 @@ export default function AdminDutyRoster() {
                           <td className="px-3 py-2">
                             <span className={`rounded-full px-2 py-1 text-xs font-medium ${st.cls}`}>{st.label}</span>
                           </td>
-                          <td className="rounded-r-[20px] px-3 py-2 text-right">{payOf(s.id) || '—'}</td>
+                          {(() => {
+                            const p = payOf(s.id);
+                            return (
+                              <td className="rounded-r-[20px] px-3 py-2 text-right">
+                                {!p.anyConfigured ? (
+                                  <span className="text-xs text-muted-foreground">পে সেটআপ নাই</span>
+                                ) : (
+                                  <span title={p.lines.map((l) => `${l.shiftName}: ${l.note}`).join(' | ')}>
+                                    {p.total || '—'}
+                                  </span>
+                                )}
+                              </td>
+                            );
+                          })()}
                         </tr>
                       );
                     })}
