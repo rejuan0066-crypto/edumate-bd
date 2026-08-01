@@ -13,9 +13,16 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { CalendarClock, Plus, Trash2, Save, RefreshCw } from 'lucide-react';
+import { CalendarClock, Plus, Trash2, Save, RefreshCw, Lock, Cpu, Hand } from 'lucide-react';
 import { useConfirm } from '@/contexts/ConfirmContext';
 import { calcDayShiftPay } from '@/lib/dutyShiftPay';
+import {
+  machineWindow,
+  isMachineAllowed,
+  isManualAllowed,
+  lateMinutesFor,
+  earlyExitMinutesFor,
+} from '@/lib/dutyMachineWindow';
 
 interface DutyShift {
   id: string;
@@ -25,10 +32,15 @@ interface DutyShift {
   start_time: string;
   end_time: string;
   grace_minutes: number;
+  early_exit_grace_minutes: number;
   pay_amount: number | null;
   pay_type: string | null;
   is_active: boolean;
   sort_order: number;
+  attendance_mode: string;
+  machine_enabled: boolean;
+  machine_open_before_minutes: number;
+  machine_close_after_minutes: number;
 }
 
 interface StaffRow {
@@ -47,6 +59,27 @@ interface RosterRow {
   note: string | null;
 }
 
+interface TemplateRow {
+  id: string;
+  staff_id: string;
+  shift_id: string;
+  weekday: number;
+  is_active: boolean;
+}
+
+interface ShiftAttRow {
+  id: string;
+  staff_id: string;
+  shift_id: string;
+  duty_date: string;
+  status: string;
+  check_in_time: string | null;
+  check_out_time: string | null;
+  source: string;
+}
+
+const WEEKDAYS = ['রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহঃ', 'শুক্র', 'শনি'];
+
 const emptyShift = {
   code: '',
   name_bn: '',
@@ -54,22 +87,35 @@ const emptyShift = {
   start_time: '09:00',
   end_time: '17:00',
   grace_minutes: 0,
+  early_exit_grace_minutes: 0,
   pay_amount: '' as string | number,
   pay_type: 'per_day',
   is_active: true,
   sort_order: 0,
+  attendance_mode: 'both',
+  machine_enabled: false,
+  machine_open_before_minutes: 60,
+  machine_close_after_minutes: 60,
 };
 
-const hhmm = (t?: string | null) => (t ? t.slice(0, 5) : '—');
+const hhmm = (t?: string | null) => (t ? t.slice(0, 5) : '');
+const dash = (t?: string | null) => (t ? t.slice(0, 5) : '—');
+const weekdayOf = (d: string) => {
+  const [y, m, dd] = d.split('-').map(Number);
+  return new Date(y, (m || 1) - 1, dd || 1).getDay();
+};
 
 export default function AdminDutyRoster() {
   const qc = useQueryClient();
   const confirm = useConfirm();
   const [tab, setTab] = useState('roster');
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [showAll, setShowAll] = useState(false);
   const [shiftDialog, setShiftDialog] = useState(false);
   const [editingShift, setEditingShift] = useState<DutyShift | null>(null);
   const [form, setForm] = useState<any>(emptyShift);
+
+  const weekday = weekdayOf(date);
 
   const { data: shifts = [] } = useQuery({
     queryKey: ['duty-shifts'],
@@ -80,9 +126,11 @@ export default function AdminDutyRoster() {
         .is('deleted_at', null)
         .order('sort_order');
       if (error) throw error;
-      return (data || []) as DutyShift[];
+      return (data || []) as unknown as DutyShift[];
     },
   });
+
+  const activeShifts = useMemo(() => shifts.filter((s) => s.is_active), [shifts]);
 
   const { data: staff = [] } = useQuery({
     queryKey: ['duty-roster-staff'],
@@ -98,6 +146,18 @@ export default function AdminDutyRoster() {
     },
   });
 
+  const { data: templates = [] } = useQuery({
+    queryKey: ['duty-weekly-template'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('duty_weekly_template')
+        .select('id, staff_id, shift_id, weekday, is_active')
+        .eq('is_active', true);
+      if (error) throw error;
+      return (data || []) as TemplateRow[];
+    },
+  });
+
   const { data: roster = [] } = useQuery({
     queryKey: ['duty-roster', date],
     queryFn: async () => {
@@ -110,27 +170,25 @@ export default function AdminDutyRoster() {
     },
   });
 
-  const { data: attendance = [], isFetching: attFetching, dataUpdatedAt } = useQuery({
-    queryKey: ['duty-roster-attendance', date],
+  const { data: shiftAtt = [], isFetching: attFetching, dataUpdatedAt } = useQuery({
+    queryKey: ['duty-shift-attendance', date],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('attendance_records')
-        .select('entity_id, status, check_in_time, check_out_time')
-        .eq('entity_type', 'staff')
-        .eq('attendance_date', date);
+        .from('duty_shift_attendance')
+        .select('id, staff_id, shift_id, duty_date, status, check_in_time, check_out_time, source')
+        .eq('duty_date', date);
       if (error) throw error;
-      return data || [];
+      return (data || []) as ShiftAttRow[];
     },
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
   });
 
-  // Live update: any attendance/roster change for this date refreshes the status instantly
   useEffect(() => {
     const channel = supabase
-      .channel(`duty-roster-live-${date}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance_records' }, () => {
-        qc.invalidateQueries({ queryKey: ['duty-roster-attendance', date] });
+      .channel(`duty-live-${date}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'duty_shift_attendance' }, () => {
+        qc.invalidateQueries({ queryKey: ['duty-shift-attendance', date] });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'duty_roster' }, () => {
         qc.invalidateQueries({ queryKey: ['duty-roster', date] });
@@ -142,47 +200,121 @@ export default function AdminDutyRoster() {
   }, [date, qc]);
 
   const attMap = useMemo(() => {
-    const m = new Map<string, any>();
-    attendance.forEach((a: any) => m.set(a.entity_id, a));
+    const m = new Map<string, ShiftAttRow>();
+    shiftAtt.forEach((a) => m.set(`${a.staff_id}|${a.shift_id}`, a));
     return m;
-  }, [attendance]);
+  }, [shiftAtt]);
 
-  const rosterMap = useMemo(() => {
-    const m = new Map<string, RosterRow[]>();
+  /** Explicit day overrides take priority; otherwise the weekly template applies. */
+  const dutyMap = useMemo(() => {
+    const m = new Map<string, Set<string>>();
+    templates
+      .filter((t) => t.weekday === weekday)
+      .forEach((t) => {
+        const set = m.get(t.staff_id) || new Set<string>();
+        set.add(t.shift_id);
+        m.set(t.staff_id, set);
+      });
+    const overridden = new Set(roster.map((r) => r.staff_id));
+    overridden.forEach((sid) => m.delete(sid));
     roster.forEach((r) => {
-      const arr = m.get(r.staff_id) || [];
-      arr.push(r);
-      m.set(r.staff_id, arr);
+      const set = m.get(r.staff_id) || new Set<string>();
+      set.add(r.shift_id);
+      m.set(r.staff_id, set);
     });
     return m;
-  }, [roster]);
+  }, [templates, roster, weekday]);
 
-  const assignMutation = useMutation({
-    mutationFn: async ({ staffId, shiftId }: { staffId: string; shiftId: string }) => {
-      if (shiftId === 'none') {
+  const hasDuty = (staffId: string, shiftId: string) => !!dutyMap.get(staffId)?.has(shiftId);
+  const dutyCount = (staffId: string) => dutyMap.get(staffId)?.size || 0;
+
+  const visibleStaff = useMemo(
+    () => (showAll ? staff : staff.filter((s) => dutyCount(s.id) > 0)),
+    [staff, showAll, dutyMap],
+  );
+
+  // ---- mutations ----
+  const toggleTemplate = useMutation({
+    mutationFn: async ({ staffId, shiftId, wd, on }: { staffId: string; shiftId: string; wd: number; on: boolean }) => {
+      if (on) {
         const { error } = await supabase
-          .from('duty_roster')
+          .from('duty_weekly_template')
+          .upsert({ staff_id: staffId, shift_id: shiftId, weekday: wd, is_active: true }, { onConflict: 'staff_id,shift_id,weekday' });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('duty_weekly_template')
           .delete()
           .eq('staff_id', staffId)
-          .eq('duty_date', date);
+          .eq('shift_id', shiftId)
+          .eq('weekday', wd);
         if (error) throw error;
-        return;
       }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['duty-weekly-template'] }),
+    onError: (e: any) => toast.error(e.message || 'সমস্যা হয়েছে'),
+  });
+
+  /** Day-level override: replaces the template for this staff on this date. */
+  const setDayDuty = useMutation({
+    mutationFn: async ({ staffId, shiftIds }: { staffId: string; shiftIds: string[] }) => {
       const { error: delErr } = await supabase
         .from('duty_roster')
         .delete()
         .eq('staff_id', staffId)
         .eq('duty_date', date);
       if (delErr) throw delErr;
-      const { error } = await supabase
-        .from('duty_roster')
-        .insert({ staff_id: staffId, shift_id: shiftId, duty_date: date });
-      if (error) throw error;
+      if (shiftIds.length) {
+        const { error } = await supabase
+          .from('duty_roster')
+          .insert(shiftIds.map((sid) => ({ staff_id: staffId, shift_id: sid, duty_date: date })));
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['duty-roster', date] });
       toast.success('ডিউটি আপডেট হয়েছে');
     },
+    onError: (e: any) => toast.error(e.message || 'সমস্যা হয়েছে'),
+  });
+
+  const saveAtt = useMutation({
+    mutationFn: async (row: {
+      staffId: string;
+      shiftId: string;
+      status: string;
+      checkIn?: string | null;
+      checkOut?: string | null;
+      source?: string;
+    }) => {
+      const shift = shifts.find((s) => s.id === row.shiftId);
+      if (row.status === 'none') {
+        const { error } = await supabase
+          .from('duty_shift_attendance')
+          .delete()
+          .eq('staff_id', row.staffId)
+          .eq('shift_id', row.shiftId)
+          .eq('duty_date', date);
+        if (error) throw error;
+        return;
+      }
+      const payload = {
+        staff_id: row.staffId,
+        shift_id: row.shiftId,
+        duty_date: date,
+        status: row.status,
+        check_in_time: row.status === 'present' ? row.checkIn || null : null,
+        check_out_time: row.status === 'present' ? row.checkOut || null : null,
+        late_minutes: shift && row.status === 'present' ? lateMinutesFor(shift, row.checkIn) : 0,
+        early_exit_minutes: shift && row.status === 'present' ? earlyExitMinutesFor(shift, row.checkOut) : 0,
+        source: row.source || 'manual',
+      };
+      const { error } = await supabase
+        .from('duty_shift_attendance')
+        .upsert(payload, { onConflict: 'staff_id,shift_id,duty_date' });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['duty-shift-attendance', date] }),
     onError: (e: any) => toast.error(e.message || 'সমস্যা হয়েছে'),
   });
 
@@ -195,10 +327,15 @@ export default function AdminDutyRoster() {
         start_time: form.start_time,
         end_time: form.end_time,
         grace_minutes: Number(form.grace_minutes) || 0,
+        early_exit_grace_minutes: Number(form.early_exit_grace_minutes) || 0,
         pay_amount: form.pay_amount === '' || form.pay_amount === null ? null : Number(form.pay_amount),
         pay_type: form.pay_type || null,
         is_active: !!form.is_active,
         sort_order: Number(form.sort_order) || 0,
+        attendance_mode: form.attendance_mode || 'both',
+        machine_enabled: !!form.machine_enabled,
+        machine_open_before_minutes: Number(form.machine_open_before_minutes) || 0,
+        machine_close_after_minutes: Number(form.machine_close_after_minutes) || 0,
       };
       if (editingShift) {
         const { error } = await supabase.from('duty_shifts').update(payload).eq('id', editingShift.id);
@@ -232,70 +369,67 @@ export default function AdminDutyRoster() {
     },
   });
 
-  const statusOf = (staffId: string) => {
-    const duties = rosterMap.get(staffId) || [];
-    const att = attMap.get(staffId);
-    const hasAtt = !!att && ['present', 'late'].includes(att.status);
-    if (duties.length === 0) {
-      return hasAtt
-        ? { label: 'ডিউটি নাই (হাজিরা আছে)', cls: 'bg-amber-100 text-amber-800' }
-        : { label: 'ডিউটি নাই', cls: 'bg-muted text-muted-foreground' };
-    }
-    if (hasAtt) return { label: 'উপস্থিত', cls: 'bg-emerald-100 text-emerald-800' };
-    if (att && att.status === 'leave') return { label: 'ছুটি', cls: 'bg-sky-100 text-sky-800' };
-    return { label: 'অনুপস্থিত', cls: 'bg-rose-100 text-rose-800' };
-  };
-
-  const payOf = (staffId: string) => {
-    const duties = rosterMap.get(staffId) || [];
-    const att = attMap.get(staffId);
-    const hasAtt = !!att && ['present', 'late'].includes(att.status);
-    const dutyShifts = duties
-      .map((d) => shifts.find((x) => x.id === d.shift_id))
-      .filter(Boolean) as DutyShift[];
-    return calcDayShiftPay(dutyShifts, {
-      attended: hasAtt,
-      checkIn: att?.check_in_time,
-      checkOut: att?.check_out_time,
-    });
+  // ---- derived stats ----
+  const cellStatus = (staffId: string, shift: DutyShift) => {
+    if (!hasDuty(staffId, shift.id)) return 'no_duty';
+    const a = attMap.get(`${staffId}|${shift.id}`);
+    if (!a) return 'absent';
+    return a.status;
   };
 
   const totals = useMemo(() => {
-    let present = 0, absent = 0, noDuty = 0, leave = 0, pay = 0;
+    let present = 0, absent = 0, leave = 0, noDuty = 0, pay = 0;
     staff.forEach((s) => {
-      const st = statusOf(s.id).label;
-      if (st === 'উপস্থিত') present++;
-      else if (st === 'অনুপস্থিত') absent++;
-      else if (st === 'ছুটি') leave++;
-      else if (st.startsWith('ডিউটি নাই')) noDuty++;
-      pay += payOf(s.id).total;
+      if (dutyCount(s.id) === 0) { noDuty++; return; }
+      activeShifts.forEach((sh) => {
+        const st = cellStatus(s.id, sh);
+        if (st === 'no_duty') return;
+        if (st === 'present') {
+          present++;
+          const a = attMap.get(`${s.id}|${sh.id}`);
+          pay += calcDayShiftPay([sh], { attended: true, checkIn: a?.check_in_time, checkOut: a?.check_out_time }).total;
+        } else if (st === 'leave') leave++;
+        else absent++;
+      });
     });
-    return { present, absent, noDuty, leave, pay: Math.round(pay * 100) / 100 };
-  }, [staff, rosterMap, attMap, shifts]);
+    return { present, absent, leave, noDuty, pay: Math.round(pay * 100) / 100 };
+  }, [staff, activeShifts, dutyMap, attMap]);
 
-  // শিফট ভিত্তিক হিসাব
-  const shiftSummary = useMemo(() => {
-    return shifts
-      .filter((sh) => sh.is_active)
-      .map((sh) => {
+  const shiftSummary = useMemo(
+    () =>
+      activeShifts.map((sh) => {
         let assigned = 0, present = 0, absent = 0, pay = 0;
         staff.forEach((s) => {
-          const duties = rosterMap.get(s.id) || [];
-          if (!duties.some((d) => d.shift_id === sh.id)) return;
+          if (!hasDuty(s.id, sh.id)) return;
           assigned++;
-          const att = attMap.get(s.id);
-          const hasAtt = !!att && ['present', 'late'].includes(att.status);
-          if (hasAtt) present++;
-          else if (!att || att.status !== 'leave') absent++;
-          pay += calcDayShiftPay([sh], {
-            attended: hasAtt,
-            checkIn: att?.check_in_time,
-            checkOut: att?.check_out_time,
-          }).total;
+          const st = cellStatus(s.id, sh);
+          if (st === 'present') {
+            present++;
+            const a = attMap.get(`${s.id}|${sh.id}`);
+            pay += calcDayShiftPay([sh], { attended: true, checkIn: a?.check_in_time, checkOut: a?.check_out_time }).total;
+          } else if (st !== 'leave') absent++;
         });
         return { shift: sh, assigned, present, absent, pay: Math.round(pay * 100) / 100 };
+      }),
+    [activeShifts, staff, dutyMap, attMap],
+  );
+
+  const payOfStaff = (staffId: string) => {
+    let total = 0;
+    let configured = false;
+    activeShifts.forEach((sh) => {
+      if (!hasDuty(staffId, sh.id)) return;
+      const a = attMap.get(`${staffId}|${sh.id}`);
+      const res = calcDayShiftPay([sh], {
+        attended: a?.status === 'present',
+        checkIn: a?.check_in_time,
+        checkOut: a?.check_out_time,
       });
-  }, [shifts, staff, rosterMap, attMap]);
+      total += res.total;
+      if (res.anyConfigured) configured = true;
+    });
+    return { total: Math.round(total * 100) / 100, configured };
+  };
 
   return (
     <AdminLayout>
@@ -307,7 +441,9 @@ export default function AdminDutyRoster() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">ডিউটি রোস্টার</h1>
-              <p className="text-sm text-muted-foreground">শিফট ভিত্তিক ডিউটি ও হাজিরা</p>
+              <p className="text-sm text-muted-foreground">
+                {WEEKDAYS[weekday]}বার — শিফট ভিত্তিক ডিউটি ও হাজিরা
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -320,8 +456,9 @@ export default function AdminDutyRoster() {
               className="rounded-full"
               disabled={attFetching}
               onClick={() => {
-                qc.invalidateQueries({ queryKey: ['duty-roster-attendance', date] });
+                qc.invalidateQueries({ queryKey: ['duty-shift-attendance', date] });
                 qc.invalidateQueries({ queryKey: ['duty-roster', date] });
+                qc.invalidateQueries({ queryKey: ['duty-weekly-template'] });
               }}
             >
               <RefreshCw className={`mr-1 h-4 w-4 ${attFetching ? 'animate-spin' : ''}`} />
@@ -333,10 +470,10 @@ export default function AdminDutyRoster() {
 
         <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
           {[
-            { l: 'উপস্থিত', v: totals.present },
-            { l: 'অনুপস্থিত', v: totals.absent },
+            { l: 'উপস্থিত (শিফট)', v: totals.present },
+            { l: 'অনুপস্থিত (শিফট)', v: totals.absent },
             { l: 'ছুটি', v: totals.leave },
-            { l: 'ডিউটি নাই', v: totals.noDuty },
+            { l: 'ডিউটি নাই (স্টাফ)', v: totals.noDuty },
             { l: 'শিফট ভাতা (৳)', v: totals.pay },
           ].map((c) => (
             <Card key={c.l} className="rounded-[28px] border-border/60 backdrop-blur">
@@ -353,11 +490,12 @@ export default function AdminDutyRoster() {
             <CardTitle className="text-base">শিফট ভিত্তিক হিসাব</CardTitle>
           </CardHeader>
           <CardContent className="overflow-x-auto">
-            <table className="w-full min-w-[560px] border-separate border-spacing-y-2 text-sm">
+            <table className="w-full min-w-[620px] border-separate border-spacing-y-2 text-sm">
               <thead>
                 <tr className="text-left text-xs text-muted-foreground">
                   <th className="px-3">শিফট</th>
                   <th className="px-3">সময়</th>
+                  <th className="px-3">মেশিন উইন্ডো</th>
                   <th className="px-3 text-center">বরাদ্দ</th>
                   <th className="px-3 text-center">উপস্থিত</th>
                   <th className="px-3 text-center">অনুপস্থিত</th>
@@ -365,23 +503,29 @@ export default function AdminDutyRoster() {
                 </tr>
               </thead>
               <tbody>
-                {shiftSummary.map((r) => (
-                  <tr key={r.shift.id} className="rounded-[20px] bg-muted/30">
-                    <td className="rounded-l-[20px] px-3 py-2 font-medium">{r.shift.name_bn}</td>
-                    <td className="px-3 py-2 text-muted-foreground">
-                      {hhmm(r.shift.start_time)}–{hhmm(r.shift.end_time)}
-                    </td>
-                    <td className="px-3 py-2 text-center">{r.assigned}</td>
-                    <td className="px-3 py-2 text-center text-emerald-700">{r.present}</td>
-                    <td className="px-3 py-2 text-center text-rose-700">{r.absent}</td>
-                    <td className="rounded-r-[20px] px-3 py-2 text-right">
-                      {r.shift.pay_amount ? r.pay : <span className="text-xs text-muted-foreground">পে সেটআপ নাই</span>}
-                    </td>
-                  </tr>
-                ))}
+                {shiftSummary.map((r) => {
+                  const w = machineWindow(r.shift);
+                  return (
+                    <tr key={r.shift.id} className="rounded-[20px] bg-muted/30">
+                      <td className="rounded-l-[20px] px-3 py-2 font-medium">{r.shift.name_bn}</td>
+                      <td className="px-3 py-2 text-muted-foreground">
+                        {dash(r.shift.start_time)}–{dash(r.shift.end_time)}
+                      </td>
+                      <td className="px-3 py-2 text-xs text-muted-foreground">
+                        {isMachineAllowed(r.shift) && w ? `${w.open} – ${w.close}` : 'বন্ধ'}
+                      </td>
+                      <td className="px-3 py-2 text-center">{r.assigned}</td>
+                      <td className="px-3 py-2 text-center text-emerald-700">{r.present}</td>
+                      <td className="px-3 py-2 text-center text-rose-700">{r.absent}</td>
+                      <td className="rounded-r-[20px] px-3 py-2 text-right">
+                        {r.shift.pay_amount ? r.pay : <span className="text-xs text-muted-foreground">পে সেটআপ নাই</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
                 {shiftSummary.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-3 py-4 text-center text-muted-foreground">
+                    <td colSpan={7} className="px-3 py-4 text-center text-muted-foreground">
                       কোনো সক্রিয় শিফট নেই
                     </td>
                   </tr>
@@ -391,84 +535,227 @@ export default function AdminDutyRoster() {
           </CardContent>
         </Card>
 
-
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
-            <TabsTrigger value="roster">রোস্টার ও হাজিরা</TabsTrigger>
-            <TabsTrigger value="shifts">শিফট ব্যবস্থাপনা</TabsTrigger>
+            <TabsTrigger value="roster">দৈনিক হাজিরা</TabsTrigger>
+            <TabsTrigger value="weekly">সাপ্তাহিক ডিউটি</TabsTrigger>
+            <TabsTrigger value="shifts">শিফট সেটিং</TabsTrigger>
           </TabsList>
 
+          {/* ---------------- Daily attendance ---------------- */}
           <TabsContent value="roster" className="mt-4">
             <Card className="rounded-[38px]">
-              <CardHeader>
-                <CardTitle className="text-base">{date} — ডিউটি তালিকা</CardTitle>
+              <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
+                <CardTitle className="text-base">{date} — ডিউটি ও হাজিরা</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs text-muted-foreground">ডিউটিহীন স্টাফও দেখান</Label>
+                  <Switch checked={showAll} onCheckedChange={setShowAll} />
+                </div>
               </CardHeader>
               <CardContent className="overflow-x-auto">
-                <table className="w-full min-w-[760px] border-separate border-spacing-y-2 text-sm">
+                <table className="w-full min-w-[900px] border-separate border-spacing-y-2 text-sm">
                   <thead>
                     <tr className="text-left text-xs text-muted-foreground">
                       <th className="px-3">নাম</th>
                       <th className="px-3">আইডি</th>
-                      <th className="px-3">ডিউটি শিফট</th>
-                      <th className="px-3">চেক-ইন</th>
-                      <th className="px-3">অবস্থা</th>
+                      {activeShifts.map((sh) => (
+                        <th key={sh.id} className="px-3">
+                          {sh.name_bn}
+                          <span className="block font-normal">
+                            {dash(sh.start_time)}–{dash(sh.end_time)}
+                          </span>
+                        </th>
+                      ))}
                       <th className="px-3 text-right">ভাতা (৳)</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {staff.map((s) => {
-                      const duties = rosterMap.get(s.id) || [];
-                      const att = attMap.get(s.id);
-                      const st = statusOf(s.id);
+                    {visibleStaff.map((s) => {
+                      const pay = payOfStaff(s.id);
                       return (
-                        <tr key={s.id} className="rounded-[20px] bg-muted/30 transition hover:-translate-y-[3px]">
+                        <tr key={s.id} className="rounded-[20px] bg-muted/30 align-top">
                           <td className="rounded-l-[20px] px-3 py-2 font-medium">{s.name_bn}</td>
                           <td className="px-3 py-2 text-muted-foreground">{s.staff_id || '—'}</td>
-                          <td className="px-3 py-2">
-                            <Select
-                              value={duties[0]?.shift_id || 'none'}
-                              onValueChange={(v) => assignMutation.mutate({ staffId: s.id, shiftId: v })}
-                            >
-                              <SelectTrigger className="h-8 w-[180px]">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="none">ডিউটি নাই</SelectItem>
-                                {shifts.filter((x) => x.is_active).map((sh) => (
-                                  <SelectItem key={sh.id} value={sh.id}>
-                                    {sh.name_bn} ({hhmm(sh.start_time)}–{hhmm(sh.end_time)})
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </td>
-                          <td className="px-3 py-2">{hhmm(att?.check_in_time)}</td>
-                          <td className="px-3 py-2">
-                            <span className={`rounded-full px-2 py-1 text-xs font-medium ${st.cls}`}>{st.label}</span>
-                          </td>
-                          {(() => {
-                            const p = payOf(s.id);
+                          {activeShifts.map((sh) => {
+                            const duty = hasDuty(s.id, sh.id);
+                            const a = attMap.get(`${s.id}|${sh.id}`);
+                            if (!duty) {
+                              return (
+                                <td key={sh.id} className="px-3 py-2">
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <Lock className="h-3 w-3" /> ডিউটি নাই
+                                    <button
+                                      className="ml-1 underline"
+                                      onClick={() => {
+                                        const cur = Array.from(dutyMap.get(s.id) || []);
+                                        setDayDuty.mutate({ staffId: s.id, shiftIds: [...cur, sh.id] });
+                                      }}
+                                    >
+                                      যোগ
+                                    </button>
+                                  </div>
+                                </td>
+                              );
+                            }
+                            const late = a?.status === 'present' ? lateMinutesFor(sh, a?.check_in_time) : 0;
+                            const early = a?.status === 'present' ? earlyExitMinutesFor(sh, a?.check_out_time) : 0;
                             return (
-                              <td className="rounded-r-[20px] px-3 py-2 text-right">
-                                {!p.anyConfigured ? (
-                                  <span className="text-xs text-muted-foreground">পে সেটআপ নাই</span>
-                                ) : (
-                                  <span title={p.lines.map((l) => `${l.shiftName}: ${l.note}`).join(' | ')}>
-                                    {p.total || '—'}
-                                  </span>
-                                )}
+                              <td key={sh.id} className="px-3 py-2">
+                                <div className="space-y-1">
+                                  <Select
+                                    value={a?.status || 'absent'}
+                                    onValueChange={(v) =>
+                                      saveAtt.mutate({
+                                        staffId: s.id,
+                                        shiftId: sh.id,
+                                        status: v,
+                                        checkIn: a?.check_in_time || (v === 'present' ? hhmm(sh.start_time) : null),
+                                        checkOut: a?.check_out_time || (v === 'present' ? hhmm(sh.end_time) : null),
+                                        source: a?.source || 'manual',
+                                      })
+                                    }
+                                    disabled={!isManualAllowed(sh)}
+                                  >
+                                    <SelectTrigger className="h-8 w-[130px]">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="present">উপস্থিত</SelectItem>
+                                      <SelectItem value="absent">অনুপস্থিত</SelectItem>
+                                      <SelectItem value="leave">ছুটি</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  {a?.status === 'present' && (
+                                    <div className="flex items-center gap-1">
+                                      <Input
+                                        type="time"
+                                        className="h-7 w-[92px] px-1 text-xs"
+                                        value={hhmm(a?.check_in_time)}
+                                        onChange={(e) =>
+                                          saveAtt.mutate({
+                                            staffId: s.id,
+                                            shiftId: sh.id,
+                                            status: 'present',
+                                            checkIn: e.target.value,
+                                            checkOut: a?.check_out_time,
+                                            source: a?.source,
+                                          })
+                                        }
+                                      />
+                                      <Input
+                                        type="time"
+                                        className="h-7 w-[92px] px-1 text-xs"
+                                        value={hhmm(a?.check_out_time)}
+                                        onChange={(e) =>
+                                          saveAtt.mutate({
+                                            staffId: s.id,
+                                            shiftId: sh.id,
+                                            status: 'present',
+                                            checkIn: a?.check_in_time,
+                                            checkOut: e.target.value,
+                                            source: a?.source,
+                                          })
+                                        }
+                                      />
+                                    </div>
+                                  )}
+                                  <div className="flex flex-wrap items-center gap-1 text-[10px]">
+                                    {a?.source === 'machine' ? (
+                                      <span className="inline-flex items-center gap-1 text-sky-700">
+                                        <Cpu className="h-3 w-3" /> মেশিন
+                                      </span>
+                                    ) : a ? (
+                                      <span className="inline-flex items-center gap-1 text-muted-foreground">
+                                        <Hand className="h-3 w-3" /> ম্যানুয়াল
+                                      </span>
+                                    ) : (
+                                      <span className="text-rose-700">হাজিরা নাই</span>
+                                    )}
+                                    {late > 0 && <span className="text-amber-700">↓{late}মিঃ</span>}
+                                    {early > 0 && <span className="text-amber-700">↑{early}মিঃ</span>}
+                                  </div>
+                                </div>
                               </td>
                             );
-                          })()}
+                          })}
+                          <td className="rounded-r-[20px] px-3 py-2 text-right">
+                            {pay.configured ? pay.total : <span className="text-xs text-muted-foreground">পে সেটআপ নাই</span>}
+                          </td>
                         </tr>
                       );
                     })}
+                    {visibleStaff.length === 0 && (
+                      <tr>
+                        <td colSpan={activeShifts.length + 3} className="px-3 py-6 text-center text-muted-foreground">
+                          আজ কারও ডিউটি নেই — সাপ্তাহিক ডিউটি ট্যাব থেকে সেট করুন
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </CardContent>
             </Card>
           </TabsContent>
 
+          {/* ---------------- Weekly template ---------------- */}
+          <TabsContent value="weekly" className="mt-4">
+            <Card className="rounded-[38px]">
+              <CardHeader>
+                <CardTitle className="text-base">কোন বারে কার কোন ডিউটি</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  এখানে সেট করা ডিউটি প্রতি সপ্তাহে স্বয়ংক্রিয়ভাবে প্রযোজ্য হবে। কোনো নির্দিষ্ট তারিখে ভিন্ন হলে দৈনিক ট্যাব থেকে বদলানো যাবে।
+                </p>
+              </CardHeader>
+              <CardContent className="overflow-x-auto">
+                <table className="w-full min-w-[1000px] border-separate border-spacing-y-2 text-sm">
+                  <thead>
+                    <tr className="text-left text-xs text-muted-foreground">
+                      <th className="px-3">নাম</th>
+                      {WEEKDAYS.map((w) => (
+                        <th key={w} className="px-2 text-center">{w}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {staff.map((s) => (
+                      <tr key={s.id} className="rounded-[20px] bg-muted/30">
+                        <td className="rounded-l-[20px] px-3 py-2 font-medium">{s.name_bn}</td>
+                        {WEEKDAYS.map((_, wd) => (
+                          <td key={wd} className="px-2 py-2">
+                            <div className="flex flex-col gap-1">
+                              {activeShifts.map((sh) => {
+                                const on = templates.some(
+                                  (t) => t.staff_id === s.id && t.shift_id === sh.id && t.weekday === wd,
+                                );
+                                return (
+                                  <button
+                                    key={sh.id}
+                                    onClick={() =>
+                                      toggleTemplate.mutate({ staffId: s.id, shiftId: sh.id, wd, on: !on })
+                                    }
+                                    className={`rounded-full px-2 py-1 text-[11px] font-medium transition ${
+                                      on
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-background text-muted-foreground hover:bg-accent'
+                                    }`}
+                                  >
+                                    {sh.name_bn}
+                                  </button>
+                                );
+                              })}
+                              {activeShifts.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
+                            </div>
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ---------------- Shift settings ---------------- */}
           <TabsContent value="shifts" className="mt-4">
             <Card className="rounded-[38px]">
               <CardHeader className="flex flex-row items-center justify-between">
@@ -481,64 +768,79 @@ export default function AdminDutyRoster() {
                     setShiftDialog(true);
                   }}
                 >
-                  <Plus className="mr-1 h-4 w-4" /> নতুন শিফট
+                  <Plus className="mr-1 h-4 w-4" /> নতুন ডিউটি/শিফট
                 </Button>
               </CardHeader>
               <CardContent className="overflow-x-auto">
-                <table className="w-full min-w-[700px] border-separate border-spacing-y-2 text-sm">
+                <table className="w-full min-w-[860px] border-separate border-spacing-y-2 text-sm">
                   <thead>
                     <tr className="text-left text-xs text-muted-foreground">
                       <th className="px-3">নাম</th>
                       <th className="px-3">সময়</th>
                       <th className="px-3">গ্রেস (মিঃ)</th>
+                      <th className="px-3">হাজিরার ধরন</th>
+                      <th className="px-3">মেশিন উইন্ডো</th>
                       <th className="px-3">ভাতা</th>
                       <th className="px-3">সক্রিয়</th>
                       <th className="px-3 text-right">অ্যাকশন</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {shifts.map((sh) => (
-                      <tr key={sh.id} className="rounded-[20px] bg-muted/30">
-                        <td className="rounded-l-[20px] px-3 py-2 font-medium">{sh.name_bn}</td>
-                        <td className="px-3 py-2">{hhmm(sh.start_time)} – {hhmm(sh.end_time)}</td>
-                        <td className="px-3 py-2">{sh.grace_minutes}</td>
-                        <td className="px-3 py-2">
-                          {sh.pay_amount ? `৳${sh.pay_amount} / ${sh.pay_type}` : '—'}
-                        </td>
-                        <td className="px-3 py-2">
-                          <Badge variant={sh.is_active ? 'default' : 'secondary'}>
-                            {sh.is_active ? 'হ্যাঁ' : 'না'}
-                          </Badge>
-                        </td>
-                        <td className="rounded-r-[20px] px-3 py-2 text-right">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              setEditingShift(sh);
-                              setForm({ ...sh, pay_amount: sh.pay_amount ?? '', name_en: sh.name_en ?? '' });
-                              setShiftDialog(true);
-                            }}
-                          >
-                            সম্পাদনা
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={async () => {
-                              const ok = await confirm({
-                                title: 'শিফট মুছবেন?',
-                                description: `${sh.name_bn} শিফটটি মুছে ফেলা হবে।`,
-                                variant: 'destructive',
-                              });
-                              if (ok) deleteShift.mutate(sh.id);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
+                    {shifts.map((sh) => {
+                      const w = machineWindow(sh);
+                      return (
+                        <tr key={sh.id} className="rounded-[20px] bg-muted/30">
+                          <td className="rounded-l-[20px] px-3 py-2 font-medium">{sh.name_bn}</td>
+                          <td className="px-3 py-2">{dash(sh.start_time)} – {dash(sh.end_time)}</td>
+                          <td className="px-3 py-2">
+                            ↓{sh.grace_minutes} / ↑{sh.early_exit_grace_minutes}
+                          </td>
+                          <td className="px-3 py-2">
+                            {sh.attendance_mode === 'machine' ? 'শুধু মেশিন' : sh.attendance_mode === 'manual' ? 'শুধু ম্যানুয়াল' : 'উভয়'}
+                          </td>
+                          <td className="px-3 py-2 text-xs text-muted-foreground">
+                            {isMachineAllowed(sh) && w ? `${w.open} – ${w.close}` : 'বন্ধ'}
+                          </td>
+                          <td className="px-3 py-2">{sh.pay_amount ? `৳${sh.pay_amount} / ${sh.pay_type}` : '—'}</td>
+                          <td className="px-3 py-2">
+                            <Badge variant={sh.is_active ? 'default' : 'secondary'}>{sh.is_active ? 'হ্যাঁ' : 'না'}</Badge>
+                          </td>
+                          <td className="rounded-r-[20px] px-3 py-2 text-right">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setEditingShift(sh);
+                                setForm({
+                                  ...sh,
+                                  pay_amount: sh.pay_amount ?? '',
+                                  name_en: sh.name_en ?? '',
+                                  start_time: hhmm(sh.start_time),
+                                  end_time: hhmm(sh.end_time),
+                                });
+                                setShiftDialog(true);
+                              }}
+                            >
+                              সম্পাদনা
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={async () => {
+                                const ok = await confirm({
+                                  title: 'শিফট মুছবেন?',
+                                  description: `${sh.name_bn} শিফটটি মুছে ফেলা হবে।`,
+                                  variant: 'destructive',
+                                });
+                                if (ok) deleteShift.mutate(sh.id);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </CardContent>
@@ -549,11 +851,11 @@ export default function AdminDutyRoster() {
         <Dialog open={shiftDialog} onOpenChange={setShiftDialog}>
           <DialogContent className="max-h-[85vh] overflow-y-auto rounded-[38px]">
             <DialogHeader>
-              <DialogTitle>{editingShift ? 'শিফট সম্পাদনা' : 'নতুন শিফট'}</DialogTitle>
+              <DialogTitle>{editingShift ? 'শিফট সম্পাদনা' : 'নতুন ডিউটি/শিফট'}</DialogTitle>
             </DialogHeader>
             <div className="grid gap-3">
               <div>
-                <Label>শিফটের নাম</Label>
+                <Label>ডিউটির নাম</Label>
                 <Input value={form.name_bn} onChange={(e) => setForm({ ...form, name_bn: e.target.value })} />
               </div>
               <div>
@@ -572,13 +874,63 @@ export default function AdminDutyRoster() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>গ্রেস (মিনিট)</Label>
+                  <Label>বিলম্ব গ্রেস (মিনিট)</Label>
                   <Input type="text" inputMode="numeric" value={form.grace_minutes} onChange={(e) => setForm({ ...form, grace_minutes: e.target.value })} />
+                </div>
+                <div>
+                  <Label>আগাম প্রস্থান গ্রেস (মিনিট)</Label>
+                  <Input type="text" inputMode="numeric" value={form.early_exit_grace_minutes} onChange={(e) => setForm({ ...form, early_exit_grace_minutes: e.target.value })} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>হাজিরার ধরন</Label>
+                  <Select value={form.attendance_mode || 'both'} onValueChange={(v) => setForm({ ...form, attendance_mode: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="both">ম্যানুয়াল + মেশিন</SelectItem>
+                      <SelectItem value="manual">শুধু ম্যানুয়াল</SelectItem>
+                      <SelectItem value="machine">শুধু মেশিন</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label>ক্রম</Label>
                   <Input type="text" inputMode="numeric" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: e.target.value })} />
                 </div>
+              </div>
+              <div className="space-y-3 rounded-2xl border p-3">
+                <div className="flex items-center justify-between">
+                  <Label>মেশিন হাজিরা চালু</Label>
+                  <Switch checked={!!form.machine_enabled} onCheckedChange={(v) => setForm({ ...form, machine_enabled: v })} />
+                </div>
+                {form.machine_enabled && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">শুরুর কত মিনিট আগে চালু</Label>
+                      <Input type="text" inputMode="numeric" value={form.machine_open_before_minutes} onChange={(e) => setForm({ ...form, machine_open_before_minutes: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">শেষের কত মিনিট পরে বন্ধ</Label>
+                      <Input type="text" inputMode="numeric" value={form.machine_close_after_minutes} onChange={(e) => setForm({ ...form, machine_close_after_minutes: e.target.value })} />
+                    </div>
+                  </div>
+                )}
+                {form.machine_enabled && (
+                  <p className="text-xs text-muted-foreground">
+                    উইন্ডো: {machineWindow({
+                      start_time: form.start_time,
+                      end_time: form.end_time,
+                      machine_open_before_minutes: Number(form.machine_open_before_minutes) || 0,
+                      machine_close_after_minutes: Number(form.machine_close_after_minutes) || 0,
+                    })?.open} – {machineWindow({
+                      start_time: form.start_time,
+                      end_time: form.end_time,
+                      machine_open_before_minutes: Number(form.machine_open_before_minutes) || 0,
+                      machine_close_after_minutes: Number(form.machine_close_after_minutes) || 0,
+                    })?.close}
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
