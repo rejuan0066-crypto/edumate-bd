@@ -735,7 +735,7 @@ export default function AdminDutyRoster() {
                       <tr>
                         <td colSpan={activeShifts.length + 3} className="px-3 py-6 text-center text-muted-foreground">
                           <div className="flex flex-col items-center gap-3">
-                            <span>আজ কারও ডিউটি নেই</span>
+                            <span>{WEEKDAYS[weekday]}বারে কারও ডিউটি সেট করা নেই — সাপ্তাহিক সেটআপে এই বারে নাম যোগ করলেই এখানে দেখাবে</span>
                             <div className="flex flex-wrap justify-center gap-2">
                               <Button size="sm" onClick={() => setTab('weekly')}>
                                 সাপ্তাহিক ডিউটি সেটআপ
