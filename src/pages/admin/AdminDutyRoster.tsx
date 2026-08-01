@@ -854,6 +854,11 @@ export default function AdminDutyRoster() {
                               return (
                                 <button
                                   key={sh.id}
+                                  title={
+                                    allOn
+                                      ? `${s.name_bn} — সব বারে ${sh.name_bn} শিফট বন্ধ করুন`
+                                      : `${s.name_bn} — সপ্তাহের সব বারে ${sh.name_bn} (${hhmm(sh.start_time)}–${hhmm(sh.end_time)}) শিফট প্রয়োগ করুন`
+                                  }
                                   onClick={() =>
                                     WEEKDAYS.forEach((_, wd) =>
                                       toggleTemplate.mutate({ staffId: s.id, shiftId: sh.id, wd, on: !allOn }),
