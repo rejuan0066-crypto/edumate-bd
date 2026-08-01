@@ -621,7 +621,17 @@ export default function AdminDutyRoster() {
                       const pay = payOfStaff(s.id);
                       return (
                         <tr key={s.id} className="rounded-[20px] bg-muted/30 align-top">
-                          <td className="rounded-l-[20px] px-3 py-2 font-medium">{s.name_bn}</td>
+                          <td className="rounded-l-[20px] px-3 py-2 font-medium">
+                            {s.name_bn}
+                            {roster.some((r) => r.staff_id === s.id) && (
+                              <span
+                                className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-normal text-amber-800"
+                                title="সাপ্তাহিক সেটআপে নেই — শুধু এই তারিখের জন্য ডিউটি দেওয়া হয়েছে"
+                              >
+                                এই দিনের বিশেষ ডিউটি
+                              </span>
+                            )}
+                          </td>
                           <td className="px-3 py-2 text-muted-foreground">{s.staff_id || '—'}</td>
                           {activeShifts.map((sh) => {
                             const duty = hasDuty(s.id, sh.id);
