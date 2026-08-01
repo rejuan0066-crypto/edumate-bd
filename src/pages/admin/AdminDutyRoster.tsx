@@ -15,6 +15,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { CalendarClock, Plus, Trash2, Save, RefreshCw, Lock, Cpu, Hand } from 'lucide-react';
 import { useConfirm } from '@/contexts/ConfirmContext';
+import DutyChangeAuditTab from '@/components/duty/DutyChangeAuditTab';
 import { calcDayShiftPay } from '@/lib/dutyShiftPay';
 import {
   machineWindow,
@@ -564,7 +565,18 @@ export default function AdminDutyRoster() {
             >
               শিফট ও মেশিন সেটআপ
             </TabsTrigger>
+            <TabsTrigger
+              value="audit"
+              className="rounded-[18px] px-5 py-2.5 text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg"
+            >
+              পরিবর্তনের লগ
+            </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="audit" className="mt-4">
+            <DutyChangeAuditTab />
+          </TabsContent>
+
 
 
           {/* ---------------- Daily attendance ---------------- */}
