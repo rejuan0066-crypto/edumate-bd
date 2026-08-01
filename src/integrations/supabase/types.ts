@@ -2261,6 +2261,63 @@ export type Database = {
         }
         Relationships: []
       }
+      duty_change_audit: {
+        Row: {
+          action: string
+          changed_by: string | null
+          changed_by_name: string | null
+          created_at: string
+          duty_date: string | null
+          id: string
+          ip_address: string | null
+          new_value: Json | null
+          old_value: Json | null
+          shift_id: string | null
+          shift_name: string | null
+          source: string
+          staff_id: string | null
+          staff_name: string | null
+          user_agent: string | null
+          weekday: number | null
+        }
+        Insert: {
+          action: string
+          changed_by?: string | null
+          changed_by_name?: string | null
+          created_at?: string
+          duty_date?: string | null
+          id?: string
+          ip_address?: string | null
+          new_value?: Json | null
+          old_value?: Json | null
+          shift_id?: string | null
+          shift_name?: string | null
+          source: string
+          staff_id?: string | null
+          staff_name?: string | null
+          user_agent?: string | null
+          weekday?: number | null
+        }
+        Update: {
+          action?: string
+          changed_by?: string | null
+          changed_by_name?: string | null
+          created_at?: string
+          duty_date?: string | null
+          id?: string
+          ip_address?: string | null
+          new_value?: Json | null
+          old_value?: Json | null
+          shift_id?: string | null
+          shift_name?: string | null
+          source?: string
+          staff_id?: string | null
+          staff_name?: string | null
+          user_agent?: string | null
+          weekday?: number | null
+        }
+        Relationships: []
+      }
       duty_roster: {
         Row: {
           created_at: string
