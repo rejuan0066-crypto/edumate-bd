@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -53,6 +53,9 @@ export default function MonthlyDutyTab({
   const confirm = useConfirm();
   const [month, setMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [search, setSearch] = useState('');
+  const [autoApply, setAutoApply] = useState(
+    () => (typeof localStorage !== 'undefined' ? localStorage.getItem('duty_monthly_auto_apply') !== 'off' : true),
+  );
   const activeShifts = useMemo(() => shifts.filter((s) => s.is_active), [shifts]);
   const [shiftId, setShiftId] = useState<string>('');
   const currentShift = activeShifts.find((s) => s.id === (shiftId || activeShifts[0]?.id));
@@ -71,7 +74,7 @@ export default function MonthlyDutyTab({
   const monthStart = `${month}-01`;
   const monthEnd = `${month}-${pad(daysInMonth)}`;
 
-  const { data: roster = [] } = useQuery({
+  const { data: roster = [], isSuccess: rosterLoaded } = useQuery({
     queryKey: ['duty-roster-month', month],
     queryFn: async () => {
       const { data, error } = await supabase
