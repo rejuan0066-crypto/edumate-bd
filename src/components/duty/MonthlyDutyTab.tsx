@@ -217,17 +217,46 @@ export default function MonthlyDutyTab({
     onError: (e: any) => toast.error(e.message || 'সমস্যা হয়েছে'),
   });
 
-  /** Auto-map the weekly pattern onto a freshly selected month that has no day rows yet. */
+  /** Signature of the weekly pattern — changes whenever any template row changes. */
+  const tplSignature = useMemo(
+    () =>
+      templates
+        .map((t) => `${t.staff_id}:${t.weekday}:${t.shift_id}`)
+        .sort()
+        .join('|'),
+    [templates],
+  );
+
+  /**
+   * Auto-map the weekly pattern onto the month:
+   * - a freshly selected month with no day rows yet, or
+   * - any month whose applied pattern is older than the current weekly setup.
+   */
   const autoDone = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!autoApply || !rosterLoaded) return;
-    if (roster.length > 0) return;
     if (templates.length === 0 || staff.length === 0) return;
-    if (autoDone.current.has(month)) return;
-    autoDone.current.add(month);
-    applyTemplateMonth.mutate();
+    const sigKey = `duty_tpl_sig:${month}`;
+    const appliedSig = typeof localStorage !== 'undefined' ? localStorage.getItem(sigKey) : null;
+    const stale = appliedSig !== null && appliedSig !== tplSignature;
+    const fresh = roster.length === 0 && appliedSig === null;
+    if (!stale && !fresh) return;
+    const doneKey = `${month}::${tplSignature}`;
+    if (autoDone.current.has(doneKey)) return;
+    autoDone.current.add(doneKey);
+    applyTemplateMonth.mutate(undefined, {
+      onSuccess: () => {
+        try {
+          localStorage.setItem(sigKey, tplSignature);
+        } catch {
+          /* ignore */
+        }
+        if (stale) toast.info('সাপ্তাহিক প্যাটার্ন পরিবর্তনের পর মাসে পুনরায় প্রয়োগ হয়েছে');
+      },
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoApply, rosterLoaded, roster.length, templates.length, staff.length, month]);
+  }, [autoApply, rosterLoaded, roster.length, templates.length, staff.length, month, tplSignature]);
+
 
 
 
