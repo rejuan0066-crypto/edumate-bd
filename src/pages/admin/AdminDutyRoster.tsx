@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { CalendarClock, Plus, Trash2, Save, RefreshCw, Lock, Cpu, Hand } from 'lucide-react';
 import { useConfirm } from '@/contexts/ConfirmContext';
 import DutyChangeAuditTab from '@/components/duty/DutyChangeAuditTab';
+import MonthlyDutyTab from '@/components/duty/MonthlyDutyTab';
 import { calcDayShiftPay } from '@/lib/dutyShiftPay';
 import {
   machineWindow,
@@ -560,6 +561,12 @@ export default function AdminDutyRoster() {
               সাপ্তাহিক ডিউটি সেটআপ
             </TabsTrigger>
             <TabsTrigger
+              value="monthly"
+              className="rounded-[18px] px-5 py-2.5 text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg"
+            >
+              মাসিক ডিউটি সেটআপ
+            </TabsTrigger>
+            <TabsTrigger
               value="shifts"
               className="rounded-[18px] px-5 py-2.5 text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg"
             >
@@ -575,6 +582,10 @@ export default function AdminDutyRoster() {
 
           <TabsContent value="audit" className="mt-4">
             <DutyChangeAuditTab />
+          </TabsContent>
+
+          <TabsContent value="monthly" className="mt-4">
+            <MonthlyDutyTab shifts={shifts as any} staff={staff as any} templates={templates as any} />
           </TabsContent>
 
 
