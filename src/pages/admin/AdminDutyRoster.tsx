@@ -17,6 +17,7 @@ import { CalendarClock, Plus, Trash2, Save, RefreshCw, Lock, Cpu, Hand } from 'l
 import { useConfirm } from '@/contexts/ConfirmContext';
 import DutyChangeAuditTab from '@/components/duty/DutyChangeAuditTab';
 import MonthlyDutyTab from '@/components/duty/MonthlyDutyTab';
+import MachineAttendanceTab from '@/components/duty/MachineAttendanceTab';
 import { calcDayShiftPay } from '@/lib/dutyShiftPay';
 import {
   machineWindow,
