@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CalendarRange, Wand2, Eraser } from 'lucide-react';
@@ -53,6 +54,9 @@ export default function MonthlyDutyTab({
   const confirm = useConfirm();
   const [month, setMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [search, setSearch] = useState('');
+  const [autoApply, setAutoApply] = useState(
+    () => (typeof localStorage !== 'undefined' ? localStorage.getItem('duty_monthly_auto_apply') !== 'off' : true),
+  );
   const activeShifts = useMemo(() => shifts.filter((s) => s.is_active), [shifts]);
   const [shiftId, setShiftId] = useState<string>('');
   const currentShift = activeShifts.find((s) => s.id === (shiftId || activeShifts[0]?.id));
@@ -71,7 +75,7 @@ export default function MonthlyDutyTab({
   const monthStart = `${month}-01`;
   const monthEnd = `${month}-${pad(daysInMonth)}`;
 
-  const { data: roster = [] } = useQuery({
+  const { data: roster = [], isSuccess: rosterLoaded } = useQuery({
     queryKey: ['duty-roster-month', month],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -213,6 +217,20 @@ export default function MonthlyDutyTab({
     onError: (e: any) => toast.error(e.message || 'সমস্যা হয়েছে'),
   });
 
+  /** Auto-map the weekly pattern onto a freshly selected month that has no day rows yet. */
+  const autoDone = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!autoApply || !rosterLoaded) return;
+    if (roster.length > 0) return;
+    if (templates.length === 0 || staff.length === 0) return;
+    if (autoDone.current.has(month)) return;
+    autoDone.current.add(month);
+    applyTemplateMonth.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoApply, rosterLoaded, roster.length, templates.length, staff.length, month]);
+
+
+
   const clearMonth = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
@@ -292,10 +310,22 @@ export default function MonthlyDutyTab({
             <Label className="text-xs text-muted-foreground">স্টাফ খুঁজুন</Label>
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="নাম / আইডি" className="h-9 w-52 rounded-full" />
           </div>
+          <div className="flex items-center gap-2 pb-1">
+            <Switch
+              checked={autoApply}
+              onCheckedChange={(v) => {
+                setAutoApply(v);
+                localStorage.setItem('duty_monthly_auto_apply', v ? 'on' : 'off');
+              }}
+            />
+            <Label className="text-xs text-muted-foreground">মাস নির্বাচনে সাপ্তাহিক ছক অটো-প্রয়োগ</Label>
+          </div>
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
-          ঘরে ক্লিক করলে নির্বাচিত শিফটের ডিউটি চালু (✓) / বন্ধ হবে। সাপ্তাহিক ছক থেকে আসা ডিউটি হালকা রঙে দেখাবে।
+          অটো-প্রয়োগ চালু থাকলে যে মাসে এখনো কোনো দিন-ভিত্তিক ডিউটি নেই, সেই মাস নির্বাচন করলেই সাপ্তাহিক ছক পুরো মাসে বসে যাবে (আগের সেট করা মাস অক্ষত থাকে)।
+          ঘরে ক্লিক করলে নির্বাচিত শিফটের ডিউটি চালু (✓) / বন্ধ হবে।
         </p>
+
       </CardHeader>
       <CardContent className="overflow-x-auto">
         <table className="w-full border-separate border-spacing-y-1 text-xs">
