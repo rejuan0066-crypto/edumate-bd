@@ -366,12 +366,12 @@ const App = () => (
 
                   <Route path="/admin" element={<AdminShell />}>
                     <Route index element={<Dashboard />} />
-                    <Route path="analytics" element={<AdminAnalytics />} />
-                    <Route path="bulk-import" element={<AdminBulkImport />} />
-                    <Route path="hostel" element={<AdminHostel />} />
-                    <Route path="health-records" element={<AdminHealthRecords />} />
-                    <Route path="committees" element={<AdminCommittees />} />
-                    <Route path="committee-audit-log" element={<AdminCommitteeAuditLog />} />
+                    <Route path="analytics" element={<ModuleGuard menuPath="/admin/analytics"><AdminAnalytics /></ModuleGuard>} />
+                    <Route path="bulk-import" element={<ModuleGuard menuPath="/admin/bulk-import"><AdminBulkImport /></ModuleGuard>} />
+                    <Route path="hostel" element={<ModuleGuard menuPath="/admin/hostel"><AdminHostel /></ModuleGuard>} />
+                    <Route path="health-records" element={<ModuleGuard menuPath="/admin/health-records"><AdminHealthRecords /></ModuleGuard>} />
+                    <Route path="committees" element={<ModuleGuard menuPath="/admin/committees"><AdminCommittees /></ModuleGuard>} />
+                    <Route path="committee-audit-log" element={<ModuleGuard menuPath="/admin/committee-audit-log"><AdminCommitteeAuditLog /></ModuleGuard>} />
                     <Route path="students" element={<ModuleGuard menuPath="/admin/students"><AdminStudents /></ModuleGuard>} />
                     <Route path="staff" element={<ModuleGuard menuPath="/admin/staff"><AdminStaff staffType="all" /></ModuleGuard>} />
                     <Route path="staff/add" element={<ModuleGuard action="add" menuPath="/admin/staff"><AdminStaffForm /></ModuleGuard>} />
@@ -404,99 +404,99 @@ const App = () => (
                     <Route path="fee-types" element={<ModuleGuard menuPath="/admin/fee-types"><AdminFeeTypes /></ModuleGuard>} />
                     <Route path="fee-categories" element={<ModuleGuard menuPath="/admin/fee-categories"><AdminFeeCategories /></ModuleGuard>} />
                     <Route path="student-categories" element={<ModuleGuard menuPath="/admin/student-categories"><AdminStudentCategories /></ModuleGuard>} />
-                    <Route path="website" element={<AdminWebsite />} />
+                    <Route path="website" element={<ModuleGuard menuPath="/admin/website"><AdminWebsite /></ModuleGuard>} />
                     <Route path="expenses" element={<ModuleGuard menuPath="/admin/expenses"><AdminExpenses /></ModuleGuard>} />
                     <Route path="donors" element={<ModuleGuard menuPath="/admin/donors"><AdminDonors /></ModuleGuard>} />
                     <Route path="verified-payments" element={<ModuleGuard menuPath="/admin/donors"><AdminVerifiedPayments /></ModuleGuard>} />
                     <Route path="profile" element={<AdminProfile />} />
                     <Route path="fee-receipts" element={<ModuleGuard menuPath="/admin/fee-receipts"><AdminFeeReceipts /></ModuleGuard>} />
                     <Route path="fee-payments-fix" element={<ModuleGuard menuPath="/admin/fee-receipts"><AdminFeePaymentsFix /></ModuleGuard>} />
-                    <Route path="receipt-audit" element={<AdminReceiptStatusAudit />} />
-                    <Route path="resign-letters" element={<AdminResignLetters />} />
-                    <Route path="joining-letters" element={<AdminJoiningLetters />} />
-                    <Route path="admission-letters" element={<AdminAdmissionLetters />} />
-                    <Route path="student-certificates" element={<AdminCertificates />} />
-                    <Route path="designations" element={<AdminDesignations />} />
-                    <Route path="translations" element={<AdminTranslations />} />
-                    <Route path="form-builder" element={<AdminFormBuilder />} />
+                    <Route path="receipt-audit" element={<ModuleGuard menuPath="/admin/receipt-audit"><AdminReceiptStatusAudit /></ModuleGuard>} />
+                    <Route path="resign-letters" element={<ModuleGuard menuPath="/admin/resign-letters"><AdminResignLetters /></ModuleGuard>} />
+                    <Route path="joining-letters" element={<ModuleGuard menuPath="/admin/joining-letters"><AdminJoiningLetters /></ModuleGuard>} />
+                    <Route path="admission-letters" element={<ModuleGuard menuPath="/admin/admission-letters"><AdminAdmissionLetters /></ModuleGuard>} />
+                    <Route path="student-certificates" element={<ModuleGuard menuPath="/admin/student-certificates"><AdminCertificates /></ModuleGuard>} />
+                    <Route path="designations" element={<ModuleGuard menuPath="/admin/designations"><AdminDesignations /></ModuleGuard>} />
+                    <Route path="translations" element={<ModuleGuard menuPath="/admin/translations"><AdminTranslations /></ModuleGuard>} />
+                    <Route path="form-builder" element={<ModuleGuard menuPath="/admin/form-builder"><AdminFormBuilder /></ModuleGuard>} />
                     <Route path="custom/:slug" element={<AdminCustomFormPage />} />
-                    <Route path="module-manager" element={<AdminModuleManager />} />
-                    <Route path="formula-builder" element={<AdminFormulaBuilder />} />
+                    <Route path="module-manager" element={<ModuleGuard menuPath="/admin/module-manager"><AdminModuleManager /></ModuleGuard>} />
+                    <Route path="formula-builder" element={<ModuleGuard menuPath="/admin/formula-builder"><AdminFormulaBuilder /></ModuleGuard>} />
                     <Route path="student-attendance" element={<ModuleGuard menuPath="/admin/student-attendance"><AdminStudentAttendance /></ModuleGuard>} />
                     <Route path="staff-attendance" element={<ModuleGuard menuPath="/admin/staff-attendance"><AdminStaffAttendance /></ModuleGuard>} />
-                    <Route path="duty-roster" element={<AdminDutyRoster />} />
+                    <Route path="duty-roster" element={<ModuleGuard menuPath="/admin/duty-roster"><AdminDutyRoster /></ModuleGuard>} />
 
-                    <Route path="validation-manager" element={<AdminValidationManager />} />
-                    <Route path="reports" element={<AdminReports />} />
-                    <Route path="staff-reports" element={<AdminStaffReports />} />
-                    <Route path="permissions" element={<AdminPermissions />} />
-                    <Route path="theme" element={<AdminThemeCustomizer />} />
-                    <Route path="menu-manager" element={<AdminMenuManager />} />
-                    <Route path="widget-builder" element={<AdminWidgetBuilder />} />
-                    <Route path="backup" element={<AdminBackup />} />
-                    <Route path="recycle-bin" element={<AdminRecycleBin />} />
-                    <Route path="system-logs" element={<AdminSystemLogs />} />
-                    <Route path="health-check" element={<AdminHealthCheck />} />
-                    <Route path="email-delivery-log" element={<AdminEmailDeliveryLog />} />
-                    <Route path="inventory" element={<AdminInventory />} />
-                    <Route path="guardian-notify" element={<AdminGuardianNotifications />} />
-                    <Route path="whatsapp-queue" element={<AdminWhatsAppQueue />} />
-                    <Route path="whatsapp-logs" element={<AdminWhatsAppLogs />} />
+                    <Route path="validation-manager" element={<ModuleGuard menuPath="/admin/validation-manager"><AdminValidationManager /></ModuleGuard>} />
+                    <Route path="reports" element={<ModuleGuard menuPath="/admin/reports"><AdminReports /></ModuleGuard>} />
+                    <Route path="staff-reports" element={<ModuleGuard menuPath="/admin/staff-reports"><AdminStaffReports /></ModuleGuard>} />
+                    <Route path="permissions" element={<ModuleGuard menuPath="/admin/permissions"><AdminPermissions /></ModuleGuard>} />
+                    <Route path="theme" element={<ModuleGuard menuPath="/admin/theme"><AdminThemeCustomizer /></ModuleGuard>} />
+                    <Route path="menu-manager" element={<ModuleGuard menuPath="/admin/menu-manager"><AdminMenuManager /></ModuleGuard>} />
+                    <Route path="widget-builder" element={<ModuleGuard menuPath="/admin/widget-builder"><AdminWidgetBuilder /></ModuleGuard>} />
+                    <Route path="backup" element={<ModuleGuard menuPath="/admin/backup"><AdminBackup /></ModuleGuard>} />
+                    <Route path="recycle-bin" element={<ModuleGuard menuPath="/admin/recycle-bin"><AdminRecycleBin /></ModuleGuard>} />
+                    <Route path="system-logs" element={<ModuleGuard menuPath="/admin/system-logs"><AdminSystemLogs /></ModuleGuard>} />
+                    <Route path="health-check" element={<ModuleGuard menuPath="/admin/health-check"><AdminHealthCheck /></ModuleGuard>} />
+                    <Route path="email-delivery-log" element={<ModuleGuard menuPath="/admin/email-delivery-log"><AdminEmailDeliveryLog /></ModuleGuard>} />
+                    <Route path="inventory" element={<ModuleGuard menuPath="/admin/inventory"><AdminInventory /></ModuleGuard>} />
+                    <Route path="guardian-notify" element={<ModuleGuard menuPath="/admin/guardian-notify"><AdminGuardianNotifications /></ModuleGuard>} />
+                    <Route path="whatsapp-queue" element={<ModuleGuard menuPath="/admin/whatsapp-queue"><AdminWhatsAppQueue /></ModuleGuard>} />
+                    <Route path="whatsapp-logs" element={<ModuleGuard menuPath="/admin/whatsapp-logs"><AdminWhatsAppLogs /></ModuleGuard>} />
                     <Route path="salary" element={<ModuleGuard menuPath="/admin/salary"><AdminSalary /></ModuleGuard>} />
                     <Route path="salary-pdf-columns" element={<ModuleGuard menuPath="/admin/salary"><AdminSalaryPdfColumns /></ModuleGuard>} />
                     <Route path="salary-memo-search" element={<ModuleGuard menuPath="/admin/salary"><AdminSalaryMemoSearch /></ModuleGuard>} />
-                    <Route path="shift-audit-log" element={<AdminShiftAuditLog />} />
-                    <Route path="posts" element={<AdminPosts />} />
-                    <Route path="prayer-calendar" element={<AdminPrayerCalendar />} />
-                    <Route path="zakat-fitra" element={<AdminZakatFitra />} />
-                    <Route path="zakat-logs" element={<AdminZakatLogs />} />
-                    <Route path="staff-holidays" element={<AdminStaffHolidays />} />
-                    <Route path="academic-sessions" element={<AdminAcademicSessions />} />
-                    <Route path="address-manager" element={<AdminAddressManager />} />
-                    <Route path="api-verification" element={<AdminApiVerification />} />
-                    <Route path="user-management" element={<AdminUserManagement />} />
-                    <Route path="approvals" element={<AdminApprovals />} />
-                    <Route path="parent-approvals" element={<AdminParentApprovals />} />
-                    <Route path="parent-link-audit" element={<AdminParentLinkAudit />} />
-                    <Route path="signatory-audit" element={<AdminSignatoryAudit />} />
-                    <Route path="footer-audit" element={<AdminFooterAudit />} />
-                    <Route path="administrative-debug" element={<AdminAdministrativeDebug />} />
-                    <Route path="name-permission-audit" element={<AdminNamePermissionAudit />} />
-                    <Route path="donors-role-audit" element={<AdminDonorsRoleAudit />} />
-                    <Route path="audit-device-allowlist" element={<AdminAuditDeviceAllowlist />} />
-                    <Route path="device-management" element={<AdminDeviceManagement />} />
-                    <Route path="blocked-devices" element={<AdminBlockedDevices />} />
-                    <Route path="verified-payments-role-audit" element={<AdminVerifiedPaymentsRoleAudit />} />
-                    <Route path="complaints-role-audit" element={<AdminComplaintsRoleAudit />} />
-                    <Route path="receipts-role-audit" element={<AdminReceiptsRoleAudit />} />
-                    <Route path="student-approvals" element={<AdminStudentApprovals />} />
-                    <Route path="parent-messages" element={<AdminParentMessages />} />
-                    <Route path="push-notifications" element={<AdminPushNotifications />} />
-                    <Route path="photo-tools" element={<AdminPhotoTools />} />
-                    <Route path="design-studio" element={<AdminDesignStudio />} />
-                    <Route path="payments" element={<AdminPayments />} />
-                    <Route path="receipt-designer" element={<AdminReceiptDesigner />} />
+                    <Route path="shift-audit-log" element={<ModuleGuard menuPath="/admin/shift-audit-log"><AdminShiftAuditLog /></ModuleGuard>} />
+                    <Route path="posts" element={<ModuleGuard menuPath="/admin/posts"><AdminPosts /></ModuleGuard>} />
+                    <Route path="prayer-calendar" element={<ModuleGuard menuPath="/admin/prayer-calendar"><AdminPrayerCalendar /></ModuleGuard>} />
+                    <Route path="zakat-fitra" element={<ModuleGuard menuPath="/admin/zakat-fitra"><AdminZakatFitra /></ModuleGuard>} />
+                    <Route path="zakat-logs" element={<ModuleGuard menuPath="/admin/zakat-logs"><AdminZakatLogs /></ModuleGuard>} />
+                    <Route path="staff-holidays" element={<ModuleGuard menuPath="/admin/staff-holidays"><AdminStaffHolidays /></ModuleGuard>} />
+                    <Route path="academic-sessions" element={<ModuleGuard menuPath="/admin/academic-sessions"><AdminAcademicSessions /></ModuleGuard>} />
+                    <Route path="address-manager" element={<ModuleGuard menuPath="/admin/address-manager"><AdminAddressManager /></ModuleGuard>} />
+                    <Route path="api-verification" element={<ModuleGuard menuPath="/admin/api-verification"><AdminApiVerification /></ModuleGuard>} />
+                    <Route path="user-management" element={<ModuleGuard menuPath="/admin/user-management"><AdminUserManagement /></ModuleGuard>} />
+                    <Route path="approvals" element={<ModuleGuard menuPath="/admin/approvals"><AdminApprovals /></ModuleGuard>} />
+                    <Route path="parent-approvals" element={<ModuleGuard menuPath="/admin/parent-approvals"><AdminParentApprovals /></ModuleGuard>} />
+                    <Route path="parent-link-audit" element={<ModuleGuard menuPath="/admin/parent-link-audit"><AdminParentLinkAudit /></ModuleGuard>} />
+                    <Route path="signatory-audit" element={<ModuleGuard menuPath="/admin/signatory-audit"><AdminSignatoryAudit /></ModuleGuard>} />
+                    <Route path="footer-audit" element={<ModuleGuard menuPath="/admin/footer-audit"><AdminFooterAudit /></ModuleGuard>} />
+                    <Route path="administrative-debug" element={<ModuleGuard menuPath="/admin/administrative-debug"><AdminAdministrativeDebug /></ModuleGuard>} />
+                    <Route path="name-permission-audit" element={<ModuleGuard menuPath="/admin/name-permission-audit"><AdminNamePermissionAudit /></ModuleGuard>} />
+                    <Route path="donors-role-audit" element={<ModuleGuard menuPath="/admin/donors-role-audit"><AdminDonorsRoleAudit /></ModuleGuard>} />
+                    <Route path="audit-device-allowlist" element={<ModuleGuard menuPath="/admin/audit-device-allowlist"><AdminAuditDeviceAllowlist /></ModuleGuard>} />
+                    <Route path="device-management" element={<ModuleGuard menuPath="/admin/device-management"><AdminDeviceManagement /></ModuleGuard>} />
+                    <Route path="blocked-devices" element={<ModuleGuard menuPath="/admin/blocked-devices"><AdminBlockedDevices /></ModuleGuard>} />
+                    <Route path="verified-payments-role-audit" element={<ModuleGuard menuPath="/admin/verified-payments-role-audit"><AdminVerifiedPaymentsRoleAudit /></ModuleGuard>} />
+                    <Route path="complaints-role-audit" element={<ModuleGuard menuPath="/admin/complaints-role-audit"><AdminComplaintsRoleAudit /></ModuleGuard>} />
+                    <Route path="receipts-role-audit" element={<ModuleGuard menuPath="/admin/receipts-role-audit"><AdminReceiptsRoleAudit /></ModuleGuard>} />
+                    <Route path="student-approvals" element={<ModuleGuard menuPath="/admin/student-approvals"><AdminStudentApprovals /></ModuleGuard>} />
+                    <Route path="parent-messages" element={<ModuleGuard menuPath="/admin/parent-messages"><AdminParentMessages /></ModuleGuard>} />
+                    <Route path="push-notifications" element={<ModuleGuard menuPath="/admin/push-notifications"><AdminPushNotifications /></ModuleGuard>} />
+                    <Route path="photo-tools" element={<ModuleGuard menuPath="/admin/photo-tools"><AdminPhotoTools /></ModuleGuard>} />
+                    <Route path="design-studio" element={<ModuleGuard menuPath="/admin/design-studio"><AdminDesignStudio /></ModuleGuard>} />
+                    <Route path="payments" element={<ModuleGuard menuPath="/admin/payments"><AdminPayments /></ModuleGuard>} />
+                    <Route path="receipt-designer" element={<ModuleGuard menuPath="/admin/receipt-designer"><AdminReceiptDesigner /></ModuleGuard>} />
                     <Route path="exam-sessions" element={<ModuleGuard menuPath="/admin/exam-sessions"><AdminExamSessions /></ModuleGuard>} />
                     <Route path="library" element={<ModuleGuard menuPath="/admin/library"><AdminLibrary /></ModuleGuard>} />
-                    <Route path="library-audit" element={<AdminLibraryAudit />} />
-                    <Route path="id-cards" element={<AdminIdCards />} />
-                    <Route path="class-routine" element={<AdminClassRoutine />} />
-                    <Route path="exam-routine" element={<AdminExamRoutine />} />
+                    <Route path="library-audit" element={<ModuleGuard menuPath="/admin/library-audit"><AdminLibraryAudit /></ModuleGuard>} />
+                    <Route path="id-cards" element={<ModuleGuard menuPath="/admin/id-cards"><AdminIdCards /></ModuleGuard>} />
+                    <Route path="class-routine" element={<ModuleGuard menuPath="/admin/class-routine"><AdminClassRoutine /></ModuleGuard>} />
+                    <Route path="exam-routine" element={<ModuleGuard menuPath="/admin/exam-routine"><AdminExamRoutine /></ModuleGuard>} />
                     <Route path="student-promotion" element={<ModuleGuard menuPath="/admin/student-promotion"><AdminStudentPromotion /></ModuleGuard>} />
-                    <Route path="question-papers" element={<AdminQuestionPapers />} />
-                    <Route path="online-exams" element={<AdminOnlineExams />} />
-                    <Route path="live-classes" element={<AdminLiveClasses />} />
-                    <Route path="meetings" element={<AdminMeetings />} />
+                    <Route path="question-papers" element={<ModuleGuard menuPath="/admin/question-papers"><AdminQuestionPapers /></ModuleGuard>} />
+                    <Route path="online-exams" element={<ModuleGuard menuPath="/admin/online-exams"><AdminOnlineExams /></ModuleGuard>} />
+                    <Route path="live-classes" element={<ModuleGuard menuPath="/admin/live-classes"><AdminLiveClasses /></ModuleGuard>} />
+                    <Route path="meetings" element={<ModuleGuard menuPath="/admin/meetings"><AdminMeetings /></ModuleGuard>} />
                     <Route path="admission-tests" element={<ModuleGuard menuPath="/admin/admission-tests"><AdminAdmissionTests /></ModuleGuard>} />
                     <Route path="scholarships" element={<ModuleGuard menuPath="/admin/scholarships"><AdminScholarships /></ModuleGuard>} />
                     <Route path="budgets" element={<ModuleGuard menuPath="/admin/budgets"><AdminBudgets /></ModuleGuard>} />
-                    <Route path="complaints" element={<AdminComplaints />} />
-                    <Route path="complaints/fields" element={<AdminComplaintFields />} />
-                    <Route path="parent-signup-fields" element={<AdminParentSignupFields />} />
-                    <Route path="settings" element={<AdminSettings />} />
-                    <Route path="settings/id-format" element={<AdminIdFormatSettings />} />
-                    <Route path="email-templates" element={<AdminEmailTemplates />} />
-                    <Route path="otp-recovery" element={<AdminOtpRecovery />} />
+                    <Route path="complaints" element={<ModuleGuard menuPath="/admin/complaints"><AdminComplaints /></ModuleGuard>} />
+                    <Route path="complaints/fields" element={<ModuleGuard menuPath="/admin/complaints"><AdminComplaintFields /></ModuleGuard>} />
+                    <Route path="parent-signup-fields" element={<ModuleGuard menuPath="/admin/parent-signup-fields"><AdminParentSignupFields /></ModuleGuard>} />
+                    <Route path="settings" element={<ModuleGuard menuPath="/admin/settings"><AdminSettings /></ModuleGuard>} />
+                    <Route path="settings/id-format" element={<ModuleGuard menuPath="/admin/settings"><AdminIdFormatSettings /></ModuleGuard>} />
+                    <Route path="email-templates" element={<ModuleGuard menuPath="/admin/email-templates"><AdminEmailTemplates /></ModuleGuard>} />
+                    <Route path="otp-recovery" element={<ModuleGuard menuPath="/admin/otp-recovery"><AdminOtpRecovery /></ModuleGuard>} />
                   </Route>
 
                   <Route path="*" element={<NotFound />} />
