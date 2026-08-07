@@ -573,6 +573,12 @@ export default function AdminDutyRoster() {
               শিফট ও মেশিন সেটআপ
             </TabsTrigger>
             <TabsTrigger
+              value="machine"
+              className="rounded-[18px] px-5 py-2.5 text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg"
+            >
+              ফিঙ্গার মেশিন হাজিরা
+            </TabsTrigger>
+            <TabsTrigger
               value="audit"
               className="rounded-[18px] px-5 py-2.5 text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg"
             >
@@ -582,6 +588,10 @@ export default function AdminDutyRoster() {
 
           <TabsContent value="audit" className="mt-4">
             <DutyChangeAuditTab />
+          </TabsContent>
+
+          <TabsContent value="machine" className="mt-4">
+            <MachineAttendanceTab staff={staff as any} />
           </TabsContent>
 
           <TabsContent value="monthly" className="mt-4">
