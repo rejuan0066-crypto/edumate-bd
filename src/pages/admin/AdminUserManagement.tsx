@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,9 @@ import { useAuth } from '@/hooks/useAuth';
 import PasswordStrengthMeter, { isPasswordStrongAgainst, firstFailedRuleMessage, usePasswordPolicy } from '@/components/PasswordStrengthMeter';
 import { sanitizePasswordInput } from '@/lib/passwordInput';
 import { useConfirm } from "@/contexts/ConfirmContext";
+import { useMenuSettings } from '@/hooks/useMenuSettings';
+import { flattenMenuPaths, mergeMenuPaths } from '@/lib/menuPathList';
+import { Search } from 'lucide-react';
 
 interface UserItem {
   id: string;
@@ -129,6 +132,14 @@ const AdminUserManagement = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const passwordPolicy = usePasswordPolicy();
+  const { menuConfig } = useMenuSettings();
+  // Every page/tab of the sidebar becomes permission-controllable, merged with
+  // the static fallback list so nothing disappears while the config loads.
+  const allMenuPaths = useMemo(
+    () => mergeMenuPaths(flattenMenuPaths(menuConfig?.sidebar ?? []), MENU_PATHS),
+    [menuConfig],
+  );
+  const [permSearch, setPermSearch] = useState('');
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/user-management');
@@ -935,7 +946,7 @@ const AdminUserManagement = () => {
     try {
       const { data, error } = await supabase.from('role_permissions').select('*').eq('role', role.name);
       if (error) throw error;
-      const merged = MENU_PATHS.map(mp => {
+      const merged = allMenuPaths.map(mp => {
         const existing = (data || []).find((d: any) => d.menu_path === mp.path);
         return {
           menu_path: mp.path,
@@ -1000,7 +1011,7 @@ const AdminUserManagement = () => {
     try {
       const { data, error } = await supabase.from('user_permissions').select('*').eq('user_id', user.id);
       if (error) throw error;
-      const merged = MENU_PATHS.map(mp => {
+      const merged = allMenuPaths.map(mp => {
         const existing = (data || []).find((d: any) => d.menu_path === mp.path);
         return {
           menu_path: mp.path,
@@ -1683,7 +1694,7 @@ const AdminUserManagement = () => {
                     </TableHeader>
                     <TableBody>
                       {userPerms.map(perm => {
-                        const menuInfo = MENU_PATHS.find(m => m.path === perm.menu_path);
+                        const menuInfo = allMenuPaths.find(m => m.path === perm.menu_path);
                         const allOn = perm.can_view && perm.can_add && perm.can_edit && perm.can_delete && perm.can_approve;
                         return (
                           <TableRow key={perm.menu_path}>
@@ -1783,7 +1794,7 @@ const AdminUserManagement = () => {
                     </TableHeader>
                     <TableBody>
                       {rolePerms.map(perm => {
-                        const menuInfo = MENU_PATHS.find(m => m.path === perm.menu_path);
+                        const menuInfo = allMenuPaths.find(m => m.path === perm.menu_path);
                         const allOn = perm.can_view && perm.can_add && perm.can_edit && perm.can_delete && perm.can_approve;
                         return (
                           <TableRow key={perm.menu_path}>
