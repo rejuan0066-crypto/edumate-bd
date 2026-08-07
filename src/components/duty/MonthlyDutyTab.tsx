@@ -216,6 +216,20 @@ export default function MonthlyDutyTab({
     onError: (e: any) => toast.error(e.message || 'সমস্যা হয়েছে'),
   });
 
+  /** Auto-map the weekly pattern onto a freshly selected month that has no day rows yet. */
+  const autoDone = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!autoApply || !rosterLoaded) return;
+    if (roster.length > 0) return;
+    if (templates.length === 0 || staff.length === 0) return;
+    if (autoDone.current.has(month)) return;
+    autoDone.current.add(month);
+    applyTemplateMonth.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoApply, rosterLoaded, roster.length, templates.length, staff.length, month]);
+
+
+
   const clearMonth = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
