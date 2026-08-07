@@ -140,6 +140,34 @@ const AdminUserManagement = () => {
     [menuConfig],
   );
   const [permSearch, setPermSearch] = useState('');
+
+  const matchesPermSearch = (menuPath: string) => {
+    const q = permSearch.trim().toLowerCase();
+    if (!q) return true;
+    const info = allMenuPaths.find(m => m.path === menuPath);
+    return (
+      menuPath.toLowerCase().includes(q) ||
+      (info?.label_bn ?? '').toLowerCase().includes(q) ||
+      (info?.label_en ?? '').toLowerCase().includes(q)
+    );
+  };
+
+  const bulkSetUserPerms = (field: 'can_view' | 'can_add' | 'can_edit' | 'can_delete' | 'can_approve') => {
+    setUserPerms(prev => {
+      const visible = prev.filter(p => matchesPermSearch(p.menu_path));
+      const allOn = visible.length > 0 && visible.every(p => (p as any)[field]);
+      return prev.map(p => (matchesPermSearch(p.menu_path) ? { ...p, [field]: !allOn } : p));
+    });
+  };
+
+  const bulkSetRolePerms = (field: 'can_view' | 'can_add' | 'can_edit' | 'can_delete' | 'can_approve') => {
+    setRolePerms(prev => {
+      const visible = prev.filter(p => matchesPermSearch(p.menu_path));
+      const allOn = visible.length > 0 && visible.every(p => (p as any)[field]);
+      return prev.map(p => (matchesPermSearch(p.menu_path) ? { ...p, [field]: !allOn } : p));
+    });
+  };
+
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/user-management');
@@ -1671,6 +1699,16 @@ const AdminUserManagement = () => {
                     : 'Permissions set here will override role-based permissions for this user.'}
                 </p>
 
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                  <Input
+                    value={permSearch}
+                    onChange={e => setPermSearch(e.target.value)}
+                    placeholder={bn ? 'পেজ/ট্যাব খুঁজুন...' : 'Search page/tab...'}
+                    className="h-9 pl-8"
+                  />
+                </div>
+
                 <div className="border rounded-lg overflow-hidden">
                   <Table>
                     <TableHeader>
@@ -1693,7 +1731,7 @@ const AdminUserManagement = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {userPerms.map(perm => {
+                      {userPerms.filter(p => matchesPermSearch(p.menu_path)).map(perm => {
                         const menuInfo = allMenuPaths.find(m => m.path === perm.menu_path);
                         const allOn = perm.can_view && perm.can_add && perm.can_edit && perm.can_delete && perm.can_approve;
                         return (
@@ -1779,6 +1817,16 @@ const AdminUserManagement = () => {
                     : 'Set what users with this role can do on each menu/feature.'}
                 </p>
 
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                  <Input
+                    value={permSearch}
+                    onChange={e => setPermSearch(e.target.value)}
+                    placeholder={bn ? 'পেজ/ট্যাব খুঁজুন...' : 'Search page/tab...'}
+                    className="h-9 pl-8"
+                  />
+                </div>
+
                 <div className="border rounded-lg overflow-hidden">
                   <Table>
                     <TableHeader>
@@ -1793,7 +1841,7 @@ const AdminUserManagement = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {rolePerms.map(perm => {
+                      {rolePerms.filter(p => matchesPermSearch(p.menu_path)).map(perm => {
                         const menuInfo = allMenuPaths.find(m => m.path === perm.menu_path);
                         const allOn = perm.can_view && perm.can_add && perm.can_edit && perm.can_delete && perm.can_approve;
                         return (
