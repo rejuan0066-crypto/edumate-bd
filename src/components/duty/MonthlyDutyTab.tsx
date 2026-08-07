@@ -212,6 +212,11 @@ export default function MonthlyDutyTab({
     },
     onSuccess: (n) => {
       invalidate();
+      try {
+        localStorage.setItem(`duty_tpl_sig:${month}`, tplSignature);
+      } catch {
+        /* ignore */
+      }
       toast.success(`সাপ্তাহিক ছক পুরো মাসে প্রয়োগ হয়েছে (${n} টি ডিউটি)`);
     },
     onError: (e: any) => toast.error(e.message || 'সমস্যা হয়েছে'),
