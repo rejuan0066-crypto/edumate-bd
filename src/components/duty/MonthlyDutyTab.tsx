@@ -309,10 +309,22 @@ export default function MonthlyDutyTab({
             <Label className="text-xs text-muted-foreground">স্টাফ খুঁজুন</Label>
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="নাম / আইডি" className="h-9 w-52 rounded-full" />
           </div>
+          <div className="flex items-center gap-2 pb-1">
+            <Switch
+              checked={autoApply}
+              onCheckedChange={(v) => {
+                setAutoApply(v);
+                localStorage.setItem('duty_monthly_auto_apply', v ? 'on' : 'off');
+              }}
+            />
+            <Label className="text-xs text-muted-foreground">মাস নির্বাচনে সাপ্তাহিক ছক অটো-প্রয়োগ</Label>
+          </div>
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
-          ঘরে ক্লিক করলে নির্বাচিত শিফটের ডিউটি চালু (✓) / বন্ধ হবে। সাপ্তাহিক ছক থেকে আসা ডিউটি হালকা রঙে দেখাবে।
+          অটো-প্রয়োগ চালু থাকলে যে মাসে এখনো কোনো দিন-ভিত্তিক ডিউটি নেই, সেই মাস নির্বাচন করলেই সাপ্তাহিক ছক পুরো মাসে বসে যাবে (আগের সেট করা মাস অক্ষত থাকে)।
+          ঘরে ক্লিক করলে নির্বাচিত শিফটের ডিউটি চালু (✓) / বন্ধ হবে।
         </p>
+
       </CardHeader>
       <CardContent className="overflow-x-auto">
         <table className="w-full border-separate border-spacing-y-1 text-xs">
