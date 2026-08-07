@@ -1714,11 +1714,11 @@ const AdminUserManagement = () => {
                     <TableHeader>
                       <TableRow className="bg-muted/50">
                         <TableHead className="min-w-[140px]">{bn ? 'মেনু' : 'Menu'}</TableHead>
-                        <TableHead className="text-center w-16">{bn ? 'দেখা' : 'View'}</TableHead>
-                        <TableHead className="text-center w-16">{bn ? 'যোগ' : 'Add'}</TableHead>
-                        <TableHead className="text-center w-16">{bn ? 'সম্পাদনা' : 'Edit'}</TableHead>
-                        <TableHead className="text-center w-16">{bn ? 'মুছুন' : 'Delete'}</TableHead>
-                        <TableHead className="text-center w-16"><span className="text-emerald-600">{bn ? 'অনুমোদন' : 'Approve'}</span></TableHead>
+                        <TableHead className="text-center w-16"><button type="button" onClick={() => bulkSetUserPerms('can_view')} className="hover:text-primary underline-offset-2 hover:underline">{bn ? 'দেখা' : 'View'}</button></TableHead>
+                        <TableHead className="text-center w-16"><button type="button" onClick={() => bulkSetUserPerms('can_add')} className="hover:text-primary underline-offset-2 hover:underline">{bn ? 'যোগ' : 'Add'}</button></TableHead>
+                        <TableHead className="text-center w-16"><button type="button" onClick={() => bulkSetUserPerms('can_edit')} className="hover:text-primary underline-offset-2 hover:underline">{bn ? 'সম্পাদনা' : 'Edit'}</button></TableHead>
+                        <TableHead className="text-center w-16"><button type="button" onClick={() => bulkSetUserPerms('can_delete')} className="hover:text-primary underline-offset-2 hover:underline">{bn ? 'মুছুন' : 'Delete'}</button></TableHead>
+                        <TableHead className="text-center w-16"><button type="button" onClick={() => bulkSetUserPerms('can_approve')} className="text-emerald-600 hover:underline underline-offset-2">{bn ? 'অনুমোদন' : 'Approve'}</button></TableHead>
                         <TableHead className="text-center w-16">{bn ? 'সব' : 'All'}</TableHead>
                         <TableHead className="text-center w-20" colSpan={3}>
                           <span className="text-yellow-600">{bn ? 'অনুমোদন লাগবে' : 'Needs Approval'}</span>
@@ -1832,11 +1832,11 @@ const AdminUserManagement = () => {
                     <TableHeader>
                       <TableRow className="bg-muted/50">
                         <TableHead className="min-w-[140px]">{bn ? 'মেনু' : 'Menu'}</TableHead>
-                        <TableHead className="text-center w-16">{bn ? 'দেখা' : 'View'}</TableHead>
-                        <TableHead className="text-center w-16">{bn ? 'যোগ' : 'Add'}</TableHead>
-                        <TableHead className="text-center w-16">{bn ? 'সম্পাদনা' : 'Edit'}</TableHead>
-                        <TableHead className="text-center w-16">{bn ? 'মুছুন' : 'Delete'}</TableHead>
-                        <TableHead className="text-center w-16"><span className="text-emerald-600">{bn ? 'অনুমোদন' : 'Approve'}</span></TableHead>
+                        <TableHead className="text-center w-16"><button type="button" onClick={() => bulkSetRolePerms('can_view')} className="hover:text-primary underline-offset-2 hover:underline">{bn ? 'দেখা' : 'View'}</button></TableHead>
+                        <TableHead className="text-center w-16"><button type="button" onClick={() => bulkSetRolePerms('can_add')} className="hover:text-primary underline-offset-2 hover:underline">{bn ? 'যোগ' : 'Add'}</button></TableHead>
+                        <TableHead className="text-center w-16"><button type="button" onClick={() => bulkSetRolePerms('can_edit')} className="hover:text-primary underline-offset-2 hover:underline">{bn ? 'সম্পাদনা' : 'Edit'}</button></TableHead>
+                        <TableHead className="text-center w-16"><button type="button" onClick={() => bulkSetRolePerms('can_delete')} className="hover:text-primary underline-offset-2 hover:underline">{bn ? 'মুছুন' : 'Delete'}</button></TableHead>
+                        <TableHead className="text-center w-16"><button type="button" onClick={() => bulkSetRolePerms('can_approve')} className="text-emerald-600 hover:underline underline-offset-2">{bn ? 'অনুমোদন' : 'Approve'}</button></TableHead>
                         <TableHead className="text-center w-16">{bn ? 'সব' : 'All'}</TableHead>
                       </TableRow>
                     </TableHeader>
