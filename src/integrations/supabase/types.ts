@@ -5012,6 +5012,72 @@ export type Database = {
           },
         ]
       }
+      machine_punch_log: {
+        Row: {
+          created_at: string
+          device_serial: string | null
+          device_user_id: string
+          direction: string | null
+          error: string | null
+          id: string
+          processed: boolean
+          punch_at: string
+          punch_date: string
+          punch_time: string
+          raw: Json | null
+          result: string | null
+          shift_id: string | null
+          staff_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_serial?: string | null
+          device_user_id: string
+          direction?: string | null
+          error?: string | null
+          id?: string
+          processed?: boolean
+          punch_at: string
+          punch_date: string
+          punch_time: string
+          raw?: Json | null
+          result?: string | null
+          shift_id?: string | null
+          staff_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_serial?: string | null
+          device_user_id?: string
+          direction?: string | null
+          error?: string | null
+          id?: string
+          processed?: boolean
+          punch_at?: string
+          punch_date?: string
+          punch_time?: string
+          raw?: Json | null
+          result?: string | null
+          shift_id?: string | null
+          staff_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "machine_punch_log_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "duty_shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "machine_punch_log_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       manual_payment_methods: {
         Row: {
           account_holder: string | null
@@ -8909,6 +8975,50 @@ export type Database = {
           weekday?: number | null
         }
         Relationships: []
+      }
+      staff_machine_users: {
+        Row: {
+          created_at: string
+          device_serial: string | null
+          device_user_id: string
+          finger_index: number | null
+          id: string
+          is_active: boolean
+          note: string | null
+          staff_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          device_serial?: string | null
+          device_user_id: string
+          finger_index?: number | null
+          id?: string
+          is_active?: boolean
+          note?: string | null
+          staff_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          device_serial?: string | null
+          device_user_id?: string
+          finger_index?: number | null
+          id?: string
+          is_active?: boolean
+          note?: string | null
+          staff_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_machine_users_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       staff_promotions: {
         Row: {
