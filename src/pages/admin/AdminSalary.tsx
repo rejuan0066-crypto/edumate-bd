@@ -1338,6 +1338,7 @@ const AdminSalary = () => {
 
         // Skip staff who had not joined by this month (don't generate for past months).
         if (!hasJoinedByMonth(s)) continue;
+        if (s.status === 'inactive' && !existing) continue;
 
 
 
