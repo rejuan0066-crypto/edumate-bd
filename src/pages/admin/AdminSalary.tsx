@@ -182,7 +182,9 @@ const AdminSalary = () => {
       const { data, error } = await supabase
         .from('staff')
         .select('*')
-        .eq('status', 'active')
+        // Inactive staff must stay visible for PAST months where their salary
+        // was already generated — they are filtered out per-month below.
+        .in('status', ['active', 'inactive'])
         .order('salary_order', { ascending: true, nullsFirst: false })
         .order('name_bn', { ascending: true });
       if (error) throw error;
