@@ -259,7 +259,9 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
       const { data } = await supabase
         .from('staff')
         .select('*')
-        .eq('status', 'active')
+        // Inactive staff stay available for PAST dates where attendance already
+        // exists; they are filtered out per-date below.
+        .in('status', ['active', 'inactive'])
         .order('salary_order', { ascending: true, nullsFirst: false })
         .order('name_bn', { ascending: true });
       return data || [];
