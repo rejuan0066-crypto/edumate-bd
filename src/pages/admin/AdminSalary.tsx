@@ -1711,7 +1711,7 @@ const AdminSalary = () => {
   // Filter staff (search + eligibility/status filter)
   const filtered = staff.filter((s: any) => {
     // Hide staff who had not yet joined by the selected month.
-    if (!hasJoinedByMonth(s)) return false;
+    if (!isInMonthRoster(s)) return false;
     const q = searchQuery.toLowerCase();
     const matchesSearch = (s.name_bn + (s.name_en || '') + (s.designation || '')).toLowerCase().includes(q);
     if (!matchesSearch) return false;
