@@ -259,7 +259,9 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
       const { data } = await supabase
         .from('staff')
         .select('*')
-        .eq('status', 'active')
+        // Inactive staff stay available for PAST dates where attendance already
+        // exists; they are filtered out per-date below.
+        .in('status', ['active', 'inactive'])
         .order('salary_order', { ascending: true, nullsFirst: false })
         .order('name_bn', { ascending: true });
       return data || [];
@@ -313,7 +315,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   }, [classes, divisions]);
 
   // Filter students based on sub-tab and filters
-  const entities = useMemo(() => {
+  const entitiesRaw = useMemo(() => {
     if (entityType === 'staff') {
       let staffFiltered = allStaff;
       // Filter by staff category
@@ -378,6 +380,15 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
       return data;
     },
   });
+
+  // Inactive (resigned/left) staff must still show on PAST dates where their
+  // attendance was already recorded, but never on dates with no record.
+  const entities = useMemo(() => {
+    if (entityType !== 'staff') return entitiesRaw;
+    return (entitiesRaw as any[]).filter((e: any) =>
+      e.status !== 'inactive' || attendance.some((a: any) => a.entity_id === e.id)
+    );
+  }, [entitiesRaw, entityType, attendance]);
 
   // Fetch attendance rules
   const { data: rules = [] } = useQuery({
