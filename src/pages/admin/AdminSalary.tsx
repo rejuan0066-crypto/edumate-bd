@@ -182,7 +182,9 @@ const AdminSalary = () => {
       const { data, error } = await supabase
         .from('staff')
         .select('*')
-        .eq('status', 'active')
+        // Inactive staff must stay visible for PAST months where their salary
+        // was already generated — they are filtered out per-month below.
+        .in('status', ['active', 'inactive'])
         .order('salary_order', { ascending: true, nullsFirst: false })
         .order('name_bn', { ascending: true });
       if (error) throw error;
@@ -193,6 +195,8 @@ const AdminSalary = () => {
     ? (staffRaw as any[])
     : (staffRaw as any[]).filter((s: any) => !committeeInfo.ids.has(s.id));
   const committeeHiddenCount = (staffRaw as any[]).filter((s: any) => committeeInfo.ids.has(s.id)).length;
+  // Only currently-active staff (used by bonus sheet & serial ordering).
+  const activeStaff = (staff as any[]).filter((s: any) => s.status === 'active');
 
   // Reorder staff in salary list — supports neighbor-swap OR jump-to-position
   const reorderStaffMutation = useMutation({
@@ -569,6 +573,9 @@ const AdminSalary = () => {
       const s = staff.find((x: any) => x.id === staffId);
       if (!s) throw new Error('Staff not found');
       const sName = s.name_bn || s.name_en;
+      if (s.status === 'inactive' && !salaryRecords.some((r: any) => r.staff_id === s.id)) {
+        throw new Error(bn ? `${sName} নিষ্ক্রিয় — এই মাসে বেতন তৈরি করা যাবে না` : `${sName} is inactive — cannot generate salary for this month`);
+      }
       if (!hasJoinedByMonth(s)) {
         const jdLabel = s.joining_date ? String(s.joining_date).slice(0, 10) : '';
         throw new Error(bn
@@ -883,6 +890,15 @@ const AdminSalary = () => {
     const jd = s?.joining_date ? String(s.joining_date).slice(0, 10) : '';
     if (!jd) return true; // unknown joining date → always include (legacy data)
     return jd <= monthEndDate;
+  };
+  // Inactive (resigned/left) staff should still appear in the months where a
+  // salary record already exists, but never in new/future months.
+  const isInMonthRoster = (s: any): boolean => {
+    if (!hasJoinedByMonth(s)) return false;
+    if (s?.status === 'inactive') {
+      return salaryRecords.some((r: any) => r.staff_id === s.id);
+    }
+    return true;
   };
   // First day this staff is counted within the selected month (joining date if
   // they joined mid-month, otherwise the 1st).
@@ -1327,6 +1343,7 @@ const AdminSalary = () => {
 
         // Skip staff who had not joined by this month (don't generate for past months).
         if (!hasJoinedByMonth(s)) continue;
+        if (s.status === 'inactive' && !existing) continue;
 
 
 
@@ -1699,7 +1716,7 @@ const AdminSalary = () => {
   // Filter staff (search + eligibility/status filter)
   const filtered = staff.filter((s: any) => {
     // Hide staff who had not yet joined by the selected month.
-    if (!hasJoinedByMonth(s)) return false;
+    if (!isInMonthRoster(s)) return false;
     const q = searchQuery.toLowerCase();
     const matchesSearch = (s.name_bn + (s.name_en || '') + (s.designation || '')).toLowerCase().includes(q);
     if (!matchesSearch) return false;
@@ -3349,7 +3366,7 @@ const AdminSalary = () => {
                     <Input type="number" className="w-24 h-8 text-sm" value={bonusYear || ''}
                       onChange={e => setBonusYear(e.target.value)} min="2020" max="2040" />
                     <Button size="sm" variant="outline" onClick={() => {
-                      const bData = staff.map((s: any, i: number) => {
+                      const bData = activeStaff.map((s: any, i: number) => {
                         const staffRecords = bonusYearRecords.filter((r: any) => r.staff_id === s.id);
                         const monthsPaid = staffRecords.length;
                         const baseSalary = Number(s.salary || 0);
@@ -3404,7 +3421,7 @@ const AdminSalary = () => {
                         let grandTotalBonus = 0;
                         return (
                           <>
-                            {staff.map((s: any, idx: number) => {
+                            {activeStaff.map((s: any, idx: number) => {
                               const staffRecords = bonusYearRecords.filter((r: any) => r.staff_id === s.id);
                               const monthsPaid = staffRecords.length;
                               const baseSalary = Number(s.salary || 0);
@@ -3427,7 +3444,7 @@ const AdminSalary = () => {
                               );
                             })}
                             <tr className="bg-muted/50 font-bold border-t-2">
-                              <td colSpan={3} className="px-3 py-2">{bn ? 'মোট' : 'Total'} ({bn ? toBnDigits(staff.length) : staff.length} {bn ? 'জন' : 'staff'})</td>
+                              <td colSpan={3} className="px-3 py-2">{bn ? 'মোট' : 'Total'} ({bn ? toBnDigits(activeStaff.length) : activeStaff.length} {bn ? 'জন' : 'staff'})</td>
                               <td className="px-3 py-2"></td>
                               <td className="px-3 py-2"></td>
                               <td className="px-3 py-2"></td>
@@ -3439,7 +3456,7 @@ const AdminSalary = () => {
                     </tbody>
                   </table>
                 </div>
-                {staff.length === 0 && (
+                {activeStaff.length === 0 && (
                   <div className="p-8 text-center text-muted-foreground">
                     <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
                     <p>{bn ? 'কোনো স্টাফ পাওয়া যায়নি' : 'No staff found'}</p>
