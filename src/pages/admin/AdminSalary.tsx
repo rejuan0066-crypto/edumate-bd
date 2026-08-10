@@ -3363,7 +3363,7 @@ const AdminSalary = () => {
                     <Input type="number" className="w-24 h-8 text-sm" value={bonusYear || ''}
                       onChange={e => setBonusYear(e.target.value)} min="2020" max="2040" />
                     <Button size="sm" variant="outline" onClick={() => {
-                      const bData = staff.map((s: any, i: number) => {
+                      const bData = activeStaff.map((s: any, i: number) => {
                         const staffRecords = bonusYearRecords.filter((r: any) => r.staff_id === s.id);
                         const monthsPaid = staffRecords.length;
                         const baseSalary = Number(s.salary || 0);
@@ -3418,7 +3418,7 @@ const AdminSalary = () => {
                         let grandTotalBonus = 0;
                         return (
                           <>
-                            {staff.map((s: any, idx: number) => {
+                            {activeStaff.map((s: any, idx: number) => {
                               const staffRecords = bonusYearRecords.filter((r: any) => r.staff_id === s.id);
                               const monthsPaid = staffRecords.length;
                               const baseSalary = Number(s.salary || 0);
@@ -3441,7 +3441,7 @@ const AdminSalary = () => {
                               );
                             })}
                             <tr className="bg-muted/50 font-bold border-t-2">
-                              <td colSpan={3} className="px-3 py-2">{bn ? 'মোট' : 'Total'} ({bn ? toBnDigits(staff.length) : staff.length} {bn ? 'জন' : 'staff'})</td>
+                              <td colSpan={3} className="px-3 py-2">{bn ? 'মোট' : 'Total'} ({bn ? toBnDigits(activeStaff.length) : activeStaff.length} {bn ? 'জন' : 'staff'})</td>
                               <td className="px-3 py-2"></td>
                               <td className="px-3 py-2"></td>
                               <td className="px-3 py-2"></td>
@@ -3453,7 +3453,7 @@ const AdminSalary = () => {
                     </tbody>
                   </table>
                 </div>
-                {staff.length === 0 && (
+                {activeStaff.length === 0 && (
                   <div className="p-8 text-center text-muted-foreground">
                     <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
                     <p>{bn ? 'কোনো স্টাফ পাওয়া যায়নি' : 'No staff found'}</p>
