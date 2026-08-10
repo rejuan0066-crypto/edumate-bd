@@ -886,6 +886,15 @@ const AdminSalary = () => {
     if (!jd) return true; // unknown joining date → always include (legacy data)
     return jd <= monthEndDate;
   };
+  // Inactive (resigned/left) staff should still appear in the months where a
+  // salary record already exists, but never in new/future months.
+  const isInMonthRoster = (s: any): boolean => {
+    if (!hasJoinedByMonth(s)) return false;
+    if (s?.status === 'inactive') {
+      return salaryRecords.some((r: any) => r.staff_id === s.id);
+    }
+    return true;
+  };
   // First day this staff is counted within the selected month (joining date if
   // they joined mid-month, otherwise the 1st).
   const joinedFromDay = (s: any): number => {
