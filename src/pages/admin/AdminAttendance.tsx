@@ -381,6 +381,15 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     },
   });
 
+  // Inactive (resigned/left) staff must still show on PAST dates where their
+  // attendance was already recorded, but never on dates with no record.
+  const entities = useMemo(() => {
+    if (entityType !== 'staff') return entitiesRaw;
+    return (entitiesRaw as any[]).filter((e: any) =>
+      e.status !== 'inactive' || attendance.some((a: any) => a.entity_id === e.id)
+    );
+  }, [entitiesRaw, entityType, attendance]);
+
   // Fetch attendance rules
   const { data: rules = [] } = useQuery({
     queryKey: ['attendance-rules'],
