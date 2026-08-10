@@ -315,7 +315,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   }, [classes, divisions]);
 
   // Filter students based on sub-tab and filters
-  const entities = useMemo(() => {
+  const entitiesRaw = useMemo(() => {
     if (entityType === 'staff') {
       let staffFiltered = allStaff;
       // Filter by staff category
