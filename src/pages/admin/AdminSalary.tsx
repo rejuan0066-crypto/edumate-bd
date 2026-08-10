@@ -573,6 +573,9 @@ const AdminSalary = () => {
       const s = staff.find((x: any) => x.id === staffId);
       if (!s) throw new Error('Staff not found');
       const sName = s.name_bn || s.name_en;
+      if (s.status === 'inactive' && !salaryRecords.some((r: any) => r.staff_id === s.id)) {
+        throw new Error(bn ? `${sName} নিষ্ক্রিয় — এই মাসে বেতন তৈরি করা যাবে না` : `${sName} is inactive — cannot generate salary for this month`);
+      }
       if (!hasJoinedByMonth(s)) {
         const jdLabel = s.joining_date ? String(s.joining_date).slice(0, 10) : '';
         throw new Error(bn
