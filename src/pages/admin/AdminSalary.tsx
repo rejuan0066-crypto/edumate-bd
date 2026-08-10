@@ -195,6 +195,8 @@ const AdminSalary = () => {
     ? (staffRaw as any[])
     : (staffRaw as any[]).filter((s: any) => !committeeInfo.ids.has(s.id));
   const committeeHiddenCount = (staffRaw as any[]).filter((s: any) => committeeInfo.ids.has(s.id)).length;
+  // Only currently-active staff (used by bonus sheet & serial ordering).
+  const activeStaff = (staff as any[]).filter((s: any) => s.status === 'active');
 
   // Reorder staff in salary list — supports neighbor-swap OR jump-to-position
   const reorderStaffMutation = useMutation({
