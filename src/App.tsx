@@ -232,6 +232,19 @@ const clearLocalExpiredSession = async () => {
   queryClient.clear();
 };
 
+// Confirms with the auth server whether the current session is still usable.
+// Used before destroying a session so that a transient 401 from one query does
+// not log the user out while their refresh token is perfectly valid.
+const sessionStillValid = async (): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    return !error && !!data.user;
+  } catch {
+    // Network failure -> assume still valid, keep the user signed in.
+    return true;
+  }
+};
+
 const handleAuthError = async (error: unknown) => {
   if (isRefreshingSession) return;
   const message = error instanceof Error ? error.message : String(error ?? '');
@@ -247,18 +260,33 @@ const handleAuthError = async (error: unknown) => {
     const { data, error: refreshError } = await supabase.auth.refreshSession();
     const nextAccessToken = data.session?.access_token ?? null;
 
-    if (refreshError || !nextAccessToken || nextAccessToken === previousAccessToken) {
+    if (nextAccessToken && nextAccessToken !== previousAccessToken) {
+      queryClient.invalidateQueries();
+      return;
+    }
+
+    // Either the refresh failed or supabase-js returned the still-valid cached
+    // token. Only sign out when the auth server itself rejects the session.
+    if (refreshError || !nextAccessToken) {
+      if (await sessionStillValid()) {
+        queryClient.invalidateQueries();
+        return;
+      }
       await clearLocalExpiredSession();
       return;
     }
 
+    // Same token returned and no error: session is fine, just refetch.
     queryClient.invalidateQueries();
   } catch {
-    await clearLocalExpiredSession();
+    if (!(await sessionStillValid())) {
+      await clearLocalExpiredSession();
+    }
   } finally {
     isRefreshingSession = false;
   }
 };
+
 
 
 const queryClient = new QueryClient({
