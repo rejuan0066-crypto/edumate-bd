@@ -121,3 +121,11 @@ UPDATE public.students SET name_bn = 'আমিনুল ইসলাম', updat
 UPDATE public.students SET name_bn = 'আমির হামজা', updated_at = NOW(), deleted_at = NULL WHERE class_id = 'b938e12b-a65a-44ab-beab-0f761175c67d' AND roll_number = '1020' AND session_id = 'b34fd827-6ef8-443a-a810-b4e5e372d888';
 UPDATE public.students SET name_bn = 'জুমুন আহমদ', updated_at = NOW(), deleted_at = NULL WHERE class_id = 'b938e12b-a65a-44ab-beab-0f761175c67d' AND roll_number = '1021' AND session_id = 'b34fd827-6ef8-443a-a810-b4e5e372d888';
 UPDATE public.students SET name_bn = 'মামুন আহমদ রিয়াপডেট', updated_at = NOW(), deleted_at = NULL WHERE class_id = 'b938e12b-a65a-44ab-beab-0f761175c67d' AND roll_number = '1022' AND session_id = 'b34fd827-6ef8-443a-a810-b4e5e372d888';
+UPDATE public.classes SET name_bn = 'মুতাঃ ৩য় বর্ষ', updated_at = NOW() WHERE id = 'dea01e69-e7c2-470f-badf-742a767a00c7';
+UPDATE public.classes SET name_bn = 'মুতাঃ ২য় বর্ষ', updated_at = NOW() WHERE id = 'fe634e96-b5b6-4207-b9c8-b273a313c8a3';
+UPDATE public.classes SET name_bn = 'ইবতেদায়ী মে', updated_at = NOW() WHERE id = '894db1e1-1c5d-45d2-b838-299e17b7e185';
+UPDATE public.classes SET name_bn = 'ইবতেদায়ী ৪র্থ', updated_at = NOW() WHERE id = '0df6a29c-5783-4662-8c8e-0274982c3ab5';
+UPDATE public.classes SET name_bn = 'নুরানী ৩য়', updated_at = NOW() WHERE id = 'f06681a5-06f2-438e-a727-ad684260be34';
+UPDATE public.classes SET name_bn = 'হিফজ নাজারা', updated_at = NOW() WHERE id = '3770ea93-d762-44ab-9850-01b512166600';
+UPDATE public.classes SET name_bn = 'নুরানী ২য়', updated_at = NOW() WHERE id = '2f15f4fc-2f79-4397-b066-0e0971fae924';
+UPDATE public.classes SET name_bn = 'নুরানী ১ম', updated_at = NOW() WHERE id = 'b938e12b-a65a-44ab-beab-0f761175c67d';
