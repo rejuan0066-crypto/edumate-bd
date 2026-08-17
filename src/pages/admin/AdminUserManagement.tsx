@@ -23,6 +23,7 @@ import { useOtpService } from '@/hooks/useOtpService';
 import { useAuth } from '@/hooks/useAuth';
 import PasswordStrengthMeter, { isPasswordStrongAgainst, firstFailedRuleMessage, usePasswordPolicy } from '@/components/PasswordStrengthMeter';
 import { sanitizePasswordInput } from '@/lib/passwordInput';
+import { edgeErrorBody } from '@/lib/edgeError';
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useMenuSettings } from '@/hooks/useMenuSettings';
 import { flattenMenuPaths, mergeMenuPaths } from '@/lib/menuPathList';
@@ -529,7 +530,7 @@ const AdminUserManagement = () => {
     setCreating(true);
     lastCreateAtRef.current = Date.now();
     try {
-      const { data, error } = await supabase.functions.invoke('manage-users', {
+      let { data, error } = await supabase.functions.invoke('manage-users', {
         body: {
           action: 'create',
           email: email.trim(),
@@ -542,6 +543,9 @@ const AdminUserManagement = () => {
           designation: createDesignation || undefined,
         },
       });
+      // Non-2xx responses leave `data` null — recover the JSON body so the
+      // specific reason (duplicate / weak password / rate limit) is shown.
+      if (error && !data) data = await edgeErrorBody(error);
       if (error || !data?.success) {
         const code = data?.error || data?.code;
         // Rate limited from server (per-admin or per-IP)
