@@ -1198,8 +1198,8 @@ const AdminSettings = () => {
           </h3>
           <p className="text-xs text-muted-foreground mb-4">
             {bn
-              ? "'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            এই প্রজেক্ট ফ্রি একাউন্টে tansfer করা যাচ্ছেনা কেন"
-              : "'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            Why can't this project be transferred to a free account"}
+              ? "'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            ফ্রি একাউন্টে প্রজেক্ট ট্রান্সফার করতে পারছিনা কেন ? হ্যাল্প করেন"
+              : "'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            I can't transfer the project to a free account. Please help."}
           </p>
 
           {emailjsLoading ? (
