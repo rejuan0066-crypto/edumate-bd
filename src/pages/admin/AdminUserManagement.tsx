@@ -1204,13 +1204,16 @@ const AdminUserManagement = () => {
                       />
                     </div>
                     <div>
-                      <Label>{bn ? 'পাসওয়ার্ড' : 'Password'} *</Label>
+                      <Label>{bn ? 'শক্তিশালী পাসওয়ার্ড' : 'Strong Password'} *</Label>
                       <div className="relative mt-1">
-                        <Input className="pr-10" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(sanitizePasswordInput(e.target.value))} placeholder={bn ? 'শক্তিশালী পাসওয়ার্ড দিন' : 'Enter strong password'} />
+                        <Input className="pr-10" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(sanitizePasswordInput(e.target.value))} placeholder={bn ? 'ইংরেজি অক্ষর, সংখ্যা ও চিহ্নের মিশ্রণ' : 'Mix of English letters, numbers & symbols'} />
                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                           {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        {bn ? 'দ্রষ্টব্য: পাসওয়ার্ডে শুধুমাত্র ইংরেজি অক্ষর গ্রহণযোগ্য এবং ইমেইল ভেরিফিকেশন প্রয়োজন হবে।' : 'Note: Only English characters are allowed and email verification will be required.'}
+                      </p>
                       <PasswordStrengthMeter password={password} bn={bn} />
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
