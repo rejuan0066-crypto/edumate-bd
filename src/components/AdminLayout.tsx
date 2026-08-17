@@ -354,7 +354,11 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
 
   // When embedded or already inside an admin shell, render only the page content
   if (isEmbedded || isNestedAdminLayout) {
-    return <>{children}</>;
+    return (
+      <AdminLayoutNestingContext.Provider value={true}>
+        {children}
+      </AdminLayoutNestingContext.Provider>
+    );
   }
 
   // Group menu items by category using dynamic sidebar sections
