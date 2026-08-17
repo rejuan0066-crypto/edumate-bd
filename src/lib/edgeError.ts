@@ -45,3 +45,13 @@ export async function parseEdgeError(
   if (error?.message && !/non-2xx/i.test(error.message)) return String(error.message);
   return bn ? 'অনুরোধ ব্যর্থ হয়েছে' : 'Request failed';
 }
+
+// Returns the JSON body of a non-2xx edge response (or null), so callers can
+// keep using their existing `data.code` / `data.error` branching.
+export async function edgeErrorBody(error: any): Promise<any | null> {
+  const ctx = error?.context;
+  if (ctx && typeof ctx.json === 'function') {
+    try { return await ctx.clone().json(); } catch { /* ignore */ }
+  }
+  return null;
+}
