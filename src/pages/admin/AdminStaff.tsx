@@ -86,6 +86,8 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
   const [selectedStaff, setSelectedStaff] = useState<any>(null);
   const [accEmail, setAccEmail] = useState('');
   const [accPassword, setAccPassword] = useState('');
+  const passwordPolicy = usePasswordPolicy();
+
   const [accRole, setAccRole] = useState('none');
   const [accCreating, setAccCreating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
