@@ -1198,8 +1198,8 @@ const AdminSettings = () => {
           </h3>
           <p className="text-xs text-muted-foreground mb-4">
             {bn
-              ? "'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            কি?"
-              : "'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            What?"}
+              ? "মাদরাসার অটোমেটিক ইমেইল এবং OTP পাঠানোর জন্য EmailJS কনফিগার করুন।"
+              : "Configure EmailJS to send automatic emails and OTPs for the institution."}
           </p>
 
           {emailjsLoading ? (

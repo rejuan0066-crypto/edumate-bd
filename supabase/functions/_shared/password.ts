@@ -27,6 +27,7 @@ const RULE_MESSAGES: Record<string, { bn: string; en: string }> = {
   lowercase: { bn: 'একটি ছোট হাতের অক্ষর (a-z)', en: 'one lowercase letter (a-z)' },
   number: { bn: 'একটি সংখ্যা (0-9)', en: 'one number (0-9)' },
   special: { bn: 'একটি বিশেষ চিহ্ন (!@#$...)', en: 'one special character (!@#$...)' },
+  english_only: { bn: 'শুধুমাত্র ইংরেজি অক্ষর', en: 'English characters only' },
 };
 
 export async function loadPasswordPolicy(supabaseAdmin: any): Promise<PasswordPolicy> {
@@ -57,6 +58,7 @@ export function evaluatePasswordAgainstPolicy(password: string, policy: Password
   if (policy.require_lowercase && !/[a-z]/.test(password)) failed.push('lowercase');
   if (policy.require_number && !/[0-9]/.test(password)) failed.push('number');
   if (policy.require_special && !/[^A-Za-z0-9]/.test(password)) failed.push('special');
+  if (!/^[\x21-\x7E]*$/.test(password)) failed.push('english_only');
   return failed;
 }
 

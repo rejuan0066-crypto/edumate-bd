@@ -7,7 +7,8 @@
  */
 export const sanitizePasswordInput = (value: string): string => {
   if (!value) return '';
-  // Keep only printable ASCII characters (no whitespace, no unicode)
+  // Keep only printable ASCII characters (no whitespace, no unicode, no Bengali digits)
+  // This explicitly ensures English-only input for passwords.
   return value.replace(/[^\x21-\x7E]/g, '');
 };
 

@@ -70,7 +70,7 @@ export const usePasswordPolicy = (): PasswordPolicy => {
 };
 
 export interface RuleResult {
-  key: 'min_length' | 'uppercase' | 'lowercase' | 'number' | 'special';
+  key: 'min_length' | 'uppercase' | 'lowercase' | 'number' | 'special' | 'english_only';
   required: boolean;
   passed: boolean;
   label_bn: string;
@@ -113,6 +113,13 @@ export const evaluatePassword = (password: string, policy: PasswordPolicy): Rule
       passed: /[^A-Za-z0-9]/.test(password),
       label_bn: 'একটি বিশেষ চিহ্ন (!@#$...)',
       label_en: 'One special character (!@#$...)',
+    },
+    {
+      key: 'english_only',
+      required: true,
+      passed: /^[\x21-\x7E]*$/.test(password),
+      label_bn: 'শুধুমাত্র ইংরেজি অক্ষর',
+      label_en: 'English characters only',
     },
   ];
 };
