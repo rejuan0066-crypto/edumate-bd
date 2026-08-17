@@ -23,6 +23,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from '@/components/ui/badge';
 import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
 import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
+import PasswordStrengthMeter, { isPasswordStrongAgainst, firstFailedRuleMessage, usePasswordPolicy } from '@/components/PasswordStrengthMeter';
+import { sanitizePasswordInput } from '@/lib/passwordInput';
+
 
 export type StaffPageType = 'all' | 'staff' | 'teacher' | 'administrative' | 'support' | 'director' | 'committee_member';
 
@@ -300,7 +303,11 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
 
   const handleCreateAccount = async () => {
     if (!accEmail.trim()) { toast.error(bn ? 'ইমেইল দিন' : 'Enter email'); return; }
-    if (!accPassword || accPassword.length < 6) { toast.error(bn ? 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষর' : 'Password min 6 chars'); return; }
+    if (!isPasswordStrongAgainst(accPassword, passwordPolicy)) {
+      toast.error(firstFailedRuleMessage(accPassword, passwordPolicy, bn) || (bn ? 'পাসওয়ার্ড নীতিমালা পূরণ করছে না' : 'Password policy not met'));
+      return;
+    }
+
 
     setAccCreating(true);
     try {
@@ -629,12 +636,14 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
               <div className="space-y-2">
                 <Label>{bn ? 'পাসওয়ার্ড' : 'Password'}</Label>
                 <div className="relative">
-                  <Input type={showPassword ? 'text' : 'password'} value={accPassword} onChange={e => setAccPassword(e.target.value)} placeholder={bn ? 'কমপক্ষে ৬ অক্ষর' : 'Min 6 characters'} />
+                  <Input type={showPassword ? 'text' : 'password'} value={accPassword} onChange={e => setAccPassword(sanitizePasswordInput(e.target.value))} placeholder={bn ? 'ইংরেজি অক্ষর, সংখ্যা ও চিহ্নের মিশ্রণ' : 'Mix of English letters, numbers & symbols'} className="pr-10" />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                <PasswordStrengthMeter password={accPassword} bn={bn} visible />
               </div>
+
               <div className="space-y-2">
                 <Label>{bn ? 'রোল' : 'Role'}</Label>
                 <Select value={accRole} onValueChange={setAccRole}>
