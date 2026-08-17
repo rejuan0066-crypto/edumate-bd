@@ -1187,11 +1187,82 @@ const AdminUserManagement = () => {
                     <div>
                       <Label>{bn ? 'নাম' : 'Full Name'}</Label>
                       <Input className="mt-1" value={fullName} onChange={e => setFullName(e.target.value)} placeholder={bn ? 'ইউজারের নাম' : 'User name'} />
-                      {fullName.trim() && (
-                        <p className={`text-xs mt-1 flex items-center gap-1 ${nameDup === 'dup' ? 'text-destructive' : nameDup === 'ok' ? 'text-emerald-600' : 'text-muted-foreground'}`}>
-                          {nameDup === 'checking' && <><Loader2 className="w-3 h-3 animate-spin" />{bn ? 'যাচাই হচ্ছে...' : 'Checking...'}</>}
-                          {nameDup === 'dup' && <><AlertTriangle className="w-3 h-3" />{bn ? '⚠️ এই নামে একজন ইউজার ইতিমধ্যে আছেন' : '⚠️ A user with this name already exists'} <button type="button" onClick={() => showConflict('name', fullName)} className="underline ml-1 hover:text-destructive/80">{bn ? 'বিস্তারিত দেখুন' : 'View details'}</button></>}
-                          {nameDup === 'ok' && <>✓ {bn ? 'নাম উপলব্ধ' : 'Name available'}</>}
+                    </div>
+                    <div>
+                      <Label>{bn ? 'ইমেইল' : 'Email'} *</Label>
+                      <Input className="mt-1" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={bn ? 'ইমেইল অ্যাড্রেস' : 'Email address'} />
+                    </div>
+                    <div>
+                      <Label>{bn ? 'মোবাইল নম্বর' : 'Mobile Number'}</Label>
+                      <Input
+                        className="mt-1"
+                        type="tel"
+                        value={createPhone}
+                        onChange={e => setCreatePhone(e.target.value.replace(/[^\d+]/g, ''))}
+                        placeholder={bn ? '01XXXXXXXXX' : '01XXXXXXXXX'}
+                        maxLength={15}
+                      />
+                    </div>
+                    <div>
+                      <Label>{bn ? 'পাসওয়ার্ড' : 'Password'} *</Label>
+                      <div className="relative mt-1">
+                        <Input className="pr-10" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(sanitizePasswordInput(e.target.value))} placeholder={bn ? 'শক্তিশালী পাসওয়ার্ড দিন' : 'Enter strong password'} />
+                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                      <PasswordStrengthMeter password={password} bn={bn} />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <Label>{bn ? 'ডিপার্টমেন্ট' : 'Department'}</Label>
+                        <Select value={createStaffCategory} onValueChange={(value) => { setCreateStaffCategory(value); setCreateDesignation(''); }}>
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder={bn ? 'ডিপার্টমেন্ট' : 'Department'} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {staffCategories.map((cat) => (
+                              <SelectItem key={cat.key} value={cat.key}>{bn ? cat.name_bn : cat.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>{bn ? 'পদবি' : 'Designation'}</Label>
+                        <Select value={createDesignation} onValueChange={setCreateDesignation} disabled={!createStaffCategory}>
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder={bn ? 'পদবি' : 'Designation'} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {masterDesignations
+                              .filter((d) => !createStaffCategory || d.staff_category === createStaffCategory)
+                              .map((d) => (
+                                <SelectItem key={d.id} value={(bn ? d.name_bn : d.name) || d.name || d.name_bn || ''}>{(bn ? d.name_bn : d.name) || d.name || d.name_bn}</SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div>
+                      <Label>{bn ? 'রোল' : 'Role'} <span className="text-xs text-muted-foreground">({bn ? 'ঐচ্ছিক' : 'Optional'})</span></Label>
+                      <Select value={role} onValueChange={setRole}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder={bn ? 'রোল সিলেক্ট করুন (ঐচ্ছিক)' : 'Select role (optional)'} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">
+                            {bn ? '🚫 রোল ছাড়া (শুধু পারমিশন)' : '🚫 No role (permission only)'}
+                          </SelectItem>
+                          {customRoles.filter(r => r.is_active).map(r => (
+                            <SelectItem key={r.name} value={r.name}>
+                              {bn ? r.name_bn : r.name} {r.is_system ? '' : `(${r.base_role})`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {(role === '' || role === 'none') && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {bn ? '⚠️ রোল ছাড়া ইউজার শুধু ব্যক্তিগত পারমিশন দিয়ে অ্যাক্সেস পাবে' : '⚠️ User without role will only access via individual permissions'}
                         </p>
                       )}
                     </div>
