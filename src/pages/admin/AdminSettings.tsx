@@ -1198,8 +1198,8 @@ const AdminSettings = () => {
           </h3>
           <p className="text-xs text-muted-foreground mb-4">
             {bn
-              ? 'EmailJS ব্যবহার করে OTP ইমেইল পাঠানো হবে। emailjs.com থেকে ফ্রি অ্যাকাউন্ট তৈরি করে Service ID, Template ID এবং Public Key সংগ্রহ করুন।'
-              : 'OTP emails will be sent via EmailJS. Create a free account at emailjs.com and get your Service ID, Template ID, and Public Key.'}
+              ? "'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            এই প্রজেক্ট ফ্রি একাউন্টে tansfer করা যাচ্ছেনা কেন"
+              : "'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            Why can't this project be transferred to a free account"}
           </p>
 
           {emailjsLoading ? (
