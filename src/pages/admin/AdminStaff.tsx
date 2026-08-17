@@ -336,7 +336,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
         },
       });
       if (error || !data?.success) {
-        toast.error(data?.error || error?.message || (bn ? 'অ্যাকাউন্ট তৈরি ব্যর্থ' : 'Failed to create account'));
+        toast.error(await parseEdgeError(error, data, bn));
         setAccCreating(false);
         return;
       }
