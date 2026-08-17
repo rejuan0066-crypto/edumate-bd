@@ -202,12 +202,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           console.warn('Auth token expired during profile fetch, attempting refresh...');
           fetchedForSession.current = null;
           try {
-            const previousAccessToken = sessionRef.current?.access_token ?? null;
             const { data, error: refreshErr } = await supabase.auth.refreshSession();
             const nextAccessToken = data.session?.access_token ?? null;
 
-            if (refreshErr || !nextAccessToken || nextAccessToken === previousAccessToken) {
-              console.warn('Session refresh failed, clearing local session');
+            // Only sign out if the server explicitly tells us the session is invalid.
+            // If the token is the same, it means the session is still active and we should continue.
+            if (refreshErr && refreshErr.message.includes('refresh_token_not_found')) {
+              console.warn('Session refresh failed definitively, clearing local session');
               await supabase.auth.signOut({ scope: 'local' });
               return;
             }
