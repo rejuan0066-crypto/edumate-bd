@@ -552,11 +552,24 @@ const AdminUserManagement = () => {
           setCreating(false);
           return;
         }
-        if (code === 'DUPLICATE_EMAIL') { showConflict('email', email); setCreating(false); return; }
-        if (code === 'DUPLICATE_NAME') { showConflict('name', fullName); setCreating(false); return; }
-        if (code === 'DUPLICATE_PHONE') {
+        if (code === 'DUPLICATE_EMAIL' || code === 'DUPLICATE_EMAIL_AUTH' || code === 'DUPLICATE_EMAIL_AUTH_RACE' || code === 'DUPLICATE_EMAIL_STAFF' || code === 'DUPLICATE_EMAIL_ADMIN') {
+          showConflict('email', email);
+          setCreating(false);
+          return;
+        }
+        if (code === 'DUPLICATE_NAME') {
+          showConflict('name', fullName);
+          setCreating(false);
+          return;
+        }
+        if (code === 'DUPLICATE_PHONE' || code === 'DUPLICATE_PHONE_RACE' || code === 'DUPLICATE_PHONE_STAFF' || code === 'DUPLICATE_PHONE_ADMIN') {
           toast.error((bn ? data?.message_bn : data?.message) || (bn ? '⚠️ এই ফোন নম্বর দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন' : '⚠️ This phone number is already registered'));
           setPhoneDup('dup');
+          setCreating(false);
+          return;
+        }
+        if (code === 'WEAK_PASSWORD') {
+          toast.error((bn ? data?.message_bn : data?.message) || (bn ? 'পাসওয়ার্ড সব শর্ত পূরণ করছে না' : 'Password does not meet requirements'));
           setCreating(false);
           return;
         }
