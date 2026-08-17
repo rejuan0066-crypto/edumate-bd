@@ -494,7 +494,11 @@ const AdminUserManagement = () => {
     }
     if (!email.trim()) { toast.error(bn ? 'ইমেইল দিন' : 'Enter email'); return; }
     if (!fullName.trim()) { toast.error(bn ? 'ইউজারের নাম দিন' : 'Enter user name'); return; }
-    if (!isPasswordStrongAgainst(password, passwordPolicy)) { toast.error(firstFailedRuleMessage(password, passwordPolicy, bn) || (bn ? 'পাসওয়ার্ড সব শর্ত পূরণ করছে না' : 'Password does not meet requirements')); return; }
+    if (!password) { toast.error(bn ? 'পাসওয়ার্ড দিন' : 'Password required'); return; }
+    if (!isPasswordStrongAgainst(password, passwordPolicy)) { 
+      toast.error(firstFailedRuleMessage(password, passwordPolicy, bn) || (bn ? 'পাসওয়ার্ড সব শর্ত পূরণ করছে না' : 'Password does not meet requirements')); 
+      return; 
+    }
     if (phoneDup === 'invalid') { toast.error(bn ? 'সঠিক ফোন নম্বর দিন' : 'Invalid phone number'); return; }
     if (phoneDup === 'dup') { toast.error(bn ? '⚠️ এই ফোন নম্বর দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন' : '⚠️ This phone number is already registered'); return; }
 
@@ -552,11 +556,24 @@ const AdminUserManagement = () => {
           setCreating(false);
           return;
         }
-        if (code === 'DUPLICATE_EMAIL') { showConflict('email', email); setCreating(false); return; }
-        if (code === 'DUPLICATE_NAME') { showConflict('name', fullName); setCreating(false); return; }
-        if (code === 'DUPLICATE_PHONE') {
+        if (code === 'DUPLICATE_EMAIL' || code === 'DUPLICATE_EMAIL_AUTH' || code === 'DUPLICATE_EMAIL_AUTH_RACE' || code === 'DUPLICATE_EMAIL_STAFF' || code === 'DUPLICATE_EMAIL_ADMIN') {
+          showConflict('email', email);
+          setCreating(false);
+          return;
+        }
+        if (code === 'DUPLICATE_NAME') {
+          showConflict('name', fullName);
+          setCreating(false);
+          return;
+        }
+        if (code === 'DUPLICATE_PHONE' || code === 'DUPLICATE_PHONE_RACE' || code === 'DUPLICATE_PHONE_STAFF' || code === 'DUPLICATE_PHONE_ADMIN') {
           toast.error((bn ? data?.message_bn : data?.message) || (bn ? '⚠️ এই ফোন নম্বর দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন' : '⚠️ This phone number is already registered'));
           setPhoneDup('dup');
+          setCreating(false);
+          return;
+        }
+        if (code === 'WEAK_PASSWORD') {
+          toast.error((bn ? data?.message_bn : data?.message) || (bn ? 'পাসওয়ার্ড সব শর্ত পূরণ করছে না' : 'Password does not meet requirements'));
           setCreating(false);
           return;
         }
@@ -1170,13 +1187,31 @@ const AdminUserManagement = () => {
                     <div>
                       <Label>{bn ? 'নাম' : 'Full Name'}</Label>
                       <Input className="mt-1" value={fullName} onChange={e => setFullName(e.target.value)} placeholder={bn ? 'ইউজারের নাম' : 'User name'} />
-                      {fullName.trim() && (
-                        <p className={`text-xs mt-1 flex items-center gap-1 ${nameDup === 'dup' ? 'text-destructive' : nameDup === 'ok' ? 'text-emerald-600' : 'text-muted-foreground'}`}>
-                          {nameDup === 'checking' && <><Loader2 className="w-3 h-3 animate-spin" />{bn ? 'যাচাই হচ্ছে...' : 'Checking...'}</>}
-                          {nameDup === 'dup' && <><AlertTriangle className="w-3 h-3" />{bn ? '⚠️ এই নামে একজন ইউজার ইতিমধ্যে আছেন' : '⚠️ A user with this name already exists'} <button type="button" onClick={() => showConflict('name', fullName)} className="underline ml-1 hover:text-destructive/80">{bn ? 'বিস্তারিত দেখুন' : 'View details'}</button></>}
-                          {nameDup === 'ok' && <>✓ {bn ? 'নাম উপলব্ধ' : 'Name available'}</>}
-                        </p>
-                      )}
+                    </div>
+                    <div>
+                      <Label>{bn ? 'ইমেইল' : 'Email'} *</Label>
+                      <Input className="mt-1" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={bn ? 'ইমেইল অ্যাড্রেস' : 'Email address'} />
+                    </div>
+                    <div>
+                      <Label>{bn ? 'মোবাইল নম্বর' : 'Mobile Number'}</Label>
+                      <Input
+                        className="mt-1"
+                        type="tel"
+                        value={createPhone}
+                        onChange={e => setCreatePhone(e.target.value.replace(/[^\d+]/g, ''))}
+                        placeholder={bn ? '01XXXXXXXXX' : '01XXXXXXXXX'}
+                        maxLength={15}
+                      />
+                    </div>
+                    <div>
+                      <Label>{bn ? 'পাসওয়ার্ড' : 'Password'} *</Label>
+                      <div className="relative mt-1">
+                        <Input className="pr-10" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(sanitizePasswordInput(e.target.value))} placeholder={bn ? 'শক্তিশালী পাসওয়ার্ড দিন' : 'Enter strong password'} />
+                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                      <PasswordStrengthMeter password={password} bn={bn} />
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
@@ -1209,47 +1244,6 @@ const AdminUserManagement = () => {
                       </div>
                     </div>
                     <div>
-                      <Label>{bn ? 'ইমেইল' : 'Email'} *</Label>
-                      <Input className="mt-1" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={bn ? 'ইমেইল অ্যাড্রেস' : 'Email address'} />
-                      {email.trim() && (
-                        <p className={`text-xs mt-1 flex items-center gap-1 ${(emailDup === 'dup' || emailDup === 'invalid') ? 'text-destructive' : emailDup === 'ok' ? 'text-emerald-600' : 'text-muted-foreground'}`}>
-                          {emailDup === 'checking' && <><Loader2 className="w-3 h-3 animate-spin" />{bn ? 'যাচাই হচ্ছে...' : 'Checking...'}</>}
-                          {emailDup === 'invalid' && <><AlertTriangle className="w-3 h-3" />{bn ? '⚠️ সঠিক ইমেইল ফরম্যাট নয়' : '⚠️ Invalid email format'}</>}
-                          {emailDup === 'dup' && <><AlertTriangle className="w-3 h-3" />{bn ? '⚠️ এই ইমেইলে একজন ইউজার ইতিমধ্যে আছেন' : '⚠️ A user with this email already exists'} <button type="button" onClick={() => showConflict('email', email)} className="underline ml-1 hover:text-destructive/80">{bn ? 'বিস্তারিত দেখুন' : 'View details'}</button></>}
-                          {emailDup === 'ok' && <>✓ {bn ? 'ইমেইল উপলব্ধ' : 'Email available'}</>}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <Label>{bn ? 'মোবাইল নম্বর' : 'Mobile Number'}</Label>
-                      <Input
-                        className="mt-1"
-                        type="tel"
-                        value={createPhone}
-                        onChange={e => setCreatePhone(e.target.value.replace(/[^\d+]/g, ''))}
-                        placeholder={bn ? '01XXXXXXXXX' : '01XXXXXXXXX'}
-                        maxLength={15}
-                      />
-                      {createPhone.trim() && (
-                        <p className={`text-xs mt-1 flex items-center gap-1 ${(phoneDup === 'dup' || phoneDup === 'invalid') ? 'text-destructive' : phoneDup === 'ok' ? 'text-emerald-600' : 'text-muted-foreground'}`}>
-                          {phoneDup === 'checking' && <><Loader2 className="w-3 h-3 animate-spin" />{bn ? 'যাচাই হচ্ছে...' : 'Checking...'}</>}
-                          {phoneDup === 'invalid' && <><AlertTriangle className="w-3 h-3" />{bn ? '⚠️ সঠিক ফোন নম্বর নয় (১১ ডিজিট)' : '⚠️ Invalid phone (11 digits)'}</>}
-                          {phoneDup === 'dup' && <><AlertTriangle className="w-3 h-3" />{bn ? '⚠️ এই ফোন নম্বর দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন' : '⚠️ This phone number is already registered'}</>}
-                          {phoneDup === 'ok' && <>✓ {bn ? 'ফোন নম্বর উপলব্ধ' : 'Phone available'}</>}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <Label>{bn ? 'পাসওয়ার্ড' : 'Password'} *</Label>
-                      <div className="relative mt-1">
-                        <Input className="pr-10" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(sanitizePasswordInput(e.target.value))} placeholder={bn ? 'শক্তিশালী পাসওয়ার্ড দিন' : 'Enter strong password'} />
-                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                      <PasswordStrengthMeter password={password} bn={bn} />
-                    </div>
-                    <div>
                       <Label>{bn ? 'রোল' : 'Role'} <span className="text-xs text-muted-foreground">({bn ? 'ঐচ্ছিক' : 'Optional'})</span></Label>
                       <Select value={role} onValueChange={setRole}>
                         <SelectTrigger className="mt-1">
@@ -1272,7 +1266,7 @@ const AdminUserManagement = () => {
                         </p>
                       )}
                     </div>
-                    <Button onClick={handleCreate} disabled={creating || emailDup === 'dup' || emailDup === 'invalid' || emailDup === 'checking' || nameDup === 'dup' || nameDup === 'checking'} className="w-full btn-primary-gradient">
+                    <Button onClick={handleCreate} disabled={creating} className="w-full btn-primary-gradient">
                       {creating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
                       {bn ? 'ইউজার তৈরি করুন' : 'Create User'}
                     </Button>
