@@ -148,11 +148,33 @@ const AdminExamSessions = () => {
       if (orParts.length > 0) {
         query = query.or(orParts.join(','));
       }
-      const { data, error } = await query.order('name_bn');
+      const { data, error } = await query;
       if (error) throw error;
-      return data;
+      return data || [];
     },
     enabled: selectedClassIds.length > 0,
+  });
+
+  // Sort subjects by class order and division order
+  const sortedSubjects = [...subjects].sort((a: any, b: any) => {
+    // Sort by class first
+    if (a.class_id !== b.class_id) {
+      if (!a.class_id) return 1;
+      if (!b.class_id) return -1;
+      const classA = classes.find((c: any) => c.id === a.class_id);
+      const classB = classes.find((c: any) => c.id === b.class_id);
+      return (classA?.sort_order ?? 0) - (classB?.sort_order ?? 0);
+    }
+    // Then by division
+    if (a.division_id !== b.division_id) {
+      if (!a.division_id) return 1;
+      if (!b.division_id) return -1;
+      const divA = divisions.find((d: any) => d.id === a.division_id);
+      const divB = divisions.find((d: any) => d.id === b.division_id);
+      return (divA?.sort_order ?? 0) - (divB?.sort_order ?? 0);
+    }
+    // Finally by name
+    return (a.name_bn || '').localeCompare(b.name_bn || '');
   });
 
   const toggleSubject = (subjectId: string) => {
@@ -161,10 +183,10 @@ const AdminExamSessions = () => {
 
   // Auto-select all subjects when subjects list changes
   useEffect(() => {
-    if (subjects.length > 0 && selectedSubjectIds.length === 0) {
-      setSelectedSubjectIds(subjects.map((s: any) => s.id));
+    if (sortedSubjects.length > 0 && selectedSubjectIds.length === 0) {
+      setSelectedSubjectIds(sortedSubjects.map((s: any) => s.id));
     }
-  }, [subjects]);
+  }, [sortedSubjects]);
 
   const { data: studentCounts = {} } = useQuery({
     queryKey: ['student_counts_by_class', academicSessionId],
@@ -300,7 +322,7 @@ const AdminExamSessions = () => {
       // Save selected subjects
       if (selectedSubjectIds.length > 0) {
         const subjectMappings = selectedSubjectIds.map(subjectId => {
-          const subj = subjects.find((s: any) => s.id === subjectId);
+          const subj = sortedSubjects.find((s: any) => s.id === subjectId);
           return {
             exam_session_id: examSession.id,
             subject_id: subjectId,
@@ -619,7 +641,7 @@ const AdminExamSessions = () => {
                 )}
 
                 {/* Subject Selection */}
-                {selectedClassIds.length > 0 && subjects.length > 0 && (
+                {selectedClassIds.length > 0 && sortedSubjects.length > 0 && (
                   <div className="mt-4">
                     <div className="flex items-center justify-between mb-2">
                       <label className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
@@ -627,7 +649,7 @@ const AdminExamSessions = () => {
                         {bn ? 'বিষয় নির্বাচন করুন' : 'Select Subjects'}
                       </label>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSelectedSubjectIds(subjects.map((s: any) => s.id))}>
+                        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSelectedSubjectIds(sortedSubjects.map((s: any) => s.id))}>
                           {bn ? 'সব নির্বাচন' : 'Select All'}
                         </Button>
                         <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSelectedSubjectIds([])}>
@@ -636,7 +658,7 @@ const AdminExamSessions = () => {
                       </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                      {subjects.map((subj: any) => {
+                      {sortedSubjects.map((subj: any) => {
                         const subjClass = subj.class_id ? classes.find((c: any) => c.id === subj.class_id) : null;
                         const subjDiv = subj.division_id ? divisions.find((d: any) => d.id === subj.division_id) : null;
                         const context = subjClass ? (bn ? subjClass.name_bn : subjClass.name) : subjDiv ? (bn ? subjDiv.name_bn : subjDiv.name) : '';
