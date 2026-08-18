@@ -1,0 +1,1 @@
+UPDATE public.students SET father_name = NULL, mother_name = NULL WHERE deleted_at IS NULL;

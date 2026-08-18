@@ -1,13 +1,10 @@
--- Cleanup Muta 2nd Year
-UPDATE public.students 
-SET deleted_at = NOW() 
-WHERE class_id = 'fe634e96-b5b6-4207-b9c8-b273a313c8a3' 
-  AND roll_number::integer > 6007 
-  AND deleted_at IS NULL;
+-- Clear father_name and mother_name for all active students
+UPDATE public.students
+SET father_name = NULL,
+    mother_name = NULL
+WHERE deleted_at IS NULL;
 
--- Cleanup Muta 3rd Year
-UPDATE public.students 
-SET deleted_at = NOW() 
-WHERE class_id = 'dea01e69-e7c2-470f-badf-742a767a00c7' 
-  AND roll_number::integer > 7007 
-  AND deleted_at IS NULL;
+-- GRANTs are already in place for public.students from previous migrations, 
+-- but ensuring we don't break permissions if someone re-runs.
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.students TO authenticated;
+GRANT ALL ON public.students TO service_role;
