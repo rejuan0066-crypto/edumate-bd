@@ -24,7 +24,7 @@ import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 const AdminStudents = () => {
   const { t, language } = useLanguage();
   const queryClient = useQueryClient();
-  const { checkApproval } = useApprovalCheck('/admin/students', 'students');
+  const { checkApproval, isRecordPending } = useApprovalCheck('/admin/students', 'students');
   const { canAddItem, canEditItem, canDeleteItem, canApproveItem } = usePagePermissions('/admin/students');
   const confirm = useConfirm();
   const bn = language === 'bn';
