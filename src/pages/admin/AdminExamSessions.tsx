@@ -20,6 +20,7 @@ const AdminExamSessions = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { canAddItem, canDeleteItem } = usePagePermissions('/admin/exam-sessions');
+  const confirm = useConfirm();
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
 
   const [name, setName] = useState('');
