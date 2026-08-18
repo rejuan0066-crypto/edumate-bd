@@ -66,6 +66,7 @@ const OtpVerificationDialog = ({
   const [otpValue, setOtpValue] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [expiryMinutes, setExpiryMinutes] = useState(10);
+  const [codeExpirySeconds, setCodeExpirySeconds] = useState(0);
   const [verifyCooldown, setVerifyCooldown] = useState(0);
 
   // Lockout state — populated whenever the API returns a lockout code.
