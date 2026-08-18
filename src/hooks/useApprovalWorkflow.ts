@@ -6,7 +6,7 @@ import { useApprovalSettings } from '@/hooks/useApprovalSettings';
 
 
 interface SubmitForApprovalParams {
-  actionType: 'add' | 'edit' | 'delete';
+  actionType: 'add' | 'edit' | 'delete' | 'reject';
   targetTable: string;
   targetId?: string;
   menuPath: string;
@@ -35,16 +35,16 @@ export const useApprovalWorkflow = () => {
 
   // Global rule: when the master switch is on, every non-admin (non-exempt) user
   // needs approval for the enabled actions — even without a per-user override row.
-  const globalNeedsApproval = (action?: 'view' | 'add' | 'edit' | 'delete'): boolean => {
+  const globalNeedsApproval = (action?: 'view' | 'add' | 'edit' | 'delete' | 'reject'): boolean => {
     if (!globalApproval.enabled) return false;
     if (role && globalApproval.exempt_roles.includes(role)) return false;
-    if (!action) return globalApproval.actions.add || globalApproval.actions.edit || globalApproval.actions.delete;
+    if (!action) return globalApproval.actions.add || globalApproval.actions.edit || globalApproval.actions.delete || globalApproval.actions.reject;
     if (action === 'view') return false;
     return globalApproval.actions[action] ?? false;
   };
 
   // Check if action requires approval for a specific menu path
-  const needsApproval = (menuPath: string, action?: 'view' | 'add' | 'edit' | 'delete'): boolean => {
+  const needsApproval = (menuPath: string, action?: 'view' | 'add' | 'edit' | 'delete' | 'reject'): boolean => {
     if (role === 'admin' || role === 'super_admin') return false;
     if (globalNeedsApproval(action)) return true;
     const perm = userPermissions.find((p: any) => p.menu_path === menuPath);
@@ -54,7 +54,7 @@ export const useApprovalWorkflow = () => {
       return perm[field] ?? false;
     }
     // If no action specified, check if any approval is required
-    return perm.approval_view || perm.approval_add || perm.approval_edit || perm.approval_delete || false;
+    return perm.approval_view || perm.approval_add || perm.approval_edit || perm.approval_delete || perm.approval_reject || false;
   };
 
 
@@ -75,6 +75,7 @@ export const useApprovalWorkflow = () => {
           ...params.payload,
           _description: params.description || '',
         },
+        requires_admin_approval: true
       });
 
       if (error) throw error;

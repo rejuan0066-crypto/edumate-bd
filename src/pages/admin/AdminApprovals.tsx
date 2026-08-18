@@ -18,6 +18,7 @@ const ACTION_LABELS: Record<string, { bn: string; en: string }> = {
   edit: { bn: 'সম্পাদনা', en: 'Edit' },
   delete: { bn: 'মুছুন', en: 'Delete' },
   submit: { bn: 'সাবমিশন', en: 'Submit' },
+  reject: { bn: 'প্রত্যাখ্যান', en: 'Reject' },
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -84,6 +85,11 @@ const AdminApprovals = () => {
         if (error) throw error;
       } else if (action_type === 'delete' && target_id) {
         const { error } = await supabase.from(target_table).delete().eq('id', target_id);
+        if (error) throw error;
+      } else if (action_type === 'reject' && target_id) {
+        // Special logic for "reject" if it targets a specific status column
+        // In most cases, it might be an update to status = 'rejected'
+        const { error } = await supabase.from(target_table).update(cleanPayload as any).eq('id', target_id);
         if (error) throw error;
       }
     } catch (err: any) {
@@ -205,6 +211,11 @@ const AdminApprovals = () => {
                       <div>
                         <p className="font-medium text-sm">{action.user_name || '—'}</p>
                         <p className="text-xs text-muted-foreground">{action.user_email}</p>
+                        {action.requires_admin_approval && (
+                          <Badge variant="secondary" className="mt-1 text-[10px] h-4">
+                            {bn ? 'অ্যাডমিন অনুমোদনের অপেক্ষায়' : 'Awaiting Admin Approval'}
+                          </Badge>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>

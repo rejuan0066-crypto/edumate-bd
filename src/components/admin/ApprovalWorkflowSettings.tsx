@@ -23,10 +23,11 @@ const ROLE_LABELS: Record<string, { bn: string; en: string }> = {
   general: { bn: 'সাধারণ', en: 'General' },
 };
 
-const ACTION_LABELS: { id: 'add' | 'edit' | 'delete'; bn: string; en: string }[] = [
+const ACTION_LABELS: { id: 'add' | 'edit' | 'delete' | 'reject'; bn: string; en: string }[] = [
   { id: 'add', bn: 'নতুন সংযোজন', en: 'Create / Add' },
   { id: 'edit', bn: 'সম্পাদনা', en: 'Edit / Update' },
   { id: 'delete', bn: 'মুছে ফেলা', en: 'Delete' },
+  { id: 'reject', bn: 'প্রত্যাখ্যান', en: 'Reject' },
 ];
 
 const ApprovalWorkflowSettings = () => {
