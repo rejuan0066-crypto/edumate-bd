@@ -35,6 +35,7 @@ import { recomputeNetSalary } from '@/lib/salaryNet';
 import { shouldApplyThursdayHalfDay, effectiveDutyEndForThursday, parseHalfDayEndMinutes, parseClockMinutes } from '@/lib/thursdayHalfDay';
 import { downloadSlipAsPdf, downloadSheetAsPdf, isMobileOrPwa } from '@/lib/salarySlipPdf';
 import { DatePicker } from '@/components/ui/date-picker';
+import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import {
   Wallet, Users, Search, Save, Download, Printer, Settings2,
   CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Edit2, Eye,
@@ -99,6 +100,7 @@ const AdminSalary = () => {
   const bn = language === 'bn';
   const queryClient = useQueryClient();
   const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/salary');
+  const { checkApproval, isRecordPending } = useApprovalCheck('/admin/salary', 'salary_records');
   const { timeFormat } = useTimeFormat();
   const fmt = (t: string) => formatTimeDisplay(t, timeFormat);
   const { settings: webSettings } = useWebsiteSettings();
@@ -1534,6 +1536,7 @@ const AdminSalary = () => {
         net_salary: netSalary,
         updated_at: new Date().toISOString(),
       };
+      if (await checkApproval('edit', { ...payload, staff_id: record.staff_id, month_year: record.month_year }, record.id, `বেতন সংশোধন: ${record.staff_id} (${record.month_year})`)) return;
       const { error } = await supabase.from('salary_records').update(payload).eq('id', record.id);
       if (error) throw error;
     },
@@ -2939,6 +2942,7 @@ const AdminSalary = () => {
                         <th className="px-3 py-2 text-right text-xs font-medium text-blue-600">{bn ? 'জমা' : 'Savings'}</th>
                         <th className="px-3 py-2 text-right text-xs font-medium text-emerald-600">{bn ? 'নিট বেতন' : 'Net'}</th>
                         <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'স্ট্যাটাস' : 'Status'}</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'পেন্ডিং অবস্থা' : 'Pending Status'}</th>
                         <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'অ্যাকশন' : 'Actions'}</th>
 
                       </tr>
@@ -3267,6 +3271,14 @@ const AdminSalary = () => {
                               )}
                             </td>
                             <td className="px-3 py-2 text-center">
+                              {rec && isRecordPending(rec.id) && (
+                                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse text-[10px]">
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  {bn ? 'অ্যাডমিন অনুমোদনের অপেক্ষায়' : 'Awaiting Admin Approval'}
+                                </Badge>
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-center">
 
                               <div className="flex gap-1 justify-center">
                                 {!rec && canAddItem && (
@@ -3285,9 +3297,17 @@ const AdminSalary = () => {
                                 )}
                                 {rec && (
                                   <>
-                                    {canEditItem && <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setEditDialog({ ...displayRecord, id: rec.id, staffName: s.name_bn })}>
-                                      <Edit2 className="h-3 w-3" />
-                                    </Button>}
+                                    {canEditItem && (
+                                      <Button 
+                                        size="icon" 
+                                        variant="ghost" 
+                                        className={`h-6 w-6 ${isRecordPending(rec.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
+                                        disabled={isRecordPending(rec.id)}
+                                        onClick={() => setEditDialog({ ...displayRecord, id: rec.id, staffName: s.name_bn })}
+                                      >
+                                        <Edit2 className="h-3 w-3" />
+                                      </Button>
+                                    )}
                                     {canEditItem && rec.status !== 'paid' && (
                                       <Button
                                         size="icon"
@@ -3304,16 +3324,37 @@ const AdminSalary = () => {
                                       <Printer className="h-3 w-3" />
                                     </Button>
                                     {rec.status !== 'paid' ? (
-                                      <Button size="icon" variant="ghost" className="h-6 w-6 text-yellow-600 hover:bg-yellow-100/60 dark:hover:bg-yellow-900/30" title={bn ? 'পরিশোধিত করুন' : 'Mark Paid'} onClick={() => setPaidConfirmId(rec.id)}>
+                                      <Button 
+                                        size="icon" 
+                                        variant="ghost" 
+                                        className={`h-6 w-6 text-yellow-600 hover:bg-yellow-100/60 dark:hover:bg-yellow-900/30 ${isRecordPending(rec.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
+                                        disabled={isRecordPending(rec.id)}
+                                        title={bn ? 'পরিশোধিত করুন' : 'Mark Paid'} 
+                                        onClick={() => setPaidConfirmId(rec.id)}
+                                      >
                                         <Clock className="h-3.5 w-3.5" />
                                       </Button>
                                     ) : (
-                                      <Button size="icon" variant="ghost" className="h-6 w-6 text-emerald-600 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/30" title={bn ? 'অপরিশোধিত করুন' : 'Mark Unpaid'} onClick={() => setUnpaidConfirmId(rec.id)}>
+                                      <Button 
+                                        size="icon" 
+                                        variant="ghost" 
+                                        className={`h-6 w-6 text-emerald-600 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/30 ${isRecordPending(rec.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
+                                        disabled={isRecordPending(rec.id)}
+                                        title={bn ? 'অপরিশোধিত করুন' : 'Mark Unpaid'} 
+                                        onClick={() => setUnpaidConfirmId(rec.id)}
+                                      >
                                         <CheckCircle2 className="h-3.5 w-3.5" />
                                       </Button>
                                     )}
                                     {canDeleteItem && (
-                                      <Button size="icon" variant="ghost" className="h-6 w-6 text-red-600 hover:bg-red-100/60 dark:hover:bg-red-900/30" title={bn ? 'আনজেনারেট (মুছুন)' : 'Ungenerate'} onClick={() => setUngenerateConfirmId(rec.id)}>
+                                      <Button 
+                                        size="icon" 
+                                        variant="ghost" 
+                                        className={`h-6 w-6 text-red-600 hover:bg-red-100/60 dark:hover:bg-red-900/30 ${isRecordPending(rec.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
+                                        disabled={isRecordPending(rec.id)}
+                                        title={bn ? 'আনজেনারেট (মুছুন)' : 'Ungenerate'} 
+                                        onClick={() => setUngenerateConfirmId(rec.id)}
+                                      >
                                         <Trash2 className="h-3.5 w-3.5" />
                                       </Button>
                                     )}
@@ -3552,6 +3593,14 @@ const AdminSalary = () => {
                                   <Badge variant="outline" className="text-[9px]">+{ledgerEntries.length - 6}</Badge>
                                 )}
                               </div>
+                            </td>
+                            <td className="px-3 py-2 text-center">
+                              {isRecordPending(cfg.id) && (
+                                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse text-[10px]">
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  {bn ? 'অ্যাডমিন অনুমোদনের অপেক্ষায়' : 'Awaiting Admin Approval'}
+                                </Badge>
+                              )}
                             </td>
                             <td className="px-3 py-2 text-center">
                               <div className="flex gap-1 justify-center items-center flex-wrap">

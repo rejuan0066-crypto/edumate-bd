@@ -24,7 +24,7 @@ import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 const AdminStudents = () => {
   const { t, language } = useLanguage();
   const queryClient = useQueryClient();
-  const { checkApproval } = useApprovalCheck('/admin/students', 'students');
+  const { checkApproval, isRecordPending } = useApprovalCheck('/admin/students', 'students');
   const { canAddItem, canEditItem, canDeleteItem, canApproveItem } = usePagePermissions('/admin/students');
   const confirm = useConfirm();
   const bn = language === 'bn';
@@ -360,6 +360,7 @@ const AdminStudents = () => {
                     <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'সেশন' : 'Session'}</th>
                     <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'শ্রেণী' : 'Class'}</th>
                     <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'অনুমোদন' : 'Approval'}</th>
+                    <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'পেন্ডিং অবস্থা' : 'Pending Status'}</th>
                     {canApproveItem && <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'ধরন' : 'Type'}</th>}
                     <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'স্ট্যাটাস' : 'Status'}</th>
                     <th className="text-right px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'অ্যাকশন' : 'Action'}</th>
@@ -393,6 +394,14 @@ const AdminStudents = () => {
                       <td className="px-5 py-4 text-sm text-muted-foreground">{getSessionName(s.session_id, s.admission_session)}</td>
                       <td className="px-5 py-4 text-sm text-muted-foreground">{getClassName(s.class_id)}</td>
                       <td className="px-5 py-4">{getApprovalBadge(s.approval_status || 'pending')}</td>
+                      <td className="px-5 py-4">
+                        {isRecordPending(s.id) && (
+                          <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse text-[10px]">
+                            <Clock className="w-3 h-3 mr-1" />
+                            {bn ? 'অ্যাডমিন অনুমোদনের অপেক্ষায়' : 'Awaiting Admin Approval'}
+                          </Badge>
+                        )}
+                      </td>
                       {canApproveItem && <td className="px-5 py-4">
                         {(() => {
                           const t = (s.student_type === 'old') ? 'old' : 'new';
@@ -448,7 +457,14 @@ const AdminStudents = () => {
                           <button onClick={() => setShowDetail(s)} className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/30 shadow-sm border border-blue-200/50 dark:border-blue-800/30 flex items-center justify-center text-blue-600 dark:text-blue-400 hover:shadow-md hover:scale-110 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all duration-200" title={bn ? 'দেখুন' : 'View'}><Eye className="w-4 h-4" strokeWidth={1.75} /></button>
                           <button onClick={() => printStudentProfile({ student: s, bn, institution: institution || {}, className: getClassName(s.class_id), sessionName: getSessionName(s.session_id, s.admission_session) })} className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/30 shadow-sm border border-indigo-200/50 dark:border-indigo-800/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 hover:shadow-md hover:scale-110 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all duration-200" title={bn ? 'প্রোফাইল প্রিন্ট' : 'Print Profile'}><Printer className="w-4 h-4" strokeWidth={1.75} /></button>
                           {canEditItem && (
-                            <button onClick={() => { setEditStudent(s); setShowAdd(true); }} className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/30 shadow-sm border border-emerald-200/50 dark:border-emerald-800/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 hover:shadow-md hover:scale-110 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all duration-200" title={bn ? 'সম্পাদনা' : 'Edit'}><Pencil className="w-4 h-4" strokeWidth={1.75} /></button>
+                            <button 
+                              disabled={isRecordPending(s.id)}
+                              onClick={() => { setEditStudent(s); setShowAdd(true); }} 
+                              className={`w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/30 shadow-sm border border-emerald-200/50 dark:border-emerald-800/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 hover:shadow-md hover:scale-110 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all duration-200 ${isRecordPending(s.id) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`} 
+                              title={bn ? 'সম্পাদনা' : 'Edit'}
+                            >
+                              <Pencil className="w-4 h-4" strokeWidth={1.75} />
+                            </button>
                           )}
                           {canEditItem && (s.approval_status !== 'approved') && (
                             <button onClick={() => statusMutation.mutate({ id: s.id, status: 'approved' })} className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/30 shadow-sm border border-emerald-200/50 dark:border-emerald-800/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 hover:shadow-md hover:scale-110 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all duration-200" title={bn ? 'অনুমোদন' : 'Approve'}><CheckCircle className="w-4 h-4" strokeWidth={1.75} /></button>
@@ -468,8 +484,15 @@ const AdminStudents = () => {
                               {(s.status || 'active') === 'active' ? <UserX className="w-4 h-4" strokeWidth={1.75} /> : <UserCheck className="w-4 h-4" strokeWidth={1.75} />}
                             </button>
                           )}
-                          {canDeleteItem && (
-                            <button onClick={() => setDeleteId(s.id)} className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/30 shadow-sm border border-rose-200/50 dark:border-rose-800/30 flex items-center justify-center text-rose-600 dark:text-rose-400 hover:shadow-md hover:scale-110 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-all duration-200" title={bn ? 'মুছুন' : 'Delete'}><Trash2 className="w-4 h-4" strokeWidth={1.75} /></button>
+                           {canDeleteItem && (
+                            <button 
+                              disabled={isRecordPending(s.id)}
+                              onClick={() => setDeleteId(s.id)} 
+                              className={`w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/30 shadow-sm border border-rose-200/50 dark:border-rose-800/30 flex items-center justify-center text-rose-600 dark:text-rose-400 hover:shadow-md hover:scale-110 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-all duration-200 ${isRecordPending(s.id) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`} 
+                              title={bn ? 'মুছুন' : 'Delete'}
+                            >
+                              <Trash2 className="w-4 h-4" strokeWidth={1.75} />
+                            </button>
                           )}
                         </div>
                       </td>

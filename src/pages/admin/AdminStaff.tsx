@@ -67,7 +67,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const menuPath = staffType === 'teacher' ? '/admin/teachers' : staffType === 'administrative' ? '/admin/administrative-staff' : staffType === 'support' ? '/admin/support-staff' : staffType === 'staff' ? '/admin/general-staff' : staffType === 'director' ? '/admin/directors' : staffType === 'committee_member' ? '/admin/committee-members' : '/admin/staff';
-  const { checkApproval } = useApprovalCheck(menuPath, 'staff');
+  const { checkApproval, isRecordPending } = useApprovalCheck(menuPath, 'staff');
   const { role } = useAuth();
   const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions(menuPath);
   const confirm = useConfirm();
@@ -461,6 +461,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('status')}>
                        {bn ? 'স্ট্যাটাস' : 'Status'} <span className="ml-1 opacity-60">{sortIcon('status')}</span>
                      </th>
+                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'পেন্ডিং অবস্থা' : 'Pending Status'}</th>
                      <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'অ্যাকশন' : 'Action'}</th>
                    </tr>
                 </thead>
@@ -554,39 +555,89 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                            (bn ? 'নিষ্ক্রিয়' : 'Inactive')}
                         </span>
                       </td>
+                      <td className="px-4 py-3">
+                        {isRecordPending(s.id) && (
+                          <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse text-[10px]">
+                            <Clock className="w-3 h-3 mr-1" />
+                            {bn ? 'অ্যাডমিন অনুমোদনের অপেক্ষায়' : 'Awaiting Admin Approval'}
+                          </Badge>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-right flex items-center justify-end gap-1">
                         {s.status === 'pending' && isAdminRole(role) && (
                           <>
-                            <button onClick={() => statusMutation.mutate({ id: s.id, status: 'active' })} className="p-2 rounded-lg hover:bg-success/10 text-success" title={bn ? 'অনুমোদন' : 'Approve'} disabled={statusMutation.isPending}><Check className="w-4 h-4" /></button>
-                            <button onClick={() => setDeleteId(s.id)} className="p-2 rounded-lg hover:bg-destructive/10 text-destructive" title={bn ? 'বাতিল' : 'Reject'} disabled={statusMutation.isPending}><X className="w-4 h-4" /></button>
+                            <button 
+                              onClick={() => statusMutation.mutate({ id: s.id, status: 'active' })} 
+                              className={`p-2 rounded-lg hover:bg-success/10 text-success ${isRecordPending(s.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
+                              title={bn ? 'অনুমোদন' : 'Approve'} 
+                              disabled={statusMutation.isPending || isRecordPending(s.id)}
+                            >
+                              <Check className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => setDeleteId(s.id)} 
+                              className={`p-2 rounded-lg hover:bg-destructive/10 text-destructive ${isRecordPending(s.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
+                              title={bn ? 'বাতিল' : 'Reject'} 
+                              disabled={statusMutation.isPending || isRecordPending(s.id)}
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
                           </>
                         )}
-                        <button onClick={() => setViewStaff(s)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary" title={bn ? 'প্রোফাইল দেখুন' : 'View Profile'}><Eye className="w-4 h-4" /></button>
+                        <button onClick={() => setViewStaff(s)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary" title={bn ? 'প্রোফail দেখুন' : 'View Profile'}><Eye className="w-4 h-4" /></button>
                         {canEditItem && s.status === 'active' && (
-                          <button onClick={() => setLetterStaff(s)} className="p-2 rounded-lg hover:bg-accent/10 text-muted-foreground hover:text-accent" title={bn ? 'পদোন্নতি / বেতন পত্র' : 'Promotion / Salary Letter'}><Award className="w-4 h-4" /></button>
+                          <button 
+                            onClick={() => setLetterStaff(s)} 
+                            className={`p-2 rounded-lg hover:bg-accent/10 text-muted-foreground hover:text-accent ${isRecordPending(s.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
+                            disabled={isRecordPending(s.id)}
+                            title={bn ? 'পদোন্নতি / বেতন পত্র' : 'Promotion / Salary Letter'}
+                          >
+                            <Award className="w-4 h-4" />
+                          </button>
                         )}
                         {canEditItem && s.status === 'active' && (
-                          <button onClick={() => setDutyStaff(s)} className={`p-2 rounded-lg hover:bg-primary/10 ${s.duty_start_time ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`} title={bn ? 'ব্যক্তিগত ডিউটি সময়' : 'Personal Duty Time'}><Clock className="w-4 h-4" /></button>
+                          <button 
+                            onClick={() => setDutyStaff(s)} 
+                            className={`p-2 rounded-lg hover:bg-primary/10 ${s.duty_start_time ? 'text-primary' : 'text-muted-foreground hover:text-primary'} ${isRecordPending(s.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
+                            disabled={isRecordPending(s.id)}
+                            title={bn ? 'ব্যক্তিগত ডিউটি সময়' : 'Personal Duty Time'}
+                          >
+                            <Clock className="w-4 h-4" />
+                          </button>
                         )}
                         {canEditItem && (s.status === 'active' || s.status === 'inactive') && isAdminRole(role) && (
                           <button
+                            disabled={statusMutation.isPending || isRecordPending(s.id)}
                             onClick={async () => { const next = s.status === 'active' ? 'inactive' : 'active'; const ok = await confirm({ title: bn ? (next === 'active' ? 'স্টাফ সক্রিয় করবেন?' : 'স্টাফ নিষ্ক্রিয় করবেন?') : (next === 'active' ? 'Activate staff?' : 'Deactivate staff?'), description: bn ? `"${s.name_bn || s.name_en}" কে ${next === 'active' ? 'সক্রিয়' : 'নিষ্ক্রিয়'} করতে চান?` : `Are you sure you want to ${next === 'active' ? 'activate' : 'deactivate'} "${s.name_en || s.name_bn}"?`, confirmText: bn ? 'হ্যাঁ' : 'Yes', cancelText: bn ? 'বাতিল' : 'Cancel', variant: next === 'active' ? 'default' : 'warning' }); if (!ok) return; statusMutation.mutate({ id: s.id, status: next }); }}
-                            className={`p-2 rounded-lg ${s.status === 'active' ? 'hover:bg-destructive/10 text-muted-foreground hover:text-destructive' : 'hover:bg-success/10 text-muted-foreground hover:text-success'}`}
+                            className={`p-2 rounded-lg ${s.status === 'active' ? 'hover:bg-destructive/10 text-muted-foreground hover:text-destructive' : 'hover:bg-success/10 text-muted-foreground hover:text-success'} ${isRecordPending(s.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
                             title={s.status === 'active' ? (bn ? 'নিষ্ক্রিয় করুন' : 'Inactivate') : (bn ? 'সক্রিয় করুন' : 'Activate')}
-                            disabled={statusMutation.isPending}
                           >
                             {s.status === 'active' ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
                           </button>
                         )}
                         {canEditItem && (
-                          <button onClick={() => {
-                            const cat = getStaffCategory(s, designationsMap, activeCategoryKeys);
-                            const path = cat === 'teacher' ? 'teachers' : cat === 'administrative' ? 'administrative-staff' : cat === 'support' ? 'support-staff' : cat === 'director' ? 'directors' : cat === 'committee_member' ? 'committee-members' : 'general-staff';
-                            navigate(`/admin/${path}/edit/${s.id}`);
-                          }} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary" title={bn ? 'সম্পাদনা' : 'Edit'}><Pencil className="w-4 h-4" /></button>
+                          <button 
+                            disabled={isRecordPending(s.id)}
+                            onClick={() => {
+                              const cat = getStaffCategory(s, designationsMap, activeCategoryKeys);
+                              const path = cat === 'teacher' ? 'teachers' : cat === 'administrative' ? 'administrative-staff' : cat === 'support' ? 'support-staff' : cat === 'director' ? 'directors' : cat === 'committee_member' ? 'committee-members' : 'general-staff';
+                              navigate(`/admin/${path}/edit/${s.id}`);
+                            }} 
+                            className={`p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary ${isRecordPending(s.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
+                            title={bn ? 'সম্পাদনা' : 'Edit'}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
                         )}
                         {canDeleteItem && (
-                          <button onClick={() => setDeleteId(s.id)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-destructive" title={bn ? 'মুছুন' : 'Delete'}><Trash2 className="w-4 h-4" /></button>
+                          <button 
+                            disabled={isRecordPending(s.id)}
+                            onClick={() => setDeleteId(s.id)} 
+                            className={`p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-destructive ${isRecordPending(s.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
+                            title={bn ? 'মুছুন' : 'Delete'}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         )}
                       </td>
                     </tr>
