@@ -15,7 +15,7 @@ import { useConfirm } from '@/contexts/ConfirmContext';
 const AdminSubjects = () => {
   const { language } = useLanguage();
   const queryClient = useQueryClient();
-  const { checkApproval } = useApprovalCheck('/admin/subjects', 'subjects');
+  const { checkApproval, isRecordPending } = useApprovalCheck('/admin/subjects', 'subjects');
   const confirm = useConfirm();
   const { canAddItem, canDeleteItem, canEditItem } = usePagePermissions('/admin/subjects');
   const [newName, setNewName] = useState('');
@@ -181,6 +181,7 @@ const AdminSubjects = () => {
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{language === 'bn' ? 'ইংরেজি নাম' : 'English Name'}</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{language === 'bn' ? 'কোড' : 'Code'}</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{language === 'bn' ? 'ক্লাস' : 'Class'}</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{language === 'bn' ? 'পেন্ডিং অবস্থা' : 'Pending Status'}</th>
                     <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{language === 'bn' ? 'অ্যাকশন' : 'Action'}</th>
                   </tr>
                 </thead>
@@ -211,10 +212,34 @@ const AdminSubjects = () => {
                           <td className="px-4 py-3 text-sm text-muted-foreground">{s.name}</td>
                           <td className="px-4 py-3 text-sm text-muted-foreground">{s.code || '-'}</td>
                           <td className="px-4 py-3 text-sm"><span className="px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">{language === 'bn' ? s.classes?.name_bn : s.classes?.name || '-'}</span></td>
+                          <td className="px-4 py-3">
+                            {isRecordPending(s.id) && (
+                              <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse text-[10px]">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {language === 'bn' ? 'অ্যাডমিন অনুমোদনের অপেক্ষায়' : 'Awaiting Admin Approval'}
+                              </Badge>
+                            )}
+                          </td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end gap-1">
-                              {canEditItem && <button onClick={() => { setEditingId(s.id); setEditName(s.name_bn); setEditNameEn(s.name || ''); setEditCode(s.code || ''); setEditClass(s.class_id || ''); }} className="p-2 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary"><Edit2 className="w-4 h-4" /></button>}
-                              {canDeleteItem && <button onClick={() => deleteMutation.mutate(s.id)} className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive"><Trash2 className="w-4 h-4" /></button>}
+                              {canEditItem && (
+                                <button 
+                                  disabled={isRecordPending(s.id)}
+                                  onClick={() => { setEditingId(s.id); setEditName(s.name_bn); setEditNameEn(s.name || ''); setEditCode(s.code || ''); setEditClass(s.class_id || ''); }} 
+                                  className={`p-2 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary ${isRecordPending(s.id) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                              )}
+                              {canDeleteItem && (
+                                <button 
+                                  disabled={isRecordPending(s.id)}
+                                  onClick={() => deleteMutation.mutate(s.id)} 
+                                  className={`p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive ${isRecordPending(s.id) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
                             </div>
                           </td>
                         </>

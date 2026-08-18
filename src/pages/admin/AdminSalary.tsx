@@ -35,6 +35,7 @@ import { recomputeNetSalary } from '@/lib/salaryNet';
 import { shouldApplyThursdayHalfDay, effectiveDutyEndForThursday, parseHalfDayEndMinutes, parseClockMinutes } from '@/lib/thursdayHalfDay';
 import { downloadSlipAsPdf, downloadSheetAsPdf, isMobileOrPwa } from '@/lib/salarySlipPdf';
 import { DatePicker } from '@/components/ui/date-picker';
+import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import {
   Wallet, Users, Search, Save, Download, Printer, Settings2,
   CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Edit2, Eye,
@@ -99,6 +100,7 @@ const AdminSalary = () => {
   const bn = language === 'bn';
   const queryClient = useQueryClient();
   const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/salary');
+  const { checkApproval, isRecordPending } = useApprovalCheck('/admin/salary', 'salary_records');
   const { timeFormat } = useTimeFormat();
   const fmt = (t: string) => formatTimeDisplay(t, timeFormat);
   const { settings: webSettings } = useWebsiteSettings();

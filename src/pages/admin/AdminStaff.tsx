@@ -461,6 +461,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('status')}>
                        {bn ? 'স্ট্যাটাস' : 'Status'} <span className="ml-1 opacity-60">{sortIcon('status')}</span>
                      </th>
+                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'পেন্ডিং অবস্থা' : 'Pending Status'}</th>
                      <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'অ্যাকশন' : 'Action'}</th>
                    </tr>
                 </thead>
@@ -553,6 +554,14 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                            s.status === 'pending' ? (bn ? 'আবেদন' : 'Pending') : 
                            (bn ? 'নিষ্ক্রিয়' : 'Inactive')}
                         </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {isRecordPending(s.id) && (
+                          <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse text-[10px]">
+                            <Clock className="w-3 h-3 mr-1" />
+                            {bn ? 'অ্যাডমিন অনুমোদনের অপেক্ষায়' : 'Awaiting Admin Approval'}
+                          </Badge>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-right flex items-center justify-end gap-1">
                         {s.status === 'pending' && isAdminRole(role) && (
