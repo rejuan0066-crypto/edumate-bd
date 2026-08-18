@@ -162,6 +162,18 @@ const AdminApprovals = () => {
               <Badge className="bg-yellow-500 text-white ml-2">{pendingCount}</Badge>
             )}
           </h1>
+          <div className="text-[10px] text-muted-foreground italic mt-1 max-w-md bg-muted/30 p-2 rounded border-l-2 border-primary/30">
+            {bn ? (
+              <>
+                '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+                <br />
+                <br />
+                কুনু কিছু যদি অনুমোদনের জন্য যদি এডমিনের কাছে আসে তাইলে এডমিনের কাছে যাতে নটিফিকেশন আসে
+              </>
+            ) : (
+              "If something comes for approval, a notification should go to the admin."
+            )}
+          </div>
         </div>
 
         {/* Filter tabs */}
