@@ -6599,6 +6599,7 @@ export type Database = {
           id: string
           menu_path: string
           payload: Json
+          requires_admin_approval: boolean | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: string
@@ -6616,6 +6617,7 @@ export type Database = {
           id?: string
           menu_path: string
           payload?: Json
+          requires_admin_approval?: boolean | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
@@ -6633,6 +6635,7 @@ export type Database = {
           id?: string
           menu_path?: string
           payload?: Json
+          requires_admin_approval?: boolean | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
@@ -9893,6 +9896,7 @@ export type Database = {
           approval_approve: boolean
           approval_delete: boolean
           approval_edit: boolean
+          approval_reject: boolean | null
           approval_view: boolean
           can_add: boolean
           can_approve: boolean
@@ -9910,6 +9914,7 @@ export type Database = {
           approval_approve?: boolean
           approval_delete?: boolean
           approval_edit?: boolean
+          approval_reject?: boolean | null
           approval_view?: boolean
           can_add?: boolean
           can_approve?: boolean
@@ -9927,6 +9932,7 @@ export type Database = {
           approval_approve?: boolean
           approval_delete?: boolean
           approval_edit?: boolean
+          approval_reject?: boolean | null
           approval_view?: boolean
           can_add?: boolean
           can_approve?: boolean

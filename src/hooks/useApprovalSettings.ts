@@ -7,14 +7,14 @@ export interface ApprovalWorkflowSettings {
   /** Master on/off switch for the global approval requirement */
   enabled: boolean;
   /** Which actions require admin approval when enabled */
-  actions: { add: boolean; edit: boolean; delete: boolean };
+  actions: { add: boolean; edit: boolean; delete: boolean; reject: boolean };
   /** Roles that are exempt (in addition to admin / super_admin, which are always exempt) */
   exempt_roles: string[];
 }
 
 export const DEFAULT_APPROVAL_SETTINGS: ApprovalWorkflowSettings = {
   enabled: false,
-  actions: { add: true, edit: true, delete: true },
+  actions: { add: true, edit: true, delete: true, reject: true },
   exempt_roles: [],
 };
 
@@ -26,6 +26,7 @@ export function normalizeApprovalSettings(raw: unknown): ApprovalWorkflowSetting
       add: v.actions?.add ?? true,
       edit: v.actions?.edit ?? true,
       delete: v.actions?.delete ?? true,
+      reject: v.actions?.reject ?? true,
     },
     exempt_roles: Array.isArray(v.exempt_roles) ? v.exempt_roles.map(String) : [],
   };
