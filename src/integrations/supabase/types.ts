@@ -6599,6 +6599,7 @@ export type Database = {
           id: string
           menu_path: string
           payload: Json
+          requires_admin_approval: boolean | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: string
@@ -6616,6 +6617,7 @@ export type Database = {
           id?: string
           menu_path: string
           payload?: Json
+          requires_admin_approval?: boolean | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
@@ -6633,6 +6635,7 @@ export type Database = {
           id?: string
           menu_path?: string
           payload?: Json
+          requires_admin_approval?: boolean | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
