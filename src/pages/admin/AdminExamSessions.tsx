@@ -316,13 +316,39 @@ const AdminExamSessions = () => {
   };
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from('exam_sessions').delete().eq('id', id); if (error) throw error; },
+    mutationFn: async (id: string) => {
+      const session = examSessions.find((s: any) => s.id === id);
+      const resultInfo = (examResultCounts as Record<string, any>)[id];
+      const hasResults = resultInfo && resultInfo.resultCount > 0;
+
+      const isConfirmed = await confirm({
+        title: bn ? 'এক্সাম সেশন মুছুন?' : 'Delete Exam Session?',
+        description: hasResults 
+          ? (bn 
+              ? `এই সেশনের সাথে ${resultInfo.resultCount}টি ফলাফল (Result) যুক্ত আছে। সেশন মুছলে এই ফলাফলগুলোও মুছে যাবে। আপনি কি নিশ্চিত?` 
+              : `This session has ${resultInfo.resultCount} results linked to it. Deleting the session will also delete these results. Are you sure?`)
+          : (bn 
+              ? `আপনি কি "${session?.name_bn}" এক্সাম সেশনটি মুছে ফেলতে চান?` 
+              : `Do you want to delete "${session?.name}" exam session?`),
+        variant: 'destructive',
+        confirmText: bn ? 'হ্যাঁ, মুছুন' : 'Yes, Delete',
+        cancelText: bn ? 'বাতিল' : 'Cancel'
+      });
+
+      if (!isConfirmed) return;
+
+      const { error } = await supabase.from('exam_sessions').delete().eq('id', id);
+      if (error) throw error;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exam_sessions_list'] });
       queryClient.invalidateQueries({ queryKey: ['exam_session_classes_all'] });
-      toast.success(bn ? 'মুছে ফেলা হয়েছে' : 'Deleted');
+      toast.success(bn ? 'সফলভাবে মুছে ফেলা হয়েছে' : 'Successfully deleted');
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => {
+      console.error('Delete error:', e);
+      toast.error(bn ? `মুছে ফেলা সম্ভব হয়নি: ${e.message}` : `Could not delete: ${e.message}`);
+    },
   });
 
   // --- Exam Type CRUD ---
