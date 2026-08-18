@@ -3,7 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 
 export const useApprovalCheck = (menuPath: string, targetTable: string) => {
-  const { needsApproval, submitForApproval } = useApprovalWorkflow();
+  const { needsApproval, submitForApproval, isRecordPending } = useApprovalWorkflow();
   const { language } = useLanguage();
   const bn = language === 'bn';
 
@@ -12,12 +12,23 @@ export const useApprovalCheck = (menuPath: string, targetTable: string) => {
    * Returns true if intercepted (submitted for approval), false if should proceed normally.
    */
   const checkApproval = async (
-    actionType: 'add' | 'edit' | 'delete',
+    actionType: 'add' | 'edit' | 'delete' | 'reject',
     payload: Record<string, unknown>,
     targetId?: string,
     description?: string
   ): Promise<boolean> => {
     if (!needsApproval(menuPath, actionType)) return false;
+
+    // Check if the record is already locked for a pending action
+    if (targetId && isRecordPending(targetTable, targetId)) {
+      toast.warning(
+        bn
+          ? '⏳ এই রেকর্ডটি ইতিমধ্যে অ্যাডমিন অনুমোদনের অপেক্ষায় রয়েছে।'
+          : '⏳ This record is already awaiting admin approval.',
+        { duration: 5000 }
+      );
+      return true;
+    }
 
     const success = await submitForApproval({
       actionType,
@@ -41,5 +52,9 @@ export const useApprovalCheck = (menuPath: string, targetTable: string) => {
     return true;
   };
 
-  return { checkApproval, needsApproval: (action?: 'view' | 'add' | 'edit' | 'delete') => needsApproval(menuPath, action) };
+  return { 
+    checkApproval, 
+    needsApproval: (action?: 'view' | 'add' | 'edit' | 'delete' | 'reject') => needsApproval(menuPath, action),
+    isRecordPending: (id: string) => isRecordPending(targetTable, id)
+  };
 };
