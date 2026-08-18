@@ -74,11 +74,18 @@ const AdminStudents = () => {
   const { data: classes = [] } = useQuery({
     queryKey: ['classes'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('classes').select('*, divisions(name, name_bn)').eq('is_active', true).order('sort_order');
+      const { data, error } = await supabase.from('classes').select('*, divisions(name, name_bn, sort_order)').eq('is_active', true).order('sort_order');
       if (error) throw error;
-      return data;
+      // Sort by division serial first, then class serial
+      return [...(data || [])].sort((a: any, b: any) => {
+        const da = a.divisions?.sort_order ?? 9999;
+        const db = b.divisions?.sort_order ?? 9999;
+        if (da !== db) return da - db;
+        return (a.sort_order ?? 9999) - (b.sort_order ?? 9999);
+      });
     },
   });
+
 
   // Filter classes by selected division
   const filteredClasses = filterDivisionId !== 'all'
