@@ -159,6 +159,28 @@ const OtpVerificationDialog = ({
     };
   }, [lockout?.retryAfterSeconds]);
 
+  // OTP code expiry countdown — shows the user exactly how long the current
+  // code remains valid. Resets whenever a new code is issued.
+  const codeExpiryTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    if (codeExpirySeconds <= 0) {
+      if (codeExpiryTimerRef.current) {
+        clearInterval(codeExpiryTimerRef.current);
+        codeExpiryTimerRef.current = null;
+      }
+      return;
+    }
+    codeExpiryTimerRef.current = setInterval(() => {
+      setCodeExpirySeconds(prev => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+    return () => {
+      if (codeExpiryTimerRef.current) {
+        clearInterval(codeExpiryTimerRef.current);
+        codeExpiryTimerRef.current = null;
+      }
+    };
+  }, [codeExpirySeconds]);
+
   /** Apply a lockout based on an API error code. */
   const applyLockout = (
     code: string | undefined,
