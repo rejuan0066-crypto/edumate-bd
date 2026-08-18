@@ -6,10 +6,16 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useOtpService } from '@/hooks/useOtpService';
 import { fetchOtpRequirements, isOtpRequiredFor, type OtpRoleScope } from '@/hooks/useOtpRequirements';
-import { Loader2, Mail, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Loader2, Mail, ShieldCheck, ShieldAlert, Timer } from 'lucide-react';
 import { toast } from 'sonner';
 import OtpResendButton from '@/components/OtpResendButton';
 import { trackOtpLockout } from '@/lib/otpAnalytics';
+
+const formatCountdown = (totalSeconds: number) => {
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+};
 
 interface OtpVerificationDialogProps {
   open: boolean;
@@ -60,6 +66,7 @@ const OtpVerificationDialog = ({
   const [otpValue, setOtpValue] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [expiryMinutes, setExpiryMinutes] = useState(10);
+  const [codeExpirySeconds, setCodeExpirySeconds] = useState(0);
   const [verifyCooldown, setVerifyCooldown] = useState(0);
 
   // Lockout state — populated whenever the API returns a lockout code.
@@ -152,6 +159,28 @@ const OtpVerificationDialog = ({
     };
   }, [lockout?.retryAfterSeconds]);
 
+  // OTP code expiry countdown — shows the user exactly how long the current
+  // code remains valid. Resets whenever a new code is issued.
+  const codeExpiryTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    if (codeExpirySeconds <= 0) {
+      if (codeExpiryTimerRef.current) {
+        clearInterval(codeExpiryTimerRef.current);
+        codeExpiryTimerRef.current = null;
+      }
+      return;
+    }
+    codeExpiryTimerRef.current = setInterval(() => {
+      setCodeExpirySeconds(prev => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+    return () => {
+      if (codeExpiryTimerRef.current) {
+        clearInterval(codeExpiryTimerRef.current);
+        codeExpiryTimerRef.current = null;
+      }
+    };
+  }, [codeExpirySeconds]);
+
   /** Apply a lockout based on an API error code. */
   const applyLockout = (
     code: string | undefined,
@@ -192,6 +221,7 @@ const OtpVerificationDialog = ({
     if (result.success) {
       setOtpSent(true);
       setExpiryMinutes(result.expiryMinutes || 10);
+      setCodeExpirySeconds((result.expiryMinutes || 10) * 60);
       resendApiRef.current?.startCooldown(result.retryAfterSeconds ?? 30);
       toast.success(bn ? `${email} এ কোড পাঠানো হয়েছে` : `Code sent to ${email}`);
       return;
@@ -201,6 +231,7 @@ const OtpVerificationDialog = ({
     if (result.errorCode === 'COOLDOWN_ACTIVE') {
       setOtpSent(true);
       setExpiryMinutes(result.expiryMinutes || 10);
+      setCodeExpirySeconds((result.expiryMinutes || 10) * 60);
       if (result.retryAfterSeconds) {
         resendApiRef.current?.startCooldown(result.retryAfterSeconds);
       }
@@ -238,6 +269,8 @@ const OtpVerificationDialog = ({
       setLockout(prev => (prev?.scope === 'verify' ? null : prev));
       setVerifyCooldown(0);
       setOtpValue('');
+      setExpiryMinutes(result.expiryMinutes || 10);
+      setCodeExpirySeconds((result.expiryMinutes || 10) * 60);
     }
     return result;
   };
@@ -267,6 +300,7 @@ const OtpVerificationDialog = ({
       const fresh = await sendOtp(email, purpose, recipientName, scope);
       if (fresh.success) {
         setExpiryMinutes(fresh.expiryMinutes || 10);
+        setCodeExpirySeconds((fresh.expiryMinutes || 10) * 60);
         resendApiRef.current?.startCooldown(fresh.retryAfterSeconds ?? 30);
         toast.success(bn ? 'নতুন কোড পাঠানো হয়েছে' : 'New code sent');
       } else if (fresh.retryAfterSeconds) {
@@ -299,6 +333,7 @@ const OtpVerificationDialog = ({
       setOtpSent(false);
       setVerifyCooldown(0);
       setLockout(null);
+      setCodeExpirySeconds(0);
     }
     onOpenChange(val);
   };
@@ -306,8 +341,9 @@ const OtpVerificationDialog = ({
   const verifyLocked = !!lockout; // both scopes lock verify
   const resendLocked = lockout?.scope === 'both';
 
+  const codeExpired = otpSent && codeExpirySeconds <= 0;
   const verifyDisabled =
-    verifying || otpValue.length !== 6 || verifyCooldown > 0 || verifyLocked;
+    verifying || otpValue.length !== 6 || verifyCooldown > 0 || verifyLocked || codeExpired;
 
   const lockoutCountdownLabel = (() => {
     if (!lockout?.retryAfterSeconds || lockout.retryAfterSeconds <= 0) return null;
@@ -343,6 +379,25 @@ const OtpVerificationDialog = ({
             <Mail className="w-4 h-4 text-primary" />
             <span className="text-foreground font-medium">{email}</span>
           </div>
+
+          {otpSent && (
+            <div
+              className={`flex items-center justify-center gap-2 py-2 px-4 rounded-full text-sm font-medium mx-auto w-fit ${
+                codeExpired
+                  ? 'bg-destructive/10 text-destructive'
+                  : 'bg-emerald-500/10 text-emerald-600'
+              }`}
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              <Timer className="w-4 h-4" />
+              {codeExpired
+                ? (bn ? 'কোডের মেয়াদ শেষ — আবার পাঠান' : 'Code expired — resend to continue')
+                : (bn
+                  ? `কোডের মেয়াদ: ${formatCountdown(codeExpirySeconds)}`
+                  : `Code expires in ${formatCountdown(codeExpirySeconds)}`)}
+            </div>
+          )}
 
           {lockout && (
             <Alert
@@ -415,9 +470,11 @@ const OtpVerificationDialog = ({
             {verifying && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             {verifyLocked
               ? (bn ? 'যাচাইকরণ লক করা হয়েছে' : 'Verification locked')
-              : verifyCooldown > 0
-                ? (bn ? `${verifyCooldown}s পর আবার চেষ্টা করুন` : `Retry in ${verifyCooldown}s`)
-                : (bn ? 'যাচাই করুন' : 'Verify Code')}
+              : codeExpired
+                ? (bn ? 'কোডের মেয়াদ শেষ' : 'Code expired')
+                : verifyCooldown > 0
+                  ? (bn ? `${verifyCooldown}s পর আবার চেষ্টা করুন` : `Retry in ${verifyCooldown}s`)
+                  : (bn ? 'যাচাই করুন' : 'Verify Code')}
           </Button>
 
           <div className="flex items-center justify-center">
