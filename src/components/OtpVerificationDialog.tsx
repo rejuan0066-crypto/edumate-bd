@@ -6,10 +6,16 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useOtpService } from '@/hooks/useOtpService';
 import { fetchOtpRequirements, isOtpRequiredFor, type OtpRoleScope } from '@/hooks/useOtpRequirements';
-import { Loader2, Mail, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Loader2, Mail, ShieldCheck, ShieldAlert, Timer } from 'lucide-react';
 import { toast } from 'sonner';
 import OtpResendButton from '@/components/OtpResendButton';
 import { trackOtpLockout } from '@/lib/otpAnalytics';
+
+const formatCountdown = (totalSeconds: number) => {
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+};
 
 interface OtpVerificationDialogProps {
   open: boolean;
