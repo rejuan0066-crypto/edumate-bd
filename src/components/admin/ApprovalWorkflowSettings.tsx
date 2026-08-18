@@ -55,7 +55,7 @@ const ApprovalWorkflowSettings = () => {
       [
         {
           key: APPROVAL_SETTING_KEY,
-          value: settings as unknown as Record<string, unknown>,
+          value: settings as any,
           description: 'Global approval workflow: non-admin actions go to /admin/approvals before taking effect',
         },
       ],
