@@ -395,7 +395,7 @@ const AdminStudents = () => {
                       <td className="px-5 py-4 text-sm text-muted-foreground">{getClassName(s.class_id)}</td>
                       <td className="px-5 py-4">{getApprovalBadge(s.approval_status || 'pending')}</td>
                       <td className="px-5 py-4">
-                        {isRecordPending('students', s.id) && (
+                        {isRecordPending(s.id) && (
                           <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse text-[10px]">
                             <Clock className="w-3 h-3 mr-1" />
                             {bn ? 'অ্যাডমিন অনুমোদনের অপেক্ষায়' : 'Awaiting Admin Approval'}
