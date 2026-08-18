@@ -221,6 +221,7 @@ const OtpVerificationDialog = ({
     if (result.success) {
       setOtpSent(true);
       setExpiryMinutes(result.expiryMinutes || 10);
+      setCodeExpirySeconds((result.expiryMinutes || 10) * 60);
       resendApiRef.current?.startCooldown(result.retryAfterSeconds ?? 30);
       toast.success(bn ? `${email} এ কোড পাঠানো হয়েছে` : `Code sent to ${email}`);
       return;
@@ -230,6 +231,7 @@ const OtpVerificationDialog = ({
     if (result.errorCode === 'COOLDOWN_ACTIVE') {
       setOtpSent(true);
       setExpiryMinutes(result.expiryMinutes || 10);
+      setCodeExpirySeconds((result.expiryMinutes || 10) * 60);
       if (result.retryAfterSeconds) {
         resendApiRef.current?.startCooldown(result.retryAfterSeconds);
       }
