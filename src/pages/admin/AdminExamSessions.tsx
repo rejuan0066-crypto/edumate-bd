@@ -803,8 +803,8 @@ const AdminExamSessions = () => {
                           </div>
                         </div>
                         {esClasses.map((ec: any, idx: number) => {
-                          const resultInfo = (examResultCounts as Record<string, any>)[es.id];
-                          const hasResults = resultInfo && resultInfo.resultCount > 0;
+                          const depInfo = (sessionDependencyCounts as Record<string, any>)[es.id] || { resultCount: 0, paperCount: 0 };
+                          const hasResults = depInfo.resultCount > 0;
 
                           return (
                             <div key={ec.id} className="border-b border-border/50 last:border-b-0 hover:bg-secondary/20 transition-colors">
