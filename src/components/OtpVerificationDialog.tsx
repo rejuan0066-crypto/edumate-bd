@@ -341,8 +341,9 @@ const OtpVerificationDialog = ({
   const verifyLocked = !!lockout; // both scopes lock verify
   const resendLocked = lockout?.scope === 'both';
 
+  const codeExpired = otpSent && codeExpirySeconds <= 0;
   const verifyDisabled =
-    verifying || otpValue.length !== 6 || verifyCooldown > 0 || verifyLocked;
+    verifying || otpValue.length !== 6 || verifyCooldown > 0 || verifyLocked || codeExpired;
 
   const lockoutCountdownLabel = (() => {
     if (!lockout?.retryAfterSeconds || lockout.retryAfterSeconds <= 0) return null;
