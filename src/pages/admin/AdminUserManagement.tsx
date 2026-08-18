@@ -1188,6 +1188,9 @@ const AdminUserManagement = () => {
                     </DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4 pt-2">
+                    <p className="text-xs text-muted-foreground mt-2 px-2 py-1.5 bg-muted/30 rounded border-l-2 border-primary/30 italic">
+                      {bn ? 'নতুন অ্যাকাউন্ট তৈরি করতে ইমেইল এবং পাসওয়ার্ড দিন। পাসওয়ার্ড অবশ্যই ইংরেজি অক্ষরে হতে হবে এবং এতে বড়/ছোট হাতের অক্ষর, সংখ্যা ও চিহ্ন থাকতে হবে।' : 'Enter email and password to create a new account. Password must be in English and include uppercase/lowercase letters, numbers, and symbols.'}
+                    </p>
                     <div>
                       <Label>{bn ? 'নাম' : 'Full Name'}</Label>
                       <Input className="mt-1" value={fullName} onChange={e => setFullName(e.target.value)} placeholder={bn ? 'ইউজারের নাম' : 'User name'} />
