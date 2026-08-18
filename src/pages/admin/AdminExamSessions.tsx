@@ -220,30 +220,34 @@ const AdminExamSessions = () => {
     },
   });
 
-  // Fetch result counts per exam session
-  const { data: examResultCounts = {} } = useQuery({
-    queryKey: ['exam_session_result_counts'],
+  // Fetch result counts and question paper counts per exam session
+  const { data: sessionDependencyCounts = {} } = useQuery({
+    queryKey: ['exam_session_dependency_counts'],
     queryFn: async () => {
-      // Count results per exam_session (exam_id now references exam_sessions)
       const { data: sessions } = await supabase.from('exam_sessions').select('id');
       if (!sessions?.length) return {};
       const sessionIds = sessions.map(s => s.id);
-      const { data: results, error: rErr } = await supabase
+
+      // Fetch result counts
+      const { data: results } = await supabase
         .from('results')
         .select('exam_id')
         .in('exam_id', sessionIds);
-      const counts: Record<string, { examId: string; resultCount: number }> = {};
-      if (!rErr && results) {
-        const resultsBySession: Record<string, number> = {};
-        results.forEach((r: any) => {
-          resultsBySession[r.exam_id] = (resultsBySession[r.exam_id] || 0) + 1;
-        });
-        sessions.forEach((s: any) => {
-          if (resultsBySession[s.id]) {
-            counts[s.id] = { examId: s.id, resultCount: resultsBySession[s.id] || 0 };
-          }
-        });
-      }
+
+      // Fetch question paper counts
+      const { data: papers } = await supabase
+        .from('question_papers')
+        .select('exam_session_id')
+        .in('exam_session_id', sessionIds);
+
+      const counts: Record<string, { resultCount: number; paperCount: number }> = {};
+      
+      sessions.forEach(s => {
+        const resultCount = results?.filter(r => r.exam_id === s.id).length || 0;
+        const paperCount = papers?.filter(p => p.exam_session_id === s.id).length || 0;
+        counts[s.id] = { resultCount, paperCount };
+      });
+
       return counts;
     },
     staleTime: 30 * 1000,
@@ -318,18 +322,28 @@ const AdminExamSessions = () => {
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const session = examSessions.find((s: any) => s.id === id);
-      const resultInfo = (examResultCounts as Record<string, any>)[id];
-      const hasResults = resultInfo && resultInfo.resultCount > 0;
+      const depInfo = (sessionDependencyCounts as Record<string, any>)[id] || { resultCount: 0, paperCount: 0 };
+      const { resultCount, paperCount } = depInfo;
+      const hasDependencies = resultCount > 0 || paperCount > 0;
+
+      let description = bn 
+        ? `আপনি কি "${session?.name_bn}" এক্সাম সেশনটি মুছে ফেলতে চান?` 
+        : `Do you want to delete "${session?.name}" exam session?`;
+
+      if (hasDependencies) {
+        const warnings = [];
+        if (resultCount > 0) warnings.push(bn ? `${resultCount}টি ফলাফল (Result)` : `${resultCount} results`);
+        if (paperCount > 0) warnings.push(bn ? `${paperCount}টি প্রশ্নপত্র (Question Paper)` : `${paperCount} question papers`);
+        
+        const warningText = warnings.join(bn ? ' এবং ' : ' and ');
+        description = bn 
+          ? `এই সেশনের সাথে ${warningText} যুক্ত আছে। সেশন মুছলে এই তথ্যগুলোও মুছে যাবে। আপনি কি নিশ্চিত?`
+          : `This session has ${warningText} linked to it. Deleting the session will also delete these records. Are you sure?`;
+      }
 
       const isConfirmed = await confirm({
         title: bn ? 'এক্সাম সেশন মুছুন?' : 'Delete Exam Session?',
-        description: hasResults 
-          ? (bn 
-              ? `এই সেশনের সাথে ${resultInfo.resultCount}টি ফলাফল (Result) যুক্ত আছে। সেশন মুছলে এই ফলাফলগুলোও মুছে যাবে। আপনি কি নিশ্চিত?` 
-              : `This session has ${resultInfo.resultCount} results linked to it. Deleting the session will also delete these results. Are you sure?`)
-          : (bn 
-              ? `আপনি কি "${session?.name_bn}" এক্সাম সেশনটি মুছে ফেলতে চান?` 
-              : `Do you want to delete "${session?.name}" exam session?`),
+        description,
         variant: 'destructive',
         confirmText: bn ? 'হ্যাঁ, মুছুন' : 'Yes, Delete',
         cancelText: bn ? 'বাতিল' : 'Cancel'
