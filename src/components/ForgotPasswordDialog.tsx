@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,12 +6,12 @@ import { Label } from '@/components/ui/label';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useOtpService } from '@/hooks/useOtpService';
-import { fetchOtpRequirements, isOtpRequiredFor } from '@/hooks/useOtpRequirements';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Mail, Lock, ShieldCheck, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import PasswordStrengthMeter, { isPasswordStrongAgainst, firstFailedRuleMessage, usePasswordPolicy } from '@/components/PasswordStrengthMeter';
 import { sanitizePasswordInput } from '@/lib/passwordInput';
+import { parseEdgeError } from '@/lib/edgeError';
 
 interface ForgotPasswordDialogProps {
   open: boolean;
@@ -33,21 +33,35 @@ const ForgotPasswordDialog = ({ open, onOpenChange }: ForgotPasswordDialogProps)
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setInterval(() => setCooldown((c) => (c > 0 ? c - 1 : 0)), 1000);
+    return () => clearInterval(t);
+  }, [cooldown]);
 
   const handleSendOtp = async () => {
-    if (!email.trim()) {
-      toast.error(bn ? 'ইমেইল দিন' : 'Enter email');
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) {
+      toast.error(bn ? 'সঠিক ইমেইল দিন' : 'Enter a valid email');
       return;
     }
-    // Check if OTP is required for this flow; if not, skip straight to new password
-    const reqs = await fetchOtpRequirements();
-    if (!isOtpRequiredFor(reqs, 'password_reset')) {
-      setStep('newPassword');
-      return;
-    }
+    if (cooldown > 0) return;
+    // OTP verification is mandatory for password reset — the backend refuses
+    // any reset that has no recently verified code for this email.
     const result = await sendOtp(email.trim(), 'password_reset', undefined, 'password_reset');
     if (result.success) {
+      setOtpValue('');
+      setCooldown(60);
       setStep('otp');
+      toast.success(bn ? 'কোড পাঠানো হয়েছে' : 'Code sent');
+    } else if (result.retryAfterSeconds) {
+      setCooldown(result.retryAfterSeconds);
+      toast.error(
+        bn
+          ? `অনুগ্রহ করে ${result.retryAfterSeconds} সেকেন্ড পরে চেষ্টা করুন`
+          : `Please try again in ${result.retryAfterSeconds}s`
+      );
     }
   };
 
@@ -56,12 +70,22 @@ const ForgotPasswordDialog = ({ open, onOpenChange }: ForgotPasswordDialogProps)
       toast.error(bn ? '৬ ডিজিটের কোড দিন' : 'Enter 6-digit code');
       return;
     }
-    const result = await verifyOtp(email, otpValue, 'password_reset');
+    const result = await verifyOtp(email.trim(), otpValue, 'password_reset');
     if (result.valid) {
       toast.success(bn ? 'কোড যাচাই সফল!' : 'Code verified!');
       setStep('newPassword');
     } else {
-      toast.error(result.error || (bn ? 'কোড ভুল' : 'Invalid code'));
+      setOtpValue('');
+      toast.error(
+        result.error ||
+          (typeof result.attemptsRemaining === 'number'
+            ? bn
+              ? `কোড ভুল — আর ${result.attemptsRemaining} বার চেষ্টা করা যাবে`
+              : `Invalid code — ${result.attemptsRemaining} attempts left`
+            : bn
+              ? 'কোড ভুল'
+              : 'Invalid code')
+      );
     }
   };
 
@@ -79,12 +103,15 @@ const ForgotPasswordDialog = ({ open, onOpenChange }: ForgotPasswordDialogProps)
     // Sign in with OTP-verified email, then update password
     // Since OTP is already verified, we use admin-level password update via edge function
     const { error } = await supabase.functions.invoke('reset-password', {
-      body: { email, new_password: newPassword },
+      body: { email: email.trim(), new_password: newPassword },
     });
 
     setResetting(false);
     if (error) {
-      toast.error(bn ? 'পাসওয়ার্ড পরিবর্তন ব্যর্থ' : 'Password reset failed');
+      const msg = await parseEdgeError(error, null, bn);
+      toast.error(msg || (bn ? 'পাসওয়ার্ড পরিবর্তন ব্যর্থ' : 'Password reset failed'));
+      setStep('email');
+      setOtpValue('');
     } else {
       toast.success(bn ? 'পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে!' : 'Password reset successful!');
       handleClose();
@@ -97,6 +124,7 @@ const ForgotPasswordDialog = ({ open, onOpenChange }: ForgotPasswordDialogProps)
     setOtpValue('');
     setNewPassword('');
     setConfirmPassword('');
+    setCooldown(0);
     onOpenChange(false);
   };
 
@@ -131,9 +159,11 @@ const ForgotPasswordDialog = ({ open, onOpenChange }: ForgotPasswordDialogProps)
                   className="bg-background"
                 />
               </div>
-              <Button onClick={handleSendOtp} disabled={sending} className="btn-primary-gradient w-full">
+              <Button onClick={handleSendOtp} disabled={sending || cooldown > 0} className="btn-primary-gradient w-full">
                 {sending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                {bn ? 'কোড পাঠান' : 'Send Code'}
+                {cooldown > 0
+                  ? bn ? `আবার পাঠান (${cooldown}s)` : `Resend (${cooldown}s)`
+                  : bn ? 'কোড পাঠান' : 'Send Code'}
               </Button>
             </>
           )}
@@ -160,6 +190,18 @@ const ForgotPasswordDialog = ({ open, onOpenChange }: ForgotPasswordDialogProps)
               <Button onClick={handleVerifyOtp} disabled={verifying || otpValue.length !== 6} className="btn-primary-gradient w-full">
                 {verifying && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 {bn ? 'যাচাই করুন' : 'Verify Code'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={handleSendOtp}
+                disabled={sending || cooldown > 0}
+              >
+                {sending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {cooldown > 0
+                  ? bn ? `আবার কোড পাঠান (${cooldown}s)` : `Resend code (${cooldown}s)`
+                  : bn ? 'আবার কোড পাঠান' : 'Resend code'}
               </Button>
               <Button variant="ghost" size="sm" className="w-full" onClick={() => setStep('email')}>
                 <ArrowLeft className="w-4 h-4 mr-2" /> {bn ? 'পিছনে যান' : 'Go Back'}

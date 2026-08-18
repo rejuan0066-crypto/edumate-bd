@@ -103,6 +103,23 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Invalidate every password_reset OTP for this email so the verified
+    // window cannot be replayed to reset the password a second time.
+    await supabase
+      .from("otp_codes")
+      .delete()
+      .eq("email", email)
+      .eq("purpose", "password_reset");
+
+    await logSecurityEvent(supabase, {
+      event_type: 'password_reset_completed',
+      severity: 'info',
+      email,
+      reason: 'forgot_password_reset',
+      details: { user_id: user.id },
+      req,
+    });
+
     return new Response(
       JSON.stringify({ ok: true, success: true, message: "Password reset successfully" }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
