@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,6 @@ import { Loader2, Mail, Lock, ShieldCheck, Eye, EyeOff, ArrowLeft } from 'lucide
 import { toast } from 'sonner';
 import PasswordStrengthMeter, { isPasswordStrongAgainst, firstFailedRuleMessage, usePasswordPolicy } from '@/components/PasswordStrengthMeter';
 import { sanitizePasswordInput } from '@/lib/passwordInput';
-import { useEffect } from 'react';
 import { parseEdgeError } from '@/lib/edgeError';
 
 interface ForgotPasswordDialogProps {
@@ -109,7 +108,7 @@ const ForgotPasswordDialog = ({ open, onOpenChange }: ForgotPasswordDialogProps)
 
     setResetting(false);
     if (error) {
-      const msg = await parseEdgeError(error);
+      const msg = await parseEdgeError(error, null, bn);
       toast.error(msg || (bn ? 'পাসওয়ার্ড পরিবর্তন ব্যর্থ' : 'Password reset failed'));
       setStep('email');
       setOtpValue('');
