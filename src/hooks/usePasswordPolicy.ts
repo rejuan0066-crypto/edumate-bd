@@ -11,7 +11,7 @@ export interface PasswordPolicy {
 }
 
 export const DEFAULT_POLICY: PasswordPolicy = {
-  min_length: 8,
+  min_length: 6,
   require_uppercase: true,
   require_lowercase: true,
   require_number: true,

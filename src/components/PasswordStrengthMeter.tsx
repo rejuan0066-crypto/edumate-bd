@@ -52,10 +52,10 @@ const PasswordStrengthMeter = ({ password, bn = true, className, visible }: Pass
             key={r.key}
             className={cn(
               'flex items-center gap-1.5 text-[11px] transition-colors',
-              r.passed ? 'text-emerald-600' : 'text-destructive'
+              r.passed ? 'text-emerald-600' : (password.length > 0 ? 'text-destructive' : 'text-muted-foreground')
             )}
           >
-            {r.passed ? <Check className="w-3 h-3 shrink-0" /> : <X className="w-3 h-3 shrink-0" />}
+            {r.passed ? <Check className="w-3 h-3 shrink-0" /> : (password.length > 0 ? <X className="w-3 h-3 shrink-0" /> : <div className="w-3 h-3 rounded-full border border-current opacity-20" />)}
             <span>{bn ? r.label_bn : r.label_en}</span>
           </li>
         ))}
