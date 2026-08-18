@@ -1536,6 +1536,7 @@ const AdminSalary = () => {
         net_salary: netSalary,
         updated_at: new Date().toISOString(),
       };
+      if (await checkApproval('edit', { ...payload, staff_id: record.staff_id, month_year: record.month_year }, record.id, `বেতন সংশোধন: ${record.staff_id} (${record.month_year})`)) return;
       const { error } = await supabase.from('salary_records').update(payload).eq('id', record.id);
       if (error) throw error;
     },
