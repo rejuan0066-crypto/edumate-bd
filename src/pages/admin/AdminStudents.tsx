@@ -484,8 +484,15 @@ const AdminStudents = () => {
                               {(s.status || 'active') === 'active' ? <UserX className="w-4 h-4" strokeWidth={1.75} /> : <UserCheck className="w-4 h-4" strokeWidth={1.75} />}
                             </button>
                           )}
-                          {canDeleteItem && (
-                            <button onClick={() => setDeleteId(s.id)} className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/30 shadow-sm border border-rose-200/50 dark:border-rose-800/30 flex items-center justify-center text-rose-600 dark:text-rose-400 hover:shadow-md hover:scale-110 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-all duration-200" title={bn ? 'মুছুন' : 'Delete'}><Trash2 className="w-4 h-4" strokeWidth={1.75} /></button>
+                           {canDeleteItem && (
+                            <button 
+                              disabled={isRecordPending(s.id)}
+                              onClick={() => setDeleteId(s.id)} 
+                              className={`w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/30 shadow-sm border border-rose-200/50 dark:border-rose-800/30 flex items-center justify-center text-rose-600 dark:text-rose-400 hover:shadow-md hover:scale-110 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-all duration-200 ${isRecordPending(s.id) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`} 
+                              title={bn ? 'মুছুন' : 'Delete'}
+                            >
+                              <Trash2 className="w-4 h-4" strokeWidth={1.75} />
+                            </button>
                           )}
                         </div>
                       </td>
