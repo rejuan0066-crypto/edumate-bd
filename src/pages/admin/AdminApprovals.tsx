@@ -211,11 +211,18 @@ const AdminApprovals = () => {
                       <div>
                         <p className="font-medium text-sm">{action.user_name || '—'}</p>
                         <p className="text-xs text-muted-foreground">{action.user_email}</p>
-                        {action.requires_admin_approval && (
-                          <Badge variant="secondary" className="mt-1 text-[10px] h-4">
-                            {bn ? 'অ্যাডমিন অনুমোদনের অপেক্ষায়' : 'Awaiting Admin Approval'}
-                          </Badge>
-                        )}
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {action.requires_admin_approval && (
+                            <Badge variant="secondary" className="text-[10px] h-4">
+                              {bn ? 'অ্যাডমিন অনুমোদনের অপেক্ষায়' : 'Awaiting Admin Approval'}
+                            </Badge>
+                          )}
+                          {action.action_type === 'add' && action.payload && (
+                            <div className="bg-primary/5 border border-primary/20 rounded px-1.5 py-0.5 text-[10px] text-primary font-medium">
+                              {action.payload.name_bn || action.payload.name_en || action.payload.full_name || action.payload.title || ''}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>

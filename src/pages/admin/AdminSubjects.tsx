@@ -49,13 +49,27 @@ const AdminSubjects = () => {
 
   const addMutation = useMutation({
     mutationFn: async () => {
+      const nameBn = newName.trim();
+      const classId = newClass || null;
+
+      // Check for duplicates in the same class
+      const isDuplicate = subjects.some(
+        (s: any) =>
+          s.class_id === classId &&
+          s.name_bn.toLowerCase() === nameBn.toLowerCase()
+      );
+
+      if (isDuplicate) {
+        throw new Error(language === 'bn' ? 'একই ক্লাসে এই বিষয়টি ইতিমধ্যে বিদ্যমান' : 'This subject already exists in this class');
+      }
+
       const payload = {
-        name_bn: newName.trim(),
-        name: newNameEn.trim() || newName.trim(),
+        name_bn: nameBn,
+        name: newNameEn.trim() || nameBn,
         code: newCode.trim() || null,
-        class_id: newClass || null,
+        class_id: classId,
       };
-      if (await checkApproval('add', payload, undefined, `বিষয় যোগ: ${newName.trim()}`)) return;
+      if (await checkApproval('add', payload, undefined, `বিষয় যোগ: ${nameBn}`)) return;
       const { error } = await supabase.from('subjects').insert(payload);
       if (error) throw error;
     },
@@ -64,13 +78,28 @@ const AdminSubjects = () => {
       setNewName(''); setNewNameEn(''); setNewCode(''); setNewClass('');
       toast.success(language === 'bn' ? 'বিষয় যোগ হয়েছে' : 'Subject added');
     },
-    onError: () => toast.error(language === 'bn' ? 'সমস্যা হয়েছে' : 'Error occurred'),
+    onError: (err: any) => toast.error(err.message || (language === 'bn' ? 'সমস্যা হয়েছে' : 'Error occurred')),
   });
 
   const editMutation = useMutation({
     mutationFn: async ({ id, name_bn, name, code, class_id }: { id: string; name_bn: string; name: string; code: string; class_id: string }) => {
-      const payload = { name_bn: name_bn.trim(), name: name.trim() || name_bn.trim(), code: code.trim() || null, class_id: class_id || null };
-      if (await checkApproval('edit', payload, id, `বিষয় সম্পাদনা: ${name_bn.trim()}`)) return;
+      const trimmedNameBn = name_bn.trim();
+      const trimmedClassId = class_id || null;
+
+      // Check for duplicates in the same class (excluding current record)
+      const isDuplicate = subjects.some(
+        (s: any) =>
+          s.id !== id &&
+          s.class_id === trimmedClassId &&
+          s.name_bn.toLowerCase() === trimmedNameBn.toLowerCase()
+      );
+
+      if (isDuplicate) {
+        throw new Error(language === 'bn' ? 'একই ক্লাসে এই বিষয়টি ইতিমধ্যে বিদ্যমান' : 'This subject already exists in this class');
+      }
+
+      const payload = { name_bn: trimmedNameBn, name: name.trim() || trimmedNameBn, code: code.trim() || null, class_id: trimmedClassId };
+      if (await checkApproval('edit', payload, id, `বিষয় সম্পাদনা: ${trimmedNameBn}`)) return;
       const { error } = await supabase.from('subjects').update(payload).eq('id', id);
       if (error) throw error;
     },
@@ -79,7 +108,7 @@ const AdminSubjects = () => {
       setEditingId(null);
       toast.success(language === 'bn' ? 'বিষয় আপডেট হয়েছে' : 'Subject updated');
     },
-    onError: () => toast.error(language === 'bn' ? 'সমস্যা হয়েছে' : 'Error occurred'),
+    onError: (err: any) => toast.error(err.message || (language === 'bn' ? 'সমস্যা হয়েছে' : 'Error occurred')),
   });
 
   const deleteMutation = useMutation({
