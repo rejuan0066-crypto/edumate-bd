@@ -470,9 +470,11 @@ const OtpVerificationDialog = ({
             {verifying && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             {verifyLocked
               ? (bn ? 'যাচাইকরণ লক করা হয়েছে' : 'Verification locked')
-              : verifyCooldown > 0
-                ? (bn ? `${verifyCooldown}s পর আবার চেষ্টা করুন` : `Retry in ${verifyCooldown}s`)
-                : (bn ? 'যাচাই করুন' : 'Verify Code')}
+              : codeExpired
+                ? (bn ? 'কোডের মেয়াদ শেষ' : 'Code expired')
+                : verifyCooldown > 0
+                  ? (bn ? `${verifyCooldown}s পর আবার চেষ্টা করুন` : `Retry in ${verifyCooldown}s`)
+                  : (bn ? 'যাচাই করুন' : 'Verify Code')}
           </Button>
 
           <div className="flex items-center justify-center">
