@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
+import { useConfirm } from '@/contexts/ConfirmContext';
 
 const AdminExamSessions = () => {
   const { language } = useLanguage();
