@@ -2,6 +2,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useApprovalSettings } from '@/hooks/useApprovalSettings';
+
 
 interface SubmitForApprovalParams {
   actionType: 'add' | 'edit' | 'delete';
