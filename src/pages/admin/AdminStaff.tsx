@@ -629,6 +629,9 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
               <DialogTitle>{bn ? 'অ্যাকাউন্ট তৈরি করুন' : 'Create Account'}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-2">
+              <p className="text-xs text-muted-foreground mt-2 px-2 py-1 bg-muted/50 rounded italic border-l-2 border-primary/30">
+                {bn ? 'অ্যাকাউন্ট তৈরি করতে ইমেইল ও পাসওয়ার্ড প্রদান করুন। পাসওয়ার্ডে অন্তত একটি বড় হাতের অক্ষর, একটি ছোট হাতের অক্ষর, একটি সংখ্যা এবং একটি বিশেষ চিহ্ন থাকতে হবে (ইংরেজি ক্যারেক্টার)।' : 'Provide email and password to create an account. Password must include at least one uppercase, one lowercase, one number, and one symbol (Latin characters only).'}
+              </p>
               <p className="text-sm text-muted-foreground">
                 {bn ? `কর্মী: ${selectedStaff?.name_bn || selectedStaff?.name_en || ''}` : `Staff: ${selectedStaff?.name_en || selectedStaff?.name_bn || ''}`}
               </p>
