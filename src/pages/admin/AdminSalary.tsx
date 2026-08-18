@@ -2942,6 +2942,7 @@ const AdminSalary = () => {
                         <th className="px-3 py-2 text-right text-xs font-medium text-blue-600">{bn ? 'জমা' : 'Savings'}</th>
                         <th className="px-3 py-2 text-right text-xs font-medium text-emerald-600">{bn ? 'নিট বেতন' : 'Net'}</th>
                         <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'স্ট্যাটাস' : 'Status'}</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'পেন্ডিং অবস্থা' : 'Pending Status'}</th>
                         <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'অ্যাকশন' : 'Actions'}</th>
 
                       </tr>
@@ -3555,6 +3556,14 @@ const AdminSalary = () => {
                                   <Badge variant="outline" className="text-[9px]">+{ledgerEntries.length - 6}</Badge>
                                 )}
                               </div>
+                            </td>
+                            <td className="px-3 py-2 text-center">
+                              {rec && isRecordPending(rec.id) && (
+                                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse text-[10px]">
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  {bn ? 'অ্যাডমিন অনুমোদনের অপেক্ষায়' : 'Awaiting Admin Approval'}
+                                </Badge>
+                              )}
                             </td>
                             <td className="px-3 py-2 text-center">
                               <div className="flex gap-1 justify-center items-center flex-wrap">
