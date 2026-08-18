@@ -1,9 +1,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import { useApprovalSettings } from '@/hooks/useApprovalSettings';
-
 
 interface SubmitForApprovalParams {
   actionType: 'add' | 'edit' | 'delete' | 'reject';
@@ -57,7 +55,6 @@ export const useApprovalWorkflow = () => {
     return perm.approval_view || perm.approval_add || perm.approval_edit || perm.approval_delete || perm.approval_reject || false;
   };
 
-
   // Submit an action for approval
   const submitForApproval = async (params: SubmitForApprovalParams): Promise<boolean> => {
     if (!user) return false;
@@ -75,7 +72,8 @@ export const useApprovalWorkflow = () => {
           ...params.payload,
           _description: params.description || '',
         },
-        requires_admin_approval: true
+        requires_admin_approval: true,
+        status: 'pending'
       });
 
       if (error) throw error;
@@ -102,9 +100,32 @@ export const useApprovalWorkflow = () => {
     enabled: !!user?.id,
   });
 
+  // NEW: Check if a specific record has a pending action
+  const { data: allPendingActions = [] } = useQuery({
+    queryKey: ['all-pending-actions'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pending_actions')
+        .select('target_table, target_id, status')
+        .eq('status', 'pending');
+      if (error) throw error;
+      return data || [];
+    },
+    refetchInterval: 5000, // Refresh every 5 seconds to catch new pending items
+  });
+
+  const isRecordPending = (targetTable: string, targetId: string): boolean => {
+    if (!targetId) return false;
+    return allPendingActions.some(
+      (a: any) => a.target_table === targetTable && a.target_id === targetId && a.status === 'pending'
+    );
+  };
+
   return {
     needsApproval,
     submitForApproval,
     pendingCount,
+    isRecordPending,
+    allPendingActions,
   };
 };
