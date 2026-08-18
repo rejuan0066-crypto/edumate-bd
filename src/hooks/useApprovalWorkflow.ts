@@ -16,6 +16,7 @@ interface SubmitForApprovalParams {
 
 export const useApprovalWorkflow = () => {
   const { user, role } = useAuth();
+  const { settings: globalApproval } = useApprovalSettings();
 
   // Fetch user permissions with requires_approval flag
   const { data: userPermissions = [] } = useQuery({
@@ -32,9 +33,20 @@ export const useApprovalWorkflow = () => {
     enabled: !!user?.id,
   });
 
+  // Global rule: when the master switch is on, every non-admin (non-exempt) user
+  // needs approval for the enabled actions — even without a per-user override row.
+  const globalNeedsApproval = (action?: 'view' | 'add' | 'edit' | 'delete'): boolean => {
+    if (!globalApproval.enabled) return false;
+    if (role && globalApproval.exempt_roles.includes(role)) return false;
+    if (!action) return globalApproval.actions.add || globalApproval.actions.edit || globalApproval.actions.delete;
+    if (action === 'view') return false;
+    return globalApproval.actions[action] ?? false;
+  };
+
   // Check if action requires approval for a specific menu path
   const needsApproval = (menuPath: string, action?: 'view' | 'add' | 'edit' | 'delete'): boolean => {
     if (role === 'admin' || role === 'super_admin') return false;
+    if (globalNeedsApproval(action)) return true;
     const perm = userPermissions.find((p: any) => p.menu_path === menuPath);
     if (!perm) return false;
     if (action) {
@@ -44,6 +56,7 @@ export const useApprovalWorkflow = () => {
     // If no action specified, check if any approval is required
     return perm.approval_view || perm.approval_add || perm.approval_edit || perm.approval_delete || false;
   };
+
 
   // Submit an action for approval
   const submitForApproval = async (params: SubmitForApprovalParams): Promise<boolean> => {
