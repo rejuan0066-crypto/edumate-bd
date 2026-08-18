@@ -9896,6 +9896,7 @@ export type Database = {
           approval_approve: boolean
           approval_delete: boolean
           approval_edit: boolean
+          approval_reject: boolean | null
           approval_view: boolean
           can_add: boolean
           can_approve: boolean
@@ -9913,6 +9914,7 @@ export type Database = {
           approval_approve?: boolean
           approval_delete?: boolean
           approval_edit?: boolean
+          approval_reject?: boolean | null
           approval_view?: boolean
           can_add?: boolean
           can_approve?: boolean
@@ -9930,6 +9932,7 @@ export type Database = {
           approval_approve?: boolean
           approval_delete?: boolean
           approval_edit?: boolean
+          approval_reject?: boolean | null
           approval_view?: boolean
           can_add?: boolean
           can_approve?: boolean
