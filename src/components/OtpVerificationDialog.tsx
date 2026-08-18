@@ -333,6 +333,7 @@ const OtpVerificationDialog = ({
       setOtpSent(false);
       setVerifyCooldown(0);
       setLockout(null);
+      setCodeExpirySeconds(0);
     }
     onOpenChange(val);
   };
