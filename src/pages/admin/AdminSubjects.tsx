@@ -4,23 +4,30 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState } from 'react';
-import { Plus, Trash2, BookOpen, Loader2 } from 'lucide-react';
+import { Plus, Trash2, BookOpen, Loader2, Edit2, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
+import { useConfirm } from '@/contexts/ConfirmContext';
 
 const AdminSubjects = () => {
   const { language } = useLanguage();
   const queryClient = useQueryClient();
   const { checkApproval } = useApprovalCheck('/admin/subjects', 'subjects');
-  const { canAddItem, canDeleteItem } = usePagePermissions('/admin/subjects');
+  const confirm = useConfirm();
+  const { canAddItem, canDeleteItem, canEditItem } = usePagePermissions('/admin/subjects');
   const [newName, setNewName] = useState('');
   const [newNameEn, setNewNameEn] = useState('');
   const [newCode, setNewCode] = useState('');
   const [newClass, setNewClass] = useState('');
   const [filterClass, setFilterClass] = useState('all');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editNameEn, setEditNameEn] = useState('');
+  const [editCode, setEditCode] = useState('');
+  const [editClass, setEditClass] = useState('');
 
   const { data: classes = [] } = useQuery({
     queryKey: ['classes'],
@@ -60,9 +67,32 @@ const AdminSubjects = () => {
     onError: () => toast.error(language === 'bn' ? 'সমস্যা হয়েছে' : 'Error occurred'),
   });
 
+  const editMutation = useMutation({
+    mutationFn: async ({ id, name_bn, name, code, class_id }: { id: string; name_bn: string; name: string; code: string; class_id: string }) => {
+      const payload = { name_bn: name_bn.trim(), name: name.trim() || name_bn.trim(), code: code.trim() || null, class_id: class_id || null };
+      if (await checkApproval('edit', payload, id, `বিষয় সম্পাদনা: ${name_bn.trim()}`)) return;
+      const { error } = await supabase.from('subjects').update(payload).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['subjects'] });
+      setEditingId(null);
+      toast.success(language === 'bn' ? 'বিষয় আপডেট হয়েছে' : 'Subject updated');
+    },
+    onError: () => toast.error(language === 'bn' ? 'সমস্যা হয়েছে' : 'Error occurred'),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const subject = subjects.find((s: any) => s.id === id);
+      const isConfirmed = await confirm({
+        title: language === 'bn' ? 'আপনি কি নিশ্চিত?' : 'Are you sure?',
+        description: language === 'bn' ? `আপনি "${subject?.name_bn}" বিষয়টি মুছে ফেলতে চাচ্ছেন। এটি আর ফিরে পাওয়া যাবে না।` : `You are about to delete "${subject?.name_bn}". This action cannot be undone.`,
+        variant: 'destructive',
+        confirmText: language === 'bn' ? 'মুছে ফেলুন' : 'Delete',
+        cancelText: language === 'bn' ? 'বাতিল' : 'Cancel'
+      });
+      if (!isConfirmed) return;
       if (await checkApproval('delete', { id, name_bn: subject?.name_bn }, id, `বিষয় মুছুন: ${subject?.name_bn}`)) return;
       const { error } = await supabase.from('subjects').delete().eq('id', id);
       if (error) throw error;
@@ -128,13 +158,38 @@ const AdminSubjects = () => {
                 <tbody className="divide-y divide-border">
                   {filtered.map((s: any) => (
                     <tr key={s.id} className="hover:bg-secondary/30 transition-colors">
-                      <td className="px-4 py-3 text-sm font-medium text-foreground flex items-center gap-2"><BookOpen className="w-4 h-4 text-primary" />{s.name_bn}</td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground">{s.name}</td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground">{s.code || '-'}</td>
-                      <td className="px-4 py-3 text-sm"><span className="px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">{language === 'bn' ? s.classes?.name_bn : s.classes?.name || '-'}</span></td>
-                      <td className="px-4 py-3 text-right">
-                        {canDeleteItem && <button onClick={() => deleteMutation.mutate(s.id)} className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive"><Trash2 className="w-4 h-4" /></button>}
-                      </td>
+                      {editingId === s.id ? (
+                        <>
+                          <td className="px-4 py-3"><Input value={editName} onChange={e => setEditName(e.target.value)} className="h-8 text-sm" /></td>
+                          <td className="px-4 py-3"><Input value={editNameEn} onChange={e => setEditNameEn(e.target.value)} className="h-8 text-sm" /></td>
+                          <td className="px-4 py-3"><Input value={editCode} onChange={e => setEditCode(e.target.value)} className="h-8 text-sm w-20" /></td>
+                          <td className="px-4 py-3">
+                            <Select value={editClass} onValueChange={setEditClass}>
+                              <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                              <SelectContent>{classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{language === 'bn' ? `${c.name_bn} (${c.divisions?.name_bn || ''})` : `${c.name} (${c.divisions?.name || ''})`}</SelectItem>)}</SelectContent>
+                            </Select>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex justify-end gap-1">
+                              <button onClick={() => editMutation.mutate({ id: s.id, name_bn: editName, name: editNameEn, code: editCode, class_id: editClass })} className="p-1.5 rounded hover:bg-success/10 text-success"><Check className="w-4 h-4" /></button>
+                              <button onClick={() => setEditingId(null)} className="p-1.5 rounded hover:bg-destructive/10 text-destructive"><X className="w-4 h-4" /></button>
+                            </div>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="px-4 py-3 text-sm font-medium text-foreground flex items-center gap-2"><BookOpen className="w-4 h-4 text-primary" />{s.name_bn}</td>
+                          <td className="px-4 py-3 text-sm text-muted-foreground">{s.name}</td>
+                          <td className="px-4 py-3 text-sm text-muted-foreground">{s.code || '-'}</td>
+                          <td className="px-4 py-3 text-sm"><span className="px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">{language === 'bn' ? s.classes?.name_bn : s.classes?.name || '-'}</span></td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex justify-end gap-1">
+                              {canEditItem && <button onClick={() => { setEditingId(s.id); setEditName(s.name_bn); setEditNameEn(s.name || ''); setEditCode(s.code || ''); setEditClass(s.class_id || ''); }} className="p-2 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary"><Edit2 className="w-4 h-4" /></button>}
+                              {canDeleteItem && <button onClick={() => deleteMutation.mutate(s.id)} className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive"><Trash2 className="w-4 h-4" /></button>}
+                            </div>
+                          </td>
+                        </>
+                      )}
                     </tr>
                   ))}
                   {filtered.length === 0 && (
