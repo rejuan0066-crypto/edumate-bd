@@ -300,6 +300,7 @@ const OtpVerificationDialog = ({
       const fresh = await sendOtp(email, purpose, recipientName, scope);
       if (fresh.success) {
         setExpiryMinutes(fresh.expiryMinutes || 10);
+        setCodeExpirySeconds((fresh.expiryMinutes || 10) * 60);
         resendApiRef.current?.startCooldown(fresh.retryAfterSeconds ?? 30);
         toast.success(bn ? 'নতুন কোড পাঠানো হয়েছে' : 'New code sent');
       } else if (fresh.retryAfterSeconds) {
