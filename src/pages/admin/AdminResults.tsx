@@ -547,7 +547,7 @@ const AdminResults = () => {
             </DialogHeader>
             <div className="space-y-4">
               {sigDraft.map((s, i) => {
-                const err = sigErrors[i] || {};
+                const err = sigErrors[i] || liveSigErrors[i] || {};
                 const setField = (field: keyof ResultSignatory, val: string) => {
                   // Collapse internal whitespace runs and strip leading spaces while typing.
                   // Trailing space is preserved during typing so users can type multi-word values,
