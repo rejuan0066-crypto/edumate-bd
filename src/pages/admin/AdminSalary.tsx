@@ -3558,7 +3558,7 @@ const AdminSalary = () => {
                               </div>
                             </td>
                             <td className="px-3 py-2 text-center">
-                              {rec && isRecordPending(rec.id) && (
+                              {isRecordPending(cfg.id) && (
                                 <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse text-[10px]">
                                   <Clock className="w-3 h-3 mr-1" />
                                   {bn ? 'অ্যাডমিন অনুমোদনের অপেক্ষায়' : 'Awaiting Admin Approval'}
