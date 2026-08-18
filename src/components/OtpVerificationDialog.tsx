@@ -269,6 +269,8 @@ const OtpVerificationDialog = ({
       setLockout(prev => (prev?.scope === 'verify' ? null : prev));
       setVerifyCooldown(0);
       setOtpValue('');
+      setExpiryMinutes(result.expiryMinutes || 10);
+      setCodeExpirySeconds((result.expiryMinutes || 10) * 60);
     }
     return result;
   };
