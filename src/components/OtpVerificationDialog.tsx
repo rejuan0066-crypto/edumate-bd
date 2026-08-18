@@ -380,6 +380,25 @@ const OtpVerificationDialog = ({
             <span className="text-foreground font-medium">{email}</span>
           </div>
 
+          {otpSent && (
+            <div
+              className={`flex items-center justify-center gap-2 py-2 px-4 rounded-full text-sm font-medium mx-auto w-fit ${
+                codeExpired
+                  ? 'bg-destructive/10 text-destructive'
+                  : 'bg-emerald-500/10 text-emerald-600'
+              }`}
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              <Timer className="w-4 h-4" />
+              {codeExpired
+                ? (bn ? 'কোডের মেয়াদ শেষ — আবার পাঠান' : 'Code expired — resend to continue')
+                : (bn
+                  ? `কোডের মেয়াদ: ${formatCountdown(codeExpirySeconds)}`
+                  : `Code expires in ${formatCountdown(codeExpirySeconds)}`)}
+            </div>
+          )}
+
           {lockout && (
             <Alert
               variant="destructive"
