@@ -203,6 +203,17 @@ const AdminResults = () => {
     }, 100);
   };
 
+  // Auto-open entry for a class passed in the URL (?class=...)
+  const urlClassId = searchParams.get('class') || '';
+  const [autoClassDone, setAutoClassDone] = useState(false);
+  useEffect(() => {
+    if (autoClassDone || !urlClassId || !examSessionId) return;
+    if (!examClasses.length) return;
+    if (!examClasses.some((c: any) => c.id === urlClassId)) return;
+    setAutoClassDone(true);
+    handleClassFromList(urlClassId);
+  }, [urlClassId, examSessionId, examClasses, autoClassDone]);
+
   const handleSearch = async () => {
     if (!examYear || !examSessionId || !selectedClass) {
       toast.error(bn ? 'শিক্ষাবর্ষ, সেশন ও ক্লাস নির্বাচন করুন' : 'Select year, session and class');
