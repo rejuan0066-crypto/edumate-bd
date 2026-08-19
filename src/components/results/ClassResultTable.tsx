@@ -131,7 +131,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
         </div>
       </div>
 
-      <div className="relative z-10 overflow-x-auto">
+      <div className="relative z-10 overflow-auto max-h-[calc(100vh-180px)] result-table-scroll">
         <table className="w-full text-sm border-separate border-spacing-0">
           <thead className="sticky top-0 z-30 bg-background shadow-sm">
             <tr className="border-b border-border">
