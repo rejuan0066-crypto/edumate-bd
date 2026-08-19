@@ -7,6 +7,8 @@ import { exportResultCSV, exportResultPDF } from '@/lib/resultExport';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { toBnDigits, toEnDigits } from '@/lib/digits';
+
 
 // Legacy export for backward compat
 const getGrade = (avg: number) => {
