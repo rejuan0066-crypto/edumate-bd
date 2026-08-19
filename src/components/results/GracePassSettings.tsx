@@ -135,12 +135,32 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
               <Label className="text-xs">{bn ? 'ডিফল্ট: সর্বোচ্চ কত বিষয়ে ফেল গ্রহণযোগ্য' : 'Default max failed subjects allowed'}</Label>
               <Input 
                 type="text" 
-                value={maxSubjects || ''} 
+                value={bn ? (maxSubjects === 0 ? '' : maxSubjects.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)])) : (maxSubjects || '')} 
                 disabled={!enabled || applyTo === 'selected'}
                 placeholder={bn ? '০' : '0'}
                 data-bijoy={bn}
                 onChange={(e) => {
-                  const val = parseInt(e.target.value);
+                  const raw = e.target.value;
+                  // If English version, standard integer parsing
+                  if (!bn) {
+                    const val = parseInt(raw);
+                    if (isNaN(val)) setMaxSubjects(0);
+                    else setMaxSubjects(val);
+                    return;
+                  }
+
+                  // If Bengali version, convert digits manually
+                  const digitMap: Record<string, number> = {
+                    '০': 0, '১': 1, '২': 2, '৩': 3, '৪': 4, '৫': 5, '৬': 6, '৭': 7, '৮': 8, '৯': 9,
+                    '0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9
+                  };
+                  
+                  let numericVal = '';
+                  for (const char of raw) {
+                    if (digitMap[char] !== undefined) numericVal += digitMap[char];
+                  }
+                  
+                  const val = parseInt(numericVal);
                   if (isNaN(val)) setMaxSubjects(0);
                   else setMaxSubjects(val);
                 }} />
@@ -192,17 +212,31 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
                       </label>
                       <Input type="text" className="w-20 h-8 text-center"
                         disabled={!enabled || !checked}
-                        value={classRules[c.id] || ''}
+                        value={bn ? (classRules[c.id] === 0 ? '' : (classRules[c.id]?.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]) || '')) : (classRules[c.id] || '')}
                         placeholder={bn ? '০' : '0'}
                         data-bijoy={bn}
                         onChange={(e) => {
                           const raw = e.target.value;
-                          const val = parseInt(raw);
-                          if (isNaN(val)) {
-                            setClassRules(prev => ({ ...prev, [c.id]: 0 }));
-                          } else {
-                            setClassRules(prev => ({ ...prev, [c.id]: val }));
+                          if (!bn) {
+                            const val = parseInt(raw);
+                            if (isNaN(val)) setClassRules(prev => ({ ...prev, [c.id]: 0 }));
+                            else setClassRules(prev => ({ ...prev, [c.id]: val }));
+                            return;
                           }
+
+                          const digitMap: Record<string, number> = {
+                            '০': 0, '১': 1, '২': 2, '৩': 3, '৪': 4, '৫': 5, '৬': 6, '৭': 7, '৮': 8, '৯': 9,
+                            '0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9
+                          };
+                          
+                          let numericVal = '';
+                          for (const char of raw) {
+                            if (digitMap[char] !== undefined) numericVal += digitMap[char];
+                          }
+                          
+                          const val = parseInt(numericVal);
+                          if (isNaN(val)) setClassRules(prev => ({ ...prev, [c.id]: 0 }));
+                          else setClassRules(prev => ({ ...prev, [c.id]: val }));
                         }} />
                     </div>
                   );
