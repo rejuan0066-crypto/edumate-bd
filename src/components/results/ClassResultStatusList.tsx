@@ -27,7 +27,8 @@ const ClassResultStatusList = ({
 }: ClassResultStatusListProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
+  const [query, setQuery] = useState('');
 
   if (!classes.length) {
     return (
@@ -38,6 +39,10 @@ const ClassResultStatusList = ({
   }
 
   const savedCount = classes.filter(c => resultStatusMap[c.id]).length;
+  const q = query.trim().toLowerCase();
+  const visibleClasses = q
+    ? classes.filter((c: any) => `${c.name || ''} ${c.name_bn || ''}`.toLowerCase().includes(q))
+    : classes;
 
   return (
     <div className="card-elevated rounded-xl overflow-hidden">
@@ -53,7 +58,21 @@ const ClassResultStatusList = ({
           {savedCount}/{classes.length} {bn ? 'সম্পন্ন' : 'done'}
         </Badge>
       </button>
+      {isOpen && (
+        <div className="px-5 py-3 border-b border-border bg-background">
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={bn ? 'শ্রেণী খুঁজুন...' : 'Search class...'}
+              className="pl-9 bg-background h-9"
+            />
+          </div>
+        </div>
+      )}
       {isOpen && <div className="divide-y divide-border">
+
         {classes.map((cls: any) => {
           const hasResults = resultStatusMap[cls.id] || false;
           const isPublished = publishStatusMap[cls.id] || false;
