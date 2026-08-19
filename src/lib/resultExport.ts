@@ -382,14 +382,18 @@ export const getResultSheetHtml = ({
   *{margin:0;padding:0;box-sizing:border-box;}
   @page{
     size:A4 landscape;
-    margin:10mm;
+    margin:0;
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   html,body{width:100%;margin:0;padding:0;}
   body{font-family:'Kalpurush','Noto Sans Bengali','SutonnyOMJ','Inter',sans-serif;color:#0f172a;background:#f8fafc;}
   .screen-pageinfo{display:none;}
-  @media screen{body{padding:20px;}.screen-pageinfo{display:flex;justify-content:flex-end;font-size:10px;color:#94a3b8;margin-top:6px;}}
-  .sheet{background:#fff;border:1px solid #94a3b8;border-radius:2px;padding:15mm 12mm;box-sizing:border-box;width:100%;min-height:calc(210mm - 20mm);box-shadow:0 0 10px rgba(0,0,0,0.1);margin:0 auto;}
+  @media screen{
+    html{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    body{padding:20px;min-width:min-content;}
+    .screen-pageinfo{display:flex;justify-content:flex-end;font-size:10px;color:#94a3b8;margin-top:6px;}
+  }
+  .sheet{background:#fff;border:1px solid #94a3b8;border-radius:2px;padding:8mm 8mm;box-sizing:border-box;width:100%;box-shadow:0 0 10px rgba(0,0,0,0.1);margin:0 auto;}
   .header{display:grid;grid-template-columns:100px 1fr 100px;gap:12px;align-items:center;margin-bottom:15px;}
   .header-logo{width:80px;height:80px;object-fit:contain;}
   .header-text{text-align:center;}
@@ -458,9 +462,10 @@ export const getResultSheetHtml = ({
     .signatures{page-break-inside:avoid !important;break-inside:avoid-page !important;-webkit-column-break-inside:avoid !important;display:flex !important;flex-wrap:nowrap !important;}
     .sig-block{page-break-inside:avoid !important;break-inside:avoid-page !important;-webkit-column-break-inside:avoid !important;}
   }
-  .result-page{position:relative;box-sizing:border-box;padding:0;width:297mm;height:210mm;break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid;overflow:hidden;margin:0 auto;}
-  .result-page:last-child{break-after:auto;page-break-after:auto;}
-  .fit-inner{position:absolute;top:0;left:0;right:0;transform-origin:top left;width:100%;box-sizing:border-box;}
+  .result-page{position:relative;box-sizing:border-box;padding:8mm;width:297mm;height:209.5mm;break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid;overflow:hidden;margin:0 auto 14px;}
+  .result-page:last-child{break-after:auto;page-break-after:auto;margin-bottom:0;}
+  @media print{.result-page{margin:0 auto;}}
+  .fit-inner{position:absolute;top:8mm;left:8mm;right:8mm;transform-origin:top left;width:calc(100% - 16mm);box-sizing:border-box;}
   .signatures-wrap{margin-top:30px;}
   .sig-line{margin-top:28px;}
 </style>
@@ -468,10 +473,10 @@ export const getResultSheetHtml = ({
 (function(){
   function fit(){
     var PX = 96 / 25.4;
-    var pageH = 210 * PX;
+    var pageH = 209.5 * PX;
     var pageW = 297 * PX;
-    var availH = pageH - 20 * PX;
-    var availW = pageW - 20 * PX;
+    var availH = pageH - 16 * PX;
+    var availW = pageW - 16 * PX;
     var pages = document.querySelectorAll('.result-page');
     for (var i = 0; i < pages.length; i++) {
       var page = pages[i];
