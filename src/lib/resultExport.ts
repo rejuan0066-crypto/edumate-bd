@@ -198,9 +198,10 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
       font-size:9pt;color:#64748b;
     }
   }
-  body{font-family:'Kalpurush','Noto Sans Bengali','SutonnyOMJ','Inter',sans-serif;color:#0f172a;background:#fff;padding:6mm 8mm;}
+  html,body{width:100%;margin:0;padding:0;}
+  body{font-family:'Kalpurush','Noto Sans Bengali','SutonnyOMJ','Inter',sans-serif;color:#0f172a;background:#fff;}
   .screen-pageinfo{display:none;}
-  @media screen{.screen-pageinfo{display:flex;justify-content:flex-end;font-size:10px;color:#94a3b8;margin-top:6px;}}
+  @media screen{body{padding:6mm 8mm;}.screen-pageinfo{display:flex;justify-content:flex-end;font-size:10px;color:#94a3b8;margin-top:6px;}}
   .sheet{border:2px solid #064e3b;border-radius:6px;padding:10px 14px 14px;}
   .header{display:grid;grid-template-columns:60px 1fr 60px;gap:12px;align-items:center;border-bottom:2px double #064e3b;padding-bottom:8px;}
   .header-logo{width:60px;height:60px;object-fit:contain;}
@@ -257,7 +258,7 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
   .sig-sub{font-size:9.5px;color:#64748b;}
   .footer{margin-top:14px;display:flex;justify-content:space-between;font-size:9.5px;color:#64748b;border-top:1px dashed #cbd5e1;padding-top:6px;}
   @media print{
-    body{padding:0;}
+    html,body{padding:0 !important;}
     .sheet{border-color:#064e3b;}
     .header,.doc-band,.meta{page-break-inside:avoid;break-inside:avoid;}
     table{page-break-inside:auto;}
@@ -391,9 +392,9 @@ ${(() => {
   }).join('');
 })()}
 <style>
-  .result-page{break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid;overflow:hidden;}
+  .result-page{position:relative;width:${orientation === 'landscape' ? 297 - m.left - m.right : 210 - m.left - m.right}mm;height:${orientation === 'landscape' ? 210 - m.top - m.bottom : 297 - m.top - m.bottom}mm;break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid;overflow:hidden;}
   .result-page:last-child{break-after:auto;page-break-after:auto;}
-  .fit-inner{transform-origin:top left;}
+  .fit-inner{position:absolute;top:0;left:0;transform-origin:top left;}
   .signatures-wrap{margin-top:20px;}
   .sig-line{margin-top:22px;}
 </style>
@@ -404,8 +405,8 @@ ${(() => {
     var PX = 96 / 25.4;
     var pageH = (isLandscape ? 210 : 297) * PX;
     var pageW = (isLandscape ? 297 : 210) * PX;
-    var availH = pageH - (${m.top} + ${m.bottom}) * PX - 6;
-    var availW = pageW - (${m.left} + ${m.right}) * PX - 2;
+    var availH = pageH - (${m.top} + ${m.bottom}) * PX;
+    var availW = pageW - (${m.left} + ${m.right}) * PX;
     var pages = document.querySelectorAll('.result-page');
     for (var i = 0; i < pages.length; i++) {
       var page = pages[i];
@@ -414,13 +415,11 @@ ${(() => {
       inner.style.transform = 'none';
       inner.style.width = availW + 'px';
       var h = inner.scrollHeight;
-      var scale = Math.min(1, availH / h);
+      var w = inner.scrollWidth;
+      var scale = Math.min(1, availH / h, availW / w);
       if (scale < 1) {
-        scale = Math.max(0.45, scale - 0.01);
+        scale = Math.max(0.45, scale - 0.015);
         inner.style.transform = 'scale(' + scale + ')';
-        page.style.height = (h * scale) + 'px';
-      } else {
-        page.style.height = '';
       }
     }
   }
