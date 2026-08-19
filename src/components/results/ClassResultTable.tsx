@@ -142,25 +142,25 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
         </div>
       </div>
 
-      <div className="relative z-10 overflow-auto max-h-[calc(100vh-180px)] result-table-scroll">
-        <table className="w-full text-sm border-separate border-spacing-0">
-          <thead className="sticky top-0 z-30 bg-background shadow-sm">
+      <div className="relative z-10 overflow-auto max-h-[70vh] result-table-scroll touch-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <table className="w-full text-sm border-separate border-spacing-0 table-fixed">
+          <thead className="sticky top-0 z-30 bg-background shadow-sm" style={{ position: '-webkit-sticky' }}>
             <tr className="border-b border-border">
-              <th className="sticky top-0 left-0 z-50 px-3 py-3 text-left text-xs font-semibold text-muted-foreground w-10 bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]">#</th>
-              <th className="sticky top-0 left-10 z-50 px-3 py-3 text-left text-xs font-semibold text-muted-foreground bg-background shadow-[2px_2px_5px_-2px_rgba(0,0,0,0.1)]">{bn ? 'রোল' : 'Roll'}</th>
-              <th className="sticky top-0 left-[70px] sm:left-[90px] z-50 px-3 py-3 text-left text-xs font-semibold text-muted-foreground bg-background shadow-[2px_2px_5px_-2px_rgba(0,0,0,0.1)] min-w-[120px]">{bn ? 'নাম' : 'Name'}</th>
+              <th className="sticky top-0 left-0 z-50 px-3 py-3 text-left text-xs font-semibold text-muted-foreground w-10 min-w-[40px] bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]" style={{ position: '-webkit-sticky' }}>#</th>
+              <th className="sticky top-0 left-10 z-50 px-3 py-3 text-left text-xs font-semibold text-muted-foreground w-[60px] min-w-[60px] bg-background shadow-[2px_2px_5px_-2px_rgba(0,0,0,0.1)]" style={{ position: '-webkit-sticky' }}>{bn ? 'রোল' : 'Roll'}</th>
+              <th className="sticky top-0 left-[100px] z-50 px-3 py-3 text-left text-xs font-semibold text-muted-foreground bg-background shadow-[2px_2px_5px_-2px_rgba(0,0,0,0.1)] min-w-[120px] w-[150px]" style={{ position: '-webkit-sticky' }}>{bn ? 'নাম' : 'Name'}</th>
               {subjects.map((s: any) => (
-                <th key={s.id} className="sticky top-0 px-2 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[70px] bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]">
+                <th key={s.id} className="sticky top-0 px-2 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[70px] w-[80px] bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]" style={{ position: '-webkit-sticky' }}>
                   {bn ? s.name_bn : s.name}
                 </th>
               ))}
-              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]">{bn ? 'মোট' : 'Total'}</th>
-              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]">{bn ? 'গড়' : 'Avg'}</th>
-              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]">{bn ? 'গ্রেড' : 'Grade'}</th>
-              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]">GPA</th>
-              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[80px] bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]">{bn ? 'মর্যাদা' : 'Title'}</th>
-              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]">{bn ? 'মেধা' : 'Rank'}</th>
-              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground w-10 bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]"></th>
+              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[60px] w-[70px] bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]" style={{ position: '-webkit-sticky' }}>{bn ? 'মোট' : 'Total'}</th>
+              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[60px] w-[70px] bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]" style={{ position: '-webkit-sticky' }}>{bn ? 'গড়' : 'Avg'}</th>
+              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[60px] w-[70px] bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]" style={{ position: '-webkit-sticky' }}>{bn ? 'গ্রেড' : 'Grade'}</th>
+              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[60px] w-[70px] bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]" style={{ position: '-webkit-sticky' }}>GPA</th>
+              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[80px] w-[100px] bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]" style={{ position: '-webkit-sticky' }}>{bn ? 'মর্যাদা' : 'Title'}</th>
+              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[60px] w-[70px] bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]" style={{ position: '-webkit-sticky' }}>{bn ? 'মেধা' : 'Rank'}</th>
+              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground w-10 min-w-[40px] bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]" style={{ position: '-webkit-sticky' }}></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -198,13 +198,13 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
 
                 return (
                   <tr key={st.id} className={`hover:bg-muted/20 transition-colors ${failed ? 'bg-destructive/5' : ''}`}>
-                    <td className="sticky left-0 z-20 px-3 py-2 text-muted-foreground text-xs bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">{originalIdx + 1}</td>
-                    <td className="sticky left-10 z-20 px-3 py-2 font-medium text-foreground bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                    <td className="sticky left-0 z-20 px-3 py-2 text-muted-foreground text-xs bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" style={{ position: '-webkit-sticky' }}>{originalIdx + 1}</td>
+                    <td className="sticky left-10 z-20 px-3 py-2 font-medium text-foreground bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" style={{ position: '-webkit-sticky' }}>
                       <div className="flex flex-col">
-                        <span>{st.roll_number || '-'}</span>
+                        <span>{bn ? toBnDigits(st.roll_number || 0) : (st.roll_number || '-')}</span>
                       </div>
                     </td>
-                    <td className="sticky left-[70px] sm:left-[90px] z-20 px-3 py-2 text-foreground bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[120px]">
+                    <td className="sticky left-[100px] z-20 px-3 py-2 text-foreground bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[120px]" style={{ position: '-webkit-sticky' }}>
                       {bn ? st.name_bn : (st.name_en || st.name_bn)}
                     </td>
                   {subjects.map((sub: any) => {
