@@ -85,11 +85,33 @@ export const exportResultCSV = ({ title, students, subjects, marksMap, getOveral
     bn ? 'মেধা' : 'Rank',
   ];
 
-  const rows = students.map((st: any, idx: number) => {
+  const computed = students.map((st: any, idx: number) => {
     const marks = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`] ?? 0);
     const total = marks.reduce((a, b) => a + b, 0);
+    const overall = getOverallGrade(marks, st.class_id);
+    const failed = (overall as any).graced ? false : (marks.some(m => m < (params?.passMark || 33)) || overall.hasFail);
+    return { idx, st, marks, total, overall, failed };
+  });
+
+  const sortedByTotal = [...computed].sort((a, b) => {
+    if (a.failed && !b.failed) return 1;
+    if (!a.failed && b.failed) return -1;
+    return b.total - a.total;
+  });
+
+  const rankMap = new Map<number, number>();
+  sortedByTotal.forEach((r, i) => {
+    if (!r.failed) rankMap.set(r.idx, i + 1);
+  });
+
+  const rows = computed.map(({ st, idx, marks, total, overall, failed }) => {
     const avg = subjects.length > 0 ? total / subjects.length : 0;
-    const { grade, gpa, title: gradeTitle, title_bn } = getOverallGrade(marks, st.class_id);
+    const rank = rankMap.get(idx);
+    let rankDisplay = rank ? rank.toString() : '-';
+    if (rank === 1) rankDisplay = bn ? '১ম' : '1st';
+    else if (rank === 2) rankDisplay = bn ? '২য়' : '2nd';
+    else if (rank === 3) rankDisplay = bn ? '৩য়' : '3rd';
+
     return [
       idx + 1,
       st.roll_number || '-',
@@ -97,9 +119,9 @@ export const exportResultCSV = ({ title, students, subjects, marksMap, getOveral
       ...marks,
       total,
       avg.toFixed(1),
-      grade,
-      gpa,
-      bn ? title_bn : gradeTitle,
+      overall.grade,
+      overall.gpa,
+      bn ? overall.title_bn : overall.title,
       rankDisplay,
     ];
   });
