@@ -93,24 +93,25 @@ const AdminResults = () => {
     enabled: !!examSessionId,
   });
 
-  // Fetch result status for each class (check if results exist for this exam session)
+  // Fetch result status for each class (check per-class results)
   const { data: classResultStatus = {} } = useQuery({
     queryKey: ['class-result-status', examSessionId, examClasses.map((c: any) => c.id)],
     queryFn: async () => {
       const examSession = examSessions.find((es: any) => es.id === examSessionId);
-      if (!examSession) return {};
+      if (!examSession || !examClasses.length) return {};
 
-      const { data: results, error: resultsError } = await supabase
+      // Check results for each class specifically
+      const { data: results, error } = await supabase
         .from('results')
-        .select('id')
-        .eq('exam_id', examSessionId)
-        .limit(1);
-      if (resultsError) throw resultsError;
+        .select('student_id, students!inner(class_id)')
+        .eq('exam_id', examSessionId);
+      
+      if (error) throw error;
 
-      const hasResults = (results?.length || 0) > 0;
       const map: Record<string, boolean> = {};
       examClasses.forEach((c: any) => {
-        map[c.id] = hasResults;
+        // A class is "done" if there's at least one result for a student in that class
+        map[c.id] = results?.some((r: any) => r.students.class_id === c.id) || false;
       });
       return map;
     },
