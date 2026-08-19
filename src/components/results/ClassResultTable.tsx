@@ -27,7 +27,7 @@ interface ClassResultTableProps {
   onSave: () => void;
   isSaving: boolean;
   title: string;
-  onViewMarksheet: (studentId: string) => void;
+  onViewMarksheet: (studentId: string, rank?: number) => void;
   onClose?: () => void;
 }
 
