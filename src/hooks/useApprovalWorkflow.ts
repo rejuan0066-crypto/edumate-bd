@@ -60,9 +60,12 @@ export const useApprovalWorkflow = () => {
     if (!user) return false;
 
     try {
-      const { error } = await supabase.from('pending_actions').insert({
+      const description = params.description || '';
+      const userName = user.user_metadata?.full_name || user.email || 'User';
+
+      const { data: newAction, error } = await supabase.from('pending_actions').insert({
         user_id: user.id,
-        user_name: user.user_metadata?.full_name || user.email,
+        user_name: userName,
         user_email: user.email,
         action_type: params.actionType,
         target_table: params.targetTable,
@@ -70,13 +73,27 @@ export const useApprovalWorkflow = () => {
         menu_path: params.menuPath,
         payload: {
           ...params.payload,
-          _description: params.description || '',
+          _description: description,
         },
         requires_admin_approval: true,
         status: 'pending'
-      });
+      }).select().single();
 
       if (error) throw error;
+
+      // Add notification for admins
+      if (newAction) {
+        await supabase.from('notifications').insert({
+          title: 'নতুন অনুমোদনের অনুরোধ',
+          title_bn: 'নতুন অনুমোদনের অনুরোধ',
+          message: `${userName} একটি ${params.actionType} অনুরোধ পাঠিয়েছেন: ${description}`,
+          message_bn: `${userName} একটি ${params.actionType} অনুরোধ পাঠিয়েছেন: ${description}`,
+          type: 'warning',
+          category: 'approval',
+          link: '/admin/approvals',
+        });
+      }
+
       return true;
     } catch (err: any) {
       console.error('Failed to submit for approval:', err);
