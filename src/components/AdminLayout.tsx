@@ -673,7 +673,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           </header>
 
           {/* Content */}
-          <main className="flex-1 px-2 sm:px-4 md:px-8 pb-8 pt-4 w-full max-w-[1440px] mx-auto overflow-x-hidden min-w-0">
+          <main className="flex-1 px-2 sm:px-4 md:px-8 pb-8 pt-4 w-full max-w-[1440px] mx-auto min-w-0">
             <BackButton position="top" />
             {/* Page Header - outside card for clear separation */}
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4 sm:mb-5">
@@ -697,7 +697,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
             </div>
             {/* Modern Glass Content Container */}
             <div className="admin-page-card rounded-[20px] sm:rounded-[36px] lg:rounded-[45px] bg-card/70 dark:bg-card/35 backdrop-blur-2xl border border-border/10 dark:border-border/8 p-2.5 sm:p-6 lg:p-10 min-h-[60vh] w-full min-w-0" style={{ boxShadow: 'var(--shadow-float)' }}>
-              <div className="w-full min-w-0 overflow-x-hidden">
+              <div className="w-full min-w-0">
                 <AdminPageWithTabs>{children}</AdminPageWithTabs>
               </div>
             </div>
