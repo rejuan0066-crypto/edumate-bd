@@ -137,36 +137,57 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
             <div className="space-y-2">
               <Label className="text-xs">{bn ? 'ক্লাস অনুযায়ী অনুগ্রহ (কত বিষয়ে ফেল গ্রহণযোগ্য)' : 'Per-class grace (allowed failed subjects)'}</Label>
               <p className="text-[11px] text-muted-foreground">
-                {bn ? '০ = ওই ক্লাসে অনুগ্রহ পাস বন্ধ। খালি রাখলে ডিফল্ট প্রযোজ্য হবে।' : '0 = grace off for that class. Empty uses the default.'}
+                {bn ? 'ক্লাসে টিক দিলে ওই ক্লাসে অনুগ্রহ পাস চালু হবে, পাশের ঘরে কত বিষয় তা লিখুন।' : 'Tick a class to enable grace for it, then set how many subjects.'}
               </p>
+              <div className="flex gap-2">
+                <Button type="button" size="sm" variant="outline" disabled={!enabled}
+                  onClick={() => setClassRules(Object.fromEntries(classes.map((c: any) => [c.id, Math.max(1, Number(maxSubjects) || 1)])))}>
+                  {bn ? 'সব নির্বাচন' : 'Select all'}
+                </Button>
+                <Button type="button" size="sm" variant="outline" disabled={!enabled}
+                  onClick={() => setClassRules({})}>
+                  {bn ? 'সব বাতিল' : 'Clear all'}
+                </Button>
+              </div>
               <div className="rounded-xl border divide-y max-h-64 overflow-y-auto">
-                {classes.map((c: any) => (
-                  <div key={c.id} className="flex items-center justify-between gap-3 px-3 py-2">
-                    <div className="min-w-0">
-                      <p className="text-sm truncate">{bn ? (c.name_bn || c.name) : (c.name || c.name_bn)}</p>
-                      <p className="text-[11px] text-muted-foreground truncate">
-                        {bn ? (c.divisions?.name_bn || c.divisions?.name) : (c.divisions?.name || c.divisions?.name_bn)}
-                      </p>
+                {classes.map((c: any) => {
+                  const checked = classRules[c.id] !== undefined;
+                  return (
+                    <div key={c.id} className="flex items-center justify-between gap-3 px-3 py-2">
+                      <label className="flex items-center gap-2 min-w-0 cursor-pointer">
+                        <Checkbox
+                          checked={checked}
+                          disabled={!enabled}
+                          onCheckedChange={(v) => setClassRules(prev => {
+                            const next = { ...prev };
+                            if (v) next[c.id] = Math.max(1, Number(maxSubjects) || 1);
+                            else delete next[c.id];
+                            return next;
+                          })}
+                        />
+                        <span className="min-w-0">
+                          <span className="block text-sm truncate">{bn ? (c.name_bn || c.name) : (c.name || c.name_bn)}</span>
+                          <span className="block text-[11px] text-muted-foreground truncate">
+                            {bn ? (c.divisions?.name_bn || c.divisions?.name) : (c.divisions?.name || c.divisions?.name_bn)}
+                          </span>
+                        </span>
+                      </label>
+                      <Input type="number" min={1} max={10} className="w-20 h-8 text-center"
+                        disabled={!enabled || !checked}
+                        value={classRules[c.id] ?? ''}
+                        placeholder={String(maxSubjects)}
+                        onChange={(e) => {
+                          const raw = e.target.value;
+                          setClassRules(prev => ({ ...prev, [c.id]: Math.max(1, parseInt(raw) || 1) }));
+                        }} />
                     </div>
-                    <Input type="number" min={0} max={10} className="w-20 h-8 text-center"
-                      disabled={!enabled}
-                      value={classRules[c.id] ?? ''}
-                      placeholder={applyTo === 'selected' ? '0' : String(maxSubjects)}
-                      onChange={(e) => {
-                        const raw = e.target.value;
-                        setClassRules(prev => {
-                          const next = { ...prev };
-                          if (raw === '') delete next[c.id];
-                          else next[c.id] = Math.max(0, parseInt(raw) || 0);
-                          return next;
-                        });
-                      }} />
-                  </div>
-                ))}
+                  );
+                })}
                 {classes.length === 0 && (
                   <p className="px-3 py-4 text-xs text-muted-foreground text-center">{bn ? 'কোনো ক্লাস নেই' : 'No classes'}</p>
                 )}
               </div>
+
             </div>
 
             <p className="text-xs text-muted-foreground leading-relaxed rounded-xl border p-3 bg-muted/20">
