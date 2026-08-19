@@ -132,7 +132,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
       </div>
 
       <div className="relative z-10 overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm border-separate border-spacing-0">
           <thead className="sticky top-[133px] z-20 bg-background/95 backdrop-blur-sm shadow-sm">
             <tr className="border-b border-border">
               <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground w-10">#</th>
@@ -153,6 +153,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
+            {/* Table Head is handled above with sticky positioning */}
             {(() => {
               const studentsWithStats = students.map((st: any, idx: number) => {
                 const hasEnteredAnyMark = subjects.some((sub: any) => marksMap[`${st.id}_${sub.id}`] !== undefined);
