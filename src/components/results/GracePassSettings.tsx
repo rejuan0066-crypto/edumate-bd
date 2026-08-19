@@ -135,7 +135,7 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
               <Label className="text-xs">{bn ? 'ডিফল্ট: সর্বোচ্চ কত বিষয়ে ফেল গ্রহণযোগ্য' : 'Default max failed subjects allowed'}</Label>
               <Input 
                 type="text" 
-                value={maxSubjects || ''} 
+                value={bn ? (maxSubjects === 0 ? '' : maxSubjects.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)])) : (maxSubjects || '')} 
                 disabled={!enabled || applyTo === 'selected'}
                 placeholder={bn ? '০' : '0'}
                 data-bijoy={bn}
@@ -212,7 +212,7 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
                       </label>
                       <Input type="text" className="w-20 h-8 text-center"
                         disabled={!enabled || !checked}
-                        value={classRules[c.id] || ''}
+                        value={bn ? (classRules[c.id] === 0 ? '' : (classRules[c.id]?.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]) || '')) : (classRules[c.id] || '')}
                         placeholder={bn ? '০' : '0'}
                         data-bijoy={bn}
                         onChange={(e) => {
