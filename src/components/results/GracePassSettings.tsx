@@ -187,7 +187,12 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
                         placeholder={String(maxSubjects)}
                         onChange={(e) => {
                           const raw = e.target.value;
-                          setClassRules(prev => ({ ...prev, [c.id]: Math.max(1, parseInt(raw) || 1) }));
+                          const val = parseInt(raw);
+                          if (!raw) {
+                            setClassRules(prev => ({ ...prev, [c.id]: 0 })); // Allow empty input temporarily
+                            return;
+                          }
+                          setClassRules(prev => ({ ...prev, [c.id]: Math.max(0, val || 0) }));
                         }} />
                     </div>
                   );
