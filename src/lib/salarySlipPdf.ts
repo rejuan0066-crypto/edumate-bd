@@ -167,6 +167,7 @@ export async function downloadSheetAsPdf(
   htmlContent: string,
   filename: string = 'salary-sheet.pdf',
   targetWindow?: Window | null,
+  orientation: 'landscape' | 'portrait' = 'landscape',
 ): Promise<void> {
   // Strip the on-screen Print Settings bar + auto-print script and screen-only blocks.
   let cleanHtml = htmlContent.replace(/<script>[\s\S]*?<\/script>/gi, '');
@@ -174,15 +175,15 @@ export async function downloadSheetAsPdf(
 
   // A4 landscape at 96dpi: 1123px x 794px. Lock EVERY page to this exact box so
   // all captured pages share one aspect ratio → identical margins in the PDF.
-  const pageW = 1123;
-  const pageH = 794;
+  const pageW = orientation === 'landscape' ? 1123 : 794;
+  const pageH = orientation === 'landscape' ? 794 : 1123;
 
   const pdfOverrides = `
     <style>
       html, body { background:#fff !important; margin:0 !important; padding:0 !important; width:${pageW}px !important; }
       .print-settings, [data-print-settings] { display:none !important; }
       .sheet { width:${pageW}px !important; max-width:${pageW}px !important; margin:0 auto !important; }
-      .salary-page {
+      .salary-page, .result-page {
         box-shadow:none !important;
         width:${pageW}px !important;
         height:${pageH}px !important;
@@ -193,7 +194,7 @@ export async function downloadSheetAsPdf(
         box-sizing:border-box !important;
         position:relative !important;
       }
-      .print-fit { transform-origin:top left !important; width:100% !important; }
+      .print-fit, .fit-inner { transform-origin:top center !important; width:100% !important; }
       * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; color-adjust:exact !important; }
     </style>
   `;
@@ -243,14 +244,14 @@ export async function downloadSheetAsPdf(
         );
         await new Promise((r) => setTimeout(r, 800));
 
-        const pages = Array.from(iframeDoc.querySelectorAll('.salary-page')) as HTMLElement[];
+        const pages = Array.from(iframeDoc.querySelectorAll('.salary-page, .result-page')) as HTMLElement[];
         const targets = pages.length > 0
           ? pages
           : [((iframeDoc.querySelector('.sheet') as HTMLElement) || iframeDoc.body)];
 
-        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-        const pdfWidth = 297;
-        const pdfHeight = 210;
+        const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
+        const pdfWidth = orientation === 'landscape' ? 297 : 210;
+        const pdfHeight = orientation === 'landscape' ? 210 : 297;
         const margin = 8;
         const availW = pdfWidth - margin * 2;
         const availH = pdfHeight - margin * 2;
@@ -260,7 +261,7 @@ export async function downloadSheetAsPdf(
 
           // Scale the inner content to fit inside the fixed A4 box so dense pages
           // never overflow the border and sparse pages keep the same frame.
-          const fit = target.querySelector('.print-fit') as HTMLElement | null;
+          const fit = (target.querySelector('.print-fit') || target.querySelector('.fit-inner')) as HTMLElement | null;
           if (fit) {
             fit.style.transform = 'none';
             const cs = iframe.contentWindow?.getComputedStyle(target);
@@ -300,7 +301,7 @@ export async function downloadSheetAsPdf(
           const offsetX = margin + (availW - drawW) / 2;
           const offsetY = margin + (availH - drawH) / 2;
 
-          if (i > 0) pdf.addPage('a4', 'landscape');
+          if (i > 0) pdf.addPage('a4', orientation === 'landscape' ? 'landscape' : 'portrait');
           const imgData = canvas.toDataURL('image/png');
           pdf.addImage(imgData, 'PNG', offsetX, offsetY, drawW, drawH);
         }
