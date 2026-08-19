@@ -19,9 +19,14 @@ const AdminExamSessions = () => {
   const bn = language === 'bn';
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { canAddItem, canDeleteItem } = usePagePermissions('/admin/exam-sessions');
+  const { canAddItem, canDeleteItem, canEditItem } = usePagePermissions('/admin/exam-sessions');
+
   const confirm = useConfirm();
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [editSessionName, setEditSessionName] = useState('');
+  const [editSessionNameBn, setEditSessionNameBn] = useState('');
+
 
   const [name, setName] = useState('');
   const [nameBn, setNameBn] = useState('');
@@ -387,8 +392,25 @@ const AdminExamSessions = () => {
     },
   });
 
+  const updateSessionMutation = useMutation({
+    mutationFn: async ({ id, name, name_bn }: { id: string; name: string; name_bn: string }) => {
+      if (!name_bn.trim()) throw new Error(bn ? 'বাংলা নাম দিন' : 'Bangla name required');
+      const { error } = await supabase.from('exam_sessions')
+        .update({ name: name.trim() || name_bn.trim(), name_bn: name_bn.trim() })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['exam_sessions_list'] });
+      setEditingSessionId(null);
+      toast.success(bn ? 'সেশনের নাম আপডেট হয়েছে' : 'Session name updated');
+    },
+    onError: (e: any) => toast.error(e.message || 'Error'),
+  });
+
   // --- Exam Type CRUD ---
   const addTypeMutation = useMutation({
+
     mutationFn: async () => {
       if (!newTypeNameBn.trim() || !newTypeKey.trim()) throw new Error(bn ? 'নাম ও কী দিন' : 'Name & key required');
       const maxSort = examTypes.length > 0 ? Math.max(...examTypes.map((t: any) => t.sort_order || 0)) : 0;
@@ -787,11 +809,25 @@ const AdminExamSessions = () => {
                           {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                         </button>
                         <div className="min-w-0">
-                          <div className="font-medium text-foreground text-sm truncate">{bn ? es.name_bn : es.name}</div>
+                          {editingSessionId === es.id ? (
+                            <div className="flex flex-wrap items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                              <Input value={editSessionNameBn} onChange={e => setEditSessionNameBn(e.target.value)} placeholder={bn ? 'বাংলা নাম' : 'Bangla name'} className="h-7 w-40 text-sm bg-background" />
+                              <Input value={editSessionName} onChange={e => setEditSessionName(e.target.value)} placeholder={bn ? 'ইংরেজি নাম' : 'English name'} className="h-7 w-40 text-sm bg-background" />
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-success" disabled={updateSessionMutation.isPending} onClick={() => updateSessionMutation.mutate({ id: es.id, name: editSessionName, name_bn: editSessionNameBn })}>
+                                <Check className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingSessionId(null)}>
+                                <X className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="font-medium text-foreground text-sm truncate">{bn ? es.name_bn : es.name}</div>
+                          )}
                           <div className="text-xs text-muted-foreground truncate">
                             {bn ? (es.academic_sessions?.name_bn || es.academic_sessions?.name) : es.academic_sessions?.name || '-'}
                           </div>
                         </div>
+
                       </div>
                       <div className="flex items-center gap-2 flex-wrap pl-7 sm:pl-0 sm:ml-auto">
                         <span className="px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary whitespace-nowrap">{getTypeLabel(es.exam_type)}</span>
@@ -803,6 +839,12 @@ const AdminExamSessions = () => {
                             <GraduationCap className="w-3.5 h-3.5" />
                             {bn ? 'ফলাফল তৈরি' : 'Create Result'}
                           </Button>
+                          {canEditItem && editingSessionId !== es.id && (
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingSessionId(es.id); setEditSessionName(es.name || ''); setEditSessionNameBn(es.name_bn || ''); }}>
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+
                           {canDeleteItem && (
                             <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => deleteMutation.mutate(es.id)}>
                               <Trash2 className="w-3.5 h-3.5" />
