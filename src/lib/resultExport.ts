@@ -364,8 +364,8 @@ export const getResultSheetHtml = ({
           </div>
 
           <div class="footer">
-            <div>${showFooterInstitution ? (institutionName || '') : ''}</div>
-            <div class="screen-pageinfo">${bn ? 'পৃষ্ঠা' : 'Page'} ${pageIdx + 1} / ${totalPages}</div>
+            <div style="font-weight:700;">${showFooterInstitution ? (institutionName || '') : ''}</div>
+            <div class="screen-pageinfo" style="font-weight:600;">${bn ? 'পৃষ্ঠা' : 'Page'} ${pageIdx + 1} / ${totalPages}</div>
           </div>
         </div>
       </div>
