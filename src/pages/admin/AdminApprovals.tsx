@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ClipboardCheck, Check, X, Loader2, Eye, MessageSquare } from 'lucide-react';
+import { ClipboardCheck, Check, X, Loader2, Eye, MessageSquare, Clock, FileText, Layers } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ACTION_LABELS: Record<string, { bn: string; en: string }> = {
@@ -305,122 +305,156 @@ const AdminApprovals = () => {
 
         {/* Detail Dialog */}
         <Dialog open={!!detailAction} onOpenChange={(open) => { if (!open) setDetailAction(null); }}>
-          <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <ClipboardCheck className="w-5 h-5 text-primary" />
-                {bn ? 'রিকোয়েস্ট বিস্তারিত' : 'Request Details'}
+          <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
+            <DialogHeader className="px-6 py-4 border-b">
+              <DialogTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ClipboardCheck className="w-5 h-5 text-primary" />
+                  {bn ? 'রিকোয়েস্ট বিস্তারিত' : 'Request Details'}
+                </div>
+                {detailAction && (
+                  <Badge variant="outline" className={STATUS_COLORS[detailAction.status]}>
+                    {detailAction.status === 'pending' ? (bn ? 'পেন্ডিং' : 'Pending') :
+                     detailAction.status === 'approved' ? (bn ? 'অনুমোদিত' : 'Approved') :
+                     (bn ? 'প্রত্যাখ্যাত' : 'Rejected')}
+                  </Badge>
+                )}
               </DialogTitle>
             </DialogHeader>
 
             {detailAction && (
-              <div className="space-y-4 pt-2">
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">{bn ? 'ইউজার' : 'User'}</p>
-                    <p className="font-medium">{detailAction.user_name || detailAction.user_email}</p>
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {/* User & Request Info Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-muted/30 p-4 rounded-xl border border-border/50">
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">{bn ? 'অনুরোধকারী' : 'Requester'}</p>
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                          {(detailAction.user_name || detailAction.user_email || 'U')[0].toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-sm leading-tight">{detailAction.user_name || '—'}</p>
+                          <p className="text-xs text-muted-foreground">{detailAction.user_email}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">{bn ? 'অ্যাকশন ও মডিউল' : 'Action & Module'}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="secondary" className="capitalize">
+                          {ACTION_LABELS[detailAction.action_type]?.[bn ? 'bn' : 'en'] || detailAction.action_type}
+                        </Badge>
+                        <span className="text-muted-foreground text-xs">→</span>
+                        <span className="font-medium text-sm">{detailAction.target_table}</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-1 font-mono">{detailAction.menu_path}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-muted-foreground">{bn ? 'অ্যাকশন' : 'Action'}</p>
-                    <Badge variant="outline">
-                      {ACTION_LABELS[detailAction.action_type]?.[bn ? 'bn' : 'en'] || detailAction.action_type}
-                    </Badge>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">{bn ? 'টেবিল' : 'Table'}</p>
-                    <p className="font-medium">{detailAction.target_table}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">{bn ? 'মেনু পাথ' : 'Menu Path'}</p>
-                    <p className="font-medium">{detailAction.menu_path}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">{bn ? 'তারিখ' : 'Date'}</p>
-                    <p className="font-medium">{new Date(detailAction.created_at).toLocaleString(bn ? 'bn-BD' : 'en-US')}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">{bn ? 'স্ট্যাটাস' : 'Status'}</p>
-                    <Badge variant="outline" className={STATUS_COLORS[detailAction.status] || ''}>
-                      {detailAction.status === 'pending' ? (bn ? 'পেন্ডিং' : 'Pending') :
-                       detailAction.status === 'approved' ? (bn ? 'অনুমোদিত' : 'Approved') :
-                       (bn ? 'প্রত্যাখ্যাত' : 'Rejected')}
-                    </Badge>
+
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">{bn ? 'অনুরোধের সময়' : 'Requested At'}</p>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="font-medium">
+                          {new Date(detailAction.created_at).toLocaleString(bn ? 'bn-BD' : 'en-US', {
+                            dateStyle: 'medium',
+                            timeStyle: 'short'
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                    {detailAction.status !== 'pending' && (
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+                          {detailAction.status === 'approved' ? (bn ? 'অনুমোদনের সময়' : 'Approved At') : (bn ? 'প্রত্যাখ্যানের সময়' : 'Rejected At')}
+                        </p>
+                        <p className="text-sm font-medium">
+                          {detailAction.reviewed_at ? new Date(detailAction.reviewed_at).toLocaleString(bn ? 'bn-BD' : 'en-US') : '—'}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Payload */}
+                {/* Description if present in payload */}
+                {detailAction.payload?._description && (
+                  <div>
+                    <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-primary" />
+                      {bn ? 'বিবরণ' : 'Description'}
+                    </h4>
+                    <div className="bg-primary/5 border border-primary/10 rounded-lg p-3 text-sm italic">
+                      {detailAction.payload._description}
+                    </div>
+                  </div>
+                )}
+
+                {/* Data/Payload Comparison or View */}
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">{bn ? 'ডেটা/পেলোড' : 'Data/Payload'}</p>
-                  <pre className="bg-muted/50 rounded-lg p-3 text-xs overflow-auto max-h-48 whitespace-pre-wrap">
-                    {JSON.stringify(detailAction.payload, null, 2)}
-                  </pre>
+                  <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-primary" />
+                    {bn ? 'ডেটা / পেলোড' : 'Data / Payload'}
+                  </h4>
+                  <div className="relative group">
+                    <pre className="bg-slate-950 text-slate-50 rounded-xl p-4 text-xs overflow-auto max-h-64 scrollbar-thin scrollbar-thumb-slate-700 font-mono leading-relaxed shadow-inner">
+                      {JSON.stringify(
+                        (() => {
+                          const p = { ...detailAction.payload };
+                          delete p._description;
+                          return p;
+                        })(), 
+                        null, 
+                        2
+                      )}
+                    </pre>
+                  </div>
                 </div>
 
-                {/* Admin note / rejection reason input */}
-                {detailAction.status === 'pending' && (
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
-                      <MessageSquare className="w-3 h-3" />
-                      {bn
-                        ? 'অ্যাডমিন নোট / প্রত্যাখ্যানের কারণ'
-                        : 'Admin Note / Rejection Reason'}
-                      <span className="text-xs text-muted-foreground/70 ml-1">
-                        {bn ? '(প্রত্যাখ্যানের ক্ষেত্রে আবশ্যক)' : '(required when rejecting)'}
-                      </span>
-                    </p>
-                    <Textarea
-                      value={adminNote}
-                      onChange={e => setAdminNote(e.target.value)}
-                      placeholder={bn
-                        ? 'অনুমোদনের জন্য ঐচ্ছিক নোট, অথবা প্রত্যাখ্যানের কারণ লিখুন...'
-                        : 'Optional note for approval, or reason for rejection...'}
-                      rows={3}
-                    />
-                  </div>
-                )}
-
-                {/* Show stored admin note / rejection reason on resolved records */}
-                {detailAction.admin_note && detailAction.status !== 'pending' && (
-                  <div
-                    className={
-                      detailAction.status === 'rejected'
-                        ? 'bg-destructive/10 border border-destructive/30 rounded-lg p-3'
-                        : 'bg-muted/50 rounded-lg p-3'
-                    }
-                  >
-                    <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                      <MessageSquare className="w-3 h-3" />
-                      {detailAction.status === 'rejected'
-                        ? (bn ? 'প্রত্যাখ্যানের কারণ' : 'Rejection Reason')
-                        : (bn ? 'অ্যাডমিন নোট' : 'Admin Note')}
-                    </p>
-                    <p className={`text-sm ${detailAction.status === 'rejected' ? 'text-destructive font-medium' : ''}`}>
-                      {detailAction.admin_note}
-                    </p>
-                  </div>
-                )}
-
-                {/* Action buttons */}
-                {detailAction.status === 'pending' && (
-                  <div className="flex gap-2">
-                    <Button
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                      onClick={() => approveMutation.mutate({ id: detailAction.id, status: 'approved', note: adminNote })}
-                      disabled={approveMutation.isPending}
-                    >
-                      {approveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
-                      {bn ? 'অনুমোদন করুন' : 'Approve'}
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      className="flex-1"
-                      onClick={() => approveMutation.mutate({ id: detailAction.id, status: 'rejected', note: adminNote })}
-                      disabled={approveMutation.isPending || !adminNote.trim()}
-                      title={!adminNote.trim() ? (bn ? 'প্রত্যাখ্যানের কারণ আবশ্যক' : 'Rejection reason is required') : undefined}
-                    >
-                      {approveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <X className="w-4 h-4 mr-2" />}
-                      {bn ? 'প্রত্যাখ্যান করুন' : 'Reject'}
-                    </Button>
+                {/* Admin Note Section */}
+                {(detailAction.status === 'pending' || detailAction.admin_note) && (
+                  <div className="pt-4 border-t">
+                    <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-amber-500" />
+                      {bn ? 'অ্যাডমিন নোট ও সিদ্ধান্ত' : 'Admin Note & Decision'}
+                    </h4>
+                    
+                    {detailAction.status === 'pending' ? (
+                      <div className="space-y-3">
+                        <Textarea
+                          placeholder={bn ? 'অনুমোদন বা প্রত্যাখ্যানের জন্য কোনো নোট লিখুন...' : 'Write a note for approval or rejection...'}
+                          value={adminNote}
+                          onChange={(e) => setAdminNote(e.target.value)}
+                          className="min-h-[100px] resize-none focus:ring-primary/20"
+                        />
+                        <div className="flex gap-3 pt-2">
+                          <Button 
+                            className="flex-1 btn-primary-gradient h-11"
+                            onClick={() => approveMutation.mutate({ id: detailAction.id, status: 'approved', note: adminNote })}
+                            disabled={approveMutation.isPending}
+                          >
+                            {approveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+                            {bn ? 'অনুমোদন করুন' : 'Approve Request'}
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            className="flex-1 h-11"
+                            onClick={() => approveMutation.mutate({ id: detailAction.id, status: 'rejected', note: adminNote })}
+                            disabled={approveMutation.isPending || !adminNote.trim()}
+                            title={!adminNote.trim() ? (bn ? 'প্রত্যাখ্যানের কারণ আবশ্যক' : 'Rejection reason is required') : undefined}
+                          >
+                            <X className="w-4 h-4 mr-2" />
+                            {bn ? 'প্রত্যাখ্যান করুন' : 'Reject Request'}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-muted rounded-lg p-4">
+                        <p className="text-xs text-muted-foreground mb-1 font-medium">{bn ? 'অ্যাডমিন মন্তব্য:' : 'Admin Note:'}</p>
+                        <p className="text-sm">{detailAction.admin_note || (bn ? 'কোনো মন্তব্য নেই' : 'No note provided')}</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
