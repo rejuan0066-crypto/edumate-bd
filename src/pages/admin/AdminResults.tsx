@@ -555,7 +555,7 @@ const AdminResults = () => {
           </Button>
           <Button variant="outline" size="sm" onClick={() => setGraceDialogOpen(true)} className="gap-2">
             <Settings2 className="w-4 h-4" />
-            {bn ? 'গ্রেস পাস' : 'Grace Pass'}
+            {bn ? 'অনুগ্রহ পাস' : 'Grace Pass'}
           </Button>
         </div>
 
