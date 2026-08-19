@@ -87,7 +87,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
       )}
 
       {/* Institution Header */}
-      <div className="sticky top-0 z-30 border-b border-border bg-background px-5 py-4 text-center">
+      <div className="border-b border-border bg-background px-5 py-4 text-center">
         <div className="flex items-center justify-center gap-4">
           {institution?.logo_url && (
             <img src={institution.logo_url} alt="" className="w-12 h-12 object-contain rounded" />
@@ -105,7 +105,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
       </div>
 
       {/* Title & Actions Bar — non-sticky so it scrolls with content and never covers student names */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-background/95 backdrop-blur-sm shadow-sm">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-background shadow-sm">
         <div className="flex items-center gap-2">
           {onClose && (
             <button onClick={onClose} className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title={bn ? 'বন্ধ করুন' : 'Close'}>
@@ -133,23 +133,23 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
 
       <div className="relative z-10 overflow-x-auto">
         <table className="w-full text-sm border-separate border-spacing-0">
-          <thead className="sticky top-[81px] z-20 bg-background/95 backdrop-blur-sm shadow-sm">
+          <thead className="sticky top-0 z-30 bg-background shadow-sm">
             <tr className="border-b border-border">
-              <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground w-10 bg-background/95 backdrop-blur-sm">#</th>
-              <th className="sticky left-0 z-20 px-3 py-3 text-left text-xs font-semibold text-muted-foreground bg-background/95 backdrop-blur-sm shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">{bn ? 'রোল' : 'Roll'}</th>
-              <th className="sticky left-[60px] sm:left-[80px] z-20 px-3 py-3 text-left text-xs font-semibold text-muted-foreground bg-background/95 backdrop-blur-sm shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[120px]">{bn ? 'নাম' : 'Name'}</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground w-10 bg-background">#</th>
+              <th className="sticky left-0 z-40 px-3 py-3 text-left text-xs font-semibold text-muted-foreground bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">{bn ? 'রোল' : 'Roll'}</th>
+              <th className="sticky left-[60px] sm:left-[80px] z-40 px-3 py-3 text-left text-xs font-semibold text-muted-foreground bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[120px]">{bn ? 'নাম' : 'Name'}</th>
               {subjects.map((s: any) => (
-                <th key={s.id} className="px-2 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[70px] bg-background/95 backdrop-blur-sm">
+                <th key={s.id} className="px-2 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[70px] bg-background">
                   {bn ? s.name_bn : s.name}
                 </th>
               ))}
-              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background/95 backdrop-blur-sm">{bn ? 'মোট' : 'Total'}</th>
-              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background/95 backdrop-blur-sm">{bn ? 'গড়' : 'Avg'}</th>
-              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background/95 backdrop-blur-sm">{bn ? 'গ্রেড' : 'Grade'}</th>
-              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background/95 backdrop-blur-sm">GPA</th>
-              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[80px] bg-background/95 backdrop-blur-sm">{bn ? 'মর্যাদা' : 'Title'}</th>
-              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background/95 backdrop-blur-sm">{bn ? 'মেধা' : 'Rank'}</th>
-              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground w-10 bg-background/95 backdrop-blur-sm"></th>
+              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background">{bn ? 'মোট' : 'Total'}</th>
+              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background">{bn ? 'গড়' : 'Avg'}</th>
+              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background">{bn ? 'গ্রেড' : 'Grade'}</th>
+              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background">GPA</th>
+              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[80px] bg-background">{bn ? 'মর্যাদা' : 'Title'}</th>
+              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background">{bn ? 'মেধা' : 'Rank'}</th>
+              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground w-10 bg-background"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -188,12 +188,12 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
                 return (
                   <tr key={st.id} className={`hover:bg-muted/20 transition-colors ${failed ? 'bg-destructive/5' : ''}`}>
                     <td className="px-3 py-2 text-muted-foreground text-xs">{originalIdx + 1}</td>
-                    <td className="sticky left-0 z-10 px-3 py-2 font-medium text-foreground bg-background/95 backdrop-blur-sm shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                    <td className="sticky left-0 z-10 px-3 py-2 font-medium text-foreground bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                       <div className="flex flex-col">
                         <span>{st.roll_number || '-'}</span>
                       </div>
                     </td>
-                    <td className="sticky left-[60px] sm:left-[80px] z-10 px-3 py-2 text-foreground bg-background/95 backdrop-blur-sm shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[120px]">
+                    <td className="sticky left-[60px] sm:left-[80px] z-10 px-3 py-2 text-foreground bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[120px]">
                       {bn ? st.name_bn : (st.name_en || st.name_bn)}
                     </td>
                   {subjects.map((sub: any) => {
