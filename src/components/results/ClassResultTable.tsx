@@ -148,6 +148,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
               <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground">{bn ? 'গ্রেড' : 'Grade'}</th>
               <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground">GPA</th>
               <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[80px]">{bn ? 'মর্যাদা' : 'Title'}</th>
+              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground">{bn ? 'মেধা' : 'Rank'}</th>
               <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground w-10"></th>
             </tr>
           </thead>
@@ -189,11 +190,6 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
                     <td className="px-3 py-2 font-medium text-foreground">
                       <div className="flex flex-col">
                         <span>{st.roll_number || '-'}</span>
-                        {rank && rank <= 3 && (
-                          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                            {rankDisplay}
-                          </span>
-                        )}
                       </div>
                     </td>
                   <td className="px-3 py-2 text-foreground">{bn ? st.name_bn : (st.name_en || st.name_bn)}</td>
@@ -232,6 +228,11 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
                     <td className="px-3 py-2 text-center font-semibold text-primary">{overall ? overall.gpa : '-'}</td>
                     <td className="px-3 py-2 text-center text-xs font-medium text-muted-foreground">
                       {overall ? (bn ? overall.title_bn : overall.title) : '-'}
+                    </td>
+                    <td className="px-3 py-2 text-center text-xs font-medium text-muted-foreground">
+                      <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full ${rank && rank <= 3 ? 'bg-emerald-500/10 text-emerald-600 font-bold' : ''}`}>
+                        {hasEnteredAnyMark ? rankDisplay : '-'}
+                      </span>
                     </td>
                     <td className="px-2 py-2 text-center">
                       <button

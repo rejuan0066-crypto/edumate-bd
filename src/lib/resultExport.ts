@@ -71,7 +71,8 @@ export const DEFAULT_RESULT_SIGNATORIES: ResultSignatory[] = [
   { title_bn: `${L.muhtamim} / ${L.headmaster}`, title_en: 'Principal', name_bn: '', name_en: '' },
 ];
 
-export const exportResultCSV = ({ title, students, subjects, marksMap, getOverallGrade, bn }: ExportData) => {
+export const exportResultCSV = (params: ExportData) => {
+  const { title, students, subjects, marksMap, getOverallGrade, bn } = params;
   const headers = [
     bn ? 'ক্রম' : '#',
     bn ? 'রোল' : 'Roll',
@@ -82,13 +83,36 @@ export const exportResultCSV = ({ title, students, subjects, marksMap, getOveral
     bn ? 'গ্রেড' : 'Grade',
     'GPA',
     bn ? 'মর্যাদা' : 'Title',
+    bn ? 'মেধা' : 'Rank',
   ];
 
-  const rows = students.map((st: any, idx: number) => {
+  const computed = students.map((st: any, idx: number) => {
     const marks = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`] ?? 0);
     const total = marks.reduce((a, b) => a + b, 0);
+    const overall = getOverallGrade(marks, st.class_id);
+    const failed = (overall as any).graced ? false : (marks.some(m => m < (params?.passMark || 33)) || overall.hasFail);
+    return { idx, st, marks, total, overall, failed };
+  });
+
+  const sortedByTotal = [...computed].sort((a, b) => {
+    if (a.failed && !b.failed) return 1;
+    if (!a.failed && b.failed) return -1;
+    return b.total - a.total;
+  });
+
+  const rankMap = new Map<number, number>();
+  sortedByTotal.forEach((r, i) => {
+    if (!r.failed) rankMap.set(r.idx, i + 1);
+  });
+
+  const rows = computed.map(({ st, idx, marks, total, overall, failed }) => {
     const avg = subjects.length > 0 ? total / subjects.length : 0;
-    const { grade, gpa, title: gradeTitle, title_bn } = getOverallGrade(marks, st.class_id);
+    const rank = rankMap.get(idx);
+    let rankDisplay = rank ? rank.toString() : '-';
+    if (rank === 1) rankDisplay = bn ? '১ম' : '1st';
+    else if (rank === 2) rankDisplay = bn ? '২য়' : '2nd';
+    else if (rank === 3) rankDisplay = bn ? '৩য়' : '3rd';
+
     return [
       idx + 1,
       st.roll_number || '-',
@@ -96,9 +120,10 @@ export const exportResultCSV = ({ title, students, subjects, marksMap, getOveral
       ...marks,
       total,
       avg.toFixed(1),
-      grade,
-      gpa,
-      bn ? title_bn : gradeTitle,
+      overall.grade,
+      overall.gpa,
+      bn ? overall.title_bn : overall.title,
+      rankDisplay,
     ];
   });
 
@@ -204,7 +229,7 @@ export const getResultSheetHtml = ({
 
   const colgroupHtml = (() => {
     const n = subjects.length;
-    const fixedW = { idx: 3, roll: 5, name: 16, total: 5, avg: 4, grade: 5, gpa: 4, merit: 8, rank: 5, status: 7 };
+    const fixedW = { idx: 3, roll: 5, name: 17, total: 6, avg: 5, grade: 6, gpa: 5, merit: 10, rank: 6 };
     const used = Object.values(fixedW).reduce((a, b) => a + b, 0);
     const subjectPool = Math.max(20, 100 - used);
     const sw = n > 0 ? +(subjectPool / n).toFixed(3) : 0;
@@ -219,7 +244,6 @@ export const getResultSheetHtml = ({
       `<col style="width:${fixedW.gpa}%">`,
       `<col style="width:${fixedW.merit}%">`,
       `<col style="width:${fixedW.rank}%">`,
-      `<col style="width:${fixedW.status}%">`,
     ].join('');
     return `<colgroup>${cols}</colgroup>`;
   })();
@@ -247,7 +271,6 @@ export const getResultSheetHtml = ({
       <td class="num bold">${overall.gpa}</td>
       <td class="num">${merit}</td>
       <td class="num"><span class="rank-pill ${rank && rank <= 3 ? 'rank-top' : ''}">${rankDisplay}</span></td>
-      <td class="num ${failed ? 'status-fail' : 'status-pass'}">${failed ? (bn ? 'অকৃতকার্য' : 'Fail') : (bn ? 'কৃতকার্য' : 'Pass')}</td>
     </tr>`;
   };
 
@@ -289,7 +312,6 @@ export const getResultSheetHtml = ({
                 <th>GPA</th>
                 <th>${bn ? 'মর্যাদা' : 'Merit'}</th>
                 <th>${bn ? 'মেধা' : 'Rank'}</th>
-                <th>${bn ? 'ফলাফল' : 'Result'}</th>
               </tr>
             </thead>
             <tbody>${rowsHtml}</tbody>
