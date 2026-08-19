@@ -69,16 +69,18 @@ const AdminResults = () => {
     },
   });
 
-  // Fetch exam sessions
+  // Fetch exam sessions (filter by year when selected, otherwise show all)
   const { data: examSessions = [] } = useQuery({
     queryKey: ['exam-sessions', examYear],
     queryFn: async () => {
-      const { data, error } = await supabase.from('exam_sessions').select('*').eq('academic_session_id', examYear).eq('is_active', true).order('name');
+      let q = supabase.from('exam_sessions').select('*').eq('is_active', true);
+      if (examYear) q = q.eq('academic_session_id', examYear);
+      const { data, error } = await q.order('name');
       if (error) throw error;
       return data;
     },
-    enabled: !!examYear,
   });
+
 
   // Fetch classes linked to exam session
   const { data: examClasses = [] } = useQuery({
