@@ -22,7 +22,7 @@ const getMorjada = (grade: string) => {
   if (grade === 'B') return 'জায়্যিদ';
   if (grade === 'C') return 'মকবুল';
   if (grade === 'D') return 'মকবুল';
-  return 'রাসেব'; // F
+  return 'রাসিব'; // F
 };
 
 const getGradeColor = (grade: string) => {
