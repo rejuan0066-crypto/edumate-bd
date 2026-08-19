@@ -636,18 +636,19 @@ Deno.serve(async (req) => {
   body { padding: 0; }
 
   .salary-page {
-    width: 100%;
+    width: 297mm;
+    height: 210mm;
     margin: 0 auto;
     background: #fff;
-    border: 1pt solid #000;
-    padding: 5mm 6mm 5mm;
+    padding: 10mm 12mm;
     position: relative;
     break-after: page;
     page-break-after: always;
+    overflow: hidden;
   }
   .print-fit {
     width: 100%;
-    transform-origin: top left;
+    transform-origin: top center;
   }
   .salary-page:last-child {
     break-after: auto;
