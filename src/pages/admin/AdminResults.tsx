@@ -981,6 +981,7 @@ const AdminResults = () => {
             marksMap={marksMap}
             examTitle={getExamTitle()}
             onBack={() => setViewingStudentId(null)}
+            rank={viewingStudentRank}
           />
         ) : showResults ? (
           <ClassResultTable
@@ -991,7 +992,10 @@ const AdminResults = () => {
             onSave={() => saveMutation.mutate()}
             isSaving={saveMutation.isPending}
             title={getExamTitle()}
-            onViewMarksheet={(id) => setViewingStudentId(id)}
+            onViewMarksheet={(id, rank) => {
+              setViewingStudentId(id);
+              setViewingStudentRank(rank);
+            }}
             onClose={() => {
               setShowResults(false);
               setSelectedExamId(null);
