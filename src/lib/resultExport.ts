@@ -355,6 +355,7 @@ ${(() => {
           <th>${bn ? 'গড়' : 'Avg'}</th>
           <th>${bn ? 'গ্রেড' : 'Grade'}</th>
           <th>GPA</th>
+          <th>${bn ? 'মর্যাদা' : 'Merit'}</th>
           <th>${bn ? 'মেধাক্রম' : 'Rank'}</th>
           <th>${bn ? 'অবস্থা' : 'Status'}</th>
         </tr></thead>
