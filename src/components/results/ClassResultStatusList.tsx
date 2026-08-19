@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Clock, Eye, PenLine, ChevronDown, ChevronRight, FileSpreadsheet, FileDown, Printer, Loader2, Globe, GlobeLock } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { CheckCircle, Clock, Eye, PenLine, ChevronDown, ChevronRight, FileSpreadsheet, FileDown, Printer, Loader2, Globe, GlobeLock, Search } from 'lucide-react';
+
 
 interface ClassResultStatusListProps {
   classes: any[];
