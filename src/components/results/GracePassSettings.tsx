@@ -5,10 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useGradingSystem } from '@/hooks/useGradingSystem';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -21,7 +19,6 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const qc = useQueryClient();
-  const { scales } = useGradingSystem();
 
   const { data: row, isLoading } = useQuery({
     queryKey: ['grace-pass-rule'],
@@ -104,19 +101,11 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
                 onChange={(e) => setMaxSubjects(parseInt(e.target.value) || 1)} />
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs">{bn ? 'গ্রেস পাসে প্রদত্ত গ্রেড' : 'Grade awarded on grace pass'}</Label>
-              <Select value={grade} onValueChange={setGrade} disabled={!enabled}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent className="max-h-64">
-                  {scales.filter(s => s.grade && s.grade !== 'F').map(s => (
-                    <SelectItem key={s.grade} value={s.grade}>
-                      {s.grade} — {bn ? (s.title_bn || '') : (s.title || '')}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed rounded-xl border p-3 bg-muted/20">
+              {bn
+                ? 'অই বিষয়ে ফেল বহাল থাকবে, কিন্তু সব বিষয়ের গড় নম্বর অনুযায়ী সামগ্রিক গ্রেড ও মর্যাদা নির্ধারিত হবে।'
+                : 'The subject stays failed, but the overall grade and title are computed from the average of all subjects.'}
+            </p>
           </div>
         )}
 
