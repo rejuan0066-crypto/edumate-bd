@@ -71,7 +71,8 @@ export const DEFAULT_RESULT_SIGNATORIES: ResultSignatory[] = [
   { title_bn: `${L.muhtamim} / ${L.headmaster}`, title_en: 'Principal', name_bn: '', name_en: '' },
 ];
 
-export const exportResultCSV = ({ title, students, subjects, marksMap, getOverallGrade, bn }: ExportData) => {
+export const exportResultCSV = (params: ExportData) => {
+  const { title, students, subjects, marksMap, getOverallGrade, bn } = params;
   const headers = [
     bn ? 'ক্রম' : '#',
     bn ? 'রোল' : 'Roll',
