@@ -852,7 +852,7 @@ const AdminExamSessions = () => {
                                     variant="outline"
                                     size="sm"
                                     className="h-7 gap-1 text-xs"
-                                    onClick={() => navigate(`/admin/results?year=${es.academic_session_id}&session=${es.id}`)}
+                                    onClick={() => navigate(`/admin/results?year=${es.academic_session_id}&session=${es.id}&class=${ec.class_id || ec.classes?.id}`)}
                                   >
                                     {hasResults ? <Eye className="w-3.5 h-3.5" /> : <GraduationCap className="w-3.5 h-3.5" />}
                                     {hasResults ? (bn ? 'দেখুন' : 'View') : (bn ? 'এন্ট্রি' : 'Entry')}
