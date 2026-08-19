@@ -384,30 +384,21 @@ export const getResultSheetHtml = ({
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
   @page{
-    size:A4 ${orientation};
-    margin:${m.top}mm ${m.right}mm ${m.bottom}mm ${m.left}mm;
-    @bottom-left{
-      content:${showFooterInstitution ? `"${(institutionName || '').replace(/"/g, '\\"')}"` : `""`};
-      font-family:'Kalpurush','Noto Sans Bengali','SutonnyOMJ','Inter',sans-serif;
-      font-size:9pt;color:#64748b;
-    }
-    @bottom-right{
-      content:${showPageNumbers ? `"${bn ? 'পৃষ্ঠা' : 'Page'} " counter(page${bn ? ', bengali' : ''}) " ${bn ? 'এর' : 'of'} " counter(pages${bn ? ', bengali' : ''})` : `""`};
-      font-family:'Kalpurush','Noto Sans Bengali','SutonnyOMJ','Inter',sans-serif;
-      font-size:9pt;color:#64748b;
-    }
+    size:A4 landscape;
+    margin:10mm;
   }
+  *{margin:0;padding:0;box-sizing:border-box;}
   html,body{width:100%;margin:0;padding:0;}
-  body{font-family:'Kalpurush','Noto Sans Bengali','SutonnyOMJ','Inter',sans-serif;color:#0f172a;background:#fff;}
+  body{font-family:'Kalpurush','Noto Sans Bengali','SutonnyOMJ','Inter',sans-serif;color:#0f172a;background:#f8fafc;}
   .screen-pageinfo{display:none;}
-  @media screen{body{padding:6mm 8mm;}.screen-pageinfo{display:flex;justify-content:flex-end;font-size:10px;color:#94a3b8;margin-top:6px;}}
-  .sheet{border:2px solid #064e3b;border-radius:6px;padding:10px 14px 14px;box-sizing:border-box;width:100%;}
-  .header{display:grid;grid-template-columns:60px 1fr 60px;gap:12px;align-items:center;border-bottom:2px double #064e3b;padding-bottom:8px;}
-  .header-logo{width:60px;height:60px;object-fit:contain;}
+  @media screen{body{padding:20px;}.screen-pageinfo{display:flex;justify-content:flex-end;font-size:10px;color:#94a3b8;margin-top:6px;}}
+  .sheet{background:#fff;border:1px solid #94a3b8;border-radius:2px;padding:15mm 12mm;box-sizing:border-box;width:100%;min-height:calc(210mm - 20mm);box-shadow:0 0 10px rgba(0,0,0,0.1);margin:0 auto;}
+  .header{display:grid;grid-template-columns:100px 1fr 100px;gap:12px;align-items:center;margin-bottom:15px;}
+  .header-logo{width:80px;height:80px;object-fit:contain;}
   .header-text{text-align:center;}
-  .header-text h1{font-size:22px;font-weight:800;color:#064e3b;letter-spacing:.3px;margin-bottom:2px;}
-  .header-text .addr{font-size:11px;color:#475569;}
-  .header-text .phone{font-size:11px;color:#475569;margin-top:1px;}
+  .header-text h1{font-size:24px;font-weight:800;color:#064e3b;letter-spacing:.5px;margin-bottom:4px;}
+  .header-text .addr{font-size:13px;color:#334155;font-weight:500;}
+  .header-text .phone{font-size:13px;color:#334155;margin-top:2px;font-weight:500;}
   .doc-band{margin-top:8px;display:flex;justify-content:center;}
   .doc-band span{background:#064e3b;color:#fff;font-size:13px;font-weight:700;padding:4px 16px;border-radius:999px;letter-spacing:.4px;}
   .meta{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:center;margin-top:10px;padding:6px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;}
