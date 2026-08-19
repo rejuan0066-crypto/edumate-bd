@@ -349,6 +349,12 @@
   textarea:not(.chat-composer-input):not(.ai-chat-textarea)::placeholder {
     color: hsl(var(--muted-foreground) / 0.6);
   }
+  
+  /* Bijoy/Bengali input font application */
+  input[data-bijoy="true"],
+  textarea[data-bijoy="true"] {
+    font-family: 'SutonnyOMJ', 'SutonnyMJ', 'Noto Sans Bengali', 'Kalpurush', sans-serif !important;
+  }
 
   /* ── Chat composer input — fully encapsulated styling ──
      Applies to any element opted out via `.chat-composer-input` (preferred)

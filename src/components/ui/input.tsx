@@ -1,5 +1,5 @@
 import * as React from "react";
-
+import { useBijoy } from "@/contexts/BijoyContext";
 import { cn } from "@/lib/utils";
 import {
   isHistoryEligible,
@@ -15,6 +15,7 @@ interface InputProps extends React.ComponentProps<"input"> {
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, onChange, onBlur, list, name, id, autoComplete, placeholder, history = true, ...props }, ref) => {
+    const { bijoyEnabled } = useBijoy();
     const eligible = history && isHistoryEligible(type, name, id, autoComplete, placeholder);
     const listId = React.useMemo(() => {
       if (!eligible || list) return list;
@@ -47,7 +48,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
     return (
       <>
+      <div className="relative w-full">
         <input
+          data-bijoy={bijoyEnabled ? "true" : "false"}
           type={type}
           className={cn(
             "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
@@ -63,6 +66,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           onBlur={handleBlur}
           {...props}
         />
+      </div>
         {eligible && !list && items.length > 0 && (
           <datalist id={listId}>
             {items.map((v) => (

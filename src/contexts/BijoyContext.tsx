@@ -47,7 +47,8 @@ export const BijoyProvider = ({ children }: { children: ReactNode }) => {
 
       if (isInput) {
         const inputType = (target as HTMLInputElement).type?.toLowerCase() || 'text';
-        if (!['text', 'search', ''].includes(inputType)) return;
+        // Allow Bijoy on all text-like inputs, including those that might have been excluded
+        if (!['text', 'search', 'email', 'url', 'tel', 'password', ''].includes(inputType)) return;
       }
 
       const char = e.key;
