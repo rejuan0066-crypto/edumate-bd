@@ -132,27 +132,28 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
       </div>
 
       <div className="relative z-10 overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm border-separate border-spacing-0">
           <thead className="sticky top-[133px] z-20 bg-background/95 backdrop-blur-sm shadow-sm">
             <tr className="border-b border-border">
-              <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground w-10">#</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground w-10 bg-background/95 backdrop-blur-sm">#</th>
               <th className="sticky left-0 z-20 px-3 py-3 text-left text-xs font-semibold text-muted-foreground bg-background/95 backdrop-blur-sm shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">{bn ? 'রোল' : 'Roll'}</th>
               <th className="sticky left-[60px] sm:left-[80px] z-20 px-3 py-3 text-left text-xs font-semibold text-muted-foreground bg-background/95 backdrop-blur-sm shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[120px]">{bn ? 'নাম' : 'Name'}</th>
               {subjects.map((s: any) => (
-                <th key={s.id} className="px-2 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[70px]">
+                <th key={s.id} className="px-2 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[70px] bg-background/95 backdrop-blur-sm">
                   {bn ? s.name_bn : s.name}
                 </th>
               ))}
-              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground">{bn ? 'মোট' : 'Total'}</th>
-              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground">{bn ? 'গড়' : 'Avg'}</th>
-              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground">{bn ? 'গ্রেড' : 'Grade'}</th>
-              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground">GPA</th>
-              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[80px]">{bn ? 'মর্যাদা' : 'Title'}</th>
-              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground">{bn ? 'মেধা' : 'Rank'}</th>
-              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground w-10"></th>
+              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background/95 backdrop-blur-sm">{bn ? 'মোট' : 'Total'}</th>
+              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background/95 backdrop-blur-sm">{bn ? 'গড়' : 'Avg'}</th>
+              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background/95 backdrop-blur-sm">{bn ? 'গ্রেড' : 'Grade'}</th>
+              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background/95 backdrop-blur-sm">GPA</th>
+              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[80px] bg-background/95 backdrop-blur-sm">{bn ? 'মর্যাদা' : 'Title'}</th>
+              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background/95 backdrop-blur-sm">{bn ? 'মেধা' : 'Rank'}</th>
+              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground w-10 bg-background/95 backdrop-blur-sm"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
+            {/* Table Head is handled above with sticky positioning */}
             {(() => {
               const studentsWithStats = students.map((st: any, idx: number) => {
                 const hasEnteredAnyMark = subjects.some((sub: any) => marksMap[`${st.id}_${sub.id}`] !== undefined);
