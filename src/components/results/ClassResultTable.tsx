@@ -210,26 +210,30 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
                   <td className="px-3 py-2 text-center font-bold text-foreground">{hasAnyMarks ? total : '-'}</td>
                   <td className="px-3 py-2 text-center text-muted-foreground">{hasAnyMarks ? avg.toFixed(1) : '-'}</td>
                   <td className="px-3 py-2 text-center">
-                    {gradeInfo ? (
-                      <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-semibold ${gradeInfo.color}`}>
-                        {gradeInfo.grade}
-                      </span>
-                    ) : <span className="text-xs text-muted-foreground">-</span>}
-                  </td>
-                  <td className="px-3 py-2 text-center font-semibold text-primary">{gradeInfo ? gradeInfo.gpa : '-'}</td>
-                  <td className="px-3 py-2 text-center text-xs font-medium text-muted-foreground">{gradeInfo ? (bn ? gradeInfo.title_bn : gradeInfo.title) : '-'}</td>
-                  <td className="px-2 py-2 text-center">
-                    <button
-                      onClick={() => onViewMarksheet(st.id)}
-                      className="p-1.5 rounded-md hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
-                      title={bn ? 'মার্কশিট দেখুন' : 'View Marksheet'}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
+                    <td className="px-3 py-2 text-center">
+                      {overall ? (
+                        <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-semibold ${overall.color}`}>
+                          {overall.grade}
+                        </span>
+                      ) : <span className="text-xs text-muted-foreground">-</span>}
+                    </td>
+                    <td className="px-3 py-2 text-center font-semibold text-primary">{overall ? overall.gpa : '-'}</td>
+                    <td className="px-3 py-2 text-center text-xs font-medium text-muted-foreground">
+                      {overall ? (bn ? overall.title_bn : overall.title) : '-'}
+                    </td>
+                    <td className="px-2 py-2 text-center">
+                      <button
+                        onClick={() => onViewMarksheet(st.id)}
+                        className="p-1.5 rounded-md hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                        title={bn ? 'মার্কশিট দেখুন' : 'View Marksheet'}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              });
+            })()}
           </tbody>
         </table>
       </div>
