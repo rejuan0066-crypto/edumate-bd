@@ -809,11 +809,25 @@ const AdminExamSessions = () => {
                           {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                         </button>
                         <div className="min-w-0">
-                          <div className="font-medium text-foreground text-sm truncate">{bn ? es.name_bn : es.name}</div>
+                          {editingSessionId === es.id ? (
+                            <div className="flex flex-wrap items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                              <Input value={editSessionNameBn} onChange={e => setEditSessionNameBn(e.target.value)} placeholder={bn ? 'বাংলা নাম' : 'Bangla name'} className="h-7 w-40 text-sm bg-background" />
+                              <Input value={editSessionName} onChange={e => setEditSessionName(e.target.value)} placeholder={bn ? 'ইংরেজি নাম' : 'English name'} className="h-7 w-40 text-sm bg-background" />
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-success" disabled={updateSessionMutation.isPending} onClick={() => updateSessionMutation.mutate({ id: es.id, name: editSessionName, name_bn: editSessionNameBn })}>
+                                <Check className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingSessionId(null)}>
+                                <X className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="font-medium text-foreground text-sm truncate">{bn ? es.name_bn : es.name}</div>
+                          )}
                           <div className="text-xs text-muted-foreground truncate">
                             {bn ? (es.academic_sessions?.name_bn || es.academic_sessions?.name) : es.academic_sessions?.name || '-'}
                           </div>
                         </div>
+
                       </div>
                       <div className="flex items-center gap-2 flex-wrap pl-7 sm:pl-0 sm:ml-auto">
                         <span className="px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary whitespace-nowrap">{getTypeLabel(es.exam_type)}</span>
