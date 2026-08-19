@@ -7534,6 +7534,7 @@ export type Database = {
       results: {
         Row: {
           created_at: string | null
+          created_by: string | null
           division_id: string | null
           exam_id: string
           gpa: number | null
@@ -7543,9 +7544,11 @@ export type Database = {
           student_id: string
           subject_id: string
           updated_at: string | null
+          updated_by: string | null
         }
         Insert: {
           created_at?: string | null
+          created_by?: string | null
           division_id?: string | null
           exam_id: string
           gpa?: number | null
@@ -7555,9 +7558,11 @@ export type Database = {
           student_id: string
           subject_id: string
           updated_at?: string | null
+          updated_by?: string | null
         }
         Update: {
           created_at?: string | null
+          created_by?: string | null
           division_id?: string | null
           exam_id?: string
           gpa?: number | null
@@ -7567,6 +7572,7 @@ export type Database = {
           student_id?: string
           subject_id?: string
           updated_at?: string | null
+          updated_by?: string | null
         }
         Relationships: [
           {
