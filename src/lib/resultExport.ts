@@ -326,7 +326,7 @@ ${(() => {
 
   return chunks.map((chunk, pageIdx) => {
     const isLast = pageIdx === totalPages - 1;
-    return `<div class="sheet result-page">
+    return `<div class="result-page"><div class="sheet fit-inner">
       <div class="header">
         <div>${institutionLogo ? `<img src="${institutionLogo}" class="header-logo" crossorigin="anonymous" />` : ''}</div>
         <div class="header-text">
