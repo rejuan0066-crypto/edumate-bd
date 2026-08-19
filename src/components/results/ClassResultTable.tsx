@@ -161,7 +161,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
         <div 
           ref={leftPanelRef}
           onScroll={handleScroll}
-          className="w-[120px] xs:w-[180px] sm:w-[220px] flex flex-col border-r border-gray-300 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.1)] bg-background z-20 overflow-y-auto no-scrollbar"
+          className="w-[120px] xs:w-[180px] sm:w-[220px] flex flex-col border-r border-gray-300 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.1)] bg-background z-20 overflow-y-auto no-scrollbar max-h-[75vh]"
         >
           {/* Header - STICKY TOP */}
           <div className="sticky top-0 z-50 flex bg-slate-50 border-b border-border shrink-0 min-h-[48px]">
