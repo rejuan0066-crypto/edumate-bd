@@ -640,7 +640,7 @@ Deno.serve(async (req) => {
     height: 210mm;
     margin: 0 auto;
     background: #fff;
-    padding: 10mm 12mm;
+    padding: 8mm 10mm;
     position: relative;
     break-after: page;
     page-break-after: always;
