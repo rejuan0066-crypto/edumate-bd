@@ -289,13 +289,13 @@ export const getResultSheetHtml = ({
       <div class="fit-inner">
         <div class="sheet">
           <header class="header">
-            ${institutionLogo ? `<img src="${institutionLogo}" class="header-logo" alt="logo">` : '<div></div>'}
+            ${institutionLogo ? `<img src="${institutionLogo}" class="header-logo" alt="logo">` : '<div class="header-logo"></div>'}
             <div class="header-text">
               <h1>${institutionName || ''}</h1>
               <div class="addr">${institutionAddress || ''}</div>
               <div class="phone">${institutionPhone || ''}</div>
             </div>
-            <div></div>
+            <div class="header-logo"></div>
           </header>
 
           <div class="doc-band"><span>${title}</span></div>
