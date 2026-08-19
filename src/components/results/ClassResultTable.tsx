@@ -152,26 +152,28 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
           <tbody className="divide-y divide-border">
             {(() => {
               const studentsWithStats = students.map((st: any, idx: number) => {
+                const hasEnteredAnyMark = subjects.some((sub: any) => marksMap[`${st.id}_${sub.id}`] !== undefined);
                 const studentMarks = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`] ?? 0);
-                const total = studentMarks.reduce((a, b) => a + b, 0);
-                const overall = getOverallGrade(studentMarks, st.class_id);
-                const failed = (overall as any).graced ? false : (studentMarks.some(m => m < passMark && m > 0) || overall.hasFail);
-                return { st, studentMarks, total, overall, failed, originalIdx: idx };
+                const total = hasEnteredAnyMark ? studentMarks.reduce((a, b) => a + b, 0) : 0;
+                const overall = hasEnteredAnyMark ? getOverallGrade(studentMarks, st.class_id) : null;
+                const failed = overall ? ((overall as any).graced ? false : (studentMarks.some(m => m < passMark && m > 0) || overall.hasFail)) : false;
+                return { st, studentMarks, total, overall, failed, hasEnteredAnyMark, originalIdx: idx };
               });
 
-              const sortedForRank = [...studentsWithStats].sort((a, b) => {
-                if (a.failed && !b.failed) return 1;
-                if (!a.failed && b.failed) return -1;
-                return b.total - a.total;
-              });
+              const sortedForRank = [...studentsWithStats]
+                .filter(a => a.hasEnteredAnyMark)
+                .sort((a, b) => {
+                  if (a.failed && !b.failed) return 1;
+                  if (!a.failed && b.failed) return -1;
+                  return b.total - a.total;
+                });
 
               const rankMap = new Map<string, number>();
               sortedForRank.forEach((item, i) => {
                 if (!item.failed) rankMap.set(item.st.id, i + 1);
               });
 
-              return studentsWithStats.map(({ st, studentMarks, total, overall, failed, originalIdx }) => {
-                const hasAnyMarks = studentMarks.some(m => m > 0);
+              return studentsWithStats.map(({ st, studentMarks, total, overall, failed, hasEnteredAnyMark, originalIdx }) => {
                 const avg = subjects.length > 0 ? total / subjects.length : 0;
                 const rank = rankMap.get(st.id);
                 let rankDisplay = rank ? rank.toString() : '-';
@@ -207,8 +209,8 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
                       </td>
                     );
                   })}
-                  <td className="px-3 py-2 text-center font-bold text-foreground">{hasAnyMarks ? total : '-'}</td>
-                  <td className="px-3 py-2 text-center text-muted-foreground">{hasAnyMarks ? avg.toFixed(1) : '-'}</td>
+                  <td className="px-3 py-2 text-center font-bold text-foreground">{hasEnteredAnyMark ? total : '-'}</td>
+                  <td className="px-3 py-2 text-center text-muted-foreground">{hasEnteredAnyMark ? avg.toFixed(1) : '-'}</td>
                     <td className="px-3 py-2 text-center">
                       {overall ? (
                         <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-semibold ${overall.color}`}>
