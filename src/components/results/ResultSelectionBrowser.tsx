@@ -3,6 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Users, User, RotateCcw, CalendarDays, FileText, Check } from 'lucide-react';
 
 interface Props {
@@ -18,7 +19,11 @@ interface Props {
   onReset?: () => void;
   academicSessions: any[];
   examSessions: any[];
+  classes?: any[];
+  selectedClass?: string;
+  onClassChange?: (v: string) => void;
 }
+
 
 const ResultSelectionBrowser = ({
   searchMode, onSearchModeChange,
