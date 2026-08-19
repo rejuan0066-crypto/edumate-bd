@@ -45,7 +45,7 @@ const getGradeTwColor = (grade: string) => {
   return 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800'; // A+
 };
 
-const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack }: IndividualMarksheetProps) => {
+const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, rank }: IndividualMarksheetProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { getOverallGrade, passMark } = useGradingSystem();
