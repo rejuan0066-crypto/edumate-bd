@@ -133,7 +133,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
 
       <div className="relative z-10 overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="sticky top-[57px] z-20 bg-background/95 backdrop-blur-sm shadow-sm">
+          <thead className="sticky top-[141px] z-20 bg-background/95 backdrop-blur-sm shadow-sm">
             <tr className="border-b border-border">
               <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground w-10">#</th>
               <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground">{bn ? 'রোল' : 'Roll'}</th>
