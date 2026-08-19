@@ -78,8 +78,8 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
       const payload = {
         module: 'result',
         field_name: 'grace_pass',
-        name: 'Grace Pass',
-        name_bn: 'অনুগ্রহ পাস',
+        name: 'Consideration Pass',
+        name_bn: 'বিবেচনায় পাস',
         rule_level: 'warning',
         rule_type: 'custom',
         is_active: enabled,
@@ -114,7 +114,7 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg rounded-[28px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{bn ? 'অনুগ্রহ পাস সেটিং' : 'Grace Pass Settings'}</DialogTitle>
+          <DialogTitle>{bn ? 'বিবেচনায় পাস সেটিং' : 'Consideration Pass Settings'}</DialogTitle>
           <DialogDescription>
             {bn
               ? 'নির্দিষ্ট সংখ্যক বিষয়ে ফেল করলেও ছাত্রকে পাস (মকবুল) হিসেবে গণ্য করা হবে।'
@@ -127,7 +127,7 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
         ) : (
           <div className="space-y-4">
             <div className="flex items-center justify-between rounded-xl border p-3 bg-muted/30">
-              <Label className="text-sm">{bn ? 'অনুগ্রহ পাস চালু' : 'Enable grace pass'}</Label>
+              <Label className="text-sm">{bn ? 'বিবেচনায় পাস চালু' : 'Enable consideration pass'}</Label>
               <Switch checked={enabled} onCheckedChange={setEnabled} />
             </div>
 
@@ -144,9 +144,9 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs">{bn ? 'ক্লাস অনুযায়ী অনুগ্রহ (কত বিষয়ে ফেল গ্রহণযোগ্য)' : 'Per-class grace (allowed failed subjects)'}</Label>
+              <Label className="text-xs">{bn ? 'ক্লাস অনুযায়ী বিবেচনা (কত বিষয়ে ফেল গ্রহণযোগ্য)' : 'Per-class consideration (allowed failed subjects)'}</Label>
               <p className="text-[11px] text-muted-foreground">
-                {bn ? 'ক্লাসে টিক দিলে ওই ক্লাসে অনুগ্রহ পাস চালু হবে, পাশের ঘরে কত বিষয় তা লিখুন।' : 'Tick a class to enable grace for it, then set how many subjects.'}
+                {bn ? 'ক্লাসে টিক দিলে ওই ক্লাসে বিবেচনা পাস চালু হবে, পাশের ঘরে কত বিষয় তা লিখুন।' : 'Tick a class to enable consideration for it, then set how many subjects.'}
               </p>
               <div className="flex gap-2">
                 <Button type="button" size="sm" variant="outline" disabled={!enabled}
