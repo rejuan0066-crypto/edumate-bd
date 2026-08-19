@@ -185,18 +185,18 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
                           </span>
                         </span>
                       </label>
-                      <Input type="number" min={1} max={10} className="w-20 h-8 text-center"
+                      <Input type="text" className="w-20 h-8 text-center"
                         disabled={!enabled || !checked}
-                        value={classRules[c.id] ?? ''}
+                        value={classRules[c.id] === 0 ? '' : (classRules[c.id] ?? '')}
                         placeholder={String(maxSubjects)}
                         onChange={(e) => {
                           const raw = e.target.value;
                           const val = parseInt(raw);
-                          if (!raw) {
-                            setClassRules(prev => ({ ...prev, [c.id]: 0 })); // Allow empty input temporarily
-                            return;
+                          if (isNaN(val)) {
+                            setClassRules(prev => ({ ...prev, [c.id]: 0 }));
+                          } else {
+                            setClassRules(prev => ({ ...prev, [c.id]: val }));
                           }
-                          setClassRules(prev => ({ ...prev, [c.id]: Math.max(0, val || 0) }));
                         }} />
                     </div>
                   );
