@@ -73,6 +73,14 @@ export const DEFAULT_RESULT_SIGNATORIES: ResultSignatory[] = [
   { title_bn: `${L.muhtamim} / ${L.headmaster}`, title_en: 'Principal', name_bn: '', name_en: '' },
 ];
 
+/** Build "[Exam] - [Session] - [Class]" document/file name for result sheets. */
+export const buildResultDocName = (p: { examName?: string; sessionName?: string; className?: string; title?: string }): string => {
+  const parts = [p.examName, p.sessionName, p.className].map(x => (x || '').trim()).filter(Boolean);
+  return parts.length ? parts.join(' - ') : (p.title || 'Result Sheet');
+};
+
+const safeFileName = (name: string) => name.replace(/[\\/:*?"<>|]+/g, '_').replace(/\s+/g, ' ').trim();
+
 export const exportResultCSV = (params: ExportData) => {
   const { title, students, subjects, marksMap, getOverallGrade, bn } = params;
   const headers = [
@@ -145,7 +153,7 @@ export const exportResultCSV = (params: ExportData) => {
 export const exportResultPDF = async (params: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
   if (isMobileOrPwa()) {
     const html = getResultSheetHtml(params);
-    const fname = `result-sheet-${(params.className || 'class').replace(/\s+/g, '_')}.pdf`;
+    const fname = `${safeFileName(buildResultDocName(params))}.pdf`;
     try {
       const { toast } = await import('sonner');
       const bn = params.bn;
@@ -373,7 +381,7 @@ export const getResultSheetHtml = ({
   return `<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
-<title>${title}</title>
+<title>${docName}</title>
 <style>@font-face{font-family:"Kalpurush";src:url("/fonts/Kalpurush.ttf") format("truetype");font-display:block;}@font-face{font-family:"SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}</style>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -506,11 +514,13 @@ ${pagesHtml}
 
 export const printResultSheet = (params: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
   const html = getResultSheetHtml(params);
-  renderPrintDocument(html, params.title);
+  renderPrintDocument(html, buildResultDocName(params));
 };
 
 const renderPrintDocument = (html: string, title: string) => {
+  const prevTitle = typeof document !== 'undefined' ? document.title : '';
   try {
+    if (typeof document !== 'undefined') document.title = title;
     const existing = document.getElementById('__result_print_frame__');
     if (existing) existing.remove();
 
@@ -542,7 +552,7 @@ const renderPrintDocument = (html: string, title: string) => {
       } catch {
         /* ignore */
       }
-      setTimeout(() => iframe.remove(), 60000);
+      setTimeout(() => { iframe.remove(); document.title = prevTitle; }, 60000);
     };
 
     const ready = () => {
