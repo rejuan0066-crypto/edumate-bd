@@ -383,10 +383,51 @@ ${(() => {
         <span>${bn ? 'প্রিন্ট:' : 'Printed:'} ${new Date().toLocaleString(bn ? 'bn-BD' : 'en-GB')}</span>
         <span>${institutionName || ''}</span>
       </div>
-    </div>`;
+    </div></div>`;
   }).join('');
 })()}
-<style>.result-page{break-after:page;page-break-after:always;}.result-page:last-child{break-after:auto;page-break-after:auto;}.signatures-wrap{margin-top:24px;}</style>
+<style>
+  .result-page{break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid;overflow:hidden;}
+  .result-page:last-child{break-after:auto;page-break-after:auto;}
+  .fit-inner{transform-origin:top left;}
+  .signatures-wrap{margin-top:20px;}
+  .sig-line{margin-top:22px;}
+</style>
+<script>
+(function(){
+  function fit(){
+    var isLandscape = ${orientation === 'landscape' ? 'true' : 'false'};
+    var PX = 96 / 25.4;
+    var pageH = (isLandscape ? 210 : 297) * PX;
+    var pageW = (isLandscape ? 297 : 210) * PX;
+    var availH = pageH - (${m.top} + ${m.bottom}) * PX - 6;
+    var availW = pageW - (${m.left} + ${m.right}) * PX - 2;
+    var pages = document.querySelectorAll('.result-page');
+    for (var i = 0; i < pages.length; i++) {
+      var page = pages[i];
+      var inner = page.querySelector('.fit-inner');
+      if (!inner) continue;
+      inner.style.transform = 'none';
+      inner.style.width = availW + 'px';
+      var h = inner.scrollHeight;
+      var scale = Math.min(1, availH / h);
+      if (scale < 1) {
+        scale = Math.max(0.45, scale - 0.01);
+        inner.style.transform = 'scale(' + scale + ')';
+        page.style.height = (h * scale) + 'px';
+      } else {
+        page.style.height = '';
+      }
+    }
+  }
+  if (document.readyState === 'complete') fit();
+  else window.addEventListener('load', fit);
+  window.addEventListener('beforeprint', fit);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+  setTimeout(fit, 300);
+})();
+</script>
+
 </body></html>`;
 
   renderPrintDocument(html, title);
