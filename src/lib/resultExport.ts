@@ -82,6 +82,7 @@ export const exportResultCSV = ({ title, students, subjects, marksMap, getOveral
     bn ? 'গ্রেড' : 'Grade',
     'GPA',
     bn ? 'মর্যাদা' : 'Title',
+    bn ? 'মেধা' : 'Rank',
   ];
 
   const rows = students.map((st: any, idx: number) => {
