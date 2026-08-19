@@ -165,9 +165,19 @@ export const getResultSheetHtml = ({
     const failed = (overall as any).graced ? false : (marks.some(m => m < passMark) || overall.hasFail);
     return { idx, st, marks, total, avg, overall, failed };
   });
-  const sortedByTotal = [...computed].sort((a, b) => b.total - a.total);
+  const sortedByTotal = [...computed].sort((a, b) => {
+    if (a.failed && !b.failed) return 1;
+    if (!a.failed && b.failed) return -1;
+    return b.total - a.total;
+  });
   const rankMap = new Map<number, number>();
-  sortedByTotal.forEach((r, i) => rankMap.set(r.idx, i + 1));
+  sortedByTotal.forEach((r, i) => {
+    if (r.failed) {
+      rankMap.set(r.idx, 0); // 0 or -1 to indicate no rank for fails
+    } else {
+      rankMap.set(r.idx, i + 1);
+    }
+  });
 
   const passCount = computed.filter(c => !c.failed).length;
   const failCount = computed.length - passCount;
@@ -217,6 +227,12 @@ export const getResultSheetHtml = ({
   const renderRow = ({ idx, st, marks, total, avg, overall, failed }: any) => {
     const rank = rankMap.get(idx);
     const merit = (bn ? (overall as any).title_bn : (overall as any).title) || (overall as any).title_bn || (overall as any).title || '-';
+    
+    let rankDisplay = rank && rank > 0 ? rank.toString() : '-';
+    if (rank === 1) rankDisplay = bn ? '১ম' : '1st';
+    else if (rank === 2) rankDisplay = bn ? '২য়' : '2nd';
+    else if (rank === 3) rankDisplay = bn ? '৩য়' : '3rd';
+
     const marksCells = marks.map((mk: number) =>
       `<td class="num ${mk < passMark ? 'fail-cell' : ''}">${mk}</td>`
     ).join('');
@@ -230,7 +246,7 @@ export const getResultSheetHtml = ({
       <td class="num bold grade-${overall.grade?.replace(/[^A-Z]/g, '') || 'N'}">${overall.grade}</td>
       <td class="num bold">${overall.gpa}</td>
       <td class="num">${merit}</td>
-      <td class="num"><span class="rank-pill">${rank}</span></td>
+      <td class="num"><span class="rank-pill ${rank && rank <= 3 ? 'rank-top' : ''}">${rankDisplay}</span></td>
       <td class="num ${failed ? 'status-fail' : 'status-pass'}">${failed ? (bn ? 'অকৃতকার্য' : 'Fail') : (bn ? 'কৃতকার্য' : 'Pass')}</td>
     </tr>`;
   };
@@ -377,7 +393,8 @@ export const getResultSheetHtml = ({
   .row-fail td{background:#fff7ed !important;}
   .status-pass{color:#059669;font-weight:700;}
   .status-fail{color:#dc2626;font-weight:700;}
-  .rank-pill{display:inline-block;min-width:22px;padding:1px 6px;border-radius:999px;background:#064e3b;color:#fff;font-size:10px;font-weight:700;}
+  .rank-pill{display:inline-block;min-width:26px;padding:1px 6px;border-radius:999px;background:#64748b;color:#fff;font-size:10px;font-weight:700;}
+  .rank-pill.rank-top{background:#064e3b;min-width:32px;}
   .grade-A,.grade-AP{color:#059669;}
   .grade-B{color:#0284c7;}
   .grade-C{color:#d97706;}

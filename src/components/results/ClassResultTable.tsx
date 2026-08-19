@@ -27,7 +27,7 @@ interface ClassResultTableProps {
   onSave: () => void;
   isSaving: boolean;
   title: string;
-  onViewMarksheet: (studentId: string) => void;
+  onViewMarksheet: (studentId: string, rank?: number) => void;
   onClose?: () => void;
 }
 
@@ -150,16 +150,48 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {students.map((st: any, idx: number) => {
-              const studentMarks = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`] ?? 0);
-              const hasAnyMarks = studentMarks.some(m => m > 0);
-              const total = studentMarks.reduce((a, b) => a + b, 0);
-              const avg = subjects.length > 0 ? total / subjects.length : 0;
-              const gradeInfo = hasAnyMarks ? getOverallGrade(studentMarks, st.class_id) : null;
-              return (
-                <tr key={st.id} className="hover:bg-muted/20 transition-colors">
-                  <td className="px-3 py-2 text-muted-foreground text-xs">{idx + 1}</td>
-                  <td className="px-3 py-2 font-medium text-foreground">{st.roll_number || '-'}</td>
+            {(() => {
+              const studentsWithStats = students.map((st: any, idx: number) => {
+                const studentMarks = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`] ?? 0);
+                const total = studentMarks.reduce((a, b) => a + b, 0);
+                const overall = getOverallGrade(studentMarks, st.class_id);
+                const failed = (overall as any).graced ? false : (studentMarks.some(m => m < passMark && m > 0) || overall.hasFail);
+                return { st, studentMarks, total, overall, failed, originalIdx: idx };
+              });
+
+              const sortedForRank = [...studentsWithStats].sort((a, b) => {
+                if (a.failed && !b.failed) return 1;
+                if (!a.failed && b.failed) return -1;
+                return b.total - a.total;
+              });
+
+              const rankMap = new Map<string, number>();
+              sortedForRank.forEach((item, i) => {
+                if (!item.failed) rankMap.set(item.st.id, i + 1);
+              });
+
+              return studentsWithStats.map(({ st, studentMarks, total, overall, failed, originalIdx }) => {
+                const hasAnyMarks = studentMarks.some(m => m > 0);
+                const avg = subjects.length > 0 ? total / subjects.length : 0;
+                const rank = rankMap.get(st.id);
+                let rankDisplay = rank ? rank.toString() : '-';
+                if (rank === 1) rankDisplay = bn ? '১ম' : '1st';
+                else if (rank === 2) rankDisplay = bn ? '২য়' : '2nd';
+                else if (rank === 3) rankDisplay = bn ? '৩য়' : '3rd';
+
+                return (
+                  <tr key={st.id} className={`hover:bg-muted/20 transition-colors ${failed ? 'bg-destructive/5' : ''}`}>
+                    <td className="px-3 py-2 text-muted-foreground text-xs">{originalIdx + 1}</td>
+                    <td className="px-3 py-2 font-medium text-foreground">
+                      <div className="flex flex-col">
+                        <span>{st.roll_number || '-'}</span>
+                        {rank && rank <= 3 && (
+                          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                            {rankDisplay}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                   <td className="px-3 py-2 text-foreground">{bn ? st.name_bn : (st.name_en || st.name_bn)}</td>
                   {subjects.map((sub: any) => {
                     const mark = marksMap[`${st.id}_${sub.id}`] ?? 0;
@@ -177,27 +209,34 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
                   })}
                   <td className="px-3 py-2 text-center font-bold text-foreground">{hasAnyMarks ? total : '-'}</td>
                   <td className="px-3 py-2 text-center text-muted-foreground">{hasAnyMarks ? avg.toFixed(1) : '-'}</td>
-                  <td className="px-3 py-2 text-center">
-                    {gradeInfo ? (
-                      <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-semibold ${gradeInfo.color}`}>
-                        {gradeInfo.grade}
-                      </span>
-                    ) : <span className="text-xs text-muted-foreground">-</span>}
-                  </td>
-                  <td className="px-3 py-2 text-center font-semibold text-primary">{gradeInfo ? gradeInfo.gpa : '-'}</td>
-                  <td className="px-3 py-2 text-center text-xs font-medium text-muted-foreground">{gradeInfo ? (bn ? gradeInfo.title_bn : gradeInfo.title) : '-'}</td>
-                  <td className="px-2 py-2 text-center">
-                    <button
-                      onClick={() => onViewMarksheet(st.id)}
-                      className="p-1.5 rounded-md hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
-                      title={bn ? 'মার্কশিট দেখুন' : 'View Marksheet'}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
+                    <td className="px-3 py-2 text-center">
+                      {overall ? (
+                        <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-semibold ${overall.color}`}>
+                          {overall.grade}
+                        </span>
+                      ) : <span className="text-xs text-muted-foreground">-</span>}
+                    </td>
+                    <td className="px-3 py-2 text-center font-semibold text-primary">{overall ? overall.gpa : '-'}</td>
+                    <td className="px-3 py-2 text-center text-xs font-medium text-muted-foreground">
+                      {overall ? (bn ? overall.title_bn : overall.title) : '-'}
+                    </td>
+                    <td className="px-2 py-2 text-center">
+                      <button
+                        onClick={() => {
+                          // Find rank from rankMap before viewing
+                          const studentRank = rankMap.get(st.id);
+                          onViewMarksheet(st.id, studentRank);
+                        }}
+                        className="p-1.5 rounded-md hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                        title={bn ? 'মার্কশিট দেখুন' : 'View Marksheet'}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              });
+            })()}
           </tbody>
         </table>
       </div>

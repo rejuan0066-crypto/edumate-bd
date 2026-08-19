@@ -42,6 +42,7 @@ const AdminResults = () => {
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [marksMap, setMarksMap] = useState<Record<string, number>>({});
   const [viewingStudentId, setViewingStudentId] = useState<string | null>(null);
+  const [viewingStudentRank, setViewingStudentRank] = useState<number | undefined>(undefined);
   const [exportingClassId, setExportingClassId] = useState<string | null>(null);
 
   // Show class list when we have year+session from URL but no class selected
@@ -980,6 +981,7 @@ const AdminResults = () => {
             marksMap={marksMap}
             examTitle={getExamTitle()}
             onBack={() => setViewingStudentId(null)}
+            rank={viewingStudentRank}
           />
         ) : showResults ? (
           <ClassResultTable
@@ -990,7 +992,10 @@ const AdminResults = () => {
             onSave={() => saveMutation.mutate()}
             isSaving={saveMutation.isPending}
             title={getExamTitle()}
-            onViewMarksheet={(id) => setViewingStudentId(id)}
+            onViewMarksheet={(id, rank) => {
+              setViewingStudentId(id);
+              setViewingStudentRank(rank);
+            }}
             onClose={() => {
               setShowResults(false);
               setSelectedExamId(null);

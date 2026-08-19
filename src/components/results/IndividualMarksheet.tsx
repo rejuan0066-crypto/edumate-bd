@@ -15,6 +15,7 @@ interface IndividualMarksheetProps {
   marksMap: Record<string, number>;
   examTitle: string;
   onBack: () => void;
+  rank?: number;
 }
 
 const getMorjada = (grade: string) => {
@@ -44,10 +45,10 @@ const getGradeTwColor = (grade: string) => {
   return 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800'; // A+
 };
 
-const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack }: IndividualMarksheetProps) => {
+const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, rank }: IndividualMarksheetProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
-  const { getOverallGrade } = useGradingSystem();
+  const { getOverallGrade, passMark } = useGradingSystem();
   const [sigNames, setSigNames] = useState({ examController: '', eduSecretary: '', principal: '' });
 
   const { data: institution } = useQuery({
@@ -72,6 +73,12 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack }:
 
   const instName = bn ? institution?.name : (institution?.name_en || institution?.name);
   const studentName = bn ? student.name_bn : (student.name_en || student.name_bn);
+
+  let rankDisplay = rank ? rank.toString() : '-';
+  if (rank === 1) rankDisplay = bn ? '১ম' : '1st';
+  else if (rank === 2) rankDisplay = bn ? '২য়' : '2nd';
+  else if (rank === 3) rankDisplay = bn ? '৩য়' : '3rd';
+
 
   const handlePrint = () => {
     const gradeClass = (g: string) => {
@@ -190,6 +197,12 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack }:
   <div class="summary-box box-grade"><div class="label">${bn ? 'গ্রেড' : 'Grade'}</div><div class="val">${overall.grade}</div></div>
   <div class="summary-box box-gpa"><div class="label">GPA</div><div class="val">${overall.gpa}</div></div>
   <div class="summary-box box-morjada"><div class="label">${bn ? 'মর্যাদা' : 'Merit'}</div><div class="val" style="font-size:16px;">${morjada}</div></div>
+  ${rank && rank <= 3 ? `
+  <div class="summary-box box-morjada" style="background:#ecfdf5;color:#059669;border-color:#a7f3d0;">
+    <div class="label">${bn ? 'মেধা স্থান' : 'Merit Rank'}</div>
+    <div class="val" style="font-size:20px;">${rankDisplay}</div>
+  </div>
+  ` : ''}
 </div>
 
 <div class="signatures">
@@ -353,11 +366,22 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack }:
               <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1">GPA</p>
               <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">{overall.gpa}</p>
             </div>
-            <div className="rounded-xl bg-purple-50 dark:bg-purple-950/30 p-3 border-2 border-purple-200 dark:border-purple-800">
-              <p className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-1">{bn ? 'মর্যাদা' : 'Merit'}</p>
-              <p className="text-base font-extrabold text-purple-600 dark:text-purple-400">{morjada}</p>
+            <div className={`rounded-xl p-3 border-2 ${rank && rank <= 3 ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800' : 'bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800'}`}>
+              <p className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${rank && rank <= 3 ? 'text-emerald-600 dark:text-emerald-400' : 'text-purple-600 dark:text-purple-400'}`}>
+                {rank && rank <= 3 ? (bn ? 'মেধা স্থান' : 'Rank') : (bn ? 'মর্যাদা' : 'Merit')}
+              </p>
+              <p className={`text-base font-extrabold ${rank && rank <= 3 ? 'text-emerald-600 dark:text-emerald-400' : 'text-purple-600 dark:text-purple-400'}`}>
+                {rank && rank <= 3 ? rankDisplay : morjada}
+              </p>
             </div>
           </div>
+          {rank && rank <= 3 && (
+            <div className="mt-3 px-4 py-1.5 rounded-lg bg-emerald-100/50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-center">
+              <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                {bn ? `${morjada} (${rankDisplay} মেধা স্থান)` : `${morjada} (${rankDisplay} Merit Rank)`}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Signature Section */}
