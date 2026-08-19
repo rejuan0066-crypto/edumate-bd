@@ -287,7 +287,6 @@ export const getResultSheetHtml = ({
                 <th>GPA</th>
                 <th>${bn ? 'মর্যাদা' : 'Merit'}</th>
                 <th>${bn ? 'মেধা' : 'Rank'}</th>
-                <th>${bn ? 'ফলাফল' : 'Result'}</th>
               </tr>
             </thead>
             <tbody>${rowsHtml}</tbody>
