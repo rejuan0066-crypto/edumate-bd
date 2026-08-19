@@ -133,8 +133,12 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
 
             <div className="space-y-1.5">
               <Label className="text-xs">{bn ? 'ডিফল্ট: সর্বোচ্চ কত বিষয়ে ফেল গ্রহণযোগ্য' : 'Default max failed subjects allowed'}</Label>
-              <Input type="number" min={1} max={10} value={maxSubjects} disabled={!enabled || applyTo === 'selected'}
-                onChange={(e) => setMaxSubjects(parseInt(e.target.value) || 1)} />
+              <Input type="text" value={maxSubjects} disabled={!enabled || applyTo === 'selected'}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value);
+                  if (isNaN(val)) setMaxSubjects(0);
+                  else setMaxSubjects(val);
+                }} />
             </div>
 
             <div className="flex items-center justify-between rounded-xl border p-3 bg-muted/30">
@@ -181,13 +185,18 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
                           </span>
                         </span>
                       </label>
-                      <Input type="number" min={1} max={10} className="w-20 h-8 text-center"
+                      <Input type="text" className="w-20 h-8 text-center"
                         disabled={!enabled || !checked}
-                        value={classRules[c.id] ?? ''}
+                        value={classRules[c.id] === 0 ? '' : (classRules[c.id] ?? '')}
                         placeholder={String(maxSubjects)}
                         onChange={(e) => {
                           const raw = e.target.value;
-                          setClassRules(prev => ({ ...prev, [c.id]: Math.max(1, parseInt(raw) || 1) }));
+                          const val = parseInt(raw);
+                          if (isNaN(val)) {
+                            setClassRules(prev => ({ ...prev, [c.id]: 0 }));
+                          } else {
+                            setClassRules(prev => ({ ...prev, [c.id]: val }));
+                          }
                         }} />
                     </div>
                   );
