@@ -405,17 +405,18 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
 
         {/* Signature Section */}
         <div className="relative z-10 p-6 border-t border-border">
-          <div className="grid grid-cols-3 gap-6 mt-8 pt-4">
+          <div className="grid grid-cols-4 gap-4 mt-8 pt-4">
             {[
+              { label: bn ? 'শ্রেণি শিক্ষক' : 'Class Teacher', key: 'classTeacher' as const },
               { label: bn ? 'পরীক্ষা নিয়ন্ত্রক' : 'Exam Controller', key: 'examController' as const },
               { label: bn ? 'শিক্ষা সচিব' : 'Education Secretary', key: 'eduSecretary' as const },
-              { label: bn ? 'মুহতামিম' : 'Principal', key: 'principal' as const },
+              { label: bn ? 'মুহতামিম / অধ্যক্ষ' : 'Principal', key: 'principal' as const },
             ].map(sig => (
               <div key={sig.key} className="text-center space-y-2">
-                <div className="border-b border-dashed border-muted-foreground/40 mx-4 pb-1 min-h-[40px]" />
-                <p className="text-xs font-bold text-foreground">{sig.label}</p>
+                <div className="border-b border-dashed border-muted-foreground/40 mx-2 pb-1 min-h-[40px]" />
+                <p className="text-[10px] font-bold text-foreground">{sig.label}</p>
                 <Input
-                  className="text-center text-xs h-7 border-dashed"
+                  className="text-center text-[10px] h-7 border-dashed"
                   placeholder={bn ? 'নাম লিখুন' : 'Enter name'}
                   value={sigNames[sig.key]}
                   onChange={(e) => setSigNames(prev => ({ ...prev, [sig.key]: e.target.value }))}
