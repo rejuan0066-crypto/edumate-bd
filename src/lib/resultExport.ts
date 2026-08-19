@@ -307,6 +307,7 @@ ${(() => {
 
   const renderRow = ({ idx, st, marks, total, avg, overall, failed }: any) => {
     const rank = rankMap.get(idx);
+    const merit = (bn ? (overall as any).title_bn : (overall as any).title) || (overall as any).title_bn || (overall as any).title || '-';
     const marksCells = marks.map((mk: number) =>
       `<td class="num ${mk < passMark ? 'fail-cell' : ''}">${mk}</td>`
     ).join('');
@@ -319,7 +320,9 @@ ${(() => {
       <td class="num">${avg.toFixed(1)}</td>
       <td class="num bold grade-${overall.grade?.replace(/[^A-Z]/g, '') || 'N'}">${overall.grade}</td>
       <td class="num bold">${overall.gpa}</td>
+      <td class="num">${merit}</td>
       <td class="num"><span class="rank-pill">${rank}</span></td>
+
       <td class="num ${failed ? 'status-fail' : 'status-pass'}">${failed ? (bn ? 'অকৃতকার্য' : 'Fail') : (bn ? 'কৃতকার্য' : 'Pass')}</td>
     </tr>`;
   };
