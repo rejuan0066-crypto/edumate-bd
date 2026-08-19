@@ -87,42 +87,45 @@ export const exportResultCSV = (params: ExportData) => {
   ];
 
   const computed = students.map((st: any, idx: number) => {
+    const hasEnteredAnyMark = subjects.some((sub: any) => marksMap[`${st.id}_${sub.id}`] !== undefined);
     const marks = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`] ?? 0);
-    const total = marks.reduce((a, b) => a + b, 0);
-    const overall = getOverallGrade(marks, st.class_id);
-    const failed = (overall as any).graced ? false : (marks.some(m => m < (params?.passMark || 33)) || overall.hasFail);
-    return { idx, st, marks, total, overall, failed };
+    const total = hasEnteredAnyMark ? marks.reduce((a, b) => a + b, 0) : 0;
+    const overall = hasEnteredAnyMark ? getOverallGrade(marks, st.class_id) : { grade: '-', gpa: '-', hasFail: false };
+    const failed = hasEnteredAnyMark ? ((overall as any).graced ? false : (marks.some(m => m < (params?.passMark || 33) && m > 0) || overall.hasFail)) : false;
+    return { idx, st, marks, total, overall, failed, hasEnteredAnyMark };
   });
 
-  const sortedByTotal = [...computed].sort((a, b) => {
-    if (a.failed && !b.failed) return 1;
-    if (!a.failed && b.failed) return -1;
-    return b.total - a.total;
-  });
+  const sortedByTotal = [...computed]
+    .filter(a => a.hasEnteredAnyMark)
+    .sort((a, b) => {
+      if (a.failed && !b.failed) return 1;
+      if (!a.failed && b.failed) return -1;
+      return b.total - a.total;
+    });
 
   const rankMap = new Map<number, number>();
   sortedByTotal.forEach((r, i) => {
     if (!r.failed) rankMap.set(r.idx, i + 1);
   });
 
-  const rows = computed.map(({ st, idx, marks, total, overall, failed }) => {
+  const rows = computed.map(({ st, idx, marks, total, overall, failed, hasEnteredAnyMark }) => {
     const avg = subjects.length > 0 ? total / subjects.length : 0;
     const rank = rankMap.get(idx);
-    let rankDisplay = rank ? rank.toString() : '-';
-    if (rank === 1) rankDisplay = bn ? '১ম' : '1st';
-    else if (rank === 2) rankDisplay = bn ? '২য়' : '2nd';
-    else if (rank === 3) rankDisplay = bn ? '৩য়' : '3rd';
+    let rankDisplay = hasEnteredAnyMark && rank ? rank.toString() : '-';
+    if (hasEnteredAnyMark && rank === 1) rankDisplay = bn ? '১ম' : '1st';
+    else if (hasEnteredAnyMark && rank === 2) rankDisplay = bn ? '২য়' : '2nd';
+    else if (hasEnteredAnyMark && rank === 3) rankDisplay = bn ? '৩য়' : '3rd';
 
     return [
       idx + 1,
       st.roll_number || '-',
       bn ? st.name_bn : (st.name_en || st.name_bn),
-      ...marks,
-      total,
-      avg.toFixed(1),
+      ...marks.map((m, i) => marksMap[`${st.id}_${subjects[i].id}`] !== undefined ? m : '-'),
+      hasEnteredAnyMark ? total : '-',
+      hasEnteredAnyMark ? avg.toFixed(1) : '-',
       overall.grade,
       overall.gpa,
-      bn ? overall.title_bn : overall.title,
+      hasEnteredAnyMark ? (bn ? overall.title_bn : overall.title) : '-',
       rankDisplay,
     ];
   });
@@ -183,12 +186,13 @@ export const getResultSheetHtml = ({
   const sigList = (signatories && signatories.length ? signatories : DEFAULT_RESULT_SIGNATORIES).slice(0, 6);
   
   const computed = students.map((st: any, idx: number) => {
+    const hasEnteredAnyMark = subjects.some((sub: any) => marksMap[`${st.id}_${sub.id}`] !== undefined);
     const marks = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`] ?? 0);
-    const total = marks.reduce((a, b) => a + b, 0);
+    const total = hasEnteredAnyMark ? marks.reduce((a, b) => a + b, 0) : 0;
     const avg = subjects.length > 0 ? total / subjects.length : 0;
-    const overall = getOverallGrade(marks, st.class_id);
-    const failed = (overall as any).graced ? false : (marks.some(m => m < passMark) || overall.hasFail);
-    return { idx, st, marks, total, avg, overall, failed };
+    const overall = hasEnteredAnyMark ? getOverallGrade(marks, st.class_id) : null;
+    const failed = overall ? ((overall as any).graced ? false : (marks.some(m => m < passMark && m > 0) || overall.hasFail)) : false;
+    return { idx, st, marks, total, avg, overall, failed, hasEnteredAnyMark };
   });
   const sortedByTotal = [...computed].sort((a, b) => {
     if (a.failed && !b.failed) return 1;
@@ -204,9 +208,10 @@ export const getResultSheetHtml = ({
     }
   });
 
-  const passCount = computed.filter(c => !c.failed).length;
-  const failCount = computed.length - passCount;
-  const classAvg = computed.length ? (computed.reduce((s, c) => s + c.total, 0) / computed.length).toFixed(2) : '0';
+  const activeStudents = computed.filter(c => c.hasEnteredAnyMark);
+  const passCount = activeStudents.filter(c => !c.failed).length;
+  const failCount = activeStudents.length - passCount;
+  const classAvg = activeStudents.length ? (activeStudents.reduce((s, c) => s + c.total, 0) / activeStudents.length).toFixed(2) : '0';
 
   const subjectHeaders = subjects.map((s: any) => {
     const fullName = (bn ? s.name_bn : s.name) || '';
@@ -248,27 +253,30 @@ export const getResultSheetHtml = ({
     return `<colgroup>${cols}</colgroup>`;
   })();
 
-  const renderRow = ({ idx, st, marks, total, avg, overall, failed }: any) => {
+  const renderRow = ({ idx, st, marks, total, avg, overall, failed, hasEnteredAnyMark }: any) => {
     const rank = rankMap.get(idx);
-    const merit = (bn ? (overall as any).title_bn : (overall as any).title) || (overall as any).title_bn || (overall as any).title || '-';
+    const merit = hasEnteredAnyMark ? ((bn ? (overall as any).title_bn : (overall as any).title) || (overall as any).title_bn || (overall as any).title || '-') : '-';
     
-    let rankDisplay = rank && rank > 0 ? rank.toString() : '-';
-    if (rank === 1) rankDisplay = bn ? '১ম' : '1st';
-    else if (rank === 2) rankDisplay = bn ? '২য়' : '2nd';
-    else if (rank === 3) rankDisplay = bn ? '৩য়' : '3rd';
+    let rankDisplay = hasEnteredAnyMark && rank && rank > 0 ? rank.toString() : '-';
+    if (hasEnteredAnyMark && rank === 1) rankDisplay = bn ? '১ম' : '1st';
+    else if (hasEnteredAnyMark && rank === 2) rankDisplay = bn ? '২য়' : '2nd';
+    else if (hasEnteredAnyMark && rank === 3) rankDisplay = bn ? '৩য়' : '3rd';
 
-    const marksCells = marks.map((mk: number) =>
-      `<td class="num ${mk < passMark ? 'fail-cell' : ''}">${mk}</td>`
-    ).join('');
+    const marksCells = marks.map((mk: number, i: number) => {
+      const subjectId = subjects[i].id;
+      const isEntered = marksMap[`${st.id}_${subjectId}`] !== undefined;
+      return `<td class="num ${isEntered && mk < passMark ? 'fail-cell' : ''}">${isEntered ? mk : '-'}</td>`;
+    }).join('');
+
     return `<tr class="${failed ? 'row-fail' : ''}">
       <td class="num">${idx + 1}</td>
       <td class="num bold">${st.roll_number || '-'}</td>
       <td class="name">${bn ? st.name_bn : (st.name_en || st.name_bn)}</td>
       ${marksCells}
-      <td class="num bold">${total}</td>
-      <td class="num">${avg.toFixed(1)}</td>
-      <td class="num bold grade-${overall.grade?.replace(/[^A-Z]/g, '') || 'N'}">${overall.grade}</td>
-      <td class="num bold">${overall.gpa}</td>
+      <td class="num bold">${hasEnteredAnyMark ? total : '-'}</td>
+      <td class="num">${hasEnteredAnyMark ? avg.toFixed(1) : '-'}</td>
+      <td class="num bold grade-${overall?.grade?.replace(/[^A-Z]/g, '') || 'N'}">${overall?.grade || '-'}</td>
+      <td class="num bold">${overall?.gpa || '-'}</td>
       <td class="num">${merit}</td>
       <td class="num"><span class="rank-pill ${rank && rank <= 3 ? 'rank-top' : ''}">${rankDisplay}</span></td>
     </tr>`;
@@ -334,10 +342,10 @@ export const getResultSheetHtml = ({
               })()}
             </div>
             <div class="summary">
-              <div class="stat"><div class="stat-k">${bn ? 'অংশগ্রহণকারী' : 'TOTAL'}</div><div class="stat-v">${computed.length}</div></div>
+              <div class="stat"><div class="stat-k">${bn ? 'অংশগ্রহণকারী' : 'TOTAL'}</div><div class="stat-v">${activeStudents.length}</div></div>
               <div class="stat"><div class="stat-k">${bn ? 'কৃতকার্য' : 'PASSED'}</div><div class="stat-v">${passCount}</div></div>
               <div class="stat"><div class="stat-k">${bn ? 'অকৃতকার্য' : 'FAILED'}</div><div class="stat-v" style="color:#dc2626">${failCount}</div></div>
-              <div class="stat"><div class="stat-k">${bn ? 'পাসের হার' : 'PASS RATE'}</div><div class="stat-v">${computed.length ? ((passCount / computed.length) * 100).toFixed(1) : '0'}%</div></div>
+              <div class="stat"><div class="stat-k">${bn ? 'পাসের হার' : 'PASS RATE'}</div><div class="stat-v">${activeStudents.length ? ((passCount / activeStudents.length) * 100).toFixed(1) : '0'}%</div></div>
               <div class="stat"><div class="stat-k">${bn ? 'গড় নম্বর' : 'CLASS AVG'}</div><div class="stat-v">${classAvg}</div></div>
             </div>
             ` : ''}

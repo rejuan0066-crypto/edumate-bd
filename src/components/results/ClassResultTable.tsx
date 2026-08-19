@@ -90,39 +90,39 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
 
       {/* Institution Header */}
       <div className="border-b border-border bg-background px-5 py-4 text-center">
-        <div className="flex items-center justify-center gap-4">
+        <div className="flex flex-col items-center justify-center gap-2">
           {institution?.logo_url && (
             <img src={institution.logo_url} alt="" className="w-12 h-12 object-contain rounded" />
           )}
           <div>
             <h2 className="text-base font-bold text-foreground">{instName || ''}</h2>
-            {institution?.address && (
-              <p className="text-xs text-muted-foreground">{institution.address}</p>
-            )}
-            {institution?.phone && (
-              <p className="text-xs text-muted-foreground">{bn ? 'ফোন' : 'Phone'}: {institution.phone}</p>
-            )}
+            <h3 className="font-display font-bold text-foreground text-lg mt-1">{title}</h3>
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground">
+              {institution?.address && (
+                <p>{institution.address}</p>
+              )}
+              {institution?.phone && (
+                <p>{bn ? 'ফোন' : 'Phone'}: {institution.phone}</p>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Title & Actions Bar — non-sticky so it scrolls with content and never covers student names */}
       <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-background shadow-sm">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {onClose && (
             <button onClick={onClose} className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title={bn ? 'বন্ধ করুন' : 'Close'}>
               <X className="w-5 h-5" />
             </button>
           )}
-          <div>
-            <h3 className="font-display font-bold text-foreground text-lg">{title}</h3>
-            {lastSaved?.at && (
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {bn ? 'সর্বশেষ সংরক্ষণ' : 'Last saved'}: {new Date(lastSaved.at).toLocaleString(bn ? 'bn-BD' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' })}
-                {lastSaved.name ? ` — ${lastSaved.name}` : ''}
-              </p>
-            )}
-          </div>
+          {lastSaved?.at && (
+            <p className="text-xs text-muted-foreground">
+              {bn ? 'সর্বশেষ সংরক্ষণ' : 'Last saved'}: {new Date(lastSaved.at).toLocaleString(bn ? 'bn-BD' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' })}
+              {lastSaved.name ? ` — ${lastSaved.name}` : ''}
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
