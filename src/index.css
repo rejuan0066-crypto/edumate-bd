@@ -230,11 +230,14 @@
     @apply border-border;
   }
   html, body {
-    overflow-x: visible;
+    overflow-x: auto;
+    overflow-y: auto;
     max-width: 100vw;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
     touch-action: manipulation;
+    height: auto;
+    min-height: 100vh;
   }
   body, button, input, textarea, select, label, span, p, div, a, li, td, th, h1, h2, h3, h4, h5, h6 {
     font-family: 'Kalpurush', 'SolaimanLipi', 'SutonnyOMJ', 'Noto Sans Bengali', 'Inter', sans-serif;
