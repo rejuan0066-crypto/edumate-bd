@@ -146,21 +146,21 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
         <table className="w-full text-sm border-separate border-spacing-0">
           <thead className="sticky top-0 z-30 bg-background shadow-sm">
             <tr className="border-b border-border">
-              <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground w-10 bg-background">#</th>
-              <th className="sticky left-0 z-40 px-3 py-3 text-left text-xs font-semibold text-muted-foreground bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">{bn ? 'রোল' : 'Roll'}</th>
-              <th className="sticky left-[60px] sm:left-[80px] z-40 px-3 py-3 text-left text-xs font-semibold text-muted-foreground bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[120px]">{bn ? 'নাম' : 'Name'}</th>
+              <th className="sticky top-0 left-0 z-50 px-3 py-3 text-left text-xs font-semibold text-muted-foreground w-10 bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]">#</th>
+              <th className="sticky top-0 left-10 z-50 px-3 py-3 text-left text-xs font-semibold text-muted-foreground bg-background shadow-[2px_2px_5px_-2px_rgba(0,0,0,0.1)]">{bn ? 'রোল' : 'Roll'}</th>
+              <th className="sticky top-0 left-[70px] sm:left-[90px] z-50 px-3 py-3 text-left text-xs font-semibold text-muted-foreground bg-background shadow-[2px_2px_5px_-2px_rgba(0,0,0,0.1)] min-w-[120px]">{bn ? 'নাম' : 'Name'}</th>
               {subjects.map((s: any) => (
-                <th key={s.id} className="px-2 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[70px] bg-background">
+                <th key={s.id} className="sticky top-0 px-2 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[70px] bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]">
                   {bn ? s.name_bn : s.name}
                 </th>
               ))}
-              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background">{bn ? 'মোট' : 'Total'}</th>
-              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background">{bn ? 'গড়' : 'Avg'}</th>
-              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background">{bn ? 'গ্রেড' : 'Grade'}</th>
-              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background">GPA</th>
-              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[80px] bg-background">{bn ? 'মর্যাদা' : 'Title'}</th>
-              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background">{bn ? 'মেধা' : 'Rank'}</th>
-              <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground w-10 bg-background"></th>
+              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]">{bn ? 'মোট' : 'Total'}</th>
+              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]">{bn ? 'গড়' : 'Avg'}</th>
+              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]">{bn ? 'গ্রেড' : 'Grade'}</th>
+              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]">GPA</th>
+              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[80px] bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]">{bn ? 'মর্যাদা' : 'Title'}</th>
+              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]">{bn ? 'মেধা' : 'Rank'}</th>
+              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground w-10 bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -198,13 +198,13 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
 
                 return (
                   <tr key={st.id} className={`hover:bg-muted/20 transition-colors ${failed ? 'bg-destructive/5' : ''}`}>
-                    <td className="px-3 py-2 text-muted-foreground text-xs">{originalIdx + 1}</td>
-                    <td className="sticky left-0 z-10 px-3 py-2 font-medium text-foreground bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                    <td className="sticky left-0 z-20 px-3 py-2 text-muted-foreground text-xs bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">{originalIdx + 1}</td>
+                    <td className="sticky left-10 z-20 px-3 py-2 font-medium text-foreground bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                       <div className="flex flex-col">
                         <span>{st.roll_number || '-'}</span>
                       </div>
                     </td>
-                    <td className="sticky left-[60px] sm:left-[80px] z-10 px-3 py-2 text-foreground bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[120px]">
+                    <td className="sticky left-[70px] sm:left-[90px] z-20 px-3 py-2 text-foreground bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[120px]">
                       {bn ? st.name_bn : (st.name_en || st.name_bn)}
                     </td>
                   {subjects.map((sub: any) => {
