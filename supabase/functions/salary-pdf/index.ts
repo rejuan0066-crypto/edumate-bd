@@ -636,18 +636,19 @@ Deno.serve(async (req) => {
   body { padding: 0; }
 
   .salary-page {
-    width: 100%;
+    width: 297mm;
+    height: 210mm;
     margin: 0 auto;
     background: #fff;
-    border: 1pt solid #000;
-    padding: 5mm 6mm 5mm;
+    padding: 8mm 10mm;
     position: relative;
     break-after: page;
     page-break-after: always;
+    overflow: hidden;
   }
   .print-fit {
     width: 100%;
-    transform-origin: top left;
+    transform-origin: top center;
   }
   .salary-page:last-child {
     break-after: auto;
@@ -1036,6 +1037,7 @@ Deno.serve(async (req) => {
     .sig .sig-name { font-size: 7.8pt; min-height: 8pt; }
     .sig .role-meta, .footer, .footer .ref { font-size: 6.4pt; }
     .footer { margin-top: 3pt; padding-top: 2pt; }
+    .salary-page { border: none !important; }
   }
   /* Auto-fit hooks */
   @media print {
@@ -1158,9 +1160,9 @@ Deno.serve(async (req) => {
         var lo = overflow ? Math.min(settings.minScale, AUTO_FLOOR) : settings.minScale;
         var scale = Math.max(lo, Math.min(settings.maxScale, computed));
         if (scale >= 0.999 && h <= maxH && w <= maxW) return;
-        if (isSafari) {
+        if (isSafari || true) {
           inner.style.transform = 'scale(' + scale + ')';
-          inner.style.transformOrigin = 'top left';
+          inner.style.transformOrigin = 'top center';
           inner.style.width = (maxW / scale) + 'px';
           inner.style.height = (h * scale) + 'px';
         } else {

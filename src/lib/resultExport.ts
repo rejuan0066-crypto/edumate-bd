@@ -114,17 +114,49 @@ export const exportResultCSV = ({ title, students, subjects, marksMap, getOveral
   setTimeout(() => URL.revokeObjectURL(url), 100);
 };
 
-export const exportResultPDF = (params: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
-  // Browser-rendered HTML preserves Unicode Bangla shaping and live institution
-  // branding. The old jsPDF text renderer encoded Bangla with a Latin font,
-  // which produced mojibake like “† ²- …” in downloaded result PDFs.
+export const exportResultPDF = async (params: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
+  if (isMobileOrPwa()) {
+    const html = getResultSheetHtml(params);
+    const fname = `result-sheet-${(params.className || 'class').replace(/\s+/g, '_')}.pdf`;
+    try {
+      const { toast } = await import('sonner');
+      const bn = params.bn;
+      toast.info(bn ? 'পিডিএফ তৈরি হচ্ছে…' : 'Generating PDF…');
+      await downloadSheetAsPdf(html, fname, params.orientation || 'landscape');
+      toast.success(bn ? 'পিডিএফ ডাউনলোড হয়েছে' : 'PDF downloaded');
+    } catch (e) {
+      console.error('PDF export failed:', e);
+    }
+    return;
+  }
   printResultSheet(params);
 };
 
-export const printResultSheet = ({ title, students, subjects, marksMap, getOverallGrade, bn, institutionName, institutionLogo, institutionAddress, institutionPhone, className, examName, sessionName, passMark = 33, signatories, orientation = 'landscape', showPageNumbers = true, showFooterInstitution = true, margins }: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
+const isMobileOrPwa = (): boolean => {
+  try {
+    if (typeof window === 'undefined') return false;
+    if ((window.navigator as any).standalone === true) return true;
+    if (window.matchMedia?.('(display-mode: standalone)').matches) return true;
+    return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  } catch {
+    return false;
+  }
+};
+
+const downloadSheetAsPdf = async (html: string, filename: string, orientation: 'landscape' | 'portrait' = 'landscape') => {
+  const { downloadSheetAsPdf: dl } = await import('./salarySlipPdf');
+  return dl(html, filename, null, orientation);
+};
+
+export const getResultSheetHtml = ({ 
+  title, students, subjects, marksMap, getOverallGrade, bn, institutionName, 
+  institutionLogo, institutionAddress, institutionPhone, className, examName, 
+  sessionName, passMark = 33, signatories, orientation = 'landscape', 
+  showPageNumbers = true, showFooterInstitution = true, margins 
+}: ExportData & { orientation?: 'landscape' | 'portrait' }): string => {
   const m = sanitizeMargins(margins);
   const sigList = (signatories && signatories.length ? signatories : DEFAULT_RESULT_SIGNATORIES).slice(0, 6);
-  // Build computed rows + ranking by total (desc)
+  
   const computed = students.map((st: any, idx: number) => {
     const marks = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`] ?? 0);
     const total = marks.reduce((a, b) => a + b, 0);
@@ -139,23 +171,54 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
 
   const passCount = computed.filter(c => !c.failed).length;
   const failCount = computed.length - passCount;
-  const topper = sortedByTotal[0];
   const classAvg = computed.length ? (computed.reduce((s, c) => s + c.total, 0) / computed.length).toFixed(2) : '0';
 
   const subjectHeaders = subjects.map((s: any) => {
     const fullName = (bn ? s.name_bn : s.name) || '';
     const len = fullName.length;
-    // Tier classes drive font-size + line-clamp so all subject headers share the same visual height
     const sizeClass = len > 22 ? 'sub-name xs' : len > 16 ? 'sub-name sm' : len > 10 ? 'sub-name md' : 'sub-name';
     const safeTitle = fullName.replace(/"/g, '&quot;');
     return `<th class="sub-th"><span class="${sizeClass}" title="${safeTitle}">${fullName}</span><span class="sub-max">100</span></th>`;
   }).join('');
 
-  const rows = computed.map(({ idx, st, marks, total, avg, overall, failed }) => {
+  const metaRow = (label: string, value: string) =>
+    value ? `<div class="meta-item"><span class="meta-k">${label}</span><span class="meta-v">${value}</span></div>` : '';
+
+  const ROWS_PER_PAGE = orientation === 'landscape' ? 11 : 14;
+  const chunks: any[][] = [];
+  if (computed.length === 0) chunks.push([]);
+  for (let i = 0; i < computed.length; i += ROWS_PER_PAGE) {
+    chunks.push(computed.slice(i, i + ROWS_PER_PAGE));
+  }
+  const totalPages = chunks.length;
+
+  const colgroupHtml = (() => {
+    const n = subjects.length;
+    const fixedW = { idx: 3, roll: 5, name: 16, total: 5, avg: 4, grade: 5, gpa: 4, merit: 8, rank: 5, status: 7 };
+    const used = Object.values(fixedW).reduce((a, b) => a + b, 0);
+    const subjectPool = Math.max(20, 100 - used);
+    const sw = n > 0 ? +(subjectPool / n).toFixed(3) : 0;
+    const cols = [
+      `<col style="width:${fixedW.idx}%">`,
+      `<col style="width:${fixedW.roll}%">`,
+      `<col style="width:${fixedW.name}%">`,
+      ...subjects.map(() => `<col style="width:${sw}%">`),
+      `<col style="width:${fixedW.total}%">`,
+      `<col style="width:${fixedW.avg}%">`,
+      `<col style="width:${fixedW.grade}%">`,
+      `<col style="width:${fixedW.gpa}%">`,
+      `<col style="width:${fixedW.merit}%">`,
+      `<col style="width:${fixedW.rank}%">`,
+      `<col style="width:${fixedW.status}%">`,
+    ].join('');
+    return `<colgroup>${cols}</colgroup>`;
+  })();
+
+  const renderRow = ({ idx, st, marks, total, avg, overall, failed }: any) => {
     const rank = rankMap.get(idx);
     const merit = (bn ? (overall as any).title_bn : (overall as any).title) || (overall as any).title_bn || (overall as any).title || '-';
-    const marksCells = marks.map(m =>
-      `<td class="num ${m < passMark ? 'fail-cell' : ''}">${m}</td>`
+    const marksCells = marks.map((mk: number) =>
+      `<td class="num ${mk < passMark ? 'fail-cell' : ''}">${mk}</td>`
     ).join('');
     return `<tr class="${failed ? 'row-fail' : ''}">
       <td class="num">${idx + 1}</td>
@@ -170,13 +233,87 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
       <td class="num"><span class="rank-pill">${rank}</span></td>
       <td class="num ${failed ? 'status-fail' : 'status-pass'}">${failed ? (bn ? 'অকৃতকার্য' : 'Fail') : (bn ? 'কৃতকার্য' : 'Pass')}</td>
     </tr>`;
+  };
+
+  const pagesHtml = chunks.map((chunk, pageIdx) => {
+    const rowsHtml = chunk.map(renderRow).join('');
+    return `
+    <div class="result-page">
+      <div class="fit-inner">
+        <div class="sheet">
+          <header class="header">
+            ${institutionLogo ? `<img src="${institutionLogo}" class="header-logo" alt="logo">` : '<div></div>'}
+            <div class="header-text">
+              <h1>${institutionName || ''}</h1>
+              <div class="addr">${institutionAddress || ''}</div>
+              <div class="phone">${institutionPhone || ''}</div>
+            </div>
+            <div></div>
+          </header>
+
+          <div class="doc-band"><span>${title}</span></div>
+
+          <div class="meta">
+            ${metaRow(bn ? 'শ্রেণী:' : 'Class:', className)}
+            ${metaRow(bn ? 'পরীক্ষা:' : 'Exam:', examName)}
+            ${metaRow(bn ? 'শিক্ষাবর্ষ:' : 'Session:', sessionName)}
+          </div>
+
+          <table class="result-table">
+            ${colgroupHtml}
+            <thead>
+              <tr>
+                <th>${bn ? 'ক্রম' : '#'}</th>
+                <th>${bn ? 'রোল' : 'Roll'}</th>
+                <th>${bn ? 'নাম' : 'Name'}</th>
+                ${subjectHeaders}
+                <th>${bn ? 'মোট' : 'Total'}</th>
+                <th>${bn ? 'গড়' : 'Avg'}</th>
+                <th>${bn ? 'গ্রেড' : 'Grade'}</th>
+                <th>GPA</th>
+                <th>${bn ? 'মর্যাদা' : 'Merit'}</th>
+                <th>${bn ? 'মেধা' : 'Rank'}</th>
+                <th>${bn ? 'ফলাফল' : 'Result'}</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+
+          <div class="summary-wrap">
+            <div class="summary">
+              <div class="stat"><div class="stat-k">${bn ? 'অংশগ্রহণকারী' : 'TOTAL'}</div><div class="stat-v">${computed.length}</div></div>
+              <div class="stat"><div class="stat-k">${bn ? 'কৃতকার্য' : 'PASSED'}</div><div class="stat-v">${passCount}</div></div>
+              <div class="stat"><div class="stat-k">${bn ? 'অকৃতকার্য' : 'FAILED'}</div><div class="stat-v" style="color:#dc2626">${failCount}</div></div>
+              <div class="stat"><div class="stat-k">${bn ? 'পাসের হার' : 'PASS RATE'}</div><div class="stat-v">${computed.length ? ((passCount / computed.length) * 100).toFixed(1) : '0'}%</div></div>
+              <div class="stat"><div class="stat-k">${bn ? 'গড় নম্বর' : 'CLASS AVG'}</div><div class="stat-v">${classAvg}</div></div>
+            </div>
+          </div>
+
+          <div class="signatures-keeper">
+            <div class="signatures-wrap">
+              <div class="signatures">
+                ${sigList.map(sig => `
+                  <div class="sig-block">
+                    <div class="sig-line">
+                      <div class="sig-name">${bn ? (sig.name_bn || '') : (sig.name_en || sig.name_bn || '')}</div>
+                      <div class="sig-title">${bn ? (sig.title_bn || '') : (sig.title_en || sig.title_bn || '')}</div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+
+          <div class="footer">
+            <div>${showFooterInstitution ? (institutionName || '') : ''}</div>
+            <div class="screen-pageinfo">${bn ? 'পৃষ্ঠা' : 'Page'} ${pageIdx + 1} / ${totalPages}</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
   }).join('');
 
-
-  const metaRow = (label: string, value: string) =>
-    value ? `<div class="meta-item"><span class="meta-k">${label}</span><span class="meta-v">${value}</span></div>` : '';
-
-  const html = `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
 <title>${title}</title>
@@ -273,131 +410,9 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
     .signatures{page-break-inside:avoid !important;break-inside:avoid-page !important;-webkit-column-break-inside:avoid !important;display:flex !important;flex-wrap:nowrap !important;}
     .sig-block{page-break-inside:avoid !important;break-inside:avoid-page !important;-webkit-column-break-inside:avoid !important;}
   }
-</style>
-</head><body>
-${(() => {
-  // Keep every page self-contained. These limits reserve deterministic room
-  // for the summary, signatures and footer instead of relying on the browser
-  // to split or clip those blocks differently on mobile/desktop print engines.
-  const ROWS_PER_PAGE = orientation === 'landscape' ? 11 : 14;
-  const chunks: typeof computed[] = [];
-  if (computed.length === 0) chunks.push([]);
-  for (let i = 0; i < computed.length; i += ROWS_PER_PAGE) {
-    chunks.push(computed.slice(i, i + ROWS_PER_PAGE));
-  }
-  const totalPages = chunks.length;
-
-  const colgroupHtml = (() => {
-    const n = subjects.length;
-    const fixedW = { idx: 3, roll: 5, name: 16, total: 5, avg: 4, grade: 5, gpa: 4, merit: 8, rank: 5, status: 7 };
-    const used = Object.values(fixedW).reduce((a, b) => a + b, 0);
-    const subjectPool = Math.max(20, 100 - used);
-    const sw = n > 0 ? +(subjectPool / n).toFixed(3) : 0;
-    const cols = [
-      `<col style="width:${fixedW.idx}%">`,
-      `<col style="width:${fixedW.roll}%">`,
-      `<col style="width:${fixedW.name}%">`,
-      ...subjects.map(() => `<col style="width:${sw}%">`),
-      `<col style="width:${fixedW.total}%">`,
-      `<col style="width:${fixedW.avg}%">`,
-      `<col style="width:${fixedW.grade}%">`,
-      `<col style="width:${fixedW.gpa}%">`,
-      `<col style="width:${fixedW.merit}%">`,
-      `<col style="width:${fixedW.rank}%">`,
-      `<col style="width:${fixedW.status}%">`,
-    ].join('');
-    return `<colgroup>${cols}</colgroup>`;
-  })();
-
-  const renderRow = ({ idx, st, marks, total, avg, overall, failed }: any) => {
-    const rank = rankMap.get(idx);
-    const merit = (bn ? (overall as any).title_bn : (overall as any).title) || (overall as any).title_bn || (overall as any).title || '-';
-    const marksCells = marks.map((mk: number) =>
-      `<td class="num ${mk < passMark ? 'fail-cell' : ''}">${mk}</td>`
-    ).join('');
-    return `<tr class="${failed ? 'row-fail' : ''}">
-      <td class="num">${idx + 1}</td>
-      <td class="num bold">${st.roll_number || '-'}</td>
-      <td class="name">${bn ? st.name_bn : (st.name_en || st.name_bn)}</td>
-      ${marksCells}
-      <td class="num bold">${total}</td>
-      <td class="num">${avg.toFixed(1)}</td>
-      <td class="num bold grade-${overall.grade?.replace(/[^A-Z]/g, '') || 'N'}">${overall.grade}</td>
-      <td class="num bold">${overall.gpa}</td>
-      <td class="num">${merit}</td>
-      <td class="num"><span class="rank-pill">${rank}</span></td>
-
-      <td class="num ${failed ? 'status-fail' : 'status-pass'}">${failed ? (bn ? 'অকৃতকার্য' : 'Fail') : (bn ? 'কৃতকার্য' : 'Pass')}</td>
-    </tr>`;
-  };
-
-  return chunks.map((chunk, pageIdx) => {
-    
-    return `<div class="result-page"><div class="sheet fit-inner">
-      <div class="header">
-        <div>${institutionLogo ? `<img src="${institutionLogo}" class="header-logo" crossorigin="anonymous" />` : ''}</div>
-        <div class="header-text">
-          <h1>${institutionName || ''}</h1>
-          ${institutionAddress ? `<p class="addr">${institutionAddress}</p>` : ''}
-          ${institutionPhone ? `<p class="phone">${bn ? 'ফোন' : 'Phone'}: ${institutionPhone}</p>` : ''}
-        </div>
-        <div></div>
-      </div>
-      <div class="doc-band"><span>${bn ? 'ফলাফল শীট' : 'RESULT SHEET'}</span></div>
-      <div class="meta">
-        ${metaRow(bn ? 'পরীক্ষা:' : 'Exam:', examName || title)}
-        ${metaRow(bn ? 'শ্রেণি:' : 'Class:', className || '')}
-        ${metaRow(bn ? 'শিক্ষাবর্ষ:' : 'Session:', sessionName || '')}
-        ${metaRow(bn ? 'মোট ছাত্র:' : 'Total Students:', String(computed.length))}
-        ${metaRow(bn ? 'প্রকাশের তারিখ:' : 'Issue Date:', new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB'))}
-      </div>
-      <table class="result-table">
-        ${colgroupHtml}
-        <thead><tr>
-          <th>#</th>
-          <th>${bn ? 'রোল' : 'Roll'}</th>
-          <th style="text-align:left;padding-left:8px;">${bn ? 'শিক্ষার্থীর নাম' : 'Student Name'}</th>
-          ${subjectHeaders}
-          <th>${bn ? 'মোট' : 'Total'}</th>
-          <th>${bn ? 'গড়' : 'Avg'}</th>
-          <th>${bn ? 'গ্রেড' : 'Grade'}</th>
-          <th>GPA</th>
-          <th>${bn ? 'মর্যাদা' : 'Merit'}</th>
-          <th>${bn ? 'মেধাক্রম' : 'Rank'}</th>
-          <th>${bn ? 'অবস্থা' : 'Status'}</th>
-        </tr></thead>
-        <tbody>${chunk.map(renderRow).join('')}</tbody>
-      </table>
-      <div class="summary-wrap">
-        <div class="summary">
-          <div class="stat"><div class="stat-k">${bn ? 'মোট' : 'Total'}</div><div class="stat-v">${computed.length}</div></div>
-          <div class="stat"><div class="stat-k">${bn ? 'কৃতকার্য' : 'Pass'}</div><div class="stat-v" style="color:#059669;">${passCount}</div></div>
-          <div class="stat"><div class="stat-k">${bn ? 'অকৃতকার্য' : 'Fail'}</div><div class="stat-v" style="color:#dc2626;">${failCount}</div></div>
-          <div class="stat"><div class="stat-k">${bn ? 'গড় নম্বর' : 'Class Avg'}</div><div class="stat-v">${classAvg}</div></div>
-          <div class="stat"><div class="stat-k">${bn ? 'প্রথম স্থান' : 'Topper'}</div><div class="stat-v" style="font-size:12px;">${topper ? `${(bn ? topper.st.name_bn : (topper.st.name_en || topper.st.name_bn)) || '-'} (${topper.total})` : '-'}</div></div>
-        </div>
-      </div>
-
-      <div class="signatures-wrap">
-        <div class="signatures">
-          ${sigList.map((s) => {
-            const t = (bn ? s.title_bn : s.title_en) || (bn ? s.title_en : s.title_bn) || '';
-            const nm = (bn ? s.name_bn : s.name_en) || (bn ? s.name_en : s.name_bn) || '';
-            return `<div class="sig-block"><div class="sig-line"></div><p class="sig-name">${nm || '&nbsp;'}</p><p class="sig-title">${t}</p><p class="sig-sub">${bn ? 'স্বাক্ষর ও তারিখ' : 'Signature & Date'}</p></div>`;
-          }).join('')}
-        </div>
-      </div>
-      <div class="footer">
-        <span>${bn ? 'প্রিন্ট:' : 'Printed:'} ${new Date().toLocaleString(bn ? 'bn-BD' : 'en-GB')}</span>
-        <span>${institutionName || ''}</span>
-      </div>
-    </div></div>`;
-  }).join('');
-})()}
-<style>
-  .result-page{position:relative;width:${orientation === 'landscape' ? 297 - m.left - m.right : 210 - m.left - m.right}mm;height:${orientation === 'landscape' ? 210 - m.top - m.bottom : 297 - m.top - m.bottom}mm;break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid;overflow:hidden;}
+  .result-page{position:relative;width:${orientation === 'landscape' ? 297 - m.left - m.right : 210 - m.left - m.right}mm;height:${orientation === 'landscape' ? 210 - m.top - m.bottom : 297 - m.top - m.bottom}mm;break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid;overflow:hidden;margin:0 auto;}
   .result-page:last-child{break-after:auto;page-break-after:auto;}
-  .fit-inner{position:absolute;top:0;left:0;transform-origin:top left;}
+  .fit-inner{position:absolute;top:0;left:0;right:0;transform-origin:top center;width:100%;}
   .signatures-wrap{margin-top:20px;}
   .sig-line{margin-top:22px;}
 </style>
@@ -416,13 +431,14 @@ ${(() => {
       var inner = page.querySelector('.fit-inner');
       if (!inner) continue;
       inner.style.transform = 'none';
-      inner.style.width = availW + 'px';
+      inner.style.width = '100%';
       var h = inner.scrollHeight;
       var w = inner.scrollWidth;
       var scale = Math.min(1, availH / h, availW / w);
       if (scale < 1) {
         scale = Math.max(0.45, scale - 0.015);
         inner.style.transform = 'scale(' + scale + ')';
+        inner.style.width = (availW / scale) + 'px';
       }
     }
   }
@@ -433,19 +449,16 @@ ${(() => {
   setTimeout(fit, 300);
 })();
 </script>
-
+</head><body>
+${pagesHtml}
 </body></html>`;
-
-  renderPrintDocument(html, title);
 };
 
-/**
- * Print/save-as-PDF without depending on popups.
- * Popup blockers (and installed PWAs) silently returned null from
- * window.open(), so the "Download PDF" button appeared to do nothing.
- * A hidden same-document iframe always works; a new tab is only used as a
- * last-resort fallback.
- */
+export const printResultSheet = (params: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
+  const html = getResultSheetHtml(params);
+  renderPrintDocument(html, params.title);
+};
+
 const renderPrintDocument = (html: string, title: string) => {
   try {
     const existing = document.getElementById('__result_print_frame__');
@@ -469,14 +482,19 @@ const renderPrintDocument = (html: string, title: string) => {
         const win = iframe.contentWindow;
         if (!win) return;
         win.focus();
-        win.print();
+        if (win.document.readyState === 'complete') {
+          win.print();
+        } else {
+          win.onload = () => {
+            setTimeout(() => win.print(), 100);
+          };
+        }
       } catch {
         /* ignore */
       }
       setTimeout(() => iframe.remove(), 60000);
     };
 
-    // Wait for webfonts/images so Bangla text is shaped before printing
     const ready = () => {
       const fonts = (doc as any).fonts;
       if (fonts?.ready) {
