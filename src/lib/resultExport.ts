@@ -1,4 +1,6 @@
 import { CANONICAL_BANGLA_LABELS as L } from './banglaCanonicalLabels';
+import { formatOrdinalRank } from './digits';
+
 
 interface ExportData {
   title: string;
