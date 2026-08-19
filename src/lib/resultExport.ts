@@ -280,6 +280,7 @@ export const getResultSheetHtml = ({
           </table>
 
           <div class="summary-wrap">
+            ${pageIdx === totalPages - 1 ? `
             <div class="summary">
               <div class="stat"><div class="stat-k">${bn ? 'অংশগ্রহণকারী' : 'TOTAL'}</div><div class="stat-v">${computed.length}</div></div>
               <div class="stat"><div class="stat-k">${bn ? 'কৃতকার্য' : 'PASSED'}</div><div class="stat-v">${passCount}</div></div>
@@ -287,6 +288,7 @@ export const getResultSheetHtml = ({
               <div class="stat"><div class="stat-k">${bn ? 'পাসের হার' : 'PASS RATE'}</div><div class="stat-v">${computed.length ? ((passCount / computed.length) * 100).toFixed(1) : '0'}%</div></div>
               <div class="stat"><div class="stat-k">${bn ? 'গড় নম্বর' : 'CLASS AVG'}</div><div class="stat-v">${classAvg}</div></div>
             </div>
+            ` : ''}
           </div>
 
           <div class="signatures-keeper">
