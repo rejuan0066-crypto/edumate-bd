@@ -268,10 +268,20 @@ const AdminResults = () => {
           const { grade, gpa } = getGrade(marks);
           return { exam_id: selectedExamId, student_id, subject_id, marks, grade, gpa: parseFloat(gpa) };
         });
+      
       if (upserts.length === 0) return { saved: false as const, reason: 'empty' as const };
-      if (await checkApproval('edit', { exam_id: selectedExamId, results_count: upserts.length, results: upserts }, selectedExamId, `ফলাফল সংরক্ষণ`)) {
+      
+      const requiresApproval = await checkApproval(
+        'edit', 
+        { exam_id: selectedExamId, results_count: upserts.length, results: upserts }, 
+        selectedExamId, 
+        `ফলাফল সংরক্ষণ (${examSessions.find(s => s.id === examSessionId)?.name || ''})`
+      );
+
+      if (requiresApproval) {
         return { saved: false as const, reason: 'approval' as const };
       }
+
       const { error } = await supabase.from('results').upsert(upserts, { onConflict: 'exam_id,student_id,subject_id' });
       if (error) throw error;
       return { saved: true as const, count: upserts.length };
@@ -281,6 +291,7 @@ const AdminResults = () => {
         if (res?.reason === 'empty') {
           toast.error(bn ? 'সংরক্ষণের জন্য কোনো নম্বর পাওয়া যায়নি' : 'No marks to save');
         }
+        // If it was intercepted by approval workflow, useApprovalCheck already showed a toast
         return;
       }
       queryClient.invalidateQueries({ queryKey: ['results'] });
