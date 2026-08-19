@@ -276,7 +276,10 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
 </style>
 </head><body>
 ${(() => {
-  const ROWS_PER_PAGE = orientation === 'landscape' ? 14 : 18;
+  // Keep every page self-contained. These limits reserve deterministic room
+  // for the summary, signatures and footer instead of relying on the browser
+  // to split or clip those blocks differently on mobile/desktop print engines.
+  const ROWS_PER_PAGE = orientation === 'landscape' ? 11 : 14;
   const chunks: typeof computed[] = [];
   if (computed.length === 0) chunks.push([]);
   for (let i = 0; i < computed.length; i += ROWS_PER_PAGE) {
