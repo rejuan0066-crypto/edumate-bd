@@ -114,8 +114,17 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
               <X className="w-5 h-5" />
             </button>
           )}
-          <h3 className="font-display font-bold text-foreground text-lg">{title}</h3>
+          <div>
+            <h3 className="font-display font-bold text-foreground text-lg">{title}</h3>
+            {lastSaved?.at && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {bn ? 'সর্বশেষ সংরক্ষণ' : 'Last saved'}: {new Date(lastSaved.at).toLocaleString(bn ? 'bn-BD' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' })}
+                {lastSaved.name ? ` — ${lastSaved.name}` : ''}
+              </p>
+            )}
+          </div>
         </div>
+
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => handleExport('csv')} className="gap-1.5">
             <FileSpreadsheet className="w-4 h-4" /> Excel
