@@ -392,8 +392,25 @@ const AdminExamSessions = () => {
     },
   });
 
+  const updateSessionMutation = useMutation({
+    mutationFn: async ({ id, name, name_bn }: { id: string; name: string; name_bn: string }) => {
+      if (!name_bn.trim()) throw new Error(bn ? 'বাংলা নাম দিন' : 'Bangla name required');
+      const { error } = await supabase.from('exam_sessions')
+        .update({ name: name.trim() || name_bn.trim(), name_bn: name_bn.trim() })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['exam_sessions_list'] });
+      setEditingSessionId(null);
+      toast.success(bn ? 'সেশনের নাম আপডেট হয়েছে' : 'Session name updated');
+    },
+    onError: (e: any) => toast.error(e.message || 'Error'),
+  });
+
   // --- Exam Type CRUD ---
   const addTypeMutation = useMutation({
+
     mutationFn: async () => {
       if (!newTypeNameBn.trim() || !newTypeKey.trim()) throw new Error(bn ? 'নাম ও কী দিন' : 'Name & key required');
       const maxSort = examTypes.length > 0 ? Math.max(...examTypes.map((t: any) => t.sort_order || 0)) : 0;
