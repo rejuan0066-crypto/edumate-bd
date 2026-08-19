@@ -351,18 +351,15 @@ export const getResultSheetHtml = ({
             ` : ''}
           </div>
 
-          <div class="signatures-keeper">
-            <div class="signatures-wrap">
-              <div class="signatures">
-                ${sigList.map(sig => `
-                  <div class="sig-block">
-                    <div class="sig-line">
-                      <div class="sig-name">${bn ? (sig.name_bn || '') : (sig.name_en || sig.name_bn || '')}</div>
-                      <div class="sig-title">${bn ? (sig.title_bn || '') : (sig.title_en || sig.title_bn || '')}</div>
-                    </div>
-                  </div>
-                `).join('')}
-              </div>
+          <div class="signatures-wrap">
+            <div class="signatures">
+              ${sigList.map(sig => `
+                <div class="sig-block">
+                  <div class="sig-line"></div>
+                  <div class="sig-name">${bn ? (sig.name_bn || '') : (sig.name_en || sig.name_bn || '')}</div>
+                  <div class="sig-title">${bn ? (sig.title_bn || '') : (sig.title_en || sig.title_bn || '')}</div>
+                </div>
+              `).join('')}
             </div>
           </div>
 
