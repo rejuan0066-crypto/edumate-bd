@@ -230,7 +230,7 @@
     @apply border-border;
   }
   html, body {
-    overflow-x: auto;
+    overflow-x: visible;
     max-width: 100vw;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
