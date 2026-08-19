@@ -183,7 +183,7 @@ export const getResultSheetHtml = ({
   showPageNumbers = true, showFooterInstitution = true, margins 
 }: ExportData & { orientation?: 'landscape' | 'portrait' }): string => {
   const m = sanitizeMargins(margins);
-  const sigList = (signatories && signatories.length ? signatories : DEFAULT_RESULT_SIGNATORIES).slice(0, 6);
+  const sigList = (signatories && signatories.length ? signatories : DEFAULT_RESULT_SIGNATORIES).slice(0, 4);
   
   const computed = students.map((st: any, idx: number) => {
     const hasEnteredAnyMark = subjects.some((sub: any) => marksMap[`${st.id}_${sub.id}`] !== undefined);
@@ -289,13 +289,13 @@ export const getResultSheetHtml = ({
       <div class="fit-inner">
         <div class="sheet">
           <header class="header">
-            ${institutionLogo ? `<img src="${institutionLogo}" class="header-logo" alt="logo">` : '<div></div>'}
+            ${institutionLogo ? `<img src="${institutionLogo}" class="header-logo" alt="logo">` : '<div class="header-logo"></div>'}
             <div class="header-text">
               <h1>${institutionName || ''}</h1>
               <div class="addr">${institutionAddress || ''}</div>
               <div class="phone">${institutionPhone || ''}</div>
             </div>
-            <div></div>
+            <div class="header-logo"></div>
           </header>
 
           <div class="doc-band"><span>${title}</span></div>
@@ -310,16 +310,16 @@ export const getResultSheetHtml = ({
             ${colgroupHtml}
             <thead>
               <tr>
-                <th>${bn ? 'ক্রম' : '#'}</th>
-                <th>${bn ? 'রোল' : 'Roll'}</th>
-                <th>${bn ? 'নাম' : 'Name'}</th>
+                <th style="width:40px">${bn ? 'ক্রম' : '#'}</th>
+                <th style="width:60px">${bn ? 'রোল' : 'Roll'}</th>
+                <th style="width:180px; text-align:left; padding-left:10px;">${bn ? 'নাম' : 'Name'}</th>
                 ${subjectHeaders}
-                <th>${bn ? 'মোট' : 'Total'}</th>
-                <th>${bn ? 'গড়' : 'Avg'}</th>
-                <th>${bn ? 'গ্রেড' : 'Grade'}</th>
-                <th>GPA</th>
-                <th>${bn ? 'মর্যাদা' : 'Merit'}</th>
-                <th>${bn ? 'মেধা' : 'Rank'}</th>
+                <th style="width:60px">${bn ? 'মোট' : 'Total'}</th>
+                <th style="width:50px">${bn ? 'গড়' : 'Avg'}</th>
+                <th style="width:60px">${bn ? 'গ্রেড' : 'Grade'}</th>
+                <th style="width:50px">GPA</th>
+                <th style="width:100px">${bn ? 'মর্যাদা' : 'Merit'}</th>
+                <th style="width:60px">${bn ? 'মেধা' : 'Rank'}</th>
               </tr>
             </thead>
             <tbody>${rowsHtml}</tbody>
@@ -327,23 +327,23 @@ export const getResultSheetHtml = ({
 
           <div class="summary-wrap">
             ${pageIdx === totalPages - 1 ? `
-            <div class="top-rankers" style="margin-bottom:12px; display:flex; gap:10px; justify-content:center;">
+            <div class="top-rankers" style="margin-bottom:15px; display:flex; gap:15px; justify-content:center;">
               ${(() => {
                 const top3 = sortedByTotal.filter(r => !r.failed && rankMap.get(r.idx) && rankMap.get(r.idx)! <= 3);
                 return top3.map(r => {
                   const rank = rankMap.get(r.idx);
                   const rankLabel = rank === 1 ? (bn ? '১ম' : '1st') : rank === 2 ? (bn ? '২য়' : '2nd') : (bn ? '৩য়' : '3rd');
                   const name = bn ? r.st.name_bn : (r.st.name_en || r.st.name_bn);
-                  return `<div style="border:1.5px solid #064e3b; border-radius:6px; padding:6px 12px; background:#f0fdf4; text-align:center; min-width:120px;">
-                    <div style="font-size:10px; font-weight:700; color:#064e3b; text-transform:uppercase;">${rankLabel} ${bn ? 'স্থান' : 'Rank'}</div>
-                    <div style="font-size:12px; font-weight:800; color:#0f172a; margin-top:2px;">${name}</div>
+                  return `<div style="border:2px solid #064e3b; border-radius:8px; padding:8px 15px; background:#f0fdf4; text-align:center; min-width:160px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+                    <div style="font-size:11px; font-weight:800; color:#064e3b; text-transform:uppercase; letter-spacing:0.5px;">${rankLabel} ${bn ? 'স্থান' : 'Rank'}</div>
+                    <div style="font-size:14px; font-weight:800; color:#0f172a; margin-top:3px;">${name}</div>
                   </div>`;
                 }).join('');
               })()}
             </div>
             <div class="summary">
               <div class="stat"><div class="stat-k">${bn ? 'অংশগ্রহণকারী' : 'TOTAL'}</div><div class="stat-v">${activeStudents.length}</div></div>
-              <div class="stat"><div class="stat-k">${bn ? 'কৃতকার্য' : 'PASSED'}</div><div class="stat-v">${passCount}</div></div>
+              <div class="stat"><div class="stat-k">${bn ? 'কৃতকার্য' : 'PASSED'}</div><div class="stat-v" style="color:#059669">${passCount}</div></div>
               <div class="stat"><div class="stat-k">${bn ? 'অকৃতকার্য' : 'FAILED'}</div><div class="stat-v" style="color:#dc2626">${failCount}</div></div>
               <div class="stat"><div class="stat-k">${bn ? 'পাসের হার' : 'PASS RATE'}</div><div class="stat-v">${activeStudents.length ? ((passCount / activeStudents.length) * 100).toFixed(1) : '0'}%</div></div>
               <div class="stat"><div class="stat-k">${bn ? 'গড় নম্বর' : 'CLASS AVG'}</div><div class="stat-v">${classAvg}</div></div>
@@ -351,24 +351,21 @@ export const getResultSheetHtml = ({
             ` : ''}
           </div>
 
-          <div class="signatures-keeper">
-            <div class="signatures-wrap">
-              <div class="signatures">
-                ${sigList.map(sig => `
-                  <div class="sig-block">
-                    <div class="sig-line">
-                      <div class="sig-name">${bn ? (sig.name_bn || '') : (sig.name_en || sig.name_bn || '')}</div>
-                      <div class="sig-title">${bn ? (sig.title_bn || '') : (sig.title_en || sig.title_bn || '')}</div>
-                    </div>
-                  </div>
-                `).join('')}
-              </div>
+          <div class="signatures-wrap">
+            <div class="signatures">
+              ${sigList.map(sig => `
+                <div class="sig-block">
+                  <div class="sig-line"></div>
+                  <div class="sig-name">${bn ? (sig.name_bn || '') : (sig.name_en || sig.name_bn || '')}</div>
+                  <div class="sig-title">${bn ? (sig.title_bn || '') : (sig.title_en || sig.title_bn || '')}</div>
+                </div>
+              `).join('')}
             </div>
           </div>
 
           <div class="footer">
-            <div>${showFooterInstitution ? (institutionName || '') : ''}</div>
-            <div class="screen-pageinfo">${bn ? 'পৃষ্ঠা' : 'Page'} ${pageIdx + 1} / ${totalPages}</div>
+            <div style="font-weight:700;">${showFooterInstitution ? (institutionName || '') : ''}</div>
+            <div class="screen-pageinfo" style="font-weight:600;">${bn ? 'পৃষ্ঠা' : 'Page'} ${pageIdx + 1} / ${totalPages}</div>
           </div>
         </div>
       </div>
@@ -384,30 +381,21 @@ export const getResultSheetHtml = ({
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
   @page{
-    size:A4 ${orientation};
-    margin:${m.top}mm ${m.right}mm ${m.bottom}mm ${m.left}mm;
-    @bottom-left{
-      content:${showFooterInstitution ? `"${(institutionName || '').replace(/"/g, '\\"')}"` : `""`};
-      font-family:'Kalpurush','Noto Sans Bengali','SutonnyOMJ','Inter',sans-serif;
-      font-size:9pt;color:#64748b;
-    }
-    @bottom-right{
-      content:${showPageNumbers ? `"${bn ? 'পৃষ্ঠা' : 'Page'} " counter(page${bn ? ', bengali' : ''}) " ${bn ? 'এর' : 'of'} " counter(pages${bn ? ', bengali' : ''})` : `""`};
-      font-family:'Kalpurush','Noto Sans Bengali','SutonnyOMJ','Inter',sans-serif;
-      font-size:9pt;color:#64748b;
-    }
+    size:A4 landscape;
+    margin:10mm;
   }
+  *{margin:0;padding:0;box-sizing:border-box;}
   html,body{width:100%;margin:0;padding:0;}
-  body{font-family:'Kalpurush','Noto Sans Bengali','SutonnyOMJ','Inter',sans-serif;color:#0f172a;background:#fff;}
+  body{font-family:'Kalpurush','Noto Sans Bengali','SutonnyOMJ','Inter',sans-serif;color:#0f172a;background:#f8fafc;}
   .screen-pageinfo{display:none;}
-  @media screen{body{padding:6mm 8mm;}.screen-pageinfo{display:flex;justify-content:flex-end;font-size:10px;color:#94a3b8;margin-top:6px;}}
-  .sheet{border:2px solid #064e3b;border-radius:6px;padding:10px 14px 14px;box-sizing:border-box;width:100%;}
-  .header{display:grid;grid-template-columns:60px 1fr 60px;gap:12px;align-items:center;border-bottom:2px double #064e3b;padding-bottom:8px;}
-  .header-logo{width:60px;height:60px;object-fit:contain;}
+  @media screen{body{padding:20px;}.screen-pageinfo{display:flex;justify-content:flex-end;font-size:10px;color:#94a3b8;margin-top:6px;}}
+  .sheet{background:#fff;border:1px solid #94a3b8;border-radius:2px;padding:15mm 12mm;box-sizing:border-box;width:100%;min-height:calc(210mm - 20mm);box-shadow:0 0 10px rgba(0,0,0,0.1);margin:0 auto;}
+  .header{display:grid;grid-template-columns:100px 1fr 100px;gap:12px;align-items:center;margin-bottom:15px;}
+  .header-logo{width:80px;height:80px;object-fit:contain;}
   .header-text{text-align:center;}
-  .header-text h1{font-size:22px;font-weight:800;color:#064e3b;letter-spacing:.3px;margin-bottom:2px;}
-  .header-text .addr{font-size:11px;color:#475569;}
-  .header-text .phone{font-size:11px;color:#475569;margin-top:1px;}
+  .header-text h1{font-size:24px;font-weight:800;color:#064e3b;letter-spacing:.5px;margin-bottom:4px;}
+  .header-text .addr{font-size:13px;color:#334155;font-weight:500;}
+  .header-text .phone{font-size:13px;color:#334155;margin-top:2px;font-weight:500;}
   .doc-band{margin-top:8px;display:flex;justify-content:center;}
   .doc-band span{background:#064e3b;color:#fff;font-size:13px;font-weight:700;padding:4px 16px;border-radius:999px;letter-spacing:.4px;}
   .meta{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:center;margin-top:10px;padding:6px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;}
@@ -419,17 +407,17 @@ export const getResultSheetHtml = ({
   thead{display:table-header-group !important;}
   tfoot{display:table-footer-group;}
   thead tr{page-break-inside:avoid;break-inside:avoid;}
-  thead th{background:#064e3b;color:#fff;font-weight:700;padding:6px 4px;border:1px solid #064e3b;text-align:center;font-size:10.5px;-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact;}
-  .sub-th{padding:4px 3px;vertical-align:middle;height:38px;}
-  .sub-name{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;text-overflow:ellipsis;line-height:1.15;word-break:break-word;overflow-wrap:anywhere;hyphens:auto;font-size:10.5px;}
-  .sub-name.md{font-size:9.5px;}
-  .sub-name.sm{font-size:8.5px;-webkit-line-clamp:3;line-clamp:3;line-height:1.1;}
-  .sub-name.xs{font-size:7.5px;-webkit-line-clamp:3;line-clamp:3;line-height:1.05;letter-spacing:-.2px;}
-  .sub-max{display:block;font-size:8.5px;font-weight:500;opacity:.85;margin-top:1px;}
-  tbody td{padding:4px 5px;border:1px solid #d1d5db;}
+  thead th{background:#064e3b;color:#fff;font-weight:700;padding:8px 4px;border:1px solid #4b5563;text-align:center;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact;}
+  .sub-th{padding:6px 3px;vertical-align:middle;height:45px;}
+  .sub-name{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;text-overflow:ellipsis;line-height:1.2;word-break:break-word;overflow-wrap:anywhere;hyphens:auto;font-size:11px;}
+  .sub-name.md{font-size:10px;}
+  .sub-name.sm{font-size:9px;-webkit-line-clamp:3;line-clamp:3;line-height:1.15;}
+  .sub-name.xs{font-size:8px;-webkit-line-clamp:3;line-clamp:3;line-height:1.1;letter-spacing:-.1px;}
+  .sub-max{display:block;font-size:9px;font-weight:500;opacity:.9;margin-top:2px;}
+  tbody td{padding:6px 6px;border:1px solid #94a3b8;font-size:11px;background:#fff;}
   tbody tr{page-break-inside:avoid;break-inside:avoid;}
-  tbody tr:nth-child(even) td{background:#f8fafc;}
-  tbody tr:hover td{background:#ecfdf5;}
+  tbody tr:nth-child(even) td{background:#f9fafb;}
+  tbody tr:hover td{background:#f0fdf4;}
   td.num{text-align:center;}
   td.name{text-align:left;font-weight:600;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   td.bold{font-weight:700;}
@@ -449,45 +437,41 @@ export const getResultSheetHtml = ({
   .stat-k{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;}
   .stat-v{font-size:15px;font-weight:800;color:#064e3b;margin-top:2px;}
   .signatures-keeper{page-break-inside:avoid;break-inside:avoid-page;-webkit-column-break-inside:avoid;display:block;}
-  .signatures-wrap{margin-top:42px;page-break-inside:avoid;break-inside:avoid-page;-webkit-column-break-inside:avoid;display:block;}
-  .signatures{display:flex;flex-wrap:nowrap;justify-content:space-between;gap:16px;padding:0 10px;page-break-inside:avoid;break-inside:avoid-page;-webkit-column-break-inside:avoid;}
+  .signatures-wrap{margin-top:45px;page-break-inside:avoid;break-inside:avoid-page;-webkit-column-break-inside:avoid;display:block;}
+  .signatures{display:flex;flex-wrap:nowrap;justify-content:space-between;gap:25px;padding:0 5px;page-break-inside:avoid;break-inside:avoid-page;-webkit-column-break-inside:avoid;}
   .sig-block{flex:1 1 0;min-width:0;text-align:center;page-break-inside:avoid;break-inside:avoid-page;-webkit-column-break-inside:avoid;}
-  .sig-line{border-top:1.5px solid #334155;padding-top:4px;margin-top:30px;}
-  .sig-name{font-size:11px;font-weight:700;color:#0f172a;min-height:14px;}
-  .sig-title{font-size:11.5px;font-weight:700;color:#064e3b;margin-top:1px;}
-  .sig-sub{font-size:9.5px;color:#64748b;}
-  .footer{margin-top:14px;display:flex;justify-content:space-between;font-size:9.5px;color:#64748b;border-top:1px dashed #cbd5e1;padding-top:6px;}
+  .sig-line{border-top:1.5px solid #64748b;padding-top:6px;margin-top:35px;}
+  .sig-name{font-size:12px;font-weight:700;color:#0f172a;min-height:16px;}
+  .sig-title{font-size:12.5px;font-weight:700;color:#064e3b;margin-top:2px;}
+  .sig-sub{font-size:10px;color:#64748b;}
+  .footer{margin-top:20px;display:flex;justify-content:space-between;font-size:10px;color:#64748b;border-top:1px dashed #cbd5e1;padding-top:8px;}
   @media print{
-    html,body{padding:0 !important;}
-    .sheet{border-color:#064e3b;}
+    html,body{padding:0 !important;background:#fff !important;}
+    .sheet{box-shadow:none !important;border-color:#94a3b8 !important;}
     .header,.doc-band,.meta{page-break-inside:avoid;break-inside:avoid;}
     table{page-break-inside:auto;}
     tr{page-break-inside:avoid;break-inside:avoid;page-break-after:auto;}
     thead{display:table-header-group;}
     tfoot{display:table-footer-group;}
     .summary-wrap{page-break-inside:avoid;break-inside:avoid;-webkit-column-break-inside:avoid;break-before:auto;}
-    .summary{page-break-inside:avoid;break-inside:avoid;}
-    .stat{page-break-inside:avoid;break-inside:avoid;}
-    .signatures-keeper{page-break-inside:avoid !important;break-inside:avoid-page !important;-webkit-column-break-inside:avoid !important;}
     .signatures-wrap{page-break-inside:avoid !important;break-inside:avoid-page !important;-webkit-column-break-inside:avoid !important;page-break-before:auto;break-before:auto;page-break-after:avoid;}
     .signatures{page-break-inside:avoid !important;break-inside:avoid-page !important;-webkit-column-break-inside:avoid !important;display:flex !important;flex-wrap:nowrap !important;}
     .sig-block{page-break-inside:avoid !important;break-inside:avoid-page !important;-webkit-column-break-inside:avoid !important;}
   }
-  .result-page{position:relative;box-sizing:border-box;padding:2px;width:${orientation === 'landscape' ? 297 - m.left - m.right : 210 - m.left - m.right}mm;height:${orientation === 'landscape' ? 210 - m.top - m.bottom : 297 - m.top - m.bottom}mm;break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid;overflow:hidden;margin:0 auto;}
+  .result-page{position:relative;box-sizing:border-box;padding:0;width:297mm;height:210mm;break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid;overflow:hidden;margin:0 auto;}
   .result-page:last-child{break-after:auto;page-break-after:auto;}
-  .fit-inner{position:absolute;top:2px;left:2px;right:2px;transform-origin:top left;width:calc(100% - 4px);box-sizing:border-box;}
-  .signatures-wrap{margin-top:20px;}
-  .sig-line{margin-top:22px;}
+  .fit-inner{position:absolute;top:0;left:0;right:0;transform-origin:top left;width:100%;box-sizing:border-box;}
+  .signatures-wrap{margin-top:30px;}
+  .sig-line{margin-top:28px;}
 </style>
 <script>
 (function(){
   function fit(){
-    var isLandscape = ${orientation === 'landscape' ? 'true' : 'false'};
     var PX = 96 / 25.4;
-    var pageH = (isLandscape ? 210 : 297) * PX;
-    var pageW = (isLandscape ? 297 : 210) * PX;
-    var availH = pageH - (${m.top} + ${m.bottom}) * PX - 6;
-    var availW = pageW - (${m.left} + ${m.right}) * PX - 6;
+    var pageH = 210 * PX;
+    var pageW = 297 * PX;
+    var availH = pageH - 20 * PX;
+    var availW = pageW - 20 * PX;
     var pages = document.querySelectorAll('.result-page');
     for (var i = 0; i < pages.length; i++) {
       var page = pages[i];
