@@ -257,10 +257,8 @@ export const getResultSheetHtml = ({
     const rank = rankMap.get(idx);
     const merit = hasEnteredAnyMark ? ((bn ? (overall as any).title_bn : (overall as any).title) || (overall as any).title_bn || (overall as any).title || '-') : '-';
     
-    let rankDisplay = hasEnteredAnyMark && rank && rank > 0 ? rank.toString() : '-';
-    if (hasEnteredAnyMark && rank === 1) rankDisplay = bn ? '১ম' : '1st';
-    else if (hasEnteredAnyMark && rank === 2) rankDisplay = bn ? '২য়' : '2nd';
-    else if (hasEnteredAnyMark && rank === 3) rankDisplay = bn ? '৩য়' : '3rd';
+    const rankDisplay = hasEnteredAnyMark ? formatOrdinalRank(rank, bn) : '-';
+
 
     const marksCells = marks.map((mk: number, i: number) => {
       const subjectId = subjects[i].id;
