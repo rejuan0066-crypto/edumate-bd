@@ -1028,6 +1028,8 @@ const AdminResults = () => {
             onSave={() => saveMutation.mutate()}
             isSaving={saveMutation.isPending}
             title={getExamTitle()}
+            lastSaved={lastSavedInfo || null}
+
             onViewMarksheet={(id, rank) => {
               setViewingStudentId(id);
               setViewingStudentRank(rank);
