@@ -7,7 +7,7 @@ import { exportResultCSV, exportResultPDF } from '@/lib/resultExport';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
-import { toBnDigits, toEnDigits } from '@/lib/digits';
+import { toBnDigits, toEnDigits, formatOrdinalRank } from '@/lib/digits';
 import React, { useRef, useEffect } from 'react';
 
 // Legacy export for backward compat
