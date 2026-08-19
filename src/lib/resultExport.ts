@@ -393,7 +393,8 @@ export const getResultSheetHtml = ({
   .row-fail td{background:#fff7ed !important;}
   .status-pass{color:#059669;font-weight:700;}
   .status-fail{color:#dc2626;font-weight:700;}
-  .rank-pill{display:inline-block;min-width:22px;padding:1px 6px;border-radius:999px;background:#064e3b;color:#fff;font-size:10px;font-weight:700;}
+  .rank-pill{display:inline-block;min-width:26px;padding:1px 6px;border-radius:999px;background:#64748b;color:#fff;font-size:10px;font-weight:700;}
+  .rank-pill.rank-top{background:#064e3b;min-width:32px;}
   .grade-A,.grade-AP{color:#059669;}
   .grade-B{color:#0284c7;}
   .grade-C{color:#d97706;}
