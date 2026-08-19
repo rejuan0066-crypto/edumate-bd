@@ -473,10 +473,10 @@ export const getResultSheetHtml = ({
 (function(){
   function fit(){
     var PX = 96 / 25.4;
-    var pageH = 210 * PX;
+    var pageH = 209.5 * PX;
     var pageW = 297 * PX;
-    var availH = pageH - 20 * PX;
-    var availW = pageW - 20 * PX;
+    var availH = pageH - 16 * PX;
+    var availW = pageW - 16 * PX;
     var pages = document.querySelectorAll('.result-page');
     for (var i = 0; i < pages.length; i++) {
       var page = pages[i];
