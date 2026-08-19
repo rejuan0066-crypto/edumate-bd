@@ -129,11 +129,31 @@ export const useGradingSystem = () => {
 
     const avg = subjectMarks.length > 0 ? subjectMarks.reduce((a, b) => a + b, 0) / subjectMarks.length : 0;
 
-    // Graced: keep the subject-level fail intact, but decide the overall
-    // result from the average of all subjects (never forced to a fixed grade).
+    // Graced: subject-level fail stays, overall result comes from the average
+    // of all subjects, but is capped at the configured grace grade (default C).
     if (graced) {
-      return { ...getGrade(avg), hasFail: false, graced: true, failedCount };
+      const byAvg = getGrade(avg);
+      const capGrade = gracePass?.grade || 'C';
+      const capScale = scales.find(s => s.grade === capGrade);
+      if (capScale) {
+        const avgScale = scales.find(s => s.grade === byAvg.grade);
+        const isBetter = avgScale ? avgScale.min > capScale.min : false;
+        if (isBetter) {
+          return {
+            grade: capScale.grade,
+            gpa: capScale.gpa,
+            color: colorMap[capScale.color] || colorMap.destructive,
+            title: capScale.title,
+            title_bn: capScale.title_bn,
+            hasFail: false,
+            graced: true,
+            failedCount,
+          };
+        }
+      }
+      return { ...byAvg, hasFail: false, graced: true, failedCount };
     }
+
 
     return { ...getGrade(avg), hasFail: false, graced: false, failedCount };
   };
