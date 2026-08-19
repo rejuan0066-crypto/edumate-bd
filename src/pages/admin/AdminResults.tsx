@@ -46,7 +46,7 @@ const AdminResults = () => {
   const [exportingClassId, setExportingClassId] = useState<string | null>(null);
 
   // Show class list when we have year+session from URL but no class selected
-  const showClassList = !!examYear && !!examSessionId && !selectedClass && !showResults;
+  const showClassList = searchMode === 'class' && !!examYear && !!examSessionId && !selectedClass && !showResults;
 
   const loadResultsForExam = async (examId: string) => {
     const { data, error } = await supabase.from('results').select('*').eq('exam_id', examId);
