@@ -111,10 +111,8 @@ export const exportResultCSV = (params: ExportData) => {
   const rows = computed.map(({ st, idx, marks, total, overall, failed, hasEnteredAnyMark }) => {
     const avg = subjects.length > 0 ? total / subjects.length : 0;
     const rank = rankMap.get(idx);
-    let rankDisplay = hasEnteredAnyMark && rank ? rank.toString() : '-';
-    if (hasEnteredAnyMark && rank === 1) rankDisplay = bn ? '১ম' : '1st';
-    else if (hasEnteredAnyMark && rank === 2) rankDisplay = bn ? '২য়' : '2nd';
-    else if (hasEnteredAnyMark && rank === 3) rankDisplay = bn ? '৩য়' : '3rd';
+    const rankDisplay = hasEnteredAnyMark ? formatOrdinalRank(rank, bn) : '-';
+
 
     return [
       idx + 1,
