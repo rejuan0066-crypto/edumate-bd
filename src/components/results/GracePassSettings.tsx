@@ -41,7 +41,7 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
   const [applyTo, setApplyTo] = useState<'all' | 'selected'>('all');
   const [classRules, setClassRules] = useState<Record<string, number>>({});
 
-  const { data: classes = [] } = useQuery({
+  const { data: classes = [], refetch: refetchClasses } = useQuery({
     queryKey: ['grace-pass-classes'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -54,7 +54,15 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
         ((a.sort_order ?? 999) - (b.sort_order ?? 999)));
     },
     enabled: open,
+    staleTime: 0,
   });
+
+  useEffect(() => {
+    if (open) {
+      refetchClasses();
+      qc.invalidateQueries({ queryKey: ['grace-pass-classes'] });
+    }
+  }, [open, refetchClasses, qc]);
 
   useEffect(() => {
     const c: any = (row?.config && typeof row.config === 'object') ? row.config : {};
