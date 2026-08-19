@@ -61,16 +61,17 @@ const ResultSelectionBrowser = ({
       {/* Mode Tabs */}
       <div className="border-b border-border bg-muted/30 px-5 pt-4 pb-0">
         <Tabs value={searchMode} onValueChange={(v) => onSearchModeChange(v as 'class' | 'individual')}>
-          <TabsList className="bg-transparent gap-1 p-0 h-auto">
-            <TabsTrigger value="class" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-t-lg rounded-b-none px-5 py-2.5 text-sm font-medium gap-2 border-b-2 border-transparent data-[state=active]:border-primary">
+          <TabsList className="bg-transparent gap-1 p-0 h-auto grid grid-cols-2 w-full max-w-md">
+            <TabsTrigger value="class" className="w-full h-11 justify-center data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-t-lg rounded-b-none px-5 text-sm font-medium gap-2 border-b-2 border-transparent data-[state=active]:border-primary">
               <Users className="w-4 h-4" />
               {bn ? 'ক্লাস-ওয়াইজ' : 'Class-wise'}
             </TabsTrigger>
-            <TabsTrigger value="individual" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-t-lg rounded-b-none px-5 py-2.5 text-sm font-medium gap-2 border-b-2 border-transparent data-[state=active]:border-primary">
+            <TabsTrigger value="individual" className="w-full h-11 justify-center data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-t-lg rounded-b-none px-5 text-sm font-medium gap-2 border-b-2 border-transparent data-[state=active]:border-primary">
               <User className="w-4 h-4" />
-              {bn ? 'ব্যক্তিগত' : 'Individual'}
+              {bn ? 'একক রেজাল্ট' : 'Individual Result'}
             </TabsTrigger>
           </TabsList>
+
         </Tabs>
       </div>
 
