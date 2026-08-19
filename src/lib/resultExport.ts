@@ -310,16 +310,16 @@ export const getResultSheetHtml = ({
             ${colgroupHtml}
             <thead>
               <tr>
-                <th>${bn ? 'ক্রম' : '#'}</th>
-                <th>${bn ? 'রোল' : 'Roll'}</th>
-                <th>${bn ? 'নাম' : 'Name'}</th>
+                <th style="width:40px">${bn ? 'ক্রম' : '#'}</th>
+                <th style="width:60px">${bn ? 'রোল' : 'Roll'}</th>
+                <th style="width:180px; text-align:left; padding-left:10px;">${bn ? 'নাম' : 'Name'}</th>
                 ${subjectHeaders}
-                <th>${bn ? 'মোট' : 'Total'}</th>
-                <th>${bn ? 'গড়' : 'Avg'}</th>
-                <th>${bn ? 'গ্রেড' : 'Grade'}</th>
-                <th>GPA</th>
-                <th>${bn ? 'মর্যাদা' : 'Merit'}</th>
-                <th>${bn ? 'মেধা' : 'Rank'}</th>
+                <th style="width:60px">${bn ? 'মোট' : 'Total'}</th>
+                <th style="width:50px">${bn ? 'গড়' : 'Avg'}</th>
+                <th style="width:60px">${bn ? 'গ্রেড' : 'Grade'}</th>
+                <th style="width:50px">GPA</th>
+                <th style="width:100px">${bn ? 'মর্যাদা' : 'Merit'}</th>
+                <th style="width:60px">${bn ? 'মেধা' : 'Rank'}</th>
               </tr>
             </thead>
             <tbody>${rowsHtml}</tbody>
