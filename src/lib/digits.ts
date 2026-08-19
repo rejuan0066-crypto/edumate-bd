@@ -32,3 +32,21 @@ export function parseLocaleNumber(input: string): number {
   if (en === '' || en === '-' || en === '.' || en === '-.') return NaN;
   return Number(en);
 }
+
+/** Bengali/English ordinal label for merit rank (১ম, ২য়, ৩য়, ৪র্থ ...) */
+export function formatOrdinalRank(n: number | null | undefined, bn = true): string {
+  if (!n || n < 1) return '-';
+  if (!bn) {
+    const s = ['th', 'st', 'nd', 'rd'];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  }
+  const specials: Record<number, string> = {
+    1: '১ম', 2: '২য়', 3: '৩য়', 4: '৪র্থ', 5: '৫ম', 6: '৬ষ্ঠ',
+    7: '৭ম', 8: '৮ম', 9: '৯ম', 10: '১০ম', 11: '১১তম', 12: '১২তম',
+    13: '১৩তম', 14: '১৪তম', 15: '১৫তম', 16: '১৬তম', 17: '১৭তম',
+    18: '১৮তম', 19: '১৯তম', 20: '২০তম',
+  };
+  if (specials[n]) return specials[n];
+  return `${toBnDigits(n)}তম`;
+}
