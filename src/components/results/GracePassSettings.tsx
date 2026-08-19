@@ -8,7 +8,6 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useGradingSystem } from '@/hooks/useGradingSystem';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -21,7 +20,6 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const qc = useQueryClient();
-  const { scales } = useGradingSystem();
 
   const { data: row, isLoading } = useQuery({
     queryKey: ['grace-pass-rule'],
