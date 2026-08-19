@@ -395,9 +395,9 @@ ${(() => {
   }).join('');
 })()}
 <style>
-  .result-page{position:relative;width:${orientation === 'landscape' ? 297 - m.left - m.right : 210 - m.left - m.right}mm;height:${orientation === 'landscape' ? 210 - m.top - m.bottom : 297 - m.top - m.bottom}mm;break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid;overflow:hidden;}
+  .result-page{position:relative;width:${orientation === 'landscape' ? 297 - m.left - m.right : 210 - m.left - m.right}mm;height:${orientation === 'landscape' ? 210 - m.top - m.bottom : 297 - m.top - m.bottom}mm;break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid;overflow:hidden;margin:0 auto;}
   .result-page:last-child{break-after:auto;page-break-after:auto;}
-  .fit-inner{position:absolute;top:0;left:0;transform-origin:top left;}
+  .fit-inner{position:absolute;top:0;left:0;right:0;transform-origin:top center;width:100%;}
   .signatures-wrap{margin-top:20px;}
   .sig-line{margin-top:22px;}
 </style>
@@ -416,13 +416,14 @@ ${(() => {
       var inner = page.querySelector('.fit-inner');
       if (!inner) continue;
       inner.style.transform = 'none';
-      inner.style.width = availW + 'px';
+      inner.style.width = '100%';
       var h = inner.scrollHeight;
       var w = inner.scrollWidth;
       var scale = Math.min(1, availH / h, availW / w);
       if (scale < 1) {
         scale = Math.max(0.45, scale - 0.015);
         inner.style.transform = 'scale(' + scale + ')';
+        inner.style.width = (availW / scale) + 'px';
       }
     }
   }
@@ -469,7 +470,14 @@ const renderPrintDocument = (html: string, title: string) => {
         const win = iframe.contentWindow;
         if (!win) return;
         win.focus();
-        win.print();
+        // Force the same width/scaling check in the print window if possible
+        if (win.document.readyState === 'complete') {
+          win.print();
+        } else {
+          win.onload = () => {
+            setTimeout(() => win.print(), 100);
+          };
+        }
       } catch {
         /* ignore */
       }
