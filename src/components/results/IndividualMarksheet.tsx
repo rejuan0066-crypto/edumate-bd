@@ -51,106 +51,140 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
   const studentName = bn ? student.name_bn : (student.name_en || student.name_bn);
 
   const handlePrint = () => {
-    window.print();
+    const printContent = document.getElementById('marksheet-printable-area');
+    if (!printContent) return;
+    
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>${examTitle} - ${studentName}</title>
+          <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;800&display=swap" rel="stylesheet">
+          <script src="https://cdn.tailwindcss.com"></script>
+          <style>
+            @page { size: A4 portrait; margin: 10mm; }
+            body { 
+              font-family: 'Noto Sans Bengali', sans-serif; 
+              background: white; 
+              color: black;
+              margin: 0;
+              padding: 0;
+            }
+            .printable-sheet { width: 100%; }
+          </style>
+        </head>
+        <body>
+          <div class="printable-sheet">
+            ${printContent.innerHTML}
+          </div>
+          <script>
+            window.onload = () => {
+              setTimeout(() => {
+                window.print();
+                window.close();
+              }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   return (
-    <div className="space-y-4 print:hidden">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4">
+      <div className="flex justify-between items-center print:hidden">
         <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5">
           <ArrowLeft className="w-4 h-4" />
           {bn ? 'ফিরে যান' : 'Back'}
         </Button>
         <Button size="sm" onClick={handlePrint} className="gap-1.5 bg-emerald-700 hover:bg-emerald-800">
           <Printer className="w-4 h-4" />
-          {bn ? 'প্রিন্ট' : 'Print'}
+          {bn ? 'প্রিন্ট / PDF' : 'Print / PDF'}
         </Button>
       </div>
 
-      <div className="printable-sheet mx-auto max-w-[210mm] min-h-[297mm] bg-white text-black p-[10mm] shadow-lg border border-gray-200">
-        <style>{`
-          @page { size: A4 portrait; margin: 10mm; }
-          @media print {
-            .print\\:hidden { display: none !important; }
-            .printable-sheet { box-shadow: none; border: none; }
-          }
-        `}</style>
-        
+      <div id="marksheet-printable-area" className="mx-auto max-w-[210mm] min-h-[297mm] bg-white text-black p-[10mm] shadow-lg border border-gray-200 print:shadow-none print:border-none print:p-0">
         {/* Header */}
-        <div className="bg-[#1e5d3b] text-white p-4 text-center rounded-t-lg">
-          <div className="flex items-center justify-center gap-4">
-            {institution?.logo_url && <img src={institution.logo_url} alt="Logo" className="w-16 h-16 object-contain bg-white p-1 rounded-full" />}
+        <div className="bg-[#1e5d3b] text-white p-6 text-center rounded-t-lg">
+          <div className="flex items-center justify-center gap-6">
+            {institution?.logo_url && <img src={institution.logo_url} alt="Logo" className="w-20 h-20 object-contain bg-white p-1 rounded-full" />}
             <div>
-              <h1 className="text-xl font-bold">আল-আরাবিয়া ছোবহানিয়া হাফিজিয়া মাদ্রাসা</h1>
-              <p className="text-sm opacity-90">{institution?.address}</p>
+              <h1 className="text-2xl font-extrabold tracking-tight">আল-আরাবিয়া ছোবহানিয়া হাফিজিয়া মাদ্রাসা</h1>
+              <p className="text-sm opacity-90 mt-1">{institution?.address}</p>
               <p className="text-sm opacity-90">{institution?.phone}</p>
             </div>
           </div>
-          <div className="mt-4 pt-2 border-t border-emerald-500">
-            <h2 className="text-lg font-bold">মার্কশিট</h2>
-            <p className="text-sm italic">{examTitle}</p>
+          <div className="mt-6 pt-3 border-t border-emerald-500/50">
+            <h2 className="text-xl font-bold tracking-wider">মার্কশিট</h2>
+            <p className="text-sm italic opacity-80">{examTitle}</p>
           </div>
         </div>
 
         {/* Student Info */}
-        <div className="bg-gray-100 p-4 my-4 rounded border border-gray-300 grid grid-cols-2 gap-4 text-sm">
-          <div><span className="font-bold">নাম:</span> {studentName}</div>
-          <div><span className="font-bold">রোল নম্বর:</span> {student.roll_number}</div>
-          <div><span className="font-bold">রেজিস্ট্রেশন:</span> {student.registration_number || student.student_id}</div>
-          <div><span className="font-bold">জন্ম তারিখ:</span> {student.date_of_birth}</div>
+        <div className="bg-gray-50 p-6 my-6 rounded-lg border border-gray-200 grid grid-cols-2 gap-y-4 gap-x-8 text-[15px]">
+          <div className="flex items-center gap-2"><span className="font-bold text-gray-700 w-24">নাম:</span> <span>{studentName}</span></div>
+          <div className="flex items-center gap-2"><span className="font-bold text-gray-700 w-24">রোল নম্বর:</span> <span>{student.roll_number}</span></div>
+          <div className="flex items-center gap-2"><span className="font-bold text-gray-700 w-24">রেজিস্ট্রেশন:</span> <span>{student.registration_number || student.student_id}</span></div>
+          <div className="flex items-center gap-2"><span className="font-bold text-gray-700 w-24">জন্ম তারিখ:</span> <span>{student.date_of_birth}</span></div>
         </div>
 
         {/* Subjects Table */}
-        <table className="w-full border-collapse border border-gray-400 my-4 text-sm">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="border border-gray-400 p-2">#</th>
-              <th className="border border-gray-400 p-2 text-left">বিষয়</th>
-              <th className="border border-gray-400 p-2">পূর্ণমান</th>
-              <th className="border border-gray-400 p-2">প্রাপ্ত নম্বর</th>
-              <th className="border border-gray-400 p-2">গ্রেড</th>
-              <th className="border border-gray-400 p-2">GPA</th>
-            </tr>
-          </thead>
-          <tbody>
-            {subjectResults.map((r, i) => (
-              <tr key={i}>
-                <td className="border border-gray-400 p-2 text-center">{i + 1}</td>
-                <td className="border border-gray-400 p-2">{bn ? r.subject.name_bn : r.subject.name}</td>
-                <td className="border border-gray-400 p-2 text-center">100</td>
-                <td className="border border-gray-400 p-2 text-center font-bold">{r.marks}</td>
-                <td className="border border-gray-400 p-2 text-center">{r.grade}</td>
-                <td className="border border-gray-400 p-2 text-center">{r.gpa}</td>
+        <div className="overflow-hidden rounded-lg border border-gray-300 my-6">
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="bg-gray-100 border-b border-gray-300">
+                <th className="border-r border-gray-300 p-3 w-12">#</th>
+                <th className="border-r border-gray-300 p-3 text-left">বিষয়</th>
+                <th className="border-r border-gray-300 p-3 w-24">পূর্ণমান</th>
+                <th className="border-r border-gray-300 p-3 w-24">প্রাপ্ত নম্বর</th>
+                <th className="border-r border-gray-300 p-3 w-20">গ্রেড</th>
+                <th className="p-3 w-20">GPA</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {subjectResults.map((r, i) => (
+                <tr key={i} className="border-b border-gray-200 last:border-0 hover:bg-gray-50 transition-colors">
+                  <td className="border-r border-gray-300 p-3 text-center text-gray-500">{i + 1}</td>
+                  <td className="border-r border-gray-300 p-3 font-medium">{bn ? r.subject.name_bn : r.subject.name}</td>
+                  <td className="border-r border-gray-300 p-3 text-center">100</td>
+                  <td className="border-r border-gray-300 p-3 text-center font-bold text-lg">{r.marks}</td>
+                  <td className="border-r border-gray-300 p-3 text-center font-semibold">{r.grade}</td>
+                  <td className="p-3 text-center font-semibold text-emerald-700">{r.gpa}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-5 gap-2 my-4">
+        <div className="grid grid-cols-5 gap-3 my-8">
           {[
-            { label: 'মোট নম্বর', value: totalMarks },
-            { label: 'গড়', value: avgMarks.toFixed(1) },
-            { label: 'গ্রেড', value: overall.grade },
-            { label: 'GPA', value: overall.gpa },
-            { label: 'ফলাফল', value: morjada },
+            { label: 'মোট নম্বর', value: totalMarks, color: 'bg-blue-50 text-blue-800 border-blue-200' },
+            { label: 'গড়', value: avgMarks.toFixed(1), color: 'bg-amber-50 text-amber-800 border-amber-200' },
+            { label: 'গ্রেড', value: overall.grade, color: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
+            { label: 'GPA', value: overall.gpa, color: 'bg-indigo-50 text-indigo-800 border-indigo-200' },
+            { label: 'ফলাফল', value: morjada, color: 'bg-rose-50 text-rose-800 border-rose-200' },
           ].map((item, i) => (
-            <div key={i} className="border border-gray-400 p-2 text-center rounded bg-gray-50">
-              <div className="text-[10px] font-bold uppercase">{item.label}</div>
-              <div className="text-xl font-bold">{item.value}</div>
+            <div key={i} className={`border p-4 text-center rounded-xl shadow-sm ${item.color}`}>
+              <div className="text-[11px] font-bold uppercase tracking-wider mb-1 opacity-70">{item.label}</div>
+              <div className="text-xl font-black">{item.value}</div>
             </div>
           ))}
         </div>
 
         {/* Footer Signatures */}
-        <div className="mt-16 flex justify-between gap-4 text-center text-xs">
+        <div className="mt-20 flex justify-between gap-12 text-center text-[13px] font-bold text-gray-800">
           {['শ্রেণি শিক্ষক', 'পরীক্ষা নিয়ন্ত্রক', 'শিক্ষা সচিব', 'মুহতামিম / অধ্যক্ষ'].map((role, i) => (
-            <div key={i} className="w-full">
-              <div className="border-t border-gray-400 pt-2">{role}</div>
+            <div key={i} className="flex-1">
+              <div className="border-t-2 border-gray-900 pt-3">{role}</div>
             </div>
           ))}
         </div>
       </div>
+
     </div>
   );
 };
