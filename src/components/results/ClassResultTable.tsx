@@ -105,7 +105,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
       </div>
 
       {/* Title & Actions Bar */}
-      <div className="sticky top-[81px] z-20 flex items-center justify-between px-5 py-3 border-b border-border bg-background/95 backdrop-blur-sm shadow-sm">
+      <div className="sticky top-[81px] sm:top-[89px] lg:top-[112px] z-20 flex items-center justify-between px-5 py-3 border-b border-border bg-background/95 backdrop-blur-sm shadow-sm">
         <div className="flex items-center gap-2">
           {onClose && (
             <button onClick={onClose} className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title={bn ? 'বন্ধ করুন' : 'Close'}>
@@ -133,11 +133,11 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
 
       <div className="relative z-10 overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="sticky top-[133px] z-20 bg-background/95 backdrop-blur-sm shadow-sm">
+          <thead className="sticky top-[133px] sm:top-[141px] lg:top-[164px] z-20 bg-background/95 backdrop-blur-sm shadow-sm">
             <tr className="border-b border-border">
               <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground w-10">#</th>
-              <th className="sticky left-0 z-20 px-3 py-3 text-left text-xs font-semibold text-muted-foreground bg-background/95 backdrop-blur-sm shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">{bn ? 'রোল' : 'Roll'}</th>
-              <th className="sticky left-[60px] sm:left-[80px] z-20 px-3 py-3 text-left text-xs font-semibold text-muted-foreground bg-background/95 backdrop-blur-sm shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[120px]">{bn ? 'নাম' : 'Name'}</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground">{bn ? 'রোল' : 'Roll'}</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground min-w-[120px]">{bn ? 'নাম' : 'Name'}</th>
               {subjects.map((s: any) => (
                 <th key={s.id} className="px-2 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[70px]">
                   {bn ? s.name_bn : s.name}
@@ -187,14 +187,12 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
                 return (
                   <tr key={st.id} className={`hover:bg-muted/20 transition-colors ${failed ? 'bg-destructive/5' : ''}`}>
                     <td className="px-3 py-2 text-muted-foreground text-xs">{originalIdx + 1}</td>
-                    <td className="sticky left-0 z-10 px-3 py-2 font-medium text-foreground bg-background/95 backdrop-blur-sm shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                    <td className="px-3 py-2 font-medium text-foreground">
                       <div className="flex flex-col">
                         <span>{st.roll_number || '-'}</span>
                       </div>
                     </td>
-                    <td className="sticky left-[60px] sm:left-[80px] z-10 px-3 py-2 text-foreground bg-background/95 backdrop-blur-sm shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[120px]">
-                      {bn ? st.name_bn : (st.name_en || st.name_bn)}
-                    </td>
+                    <td className="px-3 py-2 text-foreground">{bn ? st.name_bn : (st.name_en || st.name_bn)}</td>
                   {subjects.map((sub: any) => {
                     const mark = marksMap[`${st.id}_${sub.id}`] ?? 0;
                     const isFail = mark < passMark && mark > 0;
