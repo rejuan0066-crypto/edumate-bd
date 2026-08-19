@@ -130,7 +130,7 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
     const total = marks.reduce((a, b) => a + b, 0);
     const avg = subjects.length > 0 ? total / subjects.length : 0;
     const overall = getOverallGrade(marks);
-    const failed = marks.some(m => m < passMark) || overall.hasFail;
+    const failed = (overall as any).graced ? false : (marks.some(m => m < passMark) || overall.hasFail);
     return { idx, st, marks, total, avg, overall, failed };
   });
   const sortedByTotal = [...computed].sort((a, b) => b.total - a.total);
