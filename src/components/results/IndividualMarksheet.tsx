@@ -6,6 +6,7 @@ import { getGrade } from './ClassResultTable';
 import { useQuery } from '@tanstack/react-query';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { useGradingSystem } from '@/hooks/useGradingSystem';
+import { toBnDigits } from '@/lib/digits';
 
 interface IndividualMarksheetProps {
   student: any;
@@ -14,6 +15,9 @@ interface IndividualMarksheetProps {
   examTitle: string;
   onBack: () => void;
   rank?: number;
+  className?: string;
+  examName?: string;
+  sessionName?: string;
 }
 
 const getMorjada = (grade: string) => {
@@ -25,7 +29,7 @@ const getMorjada = (grade: string) => {
   return 'রাসিব'; 
 };
 
-const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, rank }: IndividualMarksheetProps) => {
+const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, rank, className, examName, sessionName }: IndividualMarksheetProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { getOverallGrade } = useGradingSystem();
@@ -50,6 +54,20 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
   const instName = bn ? institution?.name : (institution?.name_en || institution?.name);
   const studentName = bn ? student.name_bn : (student.name_en || student.name_bn);
 
+  // [Roll] - [Name] - [Class] - [Exam] - [Session]
+  const titleParts = String(examTitle || '').split('—').map(x => x.trim()).filter(Boolean);
+  const resolvedExam = examName || titleParts[0] || '';
+  const resolvedClass = className || titleParts[1] || '';
+  const resolvedSession = sessionName || titleParts[2] || '';
+  const docName = [
+    student?.roll_number ? (bn ? toBnDigits(student.roll_number) : String(student.roll_number)) : '',
+    studentName,
+    resolvedClass,
+    resolvedExam,
+    bn ? toBnDigits(resolvedSession) : resolvedSession,
+  ].map(x => (x || '').trim()).filter(Boolean).join(' - ');
+  const safeDocName = docName.replace(/[\\/:*?"<>|]+/g, '_').replace(/\s+/g, ' ').trim() || 'marksheet';
+
   const handleDownloadPdf = async () => {
     const { downloadSlipAsPdf } = await import('@/lib/salarySlipPdf');
     const printContent = document.getElementById('marksheet-printable-area');
@@ -60,7 +78,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
       <html>
         <head>
           <meta charset="utf-8">
-          <title>${examTitle} - ${studentName}</title>
+          <title>${docName}</title>
           <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;800&display=swap" rel="stylesheet">
           <script src="https://cdn.tailwindcss.com"></script>
           <style>
@@ -84,7 +102,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </body>
       </html>
     `;
-    await downloadSlipAsPdf(html, `${studentName}_marksheet.pdf`);
+    await downloadSlipAsPdf(html, `${safeDocName}.pdf`);
   };
 
   const handlePrint = () => {
@@ -93,11 +111,14 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
     
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
+    const prevTitle = document.title;
+    document.title = docName;
+    setTimeout(() => { document.title = prevTitle; }, 30000);
 
     printWindow.document.write(`
       <html>
         <head>
-          <title>${examTitle} - ${studentName}</title>
+          <title>${docName}</title>
           <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;800&display=swap" rel="stylesheet">
           <script src="https://cdn.tailwindcss.com"></script>
           <style>
