@@ -87,42 +87,45 @@ export const exportResultCSV = (params: ExportData) => {
   ];
 
   const computed = students.map((st: any, idx: number) => {
+    const hasEnteredAnyMark = subjects.some((sub: any) => marksMap[`${st.id}_${sub.id}`] !== undefined);
     const marks = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`] ?? 0);
-    const total = marks.reduce((a, b) => a + b, 0);
-    const overall = getOverallGrade(marks, st.class_id);
-    const failed = (overall as any).graced ? false : (marks.some(m => m < (params?.passMark || 33)) || overall.hasFail);
-    return { idx, st, marks, total, overall, failed };
+    const total = hasEnteredAnyMark ? marks.reduce((a, b) => a + b, 0) : 0;
+    const overall = hasEnteredAnyMark ? getOverallGrade(marks, st.class_id) : { grade: '-', gpa: '-', hasFail: false };
+    const failed = hasEnteredAnyMark ? ((overall as any).graced ? false : (marks.some(m => m < (params?.passMark || 33) && m > 0) || overall.hasFail)) : false;
+    return { idx, st, marks, total, overall, failed, hasEnteredAnyMark };
   });
 
-  const sortedByTotal = [...computed].sort((a, b) => {
-    if (a.failed && !b.failed) return 1;
-    if (!a.failed && b.failed) return -1;
-    return b.total - a.total;
-  });
+  const sortedByTotal = [...computed]
+    .filter(a => a.hasEnteredAnyMark)
+    .sort((a, b) => {
+      if (a.failed && !b.failed) return 1;
+      if (!a.failed && b.failed) return -1;
+      return b.total - a.total;
+    });
 
   const rankMap = new Map<number, number>();
   sortedByTotal.forEach((r, i) => {
     if (!r.failed) rankMap.set(r.idx, i + 1);
   });
 
-  const rows = computed.map(({ st, idx, marks, total, overall, failed }) => {
+  const rows = computed.map(({ st, idx, marks, total, overall, failed, hasEnteredAnyMark }) => {
     const avg = subjects.length > 0 ? total / subjects.length : 0;
     const rank = rankMap.get(idx);
-    let rankDisplay = rank ? rank.toString() : '-';
-    if (rank === 1) rankDisplay = bn ? '১ম' : '1st';
-    else if (rank === 2) rankDisplay = bn ? '২য়' : '2nd';
-    else if (rank === 3) rankDisplay = bn ? '৩য়' : '3rd';
+    let rankDisplay = hasEnteredAnyMark && rank ? rank.toString() : '-';
+    if (hasEnteredAnyMark && rank === 1) rankDisplay = bn ? '১ম' : '1st';
+    else if (hasEnteredAnyMark && rank === 2) rankDisplay = bn ? '২য়' : '2nd';
+    else if (hasEnteredAnyMark && rank === 3) rankDisplay = bn ? '৩য়' : '3rd';
 
     return [
       idx + 1,
       st.roll_number || '-',
       bn ? st.name_bn : (st.name_en || st.name_bn),
-      ...marks,
-      total,
-      avg.toFixed(1),
+      ...marks.map((m, i) => marksMap[`${st.id}_${subjects[i].id}`] !== undefined ? m : '-'),
+      hasEnteredAnyMark ? total : '-',
+      hasEnteredAnyMark ? avg.toFixed(1) : '-',
       overall.grade,
       overall.gpa,
-      bn ? overall.title_bn : overall.title,
+      hasEnteredAnyMark ? (bn ? overall.title_bn : overall.title) : '-',
       rankDisplay,
     ];
   });
