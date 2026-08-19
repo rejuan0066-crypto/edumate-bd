@@ -159,21 +159,39 @@ const ResultSelectionBrowser = ({
           </div>
         </div>
 
-        {/* Individual mode roll input */}
+        {/* Individual (একক রেজাল্ট) form: class + roll + search */}
         {searchMode === 'individual' && (
-          <div className="flex gap-2">
-            <Input
-              placeholder={bn ? 'রোল / রেজিস্ট্রেশন নম্বর' : 'Roll / Reg. Number'}
-              value={rollNumber}
-              onChange={(e) => onRollNumberChange(e.target.value)}
-              className="bg-background"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 items-end">
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-1.5">{bn ? 'শ্রেণি' : 'Class'}</p>
+              <Select value={selectedClass || undefined} onValueChange={(v) => onClassChange?.(v)} disabled={!examSession}>
+                <SelectTrigger className="bg-background h-10">
+                  <SelectValue placeholder={bn ? 'ক্লাস সিলেক্ট করুন' : 'Select class'} />
+                </SelectTrigger>
+                <SelectContent className="max-h-72">
+                  {classes.map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>{bn ? (c.name_bn || c.name) : c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-1.5">{bn ? 'রোল / রেজিস্ট্রেশন' : 'Roll / Reg.'}</p>
+              <Input
+                placeholder={bn ? 'রোল / রেজিস্ট্রেশন নম্বর' : 'Roll / Reg. Number'}
+                value={rollNumber}
+                onChange={(e) => onRollNumberChange(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') onSearch(); }}
+                className="bg-background h-10"
+              />
+            </div>
             <Button onClick={onSearch} className="btn-primary-gradient h-10">
               <Search className="w-4 h-4 mr-2" />
               {bn ? 'অনুসন্ধান' : 'Search'}
             </Button>
           </div>
         )}
+
       </div>
     </div>
   );
