@@ -386,6 +386,8 @@ const AdminResults = () => {
     refetchFooterOptions();
   };
   const [sigDialogOpen, setSigDialogOpen] = useState(false);
+  const [graceDialogOpen, setGraceDialogOpen] = useState(false);
+
   const [sigDraft, setSigDraft] = useState<ResultSignatory[]>(DEFAULT_RESULT_SIGNATORIES);
   const [sigErrors, setSigErrors] = useState<Record<number, { title?: string; name?: string; title_bn?: string; title_en?: string; name_bn?: string; name_en?: string }>>({});
   useEffect(() => { setSigDraft(signatories); setSigErrors({}); }, [signatories]);
