@@ -357,7 +357,7 @@ export const getResultSheetHtml = ({
   body{font-family:'Kalpurush','Noto Sans Bengali','SutonnyOMJ','Inter',sans-serif;color:#0f172a;background:#fff;}
   .screen-pageinfo{display:none;}
   @media screen{body{padding:6mm 8mm;}.screen-pageinfo{display:flex;justify-content:flex-end;font-size:10px;color:#94a3b8;margin-top:6px;}}
-  .sheet{border:2px solid #064e3b;border-radius:6px;padding:10px 14px 14px;}
+  .sheet{border:2px solid #064e3b;border-radius:6px;padding:10px 14px 14px;box-sizing:border-box;width:100%;}
   .header{display:grid;grid-template-columns:60px 1fr 60px;gap:12px;align-items:center;border-bottom:2px double #064e3b;padding-bottom:8px;}
   .header-logo{width:60px;height:60px;object-fit:contain;}
   .header-text{text-align:center;}
