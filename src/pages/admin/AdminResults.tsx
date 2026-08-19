@@ -260,23 +260,36 @@ const AdminResults = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (!selectedExamId) return;
-      const upserts = Object.entries(marksMap).map(([key, marks]) => {
-        const [student_id, subject_id] = key.split('_');
-        const { grade, gpa } = getGrade(marks);
-        return { exam_id: selectedExamId, student_id, subject_id, marks, grade, gpa: parseFloat(gpa) };
-      });
-      if (await checkApproval('edit', { exam_id: selectedExamId, results_count: upserts.length, results: upserts }, selectedExamId, `ফলাফল সংরক্ষণ`)) return;
+      if (!selectedExamId) return { saved: false as const, reason: 'no-exam' as const };
+      const upserts = Object.entries(marksMap)
+        .filter(([, marks]) => marks !== undefined && marks !== null)
+        .map(([key, marks]) => {
+          const [student_id, subject_id] = key.split('_');
+          const { grade, gpa } = getGrade(marks);
+          return { exam_id: selectedExamId, student_id, subject_id, marks, grade, gpa: parseFloat(gpa) };
+        });
+      if (upserts.length === 0) return { saved: false as const, reason: 'empty' as const };
+      if (await checkApproval('edit', { exam_id: selectedExamId, results_count: upserts.length, results: upserts }, selectedExamId, `ফলাফল সংরক্ষণ`)) {
+        return { saved: false as const, reason: 'approval' as const };
+      }
       const { error } = await supabase.from('results').upsert(upserts, { onConflict: 'exam_id,student_id,subject_id' });
       if (error) throw error;
+      return { saved: true as const, count: upserts.length };
     },
-    onSuccess: async () => {
+    onSuccess: async (res: any) => {
+      if (!res?.saved) {
+        if (res?.reason === 'empty') {
+          toast.error(bn ? 'সংরক্ষণের জন্য কোনো নম্বর পাওয়া যায়নি' : 'No marks to save');
+        }
+        return;
+      }
       queryClient.invalidateQueries({ queryKey: ['results'] });
       queryClient.invalidateQueries({ queryKey: ['class-result-status'] });
+      queryClient.invalidateQueries({ queryKey: ['results-last-saved'] });
       if (selectedExamId) {
         await loadResultsForExam(selectedExamId);
       }
-      toast.success(bn ? 'ফলাফল সংরক্ষিত হয়েছে' : 'Results saved');
+      toast.success(bn ? `ফলাফল সংরক্ষিত হয়েছে (${res.count})` : `Results saved (${res.count})`);
     },
     onError: (e: any) => toast.error(e.message || 'Error'),
   });
