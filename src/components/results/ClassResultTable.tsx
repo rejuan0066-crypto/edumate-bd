@@ -173,9 +173,9 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
           {/* Rows */}
           {studentsWithStats.map(({ st, originalIdx, failed }) => (
             <div key={st.id} className={`flex border-b border-border shrink-0 min-h-[48px] items-center hover:bg-slate-50 transition-colors ${failed ? 'bg-destructive/5' : 'bg-white'}`}>
-              <div className="w-8 sm:w-10 px-1 sm:px-2 py-2 text-center text-[10px] sm:text-xs text-muted-foreground border-r border-border shrink-0">{originalIdx + 1}</div>
+              <div className="w-8 sm:w-10 px-1 sm:px-2 py-2 text-center text-[10px] sm:text-xs text-muted-foreground border-r border-border shrink-0">{toBnDigits(originalIdx + 1)}</div>
               <div className="w-10 sm:w-16 px-1 sm:px-2 py-2 text-center text-[10px] sm:text-xs font-medium text-foreground border-r border-border shrink-0">
-                {bn ? toBnDigits(st.roll_number || 0) : (st.roll_number || '-')}
+                {st.roll_number ? toBnDigits(st.roll_number) : '-'}
               </div>
               <div className="flex-1 px-2 py-2 text-[10px] sm:text-xs font-medium text-foreground truncate">
                 {bn ? st.name_bn : (st.name_en || st.name_bn)}
@@ -210,7 +210,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
           {/* Rows */}
           {studentsWithStats.map(({ st, total, avg, overall, failed, hasEnteredAnyMark }) => {
             const rank = rankMap.get(st.id);
-            const rankDisplay = formatOrdinalRank(rank, bn);
+            const rankDisplay = formatOrdinalRank(rank, true);
 
 
             return (
@@ -225,7 +225,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
                         type="text"
                         inputMode="numeric"
                         data-bijoy={bn}
-                        value={mark === 0 ? '' : (bn ? toBnDigits(mark) : String(mark))}
+                        value={mark === 0 ? '' : toBnDigits(mark)}
                         onChange={(e) => {
                           const raw = toEnDigits(e.target.value).replace(/[^0-9]/g, '');
                           if (raw === '') { onMarksChange(`${st.id}_${sub.id}`, 0); return; }
@@ -237,16 +237,16 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
                     </div>
                   );
                 })}
-                <div className="w-[60px] sm:w-[80px] px-2 py-2 text-center text-[10px] sm:text-xs font-bold border-r border-border shrink-0">{hasEnteredAnyMark ? (bn ? toBnDigits(total) : total) : '-'}</div>
-                <div className="w-[60px] sm:w-[80px] px-2 py-2 text-center text-[10px] sm:text-xs text-muted-foreground border-r border-border shrink-0">{hasEnteredAnyMark ? (bn ? toBnDigits(parseFloat(avg.toFixed(1))) : avg.toFixed(1)) : '-'}</div>
+                <div className="w-[60px] sm:w-[80px] px-2 py-2 text-center text-[10px] sm:text-xs font-bold border-r border-border shrink-0">{hasEnteredAnyMark ? toBnDigits(total) : '-'}</div>
+                <div className="w-[60px] sm:w-[80px] px-2 py-2 text-center text-[10px] sm:text-xs text-muted-foreground border-r border-border shrink-0">{hasEnteredAnyMark ? toBnDigits(avg.toFixed(1)) : '-'}</div>
                 <div className="w-[60px] sm:w-[80px] px-2 py-2 text-center border-r border-border shrink-0">
                   {overall ? (
                     <span className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold ${overall.color}`}>
-                      {overall.grade}
+                      {String(overall.grade).toUpperCase()}
                     </span>
                   ) : '-'}
                 </div>
-                <div className="w-[60px] sm:w-[80px] px-2 py-2 text-center text-[10px] sm:text-xs font-semibold text-primary border-r border-border shrink-0">{overall ? (bn ? toBnDigits(parseFloat(overall.gpa)) : overall.gpa) : '-'}</div>
+                <div className="w-[60px] sm:w-[80px] px-2 py-2 text-center text-[10px] sm:text-xs font-semibold text-primary border-r border-border shrink-0">{overall ? toBnDigits(overall.gpa) : '-'}</div>
                 <div className="w-[80px] sm:w-[100px] px-2 py-2 text-center text-[9px] sm:text-[10px] font-medium text-muted-foreground border-r border-border shrink-0 truncate">
                   {overall ? (bn ? overall.title_bn : overall.title) : '-'}
                 </div>

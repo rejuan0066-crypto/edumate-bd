@@ -1,5 +1,5 @@
 import { CANONICAL_BANGLA_LABELS as L } from './banglaCanonicalLabels';
-import { formatOrdinalRank } from './digits';
+import { formatOrdinalRank, toBnDigits } from './digits';
 
 
 interface ExportData {
@@ -113,7 +113,7 @@ export const exportResultCSV = (params: ExportData) => {
   const rows = computed.map(({ st, idx, marks, total, overall, failed, hasEnteredAnyMark }) => {
     const avg = subjects.length > 0 ? total / subjects.length : 0;
     const rank = rankMap.get(idx);
-    const rankDisplay = hasEnteredAnyMark ? formatOrdinalRank(rank, bn) : '-';
+    const rankDisplay = hasEnteredAnyMark ? formatOrdinalRank(rank, true) : '-';
 
 
     return [
@@ -257,24 +257,24 @@ export const getResultSheetHtml = ({
     const rank = rankMap.get(idx);
     const merit = hasEnteredAnyMark ? ((bn ? (overall as any).title_bn : (overall as any).title) || (overall as any).title_bn || (overall as any).title || '-') : '-';
     
-    const rankDisplay = hasEnteredAnyMark ? formatOrdinalRank(rank, bn) : '-';
+    const rankDisplay = hasEnteredAnyMark ? formatOrdinalRank(rank, true) : '-';
 
 
     const marksCells = marks.map((mk: number, i: number) => {
       const subjectId = subjects[i].id;
       const isEntered = marksMap[`${st.id}_${subjectId}`] !== undefined;
-      return `<td class="num ${isEntered && mk < passMark ? 'fail-cell' : ''}">${isEntered ? mk : '-'}</td>`;
+      return `<td class="num ${isEntered && mk < passMark ? 'fail-cell' : ''}">${isEntered ? toBnDigits(mk) : '-'}</td>`;
     }).join('');
 
     return `<tr class="${failed ? 'row-fail' : ''}">
-      <td class="num">${idx + 1}</td>
-      <td class="num bold">${st.roll_number || '-'}</td>
+      <td class="num">${toBnDigits(idx + 1)}</td>
+      <td class="num bold">${st.roll_number ? toBnDigits(st.roll_number) : '-'}</td>
       <td class="name">${bn ? st.name_bn : (st.name_en || st.name_bn)}</td>
       ${marksCells}
-      <td class="num bold">${hasEnteredAnyMark ? total : '-'}</td>
-      <td class="num">${hasEnteredAnyMark ? avg.toFixed(1) : '-'}</td>
-      <td class="num bold grade-${overall?.grade?.replace(/[^A-Z]/g, '') || 'N'}">${overall?.grade || '-'}</td>
-      <td class="num bold">${overall?.gpa || '-'}</td>
+      <td class="num bold">${hasEnteredAnyMark ? toBnDigits(total) : '-'}</td>
+      <td class="num">${hasEnteredAnyMark ? toBnDigits(avg.toFixed(1)) : '-'}</td>
+      <td class="num bold grade-${overall?.grade?.replace(/[^A-Z]/g, '') || 'N'}">${(overall?.grade || '-').toUpperCase()}</td>
+      <td class="num bold">${overall?.gpa ? toBnDigits(overall.gpa) : '-'}</td>
       <td class="num">${merit}</td>
       <td class="num"><span class="rank-pill ${rank && rank <= 3 ? 'rank-top' : ''}">${rankDisplay}</span></td>
     </tr>`;
@@ -330,7 +330,7 @@ export const getResultSheetHtml = ({
                 const top3 = sortedByTotal.filter(r => !r.failed && rankMap.get(r.idx) && rankMap.get(r.idx)! <= 3);
                 return top3.map(r => {
                   const rank = rankMap.get(r.idx);
-                  const rankLabel = rank === 1 ? (bn ? '১ম' : '1st') : rank === 2 ? (bn ? '২য়' : '2nd') : (bn ? '৩য়' : '3rd');
+                  const rankLabel = rank === 1 ? '১ম' : rank === 2 ? '২য়' : '৩য়';
                   const name = bn ? r.st.name_bn : (r.st.name_en || r.st.name_bn);
                   return `<div style="border:2px solid #064e3b; border-radius:8px; padding:8px 15px; background:#f0fdf4; text-align:center; min-width:160px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
                     <div style="font-size:11px; font-weight:800; color:#064e3b; text-transform:uppercase; letter-spacing:0.5px;">${rankLabel} ${bn ? 'স্থান' : 'Rank'}</div>
@@ -340,11 +340,11 @@ export const getResultSheetHtml = ({
               })()}
             </div>
             <div class="summary">
-              <div class="stat"><div class="stat-k">${bn ? 'অংশগ্রহণকারী' : 'TOTAL'}</div><div class="stat-v">${activeStudents.length}</div></div>
-              <div class="stat"><div class="stat-k">${bn ? 'কৃতকার্য' : 'PASSED'}</div><div class="stat-v" style="color:#059669">${passCount}</div></div>
-              <div class="stat"><div class="stat-k">${bn ? 'অকৃতকার্য' : 'FAILED'}</div><div class="stat-v" style="color:#dc2626">${failCount}</div></div>
-              <div class="stat"><div class="stat-k">${bn ? 'পাসের হার' : 'PASS RATE'}</div><div class="stat-v">${activeStudents.length ? ((passCount / activeStudents.length) * 100).toFixed(1) : '0'}%</div></div>
-              <div class="stat"><div class="stat-k">${bn ? 'গড় নম্বর' : 'CLASS AVG'}</div><div class="stat-v">${classAvg}</div></div>
+              <div class="stat"><div class="stat-k">${bn ? 'অংশগ্রহণকারী' : 'TOTAL'}</div><div class="stat-v">${toBnDigits(activeStudents.length)}</div></div>
+              <div class="stat"><div class="stat-k">${bn ? 'কৃতকার্য' : 'PASSED'}</div><div class="stat-v" style="color:#059669">${toBnDigits(passCount)}</div></div>
+              <div class="stat"><div class="stat-k">${bn ? 'অকৃতকার্য' : 'FAILED'}</div><div class="stat-v" style="color:#dc2626">${toBnDigits(failCount)}</div></div>
+              <div class="stat"><div class="stat-k">${bn ? 'পাসের হার' : 'PASS RATE'}</div><div class="stat-v">${toBnDigits(activeStudents.length ? ((passCount / activeStudents.length) * 100).toFixed(1) : '0')}%</div></div>
+              <div class="stat"><div class="stat-k">${bn ? 'গড় নম্বর' : 'CLASS AVG'}</div><div class="stat-v">${toBnDigits(classAvg)}</div></div>
             </div>
             ` : ''}
           </div>
@@ -363,7 +363,7 @@ export const getResultSheetHtml = ({
 
           <div class="footer">
             <div style="font-weight:700;">${showFooterInstitution ? (institutionName || '') : ''}</div>
-            <div class="screen-pageinfo" style="font-weight:600;">${bn ? 'পৃষ্ঠা' : 'Page'} ${pageIdx + 1} / ${totalPages}</div>
+            <div class="screen-pageinfo" style="font-weight:600;">${bn ? 'পৃষ্ঠা' : 'Page'} ${toBnDigits(pageIdx + 1)} / ${toBnDigits(totalPages)}</div>
           </div>
         </div>
       </div>
