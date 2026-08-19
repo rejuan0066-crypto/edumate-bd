@@ -74,12 +74,16 @@ const ResultSearchFilters = ({
           </Select>
 
           <Select value={examSession} onValueChange={onExamSessionChange}>
-            <SelectTrigger className="bg-background" disabled={!examYear}>
+            <SelectTrigger className="bg-background">
               <SelectValue placeholder={bn ? 'পরীক্ষার সেশন' : 'Exam Session'} />
             </SelectTrigger>
             <SelectContent>
-              {examSessions.map((es: any) => (
-                <SelectItem key={es.id} value={es.id}>{bn ? es.name_bn : es.name}</SelectItem>
+              {examSessions.length === 0 ? (
+                <div className="px-3 py-2 text-sm text-muted-foreground">
+                  {bn ? 'কোনো পরীক্ষার সেশন নেই' : 'No exam session found'}
+                </div>
+              ) : examSessions.map((es: any) => (
+                <SelectItem key={es.id} value={es.id}>{bn ? (es.name_bn || es.name) : es.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -89,11 +93,16 @@ const ResultSearchFilters = ({
               <SelectValue placeholder={bn ? 'শ্রেণী' : 'Class'} />
             </SelectTrigger>
             <SelectContent>
-              {classes.map((c: any) => (
-                <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}</SelectItem>
+              {classes.length === 0 ? (
+                <div className="px-3 py-2 text-sm text-muted-foreground">
+                  {bn ? 'এই সেশনে কোনো শ্রেণী যুক্ত নেই' : 'No class linked to this session'}
+                </div>
+              ) : classes.map((c: any) => (
+                <SelectItem key={c.id} value={c.id}>{bn ? (c.name_bn || c.name) : c.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
+
 
           {searchMode === 'individual' && (
             <Input
