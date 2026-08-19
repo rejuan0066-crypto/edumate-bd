@@ -122,7 +122,7 @@ export const exportResultPDF = async (params: ExportData & { orientation?: 'land
       const { toast } = await import('sonner');
       const bn = params.bn;
       toast.info(bn ? 'পিডিএফ তৈরি হচ্ছে…' : 'Generating PDF…');
-      await downloadSheetAsPdf(html, fname);
+      await downloadSheetAsPdf(html, fname, params.orientation || 'landscape');
       toast.success(bn ? 'পিডিএফ ডাউনলোড হয়েছে' : 'PDF downloaded');
     } catch (e) {
       console.error('PDF export failed:', e);
@@ -143,9 +143,9 @@ const isMobileOrPwa = (): boolean => {
   }
 };
 
-const downloadSheetAsPdf = async (html: string, filename: string) => {
+const downloadSheetAsPdf = async (html: string, filename: string, orientation: 'landscape' | 'portrait' = 'landscape') => {
   const { downloadSheetAsPdf: dl } = await import('./salarySlipPdf');
-  return dl(html, filename);
+  return dl(html, filename, null, orientation);
 };
 
 export const getResultSheetHtml = ({ 
