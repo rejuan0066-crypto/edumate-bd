@@ -382,14 +382,18 @@ export const getResultSheetHtml = ({
   *{margin:0;padding:0;box-sizing:border-box;}
   @page{
     size:A4 landscape;
-    margin:10mm;
+    margin:0;
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   html,body{width:100%;margin:0;padding:0;}
   body{font-family:'Kalpurush','Noto Sans Bengali','SutonnyOMJ','Inter',sans-serif;color:#0f172a;background:#f8fafc;}
   .screen-pageinfo{display:none;}
-  @media screen{body{padding:20px;}.screen-pageinfo{display:flex;justify-content:flex-end;font-size:10px;color:#94a3b8;margin-top:6px;}}
-  .sheet{background:#fff;border:1px solid #94a3b8;border-radius:2px;padding:15mm 12mm;box-sizing:border-box;width:100%;min-height:calc(210mm - 20mm);box-shadow:0 0 10px rgba(0,0,0,0.1);margin:0 auto;}
+  @media screen{
+    html{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    body{padding:20px;min-width:min-content;}
+    .screen-pageinfo{display:flex;justify-content:flex-end;font-size:10px;color:#94a3b8;margin-top:6px;}
+  }
+  .sheet{background:#fff;border:1px solid #94a3b8;border-radius:2px;padding:8mm 8mm;box-sizing:border-box;width:100%;box-shadow:0 0 10px rgba(0,0,0,0.1);margin:0 auto;}
   .header{display:grid;grid-template-columns:100px 1fr 100px;gap:12px;align-items:center;margin-bottom:15px;}
   .header-logo{width:80px;height:80px;object-fit:contain;}
   .header-text{text-align:center;}
