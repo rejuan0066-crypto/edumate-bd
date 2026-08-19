@@ -246,7 +246,6 @@ export const getResultSheetHtml = ({
       <td class="num bold">${overall.gpa}</td>
       <td class="num">${merit}</td>
       <td class="num"><span class="rank-pill ${rank && rank <= 3 ? 'rank-top' : ''}">${rankDisplay}</span></td>
-      <td class="num ${failed ? 'status-fail' : 'status-pass'}">${failed ? (bn ? 'অকৃতকার্য' : 'Fail') : (bn ? 'কৃতকার্য' : 'Pass')}</td>
     </tr>`;
   };
 
