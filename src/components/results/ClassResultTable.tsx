@@ -222,7 +222,11 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
                     </td>
                     <td className="px-2 py-2 text-center">
                       <button
-                        onClick={() => onViewMarksheet(st.id)}
+                        onClick={() => {
+                          // Find rank from rankMap before viewing
+                          const studentRank = rankMap.get(st.id);
+                          onViewMarksheet(st.id, studentRank);
+                        }}
                         className="p-1.5 rounded-md hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
                         title={bn ? 'মার্কশিট দেখুন' : 'View Marksheet'}
                       >
