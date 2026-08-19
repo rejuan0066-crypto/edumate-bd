@@ -105,7 +105,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
       </div>
 
       {/* Title & Actions Bar */}
-      <div className="relative z-10 flex items-center justify-between px-5 py-3 border-b border-border bg-muted/20">
+      <div className="sticky top-0 z-20 flex items-center justify-between px-5 py-3 border-b border-border bg-background/95 backdrop-blur-sm shadow-sm">
         <div className="flex items-center gap-2">
           {onClose && (
             <button onClick={onClose} className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title={bn ? 'বন্ধ করুন' : 'Close'}>
