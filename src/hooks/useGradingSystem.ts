@@ -92,12 +92,14 @@ export const useGradingSystem = () => {
         .eq('module', 'result')
         .eq('field_name', 'grace_pass')
         .maybeSingle();
-      if (error || !data) return { enabled: false, max_subjects: 1, grade: 'C' };
+      if (error || !data) return { enabled: false, max_subjects: 1, grade: 'C', apply_to: 'all' as const, class_rules: {} as Record<string, number> };
       const c: any = typeof data.config === 'object' && data.config ? data.config : {};
       return {
         enabled: !!data.is_active && c.enabled !== false,
         max_subjects: c.max_subjects ?? 1,
         grade: c.grade || 'C',
+        apply_to: (c.apply_to === 'selected' ? 'selected' : 'all') as 'all' | 'selected',
+        class_rules: (c.class_rules && typeof c.class_rules === 'object' ? c.class_rules : {}) as Record<string, number>,
       };
     },
     staleTime: 5 * 60 * 1000,
@@ -115,11 +117,21 @@ export const useGradingSystem = () => {
 
   /** Check if any single subject is below pass mark — if so, overall grade is F
    *  unless grace-pass is enabled and failed subjects are within the allowed limit. */
-  const getOverallGrade = (subjectMarks: number[]) => {
+  /** Resolve the allowed number of failed subjects for a class.
+   *  0 (or undefined in "selected" mode) means grace pass is off for that class. */
+  const getGraceLimit = (classId?: string | null) => {
+    if (!gracePass?.enabled) return 0;
+    const rules = gracePass.class_rules || {};
+    if (classId && rules[classId] !== undefined) return Number(rules[classId]) || 0;
+    if (gracePass.apply_to === 'selected') return 0;
+    return Number(gracePass.max_subjects) || 0;
+  };
+
+  const getOverallGrade = (subjectMarks: number[], classId?: string | null) => {
     const pm = passMarkConfig ?? 33;
     const failedCount = subjectMarks.filter(m => m < pm).length;
-    const graceOn = !!gracePass?.enabled;
-    const graceLimit = gracePass?.max_subjects ?? 1;
+    const graceLimit = getGraceLimit(classId);
+    const graceOn = graceLimit > 0;
     const graced = graceOn && failedCount > 0 && failedCount <= graceLimit;
 
     if (failedCount > 0 && subjectMarks.length > 0 && !graced) {
@@ -162,7 +174,8 @@ export const useGradingSystem = () => {
     scales,
     getGrade,
     getOverallGrade,
-    gracePass: gracePass ?? { enabled: false, max_subjects: 1, grade: 'C' },
+    getGraceLimit,
+    gracePass: gracePass ?? { enabled: false, max_subjects: 1, grade: 'C', apply_to: 'all' as const, class_rules: {} as Record<string, number> },
     maxMarks: marksConfig?.max ?? 100,
     minMarks: marksConfig?.min ?? 0,
     passMark: passMarkConfig ?? 33,

@@ -155,7 +155,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
               const hasAnyMarks = studentMarks.some(m => m > 0);
               const total = studentMarks.reduce((a, b) => a + b, 0);
               const avg = subjects.length > 0 ? total / subjects.length : 0;
-              const gradeInfo = hasAnyMarks ? getOverallGrade(studentMarks) : null;
+              const gradeInfo = hasAnyMarks ? getOverallGrade(studentMarks, st.class_id) : null;
               return (
                 <tr key={st.id} className="hover:bg-muted/20 transition-colors">
                   <td className="px-3 py-2 text-muted-foreground text-xs">{idx + 1}</td>

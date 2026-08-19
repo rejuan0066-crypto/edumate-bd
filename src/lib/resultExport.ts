@@ -5,7 +5,7 @@ interface ExportData {
   students: any[];
   subjects: any[];
   marksMap: Record<string, number>;
-  getOverallGrade: (marks: number[]) => { grade: string; gpa: string; title?: string; title_bn?: string; hasFail: boolean };
+  getOverallGrade: (marks: number[], classId?: string | null) => { grade: string; gpa: string; title?: string; title_bn?: string; hasFail: boolean };
   bn: boolean;
   institutionName?: string;
   institutionLogo?: string;
@@ -88,7 +88,7 @@ export const exportResultCSV = ({ title, students, subjects, marksMap, getOveral
     const marks = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`] ?? 0);
     const total = marks.reduce((a, b) => a + b, 0);
     const avg = subjects.length > 0 ? total / subjects.length : 0;
-    const { grade, gpa, title: gradeTitle, title_bn } = getOverallGrade(marks);
+    const { grade, gpa, title: gradeTitle, title_bn } = getOverallGrade(marks, st.class_id);
     return [
       idx + 1,
       st.roll_number || '-',
@@ -129,7 +129,7 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
     const marks = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`] ?? 0);
     const total = marks.reduce((a, b) => a + b, 0);
     const avg = subjects.length > 0 ? total / subjects.length : 0;
-    const overall = getOverallGrade(marks);
+    const overall = getOverallGrade(marks, st.class_id);
     const failed = (overall as any).graced ? false : (marks.some(m => m < passMark) || overall.hasFail);
     return { idx, st, marks, total, avg, overall, failed };
   });
