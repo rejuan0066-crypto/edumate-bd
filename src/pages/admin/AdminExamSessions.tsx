@@ -956,7 +956,14 @@ const AdminExamSessions = () => {
         </div>
       </div>
 
+      <ManageExamSessionDialog
+        open={!!manageSession}
+        onOpenChange={(v) => { if (!v) setManageSession(null); }}
+        examSession={manageSession}
+      />
+
       {/* Quick Add Exam Type Dialog */}
+
       <Dialog open={quickAddOpen} onOpenChange={setQuickAddOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
