@@ -43,11 +43,11 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
   const { data: classes = [] } = useQuery({
     queryKey: ['grace-pass-classes'],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('classes')
         .select('id, name, name_bn, sort_order, division_id, divisions(name_bn, name, sort_order)')
-        .is('deleted_at', null)
         .order('sort_order');
+      if (error) throw error;
       return (data || []).sort((a: any, b: any) =>
         ((a.divisions?.sort_order ?? 999) - (b.divisions?.sort_order ?? 999)) ||
         ((a.sort_order ?? 999) - (b.sort_order ?? 999)));
