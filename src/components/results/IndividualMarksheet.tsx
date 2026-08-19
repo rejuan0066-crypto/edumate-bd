@@ -366,11 +366,22 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1">GPA</p>
               <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">{overall.gpa}</p>
             </div>
-            <div className="rounded-xl bg-purple-50 dark:bg-purple-950/30 p-3 border-2 border-purple-200 dark:border-purple-800">
-              <p className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-1">{bn ? 'মর্যাদা' : 'Merit'}</p>
-              <p className="text-base font-extrabold text-purple-600 dark:text-purple-400">{morjada}</p>
+            <div className={`rounded-xl p-3 border-2 ${rank && rank <= 3 ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800' : 'bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800'}`}>
+              <p className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${rank && rank <= 3 ? 'text-emerald-600 dark:text-emerald-400' : 'text-purple-600 dark:text-purple-400'}`}>
+                {rank && rank <= 3 ? (bn ? 'মেধা স্থান' : 'Rank') : (bn ? 'মর্যাদা' : 'Merit')}
+              </p>
+              <p className={`text-base font-extrabold ${rank && rank <= 3 ? 'text-emerald-600 dark:text-emerald-400' : 'text-purple-600 dark:text-purple-400'}`}>
+                {rank && rank <= 3 ? rankDisplay : morjada}
+              </p>
             </div>
           </div>
+          {rank && rank <= 3 && (
+            <div className="mt-3 px-4 py-1.5 rounded-lg bg-emerald-100/50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-center">
+              <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                {bn ? `${morjada} (${rankDisplay} মেধা স্থান)` : `${morjada} (${rankDisplay} Merit Rank)`}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Signature Section */}
