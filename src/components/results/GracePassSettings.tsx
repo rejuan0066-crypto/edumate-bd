@@ -70,7 +70,7 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
         module: 'result',
         field_name: 'grace_pass',
         name: 'Grace Pass',
-        name_bn: 'গ্রেস পাস',
+        name_bn: 'অনুগ্রহ পাস',
         rule_level: 'warning',
         rule_type: 'custom',
         is_active: enabled,
@@ -105,7 +105,7 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg rounded-[28px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{bn ? 'গ্রেস পাস সেটিং' : 'Grace Pass Settings'}</DialogTitle>
+          <DialogTitle>{bn ? 'অনুগ্রহ পাস সেটিং' : 'Grace Pass Settings'}</DialogTitle>
           <DialogDescription>
             {bn
               ? 'নির্দিষ্ট সংখ্যক বিষয়ে ফেল করলেও ছাত্রকে পাস (মকবুল) হিসেবে গণ্য করা হবে।'
@@ -118,7 +118,7 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
         ) : (
           <div className="space-y-4">
             <div className="flex items-center justify-between rounded-xl border p-3 bg-muted/30">
-              <Label className="text-sm">{bn ? 'গ্রেস পাস চালু' : 'Enable grace pass'}</Label>
+              <Label className="text-sm">{bn ? 'অনুগ্রহ পাস চালু' : 'Enable grace pass'}</Label>
               <Switch checked={enabled} onCheckedChange={setEnabled} />
             </div>
 
@@ -135,9 +135,9 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs">{bn ? 'ক্লাস অনুযায়ী গ্রেস (কত বিষয়ে ফেল গ্রহণযোগ্য)' : 'Per-class grace (allowed failed subjects)'}</Label>
+              <Label className="text-xs">{bn ? 'ক্লাস অনুযায়ী অনুগ্রহ (কত বিষয়ে ফেল গ্রহণযোগ্য)' : 'Per-class grace (allowed failed subjects)'}</Label>
               <p className="text-[11px] text-muted-foreground">
-                {bn ? '০ = ওই ক্লাসে গ্রেস বন্ধ। খালি রাখলে ডিফল্ট প্রযোজ্য হবে।' : '0 = grace off for that class. Empty uses the default.'}
+                {bn ? '০ = ওই ক্লাসে অনুগ্রহ পাস বন্ধ। খালি রাখলে ডিফল্ট প্রযোজ্য হবে।' : '0 = grace off for that class. Empty uses the default.'}
               </p>
               <div className="rounded-xl border divide-y max-h-64 overflow-y-auto">
                 {classes.map((c: any) => (
