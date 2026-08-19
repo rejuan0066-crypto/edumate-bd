@@ -13,6 +13,8 @@ import ClassResultStatusList from '@/components/results/ClassResultStatusList';
 import { useGradingSystem } from '@/hooks/useGradingSystem';
 import IndividualMarksheet from '@/components/results/IndividualMarksheet';
 import GradingChart from '@/components/results/GradingChart';
+import GracePassSettings from '@/components/results/GracePassSettings';
+
 import { GraduationCap } from 'lucide-react';
 import { exportResultCSV, exportResultPDF, printResultSheet, DEFAULT_RESULT_SIGNATORIES, DEFAULT_PRINT_FOOTER_OPTIONS, DEFAULT_PRINT_MARGINS, PRINT_MARGIN_PRESETS, sanitizeMargins, type ResultSignatory, type ResultPrintFooterOptions, type PrintMargins } from '@/lib/resultExport';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
@@ -386,6 +388,8 @@ const AdminResults = () => {
     refetchFooterOptions();
   };
   const [sigDialogOpen, setSigDialogOpen] = useState(false);
+  const [graceDialogOpen, setGraceDialogOpen] = useState(false);
+
   const [sigDraft, setSigDraft] = useState<ResultSignatory[]>(DEFAULT_RESULT_SIGNATORIES);
   const [sigErrors, setSigErrors] = useState<Record<number, { title?: string; name?: string; title_bn?: string; title_en?: string; name_bn?: string; name_en?: string }>>({});
   useEffect(() => { setSigDraft(signatories); setSigErrors({}); }, [signatories]);
@@ -549,7 +553,15 @@ const AdminResults = () => {
             <Settings2 className="w-4 h-4" />
             {bn ? 'স্বাক্ষরকারী' : 'Signatories'}
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setGraceDialogOpen(true)} className="gap-2">
+            <Settings2 className="w-4 h-4" />
+            {bn ? 'গ্রেস পাস' : 'Grace Pass'}
+          </Button>
         </div>
+
+        <GracePassSettings open={graceDialogOpen} onOpenChange={setGraceDialogOpen} />
+
+
 
         <Dialog open={sigDialogOpen} onOpenChange={setSigDialogOpen}>
           <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">

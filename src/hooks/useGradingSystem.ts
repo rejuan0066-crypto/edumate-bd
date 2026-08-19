@@ -83,6 +83,26 @@ export const useGradingSystem = () => {
     staleTime: 5 * 60 * 1000,
   });
 
+  const { data: gracePass } = useQuery({
+    queryKey: ['grace-pass-config'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('validation_rules')
+        .select('config, is_active')
+        .eq('module', 'result')
+        .eq('field_name', 'grace_pass')
+        .maybeSingle();
+      if (error || !data) return { enabled: false, max_subjects: 1, grade: 'C' };
+      const c: any = typeof data.config === 'object' && data.config ? data.config : {};
+      return {
+        enabled: !!data.is_active && c.enabled !== false,
+        max_subjects: c.max_subjects ?? 1,
+        grade: c.grade || 'C',
+      };
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   const getGrade = (avg: number) => {
     for (const s of scales) {
       if (avg >= s.min && avg <= s.max) {
@@ -93,23 +113,47 @@ export const useGradingSystem = () => {
     return { grade: last.grade, gpa: last.gpa, color: colorMap[last.color] || colorMap.destructive, title: last.title, title_bn: last.title_bn };
   };
 
-  /** Check if any single subject is below pass mark — if so, overall grade is F */
+  /** Check if any single subject is below pass mark — if so, overall grade is F
+   *  unless grace-pass is enabled and failed subjects are within the allowed limit. */
   const getOverallGrade = (subjectMarks: number[]) => {
-    const hasFail = subjectMarks.some(m => m < (passMarkConfig ?? 33));
-    if (hasFail && subjectMarks.length > 0) {
+    const pm = passMarkConfig ?? 33;
+    const failedCount = subjectMarks.filter(m => m < pm).length;
+    const graceOn = !!gracePass?.enabled;
+    const graceLimit = gracePass?.max_subjects ?? 1;
+    const graced = graceOn && failedCount > 0 && failedCount <= graceLimit;
+
+    if (failedCount > 0 && subjectMarks.length > 0 && !graced) {
       const failScale = scales.find(s => s.grade === 'F') || DEFAULT_SCALES[DEFAULT_SCALES.length - 1];
-      return { grade: 'F', gpa: '0.00', color: colorMap[failScale.color] || colorMap.destructive, hasFail: true, title: failScale.title, title_bn: failScale.title_bn };
+      return { grade: 'F', gpa: '0.00', color: colorMap[failScale.color] || colorMap.destructive, hasFail: true, graced: false, failedCount, title: failScale.title, title_bn: failScale.title_bn };
     }
+
+    if (graced) {
+      const target = scales.find(s => s.grade === (gracePass?.grade || 'C'))
+        || DEFAULT_SCALES.find(s => s.grade === (gracePass?.grade || 'C'))!;
+      return {
+        grade: target.grade,
+        gpa: target.gpa,
+        color: colorMap[target.color] || colorMap.amber,
+        hasFail: false,
+        graced: true,
+        failedCount,
+        title: target.title,
+        title_bn: target.title_bn,
+      };
+    }
+
     const avg = subjectMarks.length > 0 ? subjectMarks.reduce((a, b) => a + b, 0) / subjectMarks.length : 0;
-    return { ...getGrade(avg), hasFail: false };
+    return { ...getGrade(avg), hasFail: false, graced: false, failedCount };
   };
 
   return {
     scales,
     getGrade,
     getOverallGrade,
+    gracePass: gracePass ?? { enabled: false, max_subjects: 1, grade: 'C' },
     maxMarks: marksConfig?.max ?? 100,
     minMarks: marksConfig?.min ?? 0,
     passMark: passMarkConfig ?? 33,
   };
 };
+
