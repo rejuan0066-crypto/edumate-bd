@@ -1037,6 +1037,7 @@ Deno.serve(async (req) => {
     .sig .sig-name { font-size: 7.8pt; min-height: 8pt; }
     .sig .role-meta, .footer, .footer .ref { font-size: 6.4pt; }
     .footer { margin-top: 3pt; padding-top: 2pt; }
+    .salary-page { border: none !important; }
   }
   /* Auto-fit hooks */
   @media print {
