@@ -133,7 +133,12 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
 
             <div className="space-y-1.5">
               <Label className="text-xs">{bn ? 'ডিফল্ট: সর্বোচ্চ কত বিষয়ে ফেল গ্রহণযোগ্য' : 'Default max failed subjects allowed'}</Label>
-              <Input type="text" value={maxSubjects} disabled={!enabled || applyTo === 'selected'}
+              <Input 
+                type="text" 
+                value={maxSubjects || ''} 
+                disabled={!enabled || applyTo === 'selected'}
+                placeholder={bn ? '০' : '0'}
+                data-bijoy={bn}
                 onChange={(e) => {
                   const val = parseInt(e.target.value);
                   if (isNaN(val)) setMaxSubjects(0);
@@ -187,8 +192,9 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
                       </label>
                       <Input type="text" className="w-20 h-8 text-center"
                         disabled={!enabled || !checked}
-                        value={classRules[c.id] === 0 ? '' : (classRules[c.id] ?? '')}
-                        placeholder={String(maxSubjects)}
+                        value={classRules[c.id] || ''}
+                        placeholder={bn ? '০' : '0'}
+                        data-bijoy={bn}
                         onChange={(e) => {
                           const raw = e.target.value;
                           const val = parseInt(raw);
