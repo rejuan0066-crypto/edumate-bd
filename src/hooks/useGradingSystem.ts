@@ -116,9 +116,9 @@ export const useGradingSystem = () => {
   };
 
   /** Check if any single subject is below pass mark — if so, overall grade is F
-   *  unless grace-pass is enabled and failed subjects are within the allowed limit. */
+   *  unless consideration-pass is enabled and failed subjects are within the allowed limit. */
   /** Resolve the allowed number of failed subjects for a class.
-   *  0 (or undefined in "selected" mode) means grace pass is off for that class. */
+   *  0 (or undefined in "selected" mode) means consideration pass is off for that class. */
   const getGraceLimit = (classId?: string | null) => {
     if (!gracePass?.enabled) return 0;
     const rules = gracePass.class_rules || {};
