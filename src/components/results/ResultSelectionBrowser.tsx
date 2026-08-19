@@ -3,6 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Users, User, RotateCcw, CalendarDays, FileText, Check } from 'lucide-react';
 
 interface Props {
@@ -18,7 +19,11 @@ interface Props {
   onReset?: () => void;
   academicSessions: any[];
   examSessions: any[];
+  classes?: any[];
+  selectedClass?: string;
+  onClassChange?: (v: string) => void;
 }
+
 
 const ResultSelectionBrowser = ({
   searchMode, onSearchModeChange,
@@ -27,6 +32,8 @@ const ResultSelectionBrowser = ({
   rollNumber, onRollNumberChange,
   onSearch, onReset,
   academicSessions, examSessions,
+  classes = [], selectedClass = '', onClassChange,
+
 }: Props) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
@@ -54,16 +61,17 @@ const ResultSelectionBrowser = ({
       {/* Mode Tabs */}
       <div className="border-b border-border bg-muted/30 px-5 pt-4 pb-0">
         <Tabs value={searchMode} onValueChange={(v) => onSearchModeChange(v as 'class' | 'individual')}>
-          <TabsList className="bg-transparent gap-1 p-0 h-auto">
-            <TabsTrigger value="class" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-t-lg rounded-b-none px-5 py-2.5 text-sm font-medium gap-2 border-b-2 border-transparent data-[state=active]:border-primary">
+          <TabsList className="bg-transparent gap-1 p-0 h-auto grid grid-cols-2 w-full max-w-md">
+            <TabsTrigger value="class" className="w-full h-11 justify-center data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-t-lg rounded-b-none px-5 text-sm font-medium gap-2 border-b-2 border-transparent data-[state=active]:border-primary">
               <Users className="w-4 h-4" />
               {bn ? 'ক্লাস-ওয়াইজ' : 'Class-wise'}
             </TabsTrigger>
-            <TabsTrigger value="individual" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-t-lg rounded-b-none px-5 py-2.5 text-sm font-medium gap-2 border-b-2 border-transparent data-[state=active]:border-primary">
+            <TabsTrigger value="individual" className="w-full h-11 justify-center data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-t-lg rounded-b-none px-5 text-sm font-medium gap-2 border-b-2 border-transparent data-[state=active]:border-primary">
               <User className="w-4 h-4" />
-              {bn ? 'ব্যক্তিগত' : 'Individual'}
+              {bn ? 'একক রেজাল্ট' : 'Individual Result'}
             </TabsTrigger>
           </TabsList>
+
         </Tabs>
       </div>
 
@@ -151,21 +159,39 @@ const ResultSelectionBrowser = ({
           </div>
         </div>
 
-        {/* Individual mode roll input */}
+        {/* Individual (একক রেজাল্ট) form: class + roll + search */}
         {searchMode === 'individual' && (
-          <div className="flex gap-2">
-            <Input
-              placeholder={bn ? 'রোল / রেজিস্ট্রেশন নম্বর' : 'Roll / Reg. Number'}
-              value={rollNumber}
-              onChange={(e) => onRollNumberChange(e.target.value)}
-              className="bg-background"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 items-end">
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-1.5">{bn ? 'শ্রেণি' : 'Class'}</p>
+              <Select value={selectedClass || undefined} onValueChange={(v) => onClassChange?.(v)} disabled={!examSession}>
+                <SelectTrigger className="bg-background h-10">
+                  <SelectValue placeholder={bn ? 'ক্লাস সিলেক্ট করুন' : 'Select class'} />
+                </SelectTrigger>
+                <SelectContent className="max-h-72">
+                  {classes.map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>{bn ? (c.name_bn || c.name) : c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-1.5">{bn ? 'রোল / রেজিস্ট্রেশন' : 'Roll / Reg.'}</p>
+              <Input
+                placeholder={bn ? 'রোল / রেজিস্ট্রেশন নম্বর' : 'Roll / Reg. Number'}
+                value={rollNumber}
+                onChange={(e) => onRollNumberChange(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') onSearch(); }}
+                className="bg-background h-10"
+              />
+            </div>
             <Button onClick={onSearch} className="btn-primary-gradient h-10">
               <Search className="w-4 h-4 mr-2" />
               {bn ? 'অনুসন্ধান' : 'Search'}
             </Button>
           </div>
         )}
+
       </div>
     </div>
   );
