@@ -997,7 +997,15 @@ const AdminResults = () => {
           onRollNumberChange={setRollNumber}
           academicSessions={academicSessions}
           examSessions={examSessions}
+          classes={examClasses}
+          selectedClass={selectedClass}
+          onClassChange={(v) => {
+            setSelectedClass(v);
+            setShowResults(false);
+            setViewingStudentId(null);
+          }}
           onSearch={handleSearch}
+
           onReset={() => {
             setExamYear('');
             setExamSessionId('');
