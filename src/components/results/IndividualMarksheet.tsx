@@ -212,6 +212,10 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
 <div class="signatures">
   <div class="sig-block">
     <div class="sig-line"></div>
+    <p class="sig-title">${bn ? 'শ্রেণি শিক্ষক' : 'Class Teacher'}</p>
+  </div>
+  <div class="sig-block">
+    <div class="sig-line"></div>
     <p class="sig-title">${bn ? 'পরীক্ষা নিয়ন্ত্রক' : 'Exam Controller'}</p>
     ${sigNames.examController ? `<p class="sig-name">${sigNames.examController}</p>` : ''}
   </div>
@@ -222,7 +226,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
   </div>
   <div class="sig-block">
     <div class="sig-line"></div>
-    <p class="sig-title">${bn ? 'মুহতামিম' : 'Principal'}</p>
+    <p class="sig-title">${bn ? 'মুহতামিম / অধ্যক্ষ' : 'Principal'}</p>
     ${sigNames.principal ? `<p class="sig-name">${sigNames.principal}</p>` : ''}
   </div>
 </div>
