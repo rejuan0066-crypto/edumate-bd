@@ -1159,9 +1159,9 @@ Deno.serve(async (req) => {
         var lo = overflow ? Math.min(settings.minScale, AUTO_FLOOR) : settings.minScale;
         var scale = Math.max(lo, Math.min(settings.maxScale, computed));
         if (scale >= 0.999 && h <= maxH && w <= maxW) return;
-        if (isSafari) {
+        if (isSafari || true) {
           inner.style.transform = 'scale(' + scale + ')';
-          inner.style.transformOrigin = 'top left';
+          inner.style.transformOrigin = 'top center';
           inner.style.width = (maxW / scale) + 'px';
           inner.style.height = (h * scale) + 'px';
         } else {
