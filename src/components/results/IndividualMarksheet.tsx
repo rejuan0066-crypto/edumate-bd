@@ -197,6 +197,12 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
   <div class="summary-box box-grade"><div class="label">${bn ? 'গ্রেড' : 'Grade'}</div><div class="val">${overall.grade}</div></div>
   <div class="summary-box box-gpa"><div class="label">GPA</div><div class="val">${overall.gpa}</div></div>
   <div class="summary-box box-morjada"><div class="label">${bn ? 'মর্যাদা' : 'Merit'}</div><div class="val" style="font-size:16px;">${morjada}</div></div>
+  ${rank && rank <= 3 ? `
+  <div class="summary-box box-morjada" style="background:#ecfdf5;color:#059669;border-color:#a7f3d0;">
+    <div class="label">${bn ? 'মেধা স্থান' : 'Merit Rank'}</div>
+    <div class="val" style="font-size:20px;">${rankDisplay}</div>
+  </div>
+  ` : ''}
 </div>
 
 <div class="signatures">
