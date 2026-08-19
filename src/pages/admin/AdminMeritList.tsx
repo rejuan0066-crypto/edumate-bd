@@ -108,7 +108,7 @@ const AdminMeritList = () => {
         const marks = subjects.map((sub: any) => subjectMarks[s.id]?.[sub.id] ?? 0);
         const total = marks.reduce((a: number, b: number) => a + b, 0);
         const avg = marks.length ? total / marks.length : 0;
-        const overall = getOverallGrade(marks);
+        const overall = getOverallGrade(marks, s.class_id);
         return {
           studentId: s.id,
           name: bn ? s.name_bn : (s.name_en || s.name_bn),

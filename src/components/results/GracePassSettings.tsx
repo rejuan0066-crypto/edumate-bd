@@ -37,12 +37,31 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
   const [enabled, setEnabled] = useState(false);
   const [maxSubjects, setMaxSubjects] = useState(1);
   const [grade, setGrade] = useState('C');
+  const [applyTo, setApplyTo] = useState<'all' | 'selected'>('all');
+  const [classRules, setClassRules] = useState<Record<string, number>>({});
+
+  const { data: classes = [] } = useQuery({
+    queryKey: ['grace-pass-classes'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('classes')
+        .select('id, name, name_bn, sort_order, division_id, divisions(name_bn, name, sort_order)')
+        .is('deleted_at', null)
+        .order('sort_order');
+      return (data || []).sort((a: any, b: any) =>
+        ((a.divisions?.sort_order ?? 999) - (b.divisions?.sort_order ?? 999)) ||
+        ((a.sort_order ?? 999) - (b.sort_order ?? 999)));
+    },
+    enabled: open,
+  });
 
   useEffect(() => {
     const c: any = (row?.config && typeof row.config === 'object') ? row.config : {};
     setEnabled(!!row?.is_active && c.enabled !== false);
     setMaxSubjects(c.max_subjects ?? 1);
     setGrade(c.grade || 'C');
+    setApplyTo(c.apply_to === 'selected' ? 'selected' : 'all');
+    setClassRules((c.class_rules && typeof c.class_rules === 'object') ? c.class_rules : {});
   }, [row]);
 
   const saveM = useMutation({
@@ -55,7 +74,15 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
         rule_level: 'warning',
         rule_type: 'custom',
         is_active: enabled,
-        config: { enabled, max_subjects: Math.max(1, Number(maxSubjects) || 1), grade } as any,
+        config: {
+          enabled,
+          max_subjects: Math.max(1, Number(maxSubjects) || 1),
+          grade,
+          apply_to: applyTo,
+          class_rules: Object.fromEntries(
+            Object.entries(classRules).filter(([, v]) => Number(v) > 0).map(([k, v]) => [k, Number(v)])
+          ),
+        } as any,
       };
       if (row?.id) {
         const { error } = await supabase.from('validation_rules').update(payload).eq('id', row.id);
@@ -76,7 +103,7 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md rounded-[28px]">
+      <DialogContent className="max-w-lg rounded-[28px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{bn ? 'গ্রেস পাস সেটিং' : 'Grace Pass Settings'}</DialogTitle>
           <DialogDescription>
@@ -96,9 +123,50 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs">{bn ? 'সর্বোচ্চ কত বিষয়ে ফেল গ্রহণযোগ্য' : 'Max failed subjects allowed'}</Label>
-              <Input type="number" min={1} max={5} value={maxSubjects} disabled={!enabled}
+              <Label className="text-xs">{bn ? 'ডিফল্ট: সর্বোচ্চ কত বিষয়ে ফেল গ্রহণযোগ্য' : 'Default max failed subjects allowed'}</Label>
+              <Input type="number" min={1} max={10} value={maxSubjects} disabled={!enabled || applyTo === 'selected'}
                 onChange={(e) => setMaxSubjects(parseInt(e.target.value) || 1)} />
+            </div>
+
+            <div className="flex items-center justify-between rounded-xl border p-3 bg-muted/30">
+              <Label className="text-sm">{bn ? 'শুধু নির্বাচিত ক্লাসে প্রযোজ্য' : 'Apply only to selected classes'}</Label>
+              <Switch checked={applyTo === 'selected'} disabled={!enabled}
+                onCheckedChange={(v) => setApplyTo(v ? 'selected' : 'all')} />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs">{bn ? 'ক্লাস অনুযায়ী গ্রেস (কত বিষয়ে ফেল গ্রহণযোগ্য)' : 'Per-class grace (allowed failed subjects)'}</Label>
+              <p className="text-[11px] text-muted-foreground">
+                {bn ? '০ = ওই ক্লাসে গ্রেস বন্ধ। খালি রাখলে ডিফল্ট প্রযোজ্য হবে।' : '0 = grace off for that class. Empty uses the default.'}
+              </p>
+              <div className="rounded-xl border divide-y max-h-64 overflow-y-auto">
+                {classes.map((c: any) => (
+                  <div key={c.id} className="flex items-center justify-between gap-3 px-3 py-2">
+                    <div className="min-w-0">
+                      <p className="text-sm truncate">{bn ? (c.name_bn || c.name) : (c.name || c.name_bn)}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        {bn ? (c.divisions?.name_bn || c.divisions?.name) : (c.divisions?.name || c.divisions?.name_bn)}
+                      </p>
+                    </div>
+                    <Input type="number" min={0} max={10} className="w-20 h-8 text-center"
+                      disabled={!enabled}
+                      value={classRules[c.id] ?? ''}
+                      placeholder={applyTo === 'selected' ? '0' : String(maxSubjects)}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        setClassRules(prev => {
+                          const next = { ...prev };
+                          if (raw === '') delete next[c.id];
+                          else next[c.id] = Math.max(0, parseInt(raw) || 0);
+                          return next;
+                        });
+                      }} />
+                  </div>
+                ))}
+                {classes.length === 0 && (
+                  <p className="px-3 py-4 text-xs text-muted-foreground text-center">{bn ? 'কোনো ক্লাস নেই' : 'No classes'}</p>
+                )}
+              </div>
             </div>
 
             <p className="text-xs text-muted-foreground leading-relaxed rounded-xl border p-3 bg-muted/20">

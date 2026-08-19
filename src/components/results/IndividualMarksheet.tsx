@@ -67,7 +67,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack }:
 
   const totalMarks = subjectResults.reduce((sum, r) => sum + r.marks, 0);
   const avgMarks = subjects.length > 0 ? totalMarks / subjects.length : 0;
-  const overall: any = getOverallGrade(subjectResults.map(r => r.marks));
+  const overall: any = getOverallGrade(subjectResults.map(r => r.marks), student?.class_id);
   const morjada = (bn ? overall.title_bn : overall.title) || overall.title_bn || getMorjada(overall.grade);
 
   const instName = bn ? institution?.name : (institution?.name_en || institution?.name);
