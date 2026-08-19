@@ -7,6 +7,8 @@ import { exportResultCSV, exportResultPDF } from '@/lib/resultExport';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { toBnDigits, toEnDigits } from '@/lib/digits';
+
 
 // Legacy export for backward compat
 const getGrade = (avg: number) => {
@@ -202,10 +204,19 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
                       <td key={sub.id} className="px-1 py-1.5 text-center">
                         <Input
                           className={`w-16 h-8 text-center bg-background text-sm mx-auto focus:border-primary ${isFail ? 'border-destructive text-destructive' : 'border-border/50'}`}
-                          type="number" min={minMarks} max={maxMarks}
-                          value={mark === 0 ? '' : mark || ''}
-                          onChange={(e) => onMarksChange(`${st.id}_${sub.id}`, parseInt(e.target.value) || 0)}
+                          type="text"
+                          inputMode="numeric"
+                          data-bijoy={bn}
+                          value={mark === 0 ? '' : (bn ? toBnDigits(mark) : String(mark))}
+                          onChange={(e) => {
+                            const raw = toEnDigits(e.target.value).replace(/[^0-9]/g, '');
+                            if (raw === '') { onMarksChange(`${st.id}_${sub.id}`, 0); return; }
+                            let num = parseInt(raw, 10) || 0;
+                            if (num > maxMarks) num = maxMarks;
+                            onMarksChange(`${st.id}_${sub.id}`, num);
+                          }}
                         />
+
                       </td>
                     );
                   })}
