@@ -227,6 +227,12 @@ export const getResultSheetHtml = ({
   const renderRow = ({ idx, st, marks, total, avg, overall, failed }: any) => {
     const rank = rankMap.get(idx);
     const merit = (bn ? (overall as any).title_bn : (overall as any).title) || (overall as any).title_bn || (overall as any).title || '-';
+    
+    let rankDisplay = rank && rank > 0 ? rank.toString() : '-';
+    if (rank === 1) rankDisplay = bn ? '১ম' : '1st';
+    else if (rank === 2) rankDisplay = bn ? '২য়' : '2nd';
+    else if (rank === 3) rankDisplay = bn ? '৩য়' : '3rd';
+
     const marksCells = marks.map((mk: number) =>
       `<td class="num ${mk < passMark ? 'fail-cell' : ''}">${mk}</td>`
     ).join('');
@@ -240,7 +246,7 @@ export const getResultSheetHtml = ({
       <td class="num bold grade-${overall.grade?.replace(/[^A-Z]/g, '') || 'N'}">${overall.grade}</td>
       <td class="num bold">${overall.gpa}</td>
       <td class="num">${merit}</td>
-      <td class="num"><span class="rank-pill">${rank}</span></td>
+      <td class="num"><span class="rank-pill ${rank && rank <= 3 ? 'rank-top' : ''}">${rankDisplay}</span></td>
       <td class="num ${failed ? 'status-fail' : 'status-pass'}">${failed ? (bn ? 'অকৃতকার্য' : 'Fail') : (bn ? 'কৃতকার্য' : 'Pass')}</td>
     </tr>`;
   };
