@@ -963,7 +963,7 @@ const AdminResults = () => {
         </Dialog>
 
 
-        <ResultSearchFilters
+        <ResultSelectionBrowser
           searchMode={searchMode}
           onSearchModeChange={(m) => {
             setSearchMode(m);
@@ -993,18 +993,9 @@ const AdminResults = () => {
             setMarksMap({});
             setShowResults(false);
           }}
-
-          selectedClass={selectedClass}
-          onClassChange={(v) => {
-            setSelectedClass(v);
-            setSelectedExamId(null);
-            setMarksMap({});
-            setShowResults(false);
-          }}
           rollNumber={rollNumber}
           onRollNumberChange={setRollNumber}
           academicSessions={academicSessions}
-          classes={examClasses}
           examSessions={examSessions}
           onSearch={handleSearch}
           onReset={() => {
@@ -1018,6 +1009,7 @@ const AdminResults = () => {
             setViewingStudentId(null);
           }}
         />
+
 
         {/* Class list with status when year+session selected but no class */}
         {showClassList && examClasses.length > 0 && (
