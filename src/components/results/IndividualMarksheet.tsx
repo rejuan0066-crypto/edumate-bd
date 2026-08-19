@@ -80,7 +80,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
   else if (rank === 3) rankDisplay = bn ? '৩য়' : '3rd';
 
 
-  const handlePrint = () => {
+  const getMarksheetHtml = () => {
     const gradeClass = (g: string) => {
       if (g === 'F') return 'grade-f';
       if (g === 'D') return 'grade-d';
@@ -107,15 +107,16 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
 
     const overallGC = getGradeColor(overall.grade);
 
-    const html = `<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
 <title>${examTitle} - ${studentName}</title>
 <style>@font-face{font-family:"SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}</style><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'SutonnyOMJ','Noto Sans Bengali',sans-serif; padding:15mm; max-width:700px; margin:0 auto; color:#1f2937; }
+  body { font-family:'SutonnyOMJ','Noto Sans Bengali',sans-serif; padding:15mm; max-width:700px; margin:0 auto; color:#1f2937; background:#fff; }
   @media print { body { padding:10mm; } }
+  .sheet { border: 1px solid #e5e7eb; border-radius: 12px; padding: 10px; }
   .header { text-align:center; margin-bottom:16px; background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; padding:18px 20px; border-radius:12px; }
   .header-logo { width:54px; height:54px; object-fit:contain; margin:0 auto 8px; display:block; border-radius:50%; background:#fff; padding:3px; }
   .header h1 { font-size:18px; margin-bottom:3px; font-weight:800; }
@@ -154,8 +155,11 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
   .sig-line { border-top:1.5px dashed #9ca3af; padding-top:6px; margin-top:36px; }
   .sig-title { font-size:11px; font-weight:700; color:#374151; }
   .sig-name { font-size:11px; color:#6b7280; margin-top:2px; }
+  .marksheet-page { break-after: page; page-break-after: always; padding: 2px; box-sizing: border-box; }
 </style>
 </head><body>
+<div class="marksheet-page">
+<div class="sheet slip">
 <div class="header">
   ${institution?.logo_url ? `<img src="${institution.logo_url}" class="header-logo" crossorigin="anonymous" />` : ''}
   <h1>${instName || ''}</h1>
@@ -222,8 +226,13 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
     ${sigNames.principal ? `<p class="sig-name">${sigNames.principal}</p>` : ''}
   </div>
 </div>
+</div>
+</div>
 </body></html>`;
+  };
 
+  const handlePrint = () => {
+    const html = getMarksheetHtml();
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const printWindow = window.open(url, '_blank');
@@ -237,6 +246,12 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
     } else {
       URL.revokeObjectURL(url);
     }
+  };
+
+  const handleDownloadPdf = async () => {
+    const { downloadSlipAsPdf } = await import('@/lib/salarySlipPdf');
+    const html = getMarksheetHtml();
+    await downloadSlipAsPdf(html, `${studentName}_marksheet.pdf`);
   };
 
   return (
@@ -406,10 +421,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           </div>
 
           <div className="mt-6 flex justify-end gap-2">
-            <Button variant="outline" size="sm" onClick={() => {
-              const { downloadSheetAsPdf } = require('@/lib/salarySlipPdf');
-              downloadSheetAsPdf(document.body.querySelector('.card-elevated')?.outerHTML || '', `${studentName}_marksheet.pdf`);
-            }} className="gap-1.5">
+            <Button variant="outline" size="sm" onClick={handleDownloadPdf} className="gap-1.5">
               <FileDown className="w-4 h-4" /> {bn ? 'পিডিএফ ডাউনলোড' : 'Download PDF'}
             </Button>
             <Button variant="outline" size="sm" onClick={handlePrint} className="gap-1.5">
