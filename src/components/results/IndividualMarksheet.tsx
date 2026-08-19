@@ -7,6 +7,7 @@ import { getGrade } from './ClassResultTable';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { useGradingSystem } from '@/hooks/useGradingSystem';
 
 interface IndividualMarksheetProps {
   student: any;
@@ -46,6 +47,7 @@ const getGradeTwColor = (grade: string) => {
 const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack }: IndividualMarksheetProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
+  const { getOverallGrade } = useGradingSystem();
   const [sigNames, setSigNames] = useState({ examController: '', eduSecretary: '', principal: '' });
 
   const { data: institution } = useQuery({
@@ -65,7 +67,8 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack }:
 
   const totalMarks = subjectResults.reduce((sum, r) => sum + r.marks, 0);
   const avgMarks = subjects.length > 0 ? totalMarks / subjects.length : 0;
-  const overall = getGrade(avgMarks);
+  const overall: any = getOverallGrade(subjectResults.map(r => r.marks));
+  const morjada = (bn ? overall.title_bn : overall.title) || overall.title_bn || getMorjada(overall.grade);
 
   const instName = bn ? institution?.name : (institution?.name_en || institution?.name);
   const studentName = bn ? student.name_bn : (student.name_en || student.name_bn);
@@ -186,7 +189,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack }:
   <div class="summary-box box-avg"><div class="label">${bn ? 'গড়' : 'Average'}</div><div class="val">${avgMarks.toFixed(1)}</div></div>
   <div class="summary-box box-grade"><div class="label">${bn ? 'গ্রেড' : 'Grade'}</div><div class="val">${overall.grade}</div></div>
   <div class="summary-box box-gpa"><div class="label">GPA</div><div class="val">${overall.gpa}</div></div>
-  <div class="summary-box box-morjada"><div class="label">${bn ? 'মর্যাদা' : 'Merit'}</div><div class="val" style="font-size:16px;">${getMorjada(overall.grade)}</div></div>
+  <div class="summary-box box-morjada"><div class="label">${bn ? 'মর্যাদা' : 'Merit'}</div><div class="val" style="font-size:16px;">${morjada}</div></div>
 </div>
 
 <div class="signatures">
@@ -352,7 +355,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack }:
             </div>
             <div className="rounded-xl bg-purple-50 dark:bg-purple-950/30 p-3 border-2 border-purple-200 dark:border-purple-800">
               <p className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-1">{bn ? 'মর্যাদা' : 'Merit'}</p>
-              <p className="text-base font-extrabold text-purple-600 dark:text-purple-400">{getMorjada(overall.grade)}</p>
+              <p className="text-base font-extrabold text-purple-600 dark:text-purple-400">{morjada}</p>
             </div>
           </div>
         </div>

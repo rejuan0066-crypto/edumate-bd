@@ -130,7 +130,7 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
     const total = marks.reduce((a, b) => a + b, 0);
     const avg = subjects.length > 0 ? total / subjects.length : 0;
     const overall = getOverallGrade(marks);
-    const failed = marks.some(m => m < passMark) || overall.hasFail;
+    const failed = (overall as any).graced ? false : (marks.some(m => m < passMark) || overall.hasFail);
     return { idx, st, marks, total, avg, overall, failed };
   });
   const sortedByTotal = [...computed].sort((a, b) => b.total - a.total);
@@ -153,6 +153,7 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
 
   const rows = computed.map(({ idx, st, marks, total, avg, overall, failed }) => {
     const rank = rankMap.get(idx);
+    const merit = (bn ? (overall as any).title_bn : (overall as any).title) || (overall as any).title_bn || (overall as any).title || '-';
     const marksCells = marks.map(m =>
       `<td class="num ${m < passMark ? 'fail-cell' : ''}">${m}</td>`
     ).join('');
@@ -165,10 +166,12 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
       <td class="num">${avg.toFixed(1)}</td>
       <td class="num bold grade-${overall.grade?.replace(/[^A-Z]/g, '') || 'N'}">${overall.grade}</td>
       <td class="num bold">${overall.gpa}</td>
+      <td class="num">${merit}</td>
       <td class="num"><span class="rank-pill">${rank}</span></td>
       <td class="num ${failed ? 'status-fail' : 'status-pass'}">${failed ? (bn ? 'অকৃতকার্য' : 'Fail') : (bn ? 'কৃতকার্য' : 'Pass')}</td>
     </tr>`;
   }).join('');
+
 
   const metaRow = (label: string, value: string) =>
     value ? `<div class="meta-item"><span class="meta-k">${label}</span><span class="meta-v">${value}</span></div>` : '';
@@ -282,7 +285,7 @@ ${(() => {
 
   const colgroupHtml = (() => {
     const n = subjects.length;
-    const fixedW = { idx: 3, roll: 5, name: 18, total: 5, avg: 4, grade: 5, gpa: 4, rank: 5, status: 7 };
+    const fixedW = { idx: 3, roll: 5, name: 16, total: 5, avg: 4, grade: 5, gpa: 4, merit: 8, rank: 5, status: 7 };
     const used = Object.values(fixedW).reduce((a, b) => a + b, 0);
     const subjectPool = Math.max(20, 100 - used);
     const sw = n > 0 ? +(subjectPool / n).toFixed(3) : 0;
@@ -295,6 +298,7 @@ ${(() => {
       `<col style="width:${fixedW.avg}%">`,
       `<col style="width:${fixedW.grade}%">`,
       `<col style="width:${fixedW.gpa}%">`,
+      `<col style="width:${fixedW.merit}%">`,
       `<col style="width:${fixedW.rank}%">`,
       `<col style="width:${fixedW.status}%">`,
     ].join('');
@@ -351,6 +355,7 @@ ${(() => {
           <th>${bn ? 'গড়' : 'Avg'}</th>
           <th>${bn ? 'গ্রেড' : 'Grade'}</th>
           <th>GPA</th>
+          <th>${bn ? 'মর্যাদা' : 'Merit'}</th>
           <th>${bn ? 'মেধাক্রম' : 'Rank'}</th>
           <th>${bn ? 'অবস্থা' : 'Status'}</th>
         </tr></thead>
