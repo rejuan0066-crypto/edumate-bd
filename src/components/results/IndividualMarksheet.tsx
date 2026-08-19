@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
-import { Printer, ArrowLeft } from 'lucide-react';
+import { Printer, ArrowLeft, FileDown } from 'lucide-react';
 import { getGrade } from './ClassResultTable';
 import { useQuery } from '@tanstack/react-query';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
@@ -49,6 +49,43 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
 
   const instName = bn ? institution?.name : (institution?.name_en || institution?.name);
   const studentName = bn ? student.name_bn : (student.name_en || student.name_bn);
+
+  const handleDownloadPdf = async () => {
+    const { downloadSlipAsPdf } = await import('@/lib/salarySlipPdf');
+    const printContent = document.getElementById('marksheet-printable-area');
+    if (!printContent) return;
+    
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>${examTitle} - ${studentName}</title>
+          <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;800&display=swap" rel="stylesheet">
+          <script src="https://cdn.tailwindcss.com"></script>
+          <style>
+            @page { size: A4 portrait; margin: 10mm; }
+            body { 
+              font-family: 'Noto Sans Bengali', sans-serif; 
+              background: white; 
+              color: black;
+              margin: 0;
+              padding: 0;
+            }
+            .printable-sheet { width: 100%; }
+            .bg-\\[\\#1e5d3b\\] { background-color: #1e5d3b !important; -webkit-print-color-adjust: exact; }
+            .text-white { color: white !important; }
+          </style>
+        </head>
+        <body>
+          <div class="printable-sheet">
+            ${printContent.innerHTML}
+          </div>
+        </body>
+      </html>
+    `;
+    await downloadSlipAsPdf(html, `${studentName}_marksheet.pdf`);
+  };
 
   const handlePrint = () => {
     const printContent = document.getElementById('marksheet-printable-area');
@@ -100,10 +137,16 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           <ArrowLeft className="w-4 h-4" />
           {bn ? 'ফিরে যান' : 'Back'}
         </Button>
-        <Button size="sm" onClick={handlePrint} className="gap-1.5 bg-emerald-700 hover:bg-emerald-800">
-          <Printer className="w-4 h-4" />
-          {bn ? 'প্রিন্ট / PDF' : 'Print / PDF'}
-        </Button>
+        <div className="flex gap-2">
+          <Button size="sm" onClick={handleDownloadPdf} className="gap-1.5 bg-blue-700 hover:bg-blue-800">
+            <FileDown className="w-4 h-4" />
+            {bn ? 'ডাউনলোড' : 'Download'}
+          </Button>
+          <Button size="sm" onClick={handlePrint} className="gap-1.5 bg-emerald-700 hover:bg-emerald-800">
+            <Printer className="w-4 h-4" />
+            {bn ? 'প্রিন্ট / PDF' : 'Print / PDF'}
+          </Button>
+        </div>
       </div>
 
       <div id="marksheet-printable-area" className="mx-auto max-w-[210mm] min-h-[297mm] bg-white text-black p-[10mm] shadow-lg border border-gray-200 print:shadow-none print:border-none print:p-0">
@@ -184,7 +227,6 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           ))}
         </div>
       </div>
-
     </div>
   );
 };
