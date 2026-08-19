@@ -638,7 +638,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
 
   return (
     <AdminLayoutNestingContext.Provider value>
-      <div className="min-h-screen bg-transparent" style={{ ['--admin-sidebar-width' as string]: `${desktopSidebarWidth}px` }}>
+      <div className="min-h-screen bg-transparent w-full overflow-x-auto" style={{ ['--admin-sidebar-width' as string]: `${desktopSidebarWidth}px` }}>
         {renderSidebar(false)}
         {mobileSidebarOpen && renderSidebar(true)}
 
