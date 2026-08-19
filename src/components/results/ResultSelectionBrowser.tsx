@@ -32,6 +32,8 @@ const ResultSelectionBrowser = ({
   rollNumber, onRollNumberChange,
   onSearch, onReset,
   academicSessions, examSessions,
+  classes = [], selectedClass = '', onClassChange,
+
 }: Props) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
