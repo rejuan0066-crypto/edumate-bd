@@ -87,7 +87,8 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
       )}
 
       {/* Institution Header */}
-      <div className="sticky top-[56px] sm:top-[64px] lg:top-[80px] z-30 border-b border-border bg-background px-5 py-4 text-center">
+      {/* Institution Header */}
+      <div className="sticky top-[var(--header-height,64px)] z-30 border-b border-border bg-background px-5 py-4 text-center">
         <div className="flex items-center justify-center gap-4">
           {institution?.logo_url && (
             <img src={institution.logo_url} alt="" className="w-12 h-12 object-contain rounded" />
@@ -105,7 +106,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
       </div>
 
       {/* Title & Actions Bar */}
-      <div className="sticky top-[137px] sm:top-[145px] lg:top-[161px] z-20 flex items-center justify-between px-5 py-3 border-b border-border bg-background/95 backdrop-blur-sm shadow-sm">
+      <div className="sticky top-[calc(var(--header-height,64px)+81px)] z-20 flex items-center justify-between px-5 py-3 border-b border-border bg-background/95 backdrop-blur-sm shadow-sm">
         <div className="flex items-center gap-2">
           {onClose && (
             <button onClick={onClose} className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title={bn ? 'বন্ধ করুন' : 'Close'}>
@@ -133,7 +134,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
 
       <div className="relative z-10 overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="sticky top-[189px] sm:top-[197px] lg:top-[213px] z-20 bg-background/95 backdrop-blur-sm shadow-sm">
+          <thead className="sticky top-[calc(var(--header-height,64px)+133px)] z-20 bg-background/95 backdrop-blur-sm shadow-sm">
             <tr className="border-b border-border">
               <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground w-10">#</th>
               <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground">{bn ? 'রোল' : 'Roll'}</th>
