@@ -15,6 +15,7 @@ interface IndividualMarksheetProps {
   marksMap: Record<string, number>;
   examTitle: string;
   onBack: () => void;
+  rank?: number;
 }
 
 const getMorjada = (grade: string) => {
