@@ -1414,7 +1414,10 @@
 [id^="lovable-badge"],
 a[href*="lovable.dev"][target="_blank"],
 a[aria-label*="Lovable" i],
-a[aria-label*="Edit with Lovable" i] {
+a[aria-label*="Edit with Lovable" i],
+#lovable-badge, 
+.lovable-badge,
+[class*="lovable-badge"] {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
