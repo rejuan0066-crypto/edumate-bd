@@ -281,7 +281,36 @@ const AdminResults = () => {
     onError: (e: any) => toast.error(e.message || 'Error'),
   });
 
+  // Last saved info (who + when) for the currently open exam
+  const { data: lastSavedInfo } = useQuery({
+    queryKey: ['results-last-saved', selectedExamId, marksMap && Object.keys(marksMap).length],
+    queryFn: async () => {
+      if (!selectedExamId) return null;
+      const { data } = await supabase
+        .from('results')
+        .select('updated_at, updated_by, created_by')
+        .eq('exam_id', selectedExamId)
+        .order('updated_at', { ascending: false })
+        .limit(1);
+      const row: any = data?.[0];
+      if (!row) return null;
+      const userId = row.updated_by || row.created_by;
+      let name = '';
+      if (userId) {
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('full_name, email')
+          .eq('id', userId)
+          .maybeSingle();
+        name = (prof as any)?.full_name || (prof as any)?.email || '';
+      }
+      return { at: row.updated_at as string, name };
+    },
+    enabled: !!selectedExamId && showResults,
+  });
+
   const getExamTitle = () => {
+
     const session = examSessions.find((es: any) => es.id === examSessionId);
     const year = academicSessions.find((s: any) => s.id === examYear);
     const cls = examClasses.find((c: any) => c.id === selectedClass);
@@ -999,6 +1028,8 @@ const AdminResults = () => {
             onSave={() => saveMutation.mutate()}
             isSaving={saveMutation.isPending}
             title={getExamTitle()}
+            lastSaved={lastSavedInfo || null}
+
             onViewMarksheet={(id, rank) => {
               setViewingStudentId(id);
               setViewingStudentRank(rank);
