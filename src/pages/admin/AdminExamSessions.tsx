@@ -13,6 +13,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { useConfirm } from '@/contexts/ConfirmContext';
+import ManageExamSessionDialog from '@/components/admin/exam-sessions/ManageExamSessionDialog';
+
 
 const AdminExamSessions = () => {
   const { language } = useLanguage();
@@ -23,6 +25,8 @@ const AdminExamSessions = () => {
 
   const confirm = useConfirm();
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
+  const [manageSession, setManageSession] = useState<any | null>(null);
+
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editSessionName, setEditSessionName] = useState('');
   const [editSessionNameBn, setEditSessionNameBn] = useState('');
@@ -839,11 +843,18 @@ const AdminExamSessions = () => {
                             <GraduationCap className="w-3.5 h-3.5" />
                             {bn ? 'ফলাফল তৈরি' : 'Create Result'}
                           </Button>
+                          {canEditItem && (
+                            <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={() => setManageSession(es)}>
+                              <Settings2 className="w-3.5 h-3.5" />
+                              {bn ? 'ক্লাস/বিষয়/ছাত্র' : 'Classes/Subjects/Students'}
+                            </Button>
+                          )}
                           {canEditItem && editingSessionId !== es.id && (
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingSessionId(es.id); setEditSessionName(es.name || ''); setEditSessionNameBn(es.name_bn || ''); }}>
                               <Edit2 className="w-3.5 h-3.5" />
                             </Button>
                           )}
+
 
                           {canDeleteItem && (
                             <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => deleteMutation.mutate(es.id)}>
@@ -945,7 +956,14 @@ const AdminExamSessions = () => {
         </div>
       </div>
 
+      <ManageExamSessionDialog
+        open={!!manageSession}
+        onOpenChange={(v) => { if (!v) setManageSession(null); }}
+        examSession={manageSession}
+      />
+
       {/* Quick Add Exam Type Dialog */}
+
       <Dialog open={quickAddOpen} onOpenChange={setQuickAddOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
