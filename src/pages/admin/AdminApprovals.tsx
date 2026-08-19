@@ -166,6 +166,9 @@ const AdminApprovals = () => {
             {bn ? (
               <>
                 '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+                                        
+                                            
+                                            I have approved the plan
                 <br />
                 <br />
                 কুনু কিছু যদি অনুমোদনের জন্য যদি এডমিনের কাছে আসে তাইলে এডমিনের কাছে যাতে নটিফিকেশন আসে
