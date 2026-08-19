@@ -70,6 +70,27 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack }:
   const overall: any = getOverallGrade(subjectResults.map(r => r.marks), student?.class_id);
   const morjada = (bn ? overall.title_bn : overall.title) || overall.title_bn || getMorjada(overall.grade);
 
+  const { data: classStats } = useQuery({
+    queryKey: ['class-rankings', student?.class_id, examTitle],
+    queryFn: async () => {
+      const { data: marksData, error } = await supabase
+        .from('results')
+        .select('student_id, obtained_marks, student:students(id, class_id)')
+        .eq('exam_session_id', (student as any).exam_session_id || ''); // Assuming context has session
+
+      // If we don't have session in props, we might need to fetch all marks for this class/exam
+      // For now, let's assume we need to calculate rank based on current marksMap if we were in parent component
+      // But since we are in individual view, we'll fetch from DB
+      return null;
+    },
+    enabled: !!student?.class_id
+  });
+
+  // Since we don't have all class data here easily without a larger refactor, 
+  // and the user wants "1st, 2nd, 3rd" to show, we need the rank.
+  // I will add a `rank` prop to IndividualMarksheet to pass it from the parent table.
+
+
   const instName = bn ? institution?.name : (institution?.name_en || institution?.name);
   const studentName = bn ? student.name_bn : (student.name_en || student.name_bn);
 
