@@ -42,6 +42,7 @@ const AdminResults = () => {
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [marksMap, setMarksMap] = useState<Record<string, number>>({});
   const [viewingStudentId, setViewingStudentId] = useState<string | null>(null);
+  const [viewingStudentRank, setViewingStudentRank] = useState<number | undefined>(undefined);
   const [exportingClassId, setExportingClassId] = useState<string | null>(null);
 
   // Show class list when we have year+session from URL but no class selected
