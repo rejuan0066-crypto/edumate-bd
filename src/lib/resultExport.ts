@@ -389,17 +389,72 @@ ${(() => {
 <style>.result-page{break-after:page;page-break-after:always;}.result-page:last-child{break-after:auto;page-break-after:auto;}.signatures-wrap{margin-top:24px;}</style>
 </body></html>`;
 
-  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const printWindow = window.open(url, '_blank');
-  if (printWindow) {
-    printWindow.onload = () => {
-      setTimeout(() => {
-        printWindow.print();
-        URL.revokeObjectURL(url);
-      }, 700);
+  renderPrintDocument(html, title);
+};
+
+/**
+ * Print/save-as-PDF without depending on popups.
+ * Popup blockers (and installed PWAs) silently returned null from
+ * window.open(), so the "Download PDF" button appeared to do nothing.
+ * A hidden same-document iframe always works; a new tab is only used as a
+ * last-resort fallback.
+ */
+const renderPrintDocument = (html: string, title: string) => {
+  try {
+    const existing = document.getElementById('__result_print_frame__');
+    if (existing) existing.remove();
+
+    const iframe = document.createElement('iframe');
+    iframe.id = '__result_print_frame__';
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) throw new Error('no iframe document');
+
+    doc.open();
+    doc.write(html);
+    doc.close();
+
+    const fire = () => {
+      try {
+        const win = iframe.contentWindow;
+        if (!win) return;
+        win.focus();
+        win.print();
+      } catch {
+        /* ignore */
+      }
+      setTimeout(() => iframe.remove(), 60000);
     };
-  } else {
-    URL.revokeObjectURL(url);
+
+    // Wait for webfonts/images so Bangla text is shaped before printing
+    const ready = () => {
+      const fonts = (doc as any).fonts;
+      if (fonts?.ready) {
+        fonts.ready.then(() => setTimeout(fire, 350)).catch(() => setTimeout(fire, 600));
+      } else {
+        setTimeout(fire, 700);
+      }
+    };
+
+    if (doc.readyState === 'complete') ready();
+    else iframe.onload = ready;
+  } catch {
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const w = window.open(url, '_blank');
+    if (w) {
+      w.onload = () => setTimeout(() => { w.print(); URL.revokeObjectURL(url); }, 700);
+    } else {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${title.replace(/[^a-zA-Z0-9\u0980-\u09FF\s]/g, '_')}.html`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
   }
 };
