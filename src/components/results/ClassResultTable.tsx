@@ -161,13 +161,13 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
         <div 
           ref={leftPanelRef}
           onScroll={handleScroll}
-          className="w-[120px] xs:w-[180px] sm:w-[220px] flex flex-col border-r border-gray-300 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.1)] bg-background z-20 overflow-y-auto no-scrollbar"
+          className="w-[120px] xs:w-[180px] sm:w-[220px] flex flex-col border-r border-gray-300 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.1)] bg-background z-20 overflow-y-auto no-scrollbar max-h-[75vh]"
         >
-          {/* Header */}
-          <div className="sticky top-0 z-30 flex bg-slate-50 border-b border-border shrink-0 min-h-[48px]">
-            <div className="w-8 sm:w-10 px-1 sm:px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0">#</div>
-            <div className="w-10 sm:w-16 px-1 sm:px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0">{bn ? 'রোল' : 'Roll'}</div>
-            <div className="flex-1 px-2 py-3 text-left text-[10px] sm:text-xs font-bold text-muted-foreground">{bn ? 'নাম' : 'Name'}</div>
+          {/* Header - STICKY TOP */}
+          <div className="sticky top-0 z-50 flex bg-slate-50 border-b border-border shrink-0 min-h-[48px]">
+            <div className="w-8 sm:w-10 px-1 sm:px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50">#</div>
+            <div className="w-10 sm:w-16 px-1 sm:px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50">{bn ? 'রোল' : 'Roll'}</div>
+            <div className="flex-1 px-2 py-3 text-left text-[10px] sm:text-xs font-bold text-muted-foreground bg-slate-50">{bn ? 'নাম' : 'Name'}</div>
           </div>
           
           {/* Rows */}
@@ -188,23 +188,23 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
         <div 
           ref={rightPanelRef}
           onScroll={handleScroll}
-          className="flex-1 flex flex-col overflow-auto touch-auto"
+          className="flex-1 flex flex-col overflow-auto touch-auto max-h-[75vh]"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
-          {/* Header */}
-          <div className="sticky top-0 z-10 flex bg-slate-50 border-b border-border shrink-0 min-h-[48px]">
+          {/* Header - STICKY TOP */}
+          <div className="sticky top-0 z-30 flex bg-slate-50 border-b border-border shrink-0 min-h-[48px]">
             {subjects.map((s: any) => (
-              <div key={s.id} className="w-[70px] sm:w-[90px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 truncate">
+              <div key={s.id} className="w-[70px] sm:w-[90px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 truncate bg-slate-50">
                 {bn ? s.name_bn : s.name}
               </div>
             ))}
-            <div className="w-[60px] sm:w-[80px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0">{bn ? 'মোট' : 'Total'}</div>
-            <div className="w-[60px] sm:w-[80px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0">{bn ? 'গড়' : 'Avg'}</div>
-            <div className="w-[60px] sm:w-[80px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0">{bn ? 'গ্রেড' : 'Grade'}</div>
-            <div className="w-[60px] sm:w-[80px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0">GPA</div>
-            <div className="w-[80px] sm:w-[100px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0">{bn ? 'মর্যাদা' : 'Title'}</div>
-            <div className="w-[60px] sm:w-[80px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0">{bn ? 'মেধা' : 'Rank'}</div>
-            <div className="w-[50px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground shrink-0"></div>
+            <div className="w-[60px] sm:w-[80px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50">{bn ? 'মোট' : 'Total'}</div>
+            <div className="w-[60px] sm:w-[80px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50">{bn ? 'গড়' : 'Avg'}</div>
+            <div className="w-[60px] sm:w-[80px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50">{bn ? 'গ্রেড' : 'Grade'}</div>
+            <div className="w-[60px] sm:w-[80px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50">GPA</div>
+            <div className="w-[80px] sm:w-[100px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50">{bn ? 'মর্যাদা' : 'Title'}</div>
+            <div className="w-[60px] sm:w-[80px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50">{bn ? 'মেধা' : 'Rank'}</div>
+            <div className="w-[50px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground shrink-0 bg-slate-50"></div>
           </div>
 
           {/* Rows */}
