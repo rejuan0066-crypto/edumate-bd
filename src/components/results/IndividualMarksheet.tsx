@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Printer, ArrowLeft } from 'lucide-react';
+import { Printer, ArrowLeft, FileDown } from 'lucide-react';
 import { getGrade } from './ClassResultTable';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -405,7 +405,13 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             ))}
           </div>
 
-          <div className="mt-6 flex justify-end">
+          <div className="mt-6 flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => {
+              const { downloadSheetAsPdf } = require('@/lib/salarySlipPdf');
+              downloadSheetAsPdf(document.body.querySelector('.card-elevated')?.outerHTML || '', `${studentName}_marksheet.pdf`);
+            }} className="gap-1.5">
+              <FileDown className="w-4 h-4" /> {bn ? 'পিডিএফ ডাউনলোড' : 'Download PDF'}
+            </Button>
             <Button variant="outline" size="sm" onClick={handlePrint} className="gap-1.5">
               <Printer className="w-4 h-4" /> {bn ? 'প্রিন্ট মার্কশিট' : 'Print Marksheet'}
             </Button>
