@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { toBnDigits, toEnDigits } from '@/lib/digits';
-
+import React, { useRef, useEffect } from 'react';
 
 // Legacy export for backward compat
 const getGrade = (avg: number) => {
@@ -35,10 +35,12 @@ interface ClassResultTableProps {
 }
 
 const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave, isSaving, title, onViewMarksheet, onClose, lastSaved }: ClassResultTableProps) => {
-
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { getOverallGrade, maxMarks, minMarks, passMark } = useGradingSystem();
+  
+  const leftPanelRef = useRef<HTMLDivElement>(null);
+  const rightPanelRef = useRef<HTMLDivElement>(null);
 
   const { data: institution } = useQuery({
     queryKey: ['institution-default'],
@@ -48,6 +50,16 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
     },
     staleTime: 10 * 60 * 1000,
   });
+
+  // Sync scrolling between left and right panels
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    if (target === leftPanelRef.current && rightPanelRef.current) {
+      rightPanelRef.current.scrollTop = target.scrollTop;
+    } else if (target === rightPanelRef.current && leftPanelRef.current) {
+      leftPanelRef.current.scrollTop = target.scrollTop;
+    }
+  };
 
   const handleExport = (type: 'csv' | 'pdf') => {
     const params = {
@@ -75,21 +87,34 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
 
   const instName = bn ? institution?.name : (institution?.name_en || institution?.name);
 
-  return (
-    <div className="card-elevated rounded-xl overflow-hidden relative">
-      {/* Logo Watermark */}
-      {institution?.logo_url && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
-          <img
-            src={institution.logo_url}
-            alt=""
-            className="w-80 h-80 object-contain opacity-[0.03] dark:opacity-[0.05]"
-          />
-        </div>
-      )}
+  // Pre-calculate stats and ranks
+  const studentsWithStats = students.map((st: any, idx: number) => {
+    const hasEnteredAnyMark = subjects.some((sub: any) => marksMap[`${st.id}_${sub.id}`] !== undefined);
+    const studentMarks = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`] ?? 0);
+    const total = hasEnteredAnyMark ? studentMarks.reduce((a, b) => a + b, 0) : 0;
+    const overall = hasEnteredAnyMark ? getOverallGrade(studentMarks, st.class_id) : null;
+    const failed = overall ? ((overall as any).graced ? false : (studentMarks.some(m => m < passMark && m > 0) || overall.hasFail)) : false;
+    const avg = subjects.length > 0 ? total / subjects.length : 0;
+    return { st, studentMarks, total, avg, overall, failed, hasEnteredAnyMark, originalIdx: idx };
+  });
 
+  const sortedForRank = [...studentsWithStats]
+    .filter(a => a.hasEnteredAnyMark)
+    .sort((a, b) => {
+      if (a.failed && !b.failed) return 1;
+      if (!a.failed && b.failed) return -1;
+      return b.total - a.total;
+    });
+
+  const rankMap = new Map<string, number>();
+  sortedForRank.forEach((item, i) => {
+    if (!item.failed) rankMap.set(item.st.id, i + 1);
+  });
+
+  return (
+    <div className="card-elevated rounded-xl overflow-hidden relative flex flex-col h-full bg-background">
       {/* Institution Header */}
-      <div className="border-b border-border bg-background px-5 py-4 text-center">
+      <div className="border-b border-border bg-background px-5 py-4 text-center shrink-0">
         <div className="flex flex-col items-center justify-center gap-2">
           {institution?.logo_url && (
             <img src={institution.logo_url} alt="" className="w-12 h-12 object-contain rounded" />
@@ -97,20 +122,12 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
           <div>
             <h2 className="text-base font-bold text-foreground">{instName || ''}</h2>
             <h3 className="font-display font-bold text-foreground text-lg mt-1">{title}</h3>
-            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground">
-              {institution?.address && (
-                <p>{institution.address}</p>
-              )}
-              {institution?.phone && (
-                <p>{bn ? 'ফোন' : 'Phone'}: {institution.phone}</p>
-              )}
-            </div>
           </div>
         </div>
       </div>
 
-      {/* Title & Actions Bar — non-sticky so it scrolls with content and never covers student names */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-background shadow-sm">
+      {/* Actions Bar */}
+      <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-background shadow-sm shrink-0">
         <div className="flex items-center gap-3">
           {onClose && (
             <button onClick={onClose} className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title={bn ? 'বন্ধ করুন' : 'Close'}>
@@ -118,176 +135,171 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
             </button>
           )}
           {lastSaved?.at && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">
               {bn ? 'সর্বশেষ সংরক্ষণ' : 'Last saved'}: {new Date(lastSaved.at).toLocaleString(bn ? 'bn-BD' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' })}
-              {lastSaved.name ? ` — ${lastSaved.name}` : ''}
             </p>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => handleExport('csv')} className="gap-1.5">
-            <FileSpreadsheet className="w-4 h-4" /> Excel
+        <div className="flex items-center gap-1 sm:gap-2">
+          <Button variant="outline" size="sm" onClick={() => handleExport('csv')} className="h-8 px-2 sm:px-3 text-[10px] sm:text-sm gap-1">
+            <FileSpreadsheet className="w-3.5 h-3.5" /> <span className="hidden xs:inline">Excel</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={() => handleExport('pdf')} className="gap-1.5">
-            <FileDown className="w-4 h-4" /> PDF
+          <Button variant="outline" size="sm" onClick={() => handleExport('pdf')} className="h-8 px-2 sm:px-3 text-[10px] sm:text-sm gap-1">
+            <FileDown className="w-3.5 h-3.5" /> <span className="hidden xs:inline">PDF</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={() => handleExport('pdf')} className="gap-1.5">
-            <Printer className="w-4 h-4" /> {bn ? 'প্রিন্ট' : 'Print'}
-          </Button>
-          <Button size="sm" className="btn-primary-gradient gap-1.5" onClick={onSave} disabled={isSaving}>
-            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          <Button size="sm" className="btn-primary-gradient h-8 px-2 sm:px-3 text-[10px] sm:text-sm gap-1" onClick={onSave} disabled={isSaving}>
+            {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
             {bn ? 'সংরক্ষণ' : 'Save'}
           </Button>
         </div>
       </div>
 
-      <div className="relative z-10 overflow-auto max-h-[70vh] result-table-scroll touch-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
-        <table className="w-full text-sm border-separate border-spacing-0 table-fixed">
-          <thead className="sticky top-0 z-30 bg-background shadow-sm" style={{ position: '-webkit-sticky' }}>
-            <tr className="border-b border-border">
-              <th className="sticky top-0 left-0 z-50 px-3 py-3 text-left text-xs font-semibold text-muted-foreground w-10 min-w-[40px] bg-background border-r border-border shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]" style={{ position: '-webkit-sticky' }}>#</th>
-              <th className="sticky top-0 left-10 z-50 px-3 py-3 text-left text-xs font-semibold text-muted-foreground w-[60px] min-w-[60px] bg-background border-r border-border shadow-[2px_2px_5px_-2px_rgba(0,0,0,0.1)]" style={{ position: '-webkit-sticky' }}>{bn ? 'রোল' : 'Roll'}</th>
-              <th className="sticky top-0 left-[100px] z-50 px-3 py-3 text-left text-xs font-semibold text-muted-foreground bg-background border-r border-gray-300 shadow-[2px_2px_5px_-2px_rgba(0,0,0,0.1)] min-w-[120px] w-[150px]" style={{ position: '-webkit-sticky' }}>{bn ? 'নাম' : 'Name'}</th>
-              {subjects.map((s: any) => (
-                <th key={s.id} className="sticky top-0 px-2 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[70px] w-[80px] bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]" style={{ position: '-webkit-sticky' }}>
-                  {bn ? s.name_bn : s.name}
-                </th>
-              ))}
-              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[60px] w-[70px] bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]" style={{ position: '-webkit-sticky' }}>{bn ? 'মোট' : 'Total'}</th>
-              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[60px] w-[70px] bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]" style={{ position: '-webkit-sticky' }}>{bn ? 'গড়' : 'Avg'}</th>
-              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[60px] w-[70px] bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]" style={{ position: '-webkit-sticky' }}>{bn ? 'গ্রেড' : 'Grade'}</th>
-              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[60px] w-[70px] bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]" style={{ position: '-webkit-sticky' }}>GPA</th>
-              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[80px] w-[100px] bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]" style={{ position: '-webkit-sticky' }}>{bn ? 'মর্যাদা' : 'Title'}</th>
-              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground min-w-[60px] w-[70px] bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]" style={{ position: '-webkit-sticky' }}>{bn ? 'মেধা' : 'Rank'}</th>
-              <th className="sticky top-0 px-3 py-3 text-center text-xs font-semibold text-muted-foreground w-10 min-w-[40px] bg-background shadow-[0_2px_5px_-2px_rgba(0,0,0,0.1)]" style={{ position: '-webkit-sticky' }}></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {/* Table Head is handled above with sticky positioning */}
-            {(() => {
-              const studentsWithStats = students.map((st: any, idx: number) => {
-                const hasEnteredAnyMark = subjects.some((sub: any) => marksMap[`${st.id}_${sub.id}`] !== undefined);
-                const studentMarks = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`] ?? 0);
-                const total = hasEnteredAnyMark ? studentMarks.reduce((a, b) => a + b, 0) : 0;
-                const overall = hasEnteredAnyMark ? getOverallGrade(studentMarks, st.class_id) : null;
-                const failed = overall ? ((overall as any).graced ? false : (studentMarks.some(m => m < passMark && m > 0) || overall.hasFail)) : false;
-                return { st, studentMarks, total, overall, failed, hasEnteredAnyMark, originalIdx: idx };
-              });
+      {/* Main Grid Container */}
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Fixed Left Panel: Student Info */}
+        <div 
+          ref={leftPanelRef}
+          onScroll={handleScroll}
+          className="w-[120px] xs:w-[180px] sm:w-[220px] flex flex-col border-r border-gray-300 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.1)] bg-background z-20 overflow-y-auto no-scrollbar"
+        >
+          {/* Header */}
+          <div className="sticky top-0 z-30 flex bg-slate-50 border-b border-border shrink-0 min-h-[48px]">
+            <div className="w-8 sm:w-10 px-1 sm:px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0">#</div>
+            <div className="w-10 sm:w-16 px-1 sm:px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0">{bn ? 'রোল' : 'Roll'}</div>
+            <div className="flex-1 px-2 py-3 text-left text-[10px] sm:text-xs font-bold text-muted-foreground">{bn ? 'নাম' : 'Name'}</div>
+          </div>
+          
+          {/* Rows */}
+          {studentsWithStats.map(({ st, originalIdx, failed }) => (
+            <div key={st.id} className={`flex border-b border-border shrink-0 min-h-[48px] items-center hover:bg-slate-50 transition-colors ${failed ? 'bg-destructive/5' : 'bg-white'}`}>
+              <div className="w-8 sm:w-10 px-1 sm:px-2 py-2 text-center text-[10px] sm:text-xs text-muted-foreground border-r border-border shrink-0">{originalIdx + 1}</div>
+              <div className="w-10 sm:w-16 px-1 sm:px-2 py-2 text-center text-[10px] sm:text-xs font-medium text-foreground border-r border-border shrink-0">
+                {bn ? toBnDigits(st.roll_number || 0) : (st.roll_number || '-')}
+              </div>
+              <div className="flex-1 px-2 py-2 text-[10px] sm:text-xs font-medium text-foreground truncate">
+                {bn ? st.name_bn : (st.name_en || st.name_bn)}
+              </div>
+            </div>
+          ))}
+        </div>
 
-              const sortedForRank = [...studentsWithStats]
-                .filter(a => a.hasEnteredAnyMark)
-                .sort((a, b) => {
-                  if (a.failed && !b.failed) return 1;
-                  if (!a.failed && b.failed) return -1;
-                  return b.total - a.total;
-                });
+        {/* Scrollable Right Panel: Marks Entry */}
+        <div 
+          ref={rightPanelRef}
+          onScroll={handleScroll}
+          className="flex-1 flex flex-col overflow-auto touch-auto"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
+          {/* Header */}
+          <div className="sticky top-0 z-10 flex bg-slate-50 border-b border-border shrink-0 min-h-[48px]">
+            {subjects.map((s: any) => (
+              <div key={s.id} className="w-[70px] sm:w-[90px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 truncate">
+                {bn ? s.name_bn : s.name}
+              </div>
+            ))}
+            <div className="w-[60px] sm:w-[80px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0">{bn ? 'মোট' : 'Total'}</div>
+            <div className="w-[60px] sm:w-[80px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0">{bn ? 'গড়' : 'Avg'}</div>
+            <div className="w-[60px] sm:w-[80px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0">{bn ? 'গ্রেড' : 'Grade'}</div>
+            <div className="w-[60px] sm:w-[80px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0">GPA</div>
+            <div className="w-[80px] sm:w-[100px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0">{bn ? 'মর্যাদা' : 'Title'}</div>
+            <div className="w-[60px] sm:w-[80px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0">{bn ? 'মেধা' : 'Rank'}</div>
+            <div className="w-[50px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground shrink-0"></div>
+          </div>
 
-              const rankMap = new Map<string, number>();
-              sortedForRank.forEach((item, i) => {
-                if (!item.failed) rankMap.set(item.st.id, i + 1);
-              });
+          {/* Rows */}
+          {studentsWithStats.map(({ st, total, avg, overall, failed, hasEnteredAnyMark }) => {
+            const rank = rankMap.get(st.id);
+            let rankDisplay = rank ? rank.toString() : '-';
+            if (rank === 1) rankDisplay = bn ? '১ম' : '1st';
+            else if (rank === 2) rankDisplay = bn ? '২য়' : '2nd';
+            else if (rank === 3) rankDisplay = bn ? '৩য়' : '3rd';
 
-              return studentsWithStats.map(({ st, studentMarks, total, overall, failed, hasEnteredAnyMark, originalIdx }) => {
-                const avg = subjects.length > 0 ? total / subjects.length : 0;
-                const rank = rankMap.get(st.id);
-                let rankDisplay = rank ? rank.toString() : '-';
-                if (rank === 1) rankDisplay = bn ? '১ম' : '1st';
-                else if (rank === 2) rankDisplay = bn ? '২য়' : '2nd';
-                else if (rank === 3) rankDisplay = bn ? '৩য়' : '3rd';
-
-                return (
-                  <tr key={st.id} className={`hover:bg-muted/20 transition-colors ${failed ? 'bg-destructive/5' : ''}`}>
-                    <td className="sticky left-0 z-20 px-3 py-2 text-muted-foreground text-xs bg-background border-r border-border shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" style={{ position: '-webkit-sticky' }}>{originalIdx + 1}</td>
-                    <td className="sticky left-10 z-20 px-3 py-2 font-medium text-foreground bg-background border-r border-border shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" style={{ position: '-webkit-sticky' }}>
-                      <div className="flex flex-col">
-                        <span>{bn ? toBnDigits(st.roll_number || 0) : (st.roll_number || '-')}</span>
-                      </div>
-                    </td>
-                    <td className="sticky left-[100px] z-20 px-3 py-2 text-foreground bg-background border-r border-gray-300 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[120px]" style={{ position: '-webkit-sticky' }}>
-                      {bn ? st.name_bn : (st.name_en || st.name_bn)}
-                    </td>
-                  {subjects.map((sub: any) => {
-                    const mark = marksMap[`${st.id}_${sub.id}`] ?? 0;
-                    const isFail = mark < passMark && mark > 0;
-                    return (
-                      <td key={sub.id} className="px-1 py-1.5 text-center">
-                        <Input
-                          className={`w-16 h-8 text-center bg-background text-sm mx-auto focus:border-primary ${isFail ? 'border-destructive text-destructive' : 'border-border/50'}`}
-                          type="text"
-                          inputMode="numeric"
-                          data-bijoy={bn}
-                          value={mark === 0 ? '' : (bn ? toBnDigits(mark) : String(mark))}
-                          onChange={(e) => {
-                            const raw = toEnDigits(e.target.value).replace(/[^0-9]/g, '');
-                            if (raw === '') { onMarksChange(`${st.id}_${sub.id}`, 0); return; }
-                            let num = parseInt(raw, 10) || 0;
-                            if (num > maxMarks) num = maxMarks;
-                            onMarksChange(`${st.id}_${sub.id}`, num);
-                          }}
-                        />
-
-                      </td>
-                    );
-                  })}
-                  <td className="px-3 py-2 text-center font-bold text-foreground">{hasEnteredAnyMark ? total : '-'}</td>
-                  <td className="px-3 py-2 text-center text-muted-foreground">{hasEnteredAnyMark ? avg.toFixed(1) : '-'}</td>
-                    <td className="px-3 py-2 text-center">
-                      {overall ? (
-                        <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-semibold ${overall.color}`}>
-                          {overall.grade}
-                        </span>
-                      ) : <span className="text-xs text-muted-foreground">-</span>}
-                    </td>
-                    <td className="px-3 py-2 text-center font-semibold text-primary">{overall ? overall.gpa : '-'}</td>
-                    <td className="px-3 py-2 text-center text-xs font-medium text-muted-foreground">
-                      {overall ? (bn ? overall.title_bn : overall.title) : '-'}
-                    </td>
-                    <td className="px-3 py-2 text-center text-xs font-medium text-muted-foreground">
-                      <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full ${rank && rank <= 3 ? 'bg-emerald-500/10 text-emerald-600 font-bold' : ''}`}>
-                        {hasEnteredAnyMark ? rankDisplay : '-'}
-                      </span>
-                    </td>
-                    <td className="px-2 py-2 text-center">
-                      <button
-                        onClick={() => {
-                          // Find rank from rankMap before viewing
-                          const studentRank = rankMap.get(st.id);
-                          onViewMarksheet(st.id, studentRank);
+            return (
+              <div key={st.id} className={`flex border-b border-border shrink-0 min-h-[48px] items-center hover:bg-muted/5 transition-colors ${failed ? 'bg-destructive/5' : 'bg-white'}`}>
+                {subjects.map((sub: any) => {
+                  const mark = marksMap[`${st.id}_${sub.id}`] ?? 0;
+                  const isFail = mark < passMark && mark > 0;
+                  return (
+                    <div key={sub.id} className="w-[70px] sm:w-[90px] px-1 py-1 text-center border-r border-border shrink-0">
+                      <Input
+                        className={`w-full h-8 text-center bg-transparent text-[10px] sm:text-sm focus:border-primary ${isFail ? 'border-destructive text-destructive' : 'border-border/50'}`}
+                        type="text"
+                        inputMode="numeric"
+                        data-bijoy={bn}
+                        value={mark === 0 ? '' : (bn ? toBnDigits(mark) : String(mark))}
+                        onChange={(e) => {
+                          const raw = toEnDigits(e.target.value).replace(/[^0-9]/g, '');
+                          if (raw === '') { onMarksChange(`${st.id}_${sub.id}`, 0); return; }
+                          let num = parseInt(raw, 10) || 0;
+                          if (num > maxMarks) num = maxMarks;
+                          onMarksChange(`${st.id}_${sub.id}`, num);
                         }}
-                        className="p-1.5 rounded-md hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
-                        title={bn ? 'মার্কশিট দেখুন' : 'View Marksheet'}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              });
-            })()}
-          </tbody>
-        </table>
+                      />
+                    </div>
+                  );
+                })}
+                <div className="w-[60px] sm:w-[80px] px-2 py-2 text-center text-[10px] sm:text-xs font-bold border-r border-border shrink-0">{hasEnteredAnyMark ? (bn ? toBnDigits(total) : total) : '-'}</div>
+                <div className="w-[60px] sm:w-[80px] px-2 py-2 text-center text-[10px] sm:text-xs text-muted-foreground border-r border-border shrink-0">{hasEnteredAnyMark ? (bn ? toBnDigits(parseFloat(avg.toFixed(1))) : avg.toFixed(1)) : '-'}</div>
+                <div className="w-[60px] sm:w-[80px] px-2 py-2 text-center border-r border-border shrink-0">
+                  {overall ? (
+                    <span className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold ${overall.color}`}>
+                      {overall.grade}
+                    </span>
+                  ) : '-'}
+                </div>
+                <div className="w-[60px] sm:w-[80px] px-2 py-2 text-center text-[10px] sm:text-xs font-semibold text-primary border-r border-border shrink-0">{overall ? (bn ? toBnDigits(parseFloat(overall.gpa)) : overall.gpa) : '-'}</div>
+                <div className="w-[80px] sm:w-[100px] px-2 py-2 text-center text-[9px] sm:text-[10px] font-medium text-muted-foreground border-r border-border shrink-0 truncate">
+                  {overall ? (bn ? overall.title_bn : overall.title) : '-'}
+                </div>
+                <div className="w-[60px] sm:w-[80px] px-2 py-2 text-center text-[10px] sm:text-xs font-medium text-muted-foreground border-r border-border shrink-0">
+                  <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full ${rank && rank <= 3 ? 'bg-emerald-500/10 text-emerald-600 font-bold' : ''}`}>
+                    {hasEnteredAnyMark ? rankDisplay : '-'}
+                  </span>
+                </div>
+                <div className="w-[50px] px-2 py-2 text-center shrink-0">
+                  <button
+                    onClick={() => onViewMarksheet(st.id, rank)}
+                    className="p-1.5 rounded-md hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Signature Section */}
-      <div className="relative z-10 px-5 py-6 border-t border-border">
-        <div className="grid grid-cols-3 gap-6 mt-6 pt-4">
+      <div className="px-5 py-6 border-t border-border bg-background shrink-0">
+        <div className="grid grid-cols-3 gap-2 sm:gap-6 mt-2 pt-2">
           {[
             { label: bn ? 'পরীক্ষা নিয়ন্ত্রক' : 'Exam Controller' },
             { label: bn ? 'শিক্ষা সচিব' : 'Education Secretary' },
             { label: bn ? 'মুহতামিম' : 'Principal' },
           ].map((sig, i) => (
-            <div key={i} className="text-center space-y-2">
-              <div className="border-b border-dashed border-muted-foreground/40 mx-4 pb-1 min-h-[40px]" />
-              <p className="text-xs font-semibold text-foreground">{sig.label}</p>
+            <div key={i} className="text-center space-y-1 sm:space-y-2">
+              <div className="border-b border-dashed border-muted-foreground/40 mx-2 sm:mx-4 pb-1 min-h-[30px] sm:min-h-[40px]" />
+              <p className="text-[9px] sm:text-xs font-semibold text-foreground truncate">{sig.label}</p>
               <Input
-                className="text-center text-xs h-7 border-dashed"
+                className="text-center text-[9px] sm:text-xs h-6 sm:h-7 border-dashed"
                 placeholder={bn ? 'নাম লিখুন' : 'Enter name'}
               />
             </div>
           ))}
         </div>
       </div>
+      
+      <style>{`
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </div>
   );
 };
