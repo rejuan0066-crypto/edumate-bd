@@ -165,9 +165,19 @@ export const getResultSheetHtml = ({
     const failed = (overall as any).graced ? false : (marks.some(m => m < passMark) || overall.hasFail);
     return { idx, st, marks, total, avg, overall, failed };
   });
-  const sortedByTotal = [...computed].sort((a, b) => b.total - a.total);
+  const sortedByTotal = [...computed].sort((a, b) => {
+    if (a.failed && !b.failed) return 1;
+    if (!a.failed && b.failed) return -1;
+    return b.total - a.total;
+  });
   const rankMap = new Map<number, number>();
-  sortedByTotal.forEach((r, i) => rankMap.set(r.idx, i + 1));
+  sortedByTotal.forEach((r, i) => {
+    if (r.failed) {
+      rankMap.set(r.idx, 0); // 0 or -1 to indicate no rank for fails
+    } else {
+      rankMap.set(r.idx, i + 1);
+    }
+  });
 
   const passCount = computed.filter(c => !c.failed).length;
   const failCount = computed.length - passCount;
