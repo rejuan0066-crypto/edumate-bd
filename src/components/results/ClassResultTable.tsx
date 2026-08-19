@@ -104,8 +104,8 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
         </div>
       </div>
 
-      {/* Title & Actions Bar */}
-      <div className="sticky top-[81px] z-20 flex items-center justify-between px-5 py-3 border-b border-border bg-background/95 backdrop-blur-sm shadow-sm">
+      {/* Title & Actions Bar — non-sticky so it scrolls with content and never covers student names */}
+      <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-background/95 backdrop-blur-sm shadow-sm">
         <div className="flex items-center gap-2">
           {onClose && (
             <button onClick={onClose} className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title={bn ? 'বন্ধ করুন' : 'Close'}>
@@ -133,7 +133,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
 
       <div className="relative z-10 overflow-x-auto">
         <table className="w-full text-sm border-separate border-spacing-0">
-          <thead className="sticky top-[133px] z-20 bg-background/95 backdrop-blur-sm shadow-sm">
+          <thead className="sticky top-[81px] z-20 bg-background/95 backdrop-blur-sm shadow-sm">
             <tr className="border-b border-border">
               <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground w-10 bg-background/95 backdrop-blur-sm">#</th>
               <th className="sticky left-0 z-20 px-3 py-3 text-left text-xs font-semibold text-muted-foreground bg-background/95 backdrop-blur-sm shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">{bn ? 'রোল' : 'Roll'}</th>
