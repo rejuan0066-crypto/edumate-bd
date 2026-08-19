@@ -282,7 +282,7 @@ ${(() => {
 
   const colgroupHtml = (() => {
     const n = subjects.length;
-    const fixedW = { idx: 3, roll: 5, name: 18, total: 5, avg: 4, grade: 5, gpa: 4, rank: 5, status: 7 };
+    const fixedW = { idx: 3, roll: 5, name: 16, total: 5, avg: 4, grade: 5, gpa: 4, merit: 8, rank: 5, status: 7 };
     const used = Object.values(fixedW).reduce((a, b) => a + b, 0);
     const subjectPool = Math.max(20, 100 - used);
     const sw = n > 0 ? +(subjectPool / n).toFixed(3) : 0;
@@ -295,6 +295,7 @@ ${(() => {
       `<col style="width:${fixedW.avg}%">`,
       `<col style="width:${fixedW.grade}%">`,
       `<col style="width:${fixedW.gpa}%">`,
+      `<col style="width:${fixedW.merit}%">`,
       `<col style="width:${fixedW.rank}%">`,
       `<col style="width:${fixedW.status}%">`,
     ].join('');
