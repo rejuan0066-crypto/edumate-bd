@@ -210,10 +210,8 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
           {/* Rows */}
           {studentsWithStats.map(({ st, total, avg, overall, failed, hasEnteredAnyMark }) => {
             const rank = rankMap.get(st.id);
-            let rankDisplay = rank ? rank.toString() : '-';
-            if (rank === 1) rankDisplay = bn ? '১ম' : '1st';
-            else if (rank === 2) rankDisplay = bn ? '২য়' : '2nd';
-            else if (rank === 3) rankDisplay = bn ? '৩য়' : '3rd';
+            const rankDisplay = formatOrdinalRank(rank, bn);
+
 
             return (
               <div key={st.id} className={`flex border-b border-border shrink-0 min-h-[48px] items-center hover:bg-muted/5 transition-colors ${failed ? 'bg-destructive/5' : 'bg-white'}`}>
