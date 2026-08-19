@@ -839,11 +839,18 @@ const AdminExamSessions = () => {
                             <GraduationCap className="w-3.5 h-3.5" />
                             {bn ? 'ফলাফল তৈরি' : 'Create Result'}
                           </Button>
+                          {canEditItem && (
+                            <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={() => setManageSession(es)}>
+                              <Settings2 className="w-3.5 h-3.5" />
+                              {bn ? 'ক্লাস/বিষয়/ছাত্র' : 'Classes/Subjects/Students'}
+                            </Button>
+                          )}
                           {canEditItem && editingSessionId !== es.id && (
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingSessionId(es.id); setEditSessionName(es.name || ''); setEditSessionNameBn(es.name_bn || ''); }}>
                               <Edit2 className="w-3.5 h-3.5" />
                             </Button>
                           )}
+
 
                           {canDeleteItem && (
                             <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => deleteMutation.mutate(es.id)}>
