@@ -114,7 +114,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
 <style>@font-face{font-family:"SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}</style><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'SutonnyOMJ','Noto Sans Bengali',sans-serif; padding:15mm; max-width:700px; margin:0 auto; color:#1f2937; background:#fff; }
+  body { font-family:'SutonnyOMJ','Noto Sans Bengali',sans-serif; padding:15mm; max-width:800px; margin:0 auto; color:#1f2937; background:#fff; }
   @media print { body { padding:10mm; } }
   .sheet { border: 1px solid #e5e7eb; border-radius: 12px; padding: 10px; }
   .header { text-align:center; margin-bottom:16px; background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; padding:18px 20px; border-radius:12px; }
@@ -140,8 +140,8 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
   .grade-b { background:#eff6ff; color:#2563eb; }
   .grade-a { background:#f0fdf4; color:#16a34a; }
   .grade-aplus { background:#ecfdf5; color:#059669; }
-  .summary { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin:16px 0; text-align:center; }
-  .summary-box { border-radius:12px; padding:14px 8px; }
+  .summary { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin:16px 0; text-align:center; page-break-inside: avoid; }
+  .summary-box { border-radius:12px; padding:14px 8px; border: 1.5px solid #e5e7eb; }
   .summary-box .label { font-size:10px; font-weight:700; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px; }
   .summary-box .val { font-size:24px; font-weight:800; line-height:1.1; }
   .summary-box .sub-label { font-size:10px; margin-top:2px; }
@@ -151,10 +151,10 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
   .box-gpa { background:#f0fdf4; color:#16a34a; border:2px solid #bbf7d0; }
   .box-morjada { background:#faf5ff; color:#7c3aed; border:2px solid #ddd6fe; }
   .signatures { display:flex; justify-content:space-between; margin-top:50px; padding:0 10px; }
-  .sig-block { text-align:center; min-width:140px; }
-  .sig-line { border-top:1.5px dashed #9ca3af; padding-top:6px; margin-top:36px; }
+  .sig-block { text-align:center; min-width:140px; flex: 1; }
+  .sig-line { border-top:1.5px dashed #9ca3af; padding-top:6px; margin-top:36px; margin-left: 10px; margin-right: 10px; }
   .sig-title { font-size:11px; font-weight:700; color:#374151; }
-  .sig-name { font-size:11px; color:#6b7280; margin-top:2px; }
+  .sig-name { font-size:11px; color:#6b7280; margin-top:2px; min-height: 14px; }
   .marksheet-page { break-after: page; page-break-after: always; padding: 2px; box-sizing: border-box; }
 </style>
 </head><body>
