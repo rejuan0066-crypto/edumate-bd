@@ -47,7 +47,7 @@ const getGradeTwColor = (grade: string) => {
 const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack }: IndividualMarksheetProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
-  const { getOverallGrade } = useGradingSystem();
+  const { getOverallGrade, passMark } = useGradingSystem();
   const [sigNames, setSigNames] = useState({ examController: '', eduSecretary: '', principal: '' });
 
   const { data: institution } = useQuery({
