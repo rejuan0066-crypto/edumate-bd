@@ -191,6 +191,7 @@ export const getResultSheetHtml = ({
   showPageNumbers = true, showFooterInstitution = true, margins 
 }: ExportData & { orientation?: 'landscape' | 'portrait' }): string => {
   const m = sanitizeMargins(margins);
+  const docName = buildResultDocName({ examName, sessionName, className, title });
   const sigList = (signatories && signatories.length ? signatories : DEFAULT_RESULT_SIGNATORIES).slice(0, 4);
   
   const computed = students.map((st: any, idx: number) => {
