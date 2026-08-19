@@ -551,7 +551,15 @@ const AdminResults = () => {
             <Settings2 className="w-4 h-4" />
             {bn ? 'স্বাক্ষরকারী' : 'Signatories'}
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setGraceDialogOpen(true)} className="gap-2">
+            <Settings2 className="w-4 h-4" />
+            {bn ? 'গ্রেস পাস' : 'Grace Pass'}
+          </Button>
         </div>
+
+        <GracePassSettings open={graceDialogOpen} onOpenChange={setGraceDialogOpen} />
+
+
 
         <Dialog open={sigDialogOpen} onOpenChange={setSigDialogOpen}>
           <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
