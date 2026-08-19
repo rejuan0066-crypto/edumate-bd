@@ -23,6 +23,10 @@ const AdminExamSessions = () => {
 
   const confirm = useConfirm();
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [editSessionName, setEditSessionName] = useState('');
+  const [editSessionNameBn, setEditSessionNameBn] = useState('');
+
 
   const [name, setName] = useState('');
   const [nameBn, setNameBn] = useState('');
