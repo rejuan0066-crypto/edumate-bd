@@ -100,6 +100,7 @@ export const exportResultCSV = ({ title, students, subjects, marksMap, getOveral
       grade,
       gpa,
       bn ? title_bn : gradeTitle,
+      rankDisplay,
     ];
   });
 
