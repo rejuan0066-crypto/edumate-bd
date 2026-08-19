@@ -49,7 +49,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { getOverallGrade, passMark } = useGradingSystem();
-  const [sigNames, setSigNames] = useState({ examController: '', eduSecretary: '', principal: '' });
+  const [sigNames, setSigNames] = useState({ classTeacher: '', examController: '', eduSecretary: '', principal: '' });
 
   const { data: institution } = useQuery({
     queryKey: ['institution-default'],
