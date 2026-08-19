@@ -429,9 +429,9 @@ export const getResultSheetHtml = ({
     .signatures{page-break-inside:avoid !important;break-inside:avoid-page !important;-webkit-column-break-inside:avoid !important;display:flex !important;flex-wrap:nowrap !important;}
     .sig-block{page-break-inside:avoid !important;break-inside:avoid-page !important;-webkit-column-break-inside:avoid !important;}
   }
-  .result-page{position:relative;width:${orientation === 'landscape' ? 297 - m.left - m.right : 210 - m.left - m.right}mm;height:${orientation === 'landscape' ? 210 - m.top - m.bottom : 297 - m.top - m.bottom}mm;break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid;overflow:hidden;margin:0 auto;}
+  .result-page{position:relative;box-sizing:border-box;padding:2px;width:${orientation === 'landscape' ? 297 - m.left - m.right : 210 - m.left - m.right}mm;height:${orientation === 'landscape' ? 210 - m.top - m.bottom : 297 - m.top - m.bottom}mm;break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid;overflow:hidden;margin:0 auto;}
   .result-page:last-child{break-after:auto;page-break-after:auto;}
-  .fit-inner{position:absolute;top:0;left:0;right:0;transform-origin:top center;width:100%;}
+  .fit-inner{position:absolute;top:2px;left:2px;right:2px;transform-origin:top left;width:calc(100% - 4px);box-sizing:border-box;}
   .signatures-wrap{margin-top:20px;}
   .sig-line{margin-top:22px;}
 </style>
@@ -442,8 +442,8 @@ export const getResultSheetHtml = ({
     var PX = 96 / 25.4;
     var pageH = (isLandscape ? 210 : 297) * PX;
     var pageW = (isLandscape ? 297 : 210) * PX;
-    var availH = pageH - (${m.top} + ${m.bottom}) * PX;
-    var availW = pageW - (${m.left} + ${m.right}) * PX;
+    var availH = pageH - (${m.top} + ${m.bottom}) * PX - 6;
+    var availW = pageW - (${m.left} + ${m.right}) * PX - 6;
     var pages = document.querySelectorAll('.result-page');
     for (var i = 0; i < pages.length; i++) {
       var page = pages[i];
