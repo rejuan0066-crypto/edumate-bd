@@ -327,16 +327,16 @@ export const getResultSheetHtml = ({
 
           <div class="summary-wrap">
             ${pageIdx === totalPages - 1 ? `
-            <div class="top-rankers" style="margin-bottom:12px; display:flex; gap:10px; justify-content:center;">
+            <div class="top-rankers" style="margin-bottom:15px; display:flex; gap:15px; justify-content:center;">
               ${(() => {
                 const top3 = sortedByTotal.filter(r => !r.failed && rankMap.get(r.idx) && rankMap.get(r.idx)! <= 3);
                 return top3.map(r => {
                   const rank = rankMap.get(r.idx);
                   const rankLabel = rank === 1 ? (bn ? '১ম' : '1st') : rank === 2 ? (bn ? '২য়' : '2nd') : (bn ? '৩য়' : '3rd');
                   const name = bn ? r.st.name_bn : (r.st.name_en || r.st.name_bn);
-                  return `<div style="border:1.5px solid #064e3b; border-radius:6px; padding:6px 12px; background:#f0fdf4; text-align:center; min-width:120px;">
-                    <div style="font-size:10px; font-weight:700; color:#064e3b; text-transform:uppercase;">${rankLabel} ${bn ? 'স্থান' : 'Rank'}</div>
-                    <div style="font-size:12px; font-weight:800; color:#0f172a; margin-top:2px;">${name}</div>
+                  return `<div style="border:2px solid #064e3b; border-radius:8px; padding:8px 15px; background:#f0fdf4; text-align:center; min-width:160px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+                    <div style="font-size:11px; font-weight:800; color:#064e3b; text-transform:uppercase; letter-spacing:0.5px;">${rankLabel} ${bn ? 'স্থান' : 'Rank'}</div>
+                    <div style="font-size:14px; font-weight:800; color:#0f172a; margin-top:3px;">${name}</div>
                   </div>`;
                 }).join('');
               })()}
