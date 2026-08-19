@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
-import ResultSearchFilters from '@/components/results/ResultSearchFilters';
+import ResultSelectionBrowser from '@/components/results/ResultSelectionBrowser';
 import ClassResultTable from '@/components/results/ClassResultTable';
 import ClassResultStatusList from '@/components/results/ClassResultStatusList';
 import { useGradingSystem } from '@/hooks/useGradingSystem';
