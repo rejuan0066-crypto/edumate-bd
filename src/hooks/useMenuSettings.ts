@@ -65,7 +65,7 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
   ]},
 
   // পরীক্ষা ও ফলাফল
-  { id: 'exam-result', path: '/admin/exam-sessions', label_bn: 'পরীক্ষা ও ফলাফল', label_en: 'Exam & Results', icon: 'FileText', visible: true, sort_order: 4, children: [
+  { id: 'exam-result', path: '/admin/results', label_bn: 'পরীক্ষা ও ফলাফল', label_en: 'Exam & Results', icon: 'FileText', visible: true, sort_order: 4, children: [
     { id: 'exam-sessions', path: '/admin/exam-sessions', label_bn: 'পরীক্ষা সেশন', label_en: 'Exam Sessions', icon: 'CalendarDays', visible: true, sort_order: 0 },
     { id: 'exam-routine', path: '/admin/exam-routine', label_bn: 'পরীক্ষার রুটিন', label_en: 'Exam Routine', icon: 'ClipboardList', visible: true, sort_order: 1 },
     { id: 'results', path: '/admin/results', label_bn: 'ফলাফল', label_en: 'Results', icon: 'FileText', visible: true, sort_order: 2 },
