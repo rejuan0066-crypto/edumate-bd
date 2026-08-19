@@ -75,7 +75,7 @@ const ClassResultStatusList = ({
       )}
       {isOpen && <div className="divide-y divide-border">
 
-        {classes.map((cls: any) => {
+        {visibleClasses.map((cls: any) => {
           const hasResults = resultStatusMap[cls.id] || false;
           const isPublished = publishStatusMap[cls.id] || false;
           const isExporting = exportingClassId === cls.id;
