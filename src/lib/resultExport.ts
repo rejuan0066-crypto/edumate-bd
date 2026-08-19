@@ -114,11 +114,38 @@ export const exportResultCSV = ({ title, students, subjects, marksMap, getOveral
   setTimeout(() => URL.revokeObjectURL(url), 100);
 };
 
-export const exportResultPDF = (params: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
-  // Browser-rendered HTML preserves Unicode Bangla shaping and live institution
-  // branding. The old jsPDF text renderer encoded Bangla with a Latin font,
-  // which produced mojibake like “† ²- …” in downloaded result PDFs.
+export const exportResultPDF = async (params: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
+  if (isMobileOrPwa()) {
+    const html = getResultSheetHtml(params);
+    const fname = `result-sheet-${(params.className || 'class').replace(/\s+/g, '_')}.pdf`;
+    try {
+      const { toast } = await import('sonner');
+      const bn = params.bn;
+      toast.info(bn ? 'পিডিএফ তৈরি হচ্ছে…' : 'Generating PDF…');
+      await downloadSheetAsPdf(html, fname);
+      toast.success(bn ? 'পিডিএফ ডাউনলোড হয়েছে' : 'PDF downloaded');
+    } catch (e) {
+      console.error('PDF export failed:', e);
+    }
+    return;
+  }
   printResultSheet(params);
+};
+
+const isMobileOrPwa = (): boolean => {
+  try {
+    if (typeof window === 'undefined') return false;
+    if ((window.navigator as any).standalone === true) return true;
+    if (window.matchMedia?.('(display-mode: standalone)').matches) return true;
+    return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  } catch {
+    return false;
+  }
+};
+
+const downloadSheetAsPdf = async (html: string, filename: string) => {
+  const { downloadSheetAsPdf: dl } = await import('./salarySlipPdf');
+  return dl(html, filename);
 };
 
 export const printResultSheet = ({ title, students, subjects, marksMap, getOverallGrade, bn, institutionName, institutionLogo, institutionAddress, institutionPhone, className, examName, sessionName, passMark = 33, signatories, orientation = 'landscape', showPageNumbers = true, showFooterInstitution = true, margins }: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
