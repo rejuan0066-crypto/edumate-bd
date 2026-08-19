@@ -462,9 +462,10 @@ export const getResultSheetHtml = ({
     .signatures{page-break-inside:avoid !important;break-inside:avoid-page !important;-webkit-column-break-inside:avoid !important;display:flex !important;flex-wrap:nowrap !important;}
     .sig-block{page-break-inside:avoid !important;break-inside:avoid-page !important;-webkit-column-break-inside:avoid !important;}
   }
-  .result-page{position:relative;box-sizing:border-box;padding:0;width:297mm;height:210mm;break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid;overflow:hidden;margin:0 auto;}
-  .result-page:last-child{break-after:auto;page-break-after:auto;}
-  .fit-inner{position:absolute;top:0;left:0;right:0;transform-origin:top left;width:100%;box-sizing:border-box;}
+  .result-page{position:relative;box-sizing:border-box;padding:8mm;width:297mm;height:209.5mm;break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid;overflow:hidden;margin:0 auto 14px;}
+  .result-page:last-child{break-after:auto;page-break-after:auto;margin-bottom:0;}
+  @media print{.result-page{margin:0 auto;}}
+  .fit-inner{position:absolute;top:8mm;left:8mm;right:8mm;transform-origin:top left;width:calc(100% - 16mm);box-sizing:border-box;}
   .signatures-wrap{margin-top:30px;}
   .sig-line{margin-top:28px;}
 </style>
