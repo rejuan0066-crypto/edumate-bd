@@ -127,22 +127,14 @@ export const useGradingSystem = () => {
       return { grade: 'F', gpa: '0.00', color: colorMap[failScale.color] || colorMap.destructive, hasFail: true, graced: false, failedCount, title: failScale.title, title_bn: failScale.title_bn };
     }
 
+    const avg = subjectMarks.length > 0 ? subjectMarks.reduce((a, b) => a + b, 0) / subjectMarks.length : 0;
+
+    // Graced: keep the subject-level fail intact, but decide the overall
+    // result from the average of all subjects (never forced to a fixed grade).
     if (graced) {
-      const target = scales.find(s => s.grade === (gracePass?.grade || 'C'))
-        || DEFAULT_SCALES.find(s => s.grade === (gracePass?.grade || 'C'))!;
-      return {
-        grade: target.grade,
-        gpa: target.gpa,
-        color: colorMap[target.color] || colorMap.amber,
-        hasFail: false,
-        graced: true,
-        failedCount,
-        title: target.title,
-        title_bn: target.title_bn,
-      };
+      return { ...getGrade(avg), hasFail: false, graced: true, failedCount };
     }
 
-    const avg = subjectMarks.length > 0 ? subjectMarks.reduce((a, b) => a + b, 0) / subjectMarks.length : 0;
     return { ...getGrade(avg), hasFail: false, graced: false, failedCount };
   };
 
