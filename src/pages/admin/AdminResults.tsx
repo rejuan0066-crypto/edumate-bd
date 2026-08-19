@@ -930,11 +930,16 @@ const AdminResults = () => {
           examSession={examSessionId}
           onExamSessionChange={(v) => {
             setExamSessionId(v);
+            const es: any = examSessions.find((s: any) => s.id === v);
+            if (es?.academic_session_id && es.academic_session_id !== examYear) {
+              setExamYear(es.academic_session_id);
+            }
             setSelectedClass('');
             setSelectedExamId(null);
             setMarksMap({});
             setShowResults(false);
           }}
+
           selectedClass={selectedClass}
           onClassChange={(v) => {
             setSelectedClass(v);
