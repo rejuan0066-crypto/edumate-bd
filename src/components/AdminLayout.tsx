@@ -642,7 +642,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
         {renderSidebar(false)}
         {mobileSidebarOpen && renderSidebar(true)}
 
-        <div className={`flex min-h-screen flex-col min-w-0 ${mobileHeaderOffsetClass} ${desktopHeaderOffsetClass} lg:ml-[var(--admin-sidebar-width)]`}>
+        <div className={`flex min-h-screen flex-col ${mobileHeaderOffsetClass} ${desktopHeaderOffsetClass} lg:ml-[var(--admin-sidebar-width)]`}>
           {/* Top bar */}
           <header className={`admin-header-glass px-3 sm:px-4 lg:px-6 ${headerPadClass} fixed top-0 right-0 left-0 lg:left-[var(--admin-sidebar-width)] z-40 flex items-center justify-between gap-2`} style={{ ...headerStyle, boxShadow: undefined, fontSize: 'var(--header-font-size, 13px)', paddingTop: `calc(env(safe-area-inset-top) + ${headerTopPadding})` }}>
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -673,7 +673,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           </header>
 
           {/* Content */}
-          <main className="flex-1 px-2 sm:px-4 md:px-8 pb-8 pt-4 w-full max-w-[1440px] mx-auto min-w-0">
+          <main className="flex-1 px-2 sm:px-4 md:px-8 pb-8 pt-4 w-full max-w-[1440px] mx-auto">
             <BackButton position="top" />
             {/* Page Header - outside card for clear separation */}
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4 sm:mb-5">
@@ -696,7 +696,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
               </div>
             </div>
             {/* Modern Glass Content Container */}
-            <div className="admin-page-card rounded-[20px] sm:rounded-[36px] lg:rounded-[45px] bg-card/70 dark:bg-card/35 backdrop-blur-2xl border border-border/10 dark:border-border/8 p-2.5 sm:p-6 lg:p-10 min-h-[60vh] w-full min-w-0" style={{ boxShadow: 'var(--shadow-float)' }}>
+            <div className="admin-page-card rounded-[20px] sm:rounded-[36px] lg:rounded-[45px] bg-card/70 dark:bg-card/35 backdrop-blur-2xl border border-border/10 dark:border-border/8 p-2.5 sm:p-6 lg:p-10 min-h-[60vh] w-full" style={{ boxShadow: 'var(--shadow-float)' }}>
               <div className="w-full min-w-0">
                 <AdminPageWithTabs>{children}</AdminPageWithTabs>
               </div>
