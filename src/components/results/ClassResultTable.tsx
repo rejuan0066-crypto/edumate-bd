@@ -209,7 +209,6 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
                   })}
                   <td className="px-3 py-2 text-center font-bold text-foreground">{hasAnyMarks ? total : '-'}</td>
                   <td className="px-3 py-2 text-center text-muted-foreground">{hasAnyMarks ? avg.toFixed(1) : '-'}</td>
-                  <td className="px-3 py-2 text-center">
                     <td className="px-3 py-2 text-center">
                       {overall ? (
                         <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-semibold ${overall.color}`}>
