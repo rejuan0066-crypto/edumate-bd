@@ -147,8 +147,8 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
       {/* Main Grid Container */}
       <div className="flex-1 overflow-auto relative scrollbar-thin scrollbar-thumb-muted-foreground/20" ref={tableRef}>
         <table className="w-full border-separate border-spacing-0 table-auto min-w-max">
-          <thead className="sticky top-0 z-40">
-            <tr className="bg-slate-50 h-[56px]">
+          <thead className="sticky top-0 z-40 bg-slate-100 shadow-sm">
+            <tr className="bg-slate-100 h-[56px]">
               {/* Sticky Columns Header */}
               <th className="sticky left-0 z-[60] bg-slate-50 border-b border-r border-border min-w-[40px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground shadow-[1px_0_0_0_#e2e8f0]">
                 <div className="flex items-center justify-center h-full">#</div>
