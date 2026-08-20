@@ -192,19 +192,19 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
           {/* Header - STICKY TOP */}
-          <div className="sticky top-0 z-30 flex bg-slate-50 border-b border-border shrink-0 min-h-[48px]">
+          <div className="sticky top-0 z-30 flex bg-slate-50 border-b border-border shrink-0 h-[48px] items-center">
             {subjects.map((s: any) => (
-              <div key={s.id} className="w-[70px] sm:w-[90px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 truncate bg-slate-50">
+              <div key={s.id} className="w-[70px] sm:w-[90px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 truncate bg-slate-50 flex items-center justify-center">
                 {bn ? s.name_bn : s.name}
               </div>
             ))}
-            <div className="w-[60px] sm:w-[80px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50">{bn ? 'মোট' : 'Total'}</div>
-            <div className="w-[60px] sm:w-[80px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50">{bn ? 'গড়' : 'Avg'}</div>
-            <div className="w-[60px] sm:w-[80px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50">{bn ? 'গ্রেড' : 'Grade'}</div>
-            <div className="w-[60px] sm:w-[80px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50">GPA</div>
-            <div className="w-[80px] sm:w-[100px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50">{bn ? 'মর্যাদা' : 'Title'}</div>
-            <div className="w-[60px] sm:w-[80px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50">{bn ? 'মেধা' : 'Rank'}</div>
-            <div className="w-[50px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground shrink-0 bg-slate-50"></div>
+            <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50 flex items-center justify-center">{bn ? 'মোট' : 'Total'}</div>
+            <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50 flex items-center justify-center">{bn ? 'গড়' : 'Avg'}</div>
+            <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50 flex items-center justify-center">{bn ? 'গ্রেড' : 'Grade'}</div>
+            <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50 flex items-center justify-center">GPA</div>
+            <div className="w-[80px] sm:w-[100px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50 flex items-center justify-center">{bn ? 'মর্যাদা' : 'Title'}</div>
+            <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50 flex items-center justify-center">{bn ? 'মেধা' : 'Rank'}</div>
+            <div className="w-[50px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground shrink-0 bg-slate-50 flex items-center justify-center"></div>
           </div>
 
           {/* Rows */}
