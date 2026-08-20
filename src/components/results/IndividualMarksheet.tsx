@@ -90,14 +90,28 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               margin: 0;
               padding: 0;
             }
-            .printable-sheet { width: 100%; }
+            .printable-sheet { width: 100%; position: relative; padding-bottom: 80px; }
             .bg-\\[\\#1e5d3b\\] { background-color: #1e5d3b !important; -webkit-print-color-adjust: exact; }
             .text-white { color: white !important; }
+            .signature-footer-fixed {
+              position: fixed;
+              bottom: 0;
+              left: 0;
+              right: 0;
+              background: white;
+              padding-bottom: 20px;
+              z-index: 9999;
+              page-break-inside: avoid;
+              break-inside: avoid;
+            }
           </style>
         </head>
         <body>
           <div class="printable-sheet">
-            ${printContent.innerHTML}
+            ${printContent.innerHTML.replace(
+              'id="signature-section"',
+              'id="signature-section" class="signature-footer-fixed"'
+            )}
           </div>
         </body>
       </html>
@@ -130,12 +144,26 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               margin: 0;
               padding: 0;
             }
-            .printable-sheet { width: 100%; }
+            .printable-sheet { width: 100%; position: relative; padding-bottom: 80px; }
+            .signature-footer-fixed {
+              position: fixed;
+              bottom: 0;
+              left: 0;
+              right: 0;
+              background: white;
+              padding-bottom: 20px;
+              z-index: 9999;
+              page-break-inside: avoid;
+              break-inside: avoid;
+            }
           </style>
         </head>
         <body>
           <div class="printable-sheet">
-            ${printContent.innerHTML}
+            ${printContent.innerHTML.replace(
+              'id="signature-section"',
+              'id="signature-section" class="signature-footer-fixed"'
+            )}
           </div>
           <script>
             window.onload = () => {
@@ -240,7 +268,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </div>
 
         {/* Footer Signatures */}
-        <div className="mt-20 flex justify-between gap-12 text-center text-[13px] font-bold text-gray-800">
+        <div id="signature-section" className="mt-20 flex justify-between gap-12 text-center text-[13px] font-bold text-gray-800">
           {['শ্রেণি শিক্ষক', 'পরীক্ষা নিয়ন্ত্রক', 'শিক্ষা সচিব', 'মুহতামিম / অধ্যক্ষ'].map((role, i) => (
             <div key={i} className="flex-1">
               <div className="border-t-2 border-gray-900 pt-3">{role}</div>

@@ -370,7 +370,7 @@ export const getResultSheetHtml = ({
             </div>
           </div>
 
-          <div class="footer">
+          <div class="footer print-hidden">
             <div style="font-weight:700;">${showFooterInstitution ? (institutionName || '') : ''}</div>
             <div class="screen-pageinfo" style="font-weight:600;">${bn ? 'পৃষ্ঠা' : 'Page'} ${toBnDigits(pageIdx + 1)} / ${toBnDigits(totalPages)}</div>
           </div>
@@ -447,27 +447,41 @@ export const getResultSheetHtml = ({
   .stat{border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;background:#f8fafc;page-break-inside:avoid;break-inside:avoid;}
   .stat-k{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;}
   .stat-v{font-size:15px;font-weight:800;color:#064e3b;margin-top:2px;}
-  .signatures-keeper{page-break-inside:avoid;break-inside:avoid-page;-webkit-column-break-inside:avoid;display:block;}
-  .signatures-wrap{margin-top:45px;page-break-inside:avoid;break-inside:avoid-page;-webkit-column-break-inside:avoid;display:block;}
-  .signatures{display:flex;flex-wrap:nowrap;justify-content:space-between;gap:25px;padding:0 5px;page-break-inside:avoid;break-inside:avoid-page;-webkit-column-break-inside:avoid;}
-  .sig-block{flex:1 1 0;min-width:0;text-align:center;page-break-inside:avoid;break-inside:avoid-page;-webkit-column-break-inside:avoid;}
+  .signatures-keeper{page-break-inside:avoid;break-inside:avoid;display:block;}
+  .signatures-wrap{margin-top:45px;page-break-inside:avoid;break-inside:avoid;display:block;}
+  .signatures{display:flex;flex-wrap:nowrap;justify-content:space-between;gap:25px;padding:0 5px;page-break-inside:avoid;break-inside:avoid;}
+  .sig-block{flex:1 1 0;min-width:0;text-align:center;page-break-inside:avoid;break-inside:avoid;}
   .sig-line{border-top:1.5px solid #64748b;padding-top:6px;margin-top:35px;}
   .sig-name{font-size:12px;font-weight:700;color:#0f172a;min-height:16px;}
   .sig-title{font-size:12.5px;font-weight:700;color:#064e3b;margin-top:2px;}
   .sig-sub{font-size:10px;color:#64748b;}
-  .footer{margin-top:20px;display:flex;justify-content:space-between;font-size:10px;color:#64748b;border-top:1px dashed #cbd5e1;padding-top:8px;}
+  .footer{display:flex;justify-content:space-between;font-size:10px;color:#64748b;border-top:1px dashed #cbd5e1;padding-top:8px;}
+  .print-only{display:none;}
   @media print{
     html,body{padding:0 !important;background:#fff !important;}
-    .sheet{box-shadow:none !important;border-color:#94a3b8 !important;}
+    .sheet{box-shadow:none !important;border:none !important;padding-bottom:50px !important;}
     .header,.doc-band,.meta{page-break-inside:avoid;break-inside:avoid;}
     table{page-break-inside:auto;}
     tr{page-break-inside:avoid;break-inside:avoid;page-break-after:auto;}
     thead{display:table-header-group;}
     tfoot{display:table-footer-group;}
-    .summary-wrap{page-break-inside:avoid;break-inside:avoid;-webkit-column-break-inside:avoid;break-before:auto;}
-    .signatures-wrap{page-break-inside:avoid !important;break-inside:avoid-page !important;-webkit-column-break-inside:avoid !important;page-break-before:auto;break-before:auto;page-break-after:avoid;}
-    .signatures{page-break-inside:avoid !important;break-inside:avoid-page !important;-webkit-column-break-inside:avoid !important;display:flex !important;flex-wrap:nowrap !important;}
-    .sig-block{page-break-inside:avoid !important;break-inside:avoid-page !important;-webkit-column-break-inside:avoid !important;}
+    .summary-wrap{page-break-inside:avoid;break-inside:avoid;}
+    .signatures-wrap{
+      position:fixed !important;
+      bottom:0 !important;
+      left:8mm !important;
+      right:8mm !important;
+      background:white !important;
+      margin-top:0 !important;
+      padding-bottom:10mm !important;
+      z-index:9999 !important;
+      page-break-inside:avoid !important;
+      break-inside:avoid !important;
+    }
+    .print-only{display:block !important;}
+    .print-hidden{display:none !important;}
+    .result-page{margin:0 !important;padding:0 !important;height:auto !important;break-after:auto !important;page-break-after:auto !important;}
+    .fit-inner{position:static !important;transform:none !important;width:100% !important;}
   }
   .result-page{position:relative;box-sizing:border-box;padding:8mm;width:297mm;height:209.5mm;break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid;overflow:hidden;margin:0 auto 14px;}
   .result-page:last-child{break-after:auto;page-break-after:auto;margin-bottom:0;}
