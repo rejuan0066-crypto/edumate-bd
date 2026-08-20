@@ -225,26 +225,26 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
 
         {/* Subjects Table */}
         <div className="w-full overflow-x-auto rounded-lg border border-gray-300 my-6">
-          <table className="min-w-[700px] w-full border-collapse text-sm">
+          <table className="w-full table-fixed border-collapse text-sm">
             <thead>
               <tr className="bg-gray-100 border-b border-gray-300">
-                <th className="border-r border-gray-300 p-3 w-12">#</th>
-                <th className="border-r border-gray-300 p-3 text-left">বিষয়</th>
-                <th className="border-r border-gray-300 p-3 w-24">পূর্ণমান</th>
-                <th className="border-r border-gray-300 p-3 w-24">প্রাপ্ত নম্বর</th>
-                <th className="border-r border-gray-300 p-3 w-20">গ্রেড</th>
-                <th className="p-3 w-20">GPA</th>
+                <th className="border-r border-gray-300 p-2 w-[10%] text-center">#</th>
+                <th className="border-r border-gray-300 p-2 w-[40%] text-left">বিষয়</th>
+                <th className="border-r border-gray-300 p-2 w-[16%] text-center">পূর্ণমান</th>
+                <th className="border-r border-gray-300 p-2 w-[16%] text-center">প্রাপ্ত নম্বর</th>
+                <th className="border-r border-gray-300 p-2 w-[10%] text-center">গ্রেড</th>
+                <th className="p-2 w-[8%] text-center">GPA</th>
               </tr>
             </thead>
             <tbody>
               {subjectResults.map((r, i) => (
                 <tr key={i} className="border-b border-gray-200 last:border-0 hover:bg-gray-50 transition-colors">
-                  <td className="border-r border-gray-300 p-3 text-center text-gray-500">{i + 1}</td>
-                  <td className="border-r border-gray-300 p-3 font-medium">{bn ? r.subject.name_bn : r.subject.name}</td>
-                  <td className="border-r border-gray-300 p-3 text-center">100</td>
-                  <td className="border-r border-gray-300 p-3 text-center font-bold text-lg">{r.marks}</td>
-                  <td className="border-r border-gray-300 p-3 text-center font-semibold">{r.grade}</td>
-                  <td className="p-3 text-center font-semibold text-emerald-700">{r.gpa}</td>
+                  <td className="border-r border-gray-300 p-2 text-center text-gray-500">{i + 1}</td>
+                  <td className="border-r border-gray-300 p-2 font-medium truncate" title={bn ? r.subject.name_bn : r.subject.name}>{bn ? r.subject.name_bn : r.subject.name}</td>
+                  <td className="border-r border-gray-300 p-2 text-center">100</td>
+                  <td className="border-r border-gray-300 p-2 text-center font-bold text-base">{r.marks}</td>
+                  <td className="border-r border-gray-300 p-2 text-center font-semibold">{r.grade}</td>
+                  <td className="p-2 text-center font-semibold text-emerald-700">{r.gpa}</td>
                 </tr>
               ))}
             </tbody>
