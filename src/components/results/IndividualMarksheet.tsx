@@ -144,7 +144,18 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               margin: 0;
               padding: 0;
             }
-            .printable-sheet { width: 100%; }
+            .printable-sheet { width: 100%; position: relative; padding-bottom: 80px; }
+            .signature-footer-fixed {
+              position: fixed;
+              bottom: 0;
+              left: 0;
+              right: 0;
+              background: white;
+              padding-bottom: 20px;
+              z-index: 9999;
+              page-break-inside: avoid;
+              break-inside: avoid;
+            }
           </style>
         </head>
         <body>
