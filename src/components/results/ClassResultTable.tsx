@@ -172,12 +172,12 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
           
           {/* Rows */}
           {studentsWithStats.map(({ st, originalIdx, failed }) => (
-            <div key={st.id} className={`flex border-b border-border shrink-0 min-h-[48px] items-center hover:bg-slate-50 transition-colors ${failed ? 'bg-destructive/5' : 'bg-white'}`}>
-              <div className="w-8 sm:w-10 px-1 sm:px-2 py-2 text-center text-[10px] sm:text-xs text-muted-foreground border-r border-border shrink-0">{toBnDigits(originalIdx + 1)}</div>
-              <div className="w-10 sm:w-16 px-1 sm:px-2 py-2 text-center text-[10px] sm:text-xs font-medium text-foreground border-r border-border shrink-0">
+            <div key={st.id} className={`flex border-b border-border shrink-0 h-[48px] items-center hover:bg-slate-50 transition-colors ${failed ? 'bg-destructive/5' : 'bg-white'}`}>
+              <div className="w-8 sm:w-10 h-[48px] px-1 sm:px-2 text-center text-[10px] sm:text-xs text-muted-foreground border-r border-border shrink-0 flex items-center justify-center">{toBnDigits(originalIdx + 1)}</div>
+              <div className="w-10 sm:w-16 h-[48px] px-1 sm:px-2 text-center text-[10px] sm:text-xs font-medium text-foreground border-r border-border shrink-0 flex items-center justify-center">
                 {st.roll_number ? toBnDigits(st.roll_number) : '-'}
               </div>
-              <div className="flex-1 px-2 py-2 text-[10px] sm:text-xs font-medium text-foreground truncate">
+              <div className="flex-1 h-[48px] px-2 text-[10px] sm:text-xs font-medium text-foreground truncate flex items-center">
                 {bn ? st.name_bn : (st.name_en || st.name_bn)}
               </div>
             </div>
