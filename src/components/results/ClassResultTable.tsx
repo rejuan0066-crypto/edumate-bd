@@ -214,12 +214,12 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
 
 
             return (
-              <div key={st.id} className={`flex border-b border-border shrink-0 min-h-[48px] items-center hover:bg-muted/5 transition-colors ${failed ? 'bg-destructive/5' : 'bg-white'}`}>
+              <div key={st.id} className={`flex border-b border-border shrink-0 h-[48px] items-center hover:bg-muted/5 transition-colors ${failed ? 'bg-destructive/5' : 'bg-white'}`}>
                 {subjects.map((sub: any) => {
                   const mark = marksMap[`${st.id}_${sub.id}`] ?? 0;
                   const isFail = mark < passMark && mark > 0;
                   return (
-                    <div key={sub.id} className="w-[70px] sm:w-[90px] px-1 py-1 text-center border-r border-border shrink-0">
+                    <div key={sub.id} className="w-[70px] sm:w-[90px] h-[48px] px-1 text-center border-r border-border shrink-0 flex items-center justify-center">
                       <Input
                         className={`w-full h-8 text-center bg-transparent text-[10px] sm:text-sm focus:border-primary ${isFail ? 'border-destructive text-destructive' : 'border-border/50'}`}
                         type="text"
@@ -237,25 +237,25 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
                     </div>
                   );
                 })}
-                <div className="w-[60px] sm:w-[80px] px-2 py-2 text-center text-[10px] sm:text-xs font-bold border-r border-border shrink-0">{hasEnteredAnyMark ? toBnDigits(total) : '-'}</div>
-                <div className="w-[60px] sm:w-[80px] px-2 py-2 text-center text-[10px] sm:text-xs text-muted-foreground border-r border-border shrink-0">{hasEnteredAnyMark ? toBnDigits(avg.toFixed(1)) : '-'}</div>
-                <div className="w-[60px] sm:w-[80px] px-2 py-2 text-center border-r border-border shrink-0">
+                <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold border-r border-border shrink-0 flex items-center justify-center">{hasEnteredAnyMark ? toBnDigits(total) : '-'}</div>
+                <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs text-muted-foreground border-r border-border shrink-0 flex items-center justify-center">{hasEnteredAnyMark ? toBnDigits(avg.toFixed(1)) : '-'}</div>
+                <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center border-r border-border shrink-0 flex items-center justify-center">
                   {overall ? (
                     <span className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold ${overall.color}`}>
                       {String(overall.grade).toUpperCase()}
                     </span>
                   ) : '-'}
                 </div>
-                <div className="w-[60px] sm:w-[80px] px-2 py-2 text-center text-[10px] sm:text-xs font-semibold text-primary border-r border-border shrink-0">{overall ? toBnDigits(overall.gpa) : '-'}</div>
-                <div className="w-[80px] sm:w-[100px] px-2 py-2 text-center text-[9px] sm:text-[10px] font-medium text-muted-foreground border-r border-border shrink-0 truncate">
+                <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-semibold text-primary border-r border-border shrink-0 flex items-center justify-center">{overall ? toBnDigits(overall.gpa) : '-'}</div>
+                <div className="w-[80px] sm:w-[100px] h-[48px] px-2 text-center text-[9px] sm:text-[10px] font-medium text-muted-foreground border-r border-border shrink-0 truncate flex items-center justify-center">
                   {overall ? (bn ? overall.title_bn : overall.title) : '-'}
                 </div>
-                <div className="w-[60px] sm:w-[80px] px-2 py-2 text-center text-[10px] sm:text-xs font-medium text-muted-foreground border-r border-border shrink-0">
+                <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-medium text-muted-foreground border-r border-border shrink-0 flex items-center justify-center">
                   <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full ${rank && rank <= 3 ? 'bg-emerald-500/10 text-emerald-600 font-bold' : ''}`}>
                     {hasEnteredAnyMark ? rankDisplay : '-'}
-                  </span>
+                </span>
                 </div>
-                <div className="w-[50px] px-2 py-2 text-center shrink-0">
+                <div className="w-[50px] h-[48px] px-2 text-center shrink-0 flex items-center justify-center">
                   <button
                     onClick={() => onViewMarksheet(st.id, rank)}
                     className="p-1.5 rounded-md hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
