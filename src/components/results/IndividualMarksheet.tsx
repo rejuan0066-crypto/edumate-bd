@@ -160,7 +160,10 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </head>
         <body>
           <div class="printable-sheet">
-            ${printContent.innerHTML}
+            ${printContent.innerHTML.replace(
+              'id="signature-section"',
+              'id="signature-section" class="signature-footer-fixed"'
+            )}
           </div>
           <script>
             window.onload = () => {
