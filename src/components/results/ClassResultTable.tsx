@@ -195,15 +195,15 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
               const rankDisplay = formatOrdinalRank(rank, true);
               
               return (
-                <tr key={st.id} className={`hover:bg-slate-50 transition-colors h-[56px] group ${failed ? 'bg-destructive/5' : 'bg-white'}`}>
+                <tr key={st.id} className={`hover:bg-slate-50 transition-colors h-[56px] group ${failed ? 'bg-destructive/5' : ''}`}>
                   {/* Sticky Columns */}
-                  <td className="sticky left-0 z-20 bg-inherit border-b border-r border-border text-center text-[10px] sm:text-xs text-muted-foreground shadow-[1px_0_0_0_#e2e8f0]">
+                  <td className={`sticky left-0 z-20 border-b border-r border-border text-center text-[10px] sm:text-xs text-muted-foreground shadow-[1px_0_0_0_#e2e8f0] ${failed ? 'bg-[#fff5f5]' : 'bg-white'}`}>
                     <div className="flex items-center justify-center h-full">{toBnDigits(originalIdx + 1)}</div>
                   </td>
-                  <td className="sticky left-[40px] z-20 bg-inherit border-b border-r border-border text-center text-[10px] sm:text-xs font-medium text-foreground shadow-[1px_0_0_0_#e2e8f0]">
+                  <td className={`sticky left-[40px] z-20 border-b border-r border-border text-center text-[10px] sm:text-xs font-medium text-foreground shadow-[1px_0_0_0_#e2e8f0] ${failed ? 'bg-[#fff5f5]' : 'bg-white'}`}>
                     <div className="flex items-center justify-center h-full">{st.roll_number ? toBnDigits(st.roll_number) : '-'}</div>
                   </td>
-                  <td className="sticky left-[100px] sm:left-[120px] z-20 bg-inherit border-b border-r border-border px-4 text-[10px] sm:text-xs font-medium text-foreground truncate shadow-[2px_0_8px_-2px_rgba(0,0,0,0.1)]">
+                  <td className={`sticky left-[100px] sm:left-[120px] z-20 border-b border-r border-border px-4 text-[10px] sm:text-xs font-medium text-foreground truncate shadow-[2px_0_8px_-2px_rgba(0,0,0,0.1)] ${failed ? 'bg-[#fff5f5]' : 'bg-white'}`}>
                     <div className="flex items-center h-full">{bn ? st.name_bn : (st.name_en || st.name_bn)}</div>
                   </td>
 
