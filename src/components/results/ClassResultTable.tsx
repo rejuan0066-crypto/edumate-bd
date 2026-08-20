@@ -39,27 +39,9 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
   const bn = language === 'bn';
   const { getOverallGrade, maxMarks, minMarks, passMark } = useGradingSystem();
   
-  const leftPanelRef = useRef<HTMLDivElement>(null);
-  const rightPanelRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
 
   const { data: institution } = useQuery({
-    queryKey: ['institution-default'],
-    queryFn: async () => {
-      const data = await fetchInstitutionInfo();
-      return data;
-    },
-    staleTime: 10 * 60 * 1000,
-  });
-
-  // Sync scrolling between left and right panels
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.currentTarget;
-    if (target === leftPanelRef.current && rightPanelRef.current) {
-      rightPanelRef.current.scrollTop = target.scrollTop;
-    } else if (target === rightPanelRef.current && leftPanelRef.current) {
-      leftPanelRef.current.scrollTop = target.scrollTop;
-    }
-  };
 
   const handleExport = (type: 'csv' | 'pdf') => {
     const params = {
