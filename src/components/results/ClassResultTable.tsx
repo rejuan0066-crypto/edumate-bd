@@ -164,20 +164,20 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
           className="w-[120px] xs:w-[180px] sm:w-[220px] flex flex-col border-r border-gray-300 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.1)] bg-background z-20 overflow-y-auto no-scrollbar max-h-[75vh]"
         >
           {/* Header - STICKY TOP */}
-          <div className="sticky top-0 z-50 flex bg-slate-50 border-b border-border shrink-0 min-h-[48px]">
-            <div className="w-8 sm:w-10 px-1 sm:px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50">#</div>
-            <div className="w-10 sm:w-16 px-1 sm:px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50">{bn ? 'রোল' : 'Roll'}</div>
-            <div className="flex-1 px-2 py-3 text-left text-[10px] sm:text-xs font-bold text-muted-foreground bg-slate-50">{bn ? 'নাম' : 'Name'}</div>
+          <div className="sticky top-0 z-50 flex bg-slate-50 border-b border-border shrink-0 h-[48px] items-center">
+            <div className="w-8 sm:w-10 h-[48px] px-1 sm:px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50 flex items-center justify-center">#</div>
+            <div className="w-10 sm:w-16 h-[48px] px-1 sm:px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50 flex items-center justify-center">{bn ? 'রোল' : 'Roll'}</div>
+            <div className="flex-1 h-[48px] px-2 text-left text-[10px] sm:text-xs font-bold text-muted-foreground bg-slate-50 flex items-center">{bn ? 'নাম' : 'Name'}</div>
           </div>
           
           {/* Rows */}
           {studentsWithStats.map(({ st, originalIdx, failed }) => (
-            <div key={st.id} className={`flex border-b border-border shrink-0 min-h-[48px] items-center hover:bg-slate-50 transition-colors ${failed ? 'bg-destructive/5' : 'bg-white'}`}>
-              <div className="w-8 sm:w-10 px-1 sm:px-2 py-2 text-center text-[10px] sm:text-xs text-muted-foreground border-r border-border shrink-0">{toBnDigits(originalIdx + 1)}</div>
-              <div className="w-10 sm:w-16 px-1 sm:px-2 py-2 text-center text-[10px] sm:text-xs font-medium text-foreground border-r border-border shrink-0">
+            <div key={st.id} className={`flex border-b border-border shrink-0 h-[48px] items-center hover:bg-slate-50 transition-colors ${failed ? 'bg-destructive/5' : 'bg-white'}`}>
+              <div className="w-8 sm:w-10 h-[48px] px-1 sm:px-2 text-center text-[10px] sm:text-xs text-muted-foreground border-r border-border shrink-0 flex items-center justify-center">{toBnDigits(originalIdx + 1)}</div>
+              <div className="w-10 sm:w-16 h-[48px] px-1 sm:px-2 text-center text-[10px] sm:text-xs font-medium text-foreground border-r border-border shrink-0 flex items-center justify-center">
                 {st.roll_number ? toBnDigits(st.roll_number) : '-'}
               </div>
-              <div className="flex-1 px-2 py-2 text-[10px] sm:text-xs font-medium text-foreground truncate">
+              <div className="flex-1 h-[48px] px-2 text-[10px] sm:text-xs font-medium text-foreground truncate flex items-center">
                 {bn ? st.name_bn : (st.name_en || st.name_bn)}
               </div>
             </div>
@@ -192,19 +192,19 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
           {/* Header - STICKY TOP */}
-          <div className="sticky top-0 z-30 flex bg-slate-50 border-b border-border shrink-0 min-h-[48px]">
+          <div className="sticky top-0 z-30 flex bg-slate-50 border-b border-border shrink-0 h-[48px] items-center">
             {subjects.map((s: any) => (
-              <div key={s.id} className="w-[70px] sm:w-[90px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 truncate bg-slate-50">
+              <div key={s.id} className="w-[70px] sm:w-[90px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 truncate bg-slate-50 flex items-center justify-center">
                 {bn ? s.name_bn : s.name}
               </div>
             ))}
-            <div className="w-[60px] sm:w-[80px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50">{bn ? 'মোট' : 'Total'}</div>
-            <div className="w-[60px] sm:w-[80px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50">{bn ? 'গড়' : 'Avg'}</div>
-            <div className="w-[60px] sm:w-[80px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50">{bn ? 'গ্রেড' : 'Grade'}</div>
-            <div className="w-[60px] sm:w-[80px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50">GPA</div>
-            <div className="w-[80px] sm:w-[100px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50">{bn ? 'মর্যাদা' : 'Title'}</div>
-            <div className="w-[60px] sm:w-[80px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50">{bn ? 'মেধা' : 'Rank'}</div>
-            <div className="w-[50px] px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground shrink-0 bg-slate-50"></div>
+            <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50 flex items-center justify-center">{bn ? 'মোট' : 'Total'}</div>
+            <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50 flex items-center justify-center">{bn ? 'গড়' : 'Avg'}</div>
+            <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50 flex items-center justify-center">{bn ? 'গ্রেড' : 'Grade'}</div>
+            <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50 flex items-center justify-center">GPA</div>
+            <div className="w-[80px] sm:w-[100px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50 flex items-center justify-center">{bn ? 'মর্যাদা' : 'Title'}</div>
+            <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50 flex items-center justify-center">{bn ? 'মেধা' : 'Rank'}</div>
+            <div className="w-[50px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground shrink-0 bg-slate-50 flex items-center justify-center"></div>
           </div>
 
           {/* Rows */}
@@ -214,12 +214,12 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
 
 
             return (
-              <div key={st.id} className={`flex border-b border-border shrink-0 min-h-[48px] items-center hover:bg-muted/5 transition-colors ${failed ? 'bg-destructive/5' : 'bg-white'}`}>
+              <div key={st.id} className={`flex border-b border-border shrink-0 h-[48px] items-center hover:bg-muted/5 transition-colors ${failed ? 'bg-destructive/5' : 'bg-white'}`}>
                 {subjects.map((sub: any) => {
                   const mark = marksMap[`${st.id}_${sub.id}`] ?? 0;
                   const isFail = mark < passMark && mark > 0;
                   return (
-                    <div key={sub.id} className="w-[70px] sm:w-[90px] px-1 py-1 text-center border-r border-border shrink-0">
+                    <div key={sub.id} className="w-[70px] sm:w-[90px] h-[48px] px-1 text-center border-r border-border shrink-0 flex items-center justify-center">
                       <Input
                         className={`w-full h-8 text-center bg-transparent text-[10px] sm:text-sm focus:border-primary ${isFail ? 'border-destructive text-destructive' : 'border-border/50'}`}
                         type="text"
@@ -237,25 +237,25 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
                     </div>
                   );
                 })}
-                <div className="w-[60px] sm:w-[80px] px-2 py-2 text-center text-[10px] sm:text-xs font-bold border-r border-border shrink-0">{hasEnteredAnyMark ? toBnDigits(total) : '-'}</div>
-                <div className="w-[60px] sm:w-[80px] px-2 py-2 text-center text-[10px] sm:text-xs text-muted-foreground border-r border-border shrink-0">{hasEnteredAnyMark ? toBnDigits(avg.toFixed(1)) : '-'}</div>
-                <div className="w-[60px] sm:w-[80px] px-2 py-2 text-center border-r border-border shrink-0">
+                <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold border-r border-border shrink-0 flex items-center justify-center">{hasEnteredAnyMark ? toBnDigits(total) : '-'}</div>
+                <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs text-muted-foreground border-r border-border shrink-0 flex items-center justify-center">{hasEnteredAnyMark ? toBnDigits(avg.toFixed(1)) : '-'}</div>
+                <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center border-r border-border shrink-0 flex items-center justify-center">
                   {overall ? (
                     <span className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold ${overall.color}`}>
                       {String(overall.grade).toUpperCase()}
                     </span>
                   ) : '-'}
                 </div>
-                <div className="w-[60px] sm:w-[80px] px-2 py-2 text-center text-[10px] sm:text-xs font-semibold text-primary border-r border-border shrink-0">{overall ? toBnDigits(overall.gpa) : '-'}</div>
-                <div className="w-[80px] sm:w-[100px] px-2 py-2 text-center text-[9px] sm:text-[10px] font-medium text-muted-foreground border-r border-border shrink-0 truncate">
+                <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-semibold text-primary border-r border-border shrink-0 flex items-center justify-center">{overall ? toBnDigits(overall.gpa) : '-'}</div>
+                <div className="w-[80px] sm:w-[100px] h-[48px] px-2 text-center text-[9px] sm:text-[10px] font-medium text-muted-foreground border-r border-border shrink-0 truncate flex items-center justify-center">
                   {overall ? (bn ? overall.title_bn : overall.title) : '-'}
                 </div>
-                <div className="w-[60px] sm:w-[80px] px-2 py-2 text-center text-[10px] sm:text-xs font-medium text-muted-foreground border-r border-border shrink-0">
+                <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-medium text-muted-foreground border-r border-border shrink-0 flex items-center justify-center">
                   <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full ${rank && rank <= 3 ? 'bg-emerald-500/10 text-emerald-600 font-bold' : ''}`}>
                     {hasEnteredAnyMark ? rankDisplay : '-'}
                   </span>
                 </div>
-                <div className="w-[50px] px-2 py-2 text-center shrink-0">
+                <div className="w-[50px] h-[48px] px-2 text-center shrink-0 flex items-center justify-center">
                   <button
                     onClick={() => onViewMarksheet(st.id, rank)}
                     className="p-1.5 rounded-md hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
