@@ -39,8 +39,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
   const bn = language === 'bn';
   const { getOverallGrade, maxMarks, minMarks, passMark } = useGradingSystem();
   
-  const leftPanelRef = useRef<HTMLDivElement>(null);
-  const rightPanelRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
 
   const { data: institution } = useQuery({
     queryKey: ['institution-default'],
@@ -50,16 +49,6 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
     },
     staleTime: 10 * 60 * 1000,
   });
-
-  // Sync scrolling between left and right panels
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.currentTarget;
-    if (target === leftPanelRef.current && rightPanelRef.current) {
-      rightPanelRef.current.scrollTop = target.scrollTop;
-    } else if (target === rightPanelRef.current && leftPanelRef.current) {
-      leftPanelRef.current.scrollTop = target.scrollTop;
-    }
-  };
 
   const handleExport = (type: 'csv' | 'pdf') => {
     const params = {
@@ -156,117 +145,131 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
       </div>
 
       {/* Main Grid Container */}
-      <div className="flex flex-1 overflow-hidden relative">
-        {/* Fixed Left Panel: Student Info */}
-        <div 
-          ref={leftPanelRef}
-          onScroll={handleScroll}
-          className="w-[120px] xs:w-[180px] sm:w-[220px] flex flex-col border-r border-gray-300 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.1)] bg-background z-20 overflow-y-auto no-scrollbar max-h-[75vh]"
-        >
-          {/* Header - STICKY TOP */}
-          <div className="sticky top-0 z-50 flex bg-slate-50 border-b border-border shrink-0 h-[48px] items-center">
-            <div className="w-8 sm:w-10 h-[48px] px-1 sm:px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50 flex items-center justify-center">#</div>
-            <div className="w-10 sm:w-16 h-[48px] px-1 sm:px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50 flex items-center justify-center">{bn ? 'রোল' : 'Roll'}</div>
-            <div className="flex-1 h-[48px] px-2 text-left text-[10px] sm:text-xs font-bold text-muted-foreground bg-slate-50 flex items-center">{bn ? 'নাম' : 'Name'}</div>
-          </div>
-          
-          {/* Rows */}
-          {studentsWithStats.map(({ st, originalIdx, failed }) => (
-            <div key={st.id} className={`flex border-b border-border shrink-0 h-[48px] items-center hover:bg-slate-50 transition-colors ${failed ? 'bg-destructive/5' : 'bg-white'}`}>
-              <div className="w-8 sm:w-10 h-[48px] px-1 sm:px-2 text-center text-[10px] sm:text-xs text-muted-foreground border-r border-border shrink-0 flex items-center justify-center">{toBnDigits(originalIdx + 1)}</div>
-              <div className="w-10 sm:w-16 h-[48px] px-1 sm:px-2 text-center text-[10px] sm:text-xs font-medium text-foreground border-r border-border shrink-0 flex items-center justify-center">
-                {st.roll_number ? toBnDigits(st.roll_number) : '-'}
-              </div>
-              <div className="flex-1 h-[48px] px-2 text-[10px] sm:text-xs font-medium text-foreground truncate flex items-center">
-                {bn ? st.name_bn : (st.name_en || st.name_bn)}
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="flex-1 overflow-auto relative" ref={tableRef}>
+        <table className="w-full border-collapse table-fixed">
+          <thead className="sticky top-0 z-40">
+            <tr className="bg-slate-50 border-b border-border h-[48px]">
+              {/* Sticky Columns Header */}
+              <th className="sticky left-0 z-50 bg-slate-50 border-r border-border w-8 sm:w-10 px-1 sm:px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground flex items-center justify-center h-[48px]">#</th>
+              <th className="sticky left-[32px] sm:left-[40px] z-50 bg-slate-50 border-r border-border w-10 sm:w-16 px-1 sm:px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground flex items-center justify-center h-[48px]">{bn ? 'রোল' : 'Roll'}</th>
+              <th className="sticky left-[72px] sm:left-[104px] z-50 bg-slate-50 border-r border-border w-[80px] xs:w-[140px] sm:w-[180px] px-2 text-left text-[10px] sm:text-xs font-bold text-muted-foreground flex items-center h-[48px]">{bn ? 'নাম' : 'Name'}</th>
+              
+              {/* Scrollable Columns Header */}
+              {subjects.map((s: any) => (
+                <th key={s.id} className="w-[70px] sm:w-[90px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border truncate bg-slate-50 h-[48px]">
+                  <div className="flex items-center justify-center h-full">
+                    {bn ? s.name_bn : s.name}
+                  </div>
+                </th>
+              ))}
+              <th className="w-[60px] sm:w-[80px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border bg-slate-50 h-[48px]">
+                <div className="flex items-center justify-center h-full">{bn ? 'মোট' : 'Total'}</div>
+              </th>
+              <th className="w-[60px] sm:w-[80px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border bg-slate-50 h-[48px]">
+                <div className="flex items-center justify-center h-full">{bn ? 'গড়' : 'Avg'}</div>
+              </th>
+              <th className="w-[60px] sm:w-[80px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border bg-slate-50 h-[48px]">
+                <div className="flex items-center justify-center h-full">{bn ? 'গ্রেড' : 'Grade'}</div>
+              </th>
+              <th className="w-[60px] sm:w-[80px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border bg-slate-50 h-[48px]">
+                <div className="flex items-center justify-center h-full">GPA</div>
+              </th>
+              <th className="w-[80px] sm:w-[100px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border bg-slate-50 h-[48px]">
+                <div className="flex items-center justify-center h-full">{bn ? 'মর্যাদা' : 'Title'}</div>
+              </th>
+              <th className="w-[60px] sm:w-[80px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border bg-slate-50 h-[48px]">
+                <div className="flex items-center justify-center h-full">{bn ? 'মেধা' : 'Rank'}</div>
+              </th>
+              <th className="w-[50px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground bg-slate-50 h-[48px]"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {studentsWithStats.map(({ st, originalIdx, failed, total, avg, overall, hasEnteredAnyMark }) => {
+              const rank = rankMap.get(st.id);
+              const rankDisplay = formatOrdinalRank(rank, true);
+              
+              return (
+                <tr key={st.id} className={`border-b border-border hover:bg-slate-50 transition-colors h-[48px] ${failed ? 'bg-destructive/5' : 'bg-white'}`}>
+                  {/* Sticky Columns */}
+                  <td className="sticky left-0 z-20 bg-inherit border-r border-border text-center text-[10px] sm:text-xs text-muted-foreground h-[48px]">
+                    <div className="flex items-center justify-center h-full">{toBnDigits(originalIdx + 1)}</div>
+                  </td>
+                  <td className="sticky left-[32px] sm:left-[40px] z-20 bg-inherit border-r border-border text-center text-[10px] sm:text-xs font-medium text-foreground h-[48px]">
+                    <div className="flex items-center justify-center h-full">{st.roll_number ? toBnDigits(st.roll_number) : '-'}</div>
+                  </td>
+                  <td className="sticky left-[72px] sm:left-[104px] z-20 bg-inherit border-r border-border px-2 text-[10px] sm:text-xs font-medium text-foreground truncate h-[48px]">
+                    <div className="flex items-center h-full">{bn ? st.name_bn : (st.name_en || st.name_bn)}</div>
+                  </td>
 
-        {/* Scrollable Right Panel: Marks Entry */}
-        <div 
-          ref={rightPanelRef}
-          onScroll={handleScroll}
-          className="flex-1 flex flex-col overflow-auto touch-auto max-h-[75vh]"
-          style={{ WebkitOverflowScrolling: 'touch' }}
-        >
-          {/* Header - STICKY TOP */}
-          <div className="sticky top-0 z-30 flex bg-slate-50 border-b border-border shrink-0 h-[48px] items-center">
-            {subjects.map((s: any) => (
-              <div key={s.id} className="w-[70px] sm:w-[90px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 truncate bg-slate-50 flex items-center justify-center">
-                {bn ? s.name_bn : s.name}
-              </div>
-            ))}
-            <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50 flex items-center justify-center">{bn ? 'মোট' : 'Total'}</div>
-            <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50 flex items-center justify-center">{bn ? 'গড়' : 'Avg'}</div>
-            <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50 flex items-center justify-center">{bn ? 'গ্রেড' : 'Grade'}</div>
-            <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50 flex items-center justify-center">GPA</div>
-            <div className="w-[80px] sm:w-[100px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50 flex items-center justify-center">{bn ? 'মর্যাদা' : 'Title'}</div>
-            <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50 flex items-center justify-center">{bn ? 'মেধা' : 'Rank'}</div>
-            <div className="w-[50px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground shrink-0 bg-slate-50 flex items-center justify-center"></div>
-          </div>
-
-          {/* Rows */}
-          {studentsWithStats.map(({ st, total, avg, overall, failed, hasEnteredAnyMark }) => {
-            const rank = rankMap.get(st.id);
-            const rankDisplay = formatOrdinalRank(rank, true);
-
-
-            return (
-              <div key={st.id} className={`flex border-b border-border shrink-0 h-[48px] items-center hover:bg-muted/5 transition-colors ${failed ? 'bg-destructive/5' : 'bg-white'}`}>
-                {subjects.map((sub: any) => {
-                  const mark = marksMap[`${st.id}_${sub.id}`] ?? 0;
-                  const isFail = mark < passMark && mark > 0;
-                  return (
-                    <div key={sub.id} className="w-[70px] sm:w-[90px] h-[48px] px-1 text-center border-r border-border shrink-0 flex items-center justify-center">
-                      <Input
-                        className={`w-full h-8 text-center bg-transparent text-[10px] sm:text-sm focus:border-primary ${isFail ? 'border-destructive text-destructive' : 'border-border/50'}`}
-                        type="text"
-                        inputMode="numeric"
-                        data-bijoy={bn}
-                        value={mark === 0 ? '' : toBnDigits(mark)}
-                        onChange={(e) => {
-                          const raw = toEnDigits(e.target.value).replace(/[^0-9]/g, '');
-                          if (raw === '') { onMarksChange(`${st.id}_${sub.id}`, 0); return; }
-                          let num = parseInt(raw, 10) || 0;
-                          if (num > maxMarks) num = maxMarks;
-                          onMarksChange(`${st.id}_${sub.id}`, num);
-                        }}
-                      />
+                  {/* Scrollable Data Columns */}
+                  {subjects.map((sub: any) => {
+                    const mark = marksMap[`${st.id}_${sub.id}`] ?? 0;
+                    const isFail = mark < passMark && mark > 0;
+                    return (
+                      <td key={sub.id} className="px-1 text-center border-r border-border h-[48px]">
+                        <div className="flex items-center justify-center h-full">
+                          <Input
+                            className={`w-full h-8 text-center bg-transparent text-[10px] sm:text-sm focus:border-primary ${isFail ? 'border-destructive text-destructive' : 'border-border/50'}`}
+                            type="text"
+                            inputMode="numeric"
+                            data-bijoy={bn}
+                            value={mark === 0 ? '' : toBnDigits(mark)}
+                            onChange={(e) => {
+                              const raw = toEnDigits(e.target.value).replace(/[^0-9]/g, '');
+                              if (raw === '') { onMarksChange(`${st.id}_${sub.id}`, 0); return; }
+                              let num = parseInt(raw, 10) || 0;
+                              if (num > maxMarks) num = maxMarks;
+                              onMarksChange(`${st.id}_${sub.id}`, num);
+                            }}
+                          />
+                        </div>
+                      </td>
+                    );
+                  })}
+                  
+                  <td className="px-2 text-center text-[10px] sm:text-xs font-bold border-r border-border h-[48px]">
+                    <div className="flex items-center justify-center h-full">{hasEnteredAnyMark ? toBnDigits(total) : '-'}</div>
+                  </td>
+                  <td className="px-2 text-center text-[10px] sm:text-xs text-muted-foreground border-r border-border h-[48px]">
+                    <div className="flex items-center justify-center h-full">{hasEnteredAnyMark ? toBnDigits(avg.toFixed(1)) : '-'}</div>
+                  </td>
+                  <td className="px-2 text-center border-r border-border h-[48px]">
+                    <div className="flex items-center justify-center h-full">
+                      {overall ? (
+                        <span className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold ${overall.color}`}>
+                          {String(overall.grade).toUpperCase()}
+                        </span>
+                      ) : '-'}
                     </div>
-                  );
-                })}
-                <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-bold border-r border-border shrink-0 flex items-center justify-center">{hasEnteredAnyMark ? toBnDigits(total) : '-'}</div>
-                <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs text-muted-foreground border-r border-border shrink-0 flex items-center justify-center">{hasEnteredAnyMark ? toBnDigits(avg.toFixed(1)) : '-'}</div>
-                <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center border-r border-border shrink-0 flex items-center justify-center">
-                  {overall ? (
-                    <span className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold ${overall.color}`}>
-                      {String(overall.grade).toUpperCase()}
-                    </span>
-                  ) : '-'}
-                </div>
-                <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-semibold text-primary border-r border-border shrink-0 flex items-center justify-center">{overall ? toBnDigits(overall.gpa) : '-'}</div>
-                <div className="w-[80px] sm:w-[100px] h-[48px] px-2 text-center text-[9px] sm:text-[10px] font-medium text-muted-foreground border-r border-border shrink-0 truncate flex items-center justify-center">
-                  {overall ? (bn ? overall.title_bn : overall.title) : '-'}
-                </div>
-                <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-medium text-muted-foreground border-r border-border shrink-0 flex items-center justify-center">
-                  <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full ${rank && rank <= 3 ? 'bg-emerald-500/10 text-emerald-600 font-bold' : ''}`}>
-                    {hasEnteredAnyMark ? rankDisplay : '-'}
-                  </span>
-                </div>
-                <div className="w-[50px] h-[48px] px-2 text-center shrink-0 flex items-center justify-center">
-                  <button
-                    onClick={() => onViewMarksheet(st.id, rank)}
-                    className="p-1.5 rounded-md hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                  </td>
+                  <td className="px-2 text-center text-[10px] sm:text-xs font-semibold text-primary border-r border-border h-[48px]">
+                    <div className="flex items-center justify-center h-full">{overall ? toBnDigits(overall.gpa) : '-'}</div>
+                  </td>
+                  <td className="px-2 text-center text-[9px] sm:text-[10px] font-medium text-muted-foreground border-r border-border truncate h-[48px]">
+                    <div className="flex items-center justify-center h-full">{overall ? (bn ? overall.title_bn : overall.title) : '-'}</div>
+                  </td>
+                  <td className="px-2 text-center text-[10px] sm:text-xs font-medium text-muted-foreground border-r border-border h-[48px]">
+                    <div className="flex items-center justify-center h-full">
+                      <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full ${rank && rank <= 3 ? 'bg-emerald-500/10 text-emerald-600 font-bold' : ''}`}>
+                        {hasEnteredAnyMark ? rankDisplay : '-'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-2 text-center h-[48px]">
+                    <div className="flex items-center justify-center h-full">
+                      <button
+                        onClick={() => onViewMarksheet(st.id, rank)}
+                        className="p-1.5 rounded-md hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
 
       {/* Signature Section */}
