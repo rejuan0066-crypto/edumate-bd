@@ -72,7 +72,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
     const { downloadSlipAsPdf } = await import('@/lib/salarySlipPdf');
     const printContent = document.getElementById('marksheet-printable-area');
     if (!printContent) return;
-    
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -82,15 +82,20 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;800&display=swap" rel="stylesheet">
           <script src="https://cdn.tailwindcss.com"></script>
           <style>
-            @page { size: A4 portrait; margin: 10mm; }
-            body { 
-              font-family: 'Noto Sans Bengali', sans-serif; 
-              background: white; 
+            @page { size: A4 portrait; margin: 8mm 10mm; }
+            body {
+              font-family: 'Noto Sans Bengali', sans-serif;
+              background: white;
               color: black;
               margin: 0;
               padding: 0;
             }
-            .printable-sheet { width: 100%; position: relative; padding-bottom: 80px; }
+            .printable-sheet {
+              width: 100%;
+              position: relative;
+              page-break-inside: avoid;
+              break-inside: avoid;
+            }
             .bg-\\[\\#1e5d3b\\] { background-color: #1e5d3b !important; -webkit-print-color-adjust: exact; }
             .text-white { color: white !important; }
             .signature-footer-fixed {
@@ -99,10 +104,19 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               left: 0;
               right: 0;
               background: white;
-              padding-bottom: 20px;
+              padding-bottom: 12px;
               z-index: 9999;
               page-break-inside: avoid;
               break-inside: avoid;
+            }
+            @media print {
+              #marksheet-printable-area { padding: 8mm !important; }
+              #marksheet-printable-area > div:first-child { padding: 16px !important; }
+              #marksheet-printable-area .bg-gray-50 { padding: 16px !important; margin: 12px 0 !important; }
+              #marksheet-printable-area table th,
+              #marksheet-printable-area table td { padding: 4px 8px !important; }
+              #marksheet-printable-area .grid.grid-cols-5 > div { padding: 8px !important; }
+              #marksheet-printable-area #signature-section { margin-top: 24px !important; }
             }
           </style>
         </head>
