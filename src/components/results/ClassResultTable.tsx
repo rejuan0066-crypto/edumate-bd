@@ -42,6 +42,13 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
   const tableRef = useRef<HTMLDivElement>(null);
 
   const { data: institution } = useQuery({
+    queryKey: ['institution-default'],
+    queryFn: async () => {
+      const data = await fetchInstitutionInfo();
+      return data;
+    },
+    staleTime: 10 * 60 * 1000,
+  });
 
   const handleExport = (type: 'csv' | 'pdf') => {
     const params = {
