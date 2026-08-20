@@ -253,7 +253,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
                 <div className="w-[60px] sm:w-[80px] h-[48px] px-2 text-center text-[10px] sm:text-xs font-medium text-muted-foreground border-r border-border shrink-0 flex items-center justify-center">
                   <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full ${rank && rank <= 3 ? 'bg-emerald-500/10 text-emerald-600 font-bold' : ''}`}>
                     {hasEnteredAnyMark ? rankDisplay : '-'}
-                </span>
+                  </span>
                 </div>
                 <div className="w-[50px] h-[48px] px-2 text-center shrink-0 flex items-center justify-center">
                   <button
