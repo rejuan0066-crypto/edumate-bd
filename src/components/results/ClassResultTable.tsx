@@ -162,31 +162,31 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
               
               {/* Scrollable Columns Header */}
               {subjects.map((s: any) => (
-                <th key={s.id} className="min-w-[100px] sm:min-w-[120px] px-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-50">
+                <th key={s.id} className="min-w-[100px] sm:min-w-[120px] px-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-100 sticky top-0 z-40">
                   <div className="flex items-center justify-center h-full whitespace-normal break-words leading-tight py-2">
                     {bn ? s.name_bn : s.name}
                   </div>
                 </th>
               ))}
-              <th className="min-w-[70px] sm:min-w-[90px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-50">
+              <th className="min-w-[70px] sm:min-w-[90px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-100 sticky top-0 z-40">
                 <div className="flex items-center justify-center h-full">{bn ? 'মোট' : 'Total'}</div>
               </th>
-              <th className="min-w-[70px] sm:min-w-[90px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-50">
+              <th className="min-w-[70px] sm:min-w-[90px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-100 sticky top-0 z-40">
                 <div className="flex items-center justify-center h-full">{bn ? 'গড়' : 'Avg'}</div>
               </th>
-              <th className="min-w-[70px] sm:min-w-[90px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-50">
+              <th className="min-w-[70px] sm:min-w-[90px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-100 sticky top-0 z-40">
                 <div className="flex items-center justify-center h-full">{bn ? 'গ্রেড' : 'Grade'}</div>
               </th>
-              <th className="min-w-[70px] sm:min-w-[90px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-50">
+              <th className="min-w-[70px] sm:min-w-[90px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-100 sticky top-0 z-40">
                 <div className="flex items-center justify-center h-full">GPA</div>
               </th>
-              <th className="min-w-[90px] sm:min-w-[110px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-50">
+              <th className="min-w-[90px] sm:min-w-[110px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-100 sticky top-0 z-40">
                 <div className="flex items-center justify-center h-full">{bn ? 'মর্যাদা' : 'Title'}</div>
               </th>
-              <th className="min-w-[70px] sm:min-w-[90px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-50">
+              <th className="min-w-[70px] sm:min-w-[90px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-100 sticky top-0 z-40">
                 <div className="flex items-center justify-center h-full">{bn ? 'মেধা' : 'Rank'}</div>
               </th>
-              <th className="min-w-[60px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b bg-slate-50"></th>
+              <th className="min-w-[60px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b bg-slate-100 sticky top-0 z-40"></th>
             </tr>
           </thead>
           <tbody>
