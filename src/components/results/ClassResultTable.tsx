@@ -147,46 +147,46 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
       {/* Main Grid Container */}
       <div className="flex-1 overflow-auto relative scrollbar-thin scrollbar-thumb-muted-foreground/20" ref={tableRef}>
         <table className="w-full border-separate border-spacing-0 table-auto min-w-max">
-          <thead className="sticky top-0 z-40">
-            <tr className="bg-slate-50 h-[56px]">
+          <thead className="sticky top-0 z-40 bg-slate-100 shadow-sm">
+            <tr className="bg-slate-100 h-[56px]">
               {/* Sticky Columns Header */}
-              <th className="sticky left-0 z-[60] bg-slate-50 border-b border-r border-border min-w-[40px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground shadow-[1px_0_0_0_#e2e8f0]">
+              <th className="sticky left-0 top-0 z-[60] bg-slate-100 border-b border-r border-border min-w-[40px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground shadow-[1px_0_0_0_#e2e8f0]">
                 <div className="flex items-center justify-center h-full">#</div>
               </th>
-              <th className="sticky left-[40px] z-[60] bg-slate-50 border-b border-r border-border min-w-[60px] sm:min-w-[80px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground shadow-[1px_0_0_0_#e2e8f0]">
+              <th className="sticky left-[40px] top-0 z-[60] bg-slate-100 border-b border-r border-border min-w-[60px] sm:min-w-[80px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground shadow-[1px_0_0_0_#e2e8f0]">
                 <div className="flex items-center justify-center h-full">{bn ? 'রোল' : 'Roll'}</div>
               </th>
-              <th className="sticky left-[100px] sm:left-[120px] z-[60] bg-slate-50 border-b border-r border-border min-w-[160px] sm:min-w-[200px] px-4 text-left text-[10px] sm:text-xs font-bold text-muted-foreground shadow-[2px_0_8px_-2px_rgba(0,0,0,0.1)]">
+              <th className="sticky left-[100px] sm:left-[120px] top-0 z-[60] bg-slate-100 border-b border-r border-border min-w-[160px] sm:min-w-[200px] px-4 text-left text-[10px] sm:text-xs font-bold text-muted-foreground shadow-[2px_0_8px_-2px_rgba(0,0,0,0.1)]">
                 <div className="flex items-center h-full">{bn ? 'নাম' : 'Name'}</div>
               </th>
               
               {/* Scrollable Columns Header */}
               {subjects.map((s: any) => (
-                <th key={s.id} className="min-w-[100px] sm:min-w-[120px] px-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-50">
+                <th key={s.id} className="min-w-[100px] sm:min-w-[120px] px-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-100 sticky top-0 z-40">
                   <div className="flex items-center justify-center h-full whitespace-normal break-words leading-tight py-2">
                     {bn ? s.name_bn : s.name}
                   </div>
                 </th>
               ))}
-              <th className="min-w-[70px] sm:min-w-[90px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-50">
+              <th className="min-w-[70px] sm:min-w-[90px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-100 sticky top-0 z-40">
                 <div className="flex items-center justify-center h-full">{bn ? 'মোট' : 'Total'}</div>
               </th>
-              <th className="min-w-[70px] sm:min-w-[90px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-50">
+              <th className="min-w-[70px] sm:min-w-[90px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-100 sticky top-0 z-40">
                 <div className="flex items-center justify-center h-full">{bn ? 'গড়' : 'Avg'}</div>
               </th>
-              <th className="min-w-[70px] sm:min-w-[90px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-50">
+              <th className="min-w-[70px] sm:min-w-[90px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-100 sticky top-0 z-40">
                 <div className="flex items-center justify-center h-full">{bn ? 'গ্রেড' : 'Grade'}</div>
               </th>
-              <th className="min-w-[70px] sm:min-w-[90px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-50">
+              <th className="min-w-[70px] sm:min-w-[90px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-100 sticky top-0 z-40">
                 <div className="flex items-center justify-center h-full">GPA</div>
               </th>
-              <th className="min-w-[90px] sm:min-w-[110px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-50">
+              <th className="min-w-[90px] sm:min-w-[110px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-100 sticky top-0 z-40">
                 <div className="flex items-center justify-center h-full">{bn ? 'মর্যাদা' : 'Title'}</div>
               </th>
-              <th className="min-w-[70px] sm:min-w-[90px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-50">
+              <th className="min-w-[70px] sm:min-w-[90px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-slate-100 sticky top-0 z-40">
                 <div className="flex items-center justify-center h-full">{bn ? 'মেধা' : 'Rank'}</div>
               </th>
-              <th className="min-w-[60px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b bg-slate-50"></th>
+              <th className="min-w-[60px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b bg-slate-100 sticky top-0 z-40"></th>
             </tr>
           </thead>
           <tbody>
