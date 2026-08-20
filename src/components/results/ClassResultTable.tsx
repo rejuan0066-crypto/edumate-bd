@@ -150,13 +150,13 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
           <thead className="sticky top-0 z-40">
             <tr className="bg-slate-50 h-[56px]">
               {/* Sticky Columns Header */}
-              <th className="sticky left-0 z-50 bg-slate-50 border-b border-r border-border min-w-[40px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground">
+              <th className="sticky left-0 z-[60] bg-slate-50 border-b border-r border-border min-w-[40px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground shadow-[1px_0_0_0_#e2e8f0]">
                 <div className="flex items-center justify-center h-full">#</div>
               </th>
-              <th className="sticky left-[40px] z-50 bg-slate-50 border-b border-r border-border min-w-[60px] sm:min-w-[80px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground">
+              <th className="sticky left-[40px] z-[60] bg-slate-50 border-b border-r border-border min-w-[60px] sm:min-w-[80px] px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground shadow-[1px_0_0_0_#e2e8f0]">
                 <div className="flex items-center justify-center h-full">{bn ? 'রোল' : 'Roll'}</div>
               </th>
-              <th className="sticky left-[100px] sm:left-[120px] z-50 bg-slate-50 border-b border-r border-border min-w-[160px] sm:min-w-[200px] px-4 text-left text-[10px] sm:text-xs font-bold text-muted-foreground">
+              <th className="sticky left-[100px] sm:left-[120px] z-[60] bg-slate-50 border-b border-r border-border min-w-[160px] sm:min-w-[200px] px-4 text-left text-[10px] sm:text-xs font-bold text-muted-foreground shadow-[2px_0_8px_-2px_rgba(0,0,0,0.1)]">
                 <div className="flex items-center h-full">{bn ? 'নাম' : 'Name'}</div>
               </th>
               
