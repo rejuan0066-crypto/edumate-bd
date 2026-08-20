@@ -164,10 +164,10 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
           className="w-[120px] xs:w-[180px] sm:w-[220px] flex flex-col border-r border-gray-300 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.1)] bg-background z-20 overflow-y-auto no-scrollbar max-h-[75vh]"
         >
           {/* Header - STICKY TOP */}
-          <div className="sticky top-0 z-50 flex bg-slate-50 border-b border-border shrink-0 min-h-[48px]">
-            <div className="w-8 sm:w-10 px-1 sm:px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50">#</div>
-            <div className="w-10 sm:w-16 px-1 sm:px-2 py-3 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50">{bn ? 'রোল' : 'Roll'}</div>
-            <div className="flex-1 px-2 py-3 text-left text-[10px] sm:text-xs font-bold text-muted-foreground bg-slate-50">{bn ? 'নাম' : 'Name'}</div>
+          <div className="sticky top-0 z-50 flex bg-slate-50 border-b border-border shrink-0 h-[48px] items-center">
+            <div className="w-8 sm:w-10 h-[48px] px-1 sm:px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50 flex items-center justify-center">#</div>
+            <div className="w-10 sm:w-16 h-[48px] px-1 sm:px-2 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-r border-border shrink-0 bg-slate-50 flex items-center justify-center">{bn ? 'রোল' : 'Roll'}</div>
+            <div className="flex-1 h-[48px] px-2 text-left text-[10px] sm:text-xs font-bold text-muted-foreground bg-slate-50 flex items-center">{bn ? 'নাম' : 'Name'}</div>
           </div>
           
           {/* Rows */}
