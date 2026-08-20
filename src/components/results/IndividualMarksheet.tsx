@@ -228,8 +228,8 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
 
       <div id="marksheet-printable-area" className="mx-auto max-w-[210mm] min-h-[297mm] bg-white text-black p-[10mm] shadow-lg border border-gray-200 print:shadow-none print:border-none print:p-0">
         {/* Header */}
-        <div className="bg-[#1e5d3b] text-white p-6 text-center rounded-t-lg">
-          <div className="flex items-center justify-center gap-6">
+        <div className="bg-[#1e5d3b] text-white p-6 text-center rounded-t-lg w-full">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
             {institution?.logo_url && <img src={institution.logo_url} alt="Logo" className="w-20 h-20 object-contain bg-white p-1 rounded-full" />}
             <div>
               <h1 className="text-2xl font-extrabold tracking-tight">আল-আরাবিয়া ছোবহানিয়া হাফিজিয়া মাদ্রাসা</h1>
@@ -244,7 +244,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </div>
 
         {/* Student Info */}
-        <div className="bg-gray-50 p-6 my-6 rounded-lg border border-gray-200 grid grid-cols-2 gap-y-4 gap-x-8 text-[15px]">
+        <div className="bg-gray-50 p-6 my-6 rounded-lg border border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8 text-[15px] w-full">
           <div className="flex items-center gap-2"><span className="font-bold text-gray-700 w-24">নাম:</span> <span>{studentName}</span></div>
           <div className="flex items-center gap-2"><span className="font-bold text-gray-700 w-24">রোল নম্বর:</span> <span>{student.roll_number}</span></div>
           <div className="flex items-center gap-2"><span className="font-bold text-gray-700 w-24">রেজিস্ট্রেশন:</span> <span>{student.registration_number || student.student_id}</span></div>
@@ -252,8 +252,8 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </div>
 
         {/* Subjects Table */}
-        <div className="w-full overflow-x-auto rounded-lg border border-gray-300 my-6">
-          <table className="w-full table-fixed border-collapse text-sm">
+        <div className="w-full overflow-x-auto block rounded-lg border border-gray-300 my-6">
+          <table className="w-full min-w-[650px] sm:min-w-0 table-fixed border-collapse text-sm whitespace-nowrap">
             <thead>
               <tr className="bg-gray-100 border-b border-gray-300">
                 <th className="border-r border-gray-300 p-2 w-[10%] text-center">#</th>
