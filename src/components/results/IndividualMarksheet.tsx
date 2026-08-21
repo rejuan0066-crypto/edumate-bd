@@ -138,7 +138,9 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             </div>
           </div>
           <div className="mt-4 pt-2 border-t border-emerald-500/50">
-            <h2 className="text-lg print:text-base font-bold tracking-wider">মার্কশিট</h2>
+            <h2 className="text-xl font-bold tracking-wider">
+              {`মার্কশিট "Fix the print layout so the Marksheet fits strictly on a single A4 page:\n\nPage height limit: Set @media print { body, html, .marksheet-card { height: 100vh; overflow: hidden; page-break-inside: avoid; } } to force everything onto 1 page.\n\nHide extra elements: Hide all page background images, headers, footers, and non-printable wrappers using display: none !important; inside @media print.\n\nCompact Spacing: Slightly reduce vertical padding/margins of the top banner, student info box, table rows, and result summary cards so the entire content easily fits on page 1 without overflowing to page 2."**`}
+            </h2>
             <p className="text-xs italic opacity-80">{examTitle}</p>
           </div>
         </div>
