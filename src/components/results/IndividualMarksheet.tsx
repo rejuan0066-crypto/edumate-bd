@@ -146,17 +146,17 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             </div>
           </div>
           <div className="mt-4 pt-2 border-t border-emerald-500/50">
-            <h2 className="text-xl font-bold tracking-wider">{`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+            <h2 className="text-xl font-bold tracking-wider">{bn ? 'মার্কশিট' : 'Marksheet'}</h2>
+            <p className="text-xs italic opacity-80">{`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            "Strictly limit the Marksheet print output to only 1 page. Prevent any 2nd page creation:
+                                            /* এই ট্যাগটি সম্পূর্ণ ডিলিট করে দিন */
 
-Set @media print { page-break-after: avoid !important; page-break-before: avoid !important; page-break-inside: avoid !important; } on the parent container.
+<p className="...">
 
-Hide all background images, body shadows, and overflow elements during print using body { background: #fff !important; } and .bg-image { display: none !important; }.
+  """Do not make any visual modifications..."""
 
-Reduce vertical padding across all elements (header banner, student info, table rows, summary boxes) so the whole layout takes up less than 90% of the single page height."**`}</h2>
-            <p className="text-xs italic opacity-80">{examTitle}</p>
+</p>`}</p>
           </div>
         </div>
 
