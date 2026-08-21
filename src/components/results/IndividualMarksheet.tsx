@@ -268,7 +268,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               {subjectResults.map((r, i) => (
                 <tr key={i} className="border-b border-gray-200 last:border-0 hover:bg-gray-50 transition-colors">
                   <td className="border-r border-gray-300 p-2 text-center text-gray-500">{i + 1}</td>
-                  <td className="border-r border-gray-300 p-2 font-medium truncate" title={bn ? r.subject.name_bn : r.subject.name}>{bn ? r.subject.name_bn : r.subject.name}</td>
+                  <td className="border-r border-gray-300 p-2 font-medium" title={bn ? r.subject.name_bn : r.subject.name}>{bn ? r.subject.name_bn : r.subject.name}</td>
                   <td className="border-r border-gray-300 p-2 text-center">100</td>
                   <td className="border-r border-gray-300 p-2 text-center font-bold text-base">{r.marks}</td>
                   <td className="border-r border-gray-300 p-2 text-center font-semibold">{r.grade}</td>
