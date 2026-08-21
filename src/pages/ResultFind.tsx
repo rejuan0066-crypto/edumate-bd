@@ -177,6 +177,17 @@ const ResultFind = () => {
                 </SelectContent>
               </Select>
 
+              <Select value={classId} onValueChange={setClassId}>
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder={bn ? 'শ্রেণি নির্বাচন' : 'Select Class'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {classes.map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>{bn ? (c.name_bn || c.name) : c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
               <Input
                 placeholder={bn ? 'রোল / রেজিস্ট্রেশন নম্বর' : 'Roll / Registration Number'}
                 className="bg-background"
