@@ -244,7 +244,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </div>
 
         {/* Student Info */}
-        <div className="bg-gray-50 p-6 my-6 rounded-lg border border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8 text-[15px] w-full">
+        <div className="bg-gray-50 p-6 my-6 rounded-lg border border-gray-200 grid grid-cols-1 gap-y-4 gap-x-8 text-[15px] w-full">
           <div className="flex items-center gap-2"><span className="font-bold text-gray-700 w-24">নাম:</span> <span>{studentName}</span></div>
           <div className="flex items-center gap-2"><span className="font-bold text-gray-700 w-24">রোল নম্বর:</span> <span>{student.roll_number}</span></div>
           <div className="flex items-center gap-2"><span className="font-bold text-gray-700 w-24">রেজিস্ট্রেশন:</span> <span>{student.registration_number || student.student_id}</span></div>
@@ -253,15 +253,15 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
 
         {/* Subjects Table */}
         <div className="w-full overflow-x-auto block rounded-lg border border-gray-300 my-6">
-          <table className="w-full min-w-[650px] sm:min-w-0 table-fixed border-collapse text-sm whitespace-nowrap">
+          <table className="w-full min-w-[700px] table-fixed border-collapse text-sm whitespace-nowrap">
             <thead>
               <tr className="bg-gray-100 border-b border-gray-300">
                 <th className="border-r border-gray-300 p-2 w-[10%] text-center">#</th>
-                <th className="border-r border-gray-300 p-2 w-[40%] text-left">বিষয়</th>
-                <th className="border-r border-gray-300 p-2 w-[16%] text-center">পূর্ণমান</th>
-                <th className="border-r border-gray-300 p-2 w-[16%] text-center">প্রাপ্ত নম্বর</th>
-                <th className="border-r border-gray-300 p-2 w-[10%] text-center">গ্রেড</th>
-                <th className="p-2 w-[8%] text-center">GPA</th>
+                <th className="border-r border-gray-300 p-2 w-[55%] text-left">বিষয়</th>
+                <th className="border-r border-gray-300 p-2 w-[10%] text-center">পূর্ণমান</th>
+                <th className="border-r border-gray-300 p-2 w-[12%] text-center">প্রাপ্ত নম্বর</th>
+                <th className="border-r border-gray-300 p-2 w-[8%] text-center">গ্রেড</th>
+                <th className="p-2 w-[5%] text-center">GPA</th>
               </tr>
             </thead>
             <tbody>
