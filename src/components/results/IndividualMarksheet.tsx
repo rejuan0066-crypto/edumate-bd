@@ -76,35 +76,50 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
   return (
     <div className="space-y-4 print:space-y-0">
       <style dangerouslySetInnerHTML={{ __html: `
+        .marksheet-table {
+          width: 100% !important;
+          table-layout: fixed !important;
+        }
+
         @media print {
-          @page { size: A4 portrait; margin: 10mm; }
-          body, html { height: 100vh; overflow: hidden; background: #fff !important; }
+          @page { size: A4 portrait; margin: 5mm; }
+          html, body { 
+            height: 100vh !important; 
+            overflow: hidden !important; 
+            background: #ffffff !important; 
+          }
+          
           body * { visibility: hidden; }
           #marksheet-printable-area, #marksheet-printable-area * { visibility: visible; }
+          
+          body::before, .bg-image, img:not(.marksheet-logo) {
+            display: none !important;
+          }
+
           #marksheet-printable-area {
             position: absolute;
             left: 0;
             top: 0;
             width: 100% !important;
-            height: 90vh !important;
+            height: 95vh !important;
             margin: 0 !important;
-            padding: 2mm !important;
+            padding: 10px !important;
             box-shadow: none !important;
             border: none !important;
             overflow: hidden !important;
             display: flex !important;
             flex-direction: column !important;
-            page-break-after: avoid !important;
-            page-break-before: avoid !important;
             page-break-inside: avoid !important;
           }
-          .print-hidden, .bg-image { display: none !important; }
+
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          .print-hidden { display: none !important; }
           .bg-\\[\\#1e5d3b\\] { 
             background-color: #1e5d3b !important; 
-            -webkit-print-color-adjust: exact; 
-            print-color-adjust: exact;
-            padding-top: 4px !important;
-            padding-bottom: 4px !important;
           }
           #signature-section {
             margin-top: auto !important;
@@ -113,7 +128,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             flex-direction: row !important;
             justify-content: space-between !important;
           }
-          .printable-sheet { page-break-inside: avoid; }
+          
           .my-4, .my-3 { margin-top: 4px !important; margin-bottom: 4px !important; }
           .p-4, .p-3 { padding: 4px !important; }
           table td, table th { padding: 2px 4px !important; }
@@ -138,7 +153,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         {/* Header */}
         <div className="bg-[#1e5d3b] text-white p-4 print:p-3 text-center rounded-t-lg w-full">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
-            {institution?.logo_url && <img src={institution.logo_url} alt="Logo" className="w-16 h-16 print:w-14 print:h-14 object-contain bg-white p-1 rounded-full" />}
+            {institution?.logo_url && <img src={institution.logo_url} alt="Logo" className="marksheet-logo w-16 h-16 print:w-14 print:h-14 object-contain bg-white p-1 rounded-full" />}
             <div>
               <h1 className="text-xl print:text-lg font-extrabold tracking-tight">আল-আরাবিয়া ছোবহানিয়া হাফিজিয়া মাদ্রাসা</h1>
               <p className="text-xs opacity-90 mt-0.5">{institution?.address}</p>
@@ -150,13 +165,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             <p className="text-xs italic opacity-80">{`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            /* এই ট্যাগটি সম্পূর্ণ ডিলিট করে দিন */
-
-<p className="...">
-
-  """Do not make any visual modifications..."""
-
-</p>`}</p>
+                                            /* ১ পেইজ ফিক্স এবং ডানপাশের কাটিং ফিক্স */\r\n.marksheet-table {\r\n  width: 100% !important;\r\n  table-layout: fixed !important;\r\n}\r\n\r\n@media print {\r\n  @page {\r\n    size: A4 portrait;\r\n    margin: 5mm;\r\n  }\r\n  \r\n  html, body {\r\n    height: 100vh !important;\r\n    overflow: hidden !important;\r\n    background: #ffffff !important;\r\n  }\r\n\r\n  /* ব্যাকগ্রাউন্ড পিকচার ও স্ক্রোলবার হাইড */\r\n  body::before, .bg-image, img:not(.marksheet-logo) {\r\n    display: none !important;\r\n  }\r\n\r\n  /* ১ পেইজে ফিট করার জন্য সাইজ ছোট করা */\r\n  .marksheet-card {\r\n    page-break-inside: avoid !important;\r\n    max-height: 95vh !important;\r\n    padding: 10px !important;\r\n  }\r\n\r\n  /* রঙ ঠিক রাখা */\r\n  * {\r\n    -webkit-print-color-adjust: exact !important;\r\n    print-color-adjust: exact !important;\r\n  }\r\n}`}</p>
           </div>
         </div>
 
@@ -170,7 +179,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
 
         {/* Subjects Table */}
         <div className="w-full overflow-x-auto block rounded-lg border border-gray-300 my-4 print:my-3">
-          <table className="w-full min-w-[700px] table-fixed border-collapse text-sm print:text-xs whitespace-nowrap">
+          <table className="marksheet-table w-full min-w-[700px] table-fixed border-collapse text-sm print:text-xs whitespace-nowrap">
             <thead>
               <tr className="bg-gray-100 border-b border-gray-300">
                 <th className="border-r border-gray-300 p-1.5 w-[10%] text-center">#</th>
