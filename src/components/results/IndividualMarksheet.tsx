@@ -153,26 +153,23 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
 
       <div id="marksheet-printable-area" className="mx-auto max-w-[210mm] min-h-[297mm] bg-white text-black p-[10mm] shadow-lg border border-gray-200 print:shadow-none print:border-none print:p-0">
         {/* Header */}
-        <div className="bg-[#1e5d3b] text-white p-4 print:p-3 text-center rounded-t-lg w-full">
+        <div className="marksheet-banner bg-[#1e5d3b] text-white p-4 print:p-3 text-center rounded-t-lg w-full">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
             {institution?.logo_url && <img src={institution.logo_url} alt="Logo" className="marksheet-logo w-16 h-16 print:w-14 print:h-14 object-contain bg-white p-1 rounded-full" />}
             <div>
-              <h1 className="text-xl print:text-lg font-extrabold tracking-tight">আল-আরাবিয়া ছোবহানিয়া হাফিজিয়া মাদ্রাসা</h1>
+              <h1 className="text-xl print:text-lg font-extrabold tracking-tight">{instName || (bn ? 'মাদ্রাসা' : 'Institution')}</h1>
               <p className="text-xs opacity-90 mt-0.5">{institution?.address}</p>
               <p className="text-xs opacity-90">{institution?.phone}</p>
             </div>
           </div>
           <div className="mt-4 pt-2 border-t border-emerald-500/50">
             <h2 className="text-xl font-bold tracking-wider">{bn ? 'মার্কশিট' : 'Marksheet'}</h2>
-            <p className="text-sm opacity-90">{`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-                                        
-                                            
-                                            I have approved the plan`}</p>
+            <p className="text-sm opacity-90">{examTitle}</p>
           </div>
         </div>
 
         {/* Student Info */}
-        <div className="bg-gray-50 p-4 print:p-3 my-4 print:my-3 rounded-lg border border-gray-200 grid grid-cols-2 gap-y-2 gap-x-4 text-[13px] print:text-[12px] w-full">
+        <div className="marksheet-info bg-gray-50 p-4 print:p-3 my-4 print:my-3 rounded-lg border border-gray-200 grid grid-cols-2 gap-y-2 gap-x-4 text-[13px] print:text-[12px] w-full">
           <div className="flex items-center gap-2"><span className="font-bold text-gray-700 w-20">নাম:</span> <span>{studentName}</span></div>
           <div className="flex items-center gap-2"><span className="font-bold text-gray-700 w-20">রোল নম্বর:</span> <span>{student.roll_number}</span></div>
           <div className="flex items-center gap-2"><span className="font-bold text-gray-700 w-20">রেজিস্ট্রেশন:</span> <span>{student.registration_number || student.student_id}</span></div>
@@ -216,7 +213,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             { label: 'GPA', value: overall.gpa, color: 'bg-indigo-50 text-indigo-800 border-indigo-200' },
             { label: 'ফলাফল', value: morjada, color: 'bg-rose-50 text-rose-800 border-rose-200' },
           ].map((item, i) => (
-            <div key={i} className={`border p-2 text-center rounded-lg shadow-sm ${item.color}`}>
+            <div key={i} className={`summary-card border p-2 text-center rounded-lg shadow-sm ${item.color}`}>
               <div className="text-[10px] font-bold uppercase tracking-wider mb-0.5 opacity-70">{item.label}</div>
               <div className="text-base print:text-sm font-black">{item.value}</div>
             </div>
