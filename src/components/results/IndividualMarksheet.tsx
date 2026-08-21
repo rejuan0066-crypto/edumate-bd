@@ -167,13 +167,13 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             <p className="text-sm opacity-90">{`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            /* ব্যানারের ভেতরের এই সহজ বাংলা লাইনটি রেখে বাকি সব টেক্সট মুছে দিন */
+                                            "Strictly limit the Marksheet print output to only 1 page. Prevent any 2nd page creation:
 
-<p className="text-sm opacity-90">
+Set @media print { page-break-after: avoid !important; page-break-before: avoid !important; page-break-inside: avoid !important; } on the parent container.
 
-  ১ম সাময়িক পরীক্ষা ২০২৬ — নূরানি ১ম — ২০২৬-২৭
+Hide all background images, body shadows, and overflow elements during print using body { background: #fff !important; } and .bg-image { display: none !important; }.
 
-</p>`}</p>
+Reduce vertical padding across all elements (header banner, student info, table rows, summary boxes) so the whole layout takes up less than 90% of the single page height."**`}</p>
           </div>
         </div>
 
