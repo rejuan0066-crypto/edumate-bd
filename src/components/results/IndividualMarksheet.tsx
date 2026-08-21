@@ -104,10 +104,14 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               left: 0;
               right: 0;
               background: white;
-              padding-bottom: 12px;
+              padding: 0 10mm 12px 10mm;
               z-index: 9999;
               page-break-inside: avoid;
               break-inside: avoid;
+              display: flex !important;
+              flex-direction: row !important;
+              justify-content: space-between !important;
+              align-items: flex-end !important;
             }
             @media print {
               #marksheet-printable-area { padding: 8mm !important; }
@@ -170,10 +174,14 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               left: 0;
               right: 0;
               background: white;
-              padding-bottom: 12px;
+              padding: 0 10mm 12px 10mm;
               z-index: 9999;
               page-break-inside: avoid;
               break-inside: avoid;
+              display: flex !important;
+              flex-direction: row !important;
+              justify-content: space-between !important;
+              align-items: flex-end !important;
             }
             @media print {
               #marksheet-printable-area { padding: 8mm !important; }
