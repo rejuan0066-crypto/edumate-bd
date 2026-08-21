@@ -68,171 +68,63 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
   ].map(x => (x || '').trim()).filter(Boolean).join(' - ');
   const safeDocName = docName.replace(/[\\/:*?"<>|]+/g, '_').replace(/\s+/g, ' ').trim() || 'marksheet';
 
-  const handleDownloadPdf = async () => {
-    const { downloadSlipAsPdf } = await import('@/lib/salarySlipPdf');
-    const printContent = document.getElementById('marksheet-printable-area');
-    if (!printContent) return;
-
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <title>${docName}</title>
-          <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;800&display=swap" rel="stylesheet">
-          <script src="https://cdn.tailwindcss.com"></script>
-          <style>
-            @page { size: A4 portrait; margin: 8mm 10mm; }
-            body {
-              font-family: 'Noto Sans Bengali', sans-serif;
-              background: white;
-              color: black;
-              margin: 0;
-              padding: 0;
-            }
-            .printable-sheet {
-              width: 100%;
-              position: relative;
-              page-break-inside: avoid;
-              break-inside: avoid;
-            }
-            .bg-\\[\\#1e5d3b\\] { background-color: #1e5d3b !important; -webkit-print-color-adjust: exact; }
-            .text-white { color: white !important; }
-            .signature-footer-fixed {
-              position: fixed;
-              bottom: 0;
-              left: 0;
-              right: 0;
-              background: white;
-              padding: 0 10mm 12px 10mm;
-              z-index: 9999;
-              page-break-inside: avoid;
-              break-inside: avoid;
-              display: flex !important;
-              flex-direction: row !important;
-              justify-content: space-between !important;
-              align-items: flex-end !important;
-            }
-            @media print {
-              #marksheet-printable-area { padding: 8mm !important; }
-              #marksheet-printable-area > div:first-child { padding: 16px !important; }
-              #marksheet-printable-area .bg-gray-50 { padding: 16px !important; margin: 12px 0 !important; }
-              #marksheet-printable-area table th,
-              #marksheet-printable-area table td { padding: 4px 8px !important; }
-              #marksheet-printable-area .grid.grid-cols-5 > div { padding: 8px !important; }
-              #marksheet-printable-area #signature-section { margin-top: 24px !important; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="printable-sheet">
-            ${printContent.innerHTML.replace(
-              'id="signature-section"',
-              'id="signature-section" class="signature-footer-fixed"'
-            )}
-          </div>
-        </body>
-      </html>
-    `;
-    await downloadSlipAsPdf(html, `${safeDocName}.pdf`);
-  };
-
   const handlePrint = () => {
-    const printContent = document.getElementById('marksheet-printable-area');
-    if (!printContent) return;
-
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-    const prevTitle = document.title;
-    document.title = docName;
-    setTimeout(() => { document.title = prevTitle; }, 30000);
-
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>${docName}</title>
-          <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;800&display=swap" rel="stylesheet">
-          <script src="https://cdn.tailwindcss.com"></script>
-          <style>
-            @page { size: A4 portrait; margin: 8mm 10mm; }
-            body {
-              font-family: 'Noto Sans Bengali', sans-serif;
-              background: white;
-              color: black;
-              margin: 0;
-              padding: 0;
-            }
-            .printable-sheet {
-              width: 100%;
-              position: relative;
-              page-break-inside: avoid;
-              break-inside: avoid;
-            }
-            .signature-footer-fixed {
-              position: fixed;
-              bottom: 0;
-              left: 0;
-              right: 0;
-              background: white;
-              padding: 0 10mm 12px 10mm;
-              z-index: 9999;
-              page-break-inside: avoid;
-              break-inside: avoid;
-              display: flex !important;
-              flex-direction: row !important;
-              justify-content: space-between !important;
-              align-items: flex-end !important;
-            }
-            @media print {
-              #marksheet-printable-area { padding: 8mm !important; }
-              #marksheet-printable-area > div:first-child { padding: 16px !important; }
-              #marksheet-printable-area .bg-gray-50 { padding: 16px !important; margin: 12px 0 !important; }
-              #marksheet-printable-area table th,
-              #marksheet-printable-area table td { padding: 4px 8px !important; }
-              #marksheet-printable-area .grid.grid-cols-5 > div { padding: 8px !important; }
-              #marksheet-printable-area #signature-section { margin-top: 24px !important; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="printable-sheet">
-            ${printContent.innerHTML.replace(
-              'id="signature-section"',
-              'id="signature-section" class="signature-footer-fixed"'
-            )}
-          </div>
-          <script>
-            window.onload = () => {
-              setTimeout(() => {
-                window.print();
-                window.close();
-              }, 500);
-            };
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    window.print();
   };
+
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 print:space-y-0">
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          @page { size: A4 portrait; margin: 10mm; }
+          body * { visibility: hidden; }
+          #marksheet-printable-area, #marksheet-printable-area * { visibility: visible; }
+          #marksheet-printable-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+            min-height: auto !important;
+          }
+          .print-hidden { display: none !important; }
+          .bg-\\[\\#1e5d3b\\] { 
+            background-color: #1e5d3b !important; 
+            -webkit-print-color-adjust: exact; 
+            print-color-adjust: exact;
+          }
+          #signature-section {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            margin-top: 0 !important;
+            padding-bottom: 5mm;
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: space-between !important;
+          }
+          .printable-sheet { page-break-inside: avoid; }
+        }
+      `}} />
+      
       <div className="flex justify-between items-center print:hidden">
         <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5">
           <ArrowLeft className="w-4 h-4" />
           {bn ? 'ফিরে যান' : 'Back'}
         </Button>
         <div className="flex gap-2">
-          <Button size="sm" onClick={handleDownloadPdf} className="gap-1.5 bg-blue-700 hover:bg-blue-800">
-            <FileDown className="w-4 h-4" />
-            {bn ? 'ডাউনলোড' : 'Download'}
-          </Button>
           <Button size="sm" onClick={handlePrint} className="gap-1.5 bg-emerald-700 hover:bg-emerald-800">
             <Printer className="w-4 h-4" />
-            {bn ? 'প্রিন্ট / PDF' : 'Print / PDF'}
+            {bn ? 'ডাউনলোড / প্রিন্ট' : 'Download / Print'}
           </Button>
         </div>
       </div>
+
 
       <div id="marksheet-printable-area" className="mx-auto max-w-[210mm] min-h-[297mm] bg-white text-black p-[10mm] shadow-lg border border-gray-200 print:shadow-none print:border-none print:p-0">
         {/* Header */}
