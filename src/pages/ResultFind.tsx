@@ -152,10 +152,7 @@ const ResultFind = () => {
         ) : (
           <div className="card-elevated p-8 max-w-2xl mx-auto">
             <h2 className="text-xl font-display font-bold mb-6 text-center">
-              {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-                                        
-                                            
-                                            " Remove the unwanted text/instructions displayed at the top of the Result Search card. Fix the React component so that prompt instructions are not hardcoded as static text. Make sure the PDF, Print, and Download layouts for the Marksheet match the preview exactly across both PC and mobile devices."`}
+              {bn ? 'ফলাফল অনুসন্ধান' : 'Search Result'}
             </h2>
             <form className="space-y-4" onSubmit={handleSearch}>
               <Select value={examYear} onValueChange={(v) => { setExamYear(v); setExamSessionId(''); }}>
