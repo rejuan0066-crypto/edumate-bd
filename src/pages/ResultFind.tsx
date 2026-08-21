@@ -76,6 +76,7 @@ const ResultFind = () => {
       const { data: matched } = await (supabase as any).rpc('public_find_exam_student', {
         p_session_id: examSessionId,
         p_roll: rollNumber.trim(),
+        p_class_id: classId,
       });
       const found = Array.isArray(matched) ? matched[0] : matched;
 
