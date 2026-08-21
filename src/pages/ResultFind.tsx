@@ -155,7 +155,7 @@ const ResultFind = () => {
               {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.''' মার্ক শিট প্রিভিউ যেভাবে দেখায় pdf/print/download সেইম হবে , pc and mobile এই এখানে আসল কেন এটা রিমুভ করেন`}
+                                            " Remove the unwanted text/instructions displayed at the top of the Result Search card. Fix the React component so that prompt instructions are not hardcoded as static text. Make sure the PDF, Print, and Download layouts for the Marksheet match the preview exactly across both PC and mobile devices."`}
             </h2>
             <form className="space-y-4" onSubmit={handleSearch}>
               <Select value={examYear} onValueChange={(v) => { setExamYear(v); setExamSessionId(''); }}>
