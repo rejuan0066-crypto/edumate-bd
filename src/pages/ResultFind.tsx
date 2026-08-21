@@ -17,6 +17,7 @@ const ResultFind = () => {
 
   const [examYear, setExamYear] = useState('');
   const [examSessionId, setExamSessionId] = useState('');
+  const [classId, setClassId] = useState('');
   const [rollNumber, setRollNumber] = useState('');
   const [searching, setSearching] = useState(false);
   const [resultData, setResultData] = useState<any>(null);
@@ -39,12 +40,20 @@ const ResultFind = () => {
     enabled: !!examYear,
   });
 
+  const { data: classes = [] } = useQuery({
+    queryKey: ['public-classes'],
+    queryFn: async () => {
+      const { data } = await supabase.from('classes').select('*').eq('is_active', true).order('sort_order');
+      return data || [];
+    },
+  });
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setResultData(null);
 
-    if (!examYear || !examSessionId || !rollNumber.trim()) {
+    if (!examYear || !examSessionId || !classId || !rollNumber.trim()) {
       setError(bn ? 'সব ফিল্ড পূরণ করুন' : 'Please fill all fields');
       return;
     }
@@ -67,6 +76,7 @@ const ResultFind = () => {
       const { data: matched } = await (supabase as any).rpc('public_find_exam_student', {
         p_session_id: examSessionId,
         p_roll: rollNumber.trim(),
+        p_class_id: classId,
       });
       const found = Array.isArray(matched) ? matched[0] : matched;
 
@@ -87,10 +97,10 @@ const ResultFind = () => {
         return;
       }
 
-      const classId = found.class_id;
+      const foundClassId = found.class_id;
 
       // Get class info to find division
-      const { data: classInfo } = await supabase.from('classes').select('*').eq('id', classId).single();
+      const { data: classInfo } = await supabase.from('classes').select('*').eq('id', foundClassId).single();
       const divisionId = classInfo?.division_id;
 
       // Load results
@@ -107,7 +117,7 @@ const ResultFind = () => {
         .eq('exam_session_id', examSessionId);
       const allSubjects = subjectData?.map((es: any) => es.subjects).filter(Boolean) || [];
       const subjects = allSubjects
-        .filter((s: any) => s.division_id === divisionId || s.class_id === classId)
+        .filter((s: any) => s.division_id === divisionId || s.class_id === foundClassId)
         .sort((a: any, b: any) => (a.name_bn || '').localeCompare(b.name_bn || ''));
 
       const year = academicSessions.find((s: any) => s.id === examYear);
@@ -163,6 +173,17 @@ const ResultFind = () => {
                 <SelectContent>
                   {examSessions.map((es: any) => (
                     <SelectItem key={es.id} value={es.id}>{bn ? es.name_bn : es.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={classId} onValueChange={setClassId}>
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder={bn ? 'শ্রেণি নির্বাচন' : 'Select Class'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {classes.map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>{bn ? (c.name_bn || c.name) : c.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
