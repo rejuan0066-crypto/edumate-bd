@@ -78,7 +78,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           @page { size: A4 portrait; margin: 10mm; }
-          body, html { height: 100vh; overflow: hidden; }
+          body, html { height: 100vh; overflow: hidden; background: #fff !important; }
           body * { visibility: hidden; }
           #marksheet-printable-area, #marksheet-printable-area * { visibility: visible; }
           #marksheet-printable-area {
@@ -86,29 +86,37 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             left: 0;
             top: 0;
             width: 100% !important;
-            height: 100% !important;
+            height: 90vh !important;
             margin: 0 !important;
-            padding: 5mm !important;
+            padding: 2mm !important;
             box-shadow: none !important;
             border: none !important;
             overflow: hidden !important;
             display: flex !important;
             flex-direction: column !important;
+            page-break-after: avoid !important;
+            page-break-before: avoid !important;
+            page-break-inside: avoid !important;
           }
-          .print-hidden { display: none !important; }
+          .print-hidden, .bg-image { display: none !important; }
           .bg-\\[\\#1e5d3b\\] { 
             background-color: #1e5d3b !important; 
             -webkit-print-color-adjust: exact; 
             print-color-adjust: exact;
+            padding-top: 4px !important;
+            padding-bottom: 4px !important;
           }
           #signature-section {
             margin-top: auto !important;
-            padding-bottom: 5mm;
+            padding-bottom: 2mm;
             display: flex !important;
             flex-direction: row !important;
             justify-content: space-between !important;
           }
           .printable-sheet { page-break-inside: avoid; }
+          .my-4, .my-3 { margin-top: 4px !important; margin-bottom: 4px !important; }
+          .p-4, .p-3 { padding: 4px !important; }
+          table td, table th { padding: 2px 4px !important; }
         }
       `}} />
       
