@@ -257,7 +257,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             <thead>
               <tr className="bg-gray-100 border-b border-gray-300">
                 <th className="border-r border-gray-300 p-2 w-[10%] text-center">#</th>
-                <th className="border-r border-gray-300 p-2 w-[40%] text-left">বিষয়</th>
+                <th className="border-r border-gray-300 p-2 w-[55%] text-left">বিষয়</th>
                 <th className="border-r border-gray-300 p-2 w-[16%] text-center">পূর্ণমান</th>
                 <th className="border-r border-gray-300 p-2 w-[16%] text-center">প্রাপ্ত নম্বর</th>
                 <th className="border-r border-gray-300 p-2 w-[10%] text-center">গ্রেড</th>
