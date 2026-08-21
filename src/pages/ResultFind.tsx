@@ -155,7 +155,7 @@ const ResultFind = () => {
               {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            I have approved the plan`}
+                                            "Fix the Marksheet PDF download and print layout so it exactly matches the screen preview. In the print/pdf generator component, fix the CSS for signature lines: change signature layout to display: flex; flex-direction: row; justify-content: space-between; so the 4 signature designations (শ্রেণিশিক্ষক, পরীক্ষা নিয়ন্ত্রক, শিক্ষাসচিব, মুহতামিম/অধ্যক্ষ) stay side-by-side on a single row without overlapping horizontal line cuts. Also, ensure html2canvas/jsPDF uses a fixed width (A4 size: 794px width) and useCORS: true so element styles do not collapse during download."`}
             </h2>
             <form className="space-y-4" onSubmit={handleSearch}>
               <Select value={examYear} onValueChange={(v) => { setExamYear(v); setExamSessionId(''); }}>
