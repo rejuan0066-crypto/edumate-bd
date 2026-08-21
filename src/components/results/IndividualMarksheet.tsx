@@ -78,7 +78,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
       <style dangerouslySetInnerHTML={{ __html: `
         .marksheet-table {
           width: 100% !important;
-          table-layout: fixed !important;
+          table-layout: auto !important;
         }
 
         @media print {
