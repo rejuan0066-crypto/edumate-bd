@@ -244,7 +244,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </div>
 
         {/* Student Info */}
-        <div className="bg-gray-50 p-6 my-6 rounded-lg border border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8 text-[15px] w-full">
+        <div className="bg-gray-50 p-6 my-6 rounded-lg border border-gray-200 grid grid-cols-1 gap-y-4 gap-x-8 text-[15px] w-full">
           <div className="flex items-center gap-2"><span className="font-bold text-gray-700 w-24">নাম:</span> <span>{studentName}</span></div>
           <div className="flex items-center gap-2"><span className="font-bold text-gray-700 w-24">রোল নম্বর:</span> <span>{student.roll_number}</span></div>
           <div className="flex items-center gap-2"><span className="font-bold text-gray-700 w-24">রেজিস্ট্রেশন:</span> <span>{student.registration_number || student.student_id}</span></div>
