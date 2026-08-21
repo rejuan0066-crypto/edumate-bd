@@ -134,12 +134,13 @@ const ResultFind = () => {
   return (
     <PublicLayout>
       <div className="container mx-auto px-4 py-12">
-        <div className="flex items-center gap-3 mb-8">
+        <div className="flex items-center gap-3 mb-8 print:hidden">
           <div className="p-2.5 rounded-xl bg-primary/10">
             <GraduationCap className="w-7 h-7 text-primary" />
           </div>
           <h1 className="text-3xl font-display font-bold text-foreground">{t('result')}</h1>
         </div>
+
 
         {resultData ? (
           <IndividualMarksheet
@@ -150,10 +151,11 @@ const ResultFind = () => {
             onBack={() => setResultData(null)}
           />
         ) : (
-          <div className="card-elevated p-8 max-w-2xl mx-auto">
+          <div className="card-elevated p-8 max-w-2xl mx-auto print:hidden">
             <h2 className="text-xl font-display font-bold mb-6 text-center">
               {bn ? 'ফলাফল অনুসন্ধান' : 'Search Result'}
             </h2>
+
             <form className="space-y-4" onSubmit={handleSearch}>
               <Select value={examYear} onValueChange={(v) => { setExamYear(v); setExamSessionId(''); }}>
                 <SelectTrigger className="bg-background">
