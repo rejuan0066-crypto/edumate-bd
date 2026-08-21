@@ -53,7 +53,7 @@ const ResultFind = () => {
     setError('');
     setResultData(null);
 
-    if (!examYear || !examSessionId || !rollNumber.trim()) {
+    if (!examYear || !examSessionId || !classId || !rollNumber.trim()) {
       setError(bn ? 'সব ফিল্ড পূরণ করুন' : 'Please fill all fields');
       return;
     }
