@@ -76,35 +76,50 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
   return (
     <div className="space-y-4 print:space-y-0">
       <style dangerouslySetInnerHTML={{ __html: `
+        .marksheet-table {
+          width: 100% !important;
+          table-layout: fixed !important;
+        }
+
         @media print {
-          @page { size: A4 portrait; margin: 10mm; }
-          body, html { height: 100vh; overflow: hidden; background: #fff !important; }
+          @page { size: A4 portrait; margin: 5mm; }
+          html, body { 
+            height: 100vh !important; 
+            overflow: hidden !important; 
+            background: #ffffff !important; 
+          }
+          
           body * { visibility: hidden; }
           #marksheet-printable-area, #marksheet-printable-area * { visibility: visible; }
+          
+          body::before, .bg-image, img:not(.marksheet-logo) {
+            display: none !important;
+          }
+
           #marksheet-printable-area {
             position: absolute;
             left: 0;
             top: 0;
             width: 100% !important;
-            height: 90vh !important;
+            height: 95vh !important;
             margin: 0 !important;
-            padding: 2mm !important;
+            padding: 10px !important;
             box-shadow: none !important;
             border: none !important;
             overflow: hidden !important;
             display: flex !important;
             flex-direction: column !important;
-            page-break-after: avoid !important;
-            page-break-before: avoid !important;
             page-break-inside: avoid !important;
           }
-          .print-hidden, .bg-image { display: none !important; }
+
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          .print-hidden { display: none !important; }
           .bg-\\[\\#1e5d3b\\] { 
             background-color: #1e5d3b !important; 
-            -webkit-print-color-adjust: exact; 
-            print-color-adjust: exact;
-            padding-top: 4px !important;
-            padding-bottom: 4px !important;
           }
           #signature-section {
             margin-top: auto !important;
@@ -113,7 +128,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             flex-direction: row !important;
             justify-content: space-between !important;
           }
-          .printable-sheet { page-break-inside: avoid; }
+          
           .my-4, .my-3 { margin-top: 4px !important; margin-bottom: 4px !important; }
           .p-4, .p-3 { padding: 4px !important; }
           table td, table th { padding: 2px 4px !important; }
