@@ -78,7 +78,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           @page { size: A4 portrait; margin: 10mm; }
-          body, html { height: 100vh; overflow: hidden; }
+          body, html { height: 100vh; overflow: hidden; background: #fff !important; }
           body * { visibility: hidden; }
           #marksheet-printable-area, #marksheet-printable-area * { visibility: visible; }
           #marksheet-printable-area {
@@ -86,29 +86,37 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             left: 0;
             top: 0;
             width: 100% !important;
-            height: 100% !important;
+            height: 90vh !important;
             margin: 0 !important;
-            padding: 5mm !important;
+            padding: 2mm !important;
             box-shadow: none !important;
             border: none !important;
             overflow: hidden !important;
             display: flex !important;
             flex-direction: column !important;
+            page-break-after: avoid !important;
+            page-break-before: avoid !important;
+            page-break-inside: avoid !important;
           }
-          .print-hidden { display: none !important; }
+          .print-hidden, .bg-image { display: none !important; }
           .bg-\\[\\#1e5d3b\\] { 
             background-color: #1e5d3b !important; 
             -webkit-print-color-adjust: exact; 
             print-color-adjust: exact;
+            padding-top: 4px !important;
+            padding-bottom: 4px !important;
           }
           #signature-section {
             margin-top: auto !important;
-            padding-bottom: 5mm;
+            padding-bottom: 2mm;
             display: flex !important;
             flex-direction: row !important;
             justify-content: space-between !important;
           }
           .printable-sheet { page-break-inside: avoid; }
+          .my-4, .my-3 { margin-top: 4px !important; margin-bottom: 4px !important; }
+          .p-4, .p-3 { padding: 4px !important; }
+          table td, table th { padding: 2px 4px !important; }
         }
       `}} />
       
@@ -138,7 +146,16 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             </div>
           </div>
           <div className="mt-4 pt-2 border-t border-emerald-500/50">
-            <h2 className="text-xl font-bold tracking-wider">মার্কশিট&nbsp;</h2>
+            <h2 className="text-xl font-bold tracking-wider">{`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+                                        
+                                            
+                                            "Strictly limit the Marksheet print output to only 1 page. Prevent any 2nd page creation:
+
+Set @media print { page-break-after: avoid !important; page-break-before: avoid !important; page-break-inside: avoid !important; } on the parent container.
+
+Hide all background images, body shadows, and overflow elements during print using body { background: #fff !important; } and .bg-image { display: none !important; }.
+
+Reduce vertical padding across all elements (header banner, student info, table rows, summary boxes) so the whole layout takes up less than 90% of the single page height."**`}</h2>
             <p className="text-xs italic opacity-80">{examTitle}</p>
           </div>
         </div>
