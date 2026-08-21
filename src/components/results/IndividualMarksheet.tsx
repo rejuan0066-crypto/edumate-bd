@@ -150,13 +150,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             <p className="text-xs italic opacity-80">{`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            /* এই ট্যাগটি সম্পূর্ণ ডিলিট করে দিন */
-
-<p className="...">
-
-  """Do not make any visual modifications..."""
-
-</p>`}</p>
+                                            /* ১ পেইজ ফিক্স এবং ডানপাশের কাটিং ফিক্স */\r\n.marksheet-table {\r\n  width: 100% !important;\r\n  table-layout: fixed !important;\r\n}\r\n\r\n@media print {\r\n  @page {\r\n    size: A4 portrait;\r\n    margin: 5mm;\r\n  }\r\n  \r\n  html, body {\r\n    height: 100vh !important;\r\n    overflow: hidden !important;\r\n    background: #ffffff !important;\r\n  }\r\n\r\n  /* ব্যাকগ্রাউন্ড পিকচার ও স্ক্রোলবার হাইড */\r\n  body::before, .bg-image, img:not(.marksheet-logo) {\r\n    display: none !important;\r\n  }\r\n\r\n  /* ১ পেইজে ফিট করার জন্য সাইজ ছোট করা */\r\n  .marksheet-card {\r\n    page-break-inside: avoid !important;\r\n    max-height: 95vh !important;\r\n    padding: 10px !important;\r\n  }\r\n\r\n  /* রঙ ঠিক রাখা */\r\n  * {\r\n    -webkit-print-color-adjust: exact !important;\r\n    print-color-adjust: exact !important;\r\n  }\r\n}`}</p>
           </div>
         </div>
 
