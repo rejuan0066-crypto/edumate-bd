@@ -153,7 +153,7 @@ const ResultFind = () => {
         ) : (
           <div className="card-elevated p-8 max-w-2xl mx-auto print:hidden">
             <h2 className="text-xl font-display font-bold mb-6 text-center">
-              {bn ? "'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            \"Fix the print layout so the Marksheet fits strictly on a single A4 page:\n\nPage height limit: Set @media print { body, html, .marksheet-card { height: 100vh; overflow: hidden; page-break-inside: avoid; } } to force everything onto 1 page.\n\nHide extra elements: Hide all page background images, headers, footers, and non-printable wrappers using display: none !important; inside @media print.\n\nCompact Spacing: Slightly reduce vertical padding/margins of the top banner, student info box, table rows, and result summary cards so the entire content easily fits on page 1 without overflowing to page 2.\"**" : 'Search Result'}
+              {bn ? 'ফলাফল অনুসন্ধান করুন' : 'Search Result'}
             </h2>
 
             <form className="space-y-4" onSubmit={handleSearch}>
