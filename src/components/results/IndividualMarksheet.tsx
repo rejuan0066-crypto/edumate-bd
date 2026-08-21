@@ -167,13 +167,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             <p className="text-sm opacity-90">{`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            "Strictly limit the Marksheet print output to only 1 page. Prevent any 2nd page creation:
-
-Set @media print { page-break-after: avoid !important; page-break-before: avoid !important; page-break-inside: avoid !important; } on the parent container.
-
-Hide all background images, body shadows, and overflow elements during print using body { background: #fff !important; } and .bg-image { display: none !important; }.
-
-Reduce vertical padding across all elements (header banner, student info, table rows, summary boxes) so the whole layout takes up less than 90% of the single page height."**`}</p>
+                                            I have approved the plan`}</p>
           </div>
         </div>
 
