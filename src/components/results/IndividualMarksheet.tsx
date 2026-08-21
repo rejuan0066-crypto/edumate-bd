@@ -164,10 +164,16 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           </div>
           <div className="mt-4 pt-2 border-t border-emerald-500/50">
             <h2 className="text-xl font-bold tracking-wider">{bn ? 'মার্কশিট' : 'Marksheet'}</h2>
-            <p className="text-xs italic opacity-80">{`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+            <p className="text-sm opacity-90">{`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            /* Marksheet Layout Fix */\r\n.marksheet-table {\r\n  width: 100% !important;\r\n  table-layout: auto !important;\r\n}\r\n\r\n@media print {\r\n  @page {\r\n    size: A4 portrait;\r\n    margin: 5mm;\r\n  }\r\n\r\n  html, body {\r\n    height: 100vh !important;\r\n    overflow: hidden !important;\r\n    background: #ffffff !important;\r\n  }\r\n\r\n  /* ব্যাকগ্রাউন্ড ও অতিরিক্ত জিনিস হাইড */\r\n  body::before, .bg-image, img:not(.marksheet-logo), .no-print {\r\n    display: none !important;\r\n  }\r\n\r\n  /* ফুল পেজ ও ১-পেজ সাইজিং */\r\n  .marksheet-card {\r\n    width: 100% !important;\r\n    max-width: 100% !important;\r\n    page-break-inside: avoid !important;\r\n    padding: 10px !important;\r\n  }\r\n\r\n  * {\r\n    -webkit-print-color-adjust: exact !important;\r\n    print-color-adjust: exact !important;\r\n  }\r\n}`}</p>
+                                            /* ব্যানারের ভেতরের এই সহজ বাংলা লাইনটি রেখে বাকি সব টেক্সট মুছে দিন */
+
+<p className="text-sm opacity-90">
+
+  ১ম সাময়িক পরীক্ষা ২০২৬ — নূরানি ১ম — ২০২৬-২৭
+
+</p>`}</p>
           </div>
         </div>
 
