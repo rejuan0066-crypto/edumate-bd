@@ -78,7 +78,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
       <style dangerouslySetInnerHTML={{ __html: `
         .marksheet-table {
           width: 100% !important;
-          table-layout: fixed !important;
+          table-layout: auto !important;
         }
 
         @media print {
@@ -92,7 +92,8 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           body * { visibility: hidden; }
           #marksheet-printable-area, #marksheet-printable-area * { visibility: visible; }
           
-          body::before, .bg-image, img:not(.marksheet-logo) {
+          /* ব্যাকগ্রাউন্ড ও অতিরিক্ত জিনিস হাইড */
+          body::before, .bg-image, img:not(.marksheet-logo), .no-print {
             display: none !important;
           }
 
@@ -101,7 +102,8 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             left: 0;
             top: 0;
             width: 100% !important;
-            height: 95vh !important;
+            height: auto !important;
+            max-height: 100vh !important;
             margin: 0 !important;
             padding: 10px !important;
             box-shadow: none !important;
@@ -165,7 +167,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             <p className="text-xs italic opacity-80">{`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            /* ১ পেইজ ফিক্স এবং ডানপাশের কাটিং ফিক্স */\r\n.marksheet-table {\r\n  width: 100% !important;\r\n  table-layout: fixed !important;\r\n}\r\n\r\n@media print {\r\n  @page {\r\n    size: A4 portrait;\r\n    margin: 5mm;\r\n  }\r\n  \r\n  html, body {\r\n    height: 100vh !important;\r\n    overflow: hidden !important;\r\n    background: #ffffff !important;\r\n  }\r\n\r\n  /* ব্যাকগ্রাউন্ড পিকচার ও স্ক্রোলবার হাইড */\r\n  body::before, .bg-image, img:not(.marksheet-logo) {\r\n    display: none !important;\r\n  }\r\n\r\n  /* ১ পেইজে ফিট করার জন্য সাইজ ছোট করা */\r\n  .marksheet-card {\r\n    page-break-inside: avoid !important;\r\n    max-height: 95vh !important;\r\n    padding: 10px !important;\r\n  }\r\n\r\n  /* রঙ ঠিক রাখা */\r\n  * {\r\n    -webkit-print-color-adjust: exact !important;\r\n    print-color-adjust: exact !important;\r\n  }\r\n}`}</p>
+                                            /* Marksheet Layout Fix */\r\n.marksheet-table {\r\n  width: 100% !important;\r\n  table-layout: auto !important;\r\n}\r\n\r\n@media print {\r\n  @page {\r\n    size: A4 portrait;\r\n    margin: 5mm;\r\n  }\r\n\r\n  html, body {\r\n    height: 100vh !important;\r\n    overflow: hidden !important;\r\n    background: #ffffff !important;\r\n  }\r\n\r\n  /* ব্যাকগ্রাউন্ড ও অতিরিক্ত জিনিস হাইড */\r\n  body::before, .bg-image, img:not(.marksheet-logo), .no-print {\r\n    display: none !important;\r\n  }\r\n\r\n  /* ফুল পেজ ও ১-পেজ সাইজিং */\r\n  .marksheet-card {\r\n    width: 100% !important;\r\n    max-width: 100% !important;\r\n    page-break-inside: avoid !important;\r\n    padding: 10px !important;\r\n  }\r\n\r\n  * {\r\n    -webkit-print-color-adjust: exact !important;\r\n    print-color-adjust: exact !important;\r\n  }\r\n}`}</p>
           </div>
         </div>
 
@@ -179,7 +181,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
 
         {/* Subjects Table */}
         <div className="w-full overflow-x-auto block rounded-lg border border-gray-300 my-4 print:my-3">
-          <table className="marksheet-table w-full min-w-[700px] table-fixed border-collapse text-sm print:text-xs whitespace-nowrap">
+          <table className="marksheet-table w-full min-w-[700px] table-auto border-collapse text-sm print:text-xs whitespace-nowrap">
             <thead>
               <tr className="bg-gray-100 border-b border-gray-300">
                 <th className="border-r border-gray-300 p-1.5 w-[10%] text-center">#</th>
