@@ -151,26 +151,27 @@ const ResultFind = () => {
           />
         ) : (
           <div className="card-elevated p-8 max-w-2xl mx-auto">
-            <h2 className="text-xl font-display font-bold mb-6 text-center">
-              Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
-              {"\n"}
-              {"\n"}
-              {"\n"}
-              Please fix the Marksheet Mobile View responsiveness so the table does NOT squish or crush on small screens:
-              {"\n"}
-              {"\n"}
-              1. Enable Clean Horizontal Scrolling on Mobile:
-              {"\n"}   - Wrap the entire Marksheet Table inside a responsive container (`w-full overflow-x-auto block`).
-              {"\n"}   - Set a minimum width on the table itself (`min-w-[650px]`) for mobile devices (`sm:` or `@media (max-width: 640px)`).
-              {"\n"}
-              {"\n"}
-              2. Fix Cell Padding & Font Sizing:
-              {"\n"}   - Prevent text wrapping into tiny single-letter lines inside cells (`white-space: nowrap`).
-              {"\n"}   - Ensure subject names, full marks, obtained marks, grade, and GPA columns maintain proper spacing and font visibility.
-              {"\n"}
-              {"\n"}
-              3. Keep Student Info & Header Cards Responsive:
-              {"\n"}   - Allow student info (Name, Roll, Reg) and Header cards to adjust to 100% screen width (`w-full`), while ONLY the table scrolls horizontally if needed.
+            <h2 className="text-xl font-display font-bold mb-6 text-center whitespace-pre-line">
+              {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+                                        
+                                            
+                                            Please fix the vertical sticky header specifically for the "Marks Entry Table" across all classes without affecting any other UI components:
+
+1. Target Component:
+
+   - Apply this fix ONLY to the main Marks Entry / Result Input Table component (<thead> and <th> elements).
+
+2. Scroll Container & Fixed Header:
+
+   - Wrap the Marks Entry Table inside a dedicated scrollable container (max-h-[75vh] overflow-y-auto relative).
+
+   - Force the subject title header row (<thead>) of the Marks Entry Table to stay fixed at the top during vertical scroll (position: sticky; top: 0; z-index: 40; bg-white).
+
+   - Ensure all header cells (<th>) have a solid white background (bg-white) so row data slides under cleanly.
+
+3. Protect Other Features:
+
+   - Do NOT alter any other page layouts, print/PDF functionality, or calculation scripts.`}
             </h2>
             <form className="space-y-4" onSubmit={handleSearch}>
               <Select value={examYear} onValueChange={(v) => { setExamYear(v); setExamSessionId(''); }}>
