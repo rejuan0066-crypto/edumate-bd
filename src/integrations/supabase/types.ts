@@ -11438,13 +11438,21 @@ export type Database = {
         Args: { _device_id: string; _notes?: string; _reason: string }
         Returns: Json
       }
-      public_find_exam_student: {
-        Args: { p_roll: string; p_session_id: string }
-        Returns: {
-          class_id: string
-          student_id: string
-        }[]
-      }
+      public_find_exam_student:
+        | {
+            Args: { p_roll: string; p_session_id: string }
+            Returns: {
+              class_id: string
+              student_id: string
+            }[]
+          }
+        | {
+            Args: { p_class_id?: string; p_roll: string; p_session_id: string }
+            Returns: {
+              class_id: string
+              student_id: string
+            }[]
+          }
       reconcile_fee_payment: {
         Args: {
           p_actor_id?: string
