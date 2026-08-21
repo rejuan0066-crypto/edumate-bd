@@ -97,10 +97,10 @@ const ResultFind = () => {
         return;
       }
 
-      const classId = found.class_id;
+      const foundClassId = found.class_id;
 
       // Get class info to find division
-      const { data: classInfo } = await supabase.from('classes').select('*').eq('id', classId).single();
+      const { data: classInfo } = await supabase.from('classes').select('*').eq('id', foundClassId).single();
       const divisionId = classInfo?.division_id;
 
       // Load results
