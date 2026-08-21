@@ -155,7 +155,7 @@ const ResultFind = () => {
               {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            মার্ক শিট প্রিভিউ যেভাবে দেখায় pdf/print/download সেইম হবে , pc and mobile`}
+                                            '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.''' মার্ক শিট প্রিভিউ যেভাবে দেখায় pdf/print/download সেইম হবে , pc and mobile এই এখানে আসল কেন এটা রিমুভ করেন`}
             </h2>
             <form className="space-y-4" onSubmit={handleSearch}>
               <Select value={examYear} onValueChange={(v) => { setExamYear(v); setExamSessionId(''); }}>
