@@ -78,6 +78,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           @page { size: A4 portrait; margin: 10mm; }
+          body, html { height: 100vh; overflow: hidden; }
           body * { visibility: hidden; }
           #marksheet-printable-area, #marksheet-printable-area * { visibility: visible; }
           #marksheet-printable-area {
@@ -85,11 +86,14 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             left: 0;
             top: 0;
             width: 100% !important;
+            height: 100% !important;
             margin: 0 !important;
-            padding: 0 !important;
+            padding: 5mm !important;
             box-shadow: none !important;
             border: none !important;
-            min-height: auto !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
           }
           .print-hidden { display: none !important; }
           .bg-\\[\\#1e5d3b\\] { 
@@ -98,11 +102,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             print-color-adjust: exact;
           }
           #signature-section {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            margin-top: 0 !important;
+            margin-top: auto !important;
             padding-bottom: 5mm;
             display: flex !important;
             flex-direction: row !important;
