@@ -153,7 +153,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         {/* Header */}
         <div className="bg-[#1e5d3b] text-white p-4 print:p-3 text-center rounded-t-lg w-full">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
-            {institution?.logo_url && <img src={institution.logo_url} alt="Logo" className="w-16 h-16 print:w-14 print:h-14 object-contain bg-white p-1 rounded-full" />}
+            {institution?.logo_url && <img src={institution.logo_url} alt="Logo" className="marksheet-logo w-16 h-16 print:w-14 print:h-14 object-contain bg-white p-1 rounded-full" />}
             <div>
               <h1 className="text-xl print:text-lg font-extrabold tracking-tight">আল-আরাবিয়া ছোবহানিয়া হাফিজিয়া মাদ্রাসা</h1>
               <p className="text-xs opacity-90 mt-0.5">{institution?.address}</p>
