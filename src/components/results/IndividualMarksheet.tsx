@@ -78,21 +78,24 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
       <style dangerouslySetInnerHTML={{ __html: `
         .marksheet-table {
           width: 100% !important;
-          table-layout: auto !important;
+          table-layout: fixed !important;
+          border-collapse: collapse !important;
         }
 
         @media print {
-          @page { size: A4 portrait; margin: 5mm; }
-          html, body { 
-            height: 100vh !important; 
-            overflow: hidden !important; 
-            background: #ffffff !important; 
+          @page { size: A4 portrait; margin: 6mm; }
+
+          html, body {
+            height: 100vh !important;
+            overflow: hidden !important;
+            background: #ffffff !important;
+            margin: 0 !important;
+            padding: 0 !important;
           }
-          
+
           body * { visibility: hidden; }
           #marksheet-printable-area, #marksheet-printable-area * { visibility: visible; }
-          
-          /* ব্যাকগ্রাউন্ড ও অতিরিক্ত জিনিস হাইড */
+
           body::before, .bg-image, img:not(.marksheet-logo), .no-print {
             display: none !important;
           }
@@ -102,16 +105,18 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             left: 0;
             top: 0;
             width: 100% !important;
-            height: auto !important;
-            max-height: 100vh !important;
-            margin: 0 !important;
-            padding: 10px !important;
+            height: 100vh !important;
+            max-width: 210mm !important;
+            max-height: 297mm !important;
+            margin: 0 auto !important;
+            padding: 6mm !important;
             box-shadow: none !important;
             border: none !important;
             overflow: hidden !important;
             display: flex !important;
             flex-direction: column !important;
             page-break-inside: avoid !important;
+            page-break-after: avoid !important;
           }
 
           * {
@@ -119,21 +124,54 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             print-color-adjust: exact !important;
           }
 
-          .print-hidden { display: none !important; }
-          .bg-\\[\\#1e5d3b\\] { 
-            background-color: #1e5d3b !important; 
+          .print-hidden, .print\\:hidden { display: none !important; }
+
+          .bg-\\[\\#1e5d3b\\] {
+            background-color: #1e5d3b !important;
+            color: #ffffff !important;
           }
+
+          .marksheet-banner {
+            padding: 8px 10px !important;
+          }
+          .marksheet-banner h1 { font-size: 16px !important; }
+          .marksheet-banner p { font-size: 10px !important; }
+          .marksheet-banner h2 { font-size: 18px !important; }
+
+          .marksheet-info {
+            padding: 6px 8px !important;
+            margin: 6px 0 !important;
+            font-size: 11px !important;
+          }
+
+          .marksheet-table th, .marksheet-table td {
+            padding: 3px 4px !important;
+            font-size: 11px !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+          }
+
+          .summary-card {
+            padding: 4px 2px !important;
+            margin: 4px 0 !important;
+          }
+          .summary-card .text-base { font-size: 13px !important; }
+          .summary-card .text-\\[10px\\] { font-size: 8px !important; }
+
           #signature-section {
             margin-top: auto !important;
-            padding-bottom: 2mm;
+            padding-top: 8px !important;
+            padding-bottom: 4px !important;
             display: flex !important;
             flex-direction: row !important;
             justify-content: space-between !important;
+            font-size: 10px !important;
           }
-          
-          .my-4, .my-3 { margin-top: 4px !important; margin-bottom: 4px !important; }
-          .p-4, .p-3 { padding: 4px !important; }
-          table td, table th { padding: 2px 4px !important; }
+          #signature-section .border-t {
+            border-top-width: 1px !important;
+            padding-top: 2px !important;
+          }
         }
       `}} />
       
@@ -178,7 +216,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
 
         {/* Subjects Table */}
         <div className="w-full overflow-x-auto block rounded-lg border border-gray-300 my-4 print:my-3">
-          <table className="marksheet-table w-full min-w-[700px] table-auto border-collapse text-sm print:text-xs whitespace-nowrap">
+          <table className="marksheet-table w-full min-w-[700px] table-fixed border-collapse text-sm print:text-xs whitespace-nowrap">
             <thead>
               <tr className="bg-gray-100 border-b border-gray-300">
                 <th className="border-r border-gray-300 p-1.5 w-[10%] text-center">#</th>
@@ -193,7 +231,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               {subjectResults.map((r, i) => (
                 <tr key={i} className="border-b border-gray-200 last:border-0 hover:bg-gray-50 transition-colors">
                   <td className="border-r border-gray-300 p-1.5 text-center text-gray-500">{i + 1}</td>
-                  <td className="border-r border-gray-300 p-1.5 font-medium" title={bn ? r.subject.name_bn : r.subject.name}>{bn ? r.subject.name_bn : r.subject.name}</td>
+                  <td className="border-r border-gray-300 p-1.5 font-medium truncate" title={bn ? r.subject.name_bn : r.subject.name}>{bn ? r.subject.name_bn : r.subject.name}</td>
                   <td className="border-r border-gray-300 p-1.5 text-center">100</td>
                   <td className="border-r border-gray-300 p-1.5 text-center font-bold">{r.marks}</td>
                   <td className="border-r border-gray-300 p-1.5 text-center font-semibold">{r.grade}</td>
