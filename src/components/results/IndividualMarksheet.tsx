@@ -92,7 +92,8 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           body * { visibility: hidden; }
           #marksheet-printable-area, #marksheet-printable-area * { visibility: visible; }
           
-          body::before, .bg-image, img:not(.marksheet-logo) {
+          /* ব্যাকগ্রাউন্ড ও অতিরিক্ত জিনিস হাইড */
+          body::before, .bg-image, img:not(.marksheet-logo), .no-print {
             display: none !important;
           }
 
@@ -101,7 +102,8 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             left: 0;
             top: 0;
             width: 100% !important;
-            height: 95vh !important;
+            height: auto !important;
+            max-height: 100vh !important;
             margin: 0 !important;
             padding: 10px !important;
             box-shadow: none !important;
