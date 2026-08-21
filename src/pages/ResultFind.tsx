@@ -155,19 +155,7 @@ const ResultFind = () => {
               {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            Please fix the mobile view responsiveness for both the Marksheet Preview and Marks Entry Table to match the desktop layout:
-
-1. Enable Horizontal Scroll on Mobile:
-
-   - Wrap both the Marksheet preview and Marks Entry table inside an overflow container (\`w-full overflow-x-auto\`).
-
-   - Set a minimum width on the table element (\`min-w-[700px]\` or \`min-w-[800px]\`) so that fields/columns do not shrink, squish, or stack vertically on smaller mobile screens.
-
-2. Preserve Desktop Structure on Mobile:
-
-   - Ensure the table maintains its exact desktop layout with horizontal scrolling instead of squeezing all columns into the small mobile screen width.
-
-   - Keep font sizes, input boxes, and padding readable and proportionate on mobile devices.`}
+                                            মার্ক শিট প্রিভিউ যেভাবে দেখায় pdf/print/download সেইম হবে , pc and mobile`}
             </h2>
             <form className="space-y-4" onSubmit={handleSearch}>
               <Select value={examYear} onValueChange={(v) => { setExamYear(v); setExamSessionId(''); }}>
