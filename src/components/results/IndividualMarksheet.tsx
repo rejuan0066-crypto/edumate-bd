@@ -253,7 +253,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
 
         {/* Subjects Table */}
         <div className="w-full overflow-x-auto block rounded-lg border border-gray-300 my-6">
-          <table className="w-full min-w-[650px] sm:min-w-0 table-fixed border-collapse text-sm whitespace-nowrap">
+          <table className="w-full min-w-[700px] table-fixed border-collapse text-sm whitespace-nowrap">
             <thead>
               <tr className="bg-gray-100 border-b border-gray-300">
                 <th className="border-r border-gray-300 p-2 w-[10%] text-center">#</th>
