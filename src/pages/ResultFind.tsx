@@ -117,7 +117,7 @@ const ResultFind = () => {
         .eq('exam_session_id', examSessionId);
       const allSubjects = subjectData?.map((es: any) => es.subjects).filter(Boolean) || [];
       const subjects = allSubjects
-        .filter((s: any) => s.division_id === divisionId || s.class_id === classId)
+        .filter((s: any) => s.division_id === divisionId || s.class_id === foundClassId)
         .sort((a: any, b: any) => (a.name_bn || '').localeCompare(b.name_bn || ''));
 
       const year = academicSessions.find((s: any) => s.id === examYear);
