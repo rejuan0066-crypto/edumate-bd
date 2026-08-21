@@ -40,6 +40,14 @@ const ResultFind = () => {
     enabled: !!examYear,
   });
 
+  const { data: classes = [] } = useQuery({
+    queryKey: ['public-classes'],
+    queryFn: async () => {
+      const { data } = await supabase.from('classes').select('*').eq('is_active', true).order('sort_order');
+      return data || [];
+    },
+  });
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
