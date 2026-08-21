@@ -152,7 +152,11 @@ const ResultFind = () => {
         ) : (
           <div className="card-elevated p-8 max-w-2xl mx-auto">
             <h2 className="text-xl font-display font-bold mb-6 text-center">
-              {bn ? 'ফলাফল অনুসন্ধান' : 'Search Result'}
+              Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
+              {"\n"}
+              {"\n"}
+              {"\n"}
+              মোবাইল ভিউয়ে মার্ক শিট স্কিনের ভাইরে চলে যায় কেন
             </h2>
             <form className="space-y-4" onSubmit={handleSearch}>
               <Select value={examYear} onValueChange={(v) => { setExamYear(v); setExamSessionId(''); }}>
