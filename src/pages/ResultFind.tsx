@@ -156,7 +156,7 @@ const ResultFind = () => {
               {"\n"}
               {"\n"}
               {"\n"}
-              মোবাইল ভিউয়ে মার্ক শিট স্কিনের ভাইরে চলে যায় কেন
+              এই লেখা রিমুভ করেন
             </h2>
             <form className="space-y-4" onSubmit={handleSearch}>
               <Select value={examYear} onValueChange={(v) => { setExamYear(v); setExamSessionId(''); }}>
