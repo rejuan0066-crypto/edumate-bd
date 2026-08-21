@@ -17,6 +17,7 @@ const ResultFind = () => {
 
   const [examYear, setExamYear] = useState('');
   const [examSessionId, setExamSessionId] = useState('');
+  const [classId, setClassId] = useState('');
   const [rollNumber, setRollNumber] = useState('');
   const [searching, setSearching] = useState(false);
   const [resultData, setResultData] = useState<any>(null);
