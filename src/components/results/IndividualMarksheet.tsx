@@ -131,15 +131,16 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               top: 0 !important;
               width: 100% !important;
               max-width: 210mm !important;
-              max-height: 270mm !important;
+              max-height: 297mm !important;
               background: #ffffff !important;
               box-shadow: none !important;
               border: none !important;
-              padding: 10mm !important;
+              padding: 8mm !important;
               margin: 0 !important;
               overflow: hidden !important;
               page-break-after: avoid !important;
               page-break-before: avoid !important;
+              page-break-inside: avoid !important;
             }
 
             @page {
