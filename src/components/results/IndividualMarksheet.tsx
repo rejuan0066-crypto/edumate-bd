@@ -236,30 +236,30 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </div>
 
         {/* Student Information Card */}
-        <div className="bg-[#fafaf9] border border-emerald-100 rounded-2xl p-6 mb-8 grid grid-cols-3 gap-y-4 gap-x-8">
+        <div className="bg-slate-50/80 border border-slate-200 rounded-2xl p-6 mb-8 grid grid-cols-3 gap-y-4 gap-x-8 shadow-sm">
           <div className="flex flex-col">
-            <span className="text-[12px] text-slate-400 font-bold uppercase tracking-wider mb-1">শিক্ষার্থী নাম (Student Name)</span>
-            <span className="text-[15px] font-bold text-slate-700">{studentName}</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1.5">শিক্ষার্থী নাম (Student Name)</span>
+            <span className="text-[16px] font-bold text-slate-800">{studentName}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[12px] text-slate-400 font-bold uppercase tracking-wider mb-1">রোল নম্বর (Roll No)</span>
-            <span className="text-[15px] font-bold text-slate-700">{isSample ? '1001' : toBnDigits(student.roll_number)}</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1.5">রোল নম্বর (Roll No)</span>
+            <span className="text-[16px] font-bold text-slate-800">{isSample ? '1001' : toBnDigits(student.roll_number)}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[12px] text-slate-400 font-bold uppercase tracking-wider mb-1">রেজিস্ট্রেশন (Reg No)</span>
-            <span className="text-[15px] font-bold text-slate-700">{student.registration_number || '20261002'}</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1.5">রেজিস্ট্রেশন (Reg No)</span>
+            <span className="text-[16px] font-bold text-slate-800">{student.registration_number || '20261002'}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[12px] text-slate-400 font-bold uppercase tracking-wider mb-1">জন্ম তারিখ (DOB)</span>
-            <span className="text-[15px] font-bold text-slate-700">{student.date_of_birth || '১৫ মে, ২০১৮'}</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1.5">জন্ম তারিখ (DOB)</span>
+            <span className="text-[16px] font-bold text-slate-800">{student.date_of_birth || '১৫ মে, ২০১৮'}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[12px] text-slate-400 font-bold uppercase tracking-wider mb-1">শ্রেণি (Class)</span>
-            <span className="text-[15px] font-bold text-slate-700">{resolvedClass}</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1.5">শ্রেণি (Class)</span>
+            <span className="text-[16px] font-bold text-slate-800">{resolvedClass}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[12px] text-slate-400 font-bold uppercase tracking-wider mb-1">শিক্ষাবর্ষ (Session)</span>
-            <span className="text-[15px] font-bold text-slate-700">{resolvedSession}</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1.5">শিক্ষাবর্ষ (Session)</span>
+            <span className="text-[16px] font-bold text-slate-800">{resolvedSession}</span>
           </div>
         </div>
 
