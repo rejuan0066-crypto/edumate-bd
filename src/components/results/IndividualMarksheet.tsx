@@ -290,7 +290,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           <table className="marksheet-table">
             <thead>
               <tr>
-                <th className="w-[50px]">Sl</th>
+                <th className="w-[50px]">নং</th>
                 <th className="text-left">বিষয় (Subject)</th>
                 <th className="w-[100px]">পূর্ণমান</th>
                 <th className="w-[120px]">প্রাপ্ত নম্বর</th>
