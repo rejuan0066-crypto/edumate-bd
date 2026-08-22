@@ -282,7 +282,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           </div>
           <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl text-center">
             <span className="text-[10px] text-indigo-500 font-bold uppercase block mb-1">সর্বমোট GPA</span>
-            <span className="text-[18px] font-black text-indigo-900">{bn ? toBnDigits(overall.gpa.toFixed(2)) : overall.gpa.toFixed(2)}</span>
+            <span className="text-[18px] font-black text-indigo-900">{bn ? toBnDigits(Number(overall.gpa).toFixed(2)) : Number(overall.gpa).toFixed(2)}</span>
           </div>
           <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl text-center">
             <span className="text-[10px] text-emerald-500 font-bold uppercase block mb-1">চূড়ান্ত গ্রেড</span>
