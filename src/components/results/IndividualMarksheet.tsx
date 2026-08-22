@@ -83,7 +83,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         }
 
         @media print {
-          @page { size: A4 portrait; margin: 3mm; }
+          @page { size: A4 portrait; margin: 2mm; }
 
           html, body {
             height: 100vh !important;
@@ -105,7 +105,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             left: 0;
             top: 0;
             width: 100% !important;
-            height: 100vh !important;
+            height: auto !important;
             max-width: 210mm !important;
             max-height: 297mm !important;
             margin: 0 auto !important;
@@ -160,7 +160,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           .summary-card .text-\\[10px\\] { font-size: 7px !important; }
 
           #signature-section {
-            margin-top: auto !important;
+            margin-top: 15px !important;
             padding-top: 4px !important;
             padding-bottom: 2px !important;
             display: flex !important;
@@ -191,7 +191,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
 
       <div id="marksheet-printable-area" className="mx-auto max-w-[210mm] min-h-[297mm] bg-white text-black p-[6mm] shadow-lg border border-gray-200 print:shadow-none print:border-none print:p-0">
         {/* Header */}
-        <div className="marksheet-banner bg-[#1e5d3b] text-white p-2 print:p-1 text-center rounded-t-lg w-full">
+        <div className="marksheet-banner bg-[#1e5d3b] text-white p-2 print:p-0.5 text-center rounded-t-lg w-full">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
             {institution?.logo_url && <img src={institution.logo_url} alt="Logo" className="marksheet-logo w-12 h-12 print:w-10 print:h-10 object-contain bg-white p-1 rounded-full" />}
             <div>
@@ -207,7 +207,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </div>
 
         {/* Student Info */}
-        <div className="marksheet-info bg-gray-50 p-1.5 print:p-1 my-1.5 print:my-1 rounded-lg border border-gray-200 grid grid-cols-2 gap-y-0.5 gap-x-4 text-[11px] print:text-[10px] w-full">
+        <div className="marksheet-info bg-gray-50 p-1.5 print:p-0.5 my-1.5 print:my-0.5 rounded-lg border border-gray-200 grid grid-cols-2 gap-y-0.5 gap-x-4 text-[11px] print:text-[10px] w-full">
           <div className="flex items-center gap-2"><span className="font-bold text-gray-700 w-20">নাম:</span> <span>{studentName}</span></div>
           <div className="flex items-center gap-2"><span className="font-bold text-gray-700 w-20">রোল নম্বর:</span> <span>{student.roll_number}</span></div>
           <div className="flex items-center gap-2"><span className="font-bold text-gray-700 w-20">রেজিস্ট্রেশন:</span> <span>{student.registration_number || student.student_id}</span></div>
@@ -215,7 +215,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </div>
 
         {/* Subjects Table */}
-        <div className="w-full overflow-hidden block rounded-lg border border-gray-300 my-1.5 print:my-1">
+        <div className="w-full overflow-hidden block rounded-lg border border-gray-300 my-1.5 print:my-0.5">
           <table className="marksheet-table w-full table-fixed border-collapse text-[11px] print:text-[10px] whitespace-nowrap">
             <thead>
               <tr className="bg-gray-100 border-b border-gray-300">
@@ -243,7 +243,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-5 gap-2 my-1.5 print:my-1">
+        <div className="grid grid-cols-5 gap-2 my-1.5 print:my-0.5">
           {[
             { label: 'মোট নম্বর', value: totalMarks, color: 'bg-blue-50 text-blue-800 border-blue-200' },
             { label: 'গড়', value: avgMarks.toFixed(1), color: 'bg-amber-50 text-amber-800 border-amber-200' },
