@@ -313,21 +313,24 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             <span className="text-[18px] font-black text-blue-900">{bn ? toBnDigits(totalMarks) : totalMarks} / {bn ? toBnDigits(subjects.length * 100) : subjects.length * 100}</span>
           </div>
           <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl text-center">
-            <span className="text-[10px] text-amber-500 font-bold uppercase block mb-1">গড় (Average)</span>
-            <span className="text-[18px] font-black text-amber-900">{bn ? toBnDigits(avgMarks.toFixed(1)) : avgMarks.toFixed(1)}%</span>
+            <span className="text-[10px] text-amber-500 font-bold uppercase block mb-1">মেধা স্থান</span>
+            <span className="text-[18px] font-black text-amber-900">{isSample ? toBnDigits(1) : (rank ? toBnDigits(rank) : '—')}</span>
           </div>
           <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl text-center">
             <span className="text-[10px] text-indigo-500 font-bold uppercase block mb-1">সর্বমোট GPA</span>
             <span className="text-[18px] font-black text-indigo-900">{bn ? toBnDigits(Number(overall.gpa).toFixed(2)) : Number(overall.gpa).toFixed(2)}</span>
           </div>
           <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl text-center">
-            <span className="text-[10px] text-emerald-500 font-bold uppercase block mb-1">চূড়ান্ত গ্রেড</span>
+            <span className="text-[10px] text-emerald-500 font-bold uppercase block mb-1">মর্যাদা</span>
             <span className="text-[18px] font-black text-emerald-900">{overall.grade}</span>
           </div>
           <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl text-center shadow-sm">
             <span className="text-[10px] text-emerald-600 font-bold uppercase block mb-1">ফলাফল (Status)</span>
-            <span className="bg-emerald-600 text-white text-[12px] px-3 py-0.5 rounded-full font-bold">
-              {overall.grade !== 'F' ? 'পাস' : 'ফেল'}
+            <span className={cn(
+              "text-white text-[12px] px-3 py-0.5 rounded-full font-bold",
+              overall.grade !== 'F' ? 'bg-emerald-600' : 'bg-rose-600'
+            )}>
+              {overall.grade !== 'F' ? 'পাস' : 'রাসিব'}
             </span>
           </div>
         </div>
