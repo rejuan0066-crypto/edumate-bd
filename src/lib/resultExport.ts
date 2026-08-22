@@ -295,6 +295,7 @@ export const getResultSheetHtml = ({
     <div class="result-page">
       <div class="fit-inner">
         <div class="sheet">
+          ${institutionLogo ? `<div class="watermark"><img src="${institutionLogo}" alt=""></div>` : ''}
           <header class="header">
             ${institutionLogo ? `<img src="${institutionLogo}" class="header-logo" alt="logo">` : '<div class="header-logo"></div>'}
             <div class="header-text">
@@ -400,7 +401,9 @@ export const getResultSheetHtml = ({
     body{padding:20px;min-width:min-content;}
     .screen-pageinfo{display:flex;justify-content:flex-end;font-size:10px;color:#94a3b8;margin-top:6px;}
   }
-  .sheet{background:#fff;border:1px solid #94a3b8;border-radius:2px;padding:8mm 8mm;box-sizing:border-box;width:100%;box-shadow:0 0 10px rgba(0,0,0,0.1);margin:0 auto;}
+  .sheet{position:relative;background:#fff;border:1px solid #94a3b8;border-radius:2px;padding:8mm 8mm;box-sizing:border-box;width:100%;box-shadow:0 0 10px rgba(0,0,0,0.1);margin:0 auto;overflow:hidden;}
+  .watermark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:400px;height:400px;opacity:0.04;pointer-events:none;z-index:0;display:flex;align-items:center;justify-content:center;filter:grayscale(100%);}
+  .watermark img{width:100%;height:100%;object-fit:contain;}
   .header{display:grid;grid-template-columns:100px 1fr 100px;gap:12px;align-items:center;margin-bottom:15px;}
   .header-logo{width:80px;height:80px;object-fit:contain;}
   .header-text{text-align:center;}

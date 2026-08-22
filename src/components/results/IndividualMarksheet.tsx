@@ -195,6 +195,18 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           .grade-f { background-color: #FEF2F2; color: #DC2626; border: 1px solid #FEE2E2; }
         `}} />
 
+        {/* Watermark Logo */}
+        {institution?.logo_url && (
+          <div className="absolute inset-0 flex items-center justify-center opacity-[0.05] pointer-events-none select-none z-0 overflow-hidden">
+            <img 
+              src={institution.logo_url} 
+              alt="" 
+              className="w-[350px] h-[350px] object-contain grayscale"
+              style={{ filter: 'grayscale(100%) brightness(0.9)' }}
+            />
+          </div>
+        )}
+
         {/* Decorative Top Accent */}
         <div className="absolute top-0 left-0 w-full h-[6px] bg-[#065f46]"></div>
         <div className="absolute top-[6px] left-0 w-full h-[2px] bg-[#d97706]"></div>
