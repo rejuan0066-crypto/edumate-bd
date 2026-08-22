@@ -356,7 +356,12 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           <div className="bg-white border border-slate-200 p-3 rounded-lg text-center shadow-sm">
             <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">মেধা স্থান</span>
             <span className="text-[22px] font-bold text-slate-800">
-              {(isSample ? '১ম' : ((rank || student.rank || student.merit_rank) ? toBnDigits(rank || student.rank || student.merit_rank) + 'তম' : '-'))}
+              {(() => {
+                const meritRank = rank || student.rank || student.merit_rank;
+                if (isSample) return '১ম';
+                if (!meritRank) return '-';
+                return toBnDigits(meritRank) + 'তম';
+              })()}
             </span>
           </div>
           <div className="bg-white border border-slate-200 p-3 rounded-lg text-center shadow-sm">
