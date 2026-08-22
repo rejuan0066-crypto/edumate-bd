@@ -207,7 +207,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </div>
 
         {/* Student Info */}
-        <div className="marksheet-info bg-gray-50 p-4 print:p-3 my-4 print:my-3 rounded-lg border border-gray-200 grid grid-cols-2 gap-y-2 gap-x-4 text-[13px] print:text-[12px] w-full">
+        <div className="marksheet-info bg-gray-50 p-2 print:p-1.5 my-2 print:my-1.5 rounded-lg border border-gray-200 grid grid-cols-2 gap-y-1 gap-x-4 text-[12px] print:text-[11px] w-full">
           <div className="flex items-center gap-2"><span className="font-bold text-gray-700 w-20">নাম:</span> <span>{studentName}</span></div>
           <div className="flex items-center gap-2"><span className="font-bold text-gray-700 w-20">রোল নম্বর:</span> <span>{student.roll_number}</span></div>
           <div className="flex items-center gap-2"><span className="font-bold text-gray-700 w-20">রেজিস্ট্রেশন:</span> <span>{student.registration_number || student.student_id}</span></div>
