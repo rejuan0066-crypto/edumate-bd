@@ -219,12 +219,12 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           <table className="marksheet-table w-full table-fixed border-collapse text-[12px] print:text-[11px] whitespace-nowrap">
             <thead>
               <tr className="bg-gray-100 border-b border-gray-300">
-                <th className="border-r border-gray-300 p-1.5 w-[10%] text-center">#</th>
-                <th className="border-r border-gray-300 p-1.5 w-[55%] text-left">বিষয়</th>
-                <th className="border-r border-gray-300 p-1.5 w-[10%] text-center">পূর্ণমান</th>
-                <th className="border-r border-gray-300 p-1.5 w-[12%] text-center">প্রাপ্ত নম্বর</th>
-                <th className="border-r border-gray-300 p-1.5 w-[8%] text-center">গ্রেড</th>
-                <th className="p-1.5 w-[5%] text-center">GPA</th>
+                <th className="border-r border-gray-300 p-1 w-[8%] text-center">#</th>
+                <th className="border-r border-gray-300 p-1 w-[55%] text-left pl-2">বিষয়</th>
+                <th className="border-r border-gray-300 p-1 w-[10%] text-center">পূর্ণমান</th>
+                <th className="border-r border-gray-300 p-1 w-[12%] text-center">প্রাপ্ত</th>
+                <th className="border-r border-gray-300 p-1 w-[8%] text-center">গ্রেড</th>
+                <th className="p-1 w-[7%] text-center">GPA</th>
               </tr>
             </thead>
             <tbody>
