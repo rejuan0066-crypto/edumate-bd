@@ -247,31 +247,42 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </div>
 
         {/* Student Information Card */}
-        <div className="bg-slate-50/80 border border-slate-200 rounded-2xl p-6 mb-8 grid grid-cols-3 gap-y-4 gap-x-8 shadow-sm">
+        <div className="bg-slate-50/80 border border-slate-200 rounded-xl p-4 mb-6 grid grid-cols-3 gap-y-3 gap-x-8 shadow-sm">
           <div className="flex flex-col">
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1.5">শিক্ষার্থী নাম (Student Name)</span>
-            <span className="text-[16px] font-bold text-slate-800">{studentName}</span>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">শিক্ষার্থী নাম (STUDENT NAME)</span>
+            <span className="text-[14px] font-bold text-slate-800">{studentName}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1.5">রোল নম্বর (Roll No)</span>
-            <span className="text-[16px] font-bold text-slate-800">{isSample ? '1001' : toBnDigits(student.roll_number)}</span>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">পিতার নাম (FATHER'S NAME)</span>
+            <span className="text-[14px] font-bold text-slate-800">{student.father_name || student.fathers_name || '-'}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1.5">রেজিস্ট্রেশন (Reg No)</span>
-            <span className="text-[16px] font-bold text-slate-800">{student.registration_number || '20261002'}</span>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">রোল নম্বর (ROLL NO)</span>
+            <span className="text-[14px] font-bold text-slate-800">{isSample ? '1001' : toBnDigits(student.roll_number)}</span>
+          </div>
+          
+          <div className="flex flex-col">
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">রেজিস্ট্রেশন (REG NO)</span>
+            <span className="text-[14px] font-bold text-slate-800">{student.registration_number || '20261002'}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1.5">জন্ম তারিখ (DOB)</span>
-            <span className="text-[16px] font-bold text-slate-800">{student.date_of_birth || '১৫ মে, ২০১৮'}</span>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">শ্রেণি (CLASS)</span>
+            <span className="text-[14px] font-bold text-slate-800">{resolvedClass}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1.5">শ্রেণি (Class)</span>
-            <span className="text-[16px] font-bold text-slate-800">{resolvedClass}</span>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">শিক্ষাবর্ষ (SESSION)</span>
+            <span className="text-[14px] font-bold text-slate-800">{resolvedSession}</span>
+          </div>
+          
+          <div className="flex flex-col">
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">জন্ম তারিখ (DOB)</span>
+            <span className="text-[14px] font-bold text-slate-800">{student.date_of_birth || '১৫ মে, ২০১৮'}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1.5">শিক্ষাবর্ষ (Session)</span>
-            <span className="text-[16px] font-bold text-slate-800">{resolvedSession}</span>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">বিভাগ/শাখা (SECTION)</span>
+            <span className="text-[14px] font-bold text-slate-800">{student.section || student.branch || '-'}</span>
           </div>
+          <div></div>
         </div>
 
         {/* Marks Details Table */}
