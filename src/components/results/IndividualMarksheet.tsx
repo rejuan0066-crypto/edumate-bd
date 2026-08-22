@@ -333,7 +333,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </div>
 
         {/* Grading Scale & Signatures */}
-        <div className="mt-auto flex justify-between items-end gap-12">
+        <div className="mt-5 flex justify-between items-end gap-12">
           {/* Reference Key */}
           <div className="w-[200px] border border-slate-100 p-3 rounded-lg bg-slate-50/50">
             <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mb-2 border-b border-slate-200 pb-1">Grading Scale</h4>
