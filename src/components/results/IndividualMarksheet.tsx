@@ -111,6 +111,11 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               overflow: hidden !important;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
+              color-adjust: exact !important;
+            }
+            .grade-badge, .bg-emerald-600, .bg-rose-600, .bg-slate-50, .bg-emerald-50, .bg-emerald-50\/20, .bg-emerald-50\/80 {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
             }
 
             /* Make ONLY the printable marksheet and its children visible */
