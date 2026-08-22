@@ -1,5 +1,6 @@
 import { CANONICAL_BANGLA_LABELS as L } from './banglaCanonicalLabels';
 import { formatOrdinalRank, toBnDigits } from './digits';
+import QRCode from 'qrcode';
 
 
 interface ExportData {
