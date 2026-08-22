@@ -343,7 +343,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
                 }
                 
                 if (gpa >= 5.0) return "মুমতাজ";
-                if (gpa >= 4.0) return "জয়্যিদ জিদ্দান";
+                if (gpa >= 4.0) return "জায়্যিদ জিদ্দান";
                 if (gpa >= 3.0) return "জয়্যিদ";
                 if (gpa >= 1.0) return "মাকবুল";
                 return "রাসিব";
