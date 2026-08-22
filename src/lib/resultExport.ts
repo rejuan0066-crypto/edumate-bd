@@ -535,7 +535,7 @@ ${pagesHtml}
 </body></html>`;
 };
 
-export const printResultSheet = (params: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
+export const printResultSheet = (params: ExportData & { orientation?: 'landscape' | 'portrait', qrCodeDataUrl?: string }) => {
   const html = getResultSheetHtml(params);
   renderPrintDocument(html, buildResultDocName(params));
 };
