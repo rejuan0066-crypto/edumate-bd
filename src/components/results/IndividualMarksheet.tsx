@@ -191,12 +191,12 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         {/* Header Section */}
         <div className="flex justify-between items-start mt-4 mb-8">
           {/* Logo */}
-          <div className="w-[80px] h-[80px] rounded-full border-[3px] border-[#065f46] p-[2px] flex items-center justify-center bg-white shadow-sm overflow-hidden">
-            <div className="w-full h-full rounded-full border border-[#d97706] flex items-center justify-center">
+          <div className="w-[85px] h-[85px] rounded-full border-[2px] border-[#065f46] p-[3px] flex items-center justify-center bg-white shadow-md overflow-hidden relative group">
+            <div className="w-full h-full rounded-full border border-emerald-100 flex items-center justify-center bg-emerald-50/20">
               {institution?.logo_url ? (
-                <img src={institution.logo_url} alt="Logo" className="w-12 h-12 object-contain" />
+                <img src={institution.logo_url} alt="Logo" className="w-14 h-14 object-contain" />
               ) : (
-                <div className="text-[#065f46] font-bold text-xs text-center leading-tight">LOGO</div>
+                <div className="text-[#065f46] font-bold text-[10px] text-center leading-tight">LOGO</div>
               )}
             </div>
           </div>
