@@ -354,9 +354,16 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             <span className="text-[10px] text-emerald-600 font-bold uppercase block mb-1">চূড়ান্ত গ্রেড</span>
             <span className={cn(
               "text-white text-[12px] px-3 py-0.5 rounded-full font-bold",
-              (student.letter_grade || overall.grade) !== 'F' ? 'bg-emerald-600' : 'bg-rose-600'
+              (() => {
+                const hasFailedSubject = subjectResults.some(r => r.grade === 'F');
+                const isFail = (student.letter_grade || overall.grade) === 'F' || hasFailedSubject;
+                return !isFail ? 'bg-emerald-600' : 'bg-rose-600';
+              })()
             )}>
-              {student.letter_grade || overall.grade}
+              {(() => {
+                const hasFailedSubject = subjectResults.some(r => r.grade === 'F');
+                return hasFailedSubject ? 'F' : (student.letter_grade || overall.grade);
+              })()}
             </span>
           </div>
         </div>
