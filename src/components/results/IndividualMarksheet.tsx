@@ -394,18 +394,18 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </div>
 
         {/* Grading Scale & Signatures */}
-        <div className="mt-auto flex justify-between items-end gap-12 pt-8 pb-4">
+        <div className="mt-auto flex justify-between items-end gap-12 pt-4 pb-2" style={{ pageBreakInside: 'avoid' }}>
           {/* Reference Key */}
-          <div className="w-[220px] border border-slate-200 p-4 rounded-xl bg-slate-50/50 shadow-sm">
-            <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 border-b border-slate-200 pb-1.5">Grading Scale</h4>
-            <div className="grid grid-cols-1 gap-y-1.5 text-[10px] font-medium text-slate-600">
-              <div className="flex justify-between items-center"><span>80-100</span> <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold border border-emerald-100">A+ (5.0)</span></div>
-              <div className="flex justify-between items-center"><span>70-79</span> <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold border border-emerald-100">A (4.0)</span></div>
-              <div className="flex justify-between items-center"><span>60-69</span> <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold border border-emerald-100">A- (3.5)</span></div>
-              <div className="flex justify-between items-center"><span>50-59</span> <span className="bg-amber-50 text-amber-700 px-2 py-0.5 rounded font-bold border border-amber-100">B (3.0)</span></div>
-              <div className="flex justify-between items-center"><span>40-49</span> <span className="bg-orange-50 text-orange-700 px-2 py-0.5 rounded font-bold border border-orange-100">C (2.0)</span></div>
-              <div className="flex justify-between items-center"><span>33-39</span> <span className="bg-orange-50 text-orange-700 px-2 py-0.5 rounded font-bold border border-orange-100">D (1.0)</span></div>
-              <div className="flex justify-between items-center"><span>00-32</span> <span className="bg-rose-50 text-rose-700 px-2 py-0.5 rounded font-bold border border-rose-100">F (0.0)</span></div>
+          <div className="w-[200px] border border-slate-200 p-2 rounded-lg bg-slate-50/50 shadow-sm">
+            <h4 className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 border-b border-slate-200 pb-1">Grading Scale</h4>
+            <div className="grid grid-cols-1 gap-y-1 text-[9px] font-medium text-slate-600">
+              <div className="flex justify-between items-center"><span>80-100</span> <span className="bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-bold border border-emerald-100">A+ (5.0)</span></div>
+              <div className="flex justify-between items-center"><span>70-79</span> <span className="bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-bold border border-emerald-100">A (4.0)</span></div>
+              <div className="flex justify-between items-center"><span>60-69</span> <span className="bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-bold border border-emerald-100">A- (3.5)</span></div>
+              <div className="flex justify-between items-center"><span>50-59</span> <span className="bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded font-bold border border-amber-100">B (3.0)</span></div>
+              <div className="flex justify-between items-center"><span>40-49</span> <span className="bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded font-bold border border-orange-100">C (2.0)</span></div>
+              <div className="flex justify-between items-center"><span>33-39</span> <span className="bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded font-bold border border-orange-100">D (1.0)</span></div>
+              <div className="flex justify-between items-center"><span>00-32</span> <span className="bg-rose-50 text-rose-700 px-1.5 py-0.5 rounded font-bold border border-rose-100">F (0.0)</span></div>
             </div>
           </div>
 
