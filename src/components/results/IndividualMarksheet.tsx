@@ -331,13 +331,17 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             <span className="text-[18px] font-black text-emerald-900">
               {(() => {
                 const gpa = Number(student.gpa || overall.gpa);
-                const isFail = student.letter_grade === 'F' || overall.grade === 'F' || gpa === 0;
+                // Check if any subject mark is below pass mark or grade is F
+                const hasFailedSubject = subjectResults.some(r => r.grade === 'F');
+                const isFail = student.letter_grade === 'F' || overall.grade === 'F' || gpa === 0 || hasFailedSubject;
                 
+                if (isFail) return "রাসিব";
+                
+                // If there's an explicit division from backend, use it
                 if (student.division || student.status_text || student.madrasha_grade) {
                   return student.division || student.status_text || student.madrasha_grade;
                 }
                 
-                if (isFail) return "রাসিব";
                 if (gpa >= 5.0) return "মুমতাজ";
                 if (gpa >= 4.0) return "জয়্যিদ জিদ্দান";
                 if (gpa >= 3.0) return "জয়্যিদ";
