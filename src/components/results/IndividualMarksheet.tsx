@@ -363,7 +363,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               })()}
             </span>
           </div>
-          <div className="bg-white border border-slate-200 p-4 rounded-xl text-center shadow-sm flex flex-col items-center justify-center">
+          <div className="bg-white border border-slate-200 p-3 rounded-lg text-center shadow-sm flex flex-col items-center justify-center">
             <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">মর্যাদা</span>
             <span className={cn(
               "text-[14px] font-bold px-4 py-1 rounded-full",
