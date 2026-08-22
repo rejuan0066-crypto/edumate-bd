@@ -164,7 +164,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             color: white;
             font-weight: 700;
             font-size: 14px;
-            padding: 12px 6px;
+            padding: 8px 6px;
           }
           .marksheet-table tr:nth-child(even) {
             background-color: #f8fafc;
