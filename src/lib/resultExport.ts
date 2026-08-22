@@ -152,8 +152,16 @@ export const exportResultCSV = (params: ExportData) => {
 };
 
 export const exportResultPDF = async (params: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
+  let qrCodeDataUrl = '';
+  try {
+    const qrUrl = `${window.location.origin}/verify-receipt/${params.title.replace(/\s+/g, '_')}`;
+    qrCodeDataUrl = await QRCode.toDataURL(qrUrl, { margin: 1, width: 120 });
+  } catch (err) {
+    console.error('QR generation failed:', err);
+  }
+
   if (isMobileOrPwa()) {
-    const html = getResultSheetHtml(params);
+    const html = getResultSheetHtml({ ...params, qrCodeDataUrl });
     const fname = `${safeFileName(buildResultDocName(params))}.pdf`;
     try {
       const { toast } = await import('sonner');
@@ -166,7 +174,7 @@ export const exportResultPDF = async (params: ExportData & { orientation?: 'land
     }
     return;
   }
-  printResultSheet(params);
+  printResultSheet({ ...params, qrCodeDataUrl });
 };
 
 const isMobileOrPwa = (): boolean => {
