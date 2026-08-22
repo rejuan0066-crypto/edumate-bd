@@ -57,7 +57,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
   };
 
   return (
-    <div className="flex flex-col items-center min-h-screen bg-slate-50 p-4 print:p-0 print:bg-white">
+    <div className="flex flex-col items-center min-h-screen bg-slate-50 p-4 print:p-0 print:bg-white printable-area">
       {/* Top Utility Bar */}
       <div className="w-full max-w-[210mm] flex justify-between items-center mb-6 no-print print:hidden">
         <Button variant="ghost" size="sm" onClick={onBack} className="gap-2 text-slate-600 hover:text-emerald-700">
