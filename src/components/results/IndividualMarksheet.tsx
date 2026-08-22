@@ -293,10 +293,10 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
                       "grade-badge",
                       r.grade === 'A+' ? 'grade-a-plus' : 
                       r.grade === 'A' ? 'grade-a' :
-                      r.grade === 'A-' ? 'grade-a' :
+                      r.grade === 'A-' ? 'grade-a-minus' :
                       r.grade === 'B' ? 'grade-b' :
                       r.grade === 'C' ? 'grade-c' :
-                      r.grade === 'D' ? 'grade-c' : 'grade-f'
+                      r.grade === 'D' ? 'grade-d' : 'grade-f'
                     )}>
                       {r.grade}
                     </span>
