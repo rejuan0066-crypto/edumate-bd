@@ -450,7 +450,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
                 <span className="text-[7px] text-emerald-600/30 font-bold tracking-tighter uppercase leading-none">OFFICIAL SEAL</span>
               </div>
               <div className="w-full border-t border-dotted border-slate-400 mb-2"></div>
-              <span className="text-[11px] font-bold text-slate-700 uppercase">{bn ? 'মুহতামিম / অধ্যক্ষ' : 'PRINCIPAL'}</span>
+              <span className="text-[11px] font-bold text-slate-700 uppercase">{bn ? 'মুহতামিম' : 'PRINCIPAL'}</span>
               <span className="text-[8px] text-slate-400 font-medium uppercase tracking-tighter">{bn ? '(PRINCIPAL)' : ''}</span>
             </div>
           </div>
