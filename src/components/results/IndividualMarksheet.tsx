@@ -191,18 +191,18 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
 
       <div id="marksheet-printable-area" className="mx-auto max-w-[210mm] min-h-[297mm] bg-white text-black p-[6mm] shadow-lg border border-gray-200 print:shadow-none print:border-none print:p-0">
         {/* Header */}
-        <div className="marksheet-banner bg-[#1e5d3b] text-white p-3 print:p-2 text-center rounded-t-lg w-full">
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-5">
-            {institution?.logo_url && <img src={institution.logo_url} alt="Logo" className="marksheet-logo w-14 h-14 print:w-12 print:h-12 object-contain bg-white p-1 rounded-full" />}
+        <div className="marksheet-banner bg-[#1e5d3b] text-white p-2 print:p-1 text-center rounded-t-lg w-full">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
+            {institution?.logo_url && <img src={institution.logo_url} alt="Logo" className="marksheet-logo w-12 h-12 print:w-10 print:h-10 object-contain bg-white p-1 rounded-full" />}
             <div>
-              <h1 className="text-lg print:text-base font-extrabold tracking-tight leading-tight">{instName || (bn ? 'মাদ্রাসা' : 'Institution')}</h1>
-              <p className="text-[11px] print:text-[10px] opacity-95 mt-0.5 leading-tight">{institution?.address}</p>
-              <p className="text-[11px] print:text-[10px] opacity-95 leading-tight">{institution?.phone}</p>
+              <h1 className="text-base print:text-sm font-extrabold tracking-tight leading-none">{instName || (bn ? 'মাদ্রাসা' : 'Institution')}</h1>
+              <p className="text-[10px] print:text-[9px] opacity-95 mt-0.5 leading-tight">{institution?.address}</p>
+              <p className="text-[10px] print:text-[9px] opacity-95 leading-tight">{institution?.phone}</p>
             </div>
           </div>
-          <div className="mt-2 pt-2 border-t border-emerald-500/50">
-            <h2 className="text-lg font-bold tracking-wider leading-none">{bn ? 'মার্কশিট' : 'Marksheet'}</h2>
-            <p className="text-xs opacity-95 mt-1">{examTitle}</p>
+          <div className="mt-1.5 pt-1.5 border-t border-emerald-500/50">
+            <h2 className="text-base font-bold tracking-wider leading-none">{bn ? 'মার্কশিট' : 'Marksheet'}</h2>
+            <p className="text-[10px] opacity-95 mt-0.5">{examTitle}</p>
           </div>
         </div>
 
