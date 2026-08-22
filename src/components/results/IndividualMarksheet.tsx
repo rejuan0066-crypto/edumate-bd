@@ -83,7 +83,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
       {/* Main A4 Container */}
       <div 
         id="marksheet-printable-area" 
-        className="relative bg-white shadow-[0_0_20px_rgba(0,0,0,0.1)] w-[210mm] min-h-[297mm] p-[16mm] flex flex-col print:shadow-none print:w-full print:p-[16mm]"
+        className="relative bg-white shadow-[0_0_20px_rgba(0,0,0,0.1)] w-[210mm] min-h-[297mm] p-[16mm] flex flex-col print:shadow-none print:w-full print:p-[16mm] printable-marksheet-wrapper"
         style={{ boxSizing: 'border-box' }}
       >
         <style dangerouslySetInnerHTML={{ __html: `
@@ -97,31 +97,54 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           @media print {
             @page {
               size: A4 portrait;
-              margin: 8mm 10mm;
+              margin: 8mm 10mm !important;
             }
             
-            body {
-              background: white !important;
+            html, body, #root, main {
+              width: 210mm !important;
+              height: 280mm !important;
+              max-height: 280mm !important;
               margin: 0 !important;
               padding: 0 !important;
+              overflow: hidden !important;
+              background: #ffffff !important;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
             }
 
-            /* নেভবার বা বাটন লুকানোর জন্য */
-            .no-print, nav, header, button {
+            /* Hide all non-printable wrappers, navigation, sidebars & buttons */
+            body > *:not(.printable-marksheet-wrapper) {
+              display: none !important;
+            }
+            
+            .no-print {
               display: none !important;
             }
 
-            /* মার্কশিট কন্টেইনার অ্যাডজাস্টমেন্ট */
-            #marksheet-printable-area {
+            /* Printable Container Styling */
+            .printable-marksheet-wrapper {
+              display: block !important;
               width: 100% !important;
-              max-height: 280mm !important;
-              margin: 0 auto !important;
+              height: 100% !important;
+              max-height: 275mm !important;
+              margin: 0 !important;
               padding: 0 !important;
               box-shadow: none !important;
               border: none !important;
+              page-break-after: avoid !important;
+              page-break-before: avoid !important;
               page-break-inside: avoid !important;
+              overflow: hidden !important;
+            }
+
+            /* Convert Flex/Grid layouts to standard Block/Table display inside print to prevent blank pages */
+            .printable-marksheet-wrapper * {
+              page-break-inside: avoid !important;
+            }
+            
+            /* Reduce table cell and card paddings for tight A4 fitting */
+            table td, table th {
+              padding: 4px 6px !important;
             }
           }
 
