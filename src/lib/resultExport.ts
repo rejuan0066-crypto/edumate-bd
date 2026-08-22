@@ -408,7 +408,9 @@ export const getResultSheetHtml = ({
   .watermark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:400px;height:400px;opacity:0.04;pointer-events:none;z-index:0;display:flex;align-items:center;justify-content:center;filter:grayscale(100%);}
   .watermark img{width:100%;height:100%;object-fit:contain;}
   .header{display:grid;grid-template-columns:100px 1fr 100px;gap:12px;align-items:center;margin-bottom:15px;}
-  .header-logo{width:80px;height:80px;object-fit:contain;}
+  .header-logo{width:80px;height:80px;object-fit:contain;display:flex;align-items:center;justify-content:center;}
+  .qr-container{border:1px solid #e2e8f0;padding:4px;background:#f8fafc;border-radius:4px;}
+  .qr-img{width:100%;height:100%;object-fit:contain;}
   .header-text{text-align:center;}
   .header-text h1{font-size:24px;font-weight:800;color:#064e3b;letter-spacing:.5px;margin-bottom:4px;}
   .header-text .addr{font-size:13px;color:#334155;font-weight:500;}
