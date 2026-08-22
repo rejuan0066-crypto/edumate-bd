@@ -247,7 +247,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </div>
 
         {/* Student Information Card */}
-        <div className="bg-slate-50/80 border border-slate-200 rounded-xl p-4 mb-6 grid grid-cols-3 gap-y-3 gap-x-8 shadow-sm">
+        <div className="bg-slate-50/80 border border-slate-200 rounded-xl px-4 py-2 mb-4 grid grid-cols-3 gap-y-1.5 gap-x-8 shadow-sm">
           <div className="flex flex-col">
             <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">শিক্ষার্থী নাম (STUDENT NAME)</span>
             <span className="text-[14px] font-bold text-slate-800">{studentName}</span>
