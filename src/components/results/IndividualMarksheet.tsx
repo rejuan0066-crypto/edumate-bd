@@ -347,7 +347,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               {bn ? toBnDigits(Number(student.gpa || overall.gpa).toFixed(2)) : Number(student.gpa || overall.gpa).toFixed(2)}
             </span>
           </div>
-          <div className="bg-white border border-slate-200 p-4 rounded-xl text-center shadow-sm flex flex-col items-center justify-center">
+          <div className="bg-white border border-slate-200 p-3 rounded-lg text-center shadow-sm flex flex-col items-center justify-center">
             <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">গ্রেড</span>
             <span className={cn(
               "text-white text-[14px] px-5 py-1 rounded-full font-bold shadow-sm",
