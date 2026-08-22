@@ -372,41 +372,41 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </div>
 
         {/* Grading Scale & Signatures */}
-        <div className="mt-5 flex justify-between items-end gap-12">
+        <div className="mt-auto flex justify-between items-end gap-12 pt-8 pb-4">
           {/* Reference Key */}
-          <div className="w-[200px] border border-slate-100 p-3 rounded-lg bg-slate-50/50">
-            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mb-2 border-b border-slate-200 pb-1">Grading Scale</h4>
-            <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[9px] font-medium text-slate-500">
-              <div className="flex justify-between"><span>80-100</span> <span className="text-emerald-700 font-bold">A+ (5.0)</span></div>
-              <div className="flex justify-between"><span>70-79</span> <span className="text-emerald-700 font-bold">A (4.0)</span></div>
-              <div className="flex justify-between"><span>60-69</span> <span className="text-emerald-700 font-bold">A- (3.5)</span></div>
-              <div className="flex justify-between"><span>50-59</span> <span className="text-emerald-700 font-bold">B (3.0)</span></div>
-              <div className="flex justify-between"><span>40-49</span> <span className="text-emerald-700 font-bold">C (2.0)</span></div>
-              <div className="flex justify-between"><span>33-39</span> <span className="text-emerald-700 font-bold">D (1.0)</span></div>
-              <div className="flex justify-between"><span>00-32</span> <span className="text-rose-700 font-bold">F (0.0)</span></div>
+          <div className="w-[220px] border border-slate-200 p-4 rounded-xl bg-slate-50/50 shadow-sm">
+            <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 border-b border-slate-200 pb-1.5">Grading Scale</h4>
+            <div className="grid grid-cols-1 gap-y-1.5 text-[10px] font-medium text-slate-600">
+              <div className="flex justify-between items-center"><span>80-100</span> <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold border border-emerald-100">A+ (5.0)</span></div>
+              <div className="flex justify-between items-center"><span>70-79</span> <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold border border-emerald-100">A (4.0)</span></div>
+              <div className="flex justify-between items-center"><span>60-69</span> <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold border border-emerald-100">A- (3.5)</span></div>
+              <div className="flex justify-between items-center"><span>50-59</span> <span className="bg-amber-50 text-amber-700 px-2 py-0.5 rounded font-bold border border-amber-100">B (3.0)</span></div>
+              <div className="flex justify-between items-center"><span>40-49</span> <span className="bg-orange-50 text-orange-700 px-2 py-0.5 rounded font-bold border border-orange-100">C (2.0)</span></div>
+              <div className="flex justify-between items-center"><span>33-39</span> <span className="bg-orange-50 text-orange-700 px-2 py-0.5 rounded font-bold border border-orange-100">D (1.0)</span></div>
+              <div className="flex justify-between items-center"><span>00-32</span> <span className="bg-rose-50 text-rose-700 px-2 py-0.5 rounded font-bold border border-rose-100">F (0.0)</span></div>
             </div>
           </div>
 
           {/* Signature Grid */}
-          <div className="flex-1 grid grid-cols-4 gap-4 text-center">
-            <div className="flex flex-col gap-1">
-              <div className="w-full border-t border-dotted border-slate-400 pt-1"></div>
-              <span className="text-[11px] font-bold text-slate-600">শ্রেণি শিক্ষক</span>
+          <div className="flex-1 grid grid-cols-4 gap-6 text-center">
+            <div className="flex flex-col justify-end">
+              <div className="w-full border-t border-dotted border-slate-400 mb-2"></div>
+              <span className="text-[12px] font-bold text-slate-700">শ্রেণি শিক্ষক</span>
             </div>
-            <div className="flex flex-col gap-1">
-              <div className="w-full border-t border-dotted border-slate-400 pt-1"></div>
-              <span className="text-[11px] font-bold text-slate-600">পরীক্ষা নিয়ন্ত্রক</span>
+            <div className="flex flex-col justify-end">
+              <div className="w-full border-t border-dotted border-slate-400 mb-2"></div>
+              <span className="text-[12px] font-bold text-slate-700">পরীক্ষা নিয়ন্ত্রক</span>
             </div>
-            <div className="flex flex-col gap-1">
-              <div className="w-full border-t border-dotted border-slate-400 pt-1"></div>
-              <span className="text-[11px] font-bold text-slate-600">অভিভাবক</span>
+            <div className="flex flex-col justify-end">
+              <div className="w-full border-t border-dotted border-slate-400 mb-2"></div>
+              <span className="text-[12px] font-bold text-slate-700">অভিভাবক</span>
             </div>
-            <div className="flex flex-col gap-1 items-center">
-              <div className="w-16 h-16 border-2 border-dashed border-emerald-100 rounded-full flex items-center justify-center mb-1">
-                <span className="text-[7px] text-slate-300 font-bold opacity-50">OFFICIAL SEAL</span>
+            <div className="flex flex-col items-center justify-end">
+              <div className="w-16 h-16 border border-dashed border-emerald-200 rounded-full flex items-center justify-center mb-3 bg-emerald-50/20">
+                <span className="text-[8px] text-emerald-600/30 font-bold tracking-tighter uppercase leading-none">OFFICIAL SEAL</span>
               </div>
-              <div className="w-full border-t border-dotted border-slate-400 pt-1"></div>
-              <span className="text-[11px] font-bold text-slate-600 uppercase">মুহতামিম / অধ্যক্ষ</span>
+              <div className="w-full border-t border-dotted border-slate-400 mb-2"></div>
+              <span className="text-[12px] font-bold text-slate-700 uppercase">মুহতামিম / অধ্যক্ষ</span>
             </div>
           </div>
         </div>
