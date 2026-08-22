@@ -154,10 +154,11 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             text-align: center;
           }
           .marksheet-table th {
-            background-color: #065f46;
+            background-color: #065F46;
             color: white;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 14px;
+            padding: 12px 6px;
           }
           .marksheet-table tr:nth-child(even) {
             background-color: #f8fafc;
