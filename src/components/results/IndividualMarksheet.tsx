@@ -83,7 +83,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         }
 
         @media print {
-          @page { size: A4 portrait; margin: 6mm; }
+          @page { size: A4 portrait; margin: 4mm; }
 
           html, body {
             height: 100vh !important;
