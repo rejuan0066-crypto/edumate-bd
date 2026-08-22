@@ -200,7 +200,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         <div className="absolute top-[6px] left-0 w-full h-[2px] bg-[#d97706]"></div>
 
         {/* Header Section */}
-        <div className="flex justify-between items-start mt-2 mb-6">
+        <div className="flex justify-between items-start py-2 mb-4">
           {/* Logo */}
           <div className="w-[85px] h-[85px] rounded-full border-[2px] border-[#065f46] p-[3px] flex items-center justify-center bg-white shadow-md overflow-hidden relative group">
             <div className="w-full h-full rounded-full border border-emerald-100 flex items-center justify-center bg-emerald-50/20">
