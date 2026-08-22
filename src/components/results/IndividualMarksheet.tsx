@@ -326,6 +326,22 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               {bn ? toBnDigits(Number(student.gpa || overall.gpa).toFixed(2)) : Number(student.gpa || overall.gpa).toFixed(2)}
             </span>
           </div>
+          <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl text-center shadow-sm">
+            <span className="text-[10px] text-emerald-600 font-bold uppercase block mb-1">চূড়ান্ত গ্রেড</span>
+            <span className={cn(
+              "text-white text-[12px] px-3 py-0.5 rounded-full font-bold",
+              (() => {
+                const hasFailedSubject = subjectResults.some(r => r.grade === 'F');
+                const isFail = (student.letter_grade || overall.grade) === 'F' || hasFailedSubject;
+                return !isFail ? 'bg-emerald-600' : 'bg-rose-600';
+              })()
+            )}>
+              {(() => {
+                const hasFailedSubject = subjectResults.some(r => r.grade === 'F');
+                return hasFailedSubject ? 'F' : (student.letter_grade || overall.grade);
+              })()}
+            </span>
+          </div>
           <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl text-center">
             <span className="text-[10px] text-emerald-500 font-bold uppercase block mb-1">মর্যাদা</span>
             <span className="text-[18px] font-black text-emerald-900">
@@ -347,22 +363,6 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
                 if (gpa >= 3.0) return "জায়্যিদ";
                 if (gpa >= 1.0) return "মাকবুল";
                 return "রাসিব";
-              })()}
-            </span>
-          </div>
-          <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl text-center shadow-sm">
-            <span className="text-[10px] text-emerald-600 font-bold uppercase block mb-1">চূড়ান্ত গ্রেড</span>
-            <span className={cn(
-              "text-white text-[12px] px-3 py-0.5 rounded-full font-bold",
-              (() => {
-                const hasFailedSubject = subjectResults.some(r => r.grade === 'F');
-                const isFail = (student.letter_grade || overall.grade) === 'F' || hasFailedSubject;
-                return !isFail ? 'bg-emerald-600' : 'bg-rose-600';
-              })()
-            )}>
-              {(() => {
-                const hasFailedSubject = subjectResults.some(r => r.grade === 'F');
-                return hasFailedSubject ? 'F' : (student.letter_grade || overall.grade);
               })()}
             </span>
           </div>
