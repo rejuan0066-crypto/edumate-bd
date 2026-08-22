@@ -341,7 +341,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               {student.rank ? toBnDigits(student.rank) + 'তম' : '-'}
             </span>
           </div>
-          <div className="bg-white border border-slate-200 p-4 rounded-xl text-center shadow-sm">
+          <div className="bg-white border border-slate-200 p-3 rounded-lg text-center shadow-sm">
             <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">সর্বমোট GPA</span>
             <span className="text-[22px] font-bold text-slate-800">
               {bn ? toBnDigits(Number(student.gpa || overall.gpa).toFixed(2)) : Number(student.gpa || overall.gpa).toFixed(2)}
