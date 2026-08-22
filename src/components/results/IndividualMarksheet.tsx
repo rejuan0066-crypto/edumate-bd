@@ -57,7 +57,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
   };
 
   return (
-    <div className="flex flex-col items-center min-h-screen bg-slate-50 p-4 print:p-0 print:bg-white">
+    <div className="flex flex-col items-center min-h-screen bg-slate-50 p-4 print:p-0 print:bg-white printable-area">
       {/* Top Utility Bar */}
       <div className="w-full max-w-[210mm] flex justify-between items-center mb-6 no-print print:hidden">
         <Button variant="ghost" size="sm" onClick={onBack} className="gap-2 text-slate-600 hover:text-emerald-700">
@@ -83,7 +83,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
       {/* Main A4 Container */}
       <div 
         id="marksheet-printable-area" 
-        className="relative bg-white shadow-[0_0_20px_rgba(0,0,0,0.1)] w-[210mm] min-h-[297mm] p-[16mm] flex flex-col print:shadow-none print:w-full print:p-[16mm] printable-marksheet-wrapper"
+        className="relative bg-white shadow-[0_0_20px_rgba(0,0,0,0.1)] w-[210mm] min-h-[297mm] p-[16mm] flex flex-col print:shadow-none print:w-full print:p-[16mm]"
         style={{ boxSizing: 'border-box' }}
       >
         <style dangerouslySetInnerHTML={{ __html: `
@@ -95,53 +95,41 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           }
 
           @media print {
-            @page {
-              size: A4 portrait;
-              margin: 8mm 10mm !important;
-            }
-            
-            html, body, #root, main {
-              width: 210mm !important;
-              height: 280mm !important;
-              max-height: 280mm !important;
+            /* Reset parent containers that block overflow */
+            html, body, #root, main, div:has(.printable-area) {
+              height: auto !important;
+              min-height: 0 !important;
+              max-height: none !important;
+              position: static !important;
+              overflow: visible !important;
               margin: 0 !important;
               padding: 0 !important;
-              overflow: hidden !important;
               background: #ffffff !important;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
             }
 
-            /* Hide all non-printable wrappers, navigation, sidebars & buttons */
-            body > *:not(.printable-marksheet-wrapper) {
-              display: none !important;
-            }
-            
-            .no-print {
+            /* Hide everything outside the mark sheet */
+            body > *:not(.printable-area) {
               display: none !important;
             }
 
-            /* Printable Container Styling */
-            .printable-marksheet-wrapper {
+            /* Ensure the printable container displays as block from top */
+            .printable-area {
               display: block !important;
+              position: relative !important;
               width: 100% !important;
-              height: 100% !important;
-              max-height: 275mm !important;
-              margin: 0 !important;
+              max-width: 210mm !important;
+              margin: 0 auto !important;
               padding: 0 !important;
-              box-shadow: none !important;
-              border: none !important;
-              page-break-after: avoid !important;
-              page-break-before: avoid !important;
               page-break-inside: avoid !important;
-              overflow: hidden !important;
             }
 
-            /* Convert Flex/Grid layouts to standard Block/Table display inside print to prevent blank pages */
-            .printable-marksheet-wrapper * {
-              page-break-inside: avoid !important;
+            @page {
+              size: A4 portrait;
+              margin: 10mm;
             }
-            
+
             /* Reduce table cell and card paddings for tight A4 fitting */
             table td, table th {
               padding: 4px 6px !important;
