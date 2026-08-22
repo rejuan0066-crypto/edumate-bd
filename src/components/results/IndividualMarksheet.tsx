@@ -410,20 +410,20 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           </div>
 
           {/* Signature Grid */}
-          <div className="flex-1 flex justify-between items-end px-4">
-            <div className="flex flex-col items-center w-[200px]">
+          <div className="flex-1 flex justify-between items-end px-4 mb-4">
+            <div className="flex flex-col items-center w-[180px]">
               <div className="w-full border-t border-dotted border-slate-400 mb-2"></div>
-              <span className="text-[12px] font-bold text-slate-700">পরীক্ষা নিয়ন্ত্রক</span>
-              <span className="text-[9px] text-slate-400 font-medium uppercase tracking-tighter">(EXAM CONTROLLER)</span>
+              <span className="text-[11px] font-bold text-slate-700">পরীক্ষা নিয়ন্ত্রক</span>
+              <span className="text-[8px] text-slate-400 font-medium uppercase tracking-tighter">(EXAM CONTROLLER)</span>
             </div>
             
-            <div className="flex flex-col items-center w-[220px]">
-              <div className="w-16 h-16 border border-dashed border-emerald-200 rounded-full flex items-center justify-center mb-2 bg-emerald-50/20">
-                <span className="text-[8px] text-emerald-600/30 font-bold tracking-tighter uppercase leading-none">OFFICIAL SEAL</span>
+            <div className="flex flex-col items-center w-[200px]">
+              <div className="w-14 h-14 border border-dashed border-emerald-200 rounded-full flex items-center justify-center mb-1 bg-emerald-50/20">
+                <span className="text-[7px] text-emerald-600/30 font-bold tracking-tighter uppercase leading-none">OFFICIAL SEAL</span>
               </div>
               <div className="w-full border-t border-dotted border-slate-400 mb-2"></div>
-              <span className="text-[12px] font-bold text-slate-700 uppercase">মুহতামিম / অধ্যক্ষ</span>
-              <span className="text-[9px] text-slate-400 font-medium uppercase tracking-tighter">(PRINCIPAL / HEADMASTER)</span>
+              <span className="text-[11px] font-bold text-slate-700 uppercase">মুহতামিম / অধ্যক্ষ</span>
+              <span className="text-[8px] text-slate-400 font-medium uppercase tracking-tighter">(PRINCIPAL / HEADMASTER)</span>
             </div>
           </div>
         </div>
