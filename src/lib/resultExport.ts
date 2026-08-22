@@ -1,5 +1,6 @@
 import { CANONICAL_BANGLA_LABELS as L } from './banglaCanonicalLabels';
 import { formatOrdinalRank, toBnDigits } from './digits';
+import QRCode from 'qrcode';
 
 
 interface ExportData {
@@ -151,8 +152,16 @@ export const exportResultCSV = (params: ExportData) => {
 };
 
 export const exportResultPDF = async (params: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
+  let qrCodeDataUrl = '';
+  try {
+    const qrUrl = `${window.location.origin}/verify-receipt/${params.title.replace(/\s+/g, '_')}`;
+    qrCodeDataUrl = await QRCode.toDataURL(qrUrl, { margin: 1, width: 120 });
+  } catch (err) {
+    console.error('QR generation failed:', err);
+  }
+
   if (isMobileOrPwa()) {
-    const html = getResultSheetHtml(params);
+    const html = getResultSheetHtml({ ...params, qrCodeDataUrl });
     const fname = `${safeFileName(buildResultDocName(params))}.pdf`;
     try {
       const { toast } = await import('sonner');
@@ -165,7 +174,7 @@ export const exportResultPDF = async (params: ExportData & { orientation?: 'land
     }
     return;
   }
-  printResultSheet(params);
+  printResultSheet({ ...params, qrCodeDataUrl });
 };
 
 const isMobileOrPwa = (): boolean => {
@@ -188,8 +197,8 @@ export const getResultSheetHtml = ({
   title, students, subjects, marksMap, getOverallGrade, bn, institutionName, 
   institutionLogo, institutionAddress, institutionPhone, className, examName, 
   sessionName, passMark = 33, signatories, orientation = 'landscape', 
-  showPageNumbers = true, showFooterInstitution = true, margins 
-}: ExportData & { orientation?: 'landscape' | 'portrait' }): string => {
+  showPageNumbers = true, showFooterInstitution = true, margins, qrCodeDataUrl
+}: ExportData & { orientation?: 'landscape' | 'portrait', qrCodeDataUrl?: string }): string => {
   const m = sanitizeMargins(margins);
   const docName = buildResultDocName({ examName, sessionName, className, title });
   const sigList = (signatories && signatories.length ? signatories : DEFAULT_RESULT_SIGNATORIES).slice(0, 4);
@@ -303,7 +312,9 @@ export const getResultSheetHtml = ({
               <div class="addr">${institutionAddress || ''}</div>
               <div class="phone">${institutionPhone || ''}</div>
             </div>
-            <div class="header-logo"></div>
+            <div class="header-logo qr-container">
+              ${qrCodeDataUrl ? `<img src="${qrCodeDataUrl}" class="qr-img" alt="QR">` : ''}
+            </div>
           </header>
 
           <div class="doc-band"><span>${title}</span></div>
@@ -405,7 +416,9 @@ export const getResultSheetHtml = ({
   .watermark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:400px;height:400px;opacity:0.04;pointer-events:none;z-index:0;display:flex;align-items:center;justify-content:center;filter:grayscale(100%);}
   .watermark img{width:100%;height:100%;object-fit:contain;}
   .header{display:grid;grid-template-columns:100px 1fr 100px;gap:12px;align-items:center;margin-bottom:15px;}
-  .header-logo{width:80px;height:80px;object-fit:contain;}
+  .header-logo{width:80px;height:80px;object-fit:contain;display:flex;align-items:center;justify-content:center;}
+  .qr-container{border:1px solid #e2e8f0;padding:4px;background:#f8fafc;border-radius:4px;}
+  .qr-img{width:100%;height:100%;object-fit:contain;}
   .header-text{text-align:center;}
   .header-text h1{font-size:24px;font-weight:800;color:#064e3b;letter-spacing:.5px;margin-bottom:4px;}
   .header-text .addr{font-size:13px;color:#334155;font-weight:500;}
@@ -530,7 +543,7 @@ ${pagesHtml}
 </body></html>`;
 };
 
-export const printResultSheet = (params: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
+export const printResultSheet = (params: ExportData & { orientation?: 'landscape' | 'portrait', qrCodeDataUrl?: string }) => {
   const html = getResultSheetHtml(params);
   renderPrintDocument(html, buildResultDocName(params));
 };
