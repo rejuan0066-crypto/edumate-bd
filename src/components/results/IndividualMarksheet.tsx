@@ -329,7 +329,21 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl text-center">
             <span className="text-[10px] text-emerald-500 font-bold uppercase block mb-1">মর্যাদা</span>
             <span className="text-[18px] font-black text-emerald-900">
-              {student.division || overall.merit_title || (student.letter_grade === 'F' ? 'রাসিব' : overall.grade)}
+              {(() => {
+                const gpa = Number(student.gpa || overall.gpa);
+                const isFail = student.letter_grade === 'F' || overall.grade === 'F' || gpa === 0;
+                
+                if (student.division || student.status_text || student.madrasha_grade) {
+                  return student.division || student.status_text || student.madrasha_grade;
+                }
+                
+                if (isFail) return "রাসিব";
+                if (gpa >= 5.0) return "মুমতাজ";
+                if (gpa >= 4.0) return "জয়্যিদ জিদ্দান";
+                if (gpa >= 3.0) return "জয়্যিদ";
+                if (gpa >= 1.0) return "মাকবুল";
+                return "রাসিব";
+              })()}
             </span>
           </div>
           <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl text-center shadow-sm">
