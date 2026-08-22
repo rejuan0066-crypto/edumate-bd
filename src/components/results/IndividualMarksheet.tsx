@@ -95,44 +95,44 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           }
 
           @media print {
-            /* Reset parent containers that block overflow */
-            html, body, #root, main, div:has(.printable-area) {
-              height: auto !important;
-              min-height: 0 !important;
-              max-height: none !important;
-              position: static !important;
-              overflow: visible !important;
+            /* Hide every single element on the page by default */
+            body * {
+              visibility: hidden !important;
+            }
+
+            /* Force clean white page background */
+            html, body {
+              background: #ffffff !important;
+              background-image: none !important;
               margin: 0 !important;
               padding: 0 !important;
-              background: #ffffff !important;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
             }
 
-            /* Hide everything outside the mark sheet */
-            body > *:not(.printable-area) {
-              display: none !important;
+            /* Make ONLY the printable marksheet and its children visible */
+            .printable-marksheet, 
+            .printable-marksheet * {
+              visibility: visible !important;
             }
 
-            /* Ensure the printable container displays as block from top */
-            .printable-area {
-              display: block !important;
-              position: relative !important;
+            /* Position the marksheet at the absolute top-left of the A4 page */
+            .printable-marksheet {
+              position: absolute !important;
+              left: 0 !important;
+              top: 0 !important;
               width: 100% !important;
               max-width: 210mm !important;
-              margin: 0 auto !important;
-              padding: 0 !important;
-              page-break-inside: avoid !important;
+              background: #ffffff !important;
+              box-shadow: none !important;
+              border: none !important;
+              padding: 10mm !important;
+              margin: 0 !important;
             }
 
             @page {
               size: A4 portrait;
-              margin: 10mm;
-            }
-
-            /* Reduce table cell and card paddings for tight A4 fitting */
-            table td, table th {
-              padding: 4px 6px !important;
+              margin: 0;
             }
           }
 
