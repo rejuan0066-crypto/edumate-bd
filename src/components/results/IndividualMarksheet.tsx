@@ -111,6 +111,11 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               overflow: hidden !important;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
+              color-adjust: exact !important;
+            }
+            .grade-badge, .bg-emerald-600, .bg-rose-600, .bg-slate-50, .bg-emerald-50, .bg-emerald-50\/20, .bg-emerald-50\/80 {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
             }
 
             /* Make ONLY the printable marksheet and its children visible */
@@ -154,10 +159,11 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             text-align: center;
           }
           .marksheet-table th {
-            background-color: #065f46;
+            background-color: #065F46;
             color: white;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 14px;
+            padding: 12px 6px;
           }
           .marksheet-table tr:nth-child(even) {
             background-color: #f8fafc;
@@ -171,16 +177,21 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           }
 
           .grade-badge {
-            padding: 2px 8px;
+            padding: 4px 12px;
             border-radius: 9999px;
-            font-size: 12px;
-            font-weight: 600;
+            font-size: 13px;
+            font-weight: 700;
+            display: inline-block;
+            min-width: 45px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
           }
-          .grade-a-plus { background-color: #dcfce7; color: #166534; }
-          .grade-a { background-color: #dcfce7; color: #15803d; }
-          .grade-b { background-color: #fef9c3; color: #854d0e; }
-          .grade-c { background-color: #ffedd5; color: #9a3412; }
-          .grade-f { background-color: #fee2e2; color: #991b1b; }
+          .grade-a-plus { background-color: #ECFDF5; color: #065F46; border: 1px solid #D1FAE5; }
+          .grade-a { background-color: #ECFDF5; color: #059669; border: 1px solid #D1FAE5; }
+          .grade-a-minus { background-color: #F0FDF4; color: #16A34A; border: 1px solid #DCFCE7; }
+          .grade-b { background-color: #FFFBEB; color: #D97706; border: 1px solid #FEF3C7; }
+          .grade-c { background-color: #FFF7ED; color: #EA580C; border: 1px solid #FFEDD5; }
+          .grade-d { background-color: #FFF7ED; color: #C2410C; border: 1px solid #FFEDD5; }
+          .grade-f { background-color: #FEF2F2; color: #DC2626; border: 1px solid #FEE2E2; }
         `}} />
 
         {/* Decorative Top Accent */}
@@ -190,12 +201,12 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         {/* Header Section */}
         <div className="flex justify-between items-start mt-4 mb-8">
           {/* Logo */}
-          <div className="w-[80px] h-[80px] rounded-full border-[3px] border-[#065f46] p-[2px] flex items-center justify-center bg-white shadow-sm overflow-hidden">
-            <div className="w-full h-full rounded-full border border-[#d97706] flex items-center justify-center">
+          <div className="w-[85px] h-[85px] rounded-full border-[2px] border-[#065f46] p-[3px] flex items-center justify-center bg-white shadow-md overflow-hidden relative group">
+            <div className="w-full h-full rounded-full border border-emerald-100 flex items-center justify-center bg-emerald-50/20">
               {institution?.logo_url ? (
-                <img src={institution.logo_url} alt="Logo" className="w-12 h-12 object-contain" />
+                <img src={institution.logo_url} alt="Logo" className="w-14 h-14 object-contain" />
               ) : (
-                <div className="text-[#065f46] font-bold text-xs text-center leading-tight">LOGO</div>
+                <div className="text-[#065f46] font-bold text-[10px] text-center leading-tight">LOGO</div>
               )}
             </div>
           </div>
@@ -223,44 +234,42 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
 
         {/* Divider & Title */}
         <div className="relative mb-8 text-center">
-          <div className="absolute top-1/2 left-0 w-full h-[1px] bg-emerald-100"></div>
-          <div className="relative inline-block bg-white px-6">
-            <div className="text-emerald-700 flex items-center gap-2">
-              <span className="text-[10px]">◆</span>
-              <div className="bg-emerald-50 px-8 py-2 rounded-full border border-emerald-100 shadow-sm">
-                <h2 className="text-[#065f46] text-[18px] font-bold leading-none mb-1">একাডেমিক ট্রান্সক্রিপ্ট / মার্কশিট</h2>
-                <p className="text-amber-700 text-[12px] font-medium">{resolvedExam} — {resolvedClass}</p>
+          <div className="absolute top-1/2 left-0 w-full h-[1px] bg-slate-100"></div>
+          <div className="relative inline-block bg-white px-8">
+            <div className="text-emerald-700 flex flex-col items-center">
+              <div className="bg-emerald-50/80 px-10 py-3 rounded-full border border-emerald-200 shadow-sm backdrop-blur-sm">
+                <h2 className="text-[#065F46] text-[20px] font-bold leading-none mb-1 tracking-tight">একাডেমিক ট্রান্সক্রিপ্ট / মার্কশিট</h2>
+                <p className="text-emerald-700/70 text-[12px] font-semibold tracking-wide uppercase">{resolvedExam} — {resolvedClass}</p>
               </div>
-              <span className="text-[10px]">◆</span>
             </div>
           </div>
         </div>
 
         {/* Student Information Card */}
-        <div className="bg-[#fafaf9] border border-emerald-100 rounded-2xl p-6 mb-8 grid grid-cols-3 gap-y-4 gap-x-8">
+        <div className="bg-slate-50/80 border border-slate-200 rounded-2xl p-6 mb-8 grid grid-cols-3 gap-y-4 gap-x-8 shadow-sm">
           <div className="flex flex-col">
-            <span className="text-[12px] text-slate-400 font-bold uppercase tracking-wider mb-1">শিক্ষার্থী নাম (Student Name)</span>
-            <span className="text-[15px] font-bold text-slate-700">{studentName}</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1.5">শিক্ষার্থী নাম (Student Name)</span>
+            <span className="text-[16px] font-bold text-slate-800">{studentName}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[12px] text-slate-400 font-bold uppercase tracking-wider mb-1">রোল নম্বর (Roll No)</span>
-            <span className="text-[15px] font-bold text-slate-700">{isSample ? '1001' : toBnDigits(student.roll_number)}</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1.5">রোল নম্বর (Roll No)</span>
+            <span className="text-[16px] font-bold text-slate-800">{isSample ? '1001' : toBnDigits(student.roll_number)}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[12px] text-slate-400 font-bold uppercase tracking-wider mb-1">রেজিস্ট্রেশন (Reg No)</span>
-            <span className="text-[15px] font-bold text-slate-700">{student.registration_number || '20261002'}</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1.5">রেজিস্ট্রেশন (Reg No)</span>
+            <span className="text-[16px] font-bold text-slate-800">{student.registration_number || '20261002'}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[12px] text-slate-400 font-bold uppercase tracking-wider mb-1">জন্ম তারিখ (DOB)</span>
-            <span className="text-[15px] font-bold text-slate-700">{student.date_of_birth || '১৫ মে, ২০১৮'}</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1.5">জন্ম তারিখ (DOB)</span>
+            <span className="text-[16px] font-bold text-slate-800">{student.date_of_birth || '১৫ মে, ২০১৮'}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[12px] text-slate-400 font-bold uppercase tracking-wider mb-1">শ্রেণি (Class)</span>
-            <span className="text-[15px] font-bold text-slate-700">{resolvedClass}</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1.5">শ্রেণি (Class)</span>
+            <span className="text-[16px] font-bold text-slate-800">{resolvedClass}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[12px] text-slate-400 font-bold uppercase tracking-wider mb-1">শিক্ষাবর্ষ (Session)</span>
-            <span className="text-[15px] font-bold text-slate-700">{resolvedSession}</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1.5">শিক্ষাবর্ষ (Session)</span>
+            <span className="text-[16px] font-bold text-slate-800">{resolvedSession}</span>
           </div>
         </div>
 
@@ -289,10 +298,10 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
                       "grade-badge",
                       r.grade === 'A+' ? 'grade-a-plus' : 
                       r.grade === 'A' ? 'grade-a' :
-                      r.grade === 'A-' ? 'grade-a' :
+                      r.grade === 'A-' ? 'grade-a-minus' :
                       r.grade === 'B' ? 'grade-b' :
                       r.grade === 'C' ? 'grade-c' :
-                      r.grade === 'D' ? 'grade-c' : 'grade-f'
+                      r.grade === 'D' ? 'grade-d' : 'grade-f'
                     )}>
                       {r.grade}
                     </span>
@@ -308,28 +317,28 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
 
         {/* Summary & Result Statistics Cards */}
         <div className="grid grid-cols-5 gap-4 mt-8 mb-8">
-          <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl text-center">
-            <span className="text-[10px] text-blue-500 font-bold uppercase block mb-1">মোট নম্বর</span>
-            <span className="text-[18px] font-black text-blue-900">
+          <div className="bg-white border border-slate-200 p-4 rounded-xl text-center shadow-sm">
+            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">মোট নম্বর</span>
+            <span className="text-[22px] font-bold text-slate-800">
               {bn ? toBnDigits(student.total_marks || totalMarks) : (student.total_marks || totalMarks)}
             </span>
           </div>
-          <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl text-center">
-            <span className="text-[10px] text-amber-500 font-bold uppercase block mb-1">মেধা স্থান</span>
-            <span className="text-[18px] font-black text-amber-900">
+          <div className="bg-white border border-slate-200 p-4 rounded-xl text-center shadow-sm">
+            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">মেধা স্থান</span>
+            <span className="text-[22px] font-bold text-slate-800">
               {student.rank ? toBnDigits(student.rank) + 'তম' : '-'}
             </span>
           </div>
-          <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl text-center">
-            <span className="text-[10px] text-indigo-500 font-bold uppercase block mb-1">সর্বমোট GPA</span>
-            <span className="text-[18px] font-black text-indigo-900">
+          <div className="bg-white border border-slate-200 p-4 rounded-xl text-center shadow-sm">
+            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">সর্বমোট GPA</span>
+            <span className="text-[22px] font-bold text-slate-800">
               {bn ? toBnDigits(Number(student.gpa || overall.gpa).toFixed(2)) : Number(student.gpa || overall.gpa).toFixed(2)}
             </span>
           </div>
-          <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl text-center shadow-sm">
-            <span className="text-[10px] text-emerald-600 font-bold uppercase block mb-1">গ্রেড</span>
+          <div className="bg-white border border-slate-200 p-4 rounded-xl text-center shadow-sm flex flex-col items-center justify-center">
+            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">গ্রেড</span>
             <span className={cn(
-              "text-white text-[12px] px-3 py-0.5 rounded-full font-bold",
+              "text-white text-[14px] px-5 py-1 rounded-full font-bold shadow-sm",
               (() => {
                 const hasFailedSubject = subjectResults.some(r => r.grade === 'F');
                 const isFail = (student.letter_grade || overall.grade) === 'F' || hasFailedSubject;
@@ -342,22 +351,26 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               })()}
             </span>
           </div>
-          <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl text-center">
-            <span className="text-[10px] text-emerald-500 font-bold uppercase block mb-1">মর্যাদা</span>
-            <span className="text-[18px] font-black text-emerald-900">
+          <div className="bg-white border border-slate-200 p-4 rounded-xl text-center shadow-sm flex flex-col items-center justify-center">
+            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">মর্যাদা</span>
+            <span className={cn(
+              "text-[14px] font-bold px-4 py-1 rounded-full",
+              (() => {
+                const gpa = Number(student.gpa || overall.gpa);
+                const hasFailedSubject = subjectResults.some(r => r.grade === 'F');
+                const isFail = student.letter_grade === 'F' || overall.grade === 'F' || gpa === 0 || hasFailedSubject;
+                return isFail ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+              })()
+            )}>
               {(() => {
                 const gpa = Number(student.gpa || overall.gpa);
-                // Check if any subject mark is below pass mark or grade is F
                 const hasFailedSubject = subjectResults.some(r => r.grade === 'F');
                 const isFail = student.letter_grade === 'F' || overall.grade === 'F' || gpa === 0 || hasFailedSubject;
                 
                 if (isFail) return "রাসিব";
-                
-                // If there's an explicit division from backend, use it
                 if (student.division || student.status_text || student.madrasha_grade) {
                   return student.division || student.status_text || student.madrasha_grade;
                 }
-                
                 if (gpa >= 5.0) return "মুমতাজ";
                 if (gpa >= 4.0) return "জায়্যিদ জিদ্দান";
                 if (gpa >= 3.0) return "জায়্যিদ";
@@ -369,41 +382,41 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </div>
 
         {/* Grading Scale & Signatures */}
-        <div className="mt-5 flex justify-between items-end gap-12">
+        <div className="mt-auto flex justify-between items-end gap-12 pt-8 pb-4">
           {/* Reference Key */}
-          <div className="w-[200px] border border-slate-100 p-3 rounded-lg bg-slate-50/50">
-            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mb-2 border-b border-slate-200 pb-1">Grading Scale</h4>
-            <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[9px] font-medium text-slate-500">
-              <div className="flex justify-between"><span>80-100</span> <span className="text-emerald-700 font-bold">A+ (5.0)</span></div>
-              <div className="flex justify-between"><span>70-79</span> <span className="text-emerald-700 font-bold">A (4.0)</span></div>
-              <div className="flex justify-between"><span>60-69</span> <span className="text-emerald-700 font-bold">A- (3.5)</span></div>
-              <div className="flex justify-between"><span>50-59</span> <span className="text-emerald-700 font-bold">B (3.0)</span></div>
-              <div className="flex justify-between"><span>40-49</span> <span className="text-emerald-700 font-bold">C (2.0)</span></div>
-              <div className="flex justify-between"><span>33-39</span> <span className="text-emerald-700 font-bold">D (1.0)</span></div>
-              <div className="flex justify-between"><span>00-32</span> <span className="text-rose-700 font-bold">F (0.0)</span></div>
+          <div className="w-[220px] border border-slate-200 p-4 rounded-xl bg-slate-50/50 shadow-sm">
+            <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 border-b border-slate-200 pb-1.5">Grading Scale</h4>
+            <div className="grid grid-cols-1 gap-y-1.5 text-[10px] font-medium text-slate-600">
+              <div className="flex justify-between items-center"><span>80-100</span> <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold border border-emerald-100">A+ (5.0)</span></div>
+              <div className="flex justify-between items-center"><span>70-79</span> <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold border border-emerald-100">A (4.0)</span></div>
+              <div className="flex justify-between items-center"><span>60-69</span> <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold border border-emerald-100">A- (3.5)</span></div>
+              <div className="flex justify-between items-center"><span>50-59</span> <span className="bg-amber-50 text-amber-700 px-2 py-0.5 rounded font-bold border border-amber-100">B (3.0)</span></div>
+              <div className="flex justify-between items-center"><span>40-49</span> <span className="bg-orange-50 text-orange-700 px-2 py-0.5 rounded font-bold border border-orange-100">C (2.0)</span></div>
+              <div className="flex justify-between items-center"><span>33-39</span> <span className="bg-orange-50 text-orange-700 px-2 py-0.5 rounded font-bold border border-orange-100">D (1.0)</span></div>
+              <div className="flex justify-between items-center"><span>00-32</span> <span className="bg-rose-50 text-rose-700 px-2 py-0.5 rounded font-bold border border-rose-100">F (0.0)</span></div>
             </div>
           </div>
 
           {/* Signature Grid */}
-          <div className="flex-1 grid grid-cols-4 gap-4 text-center">
-            <div className="flex flex-col gap-1">
-              <div className="w-full border-t border-dotted border-slate-400 pt-1"></div>
-              <span className="text-[11px] font-bold text-slate-600">শ্রেণি শিক্ষক</span>
+          <div className="flex-1 grid grid-cols-4 gap-6 text-center">
+            <div className="flex flex-col justify-end">
+              <div className="w-full border-t border-dotted border-slate-400 mb-2"></div>
+              <span className="text-[12px] font-bold text-slate-700">শ্রেণি শিক্ষক</span>
             </div>
-            <div className="flex flex-col gap-1">
-              <div className="w-full border-t border-dotted border-slate-400 pt-1"></div>
-              <span className="text-[11px] font-bold text-slate-600">পরীক্ষা নিয়ন্ত্রক</span>
+            <div className="flex flex-col justify-end">
+              <div className="w-full border-t border-dotted border-slate-400 mb-2"></div>
+              <span className="text-[12px] font-bold text-slate-700">পরীক্ষা নিয়ন্ত্রক</span>
             </div>
-            <div className="flex flex-col gap-1">
-              <div className="w-full border-t border-dotted border-slate-400 pt-1"></div>
-              <span className="text-[11px] font-bold text-slate-600">অভিভাবক</span>
+            <div className="flex flex-col justify-end">
+              <div className="w-full border-t border-dotted border-slate-400 mb-2"></div>
+              <span className="text-[12px] font-bold text-slate-700">অভিভাবক</span>
             </div>
-            <div className="flex flex-col gap-1 items-center">
-              <div className="w-16 h-16 border-2 border-dashed border-emerald-100 rounded-full flex items-center justify-center mb-1">
-                <span className="text-[7px] text-slate-300 font-bold opacity-50">OFFICIAL SEAL</span>
+            <div className="flex flex-col items-center justify-end">
+              <div className="w-16 h-16 border border-dashed border-emerald-200 rounded-full flex items-center justify-center mb-3 bg-emerald-50/20">
+                <span className="text-[8px] text-emerald-600/30 font-bold tracking-tighter uppercase leading-none">OFFICIAL SEAL</span>
               </div>
-              <div className="w-full border-t border-dotted border-slate-400 pt-1"></div>
-              <span className="text-[11px] font-bold text-slate-600 uppercase">মুহতামিম / অধ্যক্ষ</span>
+              <div className="w-full border-t border-dotted border-slate-400 mb-2"></div>
+              <span className="text-[12px] font-bold text-slate-700 uppercase">মুহতামিম / অধ্যক্ষ</span>
             </div>
           </div>
         </div>
