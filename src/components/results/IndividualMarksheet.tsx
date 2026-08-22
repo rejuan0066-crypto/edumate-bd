@@ -107,7 +107,6 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               margin: 0 !important;
               padding: 0 !important;
               height: 100% !important;
-              max-height: 297mm !important;
               overflow: hidden !important;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
