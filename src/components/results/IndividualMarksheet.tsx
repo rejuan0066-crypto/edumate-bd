@@ -44,9 +44,9 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
   const avgMarks = subjects.length > 0 ? totalMarks / subjects.length : 0;
   const overall: any = getOverallGrade(subjectResults.map(r => r.marks), student?.class_id);
 
-  const instName = institution?.name || "আল-আরাবিয়া হোসাইনিয়া হাফিজিয়া মাদরাসা";
-  const addressLine = institution?.address || "এম.এইচ সেন্ট্রাল, খাজাঞ্চী রোড, বিশ্বনাথ, সিলেট • মোবাইল: ০১৭৪৯৮৪২৪০১";
-  const studentName = isSample ? "তাহমিন আলী" : (bn ? student.name_bn : (student.name_en || student.name_bn));
+  const instName = bn ? (institution?.name || "আল-আরাবিয়া হোসাইনিয়া হাফিজিয়া মাদরাসা") : (institution?.name_en || "Al-Arabia Subhania Hafizia Madrasa");
+  const addressLine = bn ? (institution?.address || "এম.এইচ সেন্ট্রাল, খাজাঞ্চী রোড, বিশ্বনাথ, সিলেট • মোবাইল: ০১৭৪৯৮৪২৪০১") : (institution?.address_en || "M.H Central, Khajanchi Road, Bishwanath, Sylhet • Mobile: 01749842401");
+  const studentName = isSample ? (bn ? "তাহমিন আলী" : "Tahmin Ali") : (bn ? student.name_bn : (student.name_en || student.name_bn));
   
   const titleParts = String(examTitle || '').split('—').map(x => x.trim()).filter(Boolean);
   const resolvedExam = examName || titleParts[0] || '১ম সাময়িক পরীক্ষা ২০২৬';
