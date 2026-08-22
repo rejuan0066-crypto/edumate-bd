@@ -83,7 +83,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
       {/* Main A4 Container */}
       <div 
         id="marksheet-printable-area" 
-        className="relative bg-white shadow-[0_0_20px_rgba(0,0,0,0.1)] w-[210mm] min-h-[297mm] p-[10mm] flex flex-col print:shadow-none print:w-full print:p-[10mm] printable-marksheet"
+        className="relative bg-white shadow-[0_0_20px_rgba(0,0,0,0.1)] w-[210mm] min-h-[297mm] p-[8mm] flex flex-col print:shadow-none print:w-full print:p-[8mm] printable-marksheet"
         style={{ boxSizing: 'border-box' }}
       >
         <style dangerouslySetInnerHTML={{ __html: `
@@ -131,15 +131,16 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               top: 0 !important;
               width: 100% !important;
               max-width: 210mm !important;
-              max-height: 270mm !important;
+              max-height: 297mm !important;
               background: #ffffff !important;
               box-shadow: none !important;
               border: none !important;
-              padding: 10mm !important;
+              padding: 8mm !important;
               margin: 0 !important;
               overflow: hidden !important;
               page-break-after: avoid !important;
               page-break-before: avoid !important;
+              page-break-inside: avoid !important;
             }
 
             @page {
@@ -199,7 +200,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         <div className="absolute top-[6px] left-0 w-full h-[2px] bg-[#d97706]"></div>
 
         {/* Header Section */}
-        <div className="flex justify-between items-start mt-4 mb-8">
+        <div className="flex justify-between items-start mt-2 mb-6">
           {/* Logo */}
           <div className="w-[85px] h-[85px] rounded-full border-[2px] border-[#065f46] p-[3px] flex items-center justify-center bg-white shadow-md overflow-hidden relative group">
             <div className="w-full h-full rounded-full border border-emerald-100 flex items-center justify-center bg-emerald-50/20">
@@ -233,44 +234,55 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </div>
 
         {/* Divider & Title */}
-        <div className="relative mb-8 text-center">
+        <div className="relative mb-6 text-center">
           <div className="absolute top-1/2 left-0 w-full h-[1px] bg-slate-100"></div>
           <div className="relative inline-block bg-white px-8">
             <div className="text-emerald-700 flex flex-col items-center">
-              <div className="bg-emerald-50/80 px-10 py-3 rounded-full border border-emerald-200 shadow-sm backdrop-blur-sm">
-                <h2 className="text-[#065F46] text-[20px] font-bold leading-none mb-1 tracking-tight">একাডেমিক ট্রান্সক্রিপ্ট / মার্কশিট</h2>
-                <p className="text-emerald-700/70 text-[12px] font-semibold tracking-wide uppercase">{resolvedExam} — {resolvedClass}</p>
+              <div className="bg-emerald-50/80 px-8 py-2.5 rounded-full border border-emerald-200 shadow-sm backdrop-blur-sm">
+                <h2 className="text-[#065F46] text-[18px] font-bold leading-none mb-1 tracking-tight">একাডেমিক ট্রান্সক্রিপ্ট / মার্কশিট</h2>
+                <p className="text-emerald-700/70 text-[11px] font-semibold tracking-wide uppercase">{resolvedExam} — {resolvedClass}</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Student Information Card */}
-        <div className="bg-slate-50/80 border border-slate-200 rounded-2xl p-6 mb-8 grid grid-cols-3 gap-y-4 gap-x-8 shadow-sm">
+        <div className="bg-slate-50/80 border border-slate-200 rounded-xl p-4 mb-6 grid grid-cols-3 gap-y-3 gap-x-8 shadow-sm">
           <div className="flex flex-col">
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1.5">শিক্ষার্থী নাম (Student Name)</span>
-            <span className="text-[16px] font-bold text-slate-800">{studentName}</span>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">শিক্ষার্থী নাম (STUDENT NAME)</span>
+            <span className="text-[14px] font-bold text-slate-800">{studentName}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1.5">রোল নম্বর (Roll No)</span>
-            <span className="text-[16px] font-bold text-slate-800">{isSample ? '1001' : toBnDigits(student.roll_number)}</span>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">পিতার নাম (FATHER'S NAME)</span>
+            <span className="text-[14px] font-bold text-slate-800">{student.father_name || student.fathers_name || '-'}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1.5">রেজিস্ট্রেশন (Reg No)</span>
-            <span className="text-[16px] font-bold text-slate-800">{student.registration_number || '20261002'}</span>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">রোল নম্বর (ROLL NO)</span>
+            <span className="text-[14px] font-bold text-slate-800">{isSample ? '1001' : toBnDigits(student.roll_number)}</span>
+          </div>
+          
+          <div className="flex flex-col">
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">রেজিস্ট্রেশন (REG NO)</span>
+            <span className="text-[14px] font-bold text-slate-800">{student.registration_number || '20261002'}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1.5">জন্ম তারিখ (DOB)</span>
-            <span className="text-[16px] font-bold text-slate-800">{student.date_of_birth || '১৫ মে, ২০১৮'}</span>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">শ্রেণি (CLASS)</span>
+            <span className="text-[14px] font-bold text-slate-800">{resolvedClass}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1.5">শ্রেণি (Class)</span>
-            <span className="text-[16px] font-bold text-slate-800">{resolvedClass}</span>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">শিক্ষাবর্ষ (SESSION)</span>
+            <span className="text-[14px] font-bold text-slate-800">{resolvedSession}</span>
+          </div>
+          
+          <div className="flex flex-col">
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">জন্ম তারিখ (DOB)</span>
+            <span className="text-[14px] font-bold text-slate-800">{student.date_of_birth || '১৫ মে, ২০১৮'}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1.5">শিক্ষাবর্ষ (Session)</span>
-            <span className="text-[16px] font-bold text-slate-800">{resolvedSession}</span>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">বিভাগ/শাখা (SECTION)</span>
+            <span className="text-[14px] font-bold text-slate-800">{student.section || student.branch || '-'}</span>
           </div>
+          <div></div>
         </div>
 
         {/* Marks Details Table */}
@@ -316,26 +328,26 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </div>
 
         {/* Summary & Result Statistics Cards */}
-        <div className="grid grid-cols-5 gap-4 mt-8 mb-8">
-          <div className="bg-white border border-slate-200 p-4 rounded-xl text-center shadow-sm">
+        <div className="grid grid-cols-5 gap-3 mt-6 mb-6">
+          <div className="bg-white border border-slate-200 p-3 rounded-lg text-center shadow-sm">
             <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">মোট নম্বর</span>
             <span className="text-[22px] font-bold text-slate-800">
               {bn ? toBnDigits(student.total_marks || totalMarks) : (student.total_marks || totalMarks)}
             </span>
           </div>
-          <div className="bg-white border border-slate-200 p-4 rounded-xl text-center shadow-sm">
+          <div className="bg-white border border-slate-200 p-3 rounded-lg text-center shadow-sm">
             <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">মেধা স্থান</span>
             <span className="text-[22px] font-bold text-slate-800">
               {student.rank ? toBnDigits(student.rank) + 'তম' : '-'}
             </span>
           </div>
-          <div className="bg-white border border-slate-200 p-4 rounded-xl text-center shadow-sm">
+          <div className="bg-white border border-slate-200 p-3 rounded-lg text-center shadow-sm">
             <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">সর্বমোট GPA</span>
             <span className="text-[22px] font-bold text-slate-800">
               {bn ? toBnDigits(Number(student.gpa || overall.gpa).toFixed(2)) : Number(student.gpa || overall.gpa).toFixed(2)}
             </span>
           </div>
-          <div className="bg-white border border-slate-200 p-4 rounded-xl text-center shadow-sm flex flex-col items-center justify-center">
+          <div className="bg-white border border-slate-200 p-3 rounded-lg text-center shadow-sm flex flex-col items-center justify-center">
             <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">গ্রেড</span>
             <span className={cn(
               "text-white text-[14px] px-5 py-1 rounded-full font-bold shadow-sm",
@@ -351,7 +363,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               })()}
             </span>
           </div>
-          <div className="bg-white border border-slate-200 p-4 rounded-xl text-center shadow-sm flex flex-col items-center justify-center">
+          <div className="bg-white border border-slate-200 p-3 rounded-lg text-center shadow-sm flex flex-col items-center justify-center">
             <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">মর্যাদা</span>
             <span className={cn(
               "text-[14px] font-bold px-4 py-1 rounded-full",
@@ -398,31 +410,26 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           </div>
 
           {/* Signature Grid */}
-          <div className="flex-1 grid grid-cols-4 gap-6 text-center">
-            <div className="flex flex-col justify-end">
-              <div className="w-full border-t border-dotted border-slate-400 mb-2"></div>
-              <span className="text-[12px] font-bold text-slate-700">শ্রেণি শিক্ষক</span>
-            </div>
-            <div className="flex flex-col justify-end">
+          <div className="flex-1 flex justify-between items-end px-4">
+            <div className="flex flex-col items-center w-[200px]">
               <div className="w-full border-t border-dotted border-slate-400 mb-2"></div>
               <span className="text-[12px] font-bold text-slate-700">পরীক্ষা নিয়ন্ত্রক</span>
+              <span className="text-[9px] text-slate-400 font-medium uppercase tracking-tighter">(EXAM CONTROLLER)</span>
             </div>
-            <div className="flex flex-col justify-end">
-              <div className="w-full border-t border-dotted border-slate-400 mb-2"></div>
-              <span className="text-[12px] font-bold text-slate-700">অভিভাবক</span>
-            </div>
-            <div className="flex flex-col items-center justify-end">
-              <div className="w-16 h-16 border border-dashed border-emerald-200 rounded-full flex items-center justify-center mb-3 bg-emerald-50/20">
+            
+            <div className="flex flex-col items-center w-[220px]">
+              <div className="w-16 h-16 border border-dashed border-emerald-200 rounded-full flex items-center justify-center mb-2 bg-emerald-50/20">
                 <span className="text-[8px] text-emerald-600/30 font-bold tracking-tighter uppercase leading-none">OFFICIAL SEAL</span>
               </div>
               <div className="w-full border-t border-dotted border-slate-400 mb-2"></div>
               <span className="text-[12px] font-bold text-slate-700 uppercase">মুহতামিম / অধ্যক্ষ</span>
+              <span className="text-[9px] text-slate-400 font-medium uppercase tracking-tighter">(PRINCIPAL / HEADMASTER)</span>
             </div>
           </div>
         </div>
 
         {/* Branding Subtitle */}
-        <div className="absolute bottom-4 left-0 w-full text-center text-[8px] text-slate-300 pointer-events-none">
+        <div className="absolute bottom-2 left-0 w-full text-center text-[7px] text-slate-300 pointer-events-none">
           Generated via Academic Management System
         </div>
       </div>
