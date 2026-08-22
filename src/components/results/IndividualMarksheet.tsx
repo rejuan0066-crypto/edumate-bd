@@ -243,7 +243,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-5 gap-2 my-2 print:my-1.5">
+        <div className="grid grid-cols-5 gap-2 my-1.5 print:my-1">
           {[
             { label: 'মোট নম্বর', value: totalMarks, color: 'bg-blue-50 text-blue-800 border-blue-200' },
             { label: 'গড়', value: avgMarks.toFixed(1), color: 'bg-amber-50 text-amber-800 border-amber-200' },
