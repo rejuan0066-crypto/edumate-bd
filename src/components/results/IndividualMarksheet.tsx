@@ -107,7 +107,6 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               margin: 0 !important;
               padding: 0 !important;
               height: 100% !important;
-              max-height: 297mm !important;
               overflow: hidden !important;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
@@ -131,11 +130,12 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               top: 0 !important;
               width: 100% !important;
               max-width: 210mm !important;
+              height: 297mm !important;
               max-height: 297mm !important;
               background: #ffffff !important;
               box-shadow: none !important;
               border: none !important;
-              padding: 8mm !important;
+              padding: 8mm 10mm !important;
               margin: 0 !important;
               overflow: hidden !important;
               page-break-after: avoid !important;
@@ -156,7 +156,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           }
           .marksheet-table th, .marksheet-table td {
             border: 1px solid #e2e8f0;
-            padding: 3px 6px;
+            padding: 1.5px 6px;
             text-align: center;
           }
           .marksheet-table th {
@@ -164,7 +164,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             color: white;
             font-weight: 700;
             font-size: 14px;
-            padding: 12px 6px;
+            padding: 8px 6px;
           }
           .marksheet-table tr:nth-child(even) {
             background-color: #f8fafc;
@@ -200,7 +200,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         <div className="absolute top-[6px] left-0 w-full h-[2px] bg-[#d97706]"></div>
 
         {/* Header Section */}
-        <div className="flex justify-between items-start mt-2 mb-6">
+        <div className="flex justify-between items-start py-2 mb-4">
           {/* Logo */}
           <div className="w-[85px] h-[85px] rounded-full border-[2px] border-[#065f46] p-[3px] flex items-center justify-center bg-white shadow-md overflow-hidden relative group">
             <div className="w-full h-full rounded-full border border-emerald-100 flex items-center justify-center bg-emerald-50/20">
@@ -247,7 +247,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </div>
 
         {/* Student Information Card */}
-        <div className="bg-slate-50/80 border border-slate-200 rounded-xl p-4 mb-6 grid grid-cols-3 gap-y-3 gap-x-8 shadow-sm">
+        <div className="bg-slate-50/80 border border-slate-200 rounded-xl px-4 py-2 mb-4 grid grid-cols-3 gap-y-1.5 gap-x-8 shadow-sm">
           <div className="flex flex-col">
             <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">শিক্ষার্থী নাম (STUDENT NAME)</span>
             <span className="text-[14px] font-bold text-slate-800">{studentName}</span>
@@ -328,7 +328,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </div>
 
         {/* Summary & Result Statistics Cards */}
-        <div className="grid grid-cols-5 gap-3 mt-6 mb-6">
+        <div className="grid grid-cols-5 gap-3 my-3">
           <div className="bg-white border border-slate-200 p-3 rounded-lg text-center shadow-sm">
             <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">মোট নম্বর</span>
             <span className="text-[22px] font-bold text-slate-800">
@@ -394,36 +394,36 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </div>
 
         {/* Grading Scale & Signatures */}
-        <div className="mt-auto flex justify-between items-end gap-12 pt-8 pb-4">
+        <div className="mt-auto flex justify-between items-end gap-12 pt-4 pb-2" style={{ pageBreakInside: 'avoid' }}>
           {/* Reference Key */}
-          <div className="w-[220px] border border-slate-200 p-4 rounded-xl bg-slate-50/50 shadow-sm">
-            <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 border-b border-slate-200 pb-1.5">Grading Scale</h4>
-            <div className="grid grid-cols-1 gap-y-1.5 text-[10px] font-medium text-slate-600">
-              <div className="flex justify-between items-center"><span>80-100</span> <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold border border-emerald-100">A+ (5.0)</span></div>
-              <div className="flex justify-between items-center"><span>70-79</span> <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold border border-emerald-100">A (4.0)</span></div>
-              <div className="flex justify-between items-center"><span>60-69</span> <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold border border-emerald-100">A- (3.5)</span></div>
-              <div className="flex justify-between items-center"><span>50-59</span> <span className="bg-amber-50 text-amber-700 px-2 py-0.5 rounded font-bold border border-amber-100">B (3.0)</span></div>
-              <div className="flex justify-between items-center"><span>40-49</span> <span className="bg-orange-50 text-orange-700 px-2 py-0.5 rounded font-bold border border-orange-100">C (2.0)</span></div>
-              <div className="flex justify-between items-center"><span>33-39</span> <span className="bg-orange-50 text-orange-700 px-2 py-0.5 rounded font-bold border border-orange-100">D (1.0)</span></div>
-              <div className="flex justify-between items-center"><span>00-32</span> <span className="bg-rose-50 text-rose-700 px-2 py-0.5 rounded font-bold border border-rose-100">F (0.0)</span></div>
+          <div className="w-[200px] border border-slate-200 p-2 rounded-lg bg-slate-50/50 shadow-sm">
+            <h4 className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 border-b border-slate-200 pb-1">Grading Scale</h4>
+            <div className="grid grid-cols-1 gap-y-1 text-[9px] font-medium text-slate-600">
+              <div className="flex justify-between items-center"><span>80-100</span> <span className="bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-bold border border-emerald-100">A+ (5.0)</span></div>
+              <div className="flex justify-between items-center"><span>70-79</span> <span className="bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-bold border border-emerald-100">A (4.0)</span></div>
+              <div className="flex justify-between items-center"><span>60-69</span> <span className="bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-bold border border-emerald-100">A- (3.5)</span></div>
+              <div className="flex justify-between items-center"><span>50-59</span> <span className="bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded font-bold border border-amber-100">B (3.0)</span></div>
+              <div className="flex justify-between items-center"><span>40-49</span> <span className="bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded font-bold border border-orange-100">C (2.0)</span></div>
+              <div className="flex justify-between items-center"><span>33-39</span> <span className="bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded font-bold border border-orange-100">D (1.0)</span></div>
+              <div className="flex justify-between items-center"><span>00-32</span> <span className="bg-rose-50 text-rose-700 px-1.5 py-0.5 rounded font-bold border border-rose-100">F (0.0)</span></div>
             </div>
           </div>
 
           {/* Signature Grid */}
-          <div className="flex-1 flex justify-between items-end px-4">
-            <div className="flex flex-col items-center w-[200px]">
+          <div className="flex-1 flex justify-between items-end px-4 mb-4">
+            <div className="flex flex-col items-center w-[180px]">
               <div className="w-full border-t border-dotted border-slate-400 mb-2"></div>
-              <span className="text-[12px] font-bold text-slate-700">পরীক্ষা নিয়ন্ত্রক</span>
-              <span className="text-[9px] text-slate-400 font-medium uppercase tracking-tighter">(EXAM CONTROLLER)</span>
+              <span className="text-[11px] font-bold text-slate-700">পরীক্ষা নিয়ন্ত্রক</span>
+              <span className="text-[8px] text-slate-400 font-medium uppercase tracking-tighter">(EXAM CONTROLLER)</span>
             </div>
             
-            <div className="flex flex-col items-center w-[220px]">
-              <div className="w-16 h-16 border border-dashed border-emerald-200 rounded-full flex items-center justify-center mb-2 bg-emerald-50/20">
-                <span className="text-[8px] text-emerald-600/30 font-bold tracking-tighter uppercase leading-none">OFFICIAL SEAL</span>
+            <div className="flex flex-col items-center w-[200px]">
+              <div className="w-14 h-14 border border-dashed border-emerald-200 rounded-full flex items-center justify-center mb-1 bg-emerald-50/20">
+                <span className="text-[7px] text-emerald-600/30 font-bold tracking-tighter uppercase leading-none">OFFICIAL SEAL</span>
               </div>
               <div className="w-full border-t border-dotted border-slate-400 mb-2"></div>
-              <span className="text-[12px] font-bold text-slate-700 uppercase">মুহতামিম / অধ্যক্ষ</span>
-              <span className="text-[9px] text-slate-400 font-medium uppercase tracking-tighter">(PRINCIPAL / HEADMASTER)</span>
+              <span className="text-[11px] font-bold text-slate-700 uppercase">মুহতামিম / অধ্যক্ষ</span>
+              <span className="text-[8px] text-slate-400 font-medium uppercase tracking-tighter">(PRINCIPAL / HEADMASTER)</span>
             </div>
           </div>
         </div>
