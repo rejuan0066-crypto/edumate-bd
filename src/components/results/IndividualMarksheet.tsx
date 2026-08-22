@@ -172,16 +172,21 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           }
 
           .grade-badge {
-            padding: 2px 8px;
+            padding: 4px 12px;
             border-radius: 9999px;
-            font-size: 12px;
-            font-weight: 600;
+            font-size: 13px;
+            font-weight: 700;
+            display: inline-block;
+            min-width: 45px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
           }
-          .grade-a-plus { background-color: #dcfce7; color: #166534; }
-          .grade-a { background-color: #dcfce7; color: #15803d; }
-          .grade-b { background-color: #fef9c3; color: #854d0e; }
-          .grade-c { background-color: #ffedd5; color: #9a3412; }
-          .grade-f { background-color: #fee2e2; color: #991b1b; }
+          .grade-a-plus { background-color: #ECFDF5; color: #065F46; border: 1px solid #D1FAE5; }
+          .grade-a { background-color: #ECFDF5; color: #059669; border: 1px solid #D1FAE5; }
+          .grade-a-minus { background-color: #F0FDF4; color: #16A34A; border: 1px solid #DCFCE7; }
+          .grade-b { background-color: #FFFBEB; color: #D97706; border: 1px solid #FEF3C7; }
+          .grade-c { background-color: #FFF7ED; color: #EA580C; border: 1px solid #FFEDD5; }
+          .grade-d { background-color: #FFF7ED; color: #C2410C; border: 1px solid #FFEDD5; }
+          .grade-f { background-color: #FEF2F2; color: #DC2626; border: 1px solid #FEE2E2; }
         `}} />
 
         {/* Decorative Top Accent */}
