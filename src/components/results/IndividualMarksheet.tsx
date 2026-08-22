@@ -8,6 +8,7 @@ import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { useGradingSystem } from '@/hooks/useGradingSystem';
 import { toBnDigits } from '@/lib/digits';
 import { cn } from '@/lib/utils';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface IndividualMarksheetProps {
   student: any;
