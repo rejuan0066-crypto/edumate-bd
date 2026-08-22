@@ -83,7 +83,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
       {/* Main A4 Container */}
       <div 
         id="marksheet-printable-area" 
-        className="relative bg-white shadow-[0_0_20px_rgba(0,0,0,0.1)] w-[210mm] min-h-[297mm] p-[16mm] flex flex-col print:shadow-none print:w-full print:p-[16mm]"
+        className="relative bg-white shadow-[0_0_20px_rgba(0,0,0,0.1)] w-[210mm] min-h-[297mm] p-[16mm] flex flex-col print:shadow-none print:w-full print:p-[16mm] printable-marksheet-wrapper"
         style={{ boxSizing: 'border-box' }}
       >
         <style dangerouslySetInnerHTML={{ __html: `
