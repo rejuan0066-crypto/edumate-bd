@@ -262,7 +262,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
                     </span>
                   </td>
                   <td className="font-bold text-emerald-700">
-                    {isSample ? toBnDigits(r.gpa.toFixed(2)) : (bn ? toBnDigits(r.gpa.toFixed(2)) : r.gpa.toFixed(2))}
+                    {isSample ? toBnDigits(Number(r.gpa).toFixed(2)) : (bn ? toBnDigits(Number(r.gpa).toFixed(2)) : Number(r.gpa).toFixed(2))}
                   </td>
                 </tr>
               ))}
