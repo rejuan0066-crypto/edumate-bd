@@ -224,15 +224,13 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
 
         {/* Divider & Title */}
         <div className="relative mb-8 text-center">
-          <div className="absolute top-1/2 left-0 w-full h-[1px] bg-emerald-100"></div>
-          <div className="relative inline-block bg-white px-6">
-            <div className="text-emerald-700 flex items-center gap-2">
-              <span className="text-[10px]">◆</span>
-              <div className="bg-emerald-50 px-8 py-2 rounded-full border border-emerald-100 shadow-sm">
-                <h2 className="text-[#065f46] text-[18px] font-bold leading-none mb-1">একাডেমিক ট্রান্সক্রিপ্ট / মার্কশিট</h2>
-                <p className="text-amber-700 text-[12px] font-medium">{resolvedExam} — {resolvedClass}</p>
+          <div className="absolute top-1/2 left-0 w-full h-[1px] bg-slate-100"></div>
+          <div className="relative inline-block bg-white px-8">
+            <div className="text-emerald-700 flex flex-col items-center">
+              <div className="bg-emerald-50/80 px-10 py-3 rounded-full border border-emerald-200 shadow-sm backdrop-blur-sm">
+                <h2 className="text-[#065F46] text-[20px] font-bold leading-none mb-1 tracking-tight">একাডেমিক ট্রান্সক্রিপ্ট / মার্কশিট</h2>
+                <p className="text-emerald-700/70 text-[12px] font-semibold tracking-wide uppercase">{resolvedExam} — {resolvedClass}</p>
               </div>
-              <span className="text-[10px]">◆</span>
             </div>
           </div>
         </div>
