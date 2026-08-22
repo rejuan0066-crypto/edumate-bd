@@ -310,12 +310,14 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         <div className="grid grid-cols-5 gap-4 mt-8 mb-8">
           <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl text-center">
             <span className="text-[10px] text-blue-500 font-bold uppercase block mb-1">মোট নম্বর</span>
-            <span className="text-[18px] font-black text-blue-900">{bn ? toBnDigits(student.total_marks || totalMarks) : (student.total_marks || totalMarks)} / {bn ? toBnDigits(subjects.length * 100) : subjects.length * 100}</span>
+            <span className="text-[18px] font-black text-blue-900">
+              {bn ? toBnDigits(student.total_marks || totalMarks) : (student.total_marks || totalMarks)}
+            </span>
           </div>
           <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl text-center">
             <span className="text-[10px] text-amber-500 font-bold uppercase block mb-1">মেধা স্থান</span>
             <span className="text-[18px] font-black text-amber-900">
-              {isSample ? toBnDigits(1) + 'তম' : (student.rank ? toBnDigits(student.rank) + 'তম' : (rank ? toBnDigits(rank) + 'তম' : '—'))}
+              {student.rank ? toBnDigits(student.rank) + 'তম' : '-'}
             </span>
           </div>
           <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl text-center">
@@ -327,16 +329,16 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl text-center">
             <span className="text-[10px] text-emerald-500 font-bold uppercase block mb-1">মর্যাদা</span>
             <span className="text-[18px] font-black text-emerald-900">
-              {student.division || overall.merit_title || overall.grade}
+              {student.division || overall.merit_title || (student.letter_grade === 'F' ? 'রাসিব' : overall.grade)}
             </span>
           </div>
           <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl text-center shadow-sm">
-            <span className="text-[10px] text-emerald-600 font-bold uppercase block mb-1">ফলাফল (Status)</span>
+            <span className="text-[10px] text-emerald-600 font-bold uppercase block mb-1">চূড়ান্ত গ্রেড</span>
             <span className={cn(
               "text-white text-[12px] px-3 py-0.5 rounded-full font-bold",
               (student.letter_grade || overall.grade) !== 'F' ? 'bg-emerald-600' : 'bg-rose-600'
             )}>
-              {(student.letter_grade || overall.grade) !== 'F' ? 'পাস' : 'রাসিব'}
+              {student.letter_grade || overall.grade}
             </span>
           </div>
         </div>
