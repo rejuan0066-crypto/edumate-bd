@@ -304,7 +304,9 @@ export const getResultSheetHtml = ({
               <div class="addr">${institutionAddress || ''}</div>
               <div class="phone">${institutionPhone || ''}</div>
             </div>
-            <div class="header-logo"></div>
+            <div class="header-logo qr-container">
+              ${qrCodeDataUrl ? `<img src="${qrCodeDataUrl}" class="qr-img" alt="QR">` : ''}
+            </div>
           </header>
 
           <div class="doc-band"><span>${title}</span></div>
