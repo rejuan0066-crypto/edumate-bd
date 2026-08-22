@@ -338,7 +338,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           <div className="bg-white border border-slate-200 p-3 rounded-lg text-center shadow-sm">
             <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">মেধা স্থান</span>
             <span className="text-[22px] font-bold text-slate-800">
-              {student.rank ? toBnDigits(student.rank) + 'তম' : '-'}
+              {(rank || student.rank) ? toBnDigits(rank || student.rank) + 'তম' : '-'}
             </span>
           </div>
           <div className="bg-white border border-slate-200 p-3 rounded-lg text-center shadow-sm">
