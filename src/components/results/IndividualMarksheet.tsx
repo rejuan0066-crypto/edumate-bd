@@ -328,7 +328,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </div>
 
         {/* Summary & Result Statistics Cards */}
-        <div className="grid grid-cols-5 gap-4 mt-8 mb-8">
+        <div className="grid grid-cols-5 gap-3 mt-6 mb-6">
           <div className="bg-white border border-slate-200 p-4 rounded-xl text-center shadow-sm">
             <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">মোট নম্বর</span>
             <span className="text-[22px] font-bold text-slate-800">
