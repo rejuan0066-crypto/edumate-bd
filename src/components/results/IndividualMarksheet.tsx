@@ -259,10 +259,10 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </div>
 
         {/* Footer Signatures */}
-        <div id="signature-section" className="mt-auto flex justify-between gap-12 text-center text-[12px] print:text-[11px] font-bold text-gray-800 pb-2">
+        <div id="signature-section" className="mt-auto flex justify-between gap-6 text-center text-[11px] print:text-[10px] font-bold text-gray-800 pb-2">
           {['শ্রেণি শিক্ষক', 'পরীক্ষা নিয়ন্ত্রক', 'শিক্ষা সচিব', 'মুহতামিম / অধ্যক্ষ'].map((role, i) => (
             <div key={i} className="flex-1">
-              <div className="border-t border-gray-900 pt-2">{role}</div>
+              <div className="border-t border-gray-900 pt-1.5">{role}</div>
             </div>
           ))}
         </div>
