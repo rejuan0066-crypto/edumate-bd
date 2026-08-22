@@ -106,6 +106,9 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               background-image: none !important;
               margin: 0 !important;
               padding: 0 !important;
+              height: 100% !important;
+              max-height: 297mm !important;
+              overflow: hidden !important;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
             }
@@ -123,11 +126,15 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               top: 0 !important;
               width: 100% !important;
               max-width: 210mm !important;
+              max-height: 270mm !important;
               background: #ffffff !important;
               box-shadow: none !important;
               border: none !important;
               padding: 10mm !important;
               margin: 0 !important;
+              overflow: hidden !important;
+              page-break-after: avoid !important;
+              page-break-before: avoid !important;
             }
 
             @page {
@@ -143,7 +150,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           }
           .marksheet-table th, .marksheet-table td {
             border: 1px solid #e2e8f0;
-            padding: 10px 12px;
+            padding: 3px 6px;
             text-align: center;
           }
           .marksheet-table th {
