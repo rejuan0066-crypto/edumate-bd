@@ -83,7 +83,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         }
 
         @media print {
-          @page { size: A4 portrait; margin: 4mm; }
+          @page { size: A4 portrait; margin: 3mm; }
 
           html, body {
             height: 100vh !important;
@@ -109,7 +109,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             max-width: 210mm !important;
             max-height: 297mm !important;
             margin: 0 auto !important;
-            padding: 4mm !important;
+            padding: 2mm !important;
             box-shadow: none !important;
             border: none !important;
             overflow: hidden !important;
@@ -132,41 +132,41 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           }
 
           .marksheet-banner {
-            padding: 8px 10px !important;
+            padding: 4px 6px !important;
           }
           .marksheet-banner h1 { font-size: 16px !important; }
           .marksheet-banner p { font-size: 10px !important; }
           .marksheet-banner h2 { font-size: 18px !important; }
 
           .marksheet-info {
-            padding: 6px 8px !important;
-            margin: 6px 0 !important;
-            font-size: 11px !important;
+            padding: 4px 6px !important;
+            margin: 4px 0 !important;
+            font-size: 10px !important;
           }
 
           .marksheet-table th, .marksheet-table td {
-            padding: 3px 4px !important;
-            font-size: 11px !important;
+            padding: 2px 3px !important;
+            font-size: 10px !important;
             white-space: nowrap !important;
             overflow: hidden !important;
             text-overflow: ellipsis !important;
           }
 
           .summary-card {
-            padding: 4px 2px !important;
-            margin: 4px 0 !important;
+            padding: 2px 1px !important;
+            margin: 2px 0 !important;
           }
-          .summary-card .text-base { font-size: 13px !important; }
-          .summary-card .text-\\[10px\\] { font-size: 8px !important; }
+          .summary-card .text-base { font-size: 11px !important; }
+          .summary-card .text-\\[10px\\] { font-size: 7px !important; }
 
           #signature-section {
             margin-top: auto !important;
-            padding-top: 8px !important;
-            padding-bottom: 4px !important;
+            padding-top: 4px !important;
+            padding-bottom: 2px !important;
             display: flex !important;
             flex-direction: row !important;
             justify-content: space-between !important;
-            font-size: 10px !important;
+            font-size: 9px !important;
           }
           #signature-section .border-t {
             border-top-width: 1px !important;
