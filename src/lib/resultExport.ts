@@ -295,6 +295,7 @@ export const getResultSheetHtml = ({
     <div class="result-page">
       <div class="fit-inner">
         <div class="sheet">
+          ${institutionLogo ? `<div class="watermark"><img src="${institutionLogo}" alt=""></div>` : ''}
           <header class="header">
             ${institutionLogo ? `<img src="${institutionLogo}" class="header-logo" alt="logo">` : '<div class="header-logo"></div>'}
             <div class="header-text">
