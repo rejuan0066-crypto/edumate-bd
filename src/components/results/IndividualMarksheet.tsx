@@ -50,8 +50,8 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
   
   const titleParts = String(examTitle || '').split('—').map(x => x.trim()).filter(Boolean);
   const resolvedExam = examName || titleParts[0] || '১ম সাময়িক পরীক্ষা ২০২৬';
-  const resolvedClass = className || titleParts[1] || 'নুরানি ১ম শ্রেণি';
-  const resolvedSession = sessionName || titleParts[2] || '২০২৬-২৭';
+  const resolvedClass = className || titleParts[1] || (bn ? 'নুরানি ১ম শ্রেণি' : 'Noorani Class 1');
+  const resolvedSession = sessionName || titleParts[2] || (bn ? '২০২৬-২৭' : '2026-27');
 
   const handlePrint = () => {
     window.print();
