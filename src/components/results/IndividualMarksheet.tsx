@@ -236,12 +236,17 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           </div>
 
           {/* QR/Document ID */}
-          <div className="w-[80px] text-right">
-            <div className="inline-block border border-slate-200 p-2 rounded-lg bg-slate-50">
-              <div className="w-12 h-12 bg-white border border-slate-100 flex items-center justify-center text-[8px] text-slate-400 font-mono">
-                QR CODE
+          <div className="w-[85px] text-right">
+            <div className="inline-block border border-slate-200 p-1.5 rounded-lg bg-slate-50 shadow-sm print:shadow-none print:border-slate-100">
+              <div className="bg-white p-1 rounded border border-slate-100 flex items-center justify-center">
+                <QRCodeSVG 
+                  value={`${window.location.origin}/verify-receipt/${student.student_id}`}
+                  size={58}
+                  level="L"
+                  includeMargin={false}
+                />
               </div>
-              <div className="text-[9px] mt-1 font-mono text-slate-500">ID: {student.student_id || '20261002'}</div>
+              <div className="text-[8px] mt-1 font-mono text-slate-500 text-center leading-none tracking-tighter">ID: {student.student_id || '20261002'}</div>
             </div>
           </div>
         </div>
