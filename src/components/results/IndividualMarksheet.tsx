@@ -189,7 +189,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
       </div>
 
 
-      <div id="marksheet-printable-area" className="mx-auto max-w-[210mm] min-h-[297mm] bg-white text-black p-[10mm] shadow-lg border border-gray-200 print:shadow-none print:border-none print:p-0">
+      <div id="marksheet-printable-area" className="mx-auto max-w-[210mm] min-h-[297mm] bg-white text-black p-[6mm] shadow-lg border border-gray-200 print:shadow-none print:border-none print:p-0">
         {/* Header */}
         <div className="marksheet-banner bg-[#1e5d3b] text-white p-4 print:p-3 text-center rounded-t-lg w-full">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
