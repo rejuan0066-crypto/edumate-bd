@@ -95,15 +95,33 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           }
 
           @media print {
-            @page { size: A4 portrait; margin: 0; }
-            body { margin: 0; padding: 0; background: white; }
-            .no-print { display: none !important; }
-            #marksheet-printable-area {
-              box-shadow: none !important;
-              width: 210mm !important;
-              height: 297mm !important;
+            @page {
+              size: A4 portrait;
+              margin: 8mm 10mm;
+            }
+            
+            body {
+              background: white !important;
               margin: 0 !important;
-              padding: 16mm !important;
+              padding: 0 !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+
+            /* নেভবার বা বাটন লুকানোর জন্য */
+            .no-print, nav, header, button {
+              display: none !important;
+            }
+
+            /* মার্কশিট কন্টেইনার অ্যাডজাস্টমেন্ট */
+            #marksheet-printable-area {
+              width: 100% !important;
+              max-height: 280mm !important;
+              margin: 0 auto !important;
+              padding: 0 !important;
+              box-shadow: none !important;
+              border: none !important;
+              page-break-inside: avoid !important;
             }
           }
 
