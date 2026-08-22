@@ -257,7 +257,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           <div className="relative inline-block bg-white px-8">
             <div className="text-emerald-700 flex flex-col items-center">
               <div className="bg-emerald-50/80 px-8 py-2.5 rounded-full border border-emerald-200 shadow-sm backdrop-blur-sm">
-                <h2 className="text-[#065F46] text-[18px] font-bold leading-none mb-1 tracking-tight">একাডেমিক ট্রান্সক্রিপ্ট / মার্কশিট</h2>
+                <h2 className="text-[#065F46] text-[18px] font-bold leading-none mb-1 tracking-tight">{bn ? 'একাডেমিক ট্রান্সক্রিপ্ট / মার্কশিট' : 'ACADEMIC TRANSCRIPT / MARKSHEET'}</h2>
                 <p className="text-emerald-700/70 text-[11px] font-semibold tracking-wide uppercase">{resolvedExam} — {resolvedClass}</p>
               </div>
             </div>
@@ -267,37 +267,37 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         {/* Student Information Card */}
         <div className="bg-slate-50/80 border border-slate-200 rounded-xl px-4 py-2 mb-4 grid grid-cols-3 gap-y-1.5 gap-x-8 shadow-sm">
           <div className="flex flex-col">
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">শিক্ষার্থী নাম (STUDENT NAME)</span>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">{bn ? 'শিক্ষার্থী নাম (STUDENT NAME)' : 'STUDENT NAME'}</span>
             <span className="text-[14px] font-bold text-slate-800">{studentName}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">পিতার নাম (FATHER'S NAME)</span>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">{bn ? "পিতার নাম (FATHER'S NAME)" : "FATHER'S NAME"}</span>
             <span className="text-[14px] font-bold text-slate-800">{student.father_name || student.fathers_name || '-'}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">রোল নম্বর (ROLL NO)</span>
-            <span className="text-[14px] font-bold text-slate-800">{isSample ? '1001' : toBnDigits(student.roll_number)}</span>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">{bn ? 'রোল নম্বর (ROLL NO)' : 'ROLL NO'}</span>
+            <span className="text-[14px] font-bold text-slate-800">{isSample ? (bn ? '১০০১' : '1001') : (bn ? toBnDigits(student.roll_number) : student.roll_number)}</span>
           </div>
           
           <div className="flex flex-col">
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">রেজিস্ট্রেশন (REG NO)</span>
-            <span className="text-[14px] font-bold text-slate-800">{student.registration_number || '20261002'}</span>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">{bn ? 'রেজিস্ট্রেশন (REG NO)' : 'REG NO'}</span>
+            <span className="text-[14px] font-bold text-slate-800">{student.registration_number || (bn ? '২০২৬১০০২' : '20261002')}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">শ্রেণি (CLASS)</span>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">{bn ? 'শ্রেণি (CLASS)' : 'CLASS'}</span>
             <span className="text-[14px] font-bold text-slate-800">{resolvedClass}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">শিক্ষাবর্ষ (SESSION)</span>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">{bn ? 'শিক্ষাবর্ষ (SESSION)' : 'SESSION'}</span>
             <span className="text-[14px] font-bold text-slate-800">{resolvedSession}</span>
           </div>
           
           <div className="flex flex-col">
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">জন্ম তারিখ (DOB)</span>
-            <span className="text-[14px] font-bold text-slate-800">{student.date_of_birth || '১৫ মে, ২০১৮'}</span>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">{bn ? 'জন্ম তারিখ (DOB)' : 'DATE OF BIRTH'}</span>
+            <span className="text-[14px] font-bold text-slate-800">{student.date_of_birth || (bn ? '১৫ মে, ২০১৮' : '15 May, 2018')}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">বিভাগ/শাখা (SECTION)</span>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">{bn ? 'বিভাগ/শাখা (SECTION)' : 'SECTION'}</span>
             <span className="text-[14px] font-bold text-slate-800">{student.section || student.branch || '-'}</span>
           </div>
           <div></div>
@@ -308,20 +308,20 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           <table className="marksheet-table">
             <thead>
               <tr>
-                <th className="w-[50px]">ক্রমিক</th>
-                <th className="text-left">বিষয় (Subject)</th>
-                <th className="w-[100px]">পূর্ণমান</th>
-                <th className="w-[120px]">প্রাপ্ত নম্বর</th>
-                <th className="w-[100px]">লেটার গ্রেড</th>
-                <th className="w-[100px]">গ্রেড পয়েন্ট</th>
+                <th className="w-[50px]">{bn ? 'ক্রমিক' : 'Sl No'}</th>
+                <th className="text-left">{bn ? 'বিষয় (Subject)' : 'Subject'}</th>
+                <th className="w-[100px]">{bn ? 'পূর্ণমান' : 'Full Marks'}</th>
+                <th className="w-[120px]">{bn ? 'প্রাপ্ত নম্বর' : 'Obtained Marks'}</th>
+                <th className="w-[100px]">{bn ? 'লেটার গ্রেড' : 'Letter Grade'}</th>
+                <th className="w-[100px]">{bn ? 'গ্রেড পয়েন্ট' : 'Grade Point'}</th>
               </tr>
             </thead>
             <tbody>
               {subjectResults.map((r, i) => (
                 <tr key={i}>
-                  <td className="text-slate-400">{i + 1}</td>
-                  <td className="subject-col text-slate-700">{bn ? r.subject.name_bn : r.subject.name}</td>
-                  <td className="font-medium text-slate-600">100</td>
+                  <td className="text-slate-400">{bn ? toBnDigits(i + 1) : (i + 1)}</td>
+                  <td className="subject-col text-slate-700">{bn ? r.subject.name_bn : (r.subject.name_en || r.subject.name)}</td>
+                  <td className="font-medium text-slate-600">{bn ? '১০০' : '100'}</td>
                   <td className="font-bold text-slate-900">{isSample ? toBnDigits(r.marks) : (bn ? toBnDigits(r.marks) : r.marks)}</td>
                   <td>
                     <span className={cn(
@@ -348,30 +348,35 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         {/* Summary & Result Statistics Cards */}
         <div className="grid grid-cols-5 gap-3 my-3">
           <div className="bg-white border border-slate-200 p-3 rounded-lg text-center shadow-sm">
-            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">মোট নম্বর</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">{bn ? 'মোট নম্বর' : 'Total Marks'}</span>
             <span className="text-[22px] font-bold text-slate-800">
               {bn ? toBnDigits(student.total_marks || totalMarks) : (student.total_marks || totalMarks)}
             </span>
           </div>
           <div className="bg-white border border-slate-200 p-3 rounded-lg text-center shadow-sm">
-            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">মেধা স্থান</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">{bn ? 'মেধা স্থান' : 'Merit Rank'}</span>
             <span className="text-[22px] font-bold text-slate-800">
               {(() => {
                 const meritRank = rank || student.rank || student.merit_rank;
-                if (isSample) return '১ম';
+                if (isSample) return bn ? '১ম' : '1st';
                 if (!meritRank) return '-';
-                return toBnDigits(meritRank) + 'তম';
+                return bn ? toBnDigits(meritRank) + 'তম' : (
+                  meritRank === 1 ? '1st' : 
+                  meritRank === 2 ? '2nd' : 
+                  meritRank === 3 ? '3rd' : 
+                  `${meritRank}th`
+                );
               })()}
             </span>
           </div>
           <div className="bg-white border border-slate-200 p-3 rounded-lg text-center shadow-sm">
-            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">সর্বমোট GPA</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">{bn ? 'সর্বমোট GPA' : 'Overall GPA'}</span>
             <span className="text-[22px] font-bold text-slate-800">
               {bn ? toBnDigits(Number(student.gpa || overall.gpa).toFixed(2)) : Number(student.gpa || overall.gpa).toFixed(2)}
             </span>
           </div>
           <div className="bg-white border border-slate-200 p-3 rounded-lg text-center shadow-sm flex flex-col items-center justify-center">
-            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">গ্রেড</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">{bn ? 'গ্রেড' : 'Grade'}</span>
             <span className={cn(
               "text-white text-[14px] px-5 py-1 rounded-full font-bold shadow-sm",
               (() => {
@@ -387,7 +392,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             </span>
           </div>
           <div className="bg-white border border-slate-200 p-3 rounded-lg text-center shadow-sm flex flex-col items-center justify-center">
-            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">মর্যাদা</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">{bn ? 'মর্যাদা' : 'Division'}</span>
             <span className={cn(
               "text-[14px] font-bold px-4 py-1 rounded-full",
               (() => {
@@ -402,15 +407,15 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
                 const hasFailedSubject = subjectResults.some(r => r.grade === 'F');
                 const isFail = student.letter_grade === 'F' || overall.grade === 'F' || gpa === 0 || hasFailedSubject;
                 
-                if (isFail) return "রাসিব";
+                if (isFail) return bn ? "রাসিব" : "FAIL";
                 if (student.division || student.status_text || student.madrasha_grade) {
                   return student.division || student.status_text || student.madrasha_grade;
                 }
-                if (gpa >= 5.0) return "মুমতাজ";
-                if (gpa >= 4.0) return "জায়্যিদ জিদ্দান";
-                if (gpa >= 3.0) return "জায়্যিদ";
-                if (gpa >= 1.0) return "মাকবুল";
-                return "রাসিব";
+                if (gpa >= 5.0) return bn ? "মুমতাজ" : "MUMTAZ";
+                if (gpa >= 4.0) return bn ? "জায়্যিদ জিদ্দান" : "JAYYID JIDDAN";
+                if (gpa >= 3.0) return bn ? "জায়্যিদ" : "JAYYID";
+                if (gpa >= 1.0) return bn ? "মাকবুল" : "MAQBUL";
+                return bn ? "রাসিব" : "FAIL";
               })()}
             </span>
           </div>
@@ -436,8 +441,8 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           <div className="flex-1 flex justify-between items-end px-4 mb-4">
             <div className="flex flex-col items-center w-[180px]">
               <div className="w-full border-t border-dotted border-slate-400 mb-2"></div>
-              <span className="text-[11px] font-bold text-slate-700">পরীক্ষা নিয়ন্ত্রক</span>
-              <span className="text-[8px] text-slate-400 font-medium uppercase tracking-tighter">(EXAM CONTROLLER)</span>
+              <span className="text-[11px] font-bold text-slate-700">{bn ? 'পরীক্ষা নিয়ন্ত্রক' : 'EXAM CONTROLLER'}</span>
+              <span className="text-[8px] text-slate-400 font-medium uppercase tracking-tighter">{bn ? '(EXAM CONTROLLER)' : ''}</span>
             </div>
             
             <div className="flex flex-col items-center w-[200px]">
@@ -445,8 +450,8 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
                 <span className="text-[7px] text-emerald-600/30 font-bold tracking-tighter uppercase leading-none">OFFICIAL SEAL</span>
               </div>
               <div className="w-full border-t border-dotted border-slate-400 mb-2"></div>
-              <span className="text-[11px] font-bold text-slate-700 uppercase">মুহতামিম / অধ্যক্ষ</span>
-              <span className="text-[8px] text-slate-400 font-medium uppercase tracking-tighter">(PRINCIPAL / HEADMASTER)</span>
+              <span className="text-[11px] font-bold text-slate-700 uppercase">{bn ? 'মুহতামিম / অধ্যক্ষ' : 'PRINCIPAL / HEADMASTER'}</span>
+              <span className="text-[8px] text-slate-400 font-medium uppercase tracking-tighter">{bn ? '(PRINCIPAL / HEADMASTER)' : ''}</span>
             </div>
           </div>
         </div>
