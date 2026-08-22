@@ -156,7 +156,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           }
           .marksheet-table th, .marksheet-table td {
             border: 1px solid #e2e8f0;
-            padding: 3px 6px;
+            padding: 1.5px 6px;
             text-align: center;
           }
           .marksheet-table th {
