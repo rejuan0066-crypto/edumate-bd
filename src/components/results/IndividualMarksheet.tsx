@@ -251,9 +251,9 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             { label: 'GPA', value: overall.gpa, color: 'bg-indigo-50 text-indigo-800 border-indigo-200' },
             { label: 'ফলাফল', value: morjada, color: 'bg-rose-50 text-rose-800 border-rose-200' },
           ].map((item, i) => (
-            <div key={i} className={`summary-card border p-2 text-center rounded-lg shadow-sm ${item.color}`}>
-              <div className="text-[10px] font-bold uppercase tracking-wider mb-0.5 opacity-70">{item.label}</div>
-              <div className="text-base print:text-sm font-black">{item.value}</div>
+            <div key={i} className={`summary-card border p-1.5 text-center rounded-lg shadow-sm ${item.color}`}>
+              <div className="text-[9px] font-bold uppercase tracking-wider mb-0.5 opacity-70 leading-none">{item.label}</div>
+              <div className="text-sm print:text-[13px] font-black leading-none">{item.value}</div>
             </div>
           ))}
         </div>
