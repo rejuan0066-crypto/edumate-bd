@@ -189,8 +189,8 @@ export const getResultSheetHtml = ({
   title, students, subjects, marksMap, getOverallGrade, bn, institutionName, 
   institutionLogo, institutionAddress, institutionPhone, className, examName, 
   sessionName, passMark = 33, signatories, orientation = 'landscape', 
-  showPageNumbers = true, showFooterInstitution = true, margins 
-}: ExportData & { orientation?: 'landscape' | 'portrait' }): string => {
+  showPageNumbers = true, showFooterInstitution = true, margins, qrCodeDataUrl
+}: ExportData & { orientation?: 'landscape' | 'portrait', qrCodeDataUrl?: string }): string => {
   const m = sanitizeMargins(margins);
   const docName = buildResultDocName({ examName, sessionName, className, title });
   const sigList = (signatories && signatories.length ? signatories : DEFAULT_RESULT_SIGNATORIES).slice(0, 4);
