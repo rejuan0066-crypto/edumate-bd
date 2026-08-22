@@ -230,12 +230,12 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             <tbody>
               {subjectResults.map((r, i) => (
                 <tr key={i} className="border-b border-gray-200 last:border-0 hover:bg-gray-50 transition-colors">
-                  <td className="border-r border-gray-300 p-1.5 text-center text-gray-500">{i + 1}</td>
-                  <td className="border-r border-gray-300 p-1.5 font-medium truncate" title={bn ? r.subject.name_bn : r.subject.name}>{bn ? r.subject.name_bn : r.subject.name}</td>
-                  <td className="border-r border-gray-300 p-1.5 text-center">100</td>
-                  <td className="border-r border-gray-300 p-1.5 text-center font-bold">{r.marks}</td>
-                  <td className="border-r border-gray-300 p-1.5 text-center font-semibold">{r.grade}</td>
-                  <td className="p-1.5 text-center font-semibold text-emerald-700">{r.gpa}</td>
+                  <td className="border-r border-gray-300 p-1 text-center text-gray-500">{i + 1}</td>
+                  <td className="border-r border-gray-300 p-1 pl-2 font-medium truncate" title={bn ? r.subject.name_bn : r.subject.name}>{bn ? r.subject.name_bn : r.subject.name}</td>
+                  <td className="border-r border-gray-300 p-1 text-center">100</td>
+                  <td className="border-r border-gray-300 p-1 text-center font-bold">{r.marks}</td>
+                  <td className="border-r border-gray-300 p-1 text-center font-semibold">{r.grade}</td>
+                  <td className="p-1 text-center font-semibold text-emerald-700">{r.gpa}</td>
                 </tr>
               ))}
             </tbody>
