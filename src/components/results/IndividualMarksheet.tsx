@@ -307,28 +307,28 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
 
         {/* Summary & Result Statistics Cards */}
         <div className="grid grid-cols-5 gap-4 mt-8 mb-8">
-          <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl text-center">
-            <span className="text-[10px] text-blue-500 font-bold uppercase block mb-1">মোট নম্বর</span>
-            <span className="text-[18px] font-black text-blue-900">
+          <div className="bg-white border border-slate-200 p-4 rounded-xl text-center shadow-sm">
+            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">মোট নম্বর</span>
+            <span className="text-[22px] font-bold text-slate-800">
               {bn ? toBnDigits(student.total_marks || totalMarks) : (student.total_marks || totalMarks)}
             </span>
           </div>
-          <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl text-center">
-            <span className="text-[10px] text-amber-500 font-bold uppercase block mb-1">মেধা স্থান</span>
-            <span className="text-[18px] font-black text-amber-900">
+          <div className="bg-white border border-slate-200 p-4 rounded-xl text-center shadow-sm">
+            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">মেধা স্থান</span>
+            <span className="text-[22px] font-bold text-slate-800">
               {student.rank ? toBnDigits(student.rank) + 'তম' : '-'}
             </span>
           </div>
-          <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl text-center">
-            <span className="text-[10px] text-indigo-500 font-bold uppercase block mb-1">সর্বমোট GPA</span>
-            <span className="text-[18px] font-black text-indigo-900">
+          <div className="bg-white border border-slate-200 p-4 rounded-xl text-center shadow-sm">
+            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">সর্বমোট GPA</span>
+            <span className="text-[22px] font-bold text-slate-800">
               {bn ? toBnDigits(Number(student.gpa || overall.gpa).toFixed(2)) : Number(student.gpa || overall.gpa).toFixed(2)}
             </span>
           </div>
-          <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl text-center shadow-sm">
-            <span className="text-[10px] text-emerald-600 font-bold uppercase block mb-1">গ্রেড</span>
+          <div className="bg-white border border-slate-200 p-4 rounded-xl text-center shadow-sm flex flex-col items-center justify-center">
+            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">গ্রেড</span>
             <span className={cn(
-              "text-white text-[12px] px-3 py-0.5 rounded-full font-bold",
+              "text-white text-[14px] px-5 py-1 rounded-full font-bold shadow-sm",
               (() => {
                 const hasFailedSubject = subjectResults.some(r => r.grade === 'F');
                 const isFail = (student.letter_grade || overall.grade) === 'F' || hasFailedSubject;
@@ -341,22 +341,26 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               })()}
             </span>
           </div>
-          <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl text-center">
-            <span className="text-[10px] text-emerald-500 font-bold uppercase block mb-1">মর্যাদা</span>
-            <span className="text-[18px] font-black text-emerald-900">
+          <div className="bg-white border border-slate-200 p-4 rounded-xl text-center shadow-sm flex flex-col items-center justify-center">
+            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">মর্যাদা</span>
+            <span className={cn(
+              "text-[14px] font-bold px-4 py-1 rounded-full",
+              (() => {
+                const gpa = Number(student.gpa || overall.gpa);
+                const hasFailedSubject = subjectResults.some(r => r.grade === 'F');
+                const isFail = student.letter_grade === 'F' || overall.grade === 'F' || gpa === 0 || hasFailedSubject;
+                return isFail ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+              })()
+            )}>
               {(() => {
                 const gpa = Number(student.gpa || overall.gpa);
-                // Check if any subject mark is below pass mark or grade is F
                 const hasFailedSubject = subjectResults.some(r => r.grade === 'F');
                 const isFail = student.letter_grade === 'F' || overall.grade === 'F' || gpa === 0 || hasFailedSubject;
                 
                 if (isFail) return "রাসিব";
-                
-                // If there's an explicit division from backend, use it
                 if (student.division || student.status_text || student.madrasha_grade) {
                   return student.division || student.status_text || student.madrasha_grade;
                 }
-                
                 if (gpa >= 5.0) return "মুমতাজ";
                 if (gpa >= 4.0) return "জায়্যিদ জিদ্দান";
                 if (gpa >= 3.0) return "জায়্যিদ";
