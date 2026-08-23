@@ -359,19 +359,22 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               {(() => {
                 const meritRank = rank || student.rank || student.merit_rank || student.merit_position;
                 if (isSample) return bn ? '১ম' : '1st';
-                if (meritRank === undefined || meritRank === null || meritRank === 0) return '-';
+                if (meritRank === undefined || meritRank === null || meritRank === 0 || meritRank === '') return '-';
                 
+                const rankNum = Number(meritRank);
+                if (isNaN(rankNum)) return String(meritRank);
+
                 if (bn) {
                   const specials: Record<number, string> = {
                     1: '১ম', 2: '২য়', 3: '৩য়', 4: '৪র্থ', 5: '৫ম', 6: '৬ষ্ঠ',
                     7: '৭ম', 8: '৮ম', 9: '৯ম', 10: '১০ম'
                   };
-                  return specials[Number(meritRank)] || `${toBnDigits(meritRank)}তম`;
+                  return specials[rankNum] || `${toBnDigits(rankNum)}তম`;
                 }
 
                 const s = ['th', 'st', 'nd', 'rd'];
-                const v = Number(meritRank) % 100;
-                return meritRank + (s[(v - 20) % 10] || s[v] || s[0]);
+                const v = rankNum % 100;
+                return rankNum + (s[(v - 20) % 10] || s[v] || s[0]);
               })()
             }</span>
           </div>
