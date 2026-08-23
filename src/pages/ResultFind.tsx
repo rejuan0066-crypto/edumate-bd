@@ -123,7 +123,15 @@ const ResultFind = () => {
       const year = academicSessions.find((s: any) => s.id === examYear);
       const examTitle = `${bn ? examSession.name_bn : examSession.name} — ${bn ? classInfo?.name_bn : classInfo?.name} — ${bn ? (year?.name_bn || year?.name) : year?.name}`;
 
-      setResultData({ student, subjects, marksMap, examTitle });
+      setResultData({ 
+        student: {
+          ...student,
+          rank: found.merit_rank || found.merit_position || found.rank
+        }, 
+        subjects, 
+        marksMap, 
+        examTitle 
+      });
     } catch (err: any) {
       setError(err.message || 'Error');
     } finally {
