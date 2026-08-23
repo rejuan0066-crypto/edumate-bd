@@ -11450,6 +11450,7 @@ export type Database = {
             Args: { p_class_id?: string; p_roll: string; p_session_id: string }
             Returns: {
               class_id: string
+              merit_rank: number
               student_id: string
             }[]
           }
