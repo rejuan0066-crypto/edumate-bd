@@ -116,7 +116,8 @@ export const exportResultCSV = (params: ExportData) => {
 
   const rankMap = new Map<number, number>();
   sortedByTotal.forEach((r, i) => {
-    if (!r.failed) rankMap.set(r.idx, i + 1);
+    const meritRank = r.st.rank || r.st.merit_rank || r.st.merit_position;
+    if (!r.failed) rankMap.set(r.idx, meritRank || i + 1);
   });
 
   const rows = computed.map(({ st, idx, marks, total, overall, failed, hasEnteredAnyMark }) => {
