@@ -354,7 +354,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             </span>
           </div>
           <div className="bg-white border border-slate-200 p-3 rounded-lg text-center shadow-sm">
-            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">{bn ? 'মেধা স্থান' : 'Merit Rank'}</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">{bn ? "'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            মেধাস্থান  মার্ক শিটে দেখাচ্ছেনা" : 'Merit Rank'}</span>
             <span className="text-[22px] font-bold text-slate-800">
               {(() => {
                 const meritRank = rank || student.rank || student.merit_rank || student.merit_position;
