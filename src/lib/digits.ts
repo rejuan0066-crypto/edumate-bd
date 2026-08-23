@@ -35,7 +35,7 @@ export function parseLocaleNumber(input: string): number {
 
 /** Bengali/English ordinal label for merit rank (১ম, ২য়, ৩য়, ৪র্থ ...) */
 export function formatOrdinalRank(n: number | null | undefined, bn = true): string {
-  if (!n || n < 1) return '-';
+  if (n === null || n === undefined || n < 1) return '-';
   if (!bn) {
     const s = ['th', 'st', 'nd', 'rd'];
     const v = n % 100;
