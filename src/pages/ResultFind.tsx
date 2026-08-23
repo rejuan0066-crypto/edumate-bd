@@ -123,10 +123,33 @@ const ResultFind = () => {
       const year = academicSessions.find((s: any) => s.id === examYear);
       const examTitle = `${bn ? examSession.name_bn : examSession.name} — ${bn ? classInfo?.name_bn : classInfo?.name} — ${bn ? (year?.name_bn || year?.name) : year?.name}`;
 
+      // Compute merit rank within the same class
+      let computedRank: number | null = null;
+      try {
+        const { data: classmates } = await (supabase as any)
+          .from('students_public')
+          .select('id')
+          .eq('class_id', foundClassId);
+
+        const totals = (classmates || [])
+          .map((cm: any) => {
+            const marks = subjects.map((s: any) => marksMap[`${cm.id}_${s.id}`]);
+            const hasAny = marks.some((m: any) => m !== undefined);
+            const total = marks.reduce((a: number, b: any) => a + (b ?? 0), 0);
+            const hasFail = marks.some((m: any) => (m ?? 0) < 33);
+            return { id: cm.id, total, hasAny, hasFail };
+          })
+          .filter((x: any) => x.hasAny && !x.hasFail)
+          .sort((a: any, b: any) => b.total - a.total);
+
+        const idx = totals.findIndex((x: any) => x.id === found.student_id);
+        if (idx >= 0) computedRank = idx + 1;
+      } catch { /* rank optional */ }
+
       setResultData({ 
         student: {
           ...student,
-          rank: found.merit_rank || found.merit_position || found.rank
+          rank: found.merit_rank || found.merit_position || found.rank || computedRank
         }, 
         subjects, 
         marksMap, 
