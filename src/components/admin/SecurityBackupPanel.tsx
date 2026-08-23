@@ -226,6 +226,24 @@ export function SecurityBackupPanel({ bn = true }: { bn?: boolean }) {
           </table>
         </div>
       </div>
+
+      {/* Security Scanner Placeholder */}
+      <div className="card-elevated p-5">
+        <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2">
+          <ShieldCheck className="w-5 h-5 text-primary" />
+          {bn ? "নিরাপত্তা স্ক্যানার" : "Security Scanner"}
+        </h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          {bn 
+            ? "সিস্টেমের সম্ভাব্য নিরাপত্তা ঝুঁকিগুলো স্ক্যান করুন এবং সমাধান করুন।"
+            : "Scan and fix potential security risks in the system."}
+        </p>
+        <Button variant="outline" className="w-full border-dashed">
+          {bn 
+            ? "স্ক্যান ফলাফল থেকে নিরাপত্তা সমস্যাগুলো লোড করুন এবং নির্বাচিত সমস্যাগুলো ঠিক করুন।" 
+            : "Load the security issues from the scan results and fix the selected issues."}
+        </Button>
+      </div>
     </div>
   );
 }
