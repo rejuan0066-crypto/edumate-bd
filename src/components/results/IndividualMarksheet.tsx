@@ -357,16 +357,13 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">{bn ? 'মেধা স্থান' : 'Merit Rank'}</span>
             <span className="text-[22px] font-bold text-slate-800">
               {(() => {
-                const meritRank = rank || student.rank || student.merit_rank || student.merit_position;
+                const meritRank = rank ?? student.rank ?? student.merit_rank ?? student.merit_position;
                 if (isSample) return bn ? '১ম' : '1st';
-                
-                // If it's undefined, null, zero or empty string, try to look at student.rank specifically
-                const finalRank = meritRank || student.rank;
-                
-                if (finalRank === undefined || finalRank === null || finalRank === 0 || finalRank === '') return '-';
-                
-                const rankNum = Number(finalRank);
-                if (isNaN(rankNum)) return String(finalRank);
+
+                if (meritRank === undefined || meritRank === null || meritRank === '') return '-';
+
+                const rankNum = Number(meritRank);
+                if (!Number.isInteger(rankNum) || rankNum <= 0) return '-';
 
                 if (bn) {
                   const specials: Record<number, string> = {
