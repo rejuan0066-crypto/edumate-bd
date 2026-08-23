@@ -220,10 +220,11 @@ export const getResultSheetHtml = ({
   });
   const rankMap = new Map<number, number>();
   sortedByTotal.forEach((r, i) => {
+    const meritRank = r.st.rank || r.st.merit_rank || r.st.merit_position;
     if (r.failed) {
-      rankMap.set(r.idx, 0); // 0 or -1 to indicate no rank for fails
+      rankMap.set(r.idx, 0); 
     } else {
-      rankMap.set(r.idx, i + 1);
+      rankMap.set(r.idx, meritRank || i + 1);
     }
   });
 
