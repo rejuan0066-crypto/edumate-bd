@@ -359,10 +359,14 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               {(() => {
                 const meritRank = rank || student.rank || student.merit_rank || student.merit_position;
                 if (isSample) return bn ? '১ম' : '1st';
-                if (meritRank === undefined || meritRank === null || meritRank === 0 || meritRank === '') return '-';
                 
-                const rankNum = Number(meritRank);
-                if (isNaN(rankNum)) return String(meritRank);
+                // If it's undefined, null, zero or empty string, try to look at student.rank specifically
+                const finalRank = meritRank || student.rank;
+                
+                if (finalRank === undefined || finalRank === null || finalRank === 0 || finalRank === '') return '-';
+                
+                const rankNum = Number(finalRank);
+                if (isNaN(rankNum)) return String(finalRank);
 
                 if (bn) {
                   const specials: Record<number, string> = {
