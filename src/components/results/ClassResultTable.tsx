@@ -191,7 +191,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
           </thead>
           <tbody>
             {studentsWithStats.map(({ st, originalIdx, failed, total, avg, overall, hasEnteredAnyMark }) => {
-              const rank = rankMap.get(st.id);
+              const rank = rankMap.get(st.id) || st.rank || st.merit_rank || st.merit_position;
               const rankDisplay = formatOrdinalRank(rank, bn);
               
               return (

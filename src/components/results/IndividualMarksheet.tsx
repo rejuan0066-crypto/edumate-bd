@@ -357,17 +357,23 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">{bn ? 'মেধা স্থান' : 'Merit Rank'}</span>
             <span className="text-[22px] font-bold text-slate-800">
               {(() => {
-                const meritRank = rank || student.rank || student.merit_rank;
+                const meritRank = rank || student.rank || student.merit_rank || student.merit_position;
                 if (isSample) return bn ? '১ম' : '1st';
-                if (!meritRank) return '-';
-                return bn ? toBnDigits(meritRank) + 'তম' : (
-                  meritRank === 1 ? '1st' : 
-                  meritRank === 2 ? '2nd' : 
-                  meritRank === 3 ? '3rd' : 
-                  `${meritRank}th`
-                );
-              })()}
-            </span>
+                if (meritRank === undefined || meritRank === null || meritRank === 0) return '-';
+                
+                if (bn) {
+                  const specials: Record<number, string> = {
+                    1: '১ম', 2: '২য়', 3: '৩য়', 4: '৪র্থ', 5: '৫ম', 6: '৬ষ্ঠ',
+                    7: '৭ম', 8: '৮ম', 9: '৯ম', 10: '১০ম'
+                  };
+                  return specials[Number(meritRank)] || `${toBnDigits(meritRank)}তম`;
+                }
+
+                const s = ['th', 'st', 'nd', 'rd'];
+                const v = Number(meritRank) % 100;
+                return meritRank + (s[(v - 20) % 10] || s[v] || s[0]);
+              })()
+            }</span>
           </div>
           <div className="bg-white border border-slate-200 p-3 rounded-lg text-center shadow-sm">
             <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">{bn ? 'সর্বমোট GPA' : 'Overall GPA'}</span>
