@@ -149,6 +149,7 @@ const ResultFind = () => {
       setResultData({ 
         student: {
           ...student,
+          class_id: foundClassId || student.class_id,
           rank: found.merit_rank || found.merit_position || found.rank || computedRank
         }, 
         subjects, 

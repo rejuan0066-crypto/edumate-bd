@@ -385,20 +385,24 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           <div className="bg-white border border-slate-200 p-3 rounded-lg text-center shadow-sm">
             <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">{bn ? 'সর্বমোট GPA' : 'Overall GPA'}</span>
             <span className="text-[22px] font-bold text-slate-800">
-              {bn ? toBnDigits(Number(student.gpa || overall.gpa).toFixed(2)) : Number(student.gpa || overall.gpa).toFixed(2)}
+              {(() => {
+                const g = Number(overall.graced ? overall.gpa : (student.gpa || overall.gpa));
+                return bn ? toBnDigits(g.toFixed(2)) : g.toFixed(2);
+              })()}
             </span>
           </div>
           <div className="bg-white border border-slate-200 p-3 rounded-lg text-center shadow-sm flex flex-col items-center justify-center">
-            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">{bn ? 'চুড়ান্ত গ্রেড' : 'Grade'}</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase block mb-1.5">{bn ? 'চুড়ান্ত গ্রেড' : 'Grade'}</span>
             <span className={cn(
               "text-white text-[14px] px-5 py-1 rounded-full font-bold shadow-sm",
               (() => {
-                const hasFailedSubject = subjectResults.some(r => r.grade === 'F');
-                const isFail = (student.letter_grade || overall.grade) === 'F' || hasFailedSubject;
+                const hasFailedSubject = !overall.graced && subjectResults.some(r => r.grade === 'F');
+                const isFail = !overall.graced && ((student.letter_grade || overall.grade) === 'F' || hasFailedSubject);
                 return !isFail ? 'bg-emerald-600' : 'bg-rose-600';
               })()
             )}>
               {(() => {
+                if (overall.graced) return overall.grade;
                 const hasFailedSubject = subjectResults.some(r => r.grade === 'F');
                 return hasFailedSubject ? 'F' : (student.letter_grade || overall.grade);
               })()}
@@ -409,17 +413,18 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             <span className={cn(
               "text-[14px] font-bold px-4 py-1 rounded-full",
               (() => {
-                const gpa = Number(student.gpa || overall.gpa);
+                const gpa = Number(overall.graced ? overall.gpa : (student.gpa || overall.gpa));
                 const hasFailedSubject = subjectResults.some(r => r.grade === 'F');
-                const isFail = student.letter_grade === 'F' || overall.grade === 'F' || gpa === 0 || hasFailedSubject;
+                const isFail = !overall.graced && (student.letter_grade === 'F' || overall.grade === 'F' || gpa === 0 || hasFailedSubject);
                 return isFail ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200';
               })()
             )}>
               {(() => {
+                if (overall.graced) return bn ? (overall.title_bn || 'মাকবুল (বিবেচনায়)') : (overall.title || 'MAQBUL (Considered)');
                 const gpa = Number(student.gpa || overall.gpa);
                 const hasFailedSubject = subjectResults.some(r => r.grade === 'F');
                 const isFail = student.letter_grade === 'F' || overall.grade === 'F' || gpa === 0 || hasFailedSubject;
-                
+
                 if (isFail) return bn ? "রাসিব" : "FAIL";
                 if (student.division || student.status_text || student.madrasha_grade) {
                   return student.division || student.status_text || student.madrasha_grade;
@@ -432,6 +437,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               })()}
             </span>
           </div>
+
         </div>
 
         {/* Grading Scale & Signatures */}
