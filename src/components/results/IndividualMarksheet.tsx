@@ -309,7 +309,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             <thead>
               <tr>
                 <th className="w-[50px]">{bn ? 'ক্রমিক' : 'Sl No'}</th>
-                <th className="text-left">{bn ? 'বিষয় (Subject)' : 'Subject'}</th>
+                <th className="text-left">{bn ? 'বিষয়\u00a0' : 'Subject'}</th>
                 <th className="w-[100px]">{bn ? 'পূর্ণমান' : 'Full Marks'}</th>
                 <th className="w-[120px]">{bn ? 'প্রাপ্ত নম্বর' : 'Obtained Marks'}</th>
                 <th className="w-[100px]">{bn ? 'লেটার গ্রেড' : 'Letter Grade'}</th>
