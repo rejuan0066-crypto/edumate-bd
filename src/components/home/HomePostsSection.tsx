@@ -26,7 +26,7 @@ const HomePostsSection = ({ posts, language }: Props) => {
       <div className="section-header-bar flex items-center justify-between">
         <h2 className="text-base sm:text-lg font-display font-bold text-foreground flex items-center gap-2">
           <span className="w-1 h-6 bg-primary rounded-full" />
-          {bn ? 'সর্বশেষ সংবাদ' : 'Latest News'}
+          {bn ? 'সর্বশেষ পোস্ট' : 'Latest Posts'}
         </h2>
         <Link to="/posts" className="text-xs text-primary hover:underline flex items-center gap-1 font-medium">
           {bn ? 'সব দেখুন' : 'View All'} <ArrowRight className="w-3 h-3" />
