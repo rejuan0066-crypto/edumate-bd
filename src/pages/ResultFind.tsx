@@ -85,17 +85,18 @@ const ResultFind = () => {
         return;
       }
 
-      // Get student info from public view (non-sensitive fields only)
-      const { data: publicStudents } = await (supabase as any)
-        .from('students_public')
-        .select('*')
-        .eq('id', found.student_id);
-
-      const student = (publicStudents || []).find((ps: any) => ps.id === found.student_id) || null;
-      if (!student) {
-        setError(bn ? 'ছাত্র পাওয়া যায়নি' : 'Student not found');
-        return;
-      }
+      // The verified public RPC returns only this student's safe profile and marks.
+      const student = {
+        id: found.student_id,
+        name_bn: found.name_bn,
+        name_en: found.name_en,
+        roll_number: found.roll_number,
+        registration_no: found.registration_no,
+        division_id: found.division_id,
+        class_id: found.class_id,
+        session_id: found.session_id,
+        photo_url: found.photo_url,
+      };
 
       const foundClassId = found.class_id;
 
@@ -103,11 +104,9 @@ const ResultFind = () => {
       const { data: classInfo } = await supabase.from('classes').select('*').eq('id', foundClassId).single();
       const divisionId = classInfo?.division_id;
 
-      // Load results
-      const { data: results } = await supabase.from('results').select('*').eq('exam_id', examSessionId);
       const marksMap: Record<string, number> = {};
-      results?.forEach((r: any) => {
-        marksMap[`${r.student_id}_${r.subject_id}`] = r.marks ?? 0;
+      Object.entries(found.marks || {}).forEach(([subjectId, marks]) => {
+        marksMap[`${found.student_id}_${subjectId}`] = Number(marks) || 0;
       });
 
       // Load subjects
