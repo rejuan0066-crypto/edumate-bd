@@ -102,6 +102,32 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
 
   const rankMap = rankStudents(studentsWithStats);
 
+  const sheetHtml = useMemo(() => {
+    if (!readOnly) return '';
+    try {
+      return getResultSheetHtml({
+        title,
+        students,
+        subjects,
+        marksMap,
+        getOverallGrade,
+        bn,
+        institutionName: instName,
+        institutionLogo: institution?.logo_url || undefined,
+        institutionAddress: institution?.address || undefined,
+        institutionPhone: institution?.phone || undefined,
+        className: classNameProp,
+        examName,
+        sessionName,
+        passMark,
+      });
+    } catch (e) {
+      console.error('Result sheet preview failed', e);
+      return '';
+    }
+  }, [readOnly, title, students, subjects, marksMap, bn, instName, institution, classNameProp, examName, sessionName, passMark, getOverallGrade]);
+
+
   return (
     <div className="card-elevated rounded-xl overflow-hidden relative flex flex-col h-full bg-background">
       {/* Institution Header */}
@@ -154,6 +180,17 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
         </div>
       </div>
 
+      {readOnly ? (
+        <div className="w-full overflow-auto bg-slate-100 p-2 sm:p-4" style={{ maxHeight: '78vh' }}>
+          <iframe
+            title={title}
+            srcDoc={sheetHtml}
+            className="w-full bg-white rounded-lg border border-border shadow-sm"
+            style={{ height: '78vh', minHeight: 520 }}
+          />
+        </div>
+      ) : (
+        <>
       {/* Main Grid Container */}
       <div className="max-h-[75vh] w-full overflow-y-auto overflow-x-auto relative scrollbar-thin scrollbar-thumb-muted-foreground/20 bg-background" ref={tableRef}>
         <table className="w-full min-w-full border-separate border-spacing-0 table-auto whitespace-nowrap">
@@ -320,6 +357,8 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
           ))}
         </div>
       </div>
+        </>
+      )}
       
       <ResultCalculationDialog
         open={!!explainStudent}
