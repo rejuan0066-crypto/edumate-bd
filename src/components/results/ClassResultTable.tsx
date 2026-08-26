@@ -205,10 +205,10 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
                     const mark = marksMap[`${st.id}_${sub.id}`] ?? 0;
                     const isFail = mark < passMark && mark > 0;
                     return (
-                      <td key={sub.id} className="px-2 text-center border-b border-r border-border">
+                      <td key={sub.id} className="px-1 text-center border-b border-r border-border">
                         <div className="flex items-center justify-center h-full">
                           <Input
-                            className={`w-full max-w-[80px] h-9 text-center bg-white border-2 rounded-lg text-[10px] sm:text-sm transition-all focus:ring-2 focus:ring-primary/20 ${isFail ? 'border-destructive/40 text-destructive focus:border-destructive' : 'border-border/60 focus:border-primary'}`}
+                            className={`w-full max-w-[56px] h-8 px-1 text-center bg-white border-2 rounded-lg text-[10px] sm:text-xs transition-all focus:ring-2 focus:ring-primary/20 ${isFail ? 'border-destructive/40 text-destructive focus:border-destructive' : 'border-border/60 focus:border-primary'}`}
                             type="text"
                             inputMode="numeric"
                             data-bijoy={bn}
