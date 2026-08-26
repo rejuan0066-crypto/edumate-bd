@@ -10,7 +10,7 @@ interface ClassResultStatusListProps {
   classes: any[];
   resultStatusMap: Record<string, boolean>;
   publishStatusMap?: Record<string, boolean>;
-  onClassClick: (classId: string) => void;
+  onClassClick: (classId: string, mode?: 'view' | 'entry') => void;
   onExport: (classId: string, type: 'csv' | 'pdf' | 'print') => void;
   onPublishToggle?: (classId: string, publish: boolean) => void;
   exportingClassId: string | null;
