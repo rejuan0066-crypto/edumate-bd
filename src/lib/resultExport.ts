@@ -90,7 +90,7 @@ export const exportResultCSV = (params: ExportData) => {
     bn ? 'নাম' : 'Name',
     ...subjects.map((s: any) => bn ? s.name_bn : s.name),
     bn ? 'মোট' : 'Total',
-    bn ? 'গড়' : 'Avg',
+    
     bn ? 'গ্রেড' : 'Grade',
     'GPA',
     bn ? 'মর্যাদা' : 'Title',
@@ -124,7 +124,6 @@ export const exportResultCSV = (params: ExportData) => {
   });
 
   const rows = computed.map(({ st, idx, marks, total, overall, failed, hasEnteredAnyMark }) => {
-    const avg = subjects.length > 0 ? total / subjects.length : 0;
     const rank = rankMap.get(idx);
     const rankDisplay = hasEnteredAnyMark ? formatOrdinalRank(rank, true) : '-';
 
@@ -135,7 +134,6 @@ export const exportResultCSV = (params: ExportData) => {
       bn ? st.name_bn : (st.name_en || st.name_bn),
       ...marks.map((m, i) => marksMap[`${st.id}_${subjects[i].id}`] !== undefined ? m : '-'),
       hasEnteredAnyMark ? total : '-',
-      hasEnteredAnyMark ? avg.toFixed(1) : '-',
       overall.grade,
       overall.gpa,
       hasEnteredAnyMark ? (bn ? overall.title_bn : overall.title) : '-',
