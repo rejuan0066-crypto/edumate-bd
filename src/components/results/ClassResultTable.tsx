@@ -218,20 +218,26 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
                     return (
                       <td key={sub.id} className="px-1 text-center border-b border-r border-border">
                         <div className="flex items-center justify-center h-full">
-                          <Input
-                            className={`w-full max-w-[56px] h-8 px-1 text-center bg-white border-2 rounded-lg text-[10px] sm:text-xs transition-all focus:ring-2 focus:ring-primary/20 ${isFail ? 'border-destructive/40 text-destructive focus:border-destructive' : 'border-border/60 focus:border-primary'}`}
-                            type="text"
-                            inputMode="numeric"
-                            data-bijoy={bn}
-                            value={mark === 0 ? '' : toBnDigits(mark)}
-                            onChange={(e) => {
-                              const raw = toEnDigits(e.target.value).replace(/[^0-9]/g, '');
-                              if (raw === '') { onMarksChange(`${st.id}_${sub.id}`, 0); return; }
-                              let num = parseInt(raw, 10) || 0;
-                              if (num > maxMarks) num = maxMarks;
-                              onMarksChange(`${st.id}_${sub.id}`, num);
-                            }}
-                          />
+                          {readOnly ? (
+                            <span className={`text-[10px] sm:text-xs font-medium ${isFail ? 'text-destructive' : 'text-foreground'}`}>
+                              {mark === 0 ? '-' : toBnDigits(mark)}
+                            </span>
+                          ) : (
+                            <Input
+                              className={`w-full max-w-[56px] h-8 px-1 text-center bg-white border-2 rounded-lg text-[10px] sm:text-xs transition-all focus:ring-2 focus:ring-primary/20 ${isFail ? 'border-destructive/40 text-destructive focus:border-destructive' : 'border-border/60 focus:border-primary'}`}
+                              type="text"
+                              inputMode="numeric"
+                              data-bijoy={bn}
+                              value={mark === 0 ? '' : toBnDigits(mark)}
+                              onChange={(e) => {
+                                const raw = toEnDigits(e.target.value).replace(/[^0-9]/g, '');
+                                if (raw === '') { onMarksChange(`${st.id}_${sub.id}`, 0); return; }
+                                let num = parseInt(raw, 10) || 0;
+                                if (num > maxMarks) num = maxMarks;
+                                onMarksChange(`${st.id}_${sub.id}`, num);
+                              }}
+                            />
+                          )}
                         </div>
                       </td>
                     );
