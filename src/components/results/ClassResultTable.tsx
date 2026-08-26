@@ -127,6 +127,59 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
     }
   }, [readOnly, title, students, subjects, marksMap, bn, instName, institution, classNameProp, examName, sessionName, passMark, getOverallGrade]);
 
+  // Scale pages to fit iframe width and report full content height to parent
+  const previewHtml = useMemo(() => {
+    if (!sheetHtml) return '';
+    const inject = `
+<style>
+  @media screen {
+    html,body{background:#f1f5f9 !important;overflow-x:hidden !important;min-width:0 !important;padding:0 !important;}
+    #fitwrap{transform-origin:top left;}
+  }
+</style>
+<script>
+  (function(){
+    function fit(){
+      var pages = document.querySelectorAll('.result-page');
+      if(!pages.length) return;
+      var wrap = document.getElementById('fitwrap');
+      if(!wrap){
+        wrap = document.createElement('div');
+        wrap.id='fitwrap';
+        var parent = pages[0].parentNode;
+        parent.insertBefore(wrap, pages[0]);
+        pages.forEach(function(p){ wrap.appendChild(p); });
+      }
+      wrap.style.transform='none';
+      var pw = wrap.scrollWidth || 1;
+      var avail = document.documentElement.clientWidth - 16;
+      var scale = Math.min(1, avail / pw);
+      wrap.style.transform = 'scale(' + scale + ')';
+      wrap.style.width = pw + 'px';
+      var h = wrap.scrollHeight * scale + 24;
+      document.body.style.height = h + 'px';
+      parent.postMessage({ type: 'result-sheet-height', height: Math.ceil(h) }, '*');
+    }
+    window.addEventListener('load', function(){ fit(); setTimeout(fit, 300); });
+    window.addEventListener('resize', fit);
+    setTimeout(fit, 100);
+  })();
+<\/script>`;
+    return sheetHtml.includes('</body>') ? sheetHtml.replace('</body>', inject + '</body>') : sheetHtml + inject;
+  }, [sheetHtml]);
+
+  const [previewHeight, setPreviewHeight] = useState(900);
+  useEffect(() => {
+    const onMsg = (e: MessageEvent) => {
+      if (e.data?.type === 'result-sheet-height' && typeof e.data.height === 'number') {
+        setPreviewHeight(Math.max(400, Math.min(20000, e.data.height)));
+      }
+    };
+    window.addEventListener('message', onMsg);
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+
 
   return (
     <div className="card-elevated rounded-xl overflow-hidden relative flex flex-col h-full bg-background">
