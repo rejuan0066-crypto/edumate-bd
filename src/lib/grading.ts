@@ -174,3 +174,19 @@ export const rankStudents = (stats: StudentStats[]): Map<string, number> => {
   });
   return map;
 };
+
+export interface GracePassConfig {
+  enabled: boolean;
+  max_subjects: number;
+  apply_to: 'all' | 'selected';
+  class_rules: Record<string, number>;
+}
+
+/** Allowed number of failed subjects for a class (0 = consideration pass off). */
+export const resolveGraceLimit = (config: GracePassConfig | null | undefined, classId?: string | null): number => {
+  if (!config?.enabled) return 0;
+  const rules = config.class_rules || {};
+  if (classId && rules[classId] !== undefined) return Number(rules[classId]) || 0;
+  if (config.apply_to === 'selected') return 0;
+  return Number(config.max_subjects) || 0;
+};

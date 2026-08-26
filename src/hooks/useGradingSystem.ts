@@ -2,9 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
   DEFAULT_SCALES,
-  colorMap,
   gradeFromAverage,
   overallGrade,
+  resolveGraceLimit,
   type GradeScale,
 } from '@/lib/grading';
 
@@ -93,13 +93,7 @@ export const useGradingSystem = () => {
    *  unless consideration-pass is enabled and failed subjects are within the allowed limit. */
   /** Resolve the allowed number of failed subjects for a class.
    *  0 (or undefined in "selected" mode) means consideration pass is off for that class. */
-  const getGraceLimit = (classId?: string | null) => {
-    if (!gracePass?.enabled) return 0;
-    const rules = gracePass.class_rules || {};
-    if (classId && rules[classId] !== undefined) return Number(rules[classId]) || 0;
-    if (gracePass.apply_to === 'selected') return 0;
-    return Number(gracePass.max_subjects) || 0;
-  };
+  const getGraceLimit = (classId?: string | null) => resolveGraceLimit(gracePass, classId);
 
   const getOverallGrade = (subjectMarks: number[], classId?: string | null) =>
     overallGrade(subjectMarks, {

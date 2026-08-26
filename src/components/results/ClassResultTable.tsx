@@ -10,6 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { toBnDigits, toEnDigits, formatOrdinalRank } from '@/lib/digits';
+import { studentStats, rankStudents } from '@/lib/grading';
 import React, { useRef, useEffect } from 'react';
 
 // Legacy export for backward compat
@@ -39,7 +40,7 @@ interface ClassResultTableProps {
 const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave, isSaving, title, onViewMarksheet, onClose, lastSaved }: ClassResultTableProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
-  const { getOverallGrade, maxMarks, minMarks, passMark } = useGradingSystem();
+  const { getOverallGrade, getGraceLimit, scales, maxMarks, minMarks, passMark } = useGradingSystem();
   
   const tableRef = useRef<HTMLDivElement>(null);
   const [explainStudent, setExplainStudent] = useState<any | null>(null);
@@ -79,36 +80,18 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
 
   const instName = bn ? institution?.name : (institution?.name_en || institution?.name);
 
-  // Pre-calculate stats and ranks
+  // Pre-calculate stats and ranks (shared, unit-tested logic)
   const studentsWithStats = students.map((st: any, idx: number) => {
     const rawMarks = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`]);
-    const hasEnteredAnyMark = rawMarks.some((m: any) => m !== undefined && m !== null && m !== '');
-    const studentMarks = rawMarks.map((m: any) => (m === undefined || m === null || m === '' ? 0 : Number(m)));
-    // Only subjects that actually have a mark entered take part in grading —
-    // blank subjects must not be treated as 0 (that wrongly failed passing students).
-    const gradedMarks = rawMarks
-      .filter((m: any) => m !== undefined && m !== null && m !== '' && !Number.isNaN(Number(m)))
-      .map((m: any) => Number(m));
-    const total = hasEnteredAnyMark ? gradedMarks.reduce((a, b) => a + b, 0) : 0;
-    const overall = hasEnteredAnyMark ? getOverallGrade(gradedMarks, st.class_id) : null;
-    const failed = overall ? ((overall as any).graced ? false : overall.hasFail) : false;
-    const avg = gradedMarks.length > 0 ? total / gradedMarks.length : 0;
-    return { st, studentMarks, total, avg, overall, failed, hasEnteredAnyMark, originalIdx: idx };
-
-  });
-
-  const sortedForRank = [...studentsWithStats]
-    .filter(a => a.hasEnteredAnyMark)
-    .sort((a, b) => {
-      if (a.failed && !b.failed) return 1;
-      if (!a.failed && b.failed) return -1;
-      return b.total - a.total;
+    const stats = studentStats(st.id, rawMarks, {
+      scales,
+      passMark,
+      graceLimit: getGraceLimit(st.class_id),
     });
-
-  const rankMap = new Map<string, number>();
-  sortedForRank.forEach((item, i) => {
-    if (!item.failed) rankMap.set(item.st.id, i + 1);
+    return { st, ...stats, originalIdx: idx };
   });
+
+  const rankMap = rankStudents(studentsWithStats);
 
   return (
     <div className="card-elevated rounded-xl overflow-hidden relative flex flex-col h-full bg-background">
