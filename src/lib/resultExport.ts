@@ -211,10 +211,9 @@ export const getResultSheetHtml = ({
     const marks = raw.map((m: any) => (m === undefined || m === null || m === '' ? 0 : Number(m)));
     const graded = raw.filter((m: any) => m !== undefined && m !== null && m !== '' && !Number.isNaN(Number(m))).map((m: any) => Number(m));
     const total = hasEnteredAnyMark ? graded.reduce((a, b) => a + b, 0) : 0;
-    const avg = graded.length > 0 ? total / graded.length : 0;
     const overall = hasEnteredAnyMark ? getOverallGrade(graded, st.class_id) : null;
     const failed = overall ? ((overall as any).graced ? false : overall.hasFail) : false;
-    return { idx, st, marks, total, avg, overall, failed, hasEnteredAnyMark };
+    return { idx, st, marks, total, overall, failed, hasEnteredAnyMark };
   });
 
   const sortedByTotal = [...computed].sort((a, b) => {
