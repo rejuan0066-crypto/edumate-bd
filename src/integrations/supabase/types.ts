@@ -2972,6 +2972,12 @@ export type Database = {
           is_published: boolean | null
           name: string
           name_bn: string
+          publish_approval_status: string
+          publish_decided_at: string | null
+          publish_decided_by: string | null
+          publish_rejection_reason: string | null
+          publish_requested_at: string | null
+          publish_requested_by: string | null
           updated_at: string | null
         }
         Insert: {
@@ -2983,6 +2989,12 @@ export type Database = {
           is_published?: boolean | null
           name: string
           name_bn: string
+          publish_approval_status?: string
+          publish_decided_at?: string | null
+          publish_decided_by?: string | null
+          publish_rejection_reason?: string | null
+          publish_requested_at?: string | null
+          publish_requested_by?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -2994,6 +3006,12 @@ export type Database = {
           is_published?: boolean | null
           name?: string
           name_bn?: string
+          publish_approval_status?: string
+          publish_decided_at?: string | null
+          publish_decided_by?: string | null
+          publish_rejection_reason?: string | null
+          publish_requested_at?: string | null
+          publish_requested_by?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -10926,6 +10944,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      approve_result_publish: {
+        Args: { p_exam_session_id: string }
+        Returns: undefined
+      }
       assert_no_function_overloads: {
         Args: { fn_names: string[] }
         Returns: undefined
@@ -11602,6 +11624,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      reject_result_publish: {
+        Args: { p_exam_session_id: string; p_reason: string }
+        Returns: undefined
+      }
       request_device_reregistration: {
         Args: {
           _city?: string
@@ -11836,6 +11862,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      submit_result_publish_for_approval: {
+        Args: { p_exam_session_id: string }
+        Returns: undefined
       }
       unblock_device: {
         Args: { _device_id: string; _notes?: string; _reason: string }

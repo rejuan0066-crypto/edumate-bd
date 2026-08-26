@@ -1,7 +1,9 @@
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Printer, Save, Loader2, Eye, FileDown, FileSpreadsheet, X } from 'lucide-react';
+import { Printer, Save, Loader2, Eye, FileDown, FileSpreadsheet, X, Calculator } from 'lucide-react';
+import ResultCalculationDialog from '@/components/results/ResultCalculationDialog';
+import { useState } from 'react';
 import { useGradingSystem } from '@/hooks/useGradingSystem';
 import { exportResultCSV, exportResultPDF } from '@/lib/resultExport';
 import { useQuery } from '@tanstack/react-query';
@@ -40,6 +42,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
   const { getOverallGrade, maxMarks, minMarks, passMark } = useGradingSystem();
   
   const tableRef = useRef<HTMLDivElement>(null);
+  const [explainStudent, setExplainStudent] = useState<any | null>(null);
 
   const { data: institution } = useQuery({
     queryKey: ['institution-default'],
@@ -269,7 +272,14 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
                     </div>
                   </td>
                   <td className="px-2 text-center border-b">
-                    <div className="flex items-center justify-center h-full">
+                    <div className="flex items-center justify-center h-full gap-1">
+                      <button
+                        onClick={() => setExplainStudent(st)}
+                        title={bn ? 'গণনার ব্যাখ্যা' : 'Calculation breakdown'}
+                        className="p-2 rounded-full hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all transform hover:scale-110"
+                      >
+                        <Calculator className="w-4 h-4" />
+                      </button>
                       <button
                         onClick={() => onViewMarksheet(st.id, rank)}
                         className="p-2 rounded-full hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all transform hover:scale-110"
@@ -305,6 +315,14 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
         </div>
       </div>
       
+      <ResultCalculationDialog
+        open={!!explainStudent}
+        onOpenChange={(v) => { if (!v) setExplainStudent(null); }}
+        student={explainStudent}
+        subjects={subjects}
+        marksMap={marksMap}
+      />
+
       <style>{`
         .no-scrollbar::-webkit-scrollbar {
           display: none;
