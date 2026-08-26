@@ -54,6 +54,16 @@ const AdminResults = () => {
   // Show class list when we have year+session from URL but no class selected
   const showClassList = searchMode === 'class' && !!examYear && !!examSessionId && !selectedClass && !showResults;
 
+  // Scroll the saved result sheet into view as soon as it opens
+  const resultsSectionRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!showResults) return;
+    const t = setTimeout(() => {
+      resultsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 250);
+    return () => clearTimeout(t);
+  }, [showResults, viewingStudentId, selectedClass]);
+
   const loadResultsForExam = async (examId: string) => {
     const { data, error } = await supabase.from('results').select('*').eq('exam_id', examId);
     if (error) throw error;
