@@ -1,33 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  DEFAULT_SCALES,
+  gradeFromAverage,
+  overallGrade,
+  resolveGraceLimit,
+  type GradeScale,
+} from '@/lib/grading';
 
-export interface GradeScale {
-  grade: string;
-  min: number;
-  max: number;
-  gpa: string;
-  color: string;
-  title?: string;
-  title_bn?: string;
-}
-
-const DEFAULT_SCALES: GradeScale[] = [
-  { grade: 'A+', min: 80, max: 100, gpa: '5.00', color: 'emerald', title: 'Mumtaz', title_bn: 'মুমতাজ' },
-  { grade: 'A', min: 70, max: 79, gpa: '4.00', color: 'emerald', title: 'Jayyid Jiddan', title_bn: 'জায়্যিদ জিদ্দান' },
-  { grade: 'A-', min: 60, max: 69, gpa: '3.50', color: 'sky', title: 'Jayyid', title_bn: 'জায়্যিদ' },
-  { grade: 'B', min: 50, max: 59, gpa: '3.00', color: 'sky', title: 'Maqbul', title_bn: 'মাকবুল' },
-  { grade: 'C', min: 40, max: 49, gpa: '2.00', color: 'amber', title: 'Maqbul', title_bn: 'মাকবুল' },
-  { grade: 'D', min: 33, max: 39, gpa: '1.00', color: 'orange', title: 'Zayeef', title_bn: 'যয়ীফ' },
-  { grade: 'F', min: 0, max: 32, gpa: '0.00', color: 'destructive', title: 'Rasib', title_bn: 'রাসিব' },
-];
-
-const colorMap: Record<string, string> = {
-  emerald: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
-  sky: 'text-sky-600 dark:text-sky-400 bg-sky-500/10',
-  amber: 'text-amber-600 dark:text-amber-400 bg-amber-500/10',
-  orange: 'text-orange-600 dark:text-orange-400 bg-orange-500/10',
-  destructive: 'text-destructive bg-destructive/10',
-};
+export type { GradeScale } from '@/lib/grading';
+export { DEFAULT_SCALES } from '@/lib/grading';
 
 export const useGradingSystem = () => {
   const { data: scales = DEFAULT_SCALES } = useQuery({
@@ -105,83 +87,20 @@ export const useGradingSystem = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  const getGrade = (avg: number) => {
-    for (const s of scales) {
-      if (avg >= s.min && avg <= s.max) {
-        return { grade: s.grade, gpa: s.gpa, color: colorMap[s.color] || colorMap.destructive, title: s.title, title_bn: s.title_bn };
-      }
-    }
-    const last = scales[scales.length - 1] || DEFAULT_SCALES[DEFAULT_SCALES.length - 1];
-    return { grade: last.grade, gpa: last.gpa, color: colorMap[last.color] || colorMap.destructive, title: last.title, title_bn: last.title_bn };
-  };
+  const getGrade = (avg: number) => gradeFromAverage(avg, scales);
 
   /** Check if any single subject is below pass mark — if so, overall grade is F
    *  unless consideration-pass is enabled and failed subjects are within the allowed limit. */
   /** Resolve the allowed number of failed subjects for a class.
    *  0 (or undefined in "selected" mode) means consideration pass is off for that class. */
-  const getGraceLimit = (classId?: string | null) => {
-    if (!gracePass?.enabled) return 0;
-    const rules = gracePass.class_rules || {};
-    if (classId && rules[classId] !== undefined) return Number(rules[classId]) || 0;
-    if (gracePass.apply_to === 'selected') return 0;
-    return Number(gracePass.max_subjects) || 0;
-  };
+  const getGraceLimit = (classId?: string | null) => resolveGraceLimit(gracePass, classId);
 
-  const getOverallGrade = (subjectMarks: number[], classId?: string | null) => {
-    const pm = passMarkConfig ?? 33;
-    // Entered 0 counts as a failed subject; blanks are filtered out by callers.
-    const failedCount = subjectMarks.filter(m => Number(m) < pm).length;
-    const graceLimit = getGraceLimit(classId);
-    const graceOn = graceLimit > 0;
-    const graced = graceOn && failedCount > 0 && failedCount <= graceLimit;
-
-    if (failedCount > 0 && subjectMarks.length > 0 && !graced) {
-      const failScale = scales.find(s => s.grade === 'F') || DEFAULT_SCALES[DEFAULT_SCALES.length - 1];
-      return { grade: 'F', gpa: '0.00', color: colorMap[failScale.color] || colorMap.destructive, hasFail: true, graced: false, failedCount, title: failScale.title, title_bn: failScale.title_bn };
-    }
-
-    const avg = subjectMarks.length > 0 ? subjectMarks.reduce((a, b) => a + b, 0) / subjectMarks.length : 0;
-
-    // Graced: subject-level fail stays, but the overall result is a fixed
-    // consideration pass — Grade D, GPA 1.00, "মাকবুল (বিবেচনায়)".
-    if (graced) {
-      const dScale = scales.find(s => s.grade === 'D');
-      return {
-        grade: 'D',
-        gpa: '1.00',
-        color: colorMap[dScale?.color || 'orange'] || colorMap.orange,
-        title: 'Maqbul (Considered)',
-        title_bn: 'মাকবুল (বিবেচনায়)',
-        hasFail: false,
-        graced: true,
-        failedCount,
-      };
-    }
-
-    const byAvg = getGrade(avg);
-    // Safety net: a student who passed every subject must never be shown as F
-    // just because the average landed inside the F band. Fall back to the
-    // lowest passing grade instead.
-    if (byAvg.grade === 'F' && subjectMarks.length > 0) {
-      const passScales = scales.filter(s => s.grade !== 'F');
-      const lowestPass = passScales.length
-        ? passScales.reduce((low, s) => (s.min < low.min ? s : low))
-        : DEFAULT_SCALES[DEFAULT_SCALES.length - 2];
-      return {
-        grade: lowestPass.grade,
-        gpa: lowestPass.gpa,
-        color: colorMap[lowestPass.color] || colorMap.orange,
-        title: lowestPass.title,
-        title_bn: lowestPass.title_bn,
-        hasFail: false,
-        graced: false,
-        failedCount: 0,
-      };
-    }
-
-    return { ...byAvg, hasFail: false, graced: false, failedCount };
-  };
-
+  const getOverallGrade = (subjectMarks: number[], classId?: string | null) =>
+    overallGrade(subjectMarks, {
+      scales,
+      passMark: passMarkConfig ?? 33,
+      graceLimit: getGraceLimit(classId),
+    });
 
   return {
     scales,

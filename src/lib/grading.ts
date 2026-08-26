@@ -1,0 +1,192 @@
+/**
+ * Pure grading calculations shared by the grading hook, marks entry table and marksheets.
+ * Kept free of React/Supabase so the rules can be unit-tested.
+ */
+
+export interface GradeScale {
+  grade: string;
+  min: number;
+  max: number;
+  gpa: string;
+  color: string;
+  title?: string;
+  title_bn?: string;
+}
+
+export const DEFAULT_SCALES: GradeScale[] = [
+  { grade: 'A+', min: 80, max: 100, gpa: '5.00', color: 'emerald', title: 'Mumtaz', title_bn: 'মুমতাজ' },
+  { grade: 'A', min: 70, max: 79, gpa: '4.00', color: 'emerald', title: 'Jayyid Jiddan', title_bn: 'জায়্যিদ জিদ্দান' },
+  { grade: 'A-', min: 60, max: 69, gpa: '3.50', color: 'sky', title: 'Jayyid', title_bn: 'জায়্যিদ' },
+  { grade: 'B', min: 50, max: 59, gpa: '3.00', color: 'sky', title: 'Maqbul', title_bn: 'মাকবুল' },
+  { grade: 'C', min: 40, max: 49, gpa: '2.00', color: 'amber', title: 'Maqbul', title_bn: 'মাকবুল' },
+  { grade: 'D', min: 33, max: 39, gpa: '1.00', color: 'orange', title: 'Zayeef', title_bn: 'যয়ীফ' },
+  { grade: 'F', min: 0, max: 32, gpa: '0.00', color: 'destructive', title: 'Rasib', title_bn: 'রাসিব' },
+];
+
+export const colorMap: Record<string, string> = {
+  emerald: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
+  sky: 'text-sky-600 dark:text-sky-400 bg-sky-500/10',
+  amber: 'text-amber-600 dark:text-amber-400 bg-amber-500/10',
+  orange: 'text-orange-600 dark:text-orange-400 bg-orange-500/10',
+  destructive: 'text-destructive bg-destructive/10',
+};
+
+export interface GradeResult {
+  grade: string;
+  gpa: string;
+  color: string;
+  title?: string;
+  title_bn?: string;
+}
+
+export interface OverallGradeResult extends GradeResult {
+  hasFail: boolean;
+  graced: boolean;
+  failedCount: number;
+}
+
+/** Grade purely from an average, using the configured scale bands. */
+export const gradeFromAverage = (avg: number, scales: GradeScale[] = DEFAULT_SCALES): GradeResult => {
+  const list = scales.length ? scales : DEFAULT_SCALES;
+  for (const s of list) {
+    if (avg >= s.min && avg <= s.max) {
+      return { grade: s.grade, gpa: s.gpa, color: colorMap[s.color] || colorMap.destructive, title: s.title, title_bn: s.title_bn };
+    }
+  }
+  const last = list[list.length - 1];
+  return { grade: last.grade, gpa: last.gpa, color: colorMap[last.color] || colorMap.destructive, title: last.title, title_bn: last.title_bn };
+};
+
+/** Only marks that were actually entered take part in grading — blanks must never count as 0. */
+export const enteredMarks = (rawMarks: unknown[]): number[] =>
+  rawMarks
+    .filter((m) => m !== undefined && m !== null && m !== '' && !Number.isNaN(Number(m)))
+    .map((m) => Number(m));
+
+export interface OverallGradeOptions {
+  scales?: GradeScale[];
+  passMark?: number;
+  /** Number of failed subjects allowed as a consideration pass (0 = off). */
+  graceLimit?: number;
+}
+
+/**
+ * Final grade for a student.
+ * - Entered marks below the pass mark are failures; blanks are excluded by the caller.
+ * - Within the consideration limit → fixed "Maqbul (Considered)" (D / 1.00).
+ * - A student who passed every subject can never be F, even if the average lands in the F band.
+ */
+export const overallGrade = (subjectMarks: number[], options: OverallGradeOptions = {}): OverallGradeResult => {
+  const scales = options.scales?.length ? options.scales : DEFAULT_SCALES;
+  const pm = options.passMark ?? 33;
+  const graceLimit = options.graceLimit ?? 0;
+
+  const failedCount = subjectMarks.filter((m) => Number(m) < pm).length;
+  const graced = graceLimit > 0 && failedCount > 0 && failedCount <= graceLimit;
+
+  if (failedCount > 0 && subjectMarks.length > 0 && !graced) {
+    const failScale = scales.find((s) => s.grade === 'F') || DEFAULT_SCALES[DEFAULT_SCALES.length - 1];
+    return {
+      grade: 'F',
+      gpa: '0.00',
+      color: colorMap[failScale.color] || colorMap.destructive,
+      title: failScale.title,
+      title_bn: failScale.title_bn,
+      hasFail: true,
+      graced: false,
+      failedCount,
+    };
+  }
+
+  const avg = subjectMarks.length ? subjectMarks.reduce((a, b) => a + b, 0) / subjectMarks.length : 0;
+
+  if (graced) {
+    const dScale = scales.find((s) => s.grade === 'D');
+    return {
+      grade: 'D',
+      gpa: '1.00',
+      color: colorMap[dScale?.color || 'orange'] || colorMap.orange,
+      title: 'Maqbul (Considered)',
+      title_bn: 'মাকবুল (বিবেচনায়)',
+      hasFail: false,
+      graced: true,
+      failedCount,
+    };
+  }
+
+  const byAvg = gradeFromAverage(avg, scales);
+  if (byAvg.grade === 'F' && subjectMarks.length > 0) {
+    const passScales = scales.filter((s) => s.grade !== 'F');
+    const lowestPass = passScales.length
+      ? passScales.reduce((low, s) => (s.min < low.min ? s : low))
+      : DEFAULT_SCALES[DEFAULT_SCALES.length - 2];
+    return {
+      grade: lowestPass.grade,
+      gpa: lowestPass.gpa,
+      color: colorMap[lowestPass.color] || colorMap.orange,
+      title: lowestPass.title,
+      title_bn: lowestPass.title_bn,
+      hasFail: false,
+      graced: false,
+      failedCount: 0,
+    };
+  }
+
+  return { ...byAvg, hasFail: false, graced: false, failedCount };
+};
+
+export interface StudentStats {
+  id: string;
+  total: number;
+  avg: number;
+  hasEnteredAnyMark: boolean;
+  failed: boolean;
+  overall: OverallGradeResult | null;
+}
+
+/** Total / average / final grade for one student from their raw (possibly blank) subject marks. */
+export const studentStats = (id: string, rawMarks: unknown[], options: OverallGradeOptions = {}): StudentStats => {
+  const graded = enteredMarks(rawMarks);
+  const hasEnteredAnyMark = graded.length > 0;
+  const total = graded.reduce((a, b) => a + b, 0);
+  const avg = graded.length ? total / graded.length : 0;
+  const overall = hasEnteredAnyMark ? overallGrade(graded, options) : null;
+  const failed = overall ? (overall.graced ? false : overall.hasFail) : false;
+  return { id, total, avg, hasEnteredAnyMark, failed, overall };
+};
+
+/**
+ * Merit ranking: only students with entered marks are ranked, failed students never
+ * receive a merit position, and higher totals rank first.
+ */
+export const rankStudents = (stats: StudentStats[]): Map<string, number> => {
+  const ordered = stats
+    .filter((s) => s.hasEnteredAnyMark)
+    .sort((a, b) => {
+      if (a.failed && !b.failed) return 1;
+      if (!a.failed && b.failed) return -1;
+      return b.total - a.total;
+    });
+
+  const map = new Map<string, number>();
+  ordered.forEach((s, i) => {
+    if (!s.failed) map.set(s.id, i + 1);
+  });
+  return map;
+};
+
+export interface GracePassConfig {
+  enabled: boolean;
+  max_subjects: number;
+  apply_to: 'all' | 'selected';
+  class_rules: Record<string, number>;
+}
+
+/** Allowed number of failed subjects for a class (0 = consideration pass off). */
+export const resolveGraceLimit = (config: GracePassConfig | null | undefined, classId?: string | null): number => {
+  if (!config?.enabled) return 0;
+  const rules = config.class_rules || {};
+  if (classId && rules[classId] !== undefined) return Number(rules[classId]) || 0;
+  if (config.apply_to === 'selected') return 0;
+  return Number(config.max_subjects) || 0;
+};
