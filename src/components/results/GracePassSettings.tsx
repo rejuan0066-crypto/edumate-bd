@@ -250,8 +250,8 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
 
             <p className="text-xs text-muted-foreground leading-relaxed rounded-xl border p-3 bg-muted/20">
               {bn
-                ? 'অই বিষয়ে ফেল বহাল থাকবে, কিন্তু সব বিষয়ের গড় নম্বর অনুযায়ী সামগ্রিক গ্রেড ও মর্যাদা নির্ধারিত হবে।'
-                : 'The subject stays failed, but the overall grade and title are computed from the average of all subjects.'}
+                ? 'অই বিষয়ে ফেল বহাল থাকবে, কিন্তু সব বিষয়ের মোট নম্বর অনুযায়ী সামগ্রিক গ্রেড ও মর্যাদা নির্ধারিত হবে।'
+                : 'The subject stays failed, but the overall grade and title are computed from the total marks of all subjects.'}
             </p>
           </div>
         )}

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Printer, ArrowLeft } from 'lucide-react';
-import { getGrade } from './ClassResultTable';
+
 import { useQuery } from '@tanstack/react-query';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { useGradingSystem } from '@/hooks/useGradingSystem';
@@ -25,7 +25,7 @@ interface IndividualMarksheetProps {
 const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, rank, className, examName, sessionName }: IndividualMarksheetProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
-  const { getOverallGrade } = useGradingSystem();
+  const { getOverallGrade, getGrade: getSubjectGrade } = useGradingSystem();
   const [isSample, setIsSample] = useState(false);
 
   const { data: institution } = useQuery({
@@ -38,7 +38,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
     const raw = isSample ? (Math.random() > 0.2 ? 70 + Math.floor(Math.random() * 30) : 30 + Math.floor(Math.random() * 10)) : marksMap[`${student.id}_${sub.id}`];
     const entered = raw !== undefined && raw !== null && (raw as any) !== '' && !Number.isNaN(Number(raw));
     const marks = entered ? Number(raw) : 0;
-    const g = getGrade(marks);
+    const g = getSubjectGrade(marks);
     const grade = entered ? g.grade : '-';
     const gpa = entered ? g.gpa : '-';
     return { subject: sub, marks, grade, gpa, entered };

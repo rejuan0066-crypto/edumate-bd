@@ -10,19 +10,12 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { toBnDigits, toEnDigits, formatOrdinalRank } from '@/lib/digits';
-import { studentStats, rankStudents } from '@/lib/grading';
+import { studentStats, rankStudents, gradeFromMark } from '@/lib/grading';
 import React, { useRef, useEffect, useMemo } from 'react';
 
-// Legacy export for backward compat
-const getGrade = (avg: number) => {
-  if (avg >= 80) return { grade: 'A+', gpa: '5.00', color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' };
-  if (avg >= 70) return { grade: 'A', gpa: '4.00', color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' };
-  if (avg >= 60) return { grade: 'A-', gpa: '3.50', color: 'text-sky-600 dark:text-sky-400 bg-sky-500/10' };
-  if (avg >= 50) return { grade: 'B', gpa: '3.00', color: 'text-sky-600 dark:text-sky-400 bg-sky-500/10' };
-  if (avg >= 40) return { grade: 'C', gpa: '2.00', color: 'text-amber-600 dark:text-amber-400 bg-amber-500/10' };
-  if (avg >= 33) return { grade: 'D', gpa: '1.00', color: 'text-orange-600 dark:text-orange-400 bg-orange-500/10' };
-  return { grade: 'F', gpa: '0.00', color: 'text-destructive bg-destructive/10' };
-};
+// Per-subject grade helper (total-based scale, no average anywhere)
+const getGrade = (mark: number, fullMarks = 100) => gradeFromMark(mark, fullMarks);
+
 
 interface ClassResultTableProps {
   students: any[];
@@ -95,8 +88,10 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
     const stats = studentStats(st.id, rawMarks, {
       scales,
       passMark,
+      fullMarks: maxMarks,
       graceLimit: getGraceLimit(st.class_id),
     });
+
     return { st, ...stats, originalIdx: idx };
   });
 

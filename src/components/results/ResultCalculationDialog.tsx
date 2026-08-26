@@ -16,14 +16,14 @@ interface Props {
 
 /**
  * Explains, step by step, how a student's result was calculated:
- * subject-wise pass/fail, total, average, consideration (grace) rule and final grade.
+ * subject-wise pass/fail, total, consideration (grace) rule and final grade.
  * Only visible to signed-in users.
  */
 const ResultCalculationDialog = ({ open, onOpenChange, student, subjects, marksMap }: Props) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { user } = useAuth();
-  const { passMark, getOverallGrade, getGraceLimit } = useGradingSystem();
+  const { passMark, getOverallGrade, getGraceLimit, maxMarks } = useGradingSystem();
 
   const num = (v: any) => (bn ? toBnDigits(v) : String(v));
 
@@ -119,10 +119,11 @@ const ResultCalculationDialog = ({ open, onOpenChange, student, subjects, marksM
               </table>
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {[
                 { label: bn ? 'গণনায় ধরা বিষয়' : 'Counted Subjects', value: num(graded.length) },
                 { label: bn ? 'মোট নম্বর' : 'Total', value: num(total) },
+                { label: bn ? 'পূর্ণমান' : 'Out of', value: num(graded.length * maxMarks) },
                 { label: 'GPA', value: overall ? num(overall.gpa) : '-' },
               ].map((s) => (
                 <div key={s.label} className="rounded-[20px] border border-border bg-muted/30 px-3 py-2 text-center">
@@ -131,6 +132,7 @@ const ResultCalculationDialog = ({ open, onOpenChange, student, subjects, marksM
                 </div>
               ))}
             </div>
+
 
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs text-muted-foreground">{bn ? 'চূড়ান্ত গ্রেড' : 'Final Grade'}:</span>

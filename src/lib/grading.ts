@@ -13,6 +13,10 @@ export interface GradeScale {
   title_bn?: string;
 }
 
+/**
+ * Grading scale bands. `min`/`max` are percentages of the TOTAL obtainable marks
+ * (total marks ÷ total full marks × 100) — grading never uses an average.
+ */
 export const DEFAULT_SCALES: GradeScale[] = [
   { grade: 'A+', min: 80, max: 100, gpa: '5.00', color: 'emerald', title: 'Mumtaz', title_bn: 'মুমতাজ' },
   { grade: 'A', min: 70, max: 79, gpa: '4.00', color: 'emerald', title: 'Jayyid Jiddan', title_bn: 'জায়্যিদ জিদ্দান' },
@@ -45,17 +49,33 @@ export interface OverallGradeResult extends GradeResult {
   failedCount: number;
 }
 
-/** Grade purely from an average, using the configured scale bands. */
-export const gradeFromAverage = (avg: number, scales: GradeScale[] = DEFAULT_SCALES): GradeResult => {
+/** Default full marks for a single subject when nothing is configured. */
+export const DEFAULT_FULL_MARKS = 100;
+
+/**
+ * Grade from a total score against the total obtainable marks.
+ * Scale bands are expressed as a percentage of the total obtainable marks,
+ * so grading depends on the TOTAL only — no average is calculated anywhere.
+ */
+export const gradeFromTotal = (
+  total: number,
+  fullTotal: number,
+  scales: GradeScale[] = DEFAULT_SCALES,
+): GradeResult => {
   const list = scales.length ? scales : DEFAULT_SCALES;
+  const score = fullTotal > 0 ? (total / fullTotal) * 100 : 0;
   for (const s of list) {
-    if (avg >= s.min && avg <= s.max) {
+    if (score >= s.min && score <= s.max) {
       return { grade: s.grade, gpa: s.gpa, color: colorMap[s.color] || colorMap.destructive, title: s.title, title_bn: s.title_bn };
     }
   }
   const last = list[list.length - 1];
   return { grade: last.grade, gpa: last.gpa, color: colorMap[last.color] || colorMap.destructive, title: last.title, title_bn: last.title_bn };
 };
+
+/** Grade a single subject mark against that subject's full marks. */
+export const gradeFromMark = (mark: number, fullMarks: number = DEFAULT_FULL_MARKS, scales: GradeScale[] = DEFAULT_SCALES): GradeResult =>
+  gradeFromTotal(mark, fullMarks, scales);
 
 /** Only marks that were actually entered take part in grading — blanks must never count as 0. */
 export const enteredMarks = (rawMarks: unknown[]): number[] =>
@@ -66,20 +86,25 @@ export const enteredMarks = (rawMarks: unknown[]): number[] =>
 export interface OverallGradeOptions {
   scales?: GradeScale[];
   passMark?: number;
+  /** Full marks obtainable in a single subject (used to size the total-based scale). */
+  fullMarks?: number;
   /** Number of failed subjects allowed as a consideration pass (0 = off). */
   graceLimit?: number;
 }
 
+
 /**
- * Final grade for a student.
+ * Final grade for a student — based on the TOTAL marks obtained against the
+ * total obtainable marks. No average is calculated.
  * - Entered marks below the pass mark are failures; blanks are excluded by the caller.
  * - Within the consideration limit → fixed "Maqbul (Considered)" (D / 1.00).
- * - A student who passed every subject can never be F, even if the average lands in the F band.
+ * - A student who passed every subject can never be F, even if the total lands in the F band.
  */
 export const overallGrade = (subjectMarks: number[], options: OverallGradeOptions = {}): OverallGradeResult => {
   const scales = options.scales?.length ? options.scales : DEFAULT_SCALES;
   const pm = options.passMark ?? 33;
   const graceLimit = options.graceLimit ?? 0;
+  const fullMarks = options.fullMarks ?? DEFAULT_FULL_MARKS;
 
   const failedCount = subjectMarks.filter((m) => Number(m) < pm).length;
   const graced = graceLimit > 0 && failedCount > 0 && failedCount <= graceLimit;
@@ -98,8 +123,6 @@ export const overallGrade = (subjectMarks: number[], options: OverallGradeOption
     };
   }
 
-  const avg = subjectMarks.length ? subjectMarks.reduce((a, b) => a + b, 0) / subjectMarks.length : 0;
-
   if (graced) {
     const dScale = scales.find((s) => s.grade === 'D');
     return {
@@ -114,8 +137,11 @@ export const overallGrade = (subjectMarks: number[], options: OverallGradeOption
     };
   }
 
-  const byAvg = gradeFromAverage(avg, scales);
-  if (byAvg.grade === 'F' && subjectMarks.length > 0) {
+  const total = subjectMarks.reduce((a, b) => a + b, 0);
+  const fullTotal = subjectMarks.length * fullMarks;
+  const byTotal = gradeFromTotal(total, fullTotal, scales);
+
+  if (byTotal.grade === 'F' && subjectMarks.length > 0) {
     const passScales = scales.filter((s) => s.grade !== 'F');
     const lowestPass = passScales.length
       ? passScales.reduce((low, s) => (s.min < low.min ? s : low))
@@ -132,8 +158,9 @@ export const overallGrade = (subjectMarks: number[], options: OverallGradeOption
     };
   }
 
-  return { ...byAvg, hasFail: false, graced: false, failedCount };
+  return { ...byTotal, hasFail: false, graced: false, failedCount };
 };
+
 
 export interface StudentStats {
   id: string;
