@@ -88,7 +88,8 @@ export const useGradingSystem = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  const getGrade = (avg: number) => gradeFromAverage(avg, scales);
+  /** Grade for a single subject mark, measured against that subject's full marks. */
+  const getGrade = (mark: number) => gradeFromMark(mark, marksConfig?.max ?? 100, scales);
 
   /** Check if any single subject is below pass mark — if so, overall grade is F
    *  unless consideration-pass is enabled and failed subjects are within the allowed limit. */
@@ -100,8 +101,10 @@ export const useGradingSystem = () => {
     overallGrade(subjectMarks, {
       scales,
       passMark: passMarkConfig ?? 33,
+      fullMarks: marksConfig?.max ?? 100,
       graceLimit: getGraceLimit(classId),
     });
+
 
   return {
     scales,
