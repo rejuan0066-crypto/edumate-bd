@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   DEFAULT_SCALES,
   enteredMarks,
-  gradeFromAverage,
+  gradeFromTotal,
+  gradeFromMark,
   overallGrade,
   resolveGraceLimit,
   studentStats,
@@ -21,19 +22,36 @@ describe('enteredMarks', () => {
   });
 });
 
-describe('gradeFromAverage', () => {
+describe('gradeFromTotal — total-based bands', () => {
   it.each([
-    [95, 'A+'],
-    [75, 'A'],
-    [65, 'A-'],
-    [55, 'B'],
-    [45, 'C'],
-    [35, 'D'],
-    [10, 'F'],
-  ])('average %i maps to grade %s', (avg, grade) => {
-    expect(gradeFromAverage(avg).grade).toBe(grade);
+    [285, 300, 'A+'],
+    [225, 300, 'A'],
+    [195, 300, 'A-'],
+    [165, 300, 'B'],
+    [135, 300, 'C'],
+    [105, 300, 'D'],
+    [30, 300, 'F'],
+  ])('total %i out of %i maps to grade %s', (total, full, grade) => {
+    expect(gradeFromTotal(total, full).grade).toBe(grade);
+  });
+
+  it('grades a single subject mark against its full marks', () => {
+    expect(gradeFromMark(85, 100).grade).toBe('A+');
+    expect(gradeFromMark(42, 50).grade).toBe('A+'); // 84%
+  });
+
+  it('returns the lowest band when there are no obtainable marks', () => {
+    expect(gradeFromTotal(0, 0).grade).toBe('F');
   });
 });
+
+describe('overallGrade — grading uses total marks, not average', () => {
+  it('scales bands to the configured full marks per subject', () => {
+    // 3 subjects out of 50 each = 150 full; 120 total = 80% → A+
+    expect(overallGrade([40, 40, 40], { passMark: 15, fullMarks: 50 }).grade).toBe('A+');
+  });
+});
+
 
 describe('overallGrade — students who passed every subject', () => {
   it('never returns F when all subjects are at or above the pass mark', () => {
