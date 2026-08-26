@@ -138,21 +138,19 @@ export const overallGrade = (subjectMarks: number[], options: OverallGradeOption
 export interface StudentStats {
   id: string;
   total: number;
-  avg: number;
   hasEnteredAnyMark: boolean;
   failed: boolean;
   overall: OverallGradeResult | null;
 }
 
-/** Total / average / final grade for one student from their raw (possibly blank) subject marks. */
+/** Total / final grade for one student from their raw (possibly blank) subject marks. */
 export const studentStats = (id: string, rawMarks: unknown[], options: OverallGradeOptions = {}): StudentStats => {
   const graded = enteredMarks(rawMarks);
   const hasEnteredAnyMark = graded.length > 0;
   const total = graded.reduce((a, b) => a + b, 0);
-  const avg = graded.length ? total / graded.length : 0;
   const overall = hasEnteredAnyMark ? overallGrade(graded, options) : null;
   const failed = overall ? (overall.graced ? false : overall.hasFail) : false;
-  return { id, total, avg, hasEnteredAnyMark, failed, overall };
+  return { id, total, hasEnteredAnyMark, failed, overall };
 };
 
 /**
