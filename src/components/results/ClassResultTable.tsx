@@ -146,8 +146,8 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
       if(!wrap){
         wrap = document.createElement('div');
         wrap.id='fitwrap';
-        var parent = pages[0].parentNode;
-        parent.insertBefore(wrap, pages[0]);
+        var host = pages[0].parentNode;
+        host.insertBefore(wrap, pages[0]);
         pages.forEach(function(p){ wrap.appendChild(p); });
       }
       wrap.style.transform='none';
@@ -158,7 +158,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
       wrap.style.width = pw + 'px';
       var h = wrap.scrollHeight * scale + 24;
       document.body.style.height = h + 'px';
-      parent.postMessage({ type: 'result-sheet-height', height: Math.ceil(h) }, '*');
+      window.parent.postMessage({ type: 'result-sheet-height', height: Math.ceil(h) }, '*');
     }
     window.addEventListener('load', function(){ fit(); setTimeout(fit, 300); });
     window.addEventListener('resize', fit);
@@ -234,12 +234,13 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
       </div>
 
       {readOnly ? (
-        <div className="w-full overflow-auto bg-slate-100 p-2 sm:p-4" style={{ maxHeight: '78vh' }}>
+        <div className="w-full overflow-y-auto overflow-x-hidden bg-slate-100">
           <iframe
             title={title}
-            srcDoc={sheetHtml}
-            className="w-full bg-white rounded-lg border border-border shadow-sm"
-            style={{ height: '78vh', minHeight: 520 }}
+            srcDoc={previewHtml}
+            scrolling="no"
+            className="w-full block bg-slate-100 border-0"
+            style={{ height: previewHeight }}
           />
         </div>
       ) : (
