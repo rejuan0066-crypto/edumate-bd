@@ -45,17 +45,33 @@ export interface OverallGradeResult extends GradeResult {
   failedCount: number;
 }
 
-/** Grade purely from an average, using the configured scale bands. */
-export const gradeFromAverage = (avg: number, scales: GradeScale[] = DEFAULT_SCALES): GradeResult => {
+/** Default full marks for a single subject when nothing is configured. */
+export const DEFAULT_FULL_MARKS = 100;
+
+/**
+ * Grade from a total score against the total obtainable marks.
+ * Scale bands are expressed as a percentage of the total obtainable marks,
+ * so grading depends on the TOTAL only — no average is calculated anywhere.
+ */
+export const gradeFromTotal = (
+  total: number,
+  fullTotal: number,
+  scales: GradeScale[] = DEFAULT_SCALES,
+): GradeResult => {
   const list = scales.length ? scales : DEFAULT_SCALES;
+  const score = fullTotal > 0 ? (total / fullTotal) * 100 : 0;
   for (const s of list) {
-    if (avg >= s.min && avg <= s.max) {
+    if (score >= s.min && score <= s.max) {
       return { grade: s.grade, gpa: s.gpa, color: colorMap[s.color] || colorMap.destructive, title: s.title, title_bn: s.title_bn };
     }
   }
   const last = list[list.length - 1];
   return { grade: last.grade, gpa: last.gpa, color: colorMap[last.color] || colorMap.destructive, title: last.title, title_bn: last.title_bn };
 };
+
+/** Grade a single subject mark against that subject's full marks. */
+export const gradeFromMark = (mark: number, fullMarks: number = DEFAULT_FULL_MARKS, scales: GradeScale[] = DEFAULT_SCALES): GradeResult =>
+  gradeFromTotal(mark, fullMarks, scales);
 
 /** Only marks that were actually entered take part in grading — blanks must never count as 0. */
 export const enteredMarks = (rawMarks: unknown[]): number[] =>
@@ -66,9 +82,12 @@ export const enteredMarks = (rawMarks: unknown[]): number[] =>
 export interface OverallGradeOptions {
   scales?: GradeScale[];
   passMark?: number;
+  /** Full marks obtainable in a single subject (used to size the total-based scale). */
+  fullMarks?: number;
   /** Number of failed subjects allowed as a consideration pass (0 = off). */
   graceLimit?: number;
 }
+
 
 /**
  * Final grade for a student.
