@@ -273,9 +273,6 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
                 <div className="flex items-center justify-center h-full">{bn ? 'মোট' : 'Total'}</div>
               </th>
               <th className="min-w-[48px] px-1 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-white sticky top-0 z-40">
-                <div className="flex items-center justify-center h-full">{bn ? 'গড়' : 'Avg'}</div>
-              </th>
-              <th className="min-w-[48px] px-1 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-white sticky top-0 z-40">
                 <div className="flex items-center justify-center h-full">{bn ? 'গ্রেড' : 'Grade'}</div>
               </th>
               <th className="min-w-[44px] px-1 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-white sticky top-0 z-40">
@@ -291,7 +288,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
             </tr>
           </thead>
           <tbody>
-            {studentsWithStats.map(({ st, originalIdx, failed, total, avg, overall, hasEnteredAnyMark }) => {
+            {studentsWithStats.map(({ st, originalIdx, failed, total, overall, hasEnteredAnyMark }) => {
               const rank = rankMap.get(st.id) || st.rank || st.merit_rank || st.merit_position;
               const rankDisplay = formatOrdinalRank(rank, bn);
               
@@ -342,9 +339,6 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
                   
                   <td className="px-2 text-center text-[10px] sm:text-xs font-bold border-b border-r border-border">
                     <div className="flex items-center justify-center h-full bg-slate-50/50 rounded-md py-1">{hasEnteredAnyMark ? toBnDigits(total) : '-'}</div>
-                  </td>
-                  <td className="px-2 text-center text-[10px] sm:text-xs text-muted-foreground border-b border-r border-border">
-                    <div className="flex items-center justify-center h-full">{hasEnteredAnyMark ? toBnDigits(avg.toFixed(1)) : '-'}</div>
                   </td>
                   <td className="px-2 text-center border-b border-r border-border">
                     <div className="flex items-center justify-center h-full">

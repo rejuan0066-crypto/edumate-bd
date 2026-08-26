@@ -90,7 +90,7 @@ export const exportResultCSV = (params: ExportData) => {
     bn ? 'নাম' : 'Name',
     ...subjects.map((s: any) => bn ? s.name_bn : s.name),
     bn ? 'মোট' : 'Total',
-    bn ? 'গড়' : 'Avg',
+    
     bn ? 'গ্রেড' : 'Grade',
     'GPA',
     bn ? 'মর্যাদা' : 'Title',
@@ -124,7 +124,6 @@ export const exportResultCSV = (params: ExportData) => {
   });
 
   const rows = computed.map(({ st, idx, marks, total, overall, failed, hasEnteredAnyMark }) => {
-    const avg = subjects.length > 0 ? total / subjects.length : 0;
     const rank = rankMap.get(idx);
     const rankDisplay = hasEnteredAnyMark ? formatOrdinalRank(rank, true) : '-';
 
@@ -135,7 +134,6 @@ export const exportResultCSV = (params: ExportData) => {
       bn ? st.name_bn : (st.name_en || st.name_bn),
       ...marks.map((m, i) => marksMap[`${st.id}_${subjects[i].id}`] !== undefined ? m : '-'),
       hasEnteredAnyMark ? total : '-',
-      hasEnteredAnyMark ? avg.toFixed(1) : '-',
       overall.grade,
       overall.gpa,
       hasEnteredAnyMark ? (bn ? overall.title_bn : overall.title) : '-',
@@ -260,7 +258,7 @@ export const getResultSheetHtml = ({
 
   const colgroupHtml = (() => {
     const n = subjects.length;
-    const fixedW = { idx: 3, roll: 5, name: 17, total: 6, avg: 5, grade: 6, gpa: 5, merit: 10, rank: 6 };
+    const fixedW = { idx: 3, roll: 5, name: 17, total: 6, grade: 6, gpa: 5, merit: 12, rank: 6 };
     const used = Object.values(fixedW).reduce((a, b) => a + b, 0);
     const subjectPool = Math.max(20, 100 - used);
     const sw = n > 0 ? +(subjectPool / n).toFixed(3) : 0;
@@ -270,7 +268,7 @@ export const getResultSheetHtml = ({
       `<col style="width:${fixedW.name}%">`,
       ...subjects.map(() => `<col style="width:${sw}%">`),
       `<col style="width:${fixedW.total}%">`,
-      `<col style="width:${fixedW.avg}%">`,
+      
       `<col style="width:${fixedW.grade}%">`,
       `<col style="width:${fixedW.gpa}%">`,
       `<col style="width:${fixedW.merit}%">`,
@@ -279,7 +277,7 @@ export const getResultSheetHtml = ({
     return `<colgroup>${cols}</colgroup>`;
   })();
 
-  const renderRow = ({ idx, st, marks, total, avg, overall, failed, hasEnteredAnyMark }: any) => {
+  const renderRow = ({ idx, st, marks, total, overall, failed, hasEnteredAnyMark }: any) => {
     const rank = rankMap.get(idx);
     const merit = hasEnteredAnyMark ? ((bn ? (overall as any).title_bn : (overall as any).title) || (overall as any).title_bn || (overall as any).title || '-') : '-';
     
@@ -298,7 +296,7 @@ export const getResultSheetHtml = ({
       <td class="name">${bn ? st.name_bn : (st.name_en || st.name_bn)}</td>
       ${marksCells}
       <td class="num bold">${hasEnteredAnyMark ? toBnDigits(total) : '-'}</td>
-      <td class="num">${hasEnteredAnyMark ? toBnDigits(avg.toFixed(1)) : '-'}</td>
+      
       <td class="num bold grade-${overall?.grade?.replace(/[^A-Z]/g, '') || 'N'}">${(overall?.grade || '-').toUpperCase()}</td>
       <td class="num bold">${overall?.gpa ? toBnDigits(overall.gpa) : '-'}</td>
       <td class="num">${merit}</td>
@@ -342,7 +340,7 @@ export const getResultSheetHtml = ({
                 <th style="width:180px; text-align:left; padding-left:10px;">${bn ? 'নাম' : 'Name'}</th>
                 ${subjectHeaders}
                 <th style="width:60px">${bn ? 'মোট' : 'Total'}</th>
-                <th style="width:50px">${bn ? 'গড়' : 'Avg'}</th>
+                
                 <th style="width:60px">${bn ? 'গ্রেড' : 'Grade'}</th>
                 <th style="width:50px">GPA</th>
                 <th style="width:100px">${bn ? 'মর্যাদা' : 'Merit'}</th>
@@ -373,7 +371,7 @@ export const getResultSheetHtml = ({
               <div class="stat"><div class="stat-k">${bn ? 'কৃতকার্য' : 'PASSED'}</div><div class="stat-v" style="color:#059669">${toBnDigits(passCount)}</div></div>
               <div class="stat"><div class="stat-k">${bn ? 'অকৃতকার্য' : 'FAILED'}</div><div class="stat-v" style="color:#dc2626">${toBnDigits(failCount)}</div></div>
               <div class="stat"><div class="stat-k">${bn ? 'পাসের হার' : 'PASS RATE'}</div><div class="stat-v">${toBnDigits(activeStudents.length ? ((passCount / activeStudents.length) * 100).toFixed(1) : '0')}%</div></div>
-              <div class="stat"><div class="stat-k">${bn ? 'গড় নম্বর' : 'CLASS AVG'}</div><div class="stat-v">${toBnDigits(classAvg)}</div></div>
+              
             </div>
             ` : ''}
           </div>

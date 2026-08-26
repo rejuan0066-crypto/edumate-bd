@@ -44,7 +44,7 @@ const ResultCalculationDialog = ({ open, onOpenChange, student, subjects, marksM
 
   const graded = rows.filter(r => r.entered).map(r => r.mark as number);
   const total = graded.reduce((a, b) => a + b, 0);
-  const avg = graded.length ? total / graded.length : 0;
+  
   const overall: any = graded.length ? getOverallGrade(graded, student.class_id) : null;
   const failedSubjects = rows.filter(r => r.entered && !r.passed);
   const graceLimit = getGraceLimit(student.class_id);
@@ -60,8 +60,8 @@ const ResultCalculationDialog = ({ open, onOpenChange, student, subjects, marksM
           ? `${num(failedSubjects.length)} টি বিষয়ে পাস নম্বর (${num(passMark)}) এর কম পেয়েছে${graceLimit > 0 ? `, বিবেচনায় পাসের সীমা ${num(graceLimit)} টি` : ', বিবেচনায় পাস চালু নেই'} — তাই চূড়ান্ত গ্রেড F।`
           : `${failedSubjects.length} subject(s) scored below the pass mark (${passMark})${graceLimit > 0 ? `, consideration limit is ${graceLimit}` : ', consideration pass is off'} — so the final grade is F.`)
         : (bn
-          ? `সব বিষয়ে পাস নম্বর (${num(passMark)}) বা তার বেশি পেয়েছে। গড় ${num(avg.toFixed(2))} অনুযায়ী গ্রেড ${overall?.grade}।`
-          : `Passed every subject (pass mark ${passMark}). Average ${avg.toFixed(2)} gives grade ${overall?.grade}.`);
+          ? `সব বিষয়ে পাস নম্বর (${num(passMark)}) বা তার বেশি পেয়েছে। চূড়ান্ত গ্রেড ${overall?.grade}।`
+          : `Passed every subject (pass mark ${passMark}). Final grade is ${overall?.grade}.`);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -119,11 +119,10 @@ const ResultCalculationDialog = ({ open, onOpenChange, student, subjects, marksM
               </table>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {[
                 { label: bn ? 'গণনায় ধরা বিষয়' : 'Counted Subjects', value: num(graded.length) },
                 { label: bn ? 'মোট নম্বর' : 'Total', value: num(total) },
-                { label: bn ? 'গড়' : 'Average', value: num(avg.toFixed(2)) },
                 { label: 'GPA', value: overall ? num(overall.gpa) : '-' },
               ].map((s) => (
                 <div key={s.label} className="rounded-[20px] border border-border bg-muted/30 px-3 py-2 text-center">
@@ -154,8 +153,8 @@ const ResultCalculationDialog = ({ open, onOpenChange, student, subjects, marksM
 
             <p className="text-[10px] text-muted-foreground">
               {bn
-                ? 'নোট: যেসব বিষয়ে নম্বর এন্ট্রি করা হয়নি সেগুলো মোট, গড় ও গ্রেড কোনো হিসাবেই ধরা হয় না।'
-                : 'Note: subjects with no entered marks are excluded from total, average and grade.'}
+                ? 'নোট: যেসব বিষয়ে নম্বর এন্ট্রি করা হয়নি সেগুলো মোট ও গ্রেড কোনো হিসাবেই ধরা হয় না।'
+                : 'Note: subjects with no entered marks are excluded from total and grade.'}
             </p>
           </div>
         )}
