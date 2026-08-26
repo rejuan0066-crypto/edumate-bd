@@ -35,9 +35,12 @@ interface ClassResultTableProps {
   onViewMarksheet: (studentId: string, rank?: number) => void;
   onClose?: () => void;
   lastSaved?: { at: string; name: string } | null;
+  /** Read-only preview of saved results (no editing / saving) */
+  readOnly?: boolean;
+  onEdit?: () => void;
 }
 
-const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave, isSaving, title, onViewMarksheet, onClose, lastSaved }: ClassResultTableProps) => {
+const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave, isSaving, title, onViewMarksheet, onClose, lastSaved, readOnly = false, onEdit }: ClassResultTableProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { getOverallGrade, getGraceLimit, scales, maxMarks, minMarks, passMark } = useGradingSystem();
@@ -130,10 +133,18 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
           <Button variant="outline" size="sm" onClick={() => handleExport('pdf')} className="h-8 px-2 sm:px-3 text-[10px] sm:text-sm gap-1">
             <FileDown className="w-3.5 h-3.5" /> <span className="hidden xs:inline">PDF</span>
           </Button>
-          <Button size="sm" className="btn-primary-gradient h-8 px-2 sm:px-3 text-[10px] sm:text-sm gap-1" onClick={onSave} disabled={isSaving}>
-            {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-            {bn ? 'সংরক্ষণ' : 'Save'}
-          </Button>
+          {readOnly ? (
+            onEdit && (
+              <Button variant="outline" size="sm" onClick={onEdit} className="h-8 px-2 sm:px-3 text-[10px] sm:text-sm gap-1">
+                <Save className="w-3.5 h-3.5" /> {bn ? 'এডিট করুন' : 'Edit'}
+              </Button>
+            )
+          ) : (
+            <Button size="sm" className="btn-primary-gradient h-8 px-2 sm:px-3 text-[10px] sm:text-sm gap-1" onClick={onSave} disabled={isSaving}>
+              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              {bn ? 'সংরক্ষণ' : 'Save'}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -207,20 +218,26 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
                     return (
                       <td key={sub.id} className="px-1 text-center border-b border-r border-border">
                         <div className="flex items-center justify-center h-full">
-                          <Input
-                            className={`w-full max-w-[56px] h-8 px-1 text-center bg-white border-2 rounded-lg text-[10px] sm:text-xs transition-all focus:ring-2 focus:ring-primary/20 ${isFail ? 'border-destructive/40 text-destructive focus:border-destructive' : 'border-border/60 focus:border-primary'}`}
-                            type="text"
-                            inputMode="numeric"
-                            data-bijoy={bn}
-                            value={mark === 0 ? '' : toBnDigits(mark)}
-                            onChange={(e) => {
-                              const raw = toEnDigits(e.target.value).replace(/[^0-9]/g, '');
-                              if (raw === '') { onMarksChange(`${st.id}_${sub.id}`, 0); return; }
-                              let num = parseInt(raw, 10) || 0;
-                              if (num > maxMarks) num = maxMarks;
-                              onMarksChange(`${st.id}_${sub.id}`, num);
-                            }}
-                          />
+                          {readOnly ? (
+                            <span className={`text-[10px] sm:text-xs font-medium ${isFail ? 'text-destructive' : 'text-foreground'}`}>
+                              {mark === 0 ? '-' : toBnDigits(mark)}
+                            </span>
+                          ) : (
+                            <Input
+                              className={`w-full max-w-[56px] h-8 px-1 text-center bg-white border-2 rounded-lg text-[10px] sm:text-xs transition-all focus:ring-2 focus:ring-primary/20 ${isFail ? 'border-destructive/40 text-destructive focus:border-destructive' : 'border-border/60 focus:border-primary'}`}
+                              type="text"
+                              inputMode="numeric"
+                              data-bijoy={bn}
+                              value={mark === 0 ? '' : toBnDigits(mark)}
+                              onChange={(e) => {
+                                const raw = toEnDigits(e.target.value).replace(/[^0-9]/g, '');
+                                if (raw === '') { onMarksChange(`${st.id}_${sub.id}`, 0); return; }
+                                let num = parseInt(raw, 10) || 0;
+                                if (num > maxMarks) num = maxMarks;
+                                onMarksChange(`${st.id}_${sub.id}`, num);
+                              }}
+                            />
+                          )}
                         </div>
                       </td>
                     );

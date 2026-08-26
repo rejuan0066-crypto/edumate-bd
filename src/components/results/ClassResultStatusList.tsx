@@ -10,7 +10,7 @@ interface ClassResultStatusListProps {
   classes: any[];
   resultStatusMap: Record<string, boolean>;
   publishStatusMap?: Record<string, boolean>;
-  onClassClick: (classId: string) => void;
+  onClassClick: (classId: string, mode?: 'view' | 'entry') => void;
   onExport: (classId: string, type: 'csv' | 'pdf' | 'print') => void;
   onPublishToggle?: (classId: string, publish: boolean) => void;
   exportingClassId: string | null;
@@ -199,11 +199,22 @@ const ClassResultStatusList = ({
                     </Button>
                   </>
                 )}
+                {hasResults && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="gap-1.5"
+                    onClick={() => onClassClick(cls.id, 'entry')}
+                  >
+                    <PenLine className="w-3.5 h-3.5" />
+                    {bn ? 'এডিট' : 'Edit'}
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   variant={hasResults ? 'outline' : 'default'}
                   className="gap-1.5"
-                  onClick={() => onClassClick(cls.id)}
+                  onClick={() => onClassClick(cls.id, hasResults ? 'view' : 'entry')}
                 >
                   {hasResults ? <Eye className="w-3.5 h-3.5" /> : <PenLine className="w-3.5 h-3.5" />}
                   {hasResults ? (bn ? 'দেখুন' : 'View') : (bn ? 'এন্ট্রি' : 'Entry')}

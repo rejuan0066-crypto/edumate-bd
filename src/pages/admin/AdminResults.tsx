@@ -50,6 +50,7 @@ const AdminResults = () => {
   const [viewingStudentId, setViewingStudentId] = useState<string | null>(null);
   const [viewingStudentRank, setViewingStudentRank] = useState<number | undefined>(undefined);
   const [exportingClassId, setExportingClassId] = useState<string | null>(null);
+  const [readOnlyView, setReadOnlyView] = useState(false);
 
   // Show class list when we have year+session from URL but no class selected
   const showClassList = searchMode === 'class' && !!examYear && !!examSessionId && !selectedClass && !showResults;
@@ -243,7 +244,8 @@ const AdminResults = () => {
   });
 
   // When class is selected from the list, auto-trigger search
-  const handleClassFromList = async (classId: string) => {
+  const handleClassFromList = async (classId: string, mode: 'view' | 'entry' = 'entry') => {
+    setReadOnlyView(mode === 'view');
     setSelectedClass(classId);
     // We need to wait for students/subjects queries, so set state and trigger search after
     setShowResults(false);
@@ -289,6 +291,7 @@ const AdminResults = () => {
     const examId = examSessionId;
 
     try {
+      setReadOnlyView(false);
       setSelectedExamId(examId);
       await loadResultsForExam(examId);
     } catch (error: any) {
@@ -1118,6 +1121,9 @@ const AdminResults = () => {
               isSaving={saveMutation.isPending}
               title={getExamTitle()}
               lastSaved={lastSavedInfo || null}
+              readOnly={readOnlyView}
+              onEdit={() => setReadOnlyView(false)}
+
 
               onViewMarksheet={(id, rank) => {
                 setViewingStudentId(id);
