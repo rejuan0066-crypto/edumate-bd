@@ -98,13 +98,16 @@ export const exportResultCSV = (params: ExportData) => {
   ];
 
   const computed = students.map((st: any, idx: number) => {
-    const hasEnteredAnyMark = subjects.some((sub: any) => marksMap[`${st.id}_${sub.id}`] !== undefined);
-    const marks = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`] ?? 0);
-    const total = hasEnteredAnyMark ? marks.reduce((a, b) => a + b, 0) : 0;
-    const overall = hasEnteredAnyMark ? getOverallGrade(marks, st.class_id) : { grade: '-', gpa: '-', hasFail: false };
-    const failed = hasEnteredAnyMark ? ((overall as any).graced ? false : (marks.some(m => m < (params?.passMark || 33) && m > 0) || overall.hasFail)) : false;
+    const raw = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`]);
+    const hasEnteredAnyMark = raw.some((m: any) => m !== undefined && m !== null && m !== '');
+    const marks = raw.map((m: any) => (m === undefined || m === null || m === '' ? 0 : Number(m)));
+    const graded = raw.filter((m: any) => m !== undefined && m !== null && m !== '' && !Number.isNaN(Number(m))).map((m: any) => Number(m));
+    const total = hasEnteredAnyMark ? graded.reduce((a, b) => a + b, 0) : 0;
+    const overall = hasEnteredAnyMark ? getOverallGrade(graded, st.class_id) : { grade: '-', gpa: '-', hasFail: false };
+    const failed = hasEnteredAnyMark ? ((overall as any).graced ? false : overall.hasFail) : false;
     return { idx, st, marks, total, overall, failed, hasEnteredAnyMark };
   });
+
 
   const sortedByTotal = [...computed]
     .filter(a => a.hasEnteredAnyMark)
