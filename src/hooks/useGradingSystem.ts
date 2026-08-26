@@ -129,7 +129,8 @@ export const useGradingSystem = () => {
 
   const getOverallGrade = (subjectMarks: number[], classId?: string | null) => {
     const pm = passMarkConfig ?? 33;
-    const failedCount = subjectMarks.filter(m => m < pm).length;
+    // Entered 0 counts as a failed subject; blanks are filtered out by callers.
+    const failedCount = subjectMarks.filter(m => Number(m) < pm).length;
     const graceLimit = getGraceLimit(classId);
     const graceOn = graceLimit > 0;
     const graced = graceOn && failedCount > 0 && failedCount <= graceLimit;
@@ -157,9 +158,30 @@ export const useGradingSystem = () => {
       };
     }
 
+    const byAvg = getGrade(avg);
+    // Safety net: a student who passed every subject must never be shown as F
+    // just because the average landed inside the F band. Fall back to the
+    // lowest passing grade instead.
+    if (byAvg.grade === 'F' && subjectMarks.length > 0) {
+      const passScales = scales.filter(s => s.grade !== 'F');
+      const lowestPass = passScales.length
+        ? passScales.reduce((low, s) => (s.min < low.min ? s : low))
+        : DEFAULT_SCALES[DEFAULT_SCALES.length - 2];
+      return {
+        grade: lowestPass.grade,
+        gpa: lowestPass.gpa,
+        color: colorMap[lowestPass.color] || colorMap.orange,
+        title: lowestPass.title,
+        title_bn: lowestPass.title_bn,
+        hasFail: false,
+        graced: false,
+        failedCount: 0,
+      };
+    }
 
-    return { ...getGrade(avg), hasFail: false, graced: false, failedCount };
+    return { ...byAvg, hasFail: false, graced: false, failedCount };
   };
+
 
   return {
     scales,
