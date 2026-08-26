@@ -78,13 +78,20 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
 
   // Pre-calculate stats and ranks
   const studentsWithStats = students.map((st: any, idx: number) => {
-    const hasEnteredAnyMark = subjects.some((sub: any) => marksMap[`${st.id}_${sub.id}`] !== undefined);
-    const studentMarks = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`] ?? 0);
-    const total = hasEnteredAnyMark ? studentMarks.reduce((a, b) => a + b, 0) : 0;
-    const overall = hasEnteredAnyMark ? getOverallGrade(studentMarks, st.class_id) : null;
-    const failed = overall ? ((overall as any).graced ? false : (studentMarks.some(m => m < passMark && m > 0) || overall.hasFail)) : false;
-    const avg = subjects.length > 0 ? total / subjects.length : 0;
+    const rawMarks = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`]);
+    const hasEnteredAnyMark = rawMarks.some((m: any) => m !== undefined && m !== null && m !== '');
+    const studentMarks = rawMarks.map((m: any) => (m === undefined || m === null || m === '' ? 0 : Number(m)));
+    // Only subjects that actually have a mark entered take part in grading —
+    // blank subjects must not be treated as 0 (that wrongly failed passing students).
+    const gradedMarks = rawMarks
+      .filter((m: any) => m !== undefined && m !== null && m !== '' && !Number.isNaN(Number(m)))
+      .map((m: any) => Number(m));
+    const total = hasEnteredAnyMark ? gradedMarks.reduce((a, b) => a + b, 0) : 0;
+    const overall = hasEnteredAnyMark ? getOverallGrade(gradedMarks, st.class_id) : null;
+    const failed = overall ? ((overall as any).graced ? false : overall.hasFail) : false;
+    const avg = gradedMarks.length > 0 ? total / gradedMarks.length : 0;
     return { st, studentMarks, total, avg, overall, failed, hasEnteredAnyMark, originalIdx: idx };
+
   });
 
   const sortedForRank = [...studentsWithStats]
