@@ -35,9 +35,12 @@ interface ClassResultTableProps {
   onViewMarksheet: (studentId: string, rank?: number) => void;
   onClose?: () => void;
   lastSaved?: { at: string; name: string } | null;
+  /** Read-only preview of saved results (no editing / saving) */
+  readOnly?: boolean;
+  onEdit?: () => void;
 }
 
-const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave, isSaving, title, onViewMarksheet, onClose, lastSaved }: ClassResultTableProps) => {
+const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave, isSaving, title, onViewMarksheet, onClose, lastSaved, readOnly = false, onEdit }: ClassResultTableProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { getOverallGrade, getGraceLimit, scales, maxMarks, minMarks, passMark } = useGradingSystem();
