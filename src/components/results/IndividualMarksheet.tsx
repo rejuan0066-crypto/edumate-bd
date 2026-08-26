@@ -35,14 +35,19 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
   });
 
   const subjectResults = subjects.map((sub: any) => {
-    const marks = isSample ? (Math.random() > 0.2 ? 70 + Math.floor(Math.random() * 30) : 30 + Math.floor(Math.random() * 10)) : (marksMap[`${student.id}_${sub.id}`] ?? 0);
+    const raw = isSample ? (Math.random() > 0.2 ? 70 + Math.floor(Math.random() * 30) : 30 + Math.floor(Math.random() * 10)) : marksMap[`${student.id}_${sub.id}`];
+    const entered = raw !== undefined && raw !== null && (raw as any) !== '' && !Number.isNaN(Number(raw));
+    const marks = entered ? Number(raw) : 0;
     const { grade, gpa } = getGrade(marks);
-    return { subject: sub, marks, grade, gpa };
+    return { subject: sub, marks, grade, gpa, entered };
   });
 
-  const totalMarks = subjectResults.reduce((sum, r) => sum + r.marks, 0);
-  const avgMarks = subjects.length > 0 ? totalMarks / subjects.length : 0;
-  const overall: any = getOverallGrade(subjectResults.map(r => r.marks), student?.class_id);
+  // Blank subjects are excluded from grading so they can't wrongly fail a student.
+  const gradedMarks = subjectResults.filter(r => r.entered).map(r => r.marks);
+  const totalMarks = gradedMarks.reduce((sum, m) => sum + m, 0);
+  const avgMarks = gradedMarks.length > 0 ? totalMarks / gradedMarks.length : 0;
+  const overall: any = getOverallGrade(gradedMarks, student?.class_id);
+
 
   const instName = bn ? (institution?.name || "আল-আরাবিয়া হোসাইনিয়া হাফিজিয়া মাদরাসা") : (institution?.name_en || "Al-Arabia Subhania Hafizia Madrasa");
   const addressLine = bn ? (institution?.address || "এম.এইচ সেন্ট্রাল, খাজাঞ্চী রোড, বিশ্বনাথ, সিলেট • মোবাইল: ০১৭৪৯৮৪২৪০১") : (institution?.address_en || "M.H Central, Khajanchi Road, Bishwanath, Sylhet • Mobile: 01749842401");
