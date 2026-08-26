@@ -47,6 +47,9 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
   const totalMarks = gradedMarks.reduce((sum, m) => sum + m, 0);
   const avgMarks = gradedMarks.length > 0 ? totalMarks / gradedMarks.length : 0;
   const overall: any = getOverallGrade(gradedMarks, student?.class_id);
+  // Only subjects with an actual mark can cause a fail — blank subjects are ignored.
+  const hasFailedSubject = !overall.graced && subjectResults.some(r => r.entered && r.grade === 'F');
+
 
 
   const instName = bn ? (institution?.name || "আল-আরাবিয়া হোসাইনিয়া হাফিজিয়া মাদরাসা") : (institution?.name_en || "Al-Arabia Subhania Hafizia Madrasa");
