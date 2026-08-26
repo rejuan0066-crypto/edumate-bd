@@ -5,13 +5,13 @@ import { Printer, Save, Loader2, Eye, FileDown, FileSpreadsheet, X, Calculator }
 import ResultCalculationDialog from '@/components/results/ResultCalculationDialog';
 import { useState } from 'react';
 import { useGradingSystem } from '@/hooks/useGradingSystem';
-import { exportResultCSV, exportResultPDF } from '@/lib/resultExport';
+import { exportResultCSV, exportResultPDF, getResultSheetHtml } from '@/lib/resultExport';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { toBnDigits, toEnDigits, formatOrdinalRank } from '@/lib/digits';
 import { studentStats, rankStudents } from '@/lib/grading';
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 
 // Legacy export for backward compat
 const getGrade = (avg: number) => {
@@ -38,9 +38,12 @@ interface ClassResultTableProps {
   /** Read-only preview of saved results (no editing / saving) */
   readOnly?: boolean;
   onEdit?: () => void;
+  className?: string;
+  examName?: string;
+  sessionName?: string;
 }
 
-const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave, isSaving, title, onViewMarksheet, onClose, lastSaved, readOnly = false, onEdit }: ClassResultTableProps) => {
+const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave, isSaving, title, onViewMarksheet, onClose, lastSaved, readOnly = false, onEdit, className: classNameProp, examName, sessionName }: ClassResultTableProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { getOverallGrade, getGraceLimit, scales, maxMarks, minMarks, passMark } = useGradingSystem();
@@ -69,6 +72,9 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
       institutionLogo: institution?.logo_url || undefined,
       institutionAddress: institution?.address || undefined,
       institutionPhone: institution?.phone || undefined,
+      className: classNameProp,
+      examName,
+      sessionName,
     };
     type === 'csv' ? exportResultCSV(params) : exportResultPDF(params);
   };
@@ -95,6 +101,32 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
   });
 
   const rankMap = rankStudents(studentsWithStats);
+
+  const sheetHtml = useMemo(() => {
+    if (!readOnly) return '';
+    try {
+      return getResultSheetHtml({
+        title,
+        students,
+        subjects,
+        marksMap,
+        getOverallGrade,
+        bn,
+        institutionName: instName,
+        institutionLogo: institution?.logo_url || undefined,
+        institutionAddress: institution?.address || undefined,
+        institutionPhone: institution?.phone || undefined,
+        className: classNameProp,
+        examName,
+        sessionName,
+        passMark,
+      });
+    } catch (e) {
+      console.error('Result sheet preview failed', e);
+      return '';
+    }
+  }, [readOnly, title, students, subjects, marksMap, bn, instName, institution, classNameProp, examName, sessionName, passMark, getOverallGrade]);
+
 
   return (
     <div className="card-elevated rounded-xl overflow-hidden relative flex flex-col h-full bg-background">
@@ -148,6 +180,17 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
         </div>
       </div>
 
+      {readOnly ? (
+        <div className="w-full overflow-auto bg-slate-100 p-2 sm:p-4" style={{ maxHeight: '78vh' }}>
+          <iframe
+            title={title}
+            srcDoc={sheetHtml}
+            className="w-full bg-white rounded-lg border border-border shadow-sm"
+            style={{ height: '78vh', minHeight: 520 }}
+          />
+        </div>
+      ) : (
+        <>
       {/* Main Grid Container */}
       <div className="max-h-[75vh] w-full overflow-y-auto overflow-x-auto relative scrollbar-thin scrollbar-thumb-muted-foreground/20 bg-background" ref={tableRef}>
         <table className="w-full min-w-full border-separate border-spacing-0 table-auto whitespace-nowrap">
@@ -314,6 +357,8 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
           ))}
         </div>
       </div>
+        </>
+      )}
       
       <ResultCalculationDialog
         open={!!explainStudent}

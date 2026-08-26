@@ -1123,6 +1123,10 @@ const AdminResults = () => {
               lastSaved={lastSavedInfo || null}
               readOnly={readOnlyView}
               onEdit={() => setReadOnlyView(false)}
+              className={bn ? examClasses.find((c: any) => c.id === selectedClass)?.name_bn : examClasses.find((c: any) => c.id === selectedClass)?.name}
+              examName={bn ? examSessions.find((es: any) => es.id === examSessionId)?.name_bn : examSessions.find((es: any) => es.id === examSessionId)?.name}
+              sessionName={(() => { const y = academicSessions.find((s: any) => s.id === examYear); return bn ? (y?.name_bn || y?.name) : y?.name; })()}
+
 
 
               onViewMarksheet={(id, rank) => {
