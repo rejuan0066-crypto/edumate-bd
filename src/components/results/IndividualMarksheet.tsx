@@ -197,13 +197,14 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             min-width: 45px;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
           }
-          .grade-a-plus { background-color: #ECFDF5; color: #065F46; border: 1px solid #D1FAE5; }
-          .grade-a { background-color: #ECFDF5; color: #059669; border: 1px solid #D1FAE5; }
-          .grade-a-minus { background-color: #F0FDF4; color: #16A34A; border: 1px solid #DCFCE7; }
-          .grade-b { background-color: #FFFBEB; color: #D97706; border: 1px solid #FEF3C7; }
-          .grade-c { background-color: #FFF7ED; color: #EA580C; border: 1px solid #FFEDD5; }
-          .grade-d { background-color: #FFF7ED; color: #C2410C; border: 1px solid #FFEDD5; }
-          .grade-f { background-color: #FEF2F2; color: #DC2626; border: 1px solid #FEE2E2; }
+          .grade-a-plus { background-color: #059669; color: #FFFFFF; border: 1px solid #047857; }
+          .grade-a { background-color: #10B981; color: #FFFFFF; border: 1px solid #059669; }
+          .grade-a-minus { background-color: #0D9488; color: #FFFFFF; border: 1px solid #0F766E; }
+          .grade-b { background-color: #2563EB; color: #FFFFFF; border: 1px solid #1D4ED8; }
+          .grade-c { background-color: #D97706; color: #FFFFFF; border: 1px solid #B45309; }
+          .grade-d { background-color: #EA580C; color: #FFFFFF; border: 1px solid #C2410C; }
+          .grade-f { background-color: #DC2626; color: #FFFFFF; border: 1px solid #B91C1C; }
+          .grade-none { background-color: #F1F5F9; color: #94A3B8; border: 1px solid #E2E8F0; }
         `}} />
 
         {/* Watermark Logo */}
@@ -334,15 +335,16 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
                   <td className="font-medium text-slate-600">{bn ? '১০০' : '100'}</td>
                   <td className="font-bold text-slate-900">{isSample ? toBnDigits(r.marks) : (bn ? toBnDigits(r.marks) : r.marks)}</td>
                   <td>
-                    <span className={cn(
-                      "grade-badge",
-                      r.grade === 'A+' ? 'grade-a-plus' : 
-                      r.grade === 'A' ? 'grade-a' :
-                      r.grade === 'A-' ? 'grade-a-minus' :
-                      r.grade === 'B' ? 'grade-b' :
-                      r.grade === 'C' ? 'grade-c' :
-                      r.grade === 'D' ? 'grade-d' : 'grade-f'
-                    )}>
+                     <span className={cn(
+                       "grade-badge",
+                       !r.entered ? 'grade-none' :
+                       r.grade === 'A+' ? 'grade-a-plus' : 
+                       r.grade === 'A' ? 'grade-a' :
+                       r.grade === 'A-' ? 'grade-a-minus' :
+                       r.grade === 'B' ? 'grade-b' :
+                       r.grade === 'C' ? 'grade-c' :
+                       r.grade === 'D' ? 'grade-d' : 'grade-f'
+                     )}>
                       {r.grade}
                     </span>
                   </td>
