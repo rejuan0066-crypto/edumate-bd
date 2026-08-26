@@ -90,15 +90,17 @@ export interface OverallGradeOptions {
 
 
 /**
- * Final grade for a student.
+ * Final grade for a student — based on the TOTAL marks obtained against the
+ * total obtainable marks. No average is calculated.
  * - Entered marks below the pass mark are failures; blanks are excluded by the caller.
  * - Within the consideration limit → fixed "Maqbul (Considered)" (D / 1.00).
- * - A student who passed every subject can never be F, even if the average lands in the F band.
+ * - A student who passed every subject can never be F, even if the total lands in the F band.
  */
 export const overallGrade = (subjectMarks: number[], options: OverallGradeOptions = {}): OverallGradeResult => {
   const scales = options.scales?.length ? options.scales : DEFAULT_SCALES;
   const pm = options.passMark ?? 33;
   const graceLimit = options.graceLimit ?? 0;
+  const fullMarks = options.fullMarks ?? DEFAULT_FULL_MARKS;
 
   const failedCount = subjectMarks.filter((m) => Number(m) < pm).length;
   const graced = graceLimit > 0 && failedCount > 0 && failedCount <= graceLimit;
@@ -117,8 +119,6 @@ export const overallGrade = (subjectMarks: number[], options: OverallGradeOption
     };
   }
 
-  const avg = subjectMarks.length ? subjectMarks.reduce((a, b) => a + b, 0) / subjectMarks.length : 0;
-
   if (graced) {
     const dScale = scales.find((s) => s.grade === 'D');
     return {
@@ -133,8 +133,11 @@ export const overallGrade = (subjectMarks: number[], options: OverallGradeOption
     };
   }
 
-  const byAvg = gradeFromAverage(avg, scales);
-  if (byAvg.grade === 'F' && subjectMarks.length > 0) {
+  const total = subjectMarks.reduce((a, b) => a + b, 0);
+  const fullTotal = subjectMarks.length * fullMarks;
+  const byTotal = gradeFromTotal(total, fullTotal, scales);
+
+  if (byTotal.grade === 'F' && subjectMarks.length > 0) {
     const passScales = scales.filter((s) => s.grade !== 'F');
     const lowestPass = passScales.length
       ? passScales.reduce((low, s) => (s.min < low.min ? s : low))
@@ -151,8 +154,9 @@ export const overallGrade = (subjectMarks: number[], options: OverallGradeOption
     };
   }
 
-  return { ...byAvg, hasFail: false, graced: false, failedCount };
+  return { ...byTotal, hasFail: false, graced: false, failedCount };
 };
+
 
 export interface StudentStats {
   id: string;
