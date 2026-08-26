@@ -133,10 +133,18 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
           <Button variant="outline" size="sm" onClick={() => handleExport('pdf')} className="h-8 px-2 sm:px-3 text-[10px] sm:text-sm gap-1">
             <FileDown className="w-3.5 h-3.5" /> <span className="hidden xs:inline">PDF</span>
           </Button>
-          <Button size="sm" className="btn-primary-gradient h-8 px-2 sm:px-3 text-[10px] sm:text-sm gap-1" onClick={onSave} disabled={isSaving}>
-            {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-            {bn ? 'সংরক্ষণ' : 'Save'}
-          </Button>
+          {readOnly ? (
+            onEdit && (
+              <Button variant="outline" size="sm" onClick={onEdit} className="h-8 px-2 sm:px-3 text-[10px] sm:text-sm gap-1">
+                <Save className="w-3.5 h-3.5" /> {bn ? 'এডিট করুন' : 'Edit'}
+              </Button>
+            )
+          ) : (
+            <Button size="sm" className="btn-primary-gradient h-8 px-2 sm:px-3 text-[10px] sm:text-sm gap-1" onClick={onSave} disabled={isSaving}>
+              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              {bn ? 'সংরক্ষণ' : 'Save'}
+            </Button>
+          )}
         </div>
       </div>
 
