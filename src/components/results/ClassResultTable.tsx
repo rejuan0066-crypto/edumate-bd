@@ -5,13 +5,13 @@ import { Printer, Save, Loader2, Eye, FileDown, FileSpreadsheet, X, Calculator }
 import ResultCalculationDialog from '@/components/results/ResultCalculationDialog';
 import { useState } from 'react';
 import { useGradingSystem } from '@/hooks/useGradingSystem';
-import { exportResultCSV, exportResultPDF } from '@/lib/resultExport';
+import { exportResultCSV, exportResultPDF, getResultSheetHtml } from '@/lib/resultExport';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { toBnDigits, toEnDigits, formatOrdinalRank } from '@/lib/digits';
 import { studentStats, rankStudents } from '@/lib/grading';
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 
 // Legacy export for backward compat
 const getGrade = (avg: number) => {
@@ -38,9 +38,12 @@ interface ClassResultTableProps {
   /** Read-only preview of saved results (no editing / saving) */
   readOnly?: boolean;
   onEdit?: () => void;
+  className?: string;
+  examName?: string;
+  sessionName?: string;
 }
 
-const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave, isSaving, title, onViewMarksheet, onClose, lastSaved, readOnly = false, onEdit }: ClassResultTableProps) => {
+const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave, isSaving, title, onViewMarksheet, onClose, lastSaved, readOnly = false, onEdit, className: classNameProp, examName, sessionName }: ClassResultTableProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { getOverallGrade, getGraceLimit, scales, maxMarks, minMarks, passMark } = useGradingSystem();
@@ -69,6 +72,9 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
       institutionLogo: institution?.logo_url || undefined,
       institutionAddress: institution?.address || undefined,
       institutionPhone: institution?.phone || undefined,
+      className: classNameProp,
+      examName,
+      sessionName,
     };
     type === 'csv' ? exportResultCSV(params) : exportResultPDF(params);
   };
