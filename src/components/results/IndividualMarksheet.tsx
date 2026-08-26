@@ -398,14 +398,12 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             <span className={cn(
               "text-white text-[14px] px-5 py-1 rounded-full font-bold shadow-sm",
               (() => {
-                const hasFailedSubject = !overall.graced && subjectResults.some(r => r.grade === 'F');
                 const isFail = !overall.graced && ((student.letter_grade || overall.grade) === 'F' || hasFailedSubject);
                 return !isFail ? 'bg-emerald-600' : 'bg-rose-600';
               })()
             )}>
               {(() => {
                 if (overall.graced) return overall.grade;
-                const hasFailedSubject = subjectResults.some(r => r.grade === 'F');
                 return hasFailedSubject ? 'F' : (student.letter_grade || overall.grade);
               })()}
             </span>
@@ -416,7 +414,6 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               "text-[14px] font-bold px-4 py-1 rounded-full",
               (() => {
                 const gpa = Number(overall.graced ? overall.gpa : (student.gpa || overall.gpa));
-                const hasFailedSubject = subjectResults.some(r => r.grade === 'F');
                 const isFail = !overall.graced && (student.letter_grade === 'F' || overall.grade === 'F' || gpa === 0 || hasFailedSubject);
                 return isFail ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200';
               })()
@@ -424,8 +421,8 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
               {(() => {
                 if (overall.graced) return bn ? (overall.title_bn || 'মাকবুল (বিবেচনায়)') : (overall.title || 'MAQBUL (Considered)');
                 const gpa = Number(student.gpa || overall.gpa);
-                const hasFailedSubject = subjectResults.some(r => r.grade === 'F');
                 const isFail = student.letter_grade === 'F' || overall.grade === 'F' || gpa === 0 || hasFailedSubject;
+
 
                 if (isFail) return bn ? "রাসিব" : "FAIL";
                 if (student.division || student.status_text || student.madrasha_grade) {
