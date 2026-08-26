@@ -7,6 +7,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
+import { useAuth } from '@/hooks/useAuth';
+import { isAdminRole } from '@/lib/roles';
 import ResultSelectionBrowser from '@/components/results/ResultSelectionBrowser';
 import ClassResultTable from '@/components/results/ClassResultTable';
 import ClassResultStatusList from '@/components/results/ClassResultStatusList';
@@ -32,6 +34,10 @@ const AdminResults = () => {
   const { checkApproval } = useApprovalCheck('/admin/results', 'results');
   const { canAddItem, canEditItem } = usePagePermissions('/admin/results');
   const { getGrade, getOverallGrade } = useGradingSystem();
+  const { role } = useAuth();
+  const isAdmin = isAdminRole(role);
+  const [rejectPublishOpen, setRejectPublishOpen] = useState(false);
+  const [rejectPublishReason, setRejectPublishReason] = useState('');
 
   const [searchMode, setSearchMode] = useState<'class' | 'individual'>('class');
   const [examYear, setExamYear] = useState(searchParams.get('year') || '');
@@ -135,9 +141,49 @@ const AdminResults = () => {
     enabled: showClassList && examClasses.length > 0 && examSessions.length > 0,
   });
 
+  const currentExamSession: any = examSessions.find((es: any) => es.id === examSessionId);
+  const publishApprovalStatus = (currentExamSession?.publish_approval_status || 'pending') as 'pending' | 'approved' | 'rejected';
+
+  const refreshSessions = () => {
+    queryClient.invalidateQueries({ queryKey: ['exam-sessions'] });
+    queryClient.invalidateQueries({ queryKey: ['class-publish-status'] });
+  };
+
+  const handleApprovePublish = async () => {
+    if (!examSessionId) return;
+    const { error } = await (supabase as any).rpc('approve_result_publish', { p_exam_session_id: examSessionId });
+    if (error) { toast.error(error.message); return; }
+    refreshSessions();
+    toast.success(bn ? 'পাবলিশ অনুমোদিত হয়েছে' : 'Publishing approved');
+  };
+
+  const handleRejectPublish = async () => {
+    if (!examSessionId || !rejectPublishReason.trim()) return;
+    const { error } = await (supabase as any).rpc('reject_result_publish', {
+      p_exam_session_id: examSessionId,
+      p_reason: rejectPublishReason.trim(),
+    });
+    if (error) { toast.error(error.message); return; }
+    setRejectPublishOpen(false);
+    setRejectPublishReason('');
+    refreshSessions();
+    toast.success(bn ? 'পাবলিশ প্রত্যাখ্যান করা হয়েছে' : 'Publishing rejected');
+  };
+
   const handlePublishToggle = async (classId: string, publish: boolean) => {
     const examSession = examSessions.find((es: any) => es.id === examSessionId);
     if (!examSession) return;
+
+    if (publish && publishApprovalStatus !== 'approved') {
+      if (!isAdmin) {
+        await (supabase as any).rpc('submit_result_publish_for_approval', { p_exam_session_id: examSessionId });
+        refreshSessions();
+      }
+      toast.warning(bn
+        ? '⏳ ফলাফল পাবলিশ করতে অ্যাডমিনের অনুমোদন প্রয়োজন।'
+        : '⏳ Admin approval is required before publishing results.');
+      return;
+    }
 
     const { error } = await supabase.from('exam_sessions').update({ is_published: publish } as any).eq('id', examSessionId);
     if (error) {
@@ -145,8 +191,7 @@ const AdminResults = () => {
       return;
     }
 
-    queryClient.invalidateQueries({ queryKey: ['class-publish-status'] });
-    queryClient.invalidateQueries({ queryKey: ['exam-sessions'] });
+    refreshSessions();
     toast.success(publish
       ? (bn ? 'ফলাফল পাবলিশ করা হয়েছে' : 'Result published')
       : (bn ? 'ফলাফল আনপাবলিশ করা হয়েছে' : 'Result unpublished')
@@ -1030,6 +1075,11 @@ const AdminResults = () => {
             onPublishToggle={handlePublishToggle}
             exportingClassId={exportingClassId}
             examSessionName={getExamSessionName()}
+            publishApprovalStatus={publishApprovalStatus}
+            publishRejectionReason={currentExamSession?.publish_rejection_reason}
+            isAdmin={isAdmin}
+            onApprovePublish={handleApprovePublish}
+            onRejectPublish={() => setRejectPublishOpen(true)}
           />
         )}
 
@@ -1070,6 +1120,27 @@ const AdminResults = () => {
             }}
           />
         ) : null}
+        <Dialog open={rejectPublishOpen} onOpenChange={setRejectPublishOpen}>
+          <DialogContent className="rounded-[28px]">
+            <DialogHeader>
+              <DialogTitle>{bn ? 'ফলাফল পাবলিশ প্রত্যাখ্যান' : 'Reject Result Publishing'}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2">
+              <Label>{bn ? 'কারণ' : 'Reason'}</Label>
+              <Input
+                value={rejectPublishReason}
+                onChange={(e) => setRejectPublishReason(e.target.value)}
+                placeholder={bn ? 'কারণ লিখুন...' : 'Enter reason...'}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setRejectPublishOpen(false)}>{bn ? 'বাতিল' : 'Cancel'}</Button>
+              <Button variant="destructive" disabled={!rejectPublishReason.trim()} onClick={handleRejectPublish}>
+                {bn ? 'নিশ্চিত করুন' : 'Confirm'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );
