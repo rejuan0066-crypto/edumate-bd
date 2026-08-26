@@ -25,7 +25,7 @@ interface IndividualMarksheetProps {
 const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, rank, className, examName, sessionName }: IndividualMarksheetProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
-  const { getOverallGrade } = useGradingSystem();
+  const { getOverallGrade, getGrade: getSubjectGrade } = useGradingSystem();
   const [isSample, setIsSample] = useState(false);
 
   const { data: institution } = useQuery({
