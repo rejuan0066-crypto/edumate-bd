@@ -291,6 +291,7 @@ const AdminResults = () => {
     const examId = examSessionId;
 
     try {
+      setReadOnlyView(false);
       setSelectedExamId(examId);
       await loadResultsForExam(examId);
     } catch (error: any) {
