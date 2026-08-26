@@ -88,8 +88,10 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
     const stats = studentStats(st.id, rawMarks, {
       scales,
       passMark,
+      fullMarks: maxMarks,
       graceLimit: getGraceLimit(st.class_id),
     });
+
     return { st, ...stats, originalIdx: idx };
   });
 
