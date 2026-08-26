@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
   DEFAULT_SCALES,
-  gradeFromAverage,
+  gradeFromMark,
   overallGrade,
   resolveGraceLimit,
   type GradeScale,
@@ -10,6 +10,7 @@ import {
 
 export type { GradeScale } from '@/lib/grading';
 export { DEFAULT_SCALES } from '@/lib/grading';
+
 
 export const useGradingSystem = () => {
   const { data: scales = DEFAULT_SCALES } = useQuery({
