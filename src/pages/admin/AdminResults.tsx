@@ -1,6 +1,6 @@
 import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -53,6 +53,16 @@ const AdminResults = () => {
 
   // Show class list when we have year+session from URL but no class selected
   const showClassList = searchMode === 'class' && !!examYear && !!examSessionId && !selectedClass && !showResults;
+
+  // Scroll the saved result sheet into view as soon as it opens
+  const resultsSectionRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!showResults) return;
+    const t = setTimeout(() => {
+      resultsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 250);
+    return () => clearTimeout(t);
+  }, [showResults, viewingStudentId, selectedClass]);
 
   const loadResultsForExam = async (examId: string) => {
     const { data, error } = await supabase.from('results').select('*').eq('exam_id', examId);
@@ -1083,43 +1093,45 @@ const AdminResults = () => {
           />
         )}
 
-        {showResults && <GradingChart />}
+        <div ref={resultsSectionRef} className="scroll-mt-24 space-y-4">
+          {showResults && <GradingChart />}
 
-        {showResults && viewingStudent ? (
-          <IndividualMarksheet
-            student={viewingStudent}
-            subjects={subjects}
-            marksMap={marksMap}
-            examTitle={getExamTitle()}
-            examName={bn ? examSessions.find((es: any) => es.id === examSessionId)?.name_bn : examSessions.find((es: any) => es.id === examSessionId)?.name}
-            className={bn ? examClasses.find((c: any) => c.id === selectedClass)?.name_bn : examClasses.find((c: any) => c.id === selectedClass)?.name}
-            sessionName={(() => { const y = academicSessions.find((s: any) => s.id === examYear); return bn ? (y?.name_bn || y?.name) : y?.name; })()}
-            onBack={() => setViewingStudentId(null)}
-            rank={viewingStudentRank}
-          />
-        ) : showResults ? (
-          <ClassResultTable
-            students={students}
-            subjects={subjects}
-            marksMap={marksMap}
-            onMarksChange={(key, value) => setMarksMap(prev => ({ ...prev, [key]: value }))}
-            onSave={() => saveMutation.mutate()}
-            isSaving={saveMutation.isPending}
-            title={getExamTitle()}
-            lastSaved={lastSavedInfo || null}
+          {showResults && viewingStudent ? (
+            <IndividualMarksheet
+              student={viewingStudent}
+              subjects={subjects}
+              marksMap={marksMap}
+              examTitle={getExamTitle()}
+              examName={bn ? examSessions.find((es: any) => es.id === examSessionId)?.name_bn : examSessions.find((es: any) => es.id === examSessionId)?.name}
+              className={bn ? examClasses.find((c: any) => c.id === selectedClass)?.name_bn : examClasses.find((c: any) => c.id === selectedClass)?.name}
+              sessionName={(() => { const y = academicSessions.find((s: any) => s.id === examYear); return bn ? (y?.name_bn || y?.name) : y?.name; })()}
+              onBack={() => setViewingStudentId(null)}
+              rank={viewingStudentRank}
+            />
+          ) : showResults ? (
+            <ClassResultTable
+              students={students}
+              subjects={subjects}
+              marksMap={marksMap}
+              onMarksChange={(key, value) => setMarksMap(prev => ({ ...prev, [key]: value }))}
+              onSave={() => saveMutation.mutate()}
+              isSaving={saveMutation.isPending}
+              title={getExamTitle()}
+              lastSaved={lastSavedInfo || null}
 
-            onViewMarksheet={(id, rank) => {
-              setViewingStudentId(id);
-              setViewingStudentRank(rank);
-            }}
-            onClose={() => {
-              setShowResults(false);
-              setSelectedExamId(null);
-              setSelectedClass('');
-              setMarksMap({});
-            }}
-          />
-        ) : null}
+              onViewMarksheet={(id, rank) => {
+                setViewingStudentId(id);
+                setViewingStudentRank(rank);
+              }}
+              onClose={() => {
+                setShowResults(false);
+                setSelectedExamId(null);
+                setSelectedClass('');
+                setMarksMap({});
+              }}
+            />
+          ) : null}
+        </div>
         <Dialog open={rejectPublishOpen} onOpenChange={setRejectPublishOpen}>
           <DialogContent className="rounded-[28px]">
             <DialogHeader>
