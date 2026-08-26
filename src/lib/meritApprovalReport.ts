@@ -25,7 +25,6 @@ export interface MeritApprovalReportInput {
     name: string;
     rollNumber: number | null;
     totalMarks: number;
-    averageMarks: number;
     grade: string;
     gpa: string;
     hasFail: boolean;
@@ -106,7 +105,6 @@ export const generateMeritApprovalReport = (input: MeritApprovalReportInput) => 
       { bn: 'নাম', en: 'Name' },
       { bn: 'রোল', en: 'Roll' },
       { bn: 'মোট নম্বর', en: 'Total' },
-      { bn: 'গড়', en: 'Avg' },
       { bn: 'গ্রেড', en: 'Grade' },
       { bn: 'জিপিএ', en: 'GPA' },
       { bn: 'ফলাফল', en: 'Result' },
@@ -116,7 +114,6 @@ export const generateMeritApprovalReport = (input: MeritApprovalReportInput) => 
       r.name,
       r.rollNumber ?? '—',
       r.totalMarks,
-      r.averageMarks.toFixed(2),
       r.grade,
       r.gpa,
       r.hasFail ? (bn ? 'অনুত্তীর্ণ' : 'Failed') : (bn ? 'উত্তীর্ণ' : 'Passed'),

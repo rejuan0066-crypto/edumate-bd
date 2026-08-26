@@ -26,7 +26,6 @@ interface StudentRanking {
   name: string;
   rollNumber: number | null;
   totalMarks: number;
-  averageMarks: number;
   grade: string;
   gpa: string;
   rank: number;
@@ -107,14 +106,12 @@ const AdminMeritList = () => {
       const rankings: StudentRanking[] = students.map((s: any) => {
         const marks = subjects.map((sub: any) => subjectMarks[s.id]?.[sub.id] ?? 0);
         const total = marks.reduce((a: number, b: number) => a + b, 0);
-        const avg = marks.length ? total / marks.length : 0;
         const overall = getOverallGrade(marks, s.class_id);
         return {
           studentId: s.id,
           name: bn ? s.name_bn : (s.name_en || s.name_bn),
           rollNumber: s.roll_number,
           totalMarks: total,
-          averageMarks: avg,
           grade: overall.grade,
           gpa: overall.gpa,
           rank: 0,
@@ -185,10 +182,8 @@ const AdminMeritList = () => {
         .map((es: any) => {
           const marks = grouped[es.id];
           const total = marks.reduce((a, b) => a + b, 0);
-          const avg = marks.length ? total / marks.length : 0;
           return {
             name: bn ? es.name_bn : es.name,
-            average: parseFloat(avg.toFixed(2)),
             total,
           };
         });
@@ -443,7 +438,6 @@ const AdminMeritList = () => {
                           <th className="px-4 py-2 text-left">{bn ? 'ছাত্রের নাম' : 'Student Name'}</th>
                           <th className="px-4 py-2 text-left">{bn ? 'রোল' : 'Roll'}</th>
                           <th className="px-4 py-2 text-right">{bn ? 'মোট নম্বর' : 'Total Marks'}</th>
-                          <th className="px-4 py-2 text-right">{bn ? 'গড়' : 'Avg'}</th>
                           <th className="px-4 py-2 text-center">GPA</th>
                           <th className="px-4 py-2 text-center">{bn ? 'গ্রেড' : 'Grade'}</th>
                         </tr>
@@ -465,7 +459,6 @@ const AdminMeritList = () => {
                             <td className="px-4 py-3 font-medium text-foreground">{r.name}</td>
                             <td className="px-4 py-3 text-muted-foreground">{fmt(r.rollNumber || 0)}</td>
                             <td className="px-4 py-3 text-right font-semibold text-foreground">{fmt(r.totalMarks)}</td>
-                            <td className="px-4 py-3 text-right text-muted-foreground">{fmt(parseFloat(r.averageMarks.toFixed(2)))}</td>
                             <td className="px-4 py-3 text-center font-semibold text-foreground">{r.gpa}</td>
                             <td className="px-4 py-3 text-center rounded-r-[20px]">
                               <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${
@@ -548,18 +541,18 @@ const AdminMeritList = () => {
                           <div className="text-2xl font-bold text-primary mt-1">{fmt(progressData.length)}</div>
                         </div>
                         <div className="p-4 rounded-[20px] bg-emerald-500/5">
-                          <div className="text-xs text-muted-foreground">{bn ? 'সর্বোচ্চ গড়' : 'Highest Avg'}</div>
-                          <div className="text-2xl font-bold text-emerald-600 mt-1">{fmt(Math.max(...progressData.map(d => d.average)))}</div>
+                          <div className="text-xs text-muted-foreground">{bn ? 'সর্বোচ্চ মোট' : 'Highest Total'}</div>
+                          <div className="text-2xl font-bold text-emerald-600 mt-1">{fmt(Math.max(...progressData.map(d => d.total)))}</div>
                         </div>
                         <div className="p-4 rounded-[20px] bg-amber-500/5">
-                          <div className="text-xs text-muted-foreground">{bn ? 'সর্বনিম্ন গড়' : 'Lowest Avg'}</div>
-                          <div className="text-2xl font-bold text-amber-600 mt-1">{fmt(Math.min(...progressData.map(d => d.average)))}</div>
+                          <div className="text-xs text-muted-foreground">{bn ? 'সর্বনিম্ন মোট' : 'Lowest Total'}</div>
+                          <div className="text-2xl font-bold text-amber-600 mt-1">{fmt(Math.min(...progressData.map(d => d.total)))}</div>
                         </div>
                         <div className="p-4 rounded-[20px] bg-sky-500/5">
                           <div className="text-xs text-muted-foreground">{bn ? 'প্রবণতা' : 'Trend'}</div>
                           <div className="text-2xl font-bold text-sky-600 mt-1">
-                            {progressData.length >= 2 && progressData[progressData.length - 1].average > progressData[0].average
-                              ? '↗' : progressData.length >= 2 && progressData[progressData.length - 1].average < progressData[0].average ? '↘' : '→'}
+                            {progressData.length >= 2 && progressData[progressData.length - 1].total > progressData[0].total
+                              ? '↗' : progressData.length >= 2 && progressData[progressData.length - 1].total < progressData[0].total ? '↘' : '→'}
                           </div>
                         </div>
                       </div>
@@ -578,7 +571,7 @@ const AdminMeritList = () => {
                               }}
                             />
                             <Legend />
-                            <Line type="monotone" dataKey="average" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ r: 5 }} name={bn ? 'গড় নম্বর' : 'Average'} />
+                            <Line type="monotone" dataKey="total" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ r: 5 }} name={bn ? 'মোট নম্বর' : 'Total'} />
                           </LineChart>
                         </ResponsiveContainer>
                       </div>
