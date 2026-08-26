@@ -1120,6 +1120,9 @@ const AdminResults = () => {
               isSaving={saveMutation.isPending}
               title={getExamTitle()}
               lastSaved={lastSavedInfo || null}
+              readOnly={readOnlyView}
+              onEdit={() => setReadOnlyView(false)}
+
 
               onViewMarksheet={(id, rank) => {
                 setViewingStudentId(id);
