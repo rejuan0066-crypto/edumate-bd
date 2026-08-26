@@ -23,7 +23,7 @@ const ResultCalculationDialog = ({ open, onOpenChange, student, subjects, marksM
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { user } = useAuth();
-  const { passMark, getOverallGrade, getGraceLimit } = useGradingSystem();
+  const { passMark, getOverallGrade, getGraceLimit, maxMarks } = useGradingSystem();
 
   const num = (v: any) => (bn ? toBnDigits(v) : String(v));
 
