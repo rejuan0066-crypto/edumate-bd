@@ -243,7 +243,8 @@ const AdminResults = () => {
   });
 
   // When class is selected from the list, auto-trigger search
-  const handleClassFromList = async (classId: string) => {
+  const handleClassFromList = async (classId: string, mode: 'view' | 'entry' = 'entry') => {
+    setReadOnlyView(mode === 'view');
     setSelectedClass(classId);
     // We need to wait for students/subjects queries, so set state and trigger search after
     setShowResults(false);
