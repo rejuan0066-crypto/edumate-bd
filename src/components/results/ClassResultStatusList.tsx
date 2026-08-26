@@ -86,6 +86,13 @@ const ClassResultStatusList = ({
               <ShieldAlert className="w-3 h-3" />{bn ? 'পাবলিশের জন্য অ্যাডমিন অনুমোদন প্রয়োজন' : 'Awaiting admin approval to publish'}
             </Badge>
           )}
+          {publishApprovalStatus === 'pending' && classes.some((c: any) => publishStatusMap[c.id]) && (
+            <span className="text-[11px] text-muted-foreground">
+              {bn
+                ? 'অনুমোদন না হওয়া পর্যন্ত পাবলিক সাইটে আগের অনুমোদিত ফলাফলই দেখাবে।'
+                : 'Until approved, the public site keeps showing the previously approved results.'}
+            </span>
+          )}
           {publishApprovalStatus === 'rejected' && publishRejectionReason && (
             <span className="text-[11px] text-destructive">{publishRejectionReason}</span>
           )}
