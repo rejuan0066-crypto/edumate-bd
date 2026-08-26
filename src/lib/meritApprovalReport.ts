@@ -25,7 +25,6 @@ export interface MeritApprovalReportInput {
     name: string;
     rollNumber: number | null;
     totalMarks: number;
-    averageMarks: number;
     grade: string;
     gpa: string;
     hasFail: boolean;
@@ -40,9 +39,6 @@ export const generateMeritApprovalReport = (input: MeritApprovalReportInput) => 
   const failing = rankings.filter(r => r.hasFail);
   const total = rankings.length;
   const passRate = total > 0 ? ((passing.length / total) * 100).toFixed(1) + '%' : '—';
-  const avgScore = total > 0
-    ? (rankings.reduce((s, r) => s + r.totalMarks, 0) / total).toFixed(2)
-    : '—';
 
   const statusLabel = (() => {
     switch (approval.status) {
@@ -71,7 +67,6 @@ export const generateMeritApprovalReport = (input: MeritApprovalReportInput) => 
     { label_bn: 'উত্তীর্ণ', label_en: 'Passed', value: passing.length, tone: 'positive' },
     { label_bn: 'অনুত্তীর্ণ', label_en: 'Failed', value: failing.length, tone: 'negative' },
     { label_bn: 'পাশের হার', label_en: 'Pass Rate', value: passRate, tone: 'accent' },
-    { label_bn: 'গড় মোট নম্বর', label_en: 'Avg. Total', value: avgScore, tone: 'neutral' },
     { label_bn: 'অনুমোদন স্ট্যাটাস', label_en: 'Approval Status', value: statusLabel,
       tone: approval.status === 'approved' ? 'positive' : approval.status === 'rejected' ? 'negative' : 'accent' },
   ];
@@ -106,7 +101,6 @@ export const generateMeritApprovalReport = (input: MeritApprovalReportInput) => 
       { bn: 'নাম', en: 'Name' },
       { bn: 'রোল', en: 'Roll' },
       { bn: 'মোট নম্বর', en: 'Total' },
-      { bn: 'গড়', en: 'Avg' },
       { bn: 'গ্রেড', en: 'Grade' },
       { bn: 'জিপিএ', en: 'GPA' },
       { bn: 'ফলাফল', en: 'Result' },
@@ -116,7 +110,6 @@ export const generateMeritApprovalReport = (input: MeritApprovalReportInput) => 
       r.name,
       r.rollNumber ?? '—',
       r.totalMarks,
-      r.averageMarks.toFixed(2),
       r.grade,
       r.gpa,
       r.hasFail ? (bn ? 'অনুত্তীর্ণ' : 'Failed') : (bn ? 'উত্তীর্ণ' : 'Passed'),
