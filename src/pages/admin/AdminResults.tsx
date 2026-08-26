@@ -50,6 +50,7 @@ const AdminResults = () => {
   const [viewingStudentId, setViewingStudentId] = useState<string | null>(null);
   const [viewingStudentRank, setViewingStudentRank] = useState<number | undefined>(undefined);
   const [exportingClassId, setExportingClassId] = useState<string | null>(null);
+  const [readOnlyView, setReadOnlyView] = useState(false);
 
   // Show class list when we have year+session from URL but no class selected
   const showClassList = searchMode === 'class' && !!examYear && !!examSessionId && !selectedClass && !showResults;
