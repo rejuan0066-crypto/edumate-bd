@@ -119,10 +119,11 @@ const ResultCalculationDialog = ({ open, onOpenChange, student, subjects, marksM
               </table>
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {[
                 { label: bn ? 'গণনায় ধরা বিষয়' : 'Counted Subjects', value: num(graded.length) },
                 { label: bn ? 'মোট নম্বর' : 'Total', value: num(total) },
+                { label: bn ? 'পূর্ণমান' : 'Out of', value: num(graded.length * maxMarks) },
                 { label: 'GPA', value: overall ? num(overall.gpa) : '-' },
               ].map((s) => (
                 <div key={s.label} className="rounded-[20px] border border-border bg-muted/30 px-3 py-2 text-center">
@@ -131,6 +132,7 @@ const ResultCalculationDialog = ({ open, onOpenChange, student, subjects, marksM
                 </div>
               ))}
             </div>
+
 
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs text-muted-foreground">{bn ? 'চূড়ান্ত গ্রেড' : 'Final Grade'}:</span>
