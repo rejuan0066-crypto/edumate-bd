@@ -16,7 +16,7 @@ interface Props {
 
 /**
  * Explains, step by step, how a student's result was calculated:
- * subject-wise pass/fail, total, average, consideration (grace) rule and final grade.
+ * subject-wise pass/fail, total, consideration (grace) rule and final grade.
  * Only visible to signed-in users.
  */
 const ResultCalculationDialog = ({ open, onOpenChange, student, subjects, marksMap }: Props) => {
