@@ -13,6 +13,10 @@ export interface GradeScale {
   title_bn?: string;
 }
 
+/**
+ * Grading scale bands. `min`/`max` are percentages of the TOTAL obtainable marks
+ * (total marks ÷ total full marks × 100) — grading never uses an average.
+ */
 export const DEFAULT_SCALES: GradeScale[] = [
   { grade: 'A+', min: 80, max: 100, gpa: '5.00', color: 'emerald', title: 'Mumtaz', title_bn: 'মুমতাজ' },
   { grade: 'A', min: 70, max: 79, gpa: '4.00', color: 'emerald', title: 'Jayyid Jiddan', title_bn: 'জায়্যিদ জিদ্দান' },
