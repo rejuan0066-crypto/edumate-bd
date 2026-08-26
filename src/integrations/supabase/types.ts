@@ -6913,6 +6913,48 @@ export type Database = {
           },
         ]
       }
+      published_results: {
+        Row: {
+          created_at: string
+          exam_id: string
+          gpa: number | null
+          grade: string | null
+          id: string
+          marks: number | null
+          published_at: string
+          published_by: string | null
+          student_id: string
+          subject_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          exam_id: string
+          gpa?: number | null
+          grade?: string | null
+          id?: string
+          marks?: number | null
+          published_at?: string
+          published_by?: string | null
+          student_id: string
+          subject_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          exam_id?: string
+          gpa?: number | null
+          grade?: string | null
+          id?: string
+          marks?: number | null
+          published_at?: string
+          published_by?: string | null
+          student_id?: string
+          subject_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       push_notification_log: {
         Row: {
           body: string | null
