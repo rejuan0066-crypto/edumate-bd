@@ -1959,7 +1959,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
             {entityType === 'staff' && (
               <div className="flex flex-wrap gap-3 items-center">
                 {/* Staff Sub-tabs: Full-time / Duty / Meal */}
-                <Tabs value={staffSubTab} onValueChange={(v) => { setStaffSubTab(v as any); setSelectedShift(v === 'fulltime' ? 'full_day' : v === 'duty' ? 'morning' : 'meal_breakfast'); }} className="shrink-0">
+                <Tabs value={staffSubTab} onValueChange={(v) => selectStaffSubTab(v as 'fulltime' | 'duty' | 'meal')} className="shrink-0">
                   <TabsList>
                     <TabsTrigger value="fulltime">
                       <Users className="h-4 w-4 mr-1" /> {bn ? 'ফুল টাইম হাজিরা' : 'Full Time'}
