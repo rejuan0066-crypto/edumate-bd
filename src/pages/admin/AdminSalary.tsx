@@ -32,6 +32,12 @@ import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 import SalaryWorkflowPanel from '@/components/admin/SalaryWorkflowPanel';
 import BulkSalaryWorkflowDialog from '@/components/admin/BulkSalaryWorkflowDialog';
 import { recomputeNetSalary } from '@/lib/salaryNet';
+import {
+  calcDutyDeduction,
+  type DeductionResult,
+  type DutyDay,
+  type DutyAttendance,
+} from '@/lib/dutyShiftDeduction';
 import { shouldApplyThursdayHalfDay, effectiveDutyEndForThursday, parseHalfDayEndMinutes, parseClockMinutes } from '@/lib/thursdayHalfDay';
 import { downloadSlipAsPdf, downloadSheetAsPdf, isMobileOrPwa } from '@/lib/salarySlipPdf';
 import { DatePicker } from '@/components/ui/date-picker';
