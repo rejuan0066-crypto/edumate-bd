@@ -26,6 +26,9 @@ import {
   Download, Printer, RotateCcw, QrCode, Send, Fingerprint, UserCheck
 } from 'lucide-react';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
+import { useAuth } from '@/hooks/useAuth';
+import { isAdminRole } from '@/lib/roles';
+
 import ClassQRPoster from '@/components/attendance/ClassQRPoster';
 import AttendanceDeviceManager from '@/components/attendance/AttendanceDeviceManager';
 import StaffCheckinDialog from '@/components/attendance/StaffCheckinDialog';
@@ -82,7 +85,14 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   const { language } = useLanguage();
   const bn = language === 'bn';
   const queryClient = useQueryClient();
-  const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/attendance');
+  const { canAddItem, canEditItem, canDeleteItem, canApproveItem } = usePagePermissions('/admin/attendance');
+  const { role } = useAuth();
+  const isAdmin = isAdminRole(role);
+  // Non-admins can only mark attendance. Settings, rosters, devices, summaries
+  // and exports stay hidden unless the matching permission is granted.
+  const canManageAttendance = isAdmin || canApproveItem;
+  const canExportAttendance = isAdmin || canApproveItem || canDeleteItem;
+
   const { timeFormat, setTimeFormat } = useTimeFormat();
   const { tz: appTz } = useAppTimezone();
   const fmt = (t: string) => formatTimeDisplay(t, timeFormat);
@@ -361,12 +371,13 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     return found?.id as string | undefined;
   }, [dutyShiftDefs, selectedShift]);
 
-  // Roster is "active" only when some duty is actually configured — otherwise
-  // fall back to showing every residential staff member (previous behaviour).
+  // Duty tab is strictly roster-driven: only staff rostered for this weekday +
+  // shift appear. No roster => empty list (never "everyone").
   const dutyRosterActive = useMemo(
-    () => staffSubTab === 'duty' && !!currentDutyShiftId && ((dutyTemplateRows as any[]).length > 0 || (dutyRosterRows as any[]).length > 0),
-    [staffSubTab, currentDutyShiftId, dutyTemplateRows, dutyRosterRows],
+    () => staffSubTab === 'duty' && !!currentDutyShiftId,
+    [staffSubTab, currentDutyShiftId],
   );
+
 
   // Staff on duty for the selected date + shift (day override beats template)
   const dutyStaffIdsForDate = useMemo(() => {
@@ -1823,7 +1834,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
             </p>
           </div>
           <div className="flex gap-2 flex-wrap items-center">
-            {entityType === 'student' && (
+            {canManageAttendance && entityType === 'student' && (
               <>
                 <Button variant="outline" size="sm" onClick={() => setQrPosterOpen(true)}>
                   <QrCode className="h-4 w-4 mr-1" /> {bn ? 'QR পোস্টার' : 'QR Poster'}
@@ -1833,7 +1844,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                 </Button>
               </>
             )}
-            {entityType === 'staff' && (
+            {canManageAttendance && entityType === 'staff' && (
               <>
                 <Button variant="outline" size="sm" onClick={() => setStaffCheckinOpen(true)} className="border-emerald-200 text-emerald-700 hover:bg-emerald-50">
                   <UserCheck className="h-4 w-4 mr-1" /> {bn ? 'চেক-ইন সিস্টেম' : 'Check-in System'}
@@ -1843,6 +1854,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                 </Button>
               </>
             )}
+            {canManageAttendance && (
             <Button variant="outline" size="sm" onClick={async () => {
               toast.loading(bn ? 'দৈনিক সারসংক্ষেপ তৈরি হচ্ছে...' : 'Generating daily summary...');
               try {
@@ -1854,33 +1866,43 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
             }}>
               <Send className="h-4 w-4 mr-1" /> {bn ? 'দৈনিক সারসংক্ষেপ' : 'Daily Summary'}
             </Button>
-            <Button variant="outline" size="sm" onClick={handleDownloadCSV}>
-              <Download className="h-4 w-4 mr-1" /> {bn ? 'এক্সেল' : 'Excel'}
-            </Button>
-            <Button variant="outline" size="sm" onClick={handlePrint}>
-              <Printer className="h-4 w-4 mr-1" /> {bn ? 'প্রিন্ট' : 'Print'}
-            </Button>
+            )}
+            {canExportAttendance && (
+              <>
+                <Button variant="outline" size="sm" onClick={handleDownloadCSV}>
+                  <Download className="h-4 w-4 mr-1" /> {bn ? 'এক্সেল' : 'Excel'}
+                </Button>
+                <Button variant="outline" size="sm" onClick={handlePrint}>
+                  <Printer className="h-4 w-4 mr-1" /> {bn ? 'প্রিন্ট' : 'Print'}
+                </Button>
+              </>
+            )}
+            {canManageAttendance && (
             <Button variant={mainTab === 'settings' ? 'default' : 'outline'} size="sm" onClick={() => setMainTab(mainTab === 'settings' ? 'attendance' : 'settings')}>
               <Settings2 className="h-4 w-4 mr-1" /> {bn ? 'রুল সেটিংস' : 'Rule Settings'}
             </Button>
+            )}
           </div>
         </div>
 
         {/* Main Tabs: Attendance / Settings */}
-        <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as any)}>
-          <TabsList>
-            <TabsTrigger value="attendance"><CalendarDays className="h-4 w-4 mr-1" /> {bn ? 'হাজিরা' : 'Attendance'}</TabsTrigger>
-            <TabsTrigger value="settings"><Settings2 className="h-4 w-4 mr-1" /> {bn ? 'সেটিংস' : 'Settings'}</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {canManageAttendance && (
+          <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as any)}>
+            <TabsList>
+              <TabsTrigger value="attendance"><CalendarDays className="h-4 w-4 mr-1" /> {bn ? 'হাজিরা' : 'Attendance'}</TabsTrigger>
+              <TabsTrigger value="settings"><Settings2 className="h-4 w-4 mr-1" /> {bn ? 'সেটিংস' : 'Settings'}</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
 
-        {mainTab === 'settings' && (
+        {canManageAttendance && mainTab === 'settings' && (
           <Card>
             <CardContent className="p-6">
               {settingsPanel}
             </CardContent>
           </Card>
         )}
+
 
         {mainTab === 'attendance' && (<>
         {/* Staff Dashboards: exactly 3 tabs */}
@@ -2081,14 +2103,16 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
 
                 {/* Duty roster status */}
                 {staffSubTab === 'duty' && (
-                  <span className={`text-[11px] px-2.5 py-1 rounded-full border ${dutyRosterActive ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20' : 'bg-amber-500/10 text-amber-700 border-amber-500/20'}`}>
-                    {dutyRosterActive
+                  <span className={`text-[11px] px-2.5 py-1 rounded-full border ${entities.length > 0 ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20' : 'bg-amber-500/10 text-amber-700 border-amber-500/20'}`}>
+                    {entities.length > 0
                       ? (bn ? `রুটিন অনুযায়ী ${entities.length} জনের ডিউটি` : `${entities.length} on duty per roster`)
-                      : (bn ? 'রুটিন সেট নেই — সবাই দেখাচ্ছে' : 'No roster set — showing all')}
+                      : (bn ? 'এই দিনে এই শিফটে কারো ডিউটি রুটিন নেই' : 'No one rostered for this day & shift')}
                   </span>
                 )}
 
-                {/* Per-tab settings shortcuts */}
+
+                {/* Per-tab settings shortcuts (permission gated) */}
+                {canManageAttendance && (
                 <div className="flex gap-2">
 
                   {staffSubTab === 'duty' && (
@@ -2107,6 +2131,8 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                         : (bn ? 'খাবার সেটিংস' : 'Meal Settings')}
                   </Button>
                 </div>
+                )}
+
 
 
 
@@ -2436,7 +2462,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
         </>)}
 
         {/* Rules Dialog */}
-        <Dialog open={rulesDialogOpen} onOpenChange={setRulesDialogOpen}>
+        <Dialog open={canManageAttendance && rulesDialogOpen} onOpenChange={setRulesDialogOpen}>
           <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
