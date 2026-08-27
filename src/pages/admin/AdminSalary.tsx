@@ -32,6 +32,12 @@ import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 import SalaryWorkflowPanel from '@/components/admin/SalaryWorkflowPanel';
 import BulkSalaryWorkflowDialog from '@/components/admin/BulkSalaryWorkflowDialog';
 import { recomputeNetSalary } from '@/lib/salaryNet';
+import {
+  calcDutyDeduction,
+  type DeductionResult,
+  type DutyDay,
+  type DutyAttendance,
+} from '@/lib/dutyShiftDeduction';
 import { shouldApplyThursdayHalfDay, effectiveDutyEndForThursday, parseHalfDayEndMinutes, parseClockMinutes } from '@/lib/thursdayHalfDay';
 import { downloadSlipAsPdf, downloadSheetAsPdf, isMobileOrPwa } from '@/lib/salarySlipPdf';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -389,6 +395,140 @@ const AdminSalary = () => {
   const paidHolidaySet = useMemo(() => new Set(
     monthHolidays.filter((h: any) => h.is_paid).map((h: any) => h.holiday_date)
   ), [monthHolidays]);
+  const holidaySet = useMemo(() => new Set(
+    monthHolidays.map((h: any) => h.holiday_date)
+  ), [monthHolidays]);
+
+  // ── আবাসিক ডিউটি কর্তন (অনুপস্থিতি / বিলম্ব) ───────────────────────────────
+  const monthRange = useMemo(() => {
+    const y = Number(selectedYear); const m = Number(selectedMonth);
+    const lastDay = new Date(y, m, 0).getDate();
+    return {
+      start: `${monthYear}-01`,
+      end: `${monthYear}-${String(lastDay).padStart(2, '0')}`,
+      lastDay,
+    };
+  }, [monthYear, selectedYear, selectedMonth]);
+
+  const { data: dutyShiftDefs = [] } = useQuery({
+    queryKey: ['salary-duty-shifts'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('duty_shifts')
+        .select('*')
+        .is('deleted_at', null)
+        .eq('is_active', true);
+      return (data || []) as any[];
+    },
+  });
+
+  const { data: dutyTemplateRows = [] } = useQuery({
+    queryKey: ['salary-duty-template'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('duty_weekly_template')
+        .select('staff_id, shift_id, weekday, is_active')
+        .eq('is_active', true);
+      return (data || []) as any[];
+    },
+  });
+
+  const { data: dutyRosterRows = [] } = useQuery({
+    queryKey: ['salary-duty-roster', monthYear],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('duty_roster')
+        .select('staff_id, shift_id, duty_date')
+        .gte('duty_date', monthRange.start)
+        .lte('duty_date', monthRange.end);
+      return (data || []) as any[];
+    },
+  });
+
+  const { data: dutyShiftAttRows = [] } = useQuery({
+    queryKey: ['salary-duty-shift-attendance', monthYear],
+    staleTime: 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('duty_shift_attendance')
+        .select('staff_id, shift_id, duty_date, status, late_minutes, early_exit_minutes, check_in_time, check_out_time')
+        .gte('duty_date', monthRange.start)
+        .lte('duty_date', monthRange.end);
+      return (data || []) as any[];
+    },
+  });
+
+  /** staffId → { total, lines } — রোস্টার-নির্ধারিত শিফটভিত্তিক কর্তন */
+  const dutyDeductionByStaff = useMemo(() => {
+    const map = new Map<string, DeductionResult>();
+    const configured = dutyShiftDefs.filter(
+      (s: any) => Number(s.absent_deduction_amount) > 0 || s.late_deduction_enabled,
+    );
+    if (configured.length === 0) return map;
+
+    const todayISO = new Date().toISOString().slice(0, 10);
+    const dates: string[] = [];
+    for (let d = 1; d <= monthRange.lastDay; d++) {
+      dates.push(`${monthYear}-${String(d).padStart(2, '0')}`);
+    }
+    const weekdayOf = (iso: string) => {
+      const [y, m, dd] = iso.split('-').map(Number);
+      return new Date(y, m - 1, dd).getDay();
+    };
+
+    const byStaffDays = new Map<string, DutyDay[]>();
+    const push = (staffId: string, day: DutyDay) => {
+      const arr = byStaffDays.get(staffId) || [];
+      arr.push(day);
+      byStaffDays.set(staffId, arr);
+    };
+
+    // Weekly template → every matching weekday of the month
+    dutyTemplateRows.forEach((t: any) => {
+      dates.forEach((iso) => {
+        if (weekdayOf(iso) !== Number(t.weekday)) return;
+        push(t.staff_id, {
+          date: iso,
+          shiftId: t.shift_id,
+          isHoliday: holidaySet.has(iso),
+          isFuture: iso > todayISO,
+        });
+      });
+    });
+    // Explicit daily roster overrides / extras
+    dutyRosterRows.forEach((r: any) => {
+      push(r.staff_id, {
+        date: r.duty_date,
+        shiftId: r.shift_id,
+        isHoliday: holidaySet.has(r.duty_date),
+        isFuture: r.duty_date > todayISO,
+      });
+    });
+
+    const attByStaff = new Map<string, DutyAttendance[]>();
+    dutyShiftAttRows.forEach((a: any) => {
+      const arr = attByStaff.get(a.staff_id) || [];
+      arr.push({
+        date: a.duty_date,
+        shiftId: a.shift_id,
+        status: a.status,
+        late_minutes: a.late_minutes,
+        early_exit_minutes: a.early_exit_minutes,
+        check_in_time: a.check_in_time,
+        check_out_time: a.check_out_time,
+      });
+      attByStaff.set(a.staff_id, arr);
+    });
+
+    byStaffDays.forEach((days, staffId) => {
+      map.set(staffId, calcDutyDeduction(configured as any, days, attByStaff.get(staffId) || []));
+    });
+    return map;
+  }, [dutyShiftDefs, dutyTemplateRows, dutyRosterRows, dutyShiftAttRows, holidaySet, monthYear, monthRange.lastDay]);
+
+  const getDutyDeduction = (staffId: string): DeductionResult =>
+    dutyDeductionByStaff.get(staffId) || { total: 0, lines: [], absentCount: 0, lateCount: 0 };
+
   // Fetch salary settings
   const { data: settings = [] } = useQuery({
     queryKey: ['salary-settings'],
@@ -723,19 +863,21 @@ const AdminSalary = () => {
       const ovOther = Number(record.other_deduction || 0);
       const ovOvertime = Number(record.overtime || 0);
       const ovSavings = Number(record.savings_deduction ?? savingsForNet);
+      const ovDuty = Number(record.duty_deduction ?? liveCalc.duty_deduction ?? 0);
       Object.assign(liveRecord, {
         manual_override: true,
         base_salary: ovBase,
         late_deduction: ovLate,
         absence_deduction: ovAbsence,
         other_deduction: ovOther,
+        duty_deduction: ovDuty,
         overtime: ovOvertime,
         overtime_for_net: ovOvertime,
         earned_from_attendance: ovBase,
         savings_deduction: ovSavings,
         net_salary: Math.max(0, Math.round(
           ovBase + manualBonus + ovOvertime + manualAllow
-          - ovLate - ovAbsence - manualAdvance - ovOther - ovSavings
+          - ovLate - ovAbsence - manualAdvance - ovOther - ovSavings - ovDuty
         )),
       });
     }
@@ -764,6 +906,7 @@ const AdminSalary = () => {
         getAdditiveAttendanceDeduction(r)
         + Number(r.advance_deduction || 0)
         + Number(r.other_deduction || 0)
+        + Number(r.duty_deduction || 0)
       );
     }
     return Math.round(
@@ -771,6 +914,7 @@ const AdminSalary = () => {
       + Number(r.absence_deduction || 0)
       + Number(r.advance_deduction || 0)
       + Number(r.other_deduction || 0)
+      + Number(r.duty_deduction || 0)
     );
   };
 
@@ -1302,9 +1446,13 @@ const AdminSalary = () => {
     const effAdvanceDeduction = allAttendanceGiven ? advanceDeduction : 0;
     const effSavingsDeduction = allAttendanceGiven ? savingsDeduction : 0;
 
+    // আবাসিক ডিউটি কর্তন — রোস্টার অনুযায়ী অনুপস্থিত/বিলম্ব শিফটের জন্য।
+    // এটি ঠিক একবারই নিট থেকে বাদ যায় এবং আলাদা ফিল্ড হিসেবে সংরক্ষিত হয়।
+    const dutyDeduction = Math.round(getDutyDeduction(staffMember.id).total);
+
     const netSalary = Math.max(0,
       earnedFromAttendance + overtimeForNet + bonus + otherAllowance
-      - effAdvanceDeduction - effSavingsDeduction
+      - effAdvanceDeduction - effSavingsDeduction - dutyDeduction
     );
 
     return {
@@ -1316,6 +1464,7 @@ const AdminSalary = () => {
       absence_deduction: absenceDeduction,
       late_deduction: lateDeduction,
       other_deduction: otherDeduction,
+      duty_deduction: dutyDeduction,
       bonus,
       overtime,
       other_allowance: otherAllowance,
@@ -1505,10 +1654,11 @@ const AdminSalary = () => {
       const activeSavings = getActiveSavings(record.staff_id);
       const savingsDed = activeSavings ? activeSavings.amount : 0;
       const num = (v: any) => Number(v || 0);
+      const dutyDed = num(record.duty_deduction ?? getDutyDeduction(record.staff_id).total);
       const netSalary = Math.max(0,
         num(record.base_salary) + num(record.bonus) + num(record.overtime) + num(record.other_allowance)
         - num(record.late_deduction) - num(record.absence_deduction)
-        - num(record.advance_deduction) - num(record.other_deduction) - savingsDed
+        - num(record.advance_deduction) - num(record.other_deduction) - savingsDed - dutyDed
       );
       // Whitelist only real columns — the dialog can be seeded from a live
       // display snapshot that carries extra computed fields.
@@ -1525,6 +1675,7 @@ const AdminSalary = () => {
         advance_deduction: num(record.advance_deduction),
         other_deduction: num(record.other_deduction),
         other_deduction_note: record.other_deduction_note ?? null,
+        duty_deduction: dutyDed,
         savings_deduction: savingsDed,
         earned_from_attendance: num(record.base_salary),
         working_days: record.working_days ?? null,
@@ -2215,6 +2366,15 @@ const AdminSalary = () => {
             absentDetails: (st.dailyBreakdown || [])
               .filter((d: any) => d.status === 'absent')
               .map((d: any) => ({ date: d.date, deduction: Number(d.deduction) || 0 })),
+            // আবাসিক ডিউটি কর্তনের বিস্তারিত (তারিখ • শিফট • কারণ • টাকা)
+            dutyDeduction: Number(displayRecord?.duty_deduction || 0),
+            dutyDetails: getDutyDeduction(s.id).lines.map((l) => ({
+              date: l.date,
+              shift: l.shiftName,
+              reason: l.reason,
+              note: l.note,
+              amount: l.amount,
+            })),
           };
         });
 
@@ -2361,7 +2521,9 @@ const AdminSalary = () => {
 
     // স্লিপের কর্তন কলামে শুধুমাত্র "অতিরিক্ত" কর্তন (অগ্রিম + জমা) দেখাবে।
     // উপস্থিতি কর্তন (absence/late/other) ইতিমধ্যে আয় থেকে বাদ গেছে — তাই ওগুলো আয়ের অংশে দেখানো হয়েছে।
-    const totalDed = Number(record.advance_deduction || 0) + savingsAmt;
+    const dutyDed = Number(record.duty_deduction || 0);
+    const dutyDedInfo = getDutyDeduction(staffMember.id);
+    const totalDed = Number(record.advance_deduction || 0) + savingsAmt + dutyDed;
     const monthName = MONTHS.find(m => m.value === selectedMonth);
 
     // Per-shift breakdown for residential / extra duty
@@ -2581,6 +2743,7 @@ const AdminSalary = () => {
               <!-- ৩. অগ্রিম ও জমা কর্তন -->
               <div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অগ্রিম কর্তন' : 'Advance Deduction'}</span><span class="v">৳${slipNum(Number(record.advance_deduction || 0))}</span></div>
               <div class="ln savings" style="color:#dc2626"><span class="l">− ${bn ? '⊕ বেতন জমা' : '⊕ Salary Savings'}</span><span class="v">৳${slipNum(savingsAmt)}</span></div>
+              ${dutyDed > 0 ? `<div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'আবাসিক ডিউটি কর্তন' : 'Residential Duty Deduction'} <span style="color:#64748b;font-weight:400">(${bn ? toBnDigits(dutyDedInfo.lines.length) : dutyDedInfo.lines.length} ${bn ? 'শিফট' : 'shifts'}${dutyDedInfo.absentCount ? ` • ${bn ? 'অনুপস্থিত' : 'absent'} ${bn ? toBnDigits(dutyDedInfo.absentCount) : dutyDedInfo.absentCount}` : ''}${dutyDedInfo.lateCount ? ` • ${bn ? 'বিলম্ব' : 'late'} ${bn ? toBnDigits(dutyDedInfo.lateCount) : dutyDedInfo.lateCount}` : ''})</span></span><span class="v">৳${slipNum(dutyDed)}</span></div>` : ''}
 
               <!-- ৪. বোনাস / ওভারটাইম / ভাতা -->
               <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'বোনাস' : 'Bonus'}</span><span class="v">৳${slipNum(Number(record.bonus || 0))}</span></div>
@@ -3868,17 +4031,23 @@ const AdminSalary = () => {
                   // Savings is auto-applied on save, so the preview must show it too —
                   // otherwise the dialog net differs from the table/slip/PDF net.
                   const sav = Number(getActiveSavings(editDialog.staff_id)?.amount || 0);
+                  const dutyDed = Number(editDialog.duty_deduction ?? (getDutyDeduction(editDialog.staff_id).total || 0));
                   const previewNet = Math.max(0,
                     Number(editDialog.base_salary || 0) + Number(editDialog.bonus || 0)
                     + Number(editDialog.overtime || 0) + Number(editDialog.other_allowance || 0)
                     - Number(editDialog.late_deduction || 0) - Number(editDialog.absence_deduction || 0)
                     - Number(editDialog.advance_deduction || 0) - Number(editDialog.other_deduction || 0)
-                    - sav);
+                    - sav - dutyDed);
                   return (
                     <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg text-center">
                       {sav > 0 && (
                         <p className="text-[11px] text-muted-foreground mb-1">
                           {bn ? 'জমা কর্তন' : 'Savings deduction'}: ৳{sav.toLocaleString()}
+                        </p>
+                      )}
+                      {dutyDed > 0 && (
+                        <p className="text-[11px] text-muted-foreground mb-1">
+                          {bn ? 'আবাসিক ডিউটি কর্তন' : 'Residential duty deduction'}: ৳{dutyDed.toLocaleString()}
                         </p>
                       )}
                       <p className="text-xs text-muted-foreground">{bn ? 'নিট বেতন' : 'Net Salary'}</p>

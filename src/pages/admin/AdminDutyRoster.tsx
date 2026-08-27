@@ -26,6 +26,7 @@ import {
   lateMinutesFor,
   earlyExitMinutesFor,
 } from '@/lib/dutyMachineWindow';
+import { shiftMinutes, perMinuteRate } from '@/lib/dutyShiftDeduction';
 
 interface DutyShift {
   id: string;
@@ -44,6 +45,11 @@ interface DutyShift {
   machine_enabled: boolean;
   machine_open_before_minutes: number;
   machine_close_after_minutes: number;
+  absent_deduction_amount: number | null;
+  late_deduction_enabled: boolean | null;
+  late_deduction_amount: number | null;
+  late_deduction_mode: string | null;
+  late_deduction_free_minutes: number | null;
 }
 
 interface StaffRow {
@@ -99,6 +105,11 @@ const emptyShift = {
   machine_enabled: false,
   machine_open_before_minutes: 60,
   machine_close_after_minutes: 60,
+  absent_deduction_amount: '' as string | number,
+  late_deduction_enabled: false,
+  late_deduction_amount: '' as string | number,
+  late_deduction_mode: 'per_minute',
+  late_deduction_free_minutes: 5 as string | number,
 };
 
 const hhmm = (t?: string | null) => (t ? t.slice(0, 5) : '');
@@ -348,6 +359,14 @@ export default function AdminDutyRoster() {
         machine_enabled: !!form.machine_enabled,
         machine_open_before_minutes: Number(form.machine_open_before_minutes) || 0,
         machine_close_after_minutes: Number(form.machine_close_after_minutes) || 0,
+        absent_deduction_amount: Number(form.absent_deduction_amount) || 0,
+        late_deduction_enabled: !!form.late_deduction_enabled,
+        late_deduction_amount:
+          form.late_deduction_amount === '' || form.late_deduction_amount === null
+            ? null
+            : Number(form.late_deduction_amount),
+        late_deduction_mode: form.late_deduction_mode || 'flat',
+        late_deduction_free_minutes: Number(form.late_deduction_free_minutes) || 0,
       };
       if (editingShift) {
         const { error } = await supabase.from('duty_shifts').update(payload).eq('id', editingShift.id);
@@ -991,6 +1010,7 @@ export default function AdminDutyRoster() {
                       <th className="px-3">হাজিরার ধরন</th>
                       <th className="px-3">মেশিন উইন্ডো</th>
                       <th className="px-3">ভাতা</th>
+                      <th className="px-3">কর্তন</th>
                       <th className="px-3">সক্রিয়</th>
                       <th className="px-3 text-right">অ্যাকশন</th>
                     </tr>
@@ -1012,6 +1032,21 @@ export default function AdminDutyRoster() {
                             {isMachineAllowed(sh) && w ? `${w.open} – ${w.close}` : 'বন্ধ'}
                           </td>
                           <td className="px-3 py-2">{sh.pay_amount ? `৳${sh.pay_amount} / ${sh.pay_type}` : '—'}</td>
+                          <td className="px-3 py-2 text-xs">
+                            {Number(sh.absent_deduction_amount) > 0 || sh.late_deduction_enabled ? (
+                              <span>
+                                {Number(sh.absent_deduction_amount) > 0 ? `অনুপস্থিত ৳${sh.absent_deduction_amount}` : 'অনুপস্থিত —'}
+                                {sh.late_deduction_enabled && (
+                                  <span className="block text-muted-foreground">
+                                    বিলম্ব: {sh.late_deduction_mode === 'per_minute' ? 'প্রতি মিনিট' : 'ফ্ল্যাট'}
+                                    {' • '}{sh.late_deduction_free_minutes ?? 5} মিঃ ফ্রি
+                                  </span>
+                                )}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
                           <td className="px-3 py-2">
                             <Badge variant={sh.is_active ? 'default' : 'secondary'}>{sh.is_active ? 'হ্যাঁ' : 'না'}</Badge>
                           </td>
@@ -1027,6 +1062,11 @@ export default function AdminDutyRoster() {
                                   name_en: sh.name_en ?? '',
                                   start_time: hhmm(sh.start_time),
                                   end_time: hhmm(sh.end_time),
+                                  absent_deduction_amount: sh.absent_deduction_amount ?? '',
+                                  late_deduction_enabled: !!sh.late_deduction_enabled,
+                                  late_deduction_amount: sh.late_deduction_amount ?? '',
+                                  late_deduction_mode: sh.late_deduction_mode || 'per_minute',
+                                  late_deduction_free_minutes: sh.late_deduction_free_minutes ?? 5,
                                 });
                                 setShiftDialog(true);
                               }}
@@ -1159,6 +1199,89 @@ export default function AdminDutyRoster() {
                   </Select>
                 </div>
               </div>
+
+              {/* কর্তন সেটিং */}
+              <div className="space-y-3 rounded-2xl border p-3">
+                <p className="text-sm font-semibold">কর্তন সেটিং</p>
+                <div>
+                  <Label className="text-xs">অনুপস্থিতি কর্তন (৳ / শিফট)</Label>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="0 = কর্তন নাই"
+                    value={form.absent_deduction_amount}
+                    onChange={(e) => setForm({ ...form, absent_deduction_amount: e.target.value })}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>বিলম্ব কর্তন চালু</Label>
+                  <Switch
+                    checked={!!form.late_deduction_enabled}
+                    onCheckedChange={(v) => setForm({ ...form, late_deduction_enabled: v })}
+                  />
+                </div>
+                {form.late_deduction_enabled && (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">বিলম্ব কর্তনের ধরন</Label>
+                        <Select
+                          value={form.late_deduction_mode || 'per_minute'}
+                          onValueChange={(v) => setForm({ ...form, late_deduction_mode: v })}
+                        >
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="per_minute">প্রতি মিনিট</SelectItem>
+                            <SelectItem value="flat">পুরো টাকা</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">ফ্রি মিনিট (এরপর কর্তন)</Label>
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          value={form.late_deduction_free_minutes}
+                          onChange={(e) => setForm({ ...form, late_deduction_free_minutes: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs">
+                        বিলম্ব কর্তন টাকা (খালি রাখলে অনুপস্থিতির টাকা থেকে হিসাব হবে)
+                      </Label>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="খালি = স্বয়ংক্রিয়"
+                        value={form.late_deduction_amount}
+                        onChange={(e) => setForm({ ...form, late_deduction_amount: e.target.value })}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {(() => {
+                        const mins = shiftMinutes({ id: 'x', start_time: form.start_time, end_time: form.end_time });
+                        const absent = Number(form.absent_deduction_amount) || 0;
+                        const rate = perMinuteRate({
+                          id: 'x',
+                          start_time: form.start_time,
+                          end_time: form.end_time,
+                          absent_deduction_amount: absent,
+                          late_deduction_amount:
+                            form.late_deduction_amount === '' ? null : Number(form.late_deduction_amount),
+                        });
+                        return form.late_deduction_mode === 'per_minute'
+                          ? `প্রতি মিনিট হার: ৳${Math.round(rate * 100) / 100} (${absent}৳ ÷ ${mins} মিনিট) — সর্বোচ্চ ৳${absent} পর্যন্ত`
+                          : 'বিলম্ব হলে একবারে পুরো টাকা কর্তন হবে (অনুপস্থিতির টাকার বেশি নয়)।';
+                      })()}
+                    </p>
+                  </>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  ছুটির দিন বা রুটিনে ডিউটি না থাকলে কোনো কর্তন হবে না।
+                </p>
+              </div>
+
               <div className="flex items-center justify-between rounded-2xl border p-3">
                 <Label>সক্রিয়</Label>
                 <Switch checked={!!form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
