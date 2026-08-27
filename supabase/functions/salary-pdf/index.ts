@@ -566,6 +566,60 @@ Deno.serve(async (req) => {
       </section>
     ` : "";
 
+    const staffWithDuty = (staff || []).filter(
+      (s: any) => Array.isArray(s.dutyDetails) && s.dutyDetails.length > 0
+    );
+    const dutyAppendixHtml = staffWithDuty.length > 0 ? `
+      <section class="salary-page">
+        <div class="print-fit">
+          <table class="page-table">
+            ${colGroup}
+            <thead>${renderPageHeader()}</thead>
+            <tbody>
+              <tr><td colspan="${COL_COUNT}" style="padding:0;border:none;">
+                <h3 style="text-align:center;margin:6pt 0 8pt;font-size:11pt;font-weight:700;">
+                  ${bn ? "আবাসিক ডিউটি কর্তনের বিবরণী" : "Residential Duty Deduction Details"}
+                </h3>
+                ${staffWithDuty.map((s: any) => {
+                  const total = s.dutyDetails.reduce((a: number, d: any) => a + (Number(d.amount) || 0), 0);
+                  return `
+                  <div style="margin:0 0 10pt;page-break-inside:avoid;break-inside:avoid;display:table;width:100%;">
+                    <div style="font-weight:700;font-size:9.5pt;margin-bottom:3pt;">
+                      ${escapeHtml(bn ? toBnDigits(s.name) : s.name)}${s.staff_id && s.staff_id !== "-" ? ` (${escapeHtml(bn ? toBnDigits(s.staff_id) : s.staff_id)})` : ""}
+                      <span style="font-weight:600;color:#b91c1c;margin-left:6pt;">${bn ? "মোট কর্তন" : "Total"}: ৳${bn ? toBnDigits(total.toLocaleString("en-US")) : total.toLocaleString("en-US")}</span>
+                    </div>
+                    <table style="width:100%;border-collapse:collapse;font-size:8.5pt;">
+                      <thead>
+                        <tr style="background:#f1f5f9;">
+                          <th style="border:0.5pt solid #94a3b8;padding:2.5pt 4pt;text-align:left;">${bn ? "ক্রম" : "SL"}</th>
+                          <th style="border:0.5pt solid #94a3b8;padding:2.5pt 4pt;text-align:left;">${bn ? "তারিখ" : "Date"}</th>
+                          <th style="border:0.5pt solid #94a3b8;padding:2.5pt 4pt;text-align:left;">${bn ? "শিফট" : "Shift"}</th>
+                          <th style="border:0.5pt solid #94a3b8;padding:2.5pt 4pt;text-align:left;">${bn ? "কারণ" : "Reason"}</th>
+                          <th style="border:0.5pt solid #94a3b8;padding:2.5pt 4pt;text-align:right;">${bn ? "কর্তন (৳)" : "Deduction (৳)"}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${s.dutyDetails.map((d: any, i: number) => `
+                          <tr>
+                            <td style="border:0.5pt solid #cbd5e1;padding:2.5pt 4pt;">${bn ? toBnDigits(i + 1) : i + 1}</td>
+                            <td style="border:0.5pt solid #cbd5e1;padding:2.5pt 4pt;">${fmtDate(d.date)}</td>
+                            <td style="border:0.5pt solid #cbd5e1;padding:2.5pt 4pt;">${escapeHtml(String(d.shift || "—"))}</td>
+                            <td style="border:0.5pt solid #cbd5e1;padding:2.5pt 4pt;">${escapeHtml(String(d.note || (d.reason === "absent" ? (bn ? "অনুপস্থিত" : "Absent") : (bn ? "বিলম্ব" : "Late"))))}</td>
+                            <td style="border:0.5pt solid #cbd5e1;padding:2.5pt 4pt;text-align:right;font-weight:600;color:#b91c1c;">${bn ? toBnDigits((Number(d.amount) || 0).toLocaleString("en-US")) : (Number(d.amount) || 0).toLocaleString("en-US")}</td>
+                          </tr>
+                        `).join("")}
+                      </tbody>
+                    </table>
+                  </div>
+                `; }).join("")}
+              </td></tr>
+            </tbody>
+            ${renderFooter()}
+          </table>
+        </div>
+      </section>
+    ` : "";
+
     const holidayTypeLabel = (t: string): string => {
       if (bn) {
         if (t === "weekly") return "সাপ্তাহিক";
