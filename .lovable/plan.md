@@ -1,54 +1,44 @@
-# আবাসিক ডিউটি — অনুপস্থিতি ও বিলম্ব কর্তন
+# অভ্যন্তরীণ মেসেজিং সিস্টেম (স্টাফ ↔ অ্যাডমিন + গ্রুপ + ফাইল)
 
-প্রতিটি ডিউটি শিফটে অনুপস্থিত থাকলে নির্দিষ্ট টাকা কর্তন হবে, এবং টগল অন থাকলে বিলম্বের ক্ষেত্রেও একই হারে কর্তন হবে। কর্তন নিট বেতন থেকে বাদ যাবে এবং বেতন স্লিপে আলাদা লাইনে দেখাবে। ছুটির দিনে কোনো কর্তন হবে না।
+সাইটে লগইন করা যেকোনো ইউজার (স্টাফ, শিক্ষক, প্রশাসনিক, অ্যাডমিন) একে অপরকে সরাসরি মেসেজ পাঠাতে পারবে, অ্যাডমিন গ্রুপ তৈরি করতে পারবে, এবং মেসেজে ফাইল/ছবি/PDF আদান-প্রদান করা যাবে।
 
-## ডেটাবেজ
+## যা তৈরি হবে
 
-`duty_shifts` টেবিলে নতুন ফিল্ড:
-- `absent_deduction_amount` (numeric, ডিফল্ট 0) — এই শিফটে অনুপস্থিত থাকলে কত টাকা কাটা যাবে
-- `late_deduction_enabled` (boolean, ডিফল্ট false) — বিলম্ব কর্তন চালু/বন্ধ টগল
-- `late_deduction_amount` (numeric, nullable) — খালি থাকলে অনুপস্থিতির টাকার সমান ধরা হবে
-- `late_deduction_mode` (text, `flat` | `per_minute`, ডিফল্ট `flat`) — পুরো টাকা নাকি প্রতি মিনিট হারে
+### ১. চ্যাট পেজ — `/admin/messages`
+- বাম পাশে কথোপকথনের তালিকা (সর্বশেষ মেসেজ, সময়, অপঠিত ব্যাজ), সার্চ
+- ডান পাশে চ্যাট থ্রেড: মেসেজ বাবল, সময়, প্রেরকের নাম ও রোল ব্যাজ, পঠিত অবস্থা
+- "নতুন মেসেজ" বাটন → ইউজার ডিরেক্টরি (নাম/রোল/পদবি সার্চ) থেকে যেকোনো ব্যক্তি বেছে ১:১ চ্যাট শুরু
+- রিয়েলটাইম আপডেট (নতুন মেসেজ সাথে সাথে আসবে), টাইপিং ছাড়া সাধারণ পোলিং/সাবস্ক্রিপশন
+- সাইডবারে "মেসেজ" মেনু + অপঠিত সংখ্যার ব্যাজ
 
-কোনো ফিল্ড সেট না থাকলে কর্তন ০ — অর্থাৎ বর্তমান আচরণ অপরিবর্তিত থাকবে।
+### ২. গ্রুপ
+- শুধু admin/super_admin গ্রুপ তৈরি/সম্পাদনা/মুছতে পারবে (নাম, বর্ণনা, সদস্য যোগ/বাদ)
+- গ্রুপে সব সদস্য মেসেজ পাঠাতে পারবে; সদস্য না হলে কিছুই দেখবে না
 
-## সেটিং UI (আবাসিক ডিউটি → শিফট সেটিং)
+### ৩. ফাইল আদান-প্রদান
+- ছবি, PDF, ডক, এক্সেল ইত্যাদি সংযুক্তি (সর্বোচ্চ ২০MB প্রতি ফাইল)
+- প্রাইভেট স্টোরেজ বাকেট `chat-attachments`; শুধু ওই কথোপকথনের সদস্যরাই signed URL দিয়ে খুলতে পারবে
+- ছবির থাম্বনেইল প্রিভিউ, অন্য ফাইলে আইকন + নাম + সাইজ + ডাউনলোড
 
-শিফট ফর্মে নতুন "কর্তন সেটিং" সেকশন: অনুপস্থিতি কর্তন (৳/শিফট), বিলম্ব কর্তন টগল, বিলম্ব কর্তনের ধরন (পুরো / প্রতি মিনিট), বিলম্ব কর্তন টাকা। শিফট তালিকায় একটি "কর্তন" কলাম যোগ হবে।
+### ৪. অতিরিক্ত
+- অপঠিত গণনা, কথোপকথন খুললে পঠিত হিসেবে চিহ্নিত
+- নিজের মেসেজ soft-delete (`deleted_at`), অ্যাডমিন যেকোনোটা মুছতে পারবে
+- মোবাইল রেসপন্সিভ (তালিকা ↔ থ্রেড টগল)
 
-## হিসাবের নিয়ম (accuracy-first)
+## টেকনিক্যাল বিবরণ
 
-মাসের প্রতিটি রোস্টার-নির্ধারিত ডিউটি দিন × শিফট ধরে হিসাব:
+নতুন টেবিল (RLS + GRANT সহ):
+- `conversations` — `type` ('direct' | 'group'), `title`, `created_by`, `deleted_at`
+- `conversation_participants` — `conversation_id`, `user_id`, `role` ('member'|'admin'), `last_read_at`
+- `chat_messages` — `conversation_id`, `sender_id`, `body`, `attachments` (jsonb: path/name/size/mime), `deleted_at`
 
-```text
-ছুটির দিন (staff_holidays / holidays / paid weekly off)  → কর্তন ০, সম্পূর্ণ বাদ
-status = absent                                          → absent_deduction_amount
-status = late এবং late_deduction_enabled                 → flat: late_deduction_amount
-                                                           per_minute: rate × (late_minutes + early_exit_minutes)
-status = present                                         → ০
-হাজিরা রেকর্ড নাই এবং দিনটি ভবিষ্যৎ/ছুটি নয়              → absent হিসেবে গণ্য
-```
+সহায়ক ফাংশন (RLS রিকার্শন এড়াতে security definer):
+- `is_conversation_participant(_conv uuid, _user uuid)`
+- `get_or_create_direct_conversation(_other_user uuid)` — ডুপ্লিকেট ১:১ থ্রেড হবে না
+- `get_messageable_users()` — profiles + staff + administrative_officers থেকে নাম/রোল/পদবিসহ ডিরেক্টরি
 
-- বিলম্ব কর্তন কখনো `absent_deduction_amount`-এর বেশি হবে না (per_minute মোডে ক্যাপ)।
-- grace_minutes / early_exit_grace_minutes আগে বাদ দিয়ে তারপর মিনিট গোনা হবে, যাতে ডাবল কাউন্ট না হয়।
-- একই দিনে একই শিফট দুইবার গোনা হবে না (shift_id + date ইউনিক করে dedupe)।
-- ফলাফল টাকায় রাউন্ড (২ দশমিক) হবে; মোট = সব লাইনের যোগফল।
+RLS: সদস্য হলেই কথোপকথন ও মেসেজ পড়া/লেখা যাবে; গ্রুপ তৈরি ও সদস্য ব্যবস্থাপনা `has_role(auth.uid(),'admin'|'super_admin')`-এ সীমিত; `super_admin` সব দেখতে পারবে।
 
-## বেতনে সংযুক্তি
+স্টোরেজ: প্রাইভেট বাকেট `chat-attachments`, পাথ `<conversation_id>/<message_id>/<file>`; বিদ্যমান `can_access_storage_object()` + `request-signed-url` পাইপলাইনে যুক্ত হবে, ডিনায়াল `security_logs`-এ লগ হবে।
 
-- `AdminSalary` মাসের `duty_shift_attendance` + রোস্টার লোড করে প্রতি স্টাফের `dutyDeduction` বের করবে।
-- এটি বিদ্যমান `other_deduction`-এ যোগ না করে আলাদা করে নিট থেকে বিয়োগ হবে, `other_deduction_note`-এ "আবাসিক ডিউটি কর্তন" লেখা থাকবে — ফলে ডাবল ডিডাকশন হবে না (salaryNet-এর একই একবার-প্রয়োগ নিয়ম মেনে)।
-- বেতন স্লিপ ও salary PDF-এ নতুন লাইন: "− আবাসিক ডিউটি কর্তন (X শিফট)"।
-- ব্রেকডাউন ডায়ালগে শিফটভিত্তিক লাইন (তারিখ, শিফট, কারণ, টাকা) দেখানো হবে।
-
-## টেস্ট
-
-`src/lib/__tests__/dutyShiftDeduction.test.ts` — অনুপস্থিতি, বিলম্ব অন/অফ, per_minute ক্যাপ, ছুটির দিন বাদ, ডুপ্লিকেট রেকর্ড, সেটিং না থাকলে ০ — প্রতিটি কেস কভার করবে।
-
-## টেকনিক্যাল ফাইল
-
-- মাইগ্রেশন: `duty_shifts`-এ ৪টি কলাম
-- `src/lib/dutyShiftDeduction.ts` (নতুন, pure functions)
-- `src/pages/admin/AdminDutyRoster.tsx` (শিফট ফর্ম + তালিকা)
-- `src/pages/admin/AdminSalary.tsx` (হিসাব + স্লিপ লাইন)
-- `supabase/functions/salary-pdf` (PDF লাইন)
+ফ্রন্টএন্ড: `src/pages/admin/AdminMessages.tsx` + `src/components/messages/*` (ConversationList, MessageThread, NewConversationDialog, GroupDialog, AttachmentPicker), হুক `useConversations` / `useMessages`, বিদ্যমান গ্লাসমরফিজম/rounded ডিজাইন টোকেন অনুসরণ করে। রুট `App.tsx`-এ `ModuleGuard` দিয়ে যোগ হবে এবং সাইডবারে মেনু আইটেম।
