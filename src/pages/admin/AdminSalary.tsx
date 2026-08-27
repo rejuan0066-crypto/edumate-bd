@@ -4031,7 +4031,7 @@ const AdminSalary = () => {
                   // Savings is auto-applied on save, so the preview must show it too —
                   // otherwise the dialog net differs from the table/slip/PDF net.
                   const sav = Number(getActiveSavings(editDialog.staff_id)?.amount || 0);
-                  const dutyDed = Number(editDialog.duty_deduction ?? getDutyDeduction(editDialog.staff_id).total || 0);
+                  const dutyDed = Number(editDialog.duty_deduction ?? (getDutyDeduction(editDialog.staff_id).total || 0));
                   const previewNet = Math.max(0,
                     Number(editDialog.base_salary || 0) + Number(editDialog.bonus || 0)
                     + Number(editDialog.overtime || 0) + Number(editDialog.other_allowance || 0)
