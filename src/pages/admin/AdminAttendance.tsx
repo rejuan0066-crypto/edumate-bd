@@ -330,7 +330,62 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   }, [classes, divisions]);
 
   // Filter students based on sub-tab and filters
+  // ── Residential duty roster (weekly template + per-day overrides) ──
+  const { data: dutyShiftDefs = [] } = useQuery({
+    queryKey: ['duty-shift-defs'],
+    queryFn: async () => {
+      const { data } = await supabase.from('duty_shifts').select('id, code, is_active').is('deleted_at', null);
+      return (data || []) as any[];
+    },
+  });
+
+  const { data: dutyTemplateRows = [] } = useQuery({
+    queryKey: ['duty-weekly-template-attendance'],
+    queryFn: async () => {
+      const { data } = await supabase.from('duty_weekly_template').select('staff_id, shift_id, weekday').eq('is_active', true);
+      return (data || []) as any[];
+    },
+  });
+
+  const { data: dutyRosterRows = [] } = useQuery({
+    queryKey: ['duty-roster-attendance', selectedDate],
+    queryFn: async () => {
+      const { data } = await supabase.from('duty_roster').select('staff_id, shift_id, duty_date').eq('duty_date', selectedDate);
+      return (data || []) as any[];
+    },
+  });
+
+  // Which duty_shifts row matches the selected morning/evening shift
+  const currentDutyShiftId = useMemo(() => {
+    const found = (dutyShiftDefs as any[]).find((s) => s.code === selectedShift);
+    return found?.id as string | undefined;
+  }, [dutyShiftDefs, selectedShift]);
+
+  // Roster is "active" only when some duty is actually configured — otherwise
+  // fall back to showing every residential staff member (previous behaviour).
+  const dutyRosterActive = useMemo(
+    () => staffSubTab === 'duty' && !!currentDutyShiftId && ((dutyTemplateRows as any[]).length > 0 || (dutyRosterRows as any[]).length > 0),
+    [staffSubTab, currentDutyShiftId, dutyTemplateRows, dutyRosterRows],
+  );
+
+  // Staff on duty for the selected date + shift (day override beats template)
+  const dutyStaffIdsForDate = useMemo(() => {
+    const ids = new Set<string>();
+    if (!currentDutyShiftId) return ids;
+    const weekday = new Date(`${selectedDate}T00:00:00`).getDay();
+    const overriddenStaff = new Set((dutyRosterRows as any[]).map((r) => r.staff_id));
+    (dutyRosterRows as any[]).forEach((r) => {
+      if (r.shift_id === currentDutyShiftId) ids.add(r.staff_id);
+    });
+    (dutyTemplateRows as any[]).forEach((t) => {
+      if (overriddenStaff.has(t.staff_id)) return; // day override replaces template
+      if (t.weekday === weekday && t.shift_id === currentDutyShiftId) ids.add(t.staff_id);
+    });
+    return ids;
+  }, [currentDutyShiftId, selectedDate, dutyRosterRows, dutyTemplateRows]);
+
   const entitiesRaw = useMemo(() => {
+
     if (entityType === 'staff') {
       let staffFiltered = allStaff;
       // Filter by staff category
