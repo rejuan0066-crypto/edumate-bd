@@ -371,12 +371,13 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     return found?.id as string | undefined;
   }, [dutyShiftDefs, selectedShift]);
 
-  // Roster is "active" only when some duty is actually configured — otherwise
-  // fall back to showing every residential staff member (previous behaviour).
+  // Duty tab is strictly roster-driven: only staff rostered for this weekday +
+  // shift appear. No roster => empty list (never "everyone").
   const dutyRosterActive = useMemo(
-    () => staffSubTab === 'duty' && !!currentDutyShiftId && ((dutyTemplateRows as any[]).length > 0 || (dutyRosterRows as any[]).length > 0),
-    [staffSubTab, currentDutyShiftId, dutyTemplateRows, dutyRosterRows],
+    () => staffSubTab === 'duty' && !!currentDutyShiftId,
+    [staffSubTab, currentDutyShiftId],
   );
+
 
   // Staff on duty for the selected date + shift (day override beats template)
   const dutyStaffIdsForDate = useMemo(() => {
