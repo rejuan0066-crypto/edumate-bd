@@ -26,6 +26,9 @@ import {
   Download, Printer, RotateCcw, QrCode, Send, Fingerprint, UserCheck
 } from 'lucide-react';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
+import { useAuth } from '@/hooks/useAuth';
+import { isAdminRole } from '@/lib/roles';
+
 import ClassQRPoster from '@/components/attendance/ClassQRPoster';
 import AttendanceDeviceManager from '@/components/attendance/AttendanceDeviceManager';
 import StaffCheckinDialog from '@/components/attendance/StaffCheckinDialog';
