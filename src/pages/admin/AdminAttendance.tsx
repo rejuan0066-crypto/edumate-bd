@@ -2103,12 +2103,13 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
 
                 {/* Duty roster status */}
                 {staffSubTab === 'duty' && (
-                  <span className={`text-[11px] px-2.5 py-1 rounded-full border ${dutyRosterActive ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20' : 'bg-amber-500/10 text-amber-700 border-amber-500/20'}`}>
-                    {dutyRosterActive
+                  <span className={`text-[11px] px-2.5 py-1 rounded-full border ${entities.length > 0 ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20' : 'bg-amber-500/10 text-amber-700 border-amber-500/20'}`}>
+                    {entities.length > 0
                       ? (bn ? `রুটিন অনুযায়ী ${entities.length} জনের ডিউটি` : `${entities.length} on duty per roster`)
-                      : (bn ? 'রুটিন সেট নেই — সবাই দেখাচ্ছে' : 'No roster set — showing all')}
+                      : (bn ? 'এই দিনে এই শিফটে কারো ডিউটি রুটিন নেই' : 'No one rostered for this day & shift')}
                   </span>
                 )}
+
 
                 {/* Per-tab settings shortcuts (permission gated) */}
                 {canManageAttendance && (
