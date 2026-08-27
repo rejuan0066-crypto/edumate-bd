@@ -375,7 +375,7 @@ const AdminMessages = () => {
                     </div>
                   )}
 
-                  <div className="flex items-end gap-2 border-t border-border/50 pt-3">
+                  <div className="flex w-full flex-nowrap items-end gap-2 border-t border-border/50 pt-3">
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -389,7 +389,7 @@ const AdminMessages = () => {
                     <Button
                       variant="outline"
                       size="icon"
-                      className="rounded-full"
+                      className="h-11 w-11 shrink-0 rounded-full"
                       onClick={() => fileInputRef.current?.click()}
                       aria-label="ফাইল সংযুক্ত করুন"
                     >
@@ -406,12 +406,13 @@ const AdminMessages = () => {
                       }}
                       rows={1}
                       placeholder="মেসেজ লিখুন…"
-                      className="min-h-[44px] flex-1 resize-none rounded-[20px]"
+                      className="min-h-[44px] w-full min-w-0 flex-1 resize-none rounded-[20px]"
                     />
                     <Button
                       onClick={send}
                       disabled={sending || (!body.trim() && files.length === 0)}
-                      className="rounded-full"
+                      size="icon"
+                      className="h-11 w-11 shrink-0 rounded-full"
                     >
                       {sending ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
