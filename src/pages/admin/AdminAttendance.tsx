@@ -1032,7 +1032,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     if (entityType === 'student') return bn ? (studentSubTab === 'residential' ? 'আবাসিক ছাত্র হাজিরা' : 'ছাত্র হাজিরা') : (studentSubTab === 'residential' ? 'Residential Student Attendance' : 'Student Attendance');
     if (staffSubTab === 'fulltime') return bn ? 'ফুল টাইম হাজিরা' : 'Full Time Attendance';
     if (staffSubTab === 'duty') return bn ? 'আবাসিক ডিউটি হাজিরা' : 'Residential Duty Attendance';
-    return bn ? 'খাওয়া হাজিরা' : 'Meal Attendance';
+    return bn ? 'খাবার হাজিরা' : 'Meal Attendance';
   }, [entityType, staffSubTab, studentSubTab, bn]);
 
   const currentShiftLabel = useMemo(() => {
