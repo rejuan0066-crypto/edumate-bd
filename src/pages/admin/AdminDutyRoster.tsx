@@ -1198,6 +1198,89 @@ export default function AdminDutyRoster() {
                   </Select>
                 </div>
               </div>
+
+              {/* কর্তন সেটিং */}
+              <div className="space-y-3 rounded-2xl border p-3">
+                <p className="text-sm font-semibold">কর্তন সেটিং</p>
+                <div>
+                  <Label className="text-xs">অনুপস্থিতি কর্তন (৳ / শিফট)</Label>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="0 = কর্তন নাই"
+                    value={form.absent_deduction_amount}
+                    onChange={(e) => setForm({ ...form, absent_deduction_amount: e.target.value })}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>বিলম্ব কর্তন চালু</Label>
+                  <Switch
+                    checked={!!form.late_deduction_enabled}
+                    onCheckedChange={(v) => setForm({ ...form, late_deduction_enabled: v })}
+                  />
+                </div>
+                {form.late_deduction_enabled && (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">বিলম্ব কর্তনের ধরন</Label>
+                        <Select
+                          value={form.late_deduction_mode || 'per_minute'}
+                          onValueChange={(v) => setForm({ ...form, late_deduction_mode: v })}
+                        >
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="per_minute">প্রতি মিনিট</SelectItem>
+                            <SelectItem value="flat">পুরো টাকা</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">ফ্রি মিনিট (এরপর কর্তন)</Label>
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          value={form.late_deduction_free_minutes}
+                          onChange={(e) => setForm({ ...form, late_deduction_free_minutes: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs">
+                        বিলম্ব কর্তন টাকা (খালি রাখলে অনুপস্থিতির টাকা থেকে হিসাব হবে)
+                      </Label>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="খালি = স্বয়ংক্রিয়"
+                        value={form.late_deduction_amount}
+                        onChange={(e) => setForm({ ...form, late_deduction_amount: e.target.value })}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {(() => {
+                        const mins = shiftMinutes({ id: 'x', start_time: form.start_time, end_time: form.end_time });
+                        const absent = Number(form.absent_deduction_amount) || 0;
+                        const rate = perMinuteRate({
+                          id: 'x',
+                          start_time: form.start_time,
+                          end_time: form.end_time,
+                          absent_deduction_amount: absent,
+                          late_deduction_amount:
+                            form.late_deduction_amount === '' ? null : Number(form.late_deduction_amount),
+                        });
+                        return form.late_deduction_mode === 'per_minute'
+                          ? `প্রতি মিনিট হার: ৳${Math.round(rate * 100) / 100} (${absent}৳ ÷ ${mins} মিনিট) — সর্বোচ্চ ৳${absent} পর্যন্ত`
+                          : 'বিলম্ব হলে একবারে পুরো টাকা কর্তন হবে (অনুপস্থিতির টাকার বেশি নয়)।';
+                      })()}
+                    </p>
+                  </>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  ছুটির দিন বা রুটিনে ডিউটি না থাকলে কোনো কর্তন হবে না।
+                </p>
+              </div>
+
               <div className="flex items-center justify-between rounded-2xl border p-3">
                 <Label>সক্রিয়</Label>
                 <Switch checked={!!form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
