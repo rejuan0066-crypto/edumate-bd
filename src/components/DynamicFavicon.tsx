@@ -182,7 +182,27 @@ async function rasterizeToPng(src: string, size: number, bgColor = '#0f766e'): P
   });
 }
 
-function buildManifest(opts: {
+function dataUrlToBlob(dataUrl: string): Blob {
+  const [head, b64] = dataUrl.split(',');
+  const mime = /:(.*?);/.exec(head)?.[1] || 'image/png';
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
+}
+
+/**
+ * Build a BRANDED manifest and publish it at the SAME-ORIGIN url `/manifest.json`
+ * through the service worker's branding cache.
+ *
+ * Android Chrome refuses to install a PWA whose manifest is a `data:` (or `blob:`)
+ * URL — the manifest and its icons must be real, fetchable, same-origin URLs.
+ * So the icons are stored at `/branded-icon-192.png` and `/branded-icon-512.png`
+ * and the manifest simply points at them. If the service worker is not ready yet,
+ * the static `/manifest.json` shipped with the build stays in place (still
+ * installable, just with the default name/icon).
+ */
+async function publishManifest(opts: {
   name: string;
   short_name: string;
   icon192: string;
@@ -192,26 +212,51 @@ function buildManifest(opts: {
   const manifest = {
     name: opts.name,
     short_name: opts.short_name,
+    id: '/?source=pwa',
     description: 'Islamic Education Management System',
-    start_url: '/',
+    start_url: '/?source=pwa',
     scope: '/',
     display: 'standalone',
-    orientation: 'portrait',
+    display_override: ['standalone', 'minimal-ui', 'browser'],
+    orientation: 'any',
     background_color: '#ffffff',
     theme_color: opts.theme_color,
     icons: [
-      { src: opts.icon192, sizes: '192x192', type: 'image/png', purpose: 'any' },
-      { src: opts.icon512, sizes: '512x512', type: 'image/png', purpose: 'any' },
-      { src: opts.icon192, sizes: '192x192', type: 'image/png', purpose: 'maskable' },
-      { src: opts.icon512, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      { src: '/branded-icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/branded-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: '/branded-icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+      { src: '/branded-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
     ],
     categories: ['education', 'productivity'],
     lang: 'bn',
+    prefer_related_applications: false,
   };
-  // Use data URL (not blob:) — Android Chrome requires same-origin or data: manifest for install
-  const json = JSON.stringify(manifest);
-  return 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(json);
+
+  if (!('caches' in window) || !('serviceWorker' in navigator)) return;
+  try {
+    await navigator.serviceWorker.ready;
+    const cache = await caches.open('subhania-branding');
+    await cache.put(
+      '/branded-icon-192.png',
+      new Response(dataUrlToBlob(opts.icon192), { headers: { 'Content-Type': 'image/png' } }),
+    );
+    await cache.put(
+      '/branded-icon-512.png',
+      new Response(dataUrlToBlob(opts.icon512), { headers: { 'Content-Type': 'image/png' } }),
+    );
+    await cache.put(
+      '/manifest.json',
+      new Response(JSON.stringify(manifest), {
+        headers: { 'Content-Type': 'application/manifest+json' },
+      }),
+    );
+    // Re-point the link so Chrome re-reads the (now branded) manifest
+    applyManifest('/manifest.json');
+  } catch {
+    /* keep the static manifest */
+  }
 }
+
 
 function applyAppleWebAppTitle(title: string) {
   let meta = document.querySelector('meta[name="apple-mobile-web-app-title"]') as HTMLMetaElement | null;
