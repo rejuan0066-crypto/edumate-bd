@@ -358,6 +358,14 @@ export default function AdminDutyRoster() {
         machine_enabled: !!form.machine_enabled,
         machine_open_before_minutes: Number(form.machine_open_before_minutes) || 0,
         machine_close_after_minutes: Number(form.machine_close_after_minutes) || 0,
+        absent_deduction_amount: Number(form.absent_deduction_amount) || 0,
+        late_deduction_enabled: !!form.late_deduction_enabled,
+        late_deduction_amount:
+          form.late_deduction_amount === '' || form.late_deduction_amount === null
+            ? null
+            : Number(form.late_deduction_amount),
+        late_deduction_mode: form.late_deduction_mode || 'flat',
+        late_deduction_free_minutes: Number(form.late_deduction_free_minutes) || 0,
       };
       if (editingShift) {
         const { error } = await supabase.from('duty_shifts').update(payload).eq('id', editingShift.id);
