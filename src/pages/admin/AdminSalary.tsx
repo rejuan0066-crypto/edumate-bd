@@ -31,7 +31,7 @@ import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
 import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 import SalaryWorkflowPanel from '@/components/admin/SalaryWorkflowPanel';
 import BulkSalaryWorkflowDialog from '@/components/admin/BulkSalaryWorkflowDialog';
-import { recomputeNetSalary } from '@/lib/salaryNet';
+import { recomputeNetSalary, computeManualOverrideNet } from '@/lib/salaryNet';
 import {
   calcDutyDeduction,
   type DeductionResult,
