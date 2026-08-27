@@ -16,6 +16,7 @@ const ALLOWED_BUCKETS = new Set([
   "photos",
   "staff-letters",
   "committee-attachments",
+  "chat-attachments",
 ]);
 
 function clientIp(req: Request): string {

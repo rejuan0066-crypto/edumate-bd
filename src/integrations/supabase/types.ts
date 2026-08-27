@@ -1021,6 +1021,47 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_messages: {
+        Row: {
+          attachments: Json
+          body: string | null
+          conversation_id: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          sender_id: string
+          updated_at: string
+        }
+        Insert: {
+          attachments?: Json
+          body?: string | null
+          conversation_id: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          sender_id: string
+          updated_at?: string
+        }
+        Update: {
+          attachments?: Json
+          body?: string | null
+          conversation_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          sender_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       class_routines: {
         Row: {
           academic_session_id: string | null
@@ -1560,6 +1601,80 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      conversation_participants: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          id: string
+          last_read_at: string
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          id?: string
+          last_read_at?: string
+          role?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          last_read_at?: string
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_participants_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          id: string
+          last_message_at: string
+          title: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          last_message_at?: string
+          title?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          last_message_at?: string
+          title?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       custom_form_fields: {
         Row: {
@@ -11138,11 +11253,25 @@ export type Database = {
           session_id: string
         }[]
       }
+      get_messageable_users: {
+        Args: never
+        Returns: {
+          designation: string
+          full_name: string
+          role: string
+          source: string
+          user_id: string
+        }[]
+      }
       get_next_admission_roll: {
         Args: { p_class_id: string; p_session_id: string }
         Returns: string
       }
       get_next_receipt_serial: { Args: never; Returns: string }
+      get_or_create_direct_conversation: {
+        Args: { _other_user: string }
+        Returns: string
+      }
       get_or_create_receipt_token: {
         Args: { _receipt_id: string; _receipt_type: string }
         Returns: string
@@ -11272,6 +11401,11 @@ export type Database = {
         Returns: undefined
       }
       is_accounts_staff: { Args: { _user_id: string }; Returns: boolean }
+      is_chat_admin: { Args: { _user: string }; Returns: boolean }
+      is_conversation_participant: {
+        Args: { _conv: string; _user: string }
+        Returns: boolean
+      }
       is_valid_result_signatories: { Args: { v: Json }; Returns: boolean }
       link_administrative_officer_by_email: {
         Args: never

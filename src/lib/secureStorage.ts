@@ -19,6 +19,7 @@ export const PRIVATE_BUCKETS = new Set([
   "receipts",
   "staff-letters",
   "db-backups",
+  "chat-attachments",
 ]);
 
 export interface ResolvedRef {
