@@ -1031,7 +1031,6 @@ export default function AdminDutyRoster() {
                             {isMachineAllowed(sh) && w ? `${w.open} – ${w.close}` : 'বন্ধ'}
                           </td>
                           <td className="px-3 py-2">{sh.pay_amount ? `৳${sh.pay_amount} / ${sh.pay_type}` : '—'}</td>
-                          <td className="px-3 py-2">{sh.pay_amount ? `৳${sh.pay_amount} / ${sh.pay_type}` : '—'}</td>
                           <td className="px-3 py-2 text-xs">
                             {Number(sh.absent_deduction_amount) > 0 || sh.late_deduction_enabled ? (
                               <span>
