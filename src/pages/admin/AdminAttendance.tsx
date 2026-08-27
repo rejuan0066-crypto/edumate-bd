@@ -1647,6 +1647,28 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
               </div>
               )}
 
+              {/* Meal Attendance Settings - Staff meal tab only */}
+              {entityType === 'staff' && staffSubTab === 'meal' && (
+              <div className="border rounded-lg p-3 bg-muted/20 space-y-3">
+                <Label className="font-semibold flex items-center gap-2">
+                  <Utensils className="h-4 w-4 text-primary" />
+                  {bn ? 'খাবার হাজিরা সেটিংস' : 'Meal Attendance Settings'}
+                </Label>
+                <p className="text-[11px] text-muted-foreground">
+                  {bn
+                    ? 'খাবার হাজিরার জন্য সকালের নাস্তা, দুপুর ও রাতের খাবার — উপরের ড্রপডাউন থেকে বেছে নিন। মেনু ও হোস্টেল সংক্রান্ত সেটিংস হোস্টেল পেজে।'
+                    : 'Choose breakfast, lunch or dinner from the dropdown above. Menu and hostel-related settings live on the hostel page.'}
+                </p>
+                <Button asChild size="sm" variant="secondary" className="w-full">
+                  <a href="/admin/hostel">
+                    <Utensils className="h-3 w-3 mr-1" /> {bn ? 'খাবার মেনু সেটিংস' : 'Meal Menu Settings'}
+                  </a>
+                </Button>
+              </div>
+              )}
+
+
+
               {/* Existing Rules */}
               <div className="space-y-2">
                 <p className="text-xs font-semibold text-muted-foreground">{bn ? 'বিদ্যমান রুলসমূহ' : 'Existing Rules'}</p>
