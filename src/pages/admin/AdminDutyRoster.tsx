@@ -26,6 +26,7 @@ import {
   lateMinutesFor,
   earlyExitMinutesFor,
 } from '@/lib/dutyMachineWindow';
+import { shiftMinutes, perMinuteRate } from '@/lib/dutyShiftDeduction';
 
 interface DutyShift {
   id: string;
