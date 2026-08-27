@@ -1656,11 +1656,12 @@ const AdminSalary = () => {
       const savingsDed = activeSavings ? activeSavings.amount : 0;
       const num = (v: any) => Number(v || 0);
       const dutyDed = num(record.duty_deduction ?? getDutyDeduction(record.staff_id).total);
-      const netSalary = Math.max(0,
-        num(record.base_salary) + num(record.bonus) + num(record.overtime) + num(record.other_allowance)
-        - num(record.late_deduction) - num(record.absence_deduction)
-        - num(record.advance_deduction) - num(record.other_deduction) - savingsDed - dutyDed
-      );
+      const netSalary = computeManualOverrideNet({
+        base_salary: record.base_salary, bonus: record.bonus, overtime: record.overtime,
+        other_allowance: record.other_allowance, late_deduction: record.late_deduction,
+        absence_deduction: record.absence_deduction, advance_deduction: record.advance_deduction,
+        other_deduction: record.other_deduction, savings_deduction: savingsDed, duty_deduction: dutyDed,
+      });
       // Whitelist only real columns — the dialog can be seeded from a live
       // display snapshot that carries extra computed fields.
       const payload: Record<string, any> = {
