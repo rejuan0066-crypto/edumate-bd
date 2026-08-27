@@ -52,31 +52,35 @@ describe('duty deduction is subtracted exactly once from net salary', () => {
   });
 
   it('end-to-end: dutyShiftDeduction total is the single amount applied to net', () => {
-    const result = calculateDutyShiftDeduction({
-      rosterDays: [
-        { date: '2026-06-01', shiftId: 's1' },
-        { date: '2026-06-02', shiftId: 's1' },
-        { date: '2026-06-03', shiftId: 's1' },
-      ],
-      attendance: [
-        { date: '2026-06-01', shiftId: 's1', status: 'present', lateMinutes: 0 },
-        { date: '2026-06-02', shiftId: 's1', status: 'absent', lateMinutes: 0 },
-        { date: '2026-06-03', shiftId: 's1', status: 'late', lateMinutes: 25 },
-      ],
-      shifts: [{
-        id: 's1',
-        name: 'সকাল',
-        absent_deduction_amount: 100,
-        late_deduction_enabled: true,
-        late_deduction_amount: 2,
-        late_deduction_mode: 'per_minute',
-        late_deduction_free_minutes: 5,
-      }],
-    } as any);
+    const shift = {
+      id: 's1',
+      name_bn: 'সকাল',
+      start_time: '06:00',
+      end_time: '10:00',
+      grace_minutes: 0,
+      early_exit_grace_minutes: 0,
+      absent_deduction_amount: 100,
+      late_deduction_enabled: true,
+      late_deduction_amount: 2,
+      late_deduction_mode: 'per_minute' as const,
+      late_deduction_free_minutes: 5,
+    };
+    const days = [
+      { date: '2026-06-01', shiftId: 's1' },
+      { date: '2026-06-02', shiftId: 's1' },
+      { date: '2026-06-03', shiftId: 's1' },
+    ];
+    const attendance = [
+      { date: '2026-06-01', shiftId: 's1', status: 'present' as const },
+      { date: '2026-06-02', shiftId: 's1', status: 'absent' as const },
+      { date: '2026-06-03', shiftId: 's1', status: 'late' as const, lateMinutes: 25 },
+    ];
+    const result = calcDutyDeduction([shift], days, attendance);
+    expect(result.total).toBeGreaterThan(0);
 
     const net = computeManualOverrideNet({ base_salary: 10000, duty_deduction: result.total });
-    expect(net).toBe(10000 - result.total);
-    // and running it through the display path again must not cut twice
-    expect(10000 - net).toBe(result.total);
+    expect(net).toBe(Math.round(10000 - result.total));
+    expect(10000 - net).toBe(Math.round(result.total));
   });
 });
+
