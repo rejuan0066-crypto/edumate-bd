@@ -4022,17 +4022,23 @@ const AdminSalary = () => {
                   // Savings is auto-applied on save, so the preview must show it too —
                   // otherwise the dialog net differs from the table/slip/PDF net.
                   const sav = Number(getActiveSavings(editDialog.staff_id)?.amount || 0);
+                  const dutyDed = Number(editDialog.duty_deduction ?? getDutyDeduction(editDialog.staff_id).total || 0);
                   const previewNet = Math.max(0,
                     Number(editDialog.base_salary || 0) + Number(editDialog.bonus || 0)
                     + Number(editDialog.overtime || 0) + Number(editDialog.other_allowance || 0)
                     - Number(editDialog.late_deduction || 0) - Number(editDialog.absence_deduction || 0)
                     - Number(editDialog.advance_deduction || 0) - Number(editDialog.other_deduction || 0)
-                    - sav);
+                    - sav - dutyDed);
                   return (
                     <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg text-center">
                       {sav > 0 && (
                         <p className="text-[11px] text-muted-foreground mb-1">
                           {bn ? 'জমা কর্তন' : 'Savings deduction'}: ৳{sav.toLocaleString()}
+                        </p>
+                      )}
+                      {dutyDed > 0 && (
+                        <p className="text-[11px] text-muted-foreground mb-1">
+                          {bn ? 'আবাসিক ডিউটি কর্তন' : 'Residential duty deduction'}: ৳{dutyDed.toLocaleString()}
                         </p>
                       )}
                       <p className="text-xs text-muted-foreground">{bn ? 'নিট বেতন' : 'Net Salary'}</p>
