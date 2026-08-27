@@ -330,7 +330,62 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   }, [classes, divisions]);
 
   // Filter students based on sub-tab and filters
+  // ── Residential duty roster (weekly template + per-day overrides) ──
+  const { data: dutyShiftDefs = [] } = useQuery({
+    queryKey: ['duty-shift-defs'],
+    queryFn: async () => {
+      const { data } = await supabase.from('duty_shifts').select('id, code, is_active').is('deleted_at', null);
+      return (data || []) as any[];
+    },
+  });
+
+  const { data: dutyTemplateRows = [] } = useQuery({
+    queryKey: ['duty-weekly-template-attendance'],
+    queryFn: async () => {
+      const { data } = await supabase.from('duty_weekly_template').select('staff_id, shift_id, weekday').eq('is_active', true);
+      return (data || []) as any[];
+    },
+  });
+
+  const { data: dutyRosterRows = [] } = useQuery({
+    queryKey: ['duty-roster-attendance', selectedDate],
+    queryFn: async () => {
+      const { data } = await supabase.from('duty_roster').select('staff_id, shift_id, duty_date').eq('duty_date', selectedDate);
+      return (data || []) as any[];
+    },
+  });
+
+  // Which duty_shifts row matches the selected morning/evening shift
+  const currentDutyShiftId = useMemo(() => {
+    const found = (dutyShiftDefs as any[]).find((s) => s.code === selectedShift);
+    return found?.id as string | undefined;
+  }, [dutyShiftDefs, selectedShift]);
+
+  // Roster is "active" only when some duty is actually configured — otherwise
+  // fall back to showing every residential staff member (previous behaviour).
+  const dutyRosterActive = useMemo(
+    () => staffSubTab === 'duty' && !!currentDutyShiftId && ((dutyTemplateRows as any[]).length > 0 || (dutyRosterRows as any[]).length > 0),
+    [staffSubTab, currentDutyShiftId, dutyTemplateRows, dutyRosterRows],
+  );
+
+  // Staff on duty for the selected date + shift (day override beats template)
+  const dutyStaffIdsForDate = useMemo(() => {
+    const ids = new Set<string>();
+    if (!currentDutyShiftId) return ids;
+    const weekday = new Date(`${selectedDate}T00:00:00`).getDay();
+    const overriddenStaff = new Set((dutyRosterRows as any[]).map((r) => r.staff_id));
+    (dutyRosterRows as any[]).forEach((r) => {
+      if (r.shift_id === currentDutyShiftId) ids.add(r.staff_id);
+    });
+    (dutyTemplateRows as any[]).forEach((t) => {
+      if (overriddenStaff.has(t.staff_id)) return; // day override replaces template
+      if (t.weekday === weekday && t.shift_id === currentDutyShiftId) ids.add(t.staff_id);
+    });
+    return ids;
+  }, [currentDutyShiftId, selectedDate, dutyRosterRows, dutyTemplateRows]);
+
   const entitiesRaw = useMemo(() => {
+
     if (entityType === 'staff') {
       let staffFiltered = allStaff;
       // Filter by staff category
@@ -341,13 +396,16 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       if (staffSubTab === 'meal') {
         return staffFiltered.filter((s: any) => s.residence_type === 'residential' || s.residence_type === 'resident');
       }
-      // Duty tab: only residential staff
+      // Duty tab: residential staff who are rostered for this weekday + shift
       if (staffSubTab === 'duty') {
-        return staffFiltered.filter((s: any) => s.residence_type === 'residential' || s.residence_type === 'resident');
+        const residential = staffFiltered.filter((s: any) => s.residence_type === 'residential' || s.residence_type === 'resident');
+        if (!dutyRosterActive) return residential;
+        return residential.filter((s: any) => dutyStaffIdsForDate.has(s.id));
       }
       // Full-time: all filtered staff
       return staffFiltered;
     }
+
     let filtered = allStudents;
 
     // Residential or Meal sub-tab: only residential students
@@ -377,7 +435,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     });
 
     return filtered;
-  }, [entityType, allStudents, allStaff, studentSubTab, selectedSessionYear, selectedClassId, orderedClasses, staffSubTab, selectedStaffCategory]);
+  }, [entityType, allStudents, allStaff, studentSubTab, selectedSessionYear, selectedClassId, orderedClasses, staffSubTab, selectedStaffCategory, dutyRosterActive, dutyStaffIdsForDate]);
 
   // Fetch attendance for selected date (for staff, fetch by shift too)
   const { data: attendance = [] } = useQuery({
@@ -2021,8 +2079,18 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                   </Select>
                 )}
 
+                {/* Duty roster status */}
+                {staffSubTab === 'duty' && (
+                  <span className={`text-[11px] px-2.5 py-1 rounded-full border ${dutyRosterActive ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20' : 'bg-amber-500/10 text-amber-700 border-amber-500/20'}`}>
+                    {dutyRosterActive
+                      ? (bn ? `রুটিন অনুযায়ী ${entities.length} জনের ডিউটি` : `${entities.length} on duty per roster`)
+                      : (bn ? 'রুটিন সেট নেই — সবাই দেখাচ্ছে' : 'No roster set — showing all')}
+                  </span>
+                )}
+
                 {/* Per-tab settings shortcuts */}
                 <div className="flex gap-2">
+
                   {staffSubTab === 'duty' && (
                     <Button asChild size="sm" variant="outline" className="h-8 text-xs">
                       <a href="/admin/duty-roster">
