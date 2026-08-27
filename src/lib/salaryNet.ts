@@ -53,3 +53,42 @@ export function recomputeNetSalary(calc: CalcSnapshot, manual: ManualInputs): nu
     n(manual.savings_deduction);
   return Math.max(0, Math.round(net));
 }
+
+export interface ManualOverrideInputs {
+  base_salary?: number | null;
+  bonus?: number | null;
+  overtime?: number | null;
+  other_allowance?: number | null;
+  late_deduction?: number | null;
+  absence_deduction?: number | null;
+  advance_deduction?: number | null;
+  other_deduction?: number | null;
+  savings_deduction?: number | null;
+  /** Residential duty deduction — subtracted EXACTLY ONCE from net. */
+  duty_deduction?: number | null;
+}
+
+/**
+ * Net salary for the manual-edit / manual-override path (edit dialog preview,
+ * save mutation and the live display snapshot all share this single formula).
+ *
+ *   net = base + bonus + overtime + other_allowance
+ *         - late - absence - advance - other - savings - duty
+ *
+ * Every deduction — including `duty_deduction` — is applied exactly once.
+ */
+export function computeManualOverrideNet(input: ManualOverrideInputs): number {
+  const net =
+    n(input.base_salary) +
+    n(input.bonus) +
+    n(input.overtime) +
+    n(input.other_allowance) -
+    n(input.late_deduction) -
+    n(input.absence_deduction) -
+    n(input.advance_deduction) -
+    n(input.other_deduction) -
+    n(input.savings_deduction) -
+    n(input.duty_deduction);
+  return Math.max(0, Math.round(net));
+}
+
