@@ -863,19 +863,21 @@ const AdminSalary = () => {
       const ovOther = Number(record.other_deduction || 0);
       const ovOvertime = Number(record.overtime || 0);
       const ovSavings = Number(record.savings_deduction ?? savingsForNet);
+      const ovDuty = Number(record.duty_deduction ?? liveCalc.duty_deduction ?? 0);
       Object.assign(liveRecord, {
         manual_override: true,
         base_salary: ovBase,
         late_deduction: ovLate,
         absence_deduction: ovAbsence,
         other_deduction: ovOther,
+        duty_deduction: ovDuty,
         overtime: ovOvertime,
         overtime_for_net: ovOvertime,
         earned_from_attendance: ovBase,
         savings_deduction: ovSavings,
         net_salary: Math.max(0, Math.round(
           ovBase + manualBonus + ovOvertime + manualAllow
-          - ovLate - ovAbsence - manualAdvance - ovOther - ovSavings
+          - ovLate - ovAbsence - manualAdvance - ovOther - ovSavings - ovDuty
         )),
       });
     }
@@ -904,6 +906,7 @@ const AdminSalary = () => {
         getAdditiveAttendanceDeduction(r)
         + Number(r.advance_deduction || 0)
         + Number(r.other_deduction || 0)
+        + Number(r.duty_deduction || 0)
       );
     }
     return Math.round(
@@ -911,6 +914,7 @@ const AdminSalary = () => {
       + Number(r.absence_deduction || 0)
       + Number(r.advance_deduction || 0)
       + Number(r.other_deduction || 0)
+      + Number(r.duty_deduction || 0)
     );
   };
 
