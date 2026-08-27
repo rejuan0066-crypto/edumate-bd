@@ -875,10 +875,11 @@ const AdminSalary = () => {
         overtime_for_net: ovOvertime,
         earned_from_attendance: ovBase,
         savings_deduction: ovSavings,
-        net_salary: Math.max(0, Math.round(
-          ovBase + manualBonus + ovOvertime + manualAllow
-          - ovLate - ovAbsence - manualAdvance - ovOther - ovSavings - ovDuty
-        )),
+        net_salary: computeManualOverrideNet({
+          base_salary: ovBase, bonus: manualBonus, overtime: ovOvertime, other_allowance: manualAllow,
+          late_deduction: ovLate, absence_deduction: ovAbsence, advance_deduction: manualAdvance,
+          other_deduction: ovOther, savings_deduction: ovSavings, duty_deduction: ovDuty,
+        }),
       });
     }
 
