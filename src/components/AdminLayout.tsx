@@ -153,7 +153,8 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   const canAccessPath = (path: string): boolean => {
     if (isAdmin) return true;
     const basePath = path.split('?')[0];
-    if (basePath === '/admin' || basePath === '/admin/profile') return true;
+    // Internal messaging is available to every signed-in user
+    if (basePath === '/admin' || basePath === '/admin/profile' || basePath === '/admin/messages') return true;
     return canView(basePath) || hasUserPermission(basePath, 'view');
   };
 
