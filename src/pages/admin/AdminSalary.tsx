@@ -4034,12 +4034,13 @@ const AdminSalary = () => {
                   // otherwise the dialog net differs from the table/slip/PDF net.
                   const sav = Number(getActiveSavings(editDialog.staff_id)?.amount || 0);
                   const dutyDed = Number(editDialog.duty_deduction ?? (getDutyDeduction(editDialog.staff_id).total || 0));
-                  const previewNet = Math.max(0,
-                    Number(editDialog.base_salary || 0) + Number(editDialog.bonus || 0)
-                    + Number(editDialog.overtime || 0) + Number(editDialog.other_allowance || 0)
-                    - Number(editDialog.late_deduction || 0) - Number(editDialog.absence_deduction || 0)
-                    - Number(editDialog.advance_deduction || 0) - Number(editDialog.other_deduction || 0)
-                    - sav - dutyDed);
+                  const previewNet = computeManualOverrideNet({
+                    base_salary: editDialog.base_salary, bonus: editDialog.bonus,
+                    overtime: editDialog.overtime, other_allowance: editDialog.other_allowance,
+                    late_deduction: editDialog.late_deduction, absence_deduction: editDialog.absence_deduction,
+                    advance_deduction: editDialog.advance_deduction, other_deduction: editDialog.other_deduction,
+                    savings_deduction: sav, duty_deduction: dutyDed,
+                  });
                   return (
                     <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg text-center">
                       {sav > 0 && (
