@@ -1031,6 +1031,22 @@ export default function AdminDutyRoster() {
                             {isMachineAllowed(sh) && w ? `${w.open} – ${w.close}` : 'বন্ধ'}
                           </td>
                           <td className="px-3 py-2">{sh.pay_amount ? `৳${sh.pay_amount} / ${sh.pay_type}` : '—'}</td>
+                          <td className="px-3 py-2">{sh.pay_amount ? `৳${sh.pay_amount} / ${sh.pay_type}` : '—'}</td>
+                          <td className="px-3 py-2 text-xs">
+                            {Number(sh.absent_deduction_amount) > 0 || sh.late_deduction_enabled ? (
+                              <span>
+                                {Number(sh.absent_deduction_amount) > 0 ? `অনুপস্থিত ৳${sh.absent_deduction_amount}` : 'অনুপস্থিত —'}
+                                {sh.late_deduction_enabled && (
+                                  <span className="block text-muted-foreground">
+                                    বিলম্ব: {sh.late_deduction_mode === 'per_minute' ? 'প্রতি মিনিট' : 'ফ্ল্যাট'}
+                                    {' • '}{sh.late_deduction_free_minutes ?? 5} মিঃ ফ্রি
+                                  </span>
+                                )}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
                           <td className="px-3 py-2">
                             <Badge variant={sh.is_active ? 'default' : 'secondary'}>{sh.is_active ? 'হ্যাঁ' : 'না'}</Badge>
                           </td>
@@ -1046,6 +1062,11 @@ export default function AdminDutyRoster() {
                                   name_en: sh.name_en ?? '',
                                   start_time: hhmm(sh.start_time),
                                   end_time: hhmm(sh.end_time),
+                                  absent_deduction_amount: sh.absent_deduction_amount ?? '',
+                                  late_deduction_enabled: !!sh.late_deduction_enabled,
+                                  late_deduction_amount: sh.late_deduction_amount ?? '',
+                                  late_deduction_mode: sh.late_deduction_mode || 'per_minute',
+                                  late_deduction_free_minutes: sh.late_deduction_free_minutes ?? 5,
                                 });
                                 setShiftDialog(true);
                               }}
