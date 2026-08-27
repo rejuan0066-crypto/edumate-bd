@@ -2510,7 +2510,9 @@ const AdminSalary = () => {
 
     // স্লিপের কর্তন কলামে শুধুমাত্র "অতিরিক্ত" কর্তন (অগ্রিম + জমা) দেখাবে।
     // উপস্থিতি কর্তন (absence/late/other) ইতিমধ্যে আয় থেকে বাদ গেছে — তাই ওগুলো আয়ের অংশে দেখানো হয়েছে।
-    const totalDed = Number(record.advance_deduction || 0) + savingsAmt;
+    const dutyDed = Number(record.duty_deduction || 0);
+    const dutyDedInfo = getDutyDeduction(staffMember.id);
+    const totalDed = Number(record.advance_deduction || 0) + savingsAmt + dutyDed;
     const monthName = MONTHS.find(m => m.value === selectedMonth);
 
     // Per-shift breakdown for residential / extra duty
