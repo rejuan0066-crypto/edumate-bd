@@ -341,13 +341,16 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       if (staffSubTab === 'meal') {
         return staffFiltered.filter((s: any) => s.residence_type === 'residential' || s.residence_type === 'resident');
       }
-      // Duty tab: only residential staff
+      // Duty tab: residential staff who are rostered for this weekday + shift
       if (staffSubTab === 'duty') {
-        return staffFiltered.filter((s: any) => s.residence_type === 'residential' || s.residence_type === 'resident');
+        const residential = staffFiltered.filter((s: any) => s.residence_type === 'residential' || s.residence_type === 'resident');
+        if (!dutyRosterActive) return residential;
+        return residential.filter((s: any) => dutyStaffIdsForDate.has(s.id));
       }
       // Full-time: all filtered staff
       return staffFiltered;
     }
+
     let filtered = allStudents;
 
     // Residential or Meal sub-tab: only residential students
