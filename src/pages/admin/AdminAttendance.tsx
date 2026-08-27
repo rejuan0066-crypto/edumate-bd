@@ -1997,6 +1997,21 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                   </Select>
                 )}
 
+                {/* Duty shortcuts */}
+                {staffSubTab === 'duty' && (
+                  <div className="flex gap-2">
+                    <Button asChild size="sm" variant="outline" className="h-8 text-xs">
+                      <a href="/admin/duty-roster">
+                        <CalendarDays className="h-3.5 w-3.5 mr-1" /> {bn ? 'ডিউটি রুটিন সেট' : 'Duty Roster'}
+                      </a>
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => setRulesDialogOpen(true)}>
+                      <Settings2 className="h-3.5 w-3.5 mr-1" /> {bn ? 'ডিউটি টাইম সেটিংস' : 'Duty Time Settings'}
+                    </Button>
+                  </div>
+                )}
+
+
 
                 {/* Staff Category Filter */}
                 <Select value={selectedStaffCategory} onValueChange={setSelectedStaffCategory}>
