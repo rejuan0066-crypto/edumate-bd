@@ -1958,33 +1958,20 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
             {/* Staff Shift Selector */}
             {entityType === 'staff' && (
               <div className="flex flex-wrap gap-3 items-center">
-                {/* Staff Sub-tabs: Full-time / Duty / Meal */}
-                <Tabs value={staffSubTab} onValueChange={(v) => selectStaffSubTab(v as 'fulltime' | 'duty' | 'meal')} className="shrink-0">
-                  <TabsList>
-                    <TabsTrigger value="fulltime">
-                      <Users className="h-4 w-4 mr-1" /> {bn ? 'ফুল টাইম হাজিরা' : 'Full Time'}
-                    </TabsTrigger>
-                    <TabsTrigger value="duty">
-                      <Clock className="h-4 w-4 mr-1" /> {bn ? 'আবাসিক ডিউটি' : 'Residential Duty'}
-                    </TabsTrigger>
-                    <TabsTrigger value="meal">
-                      <Utensils className="h-4 w-4 mr-1" /> {bn ? 'খাওয়া হাজিরা' : 'Meal'}
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-
-                {/* Shift selector (only for duty/meal sub-tabs) */}
+                {/* Shift filter (only for duty/meal dashboards) — dropdown, no inline sub-tabs */}
                 {staffSubTab !== 'fulltime' && (
-                  <Tabs value={selectedShift} onValueChange={setSelectedShift} className="shrink-0">
-                    <TabsList>
+                  <Select value={selectedShift} onValueChange={setSelectedShift}>
+                    <SelectTrigger className="w-44 h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
                       {(staffSubTab === 'duty' ? DUTY_SHIFTS : MEAL_SHIFTS).map(sh => (
-                        <TabsTrigger key={sh.value} value={sh.value}>
-                          <sh.icon className="h-4 w-4 mr-1" /> {bn ? sh.labelBn : sh.labelEn}
-                        </TabsTrigger>
+                        <SelectItem key={sh.value} value={sh.value}>{bn ? sh.labelBn : sh.labelEn}</SelectItem>
                       ))}
-                    </TabsList>
-                  </Tabs>
+                    </SelectContent>
+                  </Select>
                 )}
+
 
                 {/* Staff Category Filter */}
                 <Select value={selectedStaffCategory} onValueChange={setSelectedStaffCategory}>
