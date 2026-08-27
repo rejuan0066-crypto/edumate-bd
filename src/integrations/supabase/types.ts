@@ -7947,6 +7947,7 @@ export type Database = {
           created_at: string | null
           deductions_deferred: boolean | null
           deleted_at: string | null
+          duty_deduction: number
           earned_from_attendance: number | null
           id: string
           late_days: number | null
@@ -8004,6 +8005,7 @@ export type Database = {
           created_at?: string | null
           deductions_deferred?: boolean | null
           deleted_at?: string | null
+          duty_deduction?: number
           earned_from_attendance?: number | null
           id?: string
           late_days?: number | null
@@ -8061,6 +8063,7 @@ export type Database = {
           created_at?: string | null
           deductions_deferred?: boolean | null
           deleted_at?: string | null
+          duty_deduction?: number
           earned_from_attendance?: number | null
           id?: string
           late_days?: number | null
