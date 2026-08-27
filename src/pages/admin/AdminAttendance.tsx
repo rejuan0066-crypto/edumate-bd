@@ -1535,8 +1535,9 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
               </div>
               )}
 
-              {/* Residential Duty Times - Staff only */}
-              {entityType === 'staff' && (
+              {/* Residential Duty Times - Staff duty tab only */}
+              {entityType === 'staff' && staffSubTab === 'duty' && (
+
               <div className="border rounded-lg p-3 bg-muted/20 space-y-3">
                 <Label className="font-semibold flex items-center gap-2">
                   <Clock className="h-4 w-4 text-primary" />
