@@ -2109,7 +2109,8 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                   </span>
                 )}
 
-                {/* Per-tab settings shortcuts */}
+                {/* Per-tab settings shortcuts (permission gated) */}
+                {canManageAttendance && (
                 <div className="flex gap-2">
 
                   {staffSubTab === 'duty' && (
@@ -2128,6 +2129,8 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                         : (bn ? 'খাবার সেটিংস' : 'Meal Settings')}
                   </Button>
                 </div>
+                )}
+
 
 
 
