@@ -1442,9 +1442,13 @@ const AdminSalary = () => {
     const effAdvanceDeduction = allAttendanceGiven ? advanceDeduction : 0;
     const effSavingsDeduction = allAttendanceGiven ? savingsDeduction : 0;
 
+    // আবাসিক ডিউটি কর্তন — রোস্টার অনুযায়ী অনুপস্থিত/বিলম্ব শিফটের জন্য।
+    // এটি ঠিক একবারই নিট থেকে বাদ যায় এবং আলাদা ফিল্ড হিসেবে সংরক্ষিত হয়।
+    const dutyDeduction = Math.round(getDutyDeduction(staffMember.id).total);
+
     const netSalary = Math.max(0,
       earnedFromAttendance + overtimeForNet + bonus + otherAllowance
-      - effAdvanceDeduction - effSavingsDeduction
+      - effAdvanceDeduction - effSavingsDeduction - dutyDeduction
     );
 
     return {
@@ -1456,6 +1460,7 @@ const AdminSalary = () => {
       absence_deduction: absenceDeduction,
       late_deduction: lateDeduction,
       other_deduction: otherDeduction,
+      duty_deduction: dutyDeduction,
       bonus,
       overtime,
       other_allowance: otherAllowance,
