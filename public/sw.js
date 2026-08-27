@@ -12,11 +12,13 @@
 // Stale caches are cleaned ONLY by version bump on activate (targeted), never by
 // blanket clears on every load. Bump CACHE_VERSION whenever you change SW logic.
 
-const CACHE_VERSION = 'v8';
+const CACHE_VERSION = 'v9';
 const OFFLINE_URL = '/offline.html';
 const SHELL_CACHE = `subhania-shell-${CACHE_VERSION}`;
 const ASSET_CACHE = `subhania-assets-${CACHE_VERSION}`;
 const IMAGE_CACHE = `subhania-images-${CACHE_VERSION}`;
+// Branded manifest + icons written by the app (survives version bumps)
+const BRANDING_CACHE = 'subhania-branding';
 
 
 // Files we want available offline / instantly on first PWA launch
@@ -54,7 +56,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
       const keys = await caches.keys();
-      const valid = new Set([SHELL_CACHE, ASSET_CACHE, IMAGE_CACHE]);
+      const valid = new Set([SHELL_CACHE, ASSET_CACHE, IMAGE_CACHE, BRANDING_CACHE]);
       await Promise.all(keys.filter((k) => !valid.has(k)).map((k) => caches.delete(k)));
       // Speed up navigation revalidations on supported browsers
       if (self.registration.navigationPreload) {
@@ -234,8 +236,28 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Manifest → stale-while-revalidate so install card is instant
-  if (url.pathname === '/manifest.json' || url.pathname.endsWith('.webmanifest')) {
+  // Branded manifest / icons written by the app take priority (same-origin URLs,
+  // which Android Chrome requires for install — a data: manifest is NOT installable)
+  if (
+    url.pathname === '/manifest.json' ||
+    url.pathname === '/branded-icon-192.png' ||
+    url.pathname === '/branded-icon-512.png'
+  ) {
+    event.respondWith(
+      (async () => {
+        const branded = await caches.open(BRANDING_CACHE);
+        const hit = await branded.match(url.pathname);
+        if (hit) return hit;
+        if (url.pathname.startsWith('/branded-icon-')) {
+          const fallback = url.pathname.includes('192') ? '/app-icon-192.png' : '/app-icon.png';
+          return fetch(fallback);
+        }
+        return staleWhileRevalidate(request, SHELL_CACHE);
+      })()
+    );
+    return;
+  }
+  if (url.pathname.endsWith('.webmanifest')) {
     event.respondWith(staleWhileRevalidate(request, SHELL_CACHE));
     return;
   }
