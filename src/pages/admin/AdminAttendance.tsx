@@ -82,7 +82,14 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   const { language } = useLanguage();
   const bn = language === 'bn';
   const queryClient = useQueryClient();
-  const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/attendance');
+  const { canAddItem, canEditItem, canDeleteItem, canApproveItem } = usePagePermissions('/admin/attendance');
+  const { role } = useAuth();
+  const isAdmin = isAdminRole(role);
+  // Non-admins can only mark attendance. Settings, rosters, devices, summaries
+  // and exports stay hidden unless the matching permission is granted.
+  const canManageAttendance = isAdmin || canApproveItem;
+  const canExportAttendance = isAdmin || canApproveItem || canDeleteItem;
+
   const { timeFormat, setTimeFormat } = useTimeFormat();
   const { tz: appTz } = useAppTimezone();
   const fmt = (t: string) => formatTimeDisplay(t, timeFormat);
