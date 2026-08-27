@@ -2366,6 +2366,15 @@ const AdminSalary = () => {
             absentDetails: (st.dailyBreakdown || [])
               .filter((d: any) => d.status === 'absent')
               .map((d: any) => ({ date: d.date, deduction: Number(d.deduction) || 0 })),
+            // আবাসিক ডিউটি কর্তনের বিস্তারিত (তারিখ • শিফট • কারণ • টাকা)
+            dutyDeduction: Number(displayRecord?.duty_deduction || 0),
+            dutyDetails: getDutyDeduction(s.id).lines.map((l) => ({
+              date: l.date,
+              shift: l.shiftName,
+              reason: l.reason,
+              note: l.note,
+              amount: l.amount,
+            })),
           };
         });
 
