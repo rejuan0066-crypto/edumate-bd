@@ -98,8 +98,23 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   useEffect(() => {
     setEntityType(forcedTab || (tabParam === 'staff' ? 'staff' : 'student'));
   }, [forcedTab, tabParam]);
-  const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal'>('all');
-  const [staffSubTab, setStaffSubTab] = useState<'fulltime' | 'duty' | 'meal'>('fulltime');
+const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal'>('all');
+  const stafftabParam = searchParams.get('stafftab');
+  const [staffSubTab, setStaffSubTab] = useState<'fulltime' | 'duty' | 'meal'>(
+    stafftabParam === 'duty' ? 'duty' : stafftabParam === 'meal' ? 'meal' : 'fulltime'
+  );
+
+  // Sync staffSubTab with ?stafftab=fulltime|duty|meal (separate pages per tab)
+  const setSearchParams = useSearchParams()[1];
+  const selectStaffSubTab = (v: 'fulltime' | 'duty' | 'meal') => {
+    setStaffSubTab(v);
+    const next = new URLSearchParams(searchParams.toString());
+    next.set('tab', 'staff');
+    if (v === 'fulltime') next.delete('stafftab');
+    else next.set('stafftab', v);
+    setSearchParams(next, { replace: true });
+    setSelectedShift(v === 'fulltime' ? 'full_day' : v === 'duty' ? 'morning' : 'meal_breakfast');
+  };
   const [selectedStaffCategory, setSelectedStaffCategory] = useState<string>('all');
   const [studentMealShift, setStudentMealShift] = useState('meal_breakfast');
   const [selectedDate, setSelectedDate] = useState(todayIsoInTz(appTz));
