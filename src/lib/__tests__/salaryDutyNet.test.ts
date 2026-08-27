@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { computeManualOverrideNet, recomputeNetSalary } from '@/lib/salaryNet';
-import { calculateDutyShiftDeduction } from '@/lib/dutyShiftDeduction';
+import { calcDutyDeduction } from '@/lib/dutyShiftDeduction';
 
 /**
  * Contract: আবাসিক ডিউটি কর্তন (duty_deduction) নিট বেতন থেকে ঠিক একবার বাদ যায়।
