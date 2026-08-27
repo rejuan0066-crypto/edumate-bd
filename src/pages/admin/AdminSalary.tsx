@@ -31,7 +31,7 @@ import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
 import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 import SalaryWorkflowPanel from '@/components/admin/SalaryWorkflowPanel';
 import BulkSalaryWorkflowDialog from '@/components/admin/BulkSalaryWorkflowDialog';
-import { recomputeNetSalary } from '@/lib/salaryNet';
+import { recomputeNetSalary, computeManualOverrideNet } from '@/lib/salaryNet';
 import {
   calcDutyDeduction,
   type DeductionResult,
@@ -875,10 +875,11 @@ const AdminSalary = () => {
         overtime_for_net: ovOvertime,
         earned_from_attendance: ovBase,
         savings_deduction: ovSavings,
-        net_salary: Math.max(0, Math.round(
-          ovBase + manualBonus + ovOvertime + manualAllow
-          - ovLate - ovAbsence - manualAdvance - ovOther - ovSavings - ovDuty
-        )),
+        net_salary: computeManualOverrideNet({
+          base_salary: ovBase, bonus: manualBonus, overtime: ovOvertime, other_allowance: manualAllow,
+          late_deduction: ovLate, absence_deduction: ovAbsence, advance_deduction: manualAdvance,
+          other_deduction: ovOther, savings_deduction: ovSavings, duty_deduction: ovDuty,
+        }),
       });
     }
 
@@ -1655,11 +1656,12 @@ const AdminSalary = () => {
       const savingsDed = activeSavings ? activeSavings.amount : 0;
       const num = (v: any) => Number(v || 0);
       const dutyDed = num(record.duty_deduction ?? getDutyDeduction(record.staff_id).total);
-      const netSalary = Math.max(0,
-        num(record.base_salary) + num(record.bonus) + num(record.overtime) + num(record.other_allowance)
-        - num(record.late_deduction) - num(record.absence_deduction)
-        - num(record.advance_deduction) - num(record.other_deduction) - savingsDed - dutyDed
-      );
+      const netSalary = computeManualOverrideNet({
+        base_salary: record.base_salary, bonus: record.bonus, overtime: record.overtime,
+        other_allowance: record.other_allowance, late_deduction: record.late_deduction,
+        absence_deduction: record.absence_deduction, advance_deduction: record.advance_deduction,
+        other_deduction: record.other_deduction, savings_deduction: savingsDed, duty_deduction: dutyDed,
+      });
       // Whitelist only real columns — the dialog can be seeded from a live
       // display snapshot that carries extra computed fields.
       const payload: Record<string, any> = {
@@ -4032,12 +4034,13 @@ const AdminSalary = () => {
                   // otherwise the dialog net differs from the table/slip/PDF net.
                   const sav = Number(getActiveSavings(editDialog.staff_id)?.amount || 0);
                   const dutyDed = Number(editDialog.duty_deduction ?? (getDutyDeduction(editDialog.staff_id).total || 0));
-                  const previewNet = Math.max(0,
-                    Number(editDialog.base_salary || 0) + Number(editDialog.bonus || 0)
-                    + Number(editDialog.overtime || 0) + Number(editDialog.other_allowance || 0)
-                    - Number(editDialog.late_deduction || 0) - Number(editDialog.absence_deduction || 0)
-                    - Number(editDialog.advance_deduction || 0) - Number(editDialog.other_deduction || 0)
-                    - sav - dutyDed);
+                  const previewNet = computeManualOverrideNet({
+                    base_salary: editDialog.base_salary, bonus: editDialog.bonus,
+                    overtime: editDialog.overtime, other_allowance: editDialog.other_allowance,
+                    late_deduction: editDialog.late_deduction, absence_deduction: editDialog.absence_deduction,
+                    advance_deduction: editDialog.advance_deduction, other_deduction: editDialog.other_deduction,
+                    savings_deduction: sav, duty_deduction: dutyDed,
+                  });
                   return (
                     <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg text-center">
                       {sav > 0 && (
