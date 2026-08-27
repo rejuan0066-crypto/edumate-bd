@@ -60,30 +60,21 @@ const DynamicFavicon = () => {
               localStorage.setItem(ck512, icon512);
             } catch {}
           }
-          const manifestUrl = buildManifest({
+          await publishManifest({
             name: appName,
             short_name: shortName,
             icon192: icon192!,
             icon512: icon512!,
             theme_color: themeColor,
           });
-          applyManifest(manifestUrl);
-          localStorage.setItem(MANIFEST_CACHE_KEY, manifestUrl);
           applyAppleWebAppTitle(shortName);
           // Use the high-quality 192 PNG for apple-touch-icon too
           applyAppleTouchIcon(icon192!);
         } catch (e) {
-          // Fallback to original src
-          const manifestUrl = buildManifest({
-            name: appName,
-            short_name: shortName,
-            icon192: appIconSrc,
-            icon512: appIconSrc,
-            theme_color: themeColor,
-          });
-          applyManifest(manifestUrl);
+          // Keep the static /manifest.json — still installable
           applyAppleWebAppTitle(shortName);
         }
+
       })();
     }
   }, [isLoading, faviconSrc, appIconSrc, appName, shortName, themeColor]);
