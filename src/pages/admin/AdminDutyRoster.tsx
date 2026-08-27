@@ -1009,6 +1009,7 @@ export default function AdminDutyRoster() {
                       <th className="px-3">হাজিরার ধরন</th>
                       <th className="px-3">মেশিন উইন্ডো</th>
                       <th className="px-3">ভাতা</th>
+                      <th className="px-3">কর্তন</th>
                       <th className="px-3">সক্রিয়</th>
                       <th className="px-3 text-right">অ্যাকশন</th>
                     </tr>
