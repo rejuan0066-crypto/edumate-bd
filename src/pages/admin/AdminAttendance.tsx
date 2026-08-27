@@ -1032,7 +1032,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     if (entityType === 'student') return bn ? (studentSubTab === 'residential' ? 'আবাসিক ছাত্র হাজিরা' : 'ছাত্র হাজিরা') : (studentSubTab === 'residential' ? 'Residential Student Attendance' : 'Student Attendance');
     if (staffSubTab === 'fulltime') return bn ? 'ফুল টাইম হাজিরা' : 'Full Time Attendance';
     if (staffSubTab === 'duty') return bn ? 'আবাসিক ডিউটি হাজিরা' : 'Residential Duty Attendance';
-    return bn ? 'খাওয়া হাজিরা' : 'Meal Attendance';
+    return bn ? 'খাবার হাজিরা' : 'Meal Attendance';
   }, [entityType, staffSubTab, studentSubTab, bn]);
 
   const currentShiftLabel = useMemo(() => {
@@ -1801,8 +1801,33 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
         )}
 
         {mainTab === 'attendance' && (<>
+        {/* Staff Dashboards: exactly 3 tabs */}
+        {entityType === 'staff' && (
+          <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-full border border-border/30 bg-gradient-to-r from-muted/70 via-muted/40 to-muted/70 backdrop-blur-xl w-fit max-w-full overflow-x-auto [&::-webkit-scrollbar]:hidden">
+            {[
+              { id: 'fulltime' as const, icon: Users, label: bn ? 'ফুল টাইম হাজিরা' : 'Full Time Attendance' },
+              { id: 'duty' as const, icon: Clock, label: bn ? 'আবাসিক ডিউটি' : 'Residential Duty' },
+              { id: 'meal' as const, icon: Utensils, label: bn ? 'খাবার হাজিরা' : 'Meal Attendance' },
+            ].map(t => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => selectStaffSubTab(t.id)}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-200 ${
+                  staffSubTab === t.id
+                    ? 'bg-primary text-primary-foreground shadow-[0_4px_14px_-2px_hsl(var(--primary)/0.45)]'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-primary/5'
+                }`}
+              >
+                <t.icon className="h-4 w-4 shrink-0" /> {t.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div key={`stats-${entityType}-${staffSubTab}`} className="grid grid-cols-2 md:grid-cols-5 gap-4">
+
 
           {[
             { label: bn ? 'মোট' : 'Total', value: stats.total, icon: Users, gradient: 'from-primary/15 to-primary/5', iconBg: 'bg-primary/15', iconColor: 'text-primary' },
@@ -1958,33 +1983,20 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
             {/* Staff Shift Selector */}
             {entityType === 'staff' && (
               <div className="flex flex-wrap gap-3 items-center">
-                {/* Staff Sub-tabs: Full-time / Duty / Meal */}
-                <Tabs value={staffSubTab} onValueChange={(v) => selectStaffSubTab(v as 'fulltime' | 'duty' | 'meal')} className="shrink-0">
-                  <TabsList>
-                    <TabsTrigger value="fulltime">
-                      <Users className="h-4 w-4 mr-1" /> {bn ? 'ফুল টাইম হাজিরা' : 'Full Time'}
-                    </TabsTrigger>
-                    <TabsTrigger value="duty">
-                      <Clock className="h-4 w-4 mr-1" /> {bn ? 'আবাসিক ডিউটি' : 'Residential Duty'}
-                    </TabsTrigger>
-                    <TabsTrigger value="meal">
-                      <Utensils className="h-4 w-4 mr-1" /> {bn ? 'খাওয়া হাজিরা' : 'Meal'}
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-
-                {/* Shift selector (only for duty/meal sub-tabs) */}
+                {/* Shift filter (only for duty/meal dashboards) — dropdown, no inline sub-tabs */}
                 {staffSubTab !== 'fulltime' && (
-                  <Tabs value={selectedShift} onValueChange={setSelectedShift} className="shrink-0">
-                    <TabsList>
+                  <Select value={selectedShift} onValueChange={setSelectedShift}>
+                    <SelectTrigger className="w-44 h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
                       {(staffSubTab === 'duty' ? DUTY_SHIFTS : MEAL_SHIFTS).map(sh => (
-                        <TabsTrigger key={sh.value} value={sh.value}>
-                          <sh.icon className="h-4 w-4 mr-1" /> {bn ? sh.labelBn : sh.labelEn}
-                        </TabsTrigger>
+                        <SelectItem key={sh.value} value={sh.value}>{bn ? sh.labelBn : sh.labelEn}</SelectItem>
                       ))}
-                    </TabsList>
-                  </Tabs>
+                    </SelectContent>
+                  </Select>
                 )}
+
 
                 {/* Staff Category Filter */}
                 <Select value={selectedStaffCategory} onValueChange={setSelectedStaffCategory}>
