@@ -2732,6 +2732,7 @@ const AdminSalary = () => {
               <!-- ৩. অগ্রিম ও জমা কর্তন -->
               <div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অগ্রিম কর্তন' : 'Advance Deduction'}</span><span class="v">৳${slipNum(Number(record.advance_deduction || 0))}</span></div>
               <div class="ln savings" style="color:#dc2626"><span class="l">− ${bn ? '⊕ বেতন জমা' : '⊕ Salary Savings'}</span><span class="v">৳${slipNum(savingsAmt)}</span></div>
+              ${dutyDed > 0 ? `<div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'আবাসিক ডিউটি কর্তন' : 'Residential Duty Deduction'} <span style="color:#64748b;font-weight:400">(${bn ? toBnDigits(dutyDedInfo.lines.length) : dutyDedInfo.lines.length} ${bn ? 'শিফট' : 'shifts'}${dutyDedInfo.absentCount ? ` • ${bn ? 'অনুপস্থিত' : 'absent'} ${bn ? toBnDigits(dutyDedInfo.absentCount) : dutyDedInfo.absentCount}` : ''}${dutyDedInfo.lateCount ? ` • ${bn ? 'বিলম্ব' : 'late'} ${bn ? toBnDigits(dutyDedInfo.lateCount) : dutyDedInfo.lateCount}` : ''})</span></span><span class="v">৳${slipNum(dutyDed)}</span></div>` : ''}
 
               <!-- ৪. বোনাস / ওভারটাইম / ভাতা -->
               <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'বোনাস' : 'Bonus'}</span><span class="v">৳${slipNum(Number(record.bonus || 0))}</span></div>
