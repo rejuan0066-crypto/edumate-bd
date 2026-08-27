@@ -44,6 +44,11 @@ interface DutyShift {
   machine_enabled: boolean;
   machine_open_before_minutes: number;
   machine_close_after_minutes: number;
+  absent_deduction_amount: number | null;
+  late_deduction_enabled: boolean | null;
+  late_deduction_amount: number | null;
+  late_deduction_mode: string | null;
+  late_deduction_free_minutes: number | null;
 }
 
 interface StaffRow {
