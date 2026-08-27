@@ -1823,7 +1823,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
             </p>
           </div>
           <div className="flex gap-2 flex-wrap items-center">
-            {entityType === 'student' && (
+            {canManageAttendance && entityType === 'student' && (
               <>
                 <Button variant="outline" size="sm" onClick={() => setQrPosterOpen(true)}>
                   <QrCode className="h-4 w-4 mr-1" /> {bn ? 'QR পোস্টার' : 'QR Poster'}
@@ -1833,7 +1833,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                 </Button>
               </>
             )}
-            {entityType === 'staff' && (
+            {canManageAttendance && entityType === 'staff' && (
               <>
                 <Button variant="outline" size="sm" onClick={() => setStaffCheckinOpen(true)} className="border-emerald-200 text-emerald-700 hover:bg-emerald-50">
                   <UserCheck className="h-4 w-4 mr-1" /> {bn ? 'চেক-ইন সিস্টেম' : 'Check-in System'}
@@ -1843,6 +1843,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                 </Button>
               </>
             )}
+            {canManageAttendance && (
             <Button variant="outline" size="sm" onClick={async () => {
               toast.loading(bn ? 'দৈনিক সারসংক্ষেপ তৈরি হচ্ছে...' : 'Generating daily summary...');
               try {
@@ -1854,33 +1855,43 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
             }}>
               <Send className="h-4 w-4 mr-1" /> {bn ? 'দৈনিক সারসংক্ষেপ' : 'Daily Summary'}
             </Button>
-            <Button variant="outline" size="sm" onClick={handleDownloadCSV}>
-              <Download className="h-4 w-4 mr-1" /> {bn ? 'এক্সেল' : 'Excel'}
-            </Button>
-            <Button variant="outline" size="sm" onClick={handlePrint}>
-              <Printer className="h-4 w-4 mr-1" /> {bn ? 'প্রিন্ট' : 'Print'}
-            </Button>
+            )}
+            {canExportAttendance && (
+              <>
+                <Button variant="outline" size="sm" onClick={handleDownloadCSV}>
+                  <Download className="h-4 w-4 mr-1" /> {bn ? 'এক্সেল' : 'Excel'}
+                </Button>
+                <Button variant="outline" size="sm" onClick={handlePrint}>
+                  <Printer className="h-4 w-4 mr-1" /> {bn ? 'প্রিন্ট' : 'Print'}
+                </Button>
+              </>
+            )}
+            {canManageAttendance && (
             <Button variant={mainTab === 'settings' ? 'default' : 'outline'} size="sm" onClick={() => setMainTab(mainTab === 'settings' ? 'attendance' : 'settings')}>
               <Settings2 className="h-4 w-4 mr-1" /> {bn ? 'রুল সেটিংস' : 'Rule Settings'}
             </Button>
+            )}
           </div>
         </div>
 
         {/* Main Tabs: Attendance / Settings */}
-        <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as any)}>
-          <TabsList>
-            <TabsTrigger value="attendance"><CalendarDays className="h-4 w-4 mr-1" /> {bn ? 'হাজিরা' : 'Attendance'}</TabsTrigger>
-            <TabsTrigger value="settings"><Settings2 className="h-4 w-4 mr-1" /> {bn ? 'সেটিংস' : 'Settings'}</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {canManageAttendance && (
+          <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as any)}>
+            <TabsList>
+              <TabsTrigger value="attendance"><CalendarDays className="h-4 w-4 mr-1" /> {bn ? 'হাজিরা' : 'Attendance'}</TabsTrigger>
+              <TabsTrigger value="settings"><Settings2 className="h-4 w-4 mr-1" /> {bn ? 'সেটিংস' : 'Settings'}</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
 
-        {mainTab === 'settings' && (
+        {canManageAttendance && mainTab === 'settings' && (
           <Card>
             <CardContent className="p-6">
               {settingsPanel}
             </CardContent>
           </Card>
         )}
+
 
         {mainTab === 'attendance' && (<>
         {/* Staff Dashboards: exactly 3 tabs */}
