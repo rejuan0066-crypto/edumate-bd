@@ -2423,6 +2423,7 @@ export type Database = {
       }
       duty_shifts: {
         Row: {
+          absent_deduction_amount: number
           attendance_mode: string
           code: string
           created_at: string
@@ -2432,6 +2433,10 @@ export type Database = {
           grace_minutes: number
           id: string
           is_active: boolean
+          late_deduction_amount: number | null
+          late_deduction_enabled: boolean
+          late_deduction_free_minutes: number
+          late_deduction_mode: string
           machine_close_after_minutes: number
           machine_enabled: boolean
           machine_open_before_minutes: number
@@ -2445,6 +2450,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          absent_deduction_amount?: number
           attendance_mode?: string
           code: string
           created_at?: string
@@ -2454,6 +2460,10 @@ export type Database = {
           grace_minutes?: number
           id?: string
           is_active?: boolean
+          late_deduction_amount?: number | null
+          late_deduction_enabled?: boolean
+          late_deduction_free_minutes?: number
+          late_deduction_mode?: string
           machine_close_after_minutes?: number
           machine_enabled?: boolean
           machine_open_before_minutes?: number
@@ -2467,6 +2477,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          absent_deduction_amount?: number
           attendance_mode?: string
           code?: string
           created_at?: string
@@ -2476,6 +2487,10 @@ export type Database = {
           grace_minutes?: number
           id?: string
           is_active?: boolean
+          late_deduction_amount?: number | null
+          late_deduction_enabled?: boolean
+          late_deduction_free_minutes?: number
+          late_deduction_mode?: string
           machine_close_after_minutes?: number
           machine_enabled?: boolean
           machine_open_before_minutes?: number
