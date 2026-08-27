@@ -104,6 +104,11 @@ const emptyShift = {
   machine_enabled: false,
   machine_open_before_minutes: 60,
   machine_close_after_minutes: 60,
+  absent_deduction_amount: '' as string | number,
+  late_deduction_enabled: false,
+  late_deduction_amount: '' as string | number,
+  late_deduction_mode: 'per_minute',
+  late_deduction_free_minutes: 5 as string | number,
 };
 
 const hhmm = (t?: string | null) => (t ? t.slice(0, 5) : '');
