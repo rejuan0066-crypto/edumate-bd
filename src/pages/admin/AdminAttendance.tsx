@@ -2460,7 +2460,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
         </>)}
 
         {/* Rules Dialog */}
-        <Dialog open={rulesDialogOpen} onOpenChange={setRulesDialogOpen}>
+        <Dialog open={canManageAttendance && rulesDialogOpen} onOpenChange={setRulesDialogOpen}>
           <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
