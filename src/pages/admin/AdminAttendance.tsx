@@ -380,7 +380,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     });
 
     return filtered;
-  }, [entityType, allStudents, allStaff, studentSubTab, selectedSessionYear, selectedClassId, orderedClasses, staffSubTab, selectedStaffCategory]);
+  }, [entityType, allStudents, allStaff, studentSubTab, selectedSessionYear, selectedClassId, orderedClasses, staffSubTab, selectedStaffCategory, dutyRosterActive, dutyStaffIdsForDate]);
 
   // Fetch attendance for selected date (for staff, fetch by shift too)
   const { data: attendance = [] } = useQuery({
