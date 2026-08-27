@@ -389,6 +389,140 @@ const AdminSalary = () => {
   const paidHolidaySet = useMemo(() => new Set(
     monthHolidays.filter((h: any) => h.is_paid).map((h: any) => h.holiday_date)
   ), [monthHolidays]);
+  const holidaySet = useMemo(() => new Set(
+    monthHolidays.map((h: any) => h.holiday_date)
+  ), [monthHolidays]);
+
+  // ── আবাসিক ডিউটি কর্তন (অনুপস্থিতি / বিলম্ব) ───────────────────────────────
+  const monthRange = useMemo(() => {
+    const y = Number(selectedYear); const m = Number(selectedMonth);
+    const lastDay = new Date(y, m, 0).getDate();
+    return {
+      start: `${monthYear}-01`,
+      end: `${monthYear}-${String(lastDay).padStart(2, '0')}`,
+      lastDay,
+    };
+  }, [monthYear, selectedYear, selectedMonth]);
+
+  const { data: dutyShiftDefs = [] } = useQuery({
+    queryKey: ['salary-duty-shifts'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('duty_shifts')
+        .select('*')
+        .is('deleted_at', null)
+        .eq('is_active', true);
+      return (data || []) as any[];
+    },
+  });
+
+  const { data: dutyTemplateRows = [] } = useQuery({
+    queryKey: ['salary-duty-template'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('duty_weekly_template')
+        .select('staff_id, shift_id, weekday, is_active')
+        .eq('is_active', true);
+      return (data || []) as any[];
+    },
+  });
+
+  const { data: dutyRosterRows = [] } = useQuery({
+    queryKey: ['salary-duty-roster', monthYear],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('duty_roster')
+        .select('staff_id, shift_id, duty_date')
+        .gte('duty_date', monthRange.start)
+        .lte('duty_date', monthRange.end);
+      return (data || []) as any[];
+    },
+  });
+
+  const { data: dutyShiftAttRows = [] } = useQuery({
+    queryKey: ['salary-duty-shift-attendance', monthYear],
+    staleTime: 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('duty_shift_attendance')
+        .select('staff_id, shift_id, duty_date, status, late_minutes, early_exit_minutes, check_in_time, check_out_time')
+        .gte('duty_date', monthRange.start)
+        .lte('duty_date', monthRange.end);
+      return (data || []) as any[];
+    },
+  });
+
+  /** staffId → { total, lines } — রোস্টার-নির্ধারিত শিফটভিত্তিক কর্তন */
+  const dutyDeductionByStaff = useMemo(() => {
+    const map = new Map<string, DeductionResult>();
+    const configured = dutyShiftDefs.filter(
+      (s: any) => Number(s.absent_deduction_amount) > 0 || s.late_deduction_enabled,
+    );
+    if (configured.length === 0) return map;
+
+    const todayISO = new Date().toISOString().slice(0, 10);
+    const dates: string[] = [];
+    for (let d = 1; d <= monthRange.lastDay; d++) {
+      dates.push(`${monthYear}-${String(d).padStart(2, '0')}`);
+    }
+    const weekdayOf = (iso: string) => {
+      const [y, m, dd] = iso.split('-').map(Number);
+      return new Date(y, m - 1, dd).getDay();
+    };
+
+    const byStaffDays = new Map<string, DutyDay[]>();
+    const push = (staffId: string, day: DutyDay) => {
+      const arr = byStaffDays.get(staffId) || [];
+      arr.push(day);
+      byStaffDays.set(staffId, arr);
+    };
+
+    // Weekly template → every matching weekday of the month
+    dutyTemplateRows.forEach((t: any) => {
+      dates.forEach((iso) => {
+        if (weekdayOf(iso) !== Number(t.weekday)) return;
+        push(t.staff_id, {
+          date: iso,
+          shiftId: t.shift_id,
+          isHoliday: holidaySet.has(iso),
+          isFuture: iso > todayISO,
+        });
+      });
+    });
+    // Explicit daily roster overrides / extras
+    dutyRosterRows.forEach((r: any) => {
+      push(r.staff_id, {
+        date: r.duty_date,
+        shiftId: r.shift_id,
+        isHoliday: holidaySet.has(r.duty_date),
+        isFuture: r.duty_date > todayISO,
+      });
+    });
+
+    const attByStaff = new Map<string, DutyAttendance[]>();
+    dutyShiftAttRows.forEach((a: any) => {
+      const arr = attByStaff.get(a.staff_id) || [];
+      arr.push({
+        date: a.duty_date,
+        shiftId: a.shift_id,
+        status: a.status,
+        late_minutes: a.late_minutes,
+        early_exit_minutes: a.early_exit_minutes,
+        check_in_time: a.check_in_time,
+        check_out_time: a.check_out_time,
+      });
+      attByStaff.set(a.staff_id, arr);
+    });
+
+    byStaffDays.forEach((days, staffId) => {
+      map.set(staffId, calcDutyDeduction(configured as any, days, attByStaff.get(staffId) || []));
+    });
+    return map;
+  }, [dutyShiftDefs, dutyTemplateRows, dutyRosterRows, dutyShiftAttRows, holidaySet, monthYear, monthRange.lastDay]);
+
+  const getDutyDeduction = (staffId: string): DeductionResult =>
+    dutyDeductionByStaff.get(staffId) || { total: 0, lines: [], absentCount: 0, lateCount: 0 };
+
   // Fetch salary settings
   const { data: settings = [] } = useQuery({
     queryKey: ['salary-settings'],
