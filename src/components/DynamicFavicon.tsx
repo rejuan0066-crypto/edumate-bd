@@ -10,18 +10,19 @@ const DynamicFavicon = () => {
   const { settings, isLoading } = useWebsiteSettings();
   const [applied, setApplied] = useState(false);
 
-  // Apply cached favicon/manifest immediately on mount (before DB loads)
+  // Apply cached favicon immediately on mount (before DB loads).
+  // NOTE: the manifest link is intentionally left pointing at the static,
+  // same-origin /manifest.json — replacing it with a data:/blob: URL makes the
+  // app un-installable on Android Chrome.
   useEffect(() => {
     const cached = localStorage.getItem(CACHE_KEY);
     if (cached && !applied) {
       applyFavicon(cached);
       applyAppleTouchIcon(cached);
     }
-    const cachedManifest = localStorage.getItem(MANIFEST_CACHE_KEY);
-    if (cachedManifest) {
-      applyManifest(cachedManifest);
-    }
+    localStorage.removeItem(MANIFEST_CACHE_KEY);
   }, []);
+
 
   const faviconSrc = settings.favicon_url || settings.logo_url;
   const appIconSrc = settings.logo_url || settings.favicon_url;
