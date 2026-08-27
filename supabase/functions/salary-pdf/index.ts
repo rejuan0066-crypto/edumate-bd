@@ -1141,6 +1141,7 @@ Deno.serve(async (req) => {
   ${pagesHtml}
   ${lateAppendixHtml}
   ${absentAppendixHtml}
+  ${dutyAppendixHtml}
   ${holidayAppendixHtml}
 
 </div>
