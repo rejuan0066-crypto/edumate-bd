@@ -2079,8 +2079,18 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                   </Select>
                 )}
 
+                {/* Duty roster status */}
+                {staffSubTab === 'duty' && (
+                  <span className={`text-[11px] px-2.5 py-1 rounded-full border ${dutyRosterActive ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20' : 'bg-amber-500/10 text-amber-700 border-amber-500/20'}`}>
+                    {dutyRosterActive
+                      ? (bn ? `রুটিন অনুযায়ী ${entities.length} জনের ডিউটি` : `${entities.length} on duty per roster`)
+                      : (bn ? 'রুটিন সেট নেই — সবাই দেখাচ্ছে' : 'No roster set — showing all')}
+                  </span>
+                )}
+
                 {/* Per-tab settings shortcuts */}
                 <div className="flex gap-2">
+
                   {staffSubTab === 'duty' && (
                     <Button asChild size="sm" variant="outline" className="h-8 text-xs">
                       <a href="/admin/duty-roster">
