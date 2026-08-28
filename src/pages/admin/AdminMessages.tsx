@@ -50,6 +50,12 @@ const AdminMessages = () => {
   const markRead = useMarkRead();
   const push = usePushNotifications();
 
+  // Open a conversation directly from a notification link (?c=<id>)
+  useEffect(() => {
+    const cid = new URLSearchParams(window.location.search).get("c");
+    if (cid) setActiveId(cid);
+  }, []);
+
   const [activeId, setActiveId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [body, setBody] = useState("");
