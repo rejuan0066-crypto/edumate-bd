@@ -17,6 +17,7 @@ import {
   ArrowLeft,
   Trash2,
   Settings2,
+  Bell,
   X,
 } from "lucide-react";
 import { format } from "date-fns";
@@ -35,6 +36,7 @@ import {
 import NewConversationDialog from "@/components/messages/NewConversationDialog";
 import GroupDialog from "@/components/messages/GroupDialog";
 import AttachmentView from "@/components/messages/AttachmentView";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
@@ -46,6 +48,13 @@ const AdminMessages = () => {
   const { data: conversations, isLoading, totalUnread } = useConversations();
   const { data: directory } = useMessageableUsers();
   const markRead = useMarkRead();
+  const push = usePushNotifications();
+
+  // Open a conversation directly from a notification link (?c=<id>)
+  useEffect(() => {
+    const cid = new URLSearchParams(window.location.search).get("c");
+    if (cid) setActiveId(cid);
+  }, []);
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -125,6 +134,13 @@ const AdminMessages = () => {
         attachments,
       } as never);
       if (insErr) throw insErr;
+
+      // Notify the other participants (push + in-app bell). Failure must not block sending.
+      const previewText = body.trim() || (attachments.length ? `${attachments.length}টি ফাইল পাঠানো হয়েছে` : "");
+      supabase.functions
+        .invoke("notify-message", { body: { conversation_id: activeId, preview: previewText } })
+        .catch(() => {});
+
       setBody("");
       setFiles([]);
     } catch (err) {
@@ -164,7 +180,21 @@ const AdminMessages = () => {
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            {push.supported && !push.subscribed && (
+              <Button
+                variant="outline"
+                className="rounded-full"
+                disabled={push.loading}
+                onClick={async () => {
+                  const ok = await push.subscribe();
+                  if (ok) toast.success("মোবাইলে বার্তার নোটিফিকেশন চালু হয়েছে");
+                  else toast.error("নোটিফিকেশন চালু করা যায়নি — ব্রাউজারে অনুমতি দিন");
+                }}
+              >
+                <Bell className="mr-1.5 h-4 w-4" /> নোটিফিকেশন চালু করুন
+              </Button>
+            )}
             <Button onClick={() => setNewOpen(true)} className="rounded-full">
               <Plus className="mr-1.5 h-4 w-4" /> নতুন মেসেজ
             </Button>
