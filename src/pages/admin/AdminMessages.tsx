@@ -125,6 +125,13 @@ const AdminMessages = () => {
         attachments,
       } as never);
       if (insErr) throw insErr;
+
+      // Notify the other participants (push + in-app bell). Failure must not block sending.
+      const previewText = body.trim() || (attachments.length ? `${attachments.length}টি ফাইল পাঠানো হয়েছে` : "");
+      supabase.functions
+        .invoke("notify-message", { body: { conversation_id: activeId, preview: previewText } })
+        .catch(() => {});
+
       setBody("");
       setFiles([]);
     } catch (err) {
