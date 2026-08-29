@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowDown } from 'lucide-react';
 
 const ScrollNavigation = () => {
-  const [showTop, setShowTop] = useState(false);
   const [showBottom, setShowBottom] = useState(true);
 
   useEffect(() => {
@@ -12,7 +11,6 @@ const ScrollNavigation = () => {
       const winHeight = window.innerHeight;
       const atBottom = scrollY + winHeight >= docHeight - 20;
 
-      setShowTop(scrollY > 200);
       setShowBottom(!atBottom && docHeight > winHeight + 100);
     };
 
@@ -26,13 +24,6 @@ const ScrollNavigation = () => {
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
-      <button
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className={`${btnClass} ${showTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}
-        aria-label="Scroll to top"
-      >
-        <ArrowUp className="w-5 h-5" strokeWidth={2} />
-      </button>
       <button
         onClick={() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })}
         className={`${btnClass} ${showBottom ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
