@@ -127,7 +127,8 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !password) {
       toast.error(language === 'bn' ? 'সব তথ্য পূরণ করুন' : 'Please fill all fields');
       return;
     }
@@ -136,7 +137,7 @@ const Login = () => {
     // guard above blocks navigation as soon as the user state hydrates.
     try { sessionStorage.setItem(LOGIN_OTP_FLAG, '1'); } catch { /* ignore */ }
     setPendingOtp(true);
-    const { error } = await signIn(email, password);
+    const { error } = await signIn(cleanEmail, password);
     setLoading(false);
     if (error) {
       try { sessionStorage.removeItem(LOGIN_OTP_FLAG); } catch { /* ignore */ }
