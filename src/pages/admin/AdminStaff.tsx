@@ -254,6 +254,8 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
   });
 
   const pendingCount = typeFiltered.filter((s: any) => s.status === 'pending').length;
+  const activeCount = typeFiltered.filter((s: any) => s.status === 'active').length;
+  const inactiveCount = typeFiltered.filter((s: any) => s.status === 'inactive').length;
 
   const preFiltered = typeFiltered.filter((s: any) => {
     if (statusFilter !== 'all' && s.status !== statusFilter) return false;
@@ -420,7 +422,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
               {bn ? 'সবগুলো' : 'All'} ({typeFiltered.length})
             </Button>
             <Button variant={statusFilter === 'active' ? 'default' : 'outline'} size="sm" onClick={() => setStatusFilter('active')}>
-              {bn ? 'সক্রিয়' : 'Active'}
+              {bn ? 'সক্রিয়' : 'Active'} ({activeCount})
             </Button>
             <Button variant={statusFilter === 'pending' ? 'default' : 'outline'} size="sm" onClick={() => setStatusFilter('pending')} className="relative">
               {bn ? 'আবেদন' : 'Pending'}
@@ -431,7 +433,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
               )}
             </Button>
             <Button variant={statusFilter === 'inactive' ? 'default' : 'outline'} size="sm" onClick={() => setStatusFilter('inactive')}>
-              {bn ? 'নিষ্ক্রিয়' : 'Inactive'}
+              {bn ? 'নিষ্ক্রিয়' : 'Inactive'} ({inactiveCount})
             </Button>
           </div>
         </div>
