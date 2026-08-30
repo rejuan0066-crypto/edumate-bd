@@ -987,6 +987,29 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     return name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
+  // Reorder staff serial (salary_order) — moves a staff row up/down in the list
+  const [reorderingId, setReorderingId] = useState<string | null>(null);
+  const handleMoveSerial = async (idx: number, dir: -1 | 1) => {
+    const j = idx + dir;
+    if (j < 0 || j >= filtered.length) return;
+    const next = [...filtered];
+    [next[idx], next[j]] = [next[j], next[idx]];
+    setReorderingId(next[j].id);
+    try {
+      await Promise.all(next.map((s: any, i: number) =>
+        (s.salary_order ?? null) !== i + 1
+          ? supabase.from('staff').update({ salary_order: i + 1 }).eq('id', s.id).then(({ error }) => { if (error) throw error; })
+          : Promise.resolve(null)
+      ));
+      queryClient.invalidateQueries({ queryKey: ['staff'] });
+      toast.success(bn ? 'সিরিয়াল আপডেট হয়েছে' : 'Serial updated');
+    } catch (e: any) {
+      toast.error(e?.message || (bn ? 'সিরিয়াল বদলানো যায়নি' : 'Failed to reorder'));
+    } finally {
+      setReorderingId(null);
+    }
+  };
+
   // Per-class summary for drill-down grid (students only)
   const showClassGrid = entityType === 'student' && (!selectedClassId || selectedClassId === 'all');
   const classSummaries = useMemo(() => {
@@ -2280,7 +2303,31 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                     onClick={() => { if (entityType === 'staff') setMonthlyStaff(entity); }}
                     title={entityType === 'staff' ? (bn ? 'মাসিক উপস্থিতি দেখুন' : 'View monthly attendance') : undefined}
                   >
-                    <span className="text-xs font-medium text-muted-foreground/60 w-6 text-center tabular-nums">{idx + 1}</span>
+                    {entityType === 'staff' ? (
+                      <div className="flex flex-col items-center w-7 shrink-0 -my-1">
+                        <button
+                          type="button"
+                          disabled={idx === 0 || reorderingId === entity.id}
+                          onClick={(e) => { e.stopPropagation(); handleMoveSerial(idx, -1); }}
+                          className="p-0.5 rounded text-muted-foreground/50 hover:text-primary hover:bg-primary/10 disabled:opacity-20 transition"
+                          title={bn ? 'উপরে সরান' : 'Move up'}
+                        >
+                          <ChevronUp className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="text-xs font-medium text-muted-foreground/60 text-center tabular-nums">{idx + 1}</span>
+                        <button
+                          type="button"
+                          disabled={idx === filtered.length - 1 || reorderingId === entity.id}
+                          onClick={(e) => { e.stopPropagation(); handleMoveSerial(idx, 1); }}
+                          className="p-0.5 rounded text-muted-foreground/50 hover:text-primary hover:bg-primary/10 disabled:opacity-20 transition"
+                          title={bn ? 'নিচে সরান' : 'Move down'}
+                        >
+                          <ChevronDown className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs font-medium text-muted-foreground/60 w-6 text-center tabular-nums">{idx + 1}</span>
+                    )}
                     
                     {/* Avatar with emerald ring */}
                     <div className={`relative h-11 w-11 rounded-full flex items-center justify-center shrink-0 overflow-hidden ring-2 transition-all ${currentStatus === 'present' ? 'ring-emerald-400/60' : currentStatus === 'absent' ? 'ring-rose-400/40' : 'ring-border/20'}`}>
