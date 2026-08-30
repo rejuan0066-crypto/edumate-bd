@@ -987,6 +987,29 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     return name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
+  // Reorder staff serial (salary_order) — moves a staff row up/down in the list
+  const [reorderingId, setReorderingId] = useState<string | null>(null);
+  const handleMoveSerial = async (idx: number, dir: -1 | 1) => {
+    const j = idx + dir;
+    if (j < 0 || j >= filtered.length) return;
+    const next = [...filtered];
+    [next[idx], next[j]] = [next[j], next[idx]];
+    setReorderingId(next[j].id);
+    try {
+      await Promise.all(next.map((s: any, i: number) =>
+        (s.salary_order ?? null) !== i + 1
+          ? supabase.from('staff').update({ salary_order: i + 1 }).eq('id', s.id).then(({ error }) => { if (error) throw error; })
+          : Promise.resolve(null)
+      ));
+      queryClient.invalidateQueries({ queryKey: ['staff'] });
+      toast.success(bn ? 'সিরিয়াল আপডেট হয়েছে' : 'Serial updated');
+    } catch (e: any) {
+      toast.error(e?.message || (bn ? 'সিরিয়াল বদলানো যায়নি' : 'Failed to reorder'));
+    } finally {
+      setReorderingId(null);
+    }
+  };
+
   // Per-class summary for drill-down grid (students only)
   const showClassGrid = entityType === 'student' && (!selectedClassId || selectedClassId === 'all');
   const classSummaries = useMemo(() => {
