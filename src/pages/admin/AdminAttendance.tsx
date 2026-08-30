@@ -2303,7 +2303,31 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                     onClick={() => { if (entityType === 'staff') setMonthlyStaff(entity); }}
                     title={entityType === 'staff' ? (bn ? 'মাসিক উপস্থিতি দেখুন' : 'View monthly attendance') : undefined}
                   >
-                    <span className="text-xs font-medium text-muted-foreground/60 w-6 text-center tabular-nums">{idx + 1}</span>
+                    {entityType === 'staff' ? (
+                      <div className="flex flex-col items-center w-7 shrink-0 -my-1">
+                        <button
+                          type="button"
+                          disabled={idx === 0 || reorderingId === entity.id}
+                          onClick={(e) => { e.stopPropagation(); handleMoveSerial(idx, -1); }}
+                          className="p-0.5 rounded text-muted-foreground/50 hover:text-primary hover:bg-primary/10 disabled:opacity-20 transition"
+                          title={bn ? 'উপরে সরান' : 'Move up'}
+                        >
+                          <ChevronUp className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="text-xs font-medium text-muted-foreground/60 text-center tabular-nums">{idx + 1}</span>
+                        <button
+                          type="button"
+                          disabled={idx === filtered.length - 1 || reorderingId === entity.id}
+                          onClick={(e) => { e.stopPropagation(); handleMoveSerial(idx, 1); }}
+                          className="p-0.5 rounded text-muted-foreground/50 hover:text-primary hover:bg-primary/10 disabled:opacity-20 transition"
+                          title={bn ? 'নিচে সরান' : 'Move down'}
+                        >
+                          <ChevronDown className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs font-medium text-muted-foreground/60 w-6 text-center tabular-nums">{idx + 1}</span>
+                    )}
                     
                     {/* Avatar with emerald ring */}
                     <div className={`relative h-11 w-11 rounded-full flex items-center justify-center shrink-0 overflow-hidden ring-2 transition-all ${currentStatus === 'present' ? 'ring-emerald-400/60' : currentStatus === 'absent' ? 'ring-rose-400/40' : 'ring-border/20'}`}>
