@@ -126,11 +126,48 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
     extra?: { check_in_time?: string | null; check_out_time?: string | null; leave_type?: string | null; leave_reason?: string | null }
   ) => {
     if (!staff?.id) return;
+    const existing = byDate[dateKey];
+    const prevRecords = records;
+
+    // ── Optimistic UI: paint the change instantly, save in the background ──
+    const clearTimes =
+      !!existing &&
+      newStatus !== existing.status &&
+      !(extra && 'check_in_time' in extra) &&
+      !(extra && 'check_out_time' in extra);
+
+    if (newStatus === null) {
+      if (!existing) { setOpenKey(null); return; }
+      setRecords(rs => rs.filter(r => r.attendance_date !== dateKey));
+    } else if (existing) {
+      setRecords(rs => rs.map(r => r.attendance_date === dateKey ? {
+        ...r,
+        status: newStatus,
+        ...(extra && 'check_in_time' in extra ? { check_in_time: extra.check_in_time } : clearTimes ? { check_in_time: null } : {}),
+        ...(extra && 'check_out_time' in extra ? { check_out_time: extra.check_out_time } : clearTimes ? { check_out_time: null } : {}),
+        ...(extra && 'leave_type' in extra ? { leave_type: extra.leave_type } : {}),
+        ...(extra && 'leave_reason' in extra ? { leave_reason: extra.leave_reason } : {}),
+      } : r));
+    } else {
+      setRecords(rs => [...rs, {
+        id: `temp-${dateKey}`,
+        attendance_date: dateKey,
+        entity_type: 'staff',
+        entity_id: staff.id,
+        shift: shift || 'full_day',
+        status: newStatus,
+        check_in_time: extra?.check_in_time ?? null,
+        check_out_time: extra?.check_out_time ?? null,
+        leave_type: extra?.leave_type ?? null,
+        leave_reason: extra?.leave_reason ?? null,
+      }]);
+    }
+    // Close the picker right away (was waiting for the round-trip before)
+    if (extra || (newStatus !== 'late' && newStatus !== 'leave')) setOpenKey(null);
+
     setSavingKey(dateKey);
     try {
-      const existing = byDate[dateKey];
       if (newStatus === null) {
-        if (!existing) { setOpenKey(null); return; }
         const { error } = await supabase.from('attendance_records').delete().eq('id', existing.id);
         if (error) throw error;
         toast.success(bn ? 'মুছে ফেলা হয়েছে' : 'Cleared');
@@ -148,11 +185,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
         // Status changed via a plain pick (no new times supplied): clear stale
         // check-in/out so e.g. late→present doesn't keep the old late clock time
         // and get auto-counted as late again on the salary page.
-        if (
-          newStatus !== existing.status &&
-          !(extra && 'check_in_time' in extra) &&
-          !(extra && 'check_out_time' in extra)
-        ) {
+        if (clearTimes) {
           payload.check_in_time = null;
           payload.check_out_time = null;
         }
@@ -160,7 +193,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
         if (error) throw error;
         toast.success(bn ? 'আপডেট হয়েছে' : 'Updated');
       } else {
-        const { error } = await supabase.from('attendance_records').insert({
+        const { data, error } = await supabase.from('attendance_records').insert({
           attendance_date: dateKey,
           entity_type: 'staff',
           entity_id: staff.id,
@@ -170,20 +203,22 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
           check_out_time: extra?.check_out_time ?? null,
           leave_type: extra?.leave_type ?? null,
           leave_reason: extra?.leave_reason ?? null,
-        });
+        }).select().single();
         if (error) throw error;
+        // Swap the temp row for the real one (real id needed for later edits)
+        if (data) setRecords(rs => rs.map(r => r.attendance_date === dateKey ? data : r));
         toast.success(bn ? 'সেভ হয়েছে' : 'Saved');
       }
-      await refetch();
       qc.invalidateQueries({ queryKey: ['attendance'] });
-      // Close after an explicit editor save (extra provided) or a simple status pick
-      if (extra || (newStatus !== 'late' && newStatus !== 'leave')) setOpenKey(null);
     } catch (e: any) {
+      setRecords(prevRecords); // rollback
       toast.error(e?.message || (bn ? 'সেভ করতে সমস্যা' : 'Failed to save'));
+      refetch();
     } finally {
       setSavingKey(null);
     }
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
