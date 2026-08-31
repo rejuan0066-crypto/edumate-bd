@@ -131,7 +131,16 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSessionYear, setSelectedSessionYear] = useState('');
   const [selectedClassId, setSelectedClassId] = useState('');
-  const [selectedShift, setSelectedShift] = useState('full_day');
+  const [selectedShift, setSelectedShift] = useState(
+    stafftabParam === 'duty' ? 'morning' : stafftabParam === 'meal' ? 'meal_breakfast' : 'full_day'
+  );
+  // Keep the shift in sync when the staff sub-tab changes via URL (deep links)
+  useEffect(() => {
+    if (staffSubTab === 'duty' && !['morning', 'evening'].includes(selectedShift)) setSelectedShift('morning');
+    else if (staffSubTab === 'meal' && !selectedShift.startsWith('meal_')) setSelectedShift('meal_breakfast');
+    else if (staffSubTab === 'fulltime' && selectedShift !== 'full_day') setSelectedShift('full_day');
+  }, [staffSubTab]);
+
   const [qrPosterOpen, setQrPosterOpen] = useState(false);
   const [deviceManagerOpen, setDeviceManagerOpen] = useState(false);
   const [staffCheckinOpen, setStaffCheckinOpen] = useState(false);
