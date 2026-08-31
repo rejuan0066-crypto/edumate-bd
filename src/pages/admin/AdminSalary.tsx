@@ -4422,8 +4422,9 @@ const AdminSalary = () => {
                     {bn ? ' দৈনিক রেট' : ' Daily rate'}: ৳{Math.round(stats.dailyRate).toLocaleString()}
                   </div>
 
-                  <div className="border rounded-lg overflow-hidden">
-                    <table className="w-full text-sm">
+                  <div className="border rounded-lg overflow-x-auto overflow-y-hidden -mx-1 px-1 [-webkit-overflow-scrolling:touch] [overscroll-behavior-x:contain] touch-pan-x">
+                    <table className="w-full min-w-[560px] text-sm">
+
                       <thead>
                         <tr className="bg-muted/50 border-b">
                           <th className="px-2 py-2 text-left text-xs">{bn ? 'তারিখ' : 'Date'}</th>
