@@ -2028,10 +2028,10 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
 
               {/* Bulk Actions */}
               <div className="flex gap-1 shrink-0 ml-auto">
-                {canEditItem && <Button size="sm" disabled={entities.length === 0} className="text-xs rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-[0_4px_16px_hsl(160_84%_30%/0.25)] hover:shadow-[0_6px_24px_hsl(160_84%_30%/0.35)] transition-all duration-200" onClick={() => setPresentDialogOpen(true)}>
+                {canBulkMark && <Button size="sm" disabled={entities.length === 0} className="text-xs rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-[0_4px_16px_hsl(160_84%_30%/0.25)] hover:shadow-[0_6px_24px_hsl(160_84%_30%/0.35)] transition-all duration-200" onClick={() => setPresentDialogOpen(true)}>
                   <Check className="h-3.5 w-3.5 mr-1" /> {bn ? 'সবাই উপস্থিত' : 'All Present'}
                 </Button>}
-                {canEditItem && <Button size="sm" disabled={entities.length === 0} className="text-xs rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-[0_4px_16px_hsl(217_91%_50%/0.25)] hover:shadow-[0_6px_24px_hsl(217_91%_50%/0.35)] transition-all duration-200" onClick={() => setHolidayDialogOpen(true)}>
+                {canBulkMark && <Button size="sm" disabled={entities.length === 0} className="text-xs rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-[0_4px_16px_hsl(217_91%_50%/0.25)] hover:shadow-[0_6px_24px_hsl(217_91%_50%/0.35)] transition-all duration-200" onClick={() => setHolidayDialogOpen(true)}>
                   <CalendarOff className="h-3.5 w-3.5 mr-1" /> {bn ? 'সবাই ছুটি' : 'All Leave'}
                 </Button>}
                 {canDeleteItem && attendance.length > 0 && (
