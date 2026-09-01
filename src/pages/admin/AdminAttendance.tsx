@@ -85,7 +85,17 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   const { language } = useLanguage();
   const bn = language === 'bn';
   const queryClient = useQueryClient();
-  const { canAddItem, canEditItem, canDeleteItem, canApproveItem } = usePagePermissions('/admin/attendance');
+  // Full-time attendance lives on both /admin/attendance and /admin/staff-attendance;
+  // accept permissions granted on either path.
+  const permsA = usePagePermissions('/admin/attendance');
+  const permsB = usePagePermissions('/admin/staff-attendance');
+  const canViewPage = permsA.canViewPage || permsB.canViewPage;
+  const canAddItem = permsA.canAddItem || permsB.canAddItem;
+  const canEditItem = permsA.canEditItem || permsB.canEditItem;
+  const canDeleteItem = permsA.canDeleteItem || permsB.canDeleteItem;
+  const canApproveItem = permsA.canApproveItem || permsB.canApproveItem;
+  // Bulk "mark everyone" needs view + (add or edit) permission.
+  const canBulkMark = canViewPage && (canAddItem || canEditItem);
   const { role } = useAuth();
   const isAdmin = isAdminRole(role);
   // Non-admins can only mark attendance. Settings, rosters, devices, summaries
@@ -2018,10 +2028,10 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
 
               {/* Bulk Actions */}
               <div className="flex gap-1 shrink-0 ml-auto">
-                {canEditItem && <Button size="sm" disabled={entities.length === 0} className="text-xs rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-[0_4px_16px_hsl(160_84%_30%/0.25)] hover:shadow-[0_6px_24px_hsl(160_84%_30%/0.35)] transition-all duration-200" onClick={() => setPresentDialogOpen(true)}>
+                {canBulkMark && <Button size="sm" disabled={entities.length === 0} className="text-xs rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-[0_4px_16px_hsl(160_84%_30%/0.25)] hover:shadow-[0_6px_24px_hsl(160_84%_30%/0.35)] transition-all duration-200" onClick={() => setPresentDialogOpen(true)}>
                   <Check className="h-3.5 w-3.5 mr-1" /> {bn ? 'সবাই উপস্থিত' : 'All Present'}
                 </Button>}
-                {canEditItem && <Button size="sm" disabled={entities.length === 0} className="text-xs rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-[0_4px_16px_hsl(217_91%_50%/0.25)] hover:shadow-[0_6px_24px_hsl(217_91%_50%/0.35)] transition-all duration-200" onClick={() => setHolidayDialogOpen(true)}>
+                {canBulkMark && <Button size="sm" disabled={entities.length === 0} className="text-xs rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-[0_4px_16px_hsl(217_91%_50%/0.25)] hover:shadow-[0_6px_24px_hsl(217_91%_50%/0.35)] transition-all duration-200" onClick={() => setHolidayDialogOpen(true)}>
                   <CalendarOff className="h-3.5 w-3.5 mr-1" /> {bn ? 'সবাই ছুটি' : 'All Leave'}
                 </Button>}
                 {canDeleteItem && attendance.length > 0 && (
