@@ -567,7 +567,7 @@ export default function AdminDutyRoster() {
         </Card>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="h-auto w-full flex-wrap gap-2 rounded-[24px] bg-muted/60 p-2">
+          <TabsList className="h-auto w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 rounded-[24px] bg-muted/60 p-2">
             <TabsTrigger
               value="roster"
               className="rounded-[18px] px-5 py-2.5 text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg"
