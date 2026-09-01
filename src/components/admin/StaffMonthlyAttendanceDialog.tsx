@@ -10,6 +10,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMont
 import { bn as bnLocale } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import { parseClockMinutes, shouldApplyThursdayHalfDay } from '@/lib/thursdayHalfDay';
 
 const STATUS_META: Record<string, {
   bnLabel: string; enLabel: string; icon: any;
@@ -42,6 +43,10 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
   const [loading, setLoading] = useState(false);
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [openKey, setOpenKey] = useState<string | null>(null);
+  // Expected duty start (minutes-from-midnight) + Thursday half-day setting,
+  // used to compute late minutes from check-in time (same rule as salary page).
+  const [dutyInfo, setDutyInfo] = useState<{ start: number; end: number; category: string | null }>({ start: 480, end: 1020, category: null });
+  const [thuSetting, setThuSetting] = useState<any>(null);
 
   useEffect(() => {
     if (!open) return;
