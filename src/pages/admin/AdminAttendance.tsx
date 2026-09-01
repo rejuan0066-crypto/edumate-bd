@@ -85,7 +85,17 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   const { language } = useLanguage();
   const bn = language === 'bn';
   const queryClient = useQueryClient();
-  const { canAddItem, canEditItem, canDeleteItem, canApproveItem } = usePagePermissions('/admin/attendance');
+  // Full-time attendance lives on both /admin/attendance and /admin/staff-attendance;
+  // accept permissions granted on either path.
+  const permsA = usePagePermissions('/admin/attendance');
+  const permsB = usePagePermissions('/admin/staff-attendance');
+  const canViewPage = permsA.canViewPage || permsB.canViewPage;
+  const canAddItem = permsA.canAddItem || permsB.canAddItem;
+  const canEditItem = permsA.canEditItem || permsB.canEditItem;
+  const canDeleteItem = permsA.canDeleteItem || permsB.canDeleteItem;
+  const canApproveItem = permsA.canApproveItem || permsB.canApproveItem;
+  // Bulk "mark everyone" needs view + (add or edit) permission.
+  const canBulkMark = canViewPage && (canAddItem || canEditItem);
   const { role } = useAuth();
   const isAdmin = isAdminRole(role);
   // Non-admins can only mark attendance. Settings, rosters, devices, summaries
