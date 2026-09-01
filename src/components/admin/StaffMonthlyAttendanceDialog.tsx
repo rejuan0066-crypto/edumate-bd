@@ -92,6 +92,34 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
     return () => { cancel = true; };
   }, [open, staff?.id, monthStart, monthEnd, shift]);
 
+  // Load the staff's expected duty time (staff-specific → category shift → 08:00 default)
+  // and the Thursday half-day setting, so late minutes match the salary page.
+  useEffect(() => {
+    if (!open || !staff?.id) return;
+    let cancel = false;
+    (async () => {
+      const [{ data: s }, { data: cs }, { data: thu }] = await Promise.all([
+        supabase.from('staff').select('duty_start_time, duty_end_time, staff_category').eq('id', staff.id).maybeSingle(),
+        supabase.from('website_settings').select('value').eq('key', 'category_shift_times').maybeSingle(),
+        supabase.from('website_settings').select('value').eq('key', 'thursday_half_day_education').maybeSingle(),
+      ]);
+      if (cancel) return;
+      const cat = (s as any)?.staff_category || null;
+      const catMap = ((cs?.value as any) || {}) as Record<string, { start?: string; end?: string }>;
+      let start = 480, end = 1020;
+      if ((s as any)?.duty_start_time && (s as any)?.duty_end_time) {
+        start = parseClockMinutes((s as any).duty_start_time) ?? 480;
+        end = parseClockMinutes((s as any).duty_end_time) ?? 1020;
+      } else if (cat && catMap[cat]?.start && catMap[cat]?.end) {
+        start = parseClockMinutes(catMap[cat].start) ?? 480;
+        end = parseClockMinutes(catMap[cat].end) ?? 1020;
+      }
+      setDutyInfo({ start, end, category: cat });
+      setThuSetting(thu?.value || null);
+    })();
+    return () => { cancel = true; };
+  }, [open, staff?.id]);
+
   const byDate = useMemo(() => {
     const m: Record<string, any> = {};
     for (const r of records) m[r.attendance_date] = r;
@@ -104,7 +132,22 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
     return c;
   }, [records]);
 
-  const totalLateMins = useMemo(() => records.reduce((s, r) => s + (Number(r.late_minutes) || 0), 0), [records]);
+  // Late minutes for a record = check-in time minus expected duty start
+  // (Thursday half-day start override applies when the rule is on for this category).
+  const lateMinutesFor = (rec: any): number => {
+    if (!rec?.check_in_time) return 0;
+    const checkIn = parseClockMinutes(String(rec.check_in_time).slice(0, 5));
+    if (checkIn == null) return 0;
+    let expected = dutyInfo.start;
+    const overnight = dutyInfo.end <= dutyInfo.start;
+    if (shouldApplyThursdayHalfDay({ setting: thuSetting, staffCategory: dutyInfo.category, attendanceDate: rec.attendance_date, isOvernight: overnight })) {
+      const thuStart = parseClockMinutes(thuSetting?.start_time);
+      if (thuStart && thuStart > 0 && thuStart < dutyInfo.end) expected = thuStart;
+    }
+    return Math.max(0, checkIn - expected);
+  };
+
+  const totalLateMins = useMemo(() => records.reduce((s, r) => s + lateMinutesFor(r), 0), [records, dutyInfo, thuSetting]);
   // Format a minute count as hours + minutes (e.g. 90 → "১ ঘণ্টা ৩০ মিনিট" / "1h 30m")
   const fmtDuration = (mins: number) => {
     const m = Math.max(0, Math.round(mins || 0));
