@@ -23,6 +23,7 @@ import QuranDefaultsSettings from '@/components/admin/QuranDefaultsSettings';
 import RateLimitSettings from '@/components/admin/RateLimitSettings';
 import ApprovalWorkflowSettings from '@/components/admin/ApprovalWorkflowSettings';
 import { SecurityBackupPanel } from '@/components/admin/SecurityBackupPanel';
+import BackgroundSettings from '@/components/admin/BackgroundSettings';
 import { useConfirm } from "@/contexts/ConfirmContext";
 
 const AdminSettings = () => {
