@@ -86,8 +86,6 @@ const AdminIdCards = () => {
           await supabase.from('website_settings').insert({ key, value });
         }
       }
-      setPrincipalNameDirty(false);
-      setPrincipalNameEnDirty(false);
       refetchSettings();
       toast.success(bn ? 'সেটিংস সংরক্ষিত হয়েছে' : 'Settings saved');
     } catch (err: any) {
