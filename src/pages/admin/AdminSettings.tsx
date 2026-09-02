@@ -1367,6 +1367,15 @@ const AdminSettings = () => {
             <div className="space-y-6 max-w-3xl">
 
               <div className="card-elevated p-5">
+                <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2"><Palette className="w-5 h-5 text-primary" /> {bn ? 'ব্যাকগ্রাউন্ড স্টাইল' : 'Background Style'}</h3>
+                <BackgroundSettings
+                  value={websiteSettings.background_style}
+                  onChange={(value) => updateSetting({ key: 'background_style', value })}
+                  disabled={!canEditItem}
+                />
+              </div>
+
+              <div className="card-elevated p-5">
                 <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2"><Palette className="w-5 h-5 text-primary" /> {bn ? 'সাধারণ' : 'General'}</h3>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
