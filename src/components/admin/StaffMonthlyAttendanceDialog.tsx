@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ChevronLeft, ChevronRight, CheckCircle2, XCircle, Clock, AlertCircle, CalendarOff, Stethoscope, ShieldCheck, Calendar as CalendarIcon, Trash2, Save } from 'lucide-react';
