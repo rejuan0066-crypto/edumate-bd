@@ -1128,7 +1128,7 @@ const AdminSalary = () => {
     // ছুটি (leave) = পূর্ণ দিনের বেতন, তাই উপস্থিতের সাথে গণনা হয় (অর্থাৎ ফুল ডে/উপস্থিত)।
     // উপস্থিত দিন কখনো মাসের প্রকৃত দিনসংখ্যার বেশি গণনা হবে না (অতিরিক্ত দিন বাদ)।
     const [presYy, presMm] = monthYear.split('-').map(Number);
-    const daysInMonthForPresent = new Date(presYy, presMm, 0).getDate();
+    const daysInMonthForPresent = Math.min(new Date(presYy, presMm, 0).getDate(), 30);
     let present = 0;
     const recordedAbsent = records.filter((r: any) => r.status === 'absent' && !paidHolidaySet.has(r.attendance_date)).length;
     let late = 0;
@@ -1166,11 +1166,10 @@ const AdminSalary = () => {
     }> = [];
 
     const baseSalary = getEffectiveSalary(staffMember);
-    // দৈনিক হার = মাসিক বেতন ÷ সংশ্লিষ্ট মাসের প্রকৃত দিনসংখ্যা (২৮/২৯/৩০/৩১)।
-    // এতে যেকোনো মাসে পূর্ণ হাজিরায় আয় ঠিক মাসিক বেতনের সমান হয় এবং অনুপস্থিতির
-    // কর্তনও সঠিক অনুপাতে হয় — ফলে মাসভেদে হিসাব আর ভুল/অস্থির হয় না।
+    // দৈনিক হার = মাসিক বেতন ÷ ৩০ (সর্বোচ্চ)। ৩১ দিনের মাস ৩০ দিন ধরা হয়;
+    // ফেব্রুয়ারি (২৮/২৯) প্রকৃত দিনে থাকে যাতে পূর্ণ হাজিরায় পূর্ণ বেতন হয়।
     const [statYy, statMm] = monthYear.split('-').map(Number);
-    const daysInSelectedMonth = new Date(statYy, statMm, 0).getDate();
+    const daysInSelectedMonth = Math.min(new Date(statYy, statMm, 0).getDate(), 30);
     const dailyRate = baseSalary / daysInSelectedMonth;
     const perMinuteRate = scheduledMinutesPerDay > 0 ? dailyRate / scheduledMinutesPerDay : 0;
 
@@ -1323,7 +1322,8 @@ const AdminSalary = () => {
     // Days BEFORE the staff's joining date are tracked separately (preJoinDays)
     // so pay is prorated from joining. For the CURRENT month only days up to today count.
     const [yy, mm] = monthYear.split('-').map(Number);
-    const lastDay = new Date(yy, mm, 0).getDate();
+    // ৩১ দিনের মাস ৩০ দিন ধরা হয় — ৩১তারিখ বেতন হিসাবের বাইরে।
+    const lastDay = Math.min(new Date(yy, mm, 0).getDate(), 30);
     const now = new Date();
     const isCurrentMonth = now.getFullYear() === yy && (now.getMonth() + 1) === mm;
     const lastCountedDay = isCurrentMonth ? Math.min(lastDay, now.getDate()) : lastDay;
@@ -1390,7 +1390,8 @@ const AdminSalary = () => {
 
     const year = Number(selectedYear);
     const month = Number(selectedMonth);
-    const daysInMonth = new Date(year, month, 0).getDate();
+    // কর্মদিবস সর্বোচ্চ ৩০ — ৩১ দিনের মাস ৩০ দিন ধরা হয়।
+    const daysInMonth = Math.min(new Date(year, month, 0).getDate(), 30);
     // Pre-joining days are excluded from this month's working days so a mid-month
     // joiner is paid only from the joining date onward.
     const preJoinDays = attStats.preJoinDays || 0;
