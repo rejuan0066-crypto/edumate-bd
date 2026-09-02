@@ -89,9 +89,6 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
     .replace('{year}', String(new Date().getFullYear()))
     .replace('{name}', settings.institution_name);
 
-  const bgStyle = settings.background_style;
-  const hasCustomBg = bgStyle && bgStyle.type && (bgStyle.type !== 'image' || bgStyle.image_url || bgStyle.image_url_dark);
-
   const backgroundCss = useMemo(() => {
     if (!hasCustomBg) return '';
 
