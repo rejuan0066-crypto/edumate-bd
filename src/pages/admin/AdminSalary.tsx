@@ -636,18 +636,25 @@ const AdminSalary = () => {
         const savingsDed = activeSavings ? activeSavings.amount : 0;
         // Use shared helper — guarded by src/lib/__tests__/salaryNet.test.ts
         // against the savings/advance double-deduction regression.
-        const netSalary = recomputeNetSalary(calc, {
+        const keptOther = Number(existing.other_deduction || 0);
+        const netSalary = Math.max(0, recomputeNetSalary(calc, {
           overtime: calc.overtime_for_net,
           bonus: existing.bonus,
           other_allowance: existing.other_allowance,
           advance_deduction: existing.advance_deduction,
           savings_deduction: savingsDed,
-        });
+        }) - keptOther);
         const { error } = await supabase.from('salary_records').update({
           ...calc,
           bonus: Number(existing.bonus || 0),
           other_allowance: Number(existing.other_allowance || 0),
+          other_allowance_note: existing.other_allowance_note ?? null,
           advance_deduction: Number(existing.advance_deduction || 0),
+          // Manually entered extras must survive a recalculation
+          other_deduction: keptOther,
+          other_deduction_note: existing.other_deduction_note ?? null,
+          overtime_reason: existing.overtime_reason ?? null,
+          remarks: existing.remarks ?? null,
           savings_deduction: savingsDed,
           net_salary: netSalary,
           manual_override: false,
@@ -684,18 +691,25 @@ const AdminSalary = () => {
       const calc = calculateSalary(staffMember);
       const activeSavings = getActiveSavings(staffId);
       const savingsDed = activeSavings ? activeSavings.amount : 0;
-      const netSalary = recomputeNetSalary(calc, {
+      const keptOther = Number(existing.other_deduction || 0);
+      const netSalary = Math.max(0, recomputeNetSalary(calc, {
         overtime: calc.overtime_for_net,
         bonus: existing.bonus,
         other_allowance: existing.other_allowance,
         advance_deduction: existing.advance_deduction,
         savings_deduction: savingsDed,
-      });
+      }) - keptOther);
       const { error } = await supabase.from('salary_records').update({
         ...calc,
         bonus: Number(existing.bonus || 0),
         other_allowance: Number(existing.other_allowance || 0),
+        other_allowance_note: existing.other_allowance_note ?? null,
         advance_deduction: Number(existing.advance_deduction || 0),
+        // Manually entered extras must survive a recalculation
+        other_deduction: keptOther,
+        other_deduction_note: existing.other_deduction_note ?? null,
+        overtime_reason: existing.overtime_reason ?? null,
+        remarks: existing.remarks ?? null,
         savings_deduction: savingsDed,
         net_salary: netSalary,
         manual_override: false,
@@ -2524,9 +2538,13 @@ const AdminSalary = () => {
     const attendanceDeductions = Number(record.absence_deduction || 0)
       + Number(record.late_deduction || 0)
       + Number(record.other_deduction || 0);
-    const earnedFromAttendance = Number.isFinite(Number(record.earned_from_attendance))
-      ? Number(record.earned_from_attendance)
-      : Math.max(0, Number(record.base_salary || 0) - attendanceDeductions);
+    // ম্যানুয়াল এডিটে earned_from_attendance = মূল বেতন হিসেবে রাখা হয়,
+    // তাই স্লিপে কর্তনগুলো আলাদা করে বাদ দিতে হবে — নাহলে স্লিপে কর্তন দেখা যায় না।
+    const earnedFromAttendance = record.manual_override
+      ? Math.max(0, Number(record.base_salary || 0) - attendanceDeductions)
+      : (Number.isFinite(Number(record.earned_from_attendance))
+        ? Number(record.earned_from_attendance)
+        : Math.max(0, Number(record.base_salary || 0) - attendanceDeductions));
 
     const totalAllowance = Number(record.bonus || 0) + Number(record.overtime || 0) + Number(record.other_allowance || 0);
     const totalEarnings = earnedFromAttendance + totalAllowance;
