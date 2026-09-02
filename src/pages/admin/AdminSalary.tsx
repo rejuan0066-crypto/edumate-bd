@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TimePicker } from '@/components/ui/time-picker';
 import { NumberInput } from '@/components/ui/number-input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -4220,30 +4221,29 @@ const AdminSalary = () => {
                       })()}
                     </div>
                   </div>
-                  <div>
-                    <Label className="text-[11px]">{bn ? 'শুরুর সময় (বৃহস্পতিবার চেক-ইন)' : 'Start time (Thursday check-in)'}</Label>
-                    <Input
-                      type="time"
-                      className="h-8 text-sm mt-1"
-                      defaultValue={getSetting('thursday_half_day_education')?.start_time || ''}
-                      onBlur={e => saveSettingMutation.mutate({ key: 'thursday_half_day_education', value: { ...getSetting('thursday_half_day_education'), start_time: e.target.value || null } })}
-                    />
-                    <p className="text-[10px] text-muted-foreground mt-1">
-                      {bn ? 'খালি রাখলে স্বাভাবিক ডিউটি শুরুর সময় ধরা হবে।' : 'Leave empty to use the normal duty-start time.'}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-[11px]">{bn ? 'শেষ সময় (এই সময় পর্যন্ত পূর্ণ দিন)' : 'End time (full day until this)'}</Label>
-                    <Input
-                      type="time"
-                      className="h-8 text-sm mt-1"
-                      defaultValue={getSetting('thursday_half_day_education')?.end_time || '14:00'}
-                      onBlur={e => saveSettingMutation.mutate({ key: 'thursday_half_day_education', value: { ...getSetting('thursday_half_day_education'), end_time: e.target.value || '14:00' } })}
-                    />
-                    <p className="text-[10px] text-muted-foreground mt-1">
-                      {bn ? 'বৃহস্পতিবার শুরু থেকে এই সময় পর্যন্ত ধরে লেইট/আগাম মিনিট কর্তন হবে।' : 'Late/early minutes are counted against duty-start to this time on Thursdays.'}
-                    </p>
-                  </div>
+                   <div>
+                     <Label className="text-[11px]">{bn ? 'শুরুর সময় (বৃহস্পতিবার চেক-ইন)' : 'Start time (Thursday check-in)'}</Label>
+                     <TimePicker
+                       className="h-8 text-sm mt-1"
+                       value={getSetting('thursday_half_day_education')?.start_time || ''}
+                       placeholder={bn ? 'সময় নির্বাচন' : 'Select time'}
+                       onChange={value => saveSettingMutation.mutate({ key: 'thursday_half_day_education', value: { ...getSetting('thursday_half_day_education'), start_time: value || null } })}
+                     />
+                     <p className="text-[10px] text-muted-foreground mt-1">
+                       {bn ? 'খালি রাখলে স্বাভাবিক ডিউটি শুরুর সময় ধরা হবে।' : 'Leave empty to use the normal duty-start time.'}
+                     </p>
+                   </div>
+                    <div>
+                      <Label className="text-[11px]">{bn ? 'শেষ সময় (এই সময় পর্যন্ত পূর্ণ দিন)' : 'End time (full day until this)'}</Label>
+                      <TimePicker
+                        className="h-8 text-sm mt-1"
+                        value={getSetting('thursday_half_day_education')?.end_time || '14:00'}
+                        onChange={value => saveSettingMutation.mutate({ key: 'thursday_half_day_education', value: { ...getSetting('thursday_half_day_education'), end_time: value || '14:00' } })}
+                      />
+                     <p className="text-[10px] text-muted-foreground mt-1">
+                       {bn ? 'বৃহস্পতিবার শুরু থেকে এই সময় পর্যন্ত ধরে লেইট/আগাম মিনিট কর্তন হবে।' : 'Late/early minutes are counted against duty-start to this time on Thursdays.'}
+                     </p>
+                   </div>
                 </div>
 
 

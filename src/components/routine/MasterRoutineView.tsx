@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { TimePicker } from '@/components/ui/time-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Printer, Plus, Minus, Save } from 'lucide-react';
 import { toast } from 'sonner';
@@ -706,18 +707,18 @@ const MasterRoutineView = () => {
                             </PopoverTrigger>
                             <PopoverContent className="w-52 p-3 space-y-2" align="center">
                               <Label className="text-xs font-bold">{periodLabelsMap[col.num]} {bn ? 'পিরিয়ডের সময়' : 'Period Time'}</Label>
-                              <div className="flex gap-2">
-                                <div className="flex-1">
-                                  <Label className="text-[10px]">{bn ? 'শুরু' : 'Start'}</Label>
-                                  <Input type="time" className="h-7 text-xs" value={time.start}
-                                    onChange={e => setPeriodTimes(prev => ({ ...prev, [col.num]: { ...prev[col.num], start: e.target.value, end: prev[col.num]?.end || time.end || '' } }))} />
-                                </div>
-                                <div className="flex-1">
-                                  <Label className="text-[10px]">{bn ? 'শেষ' : 'End'}</Label>
-                                  <Input type="time" className="h-7 text-xs" value={time.end}
-                                    onChange={e => setPeriodTimes(prev => ({ ...prev, [col.num]: { start: prev[col.num]?.start || time.start || '', end: e.target.value } }))} />
-                                </div>
-                              </div>
+                               <div className="flex gap-2">
+                                 <div className="flex-1">
+                                   <Label className="text-[10px]">{bn ? 'শুরু' : 'Start'}</Label>
+                                   <TimePicker className="h-7 text-xs" value={time.start}
+                                     onChange={value => setPeriodTimes(prev => ({ ...prev, [col.num]: { ...prev[col.num], start: value, end: prev[col.num]?.end || time.end || '' } }))} />
+                                 </div>
+                                 <div className="flex-1">
+                                   <Label className="text-[10px]">{bn ? 'শেষ' : 'End'}</Label>
+                                   <TimePicker className="h-7 text-xs" value={time.end}
+                                     onChange={value => setPeriodTimes(prev => ({ ...prev, [col.num]: { start: prev[col.num]?.start || time.start || '', end: value } }))} />
+                                 </div>
+                               </div>
                             </PopoverContent>
                           </Popover>
                         </th>

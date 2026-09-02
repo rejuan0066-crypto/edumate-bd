@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TimePicker } from '@/components/ui/time-picker';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -449,10 +450,10 @@ const AdminExamRoutine = () => {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{bn ? 'শুরু' : 'Start'}</Label>
-                <Input type="time" value={entryForm.start_time} onChange={e => setEntryForm(f => ({ ...f, start_time: e.target.value }))} />
+                <TimePicker value={entryForm.start_time} onChange={v => setEntryForm(f => ({ ...f, start_time: v }))} />
               </div>
               <div><Label>{bn ? 'শেষ' : 'End'}</Label>
-                <Input type="time" value={entryForm.end_time} onChange={e => setEntryForm(f => ({ ...f, end_time: e.target.value }))} />
+                <TimePicker value={entryForm.end_time} onChange={v => setEntryForm(f => ({ ...f, end_time: v }))} />
               </div>
             </div>
             <div><Label>{bn ? 'রুম/হল' : 'Room/Hall'}</Label>

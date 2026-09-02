@@ -94,8 +94,8 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   const canEditItem = permsA.canEditItem || permsB.canEditItem;
   const canDeleteItem = permsA.canDeleteItem || permsB.canDeleteItem;
   const canApproveItem = permsA.canApproveItem || permsB.canApproveItem;
-  // Bulk "mark everyone" needs view + (add or edit) permission.
-  const canBulkMark = canViewPage && (canAddItem || canEditItem);
+  // New attendance needs add permission; changing a recorded row needs edit permission.
+  const canBulkMark = canViewPage && canAddItem;
   const { role } = useAuth();
   const isAdmin = isAdminRole(role);
   // Non-admins can only mark attendance. Settings, rosters, devices, summaries
@@ -795,6 +795,24 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     return getCategoryTime(entity);
   };
 
+  // Manual marking defaults to the configured shift window. Explicit edits are preserved.
+  const getAutoAttendanceTimes = (entityId: string, status: string, existing?: any) => {
+    if (!['present', 'late', 'half_day'].includes(status)) return {};
+    if (entityType === 'staff' && staffSubTab === 'meal') return {};
+    const entity = entities.find((item: any) => item.id === entityId);
+    if (!entity) return {};
+    const shiftTime = entityType === 'staff'
+      ? getStaffShiftTime(entity)
+      : {
+          start: entity.duty_start_time || defaultCategoryTimes.teacher.start,
+          end: entity.duty_end_time || defaultCategoryTimes.teacher.end,
+        };
+    return {
+      check_in_time: existing?.check_in_time || shiftTime.start,
+      check_out_time: existing?.check_out_time || shiftTime.end,
+    };
+  };
+
   // Auto-backfill: existing present/late/half_day staff records without check_in/out get scheduled shift times
   const backfillRanRef = useRef<string>('');
   useEffect(() => {
@@ -865,8 +883,15 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
         existing = data;
       }
       const updateData: any = { status, remarks, updated_at: new Date().toISOString() };
+      const autoTimes = getAutoAttendanceTimes(entityId, status, existing);
       if (check_in_time !== undefined) updateData.check_in_time = check_in_time;
+      else if (autoTimes.check_in_time !== undefined) updateData.check_in_time = autoTimes.check_in_time;
       if (check_out_time !== undefined) updateData.check_out_time = check_out_time;
+      else if (autoTimes.check_out_time !== undefined) updateData.check_out_time = autoTimes.check_out_time;
+      if (status === 'absent' || status === 'leave') {
+        updateData.check_in_time = null;
+        updateData.check_out_time = null;
+      }
       if (existing) {
         const { error } = await supabase.from('attendance_records').update(updateData).eq('id', existing.id);
         if (error) throw error;
@@ -895,6 +920,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       const records = unmarked.map((e: any) => ({
         attendance_date: selectedDate, entity_type: entityType,
         entity_id: e.id, status, shift: shiftVal,
+        ...getAutoAttendanceTimes(e.id, status),
       }));
       const { error } = await supabase.from('attendance_records').insert(records);
       if (error) throw error;
@@ -2418,16 +2444,18 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                             className="h-8 w-[120px] text-xs rounded-xl bg-background/60 border-border/20 focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20 transition-all"
                             placeholder={bn ? 'প্রবেশ' : 'In'}
                             displayFormat={timeFormat}
-                            value={att?.check_in_time || ''}
-                            onChange={v => saveMutation.mutate({ entityId: entity.id, status: currentStatus || (timeEditorOpenId === entity.id ? 'late' : 'present'), check_in_time: v, check_out_time: att?.check_out_time || '' })}
+                             value={att?.check_in_time || ''}
+                             disabled={!canEditItem}
+                             onChange={v => saveMutation.mutate({ entityId: entity.id, status: currentStatus || (timeEditorOpenId === entity.id ? 'late' : 'present'), check_in_time: v, check_out_time: att?.check_out_time || '' })}
                           />
                           <span className="text-muted-foreground/40 text-xs">—</span>
                           <TimePicker
                             className="h-8 w-[120px] text-xs rounded-xl bg-background/60 border-border/20 focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20 transition-all"
                             placeholder={bn ? 'বাহির' : 'Out'}
                             displayFormat={timeFormat}
-                            value={att?.check_out_time || ''}
-                            onChange={v => saveMutation.mutate({ entityId: entity.id, status: currentStatus || (timeEditorOpenId === entity.id ? 'late' : 'present'), check_in_time: att?.check_in_time || '', check_out_time: v })}
+                             value={att?.check_out_time || ''}
+                             disabled={!canEditItem}
+                             onChange={v => saveMutation.mutate({ entityId: entity.id, status: currentStatus || (timeEditorOpenId === entity.id ? 'late' : 'present'), check_in_time: att?.check_in_time || '', check_out_time: v })}
                           />
                         </div>
                       </div>
@@ -2446,8 +2474,9 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                           return (
                             <button
                               key={opt.status}
+                              disabled={currentStatus ? !canEditItem : !canAddItem}
                               onClick={() => saveMutation.mutate({ entityId: entity.id, status: opt.status })}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all duration-200 hover:scale-105 ${
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all duration-200 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 ${
                                 isActive 
                                   ? `${opt.activeBg} ring-1 ${opt.activeRing}` 
                                   : 'bg-muted/30 text-muted-foreground border-border/15 hover:bg-muted/50'
@@ -2479,6 +2508,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                         return (
                           <button
                             key={rule.id}
+                            disabled={currentStatus ? !canEditItem : !canAddItem}
                             onClick={() => {
                               const mutateData: any = { entityId: entity.id, status: countsAs };
                               if (entityType === 'staff' && staffSubTab !== 'meal' && ['present', 'late', 'half_day'].includes(countsAs)) {
