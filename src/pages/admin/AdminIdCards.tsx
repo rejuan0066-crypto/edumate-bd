@@ -35,8 +35,6 @@ const AdminIdCards = () => {
   const [validUntilBn, setValidUntilBn] = useState('');
   const [principalName, setPrincipalName] = useState('');
   const [principalNameEn, setPrincipalNameEn] = useState('');
-  const [principalNameDirty, setPrincipalNameDirty] = useState(false);
-  const [principalNameEnDirty, setPrincipalNameEnDirty] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
   const [signatureUrl, setSignatureUrl] = useState('');
   const [uploadingSignature, setUploadingSignature] = useState(false);
