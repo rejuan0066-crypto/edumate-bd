@@ -212,7 +212,6 @@ const BackgroundSettings = ({ value, onChange, disabled }: BackgroundSettingsPro
               }
               folder="background"
               aspectRatio="aspect-video"
-              disabled={disabled}
             />
           </div>
 
