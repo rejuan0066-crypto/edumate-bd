@@ -44,7 +44,8 @@ export default function BulkHolidayDialog({ open, onOpenChange, entities, entity
       let count = 0;
       for (const dk of dateKeys) {
         const { error: delErr } = await supabase.from('attendance_records')
-          .delete().eq('attendance_date', dk).eq('entity_type', entityType).in('entity_id', selectedIds);
+          .delete().eq('attendance_date', dk).eq('entity_type', entityType)
+          .eq('shift', shift).in('entity_id', selectedIds);
         if (delErr) throw delErr;
         const records = selectedIds.map(id => ({
           attendance_date: dk, entity_type: entityType, entity_id: id,
