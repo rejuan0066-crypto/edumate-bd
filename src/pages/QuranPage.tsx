@@ -2013,11 +2013,13 @@ const SidebarContent = ({
   // yanking the reader back up mid-scroll — so we scroll only the list container.
   useEffect(() => {
     if (!currentChapterId) return;
-    const list = listRef.current;
+  const list = listRef.current;
     const el = list?.querySelector<HTMLElement>(`[data-chapter-id="${currentChapterId}"]`);
     if (!list || !el) return;
-    const target = el.offsetTop - list.clientHeight / 2 + el.clientHeight / 2;
-    list.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+    // Radix ScrollArea renders a separate scrollable viewport — target it, never the page.
+    const scroller = (list.closest('[data-radix-scroll-area-viewport]') as HTMLElement | null) ?? list;
+    const target = el.offsetTop - scroller.clientHeight / 2 + el.clientHeight / 2;
+    scroller.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
   }, [currentChapterId]);
   return (
     <div className="flex flex-col h-full">
