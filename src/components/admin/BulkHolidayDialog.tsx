@@ -87,7 +87,7 @@ export default function BulkHolidayDialog({ open, onOpenChange, entities, entity
               : (bn ? 'একসাথে উপস্থিতি' : 'Bulk Present')}
           </DialogTitle>
         </DialogHeader>
-        <div className="grid md:grid-cols-2 gap-4 px-5 pb-5 max-h-[70vh] overflow-y-auto">
+        <div className="grid md:grid-cols-2 gap-4 px-5 pb-5 max-h-[70vh] overflow-y-auto overscroll-contain" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
           {/* Date selection */}
           <div className="min-w-0">
             <p className="text-xs font-semibold text-muted-foreground mb-2">
