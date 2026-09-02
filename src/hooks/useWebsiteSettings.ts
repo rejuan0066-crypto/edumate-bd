@@ -68,6 +68,21 @@ export interface InfoLink {
   sort_order: number;
 }
 
+export interface BackgroundStyle {
+  type: 'color' | 'gradient' | 'image';
+  color: string;
+  color_dark: string;
+  gradient: string;
+  gradient_dark: string;
+  image_url: string;
+  image_url_dark: string;
+  position: string;
+  size: string;
+  repeat: string;
+  overlay_opacity: number;
+  fixed: boolean;
+}
+
 export type HomeSectionKey =
   | 'principalMessage'
   | 'banner'
