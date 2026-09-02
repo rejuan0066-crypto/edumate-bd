@@ -139,7 +139,10 @@ export default function BulkHolidayDialog({ open, onOpenChange, entities, entity
                 {allSelected ? (bn ? 'সব বাদ' : 'Clear all') : (bn ? 'সবাই নির্বাচন' : 'Select all')}
               </button>
             </div>
-            <div className="rounded-2xl border border-border/40 p-2 space-y-0.5 overflow-y-auto max-h-[320px]">
+            <div
+              className="rounded-2xl border border-border/40 p-2 space-y-0.5 overflow-y-auto overscroll-contain max-h-[45vh] md:max-h-[320px] [-webkit-overflow-scrolling:touch]"
+              style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}
+            >
               {entities.length === 0 && (
                 <p className="text-xs text-muted-foreground p-3 text-center">{bn ? 'কোনো তালিকা নেই' : 'No one in list'}</p>
               )}
