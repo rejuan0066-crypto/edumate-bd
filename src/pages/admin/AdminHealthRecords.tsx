@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TimePicker } from '@/components/ui/time-picker';
 import { NumberInput } from '@/components/ui/number-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -1135,10 +1136,10 @@ const AdminHealthRecords = () => {
               <Label>{bn ? 'ভিজিটের তারিখ' : 'Visit Date'}</Label>
               <Input type="date" value={visitForm.visit_date || ''} onChange={(e) => setVisitForm({ ...visitForm, visit_date: e.target.value })} />
             </div>
-            <div>
-              <Label>{bn ? 'সময়' : 'Time'}</Label>
-              <Input type="time" value={visitForm.visit_time || ''} onChange={(e) => setVisitForm({ ...visitForm, visit_time: e.target.value })} />
-            </div>
+             <div>
+               <Label>{bn ? 'সময়' : 'Time'}</Label>
+               <TimePicker value={visitForm.visit_time || ''} onChange={(value) => setVisitForm({ ...visitForm, visit_time: value })} />
+             </div>
             <div className="md:col-span-2">
               <Label>{bn ? 'লক্ষণ' : 'Symptoms'}</Label>
               <Textarea value={visitForm.symptoms || ''} onChange={(e) => setVisitForm({ ...visitForm, symptoms: e.target.value })} rows={2} />

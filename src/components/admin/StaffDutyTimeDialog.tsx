@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { TimePicker } from '@/components/ui/time-picker';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -153,20 +154,16 @@ export default function StaffDutyTimeDialog({ open, onOpenChange, staff, bn = tr
               <button type="button" onClick={() => setFmt('24')} className={`px-3 py-1 rounded-full transition ${fmt === '24' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>24h</button>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label className="text-xs">{bn ? 'শুরুর সময়' : 'Start Time'}</Label>
-              {fmt === '12'
-                ? <Time12Picker value={start} onChange={setStart} bn={bn} />
-                : <Input type="time" step={60} value={start} onChange={e => setStart(e.target.value)} />}
-            </div>
-            <div>
-              <Label className="text-xs">{bn ? 'শেষের সময়' : 'End Time'}</Label>
-              {fmt === '12'
-                ? <Time12Picker value={end} onChange={setEnd} bn={bn} />
-                : <Input type="time" step={60} value={end} onChange={e => setEnd(e.target.value)} />}
-            </div>
-          </div>
+           <div className="grid grid-cols-2 gap-3">
+             <div>
+               <Label className="text-xs">{bn ? 'শুরুর সময়' : 'Start Time'}</Label>
+               <TimePicker value={start} displayFormat={fmt === '12' ? '12h' : '24h'} onChange={setStart} />
+             </div>
+             <div>
+               <Label className="text-xs">{bn ? 'শেষের সময়' : 'End Time'}</Label>
+               <TimePicker value={end} displayFormat={fmt === '12' ? '12h' : '24h'} onChange={setEnd} />
+             </div>
+           </div>
           <div className="p-3 bg-muted/40 rounded-2xl text-sm flex items-center justify-between gap-2">
             <div>
               <strong>{bn ? 'মোট ডিউটি:' : 'Total Duty:'}</strong>{' '}

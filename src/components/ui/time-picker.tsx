@@ -10,6 +10,7 @@ interface TimePickerProps {
   className?: string;
   placeholder?: string;
   displayFormat?: '12h' | '24h';
+  disabled?: boolean;
 }
 
 const MINUTES = Array.from({ length: 60 }, (_, i) => i);
@@ -135,7 +136,7 @@ function Wheel<T>({
   );
 }
 
-const TimePicker = ({ value, onChange, className, placeholder = "সময়", displayFormat = '12h' }: TimePickerProps) => {
+const TimePicker = ({ value, onChange, className, placeholder = "সময়", displayFormat = '12h', disabled = false }: TimePickerProps) => {
   const [open, setOpen] = React.useState(false);
   const [h24, setH24] = React.useState<number>(0);
   const [minute, setMinute] = React.useState<number>(0);
@@ -186,9 +187,11 @@ const TimePicker = ({ value, onChange, className, placeholder = "সময়", 
       <PopoverTrigger asChild>
         <button
           type="button"
+          disabled={disabled}
           className={cn(
             "flex items-center gap-2 h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm shadow-sm transition-all duration-300",
             "hover:border-primary/40 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50",
+            "disabled:cursor-not-allowed disabled:opacity-50",
             !value && "text-muted-foreground",
             className
           )}

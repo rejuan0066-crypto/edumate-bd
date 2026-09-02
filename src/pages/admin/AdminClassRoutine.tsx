@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TimePicker } from '@/components/ui/time-picker';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -528,10 +529,10 @@ const AdminClassRoutine = () => {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{bn ? 'শুরু' : 'Start'}</Label>
-                <Input type="time" value={periodForm.start_time} onChange={e => setPeriodForm(f => ({ ...f, start_time: e.target.value }))} />
+                <TimePicker value={periodForm.start_time} onChange={v => setPeriodForm(f => ({ ...f, start_time: v }))} />
               </div>
               <div><Label>{bn ? 'শেষ' : 'End'}</Label>
-                <Input type="time" value={periodForm.end_time} onChange={e => setPeriodForm(f => ({ ...f, end_time: e.target.value }))} />
+                <TimePicker value={periodForm.end_time} onChange={v => setPeriodForm(f => ({ ...f, end_time: v }))} />
               </div>
             </div>
             <div className="flex items-center gap-2">

@@ -5,6 +5,7 @@ import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TimePicker } from '@/components/ui/time-picker';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -893,11 +894,11 @@ const AdminAdministrative = () => {
                 </div>
                 <div>
                   <Label>{bn ? 'ডিউটি শুরু' : 'Duty Start'}</Label>
-                  <Input type="time" value={form.duty_start_time || ''} onChange={e => setForm({ ...form, duty_start_time: e.target.value })} />
+                  <TimePicker value={form.duty_start_time || ''} placeholder={bn ? 'ডিউটি শুরু' : 'Duty start'} onChange={v => setForm({ ...form, duty_start_time: v })} />
                 </div>
                 <div>
                   <Label>{bn ? 'ডিউটি শেষ' : 'Duty End'}</Label>
-                  <Input type="time" value={form.duty_end_time || ''} onChange={e => setForm({ ...form, duty_end_time: e.target.value })} />
+                  <TimePicker value={form.duty_end_time || ''} placeholder={bn ? 'ডিউটি শেষ' : 'Duty end'} onChange={v => setForm({ ...form, duty_end_time: v })} />
                 </div>
                 <div>
                   <Label>{bn ? 'স্ট্যাটাস' : 'Status'}</Label>

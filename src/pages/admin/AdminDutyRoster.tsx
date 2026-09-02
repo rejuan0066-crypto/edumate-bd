@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TimePicker } from '@/components/ui/time-picker';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -746,40 +747,40 @@ export default function AdminDutyRoster() {
                                       <SelectItem value="leave">ছুটি</SelectItem>
                                     </SelectContent>
                                   </Select>
-                                  {a?.status === 'present' && (
-                                    <div className="flex items-center gap-1">
-                                      <Input
-                                        type="time"
-                                        className="h-7 w-[92px] px-1 text-xs"
-                                        value={hhmm(a?.check_in_time)}
-                                        onChange={(e) =>
-                                          saveAtt.mutate({
-                                            staffId: s.id,
-                                            shiftId: sh.id,
-                                            status: 'present',
-                                            checkIn: e.target.value,
-                                            checkOut: a?.check_out_time,
-                                            source: a?.source,
-                                          })
-                                        }
-                                      />
-                                      <Input
-                                        type="time"
-                                        className="h-7 w-[92px] px-1 text-xs"
-                                        value={hhmm(a?.check_out_time)}
-                                        onChange={(e) =>
-                                          saveAtt.mutate({
-                                            staffId: s.id,
-                                            shiftId: sh.id,
-                                            status: 'present',
-                                            checkIn: a?.check_in_time,
-                                            checkOut: e.target.value,
-                                            source: a?.source,
-                                          })
-                                        }
-                                      />
-                                    </div>
-                                  )}
+                                   {a?.status === 'present' && (
+                                     <div className="flex items-center gap-1">
+                                        <TimePicker
+                                          className="h-7 w-[92px] px-1 text-xs"
+                                          value={hhmm(a?.check_in_time)}
+                                          disabled={!isManualAllowed(sh)}
+                                          onChange={(value) =>
+                                           saveAtt.mutate({
+                                             staffId: s.id,
+                                             shiftId: sh.id,
+                                             status: 'present',
+                                             checkIn: value,
+                                             checkOut: a?.check_out_time,
+                                             source: a?.source,
+                                           })
+                                         }
+                                       />
+                                        <TimePicker
+                                          className="h-7 w-[92px] px-1 text-xs"
+                                          value={hhmm(a?.check_out_time)}
+                                          disabled={!isManualAllowed(sh)}
+                                          onChange={(value) =>
+                                           saveAtt.mutate({
+                                             staffId: s.id,
+                                             shiftId: sh.id,
+                                             status: 'present',
+                                             checkIn: a?.check_in_time,
+                                             checkOut: value,
+                                             source: a?.source,
+                                           })
+                                         }
+                                       />
+                                     </div>
+                                   )}
                                   <div className="flex flex-wrap items-center gap-1 text-[10px]">
                                     {a?.source === 'machine' ? (
                                       <span className="inline-flex items-center gap-1 text-sky-700">
@@ -1115,11 +1116,11 @@ export default function AdminDutyRoster() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>শুরু</Label>
-                  <Input type="time" value={hhmm(form.start_time)} onChange={(e) => setForm({ ...form, start_time: e.target.value })} />
+                  <TimePicker value={hhmm(form.start_time)} onChange={(value) => setForm({ ...form, start_time: value })} />
                 </div>
                 <div>
                   <Label>শেষ</Label>
-                  <Input type="time" value={hhmm(form.end_time)} onChange={(e) => setForm({ ...form, end_time: e.target.value })} />
+                  <TimePicker value={hhmm(form.end_time)} onChange={(value) => setForm({ ...form, end_time: value })} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
