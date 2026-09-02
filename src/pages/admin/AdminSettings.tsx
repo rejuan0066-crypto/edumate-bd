@@ -1370,7 +1370,7 @@ const AdminSettings = () => {
                 <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2"><Palette className="w-5 h-5 text-primary" /> {bn ? 'ব্যাকগ্রাউন্ড স্টাইল' : 'Background Style'}</h3>
                 <BackgroundSettings
                   value={websiteSettings.background_style}
-                  onChange={(value) => updateSetting({ key: 'background_style', value })}
+                  onChange={(value) => updateSetting.mutate({ key: 'background_style', value })}
                   disabled={!canEditItem}
                 />
               </div>
