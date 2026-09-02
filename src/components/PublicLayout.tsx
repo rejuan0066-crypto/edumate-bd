@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useMemo, useEffect } from 'react';
 import BackButton from './BackButton';
 import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -7,6 +7,7 @@ import BijoyToggle from './BijoyToggle';
 import { Menu, X, Phone, Mail, MapPin, GraduationCap } from 'lucide-react';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 import { useMenuSettings } from '@/hooks/useMenuSettings';
+import type { BackgroundStyle } from '@/hooks/useWebsiteSettings';
 
 const PublicLayout = ({ children }: { children: ReactNode }) => {
   const { t, language } = useLanguage();
@@ -14,6 +15,20 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { settings } = useWebsiteSettings();
   const { menuConfig } = useMenuSettings();
+
+  const bgStyle = settings.background_style;
+  const hasCustomBg = bgStyle && bgStyle.type && (bgStyle.type !== 'image' || bgStyle.image_url || bgStyle.image_url_dark);
+
+  useEffect(() => {
+    if (hasCustomBg) {
+      document.body.classList.add('custom-public-bg');
+    } else {
+      document.body.classList.remove('custom-public-bg');
+    }
+    return () => {
+      document.body.classList.remove('custom-public-bg');
+    };
+  }, [hasCustomBg]);
 
   const hs = settings.header_style;
   const ns = settings.nav_style;
@@ -74,7 +89,63 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
     .replace('{year}', String(new Date().getFullYear()))
     .replace('{name}', settings.institution_name);
 
+  const backgroundCss = useMemo(() => {
+    if (!hasCustomBg) return '';
+
+    const buildRule = (style: BackgroundStyle, isDark: boolean) => {
+      const overlay = Math.max(0, Math.min(100, style.overlay_opacity || 0));
+      const overlayColor = isDark ? `rgba(0,0,0,${overlay / 100})` : `rgba(255,255,255,${overlay / 100})`;
+
+      let bg = '';
+      if (style.type === 'color') {
+        const c = isDark ? (style.color_dark || style.color) : style.color;
+        bg = `background: ${c || 'transparent'} !important;`;
+      } else if (style.type === 'gradient') {
+        const g = isDark ? (style.gradient_dark || style.gradient) : style.gradient;
+        bg = `background: ${g || 'transparent'} !important;`;
+      } else if (style.type === 'image') {
+        const img = isDark ? (style.image_url_dark || style.image_url) : style.image_url;
+        if (img) {
+          bg = `background-image: url(${img}) !important; background-position: ${style.position || 'center'} !important; background-size: ${style.size || 'cover'} !important; background-repeat: ${style.repeat || 'no-repeat'} !important; background-attachment: ${style.fixed ? 'fixed' : 'scroll'} !important;`;
+        }
+      }
+
+      return `${bg} --custom-bg-overlay: ${overlayColor};`;
+    };
+
+    const lightRule = buildRule(bgStyle, false);
+    const darkRule = buildRule(bgStyle, true);
+
+    return `
+      body.custom-public-bg::before {
+        ${lightRule}
+        background-size: cover !important;
+        filter: none !important;
+      }
+      body.custom-public-bg::after {
+        background: var(--custom-bg-overlay) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+      }
+      .dark body.custom-public-bg::before {
+        ${darkRule}
+        background-size: cover !important;
+        filter: none !important;
+      }
+      .dark body.custom-public-bg::after {
+        background: var(--custom-bg-overlay) !important;
+      }
+    `;
+  }, [bgStyle, hasCustomBg]);
+
   return (
+    <>
+      {hasCustomBg && (
+        <>
+          <style>{`body.custom-public-bg::before, body.custom-public-bg::after { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; }`}</style>
+          <style>{backgroundCss}</style>
+        </>
+      )}
     <div className="min-h-screen flex flex-col bg-background">
       {/* Top bar */}
       {(hs?.topbar_visible !== false) && (
@@ -285,6 +356,7 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
         </div>
       </footer>
     </div>
+    </>
   );
 };
 

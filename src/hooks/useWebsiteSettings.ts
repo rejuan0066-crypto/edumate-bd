@@ -68,6 +68,21 @@ export interface InfoLink {
   sort_order: number;
 }
 
+export interface BackgroundStyle {
+  type: 'color' | 'gradient' | 'image';
+  color: string;
+  color_dark: string;
+  gradient: string;
+  gradient_dark: string;
+  image_url: string;
+  image_url_dark: string;
+  position: string;
+  size: string;
+  repeat: string;
+  overlay_opacity: number;
+  fixed: boolean;
+}
+
 export type HomeSectionKey =
   | 'principalMessage'
   | 'banner'
@@ -265,6 +280,7 @@ export interface WebsiteSettings {
   global_footer_spacing_bottom: number; // mm — bottom margin from page edge
   global_footer_font_size: number;      // pt — footer text size on prints
   signatory_edit_super_admin_only: boolean; // when true, only super_admin can edit principal/accountant/verifier
+  background_style: BackgroundStyle;
 }
 
 const DEFAULT_SETTINGS: WebsiteSettings = {
@@ -392,6 +408,20 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   global_footer_spacing_bottom: 6,
   global_footer_font_size: 10,
   signatory_edit_super_admin_only: false,
+  background_style: {
+    type: 'image',
+    color: '',
+    color_dark: '',
+    gradient: '',
+    gradient_dark: '',
+    image_url: '',
+    image_url_dark: '',
+    position: 'center',
+    size: 'cover',
+    repeat: 'no-repeat',
+    overlay_opacity: 12,
+    fixed: true,
+  },
 };
 
 const parseSettingsData = (data: any[] | null): WebsiteSettings => {

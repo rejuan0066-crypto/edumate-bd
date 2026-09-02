@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { otpService } from '@/hooks/useOtpService';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
+import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 import PaymentGatewaySettings from '@/components/admin/PaymentGatewaySettings';
 import SmsGatewaySettings from '@/components/admin/SmsGatewaySettings';
 import WhatsAppSettings from '@/components/admin/WhatsAppSettings';
@@ -23,6 +24,7 @@ import QuranDefaultsSettings from '@/components/admin/QuranDefaultsSettings';
 import RateLimitSettings from '@/components/admin/RateLimitSettings';
 import ApprovalWorkflowSettings from '@/components/admin/ApprovalWorkflowSettings';
 import { SecurityBackupPanel } from '@/components/admin/SecurityBackupPanel';
+import BackgroundSettings from '@/components/admin/BackgroundSettings';
 import { useConfirm } from "@/contexts/ConfirmContext";
 
 const AdminSettings = () => {
@@ -30,6 +32,7 @@ const AdminSettings = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { canEditItem } = usePagePermissions('/admin/settings');
+  const { settings: websiteSettings, updateSetting } = useWebsiteSettings();
   const [emailProvider, setEmailProvider] = useState<'emailjs' | 'custom_domain'>('emailjs');
   const [settings, setSettings] = useState({
     twoFactorAuth: true,
@@ -1362,6 +1365,15 @@ const AdminSettings = () => {
 
           <TabsContent value="general" className="mt-6">
             <div className="space-y-6 max-w-3xl">
+
+              <div className="card-elevated p-5">
+                <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2"><Palette className="w-5 h-5 text-primary" /> {bn ? 'ব্যাকগ্রাউন্ড স্টাইল' : 'Background Style'}</h3>
+                <BackgroundSettings
+                  value={websiteSettings.background_style}
+                  onChange={(value) => updateSetting.mutate({ key: 'background_style', value })}
+                  disabled={!canEditItem}
+                />
+              </div>
 
               <div className="card-elevated p-5">
                 <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2"><Palette className="w-5 h-5 text-primary" /> {bn ? 'সাধারণ' : 'General'}</h3>
