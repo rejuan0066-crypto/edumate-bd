@@ -183,13 +183,26 @@ export const studentStats = (id: string, rawMarks: unknown[], options: OverallGr
 /**
  * Merit ranking: only students with entered marks are ranked, failed students never
  * receive a merit position, and higher totals rank first.
+ *
+ * Three tiers are used so that a grace-passed (consideration) student can never
+ * outrank a student who passed every subject on their own marks:
+ *   tier 0 — regular pass (all subjects passed)
+ *   tier 1 — grace pass ("মাকবুল (বিবেচনায়)")
+ *   tier 2 — failed (never ranked)
+ * Within the same tier, higher total ranks first.
  */
+const meritTier = (s: StudentStats): number => {
+  if (s.failed) return 2;
+  if (s.overall?.graced) return 1;
+  return 0;
+};
+
 export const rankStudents = (stats: StudentStats[]): Map<string, number> => {
   const ordered = stats
     .filter((s) => s.hasEnteredAnyMark)
     .sort((a, b) => {
-      if (a.failed && !b.failed) return 1;
-      if (!a.failed && b.failed) return -1;
+      const tierDiff = meritTier(a) - meritTier(b);
+      if (tierDiff !== 0) return tierDiff;
       return b.total - a.total;
     });
 

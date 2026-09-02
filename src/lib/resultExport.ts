@@ -2,6 +2,17 @@ import { CANONICAL_BANGLA_LABELS as L } from './banglaCanonicalLabels';
 import { formatOrdinalRank, toBnDigits } from './digits';
 import QRCode from 'qrcode';
 
+/**
+ * Merit tier: 0 = regular pass, 1 = grace pass (consideration), 2 = failed.
+ * Grace-passed students always rank below regular pass students, even with a
+ * higher total; failed students are never ranked.
+ */
+const meritTierOf = (r: { failed: boolean; overall: any }): number => {
+  if (r.failed) return 2;
+  if (r.overall?.graced) return 1;
+  return 0;
+};
+
 
 interface ExportData {
   title: string;
@@ -112,8 +123,8 @@ export const exportResultCSV = (params: ExportData) => {
   const sortedByTotal = [...computed]
     .filter(a => a.hasEnteredAnyMark)
     .sort((a, b) => {
-      if (a.failed && !b.failed) return 1;
-      if (!a.failed && b.failed) return -1;
+      const tierDiff = meritTierOf(a) - meritTierOf(b);
+      if (tierDiff !== 0) return tierDiff;
       return b.total - a.total;
     });
 
@@ -217,8 +228,8 @@ export const getResultSheetHtml = ({
   });
 
   const sortedByTotal = [...computed].sort((a, b) => {
-    if (a.failed && !b.failed) return 1;
-    if (!a.failed && b.failed) return -1;
+    const tierDiff = meritTierOf(a) - meritTierOf(b);
+    if (tierDiff !== 0) return tierDiff;
     return b.total - a.total;
   });
   const rankMap = new Map<number, number>();

@@ -157,6 +157,20 @@ describe('rankStudents — merit positions', () => {
     expect(ranks.get('y')).toBe(2);
   });
 
+  it('never ranks a grace-passed student above a regular pass, even with a higher total', () => {
+    const stats = [
+      studentStats('regular1', [70, 70, 70], { ...opts, graceLimit: 1 }), // 210 pass
+      studentStats('regular2', [60, 60, 60], { ...opts, graceLimit: 1 }), // 180 pass
+      studentStats('gracedHi', [99, 20, 99], { ...opts, graceLimit: 1 }), // 218 grace pass
+      studentStats('gracedLo', [50, 30, 50], { ...opts, graceLimit: 1 }), // 130 grace pass
+    ];
+    const ranks = rankStudents(stats);
+    expect(ranks.get('regular1')).toBe(1);
+    expect(ranks.get('regular2')).toBe(2);
+    expect(ranks.get('gracedHi')).toBe(3); // higher total, but grace tier stays below
+    expect(ranks.get('gracedLo')).toBe(4);
+  });
+
   it('does not give a passing student a worse title than deserved', () => {
     const stats = studentStats('z', [60, 62, 64], opts);
     expect(stats.overall?.grade).toBe('A-');
