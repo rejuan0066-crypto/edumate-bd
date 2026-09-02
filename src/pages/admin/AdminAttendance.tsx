@@ -426,14 +426,13 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       if (staffSubTab === 'meal') {
         return staffFiltered.filter((s: any) => s.residence_type === 'residential' || s.residence_type === 'resident');
       }
-      // Duty tab: staff rostered for this weekday + shift (residence type is
-      // irrelevant — roster decides). Fallback to residential when no roster.
+      // Duty tab: strictly roster-driven — only staff rostered for this weekday
+      // + shift appear. No roster => empty list (never "everyone"/residential).
       if (staffSubTab === 'duty') {
-        if (dutyRosterActive && dutyStaffIdsForDate.size > 0) {
-          return staffFiltered.filter((s: any) => dutyStaffIdsForDate.has(s.id));
-        }
-        return staffFiltered.filter((s: any) => s.residence_type === 'residential' || s.residence_type === 'resident');
+        if (!dutyRosterActive) return [];
+        return staffFiltered.filter((s: any) => dutyStaffIdsForDate.has(s.id));
       }
+
 
       // Full-time: all filtered staff
       return staffFiltered;
