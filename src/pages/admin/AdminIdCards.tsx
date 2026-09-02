@@ -720,12 +720,16 @@ const AdminIdCards = () => {
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">{bn ? 'প্রিন্সিপালের নাম (বাংলা)' : 'Principal Name (Bangla)'}</label>
-             <Input value={principalName} onChange={(e) => { setPrincipalNameDirty(true); setPrincipalName(e.target.value); }} className="bg-background" placeholder={bn ? 'বাংলায় নাম লিখুন' : 'Enter name in Bangla'} />
+            <Input value={principalName} readOnly disabled className="bg-muted" />
+            <p className="text-[10px] text-muted-foreground mt-1">
+              {bn ? 'প্রশাসনিক কর্মকর্তা রেকর্ড থেকে স্বয়ংক্রিয়; পরিবর্তনে /admin/administrative দেখুন' : 'Auto from the administrative officer record; edit at /admin/administrative'}
+            </p>
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">{bn ? 'প্রিন্সিপালের নাম (ইংরেজি)' : 'Principal Name (English)'}</label>
-             <Input value={principalNameEn} onChange={(e) => { setPrincipalNameEnDirty(true); setPrincipalNameEn(e.target.value); }} className="bg-background" placeholder={bn ? 'ইংরেজিতে নাম লিখুন' : 'Enter name in English'} />
+            <Input value={principalNameEn} readOnly disabled className="bg-muted" />
           </div>
+
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">{bn ? 'প্রিন্সিপালের স্বাক্ষর' : 'Principal Signature'}</label>
             {signatureUrl ? (
