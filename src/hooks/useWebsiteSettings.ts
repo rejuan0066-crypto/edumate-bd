@@ -408,6 +408,20 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   global_footer_spacing_bottom: 6,
   global_footer_font_size: 10,
   signatory_edit_super_admin_only: false,
+  background_style: {
+    type: 'image',
+    color: '',
+    color_dark: '',
+    gradient: '',
+    gradient_dark: '',
+    image_url: '',
+    image_url_dark: '',
+    position: 'center',
+    size: 'cover',
+    repeat: 'no-repeat',
+    overlay_opacity: 12,
+    fixed: true,
+  },
 };
 
 const parseSettingsData = (data: any[] | null): WebsiteSettings => {
