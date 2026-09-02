@@ -1240,102 +1240,94 @@ const QuranPage = () => {
       {qcfFontFaces && <style>{qcfFontFaces}</style>}
       {/* ===== Header ===== */}
       <header className="sticky top-0 z-30 backdrop-blur-xl bg-background/80 border-b border-border/50">
-        <div className="max-w-[1440px] mx-auto px-3 py-2.5 flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full h-9 w-9 shrink-0"
-            onClick={() => navigate('/')}
-            aria-label={bn ? 'হোম' : 'Home'}
-            title={bn ? 'হোমে ফিরুন' : 'Back to home'}
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="lg:hidden rounded-full h-9 w-9 shrink-0"
-            onClick={() => setSidebarOpen(true)}
-            aria-label={bn ? 'মেনু' : 'Menu'}
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </Button>
+        <div className="max-w-[1440px] mx-auto px-3 py-2 sm:py-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-h-10">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full h-9 w-9 shrink-0"
+              onClick={() => navigate('/')}
+              aria-label={bn ? 'হোম' : 'Home'}
+              title={bn ? 'হোমে ফিরুন' : 'Back to home'}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden rounded-full h-9 w-9 shrink-0"
+              onClick={() => setSidebarOpen(true)}
+              aria-label={bn ? 'সূরা তালিকা' : 'Surah list'}
+              title={bn ? 'সূরা তালিকা খুলুন' : 'Open surah list'}
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
 
-          {/* Segmented Juz · Page · Surah pill */}
-          <div className="flex-1 min-w-0 flex items-center justify-center">
-            <div className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/40 p-1 max-w-full">
-              <button
-                type="button"
-                onClick={() => { setGotoTab('juz'); setGotoOpen(true); }}
-                className="px-3 h-8 rounded-full text-xs sm:text-sm font-medium bg-background/80 border border-border/40 hover:bg-background transition-colors truncate"
-              >
-                {bn ? `পারা ${currentJuzId}` : `Juz ${currentJuzId}`}
-              </button>
-              <button
-                type="button"
-                onClick={() => { setGotoTab('page'); setGotoOpen(true); }}
-                className="px-2.5 h-8 rounded-full text-xs sm:text-sm font-bold text-primary hover:bg-background/60 transition-colors tabular-nums"
-                title={bn ? 'পৃষ্ঠায় যান' : 'Go to page'}
-              >
-                {bn ? activeId.toLocaleString('bn-BD') : activeId}
-              </button>
-              <button
-                type="button"
-                onClick={() => { setGotoTab('surah'); setGotoOpen(true); }}
-                className="px-3 h-8 rounded-full text-xs sm:text-sm font-medium bg-background/80 border border-border/40 hover:bg-background transition-colors truncate max-w-[140px] sm:max-w-[200px]"
-              >
-                {currentChapter
-                  ? (bn ? surahNameBn(currentChapter.id, currentChapter.name_simple) : currentChapter.name_simple)
-                  : (bn ? 'সূরা' : 'Surah')}
-              </button>
+            <div className="hidden sm:flex flex-1 min-w-0 items-center justify-center">
+              <div className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/40 p-1 max-w-full">
+                <Button variant="outline" onClick={() => { setGotoTab('juz'); setGotoOpen(true); }} className="px-3 h-8 rounded-full text-xs sm:text-sm font-medium truncate">
+                  {bn ? `পারা ${currentJuzId}` : `Juz ${currentJuzId}`}
+                </Button>
+                <Button variant="ghost" onClick={() => { setGotoTab('page'); setGotoOpen(true); }} className="px-2.5 h-8 rounded-full text-xs sm:text-sm font-bold text-primary tabular-nums" title={bn ? 'পৃষ্ঠায় যান' : 'Go to page'}>
+                  {bn ? activeId.toLocaleString('bn-BD') : activeId}
+                </Button>
+                <Button variant="outline" onClick={() => { setGotoTab('surah'); setGotoOpen(true); }} className="px-3 h-8 rounded-full text-xs sm:text-sm font-medium truncate max-w-[140px] sm:max-w-[200px]">
+                  {currentChapter ? (bn ? surahNameBn(currentChapter.id, currentChapter.name_simple) : currentChapter.name_simple) : (bn ? 'সূরা' : 'Surah')}
+                </Button>
+              </div>
             </div>
+            <div className="sm:hidden flex-1 min-w-0 text-center text-sm font-semibold truncate px-1">
+              {bn ? 'কুরআন পাঠ' : 'Quran reading'}
+            </div>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full h-9 w-9 shrink-0"
+              onClick={() => setMushafTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+              aria-label={bn ? 'মুসহাফ থিম' : 'Mushaf theme'}
+              title={mushafTheme === 'dark' ? (bn ? 'লাইট মুসহাফ' : 'Light mushaf') : (bn ? 'ডার্ক মুসহাফ' : 'Dark mushaf')}
+            >
+              {mushafTheme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
+
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 shrink-0" aria-label={bn ? 'খুঁজুন' : 'Search'}>
+                  <Search className="w-4 h-4" />
+                </Button>
+              </DialogTrigger>
+              <AyahSearchDialog bn={bn} onGo={goto} />
+            </Dialog>
+
+            <Dialog open={gotoOpen} onOpenChange={setGotoOpen}>
+              <GotoDialog bn={bn} chapters={chapters} onGo={goto} bookmarks={bookmarks} initialTab={gotoTab} currentPage={activeId} currentJuzId={currentJuzId} onToggleBookmark={toggleBookmark} />
+            </Dialog>
+
+            <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 shrink-0" aria-label={bn ? 'সেটিংস' : 'Settings'}>
+                  <SettingsIcon className="w-4 h-4" />
+                </Button>
+              </SheetTrigger>
+              <SettingsSheet bn={bn} settings={settings} setSettings={setSettings} playbackMode={playbackMode} setPlaybackMode={setPlaybackMode} />
+            </Sheet>
+          </Sheet>
           </div>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full h-9 w-9 shrink-0"
-            onClick={() => setMushafTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
-            aria-label={bn ? 'মুসহাফ থিম' : 'Mushaf theme'}
-            title={
-              mushafTheme === 'dark'
-                ? (bn ? 'লাইট মুসহাফ' : 'Light mushaf')
-                : (bn ? 'ডার্ক মুসহাফ' : 'Dark mushaf')
-            }
-          >
-            {mushafTheme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </Button>
-
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 shrink-0" aria-label={bn ? 'খুঁজুন' : 'Search'}>
-                <Search className="w-4 h-4" />
+          <div className="sm:hidden pt-1.5">
+            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 rounded-2xl border border-border/60 bg-muted/40 p-1">
+              <Button variant="outline" onClick={() => { setGotoTab('juz'); setGotoOpen(true); }} className="h-9 min-w-0 rounded-xl px-2 text-xs font-medium truncate">
+                {bn ? `পারা ${currentJuzId}` : `Juz ${currentJuzId}`}
               </Button>
-            </DialogTrigger>
-            <AyahSearchDialog bn={bn} onGo={goto} />
-          </Dialog>
-
-          <Dialog open={gotoOpen} onOpenChange={setGotoOpen}>
-            <GotoDialog
-              bn={bn}
-              chapters={chapters}
-              onGo={goto}
-              bookmarks={bookmarks}
-              initialTab={gotoTab}
-              currentPage={activeId}
-              currentJuzId={currentJuzId}
-              onToggleBookmark={toggleBookmark}
-            />
-          </Dialog>
-
-          <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 shrink-0" aria-label={bn ? 'সেটিংস' : 'Settings'}>
-                <SettingsIcon className="w-4 h-4" />
+              <Button variant="ghost" onClick={() => { setGotoTab('page'); setGotoOpen(true); }} className="h-9 rounded-xl px-3 text-xs font-bold text-primary tabular-nums" title={bn ? 'পৃষ্ঠায় যান' : 'Go to page'}>
+                {bn ? `পৃষ্ঠা ${activeId.toLocaleString('bn-BD')}` : `Page ${activeId}`}
               </Button>
-            </SheetTrigger>
-            <SettingsSheet bn={bn} settings={settings} setSettings={setSettings} playbackMode={playbackMode} setPlaybackMode={setPlaybackMode} />
-          </Sheet>
+              <Button variant="outline" onClick={() => { setGotoTab('surah'); setGotoOpen(true); }} className="h-9 min-w-0 rounded-xl px-2 text-xs font-medium truncate">
+                {currentChapter ? (bn ? surahNameBn(currentChapter.id, currentChapter.name_simple) : currentChapter.name_simple) : (bn ? 'সূরা' : 'Surah')}
+              </Button>
+            </div>
+          </div>
         </div>
       </header>
 
