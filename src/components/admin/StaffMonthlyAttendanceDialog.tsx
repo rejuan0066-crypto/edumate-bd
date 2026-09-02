@@ -47,6 +47,10 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
   // used to compute late minutes from check-in time (same rule as salary page).
   const [dutyInfo, setDutyInfo] = useState<{ start: number; end: number; category: string | null }>({ start: 480, end: 1020, category: null });
   const [thuSetting, setThuSetting] = useState<any>(null);
+  // Residential-duty roster: which dates this staff actually has the shift on.
+  // null = no restriction (full-day / student shifts); Set = allowed ISO dates.
+  const [dutyAllowedDates, setDutyAllowedDates] = useState<Set<string> | null>(null);
+  const isDutyShift = shift === 'morning' || shift === 'evening';
 
   useEffect(() => {
     if (!open) return;
