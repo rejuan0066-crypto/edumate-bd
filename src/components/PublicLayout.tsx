@@ -16,6 +16,20 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
   const { settings } = useWebsiteSettings();
   const { menuConfig } = useMenuSettings();
 
+  const bgStyle = settings.background_style;
+  const hasCustomBg = bgStyle && bgStyle.type && (bgStyle.type !== 'image' || bgStyle.image_url || bgStyle.image_url_dark);
+
+  useEffect(() => {
+    if (hasCustomBg) {
+      document.body.classList.add('custom-public-bg');
+    } else {
+      document.body.classList.remove('custom-public-bg');
+    }
+    return () => {
+      document.body.classList.remove('custom-public-bg');
+    };
+  }, [hasCustomBg]);
+
   const hs = settings.header_style;
   const ns = settings.nav_style;
   const fs = settings.footer_style;
