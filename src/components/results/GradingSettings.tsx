@@ -120,8 +120,8 @@ const GradingSettings = ({ open, onOpenChange }: Props) => {
       if (!scale.grade.trim() || !scale.title?.trim() || !scale.title_bn?.trim()) {
         return bn ? 'গ্রেড, ইংরেজি মর্যাদা ও বাংলা মর্যাদা পূরণ করুন।' : 'Grade and both merit titles are required.';
       }
-      if (!Number.isFinite(scale.min) || !Number.isFinite(scale.max) || scale.min < 0 || scale.max > 100 || scale.min > scale.max) {
-        return bn ? `${scale.grade} গ্রেডের শতাংশ সীমা সঠিক নয়।` : `The percentage range for ${scale.grade} is invalid.`;
+      if (!Number.isFinite(scale.min) || !Number.isFinite(scale.max) || !Number.isInteger(scale.min) || !Number.isInteger(scale.max) || scale.min < 0 || scale.max > 100 || scale.min > scale.max) {
+        return bn ? `${scale.grade} গ্রেডের শতাংশ সীমা ০ থেকে ১০০-এর পূর্ণ সংখ্যা হতে হবে।` : `The percentage range for ${scale.grade} must be whole numbers from 0 to 100.`;
       }
     }
     if (orderedScales[orderedScales.length - 1].min !== 0 || orderedScales[0].max !== 100) {
