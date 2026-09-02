@@ -55,6 +55,8 @@ import {
   Moon,
   Sun,
   ArrowLeft,
+  Repeat1,
+  ListVideo,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -125,6 +127,7 @@ const LS_LAST_READ = 'quran:lastRead'; // suffixed with user scope
 const LS_LAST_MUSHAF = 'quran:lastMushafPage'; // suffixed with user scope
 const LS_LAST_MUSHAF_VERSE = 'quran:lastMushafVerse'; // suffixed with user scope
 const LS_SETTINGS = 'quran:settings';
+const LS_AUDIO_MODE = 'quran:audio-mode';
 const lastReadKey = (uid: string | null) => `${LS_LAST_READ}:${uid || 'anon'}`;
 const lastMushafKey = (uid: string | null) => `${LS_LAST_MUSHAF}:${uid || 'anon'}`;
 const lastMushafVerseKey = (uid: string | null) => `${LS_LAST_MUSHAF_VERSE}:${uid || 'anon'}`;
@@ -156,6 +159,7 @@ interface Settings {
   showContinuationBadge: boolean;
   autoSaveLastRead: boolean;
 }
+type PlaybackMode = 'once' | 'repeat' | 'continuous';
 const defaultSettings: Settings = {
   script: 'uthmani',
   showEn: true,
@@ -766,7 +770,16 @@ const QuranPage = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playingKey, setPlayingKey] = useState<string | null>(null); // verse key or 'surah'
   const [isPlaying, setIsPlaying] = useState(false);
-  const [continuous, setContinuous] = useState(true);
+  const [playbackMode, setPlaybackMode] = useState<PlaybackMode>(() => {
+    if (typeof window === 'undefined') return 'continuous';
+    const stored = localStorage.getItem(LS_AUDIO_MODE);
+    return stored === 'once' || stored === 'repeat' || stored === 'continuous' ? stored : 'continuous';
+  });
+  const continuous = playbackMode === 'continuous';
+
+  useEffect(() => {
+    localStorage.setItem(LS_AUDIO_MODE, playbackMode);
+  }, [playbackMode]);
 
   // Fallback handler — invoked when an audio src fails to load OR errors out.
   // Forward-declared via ref so playUrl can call into the latest version.
@@ -876,7 +889,7 @@ const QuranPage = () => {
   //  1) prefetch the next few verses' audio
   //  2) load the next Mushaf page early if we're near the end of loaded pages
   useEffect(() => {
-    if (!continuous || !playingKey || playingKey === 'surah') return;
+    if (playbackMode !== 'continuous' || !playingKey || playingKey === 'surah') return;
     const source = isMushaf ? mushafVersesFlat : verses;
     const idx = source.findIndex((v) => v.verse_key === playingKey);
     if (idx < 0) return;
@@ -890,13 +903,13 @@ const QuranPage = () => {
       const last = mushafPages[mushafPages.length - 1];
       if (last && last.page < 604) loadNextMushafPage();
     }
-  }, [continuous, playingKey, isMushaf, mushafVersesFlat, verses, mushafPages, loadNextMushafPage, prefetchAudio]);
+  }, [playbackMode, playingKey, isMushaf, mushafVersesFlat, verses, mushafPages, loadNextMushafPage, prefetchAudio]);
 
   // Shared "advance to next playable verse" — scans forward skipping any verses
   // whose audio URL is missing, and (in Mushaf) loads more pages as needed.
   // `maxSkip` and `maxPagesLoaded` cap the search so we never loop forever.
   const advanceFrom = useCallback(async (startIdx: number, currentKey: string) => {
-    if (!continuous) return;
+    if (playbackMode !== 'continuous') return;
     const baseSource = isMushaf ? mushafVersesFlat : verses;
     let source = baseSource;
     let i = startIdx + 1;
@@ -939,7 +952,7 @@ const QuranPage = () => {
     }
     // Too many consecutive missing audios → stop gracefully.
     toast.info(bn ? 'পরবর্তী আয়াতের অডিও পাওয়া যায়নি' : 'No further audio available');
-  }, [continuous, isMushaf, mushafVersesFlat, verses, mushafPages, loadNextMushafPage, playUrl, bn]);
+  }, [playbackMode, isMushaf, mushafVersesFlat, verses, mushafPages, loadNextMushafPage, playUrl, bn]);
 
   // Keep the failure-fallback ref pointed at the latest advanceFrom.
   useEffect(() => {
@@ -956,7 +969,7 @@ const QuranPage = () => {
     if (!a) return;
     const onEnded = () => {
       setIsPlaying(false);
-      if (!continuous || !playingKey || playingKey === 'surah') return;
+      if (playbackMode !== 'continuous' || !playingKey || playingKey === 'surah') return;
       const source = isMushaf ? mushafVersesFlat : verses;
       const idx = source.findIndex((v) => v.verse_key === playingKey);
       if (idx < 0) return;
@@ -964,7 +977,7 @@ const QuranPage = () => {
     };
     a.addEventListener('ended', onEnded);
     return () => a.removeEventListener('ended', onEnded);
-  }, [continuous, playingKey, verses, mushafVersesFlat, isMushaf, advanceFrom]);
+  }, [playbackMode, playingKey, verses, mushafVersesFlat, isMushaf, advanceFrom]);
 
   // Cleanup
   useEffect(() => () => {
@@ -1274,7 +1287,7 @@ const QuranPage = () => {
                 <SettingsIcon className="w-4 h-4" />
               </Button>
             </SheetTrigger>
-            <SettingsSheet bn={bn} settings={settings} setSettings={setSettings} continuous={continuous} setContinuous={setContinuous} />
+            <SettingsSheet bn={bn} settings={settings} setSettings={setSettings} playbackMode={playbackMode} setPlaybackMode={setPlaybackMode} />
           </Sheet>
         </div>
       </header>
@@ -2326,14 +2339,14 @@ const SettingsSheet = ({
   bn,
   settings,
   setSettings,
-  continuous,
-  setContinuous,
+  playbackMode,
+  setPlaybackMode,
 }: {
   bn: boolean;
   settings: Settings;
   setSettings: (s: Settings) => void;
-  continuous: boolean;
-  setContinuous: (b: boolean) => void;
+  playbackMode: PlaybackMode;
+  setPlaybackMode: (mode: PlaybackMode) => void;
 }) => {
   return (
     <SheetContent className="w-[90vw] sm:w-[400px] overflow-y-auto">
@@ -2401,12 +2414,26 @@ const SettingsSheet = ({
           <Switch checked={settings.showBn} onCheckedChange={(b) => setSettings({ ...settings, showBn: b })} />
         </div>
 
-        <div className="flex items-center justify-between rounded-2xl bg-muted/40 p-3">
-          <div>
-            <p className="text-sm font-medium">{bn ? 'ধারাবাহিক প্লে' : 'Continuous play'}</p>
-            <p className="text-xs text-muted-foreground">{bn ? 'একটি আয়াত শেষ হলে পরেরটি স্বয়ংক্রিয়ভাবে চলবে' : 'Auto-play next ayah'}</p>
+        <div className="rounded-2xl bg-muted/40 p-3">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              {playbackMode === 'repeat' ? <Repeat1 className="h-4 w-4" /> : <ListVideo className="h-4 w-4" />}
+            </span>
+            <div>
+              <p className="text-sm font-medium">{bn ? 'তিলাওয়াত প্লে মোড' : 'Recitation play mode'}</p>
+              <p className="text-xs text-muted-foreground">{bn ? 'অডিও শেষ হলে কী হবে নির্বাচন করুন' : 'Choose what happens when audio ends'}</p>
+            </div>
           </div>
-          <Switch checked={continuous} onCheckedChange={setContinuous} />
+          <Select value={playbackMode} onValueChange={(v: PlaybackMode) => setPlaybackMode(v)}>
+            <SelectTrigger className="h-10 rounded-xl bg-background">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="once">{bn ? 'একবার প্লে করে বন্ধ' : 'Play once and stop'}</SelectItem>
+              <SelectItem value="repeat">{bn ? 'একই তিলাওয়াত বারবার' : 'Repeat this recitation'}</SelectItem>
+              <SelectItem value="continuous">{bn ? 'একটির পর একটি তিলাওয়াত' : 'Play next recitation automatically'}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="flex items-center justify-between rounded-2xl bg-muted/40 p-3">
