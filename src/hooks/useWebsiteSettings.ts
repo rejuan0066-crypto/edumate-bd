@@ -435,6 +435,14 @@ const readCache = (): WebsiteSettings | null => {
 const writeCache = (settings: WebsiteSettings) => {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(settings));
+    // Keep the page loader's lightweight cache in sync so the madrasa logo
+    // renders instantly on every subsequent visit, even if the loader itself
+    // unmounts before its own effect gets a chance to write.
+    const loaderLogo = settings.loader_logo_url || settings.favicon_url || settings.logo_url;
+    if (loaderLogo) {
+      localStorage.setItem('cached_loader_logo', loaderLogo);
+      localStorage.setItem('cached_loader_logo_shape', settings.loader_logo_shape || 'square');
+    }
   } catch {
     // ignore quota errors
   }
@@ -464,6 +472,7 @@ export const useWebsiteSettings = () => {
           principal_name: pick((instData as any).principal_name, parsed.principal_name),
           accountant_name: pick((instData as any).accountant_name, (parsed as any).accountant_name),
           verifier_name: pick((instData as any).verifier_name, (parsed as any).verifier_name),
+          logo_url: pick((instData as any).logo_url, parsed.logo_url),
         } as WebsiteSettings;
       };
 

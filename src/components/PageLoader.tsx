@@ -10,9 +10,33 @@ const PageLoader = () => {
   const { settings, isLoading } = useWebsiteSettings();
   const { language } = useLanguage();
   
-  // Use cached logo immediately to avoid flash of default
-  const [cachedLogo] = useState(() => localStorage.getItem(CACHE_KEY) || '');
-  const [cachedShape] = useState(() => localStorage.getItem(CACHE_SHAPE_KEY) || 'square');
+  // Use cached logo immediately to avoid flash of default.
+  // Fall back to the full website-settings cache so the logo shows even if
+  // the dedicated loader cache was never written (e.g. loader unmounted early).
+  const [cachedLogo] = useState(() => {
+    const direct = localStorage.getItem(CACHE_KEY);
+    if (direct) return direct;
+    try {
+      const raw = localStorage.getItem('website-settings-cache');
+      if (!raw) return '';
+      const parsed = JSON.parse(raw);
+      return parsed.loader_logo_url || parsed.favicon_url || parsed.logo_url || '';
+    } catch {
+      return '';
+    }
+  });
+  const [cachedShape] = useState(() => {
+    const direct = localStorage.getItem(CACHE_SHAPE_KEY);
+    if (direct) return direct;
+    try {
+      const raw = localStorage.getItem('website-settings-cache');
+      if (!raw) return 'square';
+      return JSON.parse(raw).loader_logo_shape || 'square';
+    } catch {
+      return 'square';
+    }
+  });
+  const [imgFailed, setImgFailed] = useState(false);
 
   const loaderLogo = settings.loader_logo_url || settings.favicon_url || settings.logo_url;
   const loaderShape = settings.loader_logo_shape || 'square';
@@ -25,7 +49,7 @@ const PageLoader = () => {
     }
   }, [isLoading, loaderLogo, loaderShape]);
 
-  const displayLogo = loaderLogo || cachedLogo;
+  const displayLogo = imgFailed ? '' : (loaderLogo || cachedLogo);
   const displayShape = loaderLogo ? loaderShape : cachedShape;
 
   return (
@@ -35,6 +59,7 @@ const PageLoader = () => {
           <img
             src={displayLogo}
             alt="Logo"
+            onError={() => setImgFailed(true)}
             className={`w-20 h-20 md:w-28 md:h-28 ${displayShape === 'circle' ? 'rounded-full' : displayShape === 'rounded' ? 'rounded-xl' : 'rounded-none'} object-cover animate-pulse`}
           />
         ) : (
