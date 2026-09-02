@@ -49,7 +49,7 @@ const AdminIdCards = () => {
     queryKey: ['idcard-settings'],
     queryFn: async () => {
       const { data } = await supabase.from('website_settings').select('key, value').in('key', [
-        'idcard_principal_name', 'idcard_principal_name_en', 'idcard_valid_until', 'idcard_valid_until_bn', 'idcard_principal_signature_url'
+        'idcard_valid_until', 'idcard_valid_until_bn', 'idcard_principal_signature_url'
       ]);
       const map: Record<string, string> = {};
       data?.forEach((r: any) => { map[r.key] = String(r.value || ''); });
@@ -58,33 +58,28 @@ const AdminIdCards = () => {
   });
 
   useEffect(() => {
-    const resolvedPrincipalName = idcardSettings?.idcard_principal_name || settings.principal_name || '';
-    const resolvedPrincipalNameEn = idcardSettings?.idcard_principal_name_en || '';
+    // Principal name always comes from the single source (administrative officer record)
+    const resolvedPrincipalName = settings.principal_name || '';
+    const resolvedPrincipalNameEn = settings.principal_name_en || '';
 
-    if (!principalNameDirty && principalName !== resolvedPrincipalName) {
-      setPrincipalName(resolvedPrincipalName);
-    }
-
-    if (!principalNameEnDirty && principalNameEn !== resolvedPrincipalNameEn) {
-      setPrincipalNameEn(resolvedPrincipalNameEn);
-    }
+    if (principalName !== resolvedPrincipalName) setPrincipalName(resolvedPrincipalName);
+    if (principalNameEn !== resolvedPrincipalNameEn) setPrincipalNameEn(resolvedPrincipalNameEn);
 
     if (idcardSettings) {
       if (idcardSettings.idcard_valid_until && !validUntil) setValidUntil(idcardSettings.idcard_valid_until);
       if (idcardSettings.idcard_valid_until_bn && !validUntilBn) setValidUntilBn(idcardSettings.idcard_valid_until_bn);
       if (idcardSettings.idcard_principal_signature_url && !signatureUrl) setSignatureUrl(idcardSettings.idcard_principal_signature_url);
     }
-  }, [idcardSettings, settings.principal_name, principalNameDirty, principalNameEnDirty, principalName, principalNameEn, validUntil, validUntilBn, signatureUrl]);
+  }, [idcardSettings, settings.principal_name, settings.principal_name_en, principalName, principalNameEn, validUntil, validUntilBn, signatureUrl]);
 
   const saveSettings = async () => {
     setSavingSettings(true);
     try {
       const pairs = [
-        { key: 'idcard_principal_name', value: principalName },
-        { key: 'idcard_principal_name_en', value: principalNameEn },
         { key: 'idcard_valid_until', value: validUntil },
         { key: 'idcard_valid_until_bn', value: validUntilBn },
       ];
+
       for (const { key, value } of pairs) {
         const { data: existing } = await supabase.from('website_settings').select('id').eq('key', key).maybeSingle();
         if (existing) {
