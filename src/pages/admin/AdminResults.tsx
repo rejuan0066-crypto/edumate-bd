@@ -16,6 +16,7 @@ import { useGradingSystem } from '@/hooks/useGradingSystem';
 import IndividualMarksheet from '@/components/results/IndividualMarksheet';
 import GradingChart from '@/components/results/GradingChart';
 import GracePassSettings from '@/components/results/GracePassSettings';
+import GradingSettings from '@/components/results/GradingSettings';
 
 import { GraduationCap } from 'lucide-react';
 import { exportResultCSV, exportResultPDF, printResultSheet, DEFAULT_RESULT_SIGNATORIES, DEFAULT_PRINT_FOOTER_OPTIONS, DEFAULT_PRINT_MARGINS, PRINT_MARGIN_PRESETS, sanitizeMargins, type ResultSignatory, type ResultPrintFooterOptions, type PrintMargins } from '@/lib/resultExport';
@@ -504,6 +505,7 @@ const AdminResults = () => {
   };
   const [sigDialogOpen, setSigDialogOpen] = useState(false);
   const [graceDialogOpen, setGraceDialogOpen] = useState(false);
+  const [gradingDialogOpen, setGradingDialogOpen] = useState(false);
 
   const [sigDraft, setSigDraft] = useState<ResultSignatory[]>(DEFAULT_RESULT_SIGNATORIES);
   const [sigErrors, setSigErrors] = useState<Record<number, { title?: string; name?: string; title_bn?: string; title_en?: string; name_bn?: string; name_en?: string }>>({});
@@ -672,9 +674,14 @@ const AdminResults = () => {
             <Settings2 className="w-4 h-4" />
             {bn ? 'বিবেচনায় পাস' : 'Consideration Pass'}
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setGradingDialogOpen(true)} className="gap-2">
+            <Settings2 className="w-4 h-4" />
+            {bn ? 'গ্রেডিং নিয়ম' : 'Grading Rules'}
+          </Button>
         </div>
 
         <GracePassSettings open={graceDialogOpen} onOpenChange={setGraceDialogOpen} />
+        <GradingSettings open={gradingDialogOpen} onOpenChange={setGradingDialogOpen} />
 
 
 
