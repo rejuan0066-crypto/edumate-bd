@@ -542,6 +542,14 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                   onSave={(lt, lr) => activeDateKey && setStatus(activeDateKey, 'leave', { leave_type: lt || null, leave_reason: lr || null })}
                 />
               )}
+              {activeRec?.status === 'absent' && activeDateKey && (
+                <AbsentReasonEditor
+                  bn={bn}
+                  initialReason={activeRec?.leave_reason || ''}
+                  saving={savingKey === activeDateKey}
+                  onSave={(r) => activeDateKey && setStatus(activeDateKey, 'absent', { leave_reason: r || null })}
+                />
+              )}
               {activeRec && activeDateKey && (
                 <button
                   onClick={() => setStatus(activeDateKey, null)}
@@ -617,7 +625,9 @@ function LeaveEditor({ bn, initialType, initialReason, saving, onSave }: {
     { v: 'sick',    bn: 'অসুস্থতা',   en: 'Sick' },
     { v: 'other',   bn: 'অন্যান্য',   en: 'Other' },
   ];
-  const showReason = lt === 'other' || lt === 'monthly' || lt === 'weekly';
+  // Reason box is always visible so admins can write the cause right away;
+  // it is only mandatory for the 'other' type.
+  const showReason = true;
   return (
     <div className="mt-1 p-2.5 rounded-xl border border-blue-300/40 bg-blue-50/60 dark:bg-blue-950/20 space-y-2">
       <div className="text-[10px] font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-400 flex items-center gap-1">
@@ -666,3 +676,35 @@ function LeaveEditor({ bn, initialType, initialReason, saving, onSave }: {
   );
 }
 
+
+function AbsentReasonEditor({ bn, initialReason, saving, onSave }: {
+  bn: boolean;
+  initialReason: string;
+  saving: boolean;
+  onSave: (reason: string) => void;
+}) {
+  const [r, setR] = useState(initialReason || '');
+  useEffect(() => { setR(initialReason || ''); }, [initialReason]);
+  return (
+    <div className="mt-1 p-2.5 rounded-xl border border-rose-300/40 bg-rose-50/60 dark:bg-rose-950/20 space-y-2">
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-rose-700 dark:text-rose-400 flex items-center gap-1">
+        <XCircle className="h-3 w-3" /> {bn ? 'অনুপস্থিতির কারণ (ঐচ্ছিক)' : 'Absence reason (optional)'}
+      </div>
+      <textarea
+        value={r}
+        onChange={(e) => setR(e.target.value)}
+        rows={2}
+        placeholder={bn ? 'যেমন: জরুরি কাজে আসতে পারেননি...' : 'e.g. Could not come due to urgent work...'}
+        className="w-full text-xs rounded-lg border border-border/50 bg-background/80 p-2 outline-none focus:border-rose-400 resize-none"
+      />
+      <Button
+        size="sm"
+        disabled={saving}
+        onClick={() => onSave(r.trim())}
+        className="w-full h-8 rounded-xl text-xs font-semibold bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white"
+      >
+        <Save className="h-3 w-3 mr-1" /> {bn ? 'সেভ করুন' : 'Save'}
+      </Button>
+    </div>
+  );
+}
