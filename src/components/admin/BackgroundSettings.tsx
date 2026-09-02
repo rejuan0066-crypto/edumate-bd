@@ -320,12 +320,12 @@ const BackgroundSettings = ({ value, onChange, disabled }: BackgroundSettingsPro
       </div>
 
       <Button
-        disabled={disabled || saving}
+        disabled={disabled}
         onClick={save}
         className="btn-primary-gradient w-full"
       >
         <Save className="w-4 h-4 mr-2" />
-        {saving ? (bn ? 'সংরক্ষণ হচ্ছে...' : 'Saving...') : (bn ? 'ব্যাকগ্রাউন্ড সংরক্ষণ করুন' : 'Save Background')}
+        {bn ? 'ব্যাকগ্রাউন্ড সংরক্ষণ করুন' : 'Save Background'}
       </Button>
     </div>
   );
