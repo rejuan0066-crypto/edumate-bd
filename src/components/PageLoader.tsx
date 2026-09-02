@@ -59,6 +59,7 @@ const PageLoader = () => {
           <img
             src={displayLogo}
             alt="Logo"
+            onError={() => setImgFailed(true)}
             className={`w-20 h-20 md:w-28 md:h-28 ${displayShape === 'circle' ? 'rounded-full' : displayShape === 'rounded' ? 'rounded-xl' : 'rounded-none'} object-cover animate-pulse`}
           />
         ) : (
