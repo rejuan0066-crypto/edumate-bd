@@ -49,7 +49,7 @@ const PageLoader = () => {
     }
   }, [isLoading, loaderLogo, loaderShape]);
 
-  const displayLogo = loaderLogo || cachedLogo;
+  const displayLogo = imgFailed ? '' : (loaderLogo || cachedLogo);
   const displayShape = loaderLogo ? loaderShape : cachedShape;
 
   return (
