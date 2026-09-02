@@ -218,8 +218,8 @@ const GradingSettings = ({ open, onOpenChange }: Props) => {
             </div>
 
             <div className="overflow-x-auto rounded-xl border">
-              <table className="w-full min-w-[820px] text-sm">
-                <thead className="bg-muted/50"><tr className="text-left"><th className="p-3">{bn ? 'গ্রেড' : 'Grade'}</th><th className="p-3">{bn ? 'শুরু %' : 'Min %'}</th><th className="p-3">{bn ? 'শেষ %' : 'Max %'}</th><th className="p-3">GPA</th><th className="p-3">{bn ? 'মর্যাদা (EN)' : 'Title (EN)'}</th><th className="p-3">{bn ? 'মর্যাদা (বাংলা)' : 'Title (BN)'}</th></tr></thead>
+              <table className="w-full min-w-[900px] text-sm">
+                <thead className="bg-muted/50"><tr className="text-left"><th className="p-3">{bn ? 'গ্রেড' : 'Grade'}</th><th className="p-3">{bn ? 'শুরু %' : 'Min %'}</th><th className="p-3">{bn ? 'শেষ %' : 'Max %'}</th><th className="p-3">GPA</th><th className="p-3">{bn ? 'রঙ' : 'Color'}</th><th className="p-3">{bn ? 'মর্যাদা (EN)' : 'Title (EN)'}</th><th className="p-3">{bn ? 'মর্যাদা (বাংলা)' : 'Title (BN)'}</th></tr></thead>
                 <tbody>
                   {orderedScales.map((scale) => {
                     const sourceIndex = scales.findIndex((item) => item.id === scale.id && item.grade === scale.grade);
@@ -228,12 +228,23 @@ const GradingSettings = ({ open, onOpenChange }: Props) => {
                       <td className="p-2"><Input className="w-24" type="text" inputMode="decimal" value={displayNumber(scale.min, bn)} onChange={(event) => updateScale(sourceIndex, 'min', event.target.value)} /></td>
                       <td className="p-2"><Input className="w-24" type="text" inputMode="decimal" value={displayNumber(scale.max, bn)} onChange={(event) => updateScale(sourceIndex, 'max', event.target.value)} /></td>
                       <td className="p-2"><Input className="w-24" value={scale.gpa} onChange={(event) => updateScale(sourceIndex, 'gpa', event.target.value)} /></td>
+                      <td className="p-2"><Input className="w-24" value={scale.color} onChange={(event) => updateScale(sourceIndex, 'color', event.target.value)} /></td>
                       <td className="p-2"><Input value={scale.title || ''} onChange={(event) => updateScale(sourceIndex, 'title', event.target.value)} /></td>
                       <td className="p-2"><Input value={scale.title_bn || ''} onChange={(event) => updateScale(sourceIndex, 'title_bn', event.target.value)} /></td>
                     </tr>;
                   })}
                 </tbody>
               </table>
+            </div>
+
+            <div className="rounded-xl border p-4 space-y-3">
+              <h3 className="font-semibold text-foreground">{bn ? 'লাইভ প্রিভিউ' : 'Live preview'}</h3>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {[25, 35, 50, 75, 85, 95].map((percentage) => {
+                  const preview = gradeFromTotal(percentage, 100, orderedScales);
+                  return <div key={percentage} className="rounded-lg bg-muted/40 px-3 py-2 text-center"><p className="text-xs text-muted-foreground">{displayNumber(percentage, bn)}%</p><p className="font-bold text-foreground">{preview.grade} · {preview.gpa}</p><p className="text-xs text-primary">{bn ? preview.title_bn : preview.title}</p></div>;
+                })}
+              </div>
             </div>
           </div>
         )}
