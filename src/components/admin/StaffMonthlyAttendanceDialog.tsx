@@ -96,6 +96,36 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
     return () => { cancel = true; };
   }, [open, staff?.id, monthStart, monthEnd, shift]);
 
+  // For residential duty shifts, build the set of dates in the visible month
+  // where this staff is rostered for THIS shift (day override beats template).
+  useEffect(() => {
+    if (!open || !staff?.id || !isDutyShift) { setDutyAllowedDates(null); return; }
+    let cancel = false;
+    (async () => {
+      const start = format(monthStart, 'yyyy-MM-dd');
+      const end = format(monthEnd, 'yyyy-MM-dd');
+      const [{ data: shiftRow }, { data: tpl }, { data: roster }] = await Promise.all([
+        supabase.from('duty_shifts').select('id').eq('code', shift).is('deleted_at', null).maybeSingle(),
+        supabase.from('duty_weekly_template').select('weekday, shift_id').eq('staff_id', staff.id).eq('is_active', true),
+        supabase.from('duty_roster').select('duty_date, shift_id').eq('staff_id', staff.id).gte('duty_date', start).lte('duty_date', end),
+      ]);
+      if (cancel) return;
+      const shiftId = (shiftRow as any)?.id;
+      if (!shiftId) { setDutyAllowedDates(new Set()); return; }
+      const allowed = new Set<string>();
+      const overriddenDates = new Set((roster || []).map((r: any) => r.duty_date));
+      (roster || []).forEach((r: any) => { if (r.shift_id === shiftId) allowed.add(r.duty_date); });
+      const tplWeekdays = new Set((tpl || []).filter((t: any) => t.shift_id === shiftId).map((t: any) => t.weekday));
+      days.forEach((d) => {
+        const key = format(d, 'yyyy-MM-dd');
+        if (overriddenDates.has(key)) return; // day override replaces template
+        if (tplWeekdays.has(getDay(d))) allowed.add(key);
+      });
+      setDutyAllowedDates(allowed);
+    })();
+    return () => { cancel = true; };
+  }, [open, staff?.id, shift, isDutyShift, monthStart, monthEnd, days]);
+
   // Load the staff's expected duty time (staff-specific → category shift → 08:00 default)
   // and the Thursday half-day setting, so late minutes match the salary page.
   useEffect(() => {
