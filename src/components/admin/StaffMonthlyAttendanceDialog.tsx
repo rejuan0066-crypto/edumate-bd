@@ -480,6 +480,81 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
             </div>
           )}
         </div>
+
+        {/* Centered day-status picker: always in the middle of the screen on desktop & mobile */}
+        <Dialog open={!!activeDateKey} onOpenChange={(o) => { if (!o) setActiveDateKey(null); }}>
+          <DialogContent
+            className="w-[92vw] max-w-sm max-h-[85vh] overflow-y-auto rounded-[28px] p-0 border-border/40 bg-background/95 backdrop-blur-xl"
+            onInteractOutside={(e) => {
+              const t = e.target as HTMLElement | null;
+              if (t && t.closest('[data-radix-popper-content-wrapper]')) {
+                e.preventDefault();
+              }
+            }}
+          >
+            <div className="px-4 py-4 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-border/30">
+                <div className="text-sm font-semibold">
+                  {activeDate ? format(activeDate, 'dd/MM/yyyy') : activeDateKey}
+                </div>
+                {activeIsToday && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium">{bn ? 'আজ' : 'Today'}</span>}
+              </div>
+              <div className="grid grid-cols-1 gap-0.5">
+                {Object.entries(STATUS_META).map(([k, m]) => {
+                  const I = m.icon;
+                  const active = activeRec?.status === k;
+                  return (
+                    <button
+                      key={k}
+                      onClick={() => activeDateKey && setStatus(activeDateKey, k)}
+                      disabled={savingKey === activeDateKey}
+                      className={`flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm text-left transition-all ${
+                        active
+                          ? `${m.bg} ${m.color} font-semibold shadow-sm`
+                          : 'hover:bg-muted/60 hover:translate-x-0.5'
+                      }`}
+                    >
+                      <div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${m.gradient} flex items-center justify-center shadow-sm shrink-0`}>
+                        <I className="h-4 w-4 text-white" />
+                      </div>
+                      <span className="flex-1">{bn ? m.bnLabel : m.enLabel}</span>
+                      {active && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
+                    </button>
+                  );
+                })}
+              </div>
+              {(activeRec?.status === 'present' || activeRec?.status === 'late' || activeRec?.status === 'half_day') && activeDateKey && (
+                <LateTimeEditor
+                  bn={bn}
+                  status={activeRec.status}
+                  initialIn={activeRec?.check_in_time || ''}
+                  initialOut={activeRec?.check_out_time || ''}
+                  saving={savingKey === activeDateKey}
+                  onSave={(ci, co) => setStatus(activeDateKey, activeRec.status, { check_in_time: ci || null, check_out_time: co || null })}
+                />
+              )}
+              {activeRec?.status === 'leave' && activeDateKey && (
+                <LeaveEditor
+                  bn={bn}
+                  initialType={activeRec?.leave_type || ''}
+                  initialReason={activeRec?.leave_reason || ''}
+                  saving={savingKey === activeDateKey}
+                  onSave={(lt, lr) => activeDateKey && setStatus(activeDateKey, 'leave', { leave_type: lt || null, leave_reason: lr || null })}
+                />
+              )}
+              {activeRec && activeDateKey && (
+                <button
+                  onClick={() => setStatus(activeDateKey, null)}
+                  disabled={savingKey === activeDateKey}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 mt-1 border-t border-border/30 pt-2 w-full"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {bn ? 'মুছুন' : 'Clear'}
+                </button>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </DialogContent>
     </Dialog>
   );
