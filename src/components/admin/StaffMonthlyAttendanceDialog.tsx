@@ -542,6 +542,14 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                   onSave={(lt, lr) => activeDateKey && setStatus(activeDateKey, 'leave', { leave_type: lt || null, leave_reason: lr || null })}
                 />
               )}
+              {activeRec?.status === 'absent' && activeDateKey && (
+                <AbsentReasonEditor
+                  bn={bn}
+                  initialReason={activeRec?.leave_reason || ''}
+                  saving={savingKey === activeDateKey}
+                  onSave={(r) => activeDateKey && setStatus(activeDateKey, 'absent', { leave_reason: r || null })}
+                />
+              )}
               {activeRec && activeDateKey && (
                 <button
                   onClick={() => setStatus(activeDateKey, null)}
