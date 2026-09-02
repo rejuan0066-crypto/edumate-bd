@@ -46,27 +46,9 @@ const BackgroundSettings = ({ value, onChange, disabled }: BackgroundSettingsPro
     setLocal((prev) => ({ ...prev, ...patch }));
   };
 
-  const save = async () => {
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('website_settings')
-        .upsert(
-          {
-            key: 'background_style',
-            value: local,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: 'key' }
-        );
-      if (error) throw error;
-      onChange(local);
-      toast.success(bn ? 'ব্যাকগ্রাউন্ড সেটিংস সংরক্ষিত' : 'Background settings saved');
-    } catch (err: any) {
-      toast.error(err.message || (bn ? 'সংরক্ষণ ব্যর্থ' : 'Save failed'));
-    } finally {
-      setSaving(false);
-    }
+  const save = () => {
+    onChange(local);
+    toast.success(bn ? 'ব্যাকগ্রাউন্ড সেটিংস সংরক্ষিত' : 'Background settings saved');
   };
 
   const previewStyle = (): React.CSSProperties => {
