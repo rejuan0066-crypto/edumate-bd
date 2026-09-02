@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useMemo } from 'react';
 import BackButton from './BackButton';
 import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -7,6 +7,7 @@ import BijoyToggle from './BijoyToggle';
 import { Menu, X, Phone, Mail, MapPin, GraduationCap } from 'lucide-react';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 import { useMenuSettings } from '@/hooks/useMenuSettings';
+import type { BackgroundStyle } from '@/hooks/useWebsiteSettings';
 
 const PublicLayout = ({ children }: { children: ReactNode }) => {
   const { t, language } = useLanguage();
