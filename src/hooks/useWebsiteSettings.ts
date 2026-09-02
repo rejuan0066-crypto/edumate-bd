@@ -435,6 +435,14 @@ const readCache = (): WebsiteSettings | null => {
 const writeCache = (settings: WebsiteSettings) => {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(settings));
+    // Keep the page loader's lightweight cache in sync so the madrasa logo
+    // renders instantly on every subsequent visit, even if the loader itself
+    // unmounts before its own effect gets a chance to write.
+    const loaderLogo = settings.loader_logo_url || settings.favicon_url || settings.logo_url;
+    if (loaderLogo) {
+      localStorage.setItem('cached_loader_logo', loaderLogo);
+      localStorage.setItem('cached_loader_logo_shape', settings.loader_logo_shape || 'square');
+    }
   } catch {
     // ignore quota errors
   }
