@@ -107,12 +107,16 @@ const RECITERS = [
   { id: 4, name_en: 'Abu Bakr al-Shatri', name_bn: 'আবু বকর আশ-শাতরি' },
   { id: 5, name_en: 'Hani ar-Rifai', name_bn: 'হানি আর-রিফাঈ' },
   { id: 1001, name_en: 'Shakir Qasami (Full Surah only)', name_bn: 'ক্বারী শাকির ক্বাসমী (শুধু পূর্ণ সূরা)' },
+  { id: 1002, name_en: 'Hisham Al-Harraz — Warsh (Full Surah only)', name_bn: 'হিশাম আল হাররাজ — ওয়ারশ (শুধু পূর্ণ সূরা)' },
 ];
 
 // Custom reciters not in Quran.com API — provide direct CDN URL per surah.
 const CUSTOM_SURAH_AUDIO: Record<number, (chapter: number) => string> = {
   1001: (c) =>
     `https://download.quranicaudio.com/quran/shakir_qasami_with_english/${String(c).padStart(3, '0')}.mp3`,
+  // mp3quran.net — Hicham Lharraz, Riwayat Warsh 'an Nafi' (surah 33 unavailable)
+  1002: (c) =>
+    `https://server16.mp3quran.net/H-Lharraz/Rewayat-Warsh-A-n-Nafi/${String(c).padStart(3, '0')}.mp3`,
 };
 const isCustomReciter = (id: number) => id in CUSTOM_SURAH_AUDIO;
 
