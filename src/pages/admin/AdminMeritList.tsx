@@ -30,6 +30,7 @@ interface StudentRanking {
   gpa: string;
   rank: number;
   hasFail: boolean;
+  graced?: boolean;
 }
 
 const AdminMeritList = () => {
@@ -116,12 +117,17 @@ const AdminMeritList = () => {
           gpa: overall.gpa,
           rank: 0,
           hasFail: overall.hasFail,
+          graced: (overall as any).graced === true,
         };
       });
 
-      // Sort: passing students first by total marks desc, failing students at the end
+      // Sort tiers: regular pass first, then grace pass (consideration), then failed.
+      // Within the same tier, higher total marks rank first — a grace-passed
+      // student can never outrank a student who passed every subject.
+      const tierOf = (r: StudentRanking) => (r.hasFail ? 2 : r.graced ? 1 : 0);
       rankings.sort((a, b) => {
-        if (a.hasFail !== b.hasFail) return a.hasFail ? 1 : -1;
+        const tierDiff = tierOf(a) - tierOf(b);
+        if (tierDiff !== 0) return tierDiff;
         return b.totalMarks - a.totalMarks;
       });
 
