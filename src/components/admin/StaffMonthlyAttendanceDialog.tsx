@@ -447,9 +447,6 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                         } ${isToday ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''} ${isSaving ? 'animate-pulse' : ''}`}
                          title={isOffDuty ? (bn ? 'এই বারে ডিউটি নেই' : 'No duty on this day') : meta ? (bn ? meta.bnLabel : meta.enLabel) : (bn ? 'অচিহ্নিত' : 'Unmarked')}
                        >
-                         {isOffDuty && (
-                           <span className="absolute inset-0 rounded-2xl bg-muted/60 dark:bg-muted/40" aria-hidden />
-                         )}
                         {/* Status dot indicator (top-right) */}
                         {meta && (
                           <span className={`absolute top-1 right-1 h-1.5 w-1.5 rounded-full ${meta.dot} shadow-sm`} />
