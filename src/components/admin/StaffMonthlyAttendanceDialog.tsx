@@ -617,7 +617,9 @@ function LeaveEditor({ bn, initialType, initialReason, saving, onSave }: {
     { v: 'sick',    bn: 'অসুস্থতা',   en: 'Sick' },
     { v: 'other',   bn: 'অন্যান্য',   en: 'Other' },
   ];
-  const showReason = lt === 'other' || lt === 'monthly' || lt === 'weekly';
+  // Reason box is always visible so admins can write the cause right away;
+  // it is only mandatory for the 'other' type.
+  const showReason = true;
   return (
     <div className="mt-1 p-2.5 rounded-xl border border-blue-300/40 bg-blue-50/60 dark:bg-blue-950/20 space-y-2">
       <div className="text-[10px] font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-400 flex items-center gap-1">
