@@ -44,7 +44,8 @@ export default function BulkHolidayDialog({ open, onOpenChange, entities, entity
       let count = 0;
       for (const dk of dateKeys) {
         const { error: delErr } = await supabase.from('attendance_records')
-          .delete().eq('attendance_date', dk).eq('entity_type', entityType).in('entity_id', selectedIds);
+          .delete().eq('attendance_date', dk).eq('entity_type', entityType)
+          .eq('shift', shift).in('entity_id', selectedIds);
         if (delErr) throw delErr;
         const records = selectedIds.map(id => ({
           attendance_date: dk, entity_type: entityType, entity_id: id,
@@ -86,7 +87,7 @@ export default function BulkHolidayDialog({ open, onOpenChange, entities, entity
               : (bn ? 'একসাথে উপস্থিতি' : 'Bulk Present')}
           </DialogTitle>
         </DialogHeader>
-        <div className="grid md:grid-cols-2 gap-4 px-5 pb-5 max-h-[70vh] overflow-y-auto">
+        <div className="grid md:grid-cols-2 gap-4 px-5 pb-5 max-h-[70vh] overflow-y-auto overscroll-contain" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
           {/* Date selection */}
           <div className="min-w-0">
             <p className="text-xs font-semibold text-muted-foreground mb-2">
@@ -138,7 +139,10 @@ export default function BulkHolidayDialog({ open, onOpenChange, entities, entity
                 {allSelected ? (bn ? 'সব বাদ' : 'Clear all') : (bn ? 'সবাই নির্বাচন' : 'Select all')}
               </button>
             </div>
-            <div className="rounded-2xl border border-border/40 p-2 space-y-0.5 overflow-y-auto max-h-[320px]">
+            <div
+              className="rounded-2xl border border-border/40 p-2 space-y-0.5 overflow-y-auto overscroll-contain max-h-[45vh] md:max-h-[320px] [-webkit-overflow-scrolling:touch]"
+              style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}
+            >
               {entities.length === 0 && (
                 <p className="text-xs text-muted-foreground p-3 text-center">{bn ? 'কোনো তালিকা নেই' : 'No one in list'}</p>
               )}
