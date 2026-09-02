@@ -356,6 +356,7 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
         </div>
       </footer>
     </div>
+    </>
   );
 };
 
