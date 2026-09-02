@@ -113,6 +113,9 @@ const GradingSettings = ({ open, onOpenChange }: Props) => {
     if (!orderedScales.some((scale) => scale.grade.trim().toUpperCase() === 'F')) {
       return bn ? 'F গ্রেড অবশ্যই রাখতে হবে।' : 'The F grade is required.';
     }
+    if (!orderedScales.some((scale) => scale.grade.trim().toUpperCase() === 'D')) {
+      return bn ? 'D গ্রেড অবশ্যই রাখতে হবে, কারণ বিবেচনায়-পাস এই গ্রেড ব্যবহার করে।' : 'The D grade is required because consideration pass uses this grade.';
+    }
     for (const scale of orderedScales) {
       if (!scale.grade.trim() || !scale.title?.trim() || !scale.title_bn?.trim()) {
         return bn ? 'গ্রেড, ইংরেজি মর্যাদা ও বাংলা মর্যাদা পূরণ করুন।' : 'Grade and both merit titles are required.';
