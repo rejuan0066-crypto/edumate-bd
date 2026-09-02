@@ -118,116 +118,172 @@ const DatePicker = ({
 
   const defaultPlaceholder = bengali ? 'তারিখ নির্বাচন করুন' : 'Pick a date';
 
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
+  const today = new Date();
+  const headerLabel = displayValue || (bengali ? 'কোনো তারিখ নির্বাচিত নয়' : 'No date selected');
+
+  const trigger = (
+    <button
+      type="button"
+      disabled={disabled}
+      className={cn(
+        "group flex items-center gap-2 h-10 w-full rounded-2xl border border-input bg-background px-3 py-2 text-sm shadow-sm transition-all duration-300",
+        "hover:border-primary/40 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50",
+        "disabled:cursor-not-allowed disabled:opacity-50",
+        !value && "text-muted-foreground",
+        className,
+      )}
+    >
+      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
+        <CalendarIcon className="h-3.5 w-3.5" />
+      </span>
+      <span className={cn("flex-1 text-left truncate", value && "font-medium")}>
+        {displayValue || placeholder || defaultPlaceholder}
+      </span>
+    </button>
+  );
+
+  const panel = (
+    <div className="w-full">
+      {/* selected date header */}
+      <div className="border-b border-border/60 bg-muted/30 px-5 py-3">
+        <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+          {bengali ? 'নির্বাচিত তারিখ' : 'Selected date'}
+        </p>
+        <p className={cn("text-base font-bold", !displayValue && "text-muted-foreground font-medium text-sm")}>
+          {headerLabel}
+        </p>
+      </div>
+
+      {/* Month/Year Quick Selector */}
+      <div className="flex items-center gap-2 px-4 pt-4 pb-1">
+        <Select value={String(viewMonth.getMonth())} onValueChange={handleMonthChange}>
+          <SelectTrigger className="h-9 flex-1 rounded-xl text-xs font-medium border-input/60">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl max-h-[220px]">
+            {(bengali ? BENGALI_MONTHS : ENGLISH_MONTHS).map((m, i) => (
+              <SelectItem key={i} value={String(i)} className="text-xs">{m}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={String(viewMonth.getFullYear())} onValueChange={handleYearChange}>
+          <SelectTrigger className="h-9 w-24 rounded-xl text-xs font-medium border-input/60">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl max-h-[220px]">
+            {years.map(y => (
+              <SelectItem key={y} value={String(y)} className="text-xs">
+                {bengali ? toBengaliDigit(y) : y}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Calendar
+        mode="single"
+        selected={selected}
+        onSelect={handleSelect}
+        month={viewMonth}
+        onMonthChange={setViewMonth}
+        locale={bengali ? bnLocale : undefined}
+        modifiers={{ holiday: holidayDayObjects }}
+        modifiersClassNames={{
+          holiday: "text-destructive font-bold bg-destructive/10 rounded-lg",
+        }}
+        classNames={{
+          caption: "hidden",
+          nav: "hidden",
+          head_cell: "text-muted-foreground rounded-md w-9 font-medium text-[0.7rem] uppercase tracking-wider",
+          cell: "h-9 w-9 text-center text-sm p-0 relative",
+          day: "h-9 w-9 p-0 font-medium rounded-xl transition-all duration-200 hover:bg-primary/10 aria-selected:opacity-100",
+          day_selected: "bg-primary text-primary-foreground shadow-md hover:bg-primary hover:text-primary-foreground focus:bg-primary",
+          day_today: "ring-1 ring-inset ring-primary/40 text-primary font-bold",
+        }}
+        components={{
+          IconLeft: () => <ChevronLeft className="h-4 w-4" />,
+          IconRight: () => <ChevronRight className="h-4 w-4" />,
+          DayContent: ({ date }) => {
+            const key = format(date, 'yyyy-MM-dd');
+            const info = holidayMap[key];
+            const label = bengali ? toBengaliDigit(date.getDate()) : date.getDate();
+            if (!info) return <>{label}</>;
+            const dateStr = bengali
+              ? `${toBengaliDigit(date.getDate())} ${BENGALI_MONTHS[date.getMonth()]}, ${toBengaliDigit(date.getFullYear())}`
+              : format(date, 'dd MMMM, yyyy');
+            const title = [
+              dateStr,
+              info.label ? `${bengali ? 'কারণ' : 'Reason'}: ${info.label}` : '',
+              info.type ? `${bengali ? 'ধরন' : 'Type'}: ${info.type}` : '',
+            ].filter(Boolean).join('\n');
+            return (
+              <span title={title} className="flex h-full w-full items-center justify-center cursor-help">
+                {label}
+              </span>
+            );
+          },
+        }}
+        initialFocus
+        className="p-3 pointer-events-auto"
+      />
+
+      {/* Quick actions */}
+      <div className="flex items-center gap-2 px-4 pb-4">
+        <Button
           type="button"
-          disabled={disabled}
-          className={cn(
-            "flex items-center gap-2 h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-sm transition-all duration-300",
-            "hover:border-primary/40 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50",
-            "disabled:cursor-not-allowed disabled:opacity-50",
-            !value && "text-muted-foreground",
-            className,
-          )}
+          variant="secondary"
+          size="sm"
+          className="h-9 flex-1 rounded-xl text-xs font-semibold"
+          onClick={() => {
+            const t = new Date();
+            onChange(format(t, 'yyyy-MM-dd'));
+            setViewMonth(t);
+            setOpen(false);
+          }}
         >
-          <span className="flex-1 text-left truncate">
-            {displayValue || placeholder || defaultPlaceholder}
-          </span>
-          <CalendarIcon className="h-4 w-4 text-primary/60 shrink-0" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent
-        className="w-auto p-0 border-0 shadow-[0_20px_50px_rgba(0,0,0,0.1)] rounded-[28px] backdrop-blur-xl bg-background/95 overflow-hidden"
-        align="start"
-        sideOffset={6}
-      >
-        {/* Month/Year Quick Selector */}
-        <div className="flex items-center gap-2 px-4 pt-4 pb-2">
-          <Select value={String(viewMonth.getMonth())} onValueChange={handleMonthChange}>
-            <SelectTrigger className="h-8 flex-1 rounded-xl text-xs font-medium border-input/50">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl max-h-[200px]">
-              {(bengali ? BENGALI_MONTHS : ENGLISH_MONTHS).map((m, i) => (
-                <SelectItem key={i} value={String(i)} className="text-xs">{m}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={String(viewMonth.getFullYear())} onValueChange={handleYearChange}>
-            <SelectTrigger className="h-8 w-24 rounded-xl text-xs font-medium border-input/50">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl max-h-[200px]">
-              {years.map(y => (
-                <SelectItem key={y} value={String(y)} className="text-xs">
-                  {bengali ? toBengaliDigit(y) : y}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <Calendar
-          mode="single"
-          selected={selected}
-          onSelect={handleSelect}
-          month={viewMonth}
-          onMonthChange={setViewMonth}
-          locale={bengali ? bnLocale : undefined}
-          modifiers={{ holiday: holidayDayObjects }}
-          modifiersClassNames={{
-            holiday: "text-red-600 font-bold bg-red-50 rounded-md",
-          }}
-          components={{
-            IconLeft: () => <ChevronLeft className="h-4 w-4" />,
-            IconRight: () => <ChevronRight className="h-4 w-4" />,
-            DayContent: ({ date }) => {
-              const key = format(date, 'yyyy-MM-dd');
-              const info = holidayMap[key];
-              const label = bengali ? toBengaliDigit(date.getDate()) : date.getDate();
-              if (!info) return <>{label}</>;
-              const dateStr = bengali
-                ? `${toBengaliDigit(date.getDate())} ${BENGALI_MONTHS[date.getMonth()]}, ${toBengaliDigit(date.getFullYear())}`
-                : format(date, 'dd MMMM, yyyy');
-              const title = [
-                dateStr,
-                info.label ? `${bengali ? 'কারণ' : 'Reason'}: ${info.label}` : '',
-                info.type ? `${bengali ? 'ধরন' : 'Type'}: ${info.type}` : '',
-              ].filter(Boolean).join('\n');
-              return (
-                <span title={title} className="flex h-full w-full items-center justify-center cursor-help">
-                  {label}
-                </span>
-              );
-            },
-          }}
-          initialFocus
-          className="p-3"
-        />
-
-
-
-        {/* Today button */}
-        <div className="px-4 pb-3">
+          {bengali ? 'আজকে' : 'Today'}
+        </Button>
+        {value && (
           <Button
+            type="button"
             variant="ghost"
             size="sm"
-            className="w-full rounded-xl h-8 text-xs font-medium text-primary hover:bg-primary/10"
-            onClick={() => {
-              const today = new Date();
-              onChange(format(today, 'yyyy-MM-dd'));
-              setViewMonth(today);
-              setOpen(false);
-            }}
+            className="h-9 rounded-xl px-3 text-xs font-medium text-muted-foreground hover:text-destructive"
+            onClick={() => { onChange(''); setOpen(false); }}
           >
-            {bengali ? 'আজকে' : 'Today'}
+            {bengali ? 'মুছুন' : 'Clear'}
           </Button>
-        </div>
+        )}
+      </div>
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>{trigger}</DialogTrigger>
+        <DialogContent className="w-[92vw] max-w-[340px] max-h-[88vh] overflow-y-auto gap-0 rounded-[28px] border-0 p-0 shadow-2xl [&>button]:hidden">
+          <DialogTitle className="sr-only">{bengali ? 'তারিখ নির্বাচন' : 'Select date'}</DialogTitle>
+          {panel}
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+      <PopoverContent
+        className="w-auto overflow-hidden rounded-[28px] border-0 bg-background/95 p-0 shadow-[0_20px_50px_rgba(0,0,0,0.12)] backdrop-blur-xl"
+        align="start"
+        sideOffset={6}
+        collisionPadding={12}
+      >
+        {panel}
       </PopoverContent>
     </Popover>
   );
+
 };
 
 export { DatePicker };
