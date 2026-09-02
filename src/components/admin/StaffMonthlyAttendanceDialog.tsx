@@ -47,6 +47,10 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
   // used to compute late minutes from check-in time (same rule as salary page).
   const [dutyInfo, setDutyInfo] = useState<{ start: number; end: number; category: string | null }>({ start: 480, end: 1020, category: null });
   const [thuSetting, setThuSetting] = useState<any>(null);
+  // Residential-duty roster: which dates this staff actually has the shift on.
+  // null = no restriction (full-day / student shifts); Set = allowed ISO dates.
+  const [dutyAllowedDates, setDutyAllowedDates] = useState<Set<string> | null>(null);
+  const isDutyShift = shift === 'morning' || shift === 'evening';
 
   useEffect(() => {
     if (!open) return;
@@ -91,6 +95,36 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
     })();
     return () => { cancel = true; };
   }, [open, staff?.id, monthStart, monthEnd, shift]);
+
+  // For residential duty shifts, build the set of dates in the visible month
+  // where this staff is rostered for THIS shift (day override beats template).
+  useEffect(() => {
+    if (!open || !staff?.id || !isDutyShift) { setDutyAllowedDates(null); return; }
+    let cancel = false;
+    (async () => {
+      const start = format(monthStart, 'yyyy-MM-dd');
+      const end = format(monthEnd, 'yyyy-MM-dd');
+      const [{ data: shiftRow }, { data: tpl }, { data: roster }] = await Promise.all([
+        supabase.from('duty_shifts').select('id').eq('code', shift).is('deleted_at', null).maybeSingle(),
+        supabase.from('duty_weekly_template').select('weekday, shift_id').eq('staff_id', staff.id).eq('is_active', true),
+        supabase.from('duty_roster').select('duty_date, shift_id').eq('staff_id', staff.id).gte('duty_date', start).lte('duty_date', end),
+      ]);
+      if (cancel) return;
+      const shiftId = (shiftRow as any)?.id;
+      if (!shiftId) { setDutyAllowedDates(new Set()); return; }
+      const allowed = new Set<string>();
+      const overriddenDates = new Set((roster || []).map((r: any) => r.duty_date));
+      (roster || []).forEach((r: any) => { if (r.shift_id === shiftId) allowed.add(r.duty_date); });
+      const tplWeekdays = new Set((tpl || []).filter((t: any) => t.shift_id === shiftId).map((t: any) => t.weekday));
+      days.forEach((d) => {
+        const key = format(d, 'yyyy-MM-dd');
+        if (overriddenDates.has(key)) return; // day override replaces template
+        if (tplWeekdays.has(getDay(d))) allowed.add(key);
+      });
+      setDutyAllowedDates(allowed);
+    })();
+    return () => { cancel = true; };
+  }, [open, staff?.id, shift, isDutyShift, monthStart, monthEnd, days]);
 
   // Load the staff's expected duty time (staff-specific → category shift → 08:00 default)
   // and the Thursday half-day setting, so late minutes match the salary page.
@@ -392,17 +426,18 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                 const rec = byDate[key];
                 const meta = rec ? STATUS_META[rec.status] : null;
                 const Icon = meta?.icon;
-                const isToday = isSameDay(d, new Date());
-                const isFuture = d > new Date();
-                const isFriday = getDay(d) === 5;
-                const isSaving = savingKey === key;
-                const dayNum = format(d, 'd');
-                return (
-                  <Popover key={key} open={openKey === key} onOpenChange={(o) => setOpenKey(o ? key : null)}>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        disabled={isFuture || isSaving}
+                 const isToday = isSameDay(d, new Date());
+                 const isFuture = d > new Date();
+                 const isFriday = getDay(d) === 5;
+                 const isSaving = savingKey === key;
+                 const isOffDuty = dutyAllowedDates ? !dutyAllowedDates.has(key) : false;
+                 const dayNum = format(d, 'd');
+                 return (
+                   <Popover key={key} open={openKey === key} onOpenChange={(o) => setOpenKey(o ? key : null)}>
+                     <PopoverTrigger asChild>
+                       <button
+                         type="button"
+                         disabled={isFuture || isSaving || isOffDuty}
                         className={`group relative aspect-square rounded-2xl border p-1.5 flex flex-col items-center justify-center text-center transition-all duration-200 hover:-translate-y-[3px] hover:shadow-lg hover:shadow-black/10 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:transform-none disabled:hover:shadow-none overflow-hidden ${
                           meta
                             ? `${meta.bg} border-transparent shadow-sm`
@@ -410,8 +445,8 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                               ? 'bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200/40 dark:border-emerald-800/30 border-dashed'
                               : 'bg-muted/20 border-dashed border-border/30 hover:bg-muted/40'
                         } ${isToday ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''} ${isSaving ? 'animate-pulse' : ''}`}
-                        title={meta ? (bn ? meta.bnLabel : meta.enLabel) : (bn ? 'অচিহ্নিত' : 'Unmarked')}
-                      >
+                         title={isOffDuty ? (bn ? 'এই বারে ডিউটি নেই' : 'No duty on this day') : meta ? (bn ? meta.bnLabel : meta.enLabel) : (bn ? 'অচিহ্নিত' : 'Unmarked')}
+                       >
                         {/* Status dot indicator (top-right) */}
                         {meta && (
                           <span className={`absolute top-1 right-1 h-1.5 w-1.5 rounded-full ${meta.dot} shadow-sm`} />
