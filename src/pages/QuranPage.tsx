@@ -805,12 +805,32 @@ const QuranPage = () => {
     });
   }, []);
 
+  // ---- Playback progress tracking (current time / duration) ----
+  const [audioTime, setAudioTime] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
+
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a) return;
+    const onTime = () => setAudioTime(a.currentTime || 0);
+    const onMeta = () => setAudioDuration(Number.isFinite(a.duration) ? a.duration : 0);
+    a.addEventListener('timeupdate', onTime);
+    a.addEventListener('loadedmetadata', onMeta);
+    a.addEventListener('durationchange', onMeta);
+    return () => {
+      a.removeEventListener('timeupdate', onTime);
+      a.removeEventListener('loadedmetadata', onMeta);
+      a.removeEventListener('durationchange', onMeta);
+    };
+  }, [playingKey]);
+
   const togglePlay = () => {
     const a = audioRef.current;
     if (!a) return;
     if (isPlaying) { a.pause(); setIsPlaying(false); }
     else { a.play(); setIsPlaying(true); }
   };
+
 
   const playVerse = (v: Verse) => {
     // Custom (full-surah-only) reciter: play the surah this verse belongs to.
