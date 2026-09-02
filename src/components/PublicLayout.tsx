@@ -75,7 +75,66 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
     .replace('{year}', String(new Date().getFullYear()))
     .replace('{name}', settings.institution_name);
 
+  const bgStyle = settings.background_style;
+  const hasCustomBg = bgStyle && bgStyle.type && (bgStyle.type !== 'image' || bgStyle.image_url || bgStyle.image_url_dark);
+
+  const backgroundCss = useMemo(() => {
+    if (!hasCustomBg) return '';
+
+    const buildRule = (style: BackgroundStyle, isDark: boolean) => {
+      const overlay = Math.max(0, Math.min(100, style.overlay_opacity || 0));
+      const overlayColor = isDark ? `rgba(0,0,0,${overlay / 100})` : `rgba(255,255,255,${overlay / 100})`;
+
+      let bg = '';
+      if (style.type === 'color') {
+        const c = isDark ? (style.color_dark || style.color) : style.color;
+        bg = `background: ${c || 'transparent'} !important;`;
+      } else if (style.type === 'gradient') {
+        const g = isDark ? (style.gradient_dark || style.gradient) : style.gradient;
+        bg = `background: ${g || 'transparent'} !important;`;
+      } else if (style.type === 'image') {
+        const img = isDark ? (style.image_url_dark || style.image_url) : style.image_url;
+        if (img) {
+          bg = `background-image: url(${img}) !important; background-position: ${style.position || 'center'} !important; background-size: ${style.size || 'cover'} !important; background-repeat: ${style.repeat || 'no-repeat'} !important; background-attachment: ${style.fixed ? 'fixed' : 'scroll'} !important;`;
+        }
+      }
+
+      return `${bg} --custom-bg-overlay: ${overlayColor};`;
+    };
+
+    const lightRule = buildRule(bgStyle, false);
+    const darkRule = buildRule(bgStyle, true);
+
+    return `
+      body.custom-public-bg::before {
+        ${lightRule}
+        background-size: cover !important;
+        filter: none !important;
+      }
+      body.custom-public-bg::after {
+        background: var(--custom-bg-overlay) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+      }
+      .dark body.custom-public-bg::before {
+        ${darkRule}
+        background-size: cover !important;
+        filter: none !important;
+      }
+      .dark body.custom-public-bg::after {
+        background: var(--custom-bg-overlay) !important;
+      }
+    `;
+  }, [bgStyle, hasCustomBg]);
+
   return (
+    <>
+      {hasCustomBg && (
+        <>
+          <style>{`body.custom-public-bg::before, body.custom-public-bg::after { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; }`}</style>
+          <style>{backgroundCss}</style>
+        </>
+      )}
     <div className="min-h-screen flex flex-col bg-background">
       {/* Top bar */}
       {(hs?.topbar_visible !== false) && (
