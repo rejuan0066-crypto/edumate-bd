@@ -1865,73 +1865,65 @@ const QuranPage = () => {
       {/* ===== Audio player bar (sits above floating toolbar) ===== */}
       {playingKey && (
         <div
-          className="fixed inset-x-0 z-40 border-t border-border/50 bg-background/95 backdrop-blur-xl"
+          className="fixed inset-x-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur-xl"
           style={{ bottom: 'calc(76px + env(safe-area-inset-bottom))' }}
         >
-          <div className="max-w-[1440px] mx-auto px-3 sm:px-4 py-2 sm:py-2.5 flex items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-              <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+          <div className="max-w-[1440px] mx-auto px-3 sm:px-5 py-2.5 sm:py-3">
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                 <BookOpen className="w-4 h-4 text-primary" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold truncate">
-                  {playingKey === 'surah'
-                    ? (bn ? `সম্পূর্ণ সূরা — ${currentChapter?.name_simple || ''}` : `Full Surah — ${currentChapter?.name_simple || ''}`)
-                    : `${bn ? 'আয়াত' : 'Verse'} ${playingKey}`}
+                  {playingVerse
+                    ? `${bn ? 'আয়াত' : 'Verse'} ${playingVerse.verse_key}`
+                    : playingSurah
+                      ? `${bn ? 'সূরা' : 'Surah'} ${bn ? surahNameBn(playingSurah.id, playingSurah.name_simple) : playingSurah.name_simple}`
+                      : (bn ? 'তিলাওয়াত চলছে' : 'Recitation playing')}
                 </p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {bn ? RECITERS.find((r) => r.id === settings.reciterId)?.name_bn : RECITERS.find((r) => r.id === settings.reciterId)?.name_en}
-                </p>
+                <p className="text-[11px] text-muted-foreground truncate">{playerLocation}</p>
               </div>
-            </div>
-
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full h-8 w-8 sm:h-9 sm:w-9"
-                onClick={() => {
+              <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+                <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" aria-label={bn ? 'আগের আয়াত' : 'Previous verse'} onClick={() => {
                   if (playingKey === 'surah') return;
-                  const idx = verses.findIndex((v) => v.verse_key === playingKey);
-                  if (idx > 0) playVerse(verses[idx - 1]);
-                }}
-                disabled={playingKey === 'surah'}
-              >
-                <SkipBack className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="default"
-                size="icon"
-                className="rounded-full h-8 w-8 sm:h-9 sm:w-9"
-                onClick={togglePlay}
-              >
-                {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full h-8 w-8 sm:h-9 sm:w-9"
-                onClick={() => {
+                  const source = isMushaf ? mushafVersesFlat : verses;
+                  const idx = source.findIndex((v) => v.verse_key === playingKey);
+                  if (idx > 0) playVerse(source[idx - 1]);
+                }} disabled={playingKey === 'surah'}><SkipBack className="w-4 h-4" /></Button>
+                <Button variant="default" size="icon" className="rounded-full h-9 w-9" aria-label={isPlaying ? (bn ? 'বিরতি' : 'Pause') : (bn ? 'চালু করুন' : 'Play')} onClick={togglePlay}>
+                  {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                </Button>
+                <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" aria-label={bn ? 'পরের আয়াত' : 'Next verse'} onClick={() => {
                   if (playingKey === 'surah') return;
-                  const idx = verses.findIndex((v) => v.verse_key === playingKey);
-                  if (idx >= 0 && idx < verses.length - 1) playVerse(verses[idx + 1]);
-                }}
-                disabled={playingKey === 'surah'}
-              >
-                <SkipForward className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full h-8 w-8 sm:h-9 sm:w-9"
-                onClick={() => {
+                  const source = isMushaf ? mushafVersesFlat : verses;
+                  const idx = source.findIndex((v) => v.verse_key === playingKey);
+                  if (idx >= 0 && idx < source.length - 1) playVerse(source[idx + 1]);
+                }} disabled={playingKey === 'surah'}><SkipForward className="w-4 h-4" /></Button>
+                <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" aria-label={bn ? 'বন্ধ করুন' : 'Close player'} onClick={() => {
                   audioRef.current?.pause();
                   setPlayingKey(null);
                   setIsPlaying(false);
+                }}><X className="w-4 h-4" /></Button>
+              </div>
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-[10px] tabular-nums text-muted-foreground w-8">{formatAudioTime(audioTime)}</span>
+              <input
+                type="range"
+                min="0"
+                max={audioDuration || 0}
+                step="0.1"
+                value={Math.min(audioTime, audioDuration || 0)}
+                onChange={(event) => {
+                  const next = Number(event.target.value);
+                  if (audioRef.current) audioRef.current.currentTime = next;
+                  setAudioTime(next);
                 }}
-              >
-                <X className="w-4 h-4" />
-              </Button>
+                disabled={!audioDuration}
+                aria-label={bn ? 'তিলাওয়াতের অগ্রগতি' : 'Recitation progress'}
+                className="h-1.5 min-w-0 flex-1 accent-primary disabled:opacity-50"
+              />
+              <span className="text-[10px] tabular-nums text-muted-foreground w-8 text-right">{formatAudioTime(audioDuration)}</span>
             </div>
           </div>
         </div>
