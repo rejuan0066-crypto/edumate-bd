@@ -42,6 +42,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
   const [loading, setLoading] = useState(false);
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [openKey, setOpenKey] = useState<string | null>(null);
+  const [activeDateKey, setActiveDateKey] = useState<string | null>(null);
   // Expected duty start (minutes-from-midnight) + Thursday half-day setting,
   // used to compute late minutes from check-in time (same rule as salary page).
   const [dutyInfo, setDutyInfo] = useState<{ start: number; end: number; category: string | null }>({ start: 480, end: 1020, category: null });
