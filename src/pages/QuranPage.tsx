@@ -790,6 +790,8 @@ const QuranPage = () => {
     const a = audioRef.current;
     // Detach any previous handlers from earlier src.
     a.onerror = null;
+    setAudioTime(0);
+    setAudioDuration(0);
     a.src = url;
     a.onerror = () => {
       // Network / 404 / decoding error → skip to next available verse.
