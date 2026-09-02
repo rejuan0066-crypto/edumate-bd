@@ -274,7 +274,7 @@ const DatePicker = ({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent
-        className="w-auto overflow-hidden rounded-[28px] border-0 bg-background/95 p-0 shadow-[0_20px_50px_rgba(0,0,0,0.12)] backdrop-blur-xl"
+        className="w-auto overflow-hidden rounded-[28px] border-0 bg-background/95 p-0 shadow-2xl backdrop-blur-xl"
         align="start"
         sideOffset={6}
         collisionPadding={12}
