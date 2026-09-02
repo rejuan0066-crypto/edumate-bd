@@ -1112,6 +1112,26 @@ const QuranPage = () => {
     return j;
   }, [activeId]);
   const currentChapter = chapters.find((c) => c.id === (currentChapterId ?? activeId));
+  const playingVerse = useMemo(() => {
+    if (!playingKey || playingKey.startsWith('surah-') || playingKey === 'surah') return null;
+    const source = isMushaf ? mushafVersesFlat : verses;
+    return source.find((v) => v.verse_key === playingKey) ?? null;
+  }, [playingKey, isMushaf, mushafVersesFlat, verses]);
+  const playingSurahId = playingKey?.startsWith('surah-')
+    ? Number(playingKey.slice('surah-'.length))
+    : playingKey === 'surah' ? currentChapter?.id : null;
+  const playingSurah = playingSurahId ? chapters.find((c) => c.id === playingSurahId) : null;
+  const playerLocation = playingVerse
+    ? `${bn ? 'পৃষ্ঠা' : 'Page'} ${playingVerse.page_number} · ${bn ? 'আয়াত' : 'Verse'} ${playingVerse.verse_key}`
+    : playingSurah
+      ? `${bn ? 'পৃষ্ঠা' : 'Page'} ${activeId} · ${bn ? 'সূরা' : 'Surah'} ${playingSurah.id}`
+      : `${bn ? 'পৃষ্ঠা' : 'Page'} ${activeId}`;
+  const formatAudioTime = (seconds: number) => {
+    if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
+    return `${mins}:${secs}`;
+  };
   const headerTitle = useMemo(() => {
     if (mode === 'page') {
       const ch = chapters.find((c) => c.id === currentChapterId);
