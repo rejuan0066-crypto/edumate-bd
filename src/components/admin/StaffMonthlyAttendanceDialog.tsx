@@ -426,17 +426,18 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                 const rec = byDate[key];
                 const meta = rec ? STATUS_META[rec.status] : null;
                 const Icon = meta?.icon;
-                const isToday = isSameDay(d, new Date());
-                const isFuture = d > new Date();
-                const isFriday = getDay(d) === 5;
-                const isSaving = savingKey === key;
-                const dayNum = format(d, 'd');
-                return (
-                  <Popover key={key} open={openKey === key} onOpenChange={(o) => setOpenKey(o ? key : null)}>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        disabled={isFuture || isSaving}
+                 const isToday = isSameDay(d, new Date());
+                 const isFuture = d > new Date();
+                 const isFriday = getDay(d) === 5;
+                 const isSaving = savingKey === key;
+                 const isOffDuty = dutyAllowedDates ? !dutyAllowedDates.has(key) : false;
+                 const dayNum = format(d, 'd');
+                 return (
+                   <Popover key={key} open={openKey === key} onOpenChange={(o) => setOpenKey(o ? key : null)}>
+                     <PopoverTrigger asChild>
+                       <button
+                         type="button"
+                         disabled={isFuture || isSaving || isOffDuty}
                         className={`group relative aspect-square rounded-2xl border p-1.5 flex flex-col items-center justify-center text-center transition-all duration-200 hover:-translate-y-[3px] hover:shadow-lg hover:shadow-black/10 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:transform-none disabled:hover:shadow-none overflow-hidden ${
                           meta
                             ? `${meta.bg} border-transparent shadow-sm`
