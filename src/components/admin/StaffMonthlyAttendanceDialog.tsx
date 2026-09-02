@@ -160,6 +160,10 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
     return m;
   }, [records]);
 
+  const activeDate = useMemo(() => activeDateKey ? days.find(d => format(d, 'yyyy-MM-dd') === activeDateKey) || null : null, [activeDateKey, days]);
+  const activeRec = activeDateKey ? byDate[activeDateKey] : null;
+  const activeIsToday = activeDate ? isSameDay(activeDate, new Date()) : false;
+
   const counts = useMemo(() => {
     const c: Record<string, number> = { present: 0, absent: 0, late: 0, half_day: 0, leave: 0, excused: 0, medical: 0 };
     for (const r of records) if (c[r.status] !== undefined) c[r.status] += 1;
