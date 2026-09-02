@@ -454,27 +454,42 @@ export const useWebsiteSettings = () => {
   const { data: settings, isLoading } = useQuery({
     queryKey: ['website-settings'],
     queryFn: async () => {
-      const [{ data, error }, { data: instData }] = await Promise.all([
+      const [{ data, error }, { data: instData }, { data: principalRows }] = await Promise.all([
         supabase.from('website_settings').select('key, value'),
         supabase.from('institutions')
           .select('principal_name, accountant_name, verifier_name, name, name_en, address, address_en, phone, email, logo_url')
           .eq('is_default', true).maybeSingle(),
+        supabase.rpc('get_public_principal' as any),
       ]);
 
+      const principal: any = Array.isArray(principalRows) ? principalRows[0] : principalRows;
+
       const applyInstitutionOverrides = (parsed: WebsiteSettings): WebsiteSettings => {
-        if (!instData) return parsed;
-        const pick = (instVal: any, current: any) => {
-          const v = instVal != null ? String(instVal).trim() : '';
-          return v ? v : current;
+        const pick = (...vals: any[]) => {
+          for (const v of vals) {
+            const s = v != null ? String(v).trim() : '';
+            if (s) return s;
+          }
+          return '';
         };
-        return {
+        const withPrincipal = {
           ...parsed,
-          principal_name: pick((instData as any).principal_name, parsed.principal_name),
+          // Single source of truth: administrative officer record → institutions → website_settings
+          principal_name: pick(principal?.name_bn, (instData as any)?.principal_name, parsed.principal_name),
+          principal_name_en: pick(principal?.name_en, parsed.principal_name_en),
+          principal_title_bn: pick(principal?.designation, parsed.principal_title_bn),
+          principal_title_en: pick(parsed.principal_title_en, principal?.designation),
+          principal_photo_url: pick(principal?.photo_url, parsed.principal_photo_url),
+        } as WebsiteSettings;
+        if (!instData) return withPrincipal;
+        return {
+          ...withPrincipal,
           accountant_name: pick((instData as any).accountant_name, (parsed as any).accountant_name),
           verifier_name: pick((instData as any).verifier_name, (parsed as any).verifier_name),
           logo_url: pick((instData as any).logo_url, parsed.logo_url),
         } as WebsiteSettings;
       };
+
 
       if (error) {
         console.warn('Website settings fetch error:', error.message);
