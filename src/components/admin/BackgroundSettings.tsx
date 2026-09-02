@@ -35,7 +35,6 @@ const BackgroundSettings = ({ value, onChange, disabled }: BackgroundSettingsPro
   const { language } = useLanguage();
   const bn = language === 'bn';
   const [local, setLocal] = useState<BackgroundStyle>(value);
-  const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {
