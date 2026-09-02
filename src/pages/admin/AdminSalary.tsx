@@ -2538,9 +2538,13 @@ const AdminSalary = () => {
     const attendanceDeductions = Number(record.absence_deduction || 0)
       + Number(record.late_deduction || 0)
       + Number(record.other_deduction || 0);
-    const earnedFromAttendance = Number.isFinite(Number(record.earned_from_attendance))
-      ? Number(record.earned_from_attendance)
-      : Math.max(0, Number(record.base_salary || 0) - attendanceDeductions);
+    // ম্যানুয়াল এডিটে earned_from_attendance = মূল বেতন হিসেবে রাখা হয়,
+    // তাই স্লিপে কর্তনগুলো আলাদা করে বাদ দিতে হবে — নাহলে স্লিপে কর্তন দেখা যায় না।
+    const earnedFromAttendance = record.manual_override
+      ? Math.max(0, Number(record.base_salary || 0) - attendanceDeductions)
+      : (Number.isFinite(Number(record.earned_from_attendance))
+        ? Number(record.earned_from_attendance)
+        : Math.max(0, Number(record.base_salary || 0) - attendanceDeductions));
 
     const totalAllowance = Number(record.bonus || 0) + Number(record.overtime || 0) + Number(record.other_allowance || 0);
     const totalEarnings = earnedFromAttendance + totalAllowance;
