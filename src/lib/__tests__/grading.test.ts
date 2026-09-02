@@ -43,6 +43,11 @@ describe('gradeFromTotal — total-based bands', () => {
   it('returns the lowest band when there are no obtainable marks', () => {
     expect(gradeFromTotal(0, 0).grade).toBe('F');
   });
+
+  it('floors fractional percentages so every score remains in a whole-number band', () => {
+    expect(gradeFromTotal(79.99, 100).grade).toBe('A');
+    expect(gradeFromTotal(32.99, 100).grade).toBe('F');
+  });
 });
 
 describe('overallGrade — grading uses total marks, not average', () => {
@@ -98,7 +103,7 @@ describe('overallGrade — failures and consideration pass', () => {
 
   it('awards consideration pass within the allowed limit', () => {
     const r = overallGrade([90, 20, 80], { passMark: PASS, graceLimit: 1 });
-    expect(r).toMatchObject({ grade: 'D', gpa: '1.00', graced: true, hasFail: false, title_bn: 'মাকবুল (বিবেচনায়)' });
+    expect(r).toMatchObject({ grade: 'D', gpa: '1.00', graced: true, hasFail: false, title_bn: 'যয়ীফ (বিবেচনায়)' });
   });
 
   it('still fails when failures exceed the consideration limit', () => {
