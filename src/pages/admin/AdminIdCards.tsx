@@ -35,8 +35,6 @@ const AdminIdCards = () => {
   const [validUntilBn, setValidUntilBn] = useState('');
   const [principalName, setPrincipalName] = useState('');
   const [principalNameEn, setPrincipalNameEn] = useState('');
-  const [principalNameDirty, setPrincipalNameDirty] = useState(false);
-  const [principalNameEnDirty, setPrincipalNameEnDirty] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
   const [signatureUrl, setSignatureUrl] = useState('');
   const [uploadingSignature, setUploadingSignature] = useState(false);
@@ -49,7 +47,7 @@ const AdminIdCards = () => {
     queryKey: ['idcard-settings'],
     queryFn: async () => {
       const { data } = await supabase.from('website_settings').select('key, value').in('key', [
-        'idcard_principal_name', 'idcard_principal_name_en', 'idcard_valid_until', 'idcard_valid_until_bn', 'idcard_principal_signature_url'
+        'idcard_valid_until', 'idcard_valid_until_bn', 'idcard_principal_signature_url'
       ]);
       const map: Record<string, string> = {};
       data?.forEach((r: any) => { map[r.key] = String(r.value || ''); });
@@ -58,33 +56,28 @@ const AdminIdCards = () => {
   });
 
   useEffect(() => {
-    const resolvedPrincipalName = idcardSettings?.idcard_principal_name || settings.principal_name || '';
-    const resolvedPrincipalNameEn = idcardSettings?.idcard_principal_name_en || '';
+    // Principal name always comes from the single source (administrative officer record)
+    const resolvedPrincipalName = settings.principal_name || '';
+    const resolvedPrincipalNameEn = settings.principal_name_en || '';
 
-    if (!principalNameDirty && principalName !== resolvedPrincipalName) {
-      setPrincipalName(resolvedPrincipalName);
-    }
-
-    if (!principalNameEnDirty && principalNameEn !== resolvedPrincipalNameEn) {
-      setPrincipalNameEn(resolvedPrincipalNameEn);
-    }
+    if (principalName !== resolvedPrincipalName) setPrincipalName(resolvedPrincipalName);
+    if (principalNameEn !== resolvedPrincipalNameEn) setPrincipalNameEn(resolvedPrincipalNameEn);
 
     if (idcardSettings) {
       if (idcardSettings.idcard_valid_until && !validUntil) setValidUntil(idcardSettings.idcard_valid_until);
       if (idcardSettings.idcard_valid_until_bn && !validUntilBn) setValidUntilBn(idcardSettings.idcard_valid_until_bn);
       if (idcardSettings.idcard_principal_signature_url && !signatureUrl) setSignatureUrl(idcardSettings.idcard_principal_signature_url);
     }
-  }, [idcardSettings, settings.principal_name, principalNameDirty, principalNameEnDirty, principalName, principalNameEn, validUntil, validUntilBn, signatureUrl]);
+  }, [idcardSettings, settings.principal_name, settings.principal_name_en, principalName, principalNameEn, validUntil, validUntilBn, signatureUrl]);
 
   const saveSettings = async () => {
     setSavingSettings(true);
     try {
       const pairs = [
-        { key: 'idcard_principal_name', value: principalName },
-        { key: 'idcard_principal_name_en', value: principalNameEn },
         { key: 'idcard_valid_until', value: validUntil },
         { key: 'idcard_valid_until_bn', value: validUntilBn },
       ];
+
       for (const { key, value } of pairs) {
         const { data: existing } = await supabase.from('website_settings').select('id').eq('key', key).maybeSingle();
         if (existing) {
@@ -93,8 +86,6 @@ const AdminIdCards = () => {
           await supabase.from('website_settings').insert({ key, value });
         }
       }
-      setPrincipalNameDirty(false);
-      setPrincipalNameEnDirty(false);
       refetchSettings();
       toast.success(bn ? 'সেটিংস সংরক্ষিত হয়েছে' : 'Settings saved');
     } catch (err: any) {
@@ -720,12 +711,16 @@ const AdminIdCards = () => {
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">{bn ? 'প্রিন্সিপালের নাম (বাংলা)' : 'Principal Name (Bangla)'}</label>
-             <Input value={principalName} onChange={(e) => { setPrincipalNameDirty(true); setPrincipalName(e.target.value); }} className="bg-background" placeholder={bn ? 'বাংলায় নাম লিখুন' : 'Enter name in Bangla'} />
+            <Input value={principalName} readOnly disabled className="bg-muted" />
+            <p className="text-[10px] text-muted-foreground mt-1">
+              {bn ? 'প্রশাসনিক কর্মকর্তা রেকর্ড থেকে স্বয়ংক্রিয়; পরিবর্তনে /admin/administrative দেখুন' : 'Auto from the administrative officer record; edit at /admin/administrative'}
+            </p>
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">{bn ? 'প্রিন্সিপালের নাম (ইংরেজি)' : 'Principal Name (English)'}</label>
-             <Input value={principalNameEn} onChange={(e) => { setPrincipalNameEnDirty(true); setPrincipalNameEn(e.target.value); }} className="bg-background" placeholder={bn ? 'ইংরেজিতে নাম লিখুন' : 'Enter name in English'} />
+            <Input value={principalNameEn} readOnly disabled className="bg-muted" />
           </div>
+
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">{bn ? 'প্রিন্সিপালের স্বাক্ষর' : 'Principal Signature'}</label>
             {signatureUrl ? (

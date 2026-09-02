@@ -11333,6 +11333,15 @@ export type Database = {
         }
       }
       get_password_protection_info: { Args: never; Returns: Json }
+      get_public_principal: {
+        Args: never
+        Returns: {
+          designation: string
+          name_bn: string
+          name_en: string
+          photo_url: string
+        }[]
+      }
       get_public_tables: {
         Args: never
         Returns: {

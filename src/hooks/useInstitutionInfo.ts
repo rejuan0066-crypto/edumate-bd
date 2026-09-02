@@ -50,7 +50,7 @@ const pick = (...vals: any[]) => {
 };
 
 export async function fetchInstitutionInfo(): Promise<InstitutionInfo> {
-  const [{ data: inst }, { data: wsRows }, { data: admins }] = await Promise.all([
+  const [{ data: inst }, { data: wsRows }, { data: principalRows }] = await Promise.all([
     supabase
       .from('institutions')
       .select('*')
@@ -67,10 +67,7 @@ export async function fetchInstitutionInfo(): Promise<InstitutionInfo> {
         'principal_name', 'principal_name_en',
         'accountant_name', 'verifier_name',
       ]),
-    supabase
-      .from('administrative_officers')
-      .select('name_bn, name_en, designation, status')
-      .is('deleted_at', null),
+    supabase.rpc('get_public_principal' as any),
   ]);
 
   const ws: Record<string, string> = {};
@@ -79,12 +76,9 @@ export async function fetchInstitutionInfo(): Promise<InstitutionInfo> {
   });
   const i: any = inst || {};
 
-  // Auto-detect principal from administrative_officers by designation keyword
-  const KW = ['প্রিন্সিপাল', 'principal', 'অধ্যক্ষ'];
-  const principalOfficer = (admins || []).find((a: any) => {
-    const d = (a.designation || '').toLowerCase();
-    return a.status === 'active' && d && KW.some(k => d.includes(k.toLowerCase()));
-  });
+  // Single source of truth for the principal: public RPC over administrative_officers
+  const principalOfficer: any = Array.isArray(principalRows) ? principalRows[0] : principalRows;
+
 
   return {
     id: i.id,

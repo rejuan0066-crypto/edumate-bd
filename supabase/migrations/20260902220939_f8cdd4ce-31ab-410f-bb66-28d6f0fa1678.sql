@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.sync_principal_name_everywhere() FROM PUBLIC, anon, authenticated;
