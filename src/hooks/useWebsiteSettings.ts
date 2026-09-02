@@ -464,6 +464,7 @@ export const useWebsiteSettings = () => {
           principal_name: pick((instData as any).principal_name, parsed.principal_name),
           accountant_name: pick((instData as any).accountant_name, (parsed as any).accountant_name),
           verifier_name: pick((instData as any).verifier_name, (parsed as any).verifier_name),
+          logo_url: pick((instData as any).logo_url, parsed.logo_url),
         } as WebsiteSettings;
       };
 
