@@ -963,12 +963,17 @@ const QuranPage = () => {
     };
   }, [advanceFrom, isMushaf, mushafVersesFlat, verses]);
 
-  // Continuous play: chain to the next verse when the current one finishes.
+  // Apply the selected mode when the current recitation finishes.
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
     const onEnded = () => {
       setIsPlaying(false);
+      if (playbackMode === 'repeat') {
+        a.currentTime = 0;
+        a.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+        return;
+      }
       if (playbackMode !== 'continuous' || !playingKey || playingKey === 'surah') return;
       const source = isMushaf ? mushafVersesFlat : verses;
       const idx = source.findIndex((v) => v.verse_key === playingKey);
