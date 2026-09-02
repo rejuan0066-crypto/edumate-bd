@@ -280,6 +280,7 @@ export interface WebsiteSettings {
   global_footer_spacing_bottom: number; // mm — bottom margin from page edge
   global_footer_font_size: number;      // pt — footer text size on prints
   signatory_edit_super_admin_only: boolean; // when true, only super_admin can edit principal/accountant/verifier
+  background_style: BackgroundStyle;
 }
 
 const DEFAULT_SETTINGS: WebsiteSettings = {
