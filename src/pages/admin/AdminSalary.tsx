@@ -449,11 +449,14 @@ const AdminSalary = () => {
     queryKey: ['salary-duty-shift-attendance', monthYear],
     staleTime: 0,
     queryFn: async () => {
+      // আবাসিক ডিউটি হাজিরা attendance_records টেবিলে shift কোড (morning/evening) দিয়ে জমা হয়
       const { data } = await supabase
-        .from('duty_shift_attendance')
-        .select('staff_id, shift_id, duty_date, status, late_minutes, early_exit_minutes, check_in_time, check_out_time')
-        .gte('duty_date', monthRange.start)
-        .lte('duty_date', monthRange.end);
+        .from('attendance_records')
+        .select('entity_id, shift, attendance_date, status, check_in_time, check_out_time')
+        .eq('entity_type', 'staff')
+        .in('shift', ['morning', 'evening'])
+        .gte('attendance_date', monthRange.start)
+        .lte('attendance_date', monthRange.end);
       return (data || []) as any[];
     },
   });
