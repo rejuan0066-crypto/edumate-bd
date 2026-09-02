@@ -112,8 +112,8 @@ export const exportResultCSV = (params: ExportData) => {
   const sortedByTotal = [...computed]
     .filter(a => a.hasEnteredAnyMark)
     .sort((a, b) => {
-      if (a.failed && !b.failed) return 1;
-      if (!a.failed && b.failed) return -1;
+      const tierDiff = meritTierOf(a) - meritTierOf(b);
+      if (tierDiff !== 0) return tierDiff;
       return b.total - a.total;
     });
 
@@ -217,8 +217,8 @@ export const getResultSheetHtml = ({
   });
 
   const sortedByTotal = [...computed].sort((a, b) => {
-    if (a.failed && !b.failed) return 1;
-    if (!a.failed && b.failed) return -1;
+    const tierDiff = meritTierOf(a) - meritTierOf(b);
+    if (tierDiff !== 0) return tierDiff;
     return b.total - a.total;
   });
   const rankMap = new Map<number, number>();
