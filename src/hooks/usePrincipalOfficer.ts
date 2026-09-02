@@ -30,7 +30,29 @@ const matches = (designation: string | null | undefined) => {
 };
 
 export async function fetchPrincipalOfficer(): Promise<PrincipalOfficer | null> {
-  // Prefer administrative_officers (this is where Founder/Principal is normally placed)
+  // 1) Public-safe RPC — works for logged-out visitors (mobile/desktop identical)
+  try {
+    const { data: pub } = await supabase.rpc('get_public_principal' as any);
+    const row: any = Array.isArray(pub) ? pub[0] : pub;
+    if (row?.name_bn || row?.name_en) {
+      return {
+        source: 'administrative',
+        id: 'public',
+        principal_name: row.name_bn || '',
+        principal_name_en: row.name_en || '',
+        principal_title_bn: row.designation || '',
+        principal_title_en: row.designation || '',
+        principal_photo_url: row.photo_url || '',
+        phone: '',
+        email: '',
+      };
+    }
+  } catch {
+    // fall through to direct table read (admins only)
+  }
+
+  // 2) Fallback: administrative_officers (readable by admins)
+
   const { data: admins } = await supabase
     .from('administrative_officers')
     .select('id, name_bn, name_en, designation, phone, email, photo_url, sort_order, joining_date')
