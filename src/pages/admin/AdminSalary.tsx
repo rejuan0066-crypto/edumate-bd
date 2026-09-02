@@ -449,11 +449,14 @@ const AdminSalary = () => {
     queryKey: ['salary-duty-shift-attendance', monthYear],
     staleTime: 0,
     queryFn: async () => {
+      // আবাসিক ডিউটি হাজিরা attendance_records টেবিলে shift কোড (morning/evening) দিয়ে জমা হয়
       const { data } = await supabase
-        .from('duty_shift_attendance')
-        .select('staff_id, shift_id, duty_date, status, late_minutes, early_exit_minutes, check_in_time, check_out_time')
-        .gte('duty_date', monthRange.start)
-        .lte('duty_date', monthRange.end);
+        .from('attendance_records')
+        .select('entity_id, shift, attendance_date, status, check_in_time, check_out_time')
+        .eq('entity_type', 'staff')
+        .in('shift', ['morning', 'evening'])
+        .gte('attendance_date', monthRange.start)
+        .lte('attendance_date', monthRange.end);
       return (data || []) as any[];
     },
   });
@@ -505,19 +508,25 @@ const AdminSalary = () => {
       });
     });
 
+    // shift কোড (morning/evening) → duty_shifts.id ম্যাপিং
+    const shiftCodeToId = new Map<string, string>();
+    dutyShiftDefs.forEach((s: any) => {
+      if (s.code) shiftCodeToId.set(String(s.code).toLowerCase(), s.id);
+    });
+
     const attByStaff = new Map<string, DutyAttendance[]>();
     dutyShiftAttRows.forEach((a: any) => {
-      const arr = attByStaff.get(a.staff_id) || [];
+      const shiftId = shiftCodeToId.get(String(a.shift || '').toLowerCase());
+      if (!shiftId) return;
+      const arr = attByStaff.get(a.entity_id) || [];
       arr.push({
-        date: a.duty_date,
-        shiftId: a.shift_id,
+        date: a.attendance_date,
+        shiftId,
         status: a.status,
-        late_minutes: a.late_minutes,
-        early_exit_minutes: a.early_exit_minutes,
         check_in_time: a.check_in_time,
         check_out_time: a.check_out_time,
       });
-      attByStaff.set(a.staff_id, arr);
+      attByStaff.set(a.entity_id, arr);
     });
 
     byStaffDays.forEach((days, staffId) => {
