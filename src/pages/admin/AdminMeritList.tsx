@@ -131,16 +131,19 @@ const AdminMeritList = () => {
         return b.totalMarks - a.totalMarks;
       });
 
-      // Assign ranks (only to passing students)
+      // Assign ranks (only to passing students; ties share a rank within the same tier)
       let currentRank = 0;
       let lastTotal = -1;
+      let lastTier = -1;
       rankings.forEach((r, idx) => {
         if (r.hasFail) {
           r.rank = 0;
         } else {
-          if (r.totalMarks !== lastTotal) {
+          const tier = tierOf(r);
+          if (r.totalMarks !== lastTotal || tier !== lastTier) {
             currentRank = idx + 1;
             lastTotal = r.totalMarks;
+            lastTier = tier;
           }
           r.rank = currentRank;
         }
