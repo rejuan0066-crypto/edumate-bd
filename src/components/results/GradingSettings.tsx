@@ -222,7 +222,7 @@ const GradingSettings = ({ open, onOpenChange }: Props) => {
                 <thead className="bg-muted/50"><tr className="text-left"><th className="p-3">{bn ? 'গ্রেড' : 'Grade'}</th><th className="p-3">{bn ? 'শুরু %' : 'Min %'}</th><th className="p-3">{bn ? 'শেষ %' : 'Max %'}</th><th className="p-3">GPA</th><th className="p-3">{bn ? 'রঙ' : 'Color'}</th><th className="p-3">{bn ? 'মর্যাদা (EN)' : 'Title (EN)'}</th><th className="p-3">{bn ? 'মর্যাদা (বাংলা)' : 'Title (BN)'}</th></tr></thead>
                 <tbody>
                   {orderedScales.map((scale) => {
-                    const sourceIndex = scales.findIndex((item) => item.id === scale.id && item.grade === scale.grade);
+                    const sourceIndex = scales.findIndex((item) => item === scale);
                     return <tr key={scale.id || scale.grade} className="border-t">
                       <td className="p-2"><Input className="w-20" value={scale.grade} onChange={(event) => updateScale(sourceIndex, 'grade', event.target.value)} /></td>
                       <td className="p-2"><Input className="w-24" type="text" inputMode="decimal" value={displayNumber(scale.min, bn)} onChange={(event) => updateScale(sourceIndex, 'min', event.target.value)} /></td>
