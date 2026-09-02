@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info, Loader2, Save, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-type ScaleDraft = GradeScale & { id?: string };
+type ScaleDraft = GradeScale & { id?: string; sort_order?: number };
 type RuleRow = { id: string; field_name: string | null; config: unknown; is_active: boolean | null; sort_order: number | null };
 
 interface Props {
@@ -127,6 +127,9 @@ const GradingSettings = ({ open, onOpenChange }: Props) => {
     for (let index = 0; index < orderedScales.length - 1; index += 1) {
       if (orderedScales[index].min <= orderedScales[index + 1].max) {
         return bn ? 'গ্রেডগুলোর শতাংশ সীমা একে অপরের সঙ্গে ওভারল্যাপ করছে।' : 'Grade percentage ranges must not overlap.';
+      }
+      if (orderedScales[index].min !== orderedScales[index + 1].max + 1) {
+        return bn ? 'গ্রেডিং স্কেলে কোনো শতাংশ বাদ বা ফাঁকা রাখা যাবে না।' : 'Grade percentage ranges must be continuous with no gaps.';
       }
     }
     return '';

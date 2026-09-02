@@ -62,8 +62,10 @@ export const gradeFromTotal = (
   fullTotal: number,
   scales: GradeScale[] = DEFAULT_SCALES,
 ): GradeResult => {
-  const list = scales.length ? scales : DEFAULT_SCALES;
-  const score = fullTotal > 0 ? (total / fullTotal) * 100 : 0;
+  const list = scales.length ? [...scales].sort((a, b) => b.min - a.min) : DEFAULT_SCALES;
+  // Scale bands are whole percentage points (for example 70–79). Flooring keeps
+  // every possible result inside exactly one configured band: 79.99% is still 79%.
+  const score = fullTotal > 0 ? Math.floor((total / fullTotal) * 100) : 0;
   for (const s of list) {
     if (score >= s.min && score <= s.max) {
       return { grade: s.grade, gpa: s.gpa, color: colorMap[s.color] || colorMap.destructive, title: s.title, title_bn: s.title_bn };
@@ -112,8 +114,8 @@ export const overallGrade = (subjectMarks: number[], options: OverallGradeOption
   if (failedCount > 0 && subjectMarks.length > 0 && !graced) {
     const failScale = scales.find((s) => s.grade === 'F') || DEFAULT_SCALES[DEFAULT_SCALES.length - 1];
     return {
-      grade: 'F',
-      gpa: '0.00',
+      grade: failScale.grade,
+      gpa: failScale.gpa,
       color: colorMap[failScale.color] || colorMap.destructive,
       title: failScale.title,
       title_bn: failScale.title_bn,
@@ -124,13 +126,13 @@ export const overallGrade = (subjectMarks: number[], options: OverallGradeOption
   }
 
   if (graced) {
-    const dScale = scales.find((s) => s.grade === 'D');
+    const dScale = scales.find((s) => s.grade === 'D') || DEFAULT_SCALES.find((s) => s.grade === 'D');
     return {
-      grade: 'D',
-      gpa: '1.00',
+      grade: dScale?.grade || 'D',
+      gpa: dScale?.gpa || '1.00',
       color: colorMap[dScale?.color || 'orange'] || colorMap.orange,
-      title: 'Maqbul (Considered)',
-      title_bn: 'মাকবুল (বিবেচনায়)',
+      title: dScale?.title ? `${dScale.title} (Considered)` : 'Maqbul (Considered)',
+      title_bn: dScale?.title_bn ? `${dScale.title_bn} (বিবেচনায়)` : 'মাকবুল (বিবেচনায়)',
       hasFail: false,
       graced: true,
       failedCount,
