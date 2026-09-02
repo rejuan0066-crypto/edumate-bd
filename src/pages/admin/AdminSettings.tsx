@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { otpService } from '@/hooks/useOtpService';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
+import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 import PaymentGatewaySettings from '@/components/admin/PaymentGatewaySettings';
 import SmsGatewaySettings from '@/components/admin/SmsGatewaySettings';
 import WhatsAppSettings from '@/components/admin/WhatsAppSettings';
