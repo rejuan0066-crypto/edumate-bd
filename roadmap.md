@@ -7,5 +7,5 @@
 - [ ] SaaS পরিকল্পনা: প্রতিটি মাদ্রাসা/স্কুলের জন্য আলাদা tenant, নিজস্ব ডাটা ও সেটিংস
 - [x] সব সময় ইনপুটকে একই TimePicker-এ রূপান্তর এবং উপস্থিতির স্বয়ংক্রিয় প্রবেশ/প্রস্থান সময়
 - [x] অনুমতি পাওয়া অ্যাডমিন ও ইউজারের জন্য উপস্থিতি/সময় ব্যবস্থাপনার একই কার্যকর আচরণ
-- [ ] সব TimePicker/DatePicker-এর responsive centered mobile dialog ও desktop-safe modern design
-- [ ] কুরআন প্লেয়ারে once/repeat/continuous playback mode
+- [x] সব TimePicker/DatePicker-এর responsive centered mobile dialog ও desktop-safe modern design
+- [x] কুরআন প্লেয়ারে once/repeat/continuous playback mode
