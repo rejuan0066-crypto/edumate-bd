@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/select';
 import { Save, Image, Paintbrush, Palette, Monitor, Moon, Sun } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 import ImageUpload from '@/components/ImageUpload';
 import type { BackgroundStyle } from '@/hooks/useWebsiteSettings';
 
