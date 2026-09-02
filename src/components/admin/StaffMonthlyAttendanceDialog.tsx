@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ChevronLeft, ChevronRight, CheckCircle2, XCircle, Clock, AlertCircle, CalendarOff, Stethoscope, ShieldCheck, Calendar as CalendarIcon, Trash2, Save } from 'lucide-react';
@@ -43,6 +42,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
   const [loading, setLoading] = useState(false);
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [openKey, setOpenKey] = useState<string | null>(null);
+  const [activeDateKey, setActiveDateKey] = useState<string | null>(null);
   // Expected duty start (minutes-from-midnight) + Thursday half-day setting,
   // used to compute late minutes from check-in time (same rule as salary page).
   const [dutyInfo, setDutyInfo] = useState<{ start: number; end: number; category: string | null }>({ start: 480, end: 1020, category: null });
@@ -159,6 +159,10 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
     for (const r of records) m[r.attendance_date] = r;
     return m;
   }, [records]);
+
+  const activeDate = useMemo(() => activeDateKey ? days.find(d => format(d, 'yyyy-MM-dd') === activeDateKey) || null : null, [activeDateKey, days]);
+  const activeRec = activeDateKey ? byDate[activeDateKey] : null;
+  const activeIsToday = activeDate ? isSameDay(activeDate, new Date()) : false;
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { present: 0, absent: 0, late: 0, half_day: 0, leave: 0, excused: 0, medical: 0 };
@@ -433,114 +437,37 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                  const isOffDuty = dutyAllowedDates ? !dutyAllowedDates.has(key) : false;
                  const dayNum = format(d, 'd');
                  return (
-                   <Popover key={key} open={openKey === key} onOpenChange={(o) => setOpenKey(o ? key : null)}>
-                     <PopoverTrigger asChild>
-                       <button
-                         type="button"
-                         disabled={isFuture || isSaving || isOffDuty}
-                        className={`group relative aspect-square rounded-2xl border p-1.5 flex flex-col items-center justify-center text-center transition-all duration-200 hover:-translate-y-[3px] hover:shadow-lg hover:shadow-black/10 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:transform-none disabled:hover:shadow-none overflow-hidden ${
-                          meta
-                            ? `${meta.bg} border-transparent shadow-sm`
-                            : isFriday
-                              ? 'bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200/40 dark:border-emerald-800/30 border-dashed'
-                              : 'bg-muted/20 border-dashed border-border/30 hover:bg-muted/40'
-                        } ${isToday ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''} ${isSaving ? 'animate-pulse' : ''}`}
-                         title={isOffDuty ? (bn ? 'এই বারে ডিউটি নেই' : 'No duty on this day') : meta ? (bn ? meta.bnLabel : meta.enLabel) : (bn ? 'অচিহ্নিত' : 'Unmarked')}
-                       >
-                        {/* Status dot indicator (top-right) */}
-                        {meta && (
-                          <span className={`absolute top-1 right-1 h-1.5 w-1.5 rounded-full ${meta.dot} shadow-sm`} />
-                        )}
-                        {isToday && !meta && (
-                          <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                        )}
-                        <div className={`text-[12px] sm:text-sm font-bold tabular-nums ${meta ? meta.color : isToday ? 'text-primary' : 'text-foreground/70'}`}>
-                          {dayNum}
-                        </div>
-                        {Icon && <Icon className={`h-3 w-3 sm:h-3.5 sm:w-3.5 mt-0.5 ${meta!.color}`} />}
-                        {rec && lateMinutesFor(rec) > 0 ? (
-                          <div className="text-[9px] text-amber-700 dark:text-amber-400 font-bold leading-none mt-0.5 tabular-nums">
-                            +{fmtDuration(lateMinutesFor(rec))}
-                          </div>
-                        ) : null}
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="w-72 p-2 rounded-2xl border-border/40 bg-background/95 backdrop-blur-xl shadow-xl overflow-y-auto"
-                      style={{ maxHeight: 'var(--radix-popover-content-available-height)' }}
-                      collisionPadding={12}
-                      side="right"
-                      align="start"
-                      sideOffset={8}
-                      onOpenAutoFocus={(e) => e.preventDefault()}
-                      onInteractOutside={(e) => {
-                        const t = e.target as HTMLElement | null;
-                        // Keep open when interaction is from a nested popover/select (e.g. TimePicker)
-                        if (t && t.closest('[data-radix-popper-content-wrapper]')) {
-                          e.preventDefault();
-                        }
-                      }}
-                    >
-                      <div className="flex items-center justify-between px-2 pb-2 mb-1 border-b border-border/30">
-                        <div className="text-xs font-semibold">{format(d, 'dd/MM/yyyy')}</div>
-                        {isToday && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium">{bn ? 'আজ' : 'Today'}</span>}
+                  <button
+                    key={key}
+                    type="button"
+                    disabled={isFuture || isSaving || isOffDuty}
+                    onClick={() => setActiveDateKey(key)}
+                    className={`group relative aspect-square rounded-2xl border p-1.5 flex flex-col items-center justify-center text-center transition-all duration-200 hover:-translate-y-[3px] hover:shadow-lg hover:shadow-black/10 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:transform-none disabled:hover:shadow-none overflow-hidden ${
+                      meta
+                        ? `${meta.bg} border-transparent shadow-sm`
+                        : isFriday
+                          ? 'bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200/40 dark:border-emerald-800/30 border-dashed'
+                          : 'bg-muted/20 border-dashed border-border/30 hover:bg-muted/40'
+                    } ${isToday ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''} ${isSaving ? 'animate-pulse' : ''}`}
+                    title={isOffDuty ? (bn ? 'এই বারে ডিউটি নেই' : 'No duty on this day') : meta ? (bn ? meta.bnLabel : meta.enLabel) : (bn ? 'অচিহ্নিত' : 'Unmarked')}
+                  >
+                    {/* Status dot indicator (top-right) */}
+                    {meta && (
+                      <span className={`absolute top-1 right-1 h-1.5 w-1.5 rounded-full ${meta.dot} shadow-sm`} />
+                    )}
+                    {isToday && !meta && (
+                      <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                    )}
+                    <div className={`text-[12px] sm:text-sm font-bold tabular-nums ${meta ? meta.color : isToday ? 'text-primary' : 'text-foreground/70'}`}>
+                      {dayNum}
+                    </div>
+                    {Icon && <Icon className={`h-3 w-3 sm:h-3.5 sm:w-3.5 mt-0.5 ${meta!.color}`} />}
+                    {rec && lateMinutesFor(rec) > 0 ? (
+                      <div className="text-[9px] text-amber-700 dark:text-amber-400 font-bold leading-none mt-0.5 tabular-nums">
+                        +{fmtDuration(lateMinutesFor(rec))}
                       </div>
-                      <div className="grid grid-cols-1 gap-0.5">
-                        {Object.entries(STATUS_META).map(([k, m]) => {
-                          const I = m.icon;
-                          const active = rec?.status === k;
-                          return (
-                            <button
-                              key={k}
-                              onClick={() => setStatus(key, k)}
-                              disabled={isSaving}
-                              className={`flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm text-left transition-all ${
-                                active
-                                  ? `${m.bg} ${m.color} font-semibold shadow-sm`
-                                  : 'hover:bg-muted/60 hover:translate-x-0.5'
-                              }`}
-                            >
-                              <div className={`h-7 w-7 rounded-lg bg-gradient-to-br ${m.gradient} flex items-center justify-center shadow-sm shrink-0`}>
-                                <I className="h-3.5 w-3.5 text-white" />
-                              </div>
-                              <span className="flex-1">{bn ? m.bnLabel : m.enLabel}</span>
-                              {active && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      {/* Editors kept outside the scroll area so they're always visible */}
-                      {(rec?.status === 'present' || rec?.status === 'late' || rec?.status === 'half_day') && (
-                        <LateTimeEditor
-                          bn={bn}
-                          status={rec.status}
-                          initialIn={rec?.check_in_time || ''}
-                          initialOut={rec?.check_out_time || ''}
-                          saving={isSaving}
-                          onSave={(ci, co) => setStatus(key, rec.status, { check_in_time: ci || null, check_out_time: co || null })}
-                        />
-                      )}
-                      {rec?.status === 'leave' && (
-                        <LeaveEditor
-                          bn={bn}
-                          initialType={rec?.leave_type || ''}
-                          initialReason={rec?.leave_reason || ''}
-                          saving={isSaving}
-                          onSave={(lt, lr) => setStatus(key, 'leave', { leave_type: lt || null, leave_reason: lr || null })}
-                        />
-                      )}
-                      {rec && (
-                        <button
-                          onClick={() => setStatus(key, null)}
-                          disabled={isSaving}
-                          className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 mt-1 border-t border-border/30 pt-2 w-full"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          {bn ? 'মুছুন' : 'Clear'}
-                        </button>
-                      )}
-                    </PopoverContent>
-                  </Popover>
+                    ) : null}
+                  </button>
                 );
               })}
             </div>
@@ -553,6 +480,81 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
             </div>
           )}
         </div>
+
+        {/* Centered day-status picker: always in the middle of the screen on desktop & mobile */}
+        <Dialog open={!!activeDateKey} onOpenChange={(o) => { if (!o) setActiveDateKey(null); }}>
+          <DialogContent
+            className="w-[92vw] max-w-sm max-h-[85vh] overflow-y-auto rounded-[28px] p-0 border-border/40 bg-background/95 backdrop-blur-xl"
+            onInteractOutside={(e) => {
+              const t = e.target as HTMLElement | null;
+              if (t && t.closest('[data-radix-popper-content-wrapper]')) {
+                e.preventDefault();
+              }
+            }}
+          >
+            <div className="px-4 py-4 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-border/30">
+                <div className="text-sm font-semibold">
+                  {activeDate ? format(activeDate, 'dd/MM/yyyy') : activeDateKey}
+                </div>
+                {activeIsToday && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium">{bn ? 'আজ' : 'Today'}</span>}
+              </div>
+              <div className="grid grid-cols-1 gap-0.5">
+                {Object.entries(STATUS_META).map(([k, m]) => {
+                  const I = m.icon;
+                  const active = activeRec?.status === k;
+                  return (
+                    <button
+                      key={k}
+                      onClick={() => activeDateKey && setStatus(activeDateKey, k)}
+                      disabled={savingKey === activeDateKey}
+                      className={`flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm text-left transition-all ${
+                        active
+                          ? `${m.bg} ${m.color} font-semibold shadow-sm`
+                          : 'hover:bg-muted/60 hover:translate-x-0.5'
+                      }`}
+                    >
+                      <div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${m.gradient} flex items-center justify-center shadow-sm shrink-0`}>
+                        <I className="h-4 w-4 text-white" />
+                      </div>
+                      <span className="flex-1">{bn ? m.bnLabel : m.enLabel}</span>
+                      {active && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
+                    </button>
+                  );
+                })}
+              </div>
+              {(activeRec?.status === 'present' || activeRec?.status === 'late' || activeRec?.status === 'half_day') && activeDateKey && (
+                <LateTimeEditor
+                  bn={bn}
+                  status={activeRec.status}
+                  initialIn={activeRec?.check_in_time || ''}
+                  initialOut={activeRec?.check_out_time || ''}
+                  saving={savingKey === activeDateKey}
+                  onSave={(ci, co) => setStatus(activeDateKey, activeRec.status, { check_in_time: ci || null, check_out_time: co || null })}
+                />
+              )}
+              {activeRec?.status === 'leave' && activeDateKey && (
+                <LeaveEditor
+                  bn={bn}
+                  initialType={activeRec?.leave_type || ''}
+                  initialReason={activeRec?.leave_reason || ''}
+                  saving={savingKey === activeDateKey}
+                  onSave={(lt, lr) => activeDateKey && setStatus(activeDateKey, 'leave', { leave_type: lt || null, leave_reason: lr || null })}
+                />
+              )}
+              {activeRec && activeDateKey && (
+                <button
+                  onClick={() => setStatus(activeDateKey, null)}
+                  disabled={savingKey === activeDateKey}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 mt-1 border-t border-border/30 pt-2 w-full"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {bn ? 'মুছুন' : 'Clear'}
+                </button>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </DialogContent>
     </Dialog>
   );
