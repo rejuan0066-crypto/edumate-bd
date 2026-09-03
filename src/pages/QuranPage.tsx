@@ -141,6 +141,48 @@ const cleanArabicText = (text?: string) =>
     .replace(/\s+/g, ' ')
     .trim();
 
+// Renders one Mushaf line on a single row (no wrapping) and horizontally
+// compresses it just enough to fit the container width. This keeps every
+// verse fragment and end-marker on its correct typeset line on any screen.
+const MushafFitLine: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const outerRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLSpanElement>(null);
+  const [scale, setScale] = useState(1);
+
+  useLayoutEffect(() => {
+    const outer = outerRef.current;
+    const inner = innerRef.current;
+    if (!outer || !inner) return;
+    const fit = () => {
+      // Reset before measuring so we read the natural content width.
+      inner.style.transform = '';
+      const available = outer.clientWidth;
+      const natural = inner.scrollWidth;
+      const next = available > 0 && natural > available ? Math.max(0.5, available / natural) : 1;
+      setScale(next);
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(outer);
+    return () => ro.disconnect();
+  }, [children]);
+
+  return (
+    <div ref={outerRef} style={{ whiteSpace: 'nowrap' }}>
+      <span
+        ref={innerRef}
+        style={{
+          display: 'inline-block',
+          transform: scale === 1 ? undefined : `scaleX(${scale})`,
+          transformOrigin: 'right center',
+        }}
+      >
+        {children}
+      </span>
+    </div>
+  );
+};
+
 // Standard Madinah Mushaf: first page of each Juz (1..30)
 const JUZ_FIRST_PAGE: Record<number, number> = {
   1: 1, 2: 22, 3: 42, 4: 62, 5: 82, 6: 102, 7: 121, 8: 142, 9: 162, 10: 182,
