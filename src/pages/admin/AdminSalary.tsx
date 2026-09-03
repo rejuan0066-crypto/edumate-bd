@@ -2444,24 +2444,16 @@ const AdminSalary = () => {
       html = html.replace('</style>', `${fontFace}</style>`);
       html = html.replace(/font-family:\s*'Noto Sans Bengali'/g, `font-family:'SutonnyOMJ','Noto Sans Bengali'`);
 
-      // On mobile / installed PWA, window.open + print outputs the blank parent
-      // app page (iOS). Generate a real PDF and preview it in the pre-opened tab.
+      // Always produce a real .pdf FILE (no print dialog / print page).
+      const fname = `salary-sheet-${selectedYear}${selectedMonth}.pdf`;
+      toast.info(bn ? 'বেতন শিট PDF তৈরি হচ্ছে…' : 'Generating salary sheet PDF…');
       if (isMobileOrPwa()) {
-        const fname = `salary-sheet-${selectedYear}${selectedMonth}.pdf`;
-        toast.info(bn ? 'বেতন শিট PDF তৈরি হচ্ছে…' : 'Generating salary sheet PDF…');
-        await downloadSheetAsPdf(html, fname, previewWin);
+        // Mobile/PWA: preview in the pre-opened tab (downloads are unreliable there).
+        await downloadSheetAsPdf(html, fname, previewWin, 'landscape', 'preview');
         toast.success(bn ? 'PDF প্রিভিউ প্রস্তুত' : 'PDF preview ready');
         return;
       }
-
-      const printWindow = window.open('', '_blank');
-
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
-        // No auto-print — the new window shows a Print Settings bar (orientation/paper/min-max scale/margin)
-        // and a "Print" button so the user can review and trigger print themselves.
-      }
+      await downloadSheetAsPdf(html, fname, null, 'landscape', 'download');
       toast.success(bn ? 'PDF ডাউনলোড হয়েছে' : 'PDF downloaded');
     } catch (err) {
       console.error(err);
