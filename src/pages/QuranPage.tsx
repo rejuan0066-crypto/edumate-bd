@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { groupVersesBySurah } from '@/lib/quranSegments';
 import { surahNameBn } from '@/lib/quranSurahNamesBn';
@@ -140,6 +140,48 @@ const cleanArabicText = (text?: string) =>
     .replace(/\s*[\uE000-\uF8FF]+\s*/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+
+// Renders one Mushaf line on a single row (no wrapping) and horizontally
+// compresses it just enough to fit the container width. This keeps every
+// verse fragment and end-marker on its correct typeset line on any screen.
+const MushafFitLine: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const outerRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLSpanElement>(null);
+  const [scale, setScale] = useState(1);
+
+  useLayoutEffect(() => {
+    const outer = outerRef.current;
+    const inner = innerRef.current;
+    if (!outer || !inner) return;
+    const fit = () => {
+      // Reset before measuring so we read the natural content width.
+      inner.style.transform = '';
+      const available = outer.clientWidth;
+      const natural = inner.scrollWidth;
+      const next = available > 0 && natural > available ? Math.max(0.5, available / natural) : 1;
+      setScale(next);
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(outer);
+    return () => ro.disconnect();
+  }, [children]);
+
+  return (
+    <div ref={outerRef} style={{ whiteSpace: 'nowrap' }}>
+      <span
+        ref={innerRef}
+        style={{
+          display: 'inline-block',
+          transform: scale === 1 ? undefined : `scaleX(${scale})`,
+          transformOrigin: 'right center',
+        }}
+      >
+        {children}
+      </span>
+    </div>
+  );
+};
 
 // Standard Madinah Mushaf: first page of each Juz (1..30)
 const JUZ_FIRST_PAGE: Record<number, number> = {
@@ -548,6 +590,31 @@ const QuranPage = () => {
   // When user navigates via Go-to (Page/Juz), remember which page to scroll
   // into view once it's mounted. Cleared after a successful scroll.
   const pendingScrollPageRef = useRef<number | null>(null);
+
+  // Track which per-page QCF fonts have actually finished loading.
+  // Line-by-line Mushaf layout is only pixel-accurate with these fonts;
+  // until a page's font is ready we render a flowing paragraph instead.
+  const [qcfLoadedPages, setQcfLoadedPages] = useState<Set<number>>(new Set());
+  useEffect(() => {
+    const pages = [...new Set(mushafPages.map((p) => p.page))].filter((p) => p >= 1 && p <= 604);
+    pages.forEach((page) => {
+      if (qcfLoadedPages.has(page)) return;
+      const fam = mushafPageFontFamily(page);
+      document.fonts
+        .load(`30px "${fam}"`, '\u0627')
+        .then((loaded) => {
+          if (loaded && loaded.length > 0) {
+            setQcfLoadedPages((s) => {
+              if (s.has(page)) return s;
+              const n = new Set(s);
+              n.add(page);
+              return n;
+            });
+          }
+        })
+        .catch(() => {});
+    });
+  }, [mushafPages, qcfLoadedPages]);
 
   const qcfFontFaces = useMemo(() => {
     const pages = [...new Set(mushafPages.map((p) => p.page))]
@@ -1510,9 +1577,13 @@ const QuranPage = () => {
                                     });
                                     const sortedLines = [...linesMap.entries()].sort((a, b) => a[0] - b[0]);
 
-                                    // Fallback: API returned no words → render the whole
-                                    // segment as a single justified paragraph (legacy path).
-                                    if (sortedLines.length === 0) {
+                                     // Fallback: API returned no words, the page's QCF font
+                                     // isn't loaded yet, or the selected script isn't Uthmani
+                                     // (IndoPak text has different metrics) → render the whole
+                                     // segment as one flowing justified paragraph so verses
+                                     // never break into misaligned fragments.
+                                     const qcfReady = settings.script === 'uthmani' && qcfLoadedPages.has(page);
+                                     if (sortedLines.length === 0 || !qcfReady) {
                                       return (
                                         <p
                                           dir="rtl"
@@ -1581,7 +1652,8 @@ const QuranPage = () => {
                                             textJustify: 'inter-word',
                                             lineHeight: 1.9,
                                           } as React.CSSProperties}
-                                        >
+                                         >
+                                          <MushafFitLine>
                                           {items.map(({ word, verse }, idx) => {
                                             const isEnd = word.char_type_name === 'end';
                                             const verseNum = verse.verse_key.split(':')[1];
@@ -1664,7 +1736,8 @@ const QuranPage = () => {
                                                 {sep}
                                               </React.Fragment>
                                             );
-                                          })}
+                                           })}
+                                          </MushafFitLine>
                                           {showRuku && (
                                             <span
                                               className="absolute top-1/2 -translate-y-1/2 -left-1 sm:-left-3 text-xs sm:text-sm font-bold opacity-75 select-none"
