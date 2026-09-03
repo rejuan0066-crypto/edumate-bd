@@ -1312,7 +1312,6 @@ const QuranPage = () => {
               </SheetTrigger>
               <SettingsSheet bn={bn} settings={settings} setSettings={setSettings} playbackMode={playbackMode} setPlaybackMode={setPlaybackMode} />
             </Sheet>
-          </Sheet>
           </div>
 
           <div className="sm:hidden pt-1.5">
