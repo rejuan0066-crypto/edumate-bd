@@ -5,12 +5,25 @@ import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 import { usePrincipalOfficer } from '@/hooks/usePrincipalOfficer';
 import { motion } from 'framer-motion';
 import { Target, Eye, BookOpen } from 'lucide-react';
+import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 
 const About = () => {
   const { language } = useLanguage();
   const { settings: rawSettings } = useWebsiteSettings();
   const { data: principal } = usePrincipalOfficer();
   const bn = language === 'bn';
+  const { hash } = useLocation();
+
+  useEffect(() => {
+    if (!hash) return;
+    const id = hash.slice(1);
+    const t = setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 300);
+    return () => clearTimeout(t);
+  }, [hash, rawSettings]);
+
   const settings: any = principal
     ? {
         ...rawSettings,
