@@ -168,6 +168,7 @@ export async function downloadSheetAsPdf(
   filename: string = 'salary-sheet.pdf',
   targetWindow?: Window | null,
   orientation: 'landscape' | 'portrait' = 'landscape',
+  mode: 'preview' | 'download' = 'preview',
 ): Promise<void> {
   // Strip the on-screen Print Settings bar + auto-print script and screen-only blocks.
   let cleanHtml = htmlContent.replace(/<script>[\s\S]*?<\/script>/gi, '');
@@ -306,19 +307,23 @@ export async function downloadSheetAsPdf(
           pdf.addImage(imgData, 'PNG', offsetX, offsetY, drawW, drawH);
         }
 
-        // Open the generated PDF in a new tab for PREVIEW. Use the window the
-        // caller opened synchronously on click (avoids popup blocking); fall back
-        // to opening here, then to a direct download.
+        // Save the file directly when the caller asked for a download; otherwise
+        // preview it in the window opened synchronously on click.
         try {
-          const blob = pdf.output('blob');
-          const url = URL.createObjectURL(blob);
-          if (targetWindow && !targetWindow.closed) {
-            targetWindow.location.href = url;
+          if (mode === 'download') {
+            if (targetWindow && !targetWindow.closed) targetWindow.close();
+            pdf.save(filename);
           } else {
-            const win = window.open(url, '_blank');
-            if (!win) pdf.save(filename);
+            const blob = pdf.output('blob');
+            const url = URL.createObjectURL(blob);
+            if (targetWindow && !targetWindow.closed) {
+              targetWindow.location.href = url;
+            } else {
+              const win = window.open(url, '_blank');
+              if (!win) pdf.save(filename);
+            }
+            setTimeout(() => URL.revokeObjectURL(url), 60000);
           }
-          setTimeout(() => URL.revokeObjectURL(url), 60000);
         } catch {
           if (targetWindow && !targetWindow.closed) targetWindow.close();
           pdf.save(filename);

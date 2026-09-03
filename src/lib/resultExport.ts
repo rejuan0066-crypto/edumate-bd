@@ -180,7 +180,7 @@ export const exportResultPDF = async (params: ExportData & { orientation?: 'land
       const { toast } = await import('sonner');
       const bn = params.bn;
       toast.info(bn ? 'পিডিএফ তৈরি হচ্ছে…' : 'Generating PDF…');
-      await downloadSheetAsPdf(html, fname, params.orientation || 'landscape');
+      await downloadSheetAsPdf(html, fname, null, params.orientation || 'landscape', 'download');
       toast.success(bn ? 'পিডিএফ ডাউনলোড হয়েছে' : 'PDF downloaded');
     } catch (e) {
       console.error('PDF export failed:', e);
