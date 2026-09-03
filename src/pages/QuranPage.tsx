@@ -2,6 +2,8 @@ import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallba
 import { useQuery } from '@tanstack/react-query';
 import { groupVersesBySurah } from '@/lib/quranSegments';
 import { surahNameBn } from '@/lib/quranSurahNamesBn';
+import { useAudioEqualizer } from '@/hooks/useAudioEqualizer';
+import EqualizerDialog from '@/components/quran/EqualizerDialog';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,6 +39,7 @@ import {
   SkipBack,
   SkipForward,
   Settings as SettingsIcon,
+  SlidersHorizontal,
   ListOrdered,
   Loader2,
   History,
@@ -279,6 +282,8 @@ const QuranPage = () => {
   const [gotoOpen, setGotoOpen] = useState(false);
   const [gotoTab, setGotoTab] = useState<'surah' | 'page' | 'juz' | 'bm'>('surah');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [equalizerOpen, setEqualizerOpen] = useState(false);
+  const equalizer = useAudioEqualizer();
 
   // ===== Mushaf theme (dark / light) — separate from app theme =====
   const MUSHAF_THEME_KEY = 'quran:mushafTheme';
@@ -855,6 +860,9 @@ const QuranPage = () => {
   const playUrl = useCallback((url: string, key: string) => {
     if (!audioRef.current) audioRef.current = new Audio();
     const a = audioRef.current;
+    // The Web Audio graph must be attached to the one persistent element.
+    a.crossOrigin = 'anonymous';
+    equalizer.attach(a);
     // Detach any previous handlers from earlier src.
     a.onerror = null;
     setAudioTime(0);
@@ -872,7 +880,7 @@ const QuranPage = () => {
       // play() rejection (autoplay block, decode error, etc.) → try next.
       advanceOnFailureRef.current(key);
     });
-  }, []);
+  }, [equalizer]);
 
   // ---- Playback progress tracking (current time / duration) ----
   const [audioTime, setAudioTime] = useState(0);
