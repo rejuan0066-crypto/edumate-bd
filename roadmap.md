@@ -9,3 +9,4 @@
 - [x] অনুমতি পাওয়া অ্যাডমিন ও ইউজারের জন্য উপস্থিতি/সময় ব্যবস্থাপনার একই কার্যকর আচরণ
 - [x] সব TimePicker/DatePicker-এর responsive centered mobile dialog ও desktop-safe modern design
 - [x] কুরআন প্লেয়ারে once/repeat/continuous playback mode
+- [x] কুরআন প্লেয়ারের উপরের বারকে সহজ, দুই স্তরের UI করা এবং পৃষ্ঠা/আয়াত ট্র্যাকিং দেখানো

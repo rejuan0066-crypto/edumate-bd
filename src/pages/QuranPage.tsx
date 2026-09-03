@@ -790,6 +790,8 @@ const QuranPage = () => {
     const a = audioRef.current;
     // Detach any previous handlers from earlier src.
     a.onerror = null;
+    setAudioTime(0);
+    setAudioDuration(0);
     a.src = url;
     a.onerror = () => {
       // Network / 404 / decoding error → skip to next available verse.
@@ -805,12 +807,32 @@ const QuranPage = () => {
     });
   }, []);
 
+  // ---- Playback progress tracking (current time / duration) ----
+  const [audioTime, setAudioTime] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
+
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a) return;
+    const onTime = () => setAudioTime(a.currentTime || 0);
+    const onMeta = () => setAudioDuration(Number.isFinite(a.duration) ? a.duration : 0);
+    a.addEventListener('timeupdate', onTime);
+    a.addEventListener('loadedmetadata', onMeta);
+    a.addEventListener('durationchange', onMeta);
+    return () => {
+      a.removeEventListener('timeupdate', onTime);
+      a.removeEventListener('loadedmetadata', onMeta);
+      a.removeEventListener('durationchange', onMeta);
+    };
+  }, [playingKey]);
+
   const togglePlay = () => {
     const a = audioRef.current;
     if (!a) return;
     if (isPlaying) { a.pause(); setIsPlaying(false); }
     else { a.play(); setIsPlaying(true); }
   };
+
 
   const playVerse = (v: Verse) => {
     // Custom (full-surah-only) reciter: play the surah this verse belongs to.
@@ -1090,6 +1112,26 @@ const QuranPage = () => {
     return j;
   }, [activeId]);
   const currentChapter = chapters.find((c) => c.id === (currentChapterId ?? activeId));
+  const playingVerse = useMemo(() => {
+    if (!playingKey || playingKey.startsWith('surah-') || playingKey === 'surah') return null;
+    const source = isMushaf ? mushafVersesFlat : verses;
+    return source.find((v) => v.verse_key === playingKey) ?? null;
+  }, [playingKey, isMushaf, mushafVersesFlat, verses]);
+  const playingSurahId = playingKey?.startsWith('surah-')
+    ? Number(playingKey.slice('surah-'.length))
+    : playingKey === 'surah' ? currentChapter?.id : null;
+  const playingSurah = playingSurahId ? chapters.find((c) => c.id === playingSurahId) : null;
+  const playerLocation = playingVerse
+    ? `${bn ? 'পৃষ্ঠা' : 'Page'} ${playingVerse.page_number} · ${bn ? 'আয়াত' : 'Verse'} ${playingVerse.verse_key}`
+    : playingSurah
+      ? `${bn ? 'পৃষ্ঠা' : 'Page'} ${activeId} · ${bn ? 'সূরা' : 'Surah'} ${playingSurah.id}`
+      : `${bn ? 'পৃষ্ঠা' : 'Page'} ${activeId}`;
+  const formatAudioTime = (seconds: number) => {
+    if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
+    return `${mins}:${secs}`;
+  };
   const headerTitle = useMemo(() => {
     if (mode === 'page') {
       const ch = chapters.find((c) => c.id === currentChapterId);
@@ -1198,102 +1240,93 @@ const QuranPage = () => {
       {qcfFontFaces && <style>{qcfFontFaces}</style>}
       {/* ===== Header ===== */}
       <header className="sticky top-0 z-30 backdrop-blur-xl bg-background/80 border-b border-border/50">
-        <div className="max-w-[1440px] mx-auto px-3 py-2.5 flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full h-9 w-9 shrink-0"
-            onClick={() => navigate('/')}
-            aria-label={bn ? 'হোম' : 'Home'}
-            title={bn ? 'হোমে ফিরুন' : 'Back to home'}
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="lg:hidden rounded-full h-9 w-9 shrink-0"
-            onClick={() => setSidebarOpen(true)}
-            aria-label={bn ? 'মেনু' : 'Menu'}
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </Button>
+        <div className="max-w-[1440px] mx-auto px-3 py-2 sm:py-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-h-10">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full h-9 w-9 shrink-0"
+              onClick={() => navigate('/')}
+              aria-label={bn ? 'হোম' : 'Home'}
+              title={bn ? 'হোমে ফিরুন' : 'Back to home'}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden rounded-full h-9 w-9 shrink-0"
+              onClick={() => setSidebarOpen(true)}
+              aria-label={bn ? 'সূরা তালিকা' : 'Surah list'}
+              title={bn ? 'সূরা তালিকা খুলুন' : 'Open surah list'}
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
 
-          {/* Segmented Juz · Page · Surah pill */}
-          <div className="flex-1 min-w-0 flex items-center justify-center">
-            <div className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/40 p-1 max-w-full">
-              <button
-                type="button"
-                onClick={() => { setGotoTab('juz'); setGotoOpen(true); }}
-                className="px-3 h-8 rounded-full text-xs sm:text-sm font-medium bg-background/80 border border-border/40 hover:bg-background transition-colors truncate"
-              >
-                {bn ? `পারা ${currentJuzId}` : `Juz ${currentJuzId}`}
-              </button>
-              <button
-                type="button"
-                onClick={() => { setGotoTab('page'); setGotoOpen(true); }}
-                className="px-2.5 h-8 rounded-full text-xs sm:text-sm font-bold text-primary hover:bg-background/60 transition-colors tabular-nums"
-                title={bn ? 'পৃষ্ঠায় যান' : 'Go to page'}
-              >
-                {bn ? activeId.toLocaleString('bn-BD') : activeId}
-              </button>
-              <button
-                type="button"
-                onClick={() => { setGotoTab('surah'); setGotoOpen(true); }}
-                className="px-3 h-8 rounded-full text-xs sm:text-sm font-medium bg-background/80 border border-border/40 hover:bg-background transition-colors truncate max-w-[140px] sm:max-w-[200px]"
-              >
-                {currentChapter
-                  ? (bn ? surahNameBn(currentChapter.id, currentChapter.name_simple) : currentChapter.name_simple)
-                  : (bn ? 'সূরা' : 'Surah')}
-              </button>
+            <div className="hidden sm:flex flex-1 min-w-0 items-center justify-center">
+              <div className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/40 p-1 max-w-full">
+                <Button variant="outline" onClick={() => { setGotoTab('juz'); setGotoOpen(true); }} className="px-3 h-8 rounded-full text-xs sm:text-sm font-medium truncate">
+                  {bn ? `পারা ${currentJuzId}` : `Juz ${currentJuzId}`}
+                </Button>
+                <Button variant="ghost" onClick={() => { setGotoTab('page'); setGotoOpen(true); }} className="px-2.5 h-8 rounded-full text-xs sm:text-sm font-bold text-primary tabular-nums" title={bn ? 'পৃষ্ঠায় যান' : 'Go to page'}>
+                  {bn ? activeId.toLocaleString('bn-BD') : activeId}
+                </Button>
+                <Button variant="outline" onClick={() => { setGotoTab('surah'); setGotoOpen(true); }} className="px-3 h-8 rounded-full text-xs sm:text-sm font-medium truncate max-w-[140px] sm:max-w-[200px]">
+                  {currentChapter ? (bn ? surahNameBn(currentChapter.id, currentChapter.name_simple) : currentChapter.name_simple) : (bn ? 'সূরা' : 'Surah')}
+                </Button>
+              </div>
             </div>
+            <div className="sm:hidden flex-1 min-w-0 text-center text-sm font-semibold truncate px-1">
+              {bn ? 'কুরআন পাঠ' : 'Quran reading'}
+            </div>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full h-9 w-9 shrink-0"
+              onClick={() => setMushafTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+              aria-label={bn ? 'মুসহাফ থিম' : 'Mushaf theme'}
+              title={mushafTheme === 'dark' ? (bn ? 'লাইট মুসহাফ' : 'Light mushaf') : (bn ? 'ডার্ক মুসহাফ' : 'Dark mushaf')}
+            >
+              {mushafTheme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
+
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 shrink-0" aria-label={bn ? 'খুঁজুন' : 'Search'}>
+                  <Search className="w-4 h-4" />
+                </Button>
+              </DialogTrigger>
+              <AyahSearchDialog bn={bn} onGo={goto} />
+            </Dialog>
+
+            <Dialog open={gotoOpen} onOpenChange={setGotoOpen}>
+              <GotoDialog bn={bn} chapters={chapters} onGo={goto} bookmarks={bookmarks} initialTab={gotoTab} currentPage={activeId} currentJuzId={currentJuzId} onToggleBookmark={toggleBookmark} />
+            </Dialog>
+
+            <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 shrink-0" aria-label={bn ? 'সেটিংস' : 'Settings'}>
+                  <SettingsIcon className="w-4 h-4" />
+                </Button>
+              </SheetTrigger>
+              <SettingsSheet bn={bn} settings={settings} setSettings={setSettings} playbackMode={playbackMode} setPlaybackMode={setPlaybackMode} />
+            </Sheet>
           </div>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full h-9 w-9 shrink-0"
-            onClick={() => setMushafTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
-            aria-label={bn ? 'মুসহাফ থিম' : 'Mushaf theme'}
-            title={
-              mushafTheme === 'dark'
-                ? (bn ? 'লাইট মুসহাফ' : 'Light mushaf')
-                : (bn ? 'ডার্ক মুসহাফ' : 'Dark mushaf')
-            }
-          >
-            {mushafTheme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </Button>
-
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 shrink-0" aria-label={bn ? 'খুঁজুন' : 'Search'}>
-                <Search className="w-4 h-4" />
+          <div className="sm:hidden pt-1.5">
+            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 rounded-2xl border border-border/60 bg-muted/40 p-1">
+              <Button variant="outline" onClick={() => { setGotoTab('juz'); setGotoOpen(true); }} className="h-9 min-w-0 rounded-xl px-2 text-xs font-medium truncate">
+                {bn ? `পারা ${currentJuzId}` : `Juz ${currentJuzId}`}
               </Button>
-            </DialogTrigger>
-            <AyahSearchDialog bn={bn} onGo={goto} />
-          </Dialog>
-
-          <Dialog open={gotoOpen} onOpenChange={setGotoOpen}>
-            <GotoDialog
-              bn={bn}
-              chapters={chapters}
-              onGo={goto}
-              bookmarks={bookmarks}
-              initialTab={gotoTab}
-              currentPage={activeId}
-              currentJuzId={currentJuzId}
-              onToggleBookmark={toggleBookmark}
-            />
-          </Dialog>
-
-          <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 shrink-0" aria-label={bn ? 'সেটিংস' : 'Settings'}>
-                <SettingsIcon className="w-4 h-4" />
+              <Button variant="ghost" onClick={() => { setGotoTab('page'); setGotoOpen(true); }} className="h-9 rounded-xl px-3 text-xs font-bold text-primary tabular-nums" title={bn ? 'পৃষ্ঠায় যান' : 'Go to page'}>
+                {bn ? `পৃষ্ঠা ${activeId.toLocaleString('bn-BD')}` : `Page ${activeId}`}
               </Button>
-            </SheetTrigger>
-            <SettingsSheet bn={bn} settings={settings} setSettings={setSettings} playbackMode={playbackMode} setPlaybackMode={setPlaybackMode} />
-          </Sheet>
+              <Button variant="outline" onClick={() => { setGotoTab('surah'); setGotoOpen(true); }} className="h-9 min-w-0 rounded-xl px-2 text-xs font-medium truncate">
+                {currentChapter ? (bn ? surahNameBn(currentChapter.id, currentChapter.name_simple) : currentChapter.name_simple) : (bn ? 'সূরা' : 'Surah')}
+              </Button>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -1823,73 +1856,65 @@ const QuranPage = () => {
       {/* ===== Audio player bar (sits above floating toolbar) ===== */}
       {playingKey && (
         <div
-          className="fixed inset-x-0 z-40 border-t border-border/50 bg-background/95 backdrop-blur-xl"
+          className="fixed inset-x-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur-xl"
           style={{ bottom: 'calc(76px + env(safe-area-inset-bottom))' }}
         >
-          <div className="max-w-[1440px] mx-auto px-3 sm:px-4 py-2 sm:py-2.5 flex items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-              <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+          <div className="max-w-[1440px] mx-auto px-3 sm:px-5 py-2.5 sm:py-3">
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                 <BookOpen className="w-4 h-4 text-primary" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold truncate">
-                  {playingKey === 'surah'
-                    ? (bn ? `সম্পূর্ণ সূরা — ${currentChapter?.name_simple || ''}` : `Full Surah — ${currentChapter?.name_simple || ''}`)
-                    : `${bn ? 'আয়াত' : 'Verse'} ${playingKey}`}
+                  {playingVerse
+                    ? `${bn ? 'আয়াত' : 'Verse'} ${playingVerse.verse_key}`
+                    : playingSurah
+                      ? `${bn ? 'সূরা' : 'Surah'} ${bn ? surahNameBn(playingSurah.id, playingSurah.name_simple) : playingSurah.name_simple}`
+                      : (bn ? 'তিলাওয়াত চলছে' : 'Recitation playing')}
                 </p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {bn ? RECITERS.find((r) => r.id === settings.reciterId)?.name_bn : RECITERS.find((r) => r.id === settings.reciterId)?.name_en}
-                </p>
+                <p className="text-[11px] text-muted-foreground truncate">{playerLocation}</p>
               </div>
-            </div>
-
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full h-8 w-8 sm:h-9 sm:w-9"
-                onClick={() => {
+              <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+                <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" aria-label={bn ? 'আগের আয়াত' : 'Previous verse'} onClick={() => {
                   if (playingKey === 'surah') return;
-                  const idx = verses.findIndex((v) => v.verse_key === playingKey);
-                  if (idx > 0) playVerse(verses[idx - 1]);
-                }}
-                disabled={playingKey === 'surah'}
-              >
-                <SkipBack className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="default"
-                size="icon"
-                className="rounded-full h-8 w-8 sm:h-9 sm:w-9"
-                onClick={togglePlay}
-              >
-                {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full h-8 w-8 sm:h-9 sm:w-9"
-                onClick={() => {
+                  const source = isMushaf ? mushafVersesFlat : verses;
+                  const idx = source.findIndex((v) => v.verse_key === playingKey);
+                  if (idx > 0) playVerse(source[idx - 1]);
+                }} disabled={playingKey === 'surah'}><SkipBack className="w-4 h-4" /></Button>
+                <Button variant="default" size="icon" className="rounded-full h-9 w-9" aria-label={isPlaying ? (bn ? 'বিরতি' : 'Pause') : (bn ? 'চালু করুন' : 'Play')} onClick={togglePlay}>
+                  {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                </Button>
+                <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" aria-label={bn ? 'পরের আয়াত' : 'Next verse'} onClick={() => {
                   if (playingKey === 'surah') return;
-                  const idx = verses.findIndex((v) => v.verse_key === playingKey);
-                  if (idx >= 0 && idx < verses.length - 1) playVerse(verses[idx + 1]);
-                }}
-                disabled={playingKey === 'surah'}
-              >
-                <SkipForward className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full h-8 w-8 sm:h-9 sm:w-9"
-                onClick={() => {
+                  const source = isMushaf ? mushafVersesFlat : verses;
+                  const idx = source.findIndex((v) => v.verse_key === playingKey);
+                  if (idx >= 0 && idx < source.length - 1) playVerse(source[idx + 1]);
+                }} disabled={playingKey === 'surah'}><SkipForward className="w-4 h-4" /></Button>
+                <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" aria-label={bn ? 'বন্ধ করুন' : 'Close player'} onClick={() => {
                   audioRef.current?.pause();
                   setPlayingKey(null);
                   setIsPlaying(false);
+                }}><X className="w-4 h-4" /></Button>
+              </div>
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-[10px] tabular-nums text-muted-foreground w-8">{formatAudioTime(audioTime)}</span>
+              <input
+                type="range"
+                min="0"
+                max={audioDuration || 0}
+                step="0.1"
+                value={Math.min(audioTime, audioDuration || 0)}
+                onChange={(event) => {
+                  const next = Number(event.target.value);
+                  if (audioRef.current) audioRef.current.currentTime = next;
+                  setAudioTime(next);
                 }}
-              >
-                <X className="w-4 h-4" />
-              </Button>
+                disabled={!audioDuration}
+                aria-label={bn ? 'তিলাওয়াতের অগ্রগতি' : 'Recitation progress'}
+                className="h-1.5 min-w-0 flex-1 accent-primary disabled:opacity-50"
+              />
+              <span className="text-[10px] tabular-nums text-muted-foreground w-8 text-right">{formatAudioTime(audioDuration)}</span>
             </div>
           </div>
         </div>
