@@ -85,7 +85,7 @@ const About = () => {
         </div>
 
         {/* Principal Section */}
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="card-elevated p-8">
+        <motion.div id="principal-message" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="card-elevated p-8 scroll-mt-28">
           <h2 className="text-2xl font-display font-bold text-foreground mb-6">
             {language === 'bn' ? 'অধ্যক্ষের বাণী' : "Principal's Message"}
           </h2>
@@ -106,6 +106,32 @@ const About = () => {
             </div>
           </div>
         </motion.div>
+
+        {/* Admin Section */}
+        {(bn ? settings.admin_message_bn : settings.admin_message_en) && (
+          <motion.div id="admin-message" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="card-elevated p-8 scroll-mt-28">
+            <h2 className="text-2xl font-display font-bold text-foreground mb-6">
+              {bn ? 'পরিচালকের বাণী' : "Administrator's Message"}
+            </h2>
+            <div className="flex flex-col sm:flex-row gap-6">
+              <div className="w-32 h-32 rounded-xl bg-secondary shrink-0 flex items-center justify-center text-4xl overflow-hidden">
+                {settings.admin_photo_url ? (
+                  <img src={settings.admin_photo_url} alt="Administrator" className="w-full h-full object-cover" />
+                ) : '👤'}
+              </div>
+              <div>
+                <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                  {bn ? settings.admin_message_bn : settings.admin_message_en}
+                </p>
+                <p className="mt-4 font-semibold text-foreground">{settings.admin_name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {bn ? settings.admin_title_bn || 'এডমিন' : settings.admin_title_en || 'Admin'}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
       </div>
     </PublicLayout>
   );
