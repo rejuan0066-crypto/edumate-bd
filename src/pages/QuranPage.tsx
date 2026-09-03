@@ -860,6 +860,9 @@ const QuranPage = () => {
   const playUrl = useCallback((url: string, key: string) => {
     if (!audioRef.current) audioRef.current = new Audio();
     const a = audioRef.current;
+    // The Web Audio graph must be attached to the one persistent element.
+    a.crossOrigin = 'anonymous';
+    equalizer.attach(a);
     // Detach any previous handlers from earlier src.
     a.onerror = null;
     setAudioTime(0);
@@ -877,7 +880,7 @@ const QuranPage = () => {
       // play() rejection (autoplay block, decode error, etc.) → try next.
       advanceOnFailureRef.current(key);
     });
-  }, []);
+  }, [equalizer]);
 
   // ---- Playback progress tracking (current time / duration) ----
   const [audioTime, setAudioTime] = useState(0);
