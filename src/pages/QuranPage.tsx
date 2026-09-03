@@ -549,6 +549,31 @@ const QuranPage = () => {
   // into view once it's mounted. Cleared after a successful scroll.
   const pendingScrollPageRef = useRef<number | null>(null);
 
+  // Track which per-page QCF fonts have actually finished loading.
+  // Line-by-line Mushaf layout is only pixel-accurate with these fonts;
+  // until a page's font is ready we render a flowing paragraph instead.
+  const [qcfLoadedPages, setQcfLoadedPages] = useState<Set<number>>(new Set());
+  useEffect(() => {
+    const pages = [...new Set(mushafPages.map((p) => p.page))].filter((p) => p >= 1 && p <= 604);
+    pages.forEach((page) => {
+      if (qcfLoadedPages.has(page)) return;
+      const fam = mushafPageFontFamily(page);
+      document.fonts
+        .load(`30px "${fam}"`, '\u0627')
+        .then((loaded) => {
+          if (loaded && loaded.length > 0) {
+            setQcfLoadedPages((s) => {
+              if (s.has(page)) return s;
+              const n = new Set(s);
+              n.add(page);
+              return n;
+            });
+          }
+        })
+        .catch(() => {});
+    });
+  }, [mushafPages, qcfLoadedPages]);
+
   const qcfFontFaces = useMemo(() => {
     const pages = [...new Set(mushafPages.map((p) => p.page))]
       .filter((page) => page >= 1 && page <= 604)
