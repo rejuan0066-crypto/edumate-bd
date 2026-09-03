@@ -1535,9 +1535,13 @@ const QuranPage = () => {
                                     });
                                     const sortedLines = [...linesMap.entries()].sort((a, b) => a[0] - b[0]);
 
-                                    // Fallback: API returned no words → render the whole
-                                    // segment as a single justified paragraph (legacy path).
-                                    if (sortedLines.length === 0) {
+                                     // Fallback: API returned no words, the page's QCF font
+                                     // isn't loaded yet, or the selected script isn't Uthmani
+                                     // (IndoPak text has different metrics) → render the whole
+                                     // segment as one flowing justified paragraph so verses
+                                     // never break into misaligned fragments.
+                                     const qcfReady = settings.script === 'uthmani' && qcfLoadedPages.has(page);
+                                     if (sortedLines.length === 0 || !qcfReady) {
                                       return (
                                         <p
                                           dir="rtl"
