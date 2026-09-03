@@ -168,6 +168,7 @@ export async function downloadSheetAsPdf(
   filename: string = 'salary-sheet.pdf',
   targetWindow?: Window | null,
   orientation: 'landscape' | 'portrait' = 'landscape',
+  mode: 'preview' | 'download' = 'preview',
 ): Promise<void> {
   // Strip the on-screen Print Settings bar + auto-print script and screen-only blocks.
   let cleanHtml = htmlContent.replace(/<script>[\s\S]*?<\/script>/gi, '');
