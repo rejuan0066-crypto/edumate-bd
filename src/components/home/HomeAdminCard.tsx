@@ -43,7 +43,7 @@ const HomeAdminCard = ({ settings, language, t }: Props) => {
         <p className="text-xs text-muted-foreground leading-relaxed line-clamp-4 mt-3">
           {bn ? settings.admin_message_bn || '' : settings.admin_message_en || ''}
         </p>
-        <Link to="/about" className="inline-flex items-center gap-1 text-xs text-accent hover:underline mt-4 font-medium">
+        <Link to="/about#admin-message" className="inline-flex items-center gap-1 text-xs text-accent hover:underline mt-4 font-medium">
           {bn ? 'আরও পড়ুন.....' : 'Read more.....'} <ArrowRight className="w-3 h-3" />
         </Link>
       </div>

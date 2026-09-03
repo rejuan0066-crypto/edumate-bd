@@ -58,7 +58,7 @@ const HomePrincipalCard = ({ settings: rawSettings, language, t }: Props) => {
         <p className="text-xs text-muted-foreground leading-relaxed line-clamp-4 mt-3">
           {bn ? settings.principal_message_bn : settings.principal_message_en}
         </p>
-        <Link to="/about" className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-4 font-medium">
+        <Link to="/about#principal-message" className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-4 font-medium">
           {bn ? 'আরও পড়ুন.....' : 'Read more.....'} <ArrowRight className="w-3 h-3" />
         </Link>
       </div>
