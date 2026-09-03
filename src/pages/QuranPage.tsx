@@ -282,6 +282,8 @@ const QuranPage = () => {
   const [gotoOpen, setGotoOpen] = useState(false);
   const [gotoTab, setGotoTab] = useState<'surah' | 'page' | 'juz' | 'bm'>('surah');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [equalizerOpen, setEqualizerOpen] = useState(false);
+  const equalizer = useAudioEqualizer();
 
   // ===== Mushaf theme (dark / light) — separate from app theme =====
   const MUSHAF_THEME_KEY = 'quran:mushafTheme';
