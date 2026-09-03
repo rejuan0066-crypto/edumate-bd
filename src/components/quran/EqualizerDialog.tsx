@@ -50,22 +50,20 @@ const EqualizerDialog = ({ open, onOpenChange, bn, eq }: Props) => {
               <p className="text-xs font-semibold text-muted-foreground mb-2">{bn ? 'প্রিসেট' : 'Presets'}</p>
               <div className="flex flex-wrap gap-2">
                 {EQ_PRESETS.map((p) => (
-                  <button
+                  <Button
                     key={p.id}
                     type="button"
+                    variant={eq.preset === p.id ? 'default' : 'outline'}
+                    size="sm"
                     disabled={!eq.enabled}
                     onClick={() => eq.applyPreset(p.id)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors disabled:opacity-50 ${
-                      eq.preset === p.id
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'border-border/60 hover:bg-muted'
-                    }`}
+                    className="rounded-full text-xs"
                   >
                     {bn ? p.label_bn : p.label_en}
-                  </button>
+                  </Button>
                 ))}
                 {eq.preset === 'custom' && (
-                  <span className="px-3 py-1.5 rounded-full text-xs font-medium bg-primary text-primary-foreground">
+                  <span className="px-3 py-1.5 rounded-full text-xs font-medium border border-primary bg-primary text-primary-foreground">
                     {bn ? 'কাস্টম' : 'Custom'}
                   </span>
                 )}

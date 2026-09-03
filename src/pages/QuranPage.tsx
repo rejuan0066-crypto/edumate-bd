@@ -857,12 +857,15 @@ const QuranPage = () => {
   // Forward-declared via ref so playUrl can call into the latest version.
   const advanceOnFailureRef = useRef<(failedKey: string) => void>(() => {});
 
+  // Stable reference — the hook memoises `attach`, so playUrl stays stable too.
+  const eqAttach = equalizer.attach;
+
   const playUrl = useCallback((url: string, key: string) => {
     if (!audioRef.current) audioRef.current = new Audio();
     const a = audioRef.current;
     // The Web Audio graph must be attached to the one persistent element.
     a.crossOrigin = 'anonymous';
-    equalizer.attach(a);
+    eqAttach(a);
     // Detach any previous handlers from earlier src.
     a.onerror = null;
     setAudioTime(0);
@@ -880,7 +883,7 @@ const QuranPage = () => {
       // play() rejection (autoplay block, decode error, etc.) → try next.
       advanceOnFailureRef.current(key);
     });
-  }, [equalizer]);
+  }, [eqAttach]);
 
   // ---- Playback progress tracking (current time / duration) ----
   const [audioTime, setAudioTime] = useState(0);
@@ -1378,6 +1381,17 @@ const QuranPage = () => {
             <Dialog open={gotoOpen} onOpenChange={setGotoOpen}>
               <GotoDialog bn={bn} chapters={chapters} onGo={goto} bookmarks={bookmarks} initialTab={gotoTab} currentPage={activeId} currentJuzId={currentJuzId} onToggleBookmark={toggleBookmark} />
             </Dialog>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`rounded-full h-9 w-9 shrink-0 ${equalizer.enabled ? 'text-primary' : ''}`}
+              onClick={() => setEqualizerOpen(true)}
+              aria-label={bn ? 'ইকুয়ালাইজার' : 'Equalizer'}
+              title={bn ? 'তিলাওয়াতের ইকুয়ালাইজার' : 'Recitation equalizer'}
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+            </Button>
 
             <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
               <SheetTrigger asChild>
@@ -1971,6 +1985,7 @@ const QuranPage = () => {
                   const idx = source.findIndex((v) => v.verse_key === playingKey);
                   if (idx >= 0 && idx < source.length - 1) playVerse(source[idx + 1]);
                 }} disabled={playingKey === 'surah'}><SkipForward className="w-4 h-4" /></Button>
+                <Button variant="ghost" size="icon" className={`rounded-full h-8 w-8 ${equalizer.enabled ? 'text-primary' : ''}`} aria-label={bn ? 'ইকুয়ালাইজার' : 'Equalizer'} onClick={() => setEqualizerOpen(true)}><SlidersHorizontal className="w-4 h-4" /></Button>
                 <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" aria-label={bn ? 'বন্ধ করুন' : 'Close player'} onClick={() => {
                   audioRef.current?.pause();
                   setPlayingKey(null);
@@ -2000,6 +2015,8 @@ const QuranPage = () => {
           </div>
         </div>
       )}
+
+      <EqualizerDialog open={equalizerOpen} onOpenChange={setEqualizerOpen} bn={bn} eq={equalizer} />
 
       {/* ===== Floating bottom toolbar (Quran-Majeed style) ===== */}
       <div className="fixed bottom-0 inset-x-0 z-40 pointer-events-none">
