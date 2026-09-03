@@ -339,7 +339,7 @@ const UpdatePrompt = () => {
         </button>
       )}
 
-      {updateAvailable && !dismissed && (
+      {standalone && updateAvailable && !dismissed && (
         <div
           className="fixed left-3 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-full sm:max-w-xs z-[100] animate-fade-in"
           style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 14px)', maxWidth: 'calc(100vw - 24px)' }}
