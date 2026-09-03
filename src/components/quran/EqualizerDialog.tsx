@@ -63,7 +63,7 @@ const EqualizerDialog = ({ open, onOpenChange, bn, eq }: Props) => {
                   </Button>
                 ))}
                 {eq.preset === 'custom' && (
-                  <span className="px-3 py-1.5 rounded-full text-xs font-medium bg-primary text-primary-foreground">
+                  <span className="px-3 py-1.5 rounded-full text-xs font-medium border border-primary bg-primary text-primary-foreground">
                     {bn ? 'কাস্টম' : 'Custom'}
                   </span>
                 )}
