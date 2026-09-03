@@ -2,6 +2,8 @@ import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallba
 import { useQuery } from '@tanstack/react-query';
 import { groupVersesBySurah } from '@/lib/quranSegments';
 import { surahNameBn } from '@/lib/quranSurahNamesBn';
+import { useAudioEqualizer } from '@/hooks/useAudioEqualizer';
+import EqualizerDialog from '@/components/quran/EqualizerDialog';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,6 +39,7 @@ import {
   SkipBack,
   SkipForward,
   Settings as SettingsIcon,
+  SlidersHorizontal,
   ListOrdered,
   Loader2,
   History,
