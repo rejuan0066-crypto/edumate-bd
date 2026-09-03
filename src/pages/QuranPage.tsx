@@ -1652,7 +1652,8 @@ const QuranPage = () => {
                                             textJustify: 'inter-word',
                                             lineHeight: 1.9,
                                           } as React.CSSProperties}
-                                        >
+                                         >
+                                          <MushafFitLine>
                                           {items.map(({ word, verse }, idx) => {
                                             const isEnd = word.char_type_name === 'end';
                                             const verseNum = verse.verse_key.split(':')[1];
@@ -1735,7 +1736,8 @@ const QuranPage = () => {
                                                 {sep}
                                               </React.Fragment>
                                             );
-                                          })}
+                                           })}
+                                          </MushafFitLine>
                                           {showRuku && (
                                             <span
                                               className="absolute top-1/2 -translate-y-1/2 -left-1 sm:-left-3 text-xs sm:text-sm font-bold opacity-75 select-none"
