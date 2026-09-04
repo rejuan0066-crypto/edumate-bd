@@ -454,6 +454,7 @@ const AdminResignLetters = () => {
         </div>
       </div>
     </div>
+    ${settlementHtml}
     <div class="footer">
       <div class="qr-block" id="qr-container">
         <p class="qr-label">${bn ? 'ডিজিটাল যাচাই' : 'Digital Verification'}</p>
