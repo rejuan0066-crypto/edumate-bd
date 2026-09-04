@@ -792,7 +792,7 @@ Deno.serve(async (req) => {
     width: 100%;
     max-width: 100%;
     border-collapse: collapse;
-    font-size: 8pt;
+    font-size: 7.5pt;
     color: #000;
     table-layout: fixed;
     height: 100%;
@@ -803,12 +803,12 @@ Deno.serve(async (req) => {
     background: #f1f1f1;
     color: #000;
     font-weight: 700;
-    padding: 3pt 3pt;
+    padding: 4pt 4pt;
     text-align: left;
     border: 0.5pt solid #000;
     font-family: 'Kalpurush', 'Noto Serif Bengali', 'Tinos', serif;
     vertical-align: middle;
-    font-size: 8pt;
+    font-size: 7.5pt;
     line-height: 1.2;
     /* Long headers wrap softly across spaces, then fall back to anywhere */
     white-space: normal;
@@ -827,8 +827,9 @@ Deno.serve(async (req) => {
   }
 
   tbody td {
-    padding: 2pt 3pt;
+    padding: 3.5pt 4pt;
     border: 0.4pt solid #000;
+    font-size: 7.5pt;
     vertical-align: middle;
     color: #000;
     line-height: 1.2;
@@ -878,7 +879,7 @@ Deno.serve(async (req) => {
   }
   .c-name .nm {
     font-weight: 700;
-    font-size: 8pt;
+    font-size: 7.5pt;
     overflow-wrap: anywhere;
     word-break: break-word;
     hyphens: auto;
@@ -901,7 +902,8 @@ Deno.serve(async (req) => {
     background: #e8e8e8 !important;
     font-weight: 700;
     border: 0.75pt solid #000;
-    padding: 4pt 3pt;
+    padding: 4pt 4pt;
+    font-size: 7.5pt;
   }
   .totals td:first-child {
     text-align: center;
