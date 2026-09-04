@@ -154,7 +154,15 @@ const AdminResignLetters = () => {
         letter_date: today,
         resign_date: resignDate || today,
         reason: reason || '',
-        letter_data: { photo_url: (staff as any).photo_url || '' },
+        letter_data: {
+          photo_url: (staff as any).photo_url || '',
+          settlement: {
+            deposit_amount: depositAmount || '',
+            deposit_status: depositStatus,
+            salary_due_amount: salaryDueAmount || '',
+            salary_due_status: salaryDueStatus,
+          },
+        },
         status: 'issued',
       });
       if (error) throw error;
