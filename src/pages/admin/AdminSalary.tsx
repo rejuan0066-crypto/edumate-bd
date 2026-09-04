@@ -2343,9 +2343,6 @@ const AdminSalary = () => {
     paid_by?: string; paid_by_role?: string;
   }) => {
     setPdfLoading(true);
-    // Open the preview tab synchronously (within the click gesture) so iOS/PWA
-    // popup blockers don't kill it after the async PDF build.
-    const previewWin = isMobileOrPwa() ? window.open('', '_blank') : null;
     try {
       const monthName = MONTHS.find(m => m.value === selectedMonth);
       const sig = sigOverride || (() => {
@@ -2444,20 +2441,14 @@ const AdminSalary = () => {
       html = html.replace('</style>', `${fontFace}</style>`);
       html = html.replace(/font-family:\s*'Noto Sans Bengali'/g, `font-family:'SutonnyOMJ','Noto Sans Bengali'`);
 
-      // Always produce a real .pdf FILE (no print dialog / print page).
+      // Always produce a real .pdf FILE download (no print dialog / print page),
+      // on desktop AND mobile browsers alike.
       const fname = `salary-sheet-${selectedYear}${selectedMonth}.pdf`;
       toast.info(bn ? 'বেতন শিট PDF তৈরি হচ্ছে…' : 'Generating salary sheet PDF…');
-      if (isMobileOrPwa()) {
-        // Mobile/PWA: preview in the pre-opened tab (downloads are unreliable there).
-        await downloadSheetAsPdf(html, fname, previewWin, 'landscape', 'preview');
-        toast.success(bn ? 'PDF প্রিভিউ প্রস্তুত' : 'PDF preview ready');
-        return;
-      }
       await downloadSheetAsPdf(html, fname, null, 'landscape', 'download');
       toast.success(bn ? 'PDF ডাউনলোড হয়েছে' : 'PDF downloaded');
     } catch (err) {
       console.error(err);
-      if (previewWin && !previewWin.closed) previewWin.close();
       toast.error(bn ? 'PDF তৈরি করতে সমস্যা' : 'Failed to generate PDF');
     } finally {
       setPdfLoading(false);
