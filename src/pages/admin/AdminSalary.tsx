@@ -2124,7 +2124,7 @@ const AdminSalary = () => {
     const headers = [
       '#', bn ? 'নাম' : 'Name', bn ? 'স্টাফ আইডি' : 'Staff ID', bn ? 'পদবি' : 'Designation',
       bn ? 'মূল বেতন' : 'Base Salary', bn ? 'বোনাস' : 'Bonus',
-      bn ? 'ওভারটাইম' : 'Overtime', bn ? 'কর্তন' : 'Deductions',
+      bn ? 'ওভারটাইম/বোনাস' : 'Overtime/Bonus', bn ? 'কর্তন' : 'Deductions',
       bn ? 'জমা' : 'Savings', bn ? 'অগ্রিম' : 'Advance',
       bn ? 'নিট বেতন' : 'Net Salary', bn ? 'স্ট্যাটাস' : 'Status'
     ];
@@ -2147,7 +2147,7 @@ const AdminSalary = () => {
         getDesignation(s.designation),
         fmtNum(Number(displayRecord?.base_salary ?? getEffectiveSalary(s))),
         fmtNum(Number(displayRecord?.bonus || 0)),
-        fmtNum(Number(displayRecord?.overtime || 0)),
+        fmtNum(Number(displayRecord?.overtime || 0) + Number(displayRecord?.bonus || 0)),
         fmtNum(totalDed),
         fmtNum(snap.savingsDisplay),
         fmtNum(Number(displayRecord?.advance_deduction || 0)),
@@ -2375,7 +2375,8 @@ const AdminSalary = () => {
             late: st.late ?? 0,
             leave: st.leave || 0,
             bonus: Number(displayRecord?.bonus || 0),
-            overtime: Number(displayRecord?.overtime || 0),
+            // PDF-এর ওভারটাইম কলামে বোনাসও যুক্ত হয়ে আসবে
+            overtime: Number(displayRecord?.overtime || 0) + Number(displayRecord?.bonus || 0),
             overtime_reason: displayRecord?.overtime_reason,
             deductions: totalDed,
             advance: Number(displayRecord?.advance_deduction || 0),
@@ -3118,7 +3119,7 @@ const AdminSalary = () => {
                         <th className="px-3 py-2 text-right text-xs font-medium">{bn ? 'মূল বেতন' : 'Base'}</th>
                         <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'উপ/অনু/বি/ছু' : 'P/A/L/Lv'}</th>
                         <th className="px-3 py-2 text-right text-xs font-medium">{bn ? 'কর্তন' : 'Ded.'}</th>
-                        <th className="px-3 py-2 text-right text-xs font-medium">{bn ? 'ওভারটাইম' : 'OT'}</th>
+                        <th className="px-3 py-2 text-right text-xs font-medium">{bn ? 'ওভারটাইম/বোনাস' : 'OT/Bonus'}</th>
                         <th className="px-3 py-2 text-right text-xs font-medium text-blue-600">{bn ? 'জমা' : 'Savings'}</th>
                         <th className="px-3 py-2 text-right text-xs font-medium text-emerald-600">{bn ? 'নিট বেতন' : 'Net'}</th>
                         <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'স্ট্যাটাস' : 'Status'}</th>
@@ -3136,7 +3137,8 @@ const AdminSalary = () => {
                         const isPaid = snap.isPaid;
                         const isAdditive = snap.isAdditive;
                         const totalDed = getSalaryDisplayTotalDeduction(snap);
-                        const displayOvertime = Number(displayRecord.overtime || 0);
+                        // ওভারটাইম কলামে বোনাসও অন্তর্ভুক্ত — কাউকে বোনাস দিলে এখানেই দেখাবে
+                        const displayOvertime = Number(displayRecord.overtime || 0) + Number(displayRecord.bonus || 0);
                         const displayNet = Number(displayRecord.net_salary || 0);
 
                         const validation = !rec ? getAttendanceValidation(s) : null;
