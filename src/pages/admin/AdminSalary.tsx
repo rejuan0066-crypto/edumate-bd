@@ -2124,7 +2124,7 @@ const AdminSalary = () => {
     const headers = [
       '#', bn ? 'নাম' : 'Name', bn ? 'স্টাফ আইডি' : 'Staff ID', bn ? 'পদবি' : 'Designation',
       bn ? 'মূল বেতন' : 'Base Salary', bn ? 'বোনাস' : 'Bonus',
-      bn ? 'ওভারটাইম' : 'Overtime', bn ? 'কর্তন' : 'Deductions',
+      bn ? 'ওভারটাইম/বোনাস' : 'Overtime/Bonus', bn ? 'কর্তন' : 'Deductions',
       bn ? 'জমা' : 'Savings', bn ? 'অগ্রিম' : 'Advance',
       bn ? 'নিট বেতন' : 'Net Salary', bn ? 'স্ট্যাটাস' : 'Status'
     ];
@@ -2147,7 +2147,7 @@ const AdminSalary = () => {
         getDesignation(s.designation),
         fmtNum(Number(displayRecord?.base_salary ?? getEffectiveSalary(s))),
         fmtNum(Number(displayRecord?.bonus || 0)),
-        fmtNum(Number(displayRecord?.overtime || 0)),
+        fmtNum(Number(displayRecord?.overtime || 0) + Number(displayRecord?.bonus || 0)),
         fmtNum(totalDed),
         fmtNum(snap.savingsDisplay),
         fmtNum(Number(displayRecord?.advance_deduction || 0)),
