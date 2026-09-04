@@ -201,9 +201,15 @@ const isMobileOrPwa = (): boolean => {
   }
 };
 
-const downloadSheetAsPdf = async (html: string, filename: string, orientation: 'landscape' | 'portrait' = 'landscape') => {
+const downloadSheetAsPdf = async (
+  html: string,
+  filename: string,
+  _targetWindow: Window | null = null,
+  orientation: 'landscape' | 'portrait' = 'landscape',
+  mode: 'preview' | 'download' = 'download',
+) => {
   const { downloadSheetAsPdf: dl } = await import('./salarySlipPdf');
-  return dl(html, filename, null, orientation);
+  return dl(html, filename, _targetWindow, orientation, mode);
 };
 
 export const getResultSheetHtml = ({ 
