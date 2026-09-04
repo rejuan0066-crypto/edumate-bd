@@ -615,6 +615,43 @@ const AdminResignLetters = () => {
                   rows={3}
                 />
               </div>
+
+              {/* Financial settlement & clearance */}
+              <div className="rounded-lg border border-border p-3 space-y-3">
+                <p className="text-sm font-semibold text-foreground">{bn ? 'আর্থিক নিষ্পত্তি ও ছাড়পত্র' : 'Financial Settlement & Clearance'}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">{bn ? 'জামানত/ডিপোজিট (৳)' : 'Security Deposit (BDT)'}</Label>
+                    <Input value={depositAmount} onChange={e => setDepositAmount(e.target.value)} placeholder={bn ? 'পরিমাণ' : 'Amount'} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">{bn ? 'জামানতের অবস্থা' : 'Deposit Status'}</Label>
+                    <Select value={depositStatus} onValueChange={v => setDepositStatus(v as any)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">{bn ? 'প্রযোজ্য নয়' : 'Not applicable'}</SelectItem>
+                        <SelectItem value="refunded">{bn ? 'ফেরত প্রদান হয়েছে' : 'Fully refunded'}</SelectItem>
+                        <SelectItem value="pending">{bn ? 'বাকি আছে' : 'Pending'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">{bn ? 'বকেয়া বেতন (৳)' : 'Salary Dues (BDT)'}</Label>
+                    <Input value={salaryDueAmount} onChange={e => setSalaryDueAmount(e.target.value)} placeholder={bn ? 'পরিমাণ' : 'Amount'} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">{bn ? 'বেতনের অবস্থা' : 'Salary Status'}</Label>
+                    <Select value={salaryDueStatus} onValueChange={v => setSalaryDueStatus(v as any)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">{bn ? 'প্রযোজ্য নয়' : 'Not applicable'}</SelectItem>
+                        <SelectItem value="paid">{bn ? 'পরিশোধ করা হয়েছে' : 'Fully paid'}</SelectItem>
+                        <SelectItem value="pending">{bn ? 'বাকি আছে' : 'Pending'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
               <Button
                 className="w-full"
                 disabled={!selectedStaffId || createMutation.isPending}
