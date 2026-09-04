@@ -2375,7 +2375,8 @@ const AdminSalary = () => {
             late: st.late ?? 0,
             leave: st.leave || 0,
             bonus: Number(displayRecord?.bonus || 0),
-            overtime: Number(displayRecord?.overtime || 0),
+            // PDF-এর ওভারটাইম কলামে বোনাসও যুক্ত হয়ে আসবে
+            overtime: Number(displayRecord?.overtime || 0) + Number(displayRecord?.bonus || 0),
             overtime_reason: displayRecord?.overtime_reason,
             deductions: totalDed,
             advance: Number(displayRecord?.advance_deduction || 0),
@@ -3136,7 +3137,8 @@ const AdminSalary = () => {
                         const isPaid = snap.isPaid;
                         const isAdditive = snap.isAdditive;
                         const totalDed = getSalaryDisplayTotalDeduction(snap);
-                        const displayOvertime = Number(displayRecord.overtime || 0);
+                        // ওভারটাইম কলামে বোনাসও অন্তর্ভুক্ত — কাউকে বোনাস দিলে এখানেই দেখাবে
+                        const displayOvertime = Number(displayRecord.overtime || 0) + Number(displayRecord.bonus || 0);
                         const displayNet = Number(displayRecord.net_salary || 0);
 
                         const validation = !rec ? getAttendanceValidation(s) : null;
