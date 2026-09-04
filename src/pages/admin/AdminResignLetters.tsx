@@ -57,6 +57,11 @@ const AdminResignLetters = () => {
   const [selectedStaffId, setSelectedStaffId] = useState('');
   const [resignDate, setResignDate] = useState('');
   const [reason, setReason] = useState('');
+  // Financial settlement & clearance fields
+  const [depositAmount, setDepositAmount] = useState('');
+  const [depositStatus, setDepositStatus] = useState<'refunded' | 'pending' | 'none'>('none');
+  const [salaryDueAmount, setSalaryDueAmount] = useState('');
+  const [salaryDueStatus, setSalaryDueStatus] = useState<'paid' | 'pending' | 'none'>('none');
 
   /* ── Editable overrides ─────────────────── */
   const [overrides, setOverrides] = useState<Record<string, string>>({});
