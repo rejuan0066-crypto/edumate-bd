@@ -3119,7 +3119,7 @@ const AdminSalary = () => {
                         <th className="px-3 py-2 text-right text-xs font-medium">{bn ? 'মূল বেতন' : 'Base'}</th>
                         <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'উপ/অনু/বি/ছু' : 'P/A/L/Lv'}</th>
                         <th className="px-3 py-2 text-right text-xs font-medium">{bn ? 'কর্তন' : 'Ded.'}</th>
-                        <th className="px-3 py-2 text-right text-xs font-medium">{bn ? 'ওভারটাইম' : 'OT'}</th>
+                        <th className="px-3 py-2 text-right text-xs font-medium">{bn ? 'ওভারটাইম/বোনাস' : 'OT/Bonus'}</th>
                         <th className="px-3 py-2 text-right text-xs font-medium text-blue-600">{bn ? 'জমা' : 'Savings'}</th>
                         <th className="px-3 py-2 text-right text-xs font-medium text-emerald-600">{bn ? 'নিট বেতন' : 'Net'}</th>
                         <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'স্ট্যাটাস' : 'Status'}</th>
