@@ -399,6 +399,12 @@ const AdminResignLetters = () => {
   .letter-body{font-size:14px;line-height:2.2;margin-bottom:20px;flex:1}
   .letter-body p{margin-bottom:10px}
   .letter-body .highlight{color:#991b1b;font-weight:700}
+  .settlement{margin:4px 0 14px;border:1px solid #bbb;border-radius:6px;padding:10px 12px;background:#fafaf8}
+  .settlement h3{font-size:13px;font-weight:700;letter-spacing:1px;color:#1f4d3a;text-align:center;margin-bottom:8px;text-transform:uppercase}
+  .settle-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px}
+  .settle-table th,.settle-table td{border:0.5pt solid #bbb;padding:6px 8px;text-align:left;vertical-align:middle}
+  .settle-table th{background:#eef3ef;color:#1f4d3a;width:42%;font-weight:600}
+  .settle-decl{font-size:12px;line-height:1.8;text-align:justify;color:#1a1a1a}
   .body-flex{display:flex;gap:20px}
   .body-text{flex:1}
   .photo-box{flex-shrink:0;text-align:center}
