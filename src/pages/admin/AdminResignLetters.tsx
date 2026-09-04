@@ -778,8 +778,77 @@ const AdminResignLetters = () => {
                           </div>
                         </div>
 
+                        {/* Financial settlement & clearance */}
+                        <div className="rounded-md border border-foreground/25 p-3 mb-4 bg-muted/30">
+                          <p className="text-[13px] font-bold tracking-wide text-center mb-2 uppercase" style={{ color: '#1f4d3a' }}>
+                            {bn ? 'আর্থিক নিষ্পত্তি ও ছাড়পত্র' : 'FINANCIAL SETTLEMENT & CLEARANCE'}
+                          </p>
+                          <table className="w-full text-xs border-collapse mb-2">
+                            <tbody>
+                              <tr>
+                                <th className="border border-foreground/20 px-2 py-1.5 text-left font-semibold w-2/5" style={{ background: '#eef3ef', color: '#1f4d3a' }}>{bn ? 'জামানত / সিকিউরিটি ডিপোজিট' : 'Security Deposit / Guarantee Money'}</th>
+                                <td className="border border-foreground/20 px-2 py-1.5">
+                                  {editMode
+                                    ? <Editable value={r.settlement.depositAmount} onChange={v => set('depositAmount', v)} editing={editMode} />
+                                    : (r.settlement.depositAmount ? `${bn ? '৳' : 'BDT '}${r.settlement.depositAmount}` : '—')}
+                                </td>
+                                <td className="border border-foreground/20 px-2 py-1.5">
+                                  {editMode ? (
+                                    <select
+                                      className="w-full bg-background border border-border rounded px-1 py-0.5 text-xs"
+                                      value={r.settlement.depositStatus}
+                                      onChange={e => set('depositStatus', e.target.value)}
+                                    >
+                                      <option value="none">{bn ? 'প্রযোজ্য নয়' : 'Not applicable'}</option>
+                                      <option value="refunded">{bn ? 'ফেরত প্রদান হয়েছে' : 'Fully refunded'}</option>
+                                      <option value="pending">{bn ? 'বাকি আছে' : 'Pending'}</option>
+                                    </select>
+                                  ) : (
+                                    r.settlement.depositStatus === 'refunded'
+                                      ? (bn ? 'সম্পূর্ণ ফেরত প্রদান করা হয়েছে' : 'Fully refunded')
+                                      : r.settlement.depositStatus === 'pending'
+                                        ? (bn ? 'এখনো ফেরত দেওয়া হয়নি (বাকি আছে)' : 'Pending refund')
+                                        : (bn ? 'প্রযোজ্য নয়' : 'Not applicable')
+                                  )}
+                                </td>
+                              </tr>
+                              <tr>
+                                <th className="border border-foreground/20 px-2 py-1.5 text-left font-semibold" style={{ background: '#eef3ef', color: '#1f4d3a' }}>{bn ? 'সর্বশেষ বেতন / বকেয়া বেতন' : 'Final Salary / Salary Dues'}</th>
+                                <td className="border border-foreground/20 px-2 py-1.5">
+                                  {editMode
+                                    ? <Editable value={r.settlement.salaryDueAmount} onChange={v => set('salaryDueAmount', v)} editing={editMode} />
+                                    : (r.settlement.salaryDueAmount ? `${bn ? '৳' : 'BDT '}${r.settlement.salaryDueAmount}` : '—')}
+                                </td>
+                                <td className="border border-foreground/20 px-2 py-1.5">
+                                  {editMode ? (
+                                    <select
+                                      className="w-full bg-background border border-border rounded px-1 py-0.5 text-xs"
+                                      value={r.settlement.salaryDueStatus}
+                                      onChange={e => set('salaryDueStatus', e.target.value)}
+                                    >
+                                      <option value="none">{bn ? 'প্রযোজ্য নয়' : 'Not applicable'}</option>
+                                      <option value="paid">{bn ? 'পরিশোধ করা হয়েছে' : 'Fully paid'}</option>
+                                      <option value="pending">{bn ? 'বাকি আছে' : 'Pending'}</option>
+                                    </select>
+                                  ) : (
+                                    r.settlement.salaryDueStatus === 'paid'
+                                      ? (bn ? 'সম্পূর্ণ পরিশোধ করা হয়েছে' : 'Fully paid')
+                                      : r.settlement.salaryDueStatus === 'pending'
+                                        ? (bn ? 'এখনো পরিশোধ করা হয়নি (বাকি আছে)' : 'Pending payment')
+                                        : (bn ? 'প্রযোজ্য নয়' : 'Not applicable')
+                                  )}
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                          <p className="text-xs leading-relaxed text-justify" style={{ color: '#1a1a1a' }}>
+                            <strong>{bn ? 'পূর্ণ ও চূড়ান্ত নিষ্পত্তি (Full and Final Settlement):' : 'Full and Final Settlement Declaration:'}</strong>{' '}
+                            <Editable value={r.settlement.settlementStatement} onChange={v => set('settlementStatement', v)} editing={editMode} />
+                          </p>
+                        </div>
+
                         {/* Signature area */}
-                        <div className="flex justify-between items-end mt-12 pt-4">
+                        <div className="flex justify-between items-end mt-6 pt-4">
                           <div className="flex flex-col items-center gap-1">
                             <QRCodeSVG
                               value={`RL:${viewLetter.letter_number}|${viewLetter.staff_name}|${viewLetter.resign_date}`}
