@@ -339,6 +339,37 @@ const AdminResignLetters = () => {
 
     const bodyText = `${r.bodyText}<br/><br/><strong>${bn ? 'কারণ:' : 'Reason:'}</strong> ${r.reason}<br/><br/>${r.closingText}`;
 
+    /* ── Financial settlement & clearance section ── */
+    const s = (r as any).settlement || {};
+    const fmtMoney = (v: string) => v ? `${bn ? '৳' : 'BDT '}${v}` : (bn ? '—' : '—');
+    const depositLabel = s.depositStatus === 'refunded'
+      ? (bn ? 'সম্পূর্ণ ফেরত প্রদান করা হয়েছে' : 'Fully refunded')
+      : s.depositStatus === 'pending'
+        ? (bn ? 'এখনো ফেরত দেওয়া হয়নি (বাকি আছে)' : 'Pending refund')
+        : (bn ? 'প্রযোজ্য নয়' : 'Not applicable');
+    const salaryLabel = s.salaryDueStatus === 'paid'
+      ? (bn ? 'সম্পূর্ণ পরিশোধ করা হয়েছে' : 'Fully paid')
+      : s.salaryDueStatus === 'pending'
+        ? (bn ? 'এখনো পরিশোধ করা হয়নি (বাকি আছে)' : 'Pending payment')
+        : (bn ? 'প্রযোজ্য নয়' : 'Not applicable');
+    const settlementHtml = `
+    <div class="settlement">
+      <h3>${bn ? 'আর্থিক নিষ্পত্তি ও ছাড়পত্র' : 'FINANCIAL SETTLEMENT & CLEARANCE'}</h3>
+      <table class="settle-table">
+        <tr>
+          <th>${bn ? 'জামানত / সিকিউরিটি ডিপোজিট' : 'Security Deposit / Guarantee Money'}</th>
+          <td>${fmtMoney(s.depositAmount)}</td>
+          <td>${depositLabel}</td>
+        </tr>
+        <tr>
+          <th>${bn ? 'সর্বশেষ বেতন / বকেয়া বেতন' : 'Final Salary / Salary Dues'}</th>
+          <td>${fmtMoney(s.salaryDueAmount)}</td>
+          <td>${salaryLabel}</td>
+        </tr>
+      </table>
+      <p class="settle-decl"><strong>${bn ? 'পূর্ণ ও চূড়ান্ত নিষ্পত্তি (Full and Final Settlement):' : 'Full and Final Settlement Declaration:'}</strong> ${s.settlementStatement}</p>
+    </div>`;
+
     const html = `<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
