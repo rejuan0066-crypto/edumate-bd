@@ -3002,8 +3002,11 @@ const AdminSalary = () => {
                 <Button size="sm" variant="outline" onClick={exportExcel}>
                   <Download className="h-3 w-3 mr-1" /> Excel
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => setSigDialogOpen(true)} disabled={pdfLoading}>
-                  <FileText className="h-3 w-3 mr-1" /> {pdfLoading ? '...' : 'PDF'}
+                <Button size="sm" variant="outline" onClick={() => exportPDF()} disabled={pdfLoading} title={bn ? 'সরাসরি PDF ডাউনলোড করুন' : 'Download PDF directly'}>
+                  <Download className="h-3 w-3 mr-1" /> {pdfLoading ? '...' : (bn ? 'PDF ডাউনলোড' : 'Download PDF')}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setSigDialogOpen(true)} disabled={pdfLoading} title={bn ? 'স্বাক্ষর কাস্টমাইজ করে PDF' : 'PDF with custom signatures'}>
+                  <FileText className="h-3 w-3" />
                 </Button>
               </div>
             </div>
