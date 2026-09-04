@@ -843,7 +843,7 @@ Deno.serve(async (req) => {
   }
   tbody tr:nth-child(even) td { background: #fafafa; }
 
-  .staff-row { height: 8.5mm; }
+  .staff-row { min-height: 9mm; }
 
   /* === Numeric / amount columns: keep on a single line, right-aligned, monospaced digits === */
   .c-num {
@@ -875,7 +875,7 @@ Deno.serve(async (req) => {
     word-break: break-word;
     hyphens: auto;
     -webkit-hyphens: auto;
-    line-height: 1.15;
+    line-height: 1.4;
   }
   .c-name .nm {
     font-weight: 700;
@@ -884,6 +884,7 @@ Deno.serve(async (req) => {
     word-break: break-word;
     hyphens: auto;
     display: block;
+    line-height: 1.4;
   }
   .c-name .sid {
     font-size: 6.8pt;
@@ -891,6 +892,7 @@ Deno.serve(async (req) => {
     margin-top: 1pt;
     font-family: 'Kalpurush', 'Tinos', monospace;
     letter-spacing: 0.2pt;
+    line-height: 1.3;
     /* IDs are alphanumeric — break anywhere if needed but never wrap mid-digit-run on big screens */
     overflow-wrap: anywhere;
     word-break: break-all;
@@ -902,8 +904,9 @@ Deno.serve(async (req) => {
     background: #e8e8e8 !important;
     font-weight: 700;
     border: 0.75pt solid #000;
-    padding: 4pt 4pt;
+    padding: 5pt 5pt;
     font-size: 7.5pt;
+    line-height: 1.5;
   }
   .totals td:first-child {
     text-align: center;
