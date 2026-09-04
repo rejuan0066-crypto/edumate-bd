@@ -193,6 +193,10 @@ const AdminResignLetters = () => {
       setSelectedStaffId('');
       setResignDate('');
       setReason('');
+      setDepositAmount('');
+      setDepositStatus('none');
+      setSalaryDueAmount('');
+      setSalaryDueStatus('none');
     },
     onError: () => toast.error(bn ? 'ত্রুটি হয়েছে' : 'Error creating letter'),
   });
