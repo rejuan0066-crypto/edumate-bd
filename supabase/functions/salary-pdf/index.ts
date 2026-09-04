@@ -803,13 +803,13 @@ Deno.serve(async (req) => {
     background: #f1f1f1;
     color: #000;
     font-weight: 700;
-    padding: 4pt 4pt;
+    padding: 5pt 5pt;
     text-align: left;
     border: 0.5pt solid #000;
     font-family: 'Kalpurush', 'Noto Serif Bengali', 'Tinos', serif;
     vertical-align: middle;
     font-size: 7.5pt;
-    line-height: 1.2;
+    line-height: 1.5;
     /* Long headers wrap softly across spaces, then fall back to anywhere */
     white-space: normal;
     overflow-wrap: break-word;
@@ -827,12 +827,12 @@ Deno.serve(async (req) => {
   }
 
   tbody td {
-    padding: 3.5pt 4pt;
+    padding: 4.5pt 5pt;
     border: 0.4pt solid #000;
     font-size: 7.5pt;
     vertical-align: middle;
     color: #000;
-    line-height: 1.2;
+    line-height: 1.5;
     overflow: hidden;
     /* Default body cells: wrap softly */
     white-space: normal;
@@ -843,7 +843,7 @@ Deno.serve(async (req) => {
   }
   tbody tr:nth-child(even) td { background: #fafafa; }
 
-  .staff-row { height: 8.5mm; }
+  .staff-row { min-height: 9mm; }
 
   /* === Numeric / amount columns: keep on a single line, right-aligned, monospaced digits === */
   .c-num {
@@ -875,7 +875,7 @@ Deno.serve(async (req) => {
     word-break: break-word;
     hyphens: auto;
     -webkit-hyphens: auto;
-    line-height: 1.15;
+    line-height: 1.4;
   }
   .c-name .nm {
     font-weight: 700;
@@ -884,6 +884,7 @@ Deno.serve(async (req) => {
     word-break: break-word;
     hyphens: auto;
     display: block;
+    line-height: 1.4;
   }
   .c-name .sid {
     font-size: 6.8pt;
@@ -891,6 +892,7 @@ Deno.serve(async (req) => {
     margin-top: 1pt;
     font-family: 'Kalpurush', 'Tinos', monospace;
     letter-spacing: 0.2pt;
+    line-height: 1.3;
     /* IDs are alphanumeric — break anywhere if needed but never wrap mid-digit-run on big screens */
     overflow-wrap: anywhere;
     word-break: break-all;
@@ -902,8 +904,9 @@ Deno.serve(async (req) => {
     background: #e8e8e8 !important;
     font-weight: 700;
     border: 0.75pt solid #000;
-    padding: 4pt 4pt;
+    padding: 5pt 5pt;
     font-size: 7.5pt;
+    line-height: 1.5;
   }
   .totals td:first-child {
     text-align: center;
@@ -1081,12 +1084,12 @@ Deno.serve(async (req) => {
     .inst-contact, .doc-period { font-size: 7pt; }
     .doc-title { margin: 2pt 0; }
     .doc-title h2 { font-size: 9pt; padding: 1pt 10pt; }
-    thead th { font-size: 8.2pt; padding: 2pt 2pt; line-height: 1.05; }
-    tbody td { font-size: 8.2pt; padding: 1.8pt 2pt; line-height: 1.15; }
-    .staff-row { height: 6.8mm; }
-    .c-name .nm { font-size: 8.2pt; line-height: 1.1; }
-    .c-name .sid { font-size: 7pt; line-height: 1.05; }
-    .totals td { padding: 2.5pt 2pt; }
+    thead th { font-size: 8pt; padding: 3pt 3.5pt; line-height: 1.4; }
+    tbody td { font-size: 8pt; padding: 3pt 3.5pt; line-height: 1.45; }
+    .staff-row { min-height: 7.5mm; height: auto; }
+    .c-name .nm { font-size: 8pt; line-height: 1.4; }
+    .c-name .sid { font-size: 7pt; line-height: 1.3; }
+    .totals td { padding: 3pt 3.5pt; line-height: 1.4; }
     .note-cell { font-size: 7.6pt; padding: 1.8pt 3pt; }
     .signatures { margin: 4mm 3mm 1mm; gap: 5mm; }
     .sig, .sig .role { font-size: 7.2pt; }
