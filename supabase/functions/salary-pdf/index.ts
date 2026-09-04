@@ -803,13 +803,13 @@ Deno.serve(async (req) => {
     background: #f1f1f1;
     color: #000;
     font-weight: 700;
-    padding: 4pt 4pt;
+    padding: 5pt 5pt;
     text-align: left;
     border: 0.5pt solid #000;
     font-family: 'Kalpurush', 'Noto Serif Bengali', 'Tinos', serif;
     vertical-align: middle;
     font-size: 7.5pt;
-    line-height: 1.2;
+    line-height: 1.5;
     /* Long headers wrap softly across spaces, then fall back to anywhere */
     white-space: normal;
     overflow-wrap: break-word;
@@ -827,12 +827,12 @@ Deno.serve(async (req) => {
   }
 
   tbody td {
-    padding: 3.5pt 4pt;
+    padding: 4.5pt 5pt;
     border: 0.4pt solid #000;
     font-size: 7.5pt;
     vertical-align: middle;
     color: #000;
-    line-height: 1.2;
+    line-height: 1.5;
     overflow: hidden;
     /* Default body cells: wrap softly */
     white-space: normal;
