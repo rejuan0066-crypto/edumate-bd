@@ -57,6 +57,11 @@ const AdminResignLetters = () => {
   const [selectedStaffId, setSelectedStaffId] = useState('');
   const [resignDate, setResignDate] = useState('');
   const [reason, setReason] = useState('');
+  // Financial settlement & clearance fields
+  const [depositAmount, setDepositAmount] = useState('');
+  const [depositStatus, setDepositStatus] = useState<'refunded' | 'pending' | 'none'>('none');
+  const [salaryDueAmount, setSalaryDueAmount] = useState('');
+  const [salaryDueStatus, setSalaryDueStatus] = useState<'paid' | 'pending' | 'none'>('none');
 
   /* ── Editable overrides ─────────────────── */
   const [overrides, setOverrides] = useState<Record<string, string>>({});
@@ -149,7 +154,15 @@ const AdminResignLetters = () => {
         letter_date: today,
         resign_date: resignDate || today,
         reason: reason || '',
-        letter_data: { photo_url: (staff as any).photo_url || '' },
+        letter_data: {
+          photo_url: (staff as any).photo_url || '',
+          settlement: {
+            deposit_amount: depositAmount || '',
+            deposit_status: depositStatus,
+            salary_due_amount: salaryDueAmount || '',
+            salary_due_status: salaryDueStatus,
+          },
+        },
         status: 'issued',
       });
       if (error) throw error;
@@ -180,6 +193,10 @@ const AdminResignLetters = () => {
       setSelectedStaffId('');
       setResignDate('');
       setReason('');
+      setDepositAmount('');
+      setDepositStatus('none');
+      setSalaryDueAmount('');
+      setSalaryDueStatus('none');
     },
     onError: () => toast.error(bn ? 'ত্রুটি হয়েছে' : 'Error creating letter'),
   });
@@ -285,7 +302,17 @@ const AdminResignLetters = () => {
       ? 'তাঁর প্রতি আমরা কৃতজ্ঞতা জ্ঞাপন করছি এবং ভবিষ্যৎ জীবনে সাফল্য কামনা করছি।'
       : 'We express our gratitude for their service and wish them success in future endeavors.';
 
+    const st = ((letter.letter_data as any)?.settlement) || {};
+    const depositAmount = get('depositAmount', st.deposit_amount || '');
+    const depositStatus = get('depositStatus', st.deposit_status || 'none');
+    const salaryDueAmount = get('salaryDueAmount', st.salary_due_amount || '');
+    const salaryDueStatus = get('salaryDueStatus', st.salary_due_status || 'none');
+    const settlementStatement = get('settlementStatement', bn
+      ? 'ঘোষণা: উপরোক্ত সকল আর্থিক দায়-দেনা সম্পূর্ণ নিষ্পত্তি (Full and Final Settlement) করা হয়েছে এবং উভয় পক্ষের মধ্যে প্রতিষ্ঠান সংক্রান্ত কোনো পাওনা-দেনা অবশিষ্ট নেই বলে ঘোষণা করা হলো।'
+      : 'Declaration: The above financial settlement constitutes the Full and Final Settlement between the staff member and the institution; no further dues remain outstanding from either side.');
+
     return {
+      settlement: { depositAmount, depositStatus, salaryDueAmount, salaryDueStatus, settlementStatement },
       instName: get('instName', inst.name || ''),
       instNameEn: get('instNameEn', inst.name_en || ''),
       instAddress: get('instAddress', inst.address || ''),
@@ -311,6 +338,37 @@ const AdminResignLetters = () => {
     const qrValue = `RL:${letter.letter_number}|${letter.staff_name}|${letter.resign_date}`;
 
     const bodyText = `${r.bodyText}<br/><br/><strong>${bn ? 'কারণ:' : 'Reason:'}</strong> ${r.reason}<br/><br/>${r.closingText}`;
+
+    /* ── Financial settlement & clearance section ── */
+    const s = (r as any).settlement || {};
+    const fmtMoney = (v: string) => v ? `${bn ? '৳' : 'BDT '}${v}` : (bn ? '—' : '—');
+    const depositLabel = s.depositStatus === 'refunded'
+      ? (bn ? 'সম্পূর্ণ ফেরত প্রদান করা হয়েছে' : 'Fully refunded')
+      : s.depositStatus === 'pending'
+        ? (bn ? 'এখনো ফেরত দেওয়া হয়নি (বাকি আছে)' : 'Pending refund')
+        : (bn ? 'প্রযোজ্য নয়' : 'Not applicable');
+    const salaryLabel = s.salaryDueStatus === 'paid'
+      ? (bn ? 'সম্পূর্ণ পরিশোধ করা হয়েছে' : 'Fully paid')
+      : s.salaryDueStatus === 'pending'
+        ? (bn ? 'এখনো পরিশোধ করা হয়নি (বাকি আছে)' : 'Pending payment')
+        : (bn ? 'প্রযোজ্য নয়' : 'Not applicable');
+    const settlementHtml = `
+    <div class="settlement">
+      <h3>${bn ? 'আর্থিক নিষ্পত্তি ও ছাড়পত্র' : 'FINANCIAL SETTLEMENT & CLEARANCE'}</h3>
+      <table class="settle-table">
+        <tr>
+          <th>${bn ? 'জামানত / সিকিউরিটি ডিপোজিট' : 'Security Deposit / Guarantee Money'}</th>
+          <td>${fmtMoney(s.depositAmount)}</td>
+          <td>${depositLabel}</td>
+        </tr>
+        <tr>
+          <th>${bn ? 'সর্বশেষ বেতন / বকেয়া বেতন' : 'Final Salary / Salary Dues'}</th>
+          <td>${fmtMoney(s.salaryDueAmount)}</td>
+          <td>${salaryLabel}</td>
+        </tr>
+      </table>
+      <p class="settle-decl"><strong>${bn ? 'পূর্ণ ও চূড়ান্ত নিষ্পত্তি (Full and Final Settlement):' : 'Full and Final Settlement Declaration:'}</strong> ${s.settlementStatement}</p>
+    </div>`;
 
     const html = `<!DOCTYPE html>
 <html><head>
@@ -341,6 +399,12 @@ const AdminResignLetters = () => {
   .letter-body{font-size:14px;line-height:2.2;margin-bottom:20px;flex:1}
   .letter-body p{margin-bottom:10px}
   .letter-body .highlight{color:#991b1b;font-weight:700}
+  .settlement{margin:4px 0 14px;border:1px solid #bbb;border-radius:6px;padding:10px 12px;background:#fafaf8}
+  .settlement h3{font-size:13px;font-weight:700;letter-spacing:1px;color:#1f4d3a;text-align:center;margin-bottom:8px;text-transform:uppercase}
+  .settle-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px}
+  .settle-table th,.settle-table td{border:0.5pt solid #bbb;padding:6px 8px;text-align:left;vertical-align:middle}
+  .settle-table th{background:#eef3ef;color:#1f4d3a;width:42%;font-weight:600}
+  .settle-decl{font-size:12px;line-height:1.8;text-align:justify;color:#1a1a1a}
   .body-flex{display:flex;gap:20px}
   .body-text{flex:1}
   .photo-box{flex-shrink:0;text-align:center}
@@ -396,6 +460,7 @@ const AdminResignLetters = () => {
         </div>
       </div>
     </div>
+    ${settlementHtml}
     <div class="footer">
       <div class="qr-block" id="qr-container">
         <p class="qr-label">${bn ? 'ডিজিটাল যাচাই' : 'Digital Verification'}</p>
@@ -550,6 +615,43 @@ const AdminResignLetters = () => {
                   rows={3}
                 />
               </div>
+
+              {/* Financial settlement & clearance */}
+              <div className="rounded-lg border border-border p-3 space-y-3">
+                <p className="text-sm font-semibold text-foreground">{bn ? 'আর্থিক নিষ্পত্তি ও ছাড়পত্র' : 'Financial Settlement & Clearance'}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">{bn ? 'জামানত/ডিপোজিট (৳)' : 'Security Deposit (BDT)'}</Label>
+                    <Input value={depositAmount} onChange={e => setDepositAmount(e.target.value)} placeholder={bn ? 'পরিমাণ' : 'Amount'} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">{bn ? 'জামানতের অবস্থা' : 'Deposit Status'}</Label>
+                    <Select value={depositStatus} onValueChange={v => setDepositStatus(v as any)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">{bn ? 'প্রযোজ্য নয়' : 'Not applicable'}</SelectItem>
+                        <SelectItem value="refunded">{bn ? 'ফেরত প্রদান হয়েছে' : 'Fully refunded'}</SelectItem>
+                        <SelectItem value="pending">{bn ? 'বাকি আছে' : 'Pending'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">{bn ? 'বকেয়া বেতন (৳)' : 'Salary Dues (BDT)'}</Label>
+                    <Input value={salaryDueAmount} onChange={e => setSalaryDueAmount(e.target.value)} placeholder={bn ? 'পরিমাণ' : 'Amount'} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">{bn ? 'বেতনের অবস্থা' : 'Salary Status'}</Label>
+                    <Select value={salaryDueStatus} onValueChange={v => setSalaryDueStatus(v as any)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">{bn ? 'প্রযোজ্য নয়' : 'Not applicable'}</SelectItem>
+                        <SelectItem value="paid">{bn ? 'পরিশোধ করা হয়েছে' : 'Fully paid'}</SelectItem>
+                        <SelectItem value="pending">{bn ? 'বাকি আছে' : 'Pending'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
               <Button
                 className="w-full"
                 disabled={!selectedStaffId || createMutation.isPending}
@@ -676,8 +778,77 @@ const AdminResignLetters = () => {
                           </div>
                         </div>
 
+                        {/* Financial settlement & clearance */}
+                        <div className="rounded-md border border-foreground/25 p-3 mb-4 bg-muted/30">
+                          <p className="text-[13px] font-bold tracking-wide text-center mb-2 uppercase" style={{ color: '#1f4d3a' }}>
+                            {bn ? 'আর্থিক নিষ্পত্তি ও ছাড়পত্র' : 'FINANCIAL SETTLEMENT & CLEARANCE'}
+                          </p>
+                          <table className="w-full text-xs border-collapse mb-2">
+                            <tbody>
+                              <tr>
+                                <th className="border border-foreground/20 px-2 py-1.5 text-left font-semibold w-2/5" style={{ background: '#eef3ef', color: '#1f4d3a' }}>{bn ? 'জামানত / সিকিউরিটি ডিপোজিট' : 'Security Deposit / Guarantee Money'}</th>
+                                <td className="border border-foreground/20 px-2 py-1.5">
+                                  {editMode
+                                    ? <Editable value={r.settlement.depositAmount} onChange={v => set('depositAmount', v)} editing={editMode} />
+                                    : (r.settlement.depositAmount ? `${bn ? '৳' : 'BDT '}${r.settlement.depositAmount}` : '—')}
+                                </td>
+                                <td className="border border-foreground/20 px-2 py-1.5">
+                                  {editMode ? (
+                                    <select
+                                      className="w-full bg-background border border-border rounded px-1 py-0.5 text-xs"
+                                      value={r.settlement.depositStatus}
+                                      onChange={e => set('depositStatus', e.target.value)}
+                                    >
+                                      <option value="none">{bn ? 'প্রযোজ্য নয়' : 'Not applicable'}</option>
+                                      <option value="refunded">{bn ? 'ফেরত প্রদান হয়েছে' : 'Fully refunded'}</option>
+                                      <option value="pending">{bn ? 'বাকি আছে' : 'Pending'}</option>
+                                    </select>
+                                  ) : (
+                                    r.settlement.depositStatus === 'refunded'
+                                      ? (bn ? 'সম্পূর্ণ ফেরত প্রদান করা হয়েছে' : 'Fully refunded')
+                                      : r.settlement.depositStatus === 'pending'
+                                        ? (bn ? 'এখনো ফেরত দেওয়া হয়নি (বাকি আছে)' : 'Pending refund')
+                                        : (bn ? 'প্রযোজ্য নয়' : 'Not applicable')
+                                  )}
+                                </td>
+                              </tr>
+                              <tr>
+                                <th className="border border-foreground/20 px-2 py-1.5 text-left font-semibold" style={{ background: '#eef3ef', color: '#1f4d3a' }}>{bn ? 'সর্বশেষ বেতন / বকেয়া বেতন' : 'Final Salary / Salary Dues'}</th>
+                                <td className="border border-foreground/20 px-2 py-1.5">
+                                  {editMode
+                                    ? <Editable value={r.settlement.salaryDueAmount} onChange={v => set('salaryDueAmount', v)} editing={editMode} />
+                                    : (r.settlement.salaryDueAmount ? `${bn ? '৳' : 'BDT '}${r.settlement.salaryDueAmount}` : '—')}
+                                </td>
+                                <td className="border border-foreground/20 px-2 py-1.5">
+                                  {editMode ? (
+                                    <select
+                                      className="w-full bg-background border border-border rounded px-1 py-0.5 text-xs"
+                                      value={r.settlement.salaryDueStatus}
+                                      onChange={e => set('salaryDueStatus', e.target.value)}
+                                    >
+                                      <option value="none">{bn ? 'প্রযোজ্য নয়' : 'Not applicable'}</option>
+                                      <option value="paid">{bn ? 'পরিশোধ করা হয়েছে' : 'Fully paid'}</option>
+                                      <option value="pending">{bn ? 'বাকি আছে' : 'Pending'}</option>
+                                    </select>
+                                  ) : (
+                                    r.settlement.salaryDueStatus === 'paid'
+                                      ? (bn ? 'সম্পূর্ণ পরিশোধ করা হয়েছে' : 'Fully paid')
+                                      : r.settlement.salaryDueStatus === 'pending'
+                                        ? (bn ? 'এখনো পরিশোধ করা হয়নি (বাকি আছে)' : 'Pending payment')
+                                        : (bn ? 'প্রযোজ্য নয়' : 'Not applicable')
+                                  )}
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                          <p className="text-xs leading-relaxed text-justify" style={{ color: '#1a1a1a' }}>
+                            <strong>{bn ? 'পূর্ণ ও চূড়ান্ত নিষ্পত্তি (Full and Final Settlement):' : 'Full and Final Settlement Declaration:'}</strong>{' '}
+                            <Editable value={r.settlement.settlementStatement} onChange={v => set('settlementStatement', v)} editing={editMode} />
+                          </p>
+                        </div>
+
                         {/* Signature area */}
-                        <div className="flex justify-between items-end mt-12 pt-4">
+                        <div className="flex justify-between items-end mt-6 pt-4">
                           <div className="flex flex-col items-center gap-1">
                             <QRCodeSVG
                               value={`RL:${viewLetter.letter_number}|${viewLetter.staff_name}|${viewLetter.resign_date}`}
