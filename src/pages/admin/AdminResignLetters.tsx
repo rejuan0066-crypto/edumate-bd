@@ -17,6 +17,8 @@ import { toast } from 'sonner';
 import { useState, useRef, useCallback } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { QRCodeSVG } from 'qrcode.react';
+import QRCode from 'qrcode';
+import { downloadLetterAsPdf } from '@/lib/letterPdfDownload';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 /* ── Editable span helper ─────────────────────────── */
