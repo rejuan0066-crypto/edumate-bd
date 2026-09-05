@@ -581,6 +581,9 @@ const AdminResignLetters = () => {
                         <Button size="icon" variant="ghost" className="text-green-600 hover:bg-green-500/10" onClick={() => handlePrint(l)} title={bn ? 'প্রিন্ট' : 'Print'}>
                           <Printer className="w-4 h-4" />
                         </Button>
+                        <Button size="icon" variant="ghost" className="text-blue-600 hover:bg-blue-500/10" onClick={() => handleDownloadPdf(l)} title={bn ? 'PDF ডাউনলোড' : 'Download PDF'}>
+                          <Download className="w-4 h-4" />
+                        </Button>
                         {l.status !== 'rejoined' && l.staff_id && (
                           <Button size="icon" variant="ghost" className="text-blue-600 hover:bg-blue-500/10" onClick={() => setRejoinId(l.id)} title={bn ? 'পুনর্বহাল' : 'Rejoin'}>
                             <UserCheck className="w-4 h-4" />
