@@ -11,12 +11,14 @@ import { Input } from '@/components/ui/input';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { FileText, Printer, Trash2, Loader2, Eye, Pencil, PencilOff, Upload, Plus, UserCheck } from 'lucide-react';
+import { FileText, Printer, Download, Trash2, Loader2, Eye, Pencil, PencilOff, Upload, Plus, UserCheck } from 'lucide-react';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { toast } from 'sonner';
 import { useState, useRef, useCallback } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { QRCodeSVG } from 'qrcode.react';
+import QRCode from 'qrcode';
+import { downloadLetterAsPdf } from '@/lib/letterPdfDownload';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 /* ── Editable span helper ─────────────────────────── */
@@ -332,11 +334,8 @@ const AdminResignLetters = () => {
     };
   }, [institution, principalInfo, bn, overrides, localLogo, localPhoto]);
 
-  /* ── Print handler ──────────── */
-  const handlePrint = (letter: any) => {
-    const r = resolved(letter);
-    const qrValue = `RL:${letter.letter_number}|${letter.staff_name}|${letter.resign_date}`;
-
+  /* ── Letter HTML builder ────── */
+  const buildLetterHtml = (letter: any, r: any, qrSvg: string) => {
     const bodyText = `${r.bodyText}<br/><br/><strong>${bn ? 'কারণ:' : 'Reason:'}</strong> ${r.reason}<br/><br/>${r.closingText}`;
 
     /* ── Financial settlement & clearance section ── */
@@ -370,7 +369,7 @@ const AdminResignLetters = () => {
       <p class="settle-decl"><strong>${bn ? 'পূর্ণ ও চূড়ান্ত নিষ্পত্তি (Full and Final Settlement):' : 'Full and Final Settlement Declaration:'}</strong> ${s.settlementStatement}</p>
     </div>`;
 
-    const html = `<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
 <title>${bn ? 'পদত্যাগ পত্র' : 'Resign Letter'}</title>
@@ -412,7 +411,7 @@ const AdminResignLetters = () => {
   .photo-label{font-size:9px;color:#888;margin-top:4px}
   .footer{display:flex;justify-content:space-between;align-items:flex-end;margin-top:auto;padding-top:30px}
   .qr-block{text-align:center}
-  .qr-block canvas,.qr-block svg,.qr-block img{width:60px;height:60px}
+  .qr-block svg,.qr-block img{width:60px;height:60px}
   .qr-label{font-size:8px;color:#888;margin-top:3px}
   .sig{text-align:center}
   .sig .line{width:160px;border-top:1px solid #444;margin-bottom:3px}
@@ -463,6 +462,7 @@ const AdminResignLetters = () => {
     ${settlementHtml}
     <div class="footer">
       <div class="qr-block" id="qr-container">
+        ${qrSvg}
         <p class="qr-label">${bn ? 'ডিজিটাল যাচাই' : 'Digital Verification'}</p>
       </div>
       <div class="sig">
@@ -483,25 +483,43 @@ const AdminResignLetters = () => {
     </div>
   </div>
 </div></div>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"><\/script>
-<script>
-  function tryQR(attempts) {
-    if (typeof QRCode === 'undefined') {
-      if (attempts < 20) setTimeout(function(){ tryQR(attempts+1); }, 200);
-      else setTimeout(function(){ window.print(); }, 300);
-      return;
-    }
-    var container = document.getElementById('qr-container');
-    QRCode.toString('${qrValue.replace(/'/g, "\\'")}', {type:'svg',width:60,margin:0}, function(err,svg){
-      if(!err && svg){ container.insertAdjacentHTML('afterbegin', svg); }
-      setTimeout(function(){ window.print(); }, 500);
-    });
-  }
-  tryQR(0);
-<\/script>
 </body></html>`;
+  };
+
+  /* ── Print handler ──────────── */
+  const handlePrint = async (letter: any) => {
+    const r = resolved(letter);
+    const qrValue = `RL:${letter.letter_number}|${letter.staff_name}|${letter.resign_date}`;
+    const qrSvg = await QRCode.toString(qrValue, { type: 'svg', width: 60, margin: 0 });
+    const html = buildLetterHtml(letter, r, qrSvg);
     const w = window.open('', '_blank');
-    if (w) { w.document.write(html); w.document.close(); }
+    if (w) {
+      w.document.write(html);
+      w.document.close();
+      setTimeout(() => {
+        if (w.document.fonts) {
+          w.document.fonts.ready.then(() => w.print()).catch(() => w.print());
+        } else {
+          w.print();
+        }
+      }, 800);
+    }
+  };
+
+  /* ── Direct PDF download handler ─ */
+  const handleDownloadPdf = async (letter: any) => {
+    try {
+      const r = resolved(letter);
+      const qrValue = `RL:${letter.letter_number}|${letter.staff_name}|${letter.resign_date}`;
+      const qrSvg = await QRCode.toString(qrValue, { type: 'svg', width: 60, margin: 0 });
+      const html = buildLetterHtml(letter, r, qrSvg);
+      const filename = `resign-letter-${letter.letter_number || 'unknown'}.pdf`;
+      await downloadLetterAsPdf(html, filename);
+      toast.success(bn ? 'PDF ডাউনলোড সম্পন্ন হয়েছে' : 'PDF downloaded');
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || (bn ? 'PDF ডাউনলোড ব্যর্থ' : 'PDF download failed'));
+    }
   };
 
   return (
@@ -562,6 +580,9 @@ const AdminResignLetters = () => {
                         </Button>
                         <Button size="icon" variant="ghost" className="text-green-600 hover:bg-green-500/10" onClick={() => handlePrint(l)} title={bn ? 'প্রিন্ট' : 'Print'}>
                           <Printer className="w-4 h-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="text-blue-600 hover:bg-blue-500/10" onClick={() => handleDownloadPdf(l)} title={bn ? 'PDF ডাউনলোড' : 'Download PDF'}>
+                          <Download className="w-4 h-4" />
                         </Button>
                         {l.status !== 'rejoined' && l.staff_id && (
                           <Button size="icon" variant="ghost" className="text-blue-600 hover:bg-blue-500/10" onClick={() => setRejoinId(l.id)} title={bn ? 'পুনর্বহাল' : 'Rejoin'}>
@@ -881,9 +902,12 @@ const AdminResignLetters = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="px-4 pb-4">
-                    <Button className="w-full" onClick={() => handlePrint(viewLetter)}>
-                      <Printer className="w-4 h-4 mr-2" />{bn ? 'প্রিন্ট করুন' : 'Print'}
+                  <div className="px-4 pb-4 grid grid-cols-2 gap-3">
+                    <Button variant="outline" onClick={() => handlePrint(viewLetter)}>
+                      <Printer className="w-4 h-4 mr-2" />{bn ? 'প্রিন্ট' : 'Print'}
+                    </Button>
+                    <Button onClick={() => handleDownloadPdf(viewLetter)}>
+                      <Download className="w-4 h-4 mr-2" />{bn ? 'PDF' : 'PDF'}
                     </Button>
                   </div>
                 </div>
