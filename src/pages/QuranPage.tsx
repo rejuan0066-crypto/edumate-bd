@@ -1297,6 +1297,20 @@ const QuranPage = () => {
       navigator.mediaSession.playbackState = playingKey ? (isPlaying ? 'playing' : 'paused') : 'none';
     } catch { /* ignore */ }
   }, [isPlaying, playingKey]);
+
+  // Publish position/duration so the lock-screen & notification show a
+  // live seekbar for the current ayah/surah audio.
+  useEffect(() => {
+    if (!('mediaSession' in navigator) || !('setPositionState' in navigator.mediaSession)) return;
+    if (!playingKey || !audioDuration || !Number.isFinite(audioDuration)) return;
+    try {
+      navigator.mediaSession.setPositionState({
+        duration: audioDuration,
+        playbackRate: 1,
+        position: Math.min(audioTime, audioDuration),
+      });
+    } catch { /* ignore */ }
+  }, [audioTime, audioDuration, playingKey]);
   const formatAudioTime = (seconds: number) => {
     if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
     const mins = Math.floor(seconds / 60);
