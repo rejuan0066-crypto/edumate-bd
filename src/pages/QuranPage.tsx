@@ -1229,22 +1229,36 @@ const QuranPage = () => {
       return;
     }
     const reciter = RECITERS.find((r) => r.id === settings.reciterId);
-    const verseSurahId = playingVerse ? Number(playingVerse.verse_key.split(':')[0]) : null;
+    // Resolve the surah directly from the playing key ("2:255" → 2) so the
+    // lock-screen title stays correct even when the verse list for the page
+    // has not loaded yet (e.g. continuous play crossing into a new page).
+    const isVerseKey = /^\d+:\d+$/.test(playingKey);
+    const verseSurahId = isVerseKey
+      ? Number(playingKey.split(':')[0])
+      : playingKey.startsWith('surah-')
+        ? Number(playingKey.slice('surah-'.length))
+        : playingSurah?.id ?? null;
     const verseChapter = verseSurahId ? chapters.find((c) => c.id === verseSurahId) : null;
-    const surahLabel = verseChapter
-      ? (bn ? surahNameBn(verseChapter.id, verseChapter.name_simple) : verseChapter.name_simple)
-      : playingSurah
-        ? (bn ? surahNameBn(playingSurah.id, playingSurah.name_simple) : playingSurah.name_simple)
-        : '';
-    const title = playingVerse
-      ? `${surahLabel} · ${bn ? 'আয়াত' : 'Verse'} ${playingVerse.verse_key.split(':')[1]}`
-      : surahLabel || (bn ? 'কুরআন তিলাওয়াত' : 'Quran Recitation');
+    const surahLabel = verseSurahId
+      ? bn
+        ? surahNameBn(verseSurahId, verseChapter?.name_simple || `সূরা ${verseSurahId}`)
+        : verseChapter?.name_simple || `Surah ${verseSurahId}`
+      : '';
+    const verseNum = isVerseKey ? playingKey.split(':')[1] : null;
+    const title = verseNum
+      ? `${surahLabel} · ${bn ? 'আয়াত' : 'Verse'} ${verseNum}`
+      : surahLabel
+        ? `${bn ? 'সূরা' : 'Surah'} ${surahLabel}`
+        : bn ? 'কুরআন তিলাওয়াত' : 'Quran Recitation';
     try {
       ms.metadata = new MediaMetadata({
         title,
         artist: reciter ? (bn ? reciter.name_bn : reciter.name_en) : '',
         album: bn ? 'কুরআন তিলাওয়াত' : 'Quran Recitation',
-        artwork: [{ src: '/app-icon.svg', sizes: 'any', type: 'image/svg+xml' }],
+        artwork: [
+          { src: '/quran-artwork.png', sizes: '512x512', type: 'image/png' },
+          { src: '/app-icon.svg', sizes: 'any', type: 'image/svg+xml' },
+        ],
       });
     } catch { /* older browsers */ }
     ms.setActionHandler('play', () => {
