@@ -902,9 +902,12 @@ const AdminResignLetters = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="px-4 pb-4">
-                    <Button className="w-full" onClick={() => handlePrint(viewLetter)}>
-                      <Printer className="w-4 h-4 mr-2" />{bn ? 'প্রিন্ট করুন' : 'Print'}
+                  <div className="px-4 pb-4 grid grid-cols-2 gap-3">
+                    <Button variant="outline" onClick={() => handlePrint(viewLetter)}>
+                      <Printer className="w-4 h-4 mr-2" />{bn ? 'প্রিন্ট' : 'Print'}
+                    </Button>
+                    <Button onClick={() => handleDownloadPdf(viewLetter)}>
+                      <Download className="w-4 h-4 mr-2" />{bn ? 'PDF' : 'PDF'}
                     </Button>
                   </div>
                 </div>
