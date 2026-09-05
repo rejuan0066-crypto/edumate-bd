@@ -1204,6 +1204,85 @@ const QuranPage = () => {
     : playingSurah
       ? `${bn ? 'পৃষ্ঠা' : 'Page'} ${activeId} · ${bn ? 'সূরা' : 'Surah'} ${playingSurah.id}`
       : `${bn ? 'পৃষ্ঠা' : 'Page'} ${activeId}`;
+
+  const skipVerse = useCallback((dir: 1 | -1) => {
+    if (!playingKey || playingKey === 'surah') return;
+    const source = isMushaf ? mushafVersesFlat : verses;
+    const idx = source.findIndex((v) => v.verse_key === playingKey);
+    const target = source[idx + dir];
+    if (idx >= 0 && target) playVerse(target);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playingKey, isMushaf, mushafVersesFlat, verses]);
+
+  // ---- Media Session API ----
+  // Without this, mobile browsers (esp. Android Chrome) suspend/pause the
+  // <audio> element as soon as the tab goes to the background or the screen
+  // locks. Registering mediaSession metadata + action handlers promotes the
+  // playback to a "media session", so recitation keeps playing in the
+  // background and lock-screen / notification controls appear.
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+    const ms = navigator.mediaSession;
+    if (!playingKey) {
+      ms.metadata = null;
+      ms.playbackState = 'none';
+      return;
+    }
+    const reciter = RECITERS.find((r) => r.id === settings.reciterId);
+    const verseSurahId = playingVerse ? Number(playingVerse.verse_key.split(':')[0]) : null;
+    const verseChapter = verseSurahId ? chapters.find((c) => c.id === verseSurahId) : null;
+    const surahLabel = verseChapter
+      ? (bn ? surahNameBn(verseChapter.id, verseChapter.name_simple) : verseChapter.name_simple)
+      : playingSurah
+        ? (bn ? surahNameBn(playingSurah.id, playingSurah.name_simple) : playingSurah.name_simple)
+        : '';
+    const title = playingVerse
+      ? `${surahLabel} · ${bn ? 'আয়াত' : 'Verse'} ${playingVerse.verse_key.split(':')[1]}`
+      : surahLabel || (bn ? 'কুরআন তিলাওয়াত' : 'Quran Recitation');
+    try {
+      ms.metadata = new MediaMetadata({
+        title,
+        artist: reciter ? (bn ? reciter.name_bn : reciter.name_en) : '',
+        album: bn ? 'কুরআন তিলাওয়াত' : 'Quran Recitation',
+        artwork: [{ src: '/app-icon.svg', sizes: 'any', type: 'image/svg+xml' }],
+      });
+    } catch { /* older browsers */ }
+    ms.setActionHandler('play', () => {
+      const a = audioRef.current;
+      if (a?.src) a.play().then(() => setIsPlaying(true)).catch(() => {});
+    });
+    ms.setActionHandler('pause', () => {
+      audioRef.current?.pause();
+      setIsPlaying(false);
+    });
+    ms.setActionHandler('previoustrack', () => skipVerse(-1));
+    ms.setActionHandler('nexttrack', () => skipVerse(1));
+    ms.setActionHandler('seekto', (d) => {
+      const a = audioRef.current;
+      if (a && d.seekTime != null) {
+        a.currentTime = d.seekTime;
+        setAudioTime(d.seekTime);
+      }
+    });
+    return () => {
+      try {
+        ms.setActionHandler('play', null);
+        ms.setActionHandler('pause', null);
+        ms.setActionHandler('previoustrack', null);
+        ms.setActionHandler('nexttrack', null);
+        ms.setActionHandler('seekto', null);
+      } catch { /* ignore */ }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playingKey, playingVerse, playingSurah, chapters, settings.reciterId, bn, skipVerse]);
+
+  // Keep lock-screen play/pause state in sync.
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+    try {
+      navigator.mediaSession.playbackState = playingKey ? (isPlaying ? 'playing' : 'paused') : 'none';
+    } catch { /* ignore */ }
+  }, [isPlaying, playingKey]);
   const formatAudioTime = (seconds: number) => {
     if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
     const mins = Math.floor(seconds / 60);
