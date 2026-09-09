@@ -33,6 +33,8 @@ import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 import SalaryWorkflowPanel from '@/components/admin/SalaryWorkflowPanel';
 import BulkSalaryWorkflowDialog from '@/components/admin/BulkSalaryWorkflowDialog';
 import { recomputeNetSalary, computeManualOverrideNet } from '@/lib/salaryNet';
+import { dedupeAttendanceRecords } from '@/lib/attendanceDedup';
+import { useAttendanceDuplicateRule } from '@/hooks/useAttendanceDuplicateRule';
 import {
   calcDutyDeduction,
   type DeductionResult,
