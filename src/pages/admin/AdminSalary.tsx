@@ -114,6 +114,8 @@ const AdminSalary = () => {
   const fmt = (t: string) => formatTimeDisplay(t, timeFormat);
   const { settings: webSettings } = useWebsiteSettings();
   const { tz: appTz } = useAppTimezone();
+  // একই দিনের একাধিক হাজিরা এন্ট্রি থাকলে কোনটি গণনা হবে (অ্যাডমিন সেটিংস)
+  const duplicateRule = useAttendanceDuplicateRule();
 
   // Use app-timezone "now" so the default month/year don't drift before midnight in BD
   const tzParts = getDatePartsInTz(new Date(), appTz);
