@@ -37,6 +37,7 @@ interface Props {
 
 export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff, shift, initialDate }: Props) {
   const { language } = useLanguage();
+  const duplicateRule = useAttendanceDuplicateRule();
   const bn = language === 'bn';
   const qc = useQueryClient();
   const [cursor, setCursor] = useState<Date>(new Date());
