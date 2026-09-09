@@ -33,6 +33,8 @@ import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 import SalaryWorkflowPanel from '@/components/admin/SalaryWorkflowPanel';
 import BulkSalaryWorkflowDialog from '@/components/admin/BulkSalaryWorkflowDialog';
 import { recomputeNetSalary, computeManualOverrideNet } from '@/lib/salaryNet';
+import { dedupeAttendanceRecords } from '@/lib/attendanceDedup';
+import { useAttendanceDuplicateRule } from '@/hooks/useAttendanceDuplicateRule';
 import {
   calcDutyDeduction,
   type DeductionResult,
@@ -112,6 +114,8 @@ const AdminSalary = () => {
   const fmt = (t: string) => formatTimeDisplay(t, timeFormat);
   const { settings: webSettings } = useWebsiteSettings();
   const { tz: appTz } = useAppTimezone();
+  // একই দিনের একাধিক হাজিরা এন্ট্রি থাকলে কোনটি গণনা হবে (অ্যাডমিন সেটিংস)
+  const duplicateRule = useAttendanceDuplicateRule();
 
   // Use app-timezone "now" so the default month/year don't drift before midnight in BD
   const tzParts = getDatePartsInTz(new Date(), appTz);
@@ -1114,30 +1118,12 @@ const AdminSalary = () => {
       a.entity_id === staffMember.id &&
       a.shift !== 'morning' && a.shift !== 'evening'
     );
-    // Deduplicate: একই দিনের একাধিক রেকর্ড থাকলে সর্বশেষ আপডেট হওয়া রেকর্ডটাই গণনা হবে।
-    // আগে status priority দিয়ে present রেকর্ড late-কে ঢেকে দিচ্ছিল, তাই বিলম্ব উপস্থিতি ভুল দেখাত।
-    const statusPriority: Record<string, number> = {
-      late: 6, half_day: 5, present: 4, leave: 3, excused: 3, absent: 2,
-    };
-    const recordTimestamp = (r: any): number => {
-      const ts = r?.updated_at || r?.created_at || (r?.attendance_date ? `${r.attendance_date}T00:00:00` : '');
-      const t = ts ? new Date(ts).getTime() : 0;
-      return Number.isFinite(t) ? t : 0;
-    };
-    const byDate = new Map<string, any>();
-    for (const r of rawRecords) {
-      const existing = byDate.get(r.attendance_date);
-      const curPri = statusPriority[r.status] ?? 0;
-      const exPri = existing ? (statusPriority[existing.status] ?? 0) : -1;
-      const curTs = recordTimestamp(r);
-      const exTs = existing ? recordTimestamp(existing) : -1;
-      if (!existing || curTs > exTs || (curTs === exTs && curPri > exPri)) {
-        byDate.set(r.attendance_date, r);
-      }
-    }
-    const records = Array.from(byDate.values()).sort((a, b) =>
-      a.attendance_date.localeCompare(b.attendance_date)
-    );
+    // Deduplicate: একই দিনের একাধিক রেকর্ড থাকলে অ্যাডমিন-নির্ধারিত নিয়ম (নতুন/পুরোনো) অনুযায়ী একটিই গণনা হবে।
+    const records = dedupeAttendanceRecords(
+      rawRecords as any[],
+      duplicateRule,
+      (r: any) => r.attendance_date,
+    ).sort((a: any, b: any) => a.attendance_date.localeCompare(b.attendance_date));
 
     // Treat absent records on paid holidays as paid leave (no deduction)
     // ছুটি (leave) = পূর্ণ দিনের বেতন, তাই উপস্থিতের সাথে গণনা হয় (অর্থাৎ ফুল ডে/উপস্থিত)।

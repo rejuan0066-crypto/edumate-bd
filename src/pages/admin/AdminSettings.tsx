@@ -21,6 +21,7 @@ import SalaryWorkflowSettings from '@/components/admin/SalaryWorkflowSettings';
 import TimezoneSettings from '@/components/admin/TimezoneSettings';
 import ReceiptQrSettings from '@/components/admin/ReceiptQrSettings';
 import QuranDefaultsSettings from '@/components/admin/QuranDefaultsSettings';
+import AttendanceDuplicateSettings from '@/components/admin/AttendanceDuplicateSettings';
 import RateLimitSettings from '@/components/admin/RateLimitSettings';
 import ApprovalWorkflowSettings from '@/components/admin/ApprovalWorkflowSettings';
 import { SecurityBackupPanel } from '@/components/admin/SecurityBackupPanel';
@@ -635,6 +636,9 @@ const AdminSettings = () => {
             </TabsTrigger>
             <TabsTrigger value="quran" className="gap-1.5">
               <Mail className="w-4 h-4" /> {bn ? 'কুরআন' : 'Quran'}
+            </TabsTrigger>
+            <TabsTrigger value="attendance_dup" className="gap-1.5">
+              <Clock className="w-4 h-4" /> {bn ? 'হাজিরা ডুপ্লিকেট' : 'Attendance Duplicates'}
             </TabsTrigger>
             <TabsTrigger value="id_format" className="gap-1.5" asChild>
               <a href="/admin/settings/id-format">
@@ -1418,6 +1422,10 @@ const AdminSettings = () => {
 
           <TabsContent value="quran" className="mt-6">
             <QuranDefaultsSettings />
+          </TabsContent>
+
+          <TabsContent value="attendance_dup" className="mt-6">
+            <AttendanceDuplicateSettings />
           </TabsContent>
         </Tabs>
       </div>

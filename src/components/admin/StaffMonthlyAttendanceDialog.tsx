@@ -10,6 +10,8 @@ import { bn as bnLocale } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { parseClockMinutes, shouldApplyThursdayHalfDay } from '@/lib/thursdayHalfDay';
+import { dedupeAttendanceRecords } from '@/lib/attendanceDedup';
+import { useAttendanceDuplicateRule } from '@/hooks/useAttendanceDuplicateRule';
 
 const STATUS_META: Record<string, {
   bnLabel: string; enLabel: string; icon: any;
@@ -35,6 +37,7 @@ interface Props {
 
 export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff, shift, initialDate }: Props) {
   const { language } = useLanguage();
+  const duplicateRule = useAttendanceDuplicateRule();
   const bn = language === 'bn';
   const qc = useQueryClient();
   const [cursor, setCursor] = useState<Date>(new Date());
@@ -76,7 +79,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
       .lte('attendance_date', format(monthEnd, 'yyyy-MM-dd'));
     if (shift) q = q.eq('shift', shift);
     const { data } = await q;
-    setRecords((data as any[]) || []);
+    setRecords(dedupeAttendanceRecords((data as any[]) || [], duplicateRule));
   };
 
   useEffect(() => {
@@ -91,10 +94,11 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
         .lte('attendance_date', format(monthEnd, 'yyyy-MM-dd'));
       if (shift) q = q.eq('shift', shift);
       const { data } = await q;
-      if (!cancel) { setRecords((data as any[]) || []); setLoading(false); }
+      if (!cancel) { setRecords(dedupeAttendanceRecords((data as any[]) || [], duplicateRule)); setLoading(false); }
     })();
     return () => { cancel = true; };
-  }, [open, staff?.id, monthStart, monthEnd, shift]);
+  }, [open, staff?.id, monthStart, monthEnd, shift, duplicateRule]);
+
 
   // For residential duty shifts, build the set of dates in the visible month
   // where this staff is rostered for THIS shift (day override beats template).
