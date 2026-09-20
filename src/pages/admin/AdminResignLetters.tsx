@@ -338,9 +338,9 @@ const AdminResignLetters = () => {
     const depositStatus = get('depositStatus', st.deposit_status || 'none');
     const salaryDueAmount = get('salaryDueAmount', st.salary_due_amount || '');
     const salaryDueStatus = get('salaryDueStatus', st.salary_due_status || 'none');
-    const settlementStatement = get('settlementStatement', bn
+    const settlementStatement = get('settlementStatement', st.statement || (bn
       ? 'ঘোষণা: উপরোক্ত সকল আর্থিক দায়-দেনা সম্পূর্ণ নিষ্পত্তি (Full and Final Settlement) করা হয়েছে এবং উভয় পক্ষের মধ্যে প্রতিষ্ঠান সংক্রান্ত কোনো পাওনা-দেনা অবশিষ্ট নেই বলে ঘোষণা করা হলো।'
-      : 'Declaration: The above financial settlement constitutes the Full and Final Settlement between the staff member and the institution; no further dues remain outstanding from either side.');
+      : 'Declaration: The above financial settlement constitutes the Full and Final Settlement between the staff member and the institution; no further dues remain outstanding from either side.'));
 
     return {
       settlement: { depositAmount, depositStatus, salaryDueAmount, salaryDueStatus, settlementStatement },
