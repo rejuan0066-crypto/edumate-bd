@@ -16,6 +16,7 @@ import PageLoader from '@/components/PageLoader';
 
 import { fetchOtpRequirements, isOtpRequiredFor, type OtpRoleScope } from '@/hooks/useOtpRequirements';
 import { supabase } from '@/integrations/supabase/client';
+import { sanitizePasswordInput } from '@/lib/passwordInput';
 
 const LOGIN_OTP_FLAG = 'pending_login_otp_v1';
 
@@ -273,7 +274,7 @@ const Login = () => {
               <Input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => setPassword(sanitizePasswordInput(e.target.value))}
                 placeholder="••••••••"
                 className="bg-background pr-10"
                 name="password"

@@ -47,8 +47,10 @@ export const BijoyProvider = ({ children }: { children: ReactNode }) => {
 
       if (isInput) {
         const inputType = (target as HTMLInputElement).type?.toLowerCase() || 'text';
-        // Allow Bijoy on all text-like inputs, including those that might have been excluded
-        if (!['text', 'search', 'email', 'url', 'tel', 'password', ''].includes(inputType)) return;
+        // Passwords must remain byte-for-byte identical to the value saved by auth.
+        // Never run Bijoy conversion inside a password field.
+        if (inputType === 'password') return;
+        if (!['text', 'search', 'email', 'url', 'tel', ''].includes(inputType)) return;
       }
 
       const char = e.key;
