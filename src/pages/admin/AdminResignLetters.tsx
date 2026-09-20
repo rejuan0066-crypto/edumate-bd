@@ -730,6 +730,16 @@ const AdminResignLetters = () => {
                       {editMode ? <PencilOff className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
                       {editMode ? (bn ? 'এডিট বন্ধ' : 'Exit Edit') : (bn ? 'এডিট মোড' : 'Edit Mode')}
                     </Button>
+                    {editMode && (
+                      <Button
+                        size="sm"
+                        onClick={() => saveSettlementMutation.mutate(viewLetter)}
+                        disabled={saveSettlementMutation.isPending}
+                        className="gap-1.5"
+                      >
+                        {bn ? 'আর্থিক তথ্য সংরক্ষণ' : 'Save Settlement'}
+                      </Button>
+                    )}
                   </div>
 
                   {/* Hidden file inputs */}
