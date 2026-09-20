@@ -632,7 +632,7 @@ const AdminResignLetters = () => {
 
         {/* ── Create Dialog ─────────────────────────── */}
         <Dialog open={showCreate} onOpenChange={setShowCreate}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md max-h-[92vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{bn ? 'নতুন পদত্যাগ পত্র তৈরি করুন' : 'Create Resign Letter'}</DialogTitle>
             </DialogHeader>
