@@ -203,6 +203,35 @@ const AdminResignLetters = () => {
     onError: () => toast.error(bn ? 'ত্রুটি হয়েছে' : 'Error creating letter'),
   });
 
+  /* ── Save settlement edits to DB ── */
+  const saveSettlementMutation = useMutation({
+    mutationFn: async (letter: any) => {
+      const st = ((letter.letter_data as any)?.settlement) || {};
+      const nextData = {
+        ...((letter.letter_data as any) || {}),
+        settlement: {
+          deposit_amount: overrides.depositAmount ?? st.deposit_amount ?? '',
+          deposit_status: overrides.depositStatus ?? st.deposit_status ?? 'none',
+          salary_due_amount: overrides.salaryDueAmount ?? st.salary_due_amount ?? '',
+          salary_due_status: overrides.salaryDueStatus ?? st.salary_due_status ?? 'none',
+          statement: overrides.settlementStatement ?? st.statement ?? '',
+        },
+      };
+      const { error } = await supabase
+        .from('resign_letters')
+        .update({ letter_data: nextData })
+        .eq('id', letter.id);
+      if (error) throw error;
+      return nextData;
+    },
+    onSuccess: (nextData) => {
+      queryClient.invalidateQueries({ queryKey: ['resign-letters'] });
+      setViewLetter((prev: any) => prev ? { ...prev, letter_data: nextData } : prev);
+      toast.success(bn ? 'আর্থিক নিষ্পত্তির তথ্য সংরক্ষিত হয়েছে' : 'Financial settlement saved');
+    },
+    onError: () => toast.error(bn ? 'সংরক্ষণ করা যায়নি' : 'Failed to save'),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from('resign_letters').delete().eq('id', id);
@@ -309,9 +338,9 @@ const AdminResignLetters = () => {
     const depositStatus = get('depositStatus', st.deposit_status || 'none');
     const salaryDueAmount = get('salaryDueAmount', st.salary_due_amount || '');
     const salaryDueStatus = get('salaryDueStatus', st.salary_due_status || 'none');
-    const settlementStatement = get('settlementStatement', bn
+    const settlementStatement = get('settlementStatement', st.statement || (bn
       ? 'ঘোষণা: উপরোক্ত সকল আর্থিক দায়-দেনা সম্পূর্ণ নিষ্পত্তি (Full and Final Settlement) করা হয়েছে এবং উভয় পক্ষের মধ্যে প্রতিষ্ঠান সংক্রান্ত কোনো পাওনা-দেনা অবশিষ্ট নেই বলে ঘোষণা করা হলো।'
-      : 'Declaration: The above financial settlement constitutes the Full and Final Settlement between the staff member and the institution; no further dues remain outstanding from either side.');
+      : 'Declaration: The above financial settlement constitutes the Full and Final Settlement between the staff member and the institution; no further dues remain outstanding from either side.'));
 
     return {
       settlement: { depositAmount, depositStatus, salaryDueAmount, salaryDueStatus, settlementStatement },
@@ -701,6 +730,16 @@ const AdminResignLetters = () => {
                       {editMode ? <PencilOff className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
                       {editMode ? (bn ? 'এডিট বন্ধ' : 'Exit Edit') : (bn ? 'এডিট মোড' : 'Edit Mode')}
                     </Button>
+                    {editMode && (
+                      <Button
+                        size="sm"
+                        onClick={() => saveSettlementMutation.mutate(viewLetter)}
+                        disabled={saveSettlementMutation.isPending}
+                        className="gap-1.5"
+                      >
+                        {bn ? 'আর্থিক তথ্য সংরক্ষণ' : 'Save Settlement'}
+                      </Button>
+                    )}
                   </div>
 
                   {/* Hidden file inputs */}
