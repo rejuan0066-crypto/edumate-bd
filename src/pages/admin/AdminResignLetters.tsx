@@ -203,6 +203,35 @@ const AdminResignLetters = () => {
     onError: () => toast.error(bn ? 'ত্রুটি হয়েছে' : 'Error creating letter'),
   });
 
+  /* ── Save settlement edits to DB ── */
+  const saveSettlementMutation = useMutation({
+    mutationFn: async (letter: any) => {
+      const st = ((letter.letter_data as any)?.settlement) || {};
+      const nextData = {
+        ...((letter.letter_data as any) || {}),
+        settlement: {
+          deposit_amount: overrides.depositAmount ?? st.deposit_amount ?? '',
+          deposit_status: overrides.depositStatus ?? st.deposit_status ?? 'none',
+          salary_due_amount: overrides.salaryDueAmount ?? st.salary_due_amount ?? '',
+          salary_due_status: overrides.salaryDueStatus ?? st.salary_due_status ?? 'none',
+          statement: overrides.settlementStatement ?? st.statement ?? '',
+        },
+      };
+      const { error } = await supabase
+        .from('resign_letters')
+        .update({ letter_data: nextData })
+        .eq('id', letter.id);
+      if (error) throw error;
+      return nextData;
+    },
+    onSuccess: (nextData) => {
+      queryClient.invalidateQueries({ queryKey: ['resign-letters'] });
+      setViewLetter((prev: any) => prev ? { ...prev, letter_data: nextData } : prev);
+      toast.success(bn ? 'আর্থিক নিষ্পত্তির তথ্য সংরক্ষিত হয়েছে' : 'Financial settlement saved');
+    },
+    onError: () => toast.error(bn ? 'সংরক্ষণ করা যায়নি' : 'Failed to save'),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from('resign_letters').delete().eq('id', id);
