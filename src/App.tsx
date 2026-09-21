@@ -319,6 +319,7 @@ const queryClient = new QueryClient({
 
 const AdminShell = () => (
   <ProtectedRoute>
+    <AdminUrlMask />
     <AdminLayout>
       {/* Inner Suspense keeps the admin shell mounted while a lazy page chunk
           loads, so navigation shows a single contained shimmer instead of a
