@@ -213,6 +213,8 @@ export const useGlobalCardPreset = () => {
       }
       return DEFAULT_GLOBAL_PRESET;
     },
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   const savePreset = useMutation({
@@ -256,6 +258,8 @@ export const usePageLayout = (pageId: string) => {
       }
       return defaultSections;
     },
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   const saveSections = useMutation({
@@ -298,6 +302,8 @@ export const useAllPageLayouts = () => {
       });
       return map;
     },
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   const savePageLayout = useMutation({

@@ -16,6 +16,8 @@ export const useTimeFormat = () => {
         .maybeSingle();
       return ((data?.value as any)?.format as TimeFormatType) || '12h';
     },
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   const setTimeFormat = useMutation({

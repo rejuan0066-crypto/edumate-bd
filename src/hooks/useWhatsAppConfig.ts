@@ -49,7 +49,8 @@ export const useWhatsAppConfig = () => {
       const row = Array.isArray(data) ? data[0] : data;
       return (row ?? null) as unknown as WhatsAppConfig | null;
     },
-    staleTime: 60_000,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
     retry: 1,
   });
 };

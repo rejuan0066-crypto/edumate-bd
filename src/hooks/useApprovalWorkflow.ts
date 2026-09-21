@@ -128,7 +128,7 @@ export const useApprovalWorkflow = () => {
       if (error) throw error;
       return data || [];
     },
-    refetchInterval: 5000, // Refresh every 5 seconds to catch new pending items
+    refetchInterval: 30000, // Refresh every 30 seconds to catch new pending items
   });
 
   const isRecordPending = (targetTable: string, targetId: string): boolean => {

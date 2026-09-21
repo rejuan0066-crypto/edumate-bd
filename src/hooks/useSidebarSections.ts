@@ -79,6 +79,8 @@ export const useSidebarSections = () => {
       return DEFAULT_SIDEBAR_SECTIONS;
     },
     enabled: !authLoading,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   const saveSections = useMutation({
