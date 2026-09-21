@@ -45,6 +45,9 @@ export const useWidgetSettings = () => {
       }
       return DEFAULT_WIDGETS;
     },
+    // Config rarely changes; saves invalidate this key explicitly.
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   const saveWidgets = useMutation({

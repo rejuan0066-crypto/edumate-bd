@@ -282,6 +282,8 @@ export const useMenuSettings = () => {
       return result;
     },
     enabled: !authLoading,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   const saveMenuConfig = useMutation({
