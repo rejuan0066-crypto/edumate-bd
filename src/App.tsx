@@ -6,6 +6,7 @@ import ModuleGuard from "@/components/ModuleGuard";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import AdminLayout from "@/components/AdminLayout";
 import RouteShimmer from "@/components/RouteShimmer";
+import { AdminUrlMask, UserPathRedirect } from "@/components/AdminUrlMask";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -393,6 +394,8 @@ const App = () => (
                   <Route path="/complaints/track" element={<ComplaintTrackPage />} />
                   <Route path="/zakat-fitra" element={<ZakatFitraPage />} />
                   <Route path="/quran" element={<QuranPage />} />
+
+                  <Route path="/user/*" element={<UserPathRedirect />} />
 
                   <Route path="/admin" element={<AdminShell />}>
                     <Route index element={<Dashboard />} />
