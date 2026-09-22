@@ -320,7 +320,6 @@ const queryClient = new QueryClient({
 
 const AdminShell = () => (
   <ProtectedRoute>
-    <AdminUrlMask />
     <AdminLayout>
       {/* Inner Suspense keeps the admin shell mounted while a lazy page chunk
           loads, so navigation shows a single contained shimmer instead of a
@@ -349,6 +348,9 @@ const App = () => (
               <UpdatePrompt />
               <BrowserRouter>
                 <RoutePrefetcher />
+                {/* Global so the "/user/..." address stays masked on every
+                    route, including not-found pages. */}
+                <AdminUrlMask />
                 <HideOnRoutes paths={["/quran"]}>
                   <ScrollToTop />
                   <ScrollNavigation />
