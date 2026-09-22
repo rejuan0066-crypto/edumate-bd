@@ -395,6 +395,8 @@ const App = () => (
                   <Route path="/zakat-fitra" element={<ZakatFitraPage />} />
                   <Route path="/quran" element={<QuranPage />} />
 
+                  <Route path="/user/*" element={<UserPathRedirect />} />
+
                   <Route path="/admin" element={<AdminShell />}>
                     <Route index element={<Dashboard />} />
                     <Route path="analytics" element={<ModuleGuard menuPath="/admin/analytics"><AdminAnalytics /></ModuleGuard>} />
