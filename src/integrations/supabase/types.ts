@@ -11394,6 +11394,10 @@ export type Database = {
           welcome_message: string
         }[]
       }
+      has_any_menu_permission: {
+        Args: { _action: string; _paths: string[]; _user_id: string }
+        Returns: boolean
+      }
       has_menu_permission: {
         Args: { _action: string; _menu_path: string; _user_id: string }
         Returns: boolean
