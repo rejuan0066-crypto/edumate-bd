@@ -65,21 +65,41 @@ export const usePermissions = () => {
     }
   };
 
+  /** '/admin/students/add' -> ['/admin/students/add', '/admin/students'] */
+  const pathCandidates = (menuPath: string): string[] => {
+    const out: string[] = [];
+    let p = menuPath;
+    while (p && p !== '/admin' && p.includes('/')) {
+      out.push(p);
+      const idx = p.lastIndexOf('/');
+      if (idx <= 0) break;
+      p = p.slice(0, idx);
+    }
+    return out;
+  };
+
   const hasPermission = (menuPath: string, action: PermAction): boolean => {
     if (isAdminRole(role)) return true;
 
+    const candidates = pathCandidates(menuPath);
+
     // If user has individual permissions set, ONLY use those (no role fallback)
     if (hasUserOverrides) {
-      const userPerm = userPermissions.find(p => p.menu_path === menuPath);
-      if (!userPerm) return false; // Not in user perms = no access
-      return pickAction(userPerm, action);
+      for (const path of candidates) {
+        const userPerm = userPermissions.find(p => p.menu_path === path);
+        if (userPerm) return pickAction(userPerm, action);
+      }
+      return false; // Not in user perms = no access
     }
 
     // No user overrides — use role-level permissions
-    const perm = rolePermissions.find(p => p.menu_path === menuPath);
-    if (!perm) return false;
-    return pickAction(perm, action);
+    for (const path of candidates) {
+      const perm = rolePermissions.find(p => p.menu_path === path);
+      if (perm) return pickAction(perm, action);
+    }
+    return false;
   };
+
 
   const canView = (menuPath: string) => hasPermission(menuPath, 'view');
   const canAdd = (menuPath: string) => hasPermission(menuPath, 'add');
