@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useTimeFormat, formatTimeDisplay } from '@/hooks/useTimeFormat';
+import { useResignedStaff } from '@/hooks/useResignedStaff';
 import { useAppTimezone } from '@/hooks/useAppTimezone';
 import { toIsoDateInTz, getDatePartsInTz, formatDateTimeInTz, formatDateInTz, formatTimeInTz } from '@/lib/timezone';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -1070,6 +1071,10 @@ const AdminSalary = () => {
   // salary record already exists, but never in new/future months.
   const isInMonthRoster = (s: any): boolean => {
     if (!hasJoinedByMonth(s)) return false;
+    // Resigned before this month started → only show if a record already exists (history).
+    if (isResignedBeforeMonth(s?.id, monthYear)) {
+      return salaryRecords.some((r: any) => r.staff_id === s.id);
+    }
     if (s?.status === 'inactive') {
       return salaryRecords.some((r: any) => r.staff_id === s.id);
     }
