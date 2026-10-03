@@ -1067,7 +1067,7 @@ const AdminSalary = () => {
     const lastDay = new Date(yy, mm, 0).getDate();
     return `${monthYear}-${String(lastDay).padStart(2, '0')}`;
   })();
-  const { isResignedBeforeMonth } = useResignedStaff();
+  const { isResignedBeforeMonth, resignDateByStaff } = useResignedStaff();
   const hasJoinedByMonth = (s: any): boolean => {
     const jd = s?.joining_date ? String(s.joining_date).slice(0, 10) : '';
     if (!jd) return true; // unknown joining date → always include (legacy data)
@@ -1094,6 +1094,16 @@ const AdminSalary = () => {
     if (jd <= `${monthYear}-01`) return 1;
     if (jd > monthEndDate) return 32; // hasn't joined this month at all
     return Number(jd.slice(8, 10)) || 1;
+  };
+  // Last day this staff is counted within the selected month (resign date if
+  // they resigned mid-month, otherwise the month's last counted day). Days
+  // AFTER the resign date earn nothing — pay is prorated up to resign_date.
+  const resignedUntilDay = (s: any): number => {
+    const rd = s?.id ? resignDateByStaff.get(s.id) : undefined;
+    if (!rd) return 32; // no resignation → counted through month end
+    if (rd < `${monthYear}-01`) return 0; // resigned before this month
+    if (rd > monthEndDate) return 32; // resigns in a later month
+    return Number(rd.slice(8, 10)) || 32;
   };
 
   // Effective base salary for the SELECTED month.
