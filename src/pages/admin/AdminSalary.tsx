@@ -1067,7 +1067,7 @@ const AdminSalary = () => {
     const lastDay = new Date(yy, mm, 0).getDate();
     return `${monthYear}-${String(lastDay).padStart(2, '0')}`;
   })();
-  const { isResignedBeforeMonth } = useResignedStaff();
+  const { isResignedBeforeMonth, resignDateByStaff } = useResignedStaff();
   const hasJoinedByMonth = (s: any): boolean => {
     const jd = s?.joining_date ? String(s.joining_date).slice(0, 10) : '';
     if (!jd) return true; // unknown joining date → always include (legacy data)
@@ -1094,6 +1094,16 @@ const AdminSalary = () => {
     if (jd <= `${monthYear}-01`) return 1;
     if (jd > monthEndDate) return 32; // hasn't joined this month at all
     return Number(jd.slice(8, 10)) || 1;
+  };
+  // Last day this staff is counted within the selected month (resign date if
+  // they resigned mid-month, otherwise the month's last counted day). Days
+  // AFTER the resign date earn nothing — pay is prorated up to resign_date.
+  const resignedUntilDay = (s: any): number => {
+    const rd = s?.id ? resignDateByStaff.get(s.id) : undefined;
+    if (!rd) return 32; // no resignation → counted through month end
+    if (rd < `${monthYear}-01`) return 0; // resigned before this month
+    if (rd > monthEndDate) return 32; // resigns in a later month
+    return Number(rd.slice(8, 10)) || 32;
   };
 
   // Effective base salary for the SELECTED month.
@@ -1340,10 +1350,13 @@ const AdminSalary = () => {
     const isCurrentMonth = now.getFullYear() === yy && (now.getMonth() + 1) === mm;
     const lastCountedDay = isCurrentMonth ? Math.min(lastDay, now.getDate()) : lastDay;
     const firstCountedDay = joinedFromDay(staffMember);
+    const resignLastDay = resignedUntilDay(staffMember); // days after this earn nothing
     let untrackedPaidDays = 0;
     let preJoinDays = 0;
+    let postResignDays = 0;
     for (let d = 1; d <= lastDay; d++) {
       if (d < firstCountedDay) { preJoinDays += 1; continue; }
+      if (d > resignLastDay) { postResignDays += 1; continue; } // after resign date
       if (d > lastCountedDay) continue; // future day of ongoing month
       const dateStr = `${monthYear}-${String(d).padStart(2, '0')}`;
       if (recordedDates.has(dateStr)) continue;
@@ -1363,7 +1376,7 @@ const AdminSalary = () => {
 
     return {
       present, absent, late, halfDay, leave, holidayCovered, untouchedHolidayDays,
-      untrackedAbsentDays: untrackedUnmarkedDays, untrackedPaidDays, recordedAbsent, preJoinDays, firstCountedDay,
+      untrackedAbsentDays: untrackedUnmarkedDays, untrackedPaidDays, recordedAbsent, preJoinDays, postResignDays, firstCountedDay,
       total: records.length,
       totalLateArrivalMinutes, totalEarlyExitMinutes, totalMissedMinutes, totalOvertimeMinutes,
       totalLateArrivalDeduction, totalEarlyExitDeduction,
@@ -1407,7 +1420,10 @@ const AdminSalary = () => {
     // Pre-joining days are excluded from this month's working days so a mid-month
     // joiner is paid only from the joining date onward.
     const preJoinDays = attStats.preJoinDays || 0;
-    const workingDays = daysInMonth - preJoinDays;
+    // Days after the resign date are excluded too — a mid-month resignee is
+    // paid only up to the resign date.
+    const postResignDays = attStats.postResignDays || 0;
+    const workingDays = daysInMonth - preJoinDays - postResignDays;
 
     const bonus = 0;
     const otherAllowance = 0;
@@ -1422,6 +1438,8 @@ const AdminSalary = () => {
     const otherDeduction = Math.round(attStats.halfDay * (attStats.dailyRate / 2));
     // Proration for the joining month: deduct the value of days before joining.
     const preJoinDeduction = Math.round(preJoinDays * attStats.dailyRate);
+    // Proration for the resign month: deduct the value of days after resigning.
+    const postResignDeduction = Math.round(postResignDays * attStats.dailyRate);
 
     // Calculation basis toggle: 'subtractive' (default — পূর্ণ মাসিক বেতন − কর্তন; ছুটির দিনসহ)
     // অথবা 'additive' (শুধু উপস্থিত দিনের আয় যোগ; ছুটির দিনে বেতন নেই)
@@ -1433,7 +1451,7 @@ const AdminSalary = () => {
     const attendanceEarningsWithoutOvertime = Math.max(0, Math.round(attStats.totalDailyEarnings) - includedOvertime);
     let earnedFromAttendance = calcBasis === 'additive'
       ? Math.min(baseSalary, attendanceEarningsWithoutOvertime)
-      : Math.max(0, baseSalary - absenceDeduction - lateDeduction - otherDeduction - preJoinDeduction);
+      : Math.max(0, baseSalary - absenceDeduction - lateDeduction - otherDeduction - preJoinDeduction - postResignDeduction);
     let overtime = includedOvertime;
 
     if (dutySettings?.extra_duty_enabled && dutySettings?.extra_duty_rate > 0) {
