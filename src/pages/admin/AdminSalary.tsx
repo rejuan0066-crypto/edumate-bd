@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useTimeFormat, formatTimeDisplay } from '@/hooks/useTimeFormat';
+import { useResignedStaff } from '@/hooks/useResignedStaff';
 import { useAppTimezone } from '@/hooks/useAppTimezone';
 import { toIsoDateInTz, getDatePartsInTz, formatDateTimeInTz, formatDateInTz, formatTimeInTz } from '@/lib/timezone';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -752,6 +753,11 @@ const AdminSalary = () => {
           ? `${sName} এই মাসের আগে যোগদান করেননি (যোগদান: ${jdLabel})`
           : `${sName} had not joined before this month (joined: ${jdLabel})`);
       }
+      if (isResignedBeforeMonth(s.id, monthYear) && !salaryRecords.some((r: any) => r.staff_id === s.id)) {
+        throw new Error(bn
+          ? `${sName} এই মাস শুরুর আগে পদত্যাগ করেছেন — এই মাসে বেতন তৈরি করা যাবে না`
+          : `${sName} resigned before this month started — cannot generate salary for this month`);
+      }
       const requireAttendance = getSetting('require_attendance')?.enabled !== false;
       // Hard validation — block on any data error
       const v = getAttendanceValidation(s);
@@ -1061,6 +1067,7 @@ const AdminSalary = () => {
     const lastDay = new Date(yy, mm, 0).getDate();
     return `${monthYear}-${String(lastDay).padStart(2, '0')}`;
   })();
+  const { isResignedBeforeMonth } = useResignedStaff();
   const hasJoinedByMonth = (s: any): boolean => {
     const jd = s?.joining_date ? String(s.joining_date).slice(0, 10) : '';
     if (!jd) return true; // unknown joining date → always include (legacy data)
@@ -1070,6 +1077,10 @@ const AdminSalary = () => {
   // salary record already exists, but never in new/future months.
   const isInMonthRoster = (s: any): boolean => {
     if (!hasJoinedByMonth(s)) return false;
+    // Resigned before this month started → only show if a record already exists (history).
+    if (isResignedBeforeMonth(s?.id, monthYear)) {
+      return salaryRecords.some((r: any) => r.staff_id === s.id);
+    }
     if (s?.status === 'inactive') {
       return salaryRecords.some((r: any) => r.staff_id === s.id);
     }
@@ -1506,6 +1517,8 @@ const AdminSalary = () => {
 
         // Skip staff who had not joined by this month (don't generate for past months).
         if (!hasJoinedByMonth(s)) continue;
+        // Skip staff who resigned before this month started.
+        if (isResignedBeforeMonth(s.id, monthYear) && !existing) continue;
         if (s.status === 'inactive' && !existing) continue;
 
 

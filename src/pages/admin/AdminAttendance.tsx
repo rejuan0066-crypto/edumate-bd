@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { exportAttendanceExcel, calcLateMinutes } from '@/lib/attendanceExcelExport';
 import { useTimeFormat, formatTimeDisplay } from '@/hooks/useTimeFormat';
+import { useResignedStaff } from '@/hooks/useResignedStaff';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import AdminLayout from '@/components/AdminLayout';
@@ -488,12 +489,18 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
 
   // Inactive (resigned/left) staff must still show on PAST dates where their
   // attendance was already recorded, but never on dates with no record.
+  const { isResignedOnDate } = useResignedStaff();
+
   const entities = useMemo(() => {
     if (entityType !== 'staff') return entitiesRaw;
-    return (entitiesRaw as any[]).filter((e: any) =>
-      e.status !== 'inactive' || attendance.some((a: any) => a.entity_id === e.id)
-    );
-  }, [entitiesRaw, entityType, attendance]);
+    return (entitiesRaw as any[]).filter((e: any) => {
+      if (e.status === 'inactive' && !attendance.some((a: any) => a.entity_id === e.id)) return false;
+      // Resigned staff disappear from the roster from their resign_date onward
+      // (past dates with existing attendance stay visible for history).
+      if (isResignedOnDate(e.id, selectedDate) && !attendance.some((a: any) => a.entity_id === e.id)) return false;
+      return true;
+    });
+  }, [entitiesRaw, entityType, attendance, isResignedOnDate, selectedDate]);
 
   // Fetch attendance rules
   const { data: rules = [] } = useQuery({
