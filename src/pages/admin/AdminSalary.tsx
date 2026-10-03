@@ -1062,6 +1062,7 @@ const AdminSalary = () => {
     const lastDay = new Date(yy, mm, 0).getDate();
     return `${monthYear}-${String(lastDay).padStart(2, '0')}`;
   })();
+  const { isResignedBeforeMonth } = useResignedStaff();
   const hasJoinedByMonth = (s: any): boolean => {
     const jd = s?.joining_date ? String(s.joining_date).slice(0, 10) : '';
     if (!jd) return true; // unknown joining date → always include (legacy data)
@@ -1511,6 +1512,8 @@ const AdminSalary = () => {
 
         // Skip staff who had not joined by this month (don't generate for past months).
         if (!hasJoinedByMonth(s)) continue;
+        // Skip staff who resigned before this month started.
+        if (isResignedBeforeMonth(s.id, monthYear) && !existing) continue;
         if (s.status === 'inactive' && !existing) continue;
 
 
