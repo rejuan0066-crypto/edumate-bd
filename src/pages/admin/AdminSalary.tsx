@@ -753,6 +753,11 @@ const AdminSalary = () => {
           ? `${sName} এই মাসের আগে যোগদান করেননি (যোগদান: ${jdLabel})`
           : `${sName} had not joined before this month (joined: ${jdLabel})`);
       }
+      if (isResignedBeforeMonth(s.id, monthYear) && !salaryRecords.some((r: any) => r.staff_id === s.id)) {
+        throw new Error(bn
+          ? `${sName} এই মাস শুরুর আগে পদত্যাগ করেছেন — এই মাসে বেতন তৈরি করা যাবে না`
+          : `${sName} resigned before this month started — cannot generate salary for this month`);
+      }
       const requireAttendance = getSetting('require_attendance')?.enabled !== false;
       // Hard validation — block on any data error
       const v = getAttendanceValidation(s);
