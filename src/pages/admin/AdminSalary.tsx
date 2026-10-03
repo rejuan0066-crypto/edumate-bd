@@ -1350,11 +1350,13 @@ const AdminSalary = () => {
     const isCurrentMonth = now.getFullYear() === yy && (now.getMonth() + 1) === mm;
     const lastCountedDay = isCurrentMonth ? Math.min(lastDay, now.getDate()) : lastDay;
     const firstCountedDay = joinedFromDay(staffMember);
+    const staffLastCountedDay = Math.min(lastCountedDay, resignedUntilDay(staffMember));
     let untrackedPaidDays = 0;
     let preJoinDays = 0;
+    let postResignDays = 0;
     for (let d = 1; d <= lastDay; d++) {
       if (d < firstCountedDay) { preJoinDays += 1; continue; }
-      if (d > lastCountedDay) continue; // future day of ongoing month
+      if (d > staffLastCountedDay) { postResignDays += 1; continue; } // after resign date (or future day)
       const dateStr = `${monthYear}-${String(d).padStart(2, '0')}`;
       if (recordedDates.has(dateStr)) continue;
       if (paidHolidaySet.has(dateStr)) continue;
