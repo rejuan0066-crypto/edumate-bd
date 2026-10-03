@@ -490,10 +490,14 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   // attendance was already recorded, but never on dates with no record.
   const entities = useMemo(() => {
     if (entityType !== 'staff') return entitiesRaw;
-    return (entitiesRaw as any[]).filter((e: any) =>
-      e.status !== 'inactive' || attendance.some((a: any) => a.entity_id === e.id)
-    );
-  }, [entitiesRaw, entityType, attendance]);
+    return (entitiesRaw as any[]).filter((e: any) => {
+      if (e.status === 'inactive' && !attendance.some((a: any) => a.entity_id === e.id)) return false;
+      // Resigned staff disappear from the roster from their resign_date onward
+      // (past dates with existing attendance stay visible for history).
+      if (isResignedOnDate(e.id, selectedDate) && !attendance.some((a: any) => a.entity_id === e.id)) return false;
+      return true;
+    });
+  }, [entitiesRaw, entityType, attendance, isResignedOnDate, selectedDate]);
 
   // Fetch attendance rules
   const { data: rules = [] } = useQuery({
