@@ -1438,6 +1438,8 @@ const AdminSalary = () => {
     const otherDeduction = Math.round(attStats.halfDay * (attStats.dailyRate / 2));
     // Proration for the joining month: deduct the value of days before joining.
     const preJoinDeduction = Math.round(preJoinDays * attStats.dailyRate);
+    // Proration for the resign month: deduct the value of days after resigning.
+    const postResignDeduction = Math.round(postResignDays * attStats.dailyRate);
 
     // Calculation basis toggle: 'subtractive' (default — পূর্ণ মাসিক বেতন − কর্তন; ছুটির দিনসহ)
     // অথবা 'additive' (শুধু উপস্থিত দিনের আয় যোগ; ছুটির দিনে বেতন নেই)
@@ -1449,7 +1451,7 @@ const AdminSalary = () => {
     const attendanceEarningsWithoutOvertime = Math.max(0, Math.round(attStats.totalDailyEarnings) - includedOvertime);
     let earnedFromAttendance = calcBasis === 'additive'
       ? Math.min(baseSalary, attendanceEarningsWithoutOvertime)
-      : Math.max(0, baseSalary - absenceDeduction - lateDeduction - otherDeduction - preJoinDeduction);
+      : Math.max(0, baseSalary - absenceDeduction - lateDeduction - otherDeduction - preJoinDeduction - postResignDeduction);
     let overtime = includedOvertime;
 
     if (dutySettings?.extra_duty_enabled && dutySettings?.extra_duty_rate > 0) {
