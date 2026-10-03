@@ -1376,7 +1376,7 @@ const AdminSalary = () => {
 
     return {
       present, absent, late, halfDay, leave, holidayCovered, untouchedHolidayDays,
-      untrackedAbsentDays: untrackedUnmarkedDays, untrackedPaidDays, recordedAbsent, preJoinDays, firstCountedDay,
+      untrackedAbsentDays: untrackedUnmarkedDays, untrackedPaidDays, recordedAbsent, preJoinDays, postResignDays, firstCountedDay,
       total: records.length,
       totalLateArrivalMinutes, totalEarlyExitMinutes, totalMissedMinutes, totalOvertimeMinutes,
       totalLateArrivalDeduction, totalEarlyExitDeduction,
@@ -1420,7 +1420,10 @@ const AdminSalary = () => {
     // Pre-joining days are excluded from this month's working days so a mid-month
     // joiner is paid only from the joining date onward.
     const preJoinDays = attStats.preJoinDays || 0;
-    const workingDays = daysInMonth - preJoinDays;
+    // Days after the resign date are excluded too — a mid-month resignee is
+    // paid only up to the resign date.
+    const postResignDays = attStats.postResignDays || 0;
+    const workingDays = daysInMonth - preJoinDays - postResignDays;
 
     const bonus = 0;
     const otherAllowance = 0;
