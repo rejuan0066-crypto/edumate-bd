@@ -74,6 +74,19 @@ function Wheel<T>({
     }, 110);
   };
 
+  const commitVisibleItem = () => {
+    if (scrollTimer.current) clearTimeout(scrollTimer.current);
+    const el = ref.current;
+    if (!el) return;
+    const nextIndex = Math.min(items.length - 1, Math.max(0, Math.round(el.scrollTop / ITEM_H)));
+    snapTo(nextIndex * ITEM_H);
+    if (items[nextIndex] !== value) onChange(items[nextIndex]);
+  };
+
+  React.useEffect(() => () => {
+    if (scrollTimer.current) clearTimeout(scrollTimer.current);
+  }, []);
+
   // Discrete mouse-wheel: hover over the column and scroll moves one item per tick.
   // Native non-passive listener so we can preventDefault and avoid the page scrolling.
   React.useEffect(() => {
@@ -123,11 +136,13 @@ function Wheel<T>({
         <div
           ref={ref}
           onScroll={handleScroll}
+          onTouchEnd={commitVisibleItem}
+          onPointerUp={commitVisibleItem}
           onKeyDown={onKeyDown}
           tabIndex={0}
           role="listbox"
           aria-label={label}
-          className="h-full overflow-y-auto snap-y snap-mandatory id-preview-scroll overscroll-contain cursor-ns-resize outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-2xl"
+          className="h-full overflow-y-auto snap-y snap-mandatory id-preview-scroll overscroll-contain cursor-ns-resize outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-2xl touch-pan-y"
           style={{ scrollPaddingTop: ITEM_H * 2, touchAction: 'pan-y' }}
         >
           {/* top spacer */}
@@ -260,7 +275,26 @@ const TimePicker = ({ value, onChange, className, placeholder = "সময়", 
         </Button>
       </div>
 
-      <div className="flex items-stretch gap-1.5 px-4 pt-4">
+      {!is24 && (
+        <div className="px-4 pt-4">
+          <div className="grid grid-cols-2 rounded-2xl border border-border/70 bg-muted/40 p-1" role="group" aria-label="AM বা PM নির্বাচন">
+            {PERIODS.map((item) => (
+              <Button
+                key={item}
+                type="button"
+                variant={period === item ? 'default' : 'ghost'}
+                onClick={() => setPeriod(item)}
+                aria-pressed={period === item}
+                className="h-11 rounded-xl text-sm font-bold"
+              >
+                {item}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-stretch gap-3 px-4 pt-4">
         <Wheel
           label={"ঘণ্টা"}
           items={is24 ? HOURS_24 : HOURS_12}
@@ -275,15 +309,6 @@ const TimePicker = ({ value, onChange, className, placeholder = "সময়", 
           onChange={setMinute}
           render={(v) => String(v).padStart(2, '0')}
         />
-        {!is24 && (
-          <Wheel
-            label={"AM/PM"}
-            items={PERIODS as unknown as typeof PERIODS[number][]}
-            value={period}
-            onChange={setPeriod}
-            render={(v) => v}
-          />
-        )}
       </div>
 
       <div className="flex items-center gap-2 px-4 pb-4 pt-3">
@@ -314,7 +339,7 @@ const TimePicker = ({ value, onChange, className, placeholder = "সময়", 
     return (
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>{trigger}</DialogTrigger>
-        <DialogContent className="w-[88vw] max-w-[320px] gap-0 overflow-hidden rounded-[28px] border-0 p-0 shadow-2xl [&>button]:hidden">
+        <DialogContent className="w-[calc(100vw-24px)] max-w-[360px] gap-0 overflow-hidden rounded-[28px] border-0 p-0 shadow-2xl [&>button]:hidden">
           <DialogTitle className="sr-only">সময় নির্বাচন</DialogTitle>
           {panel}
         </DialogContent>
