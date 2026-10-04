@@ -1886,7 +1886,6 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-31"
               }
             ],
-            "type": "city_corporation",
             "postOffices": [
               {
                 "name": "Atra Shilpa Area",
@@ -5840,7 +5839,6 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-41"
               }
             ],
-            "type": "city_corporation",
             "postOffices": [
               {
                 "name": "Al- Amin Baria Madra",
@@ -7021,7 +7019,6 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-27"
               }
             ],
-            "type": "city_corporation",
             "postOffices": [
               {
                 "name": "Comilla Contoment",
@@ -10821,7 +10818,6 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-75"
               }
             ],
-            "type": "city_corporation",
             "postOffices": [
               {
                 "name": "Posta TSO",
@@ -11052,7 +11048,6 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-54"
               }
             ],
-            "type": "city_corporation",
             "postOffices": [
               {
                 "name": "Banani TSO",
@@ -12583,7 +12578,6 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-57"
               }
             ],
-            "type": "city_corporation",
             "postOffices": [
               {
                 "name": "B.O.F",
@@ -16286,7 +16280,6 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-27"
               }
             ],
-            "type": "city_corporation",
             "postOffices": [
               {
                 "name": "Narayanganj Sadar",
@@ -20062,7 +20055,6 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-30"
               }
             ],
-            "type": "city_corporation",
             "postOffices": [
               {
                 "name": "Barisal Sadar",
@@ -24033,7 +24025,6 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-21"
               }
             ],
-            "type": "city_corporation",
             "postOffices": [
               {
                 "name": "Agriculture Universi",
@@ -29537,7 +29528,6 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-33"
               }
             ],
-            "type": "city_corporation",
             "postOffices": [
               {
                 "name": "Alamnagar",
@@ -34131,7 +34121,6 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-30"
               }
             ],
-            "type": "city_corporation",
             "postOffices": [
               {
                 "name": "Binodpur Bazar",
@@ -39115,7 +39104,6 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-27"
               }
             ],
-            "type": "city_corporation",
             "postOffices": [
               {
                 "name": "Birahimpur",
