@@ -143,23 +143,46 @@ const Login = () => {
     if (error) {
       try { sessionStorage.removeItem(LOGIN_OTP_FLAG); } catch { /* ignore */ }
       setPendingOtp(false);
-      const rawMsg = (error instanceof Error ? error.message : String((error as { message?: unknown })?.message ?? error ?? '')).toLowerCase();
+      const errObj = error as { message?: string; status?: number; code?: string } | null;
+      const rawMsg = (error instanceof Error ? error.message : String(errObj?.message ?? error ?? '')).trim();
+      const lower = rawMsg.toLowerCase();
+      console.error('Supabase login error details:', { error, rawMsg, cleanEmail });
+
       const isNetworkError =
-        rawMsg.includes('load failed') ||
-        rawMsg.includes('failed to fetch') ||
-        rawMsg.includes('networkerror') ||
-        rawMsg.includes('network error') ||
-        rawMsg.includes('fetch failed') ||
-        rawMsg.includes('timeout') ||
-        rawMsg.includes('timed out');
+        lower.includes('load failed') ||
+        lower.includes('failed to fetch') ||
+        lower.includes('networkerror') ||
+        lower.includes('network error') ||
+        lower.includes('fetch failed') ||
+        lower.includes('timeout') ||
+        lower.includes('timed out');
+
       if (isNetworkError) {
         toast.error(
           language === 'bn'
             ? 'ইন্টারনেট সংযোগে সমস্যা হচ্ছে। একটু পরে আবার চেষ্টা করুন।'
             : 'Network problem. Please check your connection and try again.'
         );
+      } else if (lower.includes('email not confirmed')) {
+        toast.error(
+          language === 'bn'
+            ? 'ইমেইল ভেরিফাই করা হয়নি। অনুগ্রহ করে Supabase ড্যাশবোর্ড থেকে ইমেইল কনফার্ম করুন।'
+            : 'Email not confirmed. Please confirm your email in Supabase.'
+        );
+      } else if (lower.includes('rate limit') || lower.includes('too many requests')) {
+        toast.error(
+          language === 'bn'
+            ? 'অনেক বেশিবার ভুল চেষ্টা করা হয়েছে। কিছুক্ষণ পর আবার চেষ্টা করুন।'
+            : 'Too many requests. Please wait a moment and try again.'
+        );
+      } else if (lower.includes('invalid login credentials') || lower.includes('invalid credentials')) {
+        toast.error(
+          language === 'bn'
+            ? 'ইমেইল বা পাসওয়ার্ড সঠিক নয়।'
+            : 'Invalid email or password.'
+        );
       } else {
-        toast.error(language === 'bn' ? 'ইউজারনেম বা পাসওয়ার্ড ভুল' : 'Invalid credentials');
+        toast.error(rawMsg || (language === 'bn' ? 'লগইন ব্যর্থ হয়েছে' : 'Login failed'));
       }
     }
     // On success: useEffect above will resolve role and open OTP dialog if needed.
