@@ -44,8 +44,8 @@ export interface VerifyOtpResult {
 export type OtpPurpose = 'email_verification' | 'password_reset';
 export type OtpScope = 'login' | 'password_reset' | 'email_change' | 'password_change';
 
-const FUNCTIONS_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
-const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+const FUNCTIONS_BASE = `${(import.meta.env.VITE_SUPABASE_URL || '').replace(/^["']|["']$/g, '').trim()}/functions/v1`;
+const ANON_KEY = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '').replace(/^["']|["']$/g, '').trim();
 
 /**
  * Direct fetch to an edge function — bypasses supabase-js's `functions.invoke`,
