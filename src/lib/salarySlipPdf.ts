@@ -312,7 +312,7 @@ export async function downloadSheetAsPdf(
         try {
           if (mode === 'download') {
             if (targetWindow && !targetWindow.closed) targetWindow.close();
-            pdf.save(filename);
+            savePdfSmart(pdf, filename);
           } else {
             const blob = pdf.output('blob');
             const url = URL.createObjectURL(blob);
