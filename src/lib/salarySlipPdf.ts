@@ -140,7 +140,7 @@ export async function downloadSlipAsPdf(
         const imgData = canvas.toDataURL('image/png');
         pdf.addImage(imgData, 'PNG', offsetX, offsetY, drawW, drawH);
 
-        pdf.save(filename);
+        savePdfSmart(pdf, filename);
         resolve();
       } catch (err) {
         reject(err);
@@ -312,7 +312,7 @@ export async function downloadSheetAsPdf(
         try {
           if (mode === 'download') {
             if (targetWindow && !targetWindow.closed) targetWindow.close();
-            pdf.save(filename);
+            savePdfSmart(pdf, filename);
           } else {
             const blob = pdf.output('blob');
             const url = URL.createObjectURL(blob);
@@ -340,6 +340,44 @@ export async function downloadSheetAsPdf(
     iframe.onload = () => { void captureAndDownload(); };
     setTimeout(() => { void captureAndDownload(); }, 4000);
   });
+}
+
+/**
+ * Mobile-safe PDF save. jsPDF's `save()` relies on an anchor download which
+ * silently fails on several mobile browsers (esp. iOS Safari / PWAs). On
+ * mobile we create a blob URL and click a real `<a download>` link ourselves,
+ * falling back to opening the blob (the PWA adapter turns that into a
+ * download) and finally to `pdf.save()`.
+ */
+function savePdfSmart(pdf: jsPDF, filename: string): void {
+  if (!isMobileOrPwa()) {
+    pdf.save(filename);
+    return;
+  }
+  try {
+    const blob = pdf.output('blob');
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.rel = 'noopener';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      try { a.remove(); } catch {}
+      try { URL.revokeObjectURL(url); } catch {}
+    }, 60000);
+  } catch {
+    try {
+      const blob = pdf.output('blob');
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => { try { URL.revokeObjectURL(url); } catch {} }, 60000);
+    } catch {
+      pdf.save(filename);
+    }
+  }
 }
 
 /** True when running on a mobile device or an installed standalone PWA. */
