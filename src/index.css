@@ -443,89 +443,80 @@
     background-color: hsl(200 30% 14% / 0.35);
   }
   table tbody tr:hover {
-    background-color: hsl(var(--aqua) / 0.08);
-    transform: translateY(-3px);
-    box-shadow: 0 12px 40px -10px hsl(var(--aqua) / 0.22), inset 0 0 0 1px hsl(var(--aqua) / 0.35), var(--shadow-glow-aqua);
+    background-color: hsl(var(--muted) / 0.6);
   }
   table tbody td {
-    @apply py-4 px-6;
-    border-bottom: none;
+    @apply py-3 px-4;
+    border-bottom: 1px solid hsl(var(--border) / 0.3);
   }
   table tbody td:first-child {
-    border-radius: 20px 0 0 20px;
+    border-radius: 8px 0 0 8px;
   }
   table tbody td:last-child {
-    border-radius: 0 20px 20px 0;
+    border-radius: 0 8px 8px 0;
   }
 }
 
 @layer components {
-  /* ── Reusable frosted aquamarine glass surface (modals, dropdowns, popovers) ── */
+  /* ── Reusable frosted clean surface (modals, dropdowns, popovers) ── */
   .glass-surface {
-    background: hsl(0 0% 100% / 0.62) !important;
-    backdrop-filter: blur(22px) saturate(1.7);
-    -webkit-backdrop-filter: blur(22px) saturate(1.7);
-    border: 1px solid hsl(var(--glass-border) / 0.4) !important;
-    box-shadow: 0 24px 70px -18px hsl(180 45% 15% / 0.3), var(--shadow-glow-aqua) !important;
+    background: hsl(var(--card) / 0.96) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid hsl(var(--border) / 0.6) !important;
+    box-shadow: 0 16px 40px -10px hsl(0 0% 0% / 0.15) !important;
   }
   .dark .glass-surface {
-    background: hsl(200 30% 9% / 0.72) !important;
-    border-color: hsl(var(--glass-border) / 0.3) !important;
+    background: hsl(var(--card) / 0.94) !important;
+    border-color: hsl(var(--border) / 0.5) !important;
   }
 
-  /* ── Premium Glass Cards ── */
+  /* ── Premium Clean Cards ── */
   .glass-card {
-    border-radius: 45px;
-    background: hsl(0 0% 100% / 0.55);
-    backdrop-filter: blur(60px) saturate(1.9);
-    -webkit-backdrop-filter: blur(60px) saturate(1.9);
-    border: 1.5px solid hsl(var(--aqua) / 0.4);
-    box-shadow: var(--shadow-float), inset 0 1px 0 hsl(0 0% 100% / 0.4), 0 0 0 1px hsl(var(--aqua-glow) / 0.2), 0 0 22px -6px hsl(var(--aqua) / 0.35);
-    transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    border-radius: 16px;
+    background: hsl(var(--card) / 0.95);
+    border: 1px solid hsl(var(--border) / 0.6);
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
   }
   .dark .glass-card {
-    background: hsl(var(--card) / 0.45);
-    border-color: hsl(var(--aqua) / 0.2);
-    box-shadow: var(--shadow-float), 0 0 0 1px hsl(var(--aqua-glow) / 0.1);
+    background: hsl(var(--card) / 0.8);
+    border-color: hsl(var(--border) / 0.4);
   }
   .glass-card:hover {
-    box-shadow: var(--shadow-float), var(--shadow-glow-aqua);
-    transform: translateY(-3px);
+    box-shadow: var(--shadow-elevated);
+    transform: translateY(-2px);
   }
 
   .card-elevated {
-    border-radius: 36px;
-    background: hsl(0 0% 100% / 0.5);
-    backdrop-filter: blur(48px) saturate(1.8);
-    -webkit-backdrop-filter: blur(48px) saturate(1.8);
-    border: 1.5px solid hsl(var(--aqua) / 0.4);
-    box-shadow: var(--shadow-card), inset 0 1px 0 hsl(0 0% 100% / 0.35), 0 0 0 1px hsl(var(--aqua-glow) / 0.18), 0 0 20px -6px hsl(var(--aqua) / 0.32);
-    transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    border-radius: 16px;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border) / 0.6);
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
   }
   .dark .card-elevated {
-    background: hsl(var(--card) / 0.5);
-    border-color: hsl(var(--aqua) / 0.18);
+    background: hsl(var(--card) / 0.85);
+    border-color: hsl(var(--border) / 0.4);
   }
   .card-elevated:hover {
-    box-shadow: var(--shadow-elevated), var(--shadow-glow-aqua);
-    transform: translateY(-3px);
+    box-shadow: var(--shadow-elevated);
+    transform: translateY(-2px);
   }
 
   .stat-card {
-    border-radius: 32px;
-    background: hsl(0 0% 100% / 0.48);
-    backdrop-filter: blur(42px) saturate(1.7);
-    -webkit-backdrop-filter: blur(42px) saturate(1.7);
-    border: 1.5px solid hsl(var(--aqua) / 0.4);
-    box-shadow: var(--shadow-card), inset 0 1px 0 hsl(0 0% 100% / 0.35), 0 0 0 1px hsl(var(--aqua-glow) / 0.18), 0 0 20px -6px hsl(var(--aqua) / 0.32);
-    padding: 1.75rem;
-    transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    border-radius: 16px;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border) / 0.6);
+    box-shadow: var(--shadow-card);
+    padding: 1.25rem 1.5rem;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
     position: relative;
     overflow: hidden;
   }
   .dark .stat-card {
-    background: hsl(var(--card) / 0.5);
-    border-color: hsl(var(--aqua) / 0.16);
+    background: hsl(var(--card) / 0.85);
+    border-color: hsl(var(--border) / 0.4);
   }
   .stat-card::before {
     content: '';
@@ -536,8 +527,8 @@
     pointer-events: none;
   }
   .stat-card:hover {
-    box-shadow: var(--shadow-elevated), var(--shadow-glow-aqua);
-    transform: translateY(-4px) scale(1.01);
+    box-shadow: var(--shadow-elevated);
+    transform: translateY(-2px);
   }
 
   /* ── Button Styles ── */
