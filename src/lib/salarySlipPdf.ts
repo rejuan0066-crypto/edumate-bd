@@ -21,17 +21,9 @@ const HIDDEN_IFRAME_CSS = (w: number, h: number) =>
   `position:fixed;left:0;top:0;width:${w}px;height:${h}px;border:none;opacity:0;pointer-events:none;z-index:-1;`;
 
 /**
- * Renders a full salary-slip HTML string into a hidden iframe, captures the
- * `.slip` element with html2canvas, and saves it as an A4 PORTRAIT PDF.
- *
- * Why: on iOS Safari / installed PWAs, `window.print()` of an iframe prints the
- * PARENT document (a blank app page), so the slip never appears. Generating a
- * downloadable PDF works reliably on every platform.
+ * Generates an A4 PORTRAIT PDF Blob from a salary-slip HTML string.
  */
-export async function downloadSlipAsPdf(
-  htmlContent: string,
-  filename: string = 'salary-slip.pdf',
-): Promise<void> {
+export async function generateSlipPdfBlob(htmlContent: string): Promise<Blob> {
   // Strip <script> tags (auto-print logic) and @media screen blocks.
   let cleanHtml = htmlContent.replace(/<script>[\s\S]*?<\/script>/gi, '');
   cleanHtml = cleanHtml.replace(/@media\s+screen\s*\{([\s\S]*?)\n\s*\}/g, '');
@@ -83,7 +75,7 @@ export async function downloadSlipAsPdf(
     iframeDoc.write(cleanHtml);
     iframeDoc.close();
 
-    const captureAndDownload = async () => {
+    const captureAndGenerate = async () => {
       if (hasCaptured) return;
       hasCaptured = true;
       try {
@@ -115,7 +107,6 @@ export async function downloadSlipAsPdf(
           imageTimeout: 5000,
         });
 
-
         const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
         const pdfWidth = 210;
         const pdfHeight = 297;
@@ -124,8 +115,6 @@ export async function downloadSlipAsPdf(
         const availW = pdfWidth - margin * 2;
         const availH = pdfHeight - margin * 2;
 
-        // Scale image to fit the printable area while preserving aspect ratio,
-        // so the whole slip always fits on a SINGLE page within the margins.
         const ratio = canvas.width / canvas.height;
         let drawW = availW;
         let drawH = drawW / ratio;
@@ -140,8 +129,8 @@ export async function downloadSlipAsPdf(
         const imgData = canvas.toDataURL('image/png');
         pdf.addImage(imgData, 'PNG', offsetX, offsetY, drawW, drawH);
 
-        savePdfSmart(pdf, filename);
-        resolve();
+        const blob = pdf.output('blob');
+        resolve(blob);
       } catch (err) {
         reject(err);
       } finally {
@@ -149,9 +138,151 @@ export async function downloadSlipAsPdf(
       }
     };
 
-    iframe.onload = () => { void captureAndDownload(); };
-    setTimeout(() => { void captureAndDownload(); }, 4000);
+    iframe.onload = () => { void captureAndGenerate(); };
+    setTimeout(() => { void captureAndGenerate(); }, 4000);
   });
+}
+
+/**
+ * Saves a salary-slip as an A4 PORTRAIT PDF file.
+ */
+export async function downloadSlipAsPdf(
+  htmlContent: string,
+  filename: string = 'salary-slip.pdf',
+): Promise<void> {
+  const blob = await generateSlipPdfBlob(htmlContent);
+  saveBlobSmart(blob, filename);
+}
+
+/**
+ * Triggers native mobile (Android/iOS) and desktop printing for a salary slip.
+ * Uses a self-contained Blob URL with auto-print & on-screen navigation buttons,
+ * falling back to an in-app printable iframe for standalone PWA mode.
+ */
+export function printSalarySlipHtml(htmlContent: string, staffName: string = 'staff'): void {
+  let printableHtml = htmlContent;
+
+  const floatingBar = `
+    <div class="print-actions-bar no-print" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:8px 16px;border-radius:999px;box-shadow:0 12px 30px rgba(0,0,0,0.35);display:flex;align-items:center;gap:12px;z-index:99999;font-family:system-ui,-apple-system,sans-serif;">
+      <button onclick="window.print()" style="background:#059669;color:#fff;border:none;padding:8px 18px;border-radius:999px;font-weight:700;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+        🖨️ প্রিন্ট করুন / Print
+      </button>
+      <button onclick="window.close()" style="background:rgba(255,255,255,0.18);color:#fff;border:none;padding:8px 16px;border-radius:999px;font-weight:600;font-size:13px;cursor:pointer;">
+        ✕ বন্ধ করুন / Close
+      </button>
+    </div>
+    <style>
+      @media print {
+        .print-actions-bar, .no-print { display: none !important; }
+      }
+    </style>
+  `;
+
+  const autoPrintScript = `
+    <script>
+      (function() {
+        var printed = false;
+        function runPrint() {
+          if (printed) return;
+          printed = true;
+          try {
+            window.focus();
+            window.print();
+          } catch(e) {
+            console.error('Print trigger failed', e);
+          }
+        }
+        if (document.fonts && document.fonts.ready) {
+          document.fonts.ready.then(function() {
+            setTimeout(runPrint, 300);
+          }).catch(function() {
+            setTimeout(runPrint, 600);
+          });
+        } else {
+          setTimeout(runPrint, 600);
+        }
+      })();
+    </script>
+  `;
+
+  if (printableHtml.includes('</body>')) {
+    printableHtml = printableHtml.replace('</body>', `${floatingBar}${autoPrintScript}</body>`);
+  } else {
+    printableHtml += `${floatingBar}${autoPrintScript}`;
+  }
+
+  const blob = new Blob([printableHtml], { type: 'text/html;charset=utf-8' });
+  const blobUrl = URL.createObjectURL(blob);
+
+  // Try window.open first (standard for desktop, iOS Safari, Android Chrome)
+  let printWindow: Window | null = null;
+  try {
+    printWindow = window.open(blobUrl, '_blank');
+  } catch {
+    printWindow = null;
+  }
+
+  if (printWindow) {
+    try { printWindow.focus(); } catch {}
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
+    return;
+  }
+
+  // Fallback for standalone PWA / restricted popups: printable iframe
+  const iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:none;opacity:0;pointer-events:none;z-index:-1;';
+  iframe.src = blobUrl;
+  document.body.appendChild(iframe);
+
+  const cleanup = () => {
+    try { iframe.remove(); } catch {}
+    try { URL.revokeObjectURL(blobUrl); } catch {}
+  };
+
+  iframe.onload = () => {
+    try {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+    } catch {
+      void downloadSlipAsPdf(htmlContent, `salary-slip-${staffName}.pdf`);
+    }
+    setTimeout(cleanup, 120000);
+  };
+}
+
+/**
+ * Shares salary slip PDF directly to WhatsApp, Bluetooth printer apps, Mail, etc.
+ * Falls back cleanly to PDF file download if Web Share API is unavailable.
+ */
+export async function shareSlipPdf(
+  htmlContent: string,
+  filename: string = 'salary-slip.pdf',
+  title: string = 'বেতন স্লিপ (Salary Slip)',
+): Promise<boolean> {
+  try {
+    const blob = await generateSlipPdfBlob(htmlContent);
+    const file = new File([blob], filename, { type: 'application/pdf' });
+    if (typeof navigator !== 'undefined' && (navigator as any).canShare && (navigator as any).canShare({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title,
+        text: title,
+      });
+      return true;
+    } else if (typeof navigator !== 'undefined' && navigator.share) {
+      await navigator.share({
+        title,
+        text: title,
+      });
+      return true;
+    }
+  } catch (err: any) {
+    if (err?.name === 'AbortError') return true; // User dismissed share sheet
+    console.warn('Native share failed, falling back to download', err);
+  }
+  // Fallback to normal download
+  await downloadSlipAsPdf(htmlContent, filename);
+  return false;
 }
 
 /**
@@ -343,19 +474,11 @@ export async function downloadSheetAsPdf(
 }
 
 /**
- * Mobile-safe PDF save. jsPDF's `save()` relies on an anchor download which
- * silently fails on several mobile browsers (esp. iOS Safari / PWAs). On
- * mobile we create a blob URL and click a real `<a download>` link ourselves,
- * falling back to opening the blob (the PWA adapter turns that into a
- * download) and finally to `pdf.save()`.
+ * Mobile-safe Blob save. Creates a blob URL and clicks an anchor link,
+ * with fallbacks for mobile browsers/PWAs.
  */
-function savePdfSmart(pdf: jsPDF, filename: string): void {
-  if (!isMobileOrPwa()) {
-    pdf.save(filename);
-    return;
-  }
+export function saveBlobSmart(blob: Blob, filename: string): void {
   try {
-    const blob = pdf.output('blob');
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -370,14 +493,27 @@ function savePdfSmart(pdf: jsPDF, filename: string): void {
     }, 60000);
   } catch {
     try {
-      const blob = pdf.output('blob');
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
       setTimeout(() => { try { URL.revokeObjectURL(url); } catch {} }, 60000);
-    } catch {
-      pdf.save(filename);
+    } catch (e) {
+      console.error('saveBlobSmart error', e);
     }
   }
+}
+
+/**
+ * Mobile-safe PDF save. jsPDF's `save()` relies on an anchor download which
+ * silently fails on several mobile browsers (esp. iOS Safari / PWAs). On
+ * mobile we create a blob URL and click a real `<a download>` link ourselves.
+ */
+function savePdfSmart(pdf: jsPDF, filename: string): void {
+  if (!isMobileOrPwa()) {
+    pdf.save(filename);
+    return;
+  }
+  const blob = pdf.output('blob');
+  saveBlobSmart(blob, filename);
 }
 
 /** True when running on a mobile device or an installed standalone PWA. */

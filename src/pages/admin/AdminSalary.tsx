@@ -43,14 +43,14 @@ import {
   type DutyAttendance,
 } from '@/lib/dutyShiftDeduction';
 import { shouldApplyThursdayHalfDay, effectiveDutyEndForThursday, parseHalfDayEndMinutes, parseClockMinutes } from '@/lib/thursdayHalfDay';
-import { downloadSlipAsPdf, downloadSheetAsPdf, isMobileOrPwa } from '@/lib/salarySlipPdf';
+import { downloadSlipAsPdf, downloadSheetAsPdf, printSalarySlipHtml, shareSlipPdf, isMobileOrPwa } from '@/lib/salarySlipPdf';
 import { DatePicker } from '@/components/ui/date-picker';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import {
   Wallet, Users, Search, Save, Download, Printer, Settings2,
   CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Edit2, Eye,
   Calculator, Plus, Trash2, DollarSign, FileText, FolderOpen,
-  PiggyBank, Landmark, RefreshCw, Minus
+  PiggyBank, Landmark, RefreshCw, Minus, Share2
 } from 'lucide-react';
 
 const MONTHS = [
@@ -139,6 +139,30 @@ const AdminSalary = () => {
   const [disburseDialog, setDisburseDialog] = useState<any>(null);
   const [eligibilityFilter, setEligibilityFilter] = useState<'all' | 'eligible' | 'not_generated' | 'pending' | 'paid'>('all');
   const [auditLogOpen, setAuditLogOpen] = useState(false);
+
+  // Pre-fetch default institution for instant synchronous salary slip printing
+  const { data: defaultInstData } = useQuery({
+    queryKey: ['institution-default-salary-sig'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('institutions')
+        .select('principal_name, accountant_name, verifier_name')
+        .eq('is_default', true)
+        .maybeSingle();
+      return data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const [slipModal, setSlipModal] = useState<{
+    staff: any;
+    record: any;
+    html: string;
+    filename: string;
+    slipId: string;
+    monthLabel: string;
+  } | null>(null);
+  const [slipModalLoading, setSlipModalLoading] = useState<'download' | 'share' | null>(null);
 
   const monthYear = `${selectedYear}-${selectedMonth}`;
 
@@ -2502,8 +2526,8 @@ const AdminSalary = () => {
     }
   };
 
-  // Print salary slip
-  const printSlip = async (staffMember: any, record: any) => {
+  // Build salary slip HTML and metadata synchronously
+  const buildSalarySlip = (staffMember: any, record: any) => {
     const slipSnapshot = getSalaryDisplaySnapshot(staffMember, record);
     record = slipSnapshot.record;
     const savingsAmt = slipSnapshot.savingsDisplay;
@@ -2564,7 +2588,6 @@ const AdminSalary = () => {
       </div>
     ` : '';
 
-
     // Earned-from-attendance = live/persisted attendance result for the selected month.
     const attendanceDeductions = Number(record.absence_deduction || 0)
       + Number(record.late_deduction || 0)
@@ -2612,7 +2635,6 @@ const AdminSalary = () => {
       ? numberToBanglaWords(Math.floor(netSalary))
       : `${netSalary.toLocaleString()} Taka Only`;
 
-
     const instName = bn
       ? (webSettings?.institution_name || 'প্রতিষ্ঠানের নাম')
       : (webSettings?.institution_name_en || webSettings?.institution_name || 'Institution Name');
@@ -2620,12 +2642,9 @@ const AdminSalary = () => {
     const instPhone = webSettings?.phone || '';
     const instEmail = webSettings?.email || '';
     const logoUrl = webSettings?.logo_url || '';
-    // Names: priority is institutions table → website_settings → fallback
-    const { data: instRow } = await supabase
-      .from('institutions')
-      .select('principal_name, accountant_name, verifier_name')
-      .eq('is_default', true)
-      .maybeSingle();
+
+    // Default institution data pre-fetched via useQuery for instant sync generation
+    const instRow = defaultInstData;
     const principalName =
       (instRow?.principal_name && String(instRow.principal_name).trim()) ||
       (bn ? webSettings?.principal_name : (webSettings?.principal_name_en || webSettings?.principal_name)) ||
@@ -2646,6 +2665,8 @@ const AdminSalary = () => {
     const issueDate = new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB');
 
     const fontHref = `${window.location.origin}/fonts/Kalpurush.ttf`;
+    const fname = `salary-slip-${(staffMember.name_en || staffMember.name_bn || 'staff').replace(/\s+/g, '_')}-${selectedYear}${selectedMonth}.pdf`;
+
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${bn ? 'বেতন স্লিপ' : 'Salary Slip'} - ${staffMember.name_bn}</title>
     <link rel="preload" as="font" type="font/ttf" href="${fontHref}" crossorigin="anonymous">
     <style>
@@ -2821,7 +2842,6 @@ const AdminSalary = () => {
           </div>
         </div>
 
-
         <div class="net-box">
           <span class="lbl">${bn ? 'নিট বেতন (প্রদেয়)' : 'Net Salary (Payable)'}</span>
           <span class="amt">৳ ${slipNum(netSalary)}</span>
@@ -2831,7 +2851,6 @@ const AdminSalary = () => {
         ${lateDetailHtml}
 
         <div class="signatures">
-
           <div class="sig">
             <div class="line"></div>
             <div class="sig-name">${recipientName}</div>
@@ -2856,34 +2875,32 @@ const AdminSalary = () => {
       </div>
     </div>
     </body></html>`;
-    // On mobile / installed PWA, iframe printing prints the parent (blank) page
-    // on iOS. Generate a real downloadable PDF instead.
-    if (isMobileOrPwa()) {
-      const fname = `salary-slip-${(staffMember.name_en || staffMember.name_bn || 'staff').replace(/\s+/g, '_')}-${selectedYear}${selectedMonth}.pdf`;
-      try {
-        toast.info(bn ? 'স্লিপ PDF তৈরি হচ্ছে…' : 'Generating slip PDF…');
-        await downloadSlipAsPdf(html, fname);
-        toast.success(bn ? 'PDF ডাউনলোড হয়েছে' : 'PDF downloaded');
-      } catch (e) {
-        toast.error(bn ? 'PDF তৈরিতে সমস্যা হয়েছে' : 'Failed to generate PDF');
-      }
-      return;
-    }
 
-    const w = window.open('', '_blank');
-    if (w) {
-      w.document.write(html);
-      w.document.close();
-      const doPrint = () => {
-        const fonts = (w.document as any).fonts;
-        if (fonts && fonts.ready) {
-          fonts.ready.then(() => setTimeout(() => w.print(), 200));
-        } else {
-          setTimeout(() => w.print(), 1200);
-        }
-      };
-      if (w.document.readyState === 'complete') doPrint();
-      else w.addEventListener('load', doPrint);
+    return {
+      html,
+      fname,
+      slipId,
+      record,
+      staffMember,
+      netSalary,
+    };
+  };
+
+  // Open salary slip preview & print modal (instant on mobile and desktop)
+  const printSlip = (staffMember: any, record: any) => {
+    try {
+      const data = buildSalarySlip(staffMember, record);
+      setSlipModal({
+        staff: staffMember,
+        record: data.record,
+        html: data.html,
+        filename: data.fname,
+        slipId: data.slipId,
+        monthLabel: getMonthLabel(`${selectedYear}-${selectedMonth}`),
+      });
+    } catch (err) {
+      console.error('Failed to generate salary slip preview', err);
+      toast.error(bn ? 'স্লিপ তৈরিতে সমস্যা হয়েছে' : 'Failed to generate salary slip');
     }
   };
 
@@ -3548,7 +3565,13 @@ const AdminSalary = () => {
                                         <RefreshCw className={`h-3 w-3 ${recalculateSingleMutation.isPending ? 'animate-spin' : ''}`} />
                                       </Button>
                                     )}
-                                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => printSlip(s, rec)}>
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="h-6 w-6 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-100/60 dark:text-emerald-400 dark:hover:bg-emerald-900/30"
+                                      title={bn ? 'বেতন স্লিপ দেখুন, প্রিন্ট ও ডাউনলোড করুন' : 'View, Print & Download Salary Slip'}
+                                      onClick={() => printSlip(s, rec)}
+                                    >
                                       <Printer className="h-3 w-3" />
                                     </Button>
                                     {rec.status !== 'paid' ? (
@@ -4740,6 +4763,149 @@ const AdminSalary = () => {
                   <FileText className="h-3 w-3 mr-1" /> {bn ? 'PDF তৈরি করুন' : 'Generate PDF'}
                 </Button>
               </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Salary Slip Preview & Mobile/Desktop Print Modal */}
+        <Dialog open={!!slipModal} onOpenChange={(open) => { if (!open) setSlipModal(null); }}>
+          <DialogContent className="max-w-4xl max-h-[95vh] flex flex-col p-0 gap-0 overflow-hidden rounded-2xl border bg-background shadow-2xl">
+            {/* Header with sticky action bar */}
+            <div className="p-4 sm:p-5 border-b bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-950 text-white flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 text-emerald-950 grid place-items-center shadow-md flex-shrink-0">
+                  <Printer className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base sm:text-lg font-bold truncate">
+                      {slipModal?.staff?.name_bn || slipModal?.staff?.name_en}
+                    </h3>
+                    <Badge variant="outline" className="text-[10px] bg-white/10 text-amber-300 border-white/20">
+                      {slipModal?.slipId}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-emerald-200/90 truncate">
+                    {bn ? 'বেতন স্লিপ প্রিভিউ ও প্রিন্ট' : 'Salary Slip Preview & Print'} • {slipModal?.monthLabel}
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 ml-auto">
+                <Button
+                  size="sm"
+                  className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-md gap-1.5 px-4"
+                  onClick={() => {
+                    if (slipModal) {
+                      printSalarySlipHtml(slipModal.html, slipModal.staff?.name_en || slipModal.staff?.name_bn);
+                    }
+                  }}
+                >
+                  <Printer className="h-4 w-4" />
+                  <span>{bn ? 'প্রিন্ট করুন' : 'Print'}</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="bg-white/10 hover:bg-white/20 text-white border-white/20 font-medium gap-1.5"
+                  disabled={slipModalLoading === 'download'}
+                  onClick={async () => {
+                    if (!slipModal) return;
+                    setSlipModalLoading('download');
+                    try {
+                      toast.info(bn ? 'PDF তৈরি হচ্ছে…' : 'Generating PDF…');
+                      await downloadSlipAsPdf(slipModal.html, slipModal.filename);
+                      toast.success(bn ? 'PDF ডাউনলোড সম্পন্ন' : 'PDF downloaded');
+                    } catch {
+                      toast.error(bn ? 'PDF তৈরিতে সমস্যা' : 'Failed to generate PDF');
+                    } finally {
+                      setSlipModalLoading(null);
+                    }
+                  }}
+                >
+                  <Download className="h-4 w-4" />
+                  <span>{slipModalLoading === 'download' ? (bn ? 'হচ্ছে…' : 'Generating…') : (bn ? 'PDF ডাউনলোড' : 'PDF')}</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="bg-white/10 hover:bg-white/20 text-white border-white/20 font-medium gap-1.5"
+                  disabled={slipModalLoading === 'share'}
+                  onClick={async () => {
+                    if (!slipModal) return;
+                    setSlipModalLoading('share');
+                    try {
+                      toast.info(bn ? 'শেয়ার প্রস্তুত হচ্ছে…' : 'Preparing share…');
+                      const shared = await shareSlipPdf(slipModal.html, slipModal.filename, bn ? 'বেতন স্লিপ' : 'Salary Slip');
+                      if (shared) toast.success(bn ? 'শেয়ার সম্পন্ন' : 'Shared successfully');
+                    } catch {
+                      toast.error(bn ? 'শেয়ারে সমস্যা' : 'Failed to share');
+                    } finally {
+                      setSlipModalLoading(null);
+                    }
+                  }}
+                >
+                  <Share2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">{bn ? 'শেয়ার করুন' : 'Share'}</span>
+                </Button>
+              </div>
+            </div>
+
+            {/* Slip Interactive Preview Body */}
+            <div className="flex-1 overflow-auto p-3 sm:p-5 bg-slate-100 dark:bg-slate-950 flex justify-center items-start min-h-[350px] max-h-[75vh]">
+              {slipModal && (
+                <div className="w-full max-w-[820px] bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden flex flex-col items-center">
+                  <iframe
+                    srcDoc={slipModal.html}
+                    title="Salary Slip Preview"
+                    className="w-full min-h-[750px] border-0 bg-white"
+                    style={{ height: '780px' }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Footer for convenient thumb access */}
+            <div className="sm:hidden p-2.5 border-t bg-background flex items-center justify-between gap-2">
+              <Button
+                size="sm"
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1.5"
+                onClick={() => {
+                  if (slipModal) {
+                    printSalarySlipHtml(slipModal.html, slipModal.staff?.name_en || slipModal.staff?.name_bn);
+                  }
+                }}
+              >
+                <Printer className="h-4 w-4" />
+                <span>{bn ? 'সরাসরি প্রিন্ট' : 'Print Now'}</span>
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1"
+                disabled={slipModalLoading === 'download'}
+                onClick={async () => {
+                  if (!slipModal) return;
+                  setSlipModalLoading('download');
+                  try {
+                    await downloadSlipAsPdf(slipModal.html, slipModal.filename);
+                    toast.success(bn ? 'PDF ডাউনলোড সম্পন্ন' : 'PDF downloaded');
+                  } finally {
+                    setSlipModalLoading(null);
+                  }
+                }}
+              >
+                <Download className="h-4 w-4 mr-1" />
+                <span>PDF</span>
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setSlipModal(null)}
+              >
+                {bn ? 'বন্ধ' : 'Close'}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
