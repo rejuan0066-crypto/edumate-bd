@@ -77,6 +77,7 @@ export const usePermissions = () => {
     '/admin/support-staff': ['/admin/staff'],
     '/admin/directors': ['/admin/staff'],
     '/admin/committee-members': ['/admin/staff'],
+    '/admin/staff': ['/admin/teachers', '/admin/general-staff', '/admin/administrative-staff', '/admin/support-staff'],
     '/admin/fee-receipts': ['/admin/students-fees', '/admin/fees'],
     '/admin/fee-payments-fix': ['/admin/fee-receipts', '/admin/students-fees', '/admin/fees'],
     '/admin/receipt-audit': ['/admin/fee-receipts', '/admin/students-fees', '/admin/fees'],
@@ -109,16 +110,13 @@ export const usePermissions = () => {
 
     const candidates = pathCandidates(menuPath);
 
-    // If user has individual permissions set, check individual overrides first
+    // If user has individual permissions set, ONLY use those (strictly no role fallback).
+    // This ensures only the exact pages granted to the user will appear in the sidebar
+    // and be accessible across the app.
     if (hasUserOverrides) {
       for (const path of candidates) {
         const userPerm = userPermissions.find((p) => p.menu_path === path);
         if (userPerm) return pickAction(userPerm, action);
-      }
-      // If this specific path is not configured in individual overrides, fall back to role permissions
-      for (const path of candidates) {
-        const perm = rolePermissions.find((p) => p.menu_path === path);
-        if (perm) return pickAction(perm, action);
       }
       return false;
     }

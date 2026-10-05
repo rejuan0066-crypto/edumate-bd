@@ -155,7 +155,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     const basePath = path.split('?')[0];
     // Internal messaging is available to every signed-in user
     if (basePath === '/admin' || basePath === '/admin/profile' || basePath === '/admin/messages') return true;
-    return canView(basePath) || hasUserPermission(basePath, 'view');
+    return canView(basePath);
   };
 
   const toggleGroup = (key: string) => {
@@ -272,11 +272,15 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
 
   const canAccessParent = (item: MenuItemConfig): boolean => {
     if (isAdmin) return true;
-    if (canAccessPath(item.path)) return true;
     if (item.children && item.children.length > 0) {
-      return item.children.some(c => c.visible && canAccessPath(c.path));
+      const hasAccessibleChild = item.children.some(c => c.visible && !c.tab_of && canAccessPath(c.path));
+      if (hasAccessibleChild) return true;
+      if (item.path && item.path !== '#' && canAccessPath(item.path)) {
+        return true;
+      }
+      return false;
     }
-    return false;
+    return canAccessPath(item.path);
   };
 
   const baseMenuItems: MenuItem[] = dedupeTopLevelMenuItems(
@@ -289,7 +293,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   const menuItems: MenuItem[] = baseMenuItems.map(item => {
     const subForms = dedupeMenuEntries(
       publishedForms
-        .filter(f => f.publish_to === 'sub_menu' && f.parent_menu === item.path)
+        .filter(f => f.publish_to === 'sub_menu' && f.parent_menu === item.path && (isAdmin || canAccessPath(`/admin/custom/${f.menu_slug}`)))
         .map(f => ({
           path: `/admin/custom/${f.menu_slug}`,
           label: language === 'bn' ? f.name_bn : f.name,
@@ -306,7 +310,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
 
   dedupeMenuEntries(
     publishedForms
-      .filter(f => f.publish_to === 'main_menu')
+      .filter(f => f.publish_to === 'main_menu' && (isAdmin || canAccessPath(`/admin/custom/${f.menu_slug}`)))
       .map(f => ({
         path: `/admin/custom/${f.menu_slug}`,
         label: language === 'bn' ? f.name_bn : f.name,
@@ -527,8 +531,10 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
                       {/* Accordion submenu — parent's own page injected as first item */}
                       <div className={`sidebar-submenu-slide ${isGroupOpen ? 'sidebar-submenu-open' : ''}`}>
                         <div className="sidebar-submenu-container">
-                          {/* Parent's own page as first sub-item */}
+                          {/* Parent's own page as first sub-item only if accessible, valid, and not already in children */}
                           {(() => {
+                            if (!item.path || item.path === '#' || !canAccessPath(item.path)) return null;
+                            if (item.children?.some(c => c.path === item.path)) return null;
                             const parentActive = isDirectActive && !hasActiveChild;
                             return (
                               <Link

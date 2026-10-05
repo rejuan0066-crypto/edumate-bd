@@ -1117,7 +1117,7 @@ const AdminUserManagement = () => {
     setPermSaving(true);
     try {
       await supabase.from('user_permissions').delete().eq('user_id', permUser.id);
-      const toInsert = userPerms
+      let toInsert = userPerms
         .filter(p => p.can_view || p.can_add || p.can_edit || p.can_delete || p.can_approve)
         .map(p => ({
           user_id: permUser.id,
@@ -1132,10 +1132,47 @@ const AdminUserManagement = () => {
           approval_edit: p.approval_edit,
           approval_delete: p.approval_delete,
         }));
-      if (toInsert.length > 0) {
-        const { error } = await supabase.from('user_permissions').insert(toInsert);
-        if (error) throw error;
+
+      // If user has attendance sub-permission, bridge /admin/attendance for DB RLS compatibility
+      const hasStudentAtt = toInsert.find(p => p.menu_path === '/admin/student-attendance');
+      const hasStaffAtt = toInsert.find(p => p.menu_path === '/admin/staff-attendance');
+      const hasMainAtt = toInsert.find(p => p.menu_path === '/admin/attendance');
+      if ((hasStudentAtt || hasStaffAtt) && !hasMainAtt) {
+        toInsert.push({
+          user_id: permUser.id,
+          menu_path: '/admin/attendance',
+          can_view: true,
+          can_add: (hasStudentAtt?.can_add || hasStaffAtt?.can_add) ?? false,
+          can_edit: (hasStudentAtt?.can_edit || hasStaffAtt?.can_edit) ?? false,
+          can_delete: (hasStudentAtt?.can_delete || hasStaffAtt?.can_delete) ?? false,
+          can_approve: (hasStudentAtt?.can_approve || hasStaffAtt?.can_approve) ?? false,
+          approval_view: false,
+          approval_add: false,
+          approval_edit: false,
+          approval_delete: false,
+        });
       }
+
+      // If admin intentionally unchecked all permissions, store a sentinel row so
+      // the user has explicit overrides and strictly nothing is shown
+      if (toInsert.length === 0) {
+        toInsert = [{
+          user_id: permUser.id,
+          menu_path: '__blocked__',
+          can_view: false,
+          can_add: false,
+          can_edit: false,
+          can_delete: false,
+          can_approve: false,
+          approval_view: false,
+          approval_add: false,
+          approval_edit: false,
+          approval_delete: false,
+        }];
+      }
+
+      const { error } = await supabase.from('user_permissions').insert(toInsert);
+      if (error) throw error;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['user-permissions'] }),
         queryClient.invalidateQueries({ queryKey: ['role-permissions'] }),
