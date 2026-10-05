@@ -919,13 +919,57 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
         if (error) throw error;
       }
     },
+    onMutate: async ({ entityId, status, remarks, check_in_time, check_out_time }) => {
+      // Cancel any outgoing refetches so they don't overwrite optimistic update
+      const queryKey = ['attendance', selectedDate, entityType, effectiveShift];
+      await queryClient.cancelQueries({ queryKey });
+      // Snapshot previous value for rollback on error
+      const previousAttendance = queryClient.getQueryData(queryKey);
+      // Optimistically update cache immediately — UI responds instantly without waiting for server
+      queryClient.setQueryData(queryKey, (old: any) => {
+        if (!Array.isArray(old)) return old;
+        const existing = old.find((a: any) => a.entity_id === entityId);
+        const autoTimes = getAutoAttendanceTimes(entityId, status, existing);
+        const optimisticRecord: any = {
+          ...(existing ?? {
+            id: `optimistic-${entityId}`,
+            attendance_date: selectedDate,
+            entity_type: entityType,
+            entity_id: entityId,
+            shift: effectiveShift,
+          }),
+          status,
+          remarks: remarks ?? existing?.remarks,
+          check_in_time: check_in_time !== undefined ? check_in_time : (autoTimes.check_in_time ?? existing?.check_in_time),
+          check_out_time: check_out_time !== undefined ? check_out_time : (autoTimes.check_out_time ?? existing?.check_out_time),
+          updated_at: new Date().toISOString(),
+        };
+        if (status === 'absent' || status === 'leave') {
+          optimisticRecord.check_in_time = null;
+          optimisticRecord.check_out_time = null;
+        }
+        if (existing) {
+          return old.map((a: any) => a.entity_id === entityId ? optimisticRecord : a);
+        }
+        return [...old, optimisticRecord];
+      });
+      return { previousAttendance, queryKey };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType, effectiveShift] });
       queryClient.invalidateQueries({ queryKey: ['salary-attendance'] });
       queryClient.invalidateQueries({ queryKey: ['salary-duty-attendance'] });
     },
-    onError: (err) => { console.error('Attendance save error:', err); toast.error(bn ? 'সেভ করতে সমস্যা' : 'Failed to save'); },
+    onError: (err, _vars, context: any) => {
+      // Rollback UI to previous state if save fails
+      if (context?.previousAttendance !== undefined) {
+        queryClient.setQueryData(context.queryKey, context.previousAttendance);
+      }
+      console.error('Attendance save error:', err);
+      toast.error(bn ? 'সেভ করতে সমস্যা হয়েছে, আবার চেষ্টা করুন' : 'Failed to save. Please try again.');
+    },
   });
+
 
   // Bulk mark all
   const bulkMutation = useMutation({
