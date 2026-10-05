@@ -150,7 +150,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     if (staffSubTab === 'duty' && !['morning', 'evening'].includes(selectedShift)) setSelectedShift('morning');
     else if (staffSubTab === 'meal' && !selectedShift.startsWith('meal_')) setSelectedShift('meal_breakfast');
     else if (staffSubTab === 'fulltime' && selectedShift !== 'full_day') setSelectedShift('full_day');
-  }, [staffSubTab]);
+  }, [staffSubTab, selectedShift]);
 
   const [qrPosterOpen, setQrPosterOpen] = useState(false);
   const [deviceManagerOpen, setDeviceManagerOpen] = useState(false);
@@ -336,12 +336,12 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   }, [academicSessions, allStudents, bn]);
 
   // Set default session
-  useMemo(() => {
+  useEffect(() => {
     if (sessionOptions.length > 0 && !selectedSessionYear) {
       const active = academicSessions.find((s: any) => s.is_active);
       setSelectedSessionYear(active?.id || sessionOptions[0].value);
     }
-  }, [sessionOptions, academicSessions]);
+  }, [sessionOptions, academicSessions, selectedSessionYear]);
 
   const orderedClasses = useMemo(() => {
     const divisionOrder = new Map(divisions.map((d: any, index: number) => [d.id, d.sort_order ?? index]));
@@ -531,7 +531,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   });
 
   // Sync loaded duty times to state
-  useMemo(() => {
+  useEffect(() => {
     if (savedDutyTimes) {
       setDutyTimes({
         morning_start: savedDutyTimes.morning_start || '06:00',
@@ -985,11 +985,43 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       const { error } = await supabase.from('attendance_records').insert(records);
       if (error) throw error;
     },
+    onMutate: async (status: string) => {
+      const queryKey = ['attendance', selectedDate, entityType, effectiveShift];
+      await queryClient.cancelQueries({ queryKey });
+      const previousAttendance = queryClient.getQueryData(queryKey);
+      queryClient.setQueryData(queryKey, (old: any) => {
+        if (!Array.isArray(old)) return old;
+        const unmarked = entities.filter((e: any) => !old.some((a: any) => a.entity_id === e.id));
+        const newRecords = unmarked.map((e: any) => {
+          const autoTimes = getAutoAttendanceTimes(e.id, status);
+          return {
+            id: `optimistic-bulk-${e.id}`,
+            attendance_date: selectedDate,
+            entity_type: entityType,
+            entity_id: e.id,
+            shift: effectiveShift,
+            status,
+            check_in_time: autoTimes.check_in_time || null,
+            check_out_time: autoTimes.check_out_time || null,
+            updated_at: new Date().toISOString(),
+          };
+        });
+        return [...old, ...newRecords];
+      });
+      return { previousAttendance, queryKey };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType, effectiveShift] });
       queryClient.invalidateQueries({ queryKey: ['salary-attendance'] });
       queryClient.invalidateQueries({ queryKey: ['salary-duty-attendance'] });
       toast.success(bn ? 'সবার উপস্থিতি সেভ হয়েছে' : 'Bulk attendance saved');
+    },
+    onError: (err, _vars, context: any) => {
+      if (context?.previousAttendance !== undefined) {
+        queryClient.setQueryData(context.queryKey, context.previousAttendance);
+      }
+      console.error('Bulk attendance error:', err);
+      toast.error(bn ? 'সেভ করতে সমস্যা হয়েছে' : 'Failed to save bulk attendance');
     },
   });
 

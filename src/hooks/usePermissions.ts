@@ -30,6 +30,7 @@ export const usePermissions = () => {
       return data as Permission[];
     },
     enabled: !authLoading && !!role,
+    staleTime: 5 * 60 * 1000,
   });
 
   // User-specific permissions (override role permissions)
@@ -45,9 +46,10 @@ export const usePermissions = () => {
       return (data || []) as (Permission & { requires_approval?: boolean })[];
     },
     enabled: !authLoading && !!user?.id,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const isLoading = roleLoading || userLoading;
+  const isLoading = authLoading || roleLoading || userLoading;
 
   // If user has ANY user_permissions entries, those become the sole authority
   // (no fallback to role permissions). This ensures the individual permission

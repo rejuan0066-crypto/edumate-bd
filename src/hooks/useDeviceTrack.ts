@@ -17,13 +17,19 @@ export function useDeviceTrack() {
     const last = Number(localStorage.getItem(STORAGE_KEY) ?? 0);
     if (Date.now() - last < TTL_MS) return;
     fired.current = true;
+    let mounted = true;
     (async () => {
       try {
         await supabase.functions.invoke("device-track", { headers: deviceHeaders() });
-        localStorage.setItem(STORAGE_KEY, String(Date.now()));
+        if (mounted) {
+          localStorage.setItem(STORAGE_KEY, String(Date.now()));
+        }
       } catch {
         /* non-fatal */
       }
     })();
+    return () => {
+      mounted = false;
+    };
   }, [user?.id]);
 }

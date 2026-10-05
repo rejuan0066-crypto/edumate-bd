@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useTimeFormat, formatTimeDisplay } from '@/hooks/useTimeFormat';
 import { useResignedStaff } from '@/hooks/useResignedStaff';
 import { useAppTimezone } from '@/hooks/useAppTimezone';
@@ -1069,15 +1069,15 @@ const AdminSalary = () => {
     return `${monthYear}-${String(lastDay).padStart(2, '0')}`;
   })();
   const { isResignedBeforeMonth, isResignedInMonth, resignDateByStaff, getResignDate } = useResignedStaff();
-  const hasJoinedByMonth = (s: any): boolean => {
+  const hasJoinedByMonth = useCallback((s: any): boolean => {
     const jd = s?.joining_date ? String(s.joining_date).slice(0, 10) : '';
     if (!jd) return true; // unknown joining date → always include (legacy data)
     return jd <= monthEndDate;
-  };
+  }, [monthEndDate]);
   // Inactive (resigned/left) staff should still appear in the months where a
   // salary record already exists, but never in future months after resignation.
   // In the month they resigned, they MUST appear so their final salary up to resign date can be processed.
-  const isInMonthRoster = (s: any): boolean => {
+  const isInMonthRoster = useCallback((s: any): boolean => {
     if (!hasJoinedByMonth(s)) return false;
     const rd = getResignDate(s?.id);
     if (rd) {
@@ -1094,7 +1094,7 @@ const AdminSalary = () => {
       return salaryRecords.some((r: any) => r.staff_id === s.id);
     }
     return true;
-  };
+  }, [hasJoinedByMonth, getResignDate, monthYear, salaryRecords]);
   // First day this staff is counted within the selected month (joining date if
   // they joined mid-month, otherwise the 1st).
   const joinedFromDay = (s: any): number => {
@@ -1443,8 +1443,7 @@ const AdminSalary = () => {
     const preJoinDays = attStats.preJoinDays || 0;
     // Days after the resign date are excluded too — a mid-month resignee is
     // paid only up to the resign date.
-    const postResignDays = attStats.postResignDays || 0;
-    const workingDays = daysInMonth - preJoinDays - postResignDays;
+    const workingDays = Math.max(0, daysInMonth - preJoinDays - postResignDays);
 
     const bonus = 0;
     const otherAllowance = 0;
@@ -1810,8 +1809,11 @@ const AdminSalary = () => {
         const monthName = MONTHS.find(m => m.value === selectedMonth);
         const description = `${bn ? 'বেতন' : 'Salary'}: ${staffMember?.name_bn || 'Staff'} - ${bn ? monthName?.bn : monthName?.en} ${selectedYear}`;
 
+        const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').replace(/\/$/, '');
         const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-        const pdfUrl = `https://${projectRef}.supabase.co/functions/v1/salary-pdf`;
+        const pdfUrl = supabaseUrl
+          ? `${supabaseUrl}/functions/v1/salary-pdf`
+          : (projectRef ? `https://${projectRef}.supabase.co/functions/v1/salary-pdf` : null);
 
         // হিসাব/লেজারে বেতন অবশ্যই নির্বাচিত salary month-এই যাবে — payment date/current month নয়।
         const expenseMonthYear = getExpenseMonthYearFromSalaryMonth(record.month_year || monthYear);
@@ -1936,23 +1938,25 @@ const AdminSalary = () => {
   });
 
   // Filter staff (search + eligibility/status filter)
-  const filtered = staff.filter((s: any) => {
-    // Hide staff who had not yet joined by the selected month.
-    if (!isInMonthRoster(s)) return false;
-    const q = searchQuery.toLowerCase();
-    const matchesSearch = (s.name_bn + (s.name_en || '') + (s.designation || '')).toLowerCase().includes(q);
-    if (!matchesSearch) return false;
-    if (eligibilityFilter === 'all') return true;
-    const rec = salaryRecords.find((r: any) => r.staff_id === s.id);
-    const requireAttendance = (settings.find((st: any) => st.setting_key === 'require_attendance')?.setting_value as any)?.enabled !== false;
-    const hasAttendance = attendanceData.some((a: any) => a.entity_id === s.id);
-    const isEligible = (!requireAttendance || hasAttendance) && Number(s.salary || 0) > 0;
-    if (eligibilityFilter === 'eligible') return !rec && isEligible;
-    if (eligibilityFilter === 'not_generated') return !rec;
-    if (eligibilityFilter === 'pending') return rec && rec.status === 'pending';
-    if (eligibilityFilter === 'paid') return rec && rec.status === 'paid';
-    return true;
-  });
+  const filtered = useMemo(() => {
+    return staff.filter((s: any) => {
+      // Hide staff who had not yet joined by the selected month.
+      if (!isInMonthRoster(s)) return false;
+      const q = searchQuery.toLowerCase();
+      const matchesSearch = (s.name_bn + (s.name_en || '') + (s.designation || '')).toLowerCase().includes(q);
+      if (!matchesSearch) return false;
+      if (eligibilityFilter === 'all') return true;
+      const rec = salaryRecords.find((r: any) => r.staff_id === s.id);
+      const requireAttendance = (settings.find((st: any) => st.setting_key === 'require_attendance')?.setting_value as any)?.enabled !== false;
+      const hasAttendance = attendanceData.some((a: any) => a.entity_id === s.id);
+      const isEligible = (!requireAttendance || hasAttendance) && Number(s.salary || 0) > 0;
+      if (eligibilityFilter === 'eligible') return !rec && isEligible;
+      if (eligibilityFilter === 'not_generated') return !rec;
+      if (eligibilityFilter === 'pending') return rec && rec.status === 'pending';
+      if (eligibilityFilter === 'paid') return rec && rec.status === 'paid';
+      return true;
+    });
+  }, [staff, isInMonthRoster, searchQuery, eligibilityFilter, salaryRecords, settings, attendanceData]);
 
   // Get record for a staff
   const getRecord = (staffId: string) => salaryRecords.find((r: any) => r.staff_id === staffId);

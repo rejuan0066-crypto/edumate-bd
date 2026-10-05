@@ -17,17 +17,18 @@ import { ConfirmProvider } from "@/contexts/ConfirmContext";
 import { useDeviceRegistration } from "@/hooks/useDeviceRegistration";
 import { useDeviceTrack } from "@/hooks/useDeviceTrack";
 
-const DeviceRegistrar = () => {
-  useDeviceRegistration();
-  useDeviceTrack();
-  return null;
-};
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DynamicFavicon from "@/components/DynamicFavicon";
 import UpdatePrompt from "@/components/UpdatePrompt";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+
+const DeviceRegistrar = () => {
+  useDeviceRegistration();
+  useDeviceTrack();
+  return null;
+};
 
 // Lazy-loaded public pages (rarely visited on first PWA boot)
 const About = lazy(() => import("./pages/About"));
@@ -324,9 +325,11 @@ const AdminShell = () => (
       {/* Inner Suspense keeps the admin shell mounted while a lazy page chunk
           loads, so navigation shows a single contained shimmer instead of a
           full-screen loader swap (the "double flash"). */}
-      <Suspense fallback={<RouteShimmer />}>
-        <Outlet />
-      </Suspense>
+      <ErrorBoundary>
+        <Suspense fallback={<RouteShimmer />}>
+          <Outlet />
+        </Suspense>
+      </ErrorBoundary>
     </AdminLayout>
   </ProtectedRoute>
 );
@@ -442,7 +445,7 @@ const App = () => (
                     <Route path="website" element={<ModuleGuard menuPath="/admin/website"><AdminWebsite /></ModuleGuard>} />
                     <Route path="expenses" element={<ModuleGuard menuPath="/admin/expenses"><AdminExpenses /></ModuleGuard>} />
                     <Route path="donors" element={<ModuleGuard menuPath="/admin/donors"><AdminDonors /></ModuleGuard>} />
-                    <Route path="verified-payments" element={<ModuleGuard menuPath="/admin/donors"><AdminVerifiedPayments /></ModuleGuard>} />
+                    <Route path="verified-payments" element={<ModuleGuard menuPath="/admin/verified-payments"><AdminVerifiedPayments /></ModuleGuard>} />
                     <Route path="profile" element={<AdminProfile />} />
                     <Route path="fee-receipts" element={<ModuleGuard menuPath="/admin/fee-receipts"><AdminFeeReceipts /></ModuleGuard>} />
                     <Route path="fee-payments-fix" element={<ModuleGuard menuPath="/admin/fee-receipts"><AdminFeePaymentsFix /></ModuleGuard>} />

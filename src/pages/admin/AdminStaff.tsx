@@ -12,7 +12,7 @@ import StaffDutyTimeDialog from '@/components/admin/StaffDutyTimeDialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useResignedStaff } from '@/hooks/useResignedStaff';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
@@ -141,15 +141,23 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
     },
   });
 
-  const designationsMap = new Map<string, string>();
-  designationsList.forEach((d: any) => {
-    if (d.staff_category) {
-      if (d.name) designationsMap.set(d.name.toLowerCase(), d.staff_category);
-      if (d.name_bn) designationsMap.set(d.name_bn.toLowerCase(), d.staff_category);
-    }
-  });
-  const activeCategoryKeys = new Set((staffCategories as any[]).map((c: any) => c.key));
-  const labelForCategory = (key: string) => {
+  const designationsMap = useMemo(() => {
+    const map = new Map<string, string>();
+    designationsList.forEach((d: any) => {
+      if (d.staff_category) {
+        if (d.name) map.set(d.name.toLowerCase(), d.staff_category);
+        if (d.name_bn) map.set(d.name_bn.toLowerCase(), d.staff_category);
+      }
+    });
+    return map;
+  }, [designationsList]);
+
+  const activeCategoryKeys = useMemo(
+    () => new Set((staffCategories as any[]).map((c: any) => c.key)),
+    [staffCategories]
+  );
+
+  const labelForCategory = useMemo(() => (key: string) => {
     const category = (staffCategories as any[]).find((c: any) => c.key === key);
     if (category) return bn ? (category.name_bn || category.name) : (category.name || category.name_bn);
 
@@ -162,7 +170,8 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
       administrative: { bn: 'প্রশাসনিক', en: 'Administrative' },
     };
     return fallbackLabels[key]?.[bn ? 'bn' : 'en'] || key;
-  };
+  }, [staffCategories, bn]);
+
 
   const statusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
@@ -189,12 +198,26 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
         }
       }
     },
+    onMutate: async ({ id, status }) => {
+      await queryClient.cancelQueries({ queryKey: ['staff'] });
+      const previousStaff = queryClient.getQueryData(['staff']);
+      queryClient.setQueryData(['staff'], (old: any[]) => {
+        if (!Array.isArray(old)) return old;
+        return old.map((s: any) => s.id === id ? { ...s, status } : s);
+      });
+      return { previousStaff };
+    },
     onSuccess: (_, { status }) => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
       queryClient.invalidateQueries({ queryKey: ['joining-letters'] });
       toast.success(status === 'active' ? (bn ? '✅ অনুমোদিত ও যোগদান পত্র তৈরি হয়েছে' : '✅ Approved & Joining Letter Created') : (bn ? '❌ বাতিল করা হয়েছে' : '❌ Rejected'));
     },
-    onError: () => toast.error(bn ? 'সমস্যা হয়েছে' : 'Error'),
+    onError: (_err, _vars, context: any) => {
+      if (context?.previousStaff) {
+        queryClient.setQueryData(['staff'], context.previousStaff);
+      }
+      toast.error(bn ? 'সমস্যা হয়েছে' : 'Error');
+    },
   });
 
   const deleteMutation = useMutation({
@@ -242,7 +265,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
     onError: () => toast.error(bn ? 'সমস্যা হয়েছে' : 'Error'),
   });
 
-  const typeFiltered = staffType === 'all' ? staffList : staffList.filter((s: any) => {
+  const typeFiltered = useMemo(() => staffType === 'all' ? staffList : staffList.filter((s: any) => {
     // Director / committee member: rely strictly on the stored staff_category column
     if (staffType === 'director') return s.staff_category === 'director';
     if (staffType === 'committee_member') return s.staff_category === 'committee_member';
@@ -252,14 +275,14 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
     if (staffType === 'support') return category === 'support';
     if (staffType === 'staff') return category === 'general';
     return true;
-  });
+  }), [staffList, staffType, designationsMap, activeCategoryKeys]);
 
   const { isResignedOnDate, resignDateByStaff, getResignDate } = useResignedStaff();
-  const todayISO = new Date().toISOString().split('T')[0];
+  const todayISO = useMemo(() => new Date().toISOString().split('T')[0], []);
 
-  const isStaffResigned = (s: any) => {
+  const isStaffResigned = useMemo(() => (s: any) => {
     return isResignedOnDate(s?.id, todayISO) || s?.status === 'resigned' || (s?.status === 'inactive' && !!getResignDate(s?.id));
-  };
+  }, [isResignedOnDate, todayISO, getResignDate]);
 
   // Auto-sync staff status in DB if they have an active resignation
   useEffect(() => {
@@ -268,20 +291,26 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
       (s: any) => s.status === 'active' && isResignedOnDate(s.id, todayISO)
     );
     if (toDeactivate.length > 0) {
-      toDeactivate.forEach(async (s: any) => {
-        try {
-          await supabase.from('staff').update({ status: 'inactive' }).eq('id', s.id);
-        } catch (_) {}
-      });
+      const ids = toDeactivate.map((s: any) => s.id);
+      supabase
+        .from('staff')
+        .update({ status: 'inactive' })
+        .in('id', ids)
+        .then(({ error }) => {
+          if (!error) {
+            queryClient.invalidateQueries({ queryKey: ['staff'] });
+          }
+        })
+        .catch(console.error);
     }
-  }, [staffListRaw, isResignedOnDate, todayISO]);
+  }, [staffListRaw, isResignedOnDate, todayISO, queryClient]);
 
-  const pendingCount = typeFiltered.filter((s: any) => s.status === 'pending').length;
-  const resignedCount = typeFiltered.filter((s: any) => isStaffResigned(s)).length;
-  const activeCount = typeFiltered.filter((s: any) => s.status === 'active' && !isStaffResigned(s)).length;
-  const inactiveCount = typeFiltered.filter((s: any) => (s.status === 'inactive' || isStaffResigned(s))).length;
+  const pendingCount = useMemo(() => typeFiltered.filter((s: any) => s.status === 'pending').length, [typeFiltered]);
+  const resignedCount = useMemo(() => typeFiltered.filter((s: any) => isStaffResigned(s)).length, [typeFiltered, isStaffResigned]);
+  const activeCount = useMemo(() => typeFiltered.filter((s: any) => s.status === 'active' && !isStaffResigned(s)).length, [typeFiltered, isStaffResigned]);
+  const inactiveCount = useMemo(() => typeFiltered.filter((s: any) => (s.status === 'inactive' || isStaffResigned(s))).length, [typeFiltered, isStaffResigned]);
 
-  const preFiltered = typeFiltered.filter((s: any) => {
+  const preFiltered = useMemo(() => typeFiltered.filter((s: any) => {
     const isResigned = isStaffResigned(s);
     if (statusFilter === 'active') {
       if (isResigned || s.status !== 'active') return false;
@@ -306,23 +335,23 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
       || cat.toLowerCase().includes(q)
       || catLabel.toLowerCase().includes(q)
       || (s.department || '').toLowerCase().includes(q);
-  });
+  }), [typeFiltered, isStaffResigned, statusFilter, departmentFilter, designationsMap, activeCategoryKeys, search, labelForCategory]);
 
-  const getSortVal = (s: any): string => {
-    switch (sortKey) {
-      case 'name': return (bn ? (s.name_bn || s.name_en) : (s.name_en || s.name_bn)) || '';
-      case 'staff_id': return s.staff_id || '\uffff'; // empty IDs sort last on asc
-      case 'designation': return s.designation || '';
-      case 'department': return labelForCategory(getStaffCategory(s, designationsMap, activeCategoryKeys));
-      case 'status': return s.status || '';
-    }
-  };
-  const filtered = [...preFiltered].sort((a, b) => {
+  const filtered = useMemo(() => [...preFiltered].sort((a, b) => {
+    const getSortVal = (s: any): string => {
+      switch (sortKey) {
+        case 'name': return (bn ? (s.name_bn || s.name_en) : (s.name_en || s.name_bn)) || '';
+        case 'staff_id': return s.staff_id || '\uffff'; // empty IDs sort last on asc
+        case 'designation': return s.designation || '';
+        case 'department': return labelForCategory(getStaffCategory(s, designationsMap, activeCategoryKeys));
+        case 'status': return s.status || '';
+      }
+    };
     const av = getSortVal(a);
     const bv = getSortVal(b);
     const cmp = String(av).localeCompare(String(bv), bn ? 'bn' : 'en', { numeric: true, sensitivity: 'base' });
     return sortDir === 'asc' ? cmp : -cmp;
-  });
+  }), [preFiltered, sortKey, sortDir, bn, designationsMap, activeCategoryKeys, labelForCategory]);
 
   const toggleSort = (key: typeof sortKey) => {
     if (sortKey === key) setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
@@ -394,9 +423,11 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
     setGeneratingIds(true);
     try {
       const staffWithoutId = staffList.filter((s: any) => !s.staff_id);
-      for (const s of staffWithoutId) {
-        await supabase.from('staff').update({ updated_at: new Date().toISOString() }).eq('id', s.id);
-      }
+      await Promise.all(
+        staffWithoutId.map((s: any) =>
+          supabase.from('staff').update({ updated_at: new Date().toISOString() }).eq('id', s.id)
+        )
+      );
       queryClient.invalidateQueries({ queryKey: ['staff'] });
       toast.success(bn ? `${staffWithoutId.length} জন কর্মীর আইডি জেনারেট হয়েছে` : `Generated IDs for ${staffWithoutId.length} staff`);
     } catch {
