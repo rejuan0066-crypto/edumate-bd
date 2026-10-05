@@ -67,7 +67,25 @@ export const usePermissions = () => {
     }
   };
 
-  /** '/admin/students/add' -> ['/admin/students/add', '/admin/students'] */
+  const MENU_ALIASES: Record<string, string[]> = {
+    '/admin/student-attendance': ['/admin/attendance'],
+    '/admin/staff-attendance': ['/admin/attendance'],
+    '/admin/attendance': ['/admin/student-attendance', '/admin/staff-attendance'],
+    '/admin/teachers': ['/admin/staff'],
+    '/admin/general-staff': ['/admin/staff'],
+    '/admin/administrative-staff': ['/admin/staff'],
+    '/admin/support-staff': ['/admin/staff'],
+    '/admin/directors': ['/admin/staff'],
+    '/admin/committee-members': ['/admin/staff'],
+    '/admin/fee-receipts': ['/admin/students-fees', '/admin/fees'],
+    '/admin/fee-payments-fix': ['/admin/fee-receipts', '/admin/students-fees', '/admin/fees'],
+    '/admin/receipt-audit': ['/admin/fee-receipts', '/admin/students-fees', '/admin/fees'],
+    '/admin/students-fees': ['/admin/fees', '/admin/fee-receipts'],
+    '/admin/salary-pdf-columns': ['/admin/salary'],
+    '/admin/salary-memo-search': ['/admin/salary'],
+  };
+
+  /** '/admin/students/add' -> ['/admin/students/add', '/admin/students', ...aliases] */
   const pathCandidates = (menuPath: string): string[] => {
     const out: string[] = [];
     let p = menuPath;
@@ -77,6 +95,12 @@ export const usePermissions = () => {
       if (idx <= 0) break;
       p = p.slice(0, idx);
     }
+    const aliases = MENU_ALIASES[menuPath];
+    if (aliases) {
+      aliases.forEach((a) => {
+        if (!out.includes(a)) out.push(a);
+      });
+    }
     return out;
   };
 
@@ -85,18 +109,23 @@ export const usePermissions = () => {
 
     const candidates = pathCandidates(menuPath);
 
-    // If user has individual permissions set, ONLY use those (no role fallback)
+    // If user has individual permissions set, check individual overrides first
     if (hasUserOverrides) {
       for (const path of candidates) {
-        const userPerm = userPermissions.find(p => p.menu_path === path);
+        const userPerm = userPermissions.find((p) => p.menu_path === path);
         if (userPerm) return pickAction(userPerm, action);
       }
-      return false; // Not in user perms = no access
+      // If this specific path is not configured in individual overrides, fall back to role permissions
+      for (const path of candidates) {
+        const perm = rolePermissions.find((p) => p.menu_path === path);
+        if (perm) return pickAction(perm, action);
+      }
+      return false;
     }
 
     // No user overrides — use role-level permissions
     for (const path of candidates) {
-      const perm = rolePermissions.find(p => p.menu_path === path);
+      const perm = rolePermissions.find((p) => p.menu_path === path);
       if (perm) return pickAction(perm, action);
     }
     return false;

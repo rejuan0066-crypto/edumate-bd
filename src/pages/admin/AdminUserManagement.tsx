@@ -101,7 +101,9 @@ const MENU_PATHS = [
   { path: '/admin/fee-receipts', label_bn: 'ফি রসিদ', label_en: 'Fee Receipts' },
   { path: '/admin/expenses', label_bn: 'হিসাব ব্যবস্থাপনা', label_en: 'Expenses' },
   { path: '/admin/donors', label_bn: 'দাতা তালিকা', label_en: 'Donors' },
-  { path: '/admin/attendance', label_bn: 'হাজিরা', label_en: 'Attendance' },
+  { path: '/admin/attendance', label_bn: 'হাজিরা (সকল)', label_en: 'Attendance (All)' },
+  { path: '/admin/student-attendance', label_bn: 'ছাত্র হাজিরা', label_en: 'Student Attendance' },
+  { path: '/admin/staff-attendance', label_bn: 'স্টাফ/শিক্ষক হাজিরা', label_en: 'Staff Attendance' },
   { path: '/admin/salary', label_bn: 'বেতন ব্যবস্থাপনা', label_en: 'Salary' },
   { path: '/admin/reports', label_bn: 'রিপোর্ট ও অ্যানালিটিক্স', label_en: 'Reports & Analytics' },
   { path: '/admin/website', label_bn: 'ওয়েবসাইট নিয়ন্ত্রণ', label_en: 'Website Control' },
@@ -1045,6 +1047,10 @@ const AdminUserManagement = () => {
         const { error } = await supabase.from('role_permissions').insert(toInsert);
         if (error) throw error;
       }
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['role-permissions'] }),
+        queryClient.invalidateQueries({ queryKey: ['user-permissions'] }),
+      ]);
       toast.success(bn ? '✅ রোল পারমিশন সেভ হয়েছে!' : '✅ Role permissions saved!');
       setRolePermDialogOpen(false);
     } catch (err: any) {
@@ -1058,8 +1064,16 @@ const AdminUserManagement = () => {
     setPermDialogOpen(true);
     setPermLoading(true);
     try {
-      const { data, error } = await supabase.from('user_permissions').select('*').eq('user_id', user.id);
-      if (error) throw error;
+      const [userPermsRes, rolePermsRes] = await Promise.all([
+        supabase.from('user_permissions').select('*').eq('user_id', user.id),
+        supabase.from('role_permissions').select('*').eq('role', user.role),
+      ]);
+      if (userPermsRes.error) throw userPermsRes.error;
+      const userPermsData = userPermsRes.data || [];
+      const rolePermsData = rolePermsRes.data || [];
+      const hasUserOverrides = userPermsData.length > 0;
+      const data = hasUserOverrides ? userPermsData : rolePermsData;
+
       const merged = allMenuPaths.map(mp => {
         const existing = (data || []).find((d: any) => d.menu_path === mp.path);
         return {
@@ -1122,10 +1136,47 @@ const AdminUserManagement = () => {
         const { error } = await supabase.from('user_permissions').insert(toInsert);
         if (error) throw error;
       }
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['user-permissions'] }),
+        queryClient.invalidateQueries({ queryKey: ['role-permissions'] }),
+      ]);
       toast.success(bn ? '✅ পারমিশন সেভ হয়েছে!' : '✅ Permissions saved!');
       setPermDialogOpen(false);
     } catch (err: any) {
       toast.error(err?.message || (bn ? 'পারমিশন সেভ ব্যর্থ' : 'Failed to save permissions'));
+    }
+    setPermSaving(false);
+  };
+
+  const resetToRoleDefaults = async () => {
+    if (!permUser) return;
+    setPermSaving(true);
+    try {
+      await supabase.from('user_permissions').delete().eq('user_id', permUser.id);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['user-permissions'] }),
+        queryClient.invalidateQueries({ queryKey: ['role-permissions'] }),
+      ]);
+      const { data: rolePerms } = await supabase.from('role_permissions').select('*').eq('role', permUser.role);
+      const merged = allMenuPaths.map(mp => {
+        const existing = (rolePerms || []).find((d: any) => d.menu_path === mp.path);
+        return {
+          menu_path: mp.path,
+          can_view: existing?.can_view ?? false,
+          can_add: existing?.can_add ?? false,
+          can_edit: existing?.can_edit ?? false,
+          can_delete: existing?.can_delete ?? false,
+          can_approve: existing?.can_approve ?? false,
+          approval_view: false,
+          approval_add: false,
+          approval_edit: false,
+          approval_delete: false,
+        };
+      });
+      setUserPerms(merged);
+      toast.success(bn ? '✅ ইউজারের রোল অনুযায়ী পারমিশন রিসেট হয়েছে' : '✅ Reset to role default permissions');
+    } catch (err: any) {
+      toast.error(err?.message || (bn ? 'রিসেট ব্যর্থ' : 'Failed to reset'));
     }
     setPermSaving(false);
   };
@@ -1785,10 +1836,21 @@ const AdminUserManagement = () => {
                   </Table>
                 </div>
 
-                <Button onClick={savePermissions} disabled={permSaving} className="w-full btn-primary-gradient">
-                  {permSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                  {bn ? 'পারমিশন সেভ করুন' : 'Save Permissions'}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={resetToRoleDefaults}
+                    disabled={permSaving || permLoading}
+                    className="flex-1"
+                  >
+                    {bn ? 'রোল ডিফল্টে রিসেট' : 'Reset to Role Defaults'}
+                  </Button>
+                  <Button onClick={savePermissions} disabled={permSaving} className="flex-1 btn-primary-gradient">
+                    {permSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                    {bn ? 'পারমিশন সেভ করুন' : 'Save Permissions'}
+                  </Button>
+                </div>
               </div>
             )}
           </DialogContent>

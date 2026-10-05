@@ -86,17 +86,19 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   const { language } = useLanguage();
   const bn = language === 'bn';
   const queryClient = useQueryClient();
-  // Full-time attendance lives on both /admin/attendance and /admin/staff-attendance;
-  // accept permissions granted on either path.
+  // Full-time attendance lives on /admin/attendance, /admin/staff-attendance and /admin/student-attendance;
+  // accept permissions granted on any path.
   const permsA = usePagePermissions('/admin/attendance');
   const permsB = usePagePermissions('/admin/staff-attendance');
-  const canViewPage = permsA.canViewPage || permsB.canViewPage;
-  const canAddItem = permsA.canAddItem || permsB.canAddItem;
-  const canEditItem = permsA.canEditItem || permsB.canEditItem;
-  const canDeleteItem = permsA.canDeleteItem || permsB.canDeleteItem;
-  const canApproveItem = permsA.canApproveItem || permsB.canApproveItem;
-  // New attendance needs add permission; changing a recorded row needs edit permission.
-  const canBulkMark = canViewPage && canAddItem;
+  const permsC = usePagePermissions('/admin/student-attendance');
+  const canViewPage = permsA.canViewPage || permsB.canViewPage || permsC.canViewPage;
+  const canAddItem = permsA.canAddItem || permsB.canAddItem || permsC.canAddItem;
+  const canEditItem = permsA.canEditItem || permsB.canEditItem || permsC.canEditItem;
+  const canDeleteItem = permsA.canDeleteItem || permsB.canDeleteItem || permsC.canDeleteItem;
+  const canApproveItem = permsA.canApproveItem || permsB.canApproveItem || permsC.canApproveItem;
+  // Anyone with add or edit permissions can mark attendance
+  const canMarkAttendance = canAddItem || canEditItem;
+  const canBulkMark = canViewPage && canMarkAttendance;
   const { role } = useAuth();
   const isAdmin = isAdminRole(role);
   // Non-admins can only mark attendance. Settings, rosters, devices, summaries
@@ -2536,18 +2538,18 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                             className="h-8 w-[120px] text-xs rounded-xl bg-background/60 border-border/20 focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20 transition-all"
                             placeholder={bn ? 'প্রবেশ' : 'In'}
                             displayFormat={timeFormat}
-                             value={att?.check_in_time || ''}
-                             disabled={!canEditItem}
-                             onChange={v => saveMutation.mutate({ entityId: entity.id, status: currentStatus || (timeEditorOpenId === entity.id ? 'late' : 'present'), check_in_time: v, check_out_time: att?.check_out_time || '' })}
+                            value={att?.check_in_time || ''}
+                            disabled={!canMarkAttendance}
+                            onChange={v => saveMutation.mutate({ entityId: entity.id, status: currentStatus || (timeEditorOpenId === entity.id ? 'late' : 'present'), check_in_time: v, check_out_time: att?.check_out_time || '' })}
                           />
                           <span className="text-muted-foreground/40 text-xs">—</span>
                           <TimePicker
                             className="h-8 w-[120px] text-xs rounded-xl bg-background/60 border-border/20 focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20 transition-all"
                             placeholder={bn ? 'বাহির' : 'Out'}
                             displayFormat={timeFormat}
-                             value={att?.check_out_time || ''}
-                             disabled={!canEditItem}
-                             onChange={v => saveMutation.mutate({ entityId: entity.id, status: currentStatus || (timeEditorOpenId === entity.id ? 'late' : 'present'), check_in_time: att?.check_in_time || '', check_out_time: v })}
+                            value={att?.check_out_time || ''}
+                            disabled={!canMarkAttendance}
+                            onChange={v => saveMutation.mutate({ entityId: entity.id, status: currentStatus || (timeEditorOpenId === entity.id ? 'late' : 'present'), check_in_time: att?.check_in_time || '', check_out_time: v })}
                           />
                         </div>
                       </div>
@@ -2566,7 +2568,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                           return (
                             <button
                               key={opt.status}
-                              disabled={currentStatus ? !canEditItem : !canAddItem}
+                              disabled={!canMarkAttendance}
                               onClick={() => saveMutation.mutate({ entityId: entity.id, status: opt.status })}
                               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all duration-200 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 ${
                                 isActive 
@@ -2600,7 +2602,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                         return (
                           <button
                             key={rule.id}
-                            disabled={currentStatus ? !canEditItem : !canAddItem}
+                            disabled={!canMarkAttendance}
                             onClick={() => {
                               const mutateData: any = { entityId: entity.id, status: countsAs };
                               if (entityType === 'staff' && staffSubTab !== 'meal' && ['present', 'late', 'half_day'].includes(countsAs)) {

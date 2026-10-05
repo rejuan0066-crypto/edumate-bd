@@ -460,6 +460,7 @@ const App = () => (
                     <Route path="custom/:slug" element={<AdminCustomFormPage />} />
                     <Route path="module-manager" element={<ModuleGuard menuPath="/admin/module-manager"><AdminModuleManager /></ModuleGuard>} />
                     <Route path="formula-builder" element={<ModuleGuard menuPath="/admin/formula-builder"><AdminFormulaBuilder /></ModuleGuard>} />
+                    <Route path="attendance" element={<ModuleGuard menuPath="/admin/attendance"><AdminAttendance /></ModuleGuard>} />
                     <Route path="student-attendance" element={<ModuleGuard menuPath="/admin/student-attendance"><AdminStudentAttendance /></ModuleGuard>} />
                     <Route path="staff-attendance" element={<ModuleGuard menuPath="/admin/staff-attendance"><AdminStaffAttendance /></ModuleGuard>} />
                     <Route path="duty-roster" element={<ModuleGuard menuPath="/admin/duty-roster"><AdminDutyRoster /></ModuleGuard>} />
