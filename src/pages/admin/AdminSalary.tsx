@@ -1441,6 +1441,7 @@ const AdminSalary = () => {
     // Pre-joining days are excluded from this month's working days so a mid-month
     // joiner is paid only from the joining date onward.
     const preJoinDays = attStats.preJoinDays || 0;
+    const postResignDays = attStats.postResignDays || 0;
     // Days after the resign date are excluded too — a mid-month resignee is
     // paid only up to the resign date.
     const workingDays = Math.max(0, daysInMonth - preJoinDays - postResignDays);
