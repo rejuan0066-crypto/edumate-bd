@@ -181,13 +181,14 @@ export async function viewSlipPdfInNewTab(htmlContent: string): Promise<void> {
  */
 export function printSalarySlipHtml(htmlContent: string, staffName: string = 'staff'): void {
   let printableHtml = htmlContent;
+  const appReturnUrl = typeof window !== 'undefined' ? window.location.href : '';
 
   const floatingBar = `
     <div class="print-actions-bar no-print" style="position:fixed;bottom:20px;left:0;right:0;width:fit-content;margin:0 auto;background:#0f172a;color:#fff;padding:8px 16px;border-radius:999px;box-shadow:0 12px 30px rgba(0,0,0,0.35);display:flex;align-items:center;gap:12px;z-index:99999;font-family:system-ui,-apple-system,sans-serif;">
-      <button onclick="window.print()" style="background:#059669;color:#fff;border:none;padding:8px 18px;border-radius:999px;font-weight:700;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+      <button type="button" onclick="window.print()" style="background:#059669;color:#fff;border:none;padding:8px 18px;border-radius:999px;font-weight:700;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
         🖨️ প্রিন্ট করুন / Print
       </button>
-      <button onclick="window.close()" style="background:rgba(255,255,255,0.18);color:#fff;border:none;padding:8px 16px;border-radius:999px;font-weight:600;font-size:13px;cursor:pointer;">
+      <button type="button" id="close-slip-btn" onclick="closeSalarySlipTab(event)" ontouchend="closeSalarySlipTab(event)" style="background:rgba(255,255,255,0.18);color:#fff;border:none;padding:8px 16px;border-radius:999px;font-weight:600;font-size:13px;cursor:pointer;touch-action:manipulation;">
         ✕ বন্ধ করুন / Close
       </button>
     </div>
@@ -201,6 +202,66 @@ export function printSalarySlipHtml(htmlContent: string, staffName: string = 'st
   const autoPrintScript = `
     <script>
       (function() {
+        var returnUrl = ${JSON.stringify(appReturnUrl)};
+        var isClosing = false;
+
+        window.closeSalarySlipTab = function(e) {
+          if (e && e.preventDefault) e.preventDefault();
+          if (isClosing) return;
+          isClosing = true;
+
+          var btn = document.getElementById('close-slip-btn');
+          if (btn) {
+            btn.style.opacity = '0.7';
+            btn.innerHTML = 'বন্ধ হচ্ছে…';
+          }
+
+          // ১. ব্রাউজারের উইন্ডো সরাসরি বন্ধ করার চেষ্টা (Desktop এবং অনুমোদিত ব্রাউজারে)
+          try {
+            if (window.opener && !window.opener.closed) {
+              try { window.opener.focus(); } catch(err) {}
+            }
+            window.close();
+          } catch(err) {}
+
+          try { self.close(); } catch(err) {}
+          try {
+            var w = window.open('', '_self');
+            if (w) w.close();
+          } catch(err) {}
+
+          // ২. মোবাইল ব্রাউজারে যদি window.close কাজ না করে (iOS Safari/Android Chrome নিরাপত্তা পলিসি):
+          setTimeout(function() {
+            // হিস্টোরিতে আগের পেজ থাকলে ফিরে যাও
+            if (window.history && window.history.length > 1) {
+              try {
+                window.history.back();
+                return;
+              } catch(err) {}
+            }
+            // সরাসরি অ্যাপের রিটার্ন লিঙ্কে রিডাইরেক্ট করে ফিরে যাও
+            if (returnUrl && returnUrl !== 'about:blank' && !returnUrl.startsWith('blob:')) {
+              try {
+                window.location.replace(returnUrl);
+                return;
+              } catch(err) {}
+            }
+            if (document.referrer && document.referrer !== window.location.href) {
+              try {
+                window.location.replace(document.referrer);
+                return;
+              } catch(err) {}
+            }
+            // শেষ উপায়: ইউজারকে মোবাইলের ট্যাব বন্ধের নির্দেশনা
+            alert('অনুগ্রহ করে মোবাইল ব্রাউজারের ট্যাব লিস্ট থেকে (✕) চেপে অ্যাপে ফিরে যান।');
+            isClosing = false;
+            if (btn) {
+              btn.style.opacity = '1';
+              btn.innerHTML = '✕ বন্ধ করুন / Close';
+            }
+          }, 150);
+        };
+
         var printed = false;
         function runPrint() {
           if (printed) return;

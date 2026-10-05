@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useTimeFormat, formatTimeDisplay } from '@/hooks/useTimeFormat';
 import { useResignedStaff } from '@/hooks/useResignedStaff';
 import { useAppTimezone } from '@/hooks/useAppTimezone';
@@ -163,6 +163,7 @@ const AdminSalary = () => {
     monthLabel: string;
   } | null>(null);
   const [slipModalLoading, setSlipModalLoading] = useState<'download' | 'share' | 'view' | null>(null);
+  const previewIframeRef = useRef<HTMLIFrameElement>(null);
 
   const monthYear = `${selectedYear}-${selectedMonth}`;
 
@@ -2935,6 +2936,22 @@ const AdminSalary = () => {
     }
   };
 
+  // Triggers print: uses existing preview iframe directly where possible, or falls back to print window
+  const handlePrintSlip = () => {
+    if (!slipModal) return;
+    try {
+      const ifr = previewIframeRef.current;
+      if (ifr && ifr.contentWindow) {
+        ifr.contentWindow.focus();
+        ifr.contentWindow.print();
+        return;
+      }
+    } catch (err) {
+      console.warn('Direct iframe print failed, falling back to standalone print', err);
+    }
+    printSalarySlipHtml(slipModal.html, slipModal.staff?.name_en || slipModal.staff?.name_bn);
+  };
+
   // Helper: get month name from month_year string
   const getMonthLabel = (my: string) => {
     const [y, m] = my.split('-');
@@ -4827,11 +4844,7 @@ const AdminSalary = () => {
                 <Button
                   size="sm"
                   className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-md gap-1.5 px-3.5"
-                  onClick={() => {
-                    if (slipModal) {
-                      printSalarySlipHtml(slipModal.html, slipModal.staff?.name_en || slipModal.staff?.name_bn);
-                    }
-                  }}
+                  onClick={handlePrintSlip}
                 >
                   <Printer className="h-4 w-4" />
                   <span>{bn ? 'সরাসরি প্রিন্ট' : 'Print'}</span>
@@ -4909,6 +4922,7 @@ const AdminSalary = () => {
               {slipModal && (
                 <div className="w-full max-w-[820px] bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden flex flex-col items-center">
                   <iframe
+                    ref={previewIframeRef}
                     srcDoc={slipModal.html}
                     title="Salary Slip Preview"
                     className="w-full min-h-[750px] border-0 bg-white"
@@ -4923,11 +4937,7 @@ const AdminSalary = () => {
               <Button
                 size="sm"
                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1 px-1.5 text-xs"
-                onClick={() => {
-                  if (slipModal) {
-                    printSalarySlipHtml(slipModal.html, slipModal.staff?.name_en || slipModal.staff?.name_bn);
-                  }
-                }}
+                onClick={handlePrintSlip}
               >
                 <Printer className="h-3.5 w-3.5" />
                 <span>{bn ? 'প্রিন্ট' : 'Print'}</span>
