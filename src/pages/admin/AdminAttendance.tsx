@@ -487,20 +487,29 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     },
   });
 
-  // Inactive (resigned/left) staff must still show on PAST dates where their
-  // attendance was already recorded, but never on dates with no record.
-  const { isResignedOnDate } = useResignedStaff();
+  // Inactive (resigned/left) staff must NOT show on dates after their resignation.
+  // Past dates before or on the resign date preserve attendance history.
+  const { isResignedOnDate, getResignDate } = useResignedStaff();
 
   const entities = useMemo(() => {
     if (entityType !== 'staff') return entitiesRaw;
     return (entitiesRaw as any[]).filter((e: any) => {
-      if (e.status === 'inactive' && !attendance.some((a: any) => a.entity_id === e.id)) return false;
-      // Resigned staff disappear from the roster from their resign_date onward
-      // (past dates with existing attendance stay visible for history).
-      if (isResignedOnDate(e.id, selectedDate) && !attendance.some((a: any) => a.entity_id === e.id)) return false;
+      const rd = getResignDate(e.id);
+      // Strictly exclude from attendance roster on any date AFTER the resignation date
+      if (rd && selectedDate > rd) {
+        return false;
+      }
+      // Inactive staff with no record on this date are hidden
+      if (e.status === 'inactive' && !attendance.some((a: any) => a.entity_id === e.id)) {
+        return false;
+      }
+      // Resigned staff disappear on/after resign date unless viewing pre-existing record on that exact day
+      if (isResignedOnDate(e.id, selectedDate) && !attendance.some((a: any) => a.entity_id === e.id)) {
+        return false;
+      }
       return true;
     });
-  }, [entitiesRaw, entityType, attendance, isResignedOnDate, selectedDate]);
+  }, [entitiesRaw, entityType, attendance, isResignedOnDate, getResignDate, selectedDate]);
 
   // Fetch attendance rules
   const { data: rules = [] } = useQuery({

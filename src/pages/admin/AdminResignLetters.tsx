@@ -169,10 +169,19 @@ const AdminResignLetters = () => {
       });
       if (error) throw error;
 
-      // Set staff status to inactive
+      // Set staff status to inactive and save resignation metadata
+      const nextStaffData = {
+        ...((staff as any).staff_data || {}),
+        resign_date: resignDate || today,
+        resign_reason: reason || '',
+        status_reason: 'resigned',
+      };
       const { error: staffErr } = await supabase
         .from('staff')
-        .update({ status: 'inactive' })
+        .update({
+          status: 'inactive',
+          staff_data: nextStaffData,
+        })
         .eq('id', staff.id);
       if (staffErr) console.error('Failed to deactivate staff:', staffErr);
 
@@ -190,6 +199,12 @@ const AdminResignLetters = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resign-letters'] });
       queryClient.invalidateQueries({ queryKey: ['staff-for-resign'] });
+      queryClient.invalidateQueries({ queryKey: ['staff'] });
+      queryClient.invalidateQueries({ queryKey: ['resigned-staff-dates'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-staff'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-records'] });
+      queryClient.invalidateQueries({ queryKey: ['duty-roster-staff'] });
       toast.success(bn ? 'পদত্যাগ পত্র তৈরি হয়েছে ও স্টাফ নিষ্ক্রিয় হয়েছে' : 'Resign letter created & staff deactivated');
       setShowCreate(false);
       setSelectedStaffId('');
@@ -239,6 +254,12 @@ const AdminResignLetters = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resign-letters'] });
+      queryClient.invalidateQueries({ queryKey: ['staff'] });
+      queryClient.invalidateQueries({ queryKey: ['resigned-staff-dates'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-staff'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-records'] });
+      queryClient.invalidateQueries({ queryKey: ['duty-roster-staff'] });
       toast.success(bn ? 'মুছে ফেলা হয়েছে' : 'Deleted');
       setDeleteId(null);
     },
@@ -313,6 +334,12 @@ const AdminResignLetters = () => {
       queryClient.invalidateQueries({ queryKey: ['resign-letters'] });
       queryClient.invalidateQueries({ queryKey: ['joining-letters'] });
       queryClient.invalidateQueries({ queryKey: ['staff-for-resign'] });
+      queryClient.invalidateQueries({ queryKey: ['staff'] });
+      queryClient.invalidateQueries({ queryKey: ['resigned-staff-dates'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-staff'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-records'] });
+      queryClient.invalidateQueries({ queryKey: ['duty-roster-staff'] });
       toast.success(bn ? 'পুনর্বহাল করা হয়েছে এবং নতুন যোগদান পত্র তৈরি হয়েছে' : 'Staff rejoined and new joining letter created');
       setRejoinId(null);
     },

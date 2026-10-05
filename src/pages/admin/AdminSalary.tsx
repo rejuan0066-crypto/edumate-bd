@@ -744,7 +744,8 @@ const AdminSalary = () => {
       const s = staff.find((x: any) => x.id === staffId);
       if (!s) throw new Error('Staff not found');
       const sName = s.name_bn || s.name_en;
-      if (s.status === 'inactive' && !salaryRecords.some((r: any) => r.staff_id === s.id)) {
+      const isResignMonth = isResignedInMonth(s.id, monthYear);
+      if (s.status === 'inactive' && !isResignMonth && !salaryRecords.some((r: any) => r.staff_id === s.id)) {
         throw new Error(bn ? `${sName} নিষ্ক্রিয় — এই মাসে বেতন তৈরি করা যাবে না` : `${sName} is inactive — cannot generate salary for this month`);
       }
       if (!hasJoinedByMonth(s)) {
@@ -1067,21 +1068,29 @@ const AdminSalary = () => {
     const lastDay = new Date(yy, mm, 0).getDate();
     return `${monthYear}-${String(lastDay).padStart(2, '0')}`;
   })();
-  const { isResignedBeforeMonth, resignDateByStaff } = useResignedStaff();
+  const { isResignedBeforeMonth, isResignedInMonth, resignDateByStaff, getResignDate } = useResignedStaff();
   const hasJoinedByMonth = (s: any): boolean => {
     const jd = s?.joining_date ? String(s.joining_date).slice(0, 10) : '';
     if (!jd) return true; // unknown joining date → always include (legacy data)
     return jd <= monthEndDate;
   };
   // Inactive (resigned/left) staff should still appear in the months where a
-  // salary record already exists, but never in new/future months.
+  // salary record already exists, but never in future months after resignation.
+  // In the month they resigned, they MUST appear so their final salary up to resign date can be processed.
   const isInMonthRoster = (s: any): boolean => {
     if (!hasJoinedByMonth(s)) return false;
-    // Resigned before this month started → only show if a record already exists (history).
-    if (isResignedBeforeMonth(s?.id, monthYear)) {
-      return salaryRecords.some((r: any) => r.staff_id === s.id);
+    const rd = getResignDate(s?.id);
+    if (rd) {
+      const resignMonth = rd.slice(0, 7);
+      // Strictly after the resign month: only show if salary record already exists (history)
+      if (monthYear > resignMonth) {
+        return salaryRecords.some((r: any) => r.staff_id === s.id);
+      }
+      // In the resign month: include so salary can be generated up to the resign date
+      return true;
     }
-    if (s?.status === 'inactive') {
+    // Inactive staff with no known resign date: only show if record exists
+    if (s?.status === 'inactive' || s?.status === 'resigned') {
       return salaryRecords.some((r: any) => r.staff_id === s.id);
     }
     return true;
@@ -1099,10 +1108,12 @@ const AdminSalary = () => {
   // they resigned mid-month, otherwise the month's last counted day). Days
   // AFTER the resign date earn nothing — pay is prorated up to resign_date.
   const resignedUntilDay = (s: any): number => {
-    const rd = s?.id ? resignDateByStaff.get(s.id) : undefined;
+    const rd = getResignDate(s?.id);
     if (!rd) return 32; // no resignation → counted through month end
-    if (rd < `${monthYear}-01`) return 0; // resigned before this month
-    if (rd > monthEndDate) return 32; // resigns in a later month
+    const resignMonth = rd.slice(0, 7);
+    if (resignMonth < monthYear) return 0; // resigned before this month started
+    if (resignMonth > monthYear) return 32; // resigns in a later month
+    // Resigned in this month: count strictly up to the day of resignation!
     return Number(rd.slice(8, 10)) || 32;
   };
 
@@ -1134,11 +1145,19 @@ const AdminSalary = () => {
 
   // Calculate attendance stats with per-minute tracking
   const getAttendanceStats = (staffMember: any) => {
+    const resignLastDay = resignedUntilDay(staffMember);
+    const firstCountedDay = joinedFromDay(staffMember);
+
     // Main attendance only (exclude morning/evening duty shifts which are handled separately as overtime)
-    const rawRecords = attendanceData.filter((a: any) =>
-      a.entity_id === staffMember.id &&
-      a.shift !== 'morning' && a.shift !== 'evening'
-    );
+    // AND strictly exclude any attendance dated AFTER resignation date or BEFORE joining date
+    const rawRecords = attendanceData.filter((a: any) => {
+      if (a.entity_id !== staffMember.id) return false;
+      if (a.shift === 'morning' || a.shift === 'evening') return false;
+      const dayNum = Number(String(a.attendance_date).slice(8, 10));
+      if (dayNum > resignLastDay) return false;
+      if (dayNum < firstCountedDay) return false;
+      return true;
+    });
     // Deduplicate: একই দিনের একাধিক রেকর্ড থাকলে অ্যাডমিন-নির্ধারিত নিয়ম (নতুন/পুরোনো) অনুযায়ী একটিই গণনা হবে।
     const records = dedupeAttendanceRecords(
       rawRecords as any[],
@@ -1330,11 +1349,15 @@ const AdminSalary = () => {
     const totalMissedMinutes = totalLateArrivalMinutes + totalEarlyExitMinutes;
 
     // For additive mode: add paid holidays that have NO attendance record
-    // (so weekend/public holidays still count as paid days)
+    // (so weekend/public holidays still count as paid days within active employment)
     const recordedDates = new Set(records.map((r: any) => r.attendance_date));
     let untouchedHolidayDays = 0;
     paidHolidaySet.forEach((d: any) => {
-      if (!recordedDates.has(d)) untouchedHolidayDays += 1;
+      const dayNum = Number(String(d).slice(8, 10));
+      // Paid holidays only count during active employment [firstCountedDay, resignLastDay]
+      if (dayNum >= firstCountedDay && dayNum <= resignLastDay) {
+        if (!recordedDates.has(d)) untouchedHolidayDays += 1;
+      }
     });
     totalDailyEarnings += untouchedHolidayDays * dailyRate;
 
@@ -1349,8 +1372,6 @@ const AdminSalary = () => {
     const now = new Date();
     const isCurrentMonth = now.getFullYear() === yy && (now.getMonth() + 1) === mm;
     const lastCountedDay = isCurrentMonth ? Math.min(lastDay, now.getDate()) : lastDay;
-    const firstCountedDay = joinedFromDay(staffMember);
-    const resignLastDay = resignedUntilDay(staffMember); // days after this earn nothing
     let untrackedPaidDays = 0;
     let preJoinDays = 0;
     let postResignDays = 0;
@@ -1449,8 +1470,10 @@ const AdminSalary = () => {
     // মাসিক বেতনে সীমাবদ্ধ রাখা হয় (ওভারটাইম আলাদাভাবে যোগ হয়)।
     const includedOvertime = Math.round(attStats.totalOvertimeMinutes * attStats.perMinuteRate);
     const attendanceEarningsWithoutOvertime = Math.max(0, Math.round(attStats.totalDailyEarnings) - includedOvertime);
+    // Prorate maximum base salary for the month up to the resignation date / joining date
+    const maxPayableBaseSalary = Math.round(baseSalary * (Math.max(0, workingDays) / daysInMonth));
     let earnedFromAttendance = calcBasis === 'additive'
-      ? Math.min(baseSalary, attendanceEarningsWithoutOvertime)
+      ? Math.min(maxPayableBaseSalary, attendanceEarningsWithoutOvertime)
       : Math.max(0, baseSalary - absenceDeduction - lateDeduction - otherDeduction - preJoinDeduction - postResignDeduction);
     let overtime = includedOvertime;
 
@@ -1537,7 +1560,8 @@ const AdminSalary = () => {
         if (!hasJoinedByMonth(s)) continue;
         // Skip staff who resigned before this month started.
         if (isResignedBeforeMonth(s.id, monthYear) && !existing) continue;
-        if (s.status === 'inactive' && !existing) continue;
+        const isResignMonth = isResignedInMonth(s.id, monthYear);
+        if (s.status === 'inactive' && !isResignMonth && !existing) continue;
 
 
 

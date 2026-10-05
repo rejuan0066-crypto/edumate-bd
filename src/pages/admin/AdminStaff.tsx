@@ -12,7 +12,8 @@ import StaffDutyTimeDialog from '@/components/admin/StaffDutyTimeDialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useResignedStaff } from '@/hooks/useResignedStaff';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { useAuth } from '@/hooks/useAuth';
@@ -253,12 +254,44 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
     return true;
   });
 
+  const { isResignedOnDate, resignDateByStaff, getResignDate } = useResignedStaff();
+  const todayISO = new Date().toISOString().split('T')[0];
+
+  const isStaffResigned = (s: any) => {
+    return isResignedOnDate(s?.id, todayISO) || s?.status === 'resigned' || (s?.status === 'inactive' && !!getResignDate(s?.id));
+  };
+
+  // Auto-sync staff status in DB if they have an active resignation
+  useEffect(() => {
+    if (!staffListRaw || (staffListRaw as any[]).length === 0) return;
+    const toDeactivate = (staffListRaw as any[]).filter(
+      (s: any) => s.status === 'active' && isResignedOnDate(s.id, todayISO)
+    );
+    if (toDeactivate.length > 0) {
+      toDeactivate.forEach(async (s: any) => {
+        try {
+          await supabase.from('staff').update({ status: 'inactive' }).eq('id', s.id);
+        } catch (_) {}
+      });
+    }
+  }, [staffListRaw, isResignedOnDate, todayISO]);
+
   const pendingCount = typeFiltered.filter((s: any) => s.status === 'pending').length;
-  const activeCount = typeFiltered.filter((s: any) => s.status === 'active').length;
-  const inactiveCount = typeFiltered.filter((s: any) => s.status === 'inactive').length;
+  const resignedCount = typeFiltered.filter((s: any) => isStaffResigned(s)).length;
+  const activeCount = typeFiltered.filter((s: any) => s.status === 'active' && !isStaffResigned(s)).length;
+  const inactiveCount = typeFiltered.filter((s: any) => (s.status === 'inactive' || isStaffResigned(s))).length;
 
   const preFiltered = typeFiltered.filter((s: any) => {
-    if (statusFilter !== 'all' && s.status !== statusFilter) return false;
+    const isResigned = isStaffResigned(s);
+    if (statusFilter === 'active') {
+      if (isResigned || s.status !== 'active') return false;
+    } else if (statusFilter === 'resigned') {
+      if (!isResigned) return false;
+    } else if (statusFilter === 'inactive') {
+      if (s.status !== 'inactive' && !isResigned) return false;
+    } else if (statusFilter !== 'all') {
+      if (s.status !== statusFilter) return false;
+    }
     if (departmentFilter !== 'all' && getStaffCategory(s, designationsMap, activeCategoryKeys) !== departmentFilter) return false;
     if (!search) return true;
     const q = search.toLowerCase();
@@ -424,6 +457,14 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
             <Button variant={statusFilter === 'active' ? 'default' : 'outline'} size="sm" onClick={() => setStatusFilter('active')}>
               {bn ? 'সক্রিয়' : 'Active'} ({activeCount})
             </Button>
+            <Button variant={statusFilter === 'resigned' ? 'default' : 'outline'} size="sm" onClick={() => setStatusFilter('resigned')} className="relative">
+              {bn ? 'পদত্যাগী' : 'Resigned'}
+              {resignedCount > 0 && (
+                <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-destructive text-destructive-foreground">
+                  {resignedCount}
+                </span>
+              )}
+            </Button>
             <Button variant={statusFilter === 'pending' ? 'default' : 'outline'} size="sm" onClick={() => setStatusFilter('pending')} className="relative">
               {bn ? 'আবেদন' : 'Pending'}
               {pendingCount > 0 && (
@@ -547,15 +588,22 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                       </td>
                       )}
                       <td className="px-4 py-3">
-                        <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                          s.status === 'active' ? 'bg-success/10 text-success' : 
-                          s.status === 'pending' ? 'bg-warning/10 text-warning' : 
-                          'bg-destructive/10 text-destructive'
-                        }`}>
-                          {s.status === 'active' ? (bn ? 'সক্রিয়' : 'Active') : 
-                           s.status === 'pending' ? (bn ? 'আবেদন' : 'Pending') : 
-                           (bn ? 'নিষ্ক্রিয়' : 'Inactive')}
-                        </span>
+                        {isStaffResigned(s) ? (
+                          <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-destructive/10 text-destructive border border-destructive/20 inline-flex items-center gap-1">
+                            {bn ? 'পদত্যাগী' : 'Resigned'}
+                            {getResignDate(s.id) && <span className="opacity-75 text-[10px]">({getResignDate(s.id)})</span>}
+                          </span>
+                        ) : (
+                          <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                            s.status === 'active' ? 'bg-success/10 text-success' : 
+                            s.status === 'pending' ? 'bg-warning/10 text-warning' : 
+                            'bg-destructive/10 text-destructive'
+                          }`}>
+                            {s.status === 'active' ? (bn ? 'সক্রিয়' : 'Active') : 
+                             s.status === 'pending' ? (bn ? 'আবেদন' : 'Pending') : 
+                             (bn ? 'নিষ্ক্রিয়' : 'Inactive')}
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         {isRecordPending(s.id) && (
