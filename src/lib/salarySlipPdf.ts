@@ -110,10 +110,11 @@ export async function generateSlipPdfBlob(htmlContent: string): Promise<Blob> {
         const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
         const pdfWidth = 210;
         const pdfHeight = 297;
-        const margin = 10; // mm margin on all sides
+        const marginX = 8; // mm margin on sides
+        const marginTop = 8; // mm margin on top
 
-        const availW = pdfWidth - margin * 2;
-        const availH = pdfHeight - margin * 2;
+        const availW = pdfWidth - marginX * 2;
+        const availH = pdfHeight - marginTop * 2;
 
         const ratio = canvas.width / canvas.height;
         let drawW = availW;
@@ -123,8 +124,8 @@ export async function generateSlipPdfBlob(htmlContent: string): Promise<Blob> {
           drawW = drawH * ratio;
         }
 
-        const offsetX = margin + (availW - drawW) / 2;
-        const offsetY = margin + (availH - drawH) / 2;
+        const offsetX = marginX + (availW - drawW) / 2;
+        const offsetY = marginTop;
 
         const imgData = canvas.toDataURL('image/png');
         pdf.addImage(imgData, 'PNG', offsetX, offsetY, drawW, drawH);

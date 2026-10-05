@@ -2726,7 +2726,7 @@ const AdminSalary = () => {
       .sig .role{font-weight:600;color:#475569;font-size:11px;margin-top:2px}
       .footer{background:#f1f5f9;padding:10px 28px;text-align:center;font-size:10.5px;color:#64748b;border-top:1px solid #e2e8f0;margin-top:25px}
       .footer .gen{color:#94a3b8;font-size:9.5px;margin-top:3px}
-      @page{size:A4 portrait;margin:6mm}
+      @page{size:A4 portrait;margin:0}
       @media print{
         *,*::before,*::after{
           -webkit-print-color-adjust:exact !important;
@@ -2738,9 +2738,9 @@ const AdminSalary = () => {
           background:#fff !important;
           padding:0 !important;
           margin:0 !important;
-          width:100% !important;
-          min-width:100% !important;
-          max-width:100% !important;
+          width:210mm !important;
+          min-width:210mm !important;
+          max-width:210mm !important;
           height:auto !important;
           overflow:visible !important;
         }
@@ -2748,11 +2748,11 @@ const AdminSalary = () => {
           box-shadow:none !important;
           border-radius:0 !important;
           border:none !important;
-          width:100% !important;
-          min-width:100% !important;
-          max-width:100% !important;
-          margin:0 !important;
-          padding:0 !important;
+          width:210mm !important;
+          min-width:210mm !important;
+          max-width:210mm !important;
+          margin:0 auto !important;
+          padding:8mm 10mm !important;
           overflow:visible !important;
           height:auto !important;
           max-height:none !important;
@@ -2936,18 +2936,21 @@ const AdminSalary = () => {
     }
   };
 
-  // Triggers print: uses existing preview iframe directly where possible, or falls back to print window
+  // Triggers print: on desktop, prints the preview iframe directly. On mobile, opens the dedicated 210mm A4 printable window.
   const handlePrintSlip = () => {
     if (!slipModal) return;
-    try {
-      const ifr = previewIframeRef.current;
-      if (ifr && ifr.contentWindow) {
-        ifr.contentWindow.focus();
-        ifr.contentWindow.print();
-        return;
+    const isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+    if (!isMobile) {
+      try {
+        const ifr = previewIframeRef.current;
+        if (ifr && ifr.contentWindow) {
+          ifr.contentWindow.focus();
+          ifr.contentWindow.print();
+          return;
+        }
+      } catch (err) {
+        console.warn('Direct iframe print failed, falling back to standalone print', err);
       }
-    } catch (err) {
-      console.warn('Direct iframe print failed, falling back to standalone print', err);
     }
     printSalarySlipHtml(slipModal.html, slipModal.staff?.name_en || slipModal.staff?.name_bn);
   };
