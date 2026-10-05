@@ -163,7 +163,7 @@ export function printSalarySlipHtml(htmlContent: string, staffName: string = 'st
   let printableHtml = htmlContent;
 
   const floatingBar = `
-    <div class="print-actions-bar no-print" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:8px 16px;border-radius:999px;box-shadow:0 12px 30px rgba(0,0,0,0.35);display:flex;align-items:center;gap:12px;z-index:99999;font-family:system-ui,-apple-system,sans-serif;">
+    <div class="print-actions-bar no-print" style="position:fixed;bottom:20px;left:0;right:0;width:fit-content;margin:0 auto;background:#0f172a;color:#fff;padding:8px 16px;border-radius:999px;box-shadow:0 12px 30px rgba(0,0,0,0.35);display:flex;align-items:center;gap:12px;z-index:99999;font-family:system-ui,-apple-system,sans-serif;">
       <button onclick="window.print()" style="background:#059669;color:#fff;border:none;padding:8px 18px;border-radius:999px;font-weight:700;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
         🖨️ প্রিন্ট করুন / Print
       </button>
@@ -173,7 +173,7 @@ export function printSalarySlipHtml(htmlContent: string, staffName: string = 'st
     </div>
     <style>
       @media print {
-        .print-actions-bar, .no-print { display: none !important; }
+        .print-actions-bar, .no-print { display: none !important; position: absolute !important; width: 0 !important; height: 0 !important; overflow: hidden !important; }
       }
     </style>
   `;

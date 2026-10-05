@@ -2667,17 +2667,19 @@ const AdminSalary = () => {
     const fontHref = `${window.location.origin}/fonts/Kalpurush.ttf`;
     const fname = `salary-slip-${(staffMember.name_en || staffMember.name_bn || 'staff').replace(/\s+/g, '_')}-${selectedYear}${selectedMonth}.pdf`;
 
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${bn ? 'বেতন স্লিপ' : 'Salary Slip'} - ${staffMember.name_bn}</title>
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>${bn ? 'বেতন স্লিপ' : 'Salary Slip'} - ${staffMember.name_bn}</title>
     <link rel="preload" as="font" type="font/ttf" href="${fontHref}" crossorigin="anonymous">
     <style>
       @font-face{font-family:"Kalpurush";src:url("${fontHref}") format("truetype");font-display:block;}
-      *{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}
-      html,body{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
-      body{font-family:'Kalpurush','Noto Sans Bengali','Segoe UI',sans-serif;background:#f8fafc;color:#0f172a;padding:24px;line-height:1.5}
-      .slip{max-width:780px;margin:0 auto;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 20px 50px -15px rgba(15,23,42,.18);position:relative}
-      .watermark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0}
+      *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}
+      html,body{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;width:100%;max-width:100%;overflow-x:hidden}
+      body{font-family:'Kalpurush','Noto Sans Bengali','Segoe UI',sans-serif;background:#f8fafc;color:#0f172a;padding:16px;line-height:1.5}
+      .slip{max-width:780px;width:100%;margin:0 auto;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 20px 50px -15px rgba(15,23,42,.18);position:relative;box-sizing:border-box}
+      .watermark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0;overflow:hidden}
       .watermark span{font-size:140px;color:rgba(13,148,136,.06);font-weight:900;letter-spacing:8px;transform:rotate(-28deg);white-space:nowrap}
-      .header{background:linear-gradient(135deg,#0d9488 0%,#0f766e 60%,#115e59 100%);color:#fff;padding:24px 32px;position:relative;overflow:hidden}
+      .header{background:linear-gradient(135deg,#0d9488 0%,#0f766e 60%,#115e59 100%);color:#fff;padding:22px 28px;position:relative;overflow:hidden}
       .header::after{content:"";position:absolute;right:-60px;top:-60px;width:240px;height:240px;background:radial-gradient(circle,rgba(255,255,255,.18) 0%,transparent 70%);border-radius:50%}
       .head-row{display:flex;align-items:center;gap:16px;position:relative;z-index:1}
       .logo-wrap{width:64px;height:64px;background:rgba(255,255,255,.18);border:2px solid rgba(255,255,255,.35);border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;backdrop-filter:blur(8px)}
@@ -2686,12 +2688,12 @@ const AdminSalary = () => {
       .inst-info{flex:1}
       .inst-name{font-size:22px;font-weight:800;letter-spacing:.3px;margin-bottom:2px}
       .inst-meta{font-size:11.5px;opacity:.92;line-height:1.55}
-      .slip-tag{position:absolute;right:32px;top:24px;z-index:2;text-align:right}
+      .slip-tag{position:absolute;right:28px;top:22px;z-index:2;text-align:right}
       .slip-tag .badge{background:rgba(255,255,255,.95);color:#0f766e;font-weight:700;padding:5px 14px;border-radius:999px;font-size:11px;letter-spacing:1.5px;display:inline-block}
       .slip-tag .id{color:#fff;font-size:10.5px;margin-top:6px;opacity:.92;font-family:monospace}
-      .month-bar{background:linear-gradient(90deg,#f0fdfa 0%,#ccfbf1 50%,#f0fdfa 100%);padding:12px 32px;border-bottom:1px solid #ccfbf1;display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:#0f766e;font-weight:600;position:relative;z-index:1}
+      .month-bar{background:linear-gradient(90deg,#f0fdfa 0%,#ccfbf1 50%,#f0fdfa 100%);padding:12px 28px;border-bottom:1px solid #ccfbf1;display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:#0f766e;font-weight:600;position:relative;z-index:1}
       .month-bar .month{font-size:15px;font-weight:800;color:#115e59}
-      .body{padding:24px 32px;position:relative;z-index:1}
+      .body{padding:22px 28px;position:relative;z-index:1}
       .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;background:#f8fafc;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;margin-bottom:18px}
       .info-cell{padding:10px 14px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;font-size:12.5px}
       .info-cell:last-child{border-bottom:none}
@@ -2718,48 +2720,75 @@ const AdminSalary = () => {
       .net-box .amt{font-size:26px;font-weight:900;font-variant-numeric:tabular-nums}
       .words{margin-top:10px;padding:9px 14px;background:#f8fafc;border-left:3px solid #0d9488;border-radius:6px;font-size:12px;color:#334155;font-style:italic}
       .words strong{color:#0f766e;font-style:normal;font-weight:700}
-      .signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-top:55px;padding:0 8px}
+      .signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-top:45px;padding:0 8px}
       .sig{text-align:center;font-size:11.5px;color:#475569}
       .sig .line{border-top:1.5px solid #94a3b8;margin:0 6px;height:0}
       .sig .sig-name{font-size:12px;font-weight:700;color:#0f172a;padding-top:6px;min-height:18px}
       .sig .role{font-weight:600;color:#475569;font-size:11px;margin-top:2px}
-      .footer{background:#f1f5f9;padding:10px 32px;text-align:center;font-size:10.5px;color:#64748b;border-top:1px solid #e2e8f0;margin-top:30px}
+      .footer{background:#f1f5f9;padding:10px 28px;text-align:center;font-size:10.5px;color:#64748b;border-top:1px solid #e2e8f0;margin-top:25px}
       .footer .gen{color:#94a3b8;font-size:9.5px;margin-top:3px}
+      @page{size:A4 portrait;margin:6mm}
       @media print{
-        *,*::before,*::after{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}
-        html,body{background:#fff;padding:0;margin:0}
-        .slip{box-shadow:none;border-radius:0;max-width:100%;page-break-inside:avoid;break-inside:avoid}
-        .slip,.body,.header,.month-bar,.info-grid,.col,.net-box,.signatures,.footer{page-break-inside:avoid;break-inside:avoid}
-        @page{size:A4;margin:6mm}
+        *,*::before,*::after{
+          -webkit-print-color-adjust:exact !important;
+          print-color-adjust:exact !important;
+          color-adjust:exact !important;
+          box-sizing:border-box !important;
+        }
+        html,body{
+          background:#fff !important;
+          padding:0 !important;
+          margin:0 !important;
+          width:100% !important;
+          min-width:100% !important;
+          max-width:100% !important;
+          overflow:visible !important;
+        }
+        .slip{
+          box-shadow:none !important;
+          border-radius:0 !important;
+          width:100% !important;
+          min-width:100% !important;
+          max-width:100% !important;
+          margin:0 auto !important;
+          padding:0 !important;
+          overflow:hidden !important;
+          box-sizing:border-box !important;
+          page-break-inside:avoid !important;
+          break-inside:avoid !important;
+        }
+        .header::after{display:none !important}
+        .watermark{display:none !important}
+        .print-actions-bar,.no-print{display:none !important;visibility:hidden !important}
+
         /* Compact for single-page A4 */
-        .header{padding:10px 18px}
+        .header{padding:12px 20px !important;width:100% !important;box-sizing:border-box !important}
         .logo-wrap{width:48px;height:48px;border-radius:10px}
-        .inst-name{font-size:17px}
-        .inst-meta{font-size:10px;line-height:1.35}
-        .slip-tag{right:18px;top:10px}
+        .inst-name{font-size:18px}
+        .inst-meta{font-size:10.5px;line-height:1.4}
+        .slip-tag{right:20px;top:12px}
         .slip-tag .badge{padding:3px 10px;font-size:9.5px}
         .slip-tag .id{font-size:9px;margin-top:3px}
-        .month-bar{padding:6px 18px;font-size:11px}
-        .month-bar .month{font-size:12.5px}
-        .body{padding:10px 18px}
-        .info-grid{margin-bottom:8px;border-radius:8px}
+        .month-bar{padding:7px 20px !important;font-size:11px;width:100% !important;box-sizing:border-box !important}
+        .month-bar .month{font-size:13px}
+        .body{padding:12px 20px !important;width:100% !important;box-sizing:border-box !important}
+        .info-grid{margin-bottom:8px;border-radius:8px;width:100% !important;box-sizing:border-box !important}
         .info-cell{padding:5px 10px;font-size:10.5px}
-        .columns,.single-col{margin-bottom:8px}
-        .col{border-radius:8px}
+        .columns,.single-col{margin-bottom:8px;width:100% !important;box-sizing:border-box !important}
+        .col{border-radius:8px;width:100% !important;box-sizing:border-box !important}
         .col-head{padding:5px 10px;font-size:10.5px}
         .ln{padding:4px 10px;font-size:10.5px}
         .col-foot{padding:6px 10px;font-size:11.5px}
-        .net-box{padding:8px 14px;border-radius:10px;margin-top:4px}
+        .net-box{padding:8px 14px;border-radius:10px;margin-top:4px;width:100% !important;box-sizing:border-box !important}
         .net-box .lbl{font-size:11px}
         .net-box .amt{font-size:18px}
-        .words{margin-top:6px;padding:5px 10px;font-size:10.5px}
-        .signatures{margin-top:24px;gap:14px;padding:0 4px}
+        .words{margin-top:6px;padding:5px 10px;font-size:10.5px;width:100% !important;box-sizing:border-box !important}
+        .signatures{margin-top:24px;gap:14px;padding:0 4px;width:100% !important;box-sizing:border-box !important}
         .sig{font-size:10px}
         .sig .sig-name{font-size:10.5px;padding-top:3px;min-height:14px}
         .sig .role{font-size:9.5px}
-        .footer{padding:6px 18px;margin-top:12px;font-size:9.5px}
+        .footer{padding:6px 20px !important;margin-top:12px;font-size:9.5px;width:100% !important;box-sizing:border-box !important}
         .footer .gen{font-size:8.5px;margin-top:2px}
-        .watermark span{font-size:110px}
       }
     </style></head><body>
     <div class="slip">
