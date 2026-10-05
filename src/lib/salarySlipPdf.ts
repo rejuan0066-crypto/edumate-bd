@@ -155,6 +155,26 @@ export async function downloadSlipAsPdf(
 }
 
 /**
+ * Opens a salary slip as an A4 PORTRAIT PDF in a new browser tab.
+ * Gives mobile and desktop users direct access to the pre-rendered vector PDF.
+ */
+export async function viewSlipPdfInNewTab(htmlContent: string): Promise<void> {
+  const blob = await generateSlipPdfBlob(htmlContent);
+  const blobUrl = URL.createObjectURL(blob);
+  const win = window.open(blobUrl, '_blank');
+  if (!win) {
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 180000);
+}
+
+/**
  * Triggers native mobile (Android/iOS) and desktop printing for a salary slip.
  * Uses a self-contained Blob URL with auto-print & on-screen navigation buttons,
  * falling back to an in-app printable iframe for standalone PWA mode.

@@ -43,7 +43,7 @@ import {
   type DutyAttendance,
 } from '@/lib/dutyShiftDeduction';
 import { shouldApplyThursdayHalfDay, effectiveDutyEndForThursday, parseHalfDayEndMinutes, parseClockMinutes } from '@/lib/thursdayHalfDay';
-import { downloadSlipAsPdf, downloadSheetAsPdf, printSalarySlipHtml, shareSlipPdf, isMobileOrPwa } from '@/lib/salarySlipPdf';
+import { downloadSlipAsPdf, downloadSheetAsPdf, printSalarySlipHtml, shareSlipPdf, viewSlipPdfInNewTab, isMobileOrPwa } from '@/lib/salarySlipPdf';
 import { DatePicker } from '@/components/ui/date-picker';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import {
@@ -162,7 +162,7 @@ const AdminSalary = () => {
     slipId: string;
     monthLabel: string;
   } | null>(null);
-  const [slipModalLoading, setSlipModalLoading] = useState<'download' | 'share' | null>(null);
+  const [slipModalLoading, setSlipModalLoading] = useState<'download' | 'share' | 'view' | null>(null);
 
   const monthYear = `${selectedYear}-${selectedMonth}`;
 
@@ -2668,7 +2668,7 @@ const AdminSalary = () => {
     const fname = `salary-slip-${(staffMember.name_en || staffMember.name_bn || 'staff').replace(/\s+/g, '_')}-${selectedYear}${selectedMonth}.pdf`;
 
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <meta name="viewport" content="width=794">
     <title>${bn ? 'বেতন স্লিপ' : 'Salary Slip'} - ${staffMember.name_bn}</title>
     <link rel="preload" as="font" type="font/ttf" href="${fontHref}" crossorigin="anonymous">
     <style>
@@ -2712,9 +2712,7 @@ const AdminSalary = () => {
       .ln .v{color:#0f172a;font-weight:600;font-variant-numeric:tabular-nums}
       .ln.savings{background:#eff6ff;color:#1e40af}
       .ln.savings .l,.ln.savings .v{color:#1e40af}
-      .col-foot{padding:11px 14px;font-size:13px;font-weight:800;display:flex;justify-content:space-between;border-top:2px solid;font-variant-numeric:tabular-nums}
-      .col.earn .col-foot{background:#ecfdf5;color:#065f46;border-color:#10b981}
-      .col.ded .col-foot{background:#fffbeb;color:#92400e;border-color:#f59e0b}
+      .col-foot{display:none}
       .net-box{background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;border-radius:14px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin-top:6px;box-shadow:0 8px 24px -8px rgba(13,148,136,.45)}
       .net-box .lbl{font-size:13px;font-weight:600;opacity:.95;letter-spacing:.4px;text-transform:uppercase}
       .net-box .amt{font-size:26px;font-weight:900;font-variant-numeric:tabular-nums}
@@ -2742,17 +2740,21 @@ const AdminSalary = () => {
           width:100% !important;
           min-width:100% !important;
           max-width:100% !important;
+          height:auto !important;
           overflow:visible !important;
         }
         .slip{
           box-shadow:none !important;
           border-radius:0 !important;
+          border:none !important;
           width:100% !important;
           min-width:100% !important;
           max-width:100% !important;
-          margin:0 auto !important;
+          margin:0 !important;
           padding:0 !important;
-          overflow:hidden !important;
+          overflow:visible !important;
+          height:auto !important;
+          max-height:none !important;
           box-sizing:border-box !important;
           page-break-inside:avoid !important;
           break-inside:avoid !important;
@@ -2762,33 +2764,34 @@ const AdminSalary = () => {
         .print-actions-bar,.no-print{display:none !important;visibility:hidden !important}
 
         /* Compact for single-page A4 */
-        .header{padding:12px 20px !important;width:100% !important;box-sizing:border-box !important}
-        .logo-wrap{width:48px;height:48px;border-radius:10px}
-        .inst-name{font-size:18px}
-        .inst-meta{font-size:10.5px;line-height:1.4}
-        .slip-tag{right:20px;top:12px}
-        .slip-tag .badge{padding:3px 10px;font-size:9.5px}
-        .slip-tag .id{font-size:9px;margin-top:3px}
-        .month-bar{padding:7px 20px !important;font-size:11px;width:100% !important;box-sizing:border-box !important}
-        .month-bar .month{font-size:13px}
-        .body{padding:12px 20px !important;width:100% !important;box-sizing:border-box !important}
-        .info-grid{margin-bottom:8px;border-radius:8px;width:100% !important;box-sizing:border-box !important}
-        .info-cell{padding:5px 10px;font-size:10.5px}
-        .columns,.single-col{margin-bottom:8px;width:100% !important;box-sizing:border-box !important}
-        .col{border-radius:8px;width:100% !important;box-sizing:border-box !important}
-        .col-head{padding:5px 10px;font-size:10.5px}
-        .ln{padding:4px 10px;font-size:10.5px}
-        .col-foot{padding:6px 10px;font-size:11.5px}
-        .net-box{padding:8px 14px;border-radius:10px;margin-top:4px;width:100% !important;box-sizing:border-box !important}
-        .net-box .lbl{font-size:11px}
-        .net-box .amt{font-size:18px}
-        .words{margin-top:6px;padding:5px 10px;font-size:10.5px;width:100% !important;box-sizing:border-box !important}
-        .signatures{margin-top:24px;gap:14px;padding:0 4px;width:100% !important;box-sizing:border-box !important}
-        .sig{font-size:10px}
-        .sig .sig-name{font-size:10.5px;padding-top:3px;min-height:14px}
-        .sig .role{font-size:9.5px}
-        .footer{padding:6px 20px !important;margin-top:12px;font-size:9.5px;width:100% !important;box-sizing:border-box !important}
-        .footer .gen{font-size:8.5px;margin-top:2px}
+        .header{padding:10px 18px !important;width:100% !important;box-sizing:border-box !important}
+        .logo-wrap{width:44px !important;height:44px !important;border-radius:8px !important}
+        .logo-fallback{font-size:20px !important}
+        .inst-name{font-size:17px !important}
+        .inst-meta{font-size:10px !important;line-height:1.35 !important}
+        .slip-tag{right:18px !important;top:10px !important}
+        .slip-tag .badge{padding:3px 8px !important;font-size:9px !important}
+        .slip-tag .id{font-size:8.5px !important;margin-top:2px !important}
+        .month-bar{padding:6px 18px !important;font-size:11px !important;width:100% !important;box-sizing:border-box !important}
+        .month-bar .month{font-size:12.5px !important}
+        .body{padding:10px 18px !important;width:100% !important;box-sizing:border-box !important}
+        .info-grid{margin-bottom:6px !important;border-radius:8px !important;width:100% !important;box-sizing:border-box !important}
+        .info-cell{padding:4px 8px !important;font-size:10px !important}
+        .columns,.single-col{margin-bottom:6px !important;width:100% !important;box-sizing:border-box !important}
+        .col{border-radius:8px !important;width:100% !important;box-sizing:border-box !important}
+        .col-head{padding:5px 10px !important;font-size:10.5px !important}
+        .ln{padding:3.5px 10px !important;font-size:10px !important}
+        .col-foot{display:none !important}
+        .net-box{padding:7px 12px !important;border-radius:8px !important;margin-top:4px !important;width:100% !important;box-sizing:border-box !important}
+        .net-box .lbl{font-size:10.5px !important}
+        .net-box .amt{font-size:17px !important}
+        .words{margin-top:4px !important;padding:4px 10px !important;font-size:10px !important;width:100% !important;box-sizing:border-box !important}
+        .signatures{margin-top:22px !important;gap:14px !important;padding:0 4px !important;width:100% !important;box-sizing:border-box !important}
+        .sig{font-size:9.5px !important}
+        .sig .sig-name{font-size:10px !important;font-weight:700 !important;padding-top:3px !important;min-height:14px !important}
+        .sig .role{font-size:9px !important}
+        .footer{padding:5px 18px !important;margin-top:10px !important;font-size:9px !important;width:100% !important;box-sizing:border-box !important}
+        .footer .gen{font-size:8px !important;margin-top:1px !important}
       }
     </style></head><body>
     <div class="slip">
@@ -2867,7 +2870,6 @@ const AdminSalary = () => {
                 <span class="v">৳${slipNum(netSalary)}</span>
               </div>
             </div>
-            <div class="col-foot"><span>${bn ? 'মোট বেতন (নিট প্রদেয়)' : 'Total (Net Payable)'}</span><span>৳${slipNum(netSalary)}</span></div>
           </div>
         </div>
 
@@ -4821,10 +4823,10 @@ const AdminSalary = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-2 ml-auto">
+              <div className="flex items-center gap-2 ml-auto flex-wrap sm:flex-nowrap">
                 <Button
                   size="sm"
-                  className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-md gap-1.5 px-4"
+                  className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-md gap-1.5 px-3.5"
                   onClick={() => {
                     if (slipModal) {
                       printSalarySlipHtml(slipModal.html, slipModal.staff?.name_en || slipModal.staff?.name_bn);
@@ -4832,7 +4834,28 @@ const AdminSalary = () => {
                   }}
                 >
                   <Printer className="h-4 w-4" />
-                  <span>{bn ? 'প্রিন্ট করুন' : 'Print'}</span>
+                  <span>{bn ? 'সরাসরি প্রিন্ট' : 'Print'}</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="bg-white/10 hover:bg-white/20 text-white border-white/20 font-medium gap-1.5"
+                  disabled={slipModalLoading === 'view'}
+                  onClick={async () => {
+                    if (!slipModal) return;
+                    setSlipModalLoading('view');
+                    try {
+                      toast.info(bn ? 'PDF লোড হচ্ছে…' : 'Loading PDF…');
+                      await viewSlipPdfInNewTab(slipModal.html);
+                    } catch {
+                      toast.error(bn ? 'PDF ভিউ করতে সমস্যা' : 'Failed to view PDF');
+                    } finally {
+                      setSlipModalLoading(null);
+                    }
+                  }}
+                >
+                  <FileText className="h-4 w-4" />
+                  <span>{slipModalLoading === 'view' ? (bn ? 'হচ্ছে…' : 'Loading…') : (bn ? 'PDF ভিউ' : 'PDF View')}</span>
                 </Button>
                 <Button
                   size="sm"
@@ -4896,23 +4919,41 @@ const AdminSalary = () => {
             </div>
 
             {/* Mobile Footer for convenient thumb access */}
-            <div className="sm:hidden p-2.5 border-t bg-background flex items-center justify-between gap-2">
+            <div className="sm:hidden p-2.5 border-t bg-background grid grid-cols-4 gap-1.5">
               <Button
                 size="sm"
-                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1.5"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1 px-1.5 text-xs"
                 onClick={() => {
                   if (slipModal) {
                     printSalarySlipHtml(slipModal.html, slipModal.staff?.name_en || slipModal.staff?.name_bn);
                   }
                 }}
               >
-                <Printer className="h-4 w-4" />
-                <span>{bn ? 'সরাসরি প্রিন্ট' : 'Print Now'}</span>
+                <Printer className="h-3.5 w-3.5" />
+                <span>{bn ? 'প্রিন্ট' : 'Print'}</span>
               </Button>
               <Button
                 size="sm"
                 variant="outline"
-                className="flex-1"
+                className="gap-1 px-1.5 text-xs"
+                disabled={slipModalLoading === 'view'}
+                onClick={async () => {
+                  if (!slipModal) return;
+                  setSlipModalLoading('view');
+                  try {
+                    await viewSlipPdfInNewTab(slipModal.html);
+                  } finally {
+                    setSlipModalLoading(null);
+                  }
+                }}
+              >
+                <FileText className="h-3.5 w-3.5" />
+                <span>{bn ? 'PDF ভিউ' : 'PDF View'}</span>
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1 px-1.5 text-xs"
                 disabled={slipModalLoading === 'download'}
                 onClick={async () => {
                   if (!slipModal) return;
@@ -4925,12 +4966,13 @@ const AdminSalary = () => {
                   }
                 }}
               >
-                <Download className="h-4 w-4 mr-1" />
+                <Download className="h-3.5 w-3.5" />
                 <span>PDF</span>
               </Button>
               <Button
                 size="sm"
                 variant="ghost"
+                className="px-1.5 text-xs"
                 onClick={() => setSlipModal(null)}
               >
                 {bn ? 'বন্ধ' : 'Close'}
