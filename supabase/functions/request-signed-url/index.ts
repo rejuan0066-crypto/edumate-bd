@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
     auth: { persistSession: false },
   });
   const token = authHeader.replace("Bearer ", "");
-  const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(token);
+  const { data: claimsData, error: claimsErr } = await (userClient.auth as any).getClaims(token);
   if (claimsErr || !claimsData?.claims?.sub) {
     await logDenial(null, null, null, null, 401, "Invalid JWT");
     return new Response(JSON.stringify({ error: "Unauthorized" }), {

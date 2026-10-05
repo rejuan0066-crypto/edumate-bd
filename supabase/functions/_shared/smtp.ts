@@ -75,7 +75,7 @@ export async function sendViaSMTP(
     if (port !== 465 && wantTls) {
       const starttls = await send(conn, "STARTTLS");
       expect(starttls, ["220"], "STARTTLS");
-      conn = await Deno.startTls(conn as Deno.Conn, { hostname: smtp_host });
+      conn = await Deno.startTls(conn as Deno.TcpConn, { hostname: smtp_host });
       ehlo = await send(conn, "EHLO localhost");
       expect(ehlo, ["250"], "EHLO (post-TLS)");
     }

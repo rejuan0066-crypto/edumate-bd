@@ -125,6 +125,8 @@ export function jsonError(
 
 /** Standard OTP error codes used across OTP-related endpoints. */
 export type OtpErrorCode =
+  | "OTP_DISABLED"
+  | "OTP_NOT_REQUIRED_FOR_SCOPE"
   | "INVALID_REQUEST"
   | "INVALID_PURPOSE"
   | "EMAIL_SERVICE_UNCONFIGURED"

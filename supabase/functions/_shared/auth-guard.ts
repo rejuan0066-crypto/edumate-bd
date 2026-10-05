@@ -30,7 +30,7 @@ export async function requireAuth(
 
   let claims: any;
   try {
-    const { data, error } = await supabase.auth.getClaims(token);
+    const { data, error } = await (supabase.auth as any).getClaims(token);
     if (error || !data?.claims) {
       return { ok: false, status: 401, error: 'Unauthorized: invalid token' };
     }
