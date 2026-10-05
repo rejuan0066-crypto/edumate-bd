@@ -1075,7 +1075,7 @@ const AdminUserManagement = () => {
       const data = hasUserOverrides ? userPermsData : rolePermsData;
 
       const merged = allMenuPaths.map(mp => {
-        const existing = (data || []).find((d: any) => d.menu_path === mp.path);
+        const existing: any = (data || []).find((d: any) => d.menu_path === mp.path);
         return {
           menu_path: mp.path,
           can_view: existing?.can_view ?? false,

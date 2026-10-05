@@ -225,7 +225,7 @@ Deno.serve(async (req) => {
               reason: c.action,
               details: { action, scope: c.scope, key: c.key, retry_after: res.retry_after, tier: c.action.endsWith('_hourly') ? 'hour' : 'minute' },
               user_id: userId,
-              ip_address: clientIp,
+              req,
             }).catch(() => {});
             return rateLimitedResponse(res, c.scope);
           }

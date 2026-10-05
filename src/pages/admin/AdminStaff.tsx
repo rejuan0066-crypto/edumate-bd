@@ -300,8 +300,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
           if (!error) {
             queryClient.invalidateQueries({ queryKey: ['staff'] });
           }
-        })
-        .catch(console.error);
+        }, console.error);
     }
   }, [staffListRaw, isResignedOnDate, todayISO, queryClient]);
 

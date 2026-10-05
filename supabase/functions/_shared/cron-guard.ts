@@ -46,7 +46,7 @@ export async function requireCronOrAdmin(
         Deno.env.get('SUPABASE_ANON_KEY')!,
         { global: { headers: { Authorization: `Bearer ${token}` } } }
       );
-      const { data: claimsData, error } = await userClient.auth.getClaims(token);
+      const { data: claimsData, error } = await (userClient.auth as any).getClaims(token);
       if (!error && claimsData?.claims?.sub) {
         const uid = claimsData.claims.sub as string;
         for (const role of roles) {
