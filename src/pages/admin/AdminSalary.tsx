@@ -51,7 +51,8 @@ import {
   Wallet, Users, Search, Save, Download, Printer, Settings2,
   CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Edit2, Eye,
   Calculator, Plus, Trash2, DollarSign, FileText, FolderOpen,
-  PiggyBank, Landmark, RefreshCw, Minus, Share2, Camera, FileCheck2, Upload
+  PiggyBank, Landmark, RefreshCw, Minus, Share2, Camera, FileCheck2, Upload,
+  History
 } from 'lucide-react';
 import {
   useSignedSalaryDocs,
@@ -59,6 +60,10 @@ import {
   SignedSlipUploadDialog,
   SignedSlipViewerDialog,
 } from '@/components/admin/SignedSalaryDocsManager';
+import {
+  SalarySavingsLedgerDialog,
+  type StaffSavingsGroup,
+} from '@/components/admin/SalarySavingsLedgerDialog';
 
 const MONTHS = [
   { value: '01', bn: 'জানুয়ারি', en: 'January' },
@@ -244,6 +249,7 @@ const AdminSalary = () => {
   const [signedHubOpen, setSignedHubOpen] = useState(false);
   const [directUploadStaff, setDirectUploadStaff] = useState<any | null>(null);
   const [directViewStaff, setDirectViewStaff] = useState<any | null>(null);
+  const [selectedLedgerStaffId, setSelectedLedgerStaffId] = useState<string | null>(null);
 
   // Pre-fetch default institution for instant synchronous salary slip printing
   const { data: defaultInstData } = useQuery({
@@ -732,6 +738,92 @@ const AdminSalary = () => {
       return data;
     },
   });
+
+  // Grouped savings by staff so each staff member appears only once in the savings tab
+  const groupedSavings = useMemo(() => {
+    const map = new Map<string, StaffSavingsGroup>();
+    for (const cfg of savingsConfigs as any[]) {
+      const staffId = cfg.staff_id;
+      if (!staffId) continue;
+      const staffMember = (staff as any[]).find((s: any) => s.id === staffId) || (staffRaw as any[]).find((s: any) => s.id === staffId);
+      const staffLedgers = (savingsLedger as any[]).filter(
+        (l: any) => l.staff_id === staffId || l.savings_id === cfg.id
+      );
+      if (!map.has(staffId)) {
+        map.set(staffId, {
+          staff_id: staffId,
+          staffMember,
+          primaryConfig: cfg,
+          allConfigs: [cfg],
+          totalSaved: 0,
+          ledgerEntries: staffLedgers,
+          depositedMonthsCount: 0,
+          isActive: Boolean(cfg.is_active),
+          isComplete: false,
+          monthlyAmount: Number(cfg.monthly_amount || 0),
+          durationMonths: Number(cfg.duration_months || 0),
+          startMonth: cfg.start_month,
+        });
+      } else {
+        const existing = map.get(staffId)!;
+        existing.allConfigs.push(cfg);
+        existing.ledgerEntries = [...existing.ledgerEntries, ...staffLedgers];
+        if (cfg.is_active && !existing.primaryConfig?.is_active) {
+          existing.primaryConfig = cfg;
+          existing.monthlyAmount = Number(cfg.monthly_amount || 0);
+          existing.durationMonths = Number(cfg.duration_months || 0);
+          existing.startMonth = cfg.start_month;
+        }
+      }
+    }
+
+    // Include any staff who have ledger entries even if configs are missing
+    for (const l of savingsLedger as any[]) {
+      const staffId = l.staff_id;
+      if (!staffId || map.has(staffId)) continue;
+      const staffMember = (staff as any[]).find((s: any) => s.id === staffId) || (staffRaw as any[]).find((s: any) => s.id === staffId);
+      const staffLedgers = (savingsLedger as any[]).filter((x: any) => x.staff_id === staffId);
+      map.set(staffId, {
+        staff_id: staffId,
+        staffMember,
+        primaryConfig: { id: l.savings_id || '', staff_id: staffId, monthly_amount: l.amount || 0, duration_months: 12, start_month: l.month_year, total_saved: 0, is_active: false },
+        allConfigs: [],
+        totalSaved: 0,
+        ledgerEntries: staffLedgers,
+        depositedMonthsCount: 0,
+        isActive: false,
+        isComplete: false,
+        monthlyAmount: Number(l.amount || 0),
+        durationMonths: 12,
+        startMonth: l.month_year,
+      });
+    }
+
+    return Array.from(map.values()).map((item) => {
+      const uniqueLedgers = Array.from(
+        new Map(item.ledgerEntries.map((l: any) => [l.month_year || l.id, l])).values()
+      ).sort((a: any, b: any) => (a.month_year > b.month_year ? -1 : 1));
+
+      const ledgerSum = uniqueLedgers.reduce((sum: number, l: any) => sum + Number(l.amount || 0), 0);
+      const totalSaved = Math.max(ledgerSum, Number(item.primaryConfig?.total_saved || 0));
+      const elapsed = getMonthsElapsed(monthYear, item.startMonth);
+      const isComplete = (item.durationMonths > 0 && elapsed > item.durationMonths) || (item.durationMonths > 0 && uniqueLedgers.length >= item.durationMonths);
+
+      return {
+        ...item,
+        ledgerEntries: uniqueLedgers,
+        totalSaved,
+        depositedMonthsCount: uniqueLedgers.length,
+        isComplete,
+        isActive: Boolean(item.primaryConfig?.is_active && !isComplete),
+      };
+    });
+  }, [savingsConfigs, savingsLedger, staff, staffRaw, monthYear]);
+
+  const activeLedgerGroup = useMemo(() => {
+    if (!selectedLedgerStaffId) return null;
+    return groupedSavings.find((g) => g.staff_id === selectedLedgerStaffId) || null;
+  }, [groupedSavings, selectedLedgerStaffId]);
 
   // Salary change history — used to apply increases/decreases only from their effective month.
   const { data: salaryChanges = [] } = useQuery({
@@ -3965,13 +4057,29 @@ const AdminSalary = () => {
           </TabsContent>
 
           {/* ========== SAVINGS LEDGER TAB ========== */}
+          {/* ========== SAVINGS LEDGER TAB ========== */}
           <TabsContent value="savings">
             <Card>
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Landmark className="h-5 w-5 text-blue-600" />
                   {bn ? 'জমার তালিকা (Savings Ledger)' : 'Savings Ledger'}
                 </CardTitle>
+                <Button
+                  size="sm"
+                  className="h-8 gap-1.5 bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={() => setSavingsDialog({
+                    staff_id: '',
+                    staff_name: '',
+                    monthly_amount: 1000,
+                    duration_months: 6,
+                    start_month: monthYear,
+                    is_active: true,
+                  })}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  {bn ? 'নতুন জমা সেটআপ' : 'New Savings Setup'}
+                </Button>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
@@ -3991,89 +4099,133 @@ const AdminSalary = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {savingsConfigs.length === 0 ? (
+                      {groupedSavings.length === 0 ? (
                         <tr><td colSpan={10} className="px-3 py-8 text-center text-muted-foreground">
                           <PiggyBank className="h-10 w-10 mx-auto mb-2 opacity-30" />
                           <p>{bn ? 'কোনো জমা সেটআপ নেই' : 'No savings configured yet'}</p>
-                          <p className="text-xs mt-1">{bn ? 'বেতন তালিকায় "+" বাটনে ক্লিক করে জমা সেটআপ করুন' : 'Click "+" in salary table to set up savings'}</p>
+                          <p className="text-xs mt-1">{bn ? 'উপরে "নতুন জমা সেটআপ" অথবা বেতন তালিকায় "+" বাটনে ক্লিক করে জমা চালু করুন' : 'Click "New Savings Setup" above or "+" in salary table to set up savings'}</p>
                         </td></tr>
-                      ) : savingsConfigs.map((cfg: any, idx: number) => {
-                        const staffMember = staff.find((s: any) => s.id === cfg.staff_id);
-                        const ledgerEntries = savingsLedger.filter((l: any) => l.savings_id === cfg.id);
-                        const elapsed = getMonthsElapsed(monthYear, cfg.start_month);
-                        const remaining = Math.max(0, cfg.duration_months - Math.max(0, elapsed));
-                        const isComplete = elapsed > cfg.duration_months;
-                        const isActive = cfg.is_active && !isComplete;
+                      ) : groupedSavings.map((item, idx: number) => {
+                        const remaining = Math.max(0, item.durationMonths - item.depositedMonthsCount);
 
                         return (
-                          <tr key={cfg.id} className="border-b hover:bg-muted/30 transition-colors">
+                          <tr key={item.staff_id} className="border-b hover:bg-muted/30 transition-colors">
                             <td className="px-3 py-2 text-muted-foreground">{bn ? toBnDigits(idx + 1) : idx + 1}</td>
-                            <td className="px-3 py-2 font-medium">{staffMember?.name_bn || '-'}</td>
+                            <td className="px-3 py-2 font-medium">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedLedgerStaffId(item.staff_id)}
+                                className="group inline-flex items-center gap-1.5 text-left text-blue-700 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 font-semibold hover:underline"
+                                title={bn ? 'ক্লিক করে জমার বিস্তারিত লেজার ও মিসিং মাস দেখুন' : 'Click to view deposit ledger and missing months'}
+                              >
+                                <span>{item.staffMember?.name_bn || item.staffMember?.name_en || '-'}</span>
+                                <History className="h-3.5 w-3.5 opacity-60 group-hover:opacity-100 transition-opacity" />
+                              </button>
+                              {item.staffMember?.designation && (
+                                <div className="text-[11px] text-muted-foreground font-normal">
+                                  {item.staffMember.designation}
+                                </div>
+                              )}
+                            </td>
                             <td className="px-3 py-2 text-right text-blue-700 font-semibold">
-                              ৳{bn ? toBnDigits(Number(cfg.monthly_amount).toLocaleString()) : Number(cfg.monthly_amount).toLocaleString()}
+                              ৳{bn ? toBnDigits(Number(item.monthlyAmount).toLocaleString()) : Number(item.monthlyAmount).toLocaleString()}
                             </td>
                             <td className="px-3 py-2 text-center">
-                              {bn ? toBnDigits(cfg.duration_months) : cfg.duration_months} {bn ? 'মাস' : 'months'}
+                              {bn ? toBnDigits(item.durationMonths) : item.durationMonths} {bn ? 'মাস' : 'months'}
                             </td>
-                            <td className="px-3 py-2 text-center text-xs">{getMonthLabel(cfg.start_month)}</td>
+                            <td className="px-3 py-2 text-center text-xs">{getMonthLabel(item.startMonth)}</td>
                             <td className="px-3 py-2 text-right font-bold text-blue-700">
-                              ৳{(() => {
-                                const ledgerSum = ledgerEntries.reduce((s: number, l: any) => s + Number(l.amount || 0), 0);
-                                const total = Math.max(ledgerSum, Number(cfg.total_saved || 0));
-                                return bn ? toBnDigits(total.toLocaleString()) : total.toLocaleString();
-                              })()}
+                              ৳{bn ? toBnDigits(item.totalSaved.toLocaleString()) : item.totalSaved.toLocaleString()}
                             </td>
                             <td className="px-3 py-2 text-center">
-                              {isComplete ? (
+                              {item.isComplete ? (
                                 <Badge className="bg-emerald-100 text-emerald-700 text-[10px]">{bn ? 'সম্পূর্ণ' : 'Complete'}</Badge>
                               ) : (
                                 <span>{bn ? toBnDigits(remaining) : remaining} {bn ? 'মাস' : 'mo'}</span>
                               )}
                             </td>
                             <td className="px-3 py-2 text-center">
-                              <Badge className={isActive 
-                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[10px]'
-                                : 'bg-muted text-muted-foreground text-[10px]'}>
-                                {isActive ? (bn ? 'চলমান' : 'Active') : isComplete ? (bn ? 'সম্পূর্ণ' : 'Done') : (bn ? 'নিষ্ক্রিয়' : 'Inactive')}
-                              </Badge>
-                            </td>
-                            <td className="px-3 py-2">
-                              <div className="flex flex-wrap gap-1 max-w-[250px]">
-                                {ledgerEntries.length === 0 ? (
-                                  <span className="text-xs text-muted-foreground">{bn ? 'এখনো কোনো কর্তন হয়নি' : 'No deductions yet'}</span>
-                                ) : ledgerEntries.slice(0, 6).map((entry: any) => (
-                                  <Badge key={entry.id} variant="outline" className="text-[9px] bg-blue-50/50 dark:bg-blue-900/10">
-                                    {getMonthLabel(entry.month_year)} - ৳{bn ? toBnDigits(Number(entry.amount).toLocaleString()) : Number(entry.amount).toLocaleString()}
+                              <div className="flex flex-col items-center gap-1">
+                                <Badge className={item.isActive 
+                                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[10px]'
+                                  : 'bg-muted text-muted-foreground text-[10px]'}>
+                                  {item.isActive ? (bn ? 'চলমান' : 'Active') : item.isComplete ? (bn ? 'সম্পূর্ণ' : 'Done') : (bn ? 'নিষ্ক্রিয়' : 'Inactive')}
+                                </Badge>
+                                {isRecordPending(item.primaryConfig?.id) && (
+                                  <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse text-[9px] px-1 py-0">
+                                    <Clock className="w-2.5 h-2.5 mr-0.5" />
+                                    {bn ? 'অনুমোদনের অপেক্ষায়' : 'Pending Approval'}
                                   </Badge>
-                                ))}
-                                {ledgerEntries.length > 6 && (
-                                  <Badge variant="outline" className="text-[9px]">+{ledgerEntries.length - 6}</Badge>
                                 )}
                               </div>
                             </td>
-                            <td className="px-3 py-2 text-center">
-                              {isRecordPending(cfg.id) && (
-                                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse text-[10px]">
-                                  <Clock className="w-3 h-3 mr-1" />
-                                  {bn ? 'অ্যাডমিন অনুমোদনের অপেক্ষায়' : 'Awaiting Admin Approval'}
-                                </Badge>
-                              )}
+                            <td className="px-3 py-2">
+                              <div className="flex flex-col gap-1.5 max-w-[280px]">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <Badge 
+                                    variant="secondary" 
+                                    className="cursor-pointer bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 hover:bg-blue-200 text-[11px] font-semibold py-0.5 px-2"
+                                    onClick={() => setSelectedLedgerStaffId(item.staff_id)}
+                                    title={bn ? 'লেজার খুলুন' : 'Open ledger'}
+                                  >
+                                    <PiggyBank className="h-3 w-3 mr-1 text-blue-600" />
+                                    {bn ? `${toBnDigits(item.depositedMonthsCount)} মাস জমা` : `${item.depositedMonthsCount} months deposited`}
+                                  </Badge>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 px-1.5 text-[10px] text-amber-700 hover:text-amber-800 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                                    onClick={() => setSelectedLedgerStaffId(item.staff_id)}
+                                    title={bn ? 'মিসিং মাস চেক করুন বা নতুন ডিপোজিট যোগ করুন' : 'Check missing months or add deposit'}
+                                  >
+                                    <Plus className="h-2.5 w-2.5 mr-0.5" />
+                                    {bn ? 'মিসিং মাস চেক / যোগ' : 'Missing / Add'}
+                                  </Button>
+                                </div>
+                                <div className="flex flex-wrap gap-1">
+                                  {item.ledgerEntries.length === 0 ? (
+                                    <span className="text-xs text-muted-foreground">{bn ? 'এখনো কোনো কর্তন হয়নি' : 'No deductions yet'}</span>
+                                  ) : (
+                                    item.ledgerEntries.slice(0, 5).map((entry: any) => (
+                                      <Badge key={entry.id} variant="outline" className="text-[9px] bg-blue-50/50 dark:bg-blue-900/10">
+                                        {getMonthLabel(entry.month_year)}
+                                      </Badge>
+                                    ))
+                                  )}
+                                  {item.ledgerEntries.length > 5 && (
+                                    <Badge 
+                                      variant="outline" 
+                                      className="text-[9px] cursor-pointer hover:bg-muted"
+                                      onClick={() => setSelectedLedgerStaffId(item.staff_id)}
+                                    >
+                                      +{bn ? toBnDigits(item.ledgerEntries.length - 5) : item.ledgerEntries.length - 5} {bn ? 'আরো' : 'more'}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
                             </td>
                             <td className="px-3 py-2 text-center">
                               <div className="flex gap-1 justify-center items-center flex-wrap">
-                                {!cfg.disbursed_at && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 px-2 text-[10px] text-blue-700 border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-800"
+                                  onClick={() => setSelectedLedgerStaffId(item.staff_id)}
+                                  title={bn ? 'বিস্তারিত লেজার ও মিসিং মাস' : 'View Ledger'}
+                                >
+                                  <History className="h-3 w-3 mr-1" /> {bn ? 'লেজার' : 'Ledger'}
+                                </Button>
+                                {!item.primaryConfig?.disbursed_at && (
                                   <Button
                                     size="sm"
                                     variant="outline"
                                     className="h-7 px-2 text-[10px] border-emerald-500 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
                                     onClick={() => {
-                                      const ledgerSum = (savingsLedger as any[]).filter((l: any) => l.savings_id === cfg.id)
-                                        .reduce((s: number, l: any) => s + Number(l.amount || 0), 0);
-                                      const total = Math.max(ledgerSum, Number(cfg.total_saved || 0));
                                       setDisburseDialog({
-                                        config: cfg,
-                                        staff_name: staffMember?.name_bn || '-',
-                                        amount: total,
+                                        config: item.primaryConfig,
+                                        staff_name: item.staffMember?.name_bn || item.staffMember?.name_en || '-',
+                                        amount: item.totalSaved,
                                         categoryId: '',
                                         institutionId: '',
                                         note: '',
@@ -4084,17 +4236,30 @@ const AdminSalary = () => {
                                     <DollarSign className="h-3 w-3 mr-1" /> {bn ? 'পরিশোধ' : 'Pay'}
                                   </Button>
                                 )}
-                                {cfg.disbursed_at && (
-                                  <Badge className="bg-emerald-100 text-emerald-700 text-[10px]" title={new Date(cfg.disbursed_at).toLocaleString()}>
+                                {item.primaryConfig?.disbursed_at && (
+                                  <Badge className="bg-emerald-100 text-emerald-700 text-[10px]" title={new Date(item.primaryConfig.disbursed_at).toLocaleString()}>
                                     {bn ? 'পরিশোধিত' : 'Paid'}
                                   </Badge>
                                 )}
-                                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setSavingsDialog({
-                                  ...cfg, staff_name: staffMember?.name_bn || '-',
-                                })}>
+                                <Button 
+                                  size="icon" 
+                                  variant="ghost" 
+                                  className="h-6 w-6" 
+                                  title={bn ? 'সেটিংস সম্পাদনা' : 'Edit Settings'}
+                                  onClick={() => setSavingsDialog({
+                                    ...item.primaryConfig, 
+                                    staff_name: item.staffMember?.name_bn || item.staffMember?.name_en || '-',
+                                  })}
+                                >
                                   <Edit2 className="h-3 w-3" />
                                 </Button>
-                                <Button size="icon" variant="ghost" className="h-6 w-6 text-red-500" onClick={() => setDeleteSavingsId(cfg.id)}>
+                                <Button 
+                                  size="icon" 
+                                  variant="ghost" 
+                                  className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50" 
+                                  title={bn ? 'মুছে ফেলুন' : 'Delete'}
+                                  onClick={() => setDeleteSavingsId(item.primaryConfig?.id)}
+                                >
                                   <Trash2 className="h-3 w-3" />
                                 </Button>
                               </div>
@@ -4121,9 +4286,37 @@ const AdminSalary = () => {
             </DialogHeader>
             {savingsDialog && (
               <div className="space-y-4">
-                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">{savingsDialog.staff_name}</p>
-                </div>
+                {savingsDialog.staff_name ? (
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">{savingsDialog.staff_name}</p>
+                  </div>
+                ) : (
+                  <div>
+                    <Label className="text-xs">{bn ? 'স্টাফ নির্বাচন করুন' : 'Select Staff'}</Label>
+                    <Select
+                      value={savingsDialog.staff_id || ''}
+                      onValueChange={(sid) => {
+                        const found = (staff as any[]).find((s: any) => s.id === sid) || (staffRaw as any[]).find((s: any) => s.id === sid);
+                        setSavingsDialog({
+                          ...savingsDialog,
+                          staff_id: sid,
+                          staff_name: found?.name_bn || found?.name_en || '',
+                        });
+                      }}
+                    >
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder={bn ? 'স্টাফ বাছাই করুন' : 'Choose staff'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(staff as any[]).map((s: any) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.name_bn || s.name_en} {s.staff_id_custom ? `(${s.staff_id_custom})` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div>
                   <Label className="text-xs">{bn ? 'মাসিক জমা (৳)' : 'Monthly Savings Amount (৳)'}</Label>
                   <NumberInput value={savingsDialog.monthly_amount}
@@ -4171,7 +4364,7 @@ const AdminSalary = () => {
                   </div>
                 )}
                 <Button className="w-full" onClick={() => saveSavingsMutation.mutate(savingsDialog)}
-                  disabled={saveSavingsMutation.isPending || !savingsDialog.monthly_amount || !savingsDialog.duration_months}>
+                  disabled={saveSavingsMutation.isPending || !savingsDialog.staff_id || !savingsDialog.monthly_amount || !savingsDialog.duration_months}>
                   <Save className="h-4 w-4 mr-1" /> {bn ? 'সেভ করুন' : 'Save'}
                 </Button>
               </div>
@@ -5254,6 +5447,17 @@ const AdminSalary = () => {
             isDeleting={signedDocsManager.isDeletingStaffSlip}
           />
         )}
+
+        {/* Salary Savings Ledger Detailed Dialog */}
+        <SalarySavingsLedgerDialog
+          open={!!selectedLedgerStaffId}
+          onOpenChange={(o) => {
+            if (!o) setSelectedLedgerStaffId(null);
+          }}
+          group={activeLedgerGroup}
+          currentMonthYear={monthYear}
+          bn={bn}
+        />
 
       </div>
     </>
