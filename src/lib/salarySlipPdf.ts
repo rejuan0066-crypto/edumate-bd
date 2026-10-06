@@ -180,9 +180,13 @@ export async function viewSlipPdfInNewTab(htmlContent: string): Promise<void> {
  * Uses a self-contained Blob URL with auto-print & on-screen navigation buttons,
  * falling back to an in-app printable iframe for standalone PWA mode.
  */
-export function printSalarySlipHtml(htmlContent: string, staffName: string = 'staff'): void {
+export function printSalarySlipHtml(
+  htmlContent: string,
+  staffName: string = 'staff',
+  customReturnUrl?: string,
+): void {
   let printableHtml = htmlContent;
-  const appReturnUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const appReturnUrl = customReturnUrl || (typeof window !== 'undefined' ? window.location.href : '');
 
   const floatingBar = `
     <div class="print-actions-bar no-print" style="position:fixed;bottom:20px;left:0;right:0;width:fit-content;margin:0 auto;background:#0f172a;color:#fff;padding:8px 16px;border-radius:999px;box-shadow:0 12px 30px rgba(0,0,0,0.35);display:flex;align-items:center;gap:12px;z-index:99999;font-family:system-ui,-apple-system,sans-serif;">
@@ -233,17 +237,24 @@ export function printSalarySlipHtml(htmlContent: string, staffName: string = 'st
 
           // ২. মোবাইল ব্রাউজারে যদি window.close কাজ না করে (iOS Safari/Android Chrome নিরাপত্তা পলিসি):
           setTimeout(function() {
-            // হিস্টোরিতে আগের পেজ থাকলে ফিরে যাও
-            if (window.history && window.history.length > 1) {
-              try {
-                window.history.back();
-                return;
-              } catch(err) {}
-            }
-            // সরাসরি অ্যাপের রিটার্ন লিঙ্কে রিডাইরেক্ট করে ফিরে যাও
+            // ১) সরাসরি অ্যাপের রিটার্ন লিঙ্কে রিডাইরেক্ট করে ফিরে যাও (যাতে নির্দিষ্ট মাস ও বছর বহাল থাকে)
             if (returnUrl && returnUrl !== 'about:blank' && !returnUrl.startsWith('blob:')) {
               try {
                 window.location.replace(returnUrl);
+                return;
+              } catch(err) {}
+            }
+            // ২) যদি opener সচল থাকে, ফোকাস করার চেষ্টা করো
+            if (window.opener && !window.opener.closed) {
+              try {
+                window.opener.focus();
+                return;
+              } catch(err) {}
+            }
+            // ৩) হিস্টোরিতে আগের পেজ থাকলে ফিরে যাও
+            if (window.history && window.history.length > 1) {
+              try {
+                window.history.back();
                 return;
               } catch(err) {}
             }

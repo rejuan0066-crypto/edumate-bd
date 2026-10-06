@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTimeFormat, formatTimeDisplay } from '@/hooks/useTimeFormat';
 import { useResignedStaff } from '@/hooks/useResignedStaff';
 import { useAppTimezone } from '@/hooks/useAppTimezone';
@@ -118,10 +119,104 @@ const AdminSalary = () => {
   // একই দিনের একাধিক হাজিরা এন্ট্রি থাকলে কোনটি গণনা হবে (অ্যাডমিন সেটিংস)
   const duplicateRule = useAttendanceDuplicateRule();
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
   // Use app-timezone "now" so the default month/year don't drift before midnight in BD
   const tzParts = getDatePartsInTz(new Date(), appTz);
-  const [selectedMonth, setSelectedMonth] = useState(String(tzParts.month + 1).padStart(2, '0'));
-  const [selectedYear, setSelectedYear] = useState(String(tzParts.year));
+
+  // Month & Year persistence: URL query params > sessionStorage > localStorage > current date
+  const getInitialMonth = () => {
+    const qm = searchParams.get('month');
+    if (qm && /^(0[1-9]|1[0-2])$/.test(qm)) return qm;
+    try {
+      const stored = sessionStorage.getItem('edumate_salary_month') || localStorage.getItem('edumate_salary_month');
+      if (stored && /^(0[1-9]|1[0-2])$/.test(stored)) return stored;
+    } catch {}
+    return String(tzParts.month + 1).padStart(2, '0');
+  };
+
+  const getInitialYear = () => {
+    const qy = searchParams.get('year');
+    if (qy && /^\d{4}$/.test(qy)) return qy;
+    try {
+      const stored = sessionStorage.getItem('edumate_salary_year') || localStorage.getItem('edumate_salary_year');
+      if (stored && /^\d{4}$/.test(stored)) return stored;
+    } catch {}
+    return String(tzParts.year);
+  };
+
+  const [selectedMonth, setSelectedMonthState] = useState<string>(getInitialMonth);
+  const [selectedYear, setSelectedYearState] = useState<string>(getInitialYear);
+
+  // Synced setters that update React state, URL query params, and browser storage
+  const setSelectedMonth = useCallback((m: string) => {
+    setSelectedMonthState(m);
+    try {
+      sessionStorage.setItem('edumate_salary_month', m);
+      localStorage.setItem('edumate_salary_month', m);
+    } catch {}
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('month', m);
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  const setSelectedYear = useCallback((y: string) => {
+    setSelectedYearState(y);
+    try {
+      sessionStorage.setItem('edumate_salary_year', y);
+      localStorage.setItem('edumate_salary_year', y);
+    } catch {}
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('year', y);
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  // Keep storage in sync whenever selectedMonth or selectedYear changes
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('edumate_salary_month', selectedMonth);
+      localStorage.setItem('edumate_salary_month', selectedMonth);
+      sessionStorage.setItem('edumate_salary_year', selectedYear);
+      localStorage.setItem('edumate_salary_year', selectedYear);
+    } catch {}
+  }, [selectedMonth, selectedYear]);
+
+  // Ensure URL search params always reflect the active month & year on initial mount
+  useEffect(() => {
+    const qm = searchParams.get('month');
+    const qy = searchParams.get('year');
+    if (!qm || !qy) {
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev);
+        let changed = false;
+        if (!next.get('month')) {
+          next.set('month', selectedMonth);
+          changed = true;
+        }
+        if (!next.get('year')) {
+          next.set('year', selectedYear);
+          changed = true;
+        }
+        return changed ? next : prev;
+      }, { replace: true });
+    }
+  }, []);
+
+  // Sync if URL search params change externally (e.g. browser back/forward buttons)
+  useEffect(() => {
+    const qm = searchParams.get('month');
+    const qy = searchParams.get('year');
+    if (qm && /^(0[1-9]|1[0-2])$/.test(qm) && qm !== selectedMonth) {
+      setSelectedMonthState(qm);
+    }
+    if (qy && /^\d{4}$/.test(qy) && qy !== selectedYear) {
+      setSelectedYearState(qy);
+    }
+  }, [searchParams, selectedMonth, selectedYear]);
   const [searchQuery, setSearchQuery] = useState('');
   const [editDialog, setEditDialog] = useState<any>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -2952,7 +3047,10 @@ const AdminSalary = () => {
         console.warn('Direct iframe print failed, falling back to standalone print', err);
       }
     }
-    printSalarySlipHtml(slipModal.html, slipModal.staff?.name_en || slipModal.staff?.name_bn);
+    const returnUrl = typeof window !== 'undefined'
+      ? `${window.location.origin}${window.location.pathname}?year=${selectedYear}&month=${selectedMonth}`
+      : undefined;
+    printSalarySlipHtml(slipModal.html, slipModal.staff?.name_en || slipModal.staff?.name_bn, returnUrl);
   };
 
   // Helper: get month name from month_year string
