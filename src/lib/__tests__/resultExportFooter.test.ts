@@ -40,8 +40,8 @@ const build = (o: any = {}) => {
   } as any);
 };
 
-const countRows = (html: string) => (html.match(/<tbody[\s\S]*?<\/tbody>/g) || [])
-  .reduce((n, tb) => n + (tb.match(/<tr\b/g) || []).length, 0);
+const countRows = (html: string) => ((html.match(/<tbody[\s\S]*?<\/tbody>/g) as string[]) || [])
+  .reduce((n: number, tb: string) => n + (tb.match(/<tr\b/g) || []).length, 0);
 
 describe('getResultSheetHtml — pagination & footer', () => {
   it('shows "Page X / Y" in English (11 rows per landscape page)', () => {

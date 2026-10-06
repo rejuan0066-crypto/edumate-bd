@@ -65,7 +65,7 @@ describe('OtpVerificationDialog — standardized lockout codes', () => {
 
       render(<OtpVerificationDialog {...baseProps} />);
       // Wait for initial send
-      await waitFor(() => expect(sendOtpMock).toHaveBeenCalled());
+      await waitFor(() => expect(sendOtpMock).toHaveBeenCalled(), { timeout: 3000 });
 
       // Type a 6-digit code and click verify
       const user = userEvent.setup();

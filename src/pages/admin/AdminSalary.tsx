@@ -245,6 +245,7 @@ const AdminSalary = () => {
   const [disburseDialog, setDisburseDialog] = useState<any>(null);
   const [eligibilityFilter, setEligibilityFilter] = useState<'all' | 'eligible' | 'not_generated' | 'pending' | 'paid'>('all');
   const [auditLogOpen, setAuditLogOpen] = useState(false);
+  const monthYear = `${selectedYear}-${selectedMonth}`;
   const signedDocsManager = useSignedSalaryDocs(monthYear);
   const [signedHubOpen, setSignedHubOpen] = useState(false);
   const [directUploadStaff, setDirectUploadStaff] = useState<any | null>(null);
@@ -275,8 +276,6 @@ const AdminSalary = () => {
   } | null>(null);
   const [slipModalLoading, setSlipModalLoading] = useState<'download' | 'share' | 'view' | null>(null);
   const previewIframeRef = useRef<HTMLIFrameElement>(null);
-
-  const monthYear = `${selectedYear}-${selectedMonth}`;
 
   // Auto-refresh salary records when the auto-attendance trigger inserts new rows for this month
   useEffect(() => {
