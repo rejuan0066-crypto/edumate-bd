@@ -51,8 +51,14 @@ import {
   Wallet, Users, Search, Save, Download, Printer, Settings2,
   CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Edit2, Eye,
   Calculator, Plus, Trash2, DollarSign, FileText, FolderOpen,
-  PiggyBank, Landmark, RefreshCw, Minus, Share2
+  PiggyBank, Landmark, RefreshCw, Minus, Share2, Camera, FileCheck2, Upload
 } from 'lucide-react';
+import {
+  useSignedSalaryDocs,
+  SignedSalaryDocsHubDialog,
+  SignedSlipUploadDialog,
+  SignedSlipViewerDialog,
+} from '@/components/admin/SignedSalaryDocsManager';
 
 const MONTHS = [
   { value: '01', bn: 'জানুয়ারি', en: 'January' },
@@ -234,6 +240,10 @@ const AdminSalary = () => {
   const [disburseDialog, setDisburseDialog] = useState<any>(null);
   const [eligibilityFilter, setEligibilityFilter] = useState<'all' | 'eligible' | 'not_generated' | 'pending' | 'paid'>('all');
   const [auditLogOpen, setAuditLogOpen] = useState(false);
+  const signedDocsManager = useSignedSalaryDocs(monthYear);
+  const [signedHubOpen, setSignedHubOpen] = useState(false);
+  const [directUploadStaff, setDirectUploadStaff] = useState<any | null>(null);
+  const [directViewStaff, setDirectViewStaff] = useState<any | null>(null);
 
   // Pre-fetch default institution for instant synchronous salary slip printing
   const { data: defaultInstData } = useQuery({
@@ -3203,6 +3213,21 @@ const AdminSalary = () => {
                 <Button size="sm" variant="outline" onClick={() => setAuditLogOpen(true)} title={bn ? 'বেতন জেনারেশন অডিট লগ' : 'Salary generation audit log'}>
                   <FileText className="h-3 w-3 mr-1" /> {bn ? 'অডিট লগ' : 'Audit Log'}
                 </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-emerald-400/80 bg-emerald-50/80 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-700/50 font-medium"
+                  onClick={() => setSignedHubOpen(true)}
+                  title={bn ? 'স্বাক্ষরিত মূল শীট ও সকল স্টাফের স্লিপ সংরক্ষণ কেন্দ্র' : 'Signed Slips & Master Sheet Vault'}
+                >
+                  <FileCheck2 className="h-3.5 w-3.5 mr-1 text-emerald-600" />
+                  {bn ? 'স্বাক্ষরিত কপি সংরক্ষণ' : 'Signed Docs'}
+                  {signedDocsManager.signedCount > 0 && (
+                    <Badge className="ml-1.5 px-1.5 py-0 text-[10px] bg-emerald-600 text-white font-mono">
+                      {bn ? toBnDigits(signedDocsManager.signedCount) : signedDocsManager.signedCount}
+                    </Badge>
+                  )}
+                </Button>
                 <Button size="sm" variant="outline" onClick={exportExcel}>
                   <Download className="h-3 w-3 mr-1" /> Excel
                 </Button>
@@ -3335,6 +3360,7 @@ const AdminSalary = () => {
                         <th className="px-3 py-2 text-right text-xs font-medium text-blue-600">{bn ? 'জমা' : 'Savings'}</th>
                         <th className="px-3 py-2 text-right text-xs font-medium text-emerald-600">{bn ? 'নিট বেতন' : 'Net'}</th>
                         <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'স্ট্যাটাস' : 'Status'}</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'স্বাক্ষরিত স্লিপ' : 'Signed Slip'}</th>
                         <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'পেন্ডিং অবস্থা' : 'Pending Status'}</th>
                         <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'অ্যাকশন' : 'Actions'}</th>
 
@@ -3663,6 +3689,37 @@ const AdminSalary = () => {
                                   )}
                                 </div>
                               )}
+                            </td>
+                            <td className="px-2 py-2 text-center">
+                              {(() => {
+                                const slip = signedDocsManager.getStaffSlip(s.id);
+                                if (slip) {
+                                  return (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-6 px-2 text-[10px] bg-emerald-100 hover:bg-emerald-200 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-semibold gap-1 rounded-full shadow-sm"
+                                      title={bn ? 'স্বাক্ষরিত স্লিপ দেখুন / ডাউনলোড করুন' : 'View / Download Signed Slip'}
+                                      onClick={() => setDirectViewStaff(s)}
+                                    >
+                                      <FileCheck2 className="h-3 w-3 text-emerald-600" />
+                                      <span>{bn ? 'সংরক্ষিত' : 'Saved'}</span>
+                                    </Button>
+                                  );
+                                }
+                                return (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 px-2 text-[10px] border border-dashed border-slate-300 hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-700 text-muted-foreground font-normal gap-1 rounded-full"
+                                    title={bn ? 'স্বাক্ষর নেয়ার পর স্ক্যান বা ছবি আপলোড করুন' : 'Upload / Scan Signed Slip'}
+                                    onClick={() => setDirectUploadStaff(s)}
+                                  >
+                                    <Camera className="h-2.5 w-2.5 text-slate-500 hover:text-emerald-600" />
+                                    <span>{bn ? 'আপলোড' : 'Upload'}</span>
+                                  </Button>
+                                );
+                              })()}
                             </td>
                             <td className="px-3 py-2 text-center">
                               {rec && isRecordPending(rec.id) && (
@@ -5018,6 +5075,59 @@ const AdminSalary = () => {
               </div>
             </div>
 
+            {/* Signed Slip Status Bar inside Slip Preview Modal */}
+            {slipModal?.staff && (() => {
+              const slip = signedDocsManager.getStaffSlip(slipModal.staff.id);
+              return (
+                <div className="w-full bg-slate-50 dark:bg-slate-900 px-4 py-2.5 border-b flex items-center justify-between gap-3 text-xs flex-wrap sm:flex-nowrap">
+                  {slip ? (
+                    <>
+                      <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-medium min-w-0">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                        <span className="truncate">{bn ? 'এই মাসের স্বাক্ষরিত স্লিপ সংরক্ষিত আছে' : 'Signed slip is saved'}</span>
+                        <span className="text-[10px] text-muted-foreground font-normal shrink-0">
+                          ({new Date(slip.uploaded_at).toLocaleDateString('bn-BD', { dateStyle: 'short' })})
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1 border-emerald-300 text-emerald-800 hover:bg-emerald-100 dark:text-emerald-300 dark:border-emerald-700"
+                          onClick={() => setDirectViewStaff(slipModal.staff)}
+                        >
+                          <Eye className="h-3.5 w-3.5 text-emerald-600" /> {bn ? 'স্বাক্ষরিত কপি দেখুন' : 'View Signed'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs text-muted-foreground hover:text-emerald-700"
+                          onClick={() => setDirectUploadStaff(slipModal.staff)}
+                        >
+                          {bn ? 'পরিবর্তন' : 'Replace'}
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 text-muted-foreground min-w-0">
+                        <Camera className="h-4 w-4 text-amber-500 shrink-0" />
+                        <span className="truncate">{bn ? 'প্রিন্ট করে স্বাক্ষর নেওয়ার পর স্বাক্ষরিত কপি এখানে আপলোড করুন' : 'Upload signed copy after printing & signatures'}</span>
+                      </div>
+                      <Button
+                        size="sm"
+                        className="h-7 text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shrink-0 ml-auto"
+                        onClick={() => setDirectUploadStaff(slipModal.staff)}
+                      >
+                        <Camera className="h-3.5 w-3.5" />
+                        {bn ? 'স্বাক্ষরিত স্লিপ আপলোড / স্ক্যান' : 'Upload Signed Slip'}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* Slip Interactive Preview Body */}
             <div className="flex-1 overflow-auto p-3 sm:p-5 bg-slate-100 dark:bg-slate-950 flex justify-center items-start min-h-[350px] max-h-[75vh]">
               {slipModal && (
@@ -5091,6 +5201,59 @@ const AdminSalary = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Signed Salary Documents Vault / Hub Dialog */}
+        <SignedSalaryDocsHubDialog
+          open={signedHubOpen}
+          onOpenChange={setSignedHubOpen}
+          monthYear={monthYear}
+          monthLabel={getMonthLabel(monthYear)}
+          staffList={staff}
+          manager={signedDocsManager}
+        />
+
+        {/* Staff Direct Upload Dialog */}
+        {directUploadStaff && (
+          <SignedSlipUploadDialog
+            open={!!directUploadStaff}
+            onOpenChange={(o) => { if (!o) setDirectUploadStaff(null); }}
+            staff={directUploadStaff}
+            monthLabel={getMonthLabel(monthYear)}
+            existingSlip={signedDocsManager.getStaffSlip(directUploadStaff.id)}
+            onSave={async (file, notes) => {
+              await signedDocsManager.uploadStaffSlip({
+                staffId: directUploadStaff.id,
+                staffName: directUploadStaff.name_bn || directUploadStaff.name_en,
+                file,
+                notes,
+              });
+            }}
+            isSaving={signedDocsManager.isUploadingStaffSlip}
+          />
+        )}
+
+        {/* Staff Direct Viewer Dialog */}
+        {directViewStaff && (
+          <SignedSlipViewerDialog
+            open={!!directViewStaff}
+            onOpenChange={(o) => { if (!o) setDirectViewStaff(null); }}
+            staff={directViewStaff}
+            monthLabel={getMonthLabel(monthYear)}
+            slip={signedDocsManager.getStaffSlip(directViewStaff.id) || null}
+            onReplace={() => {
+              const target = directViewStaff;
+              setDirectViewStaff(null);
+              setDirectUploadStaff(target);
+            }}
+            onDelete={async () => {
+              const s = directViewStaff;
+              const slip = signedDocsManager.getStaffSlip(s.id);
+              await signedDocsManager.deleteStaffSlip({ staffId: s.id, storagePath: slip?.storage_path });
+              setDirectViewStaff(null);
+            }}
+            isDeleting={signedDocsManager.isDeletingStaffSlip}
+          />
+        )}
 
       </div>
     </>
