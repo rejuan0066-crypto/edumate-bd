@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { TimePicker } from '@/components/ui/time-picker';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -496,7 +497,7 @@ export default function AdminDutyRoster() {
               <RefreshCw className={`mr-1 h-4 w-4 ${attFetching ? 'animate-spin' : ''}`} />
               রিফ্রেশ
             </Button>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-auto" />
+            <DatePicker value={date} onChange={setDate} className="w-[180px]" />
           </div>
         </div>
 

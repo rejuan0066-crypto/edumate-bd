@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -380,7 +381,7 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
               </div>
               <div>
                 <Label>{bn ? 'কার্যকর তারিখ' : 'Effective Date'}</Label>
-                <Input type="date" value={pEffectiveDate} onChange={e => setPEffectiveDate(e.target.value)} className="mt-1" />
+                <DatePicker value={pEffectiveDate} onChange={setPEffectiveDate} bengali={bn} className="mt-1" />
               </div>
             </div>
             <div>
@@ -437,7 +438,7 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
                         </div>
                         <div>
                           <Label className="text-xs">{bn ? 'কার্যকর তারিখ' : 'Effective Date'}</Label>
-                          <Input type="date" className="mt-1 h-8 text-xs" value={editPromo.effective_date || ''} onChange={e => setEditPromo({ ...editPromo, effective_date: e.target.value })} />
+                          <DatePicker value={editPromo.effective_date || ''} onChange={v => setEditPromo({ ...editPromo, effective_date: v })} bengali={bn} className="mt-1 h-8 text-xs" />
                         </div>
                         <div>
                           <Label className="text-xs">{bn ? 'স্মারক নং' : 'Letter No'}</Label>
@@ -515,7 +516,7 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
               </div>
               <div>
                 <Label>{bn ? 'কার্যকর তারিখ' : 'Effective Date'}</Label>
-                <Input type="date" value={sEffectiveDate} onChange={e => setSEffectiveDate(e.target.value)} className="mt-1" />
+                <DatePicker value={sEffectiveDate} onChange={setSEffectiveDate} bengali={bn} className="mt-1" />
               </div>
               <div>
                 <Label>{bn ? 'স্মারক নং (ঐচ্ছিক)' : 'Letter No (optional)'}</Label>
@@ -575,7 +576,7 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
                         </div>
                         <div>
                           <Label className="text-xs">{bn ? 'কার্যকর তারিখ' : 'Effective Date'}</Label>
-                          <Input type="date" className="mt-1 h-8 text-xs" value={editSalary.effective_date || ''} onChange={e => setEditSalary({ ...editSalary, effective_date: e.target.value })} />
+                          <DatePicker value={editSalary.effective_date || ''} onChange={v => setEditSalary({ ...editSalary, effective_date: v })} bengali={bn} className="mt-1 h-8 text-xs" />
                         </div>
                         <div className="col-span-2">
                           <Label className="text-xs">{bn ? 'স্মারক নং' : 'Letter No'}</Label>

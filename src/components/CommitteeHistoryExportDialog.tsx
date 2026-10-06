@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Download, FileText, ShieldCheck } from "lucide-react";
 import { exportStaffCommitteeHistoryCSV, exportStaffCommitteeHistoryPDF } from "@/lib/exportCommitteeHistory";
@@ -62,12 +63,12 @@ export default function CommitteeHistoryExportDialog({ open, onOpenChange, staff
             )}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs">{bn ? "শুরু" : "Start Date"}</Label>
-                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                <Label className="text-xs mb-1 block">{bn ? "শুরু" : "Start Date"}</Label>
+                <DatePicker value={startDate} onChange={setStartDate} bengali={bn} clearable />
               </div>
               <div>
-                <Label className="text-xs">{bn ? "শেষ" : "End Date"}</Label>
-                <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                <Label className="text-xs mb-1 block">{bn ? "শেষ" : "End Date"}</Label>
+                <DatePicker value={endDate} onChange={setEndDate} bengali={bn} clearable />
               </div>
             </div>
             <div>

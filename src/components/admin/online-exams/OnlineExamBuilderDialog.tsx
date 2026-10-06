@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
@@ -421,11 +422,11 @@ const OnlineExamBuilderDialog = ({ open, onOpenChange, examId, createdBy }: Prop
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>{bn ? 'শুরুর তারিখ ও সময়' : 'Start at'}</Label>
-                  <Input type="datetime-local" value={exam.start_at} onChange={(e) => setExam({ ...exam, start_at: e.target.value })} className="rounded-2xl" />
+                  <DateTimePicker value={exam.start_at} onChange={(v) => setExam({ ...exam, start_at: v })} bengali={bn} />
                 </div>
                 <div className="space-y-2">
                   <Label>{bn ? 'শেষ তারিখ ও সময়' : 'End at'}</Label>
-                  <Input type="datetime-local" value={exam.end_at} onChange={(e) => setExam({ ...exam, end_at: e.target.value })} className="rounded-2xl" />
+                  <DateTimePicker value={exam.end_at} onChange={(v) => setExam({ ...exam, end_at: v })} bengali={bn} />
                 </div>
               </div>
             </TabsContent>

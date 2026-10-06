@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -212,7 +213,7 @@ x-api-key: <API Key>
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
           <CardTitle className="text-base">মেশিন পাঞ্চ লগ</CardTitle>
           <div className="flex items-center gap-2">
-            <Input type="date" value={logDate} onChange={e => setLogDate(e.target.value)} className="w-auto" />
+            <DatePicker value={logDate} onChange={setLogDate} className="w-[180px]" />
             <Button variant="outline" size="icon" onClick={() => qc.invalidateQueries({ queryKey: ['machine-punch-log'] })}>
               <RefreshCw className="h-4 w-4" />
             </Button>

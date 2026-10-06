@@ -1808,24 +1808,26 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       ? (bn ? 'খাওয়া হাজিরা (নাস্তা + দুপুর + রাত)' : 'Meal Attendance (Breakfast + Lunch + Dinner)')
       : currentTabLabel;
 
+    const isDutyPrint = entityType === 'staff' && staffSubTab === 'duty';
     const html = `<!DOCTYPE html><html><head>
       <meta charset="utf-8">
       <title>${title} - ${selectedDate}</title>
-      <style>@font-face{font-family:"SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}</style><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
       <style>
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'SutonnyOMJ','Noto Sans Bengali',sans-serif; padding:20px; font-size:12px; }
-        .header { text-align:center; margin-bottom:16px; border-bottom:2px solid #333; padding-bottom:10px; }
-        .header img { height:50px; margin-bottom:6px; }
-        .header h2 { font-size:18px; margin:4px 0; }
-        .header p { font-size:11px; color:#555; }
-        .meta { display:flex; justify-content:space-between; margin-bottom:10px; font-size:11px; }
-        table { width:100%; border-collapse:collapse; margin-top:8px; }
-        th,td { border:1px solid #ccc; padding:5px 8px; text-align:left; font-size:11px; }
-        th { background:#f3f4f6; font-weight:700; }
-        .summary { margin-top:12px; display:flex; gap:20px; font-size:11px; font-weight:600; flex-wrap:wrap; }
-        .summary span { padding:3px 10px; border-radius:4px; }
-        @media print { body { padding:10px; } }
+        @page { size: ${isDutyPrint ? 'A4 landscape' : 'A4 portrait'}; margin: 8mm; }
+        body { font-family:'Hind Siliguri','Noto Sans Bengali',sans-serif; padding:12px; font-size:12px; color:#1e293b; }
+        .header { text-align:center; margin-bottom:12px; border-bottom:2px solid #059669; padding-bottom:8px; }
+        .header img { height:48px; margin-bottom:4px; }
+        .header h2 { font-size:18px; margin:2px 0; color:#0f172a; }
+        .header p { font-size:11px; color:#64748b; }
+        .meta { display:flex; justify-content:space-between; margin-bottom:8px; font-size:12px; font-weight:500; }
+        table { width:100%; border-collapse:collapse; margin-top:6px; }
+        th,td { border:1px solid #cbd5e1; padding:6px 8px; text-align:left; font-size:11px; }
+        th { background:#f1f5f9; font-weight:700; color:#334155; }
+        .summary { margin-top:12px; display:flex; gap:16px; font-size:11px; font-weight:600; flex-wrap:wrap; }
+        .summary span { padding:4px 12px; border-radius:6px; font-weight:bold; }
+        @media print { body { padding:0; } }
       </style>
     </head><body>
       <div class="header">

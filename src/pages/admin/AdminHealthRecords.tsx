@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { TimePicker } from '@/components/ui/time-picker';
 import { NumberInput } from '@/components/ui/number-input';
 import { Label } from '@/components/ui/label';
@@ -1133,8 +1134,8 @@ const AdminHealthRecords = () => {
               </Select>
             </div>
             <div>
-              <Label>{bn ? 'ভিজিটের তারিখ' : 'Visit Date'}</Label>
-              <Input type="date" value={visitForm.visit_date || ''} onChange={(e) => setVisitForm({ ...visitForm, visit_date: e.target.value })} />
+              <Label className="mb-1 block">{bn ? 'ভিজিটের তারিখ' : 'Visit Date'}</Label>
+              <DatePicker value={visitForm.visit_date || ''} onChange={(v) => setVisitForm({ ...visitForm, visit_date: v })} bengali={bn} />
             </div>
              <div>
                <Label>{bn ? 'সময়' : 'Time'}</Label>
@@ -1178,8 +1179,8 @@ const AdminHealthRecords = () => {
               <Input value={visitForm.attended_by || ''} onChange={(e) => setVisitForm({ ...visitForm, attended_by: e.target.value })} />
             </div>
             <div>
-              <Label>{bn ? 'ফলোআপ তারিখ' : 'Follow-up Date'}</Label>
-              <Input type="date" value={visitForm.follow_up_date || ''} onChange={(e) => setVisitForm({ ...visitForm, follow_up_date: e.target.value })} />
+              <Label className="mb-1 block">{bn ? 'ফলোআপ তারিখ' : 'Follow-up Date'}</Label>
+              <DatePicker value={visitForm.follow_up_date || ''} onChange={(v) => setVisitForm({ ...visitForm, follow_up_date: v })} bengali={bn} clearable />
             </div>
             <div className="md:col-span-2">
               <Label>{bn ? 'নোট' : 'Notes'}</Label>
@@ -1241,12 +1242,12 @@ const AdminHealthRecords = () => {
               <Input value={vaccForm.batch_number || ''} onChange={(e) => setVaccForm({ ...vaccForm, batch_number: e.target.value })} />
             </div>
             <div>
-              <Label>{bn ? 'টিকা প্রদানের তারিখ' : 'Vaccination Date'}</Label>
-              <Input type="date" value={vaccForm.vaccination_date || ''} onChange={(e) => setVaccForm({ ...vaccForm, vaccination_date: e.target.value })} />
+              <Label className="mb-1 block">{bn ? 'টিকা প্রদানের তারিখ' : 'Vaccination Date'}</Label>
+              <DatePicker value={vaccForm.vaccination_date || ''} onChange={(v) => setVaccForm({ ...vaccForm, vaccination_date: v })} bengali={bn} />
             </div>
             <div>
-              <Label>{bn ? 'পরবর্তী ডিউ তারিখ' : 'Next Due Date'}</Label>
-              <Input type="date" value={vaccForm.next_due_date || ''} onChange={(e) => setVaccForm({ ...vaccForm, next_due_date: e.target.value })} />
+              <Label className="mb-1 block">{bn ? 'পরবর্তী ডিউ তারিখ' : 'Next Due Date'}</Label>
+              <DatePicker value={vaccForm.next_due_date || ''} onChange={(v) => setVaccForm({ ...vaccForm, next_due_date: v })} bengali={bn} clearable />
             </div>
             <div className="md:col-span-2">
               <Label>{bn ? 'প্রদানকারী' : 'Administered By'}</Label>

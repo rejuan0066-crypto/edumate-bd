@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
+import { TimePicker } from '@/components/ui/time-picker';
 import { NumberInput } from '@/components/ui/number-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -341,32 +343,14 @@ const AdminHostel = () => {
     setCutoffForm({ ...cf, [meal]: to24h(next.hour, next.minute, next.period) });
   };
   const renderCutoffTimePicker = (meal: CutoffKey, label: string) => {
-    const value = parseTime12(cf[meal]);
     return (
-      <div className="space-y-2 rounded-xl border border-border/60 bg-background/60 p-3">
+      <div className="space-y-1.5 rounded-2xl border border-border/60 bg-background/60 p-3">
         <Label className="text-xs font-medium">{label}</Label>
-        <div className="grid grid-cols-[1fr_1fr_82px] gap-2">
-          <Select value={value.hour} onValueChange={(v) => updateCutoffTime(meal, 'hour', v)}>
-            <SelectTrigger aria-label={`${label} hour`} className="h-10"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {HOUR_12_OPTIONS.map(hour => <SelectItem key={hour} value={hour}>{hour}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={value.minute} onValueChange={(v) => updateCutoffTime(meal, 'minute', v)}>
-            <SelectTrigger aria-label={`${label} minute`} className="h-10"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {MINUTE_OPTIONS.map(minute => <SelectItem key={minute} value={minute}>{minute}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={value.period} onValueChange={(v) => updateCutoffTime(meal, 'period', v as TimePeriod)}>
-            <SelectTrigger aria-label={`${label} period`} className="h-10"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="AM">AM</SelectItem>
-              <SelectItem value="PM">PM</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <p className="text-[11px] text-muted-foreground">{bn ? 'দেখাচ্ছে' : 'Showing'}: {to12h(cf[meal])}</p>
+        <TimePicker
+          value={cf[meal] || ''}
+          onChange={(v) => setCutoffForm(prev => ({ ...prev, [meal]: v }))}
+          placeholder={label}
+        />
       </div>
     );
   };
@@ -1161,7 +1145,7 @@ const AdminHostel = () => {
               <CardTitle className="flex items-center gap-2"><CalendarCheck className="w-5 h-5" />{bn ? '৩ বেলা খাবারের হাজিরা' : '3-Meal Attendance'}</CardTitle>
               <div className="flex items-center gap-2">
                 <Label className="text-sm whitespace-nowrap">{bn ? 'তারিখ' : 'Date'}</Label>
-                <Input type="date" value={attDate} onChange={e => setAttDate(e.target.value)} className="w-auto" />
+                <DatePicker value={attDate} onChange={setAttDate} className="w-[180px]" bengali={bn} />
               </div>
             </CardHeader>
             <CardContent>
@@ -1722,8 +1706,14 @@ const AdminHostel = () => {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>{bn ? 'চেক-ইন' : 'Check-in'}</Label><Input type="date" value={allocForm.check_in_date || ''} onChange={e => setAllocForm({ ...allocForm, check_in_date: e.target.value })} /></div>
-              <div><Label>{bn ? 'চেক-আউট' : 'Check-out'}</Label><Input type="date" value={allocForm.check_out_date || ''} onChange={e => setAllocForm({ ...allocForm, check_out_date: e.target.value })} /></div>
+              <div>
+                <Label className="mb-1 block">{bn ? 'চেক-ইন' : 'Check-in'}</Label>
+                <DatePicker value={allocForm.check_in_date || ''} onChange={v => setAllocForm({ ...allocForm, check_in_date: v })} bengali={bn} clearable />
+              </div>
+              <div>
+                <Label className="mb-1 block">{bn ? 'চেক-আউট' : 'Check-out'}</Label>
+                <DatePicker value={allocForm.check_out_date || ''} onChange={v => setAllocForm({ ...allocForm, check_out_date: v })} bengali={bn} clearable />
+              </div>
             </div>
             <div><Label>{bn ? 'স্ট্যাটাস' : 'Status'}</Label>
               <Select value={allocForm.status || 'active'} onValueChange={v => setAllocForm({ ...allocForm, status: v })}>

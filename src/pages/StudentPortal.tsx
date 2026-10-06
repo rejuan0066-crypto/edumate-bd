@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import { Mail, Lock, User, GraduationCap, LogIn, UserPlus, Calendar, IdCard, LogOut, Eye, KeyRound } from 'lucide-react';
 import OtpVerificationDialog from '@/components/OtpVerificationDialog';
@@ -541,7 +542,7 @@ const StudentPortal = () => {
                       </div>
                       <div className="space-y-2">
                         <Label className="flex items-center gap-2"><Calendar className="w-4 h-4" />{bn ? 'জন্ম তারিখ' : 'Date of Birth'}</Label>
-                        <Input type="date" value={suDob} onChange={(e) => setSuDob(e.target.value)} className="rounded-2xl" required />
+                        <DatePicker value={suDob} onChange={setSuDob} bengali={bn} fromYear={1990} toYear={2026} placeholder={bn ? 'জন্ম তারিখ নির্বাচন করুন' : 'Select Date of Birth'} />
                       </div>
                       <div className="space-y-2">
                         <Label className="flex items-center gap-2"><Mail className="w-4 h-4" />{bn ? 'ইমেইল' : 'Email'}</Label>

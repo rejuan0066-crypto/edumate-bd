@@ -1,7 +1,7 @@
 import * as React from "react";
 import { format, parse, isValid } from "date-fns";
 import { bn as bnLocale } from "date-fns/locale";
-import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarIcon, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -11,6 +11,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface DatePickerProps {
+  id?: string;
+  name?: string;
   value?: string; // "YYYY-MM-DD"
   onChange: (value: string) => void;
   placeholder?: string;
@@ -19,6 +21,7 @@ interface DatePickerProps {
   fromYear?: number;
   toYear?: number;
   disabled?: boolean;
+  clearable?: boolean;
   /** Dates ("YYYY-MM-DD") to highlight as holidays in the calendar */
   holidayDates?: string[];
   /** Optional holiday details keyed for hover tooltip (date, reason, type) */
@@ -39,6 +42,8 @@ const toBengaliDigit = (n: number | string) =>
   String(n).replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[+d]);
 
 const DatePicker = ({
+  id,
+  name,
   value,
   onChange,
   placeholder,
@@ -47,6 +52,7 @@ const DatePicker = ({
   fromYear = 1950,
   toYear = 2060,
   disabled = false,
+  clearable = false,
   holidayDates,
   holidayInfo,
 }: DatePickerProps) => {
@@ -123,6 +129,8 @@ const DatePicker = ({
 
   const trigger = (
     <button
+      id={id}
+      name={name}
       type="button"
       disabled={disabled}
       className={cn(
@@ -139,6 +147,21 @@ const DatePicker = ({
       <span className={cn("flex-1 text-left truncate", value && "font-medium")}>
         {displayValue || placeholder || defaultPlaceholder}
       </span>
+      {clearable && value && !disabled && (
+        <span
+          role="button"
+          tabIndex={0}
+          aria-label="তারিখ মুছুন"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onChange('');
+          }}
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+        >
+          <X className="h-3 w-3" />
+        </span>
+      )}
     </button>
   );
 

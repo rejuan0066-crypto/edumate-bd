@@ -4,6 +4,7 @@ import PublicLayout from '@/components/PublicLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -367,7 +368,7 @@ const StudentInfoPage = () => {
                     </div>
                     <div className="space-y-2">
                       <Label className="flex items-center gap-2"><Calendar className="w-4 h-4" />{bn ? 'জন্ম তারিখ' : 'Date of Birth'}</Label>
-                      <Input type="date" value={suDob} onChange={(e) => setSuDob(e.target.value)} className="rounded-2xl" required />
+                      <DatePicker value={suDob} onChange={setSuDob} bengali={bn} fromYear={1990} toYear={2026} placeholder={bn ? 'জন্ম তারিখ নির্বাচন করুন' : 'Select Date of Birth'} />
                     </div>
                     <div className="space-y-2">
                       <Label className="flex items-center gap-2"><Mail className="w-4 h-4" />{bn ? 'ইমেইল' : 'Email'}</Label>

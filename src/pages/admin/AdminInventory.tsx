@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { NumberInput } from '@/components/ui/number-input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -538,7 +539,10 @@ const AdminInventory = () => {
               <div><Label>{bn ? 'লোকেশন (EN)' : 'Location (EN)'}</Label><Input value={assetForm.location} onChange={e => setAssetForm(f => ({ ...f, location: e.target.value }))} /></div>
             </div>
             <div className="grid grid-cols-3 gap-3">
-              <div><Label>{bn ? 'তারিখ' : 'Date'}</Label><Input type="date" value={assetForm.purchase_date} onChange={e => setAssetForm(f => ({ ...f, purchase_date: e.target.value }))} /></div>
+              <div>
+                <Label className="mb-1 block">{bn ? 'তারিখ' : 'Date'}</Label>
+                <DatePicker value={assetForm.purchase_date} onChange={v => setAssetForm(f => ({ ...f, purchase_date: v }))} bengali={bn} clearable />
+              </div>
               <div><Label>{bn ? 'দাম' : 'Price'}</Label><NumberInput value={assetForm.purchase_price === '' ? null : Number(assetForm.purchase_price)} onValueChange={n => setAssetForm(f => ({ ...f, purchase_price: n ? String(n) : '' }))} /></div>
               <div><Label>{bn ? 'সংখ্যা' : 'Qty'}</Label><NumberInput value={assetForm.quantity === '' ? null : Number(assetForm.quantity)} onValueChange={n => setAssetForm(f => ({ ...f, quantity: n ? String(n) : '' }))} /></div>
             </div>

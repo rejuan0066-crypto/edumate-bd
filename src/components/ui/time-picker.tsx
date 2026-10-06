@@ -7,13 +7,15 @@ import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface TimePickerProps {
+  id?: string;
+  name?: string;
   value: string; // "HH:MM" 24h format
   onChange: (value: string) => void;
   className?: string;
   placeholder?: string;
   displayFormat?: '12h' | '24h';
   disabled?: boolean;
-  /** Show the clear (mute) action inside the panel */
+  /** Show the clear (mute) action inside the panel or trigger */
   clearable?: boolean;
 }
 
@@ -178,7 +180,17 @@ function Wheel<T>({
   );
 }
 
-const TimePicker = ({ value, onChange, className, placeholder = "সময়", displayFormat = '12h', disabled = false, clearable = false }: TimePickerProps) => {
+const TimePicker = ({
+  id,
+  name,
+  value,
+  onChange,
+  className,
+  placeholder = "সময়",
+  displayFormat = '12h',
+  disabled = false,
+  clearable = false,
+}: TimePickerProps) => {
   const [open, setOpen] = React.useState(false);
   const [h24, setH24] = React.useState<number>(0);
   const [minute, setMinute] = React.useState<number>(0);
@@ -237,6 +249,8 @@ const TimePicker = ({ value, onChange, className, placeholder = "সময়", 
 
   const trigger = (
     <button
+      id={id}
+      name={name}
       type="button"
       disabled={disabled}
       className={cn(
@@ -253,6 +267,21 @@ const TimePicker = ({ value, onChange, className, placeholder = "সময়", 
       <span className={cn("flex-1 text-left truncate tabular-nums", value && "font-medium")}>
         {value ? formatDisplay(value) : placeholder}
       </span>
+      {clearable && value && !disabled && (
+        <span
+          role="button"
+          tabIndex={0}
+          aria-label="সময় মুছুন"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onChange('');
+          }}
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+        >
+          <X className="h-3 w-3" />
+        </span>
+      )}
     </button>
   );
 

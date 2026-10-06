@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -253,9 +254,8 @@ export default function AdminStaffHolidays() {
           {editing && (
             <div className="space-y-3">
               <div>
-                <Label>{bn ? 'তারিখ' : 'Date'}</Label>
-                <Input type="date" value={editing.holiday_date || ''}
-                  onChange={e => setEditing({ ...editing, holiday_date: e.target.value })} />
+                <Label className="mb-1 block">{bn ? 'তারিখ' : 'Date'}</Label>
+                <DatePicker value={editing.holiday_date || ''} onChange={v => setEditing({ ...editing, holiday_date: v })} bengali={bn} />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>

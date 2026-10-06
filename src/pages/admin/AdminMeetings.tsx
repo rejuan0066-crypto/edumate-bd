@@ -3,6 +3,7 @@ import AdminLayout from '@/components/AdminLayout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -598,11 +599,15 @@ const AdminMeetings = () => {
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <Label>{bn ? 'শুরুর সময়' : 'Start time'} *</Label>
-                <Input type="datetime-local" value={form.scheduled_start} onChange={(e) => setForm({ ...form, scheduled_start: e.target.value })} className="mt-1.5 rounded-xl" />
+                <div className="mt-1.5">
+                  <DateTimePicker value={form.scheduled_start} onChange={(v) => setForm({ ...form, scheduled_start: v })} bengali={bn} />
+                </div>
               </div>
               <div>
                 <Label>{bn ? 'শেষের সময়' : 'End time'} *</Label>
-                <Input type="datetime-local" value={form.scheduled_end} onChange={(e) => setForm({ ...form, scheduled_end: e.target.value })} className="mt-1.5 rounded-xl" />
+                <div className="mt-1.5">
+                  <DateTimePicker value={form.scheduled_end} onChange={(v) => setForm({ ...form, scheduled_end: v })} bengali={bn} />
+                </div>
               </div>
             </div>
 

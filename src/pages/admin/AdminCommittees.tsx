@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -438,12 +439,12 @@ export default function AdminCommittees() {
                 <Textarea rows={2} value={editingCommittee.description_en || ""} onChange={e => setEditingCommittee({ ...editingCommittee, description_en: e.target.value })} />
               </div>
               <div>
-                <Label>{bn ? "গঠনের তারিখ" : "Formation Date"}</Label>
-                <Input type="date" value={editingCommittee.formation_date || ""} onChange={e => setEditingCommittee({ ...editingCommittee, formation_date: e.target.value })} />
+                <Label className="mb-1 block">{bn ? "গঠনের তারিখ" : "Formation Date"}</Label>
+                <DatePicker value={editingCommittee.formation_date || ""} onChange={v => setEditingCommittee({ ...editingCommittee, formation_date: v })} bengali={bn} clearable fromYear={1980} toYear={2035} />
               </div>
               <div>
-                <Label>{bn ? "মেয়াদ শেষ" : "Expiry Date"}</Label>
-                <Input type="date" value={editingCommittee.expiry_date || ""} onChange={e => setEditingCommittee({ ...editingCommittee, expiry_date: e.target.value })} />
+                <Label className="mb-1 block">{bn ? "মেয়াদ শেষ" : "Expiry Date"}</Label>
+                <DatePicker value={editingCommittee.expiry_date || ""} onChange={v => setEditingCommittee({ ...editingCommittee, expiry_date: v })} bengali={bn} clearable fromYear={1980} toYear={2035} />
               </div>
               <div>
                 <Label>{bn ? "মেয়াদ (মাস)" : "Tenure (months)"}</Label>
@@ -589,8 +590,8 @@ export default function AdminCommittees() {
                   <Input value={editingMember.address || ""} onChange={e => setEditingMember({ ...editingMember, address: e.target.value })} />
                 </div>
                 <div>
-                  <Label>{bn ? "যোগদানের তারিখ" : "Joining Date"}</Label>
-                  <Input type="date" value={editingMember.joining_date || ""} onChange={e => setEditingMember({ ...editingMember, joining_date: e.target.value })} />
+                  <Label className="mb-1 block">{bn ? "যোগদানের তারিখ" : "Joining Date"}</Label>
+                  <DatePicker value={editingMember.joining_date || ""} onChange={v => setEditingMember({ ...editingMember, joining_date: v })} bengali={bn} clearable fromYear={1980} toYear={2035} />
                 </div>
                 <div>
                   <Label>{bn ? "সর্ট অর্ডার" : "Sort Order"}</Label>

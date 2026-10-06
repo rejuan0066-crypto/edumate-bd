@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, History, ChevronLeft, ChevronRight, X } from 'lucide-react';
@@ -85,11 +86,11 @@ export default function AdminLibraryAudit() {
             <div className="flex flex-wrap items-end gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">{bn ? 'শুরুর তারিখ' : 'From date'}</Label>
-                <Input type="date" value={from} onChange={(e) => { setFrom(e.target.value); setPage(0); }} className="w-[170px]" />
+                <DatePicker value={from} onChange={(v) => { setFrom(v); setPage(0); }} bengali={bn} className="w-[170px]" />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">{bn ? 'শেষ তারিখ' : 'To date'}</Label>
-                <Input type="date" value={to} onChange={(e) => { setTo(e.target.value); setPage(0); }} className="w-[170px]" />
+                <DatePicker value={to} onChange={(v) => { setTo(v); setPage(0); }} bengali={bn} className="w-[170px]" />
               </div>
               {(from || to) && (
                 <Button variant="outline" size="sm" onClick={resetFilters} className="gap-1">

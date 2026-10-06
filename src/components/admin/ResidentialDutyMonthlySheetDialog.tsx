@@ -544,47 +544,56 @@ export default function ResidentialDutyMonthlySheetDialog({
     }
 
     const institutionName = instInfo?.name || 'মাদরাসা / প্রতিষ্ঠান';
-    const title = `${bn ? 'আবাসিক ডিউটি মাসিক হাজিরা শিট' : 'Residential Duty Monthly Attendance Sheet'} — ${currentMonthLabel} ${selectedYear}`;
+    const shiftLabel = shiftFilter === 'morning' ? ` (${bn ? 'সকাল শিফট' : 'Morning Shift'})` : shiftFilter === 'evening' ? ` (${bn ? 'সন্ধ্যা শিফট' : 'Evening Shift'})` : '';
+    const title = `${bn ? 'আবাসিক ডিউটি মাসিক হাজিরা শিট' : 'Residential Duty Monthly Attendance Sheet'} — ${currentMonthLabel} ${selectedYear}${shiftLabel}`;
+
+    const isAll = shiftFilter === 'all';
+    const isMorningOnly = shiftFilter === 'morning';
+    const isEveningOnly = shiftFilter === 'evening';
 
     let tableHeadersHtml = `
       <tr>
-        <th rowspan="2" style="border:1px solid #cbd5e1;padding:6px;background:#f1f5f9;font-size:11px;">#</th>
-        <th rowspan="2" style="border:1px solid #cbd5e1;padding:6px;background:#f1f5f9;font-size:11px;min-width:140px;">${bn ? 'শিক্ষক/স্টাফের নাম' : 'Name'}</th>
-        <th rowspan="2" style="border:1px solid #cbd5e1;padding:6px;background:#f1f5f9;font-size:11px;">${bn ? 'পদবী' : 'Designation'}</th>
+        <th ${isAll ? 'rowspan="2"' : ''} style="border:1px solid #cbd5e1;padding:4px;background:#f1f5f9;font-size:10px;width:28px;">#</th>
+        <th ${isAll ? 'rowspan="2"' : ''} style="border:1px solid #cbd5e1;padding:4px;background:#f1f5f9;font-size:11px;min-width:120px;text-align:left;">${bn ? 'শিক্ষক/স্টাফের নাম' : 'Name'}</th>
+        <th ${isAll ? 'rowspan="2"' : ''} style="border:1px solid #cbd5e1;padding:4px;background:#f1f5f9;font-size:10px;text-align:left;">${bn ? 'পদবী' : 'Designation'}</th>
     `;
 
     daysList.forEach(day => {
       tableHeadersHtml += `
-        <th colspan="2" style="border:1px solid #cbd5e1;padding:4px;background:${day.isFriday ? '#fee2e2' : '#f8fafc'};font-size:10px;text-align:center;">
-          ${day.dayNum}<br/><span style="font-size:9px;color:#64748b;">${day.weekdayBn}</span>
+        <th ${isAll ? 'colspan="2"' : ''} style="border:1px solid #cbd5e1;padding:3px 2px;background:${day.isFriday ? '#fee2e2' : '#f8fafc'};font-size:10px;text-align:center;">
+          ${day.dayNum}<br/><span style="font-size:8.5px;color:#64748b;">${day.weekdayBn}</span>
         </th>
       `;
     });
 
-    tableHeadersHtml += `
-        <th rowspan="2" style="border:1px solid #cbd5e1;padding:6px;background:#f1f5f9;font-size:11px;color:#059669;">${bn ? 'সকাল' : 'M'}</th>
-        <th rowspan="2" style="border:1px solid #cbd5e1;padding:6px;background:#f1f5f9;font-size:11px;color:#0284c7;">${bn ? 'সন্ধ্যা' : 'E'}</th>
-        <th rowspan="2" style="border:1px solid #cbd5e1;padding:6px;background:#f1f5f9;font-size:11px;font-weight:bold;">${bn ? 'মোট' : 'Tot'}</th>
-      </tr>
-      <tr>
-    `;
-
-    daysList.forEach(() => {
+    if (isAll) {
       tableHeadersHtml += `
-        <th style="border:1px solid #cbd5e1;padding:2px;font-size:9px;color:#059669;text-align:center;">${bn ? 'স' : 'M'}</th>
-        <th style="border:1px solid #cbd5e1;padding:2px;font-size:9px;color:#0284c7;text-align:center;">${bn ? 'ব' : 'E'}</th>
+          <th rowspan="2" style="border:1px solid #cbd5e1;padding:4px;background:#f1f5f9;font-size:10px;color:#059669;">${bn ? 'সকাল' : 'M'}</th>
+          <th rowspan="2" style="border:1px solid #cbd5e1;padding:4px;background:#f1f5f9;font-size:10px;color:#0284c7;">${bn ? 'সন্ধ্যা' : 'E'}</th>
+          <th rowspan="2" style="border:1px solid #cbd5e1;padding:4px;background:#f1f5f9;font-size:10px;font-weight:bold;">${bn ? 'মোট' : 'Tot'}</th>
+        </tr>
+        <tr>
       `;
-    });
-
-    tableHeadersHtml += `</tr>`;
+      daysList.forEach(() => {
+        tableHeadersHtml += `
+          <th style="border:1px solid #cbd5e1;padding:2px;font-size:9px;color:#059669;text-align:center;">${bn ? 'স' : 'M'}</th>
+          <th style="border:1px solid #cbd5e1;padding:2px;font-size:9px;color:#0284c7;text-align:center;">${bn ? 'ব' : 'E'}</th>
+        `;
+      });
+      tableHeadersHtml += `</tr>`;
+    } else {
+      tableHeadersHtml += `
+        <th style="border:1px solid #cbd5e1;padding:4px;background:#f1f5f9;font-size:10px;font-weight:bold;text-align:center;">${bn ? 'মোট উপস্থিত' : 'Total'}</th>
+      </tr>`;
+    }
 
     let tableRowsHtml = '';
     filteredStaff.forEach((st, idx) => {
       const stats = staffStats.get(st.id);
       tableRowsHtml += `<tr>
-        <td style="border:1px solid #cbd5e1;padding:4px;text-align:center;font-size:10px;">${idx + 1}</td>
-        <td style="border:1px solid #cbd5e1;padding:4px;font-weight:600;font-size:11px;">${st.name_bn || st.name_en}</td>
-        <td style="border:1px solid #cbd5e1;padding:4px;font-size:10px;color:#475569;">${st.designation || '-'}</td>
+        <td style="border:1px solid #cbd5e1;padding:3px;text-align:center;font-size:10px;">${idx + 1}</td>
+        <td style="border:1px solid #cbd5e1;padding:3px 5px;font-weight:600;font-size:11px;text-align:left;">${st.name_bn || st.name_en}</td>
+        <td style="border:1px solid #cbd5e1;padding:3px 5px;font-size:10px;color:#475569;text-align:left;">${st.designation || '-'}</td>
       `;
 
       daysList.forEach(day => {
@@ -592,20 +601,40 @@ export default function ResidentialDutyMonthlySheetDialog({
         const mAtt = attMap.get(`${st.id}_${day.isoDate}_morning`);
         const eAtt = attMap.get(`${st.id}_${day.isoDate}_evening`);
 
-        const mBadge = mAtt?.status === 'present' ? '<span style="color:#16a34a;font-weight:bold;">P</span>' : mAtt?.status === 'absent' ? '<span style="color:#dc2626;font-weight:bold;">A</span>' : r?.morning ? '<span style="color:#94a3b8;">—</span>' : '<span style="color:#e2e8f0;">·</span>';
-        const eBadge = eAtt?.status === 'present' ? '<span style="color:#16a34a;font-weight:bold;">P</span>' : eAtt?.status === 'absent' ? '<span style="color:#dc2626;font-weight:bold;">A</span>' : r?.evening ? '<span style="color:#94a3b8;">—</span>' : '<span style="color:#e2e8f0;">·</span>';
+        const mBadge = mAtt?.status === 'present' ? '<span style="color:#16a34a;font-weight:bold;">P</span>' : mAtt?.status === 'late' ? '<span style="color:#d97706;font-weight:bold;">L</span>' : mAtt?.status === 'absent' ? '<span style="color:#dc2626;font-weight:bold;">A</span>' : r?.morning ? '<span style="color:#94a3b8;">—</span>' : '<span style="color:#e2e8f0;">·</span>';
+        const eBadge = eAtt?.status === 'present' ? '<span style="color:#16a34a;font-weight:bold;">P</span>' : eAtt?.status === 'late' ? '<span style="color:#d97706;font-weight:bold;">L</span>' : eAtt?.status === 'absent' ? '<span style="color:#dc2626;font-weight:bold;">A</span>' : r?.evening ? '<span style="color:#94a3b8;">—</span>' : '<span style="color:#e2e8f0;">·</span>';
 
-        tableRowsHtml += `
-          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-size:10px;background:${day.isFriday ? '#fff1f2' : '#ffffff'};">${mBadge}</td>
-          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-size:10px;background:${day.isFriday ? '#fff1f2' : '#ffffff'};">${eBadge}</td>
-        `;
+        if (isAll) {
+          tableRowsHtml += `
+            <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-size:10px;background:${day.isFriday ? '#fff1f2' : '#ffffff'};">${mBadge}</td>
+            <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-size:10px;background:${day.isFriday ? '#fff1f2' : '#ffffff'};">${eBadge}</td>
+          `;
+        } else if (isMorningOnly) {
+          tableRowsHtml += `
+            <td style="border:1px solid #cbd5e1;padding:3px;text-align:center;font-size:11px;background:${day.isFriday ? '#fff1f2' : '#ffffff'};">${mBadge}</td>
+          `;
+        } else {
+          tableRowsHtml += `
+            <td style="border:1px solid #cbd5e1;padding:3px;text-align:center;font-size:11px;background:${day.isFriday ? '#fff1f2' : '#ffffff'};">${eBadge}</td>
+          `;
+        }
       });
 
-      tableRowsHtml += `
-        <td style="border:1px solid #cbd5e1;padding:4px;text-align:center;font-weight:bold;color:#059669;font-size:10px;">${stats?.morningPresent || 0}</td>
-        <td style="border:1px solid #cbd5e1;padding:4px;text-align:center;font-weight:bold;color:#0284c7;font-size:10px;">${stats?.eveningPresent || 0}</td>
-        <td style="border:1px solid #cbd5e1;padding:4px;text-align:center;font-weight:bold;font-size:11px;">${stats?.totalPresent || 0}</td>
-      </tr>`;
+      if (isAll) {
+        tableRowsHtml += `
+          <td style="border:1px solid #cbd5e1;padding:3px;text-align:center;font-weight:bold;color:#059669;font-size:10px;">${stats?.morningPresent || 0}</td>
+          <td style="border:1px solid #cbd5e1;padding:3px;text-align:center;font-weight:bold;color:#0284c7;font-size:10px;">${stats?.eveningPresent || 0}</td>
+          <td style="border:1px solid #cbd5e1;padding:3px;text-align:center;font-weight:bold;font-size:11px;">${stats?.totalPresent || 0}</td>
+        </tr>`;
+      } else if (isMorningOnly) {
+        tableRowsHtml += `
+          <td style="border:1px solid #cbd5e1;padding:3px;text-align:center;font-weight:bold;color:#059669;font-size:11px;">${stats?.morningPresent || 0}</td>
+        </tr>`;
+      } else {
+        tableRowsHtml += `
+          <td style="border:1px solid #cbd5e1;padding:3px;text-align:center;font-weight:bold;color:#0284c7;font-size:11px;">${stats?.eveningPresent || 0}</td>
+        </tr>`;
+      }
     });
 
     const html = `
@@ -614,16 +643,19 @@ export default function ResidentialDutyMonthlySheetDialog({
       <head>
         <meta charset="utf-8" />
         <title>${title}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
         <style>
-          @page { size: A4 landscape; margin: 8mm; }
-          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 10px; color: #1e293b; }
-          .header { text-align: center; margin-bottom: 12px; border-bottom: 2px solid #059669; padding-bottom: 8px; }
+          * { margin:0; padding:0; box-sizing:border-box; }
+          @page { size: A4 landscape; margin: 6mm; }
+          body { font-family: 'Hind Siliguri', 'Noto Sans Bengali', sans-serif; margin: 0; padding: 10px; color: #1e293b; }
+          .header { text-align: center; margin-bottom: 10px; border-bottom: 2px solid #059669; padding-bottom: 6px; }
           .header h1 { margin: 0; font-size: 18px; color: #0f172a; }
-          .header h2 { margin: 4px 0 0 0; font-size: 14px; color: #059669; }
+          .header h2 { margin: 3px 0 0 0; font-size: 13px; color: #059669; }
           table { width: 100%; border-collapse: collapse; margin-top: 6px; }
-          .legend { display: flex; gap: 12px; margin-top: 8px; font-size: 10px; justify-content: center; }
-          .footer-signs { display: flex; justify-content: space-between; margin-top: 40px; padding: 0 40px; }
+          .legend { display: flex; gap: 14px; margin-top: 8px; font-size: 10.5px; justify-content: center; font-weight: 500; }
+          .footer-signs { display: flex; justify-content: space-between; margin-top: 36px; padding: 0 40px; }
           .sign-box { text-align: center; border-top: 1px dashed #64748b; padding-top: 4px; width: 160px; font-size: 11px; }
+          @media print { body { padding:0; } }
         </style>
       </head>
       <body>
@@ -635,8 +667,9 @@ export default function ResidentialDutyMonthlySheetDialog({
           <span><strong style="color:#16a34a;">P</strong> = উপস্থিত (Present)</span>
           <span><strong style="color:#dc2626;">A</strong> = অনুপস্থিত (Absent)</span>
           <span><strong style="color:#d97706;">L</strong> = বিলম্ব (Late)</span>
-          <span><strong>স</strong> = সকাল ডিউটি (Morning)</span>
-          <span><strong>ব</strong> = সন্ধ্যা ডিউটি (Evening)</span>
+          <span><strong style="color:#94a3b8;">—</strong> = ডিউটি নির্ধারিত</span>
+          <span><strong style="color:#cbd5e1;">·</strong> = ডিউটি নেই</span>
+          ${isAll ? '<span><strong style="color:#059669;">স</strong> = সকাল</span><span><strong style="color:#0284c7;">ব</strong> = সন্ধ্যা</span>' : ''}
         </div>
         <table>
           <thead>${tableHeadersHtml}</thead>

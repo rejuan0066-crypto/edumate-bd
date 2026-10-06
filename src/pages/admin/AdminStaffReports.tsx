@@ -7,6 +7,7 @@ import AdminLayout from '@/components/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -490,13 +491,13 @@ const AdminStaffReports = () => {
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">
                       {bn ? 'শুরুর তারিখ' : 'From Date'}
                     </label>
-                    <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+                    <DatePicker value={fromDate} onChange={setFromDate} bengali={bn} />
                   </div>
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">
                       {bn ? 'শেষ তারিখ' : 'To Date'}
                     </label>
-                    <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+                    <DatePicker value={toDate} onChange={setToDate} bengali={bn} />
                   </div>
                 </div>
 
@@ -585,7 +586,7 @@ const AdminStaffReports = () => {
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">
                       {bn ? 'তারিখ' : 'Date'}
                     </label>
-                    <Input type="date" value={dutyDate} onChange={(e) => setDutyDate(e.target.value)} />
+                    <DatePicker value={dutyDate} onChange={setDutyDate} bengali={bn} />
                   </div>
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">

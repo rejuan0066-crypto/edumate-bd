@@ -5,6 +5,7 @@ import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { TimePicker } from '@/components/ui/time-picker';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -752,8 +753,8 @@ const AdminAdministrative = () => {
                   {fieldErrors.nid && <p className="text-xs text-destructive mt-1">{fieldErrors.nid}</p>}
                 </div>
                 <div>
-                  <Label>{bn ? 'জন্মতারিখ' : 'Date of Birth'}</Label>
-                  <Input type="date" value={form.date_of_birth || ''} onChange={e => setForm({ ...form, date_of_birth: e.target.value })} />
+                  <Label className="mb-1 block">{bn ? 'জন্মতারিখ' : 'Date of Birth'}</Label>
+                  <DatePicker value={form.date_of_birth || ''} onChange={v => setForm({ ...form, date_of_birth: v })} bengali={bn} clearable fromYear={1940} toYear={2026} />
                 </div>
                 <div>
                   <Label>{bn ? 'ধর্ম' : 'Religion'}</Label>
@@ -868,8 +869,8 @@ const AdminAdministrative = () => {
                   <Input value={form.office_room || ''} onChange={e => setForm({ ...form, office_room: e.target.value })} />
                 </div>
                 <div>
-                  <Label>{bn ? 'যোগদান তারিখ' : 'Joining Date'}</Label>
-                  <Input type="date" value={form.joining_date || ''} onChange={e => setForm({ ...form, joining_date: e.target.value })} />
+                  <Label className="mb-1 block">{bn ? 'যোগদান তারিখ' : 'Joining Date'}</Label>
+                  <DatePicker value={form.joining_date || ''} onChange={v => setForm({ ...form, joining_date: v })} bengali={bn} clearable fromYear={1970} toYear={2035} />
                 </div>
                 <div>
                   <Label>{bn ? 'চাকরির ধরন' : 'Employment Type'}</Label>

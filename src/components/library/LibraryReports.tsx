@@ -5,6 +5,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -90,8 +91,8 @@ const LibraryReports = () => {
         )}
         {reportType === 'issuance_log' && (
           <>
-            <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="w-[150px]" title={bn ? 'শুরুর তারিখ' : 'From date'} />
-            <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="w-[150px]" title={bn ? 'শেষ তারিখ' : 'To date'} />
+            <DatePicker value={dateFrom} onChange={setDateFrom} bengali={bn} placeholder={bn ? 'শুরুর তারিখ' : 'From date'} className="w-[160px]" />
+            <DatePicker value={dateTo} onChange={setDateTo} bengali={bn} placeholder={bn ? 'শেষ তারিখ' : 'To date'} className="w-[160px]" />
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
               <SelectContent>

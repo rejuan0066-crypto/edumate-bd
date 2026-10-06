@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -613,8 +614,8 @@ const AdminCertificates = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label>{bn ? 'ইস্যুর তারিখ' : 'Issue Date'}</Label>
-                  <Input type="date" value={issueDate} onChange={e => setIssueDate(e.target.value)} />
+                  <Label className="mb-1 block">{bn ? 'ইস্যুর তারিখ' : 'Issue Date'}</Label>
+                  <DatePicker value={issueDate} onChange={setIssueDate} bengali={bn} />
                 </div>
                 {tab === 'certificate' && (
                   <div>
@@ -644,8 +645,8 @@ const AdminCertificates = () => {
                       placeholder={bn ? 'যেমন: ৮ম শ্রেণী' : 'e.g. Class 8'} />
                   </div>
                   <div>
-                    <Label>{bn ? 'প্রতিষ্ঠান ত্যাগের তারিখ' : 'Date of Leaving'}</Label>
-                    <Input type="date" value={dateOfLeaving} onChange={e => setDateOfLeaving(e.target.value)} />
+                    <Label className="mb-1 block">{bn ? 'প্রতিষ্ঠান ত্যাগের তারিখ' : 'Date of Leaving'}</Label>
+                    <DatePicker value={dateOfLeaving} onChange={setDateOfLeaving} bengali={bn} clearable />
                   </div>
                 </div>
               )}

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { CalendarDays, Download, FileText, Users } from 'lucide-react';
@@ -273,14 +274,14 @@ const AttendanceReportSection = () => {
               <label className="text-xs font-medium text-muted-foreground mb-1 block">
                 {bn ? 'শুরুর তারিখ' : 'From Date'}
               </label>
-              <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+              <DatePicker value={fromDate} onChange={setFromDate} bengali={bn} />
             </div>
 
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">
                 {bn ? 'শেষ তারিখ' : 'To Date'}
               </label>
-              <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+              <DatePicker value={toDate} onChange={setToDate} bengali={bn} />
             </div>
           </div>
 

@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -376,12 +377,12 @@ export default function LedgerReport({ bn, expenseInstitutions, categories, clea
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
           <div>
-            <Label className="text-xs">{bn ? 'শুরু' : 'From'}</Label>
-            <Input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} />
+            <Label className="text-xs mb-1 block">{bn ? 'শুরু' : 'From'}</Label>
+            <DatePicker value={fromDate} onChange={setFromDate} bengali={bn} />
           </div>
           <div>
-            <Label className="text-xs">{bn ? 'শেষ' : 'To'}</Label>
-            <Input type="date" value={toDate} onChange={e => setToDate(e.target.value)} />
+            <Label className="text-xs mb-1 block">{bn ? 'শেষ' : 'To'}</Label>
+            <DatePicker value={toDate} onChange={setToDate} bengali={bn} />
           </div>
           <div>
             <Label className="text-xs">{bn ? 'টাইপ' : 'Type'}</Label>

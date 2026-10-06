@@ -6,6 +6,7 @@ import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -451,12 +452,12 @@ const SyllabusCoverageSection = () => {
 
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">{bn ? 'শুরু' : 'From'}</label>
-              <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+              <DatePicker value={fromDate} onChange={setFromDate} bengali={bn} />
             </div>
 
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">{bn ? 'শেষ' : 'To'}</label>
-              <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+              <DatePicker value={toDate} onChange={setToDate} bengali={bn} />
             </div>
           </div>
 
@@ -608,7 +609,7 @@ const SyllabusCoverageSection = () => {
             </div>
             <div>
               <label className="text-xs font-medium mb-1 block">{bn ? 'তারিখ' : 'Date'} *</label>
-              <Input type="date" value={editing.coverage_date} onChange={(e) => setEditing({ ...editing, coverage_date: e.target.value })} />
+              <DatePicker value={editing.coverage_date} onChange={(val) => setEditing({ ...editing, coverage_date: val })} bengali={bn} />
             </div>
             {editing.class_id && (
               <div className="md:col-span-2 p-3 rounded-2xl border border-primary/20 bg-primary/5">

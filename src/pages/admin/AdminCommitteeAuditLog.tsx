@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AdminLayout from "@/components/AdminLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -322,19 +323,23 @@ export default function AdminCommitteeAuditLog() {
                 }}
               />
             </div>
-            <Input
-              type="date"
+            <DatePicker
               value={startDate}
-              onChange={(e) => {
-                setStartDate(e.target.value);
+              placeholder={bn ? "শুরুর তারিখ" : "Start date"}
+              bengali={bn}
+              clearable
+              onChange={(v) => {
+                setStartDate(v);
                 setPage(0);
               }}
             />
-            <Input
-              type="date"
+            <DatePicker
               value={endDate}
-              onChange={(e) => {
-                setEndDate(e.target.value);
+              placeholder={bn ? "শেষ তারিখ" : "End date"}
+              bengali={bn}
+              clearable
+              onChange={(v) => {
+                setEndDate(v);
                 setPage(0);
               }}
             />

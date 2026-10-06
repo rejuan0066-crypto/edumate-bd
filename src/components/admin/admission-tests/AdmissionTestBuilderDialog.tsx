@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -290,11 +291,15 @@ const AdmissionTestBuilderDialog = ({ open, onOpenChange, testId, onSaved }: Pro
               </div>
               <div>
                 <Label>{bn ? 'শুরুর সময়' : 'Opens At'}</Label>
-                <Input type="datetime-local" value={opensAt} onChange={(e) => setOpensAt(e.target.value)} className="rounded-xl mt-1" />
+                <div className="mt-1">
+                  <DateTimePicker value={opensAt} onChange={setOpensAt} bengali={bn} />
+                </div>
               </div>
               <div>
                 <Label>{bn ? 'শেষ সময়' : 'Closes At'}</Label>
-                <Input type="datetime-local" value={closesAt} onChange={(e) => setClosesAt(e.target.value)} className="rounded-xl mt-1" />
+                <div className="mt-1">
+                  <DateTimePicker value={closesAt} onChange={setClosesAt} bengali={bn} />
+                </div>
               </div>
             </div>
 
