@@ -5448,15 +5448,17 @@ const AdminSalary = () => {
         )}
 
         {/* Salary Savings Ledger Detailed Dialog */}
-        <SalarySavingsLedgerDialog
-          open={!!selectedLedgerStaffId}
-          onOpenChange={(o) => {
-            if (!o) setSelectedLedgerStaffId(null);
-          }}
-          group={activeLedgerGroup}
-          currentMonthYear={monthYear}
-          bn={bn}
-        />
+        {activeLedgerGroup && (
+          <SalarySavingsLedgerDialog
+            open={!!selectedLedgerStaffId}
+            onOpenChange={(o) => {
+              if (!o) setSelectedLedgerStaffId(null);
+            }}
+            group={activeLedgerGroup}
+            currentMonthYear={monthYear}
+            bn={bn}
+          />
+        )}
 
       </div>
     </>

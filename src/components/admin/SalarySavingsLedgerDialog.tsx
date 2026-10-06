@@ -233,38 +233,34 @@ export function SalarySavingsLedgerDialog({
     },
   });
 
-  if (!group) return null;
-
-  const staffName = group.staffMember?.name_bn || group.staffMember?.name_en || 'স্টাফ';
-  const designation = group.staffMember?.designation || '-';
-  const staffId = group.staffMember?.staff_id || '-';
+  const ledgerEntries = group?.ledgerEntries || [];
+  const startMonth = group?.startMonth || currentMonthYear;
+  const durationMonths = Math.max(1, group?.durationMonths || 12);
+  const monthlyAmount = group?.monthlyAmount || 0;
 
   // Map existing ledger entries by month_year
   const ledgerMap = useMemo(() => {
     const map = new Map<string, any>();
-    for (const l of group.ledgerEntries) {
-      map.set(l.month_year, l);
+    for (const l of ledgerEntries) {
+      if (l.month_year) map.set(l.month_year, l);
     }
     return map;
-  }, [group.ledgerEntries]);
+  }, [ledgerEntries]);
 
   // Compute expected months from startMonth up to max(duration, current)
   const timelineMonths = useMemo(() => {
-    const start = group.startMonth || currentMonthYear;
-    const duration = Math.max(1, group.durationMonths || 12);
-
     // Generate duration range
-    const baseRange = generateMonthRange(start, duration);
+    const baseRange = generateMonthRange(startMonth, durationMonths);
 
     // Also include any ledger entry months that might be outside the baseRange
     const allMonthsSet = new Set<string>(baseRange);
-    for (const l of group.ledgerEntries) {
+    for (const l of ledgerEntries) {
       if (l.month_year) allMonthsSet.add(l.month_year);
     }
 
     // Sort chronologically ascending
     return Array.from(allMonthsSet).sort((a, b) => (a < b ? -1 : 1));
-  }, [group.startMonth, group.durationMonths, group.ledgerEntries, currentMonthYear]);
+  }, [startMonth, durationMonths, ledgerEntries]);
 
   // Missing months: months in timeline that have no ledger entry
   const missingMonths = useMemo(() => {
@@ -272,10 +268,16 @@ export function SalarySavingsLedgerDialog({
   }, [timelineMonths, ledgerMap]);
 
   const totalCalculated = useMemo(() => {
-    return group.ledgerEntries.reduce((sum, l) => sum + Number(l.amount || 0), 0);
-  }, [group.ledgerEntries]);
+    return ledgerEntries.reduce((sum, l) => sum + Number(l.amount || 0), 0);
+  }, [ledgerEntries]);
 
-  const targetTotal = group.monthlyAmount * group.durationMonths;
+  if (!group) return null;
+
+  const staffName = group.staffMember?.name_bn || group.staffMember?.name_en || 'স্টাফ';
+  const designation = group.staffMember?.designation || '-';
+  const staffId = group.staffMember?.staff_id || '-';
+
+  const targetTotal = monthlyAmount * durationMonths;
   const remainingAmount = Math.max(0, targetTotal - totalCalculated);
 
   const openAddForMonth = (m: string) => {
