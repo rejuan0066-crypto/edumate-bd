@@ -79,7 +79,7 @@ const AdminValidationManager = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [ruleData, setRuleData] = useState<RuleData>(emptyRule);
-  const [activeTab, setActiveTab] = usePersistentTab('all', {
+  const [activeTab, setActiveTab] = usePersistentTab<string>('all', {
     paramName: 'module',
     storageKey: 'edumate_validation_module',
   });

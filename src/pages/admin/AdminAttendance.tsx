@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { exportAttendanceExcel, calcLateMinutes } from '@/lib/attendanceExcelExport';
 import { useTimeFormat, formatTimeDisplay } from '@/hooks/useTimeFormat';
 import { useResignedStaff } from '@/hooks/useResignedStaff';
@@ -38,6 +38,7 @@ import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
 import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import StaffMonthlyAttendanceDialog from '@/components/admin/StaffMonthlyAttendanceDialog';
+import ResidentialDutyMonthlySheetDialog from '@/components/admin/ResidentialDutyMonthlySheetDialog';
 import BulkHolidayDialog from '@/components/admin/BulkHolidayDialog';
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useAppTimezone } from '@/hooks/useAppTimezone';
@@ -169,6 +170,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   const [monthlyStaff, setMonthlyStaff] = useState<any | null>(null);
   const [timeEditorOpenId, setTimeEditorOpenId] = useState<string | null>(null);
   // Effective shift: for students, meal tab uses meal shift; for staff, fulltime=full_day, others use selected
+  const isDutyTab = entityType === 'staff' && staffSubTab === 'duty';
   const effectiveShift = entityType === 'student'
     ? (studentSubTab === 'meal' ? studentMealShift : 'full_day')
     : (staffSubTab === 'fulltime' ? 'full_day' : selectedShift);
@@ -178,6 +180,8 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     validTabs: ['attendance', 'settings'] as const,
     storageKey: 'edumate_attendance_main_tab',
   });
+  const [dutyViewFilter, setDutyViewFilter] = useState<'both' | 'morning' | 'evening'>('both');
+  const [dutyMonthlySheetOpen, setDutyMonthlySheetOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<any>(null);
   const [ruleForm, setRuleForm] = useState({ name: '', name_bn: '', entity_type: 'student', config: { color: 'green', counts_as: 'present' } });
   const [dutyTimes, setDutyTimes] = useState({
@@ -392,35 +396,52 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     },
   });
 
-  // Which duty_shifts row matches the selected morning/evening shift
+  // Duty shift definitions (morning & evening)
+  const morningDutyShiftDef = useMemo(() => (dutyShiftDefs as any[]).find((s) => s.code === 'morning'), [dutyShiftDefs]);
+  const eveningDutyShiftDef = useMemo(() => (dutyShiftDefs as any[]).find((s) => s.code === 'evening'), [dutyShiftDefs]);
+
+  // Which duty_shifts row matches the selected morning/evening shift (fallback)
   const currentDutyShiftId = useMemo(() => {
     const found = (dutyShiftDefs as any[]).find((s) => s.code === selectedShift);
     return found?.id as string | undefined;
   }, [dutyShiftDefs, selectedShift]);
 
-  // Duty tab is strictly roster-driven: only staff rostered for this weekday +
-  // shift appear. No roster => empty list (never "everyone").
-  const dutyRosterActive = useMemo(
-    () => staffSubTab === 'duty' && !!currentDutyShiftId,
-    [staffSubTab, currentDutyShiftId],
-  );
-
-
-  // Staff on duty for the selected date + shift (day override beats template)
-  const dutyStaffIdsForDate = useMemo(() => {
+  // Helper: compute rostered staff IDs for a specific duty shift on selectedDate
+  const getDutyStaffIdsForShiftId = useCallback((shiftId?: string) => {
     const ids = new Set<string>();
-    if (!currentDutyShiftId) return ids;
+    if (!shiftId) return ids;
     const weekday = new Date(`${selectedDate}T00:00:00`).getDay();
     const overriddenStaff = new Set((dutyRosterRows as any[]).map((r) => r.staff_id));
     (dutyRosterRows as any[]).forEach((r) => {
-      if (r.shift_id === currentDutyShiftId) ids.add(r.staff_id);
+      if (r.shift_id === shiftId) ids.add(r.staff_id);
     });
     (dutyTemplateRows as any[]).forEach((t) => {
       if (overriddenStaff.has(t.staff_id)) return; // day override replaces template
-      if (t.weekday === weekday && t.shift_id === currentDutyShiftId) ids.add(t.staff_id);
+      if (t.weekday === weekday && t.shift_id === shiftId) ids.add(t.staff_id);
     });
     return ids;
-  }, [currentDutyShiftId, selectedDate, dutyRosterRows, dutyTemplateRows]);
+  }, [selectedDate, dutyRosterRows, dutyTemplateRows]);
+
+  const morningDutyStaffIds = useMemo(
+    () => getDutyStaffIdsForShiftId(morningDutyShiftDef?.id),
+    [getDutyStaffIdsForShiftId, morningDutyShiftDef?.id]
+  );
+
+  const eveningDutyStaffIds = useMemo(
+    () => getDutyStaffIdsForShiftId(eveningDutyShiftDef?.id),
+    [getDutyStaffIdsForShiftId, eveningDutyShiftDef?.id]
+  );
+
+  // Duty tab is strictly roster-driven
+  const dutyRosterActive = useMemo(
+    () => staffSubTab === 'duty' && (!!morningDutyShiftDef || !!eveningDutyShiftDef || !!currentDutyShiftId),
+    [staffSubTab, morningDutyShiftDef, eveningDutyShiftDef, currentDutyShiftId],
+  );
+
+  // Staff on duty for the selected date + shift (day override beats template)
+  const dutyStaffIdsForDate = useMemo(() => {
+    return getDutyStaffIdsForShiftId(currentDutyShiftId);
+  }, [getDutyStaffIdsForShiftId, currentDutyShiftId]);
 
   const entitiesRaw = useMemo(() => {
 
@@ -434,13 +455,15 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       if (staffSubTab === 'meal') {
         return staffFiltered.filter((s: any) => s.residence_type === 'residential' || s.residence_type === 'resident');
       }
-      // Duty tab: strictly roster-driven — only staff rostered for this weekday
-      // + shift appear. No roster => empty list (never "everyone"/residential).
+      // Duty tab: strictly roster-driven — only staff rostered for morning/evening shifts appear
       if (staffSubTab === 'duty') {
         if (!dutyRosterActive) return [];
-        return staffFiltered.filter((s: any) => dutyStaffIdsForDate.has(s.id));
+        return staffFiltered.filter((s: any) =>
+          morningDutyStaffIds.has(s.id) ||
+          eveningDutyStaffIds.has(s.id) ||
+          dutyStaffIdsForDate.has(s.id)
+        );
       }
-
 
       // Full-time: all filtered staff
       return staffFiltered;
@@ -475,18 +498,23 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     });
 
     return filtered;
-  }, [entityType, allStudents, allStaff, studentSubTab, selectedSessionYear, selectedClassId, orderedClasses, staffSubTab, selectedStaffCategory, dutyRosterActive, dutyStaffIdsForDate]);
+  }, [entityType, allStudents, allStaff, studentSubTab, selectedSessionYear, selectedClassId, orderedClasses, staffSubTab, selectedStaffCategory, dutyRosterActive, dutyStaffIdsForDate, morningDutyStaffIds, eveningDutyStaffIds]);
 
-  // Fetch attendance for selected date (for staff, fetch by shift too)
+  // Fetch attendance for selected date (for duty tab, fetch both morning & evening together)
   const { data: attendance = [] } = useQuery({
-    queryKey: ['attendance', selectedDate, entityType, effectiveShift],
+    queryKey: ['attendance', selectedDate, entityType, isDutyTab ? 'duty_both' : effectiveShift],
     queryFn: async () => {
       let query = supabase
         .from('attendance_records')
         .select('*')
         .eq('attendance_date', selectedDate)
-        .eq('entity_type', entityType)
-        .eq('shift', effectiveShift);
+        .eq('entity_type', entityType);
+
+      if (isDutyTab) {
+        query = query.in('shift', ['morning', 'evening']);
+      } else {
+        query = query.eq('shift', effectiveShift);
+      }
 
       const { data, error } = await query;
       if (error) throw error;
@@ -517,6 +545,57 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       return true;
     });
   }, [entitiesRaw, entityType, attendance, isResignedOnDate, getResignDate, selectedDate]);
+
+  // Separate morning & evening duty roster entities for Residential Duty tab
+  const morningDutyEntities = useMemo(() => {
+    if (!isDutyTab) return [];
+    let list = allStaff;
+    if (selectedStaffCategory && selectedStaffCategory !== 'all') {
+      list = list.filter((s: any) => s.staff_category === selectedStaffCategory);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter((s: any) =>
+        (s.name && s.name.toLowerCase().includes(q)) ||
+        (s.name_bn && s.name_bn.toLowerCase().includes(q)) ||
+        (s.designation && s.designation.toLowerCase().includes(q)) ||
+        (s.phone && s.phone.includes(q))
+      );
+    }
+    return list.filter((e: any) => {
+      const rd = getResignDate(e.id);
+      if (rd && selectedDate > rd) return false;
+      const hasAtt = attendance.some((a: any) => a.entity_id === e.id && a.shift === 'morning');
+      if (e.status === 'inactive' && !hasAtt) return false;
+      if (isResignedOnDate(e.id, selectedDate) && !hasAtt) return false;
+      return morningDutyStaffIds.has(e.id) || hasAtt;
+    });
+  }, [isDutyTab, allStaff, selectedStaffCategory, searchQuery, getResignDate, selectedDate, attendance, isResignedOnDate, morningDutyStaffIds]);
+
+  const eveningDutyEntities = useMemo(() => {
+    if (!isDutyTab) return [];
+    let list = allStaff;
+    if (selectedStaffCategory && selectedStaffCategory !== 'all') {
+      list = list.filter((s: any) => s.staff_category === selectedStaffCategory);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter((s: any) =>
+        (s.name && s.name.toLowerCase().includes(q)) ||
+        (s.name_bn && s.name_bn.toLowerCase().includes(q)) ||
+        (s.designation && s.designation.toLowerCase().includes(q)) ||
+        (s.phone && s.phone.includes(q))
+      );
+    }
+    return list.filter((e: any) => {
+      const rd = getResignDate(e.id);
+      if (rd && selectedDate > rd) return false;
+      const hasAtt = attendance.some((a: any) => a.entity_id === e.id && a.shift === 'evening');
+      if (e.status === 'inactive' && !hasAtt) return false;
+      if (isResignedOnDate(e.id, selectedDate) && !hasAtt) return false;
+      return eveningDutyStaffIds.has(e.id) || hasAtt;
+    });
+  }, [isDutyTab, allStaff, selectedStaffCategory, searchQuery, getResignDate, selectedDate, attendance, isResignedOnDate, eveningDutyStaffIds]);
 
   // Fetch attendance rules
   const { data: rules = [] } = useQuery({
@@ -807,9 +886,10 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     return applyThursdayWindow(entity, base);
   };
 
-  const getStaffShiftTime = (entity: any) => {
+  const getStaffShiftTime = (entity: any, shift?: string) => {
     if (staffSubTab === 'duty') {
-      const base = selectedShift === 'evening'
+      const targetShift = shift || selectedShift;
+      const base = targetShift === 'evening'
         ? { start: dutyTimes.evening_start, end: dutyTimes.evening_end }
         : { start: dutyTimes.morning_start, end: dutyTimes.morning_end };
       return applyThursdayWindow(entity, base);
@@ -819,13 +899,13 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   };
 
   // Manual marking defaults to the configured shift window. Explicit edits are preserved.
-  const getAutoAttendanceTimes = (entityId: string, status: string, existing?: any) => {
+  const getAutoAttendanceTimes = (entityId: string, status: string, existing?: any, shift?: string) => {
     if (!['present', 'late', 'half_day'].includes(status)) return {};
     if (entityType === 'staff' && staffSubTab === 'meal') return {};
-    const entity = entities.find((item: any) => item.id === entityId);
+    const entity = (allStaff as any[]).find((item: any) => item.id === entityId) || entities.find((item: any) => item.id === entityId);
     if (!entity) return {};
     const shiftTime = entityType === 'staff'
-      ? getStaffShiftTime(entity)
+      ? getStaffShiftTime(entity, shift)
       : {
           start: entity.duty_start_time || defaultCategoryTimes.teacher.start,
           end: entity.duty_end_time || defaultCategoryTimes.teacher.end,
@@ -840,7 +920,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   const backfillRanRef = useRef<string>('');
   useEffect(() => {
     if (entityType !== 'staff' || !attendance?.length || !entities?.length) return;
-    const key = `${selectedDate}|${effectiveShift}|${attendance.length}`;
+    const key = `${selectedDate}|${isDutyTab ? 'duty_both' : effectiveShift}|${attendance.length}`;
     if (backfillRanRef.current === key) return;
     backfillRanRef.current = key;
     const entityMap = new Map(entities.map((e: any) => [e.id, e]));
@@ -857,10 +937,11 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
         let start = a.check_in_time;
         let end = a.check_out_time;
         if (staffSubTab === 'duty') {
-          if (selectedShift === 'morning') {
+          const shiftKey = a.shift === 'evening' ? 'evening' : 'morning';
+          if (shiftKey === 'morning') {
             start = start || dutyTimes.morning_start;
             end = end || dutyTimes.morning_end;
-          } else if (selectedShift === 'evening') {
+          } else {
             start = start || dutyTimes.evening_start;
             end = end || dutyTimes.evening_end;
           }
@@ -877,12 +958,12 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
         if (!error) updated++;
       }
       if (updated > 0) {
-        queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType, effectiveShift] });
+        queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType] });
         queryClient.invalidateQueries({ queryKey: ['salary-attendance'] });
         queryClient.invalidateQueries({ queryKey: ['salary-duty-attendance'] });
       }
     })();
-  }, [attendance, entities, entityType, selectedDate, effectiveShift, staffSubTab, selectedShift]);
+  }, [attendance, entities, entityType, selectedDate, effectiveShift, staffSubTab, isDutyTab, dutyTimes]);
 
   const statusOptions = useMemo(() => {
     return rules.filter((r: any) => r.entity_type === entityType && r.rule_type === 'status' && r.is_active);
@@ -890,9 +971,23 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
 
   // Save attendance mutation
   const saveMutation = useMutation({
-    mutationFn: async ({ entityId, status, remarks, check_in_time, check_out_time }: { entityId: string; status: string; remarks?: string; check_in_time?: string; check_out_time?: string }) => {
-      const shiftVal = effectiveShift;
-      let existing: any = attendance.find((a: any) => a.entity_id === entityId);
+    mutationFn: async ({
+      entityId,
+      status,
+      remarks,
+      check_in_time,
+      check_out_time,
+      shift,
+    }: {
+      entityId: string;
+      status: string;
+      remarks?: string;
+      check_in_time?: string;
+      check_out_time?: string;
+      shift?: string;
+    }) => {
+      const shiftVal = shift || (isDutyTab ? 'morning' : effectiveShift);
+      let existing: any = attendance.find((a: any) => a.entity_id === entityId && (isDutyTab ? a.shift === shiftVal : true));
       if (!existing) {
         const { data, error } = await supabase
           .from('attendance_records')
@@ -906,7 +1001,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
         existing = data;
       }
       const updateData: any = { status, remarks, updated_at: new Date().toISOString() };
-      const autoTimes = getAutoAttendanceTimes(entityId, status, existing);
+      const autoTimes = getAutoAttendanceTimes(entityId, status, existing, shiftVal);
       if (check_in_time !== undefined) updateData.check_in_time = check_in_time;
       else if (autoTimes.check_in_time !== undefined) updateData.check_in_time = autoTimes.check_in_time;
       if (check_out_time !== undefined) updateData.check_out_time = check_out_time;
@@ -926,26 +1021,28 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
         if (error) throw error;
       }
     },
-    onMutate: async ({ entityId, status, remarks, check_in_time, check_out_time }) => {
+    onMutate: async ({ entityId, status, remarks, check_in_time, check_out_time, shift }) => {
+      const shiftVal = shift || (isDutyTab ? 'morning' : effectiveShift);
       // Cancel any outgoing refetches so they don't overwrite optimistic update
-      const queryKey = ['attendance', selectedDate, entityType, effectiveShift];
+      const queryKey = ['attendance', selectedDate, entityType, isDutyTab ? 'duty_both' : effectiveShift];
       await queryClient.cancelQueries({ queryKey });
       // Snapshot previous value for rollback on error
       const previousAttendance = queryClient.getQueryData(queryKey);
       // Optimistically update cache immediately — UI responds instantly without waiting for server
       queryClient.setQueryData(queryKey, (old: any) => {
         if (!Array.isArray(old)) return old;
-        const existing = old.find((a: any) => a.entity_id === entityId);
-        const autoTimes = getAutoAttendanceTimes(entityId, status, existing);
+        const existing = old.find((a: any) => a.entity_id === entityId && (isDutyTab ? a.shift === shiftVal : true));
+        const autoTimes = getAutoAttendanceTimes(entityId, status, existing, shiftVal);
         const optimisticRecord: any = {
           ...(existing ?? {
-            id: `optimistic-${entityId}`,
+            id: `optimistic-${entityId}-${shiftVal}`,
             attendance_date: selectedDate,
             entity_type: entityType,
             entity_id: entityId,
-            shift: effectiveShift,
+            shift: shiftVal,
           }),
           status,
+          shift: shiftVal,
           remarks: remarks ?? existing?.remarks,
           check_in_time: check_in_time !== undefined ? check_in_time : (autoTimes.check_in_time ?? existing?.check_in_time),
           check_out_time: check_out_time !== undefined ? check_out_time : (autoTimes.check_out_time ?? existing?.check_out_time),
@@ -956,14 +1053,14 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
           optimisticRecord.check_out_time = null;
         }
         if (existing) {
-          return old.map((a: any) => a.entity_id === entityId ? optimisticRecord : a);
+          return old.map((a: any) => (a.entity_id === entityId && (isDutyTab ? a.shift === shiftVal : true)) ? optimisticRecord : a);
         }
         return [...old, optimisticRecord];
       });
       return { previousAttendance, queryKey };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType, effectiveShift] });
+      queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType] });
       queryClient.invalidateQueries({ queryKey: ['salary-attendance'] });
       queryClient.invalidateQueries({ queryKey: ['salary-duty-attendance'] });
     },
@@ -977,6 +1074,37 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     },
   });
 
+  // Bulk mark for duty shifts (morning or evening)
+  const handleBulkMarkDuty = async (targetShift: 'morning' | 'evening', status: string = 'present') => {
+    const list = targetShift === 'morning' ? morningDutyEntities : eveningDutyEntities;
+    const unmarked = list.filter((e: any) => !attendance.some((a: any) => a.entity_id === e.id && a.shift === targetShift));
+    if (unmarked.length === 0) {
+      toast.info(bn ? 'ইতিমধ্যে সবার হাজিরা দেওয়া আছে' : 'All staff are already marked');
+      return;
+    }
+    const records = unmarked.map((e: any) => {
+      const autoTimes = getAutoAttendanceTimes(e.id, status, undefined, targetShift);
+      return {
+        attendance_date: selectedDate,
+        entity_type: 'staff',
+        entity_id: e.id,
+        shift: targetShift,
+        status,
+        check_in_time: autoTimes.check_in_time || null,
+        check_out_time: autoTimes.check_out_time || null,
+        updated_at: new Date().toISOString(),
+      };
+    });
+    const { error } = await supabase.from('attendance_records').insert(records);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType] });
+    queryClient.invalidateQueries({ queryKey: ['salary-attendance'] });
+    queryClient.invalidateQueries({ queryKey: ['salary-duty-attendance'] });
+    toast.success(bn ? `${targetShift === 'morning' ? 'সকাল' : 'সন্ধ্যা'} শিফটের ${unmarked.length} জনের হাজিরা সেভ হয়েছে` : `Bulk attendance saved for ${unmarked.length} staff`);
+  };
 
   // Bulk mark all
   const bulkMutation = useMutation({
@@ -1253,13 +1381,48 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
 
   // Stats
   const stats = useMemo(() => {
+    if (isDutyTab) {
+      const morningTotal = morningDutyEntities.length;
+      const eveningTotal = eveningDutyEntities.length;
+      const total = morningTotal + eveningTotal;
+
+      const morningAttMap = new Map();
+      const eveningAttMap = new Map();
+      attendance.forEach((a: any) => {
+        if (a.shift === 'morning') morningAttMap.set(a.entity_id, a);
+        if (a.shift === 'evening') eveningAttMap.set(a.entity_id, a);
+      });
+
+      let present = 0, absent = 0, late = 0, marked = 0;
+      morningDutyEntities.forEach((e: any) => {
+        const a = morningAttMap.get(e.id);
+        if (a) {
+          marked++;
+          if (a.status === 'present') present++;
+          else if (a.status === 'absent') absent++;
+          else if (a.status === 'late') late++;
+        }
+      });
+      eveningDutyEntities.forEach((e: any) => {
+        const a = eveningAttMap.get(e.id);
+        if (a) {
+          marked++;
+          if (a.status === 'present') present++;
+          else if (a.status === 'absent') absent++;
+          else if (a.status === 'late') late++;
+        }
+      });
+      const unmarked = Math.max(0, total - marked);
+      return { total, present, absent, late, unmarked, morningTotal, eveningTotal };
+    }
+
     const total = entities.length;
     const present = attendance.filter((a: any) => a.status === 'present').length;
     const absent = attendance.filter((a: any) => a.status === 'absent').length;
     const late = attendance.filter((a: any) => a.status === 'late').length;
     const unmarked = total - attendance.length;
     return { total, present, absent, late, unmarked };
-  }, [entities, attendance]);
+  }, [isDutyTab, entities, attendance, morningDutyEntities, eveningDutyEntities]);
 
   const changeDate = (dir: number) => {
     setSelectedDate(addDaysIsoInTz(selectedDate, dir, appTz));
@@ -1989,6 +2152,179 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
             </div>
   );
 
+  const renderDutyStaffCard = (entity: any, shift: 'morning' | 'evening', idx: number) => {
+    const att = attendance.find((a: any) => a.entity_id === entity.id && a.shift === shift);
+    const currentStatus = att?.status || '';
+    const shiftTime = shift === 'morning'
+      ? { start: dutyTimes.morning_start, end: dutyTimes.morning_end }
+      : { start: dutyTimes.evening_start, end: dutyTimes.evening_end };
+
+    const isTimeEditorOpen = timeEditorOpenId === `${entity.id}-${shift}`;
+
+    return (
+      <div
+        key={`${entity.id}-${shift}`}
+        className={`group relative rounded-[24px] border transition-all duration-300 hover:-translate-y-[2px] hover:shadow-[0_12px_40px_-8px_hsl(220_20%_10%/0.1)] ${
+          currentStatus 
+            ? 'bg-background/80 backdrop-blur-md border-border/15 shadow-[0_4px_20px_-4px_hsl(220_20%_10%/0.06)]' 
+            : 'bg-background/60 backdrop-blur-sm border-dashed border-border/20 shadow-sm'
+        }`}
+      >
+        <div className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          {/* Left: Avatar + Info */}
+          <div
+            className="flex items-center gap-4 min-w-0 flex-shrink-0 cursor-pointer hover:opacity-80 transition"
+            onClick={() => setMonthlyStaff(entity)}
+            title={bn ? 'মাসিক ডিউটি উপস্থিতি দেখুন' : 'View monthly attendance'}
+          >
+            <span className="text-xs font-medium text-muted-foreground/60 w-6 text-center tabular-nums">
+              {idx + 1}
+            </span>
+            <div className="relative">
+              {entity.photo_url ? (
+                <img src={entity.photo_url} alt="" className="w-11 h-11 rounded-2xl object-cover border border-border/20 shadow-sm" />
+              ) : (
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/20 flex items-center justify-center text-primary font-bold shadow-sm">
+                  {(entity.name || entity.name_bn || 'S').charAt(0).toUpperCase()}
+                </div>
+              )}
+              <span
+                className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-background shadow-sm ${
+                  currentStatus === 'present' ? 'bg-emerald-500' :
+                  currentStatus === 'absent' ? 'bg-rose-500' :
+                  currentStatus === 'late' ? 'bg-amber-500' :
+                  currentStatus === 'half_day' ? 'bg-orange-500' :
+                  currentStatus === 'leave' ? 'bg-blue-500' : 'bg-muted-foreground/30'
+                }`}
+              />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-foreground text-sm truncate">
+                  {bn ? entity.name_bn || entity.name : entity.name || entity.name_bn}
+                </span>
+                <Badge variant="outline" className={`text-[10px] px-1.5 py-0 font-normal ${
+                  shift === 'morning' ? 'bg-amber-500/10 text-amber-700 border-amber-500/20' : 'bg-indigo-500/10 text-indigo-700 border-indigo-500/20'
+                }`}>
+                  {shift === 'morning' ? (bn ? '🌅 সকাল' : 'Morning') : (bn ? '🌙 সন্ধ্যা' : 'Evening')}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground truncate mt-0.5">
+                <span>{entity.designation || (bn ? 'শিক্ষক' : 'Teacher')}</span>
+                {entity.phone && <span>• {entity.phone}</span>}
+                <span className="font-mono text-[11px] bg-muted/50 px-1.5 py-0.5 rounded text-foreground/70">
+                  {formatTimeDisplay(shiftTime.start, timeFormat)} - {formatTimeDisplay(shiftTime.end, timeFormat)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Middle: Late/Early badges & Time Inputs */}
+          <div className="flex-1 flex flex-wrap items-center gap-2 justify-end sm:justify-start">
+            {(() => {
+              if (!att?.check_in_time) return null;
+              const lateMin = calcLateMinutes(att.check_in_time, shiftTime.start);
+              return lateMin > 0 ? (
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-600 border border-amber-500/15">
+                  {bn ? `${fmtMins(lateMin, true)} বিলম্ব` : `${fmtMins(lateMin, false)} late`}
+                </span>
+              ) : null;
+            })()}
+
+            {/* Time Picker */}
+            {(['present', 'late', 'half_day'].includes(currentStatus || '') || isTimeEditorOpen) && (
+              <div className="flex flex-col gap-1 shrink-0 w-full sm:w-auto rounded-2xl border border-amber-500/20 bg-amber-500/5 px-3 py-2">
+                <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+                  {bn ? 'ডিউটি চেক-ইন / চেক-আউট' : 'Duty Check-in / Out'}
+                </span>
+                <div className="flex gap-2 items-center">
+                  <TimePicker
+                    className="h-8 w-[120px] text-xs rounded-xl bg-background/60 border-border/20 focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20 transition-all"
+                    placeholder={bn ? 'প্রবেশ' : 'In'}
+                    displayFormat={timeFormat}
+                    value={att?.check_in_time || ''}
+                    disabled={!canMarkAttendance}
+                    onChange={v => saveMutation.mutate({
+                      entityId: entity.id,
+                      shift,
+                      status: currentStatus || 'present',
+                      check_in_time: v,
+                      check_out_time: att?.check_out_time || '',
+                    })}
+                  />
+                  <span className="text-muted-foreground/40 text-xs">—</span>
+                  <TimePicker
+                    className="h-8 w-[120px] text-xs rounded-xl bg-background/60 border-border/20 focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20 transition-all"
+                    placeholder={bn ? 'বাহির' : 'Out'}
+                    displayFormat={timeFormat}
+                    value={att?.check_out_time || ''}
+                    disabled={!canMarkAttendance}
+                    onChange={v => saveMutation.mutate({
+                      entityId: entity.id,
+                      shift,
+                      status: currentStatus || 'present',
+                      check_in_time: att?.check_in_time || '',
+                      check_out_time: v,
+                    })}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right: Status Pills */}
+          <div className="flex gap-1.5 flex-wrap justify-end shrink-0">
+            {statusOptions.map((rule: any) => {
+              const cfg = rule.config as any;
+              const countsAs = cfg?.counts_as || rule.name.toLowerCase();
+              const isActive = currentStatus === countsAs;
+              const Icon = STATUS_ICONS[countsAs] || Check;
+
+              const activeStyles: Record<string, string> = {
+                present: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30 shadow-[0_0_12px_hsl(160_84%_40%/0.15)] ring-1 ring-emerald-500/30',
+                absent: 'bg-rose-500/15 text-rose-700 border-rose-500/30 shadow-[0_0_12px_hsl(350_80%_50%/0.15)] ring-1 ring-rose-500/30',
+                late: 'bg-amber-500/15 text-amber-700 border-amber-500/30 shadow-[0_0_12px_hsl(40_90%_50%/0.15)] ring-1 ring-amber-500/30',
+                half_day: 'bg-orange-500/15 text-orange-700 border-orange-500/30 ring-1 ring-orange-500/30',
+                leave: 'bg-blue-500/15 text-blue-700 border-blue-500/30 ring-1 ring-blue-500/30',
+                excused: 'bg-teal-500/15 text-teal-700 border-teal-500/30 ring-1 ring-teal-500/30',
+                medical: 'bg-purple-500/15 text-purple-700 border-purple-500/30 ring-1 ring-purple-500/30',
+              };
+
+              return (
+                <button
+                  key={rule.id}
+                  disabled={!canMarkAttendance}
+                  onClick={() => {
+                    const mutateData: any = { entityId: entity.id, status: countsAs, shift };
+                    if (['present', 'late', 'half_day'].includes(countsAs)) {
+                      mutateData.check_in_time = att?.check_in_time || shiftTime.start;
+                      mutateData.check_out_time = att?.check_out_time || shiftTime.end;
+                      if (countsAs === 'late') setTimeEditorOpenId(`${entity.id}-${shift}`);
+                      else if (isTimeEditorOpen) setTimeEditorOpenId(null);
+                    } else {
+                      mutateData.check_in_time = '';
+                      mutateData.check_out_time = '';
+                      if (isTimeEditorOpen) setTimeEditorOpenId(null);
+                    }
+                    saveMutation.mutate(mutateData);
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all duration-200 hover:scale-105 ${
+                    isActive 
+                      ? (activeStyles[countsAs] || 'bg-muted text-foreground border-border/30 ring-1 ring-primary/30')
+                      : 'bg-muted/30 text-muted-foreground border-border/15 hover:bg-muted/50'
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">{bn ? rule.name_bn : rule.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-4">
@@ -2152,10 +2488,10 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
 
               {/* Bulk Actions */}
               <div className="flex gap-1 shrink-0 ml-auto">
-                {canBulkMark && <Button size="sm" disabled={entities.length === 0} className="text-xs rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-[0_4px_16px_hsl(160_84%_30%/0.25)] hover:shadow-[0_6px_24px_hsl(160_84%_30%/0.35)] transition-all duration-200" onClick={() => setPresentDialogOpen(true)}>
+                {!isDutyTab && canBulkMark && <Button size="sm" disabled={entities.length === 0} className="text-xs rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-[0_4px_16px_hsl(160_84%_30%/0.25)] hover:shadow-[0_6px_24px_hsl(160_84%_30%/0.35)] transition-all duration-200" onClick={() => setPresentDialogOpen(true)}>
                   <Check className="h-3.5 w-3.5 mr-1" /> {bn ? 'সবাই উপস্থিত' : 'All Present'}
                 </Button>}
-                {canBulkMark && <Button size="sm" disabled={entities.length === 0} className="text-xs rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-[0_4px_16px_hsl(217_91%_50%/0.25)] hover:shadow-[0_6px_24px_hsl(217_91%_50%/0.35)] transition-all duration-200" onClick={() => setHolidayDialogOpen(true)}>
+                {!isDutyTab && canBulkMark && <Button size="sm" disabled={entities.length === 0} className="text-xs rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-[0_4px_16px_hsl(217_91%_50%/0.25)] hover:shadow-[0_6px_24px_hsl(217_91%_50%/0.35)] transition-all duration-200" onClick={() => setHolidayDialogOpen(true)}>
                   <CalendarOff className="h-3.5 w-3.5 mr-1" /> {bn ? 'সবাই ছুটি' : 'All Leave'}
                 </Button>}
                 {canDeleteItem && attendance.length > 0 && (
@@ -2253,29 +2589,88 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
               </div>
             )}
 
-            {/* Staff Shift Selector */}
+            {/* Staff Shift Selector & Duty Controls */}
             {entityType === 'staff' && (
               <div className="flex flex-wrap gap-3 items-center">
-                {/* Shift filter (only for duty/meal dashboards) — dropdown, no inline sub-tabs */}
-                {staffSubTab !== 'fulltime' && (
+                {/* For Meal tab: keep meal shift selector */}
+                {staffSubTab === 'meal' && (
                   <Select value={selectedShift} onValueChange={setSelectedShift}>
                     <SelectTrigger className="w-44 h-8 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {(staffSubTab === 'duty' ? DUTY_SHIFTS : MEAL_SHIFTS).map(sh => (
+                      {MEAL_SHIFTS.map(sh => (
                         <SelectItem key={sh.value} value={sh.value}>{bn ? sh.labelBn : sh.labelEn}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 )}
 
+                {/* Duty tab: view filter (both / morning / evening) + Full Month Duty Sheet button */}
+                {staffSubTab === 'duty' && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="inline-flex rounded-lg border border-border/40 bg-muted/30 p-0.5">
+                      <button
+                        type="button"
+                        onClick={() => setDutyViewFilter('both')}
+                        className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                          dutyViewFilter === 'both'
+                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        {bn ? 'উভয় শিফট (সকাল ও সন্ধ্যা)' : 'Both Shifts'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDutyViewFilter('morning')}
+                        className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                          dutyViewFilter === 'morning'
+                            ? 'bg-amber-500 text-white shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        <Sun className="h-3 w-3" />
+                        {bn ? 'সকাল ডিউটি' : 'Morning Duty'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDutyViewFilter('evening')}
+                        className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                          dutyViewFilter === 'evening'
+                            ? 'bg-indigo-600 text-white shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        <Moon className="h-3 w-3" />
+                        {bn ? 'সন্ধ্যা ডিউটি' : 'Evening Duty'}
+                      </button>
+                    </div>
+
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => setDutyMonthlySheetOpen(true)}
+                      className="h-8 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm gap-1.5"
+                    >
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      {bn ? 'পুরো মাসের ডিউটি শিট (Excel / প্রিন্ট)' : 'Monthly Duty Sheet'}
+                    </Button>
+                  </div>
+                )}
+
                 {/* Duty roster status */}
                 {staffSubTab === 'duty' && (
-                  <span className={`text-[11px] px-2.5 py-1 rounded-full border ${entities.length > 0 ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20' : 'bg-amber-500/10 text-amber-700 border-amber-500/20'}`}>
-                    {entities.length > 0
-                      ? (bn ? `রুটিন অনুযায়ী ${entities.length} জনের ডিউটি` : `${entities.length} on duty per roster`)
-                      : (bn ? 'এই দিনে এই শিফটে কারো ডিউটি রুটিন নেই' : 'No one rostered for this day & shift')}
+                  <span className={`text-[11px] px-2.5 py-1 rounded-full border ${
+                    (morningDutyEntities.length + eveningDutyEntities.length) > 0
+                      ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20'
+                      : 'bg-amber-500/10 text-amber-700 border-amber-500/20'
+                  }`}>
+                    {(morningDutyEntities.length + eveningDutyEntities.length) > 0
+                      ? (bn
+                          ? `রুটিন অনুযায়ী: সকাল ${morningDutyEntities.length} জন • সন্ধ্যা ${eveningDutyEntities.length} জন`
+                          : `Roster: Morning ${morningDutyEntities.length} • Evening ${eveningDutyEntities.length}`)
+                      : (bn ? 'এই দিনে কারো ডিউটি রুটিন নেই' : 'No one rostered for this day')}
                   </span>
                 )}
 
@@ -2415,6 +2810,104 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                     </div>
                   </button>
                 ))}
+              </div>
+            )}
+          </div>
+        ) : isDutyTab ? (
+          <div className="space-y-8">
+            {/* Morning Duty Section */}
+            {(dutyViewFilter === 'both' || dutyViewFilter === 'morning') && (
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20 rounded-2xl p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center shadow-sm">
+                      <Sun className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-base text-foreground">
+                          {bn ? 'সকাল ডিউটি হাজিরা' : 'Morning Duty Attendance'}
+                        </h3>
+                        <Badge variant="outline" className="bg-amber-500/10 text-amber-700 border-amber-500/20 text-xs">
+                          {formatTimeDisplay(dutyTimes.morning_start, timeFormat)} - {formatTimeDisplay(dutyTimes.morning_end, timeFormat)}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {bn ? `রুটিন অনুযায়ী ${morningDutyEntities.length} জন শিক্ষক নির্ধারিত` : `${morningDutyEntities.length} staff scheduled per roster`}
+                      </p>
+                    </div>
+                  </div>
+
+                  {canBulkMark && morningDutyEntities.length > 0 && (
+                    <Button
+                      size="sm"
+                      onClick={() => handleBulkMarkDuty('morning', 'present')}
+                      className="text-xs rounded-full bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                      {bn ? 'সকাল ডিউটি সবাইকে উপস্থিত করুন' : 'Mark All Morning Present'}
+                    </Button>
+                  )}
+                </div>
+
+                {morningDutyEntities.length === 0 ? (
+                  <div className="rounded-[20px] bg-background/50 border border-dashed border-border/20 p-8 text-center">
+                    <Sun className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">
+                      {bn ? 'আজকের দিনে সকাল শিফটে কোনো শিক্ষক রুটিনে নেই' : 'No staff scheduled for morning duty today'}
+                    </p>
+                  </div>
+                ) : (
+                  morningDutyEntities.map((entity: any, idx: number) => renderDutyStaffCard(entity, 'morning', idx))
+                )}
+              </div>
+            )}
+
+            {/* Evening Duty Section */}
+            {(dutyViewFilter === 'both' || dutyViewFilter === 'evening') && (
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-indigo-500/10 via-indigo-500/5 to-transparent border border-indigo-500/20 rounded-2xl p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 flex items-center justify-center shadow-sm">
+                      <Moon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-base text-foreground">
+                          {bn ? 'সন্ধ্যা ডিউটি হাজিরা' : 'Evening Duty Attendance'}
+                        </h3>
+                        <Badge variant="outline" className="bg-indigo-500/10 text-indigo-700 border-indigo-500/20 text-xs">
+                          {formatTimeDisplay(dutyTimes.evening_start, timeFormat)} - {formatTimeDisplay(dutyTimes.evening_end, timeFormat)}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {bn ? `রুটিন অনুযায়ী ${eveningDutyEntities.length} জন শিক্ষক নির্ধারিত` : `${eveningDutyEntities.length} staff scheduled per roster`}
+                      </p>
+                    </div>
+                  </div>
+
+                  {canBulkMark && eveningDutyEntities.length > 0 && (
+                    <Button
+                      size="sm"
+                      onClick={() => handleBulkMarkDuty('evening', 'present')}
+                      className="text-xs rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                      {bn ? 'সন্ধ্যা ডিউটি সবাইকে উপস্থিত করুন' : 'Mark All Evening Present'}
+                    </Button>
+                  )}
+                </div>
+
+                {eveningDutyEntities.length === 0 ? (
+                  <div className="rounded-[20px] bg-background/50 border border-dashed border-border/20 p-8 text-center">
+                    <Moon className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">
+                      {bn ? 'আজকের দিনে সন্ধ্যা শিফটে কোনো শিক্ষক রুটিনে নেই' : 'No staff scheduled for evening duty today'}
+                    </p>
+                  </div>
+                ) : (
+                  eveningDutyEntities.map((entity: any, idx: number) => renderDutyStaffCard(entity, 'evening', idx))
+                )}
               </div>
             )}
           </div>
@@ -2684,6 +3177,12 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
           staff={monthlyStaff}
           shift={entityType === 'staff' ? effectiveShift : undefined}
           initialDate={selectedDate}
+        />
+        <ResidentialDutyMonthlySheetDialog
+          open={dutyMonthlySheetOpen}
+          onOpenChange={setDutyMonthlySheetOpen}
+          initialMonth={selectedDate.split('-')[1]}
+          initialYear={selectedDate.split('-')[0]}
         />
         <BulkHolidayDialog
           open={holidayDialogOpen}
