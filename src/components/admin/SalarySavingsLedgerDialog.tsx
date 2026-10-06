@@ -44,6 +44,8 @@ export interface StaffSavingsGroup {
   monthlyAmount: number;
   durationMonths: number;
   startMonth: string;
+  isResigned?: boolean;
+  resignDate?: string | null;
 }
 
 const MONTHS_MAP: Record<string, { bn: string; en: string }> = {
@@ -136,8 +138,8 @@ export function SalarySavingsLedgerDialog({
   // 1. Add missing or new month deposit
   const addDepositMutation = useMutation({
     mutationFn: async ({ monthYear, amount }: { monthYear: string; amount: number }) => {
-      if (!group?.primaryConfig?.id || !group?.staff_id) {
-        throw new Error(bn ? 'কনফিগ পাওয়া যায়নি' : 'Config not found');
+      if (!group?.staff_id) {
+        throw new Error(bn ? 'স্টাফ পাওয়া যায়নি' : 'Staff not found');
       }
       if (!monthYear || !/^\d{4}-\d{2}$/.test(monthYear)) {
         throw new Error(bn ? 'সঠিক মাস নির্বাচন করুন (YYYY-MM)' : 'Invalid month format');
@@ -151,6 +153,24 @@ export function SalarySavingsLedgerDialog({
       }
       if (!amount || amount <= 0) {
         throw new Error(bn ? 'সঠিক পরিমাণ দিন' : 'Enter a valid amount');
+      }
+
+      let savingsId = group?.primaryConfig?.id;
+      if (!savingsId) {
+        // Auto-create a salary_savings config for this staff
+        const { data: newCfg, error: cfgErr } = await supabase
+          .from('salary_savings')
+          .insert({
+            staff_id: group.staff_id,
+            monthly_amount: amount,
+            duration_months: 12,
+            start_month: monthYear,
+            is_active: true,
+          })
+          .select('id')
+          .single();
+        if (cfgErr) throw cfgErr;
+        savingsId = newCfg.id;
       }
 
       // Check if entry already exists for this staff and month
@@ -173,7 +193,7 @@ export function SalarySavingsLedgerDialog({
         const { error: insErr } = await supabase
           .from('salary_savings_ledger')
           .insert({
-            savings_id: group.primaryConfig.id,
+            savings_id: savingsId,
             staff_id: group.staff_id,
             month_year: monthYear,
             amount,
@@ -181,7 +201,7 @@ export function SalarySavingsLedgerDialog({
         if (insErr) throw insErr;
       }
 
-      await syncTotalSaved(group.primaryConfig.id, group.staff_id);
+      await syncTotalSaved(savingsId, group.staff_id);
     },
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ['salary-savings-ledger'] });
@@ -328,11 +348,17 @@ export function SalarySavingsLedgerDialog({
                 <PiggyBank className="h-6 w-6" />
               </div>
               <div>
-                <DialogTitle className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                <DialogTitle className="text-base sm:text-lg font-bold text-white flex items-center gap-2 flex-wrap">
                   <span>{staffName}</span>
                   <Badge variant="outline" className="text-[10px] bg-white/10 text-blue-200 border-white/20">
                     {staffId}
                   </Badge>
+                  {group.isResigned && (
+                    <Badge variant="outline" className="text-[10px] bg-red-500/20 text-red-200 border-red-400/40 font-medium">
+                      🚪 {bn ? 'পদত্যাগকৃত' : 'Resigned'}
+                      {group.resignDate ? ` (${group.resignDate})` : ''}
+                    </Badge>
+                  )}
                   {joiningMonth && (
                     <Badge variant="outline" className="text-[10px] bg-emerald-500/20 text-emerald-200 border-emerald-400/40">
                       📅 {bn ? `যোগদান: ${formatMonthLabel(joiningMonth, true)}` : `Joined: ${formatMonthLabel(joiningMonth, false)}`}

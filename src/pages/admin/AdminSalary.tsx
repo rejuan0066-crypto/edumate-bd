@@ -52,7 +52,7 @@ import {
   CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Edit2, Eye,
   Calculator, Plus, Trash2, DollarSign, FileText, FolderOpen,
   PiggyBank, Landmark, RefreshCw, Minus, Share2, Camera, FileCheck2, Upload,
-  History
+  History, UserMinus
 } from 'lucide-react';
 import {
   useSignedSalaryDocs,
@@ -246,6 +246,8 @@ const AdminSalary = () => {
   const [deleteSavingsId, setDeleteSavingsId] = useState<string | null>(null);
   const [disburseDialog, setDisburseDialog] = useState<any>(null);
   const [eligibilityFilter, setEligibilityFilter] = useState<'all' | 'eligible' | 'not_generated' | 'pending' | 'paid'>('all');
+  const [savingsFilter, setSavingsFilter] = useState<'all' | 'active' | 'resigned'>('all');
+  const [savingsSearch, setSavingsSearch] = useState('');
   const [auditLogOpen, setAuditLogOpen] = useState(false);
   const monthYear = `${selectedYear}-${selectedMonth}`;
   const signedDocsManager = useSignedSalaryDocs(monthYear);
@@ -333,9 +335,8 @@ const AdminSalary = () => {
       const { data, error } = await supabase
         .from('staff')
         .select('*')
-        // Inactive staff must stay visible for PAST months where their salary
-        // was already generated — they are filtered out per-month below.
-        .in('status', ['active', 'inactive'])
+        // Inactive / resigned staff must stay visible for history and deposit ledger
+        .in('status', ['active', 'inactive', 'resigned'])
         .order('salary_order', { ascending: true, nullsFirst: false })
         .order('name_bn', { ascending: true });
       if (error) throw error;
@@ -721,6 +722,9 @@ const AdminSalary = () => {
     },
   });
 
+  // Hook for resignation-aware queries
+  const { isResignedBeforeMonth, isResignedInMonth, resignDateByStaff, getResignDate, resignedStaffIds } = useResignedStaff();
+
   // ========== SAVINGS QUERIES ==========
   const { data: savingsConfigs = [] } = useQuery({
     queryKey: ['salary-savings'],
@@ -740,7 +744,7 @@ const AdminSalary = () => {
     },
   });
 
-  // Grouped savings by staff so each staff member appears only once in the savings tab
+  // Grouped savings by staff: shows ALL staff and teachers, with resigned staff clearly marked & separated
   const groupedSavings = useMemo(() => {
     const map = new Map<string, StaffSavingsGroup>();
     for (const cfg of savingsConfigs as any[]) {
@@ -810,31 +814,107 @@ const AdminSalary = () => {
       });
     }
 
-    return Array.from(map.values()).map((item) => {
-      const uniqueLedgers = Array.from(
-        new Map(item.ledgerEntries.map((l: any) => [l.month_year || l.id, l])).values()
-      ).sort((a: any, b: any) => (a.month_year > b.month_year ? -1 : 1));
+    // Include ALL other staff and teachers who don't have savings setup yet
+    const staffPool = (staffRaw as any[]).length > 0 ? (staffRaw as any[]) : (staff as any[]);
+    for (const s of staffPool) {
+      if (!s.id || map.has(s.id)) continue;
+      const joiningMonth = getJoiningMonth(s.joining_date);
+      const effectiveStartMonth = joiningMonth || monthYear;
+      map.set(s.id, {
+        staff_id: s.id,
+        staffMember: s,
+        primaryConfig: null,
+        allConfigs: [],
+        totalSaved: 0,
+        ledgerEntries: [],
+        depositedMonthsCount: 0,
+        isActive: false,
+        isComplete: false,
+        monthlyAmount: 0,
+        durationMonths: 0,
+        startMonth: effectiveStartMonth,
+      });
+    }
 
-      const ledgerSum = uniqueLedgers.reduce((sum: number, l: any) => sum + Number(l.amount || 0), 0);
-      const totalSaved = Math.max(ledgerSum, Number(item.primaryConfig?.total_saved || 0));
-      const elapsed = getMonthsElapsed(monthYear, item.startMonth);
-      const isComplete = (item.durationMonths > 0 && elapsed > item.durationMonths) || (item.durationMonths > 0 && uniqueLedgers.length >= item.durationMonths);
+    return Array.from(map.values())
+      .map((item) => {
+        const uniqueLedgers = Array.from(
+          new Map(item.ledgerEntries.map((l: any) => [l.month_year || l.id, l])).values()
+        ).sort((a: any, b: any) => (a.month_year > b.month_year ? -1 : 1));
 
-      return {
-        ...item,
-        ledgerEntries: uniqueLedgers,
-        totalSaved,
-        depositedMonthsCount: uniqueLedgers.length,
-        isComplete,
-        isActive: Boolean(item.primaryConfig?.is_active && !isComplete),
-      };
-    });
-  }, [savingsConfigs, savingsLedger, staff, staffRaw, monthYear]);
+        const ledgerSum = uniqueLedgers.reduce((sum: number, l: any) => sum + Number(l.amount || 0), 0);
+        const totalSaved = Math.max(ledgerSum, Number(item.primaryConfig?.total_saved || 0));
+        const elapsed = getMonthsElapsed(monthYear, item.startMonth);
+        const isComplete = (item.durationMonths > 0 && elapsed > item.durationMonths) || (item.durationMonths > 0 && uniqueLedgers.length >= item.durationMonths);
+
+        const staffObj = item.staffMember;
+        const isResigned = Boolean(
+          (staffObj && (staffObj.status === 'resigned' || staffObj.status === 'inactive')) ||
+          resignedStaffIds.has(item.staff_id)
+        );
+        const resignDate = getResignDate(item.staff_id);
+
+        return {
+          ...item,
+          ledgerEntries: uniqueLedgers,
+          totalSaved,
+          depositedMonthsCount: uniqueLedgers.length,
+          isComplete,
+          isActive: Boolean(item.primaryConfig?.is_active && !isComplete),
+          isResigned,
+          resignDate,
+        };
+      })
+      .sort((a, b) => {
+        // 1. Current / active staff first, resigned staff last
+        if (a.isResigned !== b.isResigned) {
+          return a.isResigned ? 1 : -1;
+        }
+        // 2. Staff with active savings or deposited balance first
+        const aHasSavings = a.monthlyAmount > 0 || a.totalSaved > 0 ? 1 : 0;
+        const bHasSavings = b.monthlyAmount > 0 || b.totalSaved > 0 ? 1 : 0;
+        if (aHasSavings !== bHasSavings) {
+          return bHasSavings - aHasSavings;
+        }
+        // 3. Sort by salary_order if configured
+        const orderA = a.staffMember?.salary_order ?? 999999;
+        const orderB = b.staffMember?.salary_order ?? 999999;
+        if (orderA !== orderB) return orderA - orderB;
+        // 4. Alphabetical by name
+        const nameA = a.staffMember?.name_bn || a.staffMember?.name_en || '';
+        const nameB = b.staffMember?.name_bn || b.staffMember?.name_en || '';
+        return nameA.localeCompare(nameB, 'bn');
+      });
+  }, [savingsConfigs, savingsLedger, staff, staffRaw, monthYear, resignedStaffIds, getResignDate]);
 
   const activeLedgerGroup = useMemo(() => {
     if (!selectedLedgerStaffId) return null;
     return groupedSavings.find((g) => g.staff_id === selectedLedgerStaffId) || null;
   }, [groupedSavings, selectedLedgerStaffId]);
+
+  // Savings counts and filtered list for the deposit page
+  const activeSavingsCount = useMemo(() => groupedSavings.filter((g) => !g.isResigned).length, [groupedSavings]);
+  const resignedSavingsCount = useMemo(() => groupedSavings.filter((g) => g.isResigned).length, [groupedSavings]);
+  const totalSavingsCount = groupedSavings.length;
+
+  const displayedSavings = useMemo(() => {
+    return groupedSavings.filter((item) => {
+      // 1. Resignation filter
+      if (savingsFilter === 'active' && item.isResigned) return false;
+      if (savingsFilter === 'resigned' && !item.isResigned) return false;
+
+      // 2. Search query
+      if (savingsSearch.trim()) {
+        const q = savingsSearch.toLowerCase().trim();
+        const nameBn = (item.staffMember?.name_bn || '').toLowerCase();
+        const nameEn = (item.staffMember?.name_en || '').toLowerCase();
+        const sId = (item.staffMember?.staff_id || item.staffMember?.staff_id_custom || '').toLowerCase();
+        const desig = (item.staffMember?.designation || '').toLowerCase();
+        return nameBn.includes(q) || nameEn.includes(q) || sId.includes(q) || desig.includes(q);
+      }
+      return true;
+    });
+  }, [groupedSavings, savingsFilter, savingsSearch]);
 
   // Salary change history — used to apply increases/decreases only from their effective month.
   const { data: salaryChanges = [] } = useQuery({
@@ -1317,7 +1397,6 @@ const AdminSalary = () => {
     const lastDay = new Date(yy, mm, 0).getDate();
     return `${monthYear}-${String(lastDay).padStart(2, '0')}`;
   })();
-  const { isResignedBeforeMonth, isResignedInMonth, resignDateByStaff, getResignDate } = useResignedStaff();
   const hasJoinedByMonth = useCallback((s: any): boolean => {
     const jd = s?.joining_date ? String(s.joining_date).slice(0, 10) : '';
     if (!jd) return true; // unknown joining date → always include (legacy data)
@@ -4097,17 +4176,23 @@ const AdminSalary = () => {
           </TabsContent>
 
           {/* ========== SAVINGS LEDGER TAB ========== */}
-          {/* ========== SAVINGS LEDGER TAB ========== */}
           <TabsContent value="savings">
             <Card>
-              <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Landmark className="h-5 w-5 text-blue-600" />
-                  {bn ? 'জমার তালিকা (Savings Ledger)' : 'Savings Ledger'}
-                </CardTitle>
+              <CardHeader className="pb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 space-y-0">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Landmark className="h-5 w-5 text-blue-600" />
+                    {bn ? 'জমার তালিকা ও লেজার (Savings Ledger)' : 'Savings Ledger'}
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {bn
+                      ? `সর্বমোট ${toBnDigits(totalSavingsCount)} জন স্টাফ ও শিক্ষক (${toBnDigits(activeSavingsCount)} জন বর্তমান, ${toBnDigits(resignedSavingsCount)} জন পদত্যাগকৃত)`
+                      : `Total ${totalSavingsCount} staff & teachers (${activeSavingsCount} active, ${resignedSavingsCount} resigned)`}
+                  </p>
+                </div>
                 <Button
                   size="sm"
-                  className="h-8 gap-1.5 bg-blue-600 hover:bg-blue-700 text-white"
+                  className="h-8 gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shrink-0"
                   onClick={() => setSavingsDialog({
                     staff_id: '',
                     staff_name: '',
@@ -4121,6 +4206,57 @@ const AdminSalary = () => {
                   {bn ? 'নতুন জমা সেটআপ' : 'New Savings Setup'}
                 </Button>
               </CardHeader>
+
+              {/* Sub-filters & Search Toolbar */}
+              <div className="px-4 py-2.5 border-b bg-muted/20 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                <div className="flex items-center gap-1.5 p-1 bg-muted/60 rounded-lg text-xs overflow-x-auto">
+                  <button
+                    type="button"
+                    onClick={() => setSavingsFilter('all')}
+                    className={`px-3 py-1 rounded-md font-medium whitespace-nowrap transition-all ${
+                      savingsFilter === 'all'
+                        ? 'bg-white dark:bg-card text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {bn ? `সকল স্টাফ (${toBnDigits(totalSavingsCount)})` : `All (${totalSavingsCount})`}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSavingsFilter('active')}
+                    className={`px-3 py-1 rounded-md font-medium whitespace-nowrap transition-all ${
+                      savingsFilter === 'active'
+                        ? 'bg-emerald-600 text-white shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {bn ? `বর্তমান কর্মরত (${toBnDigits(activeSavingsCount)})` : `Active (${activeSavingsCount})`}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSavingsFilter('resigned')}
+                    className={`px-3 py-1 rounded-md font-medium whitespace-nowrap transition-all ${
+                      savingsFilter === 'resigned'
+                        ? 'bg-red-600 text-white shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    🚪 {bn ? `পদত্যাগকৃত (${toBnDigits(resignedSavingsCount)})` : `Resigned (${resignedSavingsCount})`}
+                  </button>
+                </div>
+
+                <div className="relative w-full sm:w-64">
+                  <Search className="h-3.5 w-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    placeholder={bn ? 'নাম বা আইডি দিয়ে খুঁজুন...' : 'Search by name or ID...'}
+                    value={savingsSearch}
+                    onChange={(e) => setSavingsSearch(e.target.value)}
+                    className="h-8 text-xs pl-8 pr-3 bg-white dark:bg-card"
+                  />
+                </div>
+              </div>
+
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -4139,59 +4275,122 @@ const AdminSalary = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {groupedSavings.length === 0 ? (
+                      {displayedSavings.length === 0 ? (
                         <tr><td colSpan={10} className="px-3 py-8 text-center text-muted-foreground">
                           <PiggyBank className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                          <p>{bn ? 'কোনো জমা সেটআপ নেই' : 'No savings configured yet'}</p>
-                          <p className="text-xs mt-1">{bn ? 'উপরে "নতুন জমা সেটআপ" অথবা বেতন তালিকায় "+" বাটনে ক্লিক করে জমা চালু করুন' : 'Click "New Savings Setup" above or "+" in salary table to set up savings'}</p>
+                          <p>{bn ? 'কোনো স্টাফ বা শিক্ষক পাওয়া যায়নি' : 'No staff or teachers found'}</p>
+                          <p className="text-xs mt-1">
+                            {savingsSearch
+                              ? (bn ? 'অনুসন্ধানের সাথে কোনো মিল পাওয়া যায়নি' : 'No matching results')
+                              : (bn ? 'উপরে "নতুন জমা সেটআপ" বাটনে ক্লিক করে জমা চালু করতে পারেন' : 'Click "New Savings Setup" above to start savings')}
+                          </p>
                         </td></tr>
-                      ) : groupedSavings.map((item, idx: number) => {
+                      ) : displayedSavings.map((item, idx: number) => {
                         const remaining = Math.max(0, item.durationMonths - item.depositedMonthsCount);
 
                         return (
-                          <tr key={item.staff_id} className="border-b hover:bg-muted/30 transition-colors">
+                          <tr
+                            key={item.staff_id}
+                            className={`border-b transition-colors ${
+                              item.isResigned
+                                ? 'bg-red-50/25 dark:bg-red-950/10 hover:bg-red-50/50 dark:hover:bg-red-950/20 border-l-4 border-l-red-500'
+                                : 'hover:bg-muted/30'
+                            }`}
+                          >
                             <td className="px-3 py-2 text-muted-foreground">{bn ? toBnDigits(idx + 1) : idx + 1}</td>
                             <td className="px-3 py-2 font-medium">
-                              <button
-                                type="button"
-                                onClick={() => setSelectedLedgerStaffId(item.staff_id)}
-                                className="group inline-flex items-center gap-1.5 text-left text-blue-700 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 font-semibold hover:underline"
-                                title={bn ? 'ক্লিক করে জমার বিস্তারিত লেজার ও মিসিং মাস দেখুন' : 'Click to view deposit ledger and missing months'}
-                              >
-                                <span>{item.staffMember?.name_bn || item.staffMember?.name_en || '-'}</span>
-                                <History className="h-3.5 w-3.5 opacity-60 group-hover:opacity-100 transition-opacity" />
-                              </button>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedLedgerStaffId(item.staff_id)}
+                                  className="group inline-flex items-center gap-1.5 text-left text-blue-700 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 font-semibold hover:underline"
+                                  title={bn ? 'ক্লিক করে জমার বিস্তারিত লেজার ও মিসিং মাস দেখুন' : 'Click to view deposit ledger and missing months'}
+                                >
+                                  <span>{item.staffMember?.name_bn || item.staffMember?.name_en || '-'}</span>
+                                  <History className="h-3.5 w-3.5 opacity-60 group-hover:opacity-100 transition-opacity" />
+                                </button>
+                                {item.isResigned && (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] bg-red-100/80 text-red-700 dark:bg-red-950/40 dark:text-red-300 border-red-300 font-semibold gap-1 py-0 px-1.5"
+                                  >
+                                    <UserMinus className="h-2.5 w-2.5" />
+                                    {bn ? 'পদত্যাগকৃত' : 'Resigned'}
+                                    {item.resignDate ? ` (${item.resignDate})` : ''}
+                                  </Badge>
+                                )}
+                              </div>
                               {item.staffMember?.designation && (
                                 <div className="text-[11px] text-muted-foreground font-normal">
-                                  {item.staffMember.designation}
+                                  {item.staffMember.designation} {item.staffMember?.staff_id ? `• ${item.staffMember.staff_id}` : ''}
                                 </div>
                               )}
                             </td>
-                            <td className="px-3 py-2 text-right text-blue-700 font-semibold">
-                              ৳{bn ? toBnDigits(Number(item.monthlyAmount).toLocaleString()) : Number(item.monthlyAmount).toLocaleString()}
-                            </td>
-                            <td className="px-3 py-2 text-center">
-                              {bn ? toBnDigits(item.durationMonths) : item.durationMonths} {bn ? 'মাস' : 'months'}
-                            </td>
-                            <td className="px-3 py-2 text-center text-xs">{getMonthLabel(item.startMonth)}</td>
-                            <td className="px-3 py-2 text-right font-bold text-blue-700">
-                              ৳{bn ? toBnDigits(item.totalSaved.toLocaleString()) : item.totalSaved.toLocaleString()}
-                            </td>
-                            <td className="px-3 py-2 text-center">
-                              {item.isComplete ? (
-                                <Badge className="bg-emerald-100 text-emerald-700 text-[10px]">{bn ? 'সম্পূর্ণ' : 'Complete'}</Badge>
+                            <td className="px-3 py-2 text-right">
+                              {item.monthlyAmount > 0 ? (
+                                <span className="text-blue-700 dark:text-blue-400 font-semibold">
+                                  ৳{bn ? toBnDigits(Number(item.monthlyAmount).toLocaleString()) : Number(item.monthlyAmount).toLocaleString()}
+                                </span>
                               ) : (
-                                <span>{bn ? toBnDigits(remaining) : remaining} {bn ? 'মাস' : 'mo'}</span>
+                                <span className="text-muted-foreground text-xs">—</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-center text-xs">
+                              {item.durationMonths > 0 ? (
+                                <span>{bn ? toBnDigits(item.durationMonths) : item.durationMonths} {bn ? 'মাস' : 'months'}</span>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-center text-xs">
+                              {item.primaryConfig?.start_month ? (
+                                getMonthLabel(item.startMonth)
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-right font-bold">
+                              {item.totalSaved > 0 ? (
+                                <span className="text-emerald-700 dark:text-emerald-400">
+                                  ৳{bn ? toBnDigits(item.totalSaved.toLocaleString()) : item.totalSaved.toLocaleString()}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground font-normal">৳০</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-center text-xs">
+                              {item.durationMonths > 0 ? (
+                                item.isComplete ? (
+                                  <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 text-[10px]">
+                                    {bn ? 'সম্পূর্ণ' : 'Complete'}
+                                  </Badge>
+                                ) : (
+                                  <span>{bn ? toBnDigits(remaining) : remaining} {bn ? 'মাস' : 'mo'}</span>
+                                )
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
                               )}
                             </td>
                             <td className="px-3 py-2 text-center">
                               <div className="flex flex-col items-center gap-1">
-                                <Badge className={item.isActive 
-                                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[10px]'
-                                  : 'bg-muted text-muted-foreground text-[10px]'}>
-                                  {item.isActive ? (bn ? 'চলমান' : 'Active') : item.isComplete ? (bn ? 'সম্পূর্ণ' : 'Done') : (bn ? 'নিষ্ক্রিয়' : 'Inactive')}
-                                </Badge>
-                                {isRecordPending(item.primaryConfig?.id) && (
+                                {item.isResigned ? (
+                                  <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300 dark:bg-red-950/40 dark:text-red-400 text-[10px]">
+                                    🚪 {bn ? 'অব্যাহতি' : 'Left'}
+                                  </Badge>
+                                ) : item.primaryConfig ? (
+                                  <Badge className={item.isActive 
+                                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[10px]'
+                                    : item.isComplete
+                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 text-[10px]'
+                                    : 'bg-muted text-muted-foreground text-[10px]'}>
+                                    {item.isActive ? (bn ? 'চলমান' : 'Active') : item.isComplete ? (bn ? 'সম্পূর্ণ' : 'Done') : (bn ? 'নিষ্ক্রিয়' : 'Inactive')}
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-muted-foreground border-dashed text-[10px]">
+                                    {bn ? 'সেটআপ নেই' : 'No Setup'}
+                                  </Badge>
+                                )}
+                                {item.primaryConfig && isRecordPending(item.primaryConfig?.id) && (
                                   <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse text-[9px] px-1 py-0">
                                     <Clock className="w-2.5 h-2.5 mr-0.5" />
                                     {bn ? 'অনুমোদনের অপেক্ষায়' : 'Pending Approval'}
@@ -4220,7 +4419,7 @@ const AdminSalary = () => {
                                     title={bn ? 'মিসিং মাস চেক করুন বা নতুন ডিপোজিট যোগ করুন' : 'Check missing months or add deposit'}
                                   >
                                     <Plus className="h-2.5 w-2.5 mr-0.5" />
-                                    {bn ? 'মিসিং মাস চেক / যোগ' : 'Missing / Add'}
+                                    {bn ? 'মিসিং / যোগ' : 'Missing / Add'}
                                   </Button>
                                 </div>
                                 <div className="flex flex-wrap gap-1">
@@ -4256,19 +4455,19 @@ const AdminSalary = () => {
                                 >
                                   <History className="h-3 w-3 mr-1" /> {bn ? 'লেজার' : 'Ledger'}
                                 </Button>
-                                {!item.primaryConfig?.disbursed_at && (
+                                {item.totalSaved > 0 && !item.primaryConfig?.disbursed_at && (
                                   <Button
                                     size="sm"
                                     variant="outline"
                                     className="h-7 px-2 text-[10px] border-emerald-500 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
                                     onClick={() => {
                                       setDisburseDialog({
-                                        config: item.primaryConfig,
+                                        config: item.primaryConfig || { id: '', staff_id: item.staff_id, total_saved: item.totalSaved },
                                         staff_name: item.staffMember?.name_bn || item.staffMember?.name_en || '-',
                                         amount: item.totalSaved,
                                         categoryId: '',
                                         institutionId: '',
-                                        note: '',
+                                        note: item.isResigned ? (bn ? 'পদত্যাগকালীন ডিপোজিট সম্পূর্ণ পরিশোধ' : 'Settlement upon resignation') : '',
                                       });
                                     }}
                                     title={bn ? 'মোট পরিশোধ' : 'Disburse Total'}
@@ -4281,34 +4480,59 @@ const AdminSalary = () => {
                                     {bn ? 'পরিশোধিত' : 'Paid'}
                                   </Badge>
                                 )}
-                                <Button 
-                                  size="icon" 
-                                  variant="ghost" 
-                                  className="h-6 w-6" 
-                                  title={bn ? 'সেটিংস সম্পাদনা' : 'Edit Settings'}
-                                  onClick={() => {
-                                    const sJoiningMonth = getJoiningMonth(item.staffMember?.joining_date);
-                                    const rawStart = item.primaryConfig?.start_month || item.startMonth;
-                                    const clampedStart = (sJoiningMonth && rawStart < sJoiningMonth) ? sJoiningMonth : rawStart;
-                                    setSavingsDialog({
-                                      ...item.primaryConfig, 
-                                      staff_name: item.staffMember?.name_bn || item.staffMember?.name_en || '-',
-                                      staff_joining_date: item.staffMember?.joining_date,
-                                      start_month: clampedStart,
-                                    });
-                                  }}
-                                >
-                                  <Edit2 className="h-3 w-3" />
-                                </Button>
-                                <Button 
-                                  size="icon" 
-                                  variant="ghost" 
-                                  className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50" 
-                                  title={bn ? 'মুছে ফেলুন' : 'Delete'}
-                                  onClick={() => setDeleteSavingsId(item.primaryConfig?.id)}
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
+                                {item.primaryConfig ? (
+                                  <>
+                                    <Button 
+                                      size="icon" 
+                                      variant="ghost" 
+                                      className="h-6 w-6" 
+                                      title={bn ? 'সেটিংস সম্পাদনা' : 'Edit Settings'}
+                                      onClick={() => {
+                                        const sJoiningMonth = getJoiningMonth(item.staffMember?.joining_date);
+                                        const rawStart = item.primaryConfig?.start_month || item.startMonth;
+                                        const clampedStart = (sJoiningMonth && rawStart < sJoiningMonth) ? sJoiningMonth : rawStart;
+                                        setSavingsDialog({
+                                          ...item.primaryConfig, 
+                                          staff_name: item.staffMember?.name_bn || item.staffMember?.name_en || '-',
+                                          staff_joining_date: item.staffMember?.joining_date,
+                                          start_month: clampedStart,
+                                        });
+                                      }}
+                                    >
+                                      <Edit2 className="h-3 w-3" />
+                                    </Button>
+                                    <Button 
+                                      size="icon" 
+                                      variant="ghost" 
+                                      className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50" 
+                                      title={bn ? 'মুছে ফেলুন' : 'Delete'}
+                                      onClick={() => setDeleteSavingsId(item.primaryConfig?.id)}
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    className="h-7 px-2 text-[10px] bg-blue-600 hover:bg-blue-700 text-white font-medium gap-1"
+                                    onClick={() => {
+                                      const sJoiningMonth = getJoiningMonth(item.staffMember?.joining_date);
+                                      const clampedStart = (sJoiningMonth && monthYear < sJoiningMonth) ? sJoiningMonth : monthYear;
+                                      setSavingsDialog({
+                                        staff_id: item.staff_id,
+                                        staff_name: item.staffMember?.name_bn || item.staffMember?.name_en || '',
+                                        staff_joining_date: item.staffMember?.joining_date,
+                                        monthly_amount: 1000,
+                                        duration_months: 6,
+                                        start_month: clampedStart,
+                                        is_active: true,
+                                      });
+                                    }}
+                                    title={bn ? 'জমা চালু করুন' : 'Setup Savings'}
+                                  >
+                                    <Plus className="h-3 w-3" /> {bn ? 'সেটআপ' : 'Setup'}
+                                  </Button>
+                                )}
                               </div>
                             </td>
                           </tr>
