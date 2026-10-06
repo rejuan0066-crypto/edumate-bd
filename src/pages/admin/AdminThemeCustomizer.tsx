@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { usePersistentTab } from '@/hooks/usePersistentTab';
 import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useThemeSettings, DEFAULT_THEME, FONT_OPTIONS, BENGALI_FONT_OPTIONS, FONT_WEIGHT_OPTIONS, ThemeSettings } from '@/hooks/useThemeSettings';
@@ -17,6 +18,9 @@ import DashboardLayoutBuilder from '@/components/dashboard/DashboardLayoutBuilde
 import PageLayoutEditor from '@/components/admin/PageLayoutEditor';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 
+const VALID_THEME_TABS = ['colors', 'typography', 'layout', 'appearance', 'dashboard', 'pages'] as const;
+type ThemeTab = typeof VALID_THEME_TABS[number];
+
 const ColorPreview = ({ hue, sat, light, label }: { hue: number; sat: number; light: number; label: string }) => (
   <div className="flex items-center gap-3">
     <div
@@ -33,6 +37,11 @@ const ColorPreview = ({ hue, sat, light, label }: { hue: number; sat: number; li
 const AdminThemeCustomizer = () => {
   const { language } = useLanguage();
   const { theme, saveTheme } = useThemeSettings();
+  const [activeTab, setActiveTab] = usePersistentTab<ThemeTab>('colors', {
+    paramName: 'tab',
+    validTabs: VALID_THEME_TABS,
+    storageKey: 'edumate_theme_tab',
+  });
   const { canEditItem } = usePagePermissions('/admin/theme-customizer');
   const [draft, setDraft] = useState<ThemeSettings>(theme);
   const [previewActive, setPreviewActive] = useState(false);
@@ -102,7 +111,7 @@ const AdminThemeCustomizer = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="colors">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
           <TabsList className="grid grid-cols-6 w-full max-w-3xl">
             <TabsTrigger value="colors" className="gap-1"><Palette className="w-4 h-4" /> {bn ? 'কালার' : 'Colors'}</TabsTrigger>
             <TabsTrigger value="typography" className="gap-1"><Type className="w-4 h-4" /> {bn ? 'ফন্ট' : 'Fonts'}</TabsTrigger>

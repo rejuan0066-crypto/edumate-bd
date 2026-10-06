@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { usePersistentTab } from '@/hooks/usePersistentTab';
 import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
@@ -175,6 +176,12 @@ const AdminUserManagement = () => {
   const navigate = useNavigate();
   const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/user-management');
   const { role: currentUserRole } = useAuth();
+
+  const [activeTab, setActiveTab] = usePersistentTab<'users' | 'roles' | 'access'>('users', {
+    paramName: 'tab',
+    validTabs: ['users', 'roles', 'access'] as const,
+    storageKey: 'edumate_user_management_tab',
+  });
 
   const [users, setUsers] = useState<UserItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1243,7 +1250,7 @@ const AdminUserManagement = () => {
           </h1>
         </div>
 
-        <Tabs defaultValue="users" className="space-y-4">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="space-y-4">
           <TabsList>
             <TabsTrigger value="users" className="gap-1.5">
               <Users className="w-4 h-4" />

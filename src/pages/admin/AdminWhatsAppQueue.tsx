@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePersistentTab } from '@/hooks/usePersistentTab';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -45,7 +46,11 @@ export default function AdminWhatsAppQueue() {
   const { user } = useAuth();
   const bn = language === 'bn';
   const qc = useQueryClient();
-  const [tab, setTab] = useState<'pending' | 'sent' | 'failed' | 'all'>('pending');
+  const [tab, setTab] = usePersistentTab<'pending' | 'sent' | 'failed' | 'all'>('pending', {
+    paramName: 'tab',
+    validTabs: ['pending', 'sent', 'failed', 'all'] as const,
+    storageKey: 'edumate_whatsapp_queue_tab',
+  });
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const { data: rows = [], isLoading, refetch } = useQuery({

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { NumberInput } from '@/components/ui/number-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect } from 'react';
+import { usePersistentTab } from '@/hooks/usePersistentTab';
 import { CreditCard, Printer, CheckCircle, Clock, Loader2, Settings, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,8 +37,16 @@ const AdminFees = () => {
     },
     enabled: !!user?.id,
   });
-  const [mainTab, setMainTab] = useState<MainTab>('payment');
-  const [tab, setTab] = useState<FeeTab>('monthly');
+  const [mainTab, setMainTab] = usePersistentTab<MainTab>('payment', {
+    paramName: 'tab',
+    validTabs: ['payment', 'fee_types', 'categories'] as const,
+    storageKey: 'edumate_fees_tab',
+  });
+  const [tab, setTab] = usePersistentTab<FeeTab>('monthly', {
+    paramName: 'subtab',
+    validTabs: ['admission', 'monthly', 'exam'] as const,
+    storageKey: 'edumate_fees_subtab',
+  });
   const [selectedDivision, setSelectedDivision] = useState('');
   const [selectedStudent, setSelectedStudent] = useState('');
   const [paidAmount, setPaidAmount] = useState('');

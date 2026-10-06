@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useState, useEffect } from 'react';
+import { usePersistentTab } from '@/hooks/usePersistentTab';
 import { Save, Shield, Bell, Palette, Mail, Loader2, Eye, EyeOff, Globe, ArrowRight, CheckCircle2, AlertCircle, Send, CreditCard, MessageSquare, Wallet, Clock, Hash } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,12 +29,24 @@ import { SecurityBackupPanel } from '@/components/admin/SecurityBackupPanel';
 import BackgroundSettings from '@/components/admin/BackgroundSettings';
 import { useConfirm } from "@/contexts/ConfirmContext";
 
+const VALID_SETTINGS_TABS = [
+  'email', 'payment', 'sms', 'whatsapp', 'security', 'general',
+  'salary_workflow', 'timezone', 'receipt_qr', 'approvals', 'quran',
+  'attendance_dup'
+] as const;
+type SettingsTab = typeof VALID_SETTINGS_TABS[number];
+
 const AdminSettings = () => {
   const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { canEditItem } = usePagePermissions('/admin/settings');
   const { settings: websiteSettings, updateSetting } = useWebsiteSettings();
+  const [settingsTab, setSettingsTab] = usePersistentTab<SettingsTab>('email', {
+    paramName: 'tab',
+    validTabs: VALID_SETTINGS_TABS,
+    storageKey: 'edumate_settings_tab',
+  });
   const [emailProvider, setEmailProvider] = useState<'emailjs' | 'custom_domain'>('emailjs');
   const [settings, setSettings] = useState({
     twoFactorAuth: true,
@@ -602,7 +615,7 @@ const AdminSettings = () => {
           </a>
         </div>
 
-        <Tabs defaultValue="email" className="w-full">
+        <Tabs value={settingsTab} onValueChange={(v) => setSettingsTab(v as SettingsTab)} className="w-full">
           <TabsList className="w-full justify-start overflow-x-auto">
             <TabsTrigger value="email" className="gap-1.5">
               <Mail className="w-4 h-4" /> {bn ? 'ইমেইল' : 'Email'}

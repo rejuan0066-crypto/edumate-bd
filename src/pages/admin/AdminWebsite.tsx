@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect } from 'react';
+import { usePersistentTab } from '@/hooks/usePersistentTab';
 import { Globe, Save, Image, Type, Layout, BarChart3, Plus, Trash2, Eye, ImageIcon, Share2, PanelTop, PanelBottom, Navigation, Menu, RefreshCw, CheckCircle, AlertCircle, Database, FileText, ChevronUp, ChevronDown, EyeOff, Link2, List, SlidersHorizontal, LogIn, Loader2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -43,6 +44,13 @@ const INFO_LINK_ICONS = [
   'Globe', 'Heart', 'Star', 'Shield', 'Clock', 'MapPin', 'Phone', 'Mail', 'Settings', 'Bookmark', 'Layers', 'Tag',
 ];
 
+const VALID_WEBSITE_TABS = [
+  'institution', 'header', 'navigation', 'hero', 'content', 'gallery',
+  'footer', 'sections', 'divisions', 'info-links', 'social', 'sync',
+  'form-settings', 'login-page'
+] as const;
+type WebsiteTab = typeof VALID_WEBSITE_TABS[number];
+
 const AdminWebsite = () => {
   const { language } = useLanguage();
   const { settings, isLoading, updateMultiple } = useWebsiteSettings();
@@ -53,6 +61,11 @@ const AdminWebsite = () => {
   const { role } = useAuth();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<WebsiteSettings | null>(null);
+  const [activeTab, setActiveTab] = usePersistentTab<WebsiteTab>('institution', {
+    paramName: 'tab',
+    validTabs: VALID_WEBSITE_TABS,
+    storageKey: 'edumate_website_tab',
+  });
   const [publicMenu, setPublicMenu] = useState<MenuItemConfig[]>([]);
   const [saving, setSaving] = useState(false);
   const isSuperAdmin = role === 'super_admin';
@@ -540,7 +553,7 @@ const AdminWebsite = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="institution" className="w-full">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as WebsiteTab)} className="w-full">
           <TabsList className="w-full flex flex-wrap h-auto gap-1">
             <TabsTrigger value="institution" className="text-xs py-2 px-2.5">
               <Globe className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'প্রতিষ্ঠান' : 'Institution'}

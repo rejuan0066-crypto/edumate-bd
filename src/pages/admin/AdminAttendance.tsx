@@ -4,6 +4,7 @@ import { useTimeFormat, formatTimeDisplay } from '@/hooks/useTimeFormat';
 import { useResignedStaff } from '@/hooks/useResignedStaff';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
+import { usePersistentTab } from '@/hooks/usePersistentTab';
 import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -172,7 +173,11 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     ? (studentSubTab === 'meal' ? studentMealShift : 'full_day')
     : (staffSubTab === 'fulltime' ? 'full_day' : selectedShift);
   const [rulesDialogOpen, setRulesDialogOpen] = useState(false);
-  const [mainTab, setMainTab] = useState<'attendance' | 'settings'>('attendance');
+  const [mainTab, setMainTab] = usePersistentTab<'attendance' | 'settings'>('attendance', {
+    paramName: 'view',
+    validTabs: ['attendance', 'settings'] as const,
+    storageKey: 'edumate_attendance_main_tab',
+  });
   const [editingRule, setEditingRule] = useState<any>(null);
   const [ruleForm, setRuleForm] = useState({ name: '', name_bn: '', entity_type: 'student', config: { color: 'green', counts_as: 'present' } });
   const [dutyTimes, setDutyTimes] = useState({

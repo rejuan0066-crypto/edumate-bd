@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePersistentTab } from '@/hooks/usePersistentTab';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
@@ -78,7 +79,10 @@ const AdminValidationManager = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [ruleData, setRuleData] = useState<RuleData>(emptyRule);
-  const [activeTab, setActiveTab] = useState('');
+  const [activeTab, setActiveTab] = usePersistentTab('all', {
+    paramName: 'module',
+    storageKey: 'edumate_validation_module',
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
 

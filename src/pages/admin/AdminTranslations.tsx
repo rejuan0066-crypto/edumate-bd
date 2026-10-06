@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Save, Languages, Tag, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
+import { usePersistentTab } from '@/hooks/usePersistentTab';
 import { Link } from 'react-router-dom';
 import { checkBanglaDesignation } from '@/lib/banglaDesignationSpellCheck';
 
@@ -28,6 +29,11 @@ type Row = {
 const AdminTranslations = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
+  const [activeTab, setActiveTab] = usePersistentTab<'roles' | 'designations'>('roles', {
+    paramName: 'tab',
+    validTabs: ['roles', 'designations'] as const,
+    storageKey: 'edumate_translations_tab',
+  });
   const qc = useQueryClient();
   const [edits, setEdits] = useState<Record<string, Partial<Row>>>({});
 
@@ -93,7 +99,7 @@ const AdminTranslations = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="roles" className="space-y-4">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="space-y-4">
           <TabsList>
             <TabsTrigger value="roles" className="gap-1.5"><Shield className="w-4 h-4" /> {bn ? 'ভূমিকা' : 'Roles'}</TabsTrigger>
             <TabsTrigger value="designations" className="gap-1.5"><Tag className="w-4 h-4" /> {bn ? 'পদবি' : 'Designations'}</TabsTrigger>

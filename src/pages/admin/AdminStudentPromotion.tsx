@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { usePersistentTab } from '@/hooks/usePersistentTab';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,7 +39,11 @@ const AdminStudentPromotion = () => {
   const [remarks, setRemarks] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [activeTab, setActiveTab] = useState('');
+  const [activeTab, setActiveTab] = usePersistentTab<'promote' | 'history'>('promote', {
+    paramName: 'tab',
+    validTabs: ['promote', 'history'] as const,
+    storageKey: 'edumate_student_promo_tab',
+  });
 
   // Fetch sessions
   const { data: sessions = [] } = useQuery({

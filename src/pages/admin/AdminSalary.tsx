@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { usePersistentTab } from '@/hooks/usePersistentTab';
 import { useTimeFormat, formatTimeDisplay } from '@/hooks/useTimeFormat';
 import { useResignedStaff } from '@/hooks/useResignedStaff';
 import { useAppTimezone } from '@/hooks/useAppTimezone';
@@ -87,6 +88,12 @@ const toBnDigits = (val: string | number): string => {
   const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
   return String(val).replace(/[0-9]/g, d => bnDigits[parseInt(d)]);
 };
+
+const VALID_MAIN_TABS = ['salary', 'bonus', 'savings'] as const;
+type MainSalaryTabType = typeof VALID_MAIN_TABS[number];
+
+const VALID_SAVINGS_FILTERS = ['all', 'active', 'resigned'] as const;
+type SavingsFilterType = typeof VALID_SAVINGS_FILTERS[number];
 
 // Helper: parse "HH:MM" to total minutes from midnight
 const timeToMinutes = (t: string): number => {
@@ -237,7 +244,11 @@ const AdminSalary = () => {
   const [attendanceDetailDialog, setAttendanceDetailDialog] = useState<any>(null);
   const [savingsDialog, setSavingsDialog] = useState<any>(null);
   const [savingsLedgerOpen, setSavingsLedgerOpen] = useState(false);
-  const [mainTab, setMainTab] = useState('salary');
+  const [mainTab, setMainTab] = usePersistentTab<MainSalaryTabType>('salary', {
+    paramName: 'tab',
+    validTabs: VALID_MAIN_TABS,
+    storageKey: 'edumate_salary_tab',
+  });
   const [bonusYear, setBonusYear] = useState(String(tzParts.year));
   const [bonusPercent, setBonusPercent] = useState(100);
   const [unpaidConfirmId, setUnpaidConfirmId] = useState<string | null>(null);
@@ -246,7 +257,11 @@ const AdminSalary = () => {
   const [deleteSavingsId, setDeleteSavingsId] = useState<string | null>(null);
   const [disburseDialog, setDisburseDialog] = useState<any>(null);
   const [eligibilityFilter, setEligibilityFilter] = useState<'all' | 'eligible' | 'not_generated' | 'pending' | 'paid'>('all');
-  const [savingsFilter, setSavingsFilter] = useState<'all' | 'active' | 'resigned'>('all');
+  const [savingsFilter, setSavingsFilter] = usePersistentTab<SavingsFilterType>('all', {
+    paramName: 'savings_filter',
+    validTabs: VALID_SAVINGS_FILTERS,
+    storageKey: 'edumate_salary_savings_filter',
+  });
   const [savingsSearch, setSavingsSearch] = useState('');
   const [auditLogOpen, setAuditLogOpen] = useState(false);
   const monthYear = `${selectedYear}-${selectedMonth}`;
@@ -3459,7 +3474,7 @@ const AdminSalary = () => {
         )}
 
         {/* Main Tabs: Floating Segmented Control */}
-        <Tabs value={mainTab} onValueChange={setMainTab}>
+        <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as MainSalaryTabType)}>
           <SegmentedTabs
             tabs={[
               { key: 'salary', label: bn ? 'বেতন তালিকা' : 'Salary Sheet', icon: Wallet },
@@ -3483,7 +3498,7 @@ const AdminSalary = () => {
               },
             ]}
             value={mainTab}
-            onChange={setMainTab}
+            onChange={(v) => setMainTab(v as MainSalaryTabType)}
             className="mb-3"
           />
 
