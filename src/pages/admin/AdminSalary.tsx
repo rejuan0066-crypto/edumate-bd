@@ -63,6 +63,8 @@ import {
 import {
   SalarySavingsLedgerDialog,
   type StaffSavingsGroup,
+  getJoiningMonth,
+  formatMonthLabel,
 } from '@/components/admin/SalarySavingsLedgerDialog';
 
 const MONTHS = [
@@ -748,6 +750,11 @@ const AdminSalary = () => {
       const staffLedgers = (savingsLedger as any[]).filter(
         (l: any) => l.staff_id === staffId || l.savings_id === cfg.id
       );
+      const joiningMonth = getJoiningMonth(staffMember?.joining_date);
+      const effectiveStartMonth = (joiningMonth && cfg.start_month && cfg.start_month < joiningMonth)
+        ? joiningMonth
+        : cfg.start_month;
+
       if (!map.has(staffId)) {
         map.set(staffId, {
           staff_id: staffId,
@@ -761,7 +768,7 @@ const AdminSalary = () => {
           isComplete: false,
           monthlyAmount: Number(cfg.monthly_amount || 0),
           durationMonths: Number(cfg.duration_months || 0),
-          startMonth: cfg.start_month,
+          startMonth: effectiveStartMonth,
         });
       } else {
         const existing = map.get(staffId)!;
@@ -771,7 +778,7 @@ const AdminSalary = () => {
           existing.primaryConfig = cfg;
           existing.monthlyAmount = Number(cfg.monthly_amount || 0);
           existing.durationMonths = Number(cfg.duration_months || 0);
-          existing.startMonth = cfg.start_month;
+          existing.startMonth = effectiveStartMonth;
         }
       }
     }
@@ -782,10 +789,15 @@ const AdminSalary = () => {
       if (!staffId || map.has(staffId)) continue;
       const staffMember = (staff as any[]).find((s: any) => s.id === staffId) || (staffRaw as any[]).find((s: any) => s.id === staffId);
       const staffLedgers = (savingsLedger as any[]).filter((x: any) => x.staff_id === staffId);
+      const joiningMonth = getJoiningMonth(staffMember?.joining_date);
+      const effectiveStartMonth = (joiningMonth && l.month_year && l.month_year < joiningMonth)
+        ? joiningMonth
+        : l.month_year;
+
       map.set(staffId, {
         staff_id: staffId,
         staffMember,
-        primaryConfig: { id: l.savings_id || '', staff_id: staffId, monthly_amount: l.amount || 0, duration_months: 12, start_month: l.month_year, total_saved: 0, is_active: false },
+        primaryConfig: { id: l.savings_id || '', staff_id: staffId, monthly_amount: l.amount || 0, duration_months: 12, start_month: effectiveStartMonth, total_saved: 0, is_active: false },
         allConfigs: [],
         totalSaved: 0,
         ledgerEntries: staffLedgers,
@@ -794,7 +806,7 @@ const AdminSalary = () => {
         isComplete: false,
         monthlyAmount: Number(l.amount || 0),
         durationMonths: 12,
-        startMonth: l.month_year,
+        startMonth: effectiveStartMonth,
       });
     }
 
@@ -1047,9 +1059,15 @@ const AdminSalary = () => {
   });
 
   const getActiveSavings = (staffId: string): { amount: number; config: any } | null => {
+    const sMember = (staff as any[]).find((s: any) => s.id === staffId) || (staffRaw as any[]).find((s: any) => s.id === staffId);
+    const joiningMonth = getJoiningMonth(sMember?.joining_date);
+    if (joiningMonth && monthYear < joiningMonth) {
+      return null;
+    }
     const configs = savingsConfigs.filter((c: any) => c.staff_id === staffId && c.is_active);
     for (const cfg of configs) {
-      if (isMonthInSavingsRange(monthYear, cfg.start_month, cfg.duration_months)) {
+      const effStart = (joiningMonth && cfg.start_month && cfg.start_month < joiningMonth) ? joiningMonth : cfg.start_month;
+      if (isMonthInSavingsRange(monthYear, effStart, cfg.duration_months)) {
         return { amount: Number(cfg.monthly_amount), config: cfg };
       }
     }
@@ -1178,6 +1196,16 @@ const AdminSalary = () => {
   // Save savings config mutation
   const saveSavingsMutation = useMutation({
     mutationFn: async (data: any) => {
+      const staffMember = (staff as any[]).find((s: any) => s.id === data.staff_id) || (staffRaw as any[]).find((s: any) => s.id === data.staff_id);
+      const joiningMonth = getJoiningMonth(staffMember?.joining_date);
+      if (joiningMonth && data.start_month && data.start_month < joiningMonth) {
+        throw new Error(
+          bn
+            ? `যোগদানের মাস (${formatMonthLabel(joiningMonth, true)})-এর পূর্ববর্তী মাসে ডিপোজিট শুরু করা যাবে না`
+            : `Cannot set savings start month earlier than joining month (${formatMonthLabel(joiningMonth, false)})`
+        );
+      }
+
       if (data.id) {
         const { error } = await supabase.from('salary_savings').update({
           monthly_amount: data.monthly_amount,
@@ -1202,7 +1230,7 @@ const AdminSalary = () => {
       setSavingsDialog(null);
       toast.success(bn ? 'জমা সেটিংস সেভ হয়েছে' : 'Savings settings saved');
     },
-    onError: () => toast.error(bn ? 'সমস্যা হয়েছে' : 'Error saving'),
+    onError: (err: any) => toast.error(err?.message || (bn ? 'সমস্যা হয়েছে' : 'Error saving')),
   });
 
   const deleteSavingsMutation = useMutation({
@@ -3721,10 +3749,15 @@ const AdminSalary = () => {
                               {snap.savingsDisplay > 0 ? (
                                 <button onClick={() => {
                                   const existingConfig = savingsConfigs.find((c: any) => c.staff_id === s.id && c.is_active);
+                                  const sJoiningMonth = getJoiningMonth(s.joining_date);
+                                  const rawStart = existingConfig?.start_month || monthYear;
+                                  const clampedStart = (sJoiningMonth && rawStart < sJoiningMonth) ? sJoiningMonth : rawStart;
                                   setSavingsDialog({
                                     staff_id: s.id,
-                                    staff_name: s.name_bn,
-                                    ...(existingConfig || { monthly_amount: 0, duration_months: 6, start_month: monthYear }),
+                                    staff_name: s.name_bn || s.name_en,
+                                    staff_joining_date: s.joining_date,
+                                    ...(existingConfig || { monthly_amount: 0, duration_months: 6 }),
+                                    start_month: clampedStart,
                                     id: existingConfig?.id,
                                   });
                                 }}>
@@ -3734,10 +3767,18 @@ const AdminSalary = () => {
                                 </button>
                               ) : (
                                 <button
-                                  onClick={() => setSavingsDialog({
-                                    staff_id: s.id, staff_name: s.name_bn,
-                                    monthly_amount: 0, duration_months: 6, start_month: monthYear,
-                                  })}
+                                  onClick={() => {
+                                    const sJoiningMonth = getJoiningMonth(s.joining_date);
+                                    const clampedStart = (sJoiningMonth && monthYear < sJoiningMonth) ? sJoiningMonth : monthYear;
+                                    setSavingsDialog({
+                                      staff_id: s.id,
+                                      staff_name: s.name_bn || s.name_en,
+                                      staff_joining_date: s.joining_date,
+                                      monthly_amount: 0,
+                                      duration_months: 6,
+                                      start_month: clampedStart,
+                                    });
+                                  }}
                                   className="text-[10px] text-muted-foreground hover:text-blue-600 transition-colors"
                                 >
                                   <Plus className="h-3 w-3 inline" />
@@ -4245,10 +4286,17 @@ const AdminSalary = () => {
                                   variant="ghost" 
                                   className="h-6 w-6" 
                                   title={bn ? 'সেটিংস সম্পাদনা' : 'Edit Settings'}
-                                  onClick={() => setSavingsDialog({
-                                    ...item.primaryConfig, 
-                                    staff_name: item.staffMember?.name_bn || item.staffMember?.name_en || '-',
-                                  })}
+                                  onClick={() => {
+                                    const sJoiningMonth = getJoiningMonth(item.staffMember?.joining_date);
+                                    const rawStart = item.primaryConfig?.start_month || item.startMonth;
+                                    const clampedStart = (sJoiningMonth && rawStart < sJoiningMonth) ? sJoiningMonth : rawStart;
+                                    setSavingsDialog({
+                                      ...item.primaryConfig, 
+                                      staff_name: item.staffMember?.name_bn || item.staffMember?.name_en || '-',
+                                      staff_joining_date: item.staffMember?.joining_date,
+                                      start_month: clampedStart,
+                                    });
+                                  }}
                                 >
                                   <Edit2 className="h-3 w-3" />
                                 </Button>
@@ -4283,91 +4331,148 @@ const AdminSalary = () => {
                 {bn ? 'বেতন জমা সেটিংস' : 'Retainment Setup'}
               </DialogTitle>
             </DialogHeader>
-            {savingsDialog && (
-              <div className="space-y-4">
-                {savingsDialog.staff_name ? (
-                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">{savingsDialog.staff_name}</p>
-                  </div>
-                ) : (
-                  <div>
-                    <Label className="text-xs">{bn ? 'স্টাফ নির্বাচন করুন' : 'Select Staff'}</Label>
-                    <Select
-                      value={savingsDialog.staff_id || ''}
-                      onValueChange={(sid) => {
-                        const found = (staff as any[]).find((s: any) => s.id === sid) || (staffRaw as any[]).find((s: any) => s.id === sid);
-                        setSavingsDialog({
-                          ...savingsDialog,
-                          staff_id: sid,
-                          staff_name: found?.name_bn || found?.name_en || '',
-                        });
-                      }}
-                    >
-                      <SelectTrigger className="h-9">
-                        <SelectValue placeholder={bn ? 'স্টাফ বাছাই করুন' : 'Choose staff'} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(staff as any[]).map((s: any) => (
-                          <SelectItem key={s.id} value={s.id}>
-                            {s.name_bn || s.name_en} {s.staff_id_custom ? `(${s.staff_id_custom})` : ''}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-                <div>
-                  <Label className="text-xs">{bn ? 'মাসিক জমা (৳)' : 'Monthly Savings Amount (৳)'}</Label>
-                  <NumberInput value={savingsDialog.monthly_amount}
-                    onValueChange={n => setSavingsDialog({ ...savingsDialog, monthly_amount: n })}
-                    placeholder="1000" />
-                </div>
-                <div>
-                  <Label className="text-xs">{bn ? 'সময়কাল (মাস)' : 'Duration (Months)'}</Label>
-                  <NumberInput value={savingsDialog.duration_months}
-                    onValueChange={n => setSavingsDialog({ ...savingsDialog, duration_months: n })}
-                    allowDecimal={false} placeholder="6" />
-                </div>
-                <div>
-                  <Label className="text-xs">{bn ? 'শুরু মাস (YYYY-MM)' : 'Start Month (YYYY-MM)'}</Label>
-                  <Input type="month" value={savingsDialog.start_month || ''}
-                    onChange={e => setSavingsDialog({ ...savingsDialog, start_month: e.target.value })} />
-                </div>
-                {savingsDialog.monthly_amount > 0 && savingsDialog.duration_months > 0 && (
-                  <div className="p-3 bg-blue-50/80 dark:bg-blue-900/20 rounded-lg text-sm space-y-1">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{bn ? 'মোট জমা হবে' : 'Total will be saved'}</span>
-                      <span className="font-bold text-blue-700">
-                        ৳{bn ? toBnDigits((savingsDialog.monthly_amount * savingsDialog.duration_months).toLocaleString()) 
-                             : (savingsDialog.monthly_amount * savingsDialog.duration_months).toLocaleString()}
-                      </span>
+            {savingsDialog && (() => {
+              const selectedStaff = (staff as any[]).find((s: any) => s.id === savingsDialog.staff_id) || (staffRaw as any[]).find((s: any) => s.id === savingsDialog.staff_id);
+              const sJoiningMonth = getJoiningMonth(savingsDialog.staff_joining_date || selectedStaff?.joining_date);
+              const isInvalidStart = Boolean(sJoiningMonth && savingsDialog.start_month && savingsDialog.start_month < sJoiningMonth);
+
+              return (
+                <div className="space-y-4">
+                  {savingsDialog.staff_name ? (
+                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg space-y-1">
+                      <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">{savingsDialog.staff_name}</p>
+                      {sJoiningMonth && (
+                        <p className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">
+                          📅 {bn ? `যোগদান: ${formatMonthLabel(sJoiningMonth, true)}` : `Joined: ${formatMonthLabel(sJoiningMonth, false)}`}
+                        </p>
+                      )}
                     </div>
-                    {savingsDialog.id && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">{bn ? 'এখন পর্যন্ত জমা' : 'Saved so far'}</span>
-                        <span className="font-bold text-emerald-600">
-                          ৳{bn ? toBnDigits(Number(savingsDialog.total_saved || 0).toLocaleString()) 
-                               : Number(savingsDialog.total_saved || 0).toLocaleString()}
+                  ) : (
+                    <div>
+                      <Label className="text-xs">{bn ? 'স্টাফ নির্বাচন করুন' : 'Select Staff'}</Label>
+                      <Select
+                        value={savingsDialog.staff_id || ''}
+                        onValueChange={(sid) => {
+                          const found = (staff as any[]).find((s: any) => s.id === sid) || (staffRaw as any[]).find((s: any) => s.id === sid);
+                          const jMonth = getJoiningMonth(found?.joining_date);
+                          const currentStart = savingsDialog.start_month || monthYear;
+                          const clampedStart = (jMonth && currentStart < jMonth) ? jMonth : currentStart;
+                          setSavingsDialog({
+                            ...savingsDialog,
+                            staff_id: sid,
+                            staff_name: found?.name_bn || found?.name_en || '',
+                            staff_joining_date: found?.joining_date,
+                            start_month: clampedStart,
+                          });
+                        }}
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder={bn ? 'স্টাফ বাছাই করুন' : 'Choose staff'} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(staff as any[]).map((s: any) => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {s.name_bn || s.name_en} {s.staff_id_custom ? `(${s.staff_id_custom})` : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {sJoiningMonth && (
+                        <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1">
+                          📅 {bn ? `যোগদান: ${formatMonthLabel(sJoiningMonth, true)}` : `Joined: ${formatMonthLabel(sJoiningMonth, false)}`}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  <div>
+                    <Label className="text-xs">{bn ? 'মাসিক জমা (৳)' : 'Monthly Savings Amount (৳)'}</Label>
+                    <NumberInput value={savingsDialog.monthly_amount}
+                      onValueChange={n => setSavingsDialog({ ...savingsDialog, monthly_amount: n })}
+                      placeholder="1000" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">{bn ? 'সময়কাল (মাস)' : 'Duration (Months)'}</Label>
+                    <NumberInput value={savingsDialog.duration_months}
+                      onValueChange={n => setSavingsDialog({ ...savingsDialog, duration_months: n })}
+                      allowDecimal={false} placeholder="6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs">{bn ? 'শুরু মাস (YYYY-MM)' : 'Start Month (YYYY-MM)'}</Label>
+                      {sJoiningMonth && (
+                        <span className="text-[10px] text-amber-700 dark:text-amber-400 font-medium">
+                          {bn ? `সর্বনিম্ন: ${formatMonthLabel(sJoiningMonth, true)}` : `Min: ${formatMonthLabel(sJoiningMonth, false)}`}
                         </span>
-                      </div>
+                      )}
+                    </div>
+                    <Input
+                      type="month"
+                      min={sJoiningMonth || undefined}
+                      value={savingsDialog.start_month || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (sJoiningMonth && val && val < sJoiningMonth) {
+                          toast.error(
+                            bn
+                              ? `যোগদানের মাস (${formatMonthLabel(sJoiningMonth, true)})-এর পূর্ববর্তী মাস নির্বাচন করা যাবে না`
+                              : `Cannot choose month earlier than joining month`
+                          );
+                          setSavingsDialog({ ...savingsDialog, start_month: sJoiningMonth });
+                          return;
+                        }
+                        setSavingsDialog({ ...savingsDialog, start_month: val });
+                      }}
+                    />
+                    {sJoiningMonth && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {bn
+                          ? `* যোগদানের মাস (${formatMonthLabel(sJoiningMonth, true)}) বা পরবর্তী যেকোনো মাস প্রযোজ্য`
+                          : `* Starts from joining month (${formatMonthLabel(sJoiningMonth, false)}) or later`}
+                      </p>
                     )}
                   </div>
-                )}
-                {savingsDialog.id && (
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <Label className="text-xs">{bn ? 'সক্রিয়' : 'Active'}</Label>
-                    <Switch
-                      checked={savingsDialog.is_active !== false}
-                      onCheckedChange={v => setSavingsDialog({ ...savingsDialog, is_active: v })}
-                    />
-                  </div>
-                )}
-                <Button className="w-full" onClick={() => saveSavingsMutation.mutate(savingsDialog)}
-                  disabled={saveSavingsMutation.isPending || !savingsDialog.staff_id || !savingsDialog.monthly_amount || !savingsDialog.duration_months}>
-                  <Save className="h-4 w-4 mr-1" /> {bn ? 'সেভ করুন' : 'Save'}
-                </Button>
-              </div>
-            )}
+                  {savingsDialog.monthly_amount > 0 && savingsDialog.duration_months > 0 && (
+                    <div className="p-3 bg-blue-50/80 dark:bg-blue-900/20 rounded-lg text-sm space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">{bn ? 'মোট জমা হবে' : 'Total will be saved'}</span>
+                        <span className="font-bold text-blue-700">
+                          ৳{bn ? toBnDigits((savingsDialog.monthly_amount * savingsDialog.duration_months).toLocaleString()) 
+                               : (savingsDialog.monthly_amount * savingsDialog.duration_months).toLocaleString()}
+                        </span>
+                      </div>
+                      {savingsDialog.id && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">{bn ? 'এখন পর্যন্ত জমা' : 'Saved so far'}</span>
+                          <span className="font-bold text-emerald-600">
+                            ৳{bn ? toBnDigits(Number(savingsDialog.total_saved || 0).toLocaleString()) 
+                                 : Number(savingsDialog.total_saved || 0).toLocaleString()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {savingsDialog.id && (
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <Label className="text-xs">{bn ? 'সক্রিয়' : 'Active'}</Label>
+                      <Switch
+                        checked={savingsDialog.is_active !== false}
+                        onCheckedChange={v => setSavingsDialog({ ...savingsDialog, is_active: v })}
+                      />
+                    </div>
+                  )}
+                  <Button className="w-full" onClick={() => saveSavingsMutation.mutate(savingsDialog)}
+                    disabled={
+                      saveSavingsMutation.isPending ||
+                      !savingsDialog.staff_id ||
+                      !savingsDialog.monthly_amount ||
+                      !savingsDialog.duration_months ||
+                      isInvalidStart
+                    }>
+                    <Save className="h-4 w-4 mr-1" /> {bn ? 'সেভ করুন' : 'Save'}
+                  </Button>
+                </div>
+              );
+            })()}
           </DialogContent>
         </Dialog>
 
