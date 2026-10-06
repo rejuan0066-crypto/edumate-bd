@@ -7,6 +7,11 @@ let capturedHtml = '';
 
 beforeEach(() => {
   capturedHtml = '';
+  vi.restoreAllMocks();
+  // Current implementation writes HTML into a hidden iframe via document.write.
+  vi.spyOn(Document.prototype, 'write').mockImplementation(function (...parts: string[]) {
+    capturedHtml += parts.join('');
+  });
   const OriginalBlob = globalThis.Blob;
   (globalThis as any).Blob = function (parts: any[], opts: any) {
     capturedHtml = (parts || []).join('');
