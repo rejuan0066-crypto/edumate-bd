@@ -375,6 +375,8 @@ const LiveClassRoom = () => {
       } else if (!mUrl.startsWith('http://') && !mUrl.startsWith('https://')) {
         finalJaaSUrl = `https://${mUrl}`;
       }
+      const hashGlue = finalJaaSUrl.includes('#') ? '&' : '#';
+      finalJaaSUrl = `${finalJaaSUrl}${hashGlue}userInfo.displayName="${displayName}"&config.prejoinPageEnabled=false`;
       return (
         <div className="aspect-video rounded-[24px] overflow-hidden bg-black shadow-2xl">
           <iframe

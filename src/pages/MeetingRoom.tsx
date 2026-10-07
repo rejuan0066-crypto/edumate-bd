@@ -337,7 +337,7 @@ const MeetingRoom = () => {
               }
               if (liveUrl.includes('8x8.vc') || liveUrl.includes('meet.jit.si')) {
                 const hashGlue = liveUrl.includes('#') ? '&' : '#';
-                liveUrl = `${liveUrl}${hashGlue}userInfo.displayName="${displayName}"`;
+                liveUrl = `${liveUrl}${hashGlue}userInfo.displayName="${displayName}"&config.prejoinPageEnabled=false`;
               }
               return (
                 <Card className="p-2 rounded-[32px] overflow-hidden">

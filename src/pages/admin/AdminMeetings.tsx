@@ -82,9 +82,9 @@ const emptyForm: MeetingForm = {
 };
 
 const providerLabel = (p: Provider, bn: boolean) => ({
-  jitsi: ['Jitsi Meet (5 min limit)', 'জিতসি মিট (৫ মিনিট লিমিট)'],
-  jaas: ['JaaS by 8x8 (Embed)', 'JaaS by 8x8 (এমবেড)'],
-  daily: ['Daily.co (Embed)', 'Daily.co (এমবেড)'],
+  daily: ['Daily.co (10k Mins Free - Best Embed)', 'Daily.co (১০,০০০ মিনিট ফ্রি - সেরা এমবেড)'],
+  jitsi: ['Jitsi Meet (Host Login)', 'জিতসি মিট (হোস্ট লগইন)'],
+  jaas: ['JaaS by 8x8 (JWT Required)', 'JaaS by 8x8 (JWT টোকেন আবশ্যক)'],
   zoom: ['Zoom', 'জুম'],
   google_meet: ['Google Meet', 'গুগল মিট'],
   youtube: ['YouTube Live', 'ইউটিউব লাইভ'],
@@ -686,10 +686,13 @@ const AdminMeetings = () => {
               </div>
             )}
             {form.provider === 'jaas' && (
-              <div>
+              <div className="space-y-1.5">
                 <Label>{bn ? 'JaaS মিটিং URL' : 'JaaS Meeting URL'} *</Label>
-                <Input value={form.meeting_url} onChange={(e) => setForm({ ...form, meeting_url: e.target.value })} placeholder="https://8x8.vc/vpaas-magic-cookie-XXXX/RoomName" className="mt-1.5 rounded-xl" />
-                <p className="text-xs text-muted-foreground mt-1">{bn ? '8x8.vc থেকে আপনার tenant সহ পূর্ণ URL paste করুন। মাসে ১০০ ফ্রি মিনিট।' : 'Paste full URL with your tenant from 8x8.vc. 100 free min/month.'}</p>
+                <Input value={form.meeting_url} onChange={(e) => setForm({ ...form, meeting_url: e.target.value })} placeholder="https://8x8.vc/vpaas-magic-cookie-XXXX/RoomName?jwt=..." className="mt-1.5 rounded-xl" />
+                <p className="text-xs text-muted-foreground">{bn ? '8x8.vc থেকে টোকেনসহ পূর্ণ URL paste করুন।' : 'Paste full URL including JWT token from 8x8.vc.'}</p>
+                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-800 dark:text-amber-300">
+                  {bn ? '⚠️ গুরুত্বপূর্ণ: 8x8 JaaS-এ টোকেন (?jwt=...) ছাড়া প্রবেশ করলে "Authentication failed" এরর আসবে। কোনো টোকেন ছাড়া ঝামেলামুক্ত ইন-অ্যাপ কলের জন্য "Daily.co" (১০,০০০ মিনিট ফ্রি) ব্যবহার করুন।' : '⚠️ Note: 8x8 JaaS requires a signed ?jwt= token or "Authentication failed" occurs. For instant zero-token in-app meetings, use "Daily.co" (10k free min).'}
+                </div>
               </div>
             )}
             {form.provider === 'daily' && (

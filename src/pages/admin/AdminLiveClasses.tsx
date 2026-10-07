@@ -80,9 +80,9 @@ const emptyForm: LiveClassForm = {
 
 const providerLabel = (p: Provider, bn: boolean) => {
   const map: Record<Provider, [string, string]> = {
-    jitsi: ['Jitsi Meet (In-App)', 'জিতসি মিট (ইন-অ্যাপ)'],
-    jaas: ['JaaS by 8x8 (In-App)', 'JaaS by 8x8 (ইন-অ্যাপ)'],
-    daily: ['Daily.co (In-App)', 'Daily.co (ইন-অ্যাপ)'],
+    daily: ['Daily.co (10k Mins Free - Best Embed)', 'Daily.co (১০,০০০ মিনিট ফ্রি - সেরা এমবেড)'],
+    jitsi: ['Jitsi Meet (Host Login)', 'জিতসি মিট (হোস্ট লগইন)'],
+    jaas: ['JaaS by 8x8 (JWT Required)', 'JaaS by 8x8 (JWT টোকেন আবশ্যক)'],
     zoom: ['Zoom', 'জুম'],
     google_meet: ['Google Meet', 'গুগল মিট'],
     youtube: ['YouTube Live', 'ইউটিউব লাইভ'],
@@ -578,10 +578,13 @@ const AdminLiveClasses = () => {
               </div>
             )}
             {form.provider === 'jaas' && (
-              <div>
-                <Label>{bn ? 'JaaS মিটিং URL বা App ID' : 'JaaS Meeting URL or App ID'} *</Label>
-                <Input value={form.meeting_url} onChange={(e) => setForm({ ...form, meeting_url: e.target.value })} placeholder="https://8x8.vc/vpaas-magic-cookie-XXXX/RoomName" className="mt-1.5 rounded-xl" />
-                <p className="text-xs text-muted-foreground mt-1">{bn ? '8x8.vc থেকে পূর্ণ URL অথবা vpaas-magic-cookie-XXXX পেস্ট করুন।' : 'Paste full URL with your tenant from 8x8.vc or App ID.'}</p>
+              <div className="space-y-1.5">
+                <Label>{bn ? 'JaaS মিটিং URL' : 'JaaS Meeting URL'} *</Label>
+                <Input value={form.meeting_url} onChange={(e) => setForm({ ...form, meeting_url: e.target.value })} placeholder="https://8x8.vc/vpaas-magic-cookie-XXXX/RoomName?jwt=..." className="mt-1.5 rounded-xl" />
+                <p className="text-xs text-muted-foreground">{bn ? '8x8.vc থেকে টোকেনসহ পূর্ণ URL paste করুন।' : 'Paste full URL including JWT token from 8x8.vc.'}</p>
+                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-800 dark:text-amber-300">
+                  {bn ? '⚠️ গুরুত্বপূর্ণ: 8x8 JaaS-এ টোকেন (?jwt=...) ছাড়া প্রবেশ করলে "Authentication failed" এরর আসবে। কোনো টোকেন ছাড়া ঝামেলামুক্ত ইন-অ্যাপ লাইভ ক্লাসের জন্য "Daily.co" (১০,০০০ মিনিট ফ্রি) ব্যবহার করুন।' : '⚠️ Note: 8x8 JaaS requires a signed ?jwt= token or "Authentication failed" occurs. For instant zero-token in-app classes, use "Daily.co" (10k free min).'}
+                </div>
               </div>
             )}
             {form.provider === 'daily' && (
