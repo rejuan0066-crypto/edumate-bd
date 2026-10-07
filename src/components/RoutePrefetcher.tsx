@@ -41,17 +41,17 @@ const networkBudget = (): { concurrency: number; max: number; gapMs: number } | 
   if (c?.saveData) return null;
   const t = (c?.effectiveType || '4g') as string;
   if (t === 'slow-2g' || t === '2g') return null;
-  if (t === '3g') return { concurrency: 1, max: 4, gapMs: 600 };
-  // 4g / unknown / fast → generous
-  return { concurrency: 2, max: 8, gapMs: 200 };
+  if (t === '3g') return { concurrency: 1, max: 2, gapMs: 1200 };
+  // Gentle prefetching so it never contends with active page requests/images
+  return { concurrency: 1, max: 3, gapMs: 800 };
 };
 
-const idle = (cb: () => void, timeout = 1500) => {
+const idle = (cb: () => void, timeout = 4000) => {
   const ric = (window as any).requestIdleCallback as
     | ((cb: IdleRequestCallback, opts?: { timeout: number }) => number)
     | undefined;
   if (ric) ric(() => cb(), { timeout });
-  else setTimeout(cb, 200);
+  else setTimeout(cb, 3000);
 };
 
 // ───────── Loader registry (label → loader) ─────────
@@ -87,16 +87,11 @@ const L: Record<string, Loader> = {
 
 // ───────── Predictor ─────────
 const predict = (pathname: string): Task[] => {
-  // Lower priority number = loaded first
+  // Lower priority number = loaded first. Keep gentle so we don't clog network.
   const home: Task[] = [
     { label: 'Notice',         priority: 1, load: L.Notice },
-    { label: 'Login',          priority: 1, load: L.Login },
-    { label: 'Admission',      priority: 2, load: L.Admission },
-    { label: 'About',          priority: 3, load: L.About },
-    { label: 'Result',         priority: 3, load: L.Result },
-    { label: 'Gallery',        priority: 4, load: L.Gallery },
-    { label: 'Contact',        priority: 4, load: L.Contact },
-    { label: 'ParentPortal',   priority: 5, load: L.ParentPortal },
+    { label: 'Login',          priority: 2, load: L.Login },
+    { label: 'Admission',      priority: 3, load: L.Admission },
   ];
 
   const onLogin: Task[] = [

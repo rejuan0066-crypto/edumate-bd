@@ -339,11 +339,21 @@ const PrayerTimesWidget = () => {
       } catch { /* quota / private mode — ignore */ }
       return json.data;
     },
-    staleTime: 1000 * 60,
-    refetchInterval: 1000 * 60,
-    refetchIntervalInBackground: true,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    initialData: () => {
+      try {
+        const raw = localStorage.getItem(cacheKey);
+        if (raw) {
+          const parsed = JSON.parse(raw) as CachedPayload;
+          if (parsed.date === todayKey) return parsed.data;
+        }
+      } catch {}
+      return undefined;
+    },
+    staleTime: 6 * 60 * 60 * 1000,
+    refetchInterval: false,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
     retry: 2,
   });
 

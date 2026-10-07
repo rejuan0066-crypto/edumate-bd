@@ -40,6 +40,15 @@ export interface HolidayRecord {
   sort_order: number;
 }
 
+const PRAYER_CONFIG_CACHE_KEY = 'prayer-calendar-config-cache';
+const readPrayerConfigCache = (): PrayerCalendarConfig => {
+  try {
+    const raw = localStorage.getItem(PRAYER_CONFIG_CACHE_KEY);
+    if (raw) return { ...DEFAULT_CONFIG, ...JSON.parse(raw) };
+  } catch {}
+  return DEFAULT_CONFIG;
+};
+
 export const usePrayerCalendarSettings = () => {
   const queryClient = useQueryClient();
 
@@ -53,10 +62,16 @@ export const usePrayerCalendarSettings = () => {
         .maybeSingle();
       if (error) throw error;
       if (data?.value && typeof data.value === 'object' && !Array.isArray(data.value)) {
-        return { ...DEFAULT_CONFIG, ...(data.value as Record<string, unknown>) } as PrayerCalendarConfig;
+        const merged = { ...DEFAULT_CONFIG, ...(data.value as Record<string, unknown>) } as PrayerCalendarConfig;
+        try { localStorage.setItem(PRAYER_CONFIG_CACHE_KEY, JSON.stringify(merged)); } catch {}
+        return merged;
       }
       return DEFAULT_CONFIG;
     },
+    initialData: readPrayerConfigCache,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnMount: false,
   });
 
   const updateConfig = useMutation({

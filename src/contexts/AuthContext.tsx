@@ -16,6 +16,22 @@ export interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const PROFILE_CACHE_KEY = 'lovable_user_access_cache';
+
+const getCachedAccess = (userId: string): { role: string | null; userStatus: string | null } | null => {
+  try {
+    const raw = localStorage.getItem(`${PROFILE_CACHE_KEY}_${userId}`);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return null;
+};
+
+const setCachedAccess = (userId: string, data: { role: string | null; userStatus: string | null }) => {
+  try {
+    localStorage.setItem(`${PROFILE_CACHE_KEY}_${userId}`, JSON.stringify(data));
+  } catch {}
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -25,6 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userStatus, setUserStatus] = useState<string | null>(null);
   const [resolveNonce, setResolveNonce] = useState(0);
 
+  const authReadyRef = useRef(false);
   const fetchedForSession = useRef<string | null>(null);
   const lastHandledAccessToken = useRef<string | null>(null);
   const sessionRef = useRef<Session | null>(null);
@@ -54,12 +71,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const clearSessionState = () => {
       if (cancelled) return;
+      const alreadyCleared = sessionRef.current === null && userRef.current === null && authReadyRef.current;
       lastHandledAccessToken.current = null;
       sessionRef.current = null;
       userRef.current = null;
+      if (alreadyCleared) return;
       setSession(null);
       setUser(null);
       resetResolvedState();
+      authReadyRef.current = true;
       setAuthReady(true);
     };
 
@@ -78,6 +98,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         lastHandledAccessToken.current === nextAccessToken &&
         sessionRef.current?.user?.id === nextUser.id
       ) {
+        authReadyRef.current = true;
         setAuthReady(true);
         return;
       }
@@ -85,8 +106,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       lastHandledAccessToken.current = nextAccessToken;
       sessionRef.current = nextSession;
       userRef.current = nextUser;
+
+      // Seed cached role and userStatus immediately so role is available on first render!
+      const cached = getCachedAccess(nextUser.id);
+      if (cached) {
+        setRole(cached.role);
+        setUserStatus(cached.userStatus);
+        lastResolvedAccessState.current = {
+          userId: nextUser.id,
+          role: cached.role,
+          userStatus: cached.userStatus,
+        };
+      }
+
       setSession(nextSession);
       setUser(nextUser);
+      authReadyRef.current = true;
       setAuthReady(true);
     };
 
@@ -168,9 +203,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
+    const hasCachedProfile = lastResolvedAccessState.current?.userId === user.id && lastResolvedAccessState.current.role !== null;
     let cancelled = false;
     fetchedForSession.current = fetchKey;
-    setProfileLoading(true);
+    if (!hasCachedProfile) {
+      setProfileLoading(true);
+    }
 
     void (async () => {
       try {
@@ -182,6 +220,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         setRole(resolvedState.role);
         setUserStatus(resolvedState.userStatus);
+        setCachedAccess(user.id, {
+          role: resolvedState.role,
+          userStatus: resolvedState.userStatus,
+        });
         lastResolvedAccessState.current = {
           userId: user.id,
           role: resolvedState.role,

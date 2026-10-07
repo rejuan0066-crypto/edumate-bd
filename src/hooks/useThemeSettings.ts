@@ -133,6 +133,15 @@ export const FONT_WEIGHT_OPTIONS = [
   { value: '800', label: 'Extra Bold (৮০০)' },
 ];
 
+const THEME_CACHE_KEY = 'theme-settings-cache';
+const readThemeCache = (): ThemeSettings => {
+  try {
+    const raw = localStorage.getItem(THEME_CACHE_KEY);
+    if (raw) return { ...DEFAULT_THEME, ...JSON.parse(raw) };
+  } catch {}
+  return DEFAULT_THEME;
+};
+
 export const useThemeSettings = () => {
   const queryClient = useQueryClient();
 
@@ -147,17 +156,21 @@ export const useThemeSettings = () => {
       if (error) {
         console.warn('Theme settings fetch error:', error.message);
         if (error.message?.includes('JWT') || error.code === 'PGRST301' || error.code === '401') {
-          return null;
+          return readThemeCache();
         }
         throw error;
       }
       if (data && data.length > 0 && data[0].value) {
-        return { ...DEFAULT_THEME, ...(data[0].value as unknown as Partial<ThemeSettings>) };
+        const merged = { ...DEFAULT_THEME, ...(data[0].value as unknown as Partial<ThemeSettings>) };
+        try { localStorage.setItem(THEME_CACHE_KEY, JSON.stringify(merged)); } catch {}
+        return merged;
       }
       return DEFAULT_THEME;
     },
-    staleTime: 5 * 60 * 1000,
+    initialData: readThemeCache,
+    staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    refetchOnMount: false,
     retry: (failureCount, error) => {
       if (error?.message?.includes('JWT') || error?.message?.includes('401')) return false;
       return failureCount < 2;

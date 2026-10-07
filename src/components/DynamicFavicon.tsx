@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 
 const CACHE_KEY = 'cached_favicon_url';
@@ -9,6 +9,7 @@ const ICON_512_CACHE = 'cached_icon_512';
 const DynamicFavicon = () => {
   const { settings, isLoading } = useWebsiteSettings();
   const [applied, setApplied] = useState(false);
+  const lastProcessedPwaKey = useRef<string>('');
 
   // Apply cached favicon immediately on mount (before DB loads).
   // NOTE: the manifest link is intentionally left pointing at the static,
@@ -40,6 +41,9 @@ const DynamicFavicon = () => {
     }
     if (!isLoading && appIconSrc) {
       applyAppleTouchIcon(appIconSrc);
+      const pwaKey = `${appIconSrc}:${appName}:${shortName}:${themeColor}`;
+      if (lastProcessedPwaKey.current === pwaKey) return;
+      lastProcessedPwaKey.current = pwaKey;
       // Generate proper-sized PNG icons for PWA install
       (async () => {
         try {
@@ -82,23 +86,24 @@ const DynamicFavicon = () => {
   return null;
 };
 
+let lastAppliedFaviconSrc = '';
+
 function applyFavicon(src: string) {
-  const existing = document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]');
-  existing.forEach((el) => el.parentNode?.removeChild(el));
+  if (!src || src === lastAppliedFaviconSrc) return;
+  lastAppliedFaviconSrc = src;
 
+  let link = document.getElementById('dynamic-favicon') as HTMLLinkElement | null;
   const mime = guessMime(src);
-  const link = document.createElement('link');
-  link.rel = 'icon';
-  link.id = 'dynamic-favicon';
-  link.type = mime;
-  link.href = src.includes('?') ? src : `${src}?v=${Date.now()}`;
-  document.head.appendChild(link);
 
-  const shortcut = document.createElement('link');
-  shortcut.rel = 'shortcut icon';
-  shortcut.type = mime;
-  shortcut.href = link.href;
-  document.head.appendChild(shortcut);
+  if (!link) {
+    link = document.createElement('link');
+    link.rel = 'icon';
+    link.id = 'dynamic-favicon';
+    document.head.appendChild(link);
+  }
+
+  link.type = mime;
+  link.href = src;
 }
 
 function guessMime(src: string): string {
@@ -110,7 +115,12 @@ function guessMime(src: string): string {
   return 'image/png';
 }
 
+let lastAppliedAppleTouchSrc = '';
+
 function applyAppleTouchIcon(src: string) {
+  if (!src || src === lastAppliedAppleTouchSrc) return;
+  lastAppliedAppleTouchSrc = src;
+
   let link = document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement | null;
   if (!link) {
     link = document.createElement('link');

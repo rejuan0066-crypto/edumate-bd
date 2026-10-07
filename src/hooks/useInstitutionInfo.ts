@@ -80,7 +80,7 @@ export async function fetchInstitutionInfo(): Promise<InstitutionInfo> {
   const principalOfficer: any = Array.isArray(principalRows) ? principalRows[0] : principalRows;
 
 
-  return {
+  const result: InstitutionInfo = {
     id: i.id,
     name: pick(i.name, ws.institution_name) || EMPTY.name,
     name_en: pick(i.name_en, ws.institution_name_en),
@@ -99,12 +99,27 @@ export async function fetchInstitutionInfo(): Promise<InstitutionInfo> {
     other_info: pick(i.other_info),
     other_info_en: pick(i.other_info_en),
   };
+
+  try { localStorage.setItem(INST_CACHE_KEY, JSON.stringify(result)); } catch {}
+  return result;
 }
+
+const INST_CACHE_KEY = 'institution-info-cache';
+const readInstCache = (): InstitutionInfo | undefined => {
+  try {
+    const raw = localStorage.getItem(INST_CACHE_KEY);
+    if (raw) return { ...EMPTY, ...JSON.parse(raw) };
+  } catch {}
+  return undefined;
+};
 
 export const useInstitutionInfo = () => {
   return useQuery({
     queryKey: ['institution-info-merged'],
     queryFn: fetchInstitutionInfo,
-    staleTime: 5 * 60 * 1000,
+    initialData: readInstCache,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnMount: false,
   });
 };

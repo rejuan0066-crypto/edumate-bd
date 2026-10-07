@@ -450,6 +450,7 @@ const parseSettingsData = (data: any[] | null): WebsiteSettings => {
 };
 
 const CACHE_KEY = 'website-settings-cache';
+const CACHE_TIME_KEY = 'website-settings-cache-time';
 
 const readCache = (): WebsiteSettings | null => {
   try {
@@ -462,9 +463,19 @@ const readCache = (): WebsiteSettings | null => {
   }
 };
 
+const readCacheTime = (): number => {
+  try {
+    const raw = localStorage.getItem(CACHE_TIME_KEY);
+    return raw ? Number(raw) : 0;
+  } catch {
+    return 0;
+  }
+};
+
 const writeCache = (settings: WebsiteSettings) => {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(settings));
+    localStorage.setItem(CACHE_TIME_KEY, String(Date.now()));
     // Keep the page loader's lightweight cache in sync so the madrasa logo
     // renders instantly on every subsequent visit, even if the loader itself
     // unmounts before its own effect gets a chance to write.
@@ -539,13 +550,18 @@ export const useWebsiteSettings = () => {
       }
 
       const parsed = applyInstitutionOverrides(parseSettingsData(data));
+      const cached = readCache();
       writeCache(parsed);
+      if (cached && JSON.stringify(cached) === JSON.stringify(parsed)) {
+        return cached;
+      }
       return parsed;
     },
     initialData: () => readCache() ?? undefined,
+    initialDataUpdatedAt: () => readCacheTime(),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
-    refetchOnMount: 'always',
+    refetchOnMount: false,
     retry: (failureCount, error) => {
       if (error?.message?.includes('JWT') || error?.message?.includes('401')) return failureCount < 3;
       return failureCount < 2;

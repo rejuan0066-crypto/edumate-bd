@@ -67,7 +67,8 @@ const Home = () => {
       if (error) throw error;
       return data;
     },
-    retry: 3,
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
     retryDelay: (attempt) => Math.min(1000 * (attempt + 1), 3000),
   });
 
@@ -83,7 +84,8 @@ const Home = () => {
       if (error) throw error;
       return data;
     },
-    retry: 3,
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
     retryDelay: (attempt) => Math.min(1000 * (attempt + 1), 3000),
   });
 
@@ -93,6 +95,7 @@ const Home = () => {
       const { data } = await supabase.from('website_settings').select('value').eq('key', 'staff_form_public').maybeSingle();
       return data?.value === true || data?.value === 'true';
     },
+    staleTime: 10 * 60 * 1000,
   });
 
   const stats = [
@@ -262,7 +265,7 @@ const Home = () => {
 
   // Show a clean loader on first load (no cached settings yet) to avoid
   // a flash of half-rendered / empty content before settings arrive.
-  if (isSettingsLoading) {
+  if (isSettingsLoading && !settings?.institution_name) {
     return <PageLoader />;
   }
 

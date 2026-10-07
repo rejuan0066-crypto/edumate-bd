@@ -256,9 +256,17 @@ const mergeWithDefaults = (saved: MenuItemConfig[], defaults: MenuItemConfig[]):
   ];
 };
 
+const MENU_CACHE_KEY = 'menu-settings-cache';
+const readMenuCache = (): MenuConfig => {
+  try {
+    const raw = localStorage.getItem(MENU_CACHE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return DEFAULT_MENU_CONFIG;
+};
+
 export const useMenuSettings = () => {
   const queryClient = useQueryClient();
-  const { loading: authLoading } = useAuth();
 
   const { data: menuConfig, isLoading } = useQuery({
     queryKey: ['menu-settings'],
@@ -279,11 +287,13 @@ export const useMenuSettings = () => {
           result.public = mergeWithDefaults(row.value as unknown as MenuItemConfig[], DEFAULT_PUBLIC);
         }
       });
+      try { localStorage.setItem(MENU_CACHE_KEY, JSON.stringify(result)); } catch {}
       return result;
     },
-    enabled: !authLoading,
+    initialData: readMenuCache,
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    refetchOnMount: false,
   });
 
   const saveMenuConfig = useMutation({

@@ -52,6 +52,11 @@ export function useDeviceRegistration() {
 
   useEffect(() => {
     if (!user?.id) return;
+    const regKey = `lovable.device_reg_at_${user.id}`;
+    const lastReg = Number(localStorage.getItem(regKey) ?? 0);
+    // Refresh at most once every 30 minutes
+    if (Date.now() - lastReg < 1000 * 60 * 30) return;
+
     let cancelled = false;
     (async () => {
       try {
@@ -67,6 +72,7 @@ export function useDeviceRegistration() {
           _user_agent: ua,
           _ip: null, // server-side functions populate IP; the RPC just records UA here
         });
+        localStorage.setItem(regKey, String(Date.now()));
       } catch {
         // Non-fatal — server-side `verify_user_device` will still TOFU-register on first protected call
       }

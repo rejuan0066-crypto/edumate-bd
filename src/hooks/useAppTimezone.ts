@@ -7,7 +7,14 @@ import { DEFAULT_APP_TZ, safeTz } from '@/lib/timezone';
  * Returns the active IANA timezone — defaults to Asia/Dhaka while loading or on error.
  * Updates live when an admin changes the setting (via Supabase realtime).
  */
-let cachedTz: string | null = null;
+const TZ_STORAGE_KEY = 'app_cached_tz';
+let cachedTz: string = (() => {
+  try {
+    return localStorage.getItem(TZ_STORAGE_KEY) || DEFAULT_APP_TZ;
+  } catch {
+    return DEFAULT_APP_TZ;
+  }
+})();
 const listeners = new Set<(tz: string) => void>();
 
 async function fetchAppTz(): Promise<string> {
@@ -27,7 +34,10 @@ async function fetchAppTz(): Promise<string> {
 
 function setCachedTz(tz: string) {
   cachedTz = safeTz(tz);
-  listeners.forEach(fn => fn(cachedTz!));
+  try {
+    localStorage.setItem(TZ_STORAGE_KEY, cachedTz);
+  } catch {}
+  listeners.forEach(fn => fn(cachedTz));
 }
 
 let realtimeStarted = false;

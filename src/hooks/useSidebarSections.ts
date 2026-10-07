@@ -61,9 +61,17 @@ export const DEFAULT_SIDEBAR_SECTIONS: SidebarSection[] = [
   },
 ];
 
+const SIDEBAR_SECTIONS_CACHE_KEY = 'sidebar-sections-cache';
+const readSidebarSectionsCache = (): SidebarSection[] => {
+  try {
+    const raw = localStorage.getItem(SIDEBAR_SECTIONS_CACHE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return DEFAULT_SIDEBAR_SECTIONS;
+};
+
 export const useSidebarSections = () => {
   const queryClient = useQueryClient();
-  const { loading: authLoading } = useAuth();
 
   const { data: sections, isLoading } = useQuery({
     queryKey: ['sidebar-sections'],
@@ -74,13 +82,16 @@ export const useSidebarSections = () => {
         .eq('key', 'sidebar_sections');
       if (error) throw error;
       if (data && data.length > 0 && data[0].value) {
-        return data[0].value as unknown as SidebarSection[];
+        const val = data[0].value as unknown as SidebarSection[];
+        try { localStorage.setItem(SIDEBAR_SECTIONS_CACHE_KEY, JSON.stringify(val)); } catch {}
+        return val;
       }
       return DEFAULT_SIDEBAR_SECTIONS;
     },
-    enabled: !authLoading,
+    initialData: readSidebarSectionsCache,
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    refetchOnMount: false,
   });
 
   const saveSections = useMutation({

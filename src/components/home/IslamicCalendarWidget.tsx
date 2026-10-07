@@ -170,6 +170,8 @@ const IslamicCalendarWidget = () => {
         approximate: h.approximate,
       })) as Holiday[];
     },
+    staleTime: 60 * 60 * 1000,
+    refetchOnMount: false,
   });
 
   // Also fetch current year holidays for today check
@@ -192,6 +194,8 @@ const IslamicCalendarWidget = () => {
       })) as Holiday[];
     },
     enabled: viewYear !== now.getFullYear(),
+    staleTime: 60 * 60 * 1000,
+    refetchOnMount: false,
   });
 
   const yearHolidays = dbHolidays || [];
