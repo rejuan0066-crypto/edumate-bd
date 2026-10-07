@@ -155,7 +155,7 @@ const AdminCertificates = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('student_certificates')
-        .select('*, students(name_bn, name_en, student_id, roll_number, father_name, mother_name, date_of_birth, classes(name_bn, name), academic_sessions(name))')
+        .select('*, students(name_bn, name_en, student_id, roll_number, father_name, mother_name, date_of_birth, address, birth_reg_no, admission_date, registration_no, classes(name_bn, name), academic_sessions(name))')
         .eq('certificate_type', tab)
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
@@ -464,6 +464,17 @@ const AdminCertificates = () => {
         principalTitleBn: principalInfo?.principal_title_bn || 'মুহতামিম / প্রিন্সিপাল',
         principalTitleEn: principalInfo?.principal_title_en || 'Principal',
         principalTitleAr: principalInfo?.principal_title_ar || 'المدير',
+        permanentAddress: s.address || inst.address || '',
+        presentAddress: s.address || inst.address || '',
+        birthRegNo: s.birth_reg_no || s.registration_no || '',
+        registrationNo: s.registration_no || '',
+        examResult: cert.achievements_bn || 'কৃতকার্য / উত্তীর্ণ (Passed & Promoted)',
+        duesStatus: 'সম্পূর্ণ পরিশোধিত (All Dues Cleared)',
+        noObjection: 'কোনো আপত্তি নাই (No Objection)',
+        establishmentYear: inst.established_year || '',
+        registrationNumber: inst.registration_number || '',
+        officeAssistantName: inst.verifier_name || 'মো. রফিকুল ইসলাম',
+        classTeacherName: 'সংশ্লিষ্ট শ্রেণি শিক্ষক',
       },
     }) + `<script>window.onload=()=>{setTimeout(()=>window.print(),400);};</script>`;
 

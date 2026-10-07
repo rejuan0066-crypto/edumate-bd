@@ -82,9 +82,18 @@ const SAMPLE_DATA = {
   institutionAddressAr: 'دكا، بنغلاديش',
   principalName: 'মোহাম্মদ ইব্রাহিম',
   principalNameAr: 'محمد إبراهيم',
-  principalTitleBn: 'প্রিন্সিপাল',
+  principalTitleBn: 'মুহতামিম / অধ্যক্ষ',
   principalTitleEn: 'Principal',
   principalTitleAr: 'المدير',
+  permanentAddress: 'গ্রাম: চর রূপপুর, ডাকঘর: রূপপুর, উপজেলা: ভেড়ামারা, জেলা: কুষ্টিয়া',
+  presentAddress: 'মিরপুর-১০, ঢাকা-১২১৬, বাংলাদেশ',
+  birthRegNo: '20105012345678901',
+  registrationNumber: 'EIIN: 132456 / কোড: ৫৪৩২১',
+  examResult: 'জিপিএ ৫.০০ / মুমতাজ (উত্তীর্ণ)',
+  duesStatus: 'সম্পূর্ণ পরিশোধিত (All Dues Cleared)',
+  noObjection: 'কোনো আপত্তি নাই (No Objection)',
+  officeAssistantName: 'মো. রফিকুল ইসলাম',
+  classTeacherName: 'মাওলানা মাহমুদ হাসান',
 };
 
 const CertificateTemplateDesigner = ({ open, onOpenChange }: Props) => {
@@ -298,7 +307,16 @@ const CertificateTemplateDesigner = ({ open, onOpenChange }: Props) => {
                 </Section>
 
                 {/* Borders / Frame */}
-                <Section title={bn ? 'বর্ডার ও ফ্রেম' : 'Borders & Frame'}>
+                <Section title={bn ? 'পৃষ্ঠা ও ফ্রেম' : 'Page & Frame'}>
+                  <Field label={bn ? 'পৃষ্ঠা বিন্যাস (Orientation)' : 'Page Orientation'}>
+                    <Select value={cfg.orientation || (activeType === 'certificate' ? 'landscape' : 'portrait')} onValueChange={v => set('orientation', v as any)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="landscape">{bn ? 'ল্যান্ডস্কেপ / আড়াআড়ি (A4 Landscape - সনদের জন্য আদর্শ)' : 'Landscape (A4 - Best for Certificates)'}</SelectItem>
+                        <SelectItem value="portrait">{bn ? 'পোর্ট্রেট / খাড়া (A4 Portrait - ছাড়পত্র ও প্রশংসাপত্রের জন্য আদর্শ)' : 'Portrait (A4 - Best for TC & Testimonials)'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Field>
                   <ColorField label={bn ? 'বাইরের বর্ডার রং' : 'Outer border color'} value={cfg.borderColor} onChange={v => set('borderColor', v)} />
                   <ColorField label={bn ? 'ভেতরের বর্ডার রং' : 'Inner border color'} value={cfg.innerBorderColor} onChange={v => set('innerBorderColor', v)} />
                   <Field label={bn ? 'বর্ডার স্টাইল' : 'Border style'}>
@@ -421,15 +439,32 @@ const CertificateTemplateDesigner = ({ open, onOpenChange }: Props) => {
           </div>
 
           {/* Preview */}
-          <div className="flex-1 bg-muted/30 overflow-auto p-6 flex justify-center items-start">
-            <div className="shadow-2xl rounded-lg overflow-hidden bg-white" style={{ width: '210mm', minHeight: '297mm', transform: 'scale(0.8)', transformOrigin: 'top center' }}>
-              <iframe
-                title="preview"
-                srcDoc={previewHtml}
-                style={{ width: '210mm', height: '297mm', border: 'none', display: 'block' }}
-              />
-            </div>
-          </div>
+          {(() => {
+            const isLandscape = (cfg.orientation ?? (activeType === 'certificate' ? 'landscape' : 'portrait')) === 'landscape';
+            const pW = isLandscape ? '297mm' : '210mm';
+            const pH = isLandscape ? '210mm' : '297mm';
+            const pScale = isLandscape ? 0.65 : 0.76;
+            return (
+              <div className="flex-1 bg-muted/30 overflow-auto p-6 flex justify-center items-start">
+                <div
+                  className="shadow-2xl rounded-lg overflow-hidden bg-white transition-all"
+                  style={{
+                    width: pW,
+                    height: pH,
+                    transform: `scale(${pScale})`,
+                    transformOrigin: 'top center',
+                    marginBottom: isLandscape ? '-60mm' : '-45mm',
+                  }}
+                >
+                  <iframe
+                    title="preview"
+                    srcDoc={previewHtml}
+                    style={{ width: pW, height: pH, border: 'none', display: 'block' }}
+                  />
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </DialogContent>
     </Dialog>
