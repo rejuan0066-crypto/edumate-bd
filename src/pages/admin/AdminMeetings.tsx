@@ -23,7 +23,7 @@ import {
   Plus, Pencil, Trash2, Video, Users, Calendar, Clock, ExternalLink,
   Copy, Search, MessageCircle, ShieldCheck, Briefcase, Zap,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import { useMeetingProviderSettings } from '@/hooks/useMeetingProviderSettings';
@@ -514,11 +514,11 @@ const AdminMeetings = () => {
                       </div>
 
                       <div className="flex flex-wrap gap-2">
-                        {(m._status === 'live' || m._status === 'scheduled') && getJoinUrl(m) && (
+                        {(m._status === 'live' || m._status === 'scheduled') && (
                           <Button size="sm" asChild className="rounded-xl gap-1">
-                            <a href={getJoinUrl(m)} target="_blank" rel="noreferrer">
-                              <ExternalLink className="w-3.5 h-3.5" /> {bn ? 'যোগ দিন' : 'Join'}
-                            </a>
+                            <Link to={`/meeting/${m.id}`}>
+                              <Video className="w-3.5 h-3.5" /> {bn ? 'যোগ দিন' : 'Join'}
+                            </Link>
                           </Button>
                         )}
                         <Button size="sm" variant="outline" onClick={() => copyJoinLink(m)} className="rounded-xl gap-1">

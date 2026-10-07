@@ -24,6 +24,7 @@ import {
   Copy, Search, MessageCircle, ShieldCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 
 type Provider = 'jitsi' | 'jaas' | 'daily' | 'zoom' | 'google_meet' | 'youtube';
@@ -456,11 +457,11 @@ const AdminLiveClasses = () => {
                       </div>
 
                       <div className="flex flex-wrap gap-2">
-                        {(lc._status === 'live' || lc._status === 'scheduled') && getJoinUrl(lc) && (
+                        {(lc._status === 'live' || lc._status === 'scheduled') && (
                           <Button size="sm" asChild className="rounded-xl gap-1">
-                            <a href={getJoinUrl(lc)} target="_blank" rel="noreferrer">
-                              <ExternalLink className="w-3.5 h-3.5" /> {bn ? 'যোগ দিন' : 'Join'}
-                            </a>
+                            <Link to={`/live-class/${lc.id}`}>
+                              <Video className="w-3.5 h-3.5" /> {bn ? 'যোগ দিন' : 'Join'}
+                            </Link>
                           </Button>
                         )}
                         <Button size="sm" variant="outline" onClick={() => copyJoinLink(lc)} className="rounded-xl gap-1">
