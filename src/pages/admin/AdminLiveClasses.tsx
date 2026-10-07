@@ -288,8 +288,10 @@ const AdminLiveClasses = () => {
 
       let cleanUrl = payload.meeting_url.trim();
       if (payload.provider === 'jaas') {
-        if (cleanUrl.startsWith('vpaas-magic-cookie-')) {
-          const room = payload.meeting_room || payload.title.replace(/[^a-zA-Z0-9]/g, '') || 'LiveClass';
+        const room = payload.meeting_room || payload.title.replace(/[^a-zA-Z0-9]/g, '') || 'LiveClass';
+        if (cleanUrl.startsWith('eyJ')) {
+          cleanUrl = `https://8x8.vc/vpaas-magic-cookie-bf72faa5e6d3456fba4402a771432f19/${room}?jwt=${cleanUrl}`;
+        } else if (cleanUrl.startsWith('vpaas-magic-cookie-')) {
           cleanUrl = `https://8x8.vc/${cleanUrl}/${room}`;
         } else if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
           cleanUrl = `https://${cleanUrl}`;

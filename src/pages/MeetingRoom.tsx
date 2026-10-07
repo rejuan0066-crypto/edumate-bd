@@ -353,9 +353,13 @@ const MeetingRoom = () => {
 
             {(meeting.provider === 'jaas' || meeting.provider === 'daily') && status === 'live' && meeting.meeting_url && mediaReady && (() => {
               let liveUrl = meeting.meeting_url;
-              if (meeting.provider === 'jaas' && liveUrl.startsWith('vpaas-magic-cookie-')) {
+              if (meeting.provider === 'jaas') {
                 const room = meeting.meeting_room || meeting.id || 'Meeting';
-                liveUrl = `https://8x8.vc/${liveUrl}/${room}`;
+                if (liveUrl.startsWith('eyJ')) {
+                  liveUrl = `https://8x8.vc/vpaas-magic-cookie-bf72faa5e6d3456fba4402a771432f19/${room}?jwt=${liveUrl}`;
+                } else if (liveUrl.startsWith('vpaas-magic-cookie-')) {
+                  liveUrl = `https://8x8.vc/${liveUrl}/${room}`;
+                }
               }
               if (liveUrl.includes('8x8.vc') || liveUrl.includes('meet.jit.si')) {
                 const hashGlue = liveUrl.includes('#') ? '&' : '#';

@@ -369,8 +369,10 @@ const LiveClassRoom = () => {
 
     if (isJaaS) {
       let finalJaaSUrl = mUrl;
-      if (mUrl.startsWith('vpaas-magic-cookie-')) {
-        const room = lc.meeting_room || lc.id || 'LiveClass';
+      const room = lc.meeting_room || lc.id || 'LiveClass';
+      if (mUrl.startsWith('eyJ')) {
+        finalJaaSUrl = `https://8x8.vc/vpaas-magic-cookie-bf72faa5e6d3456fba4402a771432f19/${room}?jwt=${mUrl}`;
+      } else if (mUrl.startsWith('vpaas-magic-cookie-')) {
         finalJaaSUrl = `https://8x8.vc/${mUrl}/${room}`;
       } else if (!mUrl.startsWith('http://') && !mUrl.startsWith('https://')) {
         finalJaaSUrl = `https://${mUrl}`;
