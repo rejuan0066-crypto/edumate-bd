@@ -66,7 +66,7 @@ const emptyForm: MeetingForm = {
   meeting_url: '',
   meeting_room: '',
   meeting_type: 'staff',
-  access_mode: 'logged_in',
+  access_mode: 'public',
   access_code: '',
   scheduled_start: '',
   scheduled_end: '',
@@ -91,9 +91,9 @@ const providerLabel = (p: Provider, bn: boolean) => ({
 }[p]?.[bn ? 1 : 0] || p);
 
 const accessLabel = (a: AccessMode, bn: boolean) => ({
-  public: ['Public', 'পাবলিক'],
-  logged_in: ['Logged-in only', 'লগইনকৃত'],
-  access_code: ['Access Code', 'অ্যাক্সেস কোড'],
+  public: ['Public (Link Sharing - Anyone can join)', 'পাবলিক (লিংক শেয়ারে যে কেউ জয়েন করতে পারবে)'],
+  logged_in: ['Logged-in only (Students/Staff)', 'লগইনকৃত (শুধুমাত্র সাইটে লগইন করা স্টুডেন্ট/স্টাফ)'],
+  access_code: ['Access Code (Secret PIN)', 'অ্যাক্সেস কোড (গোপন পিন কোড দিয়ে)'],
 }[a][bn ? 1 : 0]);
 
 const meetingTypeLabel = (t: MeetingType, bn: boolean) => ({

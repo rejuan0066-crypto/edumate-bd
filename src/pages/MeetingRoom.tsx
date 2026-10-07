@@ -277,6 +277,17 @@ const MeetingRoom = () => {
                 <p className="text-sm text-muted-foreground mb-4">
                   {bn ? 'মিটিংয়ে যোগ দিতে আপনার ব্রাউজারকে মাইক্রোফোন এবং ক্যামেরা ব্যবহারের অনুমতি দিতে হবে। মোবাইলে ব্রাউজার পপ-আপে "Allow" চাপুন।' : 'To join, your browser needs permission to use microphone and camera. On mobile, tap "Allow" in the browser pop-up.'}
                 </p>
+                {!user && (
+                  <div className="mb-4 text-left">
+                    <Label className="text-xs font-semibold mb-1.5 block">{bn ? 'আপনার নাম লিখুন' : 'Your Name'}</Label>
+                    <Input
+                      value={guestName}
+                      onChange={(e) => setGuestName(e.target.value)}
+                      placeholder={bn ? 'উদা: মোঃ আব্দুর রহমান (অভিভাবক)' : 'e.g. John Doe'}
+                      className="rounded-xl"
+                    />
+                  </div>
+                )}
                 <Button onClick={requestMediaPermission} disabled={requestingMedia} size="lg" className="rounded-2xl w-full">
                   {requestingMedia ? (bn ? 'অনুরোধ করা হচ্ছে…' : 'Requesting…') : (bn ? 'অনুমতি দিন ও যোগ দিন' : 'Grant Permission & Join')}
                 </Button>
@@ -323,6 +334,17 @@ const MeetingRoom = () => {
                 <p className="text-sm text-muted-foreground mb-4">
                   {bn ? 'মিটিংয়ে যোগ দিতে আপনার ব্রাউজারকে মাইক্রোফোন এবং ক্যামেরা ব্যবহারের অনুমতি দিতে হবে।' : 'To join, your browser needs permission to use microphone and camera.'}
                 </p>
+                {!user && (
+                  <div className="mb-4 text-left">
+                    <Label className="text-xs font-semibold mb-1.5 block">{bn ? 'আপনার নাম লিখুন' : 'Your Name'}</Label>
+                    <Input
+                      value={guestName}
+                      onChange={(e) => setGuestName(e.target.value)}
+                      placeholder={bn ? 'উদা: মোঃ আব্দুর রহমান (অভিভাবক)' : 'e.g. John Doe'}
+                      className="rounded-xl"
+                    />
+                  </div>
+                )}
                 <Button onClick={requestMediaPermission} disabled={requestingMedia} size="lg" className="rounded-2xl w-full">
                   {requestingMedia ? (bn ? 'অনুরোধ করা হচ্ছে…' : 'Requesting…') : (bn ? 'অনুমতি দিন ও যোগ দিন' : 'Grant Permission & Join')}
                 </Button>

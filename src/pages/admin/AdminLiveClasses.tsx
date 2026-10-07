@@ -93,10 +93,10 @@ const providerLabel = (p: Provider, bn: boolean) => {
 
 const accessLabel = (a: AccessMode, bn: boolean) => {
   const map: Record<AccessMode, [string, string]> = {
-    public: ['Public', 'পাবলিক'],
-    logged_in: ['Logged-in only', 'লগইনকৃত'],
-    class_based: ['Specific Class', 'নির্দিষ্ট ক্লাস'],
-    access_code: ['Access Code', 'অ্যাক্সেস কোড'],
+    public: ['Public (Link Sharing - Anyone can join)', 'পাবলিক (লিংক শেয়ারে যে কেউ জয়েন করতে পারবে)'],
+    logged_in: ['Logged-in only (Students/Staff)', 'লগইনকৃত (শুধুমাত্র সাইটে লগইন করা স্টুডেন্ট/স্টাফ)'],
+    class_based: ['Specific Class (Class students only)', 'নির্দিষ্ট ক্লাস (শুধুমাত্র ওই ক্লাসের শিক্ষার্থীরা)'],
+    access_code: ['Access Code (Secret PIN)', 'অ্যাক্সেস কোড (গোপন পিন কোড দিয়ে)'],
   };
   return bn ? map[a][1] : map[a][0];
 };
