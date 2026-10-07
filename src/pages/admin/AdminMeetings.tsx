@@ -152,7 +152,15 @@ const AdminMeetings = () => {
   const { data: staff = [] } = useQuery({
     queryKey: ['mt-staff'],
     queryFn: async () => {
-      const { data } = await supabase.from('staff').select('id, name_en, name_bn, staff_category').is('deleted_at', null).order('name_bn');
+      const { data } = await supabase.from('staff').select('id, name_en, name_bn, staff_category, user_id').is('deleted_at', null).order('name_bn');
+      return data ?? [];
+    },
+  });
+
+  const { data: profiles = [] } = useQuery({
+    queryKey: ['mt-profiles'],
+    queryFn: async () => {
+      const { data } = await supabase.from('profiles').select('id, full_name');
       return data ?? [];
     },
   });
@@ -214,6 +222,7 @@ const AdminMeetings = () => {
     const toLocal = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
     // Auto-populate default Daily.co URL if available
     const defaultDailyUrl = getDefaultUrl('daily');
+    const myStaff = staff.find((s: any) => s.user_id === user?.id);
     setForm({
       ...emptyForm,
       scheduled_start: toLocal(inOneHour),
@@ -221,6 +230,7 @@ const AdminMeetings = () => {
       meeting_room: `meet-${Math.random().toString(36).slice(2, 10)}`,
       meeting_url: defaultDailyUrl || '',
       provider: defaultDailyUrl ? 'daily' : 'jitsi',
+      staff_organizer_id: myStaff ? myStaff.id : (staff[0]?.id || null),
     });
     setOpen(true);
   };
@@ -490,9 +500,13 @@ const AdminMeetings = () => {
                             <Clock className="w-3.5 h-3.5" />
                             {Math.round((new Date(m.scheduled_end).getTime() - new Date(m.scheduled_start).getTime()) / 60000)} {bn ? 'মিনিট' : 'min'}
                           </span>
-                          {m.staff && (
-                            <span>{bn ? 'আয়োজক:' : 'Organizer:'} {bn ? m.staff.name_bn : m.staff.name_en}</span>
-                          )}
+                          {(() => {
+                            const orgName = m.staff
+                              ? (bn ? m.staff.name_bn : m.staff.name_en)
+                              : (profiles.find((p: any) => p.id === m.organizer_id)?.full_name || '');
+                            if (!orgName) return null;
+                            return <span>{bn ? 'আয়োজক:' : 'Organizer:'} <strong>{orgName}</strong></span>;
+                          })()}
                         </div>
                         {(m.notes || m.notes_bn) && (
                           <p className="text-sm text-muted-foreground italic">{bn ? m.notes_bn || m.notes : m.notes}</p>

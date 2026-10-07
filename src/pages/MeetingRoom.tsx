@@ -69,6 +69,38 @@ const MeetingRoom = () => {
     enabled: !!id,
   });
 
+  // Fetch organizer profile if staff_organizer_id was not selected
+  const { data: organizerProfile } = useQuery({
+    queryKey: ['organizer-profile', meeting?.organizer_id],
+    queryFn: async () => {
+      if (!meeting?.organizer_id) return null;
+      const { data } = await supabase.from('profiles').select('full_name').eq('id', meeting.organizer_id).maybeSingle();
+      return data;
+    },
+    enabled: !!meeting?.organizer_id,
+  });
+
+  // Fetch logged in user's profile to pass accurate full name to meeting
+  const { data: currentUserProfile } = useQuery({
+    queryKey: ['current-user-profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  const organizerName = useMemo(() => {
+    if (meeting?.staff) {
+      return bn ? (meeting.staff.name_bn || meeting.staff.name_en) : (meeting.staff.name_en || meeting.staff.name_bn);
+    }
+    if (organizerProfile?.full_name) {
+      return organizerProfile.full_name;
+    }
+    return '';
+  }, [meeting, organizerProfile, bn]);
+
   const status = useMemo(() => {
     if (!meeting) return 'scheduled' as const;
     if (meeting.status === 'cancelled' || meeting.status === 'ended') return meeting.status;
@@ -141,7 +173,16 @@ const MeetingRoom = () => {
       day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true,
     });
 
-  const displayName = encodeURIComponent(user?.email || guestName || 'Guest');
+  const rawDisplayName = useMemo(() => {
+    if (currentUserProfile?.full_name) return currentUserProfile.full_name;
+    if (user?.user_metadata?.full_name) return user.user_metadata.full_name;
+    if (user?.user_metadata?.name) return user.user_metadata.name;
+    if (user?.email) return user.email.split('@')[0];
+    if (guestName) return guestName;
+    return bn ? 'অংশগ্রহণকারী' : 'Guest';
+  }, [currentUserProfile, user, guestName, bn]);
+
+  const displayName = encodeURIComponent(rawDisplayName);
   const jitsiConfig = [
     'config.prejoinPageEnabled=false',
     'config.startWithAudioMuted=false',
@@ -177,11 +218,16 @@ const MeetingRoom = () => {
               {status === 'live' ? (bn ? 'লাইভ' : 'LIVE') : status === 'scheduled' ? (bn ? 'নির্ধারিত' : 'Scheduled') : status === 'ended' ? (bn ? 'সমাপ্ত' : 'Ended') : (bn ? 'বাতিল' : 'Cancelled')}
             </Badge>
           </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
             <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> {formatDT(meeting.scheduled_start)}</span>
             <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> → {formatDT(meeting.scheduled_end)}</span>
             <span className="flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5" /> {meeting.access_mode}</span>
-            {meeting.staff && <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" /> {bn ? meeting.staff.name_bn : meeting.staff.name_en}</span>}
+            {organizerName && (
+              <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary font-semibold">
+                <Users className="w-3.5 h-3.5" />
+                <span>{bn ? 'আয়োজক:' : 'Organizer:'} <strong>{organizerName}</strong></span>
+              </span>
+            )}
           </div>
           {(meeting.description || meeting.description_bn) && (
             <p className="mt-3 text-sm">{bn ? meeting.description_bn || meeting.description : meeting.description}</p>
@@ -288,6 +334,10 @@ const MeetingRoom = () => {
               if (meeting.provider === 'jaas' && liveUrl.startsWith('vpaas-magic-cookie-')) {
                 const room = meeting.meeting_room || meeting.id || 'Meeting';
                 liveUrl = `https://8x8.vc/${liveUrl}/${room}`;
+              }
+              if (liveUrl.includes('8x8.vc') || liveUrl.includes('meet.jit.si')) {
+                const hashGlue = liveUrl.includes('#') ? '&' : '#';
+                liveUrl = `${liveUrl}${hashGlue}userInfo.displayName="${displayName}"`;
               }
               return (
                 <Card className="p-2 rounded-[32px] overflow-hidden">
