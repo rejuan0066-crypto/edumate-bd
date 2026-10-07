@@ -60,9 +60,13 @@ export interface CertTemplateConfig {
 
   // Accent / highlight color used inside body
   highlightColor: string;
+
+  // Theme preset identifier
+  themePreset?: 'royal-gold' | 'executive-navy' | 'emerald-heritage';
 }
 
-export const DEFAULT_TEMPLATE: CertTemplateConfig = {
+/** 1. Royal Gold Luxury Edition — For Course Completion, Memorization & Achievement Certificates */
+export const ROYAL_GOLD_TEMPLATE: CertTemplateConfig = {
   borderColor: '#b8860b',
   innerBorderColor: '#d4af37',
   borderStyle: 'double',
@@ -70,8 +74,8 @@ export const DEFAULT_TEMPLATE: CertTemplateConfig = {
   showWatermark: true,
   watermarkOpacity: 0.05,
 
-  bgGradientFrom: '#fefaf0',
-  bgGradientTo: '#f8efd4',
+  bgGradientFrom: '#fffdf8',
+  bgGradientTo: '#f9f2e3',
 
   titleColor: '#5c3a0e',
   titleBn: '',
@@ -81,7 +85,7 @@ export const DEFAULT_TEMPLATE: CertTemplateConfig = {
   showCategorySubtitle: true,
 
   showLogo: true,
-  logoSize: 62,
+  logoSize: 64,
   logoPosition: 'center',
   logoUrlOverride: '',
   showInstitutionName: true,
@@ -103,12 +107,143 @@ export const DEFAULT_TEMPLATE: CertTemplateConfig = {
   footerText: '',
 
   pagePadding: 18,
-
-  highlightColor: '#7a4f0d',
+  highlightColor: '#8c5a14',
+  themePreset: 'royal-gold',
 };
 
-export function mergeTemplate(partial: Partial<CertTemplateConfig> | null | undefined): CertTemplateConfig {
-  return { ...DEFAULT_TEMPLATE, ...(partial || {}) };
+/** 2. Executive Academic Navy Edition — For Formal Transfer Certificates & Official Clearance */
+export const EXECUTIVE_NAVY_TEMPLATE: CertTemplateConfig = {
+  borderColor: '#1e3a8a',
+  innerBorderColor: '#3b82f6',
+  borderStyle: 'solid',
+  showCornerOrnaments: true,
+  showWatermark: true,
+  watermarkOpacity: 0.04,
+
+  bgGradientFrom: '#ffffff',
+  bgGradientTo: '#f1f5f9',
+
+  titleColor: '#0f172a',
+  titleBn: '',
+  titleEn: '',
+  titleAr: '',
+  titleFontSize: 28,
+  showCategorySubtitle: false,
+
+  showLogo: true,
+  logoSize: 62,
+  logoPosition: 'center',
+  logoUrlOverride: '',
+  showInstitutionName: true,
+  showAddress: true,
+  headerAccentColor: '#1e40af',
+
+  bodyLayout: 'bilingual',
+  bodyFontSize: 12,
+  customBodyBn: '',
+  customBodyEn: '',
+  customBodyAr: '',
+
+  showInfoGrid: true,
+  infoColumns: 4,
+
+  signaturePosition: 'right',
+  showSeal: true,
+  showWishes: false,
+  footerText: '',
+
+  pagePadding: 16,
+  highlightColor: '#1d4ed8',
+  themePreset: 'executive-navy',
+};
+
+/** 3. Islamic Heritage Emerald Edition — For Character, Moral Conduct & Testimonials */
+export const EMERALD_HERITAGE_TEMPLATE: CertTemplateConfig = {
+  borderColor: '#065f46',
+  innerBorderColor: '#059669',
+  borderStyle: 'double',
+  showCornerOrnaments: true,
+  showWatermark: true,
+  watermarkOpacity: 0.05,
+
+  bgGradientFrom: '#f2fbf6',
+  bgGradientTo: '#e3f5ec',
+
+  titleColor: '#064e3b',
+  titleBn: '',
+  titleEn: '',
+  titleAr: '',
+  titleFontSize: 30,
+  showCategorySubtitle: true,
+
+  showLogo: true,
+  logoSize: 64,
+  logoPosition: 'center',
+  logoUrlOverride: '',
+  showInstitutionName: true,
+  showAddress: true,
+  headerAccentColor: '#047857',
+
+  bodyLayout: 'bilingual',
+  bodyFontSize: 12.5,
+  customBodyBn: '',
+  customBodyEn: '',
+  customBodyAr: '',
+
+  showInfoGrid: true,
+  infoColumns: 4,
+
+  signaturePosition: 'right',
+  showSeal: true,
+  showWishes: true,
+  footerText: '',
+
+  pagePadding: 18,
+  highlightColor: '#0f766e',
+  themePreset: 'emerald-heritage',
+};
+
+export const DEFAULT_TEMPLATE: CertTemplateConfig = ROYAL_GOLD_TEMPLATE;
+
+export const DEFAULT_TEMPLATES_BY_TYPE: Record<CertType, CertTemplateConfig> = {
+  certificate: ROYAL_GOLD_TEMPLATE,
+  transfer: EXECUTIVE_NAVY_TEMPLATE,
+  testimonial: EMERALD_HERITAGE_TEMPLATE,
+};
+
+export const PRESET_OPTIONS = [
+  {
+    id: 'royal-gold',
+    nameBn: 'রয়্যাল গোল্ডেন সনদ (Royal Gold)',
+    nameEn: 'Royal Gold Luxury',
+    iconColor: '#b8860b',
+    config: ROYAL_GOLD_TEMPLATE,
+  },
+  {
+    id: 'executive-navy',
+    nameBn: 'অফিসিয়াল একাডেমি নেভি (Executive Navy)',
+    nameEn: 'Executive Academic Navy',
+    iconColor: '#1e3a8a',
+    config: EXECUTIVE_NAVY_TEMPLATE,
+  },
+  {
+    id: 'emerald-heritage',
+    nameBn: 'ইসলামিক হেরিটেজ এমারেল্ড (Islamic Emerald)',
+    nameEn: 'Islamic Heritage Emerald',
+    iconColor: '#065f46',
+    config: EMERALD_HERITAGE_TEMPLATE,
+  },
+] as const;
+
+export function mergeTemplate(
+  partial: Partial<CertTemplateConfig> | null | undefined,
+  certType: CertType = 'certificate'
+): CertTemplateConfig {
+  const base = DEFAULT_TEMPLATES_BY_TYPE[certType] || DEFAULT_TEMPLATE;
+  if (!partial || Object.keys(partial).length === 0) {
+    return { ...base };
+  }
+  return { ...base, ...partial };
 }
 
 const escapeHtml = (v: string) => (v || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -119,7 +254,16 @@ export function fillTemplate(tpl: string, data: Record<string, string>): string 
   return tpl.replace(/\{(\w+)\}/g, (_, k) => data[k] ?? '');
 }
 
-const CORNER_SVG = (color: string) => `<svg viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg"><g fill="none" stroke="${color}" stroke-width="1.2"><path d="M2 14 Q2 2 14 2"/><path d="M6 14 Q6 6 14 6"/><circle cx="14" cy="14" r="2.5" fill="${color}"/><path d="M14 2 L18 6 M2 14 L6 18" stroke-width="1"/></g></svg>`;
+const getCornerSVG = (color: string, preset?: string, certType?: CertType) => {
+  if (preset === 'executive-navy' || certType === 'transfer') {
+    return `<svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg"><g fill="none" stroke="${color}"><path d="M4 24 L4 4 L24 4" stroke-width="2.4"/><rect x="3" y="3" width="7" height="7" fill="${color}"/><circle cx="20" cy="20" r="2" fill="${color}"/></g></svg>`;
+  }
+  if (preset === 'emerald-heritage' || certType === 'testimonial') {
+    return `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" stroke="${color}" stroke-width="1.3"><path d="M4 26 Q12 16 16 12 Q20 8 26 4"/><path d="M7 26 Q15 19 19 15 Q23 11 26 7" stroke-width="0.8"/><rect x="18" y="18" width="7" height="7" fill="${color}" fill-opacity="0.25" transform="rotate(45 21.5 21.5)"/><rect x="18" y="18" width="7" height="7" stroke="${color}" stroke-width="1" transform="rotate(0 21.5 21.5)"/><circle cx="21.5" cy="21.5" r="1.5" fill="${color}"/><path d="M4 4 L10 10" stroke-width="1.4"/></g></svg>`;
+  }
+  // Royal gold (default / certificate)
+  return `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" stroke="${color}" stroke-width="1.3"><path d="M4 22 C4 12, 12 4, 22 4"/><path d="M8 22 C8 14, 14 8, 22 8"/><circle cx="22" cy="22" r="3.5" fill="${color}" fill-opacity="0.25"/><circle cx="22" cy="22" r="1.5" fill="${color}"/><path d="M22 4 L28 10 M4 22 L10 28" stroke-width="1.2"/><path d="M4 4 L14 14" stroke-width="1.6"/><circle cx="7" cy="7" r="1.5" fill="${color}"/></g></svg>`;
+};
 
 export interface RenderInput {
   cfg: CertTemplateConfig;
@@ -217,11 +361,12 @@ export function renderCertificateHTML(input: RenderInput): string {
   const dual = (en: string, bn: string, ar?: string) =>
     isArOnly ? (ar || en) : isEnOnly ? en : isBnOnly ? bn : `${en} / ${bn}`;
 
+  const cornerSvgMarkup = getCornerSVG(cfg.borderColor, cfg.themePreset, certType);
   const corners = cfg.showCornerOrnaments ? `
-    <div class="corner tl">${CORNER_SVG(cfg.borderColor)}</div>
-    <div class="corner tr">${CORNER_SVG(cfg.borderColor)}</div>
-    <div class="corner bl">${CORNER_SVG(cfg.borderColor)}</div>
-    <div class="corner br">${CORNER_SVG(cfg.borderColor)}</div>` : '';
+    <div class="corner tl">${cornerSvgMarkup}</div>
+    <div class="corner tr">${cornerSvgMarkup}</div>
+    <div class="corner bl">${cornerSvgMarkup}</div>
+    <div class="corner br">${cornerSvgMarkup}</div>` : '';
 
   const watermark = cfg.showWatermark
     ? (logoUrl
@@ -292,11 +437,34 @@ export function renderCertificateHTML(input: RenderInput): string {
   })();
 
   const sealBlock = cfg.showSeal && sigJustify !== 'flex-start'
-    ? `<div class="seal">
-        ${showEn ? `<div class="seal-en">OFFICIAL</div>` : ''}
-        ${showBn ? `<div class="seal-bn">প্রাতিষ্ঠানিক সিল</div>` : ''}
-        ${showAr ? `<div class="seal-bn" style="font-family:'Amiri',serif;">الختم الرسمي</div>` : ''}
-      </div>` : '';
+    ? (() => {
+        if (cfg.themePreset === 'executive-navy' || certType === 'transfer') {
+          return `<div class="seal seal-navy">
+            <div class="seal-ring"></div>
+            <div class="seal-head">OFFICIAL RECORD</div>
+            <div class="seal-star">&starf; &starf; &starf;</div>
+            <div class="seal-sub">${isBnOnly ? 'যাচাইকৃত ছাড়পত্র' : 'VERIFIED TC'}</div>
+            <div class="seal-foot">${escapeHtml(data.sessionName || 'ACADEMIC')}</div>
+          </div>`;
+        }
+        if (cfg.themePreset === 'emerald-heritage' || certType === 'testimonial') {
+          return `<div class="seal seal-emerald">
+            <div class="seal-ring"></div>
+            <div class="seal-head" style="font-family:'Amiri',serif;font-size:10px;">شهادة تقدير</div>
+            <div class="seal-sub">${isArOnly ? 'سلوك حسن' : isBnOnly ? 'প্রশংসাপত্র' : 'TESTIMONIAL'}</div>
+            <div class="seal-star">&starf; &starf; &starf;</div>
+            <div class="seal-foot">PRESTIGE SEAL</div>
+          </div>`;
+        }
+        return `<div class="seal seal-gold">
+          <div class="seal-ring"></div>
+          <div class="seal-head">OFFICIAL AWARD</div>
+          <div class="seal-star">&starf; &starf; &starf;</div>
+          <div class="seal-sub">${isBnOnly ? 'স্বীকৃতি সনদ' : 'EXCELLENCE'}</div>
+          <div class="seal-foot">APPROVED</div>
+        </div>`;
+      })()
+    : '';
 
   const wishesText = isArOnly ? '~ مع أطيب التمنيات ~' : isBnOnly ? '~ শুভকামনা ~' : '~ Best Wishes ~';
 
@@ -385,9 +553,12 @@ export function renderCertificateHTML(input: RenderInput): string {
   html[dir="rtl"] .info > div b{font-family:'Amiri',serif;letter-spacing:0;text-transform:none;font-size:10px}
   html[dir="rtl"] .info > div span{font-family:'Amiri','Scheherazade New',serif;font-size:12px;direction:rtl}
   .footer{display:flex;align-items:flex-end;margin-top:auto;padding:14px 4px 0;border-top:1px solid rgba(212,175,55,.4);gap:24px}
-  .seal{width:88px;height:88px;border:2px dashed ${cfg.borderColor};border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:${cfg.headerAccentColor};text-align:center;background:rgba(212,175,55,.05)}
-  .seal .seal-en{font-family:'Cinzel',serif;font-size:8px;font-weight:700;letter-spacing:1.5px}
-  .seal .seal-bn{font-family:'Noto Serif Bengali',serif;font-size:9px;font-weight:600;margin-top:2px}
+  .seal{width:92px;height:92px;border:2px dashed ${cfg.borderColor};border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:${cfg.headerAccentColor};text-align:center;background:rgba(0,0,0,.02);position:relative;padding:5px;box-sizing:border-box}
+  .seal .seal-ring{position:absolute;inset:3px;border:1px solid ${cfg.innerBorderColor};border-radius:50%;opacity:.75}
+  .seal .seal-head{font-family:'Cinzel',serif;font-size:7px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${cfg.titleColor};line-height:1}
+  .seal .seal-star{font-size:8px;line-height:1;margin:2px 0;letter-spacing:1.5px;color:${cfg.borderColor}}
+  .seal .seal-sub{font-family:'Noto Serif Bengali','Cinzel',serif;font-size:8.5px;font-weight:700;letter-spacing:.8px;color:${cfg.titleColor};line-height:1.1}
+  .seal .seal-foot{font-family:'Cinzel',serif;font-size:6px;letter-spacing:1px;opacity:.8;margin-top:2px;text-transform:uppercase}
   .wishes{font-family:'Great Vibes',cursive;font-size:18px;color:${cfg.headerAccentColor};align-self:flex-end;padding-bottom:8px}
   .sig{text-align:center;min-width:200px}
   .sig .line{border-top:1.5px solid ${cfg.titleColor};margin:30px 14px 4px}

@@ -22,21 +22,45 @@ import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 
 type CertType = 'certificate' | 'transfer' | 'testimonial';
 
-const TYPE_META: Record<CertType, { bn: string; en: string; icon: any; titleBn: string; titleEn: string; titleAr: string; color: string }> = {
+const TYPE_META: Record<CertType, {
+  bn: string;
+  en: string;
+  icon: any;
+  titleBn: string;
+  titleEn: string;
+  titleAr: string;
+  color: string;
+  badgeBg: string;
+  badgeText: string;
+  descBn: string;
+  descEn: string;
+}> = {
   certificate: {
     bn: 'সার্টিফিকেট', en: 'Certificate', icon: Award,
     titleBn: 'প্রশংসা সনদপত্র', titleEn: 'Certificate of Achievement', titleAr: 'شهادة تقدير',
     color: 'from-amber-500 to-orange-500',
+    badgeBg: 'bg-amber-500/15 border-amber-500/30',
+    badgeText: 'text-amber-700 dark:text-amber-400',
+    descBn: 'কোর্স সম্পন্ন, হিফজ সমাপ্তি ও কৃতিত্ব সনদপত্র ইস্যু ও ব্যবস্থাপনা',
+    descEn: 'Issue and manage course completion, memorization & achievement certificates',
   },
   transfer: {
     bn: 'ছাড়পত্র', en: 'Transfer Certificate', icon: FileText,
     titleBn: 'ছাড়পত্র', titleEn: 'Transfer Certificate', titleAr: 'شهادة انتقال',
-    color: 'from-blue-500 to-cyan-500',
+    color: 'from-blue-600 to-indigo-600',
+    badgeBg: 'bg-blue-500/15 border-blue-500/30',
+    badgeText: 'text-blue-700 dark:text-blue-400',
+    descBn: 'শিক্ষার্থীর বদলি, প্রাতিষ্ঠানিক ক্লিয়ারেন্স ও ট্রান্সফার রেকর্ড ব্যবস্থাপনা',
+    descEn: 'Issue and manage student transfer, departure & official institutional clearance',
   },
   testimonial: {
     bn: 'প্রশংসাপত্র', en: 'Testimonial', icon: ScrollText,
     titleBn: 'প্রশংসাপত্র', titleEn: 'Testimonial', titleAr: 'شهادة حسن سيرة وسلوك',
-    color: 'from-emerald-500 to-teal-500',
+    color: 'from-emerald-600 to-teal-600',
+    badgeBg: 'bg-emerald-500/15 border-emerald-500/30',
+    badgeText: 'text-emerald-700 dark:text-emerald-400',
+    descBn: 'শিক্ষার্থীর চরিত্র, দ্বীনি আচরণ ও প্রাতিষ্ঠানিক মূল্যায়ন প্রত্যয়নপত্র ব্যবস্থাপনা',
+    descEn: 'Issue and manage student character, moral conduct & conduct testimonials',
   },
 };
 
@@ -261,7 +285,7 @@ const AdminCertificates = () => {
     const inst = institution || ({} as any);
     const meta = TYPE_META[cert.certificate_type as CertType];
     const tplRow = templates.find((t: any) => t.template_type === cert.certificate_type);
-    const cfg = mergeTemplate((tplRow?.config ?? null) as Partial<CertTemplateConfig> | null);
+    const cfg = mergeTemplate((tplRow?.config ?? null) as Partial<CertTemplateConfig> | null, cert.certificate_type as CertType);
 
     // Apply global footer text from website settings if no template-specific footer is set
     const isEnOnlyEarly = langChoice === 'en-only';
@@ -466,15 +490,15 @@ const AdminCertificates = () => {
       <div className="space-y-5">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center">
-            <GraduationCap className="w-6 h-6 text-primary" />
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${tab === 'certificate' ? 'bg-amber-500/15 text-amber-600' : tab === 'transfer' ? 'bg-blue-500/15 text-blue-600' : 'bg-emerald-500/15 text-emerald-600'}`}>
+            <TabIcon className="w-6 h-6" />
           </div>
           <div>
             <h1 className="text-2xl font-display font-bold text-foreground">
-              {bn ? 'ছাত্রদের সার্টিফিকেট' : 'Student Certificates'}
+              {bn ? `ছাত্রদের ${TYPE_META[tab].bn}` : `Student ${TYPE_META[tab].en}`}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {bn ? 'সার্টিফিকেট, ছাড়পত্র এবং প্রশংসাপত্র ইস্যু ও ব্যবস্থাপনা' : 'Issue and manage certificates, transfers & testimonials'}
+              {bn ? TYPE_META[tab].descBn : TYPE_META[tab].descEn}
             </p>
           </div>
         </div>
@@ -485,6 +509,7 @@ const AdminCertificates = () => {
             const m = TYPE_META[k];
             const Icon = m.icon;
             const active = tab === k;
+            const count = certs.filter((c: any) => c.certificate_type === k).length;
             return (
               <button key={k} onClick={() => setTab(k)}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-semibold transition-all border-2 ${
@@ -493,7 +518,10 @@ const AdminCertificates = () => {
                     : 'bg-background border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'
                 }`}>
                 <Icon className="w-4 h-4" />
-                {bn ? m.bn : m.en}
+                <span>{bn ? m.bn : m.en}</span>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${active ? 'bg-white/25 text-white' : 'bg-muted text-muted-foreground'}`}>
+                  {count}
+                </span>
               </button>
             );
           })}
@@ -542,6 +570,8 @@ const AdminCertificates = () => {
                   <TableHead>{bn ? 'আইডি' : 'ID'}</TableHead>
                   <TableHead>{bn ? 'শ্রেণী' : 'Class'}</TableHead>
                   {tab === 'certificate' && <TableHead>{bn ? 'ক্যাটেগরি' : 'Category'}</TableHead>}
+                  {tab === 'transfer' && <TableHead>{bn ? 'ছাড়ার কারণ' : 'Reason'}</TableHead>}
+                  {tab === 'testimonial' && <TableHead>{bn ? 'আচরণ ও মূল্যায়ন' : 'Conduct'}</TableHead>}
                   <TableHead>{bn ? 'ইস্যুর তারিখ' : 'Issue Date'}</TableHead>
                   <TableHead className="text-right">{bn ? 'অ্যাকশন' : 'Action'}</TableHead>
                 </TableRow>
@@ -561,7 +591,19 @@ const AdminCertificates = () => {
                       <TableCell>{className || '-'}</TableCell>
                       {tab === 'certificate' && (
                         <TableCell>
-                          {catLabel ? <Badge variant="secondary" className="rounded-full">{catLabel}</Badge> : '-'}
+                          {catLabel ? <Badge variant="secondary" className="rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">{catLabel}</Badge> : '-'}
+                        </TableCell>
+                      )}
+                      {tab === 'transfer' && (
+                        <TableCell>
+                          <span className="text-xs text-muted-foreground">{c.reason_bn || c.reason || (bn ? 'কোর্স সম্পন্ন / বদলি' : 'Transfer')}</span>
+                        </TableCell>
+                      )}
+                      {tab === 'testimonial' && (
+                        <TableCell>
+                          <Badge variant="outline" className="rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-medium text-xs">
+                            {c.conduct_bn || c.conduct || (bn ? 'সন্তোষজনক' : 'Satisfactory')}
+                          </Badge>
                         </TableCell>
                       )}
                       <TableCell>{new Date(c.issue_date).toLocaleDateString(bn ? 'bn-BD' : 'en-GB')}</TableCell>
