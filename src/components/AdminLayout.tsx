@@ -71,10 +71,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   const desktopMenuRef = useRef<HTMLElement | null>(null);
   const mobileMenuRef = useRef<HTMLElement | null>(null);
   const menuScrollPositionsRef = useRef({ desktop: 0, mobile: 0 });
-  // Track manual accordion toggles so route-change auto-open does not fight the user
-  const manualToggleAtRef = useRef<number>(0);
-  const manualOpenRef = useRef<Set<string>>(new Set());
-  const manualClosedRef = useRef<Set<string>>(new Set());
+  const lastPathRef = useRef<string>('');
 
   // Fetch staff record for sidebar avatar (shared lookup: user_id → email fallback + auto-link)
   const { data: sidebarStaffPhoto } = useCurrentStaff();
@@ -159,18 +156,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   };
 
   const toggleGroup = (key: string) => {
-    manualToggleAtRef.current = Date.now();
-    setOpenMenuId(prev => {
-      const next = prev === key ? null : key;
-      if (next === key) {
-        manualOpenRef.current.add(key);
-        manualClosedRef.current.delete(key);
-      } else {
-        manualClosedRef.current.add(key);
-        manualOpenRef.current.delete(key);
-      }
-      return next;
-    });
+    setOpenMenuId(prev => (prev === key ? null : key));
   };
 
   const persistMenuScroll = (mobile: boolean, scrollTop: number) => {
@@ -326,8 +312,12 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     }
   });
 
-  // Auto-open parent of active child on route change, but do not override a recent manual toggle
+  // Auto-open parent of active child ONLY on actual route navigation (never overrides user clicks)
   useEffect(() => {
+    const currentFullPath = location.pathname + location.search;
+    if (lastPathRef.current === currentFullPath) return;
+    lastPathRef.current = currentFullPath;
+
     const activeParent = menuItems.find(item =>
       item.children?.some(c => {
         const [cPath, cSearch] = c.path.split('?');
@@ -336,25 +326,10 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           : location.pathname === c.path;
       })
     );
-    const activePath = activeParent?.path ?? null;
-    const recentlyToggled = Date.now() - manualToggleAtRef.current < 350;
-    if (recentlyToggled) {
-      // Respect user's last manual action; only allow auto-open if it matches a path the user opened
-      if (activePath && manualOpenRef.current.has(activePath)) {
-        setOpenMenuId(activePath);
-      }
-      return;
+    if (activeParent?.path) {
+      setOpenMenuId(activeParent.path);
     }
-    // If user manually closed this exact group, keep it closed until they navigate away from it
-    if (activePath && manualClosedRef.current.has(activePath)) {
-      return;
-    }
-    // Clear manual-close record when leaving the group
-    if (activePath === null || (openMenuId && activePath !== openMenuId)) {
-      if (openMenuId) manualClosedRef.current.delete(openMenuId);
-    }
-    setOpenMenuId(activePath);
-  }, [location.pathname, location.search, menuItems, openMenuId]);
+  }, [location.pathname, location.search, menuItems]);
 
 
   // When embedded or already inside an admin shell, render only the page content
