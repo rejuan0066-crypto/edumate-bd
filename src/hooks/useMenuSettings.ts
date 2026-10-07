@@ -37,8 +37,8 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
     { id: 'attendance-student', path: '/admin/student-attendance', label_bn: 'ছাত্র উপস্থিতি', label_en: 'Student Attendance', icon: 'CalendarCheck', visible: true, sort_order: 4 },
   ]},
 
-  // স্টাফ/শিক্ষক ব্যবস্থাপনা
-  { id: 'staff', path: '/admin/staff', label_bn: 'স্টাফ/শিক্ষক', label_en: 'Staff/Teacher', icon: 'UserCog', visible: true, sort_order: 2, children: [
+  // স্টাফ ব্যবস্থাপনা
+  { id: 'staff', path: '/admin/staff', label_bn: 'স্টাফ ব্যবস্থাপনা', label_en: 'Staff Management', icon: 'UserCog', visible: true, sort_order: 2, children: [
     { id: 'teachers', path: '/admin/teachers', label_bn: 'শিক্ষক', label_en: 'Teachers', icon: 'GraduationCap', visible: true, sort_order: 0 },
     { id: 'administrative-staff', path: '/admin/administrative-staff', label_bn: 'প্রশাসনিক স্টাফ', label_en: 'Administrative Staff', icon: 'Briefcase', visible: true, sort_order: 1 },
     { id: 'support-staff', path: '/admin/support-staff', label_bn: 'সহায়ক স্টাফ', label_en: 'Support Staff', icon: 'Wrench', visible: true, sort_order: 2 },
@@ -215,10 +215,13 @@ const collectAllIds = (items: MenuItemConfig[]): Set<string> => {
 
 // Merge saved menu with defaults so newly added default items appear automatically
 const mergeWithDefaults = (saved: MenuItemConfig[], defaults: MenuItemConfig[]): MenuItemConfig[] => {
-  // Auto-fix known path corrections
+  // Auto-fix known path corrections and updated labels
   saved = saved.map(item => {
     if (item.id === 'fees' && item.path === '/admin/fees') {
       return { ...item, path: '/admin/students-fees' };
+    }
+    if (item.id === 'staff' || item.path === '/admin/staff') {
+      return { ...item, label_bn: 'স্টাফ ব্যবস্থাপনা', label_en: 'Staff Management' };
     }
     return item;
   });
@@ -256,11 +259,28 @@ const mergeWithDefaults = (saved: MenuItemConfig[], defaults: MenuItemConfig[]):
   ];
 };
 
+const sanitizeConfig = (config: MenuConfig): MenuConfig => {
+  if (!config) return config;
+  const fixItems = (items: MenuItemConfig[] = []) =>
+    items.map(item => {
+      if (item.id === 'staff' || item.path === '/admin/staff') {
+        return { ...item, label_bn: 'স্টাফ ব্যবস্থাপনা', label_en: 'Staff Management' };
+      }
+      return item;
+    });
+
+  return {
+    ...config,
+    sidebar: fixItems(config.sidebar),
+    public: fixItems(config.public),
+  };
+};
+
 const MENU_CACHE_KEY = 'menu-settings-cache';
 const readMenuCache = (): MenuConfig => {
   try {
     const raw = localStorage.getItem(MENU_CACHE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) return sanitizeConfig(JSON.parse(raw));
   } catch {}
   return DEFAULT_MENU_CONFIG;
 };

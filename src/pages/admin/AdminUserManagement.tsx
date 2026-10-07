@@ -92,7 +92,7 @@ const MENU_PATHS = [
   { path: '/admin', label_bn: 'ড্যাশবোর্ড', label_en: 'Dashboard' },
   { path: '/admin/profile', label_bn: 'প্রোফাইল', label_en: 'Profile' },
   { path: '/admin/students', label_bn: 'ছাত্র ব্যবস্থাপনা', label_en: 'Students' },
-  { path: '/admin/staff', label_bn: 'স্টাফ/শিক্ষক', label_en: 'Staff/Teacher' },
+  { path: '/admin/staff', label_bn: 'স্টাফ ব্যবস্থাপনা', label_en: 'Staff Management' },
   { path: '/admin/divisions', label_bn: 'বিভাগ ও শ্রেণী', label_en: 'Divisions' },
   { path: '/admin/academic-sessions', label_bn: 'একাডেমিক সেশন', label_en: 'Academic Sessions' },
   { path: '/admin/subjects', label_bn: 'বিষয়সমূহ', label_en: 'Subjects' },

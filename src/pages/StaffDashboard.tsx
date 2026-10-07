@@ -46,7 +46,7 @@ interface StaffModule {
 
 const STAFF_MODULES: StaffModule[] = [
   { key: 'students', menuPath: '/admin/students', labelBn: 'ছাত্র ব্যবস্থাপনা', labelEn: 'Students', icon: Users, component: AdminStudents },
-  { key: 'staff', menuPath: '/admin/staff', labelBn: 'শিক্ষক/স্টাফ', labelEn: 'Staff', icon: Users, component: AdminStaff },
+  { key: 'staff', menuPath: '/admin/staff', labelBn: 'স্টাফ ব্যবস্থাপনা', labelEn: 'Staff Management', icon: Users, component: AdminStaff },
   { key: 'divisions', menuPath: '/admin/divisions', labelBn: 'বিভাগ', labelEn: 'Divisions', icon: BookOpen, component: AdminDivisions },
   { key: 'subjects', menuPath: '/admin/subjects', labelBn: 'বিষয়', labelEn: 'Subjects', icon: BookOpen, component: AdminSubjects },
   { key: 'results', menuPath: '/admin/results', labelBn: 'ফলাফল', labelEn: 'Results', icon: FileText, component: AdminResults },

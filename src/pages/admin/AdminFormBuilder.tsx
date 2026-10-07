@@ -117,7 +117,7 @@ const ADMIN_MENUS = [
   { value: '/admin', label: 'Dashboard', label_bn: 'ড্যাশবোর্ড' },
   { value: '/admin/donors', label: 'Donor List', label_bn: 'দাতা তালিকা' },
   { value: '/admin/students', label: 'Student Management', label_bn: 'ছাত্র ব্যবস্থাপনা' },
-  { value: '/admin/staff', label: 'Staff/Teacher Management', label_bn: 'স্টাফ/শিক্ষক ব্যবস্থাপনা' },
+  { value: '/admin/staff', label: 'Staff Management', label_bn: 'স্টাফ ব্যবস্থাপনা' },
   { value: '/admin/divisions', label: 'Division & Class', label_bn: 'বিভাগ ও শ্রেণী' },
   { value: '/admin/fee-receipts', label: 'Fee Receipts', label_bn: 'ফি রসিদ' },
   { value: '/admin/results', label: 'Results', label_bn: 'ফলাফল' },
