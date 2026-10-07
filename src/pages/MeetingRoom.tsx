@@ -283,21 +283,28 @@ const MeetingRoom = () => {
               </Card>
             )}
 
-            {(meeting.provider === 'jaas' || meeting.provider === 'daily') && status === 'live' && meeting.meeting_url && mediaReady && (
-              <Card className="p-2 rounded-[32px] overflow-hidden">
-                <iframe
-                  src={meeting.meeting_url}
-                  className="w-full h-[70vh] rounded-[28px] border-0"
-                  allow="camera *; microphone *; autoplay *; fullscreen *; display-capture *; speaker-selection *; clipboard-write *"
-                  allowFullScreen
-                  {...({ allowusermedia: 'true' } as any)}
-                  title={meeting.title}
-                />
-                <p className="text-xs text-muted-foreground text-center mt-2 px-2">
-                  {bn ? '🎙️ আনমিউট না হলে: ব্রাউজার অ্যাড্রেস বারের 🔒 আইকনে ট্যাপ করে Microphone "Allow" করুন।' : '🎙️ If unmute fails: Tap 🔒 in address bar, "Allow" Microphone.'}
-                </p>
-              </Card>
-            )}
+            {(meeting.provider === 'jaas' || meeting.provider === 'daily') && status === 'live' && meeting.meeting_url && mediaReady && (() => {
+              let liveUrl = meeting.meeting_url;
+              if (meeting.provider === 'jaas' && liveUrl.startsWith('vpaas-magic-cookie-')) {
+                const room = meeting.meeting_room || meeting.id || 'Meeting';
+                liveUrl = `https://8x8.vc/${liveUrl}/${room}`;
+              }
+              return (
+                <Card className="p-2 rounded-[32px] overflow-hidden">
+                  <iframe
+                    src={liveUrl}
+                    className="w-full h-[70vh] rounded-[28px] border-0"
+                    allow="camera *; microphone *; autoplay *; fullscreen *; display-capture *; speaker-selection *; clipboard-write *"
+                    allowFullScreen
+                    {...({ allowusermedia: 'true' } as any)}
+                    title={meeting.title}
+                  />
+                  <p className="text-xs text-muted-foreground text-center mt-2 px-2">
+                    {bn ? '🎙️ আনমিউট না হলে: ব্রাউজার অ্যাড্রেস বারের 🔒 আইকনে ট্যাপ করে Microphone "Allow" করুন।' : '🎙️ If unmute fails: Tap 🔒 in address bar, "Allow" Microphone.'}
+                  </p>
+                </Card>
+              );
+            })()}
 
             {(meeting.provider === 'zoom' || meeting.provider === 'google_meet') && (
               <Card className="p-8 rounded-[32px] text-center">

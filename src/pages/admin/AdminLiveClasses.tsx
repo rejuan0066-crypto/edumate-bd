@@ -26,7 +26,7 @@ import {
 import { toast } from 'sonner';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 
-type Provider = 'jitsi' | 'zoom' | 'google_meet' | 'youtube';
+type Provider = 'jitsi' | 'jaas' | 'daily' | 'zoom' | 'google_meet' | 'youtube';
 type AccessMode = 'public' | 'logged_in' | 'class_based' | 'access_code';
 type Status = 'scheduled' | 'live' | 'ended' | 'cancelled';
 
@@ -80,7 +80,9 @@ const emptyForm: LiveClassForm = {
 
 const providerLabel = (p: Provider, bn: boolean) => {
   const map: Record<Provider, [string, string]> = {
-    jitsi: ['Jitsi Meet', 'জিতসি মিট'],
+    jitsi: ['Jitsi Meet (In-App)', 'জিতসি মিট (ইন-অ্যাপ)'],
+    jaas: ['JaaS by 8x8 (In-App)', 'JaaS by 8x8 (ইন-অ্যাপ)'],
+    daily: ['Daily.co (In-App)', 'Daily.co (ইন-অ্যাপ)'],
     zoom: ['Zoom', 'জুম'],
     google_meet: ['Google Meet', 'গুগল মিট'],
     youtube: ['YouTube Live', 'ইউটিউব লাইভ'],
@@ -283,8 +285,19 @@ const AdminLiveClasses = () => {
         throw new Error(bn ? 'ক্লাস নির্বাচন করুন' : 'Class required');
       }
 
+      let cleanUrl = payload.meeting_url.trim();
+      if (payload.provider === 'jaas') {
+        if (cleanUrl.startsWith('vpaas-magic-cookie-')) {
+          const room = payload.meeting_room || payload.title.replace(/[^a-zA-Z0-9]/g, '') || 'LiveClass';
+          cleanUrl = `https://8x8.vc/${cleanUrl}/${room}`;
+        } else if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+          cleanUrl = `https://${cleanUrl}`;
+        }
+      }
+
       const dbPayload: any = {
         ...payload,
+        meeting_url: cleanUrl,
         scheduled_start: new Date(payload.scheduled_start).toISOString(),
         scheduled_end: new Date(payload.scheduled_end).toISOString(),
         created_by: user?.id ?? null,
@@ -534,7 +547,9 @@ const AdminLiveClasses = () => {
                 <Select value={form.provider} onValueChange={(v) => setForm({ ...form, provider: v as Provider })}>
                   <SelectTrigger className="mt-1.5 rounded-xl"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="jitsi">{providerLabel('jitsi', bn)} ({bn ? 'এমবেডেড' : 'Embedded'})</SelectItem>
+                    <SelectItem value="jitsi">{providerLabel('jitsi', bn)}</SelectItem>
+                    <SelectItem value="jaas">{providerLabel('jaas', bn)}</SelectItem>
+                    <SelectItem value="daily">{providerLabel('daily', bn)}</SelectItem>
                     <SelectItem value="zoom">{providerLabel('zoom', bn)}</SelectItem>
                     <SelectItem value="google_meet">{providerLabel('google_meet', bn)}</SelectItem>
                     <SelectItem value="youtube">{providerLabel('youtube', bn)}</SelectItem>
@@ -555,13 +570,28 @@ const AdminLiveClasses = () => {
               </div>
             </div>
 
-            {form.provider === 'jitsi' ? (
+            {form.provider === 'jitsi' && (
               <div>
                 <Label>{bn ? 'রুম নাম (অনন্য)' : 'Room name (unique)'}</Label>
                 <Input value={form.meeting_room} onChange={(e) => setForm({ ...form, meeting_room: e.target.value })} placeholder="class-abc123" className="mt-1.5 rounded-xl" />
                 <p className="text-xs text-muted-foreground mt-1">https://meet.jit.si/{form.meeting_room || '[room]'}</p>
               </div>
-            ) : (
+            )}
+            {form.provider === 'jaas' && (
+              <div>
+                <Label>{bn ? 'JaaS মিটিং URL বা App ID' : 'JaaS Meeting URL or App ID'} *</Label>
+                <Input value={form.meeting_url} onChange={(e) => setForm({ ...form, meeting_url: e.target.value })} placeholder="https://8x8.vc/vpaas-magic-cookie-XXXX/RoomName" className="mt-1.5 rounded-xl" />
+                <p className="text-xs text-muted-foreground mt-1">{bn ? '8x8.vc থেকে পূর্ণ URL অথবা vpaas-magic-cookie-XXXX পেস্ট করুন।' : 'Paste full URL with your tenant from 8x8.vc or App ID.'}</p>
+              </div>
+            )}
+            {form.provider === 'daily' && (
+              <div>
+                <Label>{bn ? 'Daily.co রুম URL' : 'Daily.co Room URL'} *</Label>
+                <Input value={form.meeting_url} onChange={(e) => setForm({ ...form, meeting_url: e.target.value })} placeholder="https://your-domain.daily.co/room-name" className="mt-1.5 rounded-xl" />
+                <p className="text-xs text-muted-foreground mt-1">{bn ? 'Daily.co থেকে রুম URL পেস্ট করুন। সাইটের ভেতরেই চলবে।' : 'Paste Daily.co room URL. Embeds in-app.'}</p>
+              </div>
+            )}
+            {(form.provider === 'zoom' || form.provider === 'google_meet' || form.provider === 'youtube') && (
               <div>
                 <Label>{bn ? 'মিটিং URL' : 'Meeting URL'} *</Label>
                 <Input value={form.meeting_url} onChange={(e) => setForm({ ...form, meeting_url: e.target.value })} placeholder="https://…" className="mt-1.5 rounded-xl" />

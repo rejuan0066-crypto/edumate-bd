@@ -275,8 +275,19 @@ const AdminMeetings = () => {
         throw new Error(bn ? 'অ্যাক্সেস কোড দিন' : 'Access code required');
       }
 
+      let cleanUrl = payload.meeting_url.trim();
+      if (payload.provider === 'jaas') {
+        if (cleanUrl.startsWith('vpaas-magic-cookie-')) {
+          const room = payload.meeting_room || payload.title.replace(/[^a-zA-Z0-9]/g, '') || 'Meeting';
+          cleanUrl = `https://8x8.vc/${cleanUrl}/${room}`;
+        } else if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+          cleanUrl = `https://${cleanUrl}`;
+        }
+      }
+
       const dbPayload: any = {
         ...payload,
+        meeting_url: cleanUrl,
         scheduled_start: new Date(payload.scheduled_start).toISOString(),
         scheduled_end: new Date(payload.scheduled_end).toISOString(),
         organizer_id: user?.id ?? null,

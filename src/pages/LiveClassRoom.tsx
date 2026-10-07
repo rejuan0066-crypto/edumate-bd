@@ -363,16 +363,54 @@ const LiveClassRoom = () => {
     }
 
     // LIVE
+    const mUrl = lc.meeting_url || '';
+    const isJaaS = lc.provider === 'jaas' || mUrl.includes('8x8.vc') || mUrl.startsWith('vpaas-magic-cookie-');
+    const isDaily = lc.provider === 'daily' || mUrl.includes('daily.co');
+
+    if (isJaaS) {
+      let finalJaaSUrl = mUrl;
+      if (mUrl.startsWith('vpaas-magic-cookie-')) {
+        const room = lc.meeting_room || lc.id || 'LiveClass';
+        finalJaaSUrl = `https://8x8.vc/${mUrl}/${room}`;
+      } else if (!mUrl.startsWith('http://') && !mUrl.startsWith('https://')) {
+        finalJaaSUrl = `https://${mUrl}`;
+      }
+      return (
+        <div className="aspect-video rounded-[24px] overflow-hidden bg-black shadow-2xl">
+          <iframe
+            src={finalJaaSUrl}
+            className="w-full h-full border-0"
+            allow="camera *; microphone *; autoplay *; fullscreen *; display-capture *; speaker-selection *; clipboard-write *"
+            allowFullScreen
+            title="JaaS Live Class"
+          />
+        </div>
+      );
+    }
+
+    if (isDaily) {
+      return (
+        <div className="aspect-video rounded-[24px] overflow-hidden bg-black shadow-2xl">
+          <iframe
+            src={mUrl}
+            className="w-full h-full border-0"
+            allow="camera *; microphone *; autoplay *; fullscreen *; display-capture *; speaker-selection *; clipboard-write *"
+            allowFullScreen
+            title="Daily.co Live Class"
+          />
+        </div>
+      );
+    }
+
     if (lc.provider === 'jitsi') {
       const room = lc.meeting_room || lc.id;
-      const userInfo = encodeURIComponent(JSON.stringify({ displayName }));
       const src = `https://meet.jit.si/${room}#userInfo.displayName="${displayName}"&config.prejoinPageEnabled=false`;
       return (
-        <div className="aspect-video rounded-[24px] overflow-hidden bg-black">
+        <div className="aspect-video rounded-[24px] overflow-hidden bg-black shadow-2xl">
           <iframe
             src={src}
-            className="w-full h-full"
-            allow="camera; microphone; fullscreen; display-capture; autoplay"
+            className="w-full h-full border-0"
+            allow="camera *; microphone *; autoplay *; fullscreen *; display-capture *; speaker-selection *"
             allowFullScreen
             title="Jitsi Meet"
           />
@@ -381,10 +419,10 @@ const LiveClassRoom = () => {
     }
     if (lc.provider === 'youtube' && lc.meeting_url) {
       return (
-        <div className="aspect-video rounded-[24px] overflow-hidden bg-black">
+        <div className="aspect-video rounded-[24px] overflow-hidden bg-black shadow-2xl">
           <iframe
             src={youtubeEmbed(lc.meeting_url)}
-            className="w-full h-full"
+            className="w-full h-full border-0"
             allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
             allowFullScreen
             title="YouTube Live"
