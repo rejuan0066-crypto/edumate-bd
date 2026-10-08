@@ -74,7 +74,7 @@ const FeePaymentPage = () => {
   const [activeTab, setActiveTab] = useState<'pay' | 'receipts'>('pay');
 
   // Search State for Fee Payment (Session Year, Class, and Roll / Reg)
-  const [searchSessionId, setSearchSessionId] = useState<string>('');
+  const [searchSessionId, setSearchSessionId] = useState<string>('all');
   const [searchClassId, setSearchClassId] = useState<string>('all');
   const [searchIdentifier, setSearchIdentifier] = useState<string>('');
   const [searching, setSearching] = useState(false);
@@ -160,11 +160,11 @@ const FeePaymentPage = () => {
 
   // Auto-select active session if none selected
   useEffect(() => {
-    if (sessions.length > 0 && !searchSessionId) {
+    if (sessions.length > 0 && (!searchSessionId || searchSessionId === 'all')) {
       const active = sessions.find((s: any) => s.is_active) || sessions[0];
       if (active) setSearchSessionId(active.id);
     }
-  }, [sessions, searchSessionId]);
+  }, [sessions]);
 
   // Dynamic fee types
   const { data: dbFeeTypes = [] } = useQuery({
@@ -234,32 +234,86 @@ const FeePaymentPage = () => {
 
     try {
       const normVal = rawVal.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+      const sessId = searchSessionId && searchSessionId !== 'all' ? searchSessionId : null;
+      const clsId = searchClassId && searchClassId !== 'all' ? searchClassId : null;
 
-      const columns = isStaffOrAdmin
-        ? '*, divisions:division_id(name, name_bn), classes:class_id(name, name_bn), academic_sessions:session_id(name, name_bn)'
-        : 'id, name_bn, name_en, student_id, roll_number, registration_no, status, division_id, class_id, session_id, photo_url, divisions:division_id(name, name_bn), classes:class_id(name, name_bn), academic_sessions:session_id(name, name_bn)';
+      let matched: any = null;
 
-      let query = supabase
-        .from('students')
-        .select(columns)
-        .is('deleted_at', null)
-        .or('status.eq.active,status.is.null');
-
-      if (searchSessionId && searchSessionId !== 'all') {
-        query = query.eq('session_id', searchSessionId);
+      // 1. Try dedicated public security-definer RPC if available
+      try {
+        const { data: rpcRows, error: rpcErr } = await (supabase as any).rpc('public_search_student_for_fee', {
+          p_identifier: normVal || rawVal,
+          p_session_id: sessId,
+          p_class_id: clsId,
+        });
+        if (!rpcErr && rpcRows && rpcRows.length > 0) {
+          const r = rpcRows[0];
+          matched = {
+            ...r,
+            classes: { name: r.class_name, name_bn: r.class_name_bn },
+            academic_sessions: { name: r.session_name, name_bn: r.session_name_bn },
+          };
+        }
+      } catch {
+        // Fall through to direct query or legacy RPC
       }
 
-      if (searchClassId && searchClassId !== 'all') {
-        query = query.eq('class_id', searchClassId);
+      // 2. Direct table query (with strict anon/staff permission separation)
+      if (!matched) {
+        const columns = isStaffOrAdmin
+          ? '*, divisions:division_id(name, name_bn), classes:class_id(name, name_bn), academic_sessions:session_id(name, name_bn)'
+          : 'id, name_bn, name_en, student_id, roll_number, registration_no, status, division_id, class_id, session_id, photo_url, divisions:division_id(name, name_bn), classes:class_id(name, name_bn), academic_sessions:session_id(name, name_bn)';
+
+        let query = supabase
+          .from('students')
+          .select(columns)
+          .or('status.eq.active,status.is.null');
+
+        // Only authenticated staff/admin has permission to filter deleted_at
+        if (isStaffOrAdmin) {
+          query = query.is('deleted_at', null);
+        }
+
+        if (sessId) {
+          query = query.eq('session_id', sessId);
+        }
+
+        if (clsId) {
+          query = query.eq('class_id', clsId);
+        }
+
+        query = query.or(
+          `registration_no.eq.${rawVal},registration_no.eq.${normVal},student_id.eq.${rawVal},student_id.eq.${normVal},roll_number.eq.${rawVal},roll_number.eq.${normVal}`
+        );
+
+        const { data, error } = await query.limit(1).maybeSingle();
+        if (!error && data) {
+          matched = data;
+        }
       }
 
-      query = query.or(
-        `registration_no.eq.${rawVal},registration_no.eq.${normVal},student_id.eq.${rawVal},student_id.eq.${normVal},roll_number.eq.${rawVal},roll_number.eq.${normVal}`
-      );
+      // 3. Fallback to existing database RPC lookup_student_for_fee
+      if (!matched) {
+        try {
+          const { data: feeRpc, error: feeRpcErr } = await (supabase as any).rpc('lookup_student_for_fee', {
+            p_reg_no: rawVal,
+          });
+          if (!feeRpcErr && feeRpc && feeRpc.length > 0) {
+            const st = feeRpc[0];
+            const classObj = classes.find((c: any) => c.id === st.class_id);
+            const sessionObj = sessions.find((s: any) => s.id === st.session_id);
+            matched = {
+              ...st,
+              classes: classObj ? { name: classObj.name, name_bn: classObj.name_bn } : null,
+              academic_sessions: sessionObj ? { name: sessionObj.name, name_bn: sessionObj.name_bn } : null,
+            };
+          }
+        } catch {
+          // ignore
+        }
+      }
 
-      const { data, error } = await query.limit(1).maybeSingle();
-      if (error) throw error;
-      if (!data) {
+      if (!matched) {
         toast.error(
           bn
             ? 'উক্ত সেশন, শ্রেণি ও রোল/রেজিস্ট্রেশনে কোনো শিক্ষার্থী পাওয়া যায়নি'
@@ -267,9 +321,10 @@ const FeePaymentPage = () => {
         );
         return;
       }
-      setFoundStudent(data);
+
+      setFoundStudent(matched);
       toast.success(
-        bn ? `${data.name_bn || data.name_en}-এর তথ্য পাওয়া গেছে!` : `Found student: ${data.name_bn || data.name_en}!`
+        bn ? `${matched.name_bn || matched.name_en}-এর তথ্য পাওয়া গেছে!` : `Found student: ${matched.name_bn || matched.name_en}!`
       );
     } catch (e: any) {
       toast.error(e.message || (bn ? 'খুঁজতে সমস্যা হয়েছে' : 'Search error'));
@@ -362,6 +417,7 @@ const FeePaymentPage = () => {
   });
 
   // Private Student Receipt Search (Tab 2) — No open public listing
+  // Private Student Receipt Search (Tab 2) — No open public listing
   const handleSearchStudentReceipts = async () => {
     const queryVal = receiptIdentifier.trim();
     if (!queryVal) {
@@ -370,7 +426,56 @@ const FeePaymentPage = () => {
     }
     setReceiptSearchLoading(true);
     try {
-      // 1. Direct Receipt Number Search (e.g. STU-... or RCP-...)
+      const normQueryVal = queryVal.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+      const sessId = receiptSession && receiptSession !== 'all' ? receiptSession : null;
+      const clsId = receiptClass && receiptClass !== 'all' ? receiptClass : null;
+      const yrNum = receiptYear && receiptYear !== 'all' ? parseInt(receiptYear) : null;
+
+      // 1. Try dedicated public security-definer RPC if available
+      try {
+        const { data: rpcReceipts, error: rpcReceiptErr } = await (supabase as any).rpc('public_search_student_receipts', {
+          p_identifier: normQueryVal || queryVal,
+          p_session_id: sessId,
+          p_class_id: clsId,
+          p_year: yrNum,
+        });
+
+        if (!rpcReceiptErr && rpcReceipts && rpcReceipts.length > 0) {
+          const first = rpcReceipts[0];
+          const studentProfile = {
+            id: first.student_id,
+            name_bn: first.student_name,
+            name_en: first.student_name,
+            student_id: first.student_code,
+            registration_no: first.student_code,
+            roll_number: first.roll,
+            divisions: { name_bn: first.class_name, name: first.class_name },
+          };
+          const formatted = rpcReceipts.map((p: any) => ({
+            id: p.id,
+            receipt_number: p.receipt_number,
+            student_name: p.student_name,
+            student_id: p.student_code,
+            class_name: p.class_name,
+            roll: p.roll,
+            fee_type: bn ? (p.fee_type_bn || p.fee_type) : p.fee_type,
+            amount: p.amount,
+            paid_amount: p.paid_amount,
+            status: p.status,
+            paid_at: p.paid_at,
+            month: p.month,
+            year: p.year,
+          }));
+
+          setReceiptSearchResult({ student: studentProfile, receipts: formatted, hasSearched: true });
+          toast.success(bn ? `${formatted.length}টি রসিদ পাওয়া গেছে` : `Found ${formatted.length} receipt(s)`);
+          return;
+        }
+      } catch {
+        // Fall back to direct query / lookup
+      }
+
+      // 2. Direct Receipt Number Search (e.g. STU-... or RCP-...)
       if (queryVal.toUpperCase().startsWith('STU-') || queryVal.toUpperCase().startsWith('RCP-')) {
         const { data: recPayments, error: recErr } = await supabase
           .from('fee_payments')
@@ -412,37 +517,83 @@ const FeePaymentPage = () => {
         return;
       }
 
-      // 2. Search student by registration_no, student_id, or roll_number (+ optional session & class)
-      const normQueryVal = queryVal.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+      // 3. Search student by registration_no, student_id, or roll_number (+ optional session & class)
+      let matchedStudent: any = null;
 
-      let stuQuery = supabase
-        .from('students')
-        .select('id, name_bn, name_en, student_id, roll_number, registration_no, division_id, class_id, session_id, classes:class_id(name, name_bn), divisions:division_id(name, name_bn), academic_sessions:session_id(name, name_bn)')
-        .is('deleted_at', null)
-        .or('status.eq.active,status.is.null');
-
-      if (receiptSession && receiptSession !== 'all') {
-        stuQuery = stuQuery.eq('session_id', receiptSession);
+      // Try public_search_student_for_fee RPC first
+      try {
+        const { data: rpcStu, error: rpcStuErr } = await (supabase as any).rpc('public_search_student_for_fee', {
+          p_identifier: normQueryVal || queryVal,
+          p_session_id: sessId,
+          p_class_id: clsId,
+        });
+        if (!rpcStuErr && rpcStu && rpcStu.length > 0) {
+          const r = rpcStu[0];
+          matchedStudent = {
+            ...r,
+            divisions: { name_bn: r.class_name_bn, name: r.class_name },
+          };
+        }
+      } catch {
+        // ignore
       }
 
-      if (receiptClass && receiptClass !== 'all') {
-        stuQuery = stuQuery.eq('class_id', receiptClass);
+      if (!matchedStudent) {
+        let stuQuery = supabase
+          .from('students')
+          .select('id, name_bn, name_en, student_id, roll_number, registration_no, division_id, class_id, session_id, classes:class_id(name, name_bn), divisions:division_id(name, name_bn), academic_sessions:session_id(name, name_bn)')
+          .or('status.eq.active,status.is.null');
+
+        if (isStaffOrAdmin) {
+          stuQuery = stuQuery.is('deleted_at', null);
+        }
+
+        if (sessId) {
+          stuQuery = stuQuery.eq('session_id', sessId);
+        }
+
+        if (clsId) {
+          stuQuery = stuQuery.eq('class_id', clsId);
+        }
+
+        stuQuery = stuQuery.or(
+          `registration_no.eq.${queryVal},registration_no.eq.${normQueryVal},student_id.eq.${queryVal},student_id.eq.${normQueryVal},roll_number.eq.${queryVal},roll_number.eq.${normQueryVal}`
+        );
+
+        try {
+          const { data: matchedStudents, error: stuErr } = await stuQuery.limit(5);
+          if (!stuErr && matchedStudents && matchedStudents.length > 0) {
+            matchedStudent = matchedStudents[0];
+          }
+        } catch {
+          // ignore
+        }
       }
 
-      stuQuery = stuQuery.or(
-        `registration_no.eq.${queryVal},registration_no.eq.${normQueryVal},student_id.eq.${queryVal},student_id.eq.${normQueryVal},roll_number.eq.${queryVal},roll_number.eq.${normQueryVal}`
-      );
+      // Fallback to lookup_student_for_fee RPC
+      if (!matchedStudent) {
+        try {
+          const { data: feeRpc, error: feeRpcErr } = await (supabase as any).rpc('lookup_student_for_fee', {
+            p_reg_no: queryVal,
+          });
+          if (!feeRpcErr && feeRpc && feeRpc.length > 0) {
+            const st = feeRpc[0];
+            const classObj = classes.find((c: any) => c.id === st.class_id);
+            matchedStudent = {
+              ...st,
+              divisions: classObj ? { name_bn: classObj.name_bn, name: classObj.name } : null,
+            };
+          }
+        } catch {
+          // ignore
+        }
+      }
 
-      const { data: matchedStudents, error: stuErr } = await stuQuery.limit(5);
-      if (stuErr) throw stuErr;
-
-      if (!matchedStudents || matchedStudents.length === 0) {
+      if (!matchedStudent) {
         toast.error(bn ? 'উক্ত তথ্যে কোনো শিক্ষার্থী পাওয়া যায়নি' : 'No student found with this information');
         setReceiptSearchResult({ student: null, receipts: [], hasSearched: true });
         return;
       }
-
-      const matchedStudent = matchedStudents[0];
 
       // Fetch ONLY this student's paid fee_payments
       let feeQuery = supabase
@@ -676,7 +827,7 @@ const FeePaymentPage = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">{bn ? 'সকল সেশন' : 'All Sessions'}</SelectItem>
-                        {sessions.map((s: any) => (
+                        {sessions.filter((s: any) => Boolean(s?.id)).map((s: any) => (
                           <SelectItem key={s.id} value={s.id}>
                             {bn ? s.name_bn || s.name : s.name}
                           </SelectItem>
@@ -703,7 +854,7 @@ const FeePaymentPage = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">{bn ? 'সকল শ্রেণি' : 'All Classes'}</SelectItem>
-                        {classes.map((c: any) => (
+                        {classes.filter((c: any) => Boolean(c?.id)).map((c: any) => (
                           <SelectItem key={c.id} value={c.id}>
                             {bn ? c.name_bn || c.name : c.name}
                           </SelectItem>
@@ -1126,7 +1277,7 @@ const FeePaymentPage = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">{bn ? 'সব সেশন' : 'All Sessions'}</SelectItem>
-                        {sessions.map((s: any) => (
+                        {sessions.filter((s: any) => Boolean(s?.id)).map((s: any) => (
                           <SelectItem key={s.id} value={s.id}>
                             {bn ? (s.name_bn || s.name) : s.name}
                           </SelectItem>
@@ -1144,7 +1295,7 @@ const FeePaymentPage = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">{bn ? 'সব শ্রেণি' : 'All Classes'}</SelectItem>
-                        {classes.map((c: any) => (
+                        {classes.filter((c: any) => Boolean(c?.id)).map((c: any) => (
                           <SelectItem key={c.id} value={c.id}>
                             {bn ? c.name_bn || c.name : c.name}
                           </SelectItem>
