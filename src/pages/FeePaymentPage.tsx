@@ -73,11 +73,10 @@ const FeePaymentPage = () => {
 
   const [activeTab, setActiveTab] = useState<'pay' | 'receipts'>('pay');
 
-  // Search State
-  const [searchMode, setSearchMode] = useState<'registration' | 'session_roll'>('registration');
-  const [regNo, setRegNo] = useState('');
-  const [selectedSession, setSelectedSession] = useState('');
-  const [rollNumber, setRollNumber] = useState('');
+  // Search State for Fee Payment (Session Year, Class, and Roll / Reg)
+  const [searchSessionId, setSearchSessionId] = useState<string>('');
+  const [searchClassId, setSearchClassId] = useState<string>('all');
+  const [searchIdentifier, setSearchIdentifier] = useState<string>('');
   const [searching, setSearching] = useState(false);
   const [foundStudent, setFoundStudent] = useState<any>(null);
 
@@ -95,6 +94,7 @@ const FeePaymentPage = () => {
 
   // Receipt Tab State (Private Student Receipt Lookup)
   const [receiptSession, setReceiptSession] = useState('all');
+  const [receiptClass, setReceiptClass] = useState('all');
   const [receiptYear, setReceiptYear] = useState(new Date().getFullYear().toString());
   const [receiptIdentifier, setReceiptIdentifier] = useState('');
   const [receiptSearchLoading, setReceiptSearchLoading] = useState(false);
@@ -143,6 +143,28 @@ const FeePaymentPage = () => {
       return data || [];
     },
   });
+
+  // Classes
+  const { data: classes = [] } = useQuery({
+    queryKey: ['classes_public_fees'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('classes')
+        .select('id, name, name_bn, division_id, sort_order')
+        .eq('is_active', true)
+        .order('sort_order');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Auto-select active session if none selected
+  useEffect(() => {
+    if (sessions.length > 0 && !searchSessionId) {
+      const active = sessions.find((s: any) => s.is_active) || sessions[0];
+      if (active) setSearchSessionId(active.id);
+    }
+  }, [sessions, searchSessionId]);
 
   // Dynamic fee types
   const { data: dbFeeTypes = [] } = useQuery({
@@ -197,43 +219,58 @@ const FeePaymentPage = () => {
     }
   };
 
-  // Student Search
+  // Student Search (by Session Year, Class, and Roll / Registration No)
   const searchStudent = async () => {
+    const rawVal = searchIdentifier.trim();
+    if (!rawVal) {
+      toast.error(bn ? 'রোল বা রেজিস্ট্রেশন নম্বর লিখুন' : 'Enter roll or registration number');
+      return;
+    }
+
     setSearching(true);
     setFoundStudent(null);
     setPaymentSuccess(null);
     setSelectedFeeTypeId('');
+
     try {
+      const normVal = rawVal.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+
+      const columns = isStaffOrAdmin
+        ? '*, divisions:division_id(name, name_bn), classes:class_id(name, name_bn), academic_sessions:session_id(name, name_bn)'
+        : 'id, name_bn, name_en, student_id, roll_number, registration_no, status, division_id, class_id, session_id, photo_url, divisions:division_id(name, name_bn), classes:class_id(name, name_bn), academic_sessions:session_id(name, name_bn)';
+
       let query = supabase
         .from('students')
-        .select('*, divisions:division_id(name, name_bn), classes:class_id(name, name_bn), academic_sessions:session_id(name, name_bn)')
-        .eq('status', 'active');
+        .select(columns)
+        .is('deleted_at', null)
+        .or('status.eq.active,status.is.null');
 
-      if (searchMode === 'registration') {
-        const val = regNo.trim();
-        if (!val) {
-          toast.error(bn ? 'রেজিস্ট্রেশন বা আইডি নম্বর লিখুন' : 'Enter registration or ID number');
-          setSearching(false);
-          return;
-        }
-        query = query.or(`registration_no.eq.${val},student_id.eq.${val},roll_number.eq.${val}`);
-      } else {
-        if (!selectedSession || !rollNumber.trim()) {
-          toast.error(bn ? 'সেশন ও রোল নম্বর নির্বাচন করুন' : 'Select session and roll number');
-          setSearching(false);
-          return;
-        }
-        query = query.eq('session_id', selectedSession).eq('roll_number', rollNumber.trim());
+      if (searchSessionId && searchSessionId !== 'all') {
+        query = query.eq('session_id', searchSessionId);
       }
+
+      if (searchClassId && searchClassId !== 'all') {
+        query = query.eq('class_id', searchClassId);
+      }
+
+      query = query.or(
+        `registration_no.eq.${rawVal},registration_no.eq.${normVal},student_id.eq.${rawVal},student_id.eq.${normVal},roll_number.eq.${rawVal},roll_number.eq.${normVal}`
+      );
 
       const { data, error } = await query.limit(1).maybeSingle();
       if (error) throw error;
       if (!data) {
-        toast.error(bn ? 'কোন শিক্ষার্থী পাওয়া যায়নি' : 'Student not found');
+        toast.error(
+          bn
+            ? 'উক্ত সেশন, শ্রেণি ও রোল/রেজিস্ট্রেশনে কোনো শিক্ষার্থী পাওয়া যায়নি'
+            : 'No student found with this session, class, and roll/registration'
+        );
         return;
       }
       setFoundStudent(data);
-      toast.success(bn ? 'শিক্ষার্থী পাওয়া গেছে!' : 'Student found!');
+      toast.success(
+        bn ? `${data.name_bn || data.name_en}-এর তথ্য পাওয়া গেছে!` : `Found student: ${data.name_bn || data.name_en}!`
+      );
     } catch (e: any) {
       toast.error(e.message || (bn ? 'খুঁজতে সমস্যা হয়েছে' : 'Search error'));
     } finally {
@@ -375,17 +412,26 @@ const FeePaymentPage = () => {
         return;
       }
 
-      // 2. Search student by registration_no, student_id, or roll_number (+ optional session)
+      // 2. Search student by registration_no, student_id, or roll_number (+ optional session & class)
+      const normQueryVal = queryVal.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+
       let stuQuery = supabase
         .from('students')
-        .select('id, name_bn, name_en, student_id, roll_number, registration_no, division_id, session_id, divisions:division_id(name, name_bn), academic_sessions:session_id(name, name_bn)')
-        .eq('status', 'active');
+        .select('id, name_bn, name_en, student_id, roll_number, registration_no, division_id, class_id, session_id, classes:class_id(name, name_bn), divisions:division_id(name, name_bn), academic_sessions:session_id(name, name_bn)')
+        .is('deleted_at', null)
+        .or('status.eq.active,status.is.null');
 
       if (receiptSession && receiptSession !== 'all') {
         stuQuery = stuQuery.eq('session_id', receiptSession);
       }
 
-      stuQuery = stuQuery.or(`registration_no.eq.${queryVal},student_id.eq.${queryVal},roll_number.eq.${queryVal}`);
+      if (receiptClass && receiptClass !== 'all') {
+        stuQuery = stuQuery.eq('class_id', receiptClass);
+      }
+
+      stuQuery = stuQuery.or(
+        `registration_no.eq.${queryVal},registration_no.eq.${normQueryVal},student_id.eq.${queryVal},student_id.eq.${normQueryVal},roll_number.eq.${queryVal},roll_number.eq.${normQueryVal}`
+      );
 
       const { data: matchedStudents, error: stuErr } = await stuQuery.limit(5);
       if (stuErr) throw stuErr;
@@ -403,7 +449,7 @@ const FeePaymentPage = () => {
         .from('fee_payments')
         .select(`
           *,
-          students!inner(name_bn, name_en, student_id, roll_number, registration_no, division_id, divisions:division_id(name, name_bn)),
+          students!inner(name_bn, name_en, student_id, roll_number, registration_no, division_id, class_id, classes:class_id(name, name_bn), divisions:division_id(name, name_bn)),
           fee_types!inner(name, name_bn, fee_category)
         `)
         .eq('student_id', matchedStudent.id)
@@ -584,68 +630,115 @@ const FeePaymentPage = () => {
             {/* Search Box Card */}
             <Card className="border-border/80 shadow-sm overflow-hidden">
               <CardContent className="p-5 sm:p-6 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <h3 className="font-semibold text-foreground text-base flex items-center gap-2">
-                    <Search className="w-4 h-4 text-primary" />
-                    {bn ? 'শিক্ষার্থী খুঁজুন' : 'Find Student'}
-                  </h3>
-                  <div className="flex gap-1.5 bg-muted p-1 rounded-lg">
-                    <button
-                      type="button"
-                      onClick={() => { setSearchMode('registration'); setFoundStudent(null); }}
-                      className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${searchMode === 'registration' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                    >
-                      {bn ? 'রেজিস্ট্রেশন / আইডি / রোল' : 'Reg / ID / Roll'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setSearchMode('session_roll'); setFoundStudent(null); }}
-                      className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${searchMode === 'session_roll' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                    >
-                      {bn ? 'সেশন + রোল' : 'Session + Roll'}
-                    </button>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/40 pb-3">
+                  <div>
+                    <h3 className="font-semibold text-foreground text-base flex items-center gap-2">
+                      <Search className="w-4 h-4 text-primary" />
+                      {bn ? 'শিক্ষার্থী খুঁজুন (ফি পরিশোধের জন্য)' : 'Find Student for Fee Payment'}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {bn
+                        ? 'সেশন, শ্রেণি ও রোল বা রেজিস্ট্রেশন নম্বর দিয়ে শিক্ষার্থীর তথ্য ও বকেয়া ফি বের করুন'
+                        : 'Select session, class, and enter roll or registration number to find student'}
+                    </p>
                   </div>
+                  {foundStudent && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setFoundStudent(null);
+                        setSearchIdentifier('');
+                      }}
+                      className="text-xs h-8 text-muted-foreground hover:text-foreground"
+                    >
+                      {bn ? 'অন্য শিক্ষার্থী খুঁজুন' : 'Search Another Student'}
+                    </Button>
+                  )}
                 </div>
 
-                {searchMode === 'registration' ? (
-                  <div className="flex gap-2">
-                    <Input
-                      value={regNo}
-                      onChange={(e) => setRegNo(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && searchStudent()}
-                      placeholder={bn ? 'শিক্ষার্থীর রোল, রেজিস্ট্রেশন বা আইডি লিখুন (যেমন: 1001 বা 20261001)' : 'Enter roll, registration or ID...'}
-                      className="h-11 bg-background text-base"
-                    />
-                    <Button onClick={searchStudent} disabled={searching} className="h-11 px-6 font-semibold">
-                      {searching ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Search className="w-4 h-4 mr-1.5" />}
-                      {bn ? 'খুঁজুন' : 'Search'}
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <Select value={selectedSession} onValueChange={setSelectedSession}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-end pt-1">
+                  {/* 1. Academic Session */}
+                  <div className="space-y-1.5 lg:col-span-3">
+                    <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-primary" />
+                      {bn ? 'সেশন / শিক্ষাবর্ষ' : 'Session / Year'}
+                    </label>
+                    <Select
+                      value={searchSessionId}
+                      onValueChange={(val) => {
+                        setSearchSessionId(val);
+                        setFoundStudent(null);
+                      }}
+                    >
                       <SelectTrigger className="h-11 bg-background">
                         <SelectValue placeholder={bn ? 'সেশন নির্বাচন করুন' : 'Select Session'} />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="all">{bn ? 'সকল সেশন' : 'All Sessions'}</SelectItem>
                         {sessions.map((s: any) => (
-                          <SelectItem key={s.id} value={s.id}>{bn ? (s.name_bn || s.name) : s.name}</SelectItem>
+                          <SelectItem key={s.id} value={s.id}>
+                            {bn ? s.name_bn || s.name : s.name}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  {/* 2. Class */}
+                  <div className="space-y-1.5 lg:col-span-3">
+                    <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <GraduationCap className="w-3.5 h-3.5 text-primary" />
+                      {bn ? 'শ্রেণি / ক্লাস' : 'Class'}
+                    </label>
+                    <Select
+                      value={searchClassId}
+                      onValueChange={(val) => {
+                        setSearchClassId(val);
+                        setFoundStudent(null);
+                      }}
+                    >
+                      <SelectTrigger className="h-11 bg-background">
+                        <SelectValue placeholder={bn ? 'শ্রেণি নির্বাচন করুন' : 'Select Class'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">{bn ? 'সকল শ্রেণি' : 'All Classes'}</SelectItem>
+                        {classes.map((c: any) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {bn ? c.name_bn || c.name : c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* 3. Roll or Registration # */}
+                  <div className="space-y-1.5 lg:col-span-4">
+                    <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-primary" />
+                      {bn ? 'রোল / রেজিঃ নম্বর' : 'Roll / Reg No'}
+                    </label>
                     <Input
-                      value={rollNumber}
-                      onChange={(e) => setRollNumber(e.target.value)}
+                      value={searchIdentifier}
+                      onChange={(e) => setSearchIdentifier(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && searchStudent()}
-                      placeholder={bn ? 'রোল নম্বর লিখুন (যেমন: 101)' : 'Enter roll number'}
-                      className="h-11 bg-background"
+                      placeholder={bn ? 'রোল বা রেজিঃ নং (যেমন: 101 বা 2026101)' : 'Roll or Reg No (e.g. 101)...'}
+                      className="h-11 bg-background text-base"
                     />
-                    <Button onClick={searchStudent} disabled={searching} className="h-11 font-semibold">
-                      {searching ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Search className="w-4 h-4 mr-1.5" />}
+                  </div>
+
+                  {/* 4. Search Button */}
+                  <div className="lg:col-span-2">
+                    <Button
+                      onClick={searchStudent}
+                      disabled={searching}
+                      className="w-full h-11 font-semibold gap-1.5 text-sm"
+                    >
+                      {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
                       {bn ? 'খুঁজুন' : 'Search'}
                     </Button>
                   </div>
-                )}
+                </div>
               </CardContent>
             </Card>
 
@@ -673,11 +766,21 @@ const FeePaymentPage = () => {
                             </Badge>
                           </div>
                           <p className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
-                            <span>{bn ? 'শ্রেণি/বিভাগ:' : 'Class:'} <strong className="text-foreground">{foundStudent.divisions?.name_bn || foundStudent.classes?.name_bn || '—'}</strong></span>
+                            <span>{bn ? 'শ্রেণি:' : 'Class:'} <strong className="text-foreground">{foundStudent.classes?.name_bn || foundStudent.classes?.name || foundStudent.divisions?.name_bn || '—'}</strong></span>
                             <span>•</span>
                             <span>{bn ? 'রোল:' : 'Roll:'} <strong className="text-foreground">{foundStudent.roll_number || '—'}</strong></span>
-                            <span>•</span>
-                            <span>{bn ? 'আইডি:' : 'ID:'} <strong className="text-foreground font-mono">{foundStudent.registration_no || foundStudent.student_id || '—'}</strong></span>
+                            {foundStudent.academic_sessions && (
+                              <>
+                                <span>•</span>
+                                <span>{bn ? 'সেশন:' : 'Session:'} <strong className="text-foreground">{foundStudent.academic_sessions.name_bn || foundStudent.academic_sessions.name}</strong></span>
+                              </>
+                            )}
+                            {(foundStudent.registration_no || foundStudent.student_id) && (
+                              <>
+                                <span>•</span>
+                                <span>{bn ? 'রেজিঃ/আইডি:' : 'Reg/ID:'} <strong className="text-foreground font-mono">{foundStudent.registration_no || foundStudent.student_id}</strong></span>
+                              </>
+                            )}
                           </p>
                         </div>
                       </div>
@@ -1013,10 +1116,10 @@ const FeePaymentPage = () => {
                   </Badge>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 pt-1 items-end">
                   {/* Session Dropdown */}
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">{bn ? 'সেশন' : 'Session'}</Label>
+                  <div className="space-y-1 lg:col-span-3">
+                    <Label className="text-xs font-semibold">{bn ? 'সেশন / শিক্ষাবর্ষ' : 'Session / Year'}</Label>
                     <Select value={receiptSession} onValueChange={setReceiptSession}>
                       <SelectTrigger className="bg-background h-11">
                         <SelectValue placeholder={bn ? 'সব সেশন' : 'All Sessions'} />
@@ -1032,8 +1135,26 @@ const FeePaymentPage = () => {
                     </Select>
                   </div>
 
+                  {/* Class Dropdown */}
+                  <div className="space-y-1 lg:col-span-3">
+                    <Label className="text-xs font-semibold">{bn ? 'শ্রেণি / ক্লাস' : 'Class'}</Label>
+                    <Select value={receiptClass} onValueChange={setReceiptClass}>
+                      <SelectTrigger className="bg-background h-11">
+                        <SelectValue placeholder={bn ? 'সব শ্রেণি' : 'All Classes'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">{bn ? 'সব শ্রেণি' : 'All Classes'}</SelectItem>
+                        {classes.map((c: any) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {bn ? c.name_bn || c.name : c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   {/* Year Dropdown */}
-                  <div className="space-y-1">
+                  <div className="space-y-1 lg:col-span-2">
                     <Label className="text-xs font-semibold">{bn ? 'বছর' : 'Year'}</Label>
                     <Select value={receiptYear} onValueChange={setReceiptYear}>
                       <SelectTrigger className="bg-background h-11">
@@ -1050,14 +1171,14 @@ const FeePaymentPage = () => {
                   </div>
 
                   {/* Roll / Reg / ID / Receipt # Input */}
-                  <div className="space-y-1 sm:col-span-2">
+                  <div className="space-y-1 lg:col-span-4">
                     <Label className="text-xs font-semibold">
-                      {bn ? 'রোল / রেজিস্ট্রেশন / রসিদ নং' : 'Roll / Reg / Receipt #'}{' '}
+                      {bn ? 'রোল / রেজিঃ / রসিদ নং' : 'Roll / Reg / Receipt #'}{' '}
                       <span className="text-destructive">*</span>
                     </Label>
                     <div className="flex gap-2">
                       <Input
-                        placeholder={bn ? 'রোল, রেজিঃ বা রসিদ নং (যেমন: 101 বা 20261001)' : 'Enter roll, reg or receipt no...'}
+                        placeholder={bn ? 'রোল, রেজিঃ বা রসিদ নং...' : 'Enter roll, reg or receipt...'}
                         value={receiptIdentifier}
                         onChange={(e) => setReceiptIdentifier(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSearchStudentReceipts()}
@@ -1066,14 +1187,14 @@ const FeePaymentPage = () => {
                       <Button
                         onClick={handleSearchStudentReceipts}
                         disabled={receiptSearchLoading}
-                        className="h-11 px-5 font-semibold shrink-0"
+                        className="h-11 px-4 font-semibold shrink-0"
                       >
                         {receiptSearchLoading ? (
                           <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
                         ) : (
                           <Search className="w-4 h-4 mr-1.5" />
                         )}
-                        {bn ? 'রসিদ খুঁজুন' : 'Find Receipts'}
+                        {bn ? 'খুঁজুন' : 'Search'}
                       </Button>
                     </div>
                   </div>
@@ -1112,7 +1233,7 @@ const FeePaymentPage = () => {
                             {receiptSearchResult.student.name_bn || receiptSearchResult.student.name_en}
                           </div>
                           <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
-                            <span>{bn ? 'শ্রেণি:' : 'Class:'} <strong className="text-foreground">{receiptSearchResult.student.divisions?.name_bn || receiptSearchResult.student.divisions?.name || '—'}</strong></span>
+                            <span>{bn ? 'শ্রেণি:' : 'Class:'} <strong className="text-foreground">{receiptSearchResult.student.classes?.name_bn || receiptSearchResult.student.classes?.name || receiptSearchResult.student.divisions?.name_bn || receiptSearchResult.student.divisions?.name || '—'}</strong></span>
                             <span>•</span>
                             <span>{bn ? 'রোল:' : 'Roll:'} <strong className="text-foreground">{receiptSearchResult.student.roll_number || '—'}</strong></span>
                             {receiptSearchResult.student.registration_no && (
