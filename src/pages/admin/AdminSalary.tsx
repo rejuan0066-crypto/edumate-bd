@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
@@ -53,7 +53,7 @@ import {
   CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Edit2, Eye,
   Calculator, Plus, Trash2, DollarSign, FileText, FolderOpen,
   PiggyBank, Landmark, RefreshCw, Minus, Share2, Camera, FileCheck2, Upload,
-  History, UserMinus
+  History, UserMinus, Building2, Layers, Loader2
 } from 'lucide-react';
 import {
   useSignedSalaryDocs,
@@ -270,6 +270,8 @@ const AdminSalary = () => {
   const [directUploadStaff, setDirectUploadStaff] = useState<any | null>(null);
   const [directViewStaff, setDirectViewStaff] = useState<any | null>(null);
   const [selectedLedgerStaffId, setSelectedLedgerStaffId] = useState<string | null>(null);
+  const [payAddToExpense, setPayAddToExpense] = useState(true);
+  const [expenseSyncModalOpen, setExpenseSyncModalOpen] = useState(false);
 
   // Pre-fetch default institution for instant synchronous salary slip printing
   const { data: defaultInstData } = useQuery({
@@ -736,6 +738,50 @@ const AdminSalary = () => {
       return data;
     },
   });
+
+  // Fetch expenses for current salary month to track which salaries are linked to expenses
+  const expenseMonthYear = getExpenseMonthYearFromSalaryMonth(monthYear);
+  const { data: monthSalaryExpenses = [] } = useQuery({
+    queryKey: ['salary-expenses-for-month', expenseMonthYear],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('expenses')
+        .select('*')
+        .eq('month_year', expenseMonthYear)
+        .is('deleted_at', null);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Check if a staff member's salary is currently recorded in expenses
+  const getStaffExpense = useCallback((staffId: string, staffName?: string) => {
+    return monthSalaryExpenses.find((e: any) => {
+      if (e.description?.includes(`[staff_id:${staffId}]`)) return true;
+      if (staffName && e.description?.includes(staffName) && (e.description?.startsWith('বেতন:') || e.description?.startsWith('Salary:'))) return true;
+      return false;
+    });
+  }, [monthSalaryExpenses]);
+
+  // Check if a consolidated monthly total exists in expenses
+  const consolidatedExpense = useMemo(() => {
+    return monthSalaryExpenses.find((e: any) =>
+      e.description?.includes('[salary_bulk_total]') ||
+      e.description?.startsWith('মোট বেতন') ||
+      e.description?.startsWith('মোট শিক্ষক-স্টাফ বেতন') ||
+      e.description?.startsWith('Total Staff Salary')
+    );
+  }, [monthSalaryExpenses]);
+
+  // Total salary expense currently in expenses table for this month
+  const totalSalaryInExpenses = useMemo(() => {
+    if (consolidatedExpense) {
+      return Number(consolidatedExpense.amount || 0);
+    }
+    return monthSalaryExpenses
+      .filter((e: any) => e.description?.includes('বেতন') || e.description?.includes('Salary'))
+      .reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+  }, [monthSalaryExpenses, consolidatedExpense]);
 
   // Hook for resignation-aware queries
   const { isResignedBeforeMonth, isResignedInMonth, resignDateByStaff, getResignDate, resignedStaffIds } = useResignedStaff();
@@ -2109,9 +2155,11 @@ const AdminSalary = () => {
     },
   });
 
-  // Mark as paid + auto-create expense
+  // Mark as paid + optional expense creation
   const markPaidMutation = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async (arg: string | { id: string; addToExpense?: boolean }) => {
+      const id = typeof arg === 'string' ? arg : arg.id;
+      const addToExpense = typeof arg === 'object' && arg.addToExpense !== undefined ? arg.addToExpense : true;
       const record = salaryRecords.find((r: any) => r.id === id);
       if (!record) throw new Error('Record not found');
       const staffMember = staff.find((s: any) => s.id === record.staff_id);
@@ -2145,43 +2193,209 @@ const AdminSalary = () => {
         .eq('id', id);
       if (error) throw error;
 
-      const expenseConfig = getSetting('expense_location');
+      if (addToExpense) {
+        const expenseConfig = getSetting('expense_location');
+        const projectId = expenseConfig?.institution_id;
+        const categoryId = expenseConfig?.category_id;
+
+        if (projectId && categoryId) {
+          const monthName = MONTHS.find(m => m.value === selectedMonth);
+          const staffName = staffMember?.name_bn || staffMember?.name_en || 'Staff';
+          const description = `${bn ? 'বেতন' : 'Salary'}: ${staffName} - ${bn ? monthName?.bn : monthName?.en} ${selectedYear} [staff_id:${staffMember?.id}]`;
+
+          const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').replace(/\/$/, '');
+          const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+          const pdfUrl = supabaseUrl
+            ? `${supabaseUrl}/functions/v1/salary-pdf`
+            : (projectRef ? `https://${projectRef}.supabase.co/functions/v1/salary-pdf` : null);
+
+          // হিসাব/লেজারে বেতন অবশ্যই নির্বাচিত salary month-এই যাবে — payment date/current month নয়।
+          const expenseMonthYear = getExpenseMonthYearFromSalaryMonth(record.month_year || monthYear);
+          const { error: expError } = await supabase.from('expenses').insert({
+            institution_id: projectId,
+            category_id: categoryId,
+            month_year: expenseMonthYear,
+            expense_date: toIsoDateInTz(new Date(), appTz),
+            amount: Number(payableRecord.net_salary),
+            description,
+            has_receipt: true,
+            receipt_url: pdfUrl,
+          });
+          if (expError) {
+            console.error('Expense creation error:', expError);
+            toast.warning(bn ? 'বেতন পরিশোধিত হয়েছে কিন্তু হিসাবে সেভ হয়নি' : 'Marked paid but expense save failed');
+            return;
+          }
+        }
+      }
+    },
+    onSuccess: (_, arg) => {
+      const added = typeof arg === 'object' && arg.addToExpense !== undefined ? arg.addToExpense : true;
+      queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] });
+      queryClient.invalidateQueries({ queryKey: ['salary-expenses-for-month', expenseMonthYear] });
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['all_expenses'] });
+      if (added) {
+        toast.success(bn ? 'পরিশোধিত ও হিসাবে সেভ হয়েছে' : 'Marked as paid & saved to expenses');
+      } else {
+        toast.success(bn ? 'বেতন পরিশোধিত হয়েছে (হিসাবে যোগ করা হয়নি)' : 'Marked as paid (not added to expenses)');
+      }
+    },
+  });
+
+  // Add single paid staff to expenses
+  const addStaffExpenseMutation = useMutation({
+    mutationFn: async ({ staffId, recordId }: { staffId: string; recordId: string }) => {
+      const record = salaryRecords.find((r: any) => r.id === recordId);
+      if (!record) throw new Error('Record not found');
+      const staffMember = staff.find((s: any) => s.id === staffId);
+      const payableRecord = staffMember ? getSalaryDisplaySnapshot(staffMember, record).record : record;
+
+      const expenseConfig = getSetting('expense_location') || {};
       const projectId = expenseConfig?.institution_id;
       const categoryId = expenseConfig?.category_id;
 
-      if (projectId && categoryId) {
-        const monthName = MONTHS.find(m => m.value === selectedMonth);
-        const description = `${bn ? 'বেতন' : 'Salary'}: ${staffMember?.name_bn || 'Staff'} - ${bn ? monthName?.bn : monthName?.en} ${selectedYear}`;
+      if (!projectId || !categoryId) {
+        throw new Error(bn ? 'অনুগ্রহ করে বেতন সেটিংস ➔ হিসাব লিঙ্ক থেকে প্রতিষ্ঠান ও ক্যাটাগরি নির্বাচন করুন' : 'Please select expense institution & category in salary settings');
+      }
 
-        const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').replace(/\/$/, '');
-        const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-        const pdfUrl = supabaseUrl
-          ? `${supabaseUrl}/functions/v1/salary-pdf`
-          : (projectRef ? `https://${projectRef}.supabase.co/functions/v1/salary-pdf` : null);
+      const monthName = MONTHS.find(m => m.value === selectedMonth);
+      const staffName = staffMember?.name_bn || staffMember?.name_en || 'Staff';
+      const description = `${bn ? 'বেতন' : 'Salary'}: ${staffName} - ${bn ? monthName?.bn : monthName?.en} ${selectedYear} [staff_id:${staffId}]`;
+      const expenseMonthYear = getExpenseMonthYearFromSalaryMonth(record.month_year || monthYear);
 
-        // হিসাব/লেজারে বেতন অবশ্যই নির্বাচিত salary month-এই যাবে — payment date/current month নয়।
-        const expenseMonthYear = getExpenseMonthYearFromSalaryMonth(record.month_year || monthYear);
-        const { error: expError } = await supabase.from('expenses').insert({
+      const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').replace(/\/$/, '');
+      const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const pdfUrl = supabaseUrl
+        ? `${supabaseUrl}/functions/v1/salary-pdf`
+        : (projectRef ? `https://${projectRef}.supabase.co/functions/v1/salary-pdf` : null);
+
+      const { error: expError } = await supabase.from('expenses').insert({
+        institution_id: projectId,
+        category_id: categoryId,
+        month_year: expenseMonthYear,
+        expense_date: toIsoDateInTz(new Date(), appTz),
+        amount: Number(payableRecord.net_salary),
+        description,
+        has_receipt: true,
+        receipt_url: pdfUrl,
+      });
+      if (expError) throw expError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['salary-expenses-for-month', expenseMonthYear] });
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['all_expenses'] });
+      toast.success(bn ? 'হিসাব ব্যবস্থাপনায় খরচ যোগ হয়েছে' : 'Added to expenses');
+    },
+    onError: (e: any) => toast.error(e.message || (bn ? 'ত্রুটি হয়েছে' : 'Error')),
+  });
+
+  // Remove single staff from expenses without unpaying
+  const removeStaffExpenseMutation = useMutation({
+    mutationFn: async ({ staffId, staffName }: { staffId: string; staffName: string }) => {
+      const expenseMonthYear = getExpenseMonthYearFromSalaryMonth(monthYear);
+      const { error } = await supabase.from('expenses')
+        .update({ deleted_at: new Date().toISOString() })
+        .or(`description.like.%[staff_id:${staffId}]%,description.like.%${staffName}%`)
+        .eq('month_year', expenseMonthYear)
+        .is('deleted_at', null);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['salary-expenses-for-month', expenseMonthYear] });
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['all_expenses'] });
+      toast.success(bn ? 'হিসাব থেকে বাদ দেওয়া হয়েছে' : 'Removed from expenses');
+    },
+    onError: (e: any) => toast.error(e.message || (bn ? 'ত্রুটি হয়েছে' : 'Error')),
+  });
+
+  // Batch sync: individual per staff, consolidated single total, or remove all
+  const syncMonthExpensesMutation = useMutation({
+    mutationFn: async (mode: 'individual' | 'consolidated' | 'remove_all') => {
+      const expenseMonthYear = getExpenseMonthYearFromSalaryMonth(monthYear);
+      const expenseConfig = getSetting('expense_location') || {};
+      const projectId = expenseConfig?.institution_id;
+      const categoryId = expenseConfig?.category_id;
+
+      if (mode !== 'remove_all' && (!projectId || !categoryId)) {
+        throw new Error(bn ? 'অনুগ্রহ করে বেতন সেটিংস ➔ হিসাব লিঙ্ক থেকে প্রতিষ্ঠান ও ক্যাটাগরি নির্বাচন করুন' : 'Please select expense institution & category in salary settings');
+      }
+
+      // First clean up all existing salary expenses for this month to guarantee clean sync
+      const { error: cleanErr } = await supabase.from('expenses')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('month_year', expenseMonthYear)
+        .or(`description.like.%বেতন%,description.like.%Salary%`)
+        .is('deleted_at', null);
+      if (cleanErr) throw cleanErr;
+
+      if (mode === 'remove_all') {
+        return;
+      }
+
+      const paidRecords = salaryRecords.filter((r: any) => r.status === 'paid');
+      if (paidRecords.length === 0) {
+        throw new Error(bn ? 'এই মাসে কোনো পরিশোধিত বেতন রেকর্ড নেই' : 'No paid salary records for this month');
+      }
+
+      const monthName = MONTHS.find(m => m.value === selectedMonth);
+      const monthLabel = `${bn ? monthName?.bn : monthName?.en} ${selectedYear}`;
+
+      if (mode === 'individual') {
+        const inserts = paidRecords.map((r: any) => {
+          const staffMember = staff.find((s: any) => s.id === r.staff_id);
+          const payable = staffMember ? getSalaryDisplaySnapshot(staffMember, r).record : r;
+          const sName = staffMember?.name_bn || staffMember?.name_en || 'Staff';
+          const sDesig = staffMember?.designation ? ` (${staffMember.designation})` : '';
+          return {
+            institution_id: projectId,
+            category_id: categoryId,
+            month_year: expenseMonthYear,
+            expense_date: toIsoDateInTz(new Date(), appTz),
+            amount: Number(payable.net_salary),
+            description: `${bn ? 'বেতন' : 'Salary'}: ${sName}${sDesig} - ${monthLabel} [staff_id:${r.staff_id}]`,
+            has_receipt: true,
+          };
+        });
+
+        const { error: insErr } = await supabase.from('expenses').insert(inserts);
+        if (insErr) throw insErr;
+      } else if (mode === 'consolidated') {
+        const totalPaidNet = paidRecords.reduce((sum: number, r: any) => {
+          const staffMember = staff.find((s: any) => s.id === r.staff_id);
+          const payable = staffMember ? getSalaryDisplaySnapshot(staffMember, r).record : r;
+          return sum + Number(payable.net_salary || 0);
+        }, 0);
+
+        const description = `${bn ? 'মোট শিক্ষক-স্টাফ বেতন' : 'Total Staff Salary'}: ${monthLabel} (${toBnDigits(paidRecords.length)} জন) [salary_bulk_total]`;
+
+        const { error: insErr } = await supabase.from('expenses').insert({
           institution_id: projectId,
           category_id: categoryId,
           month_year: expenseMonthYear,
           expense_date: toIsoDateInTz(new Date(), appTz),
-          amount: Number(payableRecord.net_salary),
+          amount: totalPaidNet,
           description,
           has_receipt: true,
-          receipt_url: pdfUrl,
         });
-        if (expError) {
-          console.error('Expense creation error:', expError);
-          toast.warning(bn ? 'বেতন পরিশোধিত হয়েছে কিন্তু হিসাবে সেভ হয়নি' : 'Marked paid but expense save failed');
-          return;
-        }
+        if (insErr) throw insErr;
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] });
-      toast.success(bn ? 'পরিশোধিত ও হিসাবে সেভ হয়েছে' : 'Marked as paid & saved to expenses');
+    onSuccess: (_, mode) => {
+      queryClient.invalidateQueries({ queryKey: ['salary-expenses-for-month', expenseMonthYear] });
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['all_expenses'] });
+      if (mode === 'remove_all') {
+        toast.success(bn ? 'এই মাসের সকল বেতন হিসাব থেকে বাদ দেওয়া হয়েছে' : 'Removed all salary expenses for this month');
+      } else if (mode === 'consolidated') {
+        toast.success(bn ? 'মাসের মোট বেতন একবারে হিসাবে যুক্ত হয়েছে' : 'Added monthly total salary to expenses');
+      } else {
+        toast.success(bn ? 'সবার নাম সহ পৃথক পৃথক বেতন হিসাবে যুক্ত হয়েছে' : 'Added individual staff salaries to expenses');
+      }
     },
+    onError: (e: any) => toast.error(e.message || (bn ? 'ত্রুটি হয়েছে' : 'Error')),
   });
 
   // Mark as unpaid + remove expense entry
@@ -2201,15 +2415,17 @@ const AdminSalary = () => {
         // Match the same staff + same salary month only; never touch another month's salary expense.
         const { error: delError } = await supabase.from('expenses')
           .update({ deleted_at: new Date().toISOString() })
-          .like('description', `%${staffName}%`)
+          .or(`description.like.%[staff_id:${record.staff_id}]%,description.like.%${staffName}%`)
           .eq('month_year', expenseMonthYear)
-          .eq('amount', Number(record.net_salary))
           .is('deleted_at', null);
         if (delError) console.error('Expense removal error:', delError);
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] });
+      queryClient.invalidateQueries({ queryKey: ['salary-expenses-for-month', expenseMonthYear] });
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['all_expenses'] });
       toast.success(bn ? 'অপরিশোধিত ও হিসাব থেকে সরানো হয়েছে' : 'Marked as unpaid & expense removed');
     },
   });
@@ -2227,9 +2443,8 @@ const AdminSalary = () => {
         const expenseMonthYear = getExpenseMonthYearFromSalaryMonth(record.month_year || monthYear);
         await supabase.from('expenses')
           .update({ deleted_at: new Date().toISOString() })
-          .like('description', `%${staffName}%`)
+          .or(`description.like.%[staff_id:${record.staff_id}]%,description.like.%${staffName}%`)
           .eq('month_year', expenseMonthYear)
-          .eq('amount', Number(record.net_salary))
           .is('deleted_at', null);
       }
 
@@ -2253,6 +2468,9 @@ const AdminSalary = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] });
+      queryClient.invalidateQueries({ queryKey: ['salary-expenses-for-month', expenseMonthYear] });
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['all_expenses'] });
       queryClient.invalidateQueries({ queryKey: ['salary-savings'] });
       queryClient.invalidateQueries({ queryKey: ['salary-savings-ledger'] });
       toast.success(bn ? 'বেতন রেকর্ড মুছে ফেলা হয়েছে' : 'Salary record removed');
@@ -3441,6 +3659,21 @@ const AdminSalary = () => {
                     </Badge>
                   )}
                 </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-blue-400/80 bg-blue-50/80 hover:bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-700/50 font-medium"
+                  onClick={() => setExpenseSyncModalOpen(true)}
+                  title={bn ? 'হিসাব ব্যবস্থাপনায় (খরচ) বেতন যুক্ত বা বাদ দেওয়ার নিয়ন্ত্রণ' : 'Manage & Sync Salary in Expense Accounts'}
+                >
+                  <Landmark className="h-3.5 w-3.5 mr-1 text-blue-600" />
+                  {bn ? 'হিসাব লিঙ্ক' : 'Expense Sync'}
+                  {totalSalaryInExpenses > 0 && (
+                    <Badge className="ml-1.5 px-1.5 py-0 text-[10px] bg-blue-600 text-white font-mono">
+                      ৳{bn ? toBnDigits(totalSalaryInExpenses.toLocaleString()) : totalSalaryInExpenses.toLocaleString()}
+                    </Badge>
+                  )}
+                </Button>
                 <Button size="sm" variant="outline" onClick={exportExcel}>
                   <Download className="h-3 w-3 mr-1" /> Excel
                 </Button>
@@ -4013,7 +4246,10 @@ const AdminSalary = () => {
                                         className={`h-6 w-6 text-yellow-600 hover:bg-yellow-100/60 dark:hover:bg-yellow-900/30 ${isRecordPending(rec.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
                                         disabled={isRecordPending(rec.id)}
                                         title={bn ? 'পরিশোধিত করুন' : 'Mark Paid'} 
-                                        onClick={() => setPaidConfirmId(rec.id)}
+                                        onClick={() => {
+                                          setPaidConfirmId(rec.id);
+                                          setPayAddToExpense(getSetting('expense_location')?.auto_add_to_expenses !== false);
+                                        }}
                                       >
                                         <Clock className="h-3.5 w-3.5" />
                                       </Button>
@@ -4029,6 +4265,45 @@ const AdminSalary = () => {
                                         <CheckCircle2 className="h-3.5 w-3.5" />
                                       </Button>
                                     )}
+                                    {rec.status === 'paid' && (() => {
+                                      const staffExpense = getStaffExpense(s.id, s.name_bn || s.name_en);
+                                      if (staffExpense) {
+                                        return (
+                                          <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            className="h-6 w-6 text-emerald-600 hover:text-red-600 hover:bg-red-100/60 dark:hover:bg-red-950/30"
+                                            title={bn ? 'হিসাব ব্যবস্থাপনায় খরচ যুক্ত আছে। ক্লিক করলে হিসাব থেকে বাদ দেওয়া হবে।' : 'Linked in expenses. Click to remove from expenses.'}
+                                            disabled={removeStaffExpenseMutation.isPending}
+                                            onClick={() => removeStaffExpenseMutation.mutate({ staffId: s.id, staffName: s.name_bn || s.name_en || 'Staff' })}
+                                          >
+                                            <Landmark className="h-3 w-3" />
+                                          </Button>
+                                        );
+                                      }
+                                      if (consolidatedExpense) {
+                                        return (
+                                          <span
+                                            title={bn ? 'মাসের মোট বেতনের একক ভাউচারে হিসাবভুক্ত' : 'Included in monthly total salary expense voucher'}
+                                            className="inline-flex items-center text-[10px] text-blue-600 dark:text-blue-400 px-1 font-mono font-medium"
+                                          >
+                                            <Building2 className="h-3 w-3 mr-0.5" />
+                                          </span>
+                                        );
+                                      }
+                                      return (
+                                        <Button
+                                          size="icon"
+                                          variant="ghost"
+                                          className="h-6 w-6 text-amber-600 hover:text-emerald-700 hover:bg-emerald-100/60 dark:hover:bg-emerald-950/30"
+                                          title={bn ? 'হিসাবে এখনো যুক্ত হয়নি। ক্লিক করে হিসাব ব্যবস্থাপনায় খরচ যোগ করুন।' : 'Not in expenses. Click to add to expenses.'}
+                                          disabled={addStaffExpenseMutation.isPending}
+                                          onClick={() => addStaffExpenseMutation.mutate({ staffId: s.id, recordId: rec.id })}
+                                        >
+                                          <Plus className="h-3 w-3" />
+                                        </Button>
+                                      );
+                                    })()}
                                     {canDeleteItem && (
                                       <Button 
                                         size="icon" 
@@ -5120,11 +5395,25 @@ const AdminSalary = () => {
                   </Select>
                 </div>
 
+                <div className="flex items-center justify-between p-3 border border-border/60 rounded-xl">
+                  <div>
+                    <Label className="text-sm font-medium">{bn ? 'বেতন পরিশোধের সময় স্বয়ংক্রিয়ভাবে হিসাবে যোগ করুন' : 'Auto-add to expenses on salary payment'}</Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">{bn ? 'চালু থাকলে পেমেন্ট নিশ্চিতকরণ ডায়ালগে চেকবক্স ডিফল্ট টিক থাকবে' : 'When enabled, expense checkbox is checked by default in payment dialog'}</p>
+                  </div>
+                  <Switch
+                    checked={getSetting('expense_location')?.auto_add_to_expenses !== false}
+                    onCheckedChange={(checked) => {
+                      const current = getSetting('expense_location') || {};
+                      saveSettingMutation.mutate({ key: 'expense_location', value: { ...current, auto_add_to_expenses: checked } });
+                    }}
+                  />
+                </div>
+
                 {getSetting('expense_location')?.institution_id && getSetting('expense_location')?.category_id ? (
                   <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg text-sm">
                     <CheckCircle2 className="h-4 w-4 inline mr-1 text-emerald-600" />
                     <span className="text-emerald-700 dark:text-emerald-400 font-medium">
-                      {bn ? 'সক্রিয়: বেতন পেইড হলে অটো-সেভ হবে' : 'Active: Auto-save on salary paid'}
+                      {bn ? 'সক্রিয়: প্রতিষ্ঠান ও ক্যাটাগরি সংযুক্ত আছে' : 'Active: Institution & category connected'}
                     </span>
                   </div>
                 ) : (
@@ -5323,21 +5612,346 @@ const AdminSalary = () => {
           </DialogContent>
         </Dialog>
 
-        <ConfirmDialog
-          open={!!paidConfirmId}
-          onOpenChange={(o) => { if (!o) setPaidConfirmId(null); }}
-          onConfirm={() => {
-            if (paidConfirmId) {
-              markPaidMutation.mutate(paidConfirmId);
-              setPaidConfirmId(null);
-            }
-          }}
-          title={bn ? 'পরিশোধিত করতে চান?' : 'Mark as paid?'}
-          description={bn ? 'এই বেতন রেকর্ডটি পরিশোধিত হিসেবে চিহ্নিত হবে এবং হিসাবে যুক্ত হবে।' : 'This salary record will be marked as paid and added to expenses.'}
-          confirmLabel={bn ? 'হ্যাঁ, পরিশোধ করুন' : 'Yes, Mark Paid'}
-          isPending={markPaidMutation.isPending}
-          variant="success"
-        />
+        {/* Payment Confirmation Dialog with Expense Choice */}
+        <Dialog open={!!paidConfirmId} onOpenChange={(o) => { if (!o) setPaidConfirmId(null); }}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-foreground">
+                <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                {bn ? 'বেতন পরিশোধ নিশ্চিতকরণ' : 'Confirm Salary Payment'}
+              </DialogTitle>
+              <DialogDescription>
+                {bn ? 'এই কর্মীর বেতন পরিশোধিত হিসেবে চিহ্নিত করতে যাচ্ছেন।' : 'You are about to mark this staff member salary as paid.'}
+              </DialogDescription>
+            </DialogHeader>
+
+            {paidConfirmId && (() => {
+              const paidRecord = salaryRecords.find((r: any) => r.id === paidConfirmId);
+              const paidStaff = staff.find((s: any) => s.id === paidRecord?.staff_id);
+              const payableSnapshot = paidStaff && paidRecord ? getSalaryDisplaySnapshot(paidStaff, paidRecord).record : paidRecord;
+              const payableNet = payableSnapshot ? Number(payableSnapshot.net_salary || 0) : 0;
+              const monthNameObj = MONTHS.find(m => m.value === selectedMonth);
+
+              return (
+                <div className="space-y-4 py-2">
+                  <div className="rounded-lg border bg-muted/40 p-3.5 space-y-1.5">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">{bn ? 'কর্মীর নাম:' : 'Staff Name:'}</span>
+                      <span className="font-semibold text-foreground">{paidStaff?.name_bn || paidStaff?.name_en || '—'}</span>
+                    </div>
+                    {paidStaff?.designation && (
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-muted-foreground">{bn ? 'পদবী:' : 'Designation:'}</span>
+                        <span>{paidStaff.designation}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-muted-foreground">{bn ? 'মাস:' : 'Month:'}</span>
+                      <span className="font-medium">{bn ? monthNameObj?.bn : monthNameObj?.en} {selectedYear}</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t text-base font-bold">
+                      <span>{bn ? 'পরিশোধযোগ্য নিট বেতন:' : 'Net Payable:'}</span>
+                      <span className="text-emerald-600 font-mono">
+                        ৳{bn ? toBnDigits(payableNet.toLocaleString()) : payableNet.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border border-blue-200 bg-blue-50/70 dark:bg-blue-950/40 dark:border-blue-800/60 p-3.5 space-y-2">
+                    <div className="flex items-start space-x-2.5">
+                      <Checkbox
+                        id="payAddToExpenseCheck"
+                        checked={payAddToExpense}
+                        onCheckedChange={(checked) => setPayAddToExpense(!!checked)}
+                        className="mt-0.5"
+                      />
+                      <div className="space-y-1 leading-none cursor-pointer" onClick={() => setPayAddToExpense(!payAddToExpense)}>
+                        <label htmlFor="payAddToExpenseCheck" className="text-sm font-semibold cursor-pointer select-none text-foreground">
+                          {bn ? 'হিসাব ব্যবস্থাপনায় খরচ হিসেবে যোগ করুন' : 'Add to Expense Management as Expense'}
+                        </label>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {payAddToExpense
+                            ? (bn ? '✓ বেতন পরিশোধের সাথে সাথে এটি হিসাবের খরচে ভাউচার হিসেবে যুক্ত হবে।' : '✓ This salary will be recorded as an expense voucher in Expense Management.')
+                            : (bn ? '✕ বেতন পরিশোধ হবে কিন্তু হিসাবে কোন খরচ যুক্ত হবে না (বকেয়া বা ঘাটতি বাড়বে না)। পরে যেকোনো সময় এক ক্লিকে যুক্ত করা যাবে।' : '✕ Salary will be marked paid without adding to expenses. Can be linked anytime later.')}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                onClick={() => setPaidConfirmId(null)}
+                disabled={markPaidMutation.isPending}
+              >
+                {bn ? 'বাতিল' : 'Cancel'}
+              </Button>
+              <Button
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                onClick={() => {
+                  if (paidConfirmId) {
+                    markPaidMutation.mutate({ id: paidConfirmId, addToExpense: payAddToExpense });
+                    setPaidConfirmId(null);
+                  }
+                }}
+                disabled={markPaidMutation.isPending}
+              >
+                {markPaidMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4 mr-1" />
+                )}
+                {bn ? 'হ্যাঁ, পরিশোধ করুন' : 'Confirm Payment'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Master Expense Sync & Link Dialog */}
+        <Dialog open={expenseSyncModalOpen} onOpenChange={setExpenseSyncModalOpen}>
+          <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-foreground">
+                <Landmark className="h-5 w-5 text-blue-600" />
+                {bn ? 'হিসাব লিঙ্ক ও খরচ সমন্বয়' : 'Salary Expense Link & Sync'}
+              </DialogTitle>
+              <DialogDescription>
+                {bn ? 'বেতন পরিশোধের পর হিসাব ব্যবস্থাপনায় (খরচ) যুক্ত বা বাদ দেওয়ার সার্বিক নিয়ন্ত্রণ।' : 'Manage how paid salaries are linked to Expense Management for this month.'}
+              </DialogDescription>
+            </DialogHeader>
+
+            {(() => {
+              const paidRecordsForSync = salaryRecords.filter((r: any) => r.status === 'paid');
+              const totalPaidNetForSync = paidRecordsForSync.reduce((sum: number, r: any) => {
+                const staffMember = staff.find((s: any) => s.id === r.staff_id);
+                const payable = staffMember ? getSalaryDisplaySnapshot(staffMember, r).record : r;
+                return sum + Number(payable.net_salary || 0);
+              }, 0);
+
+              const expenseConfig = getSetting('expense_location') || {};
+              const currentInst = (expenseInstitutions as any[]).find((i: any) => i.id === expenseConfig?.institution_id);
+              const currentCat = (expenseCategories as any[]).find((c: any) => c.id === expenseConfig?.category_id);
+              const isConfigReady = !!(expenseConfig?.institution_id && expenseConfig?.category_id);
+              const monthNameObj = MONTHS.find(m => m.value === selectedMonth);
+              const monthLabel = `${bn ? monthNameObj?.bn : monthNameObj?.en} ${selectedYear}`;
+
+              return (
+                <div className="space-y-4 py-2">
+                  {/* Current Month Overview KPI Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="p-3 rounded-lg border bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/50">
+                      <div className="text-xs text-muted-foreground font-medium">{bn ? 'পরিশোধিত বেতন' : 'Paid Salary'}</div>
+                      <div className="text-lg font-bold text-foreground font-mono mt-0.5">
+                        ৳{bn ? toBnDigits(totalPaidNetForSync.toLocaleString()) : totalPaidNetForSync.toLocaleString()}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {bn ? `${toBnDigits(paidRecordsForSync.length)} জন কর্মী` : `${paidRecordsForSync.length} staff members`}
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-lg border bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50">
+                      <div className="text-xs text-muted-foreground font-medium">{bn ? 'বর্তমানে খরচে যুক্ত' : 'Currently in Expenses'}</div>
+                      <div className="text-lg font-bold text-foreground font-mono mt-0.5">
+                        ৳{bn ? toBnDigits(totalSalaryInExpenses.toLocaleString()) : totalSalaryInExpenses.toLocaleString()}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {totalSalaryInExpenses > 0 ? (
+                          consolidatedExpense ? (bn ? 'একক মোট ভাউচার' : 'Consolidated voucher') : (bn ? `${toBnDigits(monthSalaryExpenses.length)} টি ভাউচার` : `${monthSalaryExpenses.length} vouchers`)
+                        ) : (
+                          bn ? 'কোন খরচ যুক্ত নেই' : 'No expenses added'
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-lg border bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/50">
+                      <div className="text-xs text-muted-foreground font-medium">{bn ? 'হিসাব লিঙ্ক অবস্থা' : 'Expense Link Status'}</div>
+                      <div className="mt-1">
+                        {totalSalaryInExpenses === 0 ? (
+                          <Badge variant="outline" className="text-muted-foreground border-muted-foreground/30 text-xs">
+                            {bn ? 'খরচমুক্ত / বকেয়া নেই' : 'Not Linked / Zero Arrears'}
+                          </Badge>
+                        ) : consolidatedExpense ? (
+                          <Badge className="bg-blue-600 text-white text-xs">
+                            {bn ? 'এককালীন মোট' : 'Consolidated Total'}
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-emerald-600 text-white text-xs">
+                            {bn ? 'সবার নাম সহ পৃথক' : 'Individual Vouchers'}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground mt-1">
+                        {bn ? `মাস: ${monthLabel}` : `Month: ${monthLabel}`}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Destination project and category */}
+                  <div className="rounded-lg border p-3 bg-muted/30 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-semibold text-muted-foreground">{bn ? 'খরচের গন্তব্য:' : 'Destination:'}</span>
+                      {isConfigReady ? (
+                        <>
+                          <Badge variant="secondary" className="font-normal">
+                            {bn ? (currentInst?.name_bn || currentInst?.name || 'প্রতিষ্ঠান') : (currentInst?.name || 'Institution')}
+                          </Badge>
+                          <span>➔</span>
+                          <Badge variant="secondary" className="font-normal">
+                            {bn ? (currentCat?.name_bn || currentCat?.name || 'ক্যাটাগরি') : (currentCat?.name || 'Category')}
+                          </Badge>
+                        </>
+                      ) : (
+                        <span className="text-amber-600 font-medium">
+                          {bn ? '⚠️ হিসাব প্রতিষ্ঠান বা ক্যাটাগরি সেট করা নেই!' : '⚠️ Expense institution or category not set!'}
+                        </span>
+                      )}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/50 self-start sm:self-auto"
+                      onClick={() => {
+                        setExpenseSyncModalOpen(false);
+                        setSettingsOpen(true);
+                      }}
+                    >
+                      <Settings2 className="h-3 w-3 mr-1" />
+                      {bn ? 'গন্তব্য পরিবর্তন' : 'Change Location'}
+                    </Button>
+                  </div>
+
+                  {/* 3 Action Modes */}
+                  <div className="space-y-3 pt-1">
+                    <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      {bn ? 'হিসাব সমন্বয় করার বিকল্পসমূহ' : 'Expense Sync Options'}
+                    </div>
+
+                    {/* Mode 1: Individual */}
+                    <div className={`p-3.5 rounded-lg border transition-all ${monthSalaryExpenses.length > 0 && !consolidatedExpense ? 'border-emerald-500 bg-emerald-50/30 dark:bg-emerald-950/20' : 'border-border bg-card'}`}>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4 text-emerald-600" />
+                            <span className="text-sm font-semibold text-foreground">
+                              {bn ? 'বিকল্প ১: সবার নাম সহ পৃথক পৃথক খরচে যোগ করুন' : 'Option 1: Add Individual Vouchers with Names'}
+                            </span>
+                            {monthSalaryExpenses.length > 0 && !consolidatedExpense && (
+                              <Badge className="bg-emerald-600 text-white text-[10px] py-0 px-1.5">
+                                {bn ? 'বর্তমানে সক্রিয়' : 'Active'}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {bn
+                              ? 'প্রতিটি পরিশোধিত কর্মীর নাম ও পদবী সহ আলাদা খরচের ভাউচার তৈরি হবে (যেমন: "বেতন: মো: করিম (সহকারী শিক্ষক) - মার্চ ২০২৬")।'
+                              : 'Creates individual expense vouchers for each paid staff with their name and designation.'}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white whitespace-nowrap self-start sm:self-auto"
+                          disabled={syncMonthExpensesMutation.isPending || paidRecordsForSync.length === 0 || !isConfigReady}
+                          onClick={() => syncMonthExpensesMutation.mutate('individual')}
+                        >
+                          {syncMonthExpensesMutation.isPending ? (
+                            <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                          ) : (
+                            <Users className="h-3.5 w-3.5 mr-1.5" />
+                          )}
+                          {bn ? 'পৃথক ভাবে যোগ করুন' : 'Apply Individual'}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Mode 2: Consolidated */}
+                    <div className={`p-3.5 rounded-lg border transition-all ${consolidatedExpense ? 'border-blue-500 bg-blue-50/30 dark:bg-blue-950/20' : 'border-border bg-card'}`}>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Layers className="h-4 w-4 text-blue-600" />
+                            <span className="text-sm font-semibold text-foreground">
+                              {bn ? 'বিকল্প ২: পুরো মাসের মোট বেতন একবারে যোগ করুন' : 'Option 2: Add Consolidated Single Monthly Total'}
+                            </span>
+                            {consolidatedExpense && (
+                              <Badge className="bg-blue-600 text-white text-[10px] py-0 px-1.5">
+                                {bn ? 'বর্তমানে সক্রিয়' : 'Active'}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {bn
+                              ? `পুরো মাসের সকল কর্মীর মোট পরিশোধিত বেতনের একটি মাত্র মোট ভাউচার তৈরি হবে (যেমন: "মোট শিক্ষক-স্টাফ বেতন: ${monthLabel} (${toBnDigits(paidRecordsForSync.length)} জন) - ৳${toBnDigits(totalPaidNetForSync.toLocaleString())}")।`
+                              : 'Creates a single consolidated expense voucher for total paid salary of the entire month.'}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          className="bg-blue-600 hover:bg-blue-700 text-white whitespace-nowrap self-start sm:self-auto"
+                          disabled={syncMonthExpensesMutation.isPending || paidRecordsForSync.length === 0 || !isConfigReady}
+                          onClick={() => syncMonthExpensesMutation.mutate('consolidated')}
+                        >
+                          {syncMonthExpensesMutation.isPending ? (
+                            <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                          ) : (
+                            <Layers className="h-3.5 w-3.5 mr-1.5" />
+                          )}
+                          {bn ? 'এককালীন মোট যোগ করুন' : 'Apply Consolidated'}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Mode 3: Remove All */}
+                    <div className={`p-3.5 rounded-lg border transition-all ${totalSalaryInExpenses === 0 ? 'border-muted-foreground/30 bg-muted/20' : 'border-red-200 dark:border-red-900/50 bg-red-50/30 dark:bg-red-950/10'}`}>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                            <span className="text-sm font-semibold text-foreground">
+                              {bn ? 'বিকল্প ৩: হিসাব থেকে সম্পূর্ণ বাদ দিন (বকেয়া দূরীকরণ)' : 'Option 3: Remove All Salary Expenses (Clear Arrears)'}
+                            </span>
+                            {totalSalaryInExpenses === 0 && (
+                              <Badge variant="outline" className="text-[10px] py-0 px-1.5 text-muted-foreground">
+                                {bn ? 'কোন খরচ নেই' : 'Clean'}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {bn
+                              ? 'হিসাব ব্যবস্থাপনা থেকে এই মাসের সকল বেতন খরচ মুছে ফেলা হবে যাতে হিসাব পাতায় কোনো বকেয়া বা ঘাটতি না দেখায়। কোনো বেতন রেকর্ড ডিলিট হবে না।'
+                              : 'Removes all salary expense vouchers for this month from Expense Management to clear deficits/arrears. Salary records are preserved.'}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="whitespace-nowrap self-start sm:self-auto"
+                          disabled={syncMonthExpensesMutation.isPending || totalSalaryInExpenses === 0}
+                          onClick={() => syncMonthExpensesMutation.mutate('remove_all')}
+                        >
+                          {syncMonthExpensesMutation.isPending ? (
+                            <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                          )}
+                          {bn ? 'হিসাব থেকে বাদ দিন' : 'Remove from Expenses'}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setExpenseSyncModalOpen(false)}>
+                {bn ? 'বন্ধ করুন' : 'Close'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <DeleteConfirmDialog
           open={!!unpaidConfirmId}
