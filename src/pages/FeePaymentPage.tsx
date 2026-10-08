@@ -1,13 +1,26 @@
-import AdminLayout from '@/components/AdminLayout';
+import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import PublicLayout from '@/components/PublicLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useState } from 'react';
-import { CheckCircle2, Download, Printer, Receipt, Search, Calendar, Building2, CreditCard } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import ManualPaymentMethods from '@/components/ManualPaymentMethods';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
-import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { toast } from 'sonner';
+import {
+  CreditCard, Receipt, Search, Calendar, Building2, CheckCircle2,
+  Download, Printer, User, Banknote, Shield, ArrowRight, Clock,
+  AlertTriangle, Loader2, Sparkles, Phone, RefreshCw, X, ChevronRight,
+  Check
+} from 'lucide-react';
 
 interface ReceiptData {
   id: string;
@@ -25,36 +38,302 @@ interface ReceiptData {
   year: number;
 }
 
+const MONTHS = [
+  { value: 'January', en: 'January', bn: 'জানুয়ারি' },
+  { value: 'February', en: 'February', bn: 'ফেব্রুয়ারি' },
+  { value: 'March', en: 'March', bn: 'মার্চ' },
+  { value: 'April', en: 'April', bn: 'এপ্রিল' },
+  { value: 'May', en: 'May', bn: 'মে' },
+  { value: 'June', en: 'June', bn: 'জুন' },
+  { value: 'July', en: 'July', bn: 'জুলাই' },
+  { value: 'August', en: 'August', bn: 'আগস্ট' },
+  { value: 'September', en: 'September', bn: 'সেপ্টেম্বর' },
+  { value: 'October', en: 'October', bn: 'অক্টোবর' },
+  { value: 'November', en: 'November', bn: 'নভেম্বর' },
+  { value: 'December', en: 'December', bn: 'ডিসেম্বর' },
+];
+
+const toBnDigits = (num: number | string) =>
+  String(num).replace(/\d/g, (d) => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
+
+const generateTransactionId = () => {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  const rand = String(Math.floor(1000 + Math.random() * 9000));
+  return `STU-${y}${m}${d}-${rand}`;
+};
+
 const FeePaymentPage = () => {
   const { language } = useLanguage();
-  const [searchRoll, setSearchRoll] = useState('');
+  const bn = language === 'bn';
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const [activeTab, setActiveTab] = useState<'pay' | 'receipts'>('pay');
+
+  // Search State
+  const [searchMode, setSearchMode] = useState<'registration' | 'session_roll'>('registration');
+  const [regNo, setRegNo] = useState('');
+  const [selectedSession, setSelectedSession] = useState('');
+  const [rollNumber, setRollNumber] = useState('');
+  const [searching, setSearching] = useState(false);
+  const [foundStudent, setFoundStudent] = useState<any>(null);
+
+  // Payment Form State
+  const [selectedFeeTypeId, setSelectedFeeTypeId] = useState('');
+  const currentMonthValue = MONTHS[new Date().getMonth()].value;
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthValue);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
-  const [selectedMonth, setSelectedMonth] = useState('');
+  const [customAmount, setCustomAmount] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'online'>('online');
+  const [manualMethod, setManualMethod] = useState('bkash');
+  const [manualTrxId, setManualTrxId] = useState('');
+  const [senderPhone, setSenderPhone] = useState('');
+  const [paymentSuccess, setPaymentSuccess] = useState<any | null>(null);
+
+  // Receipt Tab State
+  const [receiptSearch, setReceiptSearch] = useState('');
+  const [receiptYear, setReceiptYear] = useState(new Date().getFullYear().toString());
+  const [receiptMonth, setReceiptMonth] = useState('');
   const [selectedReceipt, setSelectedReceipt] = useState<ReceiptData | null>(null);
 
+  // Institution info
   const { data: institution } = useQuery({
     queryKey: ['institution-receipt-public'],
     queryFn: async () => {
       const data = await fetchInstitutionInfo();
       return data;
-    }
+    },
   });
 
-  const { data: payments, isLoading } = useQuery({
-    queryKey: ['fee-payments-public', selectedYear, selectedMonth, searchRoll],
+  // Current logged in staff name (if admin/staff)
+  const { data: collectorStaff } = useQuery({
+    queryKey: ['collector_staff_profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase
+        .from('staff')
+        .select('name_bn, name_en')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+  const isStaffOrAdmin = !!user;
+  const collectorName = collectorStaff?.name_bn || collectorStaff?.name_en || user?.email || 'Office';
+
+  // Academic sessions
+  const { data: sessions = [] } = useQuery({
+    queryKey: ['academic_sessions_public_fees'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('academic_sessions')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+      return data || [];
+    },
+  });
+
+  // Dynamic fee types
+  const { data: dbFeeTypes = [] } = useQuery({
+    queryKey: ['fee_types_public_fees'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('fee_types')
+        .select('*, divisions(name_bn), classes(name_bn)')
+        .eq('is_active', true)
+        .order('fee_category')
+        .order('name_bn');
+      return data || [];
+    },
+  });
+
+  // Student's fee payments (to show dues & paid status)
+  const { data: studentFeePayments = [], refetch: refetchStudentPayments } = useQuery({
+    queryKey: ['student_fee_payments_public', foundStudent?.id],
+    queryFn: async () => {
+      if (!foundStudent?.id) return [];
+      const { data, error } = await supabase
+        .from('fee_payments')
+        .select('id, fee_type_id, status, paid_amount, amount, month, year, receipt_number, paid_at')
+        .eq('student_id', foundStudent.id);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!foundStudent?.id,
+  });
+
+  // Applicable fee types for found student
+  const applicableFeeTypes = useMemo(() => {
+    if (!foundStudent) return dbFeeTypes;
+    return dbFeeTypes.filter((ft: any) => {
+      if (ft.division_id && ft.division_id !== foundStudent.division_id) return false;
+      if (ft.class_id && ft.class_id !== foundStudent.class_id) return false;
+      return true;
+    });
+  }, [foundStudent, dbFeeTypes]);
+
+  // Selected fee type object
+  const selectedFeeTypeObj = useMemo(() => {
+    return applicableFeeTypes.find((ft: any) => ft.id === selectedFeeTypeId);
+  }, [applicableFeeTypes, selectedFeeTypeId]);
+
+  // Automatically update amount when fee type changes
+  const handleFeeTypeChange = (feeTypeId: string) => {
+    setSelectedFeeTypeId(feeTypeId);
+    const ft = applicableFeeTypes.find((f: any) => f.id === feeTypeId);
+    if (ft && ft.amount != null) {
+      setCustomAmount(String(ft.amount));
+    }
+  };
+
+  // Student Search
+  const searchStudent = async () => {
+    setSearching(true);
+    setFoundStudent(null);
+    setPaymentSuccess(null);
+    setSelectedFeeTypeId('');
+    try {
+      let query = supabase
+        .from('students')
+        .select('*, divisions:division_id(name, name_bn), classes:class_id(name, name_bn), academic_sessions:session_id(name, name_bn)')
+        .eq('status', 'active');
+
+      if (searchMode === 'registration') {
+        const val = regNo.trim();
+        if (!val) {
+          toast.error(bn ? 'রেজিস্ট্রেশন বা আইডি নম্বর লিখুন' : 'Enter registration or ID number');
+          setSearching(false);
+          return;
+        }
+        query = query.or(`registration_no.eq.${val},student_id.eq.${val},roll_number.eq.${val}`);
+      } else {
+        if (!selectedSession || !rollNumber.trim()) {
+          toast.error(bn ? 'সেশন ও রোল নম্বর নির্বাচন করুন' : 'Select session and roll number');
+          setSearching(false);
+          return;
+        }
+        query = query.eq('session_id', selectedSession).eq('roll_number', rollNumber.trim());
+      }
+
+      const { data, error } = await query.limit(1).maybeSingle();
+      if (error) throw error;
+      if (!data) {
+        toast.error(bn ? 'কোন শিক্ষার্থী পাওয়া যায়নি' : 'Student not found');
+        return;
+      }
+      setFoundStudent(data);
+      toast.success(bn ? 'শিক্ষার্থী পাওয়া গেছে!' : 'Student found!');
+    } catch (e: any) {
+      toast.error(e.message || (bn ? 'খুঁজতে সমস্যা হয়েছে' : 'Search error'));
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  // Pay / Collect Fee Mutation
+  const payMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedFeeTypeId || !foundStudent || !customAmount) {
+        throw new Error(bn ? 'সকল আবশ্যক তথ্য পূরণ করুন' : 'All required fields are needed');
+      }
+      const amtNum = parseFloat(customAmount);
+      if (isNaN(amtNum) || amtNum <= 0) {
+        throw new Error(bn ? 'সঠিক টাকার পরিমাণ লিখুন' : 'Enter a valid amount');
+      }
+
+      const txnId = generateTransactionId();
+      let serialNumber = txnId;
+      try {
+        const { data: sn, error: serialErr } = await supabase.rpc('get_next_receipt_serial');
+        if (!serialErr && sn) serialNumber = sn;
+      } catch {
+        // fallback to txnId
+      }
+
+      const feeTypeName = selectedFeeTypeObj ? (bn ? selectedFeeTypeObj.name_bn : selectedFeeTypeObj.name) : 'Student Fee';
+      const isCash = isStaffOrAdmin && paymentMethod === 'cash';
+
+      // 1. Record in payments table
+      const paymentPayload = {
+        fee_type: feeTypeName,
+        amount: amtNum,
+        transaction_id: txnId,
+        status: isCash ? 'success' : 'pending',
+        student_id: foundStudent.id,
+        payer_name: foundStudent.name_bn || foundStudent.name_en,
+        payment_method: isCash ? 'cash' : (manualMethod || 'online'),
+        notes: `${bn ? 'আদায়' : 'Collection'}: ${isCash ? 'Cash' : manualMethod} | TrxID: ${manualTrxId || txnId} | Sender: ${senderPhone} | Reg: ${foundStudent.registration_no || ''} | Serial: ${serialNumber}`,
+      };
+      await supabase.from('payments').insert(paymentPayload);
+
+      // 2. Record in fee_payments table
+      const feePaymentPayload = {
+        fee_type_id: selectedFeeTypeId,
+        student_id: foundStudent.id,
+        amount: amtNum,
+        paid_amount: isCash ? amtNum : 0,
+        status: isCash ? 'paid' : 'pending',
+        receipt_number: serialNumber || txnId,
+        paid_at: isCash ? new Date().toISOString() : null,
+        month: selectedFeeTypeObj?.payment_frequency === 'monthly' ? selectedMonth : null,
+        year: parseInt(selectedYear),
+        collected_by: collectorName || (isCash ? 'Office' : 'Online'),
+        approved_by: isCash ? (collectorName || 'Office') : null,
+      };
+
+      const { data: insertedRecord, error: feeErr } = await supabase
+        .from('fee_payments')
+        .insert(feePaymentPayload)
+        .select()
+        .maybeSingle();
+
+      if (feeErr) throw feeErr;
+
+      return {
+        txnId,
+        serialNumber: serialNumber || txnId,
+        feePayment: insertedRecord,
+        feeTypeName,
+        amount: amtNum,
+        isCash,
+      };
+    },
+    onSuccess: (data) => {
+      setPaymentSuccess(data);
+      refetchStudentPayments();
+      queryClient.invalidateQueries({ queryKey: ['fee-payments-public'] });
+      toast.success(
+        data.isCash
+          ? (bn ? 'ক্যাশ পেমেন্ট সফলভাবে সংরক্ষিত হয়েছে!' : 'Cash payment recorded successfully!')
+          : (bn ? 'পেমেন্ট রিকোয়েস্ট সফলভাবে জমা হয়েছে!' : 'Payment request submitted successfully!')
+      );
+    },
+    onError: (err: any) => {
+      toast.error(err.message || (bn ? 'পেমেন্ট প্রক্রিয়ায় ত্রুটি' : 'Payment process error'));
+    },
+  });
+
+  // Public Receipts Query for Tab 2
+  const { data: payments = [], isLoading: receiptsLoading } = useQuery({
+    queryKey: ['fee-payments-public', receiptYear, receiptMonth, receiptSearch],
     queryFn: async () => {
       let query = supabase
         .from('fee_payments')
         .select(`
           *,
-          students!inner(name_bn, name_en, student_id, roll_number, division_id, divisions:division_id(name, name_bn)),
+          students!inner(name_bn, name_en, student_id, roll_number, registration_no, division_id, divisions:division_id(name, name_bn)),
           fee_types!inner(name, name_bn, fee_category)
         `)
         .eq('status', 'paid')
         .order('paid_at', { ascending: false });
 
-      if (selectedYear) query = query.eq('year', parseInt(selectedYear));
-      if (selectedMonth && selectedMonth !== 'all') query = query.eq('month', selectedMonth);
+      if (receiptYear) query = query.eq('year', parseInt(receiptYear));
+      if (receiptMonth && receiptMonth !== 'all') query = query.eq('month', receiptMonth);
 
       const { data, error } = await query;
       if (error) throw error;
@@ -63,10 +342,10 @@ const FeePaymentPage = () => {
         id: p.id,
         receipt_number: p.receipt_number || `RCP-${p.id.slice(0, 8).toUpperCase()}`,
         student_name: p.students?.name_bn || p.students?.name_en || '',
-        student_id: p.students?.student_id || '',
+        student_id: p.students?.student_id || p.students?.registration_no || '',
         class_name: p.students?.divisions?.name_bn || p.students?.divisions?.name || '',
         roll: p.students?.roll_number || '',
-        fee_type: language === 'bn' ? p.fee_types?.name_bn : p.fee_types?.name,
+        fee_type: bn ? p.fee_types?.name_bn : p.fee_types?.name,
         amount: p.amount,
         paid_amount: p.paid_amount || p.amount,
         status: p.status,
@@ -74,28 +353,23 @@ const FeePaymentPage = () => {
         month: p.month,
         year: p.year,
       })) as ReceiptData[];
-    }
+    },
   });
 
-  const filteredPayments = (payments || []).filter(p =>
-    !searchRoll || p.roll?.includes(searchRoll) || p.student_id?.includes(searchRoll) || p.student_name?.includes(searchRoll)
-  );
+  const filteredPayments = useMemo(() => {
+    return (payments || []).filter((p) => {
+      if (!receiptSearch) return true;
+      const s = receiptSearch.toLowerCase();
+      return (
+        p.roll?.toLowerCase().includes(s) ||
+        p.student_id?.toLowerCase().includes(s) ||
+        p.student_name?.toLowerCase().includes(s) ||
+        p.receipt_number?.toLowerCase().includes(s)
+      );
+    });
+  }, [payments, receiptSearch]);
 
-  const months = [
-    { value: 'january', en: 'January', bn: 'জানুয়ারি' },
-    { value: 'february', en: 'February', bn: 'ফেব্রুয়ারি' },
-    { value: 'march', en: 'March', bn: 'মার্চ' },
-    { value: 'april', en: 'April', bn: 'এপ্রিল' },
-    { value: 'may', en: 'May', bn: 'মে' },
-    { value: 'june', en: 'June', bn: 'জুন' },
-    { value: 'july', en: 'July', bn: 'জুলাই' },
-    { value: 'august', en: 'August', bn: 'আগস্ট' },
-    { value: 'september', en: 'September', bn: 'সেপ্টেম্বর' },
-    { value: 'october', en: 'October', bn: 'অক্টোবর' },
-    { value: 'november', en: 'November', bn: 'নভেম্বর' },
-    { value: 'december', en: 'December', bn: 'ডিসেম্বর' },
-  ];
-
+  // Receipt Printing
   const handlePrint = (receipt: ReceiptData) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -108,7 +382,7 @@ const FeePaymentPage = () => {
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'SutonnyOMJ', 'Inter', 'Noto Sans Bengali', sans-serif; background: #f1f5f9; display: flex; justify-content: center; padding: 40px 20px; }
+        body { font-family: 'Inter', 'Noto Sans Bengali', sans-serif; background: #f1f5f9; display: flex; justify-content: center; padding: 40px 20px; }
         .card { background: white; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15); max-width: 480px; width: 100%; padding: 40px 36px; }
         .header { text-align: center; margin-bottom: 28px; }
         .check-icon { width: 56px; height: 56px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
@@ -140,37 +414,35 @@ const FeePaymentPage = () => {
           <div class="inst-name">${institution?.name || 'প্রতিষ্ঠানের নাম'}</div>
           ${institution?.name_en ? `<div style="font-size:13px;font-weight:600;color:#334155;margin-bottom:2px">${institution.name_en}</div>` : ''}
           <div class="inst-addr">${institution?.address || ''}</div>
-          ${institution?.phone ? `<div class="inst-addr">${language === 'bn' ? 'ফোন' : 'Phone'}: ${institution.phone}</div>` : ''}
-          ${institution?.email ? `<div class="inst-addr">${language === 'bn' ? 'ইমেইল' : 'Email'}: ${institution.email}</div>` : ''}
-          ${institution?.other_info ? `<div class="inst-addr" style="margin-top:2px">${institution.other_info}</div>` : ''}
-          <div class="receipt-label">Payment Receipt</div>
+          ${institution?.phone ? `<div class="inst-addr">${bn ? 'ফোন' : 'Phone'}: ${institution.phone}</div>` : ''}
+          <div class="receipt-label">Money Receipt</div>
         </div>
         <div class="section">
-          <div class="row"><span class="label">${language === 'bn' ? 'রসিদ নং' : 'Receipt No'}</span><span class="value">${receipt.receipt_number}</span></div>
-          <div class="row"><span class="label">${language === 'bn' ? 'তারিখ' : 'Date'}</span><span class="value">${receipt.paid_at ? new Date(receipt.paid_at).toLocaleDateString('bn-BD') : '-'}</span></div>
-          <div class="row"><span class="label">${language === 'bn' ? 'স্ট্যাটাস' : 'Status'}</span><span class="status-badge">${language === 'bn' ? 'পরিশোধিত' : 'Paid'}</span></div>
+          <div class="row"><span class="label">${bn ? 'রসিদ নং' : 'Receipt No'}</span><span class="value">${receipt.receipt_number}</span></div>
+          <div class="row"><span class="label">${bn ? 'তারিখ' : 'Date'}</span><span class="value">${receipt.paid_at ? new Date(receipt.paid_at).toLocaleDateString('bn-BD') : '-'}</span></div>
+          <div class="row"><span class="label">${bn ? 'স্ট্যাটাস' : 'Status'}</span><span class="status-badge">${bn ? 'পরিশোধিত' : 'Paid'}</span></div>
         </div>
         <div class="section">
-          <div class="row"><span class="label">${language === 'bn' ? 'ছাত্রের নাম' : 'Student'}</span><span class="value">${receipt.student_name}</span></div>
-          <div class="row"><span class="label">${language === 'bn' ? 'আইডি' : 'ID'}</span><span class="value">${receipt.student_id}</span></div>
-          <div class="row"><span class="label">${language === 'bn' ? 'শ্রেণী' : 'Class'}</span><span class="value">${receipt.class_name}</span></div>
-          <div class="row"><span class="label">${language === 'bn' ? 'রোল' : 'Roll'}</span><span class="value">${receipt.roll}</span></div>
+          <div class="row"><span class="label">${bn ? 'ছাত্রের নাম' : 'Student'}</span><span class="value">${receipt.student_name}</span></div>
+          <div class="row"><span class="label">${bn ? 'আইডি' : 'ID'}</span><span class="value">${receipt.student_id}</span></div>
+          <div class="row"><span class="label">${bn ? 'শ্রেণী' : 'Class'}</span><span class="value">${receipt.class_name}</span></div>
+          <div class="row"><span class="label">${bn ? 'রোল' : 'Roll'}</span><span class="value">${receipt.roll}</span></div>
         </div>
         <div class="section">
-          <div class="row"><span class="label">${language === 'bn' ? 'ফি এর ধরন' : 'Fee Type'}</span><span class="value">${receipt.fee_type}</span></div>
-          <div class="row"><span class="label">${language === 'bn' ? 'মাস' : 'Month'}</span><span class="value">${receipt.month || '-'}</span></div>
-          <div class="row"><span class="label">${language === 'bn' ? 'বছর' : 'Year'}</span><span class="value">${receipt.year || '-'}</span></div>
+          <div class="row"><span class="label">${bn ? 'ফি এর ধরন' : 'Fee Type'}</span><span class="value">${receipt.fee_type}</span></div>
+          <div class="row"><span class="label">${bn ? 'মাস' : 'Month'}</span><span class="value">${receipt.month || '-'}</span></div>
+          <div class="row"><span class="label">${bn ? 'বছর' : 'Year'}</span><span class="value">${receipt.year || '-'}</span></div>
         </div>
         <div class="dashed"></div>
         <div class="total-row">
-          <span class="total-label">${language === 'bn' ? 'মোট পরিশোধ' : 'Total Paid'}</span>
+          <span class="total-label">${bn ? 'মোট পরিশোধ' : 'Total Paid'}</span>
           <span class="total-value"><span class="currency">৳</span>${receipt.paid_amount.toLocaleString('bn-BD')}</span>
         </div>
         <div class="sig-section">
-          <div class="sig-block"><div class="sig-line">${language === 'bn' ? 'গ্রহণকারী' : 'Received By'}</div></div>
-          <div class="sig-block"><div class="sig-line">${language === 'bn' ? 'অনুমোদনকারী' : 'Authorized By'}</div></div>
+          <div class="sig-block"><div class="sig-line">${bn ? 'আদায়কারী' : 'Received By'}</div></div>
+          <div class="sig-block"><div class="sig-line">${bn ? 'অনুমোদনকারী' : 'Authorized By'}</div></div>
         </div>
-        <div class="footer">${language === 'bn' ? 'এটি কম্পিউটার জেনারেটেড রসিদ' : 'This is a computer-generated receipt'}</div>
+        <div class="footer">${bn ? 'এটি কম্পিউটার জেনারেটেড রসিদ' : 'This is a computer-generated receipt'}</div>
       </div>
     </body></html>`;
 
@@ -180,244 +452,587 @@ const FeePaymentPage = () => {
   };
 
   return (
-    <AdminLayout>
-      <div className="container mx-auto px-4 py-12 max-w-4xl space-y-6">
-        {/* Header */}
-        <div className="text-center mb-2">
-          <h1 className="text-3xl font-display font-bold text-foreground">
-            {language === 'bn' ? '🧾 ফি রসিদ ও পরিশোধ' : '🧾 Fee Receipts & Payment'}
+    <PublicLayout>
+      <div className="container mx-auto px-4 py-8 max-w-5xl space-y-6">
+        {/* Top Admin Quick Switcher Banner */}
+        {isStaffOrAdmin && (
+          <div className="rounded-xl border border-blue-200 bg-blue-50/70 dark:bg-blue-950/30 dark:border-blue-900/50 p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
+            <div className="flex items-center gap-2 text-blue-950 dark:text-blue-200">
+              <Shield className="w-4 h-4 text-blue-600 shrink-0" />
+              <span>
+                {bn
+                  ? `আপনি অ্যাডমিন হিসেবে লগইন আছেন (${collectorName})। সরাসরি অফিস ফি আদায় সিস্টেমে যেতে পারেন:`
+                  : `Logged in as staff/admin (${collectorName}). You can switch to full office fee portal:`}
+              </span>
+            </div>
+            <Link to="/admin/students-fees">
+              <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs whitespace-nowrap">
+                {bn ? 'অফিস ফি কালেকশন প্যানেল' : 'Office Fee Collection'}
+                <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {/* Page Title & Subtitle */}
+        <div className="text-center space-y-1.5">
+          <h1 className="text-3xl sm:text-4xl font-display font-bold text-foreground flex items-center justify-center gap-2.5">
+            <CreditCard className="w-8 h-8 text-primary" />
+            {bn ? 'ফি আদায় ও পরিশোধ' : 'Fee Collection & Payment'}
           </h1>
-          <p className="text-muted-foreground mt-1">
-            {language === 'bn' ? 'পরিশোধিত ফি এর রসিদ দেখুন ও প্রিন্ট করুন' : 'View and print paid fee receipts'}
+          <p className="text-muted-foreground text-sm max-w-xl mx-auto">
+            {bn
+              ? 'শিক্ষার্থীর রোল বা আইডি দিয়ে খুঁজুন, বকেয়া ফি পরিশোধ করুন অথবা পূর্বে পরিশোধিত রসিদ দেখুন ও প্রিন্ট করুন'
+              : 'Search student by roll or ID, pay due fees or view/print paid receipts'}
           </p>
         </div>
 
-        {/* Filters */}
-        <div className="card-elevated p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder={language === 'bn' ? 'নাম / রোল / আইডি...' : 'Name / Roll / ID...'}
-                value={searchRoll}
-                onChange={(e) => setSearchRoll(e.target.value)}
-                className="pl-9 bg-background"
-              />
-            </div>
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger className="bg-background">
-                <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
-                <SelectValue placeholder={language === 'bn' ? 'বছর' : 'Year'} />
-              </SelectTrigger>
-              <SelectContent>
-                {[2026, 2025, 2024].map(y => (
-                  <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-              <SelectTrigger className="bg-background">
-                <SelectValue placeholder={language === 'bn' ? 'সব মাস' : 'All Months'} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{language === 'bn' ? 'সব মাস' : 'All Months'}</SelectItem>
-                {months.map(m => (
-                  <SelectItem key={m.value} value={m.value}>{language === 'bn' ? m.bn : m.en}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Receipt className="w-4 h-4" />
-              <span>{language === 'bn' ? `মোট: ${filteredPayments.length}টি` : `Total: ${filteredPayments.length}`}</span>
-            </div>
+        {/* Main Navigation Tabs */}
+        <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="space-y-6">
+          <div className="flex justify-center">
+            <TabsList className="grid grid-cols-2 w-full max-w-md h-11 p-1 bg-muted/80 rounded-xl">
+              <TabsTrigger value="pay" className="rounded-lg text-sm font-semibold flex items-center gap-2">
+                <CreditCard className="w-4 h-4" />
+                {bn ? 'ফি আদায় ও পরিশোধ' : 'Pay / Collect Fee'}
+              </TabsTrigger>
+              <TabsTrigger value="receipts" className="rounded-lg text-sm font-semibold flex items-center gap-2">
+                <Receipt className="w-4 h-4" />
+                {bn ? 'পরিশোধিত রসিদ' : 'Paid Receipts'}
+              </TabsTrigger>
+            </TabsList>
           </div>
-        </div>
 
-        {/* Receipt Preview or List */}
-        {selectedReceipt ? (
-          <div className="animate-fade-in">
-            <div className="flex justify-center">
-              <div className="w-full max-w-md bg-card/80 backdrop-blur-md rounded-3xl shadow-2xl border border-border overflow-hidden">
-                {/* Header */}
-                <div className="text-center pt-8 pb-4 px-6">
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center mx-auto mb-4 shadow-lg">
-                    <CheckCircle2 className="w-7 h-7 text-white" />
-                  </div>
-                  {institution?.logo_url && (
-                    <img src={institution.logo_url} alt="Logo" className="h-10 mx-auto mb-2 object-contain" />
-                  )}
-                  <div className="flex items-center justify-center gap-2 mb-1">
-                    <Building2 className="w-4 h-4 text-muted-foreground" />
-                    <h2 className="text-lg font-bold text-foreground">{institution?.name || 'প্রতিষ্ঠান'}</h2>
-                  </div>
-                  {institution?.name_en && (
-                    <p className="text-sm font-semibold text-foreground/80">{institution.name_en}</p>
-                  )}
-                  <p className="text-xs text-muted-foreground">{institution?.address || ''}</p>
-                  {institution?.phone && (
-                    <p className="text-xs text-muted-foreground">{language === 'bn' ? 'ফোন' : 'Phone'}: {institution.phone}</p>
-                  )}
-                  {institution?.email && (
-                    <p className="text-xs text-muted-foreground">{language === 'bn' ? 'ইমেইল' : 'Email'}: {institution.email}</p>
-                  )}
-                  {institution?.other_info && (
-                    <p className="text-[10px] text-muted-foreground/60 mt-1">{institution.other_info}</p>
-                  )}
-                  <p className="text-[11px] uppercase tracking-[3px] text-muted-foreground/60 mt-3 font-medium">
-                    {language === 'bn' ? 'পেমেন্ট রসিদ' : 'Payment Receipt'}
-                  </p>
-                </div>
-
-                {/* Order Info */}
-                <div className="mx-5 mb-3 bg-muted/50 rounded-2xl p-4 space-y-2">
-                  <InfoRow label={language === 'bn' ? 'রসিদ নং' : 'Receipt No'} value={selectedReceipt.receipt_number} />
-                  <InfoRow label={language === 'bn' ? 'তারিখ' : 'Date'} value={selectedReceipt.paid_at ? new Date(selectedReceipt.paid_at).toLocaleDateString('bn-BD') : '-'} />
-                  <InfoRow label={language === 'bn' ? 'স্ট্যাটাস' : 'Status'} value={
-                    <span className="inline-block bg-green-500/15 text-green-600 text-[11px] font-semibold px-3 py-0.5 rounded-full uppercase tracking-wider">
-                      {language === 'bn' ? 'পরিশোধিত' : 'Paid'}
-                    </span>
-                  } />
-                </div>
-
-                {/* Student Info */}
-                <div className="mx-5 mb-3 bg-muted/50 rounded-2xl p-4 space-y-2">
-                  <InfoRow label={language === 'bn' ? 'ছাত্রের নাম' : 'Student'} value={selectedReceipt.student_name} />
-                  <InfoRow label={language === 'bn' ? 'আইডি' : 'ID'} value={selectedReceipt.student_id} />
-                  <InfoRow label={language === 'bn' ? 'শ্রেণী' : 'Class'} value={selectedReceipt.class_name} />
-                  <InfoRow label={language === 'bn' ? 'রোল' : 'Roll'} value={selectedReceipt.roll} />
-                </div>
-
-                {/* Fee Details */}
-                <div className="mx-5 mb-3 bg-muted/50 rounded-2xl p-4 space-y-2">
-                  <InfoRow label={language === 'bn' ? 'ফি এর ধরন' : 'Fee Type'} value={selectedReceipt.fee_type} />
-                  <InfoRow label={language === 'bn' ? 'মাস' : 'Month'} value={selectedReceipt.month || '-'} />
-                  <InfoRow label={language === 'bn' ? 'বছর' : 'Year'} value={String(selectedReceipt.year || '-')} />
-                </div>
-
-                {/* Dashed separator + Total */}
-                <div className="mx-5 mb-2">
-                  <div className="border-t-2 border-dashed border-border my-4" />
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-                      {language === 'bn' ? 'মোট পরিশোধ' : 'Total Paid'}
-                    </span>
-                    <span className="text-3xl font-extrabold text-primary">
-                      <span className="text-lg font-medium">৳</span>{selectedReceipt.paid_amount.toLocaleString('bn-BD')}
-                    </span>
+          {/* ================= TAB 1: PAY / COLLECT FEE ================= */}
+          <TabsContent value="pay" className="space-y-6">
+            {/* Search Box Card */}
+            <Card className="border-border/80 shadow-sm overflow-hidden">
+              <CardContent className="p-5 sm:p-6 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <h3 className="font-semibold text-foreground text-base flex items-center gap-2">
+                    <Search className="w-4 h-4 text-primary" />
+                    {bn ? 'শিক্ষার্থী খুঁজুন' : 'Find Student'}
+                  </h3>
+                  <div className="flex gap-1.5 bg-muted p-1 rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => { setSearchMode('registration'); setFoundStudent(null); }}
+                      className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${searchMode === 'registration' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                    >
+                      {bn ? 'রেজিস্ট্রেশন / আইডি / রোল' : 'Reg / ID / Roll'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setSearchMode('session_roll'); setFoundStudent(null); }}
+                      className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${searchMode === 'session_roll' ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                    >
+                      {bn ? 'সেশন + রোল' : 'Session + Roll'}
+                    </button>
                   </div>
                 </div>
 
-                {/* Signature */}
-                <div className="mx-5 mt-8 mb-2 flex justify-between gap-8">
-                  <div className="flex-1 text-center">
-                    <div className="border-t border-border pt-2 text-[11px] uppercase tracking-wider text-muted-foreground">
-                      {language === 'bn' ? 'গ্রহণকারী' : 'Received By'}
+                {searchMode === 'registration' ? (
+                  <div className="flex gap-2">
+                    <Input
+                      value={regNo}
+                      onChange={(e) => setRegNo(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && searchStudent()}
+                      placeholder={bn ? 'শিক্ষার্থীর রোল, রেজিস্ট্রেশন বা আইডি লিখুন (যেমন: 1001 বা 20261001)' : 'Enter roll, registration or ID...'}
+                      className="h-11 bg-background text-base"
+                    />
+                    <Button onClick={searchStudent} disabled={searching} className="h-11 px-6 font-semibold">
+                      {searching ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Search className="w-4 h-4 mr-1.5" />}
+                      {bn ? 'খুঁজুন' : 'Search'}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <Select value={selectedSession} onValueChange={setSelectedSession}>
+                      <SelectTrigger className="h-11 bg-background">
+                        <SelectValue placeholder={bn ? 'সেশন নির্বাচন করুন' : 'Select Session'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sessions.map((s: any) => (
+                          <SelectItem key={s.id} value={s.id}>{bn ? (s.name_bn || s.name) : s.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      value={rollNumber}
+                      onChange={(e) => setRollNumber(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && searchStudent()}
+                      placeholder={bn ? 'রোল নম্বর লিখুন (যেমন: 101)' : 'Enter roll number'}
+                      className="h-11 bg-background"
+                    />
+                    <Button onClick={searchStudent} disabled={searching} className="h-11 font-semibold">
+                      {searching ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Search className="w-4 h-4 mr-1.5" />}
+                      {bn ? 'খুঁজুন' : 'Search'}
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Found Student Profile Card */}
+            {foundStudent && (
+              <div className="space-y-6 animate-fade-in">
+                <Card className="border-primary/20 bg-primary/5 shadow-xs overflow-hidden">
+                  <CardContent className="p-5">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-14 h-14 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold text-xl shrink-0 overflow-hidden border border-primary/30">
+                          {foundStudent.photo_url ? (
+                            <img src={foundStudent.photo_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <User className="w-7 h-7" />
+                          )}
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h2 className="text-xl font-bold text-foreground">
+                              {foundStudent.name_bn || foundStudent.name_en}
+                            </h2>
+                            <Badge className="bg-emerald-600 text-white text-xs">
+                              {bn ? 'নিয়মিত শিক্ষার্থী' : 'Active'}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+                            <span>{bn ? 'শ্রেণি/বিভাগ:' : 'Class:'} <strong className="text-foreground">{foundStudent.divisions?.name_bn || foundStudent.classes?.name_bn || '—'}</strong></span>
+                            <span>•</span>
+                            <span>{bn ? 'রোল:' : 'Roll:'} <strong className="text-foreground">{foundStudent.roll_number || '—'}</strong></span>
+                            <span>•</span>
+                            <span>{bn ? 'আইডি:' : 'ID:'} <strong className="text-foreground font-mono">{foundStudent.registration_no || foundStudent.student_id || '—'}</strong></span>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="text-left sm:text-right text-xs space-y-1 text-muted-foreground">
+                        {foundStudent.father_name && (
+                          <div>{bn ? 'পিতার নাম:' : "Father's:"} <span className="font-medium text-foreground">{foundStudent.father_name}</span></div>
+                        )}
+                        {foundStudent.father_phone && (
+                          <div className="flex items-center gap-1 sm:justify-end">
+                            <Phone className="w-3 h-3" />
+                            <span>{foundStudent.father_phone}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex-1 text-center">
-                    <div className="border-t border-border pt-2 text-[11px] uppercase tracking-wider text-muted-foreground">
-                      {language === 'bn' ? 'অনুমোদনকারী' : 'Authorized By'}
+                  </CardContent>
+                </Card>
+
+                {/* Monthly Fee Payment Status Matrix */}
+                <Card className="border-border/80 shadow-sm">
+                  <CardContent className="p-5 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                        <Calendar className="w-4 h-4 text-primary" />
+                        {bn ? `মাসিক বেতনের অবস্থা (${selectedYear})` : `Monthly Fee Status (${selectedYear})`}
+                      </h4>
+                      <span className="text-xs text-muted-foreground">
+                        {bn ? 'সবুজ = পরিশোধিত, লাল = বকেয়া' : 'Green = Paid, Red = Due'}
+                      </span>
                     </div>
-                  </div>
-                </div>
 
-                {/* Footer */}
-                <div className="text-center py-4 text-[10px] text-muted-foreground/50">
-                  {language === 'bn' ? 'এটি কম্পিউটার জেনারেটেড রসিদ' : 'This is a computer-generated receipt'}
-                </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 pt-1">
+                      {MONTHS.map((m, idx) => {
+                        const isPaid = studentFeePayments.some(
+                          (p: any) => p.status === 'paid' && p.month === m.value && p.year === parseInt(selectedYear)
+                        );
+                        const isCurrentMonth = idx === new Date().getMonth();
+                        const isPastMonth = idx < new Date().getMonth();
 
-                {/* Action Buttons */}
-                <div className="px-5 pb-6 flex gap-3">
-                  <Button
-                    className="flex-1 rounded-xl bg-primary/90 backdrop-blur-sm hover:bg-primary text-primary-foreground font-semibold"
-                    onClick={() => handlePrint(selectedReceipt)}
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    {language === 'bn' ? 'ডাউনলোড' : 'Download PDF'}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="flex-1 rounded-xl backdrop-blur-sm border-border/60 font-semibold"
-                    onClick={() => handlePrint(selectedReceipt)}
-                  >
-                    <Printer className="w-4 h-4 mr-2" />
-                    {language === 'bn' ? 'প্রিন্ট' : 'Print'}
-                  </Button>
-                </div>
-              </div>
-            </div>
+                        return (
+                          <div
+                            key={m.value}
+                            className={`p-2.5 rounded-lg border text-center transition-all ${
+                              isPaid
+                                ? 'bg-emerald-50/70 border-emerald-300 dark:bg-emerald-950/20 dark:border-emerald-800'
+                                : isPastMonth
+                                ? 'bg-red-50/60 border-red-300 dark:bg-red-950/20 dark:border-red-800'
+                                : isCurrentMonth
+                                ? 'bg-amber-50/60 border-amber-300 dark:bg-amber-950/20 dark:border-amber-800'
+                                : 'bg-muted/40 border-border text-muted-foreground'
+                            }`}
+                          >
+                            <div className="text-xs font-semibold">{bn ? m.bn : m.en}</div>
+                            <div className="mt-1">
+                              {isPaid ? (
+                                <span className="inline-flex items-center text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
+                                  <Check className="w-3 h-3 mr-0.5" /> {bn ? 'পরিশোধিত' : 'Paid'}
+                                </span>
+                              ) : isPastMonth ? (
+                                <span className="inline-flex items-center text-[10px] font-bold text-red-700 dark:text-red-400">
+                                  <AlertTriangle className="w-3 h-3 mr-0.5" /> {bn ? 'বকেয়া' : 'Due'}
+                                </span>
+                              ) : isCurrentMonth ? (
+                                <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400">
+                                  {bn ? 'চলতি মাস' : 'Current'}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-muted-foreground">{bn ? 'অপেক্ষমাণ' : 'Upcoming'}</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
 
-            <div className="flex justify-center mt-4">
-              <Button variant="ghost" onClick={() => setSelectedReceipt(null)} className="text-muted-foreground">
-                ← {language === 'bn' ? 'তালিকায় ফিরুন' : 'Back to list'}
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="card-elevated overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-muted/50 border-b border-border">
-                    <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-                      {language === 'bn' ? 'রসিদ নং' : 'Receipt #'}
-                    </th>
-                    <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-                      {language === 'bn' ? 'ছাত্র' : 'Student'}
-                    </th>
-                    <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider hidden sm:table-cell">
-                      {language === 'bn' ? 'ফি' : 'Fee'}
-                    </th>
-                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-                      {language === 'bn' ? 'পরিমাণ' : 'Amount'}
-                    </th>
-                    <th className="text-center px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-                      {language === 'bn' ? 'অ্যাকশন' : 'Action'}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {isLoading ? (
-                    <tr><td colSpan={5} className="text-center py-12 text-muted-foreground">
-                      {language === 'bn' ? 'লোড হচ্ছে...' : 'Loading...'}
-                    </td></tr>
-                  ) : filteredPayments.length === 0 ? (
-                    <tr><td colSpan={5} className="text-center py-12">
-                      <Receipt className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-                      <p className="text-muted-foreground">{language === 'bn' ? 'কোনো রসিদ পাওয়া যায়নি' : 'No receipts found'}</p>
-                    </td></tr>
-                  ) : filteredPayments.map((p) => (
-                    <tr key={p.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                      <td className="px-4 py-3 font-mono text-xs text-foreground">{p.receipt_number}</td>
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-foreground">{p.student_name}</div>
-                        <div className="text-xs text-muted-foreground">{p.class_name} • {language === 'bn' ? 'রোল' : 'Roll'}: {p.roll}</div>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{p.fee_type}</td>
-                      <td className="px-4 py-3 text-right font-semibold text-foreground">৳{p.paid_amount.toLocaleString('bn-BD')}</td>
-                      <td className="px-4 py-3 text-center">
-                        <Button size="sm" variant="ghost" className="text-primary hover:text-primary" onClick={() => setSelectedReceipt(p)}>
-                          <Receipt className="w-4 h-4 mr-1" />
-                          {language === 'bn' ? 'রসিদ' : 'View'}
+                {/* Payment Form Card */}
+                {!paymentSuccess ? (
+                  <Card className="border-border/80 shadow-md">
+                    <CardContent className="p-6 space-y-6">
+                      <div className="border-b pb-3">
+                        <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                          <Banknote className="w-5 h-5 text-emerald-600" />
+                          {bn ? 'ফি আদায় ও পরিশোধ ফরম' : 'Fee Payment & Collection Form'}
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {bn ? 'যে ফি দিতে চান তা নির্বাচন করে সহজে জমা দিন' : 'Select fee type and submit payment'}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Fee Type Select */}
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <Label className="text-xs font-semibold">{bn ? 'ফি এর ধরন নির্বাচন করুন' : 'Select Fee Type'} *</Label>
+                          <Select value={selectedFeeTypeId} onValueChange={handleFeeTypeChange}>
+                            <SelectTrigger className="h-11 bg-background">
+                              <SelectValue placeholder={bn ? 'ফি নির্বাচন করুন...' : 'Choose fee type...'} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {applicableFeeTypes.map((ft: any) => (
+                                <SelectItem key={ft.id} value={ft.id}>
+                                  {bn ? ft.name_bn : ft.name} {ft.amount ? `— ৳${ft.amount.toLocaleString()}` : ''}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* If Monthly: Month Select */}
+                        {selectedFeeTypeObj?.payment_frequency === 'monthly' && (
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold">{bn ? 'মাস' : 'Month'} *</Label>
+                            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                              <SelectTrigger className="h-11 bg-background">
+                                <SelectValue placeholder={bn ? 'মাস' : 'Month'} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {MONTHS.map((m) => (
+                                  <SelectItem key={m.value} value={m.value}>{bn ? m.bn : m.en}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+
+                        {/* Year Select */}
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold">{bn ? 'বছর' : 'Year'} *</Label>
+                          <Select value={selectedYear} onValueChange={setSelectedYear}>
+                            <SelectTrigger className="h-11 bg-background">
+                              <SelectValue placeholder={bn ? 'বছর' : 'Year'} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {[2026, 2025, 2024].map((y) => (
+                                <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Amount Input */}
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <Label className="text-xs font-semibold">{bn ? 'টাকার পরিমাণ (৳)' : 'Amount (৳)'} *</Label>
+                          <Input
+                            type="number"
+                            value={customAmount}
+                            onChange={(e) => setCustomAmount(e.target.value)}
+                            placeholder="0.00"
+                            className="h-11 bg-background font-mono text-lg font-bold text-foreground"
+                          />
+                        </div>
+
+                        {/* Payment Method Toggle */}
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <Label className="text-xs font-semibold">{bn ? 'পরিশোধের মাধ্যম' : 'Payment Method'} *</Label>
+                          <div className="grid grid-cols-2 gap-3">
+                            {isStaffOrAdmin && (
+                              <button
+                                type="button"
+                                onClick={() => setPaymentMethod('cash')}
+                                className={`p-3.5 rounded-xl border text-center transition-all flex items-center justify-center gap-2 ${
+                                  paymentMethod === 'cash'
+                                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 font-bold'
+                                    : 'border-border bg-background hover:bg-muted/40 text-muted-foreground'
+                                }`}
+                              >
+                                <Banknote className="w-5 h-5 text-emerald-600" />
+                                <span>{bn ? 'ক্যাশ আদায় (অফিস)' : 'Cash (Office)'}</span>
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setPaymentMethod('online')}
+                              className={`p-3.5 rounded-xl border text-center transition-all flex items-center justify-center gap-2 ${
+                                !isStaffOrAdmin ? 'col-span-2' : ''
+                              } ${
+                                paymentMethod === 'online'
+                                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 font-bold'
+                                  : 'border-border bg-background hover:bg-muted/40 text-muted-foreground'
+                              }`}
+                            >
+                              <CreditCard className="w-5 h-5 text-blue-600" />
+                              <span>{bn ? 'অনলাইন / মোবাইল ব্যাংকিং' : 'Mobile Banking / Online'}</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Online / Manual Payment Details (bKash / Nagad / Rocket) */}
+                      {paymentMethod === 'online' && (
+                        <div className="rounded-xl border border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 p-4 space-y-4">
+                          <ManualPaymentMethods
+                            transactionId={manualTrxId}
+                            onTransactionIdChange={setManualTrxId}
+                            selectedMethod={manualMethod}
+                            onMethodSelect={setManualMethod}
+                          />
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                            <div className="space-y-1">
+                              <Label className="text-xs font-semibold">{bn ? 'প্রেরক মোবাইল নম্বর' : 'Sender Phone'} *</Label>
+                              <Input
+                                value={senderPhone}
+                                onChange={(e) => setSenderPhone(e.target.value)}
+                                placeholder="017xxxxxxxx"
+                                className="h-10 bg-background"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs font-semibold">{bn ? 'ট্রানজেকশন আইডি (TrxID)' : 'Transaction ID'} *</Label>
+                              <Input
+                                value={manualTrxId}
+                                onChange={(e) => setManualTrxId(e.target.value)}
+                                placeholder="e.g. 9J47AB89"
+                                className="h-10 bg-background font-mono"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Submit Payment Button */}
+                      <div className="pt-2">
+                        <Button
+                          className="w-full h-12 text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md"
+                          disabled={payMutation.isPending || !selectedFeeTypeId || !customAmount}
+                          onClick={() => payMutation.mutate()}
+                        >
+                          {payMutation.isPending ? (
+                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="w-5 h-5 mr-2" />
+                          )}
+                          {paymentMethod === 'cash'
+                            ? (bn ? 'ক্যাশ ফি আদায় নিশ্চিত করুন' : 'Confirm Cash Payment')
+                            : (bn ? 'ফি পরিশোধের তথ্য জমা দিন' : 'Submit Fee Payment')}
                         </Button>
-                      </td>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  /* Success & Instant Receipt View */
+                  <Card className="border-emerald-300 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-md">
+                    <CardContent className="p-6 text-center space-y-4">
+                      <div className="w-16 h-16 rounded-full bg-emerald-500 text-white flex items-center justify-center mx-auto shadow-lg">
+                        <CheckCircle2 className="w-9 h-9" />
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="text-2xl font-bold text-foreground">
+                          {paymentSuccess.isCash
+                            ? (bn ? 'ফি আদায় সম্পন্ন হয়েছে!' : 'Payment Completed!')
+                            : (bn ? 'পেমেন্ট তথ্য সংরক্ষিত হয়েছে!' : 'Payment Submitted!')}
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                          {paymentSuccess.isCash
+                            ? (bn ? 'রসিদ প্রিন্ট করুন এবং শিক্ষার্থীকে প্রদান করুন।' : 'Print receipt for the student.')
+                            : (bn ? 'অফিস যাচাই শেষে পেমেন্ট চূড়ান্তভাবে অনুমোদন করা হবে।' : 'Office will verify and approve the payment.')}
+                        </p>
+                      </div>
+
+                      <div className="inline-block bg-background px-4 py-2 rounded-lg border font-mono text-sm">
+                        <span className="text-muted-foreground mr-2">{bn ? 'রসিদ / ট্রানজেকশন নং:' : 'Receipt No:'}</span>
+                        <strong className="text-foreground">{paymentSuccess.serialNumber}</strong>
+                      </div>
+
+                      <div className="flex flex-wrap justify-center gap-3 pt-2">
+                        <Button
+                          onClick={() => {
+                            const recData: ReceiptData = {
+                              id: paymentSuccess.feePayment?.id || paymentSuccess.txnId,
+                              receipt_number: paymentSuccess.serialNumber,
+                              student_name: foundStudent.name_bn || foundStudent.name_en || '',
+                              student_id: foundStudent.student_id || foundStudent.registration_no || '',
+                              class_name: foundStudent.divisions?.name_bn || foundStudent.classes?.name_bn || '',
+                              roll: foundStudent.roll_number || '',
+                              fee_type: paymentSuccess.feeTypeName,
+                              amount: paymentSuccess.amount,
+                              paid_amount: paymentSuccess.amount,
+                              status: paymentSuccess.isCash ? 'paid' : 'pending',
+                              paid_at: new Date().toISOString(),
+                              month: selectedMonth,
+                              year: parseInt(selectedYear),
+                            };
+                            handlePrint(recData);
+                          }}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+                        >
+                          <Printer className="w-4 h-4 mr-2" />
+                          {bn ? 'রসিদ প্রিন্ট করুন' : 'Print Receipt'}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setPaymentSuccess(null);
+                            setSelectedFeeTypeId('');
+                            setManualTrxId('');
+                            setSenderPhone('');
+                          }}
+                        >
+                          <RefreshCw className="w-4 h-4 mr-2" />
+                          {bn ? 'আরেকটি ফি আদায় করুন' : 'New Payment'}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* ================= TAB 2: PAID RECEIPTS HISTORY ================= */}
+          <TabsContent value="receipts" className="space-y-6">
+            {/* Filter Bar */}
+            <Card className="border-border/80 shadow-sm">
+              <CardContent className="p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder={bn ? 'নাম / রোল / রসিদ নং...' : 'Name / Roll / Receipt #...'}
+                      value={receiptSearch}
+                      onChange={(e) => setReceiptSearch(e.target.value)}
+                      className="pl-9 bg-background h-10"
+                    />
+                  </div>
+                  <Select value={receiptYear} onValueChange={setReceiptYear}>
+                    <SelectTrigger className="bg-background h-10">
+                      <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
+                      <SelectValue placeholder={bn ? 'বছর' : 'Year'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[2026, 2025, 2024].map((y) => (
+                        <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={receiptMonth} onValueChange={setReceiptMonth}>
+                    <SelectTrigger className="bg-background h-10">
+                      <SelectValue placeholder={bn ? 'সব মাস' : 'All Months'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{bn ? 'সব মাস' : 'All Months'}</SelectItem>
+                      {MONTHS.map((m) => (
+                        <SelectItem key={m.value} value={m.value}>{bn ? m.bn : m.en}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground px-2">
+                    <Receipt className="w-4 h-4" />
+                    <span>{bn ? `মোট: ${filteredPayments.length}টি` : `Total: ${filteredPayments.length}`}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Receipts Table */}
+            <Card className="border-border/80 shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-muted/50 border-b border-border">
+                      <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+                        {bn ? 'রসিদ নং' : 'Receipt #'}
+                      </th>
+                      <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+                        {bn ? 'শিক্ষার্থী' : 'Student'}
+                      </th>
+                      <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider hidden sm:table-cell">
+                        {bn ? 'ফি' : 'Fee'}
+                      </th>
+                      <th className="text-right px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+                        {bn ? 'পরিমাণ' : 'Amount'}
+                      </th>
+                      <th className="text-center px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+                        {bn ? 'অ্যাকশন' : 'Action'}
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+                  </thead>
+                  <tbody>
+                    {receiptsLoading ? (
+                      <tr>
+                        <td colSpan={5} className="text-center py-12 text-muted-foreground">
+                          <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
+                          {bn ? 'লোড হচ্ছে...' : 'Loading...'}
+                        </td>
+                      </tr>
+                    ) : filteredPayments.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="text-center py-12">
+                          <Receipt className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                          <p className="text-muted-foreground">{bn ? 'কোনো রসিদ পাওয়া যায়নি' : 'No receipts found'}</p>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredPayments.map((p) => (
+                        <tr key={p.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                          <td className="px-4 py-3 font-mono text-xs text-foreground font-semibold">{p.receipt_number}</td>
+                          <td className="px-4 py-3">
+                            <div className="font-medium text-foreground">{p.student_name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {p.class_name} • {bn ? 'রোল' : 'Roll'}: {p.roll}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{p.fee_type}</td>
+                          <td className="px-4 py-3 text-right font-bold text-foreground font-mono">
+                            ৳{p.paid_amount.toLocaleString('bn-BD')}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-primary hover:text-primary hover:bg-primary/10 h-8 px-2.5 font-medium"
+                              onClick={() => handlePrint(p)}
+                            >
+                              <Printer className="w-3.5 h-3.5 mr-1" />
+                              {bn ? 'রসিদ' : 'Print'}
+                            </Button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
-    </AdminLayout>
+    </PublicLayout>
   );
 };
-
-const InfoRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
-  <div className="flex items-center justify-between">
-    <span className="text-[11px] uppercase tracking-[1.5px] text-muted-foreground font-medium">{label}</span>
-    <span className="text-sm font-semibold text-foreground">{typeof value === 'string' ? value : value}</span>
-  </div>
-);
 
 export default FeePaymentPage;
