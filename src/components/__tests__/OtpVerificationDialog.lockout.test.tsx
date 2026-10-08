@@ -20,6 +20,12 @@ vi.mock('@/contexts/LanguageContext', () => ({
   useLanguage: () => ({ language: 'en' }),
 }));
 
+// OTP is always required in these tests (skip the backend settings lookup).
+vi.mock('@/hooks/useOtpRequirements', () => ({
+  fetchOtpRequirements: vi.fn().mockResolvedValue({}),
+  isOtpRequiredFor: () => true,
+}));
+
 vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
@@ -65,7 +71,7 @@ describe('OtpVerificationDialog — standardized lockout codes', () => {
 
       render(<OtpVerificationDialog {...baseProps} />);
       // Wait for initial send
-      await waitFor(() => expect(sendOtpMock).toHaveBeenCalled(), { timeout: 3000 });
+      await waitFor(() => expect(sendOtpMock).toHaveBeenCalled());
 
       // Type a 6-digit code and click verify
       const user = userEvent.setup();
