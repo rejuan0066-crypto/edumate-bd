@@ -4,8 +4,9 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { lazy, Suspense, useState, useEffect, useRef, useCallback } from 'react';
-import { CreditCard, Loader2, CheckCircle, ArrowRight, ExternalLink, Search, User, Banknote, Globe, AlertCircle, Settings, BarChart3, Users, Clock, X, Receipt, AlertTriangle } from 'lucide-react';
+import { CreditCard, Loader2, CheckCircle, ArrowRight, ExternalLink, Search, User, Banknote, Globe, AlertCircle, Settings, BarChart3, Users, Clock, X, Receipt, AlertTriangle, Calendar, GraduationCap, RefreshCw } from 'lucide-react';
 import DuesManagement from '@/components/fees/DuesManagement';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -49,17 +50,16 @@ const AdminStudentsFees = () => {
   const [paymentYear, setPaymentYear] = useState<number>(new Date().getFullYear());
   const [transactionId, setTransactionId] = useState('');
 
-  // Student search
-  const [searchMode, setSearchMode] = useState<SearchMode>('registration');
-  const [regNo, setRegNo] = useState('');
-  const [selectedSession, setSelectedSession] = useState('');
-  const [rollNumber, setRollNumber] = useState('');
+  // Student search (Session Year, Class, Roll / Reg)
+  const [searchSessionId, setSearchSessionId] = useState('');
+  const [searchClassId, setSearchClassId] = useState('all');
+  const [searchIdentifier, setSearchIdentifier] = useState('');
   const [foundStudent, setFoundStudent] = useState<any>(null);
   const [searching, setSearching] = useState(false);
   // Search history
   const HISTORY_KEY = 'fee_search_history';
   const MAX_HISTORY = 8;
-  const [searchHistory, setSearchHistory] = useState<{ value: string; label: string; mode: SearchMode; time: number }[]>([]);
+  const [searchHistory, setSearchHistory] = useState<{ value: string; label: string; time: number }[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const historyRef = useRef<HTMLDivElement>(null);
 
@@ -70,10 +70,10 @@ const AdminStudentsFees = () => {
     } catch { setSearchHistory([]); }
   }, []);
 
-  const addToHistory = useCallback((value: string, label: string, mode: SearchMode) => {
+  const addToHistory = useCallback((value: string, label: string) => {
     setSearchHistory(prev => {
       const filtered = prev.filter(h => h.value !== value);
-      const next = [{ value, label, mode, time: Date.now() }, ...filtered].slice(0, MAX_HISTORY);
+      const next = [{ value, label, time: Date.now() }, ...filtered].slice(0, MAX_HISTORY);
       localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
       return next;
     });
@@ -103,6 +103,28 @@ const AdminStudentsFees = () => {
       return data || [];
     },
   });
+
+  // Classes
+  const { data: classes = [] } = useQuery({
+    queryKey: ['classes_fee_collection'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('classes')
+        .select('id, name, name_bn, division_id, sort_order')
+        .eq('is_active', true)
+        .order('sort_order');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Auto-select active session if none selected
+  useEffect(() => {
+    if (sessions.length > 0 && !searchSessionId) {
+      const active = sessions.find((s: any) => s.is_active) || sessions[0];
+      if (active) setSearchSessionId(active.id);
+    }
+  }, [sessions, searchSessionId]);
 
   // Fetch dynamic fee types from fee_types table
   const { data: dbFeeTypes = [] } = useQuery({
@@ -302,37 +324,63 @@ const AdminStudentsFees = () => {
   });
 
   const searchStudent = async () => {
+    const rawVal = searchIdentifier.trim();
+    if (!rawVal) {
+      toast.error(bn ? 'রোল বা রেজিস্ট্রেশন নম্বর দিন' : 'Enter roll or registration number');
+      return;
+    }
+
     setSearching(true);
     setFoundStudent(null);
     try {
-      let query = supabase.from('students').select('*, divisions(name_bn, name)').eq('status', 'active');
+      const normVal = rawVal.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
 
-      if (searchMode === 'registration') {
-        if (!regNo.trim()) { toast.error(bn ? 'রেজিস্ট্রেশন নম্বর দিন' : 'Enter registration number'); return; }
-        query = query.eq('registration_no', regNo.trim());
-      } else {
-        if (!selectedSession || !rollNumber.trim()) { toast.error(bn ? 'সেশন ও রোল নম্বর দিন' : 'Enter session & roll'); return; }
-        const session = sessions.find((s: any) => s.id === selectedSession);
-        query = query.eq('admission_session', session?.name || '').eq('roll_number', rollNumber.trim());
+      let query = supabase
+        .from('students')
+        .select('*, classes:class_id(id, name, name_bn), divisions:division_id(id, name, name_bn), academic_sessions:session_id(id, name, name_bn)')
+        .is('deleted_at', null)
+        .or('status.eq.active,status.is.null');
+
+      if (searchSessionId && searchSessionId !== 'all') {
+        query = query.eq('session_id', searchSessionId);
       }
 
-      const { data, error } = await query.limit(1).maybeSingle();
+      if (searchClassId && searchClassId !== 'all') {
+        query = query.eq('class_id', searchClassId);
+      }
+
+      query = query.or(
+        `registration_no.eq.${rawVal},registration_no.eq.${normVal},student_id.eq.${rawVal},student_id.eq.${normVal},roll_number.eq.${rawVal},roll_number.eq.${normVal}`
+      );
+
+      const { data: matchedStudents, error } = await query.limit(5);
       if (error) throw error;
-      if (!data) {
-        toast.error(bn ? 'ছাত্র পাওয়া যায়নি' : 'Student not found');
+      if (!matchedStudents || matchedStudents.length === 0) {
+        toast.error(
+          bn
+            ? 'উক্ত সেশন, শ্রেণি ও রোল/রেজিস্ট্রেশনে কোনো ছাত্র পাওয়া যায়নি'
+            : 'No student found with this session, class, and roll/registration'
+        );
         return;
       }
-      setFoundStudent(data);
-      // Save to search history
-      if (searchMode === 'registration') {
-        addToHistory(regNo.trim(), `${data.name_bn} (${regNo.trim()})`, 'registration');
-      } else {
-        const key = `${selectedSession}|${rollNumber.trim()}`;
-        const sessionObj = sessions.find((s: any) => s.id === selectedSession);
-        addToHistory(key, `${data.name_bn} (${sessionObj?.name || ''} রোল: ${rollNumber.trim()})`, 'session_roll');
+
+      if (matchedStudents.length > 1 && (!searchClassId || searchClassId === 'all')) {
+        toast.warning(
+          bn
+            ? `একাধিক শ্রেণিতে এই রোলের ছাত্র পাওয়া গেছে (${matchedStudents.length} জন)। অনুগ্রহ করে নির্দিষ্ট শ্রেণি নির্বাচন করুন।`
+            : `Multiple students found (${matchedStudents.length}). Please select a specific class.`
+        );
       }
+
+      const data = matchedStudents[0];
+      setFoundStudent(data);
+
+      // Save to search history
+      const classObj = classes.find((c: any) => c.id === (searchClassId !== 'all' ? searchClassId : data.class_id));
+      const label = `${data.name_bn || data.name_en} (${classObj ? (classObj.name_bn || classObj.name) + ' ' : ''}রোল: ${data.roll_number || data.registration_no || ''})`;
+      addToHistory(rawVal, label);
       setShowHistory(false);
-      toast.success(bn ? 'ছাত্র পাওয়া গেছে' : 'Student found');
+      toast.success(bn ? `${data.name_bn || data.name_en}-এর তথ্য পাওয়া গেছে` : 'Student found');
     } catch (e: any) {
       toast.error(e.message || 'Error');
     } finally {
@@ -348,13 +396,14 @@ const AdminStudentsFees = () => {
     (async () => {
       const { data } = await supabase
         .from('students')
-        .select('*, divisions(name_bn, name)')
+        .select('*, classes:class_id(id, name, name_bn), divisions:division_id(id, name, name_bn), academic_sessions:session_id(id, name, name_bn)')
         .eq('id', sid)
         .maybeSingle();
       if (cancelled || !data) return;
       setFoundStudent(data);
-      setSearchMode('registration');
-      setRegNo(data.registration_no || '');
+      setSearchIdentifier(data.registration_no || data.roll_number || '');
+      if (data.session_id) setSearchSessionId(data.session_id);
+      if (data.class_id) setSearchClassId(data.class_id);
       // Clean the param so refresh doesn't re-trigger
       const next = new URLSearchParams(searchParams);
       next.delete('studentId');
@@ -495,13 +544,11 @@ const AdminStudentsFees = () => {
     setPaymentMonth('');
     setTransactionId('');
     setFoundStudent(null);
-    setRegNo('');
-    setRollNumber('');
-    setSelectedSession('');
+    setSearchIdentifier('');
   };
 
   const feeCollectionContent = (
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-3xl mx-auto space-y-6">
         <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
           <CreditCard className="w-6 h-6 text-primary" />
           {bn ? 'ছাত্র ফি পরিশোধ' : 'Student Fee Payment'}
@@ -509,126 +556,186 @@ const AdminStudentsFees = () => {
 
         {step === 'form' && (
           <div className="card-elevated p-6 space-y-5">
-            <h3 className="font-display font-semibold text-foreground text-lg">
-              {bn ? 'ছাত্র খুঁজুন' : 'Find Student'}
-            </h3>
-
-            {/* Search mode toggle */}
-            <div className="flex gap-2">
-              <button onClick={() => { setSearchMode('registration'); setFoundStudent(null); }}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${searchMode === 'registration' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}`}>
-                {bn ? 'রেজিস্ট্রেশন নম্বর' : 'Registration No'}
-              </button>
-              <button onClick={() => { setSearchMode('session_roll'); setFoundStudent(null); }}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${searchMode === 'session_roll' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}`}>
-                {bn ? 'সেশন = রোল' : 'Session + Roll'}
-              </button>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/40 pb-3">
+              <div>
+                <h3 className="font-display font-semibold text-foreground text-lg flex items-center gap-2">
+                  <Search className="w-5 h-5 text-primary" />
+                  {bn ? 'ছাত্র খুঁজুন' : 'Find Student'}
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {bn
+                    ? 'সেশন, শ্রেণি ও রোল বা রেজিস্ট্রেশন নম্বর দিয়ে নির্দিষ্ট ছাত্র বের করুন'
+                    : 'Find student by session, class, and roll or registration number'}
+                </p>
+              </div>
+              {foundStudent && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setFoundStudent(null);
+                    setSearchIdentifier('');
+                  }}
+                  className="text-xs h-8 text-muted-foreground hover:text-foreground self-start sm:self-auto"
+                >
+                  <RefreshCw className="w-3 h-3 mr-1" />
+                  {bn ? 'অন্য ছাত্র খুঁজুন' : 'Search Another'}
+                </Button>
+              )}
             </div>
 
-            {/* Search fields */}
-            <div className="space-y-3">
-              {searchMode === 'registration' ? (
-                <div ref={historyRef} className="relative">
-                  <label className="text-sm font-medium text-foreground mb-1 block">
-                    {bn ? 'রেজিস্ট্রেশন নম্বর' : 'Registration Number'} <span className="text-destructive">*</span>
-                  </label>
-                  <div className="flex gap-2">
-                    <Input className="bg-background flex-1" value={regNo}
-                      onChange={(e) => setRegNo(e.target.value)}
-                      placeholder={bn ? 'যেমন: 20261001' : 'e.g. 20261001'}
-                      onFocus={() => setShowHistory(true)}
-                      onKeyDown={(e) => e.key === 'Enter' && searchStudent()} />
-                    <Button onClick={searchStudent} disabled={searching} variant="outline" size="icon">
-                      {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                    </Button>
-                  </div>
-                  {/* Search History Dropdown */}
-                  {showHistory && searchHistory.filter(h => h.mode === 'registration').length > 0 && (
-                    <div className="absolute z-50 top-full left-0 right-10 mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                      <div className="px-3 py-1.5 text-xs text-muted-foreground font-medium border-b border-border flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> {bn ? 'সাম্প্রতিক সার্চ' : 'Recent Searches'}
-                      </div>
-                      {searchHistory.filter(h => h.mode === 'registration').map(h => (
-                        <div key={h.value} className="flex items-center gap-2 px-3 py-2 hover:bg-accent cursor-pointer group"
-                          onClick={() => { setRegNo(h.value); setShowHistory(false); }}>
-                          <Search className="w-3 h-3 text-muted-foreground shrink-0" />
-                          <span className="text-sm text-foreground flex-1 truncate">{h.label}</span>
-                          <button onClick={(e) => { e.stopPropagation(); removeFromHistory(h.value); }}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-destructive/10 rounded">
-                            <X className="w-3 h-3 text-muted-foreground" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+            {/* 3 Search Inputs Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-end pt-1">
+              {/* 1. Academic Session */}
+              <div className="space-y-1.5 sm:col-span-1 lg:col-span-4">
+                <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-primary" />
+                  {bn ? 'সেশন / শিক্ষাবর্ষ' : 'Session / Year'}
+                </label>
+                <Select
+                  value={searchSessionId}
+                  onValueChange={(val) => {
+                    setSearchSessionId(val);
+                    setFoundStudent(null);
+                  }}
+                >
+                  <SelectTrigger className="h-11 bg-background">
+                    <SelectValue placeholder={bn ? 'সেশন নির্বাচন করুন' : 'Select Session'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{bn ? 'সকল সেশন' : 'All Sessions'}</SelectItem>
+                    {sessions.map((s: any) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {bn ? s.name_bn || s.name : s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 2. Class */}
+              <div className="space-y-1.5 sm:col-span-1 lg:col-span-4">
+                <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <GraduationCap className="w-3.5 h-3.5 text-primary" />
+                  {bn ? 'শ্রেণি / ক্লাস' : 'Class'}
+                </label>
+                <Select
+                  value={searchClassId}
+                  onValueChange={(val) => {
+                    setSearchClassId(val);
+                    setFoundStudent(null);
+                  }}
+                >
+                  <SelectTrigger className="h-11 bg-background">
+                    <SelectValue placeholder={bn ? 'শ্রেণি নির্বাচন করুন' : 'Select Class'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{bn ? 'সকল শ্রেণি' : 'All Classes'}</SelectItem>
+                    {classes.map((c: any) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {bn ? c.name_bn || c.name : c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 3. Roll or Registration No */}
+              <div className="space-y-1.5 sm:col-span-2 lg:col-span-4 relative" ref={historyRef}>
+                <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-primary" />
+                  {bn ? 'রোল / রেজিঃ নম্বর' : 'Roll / Reg No'} <span className="text-destructive">*</span>
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    className="h-11 bg-background flex-1 text-base"
+                    value={searchIdentifier}
+                    onChange={(e) => setSearchIdentifier(e.target.value)}
+                    placeholder={bn ? 'রোল বা রেজিঃ (যেমন: 101)' : 'Roll or Reg (e.g. 101)...'}
+                    onFocus={() => setShowHistory(true)}
+                    onKeyDown={(e) => e.key === 'Enter' && searchStudent()}
+                  />
+                  <Button
+                    onClick={searchStudent}
+                    disabled={searching}
+                    className="h-11 px-4 font-semibold gap-1.5 shrink-0"
+                  >
+                    {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                    {bn ? 'খুঁজুন' : 'Search'}
+                  </Button>
                 </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">
-                      {bn ? 'সেশন' : 'Session'} <span className="text-destructive">*</span>
-                    </label>
-                    <Select value={selectedSession} onValueChange={setSelectedSession}>
-                      <SelectTrigger className="bg-background"><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
-                      <SelectContent>
-                        {sessions.map((s: any) => <SelectItem key={s.id} value={s.id}>{bn ? (s.name_bn || s.name) : s.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div ref={searchMode === 'session_roll' ? historyRef : undefined} className="relative">
-                    <label className="text-sm font-medium text-foreground mb-1 block">
-                      {bn ? 'রোল নম্বর' : 'Roll Number'} <span className="text-destructive">*</span>
-                    </label>
-                    <div className="flex gap-2">
-                      <Input className="bg-background flex-1" value={rollNumber}
-                        onChange={(e) => setRollNumber(e.target.value)}
-                        placeholder={bn ? 'রোল' : 'Roll'}
-                        onFocus={() => setShowHistory(true)}
-                        onKeyDown={(e) => e.key === 'Enter' && searchStudent()} />
-                      <Button onClick={searchStudent} disabled={searching} variant="outline" size="icon">
-                        {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                      </Button>
+
+                {/* Search History Dropdown */}
+                {showHistory && searchHistory.length > 0 && (
+                  <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    <div className="px-3 py-1.5 text-xs text-muted-foreground font-medium border-b border-border flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> {bn ? 'সাম্প্রতিক সার্চ' : 'Recent Searches'}
                     </div>
-                    {/* Search History Dropdown for session+roll */}
-                    {showHistory && searchHistory.filter(h => h.mode === 'session_roll').length > 0 && (
-                      <div className="absolute z-50 top-full left-0 right-10 mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                        <div className="px-3 py-1.5 text-xs text-muted-foreground font-medium border-b border-border flex items-center gap-1">
-                          <Clock className="w-3 h-3" /> {bn ? 'সাম্প্রতিক সার্চ' : 'Recent Searches'}
-                        </div>
-                        {searchHistory.filter(h => h.mode === 'session_roll').map(h => {
-                          const [sessId, roll] = h.value.split('|');
-                          return (
-                            <div key={h.value} className="flex items-center gap-2 px-3 py-2 hover:bg-accent cursor-pointer group"
-                              onClick={() => { setSelectedSession(sessId); setRollNumber(roll); setShowHistory(false); }}>
-                              <Search className="w-3 h-3 text-muted-foreground shrink-0" />
-                              <span className="text-sm text-foreground flex-1 truncate">{h.label}</span>
-                              <button onClick={(e) => { e.stopPropagation(); removeFromHistory(h.value); }}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-destructive/10 rounded">
-                                <X className="w-3 h-3 text-muted-foreground" />
-                              </button>
-                            </div>
-                          );
-                        })}
+                    {searchHistory.map((h) => (
+                      <div
+                        key={h.value}
+                        className="flex items-center gap-2 px-3 py-2 hover:bg-accent cursor-pointer group"
+                        onClick={() => {
+                          setSearchIdentifier(h.value);
+                          setShowHistory(false);
+                        }}
+                      >
+                        <Search className="w-3 h-3 text-muted-foreground shrink-0" />
+                        <span className="text-sm text-foreground flex-1 truncate">{h.label}</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeFromHistory(h.value);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-destructive/10 rounded"
+                        >
+                          <X className="w-3 h-3 text-muted-foreground" />
+                        </button>
                       </div>
-                    )}
+                    ))}
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             {/* Found student card */}
             {foundStudent && (
-              <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User className="w-5 h-5 text-primary" />
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary shrink-0 overflow-hidden border border-primary/20">
+                    {foundStudent.photo_url ? (
+                      <img src={foundStudent.photo_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-6 h-6 text-primary" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold text-base text-foreground">{foundStudent.name_bn || foundStudent.name_en}</p>
+                      <Badge className="bg-emerald-600 text-white text-[10px] px-2 py-0.5">
+                        {bn ? 'নিয়মিত' : 'Active'}
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap mt-1">
+                      <span>{bn ? 'শ্রেণি:' : 'Class:'} <strong className="text-foreground">{foundStudent.classes?.name_bn || foundStudent.classes?.name || foundStudent.divisions?.name_bn || '—'}</strong></span>
+                      <span>•</span>
+                      <span>{bn ? 'রোল:' : 'Roll:'} <strong className="text-foreground">{foundStudent.roll_number || '—'}</strong></span>
+                      {foundStudent.academic_sessions && (
+                        <>
+                          <span>•</span>
+                          <span>{bn ? 'সেশন:' : 'Session:'} <strong className="text-foreground">{foundStudent.academic_sessions.name_bn || foundStudent.academic_sessions.name}</strong></span>
+                        </>
+                      )}
+                      {(foundStudent.registration_no || foundStudent.student_id) && (
+                        <>
+                          <span>•</span>
+                          <span>{bn ? 'রেজি/আইডি:' : 'Reg/ID:'} <strong className="text-foreground font-mono">{foundStudent.registration_no || foundStudent.student_id}</strong></span>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-foreground truncate">{foundStudent.name_bn}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {bn ? 'রোল' : 'Roll'}: {foundStudent.roll_number || '-'} | {bn ? 'রেজি' : 'Reg'}: {foundStudent.registration_no || '-'} | {foundStudent.divisions?.name_bn || ''}
-                  </p>
-                </div>
-                <CheckCircle className="w-5 h-5 text-primary shrink-0" />
+                <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0 hidden sm:block" />
               </div>
             )}
 
