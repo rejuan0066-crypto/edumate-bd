@@ -406,7 +406,7 @@ export const getResultSheetHtml = ({
 
           <div class="footer print-hidden">
             <div style="font-weight:700;">${showFooterInstitution ? (institutionName || '') : ''}</div>
-            <div class="screen-pageinfo" style="font-weight:600;">${bn ? 'পৃষ্ঠা' : 'Page'} ${bn ? toBnDigits(pageIdx + 1) : (pageIdx + 1)} / ${bn ? toBnDigits(totalPages) : totalPages}</div>
+            <div class="screen-pageinfo" style="font-weight:600;">${bn ? `পৃষ্ঠা ${toBnDigits(pageIdx + 1)} / ${toBnDigits(totalPages)}` : `Page ${pageIdx + 1} / ${totalPages}`}</div>
           </div>
         </div>
       </div>
@@ -422,7 +422,7 @@ export const getResultSheetHtml = ({
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
   @page{
-    size:A4 ${orientation || 'landscape'};
+    size:A4 ${orientation};
     margin:0;
   }
   *{margin:0;padding:0;box-sizing:border-box;}

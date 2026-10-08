@@ -1,0 +1,17 @@
+title = "Project secret scan"
+
+[extend]
+useDefault = true
+
+# Public (publishable) keys are safe to commit — ignore them.
+[allowlist]
+description = "Publishable backend keys and auto-generated files"
+paths = [
+  '''^\.env$''',
+  '''src/integrations/supabase/client\.ts''',
+  '''supabase/config\.toml''',
+  '''(bun\.lockb|bun\.lock|package-lock\.json)$''',
+]
+regexes = [
+  '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3aHVueXpvYnR1aWJodmtpcHdrIiwicm9sZSI6ImFub24i[A-Za-z0-9._-]*''',
+]
