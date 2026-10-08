@@ -3574,6 +3574,19 @@ const AdminSalary = () => {
           ))}
         </div>
 
+        {/* Committee Staff Exclusion Banner & Toggle */}
+        {committeeHiddenCount > 0 && (
+          <div className="flex items-center justify-between bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-xl px-4 py-2.5">
+            <CommitteeExclusionNotice
+              count={committeeHiddenCount}
+              info={committeeInfo}
+              hiddenStaff={staffRaw}
+              showAll={showCommitteeStaff}
+              onToggleShowAll={setShowCommitteeStaff}
+            />
+          </div>
+        )}
+
         {/* Controls */}
         <Card>
           <CardContent className="p-4">
