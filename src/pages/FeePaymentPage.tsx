@@ -93,10 +93,16 @@ const FeePaymentPage = () => {
   const [senderPhone, setSenderPhone] = useState('');
   const [paymentSuccess, setPaymentSuccess] = useState<any | null>(null);
 
-  // Receipt Tab State
-  const [receiptSearch, setReceiptSearch] = useState('');
+  // Receipt Tab State (Private Student Receipt Lookup)
+  const [receiptSession, setReceiptSession] = useState('all');
   const [receiptYear, setReceiptYear] = useState(new Date().getFullYear().toString());
-  const [receiptMonth, setReceiptMonth] = useState('');
+  const [receiptIdentifier, setReceiptIdentifier] = useState('');
+  const [receiptSearchLoading, setReceiptSearchLoading] = useState(false);
+  const [receiptSearchResult, setReceiptSearchResult] = useState<{
+    student: any | null;
+    receipts: ReceiptData[];
+    hasSearched: boolean;
+  }>({ student: null, receipts: [], hasSearched: false });
   const [selectedReceipt, setSelectedReceipt] = useState<ReceiptData | null>(null);
 
   // Institution info
@@ -318,33 +324,106 @@ const FeePaymentPage = () => {
     },
   });
 
-  // Public Receipts Query for Tab 2
-  const { data: payments = [], isLoading: receiptsLoading } = useQuery({
-    queryKey: ['fee-payments-public', receiptYear, receiptMonth, receiptSearch],
-    queryFn: async () => {
-      let query = supabase
+  // Private Student Receipt Search (Tab 2) — No open public listing
+  const handleSearchStudentReceipts = async () => {
+    const queryVal = receiptIdentifier.trim();
+    if (!queryVal) {
+      toast.error(bn ? 'রোল, রেজিস্ট্রেশন অথবা রসিদ নম্বর লিখুন' : 'Enter roll, registration or receipt number');
+      return;
+    }
+    setReceiptSearchLoading(true);
+    try {
+      // 1. Direct Receipt Number Search (e.g. STU-... or RCP-...)
+      if (queryVal.toUpperCase().startsWith('STU-') || queryVal.toUpperCase().startsWith('RCP-')) {
+        const { data: recPayments, error: recErr } = await supabase
+          .from('fee_payments')
+          .select(`
+            *,
+            students!inner(name_bn, name_en, student_id, roll_number, registration_no, division_id, divisions:division_id(name, name_bn)),
+            fee_types!inner(name, name_bn, fee_category)
+          `)
+          .eq('status', 'paid')
+          .ilike('receipt_number', `%${queryVal}%`);
+
+        if (recErr) throw recErr;
+
+        if (!recPayments || recPayments.length === 0) {
+          toast.error(bn ? 'এই রসিদ নম্বরে কোনো তথ্য পাওয়া যায়নি' : 'No receipt found with this number');
+          setReceiptSearchResult({ student: null, receipts: [], hasSearched: true });
+          return;
+        }
+
+        const st = recPayments[0].students;
+        const formatted = recPayments.map((p: any) => ({
+          id: p.id,
+          receipt_number: p.receipt_number || `RCP-${p.id.slice(0, 8).toUpperCase()}`,
+          student_name: p.students?.name_bn || p.students?.name_en || '',
+          student_id: p.students?.student_id || p.students?.registration_no || '',
+          class_name: p.students?.divisions?.name_bn || p.students?.divisions?.name || '',
+          roll: p.students?.roll_number || '',
+          fee_type: bn ? p.fee_types?.name_bn : p.fee_types?.name,
+          amount: p.amount,
+          paid_amount: p.paid_amount || p.amount,
+          status: p.status,
+          paid_at: p.paid_at,
+          month: p.month,
+          year: p.year,
+        }));
+
+        setReceiptSearchResult({ student: st, receipts: formatted, hasSearched: true });
+        toast.success(bn ? `${formatted.length}টি রসিদ পাওয়া গেছে` : `Found ${formatted.length} receipt(s)`);
+        return;
+      }
+
+      // 2. Search student by registration_no, student_id, or roll_number (+ optional session)
+      let stuQuery = supabase
+        .from('students')
+        .select('id, name_bn, name_en, student_id, roll_number, registration_no, division_id, session_id, divisions:division_id(name, name_bn), academic_sessions:session_id(name, name_bn)')
+        .eq('status', 'active');
+
+      if (receiptSession && receiptSession !== 'all') {
+        stuQuery = stuQuery.eq('session_id', receiptSession);
+      }
+
+      stuQuery = stuQuery.or(`registration_no.eq.${queryVal},student_id.eq.${queryVal},roll_number.eq.${queryVal}`);
+
+      const { data: matchedStudents, error: stuErr } = await stuQuery.limit(5);
+      if (stuErr) throw stuErr;
+
+      if (!matchedStudents || matchedStudents.length === 0) {
+        toast.error(bn ? 'উক্ত তথ্যে কোনো শিক্ষার্থী পাওয়া যায়নি' : 'No student found with this information');
+        setReceiptSearchResult({ student: null, receipts: [], hasSearched: true });
+        return;
+      }
+
+      const matchedStudent = matchedStudents[0];
+
+      // Fetch ONLY this student's paid fee_payments
+      let feeQuery = supabase
         .from('fee_payments')
         .select(`
           *,
           students!inner(name_bn, name_en, student_id, roll_number, registration_no, division_id, divisions:division_id(name, name_bn)),
           fee_types!inner(name, name_bn, fee_category)
         `)
+        .eq('student_id', matchedStudent.id)
         .eq('status', 'paid')
         .order('paid_at', { ascending: false });
 
-      if (receiptYear) query = query.eq('year', parseInt(receiptYear));
-      if (receiptMonth && receiptMonth !== 'all') query = query.eq('month', receiptMonth);
+      if (receiptYear && receiptYear !== 'all') {
+        feeQuery = feeQuery.eq('year', parseInt(receiptYear));
+      }
 
-      const { data, error } = await query;
-      if (error) throw error;
+      const { data: studentPayments, error: feeErr } = await feeQuery;
+      if (feeErr) throw feeErr;
 
-      return (data || []).map((p: any) => ({
+      const formatted = (studentPayments || []).map((p: any) => ({
         id: p.id,
         receipt_number: p.receipt_number || `RCP-${p.id.slice(0, 8).toUpperCase()}`,
-        student_name: p.students?.name_bn || p.students?.name_en || '',
-        student_id: p.students?.student_id || p.students?.registration_no || '',
-        class_name: p.students?.divisions?.name_bn || p.students?.divisions?.name || '',
-        roll: p.students?.roll_number || '',
+        student_name: matchedStudent.name_bn || matchedStudent.name_en || '',
+        student_id: matchedStudent.student_id || matchedStudent.registration_no || '',
+        class_name: matchedStudent.divisions?.name_bn || matchedStudent.divisions?.name || '',
+        roll: matchedStudent.roll_number || '',
         fee_type: bn ? p.fee_types?.name_bn : p.fee_types?.name,
         amount: p.amount,
         paid_amount: p.paid_amount || p.amount,
@@ -352,22 +431,20 @@ const FeePaymentPage = () => {
         paid_at: p.paid_at,
         month: p.month,
         year: p.year,
-      })) as ReceiptData[];
-    },
-  });
+      }));
 
-  const filteredPayments = useMemo(() => {
-    return (payments || []).filter((p) => {
-      if (!receiptSearch) return true;
-      const s = receiptSearch.toLowerCase();
-      return (
-        p.roll?.toLowerCase().includes(s) ||
-        p.student_id?.toLowerCase().includes(s) ||
-        p.student_name?.toLowerCase().includes(s) ||
-        p.receipt_number?.toLowerCase().includes(s)
-      );
-    });
-  }, [payments, receiptSearch]);
+      setReceiptSearchResult({ student: matchedStudent, receipts: formatted, hasSearched: true });
+      if (formatted.length > 0) {
+        toast.success(bn ? `${formatted.length}টি পরিশোধিত রসিদ পাওয়া গেছে` : `Found ${formatted.length} receipt(s)`);
+      } else {
+        toast.info(bn ? 'এই শিক্ষার্থীর কোনো পরিশোধিত রসিদ পাওয়া যায়নি' : 'No paid receipts found for this student');
+      }
+    } catch (err: any) {
+      toast.error(err.message || (bn ? 'অনুসন্ধানে ত্রুটি হয়েছে' : 'Search error'));
+    } finally {
+      setReceiptSearchLoading(false);
+    }
+  };
 
   // Receipt Printing
   const handlePrint = (receipt: ReceiptData) => {
@@ -913,121 +990,224 @@ const FeePaymentPage = () => {
             )}
           </TabsContent>
 
-          {/* ================= TAB 2: PAID RECEIPTS HISTORY ================= */}
+          {/* ================= TAB 2: PRIVATE STUDENT RECEIPT LOOKUP ================= */}
           <TabsContent value="receipts" className="space-y-6">
-            {/* Filter Bar */}
-            <Card className="border-border/80 shadow-sm">
-              <CardContent className="p-4">
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      placeholder={bn ? 'নাম / রোল / রসিদ নং...' : 'Name / Roll / Receipt #...'}
-                      value={receiptSearch}
-                      onChange={(e) => setReceiptSearch(e.target.value)}
-                      className="pl-9 bg-background h-10"
-                    />
+            {/* Search Box Card */}
+            <Card className="border-border/80 shadow-sm overflow-hidden">
+              <CardContent className="p-5 sm:p-6 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-3">
+                  <div>
+                    <h3 className="font-bold text-foreground text-base flex items-center gap-2">
+                      <Search className="w-4 h-4 text-primary" />
+                      {bn ? 'পরিশোধিত রসিদ অনুসন্ধান' : 'Find Paid Receipts'}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {bn
+                        ? 'আপনার সেশন, বছর ও রোল/রেজিস্ট্রেশন নম্বর দিয়ে অনুসন্ধান করে শুধুমাত্র আপনার রসিদ বের করুন'
+                        : 'Search by session, year, and roll/registration to view and print your receipts'}
+                    </p>
                   </div>
-                  <Select value={receiptYear} onValueChange={setReceiptYear}>
-                    <SelectTrigger className="bg-background h-10">
-                      <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
-                      <SelectValue placeholder={bn ? 'বছর' : 'Year'} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[2026, 2025, 2024].map((y) => (
-                        <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={receiptMonth} onValueChange={setReceiptMonth}>
-                    <SelectTrigger className="bg-background h-10">
-                      <SelectValue placeholder={bn ? 'সব মাস' : 'All Months'} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{bn ? 'সব মাস' : 'All Months'}</SelectItem>
-                      {MONTHS.map((m) => (
-                        <SelectItem key={m.value} value={m.value}>{bn ? m.bn : m.en}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground px-2">
-                    <Receipt className="w-4 h-4" />
-                    <span>{bn ? `মোট: ${filteredPayments.length}টি` : `Total: ${filteredPayments.length}`}</span>
+                  <Badge variant="outline" className="text-xs text-muted-foreground self-start sm:self-auto gap-1">
+                    <Shield className="w-3 h-3 text-emerald-600" />
+                    {bn ? 'ব্যক্তিগত ও সুরক্ষিত' : 'Private & Secure'}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-1">
+                  {/* Session Dropdown */}
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">{bn ? 'সেশন' : 'Session'}</Label>
+                    <Select value={receiptSession} onValueChange={setReceiptSession}>
+                      <SelectTrigger className="bg-background h-11">
+                        <SelectValue placeholder={bn ? 'সব সেশন' : 'All Sessions'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">{bn ? 'সব সেশন' : 'All Sessions'}</SelectItem>
+                        {sessions.map((s: any) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {bn ? (s.name_bn || s.name) : s.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Year Dropdown */}
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">{bn ? 'বছর' : 'Year'}</Label>
+                    <Select value={receiptYear} onValueChange={setReceiptYear}>
+                      <SelectTrigger className="bg-background h-11">
+                        <Calendar className="w-4 h-4 mr-1.5 text-muted-foreground" />
+                        <SelectValue placeholder={bn ? 'বছর' : 'Year'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">{bn ? 'সব বছর' : 'All Years'}</SelectItem>
+                        {[2026, 2025, 2024].map((y) => (
+                          <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Roll / Reg / ID / Receipt # Input */}
+                  <div className="space-y-1 sm:col-span-2">
+                    <Label className="text-xs font-semibold">
+                      {bn ? 'রোল / রেজিস্ট্রেশন / রসিদ নং' : 'Roll / Reg / Receipt #'}{' '}
+                      <span className="text-destructive">*</span>
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder={bn ? 'রোল, রেজিঃ বা রসিদ নং (যেমন: 101 বা 20261001)' : 'Enter roll, reg or receipt no...'}
+                        value={receiptIdentifier}
+                        onChange={(e) => setReceiptIdentifier(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearchStudentReceipts()}
+                        className="bg-background h-11 text-base flex-1"
+                      />
+                      <Button
+                        onClick={handleSearchStudentReceipts}
+                        disabled={receiptSearchLoading}
+                        className="h-11 px-5 font-semibold shrink-0"
+                      >
+                        {receiptSearchLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
+                        ) : (
+                          <Search className="w-4 h-4 mr-1.5" />
+                        )}
+                        {bn ? 'রসিদ খুঁজুন' : 'Find Receipts'}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Receipts Table */}
-            <Card className="border-border/80 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-muted/50 border-b border-border">
-                      <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-                        {bn ? 'রসিদ নং' : 'Receipt #'}
-                      </th>
-                      <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-                        {bn ? 'শিক্ষার্থী' : 'Student'}
-                      </th>
-                      <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider hidden sm:table-cell">
-                        {bn ? 'ফি' : 'Fee'}
-                      </th>
-                      <th className="text-right px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-                        {bn ? 'পরিমাণ' : 'Amount'}
-                      </th>
-                      <th className="text-center px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-                        {bn ? 'অ্যাকশন' : 'Action'}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {receiptsLoading ? (
-                      <tr>
-                        <td colSpan={5} className="text-center py-12 text-muted-foreground">
-                          <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
-                          {bn ? 'লোড হচ্ছে...' : 'Loading...'}
-                        </td>
-                      </tr>
-                    ) : filteredPayments.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="text-center py-12">
-                          <Receipt className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-                          <p className="text-muted-foreground">{bn ? 'কোনো রসিদ পাওয়া যায়নি' : 'No receipts found'}</p>
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredPayments.map((p) => (
-                        <tr key={p.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                          <td className="px-4 py-3 font-mono text-xs text-foreground font-semibold">{p.receipt_number}</td>
-                          <td className="px-4 py-3">
-                            <div className="font-medium text-foreground">{p.student_name}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {p.class_name} • {bn ? 'রোল' : 'Roll'}: {p.roll}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{p.fee_type}</td>
-                          <td className="px-4 py-3 text-right font-bold text-foreground font-mono">
-                            ৳{p.paid_amount.toLocaleString('bn-BD')}
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-primary hover:text-primary hover:bg-primary/10 h-8 px-2.5 font-medium"
-                              onClick={() => handlePrint(p)}
-                            >
-                              <Printer className="w-3.5 h-3.5 mr-1" />
-                              {bn ? 'রসিদ' : 'Print'}
-                            </Button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+            {/* Privacy Guard Empty State (Before Search) */}
+            {!receiptSearchResult.hasSearched ? (
+              <Card className="border-border/60 bg-muted/20 text-center p-8 sm:p-12 space-y-3">
+                <div className="w-14 h-14 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto shadow-xs">
+                  <Shield className="w-7 h-7" />
+                </div>
+                <h3 className="text-lg font-bold text-foreground">
+                  {bn ? 'গোপনীয় ও সুরক্ষিত রসিদ সেবা' : 'Confidential & Secure Receipt Portal'}
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
+                  {bn
+                    ? 'শিক্ষার্থীদের ব্যক্তিগত তথ্যের সুরক্ষার স্বার্থে কোনো প্রকাশ্য তালিকা উন্মুক্ত রাখা হয় না। আপনার সেশন ও রোল অথবা রেজিস্ট্রেশন নম্বর লিখে অনুসন্ধান করে শুধুমাত্র আপনার পরিশোধিত রসিদসমূহ দেখুন ও ডাউনলোড করুন।'
+                    : 'To protect student privacy, public receipt lists are not displayed openly. Enter your session and roll or registration number above to find and download only your receipts.'}
+                </p>
+              </Card>
+            ) : (
+              /* Search Results Section */
+              <div className="space-y-4 animate-fade-in">
+                {/* Student Profile Card (if found) */}
+                {receiptSearchResult.student && (
+                  <Card className="border-emerald-200 bg-emerald-50/40 dark:bg-emerald-950/20 dark:border-emerald-900/40 shadow-xs">
+                    <CardContent className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold text-lg shrink-0">
+                          <User className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-base text-foreground">
+                            {receiptSearchResult.student.name_bn || receiptSearchResult.student.name_en}
+                          </div>
+                          <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+                            <span>{bn ? 'শ্রেণি:' : 'Class:'} <strong className="text-foreground">{receiptSearchResult.student.divisions?.name_bn || receiptSearchResult.student.divisions?.name || '—'}</strong></span>
+                            <span>•</span>
+                            <span>{bn ? 'রোল:' : 'Roll:'} <strong className="text-foreground">{receiptSearchResult.student.roll_number || '—'}</strong></span>
+                            {receiptSearchResult.student.registration_no && (
+                              <>
+                                <span>•</span>
+                                <span>{bn ? 'রেজিঃ:' : 'Reg:'} <strong className="text-foreground font-mono">{receiptSearchResult.student.registration_no}</strong></span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <Badge className="bg-emerald-600 text-white text-xs px-2.5 py-1">
+                        {bn ? `মোট ${receiptSearchResult.receipts.length}টি রসিদ পাওয়া গেছে` : `${receiptSearchResult.receipts.length} receipt(s) found`}
+                      </Badge>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Receipts Table / List */}
+                {receiptSearchResult.receipts.length === 0 ? (
+                  <Card className="border-border/80 text-center py-12 space-y-3">
+                    <Receipt className="w-12 h-12 text-muted-foreground/30 mx-auto" />
+                    <h4 className="text-base font-bold text-foreground">
+                      {bn ? 'কোনো পরিশোধিত রসিদ পাওয়া যায়নি' : 'No Paid Receipts Found'}
+                    </h4>
+                    <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                      {bn
+                        ? 'উক্ত সেশন ও রোল/রেজিস্ট্রেশনে এই বছরের কোনো পরিশোধিত রসিদ পাওয়া যায়নি। সঠিক তথ্য দিয়ে পুনরায় চেষ্টা করুন।'
+                        : 'No paid fee receipts found with this information. Please check your roll/registration and try again.'}
+                    </p>
+                  </Card>
+                ) : (
+                  <Card className="border-border/80 shadow-sm overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-muted/50 border-b border-border">
+                            <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+                              {bn ? 'রসিদ নং' : 'Receipt #'}
+                            </th>
+                            <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+                              {bn ? 'ফি এর ধরন' : 'Fee Type'}
+                            </th>
+                            <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider hidden sm:table-cell">
+                              {bn ? 'মাস ও বছর' : 'Month & Year'}
+                            </th>
+                            <th className="text-right px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+                              {bn ? 'পরিশোধিত টাকা' : 'Paid Amount'}
+                            </th>
+                            <th className="text-center px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+                              {bn ? 'অ্যাকশন' : 'Action'}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {receiptSearchResult.receipts.map((p) => (
+                            <tr key={p.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                              <td className="px-4 py-3 font-mono text-xs text-foreground font-bold">
+                                {p.receipt_number}
+                                {p.paid_at && (
+                                  <div className="text-[10px] text-muted-foreground font-sans font-normal">
+                                    {new Date(p.paid_at).toLocaleDateString('bn-BD')}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 font-medium text-foreground">
+                                {p.fee_type}
+                              </td>
+                              <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
+                                {p.month ? (bn ? MONTHS.find(m => m.value === p.month)?.bn || p.month : p.month) : '—'} {p.year || ''}
+                              </td>
+                              <td className="px-4 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400 font-mono text-base">
+                                ৳{p.paid_amount.toLocaleString('bn-BD')}
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-8 px-3 font-semibold text-xs border-primary/40 text-primary hover:bg-primary/10 gap-1.5"
+                                  onClick={() => handlePrint(p)}
+                                >
+                                  <Printer className="w-3.5 h-3.5" />
+                                  {bn ? 'প্রিন্ট / রসিদ' : 'Print / View'}
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
+                )}
               </div>
-            </Card>
+            )}
           </TabsContent>
         </Tabs>
       </div>
