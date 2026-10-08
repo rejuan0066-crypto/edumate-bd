@@ -14,7 +14,7 @@ import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 import { getAuthenticatedHomePath, hasResolvedAuthRedirectState } from '@/lib/authRedirect';
 import PageLoader from '@/components/PageLoader';
 
-import { fetchOtpRequirements, isOtpRequiredFor, type OtpRoleScope } from '@/hooks/useOtpRequirements';
+import { fetchOtpRequirements, isOtpRequiredFor, useOtpRequirements, type OtpRoleScope } from '@/hooks/useOtpRequirements';
 import { supabase } from '@/integrations/supabase/client';
 import { sanitizePasswordInput } from '@/lib/passwordInput';
 
@@ -54,6 +54,7 @@ const Login = () => {
   const { t, language } = useLanguage();
   const { signIn, signOut, user, loading: authLoading, role, userStatus } = useAuth();
   const { settings } = useWebsiteSettings();
+  const { reqs: otpReqs } = useOtpRequirements();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -86,7 +87,7 @@ const Login = () => {
     void (async () => {
       const mapped = mapRoleToOtpScope(role);
       try {
-        const reqs = await fetchOtpRequirements(true);
+        const reqs = await fetchOtpRequirements(false);
         if (!isOtpRequiredFor(reqs, 'login', mapped)) {
           if (cancelled) return;
           setPendingOtp(false);
@@ -134,10 +135,17 @@ const Login = () => {
       return;
     }
     setLoading(true);
-    // Mark the upcoming session as OTP-pending BEFORE signIn so the redirect
-    // guard above blocks navigation as soon as the user state hydrates.
-    try { sessionStorage.setItem(LOGIN_OTP_FLAG, '1'); } catch { /* ignore */ }
-    setPendingOtp(true);
+    // Only mark session as OTP-pending if login OTP is actually enabled.
+    // If login OTP is disabled, we avoid blocking navigation, allowing immediate redirect!
+    const loginNeedsOtp = otpReqs ? isOtpRequiredFor(otpReqs, 'login') : false;
+    if (loginNeedsOtp) {
+      try { sessionStorage.setItem(LOGIN_OTP_FLAG, '1'); } catch { /* ignore */ }
+      setPendingOtp(true);
+    } else {
+      try { sessionStorage.removeItem(LOGIN_OTP_FLAG); } catch { /* ignore */ }
+      setPendingOtp(false);
+    }
+
     const { error } = await signIn(cleanEmail, password);
     setLoading(false);
     if (error) {

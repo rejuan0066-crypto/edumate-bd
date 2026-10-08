@@ -17,37 +17,71 @@ export interface OtpRequirements {
 }
 
 const DEFAULTS: OtpRequirements = {
-  is_enabled: true,
-  require_for_login: true,
+  is_enabled: false,
+  require_for_login: false,
   require_for_password_reset: true,
   require_for_email_change: true,
   require_for_password_change: true,
   role_overrides: {},
 };
 
-let cache: OtpRequirements | null = null;
-let cacheAt = 0;
-const TTL_MS = 60 * 1000;
+const OTP_CACHE_KEY = 'edumate_otp_requirements_cache';
+const TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+function getPersistedCache(): OtpRequirements | null {
+  try {
+    const raw = localStorage.getItem(OTP_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed.data === 'object' && Date.now() - (parsed.time || 0) < TTL_MS) {
+        return parsed.data;
+      }
+    }
+  } catch {}
+  return null;
+}
+
+let cache: OtpRequirements | null = getPersistedCache();
+let cacheAt = cache ? Date.now() : 0;
 
 export function clearOtpRequirementsCache() {
   cache = null;
   cacheAt = 0;
+  try { localStorage.removeItem(OTP_CACHE_KEY); } catch {}
 }
 
 export async function fetchOtpRequirements(force = false): Promise<OtpRequirements> {
   if (!force && cache && Date.now() - cacheAt < TTL_MS) return cache;
-  const { data } = await (supabase as any).rpc("get_otp_requirements");
-  const d = (Array.isArray(data) ? data[0] : data) as any;
-  cache = {
-    is_enabled: d?.is_enabled ?? DEFAULTS.is_enabled,
-    require_for_login: d?.require_for_login ?? DEFAULTS.require_for_login,
-    require_for_password_reset: d?.require_for_password_reset ?? DEFAULTS.require_for_password_reset,
-    require_for_email_change: d?.require_for_email_change ?? DEFAULTS.require_for_email_change,
-    require_for_password_change: d?.require_for_password_change ?? DEFAULTS.require_for_password_change,
-    role_overrides: (d?.role_overrides && typeof d.role_overrides === "object") ? d.role_overrides : {},
-  };
-  cacheAt = Date.now();
-  return cache;
+  
+  try {
+    // Add 3.5s timeout so network stalls never freeze the application
+    const rpcPromise = (supabase as any).rpc("get_otp_requirements");
+    const timeoutPromise = new Promise<{ data: null }>((_, reject) =>
+      setTimeout(() => reject(new Error('OTP requirements fetch timeout')), 3500)
+    );
+
+    const { data } = await Promise.race([rpcPromise, timeoutPromise]) as any;
+    const d = (Array.isArray(data) ? data[0] : data) as any;
+    if (d) {
+      cache = {
+        is_enabled: d?.is_enabled ?? DEFAULTS.is_enabled,
+        require_for_login: d?.require_for_login ?? DEFAULTS.require_for_login,
+        require_for_password_reset: d?.require_for_password_reset ?? DEFAULTS.require_for_password_reset,
+        require_for_email_change: d?.require_for_email_change ?? DEFAULTS.require_for_email_change,
+        require_for_password_change: d?.require_for_password_change ?? DEFAULTS.require_for_password_change,
+        role_overrides: (d?.role_overrides && typeof d.role_overrides === "object") ? d.role_overrides : {},
+      };
+      cacheAt = Date.now();
+      try {
+        localStorage.setItem(OTP_CACHE_KEY, JSON.stringify({ data: cache, time: cacheAt }));
+      } catch {}
+    }
+  } catch (err) {
+    // Fall back to existing cache or defaults on network failure/timeout
+    console.warn('fetchOtpRequirements non-blocking error/timeout, using fallback cache');
+  }
+
+  return cache || DEFAULTS;
 }
 
 const FLOW_TO_GLOBAL_KEY: Record<OtpFlowScope, keyof OtpRequirements> = {
