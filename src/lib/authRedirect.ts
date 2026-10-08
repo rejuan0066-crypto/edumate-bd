@@ -15,7 +15,8 @@ export const hasResolvedAuthRedirectState = ({ role, userStatus }: AuthRedirectS
 
 export const getAuthenticatedHomePath = ({ role, userStatus }: AuthRedirectState): string => {
   if (userStatus === 'pending' && !isAdminRole(role)) return '/waiting-approval';
-  // All authenticated users go to /admin (unified dashboard)
+  // Admins go to /admin, non-admins go to /user
+  if (role && !isAdminRole(role)) return '/user';
   return '/admin';
 };
 

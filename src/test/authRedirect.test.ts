@@ -16,10 +16,11 @@ describe('auth redirect logic', () => {
     expect(getAuthenticatedHomePath({ role: 'staff', userStatus: 'pending' })).toBe('/waiting-approval');
   });
 
-  it('routes all approved users to unified /admin dashboard', () => {
-    expect(getAuthenticatedHomePath({ role: 'staff', userStatus: 'approved' })).toBe('/admin');
+  it('routes approved non-admin users to /user and admins to /admin', () => {
+    expect(getAuthenticatedHomePath({ role: 'staff', userStatus: 'approved' })).toBe('/user');
     expect(getAuthenticatedHomePath({ role: null, userStatus: 'approved' })).toBe('/admin');
-    expect(getAuthenticatedHomePath({ role: 'teacher', userStatus: 'approved' })).toBe('/admin');
+    expect(getAuthenticatedHomePath({ role: 'teacher', userStatus: 'approved' })).toBe('/user');
+    expect(getAuthenticatedHomePath({ role: 'admin', userStatus: 'approved' })).toBe('/admin');
   });
 
   it('does not redirect until access state is resolved', () => {

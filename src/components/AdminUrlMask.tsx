@@ -13,8 +13,23 @@ export const AdminUrlMask = () => {
   const location = useLocation();
 
   useEffect(() => {
-    if (loading) return;
-    if (isAdminRole(role)) return;
+    // 1. While auth is loading or role is not yet resolved, do NOT touch the URL!
+    if (loading || !role) return;
+
+    // 2. If the user is an admin (admin / super_admin):
+    //    Ensure their address bar is ALWAYS on /admin. If it somehow starts with /user, unmask it!
+    if (isAdminRole(role)) {
+      if (window.location.pathname.startsWith('/user')) {
+        const unmasked = `/admin${window.location.pathname.slice('/user'.length)}${window.location.search}${window.location.hash}`;
+        if (window.location.pathname !== unmasked) {
+          window.history.replaceState(window.history.state, '', unmasked);
+        }
+      }
+      return;
+    }
+
+    // 3. Non-admin users (staff, teacher, student, parent, etc.):
+    //    Mask the /admin address to /user in the address bar.
     if (!location.pathname.startsWith('/admin')) return;
 
     const masked = `/user${location.pathname.slice('/admin'.length)}${location.search}${location.hash}`;

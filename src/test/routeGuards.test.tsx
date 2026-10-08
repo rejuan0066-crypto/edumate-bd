@@ -163,4 +163,20 @@ describe('route guards: shared behaviour', () => {
     );
     expect(await screen.findByText('home')).toBeInTheDocument();
   });
+
+  it('unmasks /user to /admin when an admin accesses /user', async () => {
+    setAuth({ user: { id: 'u1' }, role: 'admin', userStatus: 'approved' });
+    renderApp('/user/students');
+    expect(await screen.findByText('page:students')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(currentUrl()).toBe('/admin/students');
+    });
+  });
+
+  it('does not mask to /user while role is null during initial load', async () => {
+    setAuth({ user: { id: 'u1' }, role: null, userStatus: null, loading: false });
+    renderApp('/admin/students');
+    // While role is null, currentUrl must remain /admin/students, not masked to /user
+    expect(currentUrl()).toBe('/admin/students');
+  });
 });
