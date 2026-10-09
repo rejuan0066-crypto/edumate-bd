@@ -16,6 +16,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ConfirmProvider } from "@/contexts/ConfirmContext";
 import { useDeviceRegistration } from "@/hooks/useDeviceRegistration";
 import { useDeviceTrack } from "@/hooks/useDeviceTrack";
+import { VisitorTracker } from "@/hooks/useVisitorTracker";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DynamicFavicon from "@/components/DynamicFavicon";
@@ -351,6 +352,7 @@ const App = () => (
               <DynamicFavicon />
               <UpdatePrompt />
               <BrowserRouter>
+                <VisitorTracker />
                 <RoutePrefetcher />
                 {/* Global so the "/user/..." address stays masked on every
                     route, including not-found pages. */}
