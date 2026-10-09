@@ -33,6 +33,7 @@ import { toast } from 'sonner';
 import XLSX from 'xlsx-js-style';
 import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
 import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
+import { logAccountsAudit } from '@/lib/accountsAudit';
 import SalaryWorkflowPanel from '@/components/admin/SalaryWorkflowPanel';
 import BulkSalaryWorkflowDialog from '@/components/admin/BulkSalaryWorkflowDialog';
 import { recomputeNetSalary, computeManualOverrideNet } from '@/lib/salaryNet';

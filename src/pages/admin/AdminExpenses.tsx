@@ -21,6 +21,10 @@ import { Plus, Trash2, Edit2, DollarSign, TrendingDown, TrendingUp, Wallet, Prin
 import ExpenseVoucherPrint from '@/components/expenses/ExpenseVoucherPrint';
 import ExpenseHierarchyReport from '@/components/expenses/ExpenseHierarchyReport';
 import LedgerReport from '@/components/expenses/LedgerReport';
+import AccountsAuditView from '@/components/admin/AccountsAuditView';
+import { useSearchParams } from 'react-router-dom';
+import { useOptionalAuth } from '@/hooks/useAuth';
+import { logAccountsAudit } from '@/lib/accountsAudit';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedCounter from '@/components/expenses/AnimatedCounter';
@@ -96,11 +100,13 @@ const AdminExpenses = () => {
   const canDeleteItem = permCanDelete ?? true;
   const bn = language === 'bn';
 
+  const { user, role } = useOptionalAuth();
+  const [searchParams] = useSearchParams();
   const [selectedMonthYear, setSelectedMonthYear] = useState(`${MONTHS[new Date().getMonth()]}-${currentYear}`);
   const [filterMode, setFilterMode] = useState<'monthly' | 'yearly' | 'session'>('monthly');
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedSessionId, setSelectedSessionId] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [activeTab, setActiveTab] = useState<string>(searchParams.get('tab') === 'audit' ? 'audit' : 'dashboard');
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
@@ -682,11 +688,74 @@ const AdminExpenses = () => {
         amount: parsedAmount
       };
       if (editingExpenseId) {
+        const oldExpense = (allExpenses || expenses || []).find((e: any) => e.id === editingExpenseId);
         const { error } = await supabase.from('expenses').update(payload).eq('id', editingExpenseId);
         if (error) throw error;
+
+        const instName = allInstitutions.find(i => i.id === (expenseForm.institution_id || oldExpense?.institution_id))?.name || '';
+        const catName = allCategories.find(c => c.id === (expenseForm.category_id || oldExpense?.category_id))?.name || '';
+
+        await logAccountsAudit({
+          action: 'expense_update',
+          entity_type: 'expense',
+          entity_id: editingExpenseId,
+          title: payload.description || oldExpense?.description || 'Expense',
+          amount: parsedAmount,
+          month_year: payload.month_year,
+          institution_name: instName,
+          category_name: catName,
+          expense_method: expenseForm.expense_method,
+          quantity: parsedQty,
+          memo_no: expenseForm.memo_no,
+          recipient_or_by: expenseForm.expense_by,
+          old_data: oldExpense ? {
+            amount: oldExpense.amount,
+            description: oldExpense.description,
+            expense_date: oldExpense.expense_date,
+            month_year: oldExpense.month_year,
+          } : null,
+          new_data: {
+            amount: parsedAmount,
+            description: payload.description,
+            expense_date: payload.expense_date,
+            month_year: payload.month_year,
+          },
+          user_id: user?.id,
+          user_name: user?.user_metadata?.full_name || user?.email,
+          user_email: user?.email,
+          user_role: role,
+        });
       } else {
         const { data: insertedExpense, error } = await supabase.from('expenses').insert(payload).select('id').single();
         if (error) throw error;
+
+        const instName = allInstitutions.find(i => i.id === expenseForm.institution_id)?.name || '';
+        const catName = allCategories.find(c => c.id === expenseForm.category_id)?.name || '';
+
+        await logAccountsAudit({
+          action: 'expense_create',
+          entity_type: 'expense',
+          entity_id: insertedExpense?.id,
+          title: payload.description,
+          amount: parsedAmount,
+          month_year: payload.month_year,
+          institution_name: instName,
+          category_name: catName,
+          expense_method: expenseForm.expense_method,
+          quantity: parsedQty,
+          memo_no: expenseForm.memo_no,
+          recipient_or_by: expenseForm.expense_by,
+          new_data: {
+            amount: parsedAmount,
+            description: payload.description,
+            expense_date: payload.expense_date,
+            month_year: payload.month_year,
+          },
+          user_id: user?.id,
+          user_name: user?.user_metadata?.full_name || user?.email,
+          user_email: user?.email,
+          user_role: role,
+        });
 
         // Inventory integration: update stock and create log
         if (expenseForm.add_to_inventory && expenseForm.inventory_item_id && insertedExpense) {
@@ -714,6 +783,7 @@ const AdminExpenses = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['expenses'] });
       qc.invalidateQueries({ queryKey: ['all_expenses'] });
+      qc.invalidateQueries({ queryKey: ['accounts-audit-logs'] });
       qc.invalidateQueries({ queryKey: ['inventory-items-for-expense'] });
       qc.invalidateQueries({ queryKey: ['inventory-items'] });
       qc.invalidateQueries({ queryKey: ['inventory-logs'] });
@@ -766,10 +836,27 @@ const AdminExpenses = () => {
         receipt_url: payDueExpense.receipt_url,
       });
       if (insertError) throw insertError;
+
+      await logAccountsAudit({
+        action: 'expense_pay_due',
+        entity_type: 'expense',
+        entity_id: payDueExpense.id,
+        title: `বকেয়া পরিশোধ - ${cleanDesc(originalDesc)}`,
+        amount: Number(payDueExpense.amount),
+        month_year: pMonthYear,
+        expense_method: finalMethod,
+        memo_no: payDueForm.memo_no,
+        recipient_or_by: payDueForm.remarks,
+        user_id: user?.id,
+        user_name: user?.user_metadata?.full_name || user?.email,
+        user_email: user?.email,
+        user_role: role,
+      });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['expenses'] });
       qc.invalidateQueries({ queryKey: ['all_expenses'] });
+      qc.invalidateQueries({ queryKey: ['accounts-audit-logs'] });
       setPayDueExpense(null);
       setPayDueForm({
         payment_date: new Date().toISOString().split('T')[0],
@@ -795,16 +882,46 @@ const AdminExpenses = () => {
         source: depositForm.source
       };
       if (editingDepositId) {
+        const oldDep = (deposits || []).find((d: any) => d.id === editingDepositId);
         const { error } = await supabase.from('deposits').update(payload).eq('id', editingDepositId);
         if (error) throw error;
+
+        await logAccountsAudit({
+          action: 'deposit_update',
+          entity_type: 'deposit',
+          entity_id: editingDepositId,
+          title: payload.source || 'Deposit',
+          amount: payload.amount,
+          month_year: payload.month_year,
+          old_data: oldDep ? { amount: oldDep.amount, source: oldDep.source, deposit_date: oldDep.deposit_date } : null,
+          new_data: { amount: payload.amount, source: payload.source, deposit_date: payload.deposit_date },
+          user_id: user?.id,
+          user_name: user?.user_metadata?.full_name || user?.email,
+          user_email: user?.email,
+          user_role: role,
+        });
       } else {
         const { error } = await supabase.from('deposits').insert(payload);
         if (error) throw error;
+
+        await logAccountsAudit({
+          action: 'deposit_create',
+          entity_type: 'deposit',
+          title: payload.source || 'Deposit',
+          amount: payload.amount,
+          month_year: payload.month_year,
+          new_data: { amount: payload.amount, source: payload.source, deposit_date: payload.deposit_date },
+          user_id: user?.id,
+          user_name: user?.user_metadata?.full_name || user?.email,
+          user_email: user?.email,
+          user_role: role,
+        });
       }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['deposits'] });
       qc.invalidateQueries({ queryKey: ['all_deposits'] });
+      qc.invalidateQueries({ queryKey: ['accounts-audit-logs'] });
       setDepositForm(defaultDepositForm);
       setEditingDepositId(null);
       toast.success(bn ? 'সংরক্ষিত! নতুন এন্ট্রি দিন' : 'Saved! Add new entry');
@@ -814,18 +931,63 @@ const AdminExpenses = () => {
 
   const deleteExpense = useMutation({
     mutationFn: async (id: string) => {
+      const oldExpense = (allExpenses || expenses || []).find((e: any) => e.id === id);
       const { error } = await supabase.from('expenses').delete().eq('id', id);
       if (error) throw error;
+
+      await logAccountsAudit({
+        action: 'expense_delete',
+        entity_type: 'expense',
+        entity_id: id,
+        title: oldExpense?.description || 'Expense',
+        amount: oldExpense?.amount ? Number(oldExpense.amount) : undefined,
+        month_year: oldExpense?.month_year,
+        old_data: oldExpense ? {
+          amount: oldExpense.amount,
+          description: oldExpense.description,
+          expense_date: oldExpense.expense_date,
+          month_year: oldExpense.month_year,
+        } : null,
+        user_id: user?.id,
+        user_name: user?.user_metadata?.full_name || user?.email,
+        user_email: user?.email,
+        user_role: role,
+      });
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['expenses'] }); qc.invalidateQueries({ queryKey: ['all_expenses'] }); toast.success(bn ? 'মুছে ফেলা হয়েছে' : 'Deleted'); }
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['expenses'] });
+      qc.invalidateQueries({ queryKey: ['all_expenses'] });
+      qc.invalidateQueries({ queryKey: ['accounts-audit-logs'] });
+      toast.success(bn ? 'মুছে ফেলা হয়েছে' : 'Deleted');
+    }
   });
 
   const deleteDeposit = useMutation({
     mutationFn: async (id: string) => {
+      const oldDep = (deposits || []).find((d: any) => d.id === id);
       const { error } = await supabase.from('deposits').delete().eq('id', id);
       if (error) throw error;
+
+      await logAccountsAudit({
+        action: 'deposit_delete',
+        entity_type: 'deposit',
+        entity_id: id,
+        title: oldDep?.source || 'Deposit',
+        amount: oldDep?.amount ? Number(oldDep.amount) : undefined,
+        month_year: oldDep?.month_year,
+        old_data: oldDep ? { amount: oldDep.amount, source: oldDep.source, deposit_date: oldDep.deposit_date } : null,
+        user_id: user?.id,
+        user_name: user?.user_metadata?.full_name || user?.email,
+        user_email: user?.email,
+        user_role: role,
+      });
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['deposits'] }); qc.invalidateQueries({ queryKey: ['all_deposits'] }); toast.success(bn ? 'মুছে ফেলা হয়েছে' : 'Deleted'); }
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['deposits'] });
+      qc.invalidateQueries({ queryKey: ['all_deposits'] });
+      qc.invalidateQueries({ queryKey: ['accounts-audit-logs'] });
+      toast.success(bn ? 'মুছে ফেলা হয়েছে' : 'Deleted');
+    }
   });
 
   const saveSummary = useMutation({
@@ -1366,6 +1528,7 @@ const AdminExpenses = () => {
               { value: 'summary', label: bn ? 'সারাংশ' : 'Summary' },
               { value: 'ledger', label: bn ? 'লেজার' : 'Ledger' },
               { value: 'settings', label: bn ? 'প্রতিষ্ঠান ও ক্যাটাগরি সেটিংস' : 'Institution Setup' },
+              { value: 'audit', label: bn ? 'অডিট লগ' : 'Audit Log' },
             ].map(tab => (
               <button
                 key={tab.value}
@@ -2502,6 +2665,19 @@ const AdminExpenses = () => {
               expenseInstitutions={allInstitutions}
               categories={categories as any[]}
               cleanDesc={cleanDesc}
+            />
+          </TabsContent>
+
+          {/* Audit Log Tab */}
+          <TabsContent value="audit" className="space-y-4">
+            <AccountsAuditView
+              currentMonthYear={selectedMonthYear}
+              onRefreshExpenses={() => {
+                qc.invalidateQueries({ queryKey: ['expenses'] });
+                qc.invalidateQueries({ queryKey: ['all_expenses'] });
+                qc.invalidateQueries({ queryKey: ['deposits'] });
+                qc.invalidateQueries({ queryKey: ['all_deposits'] });
+              }}
             />
           </TabsContent>
         </Tabs>

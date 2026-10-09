@@ -178,6 +178,7 @@ const AdminDonorsRoleAudit = lazy(() => import("./pages/admin/AdminDonorsRoleAud
 const AdminAuditDeviceAllowlist = lazy(() => import("./pages/admin/AdminAuditDeviceAllowlist"));
 const AdminBlockedDevices = lazy(() => import("./pages/admin/AdminBlockedDevices"));
 const AdminDeviceManagement = lazy(() => import("./pages/admin/AdminDeviceManagement"));
+const AdminAccountsAudit = lazy(() => import("./pages/admin/AdminAccountsAudit"));
 const AdminVerifiedPaymentsRoleAudit = lazy(() => import("./pages/admin/AdminVerifiedPaymentsRoleAudit"));
 const AdminComplaintsRoleAudit = lazy(() => import("./pages/admin/AdminComplaintsRoleAudit"));
 const AdminReceiptsRoleAudit = lazy(() => import("./pages/admin/AdminReceiptsRoleAudit"));
@@ -507,6 +508,7 @@ const App = () => (
                     <Route path="donors-role-audit" element={<ModuleGuard menuPath="/admin/donors-role-audit"><AdminDonorsRoleAudit /></ModuleGuard>} />
                     <Route path="audit-device-allowlist" element={<ModuleGuard menuPath="/admin/audit-device-allowlist"><AdminAuditDeviceAllowlist /></ModuleGuard>} />
                     <Route path="device-management" element={<ModuleGuard menuPath="/admin/device-management"><AdminDeviceManagement /></ModuleGuard>} />
+                    <Route path="accounts-audit" element={<ModuleGuard menuPath="/admin/accounts-audit"><AdminAccountsAudit /></ModuleGuard>} />
                     <Route path="blocked-devices" element={<ModuleGuard menuPath="/admin/blocked-devices"><AdminBlockedDevices /></ModuleGuard>} />
                     <Route path="verified-payments-role-audit" element={<ModuleGuard menuPath="/admin/verified-payments-role-audit"><AdminVerifiedPaymentsRoleAudit /></ModuleGuard>} />
                     <Route path="complaints-role-audit" element={<ModuleGuard menuPath="/admin/complaints-role-audit"><AdminComplaintsRoleAudit /></ModuleGuard>} />
