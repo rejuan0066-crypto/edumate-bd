@@ -26,8 +26,30 @@ const ExpenseVoucherPrint = ({ expense, open, onClose }: ExpenseVoucherPrintProp
 
   if (!expense) return null;
 
-  const cleanDesc = (desc: string) => (desc || '').replace(/\[unit:.*?\]/g, '').replace(/\[method:.*?\]/g, '').trim() || '-';
-  const getUnit = (desc: string) => desc?.match(/\[unit:(.*?)\]/)?.[1] || 'পিস';
+  const cleanDesc = (desc: string) => (desc || '')
+    .replace(/\[unit:.*?\]/g, '')
+    .replace(/\[method:.*?\]/g, '')
+    .replace(/\[memo:.*?\]/g, '')
+    .replace(/\[remarks:.*?\]/g, '')
+    .replace(/\[due:.*?\]/g, '')
+    .replace(/\[paid_date:.*?\]/g, '')
+    .replace(/\[salary_bulk_total\]/g, '')
+    .replace(/\[salary_month:.*?\]/g, '')
+    .replace(/\[staff_id:.*?\]/g, '')
+    .trim() || '-';
+
+  const getUnit = (desc: string) => {
+    const match = desc?.match(/\[unit:(.*?)\]/)?.[1];
+    if (match !== undefined) {
+      if (match === 'none' || match === 'ফাঁকা' || match === '-' || match === 'none_unit') return '';
+      return match;
+    }
+    if (desc && /বেতন|salary|সম্মানী|honorarium|শিক্ষক-স্টাফ/i.test(desc)) {
+      if (desc.includes('জন')) return 'জন';
+      return '';
+    }
+    return 'পিস';
+  };
   const getMethod = (desc: string) => desc?.match(/\[method:(.*?)\]/)?.[1] || 'ক্যাশ';
   const fmt = (n: number) => `৳${n.toLocaleString('en-IN')}`;
 
@@ -89,7 +111,7 @@ const ExpenseVoucherPrint = ({ expense, open, onClose }: ExpenseVoucherPrintProp
             <tbody>
               <tr>
                 <td className="border border-gray-300 px-2 py-1.5">{cleanDesc(expense.description)}</td>
-                <td className="border border-gray-300 px-2 py-1.5 text-center">{expense.quantity || 1} {getUnit(expense.description)}</td>
+                <td className="border border-gray-300 px-2 py-1.5 text-center">{expense.quantity || 1}{getUnit(expense.description) ? ` ${getUnit(expense.description)}` : ''}</td>
                 <td className="border border-gray-300 px-2 py-1.5 text-center">{getMethod(expense.description)}</td>
                 <td className="border border-gray-300 px-2 py-1.5 text-right font-bold">{fmt(Number(expense.amount))}</td>
               </tr>

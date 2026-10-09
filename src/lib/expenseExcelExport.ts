@@ -257,7 +257,7 @@ function buildExpenseCategorySheet(
 
     const rawQty = item.quantity ? String(item.quantity) : '১';
     const unit = getUnit(item.description || '');
-    const displayQty = `${rawQty} ${unit !== 'পিস' ? unit : (bn ? 'টি' : 'pcs')}`;
+    const displayQty = unit ? `${rawQty} ${unit !== 'পিস' ? unit : (bn ? 'টি' : 'pcs')}` : `${rawQty}`;
 
     rows.push([
       { v: formatShortDate(item.expense_date, bn), s: STYLES.cellCenter },

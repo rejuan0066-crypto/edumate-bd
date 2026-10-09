@@ -33,7 +33,28 @@ import { generateBilingualReport } from '@/lib/reportPdfGenerator';
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { exportExpensesMultiTabExcel, exportSingleInstitutionExcel, getInstShortName } from '@/lib/expenseExcelExport';
 
-const QUANTITY_UNITS = ['পিস', 'কেজি', 'গ্রাম', 'লিটার', 'ফুট', 'মিটার', 'সেট', 'প্যাকেট', 'বস্তা', 'রিম'];
+export const DEFAULT_QUANTITY_UNITS = [
+  'পিস',
+  'জন',
+  'মাস',
+  'দিন',
+  'ঘণ্টা',
+  'বার',
+  'টি',
+  'কেজি',
+  'গ্রাম',
+  'লিটার',
+  'ফুট',
+  'মিটার',
+  'গজ',
+  'সেট',
+  'প্যাকেট',
+  'বস্তা',
+  'বক্স',
+  'বান্ডিল',
+  'রিম'
+];
+export const QUANTITY_UNITS = DEFAULT_QUANTITY_UNITS;
 const EXPENSE_METHODS = ['ক্যাশ', 'চেক', 'বিকাশ', 'নগদ', 'রকেট', 'ব্যাংক ট্রান্সফার', 'অন্যান্য'];
 
 export const BUILTIN_DEPOSIT_SOURCES = [
@@ -55,7 +76,22 @@ export const getSourceLabel = (sourceKey: string, bn: boolean, customSources: an
 
 const bnToEnDigit = (str: string) => str.replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d).toString());
 const onlyNumbers = (str: string) => str.replace(/[^0-9০-৯.]/g, '');
-const getUnit = (desc: string) => desc?.match(/\[unit:(.*?)\]/)?.[1] || 'পিস';
+
+const getUnit = (desc: string, categoryName?: string) => {
+  const match = desc?.match(/\[unit:(.*?)\]/)?.[1];
+  if (match !== undefined) {
+    if (match === 'none' || match === 'ফাঁকা' || match === '-' || match === 'none_unit') return '';
+    return match;
+  }
+  const isSalary = (desc && /বেতন|salary|সম্মানী|honorarium|শিক্ষক-স্টাফ/i.test(desc)) ||
+                   (categoryName && /বেতন|salary|সম্মানী|honorarium/i.test(categoryName));
+  if (isSalary) {
+    if (desc && desc.includes('জন')) return 'জন';
+    return '';
+  }
+  return 'পিস';
+};
+
 const getMethod = (desc: string) => desc?.match(/\[method:(.*?)\]/)?.[1] || 'ক্যাশ';
 const getMemo = (desc: string) => desc?.match(/\[memo:(.*?)\]/)?.[1] || '-';
 const getRemarks = (desc: string) => desc?.match(/\[remarks:(.*?)\]/)?.[1] || '-';
@@ -67,7 +103,11 @@ const cleanDesc = (desc: string) => (desc || '')
   .replace(/\[memo:.*?\]/g, '')
   .replace(/\[remarks:.*?\]/g, '')
   .replace(/\[due:.*?\]/g, '')
+  .replace(/\[paid_date:.*?\]/g, '')
   .replace(/\[original_due_id:.*?\]/g, '')
+  .replace(/\[salary_bulk_total\]/g, '')
+  .replace(/\[salary_month:.*?\]/g, '')
+  .replace(/\[staff_id:.*?\]/g, '')
   .trim() || '-';
 
 const MONTHS = [
@@ -182,6 +222,8 @@ const AdminExpenses = () => {
   const [expInstForm, setExpInstForm] = useState({ name: '', name_bn: '' });
   const [categoryForm, setCategoryForm] = useState({ institution_id: '', name: '', name_bn: '' });
   const [expenseForm, setExpenseForm] = useState(defaultExpenseForm);
+  const [isCustomUnitActive, setIsCustomUnitActive] = useState(false);
+  const [customUnitText, setCustomUnitText] = useState('');
   const [depositForm, setDepositForm] = useState(defaultDepositForm);
   const [isAddingNewSource, setIsAddingNewSource] = useState(false);
   const [newSourceInput, setNewSourceInput] = useState('');
@@ -285,6 +327,19 @@ const AdminExpenses = () => {
       return data;
     }
   });
+
+  const allCategories = categories;
+
+  const allAvailableUnits = useMemo(() => {
+    const unitsSet = new Set<string>(DEFAULT_QUANTITY_UNITS);
+    (allExpenses || []).forEach((e: any) => {
+      const u = getUnit(e.description);
+      if (u && u !== 'পিস' && !unitsSet.has(u)) {
+        unitsSet.add(u);
+      }
+    });
+    return Array.from(unitsSet);
+  }, [allExpenses]);
 
   const { data: summaryData } = useQuery({
     queryKey: ['expense_summary', selectedMonthYear],
@@ -751,39 +806,92 @@ const AdminExpenses = () => {
 
   const addExpense = useMutation({
     mutationFn: async () => {
-      if (!expenseForm.institution_id || !expenseForm.category_id || !expenseForm.amount) { toast.error(bn ? 'প্রতিষ্ঠান, ক্যাটাগরি ও টাকা প্রদান করুন' : 'Institution, Category & Amount are required'); return; }
+      if (!expenseForm.institution_id || !expenseForm.category_id || !expenseForm.amount) {
+        toast.error(bn ? 'প্রতিষ্ঠান, ক্যাটাগরি ও টাকা প্রদান করুন' : 'Institution, Category & Amount are required');
+        throw new Error(bn ? 'প্রতিষ্ঠান, ক্যাটাগরি ও টাকা প্রদান করুন' : 'Institution, Category & Amount are required');
+      }
       const parsedAmount = Number(bnToEnDigit(expenseForm.amount));
       const parsedQty = expenseForm.quantity ? Number(bnToEnDigit(expenseForm.quantity)) : 1;
-      if (isNaN(parsedAmount) || parsedAmount <= 0) { toast.error(bn ? 'সঠিক টাকার পরিমাণ দিন' : 'Enter valid amount'); return; }
-      if (isNaN(parsedQty) || parsedQty <= 0) { toast.error(bn ? 'সঠিক পরিমাণ দিন' : 'Enter valid quantity'); return; }
+      if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        toast.error(bn ? 'সঠিক টাকার পরিমাণ দিন' : 'Enter valid amount');
+        throw new Error(bn ? 'সঠিক টাকার পরিমাণ দিন' : 'Enter valid amount');
+      }
+      if (isNaN(parsedQty) || parsedQty <= 0) {
+        toast.error(bn ? 'সঠিক পরিমাণ দিন' : 'Enter valid quantity');
+        throw new Error(bn ? 'সঠিক পরিমাণ দিন' : 'Enter valid quantity');
+      }
       
       let receiptUrl = expenseForm.receipt_url || null;
       
       // Upload receipt file if exists
       if (receiptFile && expenseForm.has_receipt) {
         setUploading(true);
-        const fileExt = receiptFile.name.split('.').pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('receipts')
-          .upload(fileName, receiptFile);
-        setUploading(false);
-        if (uploadError) throw uploadError;
-        // Store storage ref instead of broken public URL on private bucket; signed URL is fetched on demand.
-        receiptUrl = `receipts/${uploadData.path}`;
+        try {
+          const fileExt = receiptFile.name.split('.').pop();
+          const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('receipts')
+            .upload(fileName, receiptFile);
+          if (uploadError) throw uploadError;
+          receiptUrl = `receipts/${uploadData.path}`;
+        } finally {
+          setUploading(false);
+        }
       }
       
-      let descWithTags = (expenseForm.description || '').trim();
-      if (expenseForm.quantity_unit && expenseForm.quantity_unit !== 'পিস') descWithTags += `[unit:${expenseForm.quantity_unit}]`;
+      let descWithTags = (expenseForm.description || '').trim()
+        .replace(/\[unit:.*?\]/g, '')
+        .replace(/\[method:.*?\]/g, '')
+        .replace(/\[memo:.*?\]/g, '')
+        .replace(/\[remarks:.*?\]/g, '')
+        .replace(/\[due:.*?\]/g, '')
+        .trim();
+
+      const unitVal = (expenseForm.quantity_unit || '').trim();
+      if (unitVal && unitVal !== 'none' && unitVal !== 'কোনোটি নয় (ফাঁকা)') {
+        descWithTags += `[unit:${unitVal}]`;
+      } else {
+        descWithTags += `[unit:none]`;
+      }
+
       const rawMethod = (expenseForm.expense_method || '').trim() || 'ক্যাশ';
       const finalMethod = rawMethod.replace(/[\[\]]/g, '');
       if (finalMethod) descWithTags += `[method:${finalMethod}]`;
       if (expenseForm.memo_no && expenseForm.memo_no.trim()) descWithTags += `[memo:${expenseForm.memo_no.trim()}]`;
       if (expenseForm.remarks && expenseForm.remarks.trim()) descWithTags += `[remarks:${expenseForm.remarks.trim()}]`;
       if (expenseForm.is_due) descWithTags += `[due:unpaid]`;
+
+      const oldExpense = editingExpenseId 
+        ? (allExpenses || expenses || []).find((e: any) => e.id === editingExpenseId) 
+        : null;
+
+      // Preserve special system tags if editing
+      if (oldExpense?.description) {
+        if (oldExpense.description.includes('[salary_bulk_total]') && !descWithTags.includes('[salary_bulk_total]')) {
+          descWithTags += ' [salary_bulk_total]';
+        }
+        const mMatch = oldExpense.description.match(/\[salary_month:.*?\]/);
+        if (mMatch && !descWithTags.includes('[salary_month:')) {
+          descWithTags += ` ${mMatch[0]}`;
+        }
+        const sMatch = oldExpense.description.match(/\[staff_id:.*?\]/);
+        if (sMatch && !descWithTags.includes('[staff_id:')) {
+          descWithTags += ` ${sMatch[0]}`;
+        }
+      }
+
+      // Compute month_year intelligently
+      const expDate = new Date(expenseForm.expense_date);
+      const computedMonthYear = !isNaN(expDate.getTime())
+        ? `${MONTHS[expDate.getMonth()]}-${expDate.getFullYear()}`
+        : selectedMonthYear;
+
+      const finalMonthYear = oldExpense?.month_year && oldExpense.expense_date === expenseForm.expense_date
+        ? oldExpense.month_year
+        : computedMonthYear;
       
       const payload = {
-        month_year: selectedMonthYear,
+        month_year: finalMonthYear,
         institution_id: expenseForm.institution_id,
         category_id: expenseForm.category_id,
         expense_date: expenseForm.expense_date,
@@ -793,13 +901,13 @@ const AdminExpenses = () => {
         receipt_url: receiptUrl,
         amount: parsedAmount
       };
+
       if (editingExpenseId) {
-        const oldExpense = (allExpenses || expenses || []).find((e: any) => e.id === editingExpenseId);
         const { error } = await supabase.from('expenses').update(payload).eq('id', editingExpenseId);
         if (error) throw error;
 
         const instName = allInstitutions.find(i => i.id === (expenseForm.institution_id || oldExpense?.institution_id))?.name || '';
-        const catName = allCategories.find(c => c.id === (expenseForm.category_id || oldExpense?.category_id))?.name || '';
+        const catName = categories.find(c => c.id === (expenseForm.category_id || oldExpense?.category_id))?.name || '';
 
         await logAccountsAudit({
           action: 'expense_update',
@@ -813,7 +921,7 @@ const AdminExpenses = () => {
           expense_method: expenseForm.expense_method,
           quantity: parsedQty,
           memo_no: expenseForm.memo_no,
-          recipient_or_by: expenseForm.expense_by,
+          recipient_or_by: expenseForm.expense_method,
           old_data: oldExpense ? {
             amount: oldExpense.amount,
             description: oldExpense.description,
@@ -836,7 +944,7 @@ const AdminExpenses = () => {
         if (error) throw error;
 
         const instName = allInstitutions.find(i => i.id === expenseForm.institution_id)?.name || '';
-        const catName = allCategories.find(c => c.id === expenseForm.category_id)?.name || '';
+        const catName = categories.find(c => c.id === expenseForm.category_id)?.name || '';
 
         await logAccountsAudit({
           action: 'expense_create',
@@ -850,7 +958,7 @@ const AdminExpenses = () => {
           expense_method: expenseForm.expense_method,
           quantity: parsedQty,
           memo_no: expenseForm.memo_no,
-          recipient_or_by: expenseForm.expense_by,
+          recipient_or_by: expenseForm.expense_method,
           new_data: {
             amount: parsedAmount,
             description: payload.description,
@@ -865,24 +973,27 @@ const AdminExpenses = () => {
 
         // Inventory integration: update stock and create log
         if (expenseForm.add_to_inventory && expenseForm.inventory_item_id && insertedExpense) {
-          const { error: stockError } = await supabase.rpc('increment_inventory_stock' as any, {
-            p_item_id: expenseForm.inventory_item_id,
-            p_amount: parsedQty
-          });
-          if (stockError) {
-            // Fallback: manual update
-            const { data: currentItem } = await supabase.from('inventory_items').select('current_stock').eq('id', expenseForm.inventory_item_id).single();
-            if (currentItem) {
-              await supabase.from('inventory_items').update({ current_stock: (currentItem.current_stock || 0) + parsedQty }).eq('id', expenseForm.inventory_item_id);
+          try {
+            const { error: stockError } = await supabase.rpc('increment_inventory_stock' as any, {
+              p_item_id: expenseForm.inventory_item_id,
+              p_amount: parsedQty
+            });
+            if (stockError) {
+              const { data: currentItem } = await supabase.from('inventory_items').select('current_stock').eq('id', expenseForm.inventory_item_id).single();
+              if (currentItem) {
+                await supabase.from('inventory_items').update({ current_stock: (currentItem.current_stock || 0) + parsedQty }).eq('id', expenseForm.inventory_item_id);
+              }
             }
+            await supabase.from('inventory_logs').insert({
+              item_id: expenseForm.inventory_item_id,
+              type: 'in',
+              change_amount: parsedQty,
+              reason: `Purchased via Expense ID: ${insertedExpense.id}`,
+              expense_id: insertedExpense.id,
+            });
+          } catch (invErr) {
+            console.warn('Inventory log error:', invErr);
           }
-          await supabase.from('inventory_logs').insert({
-            item_id: expenseForm.inventory_item_id,
-            type: 'in',
-            change_amount: parsedQty,
-            reason: `Purchased via Expense ID: ${insertedExpense.id}`,
-            expense_id: insertedExpense.id,
-          });
         }
       }
     },
@@ -893,15 +1004,28 @@ const AdminExpenses = () => {
       qc.invalidateQueries({ queryKey: ['inventory-items-for-expense'] });
       qc.invalidateQueries({ queryKey: ['inventory-items'] });
       qc.invalidateQueries({ queryKey: ['inventory-logs'] });
-      // Reset form for new entry, keep dialog open with same project/category
+      
+      const isEdit = !!editingExpenseId;
       const keepInstitutionId = expenseForm.institution_id || '';
       const keepCategoryId = expenseForm.category_id || '';
+      
       setExpenseForm({ ...defaultExpenseForm, institution_id: keepInstitutionId, category_id: keepCategoryId });
       setReceiptFile(null);
       setEditingExpenseId(null);
-      toast.success(bn ? 'সংরক্ষিত! নতুন এন্ট্রি দিন' : 'Saved! Add new entry');
+      setIsCustomUnitActive(false);
+      setCustomUnitText('');
+      
+      if (isEdit) {
+        setExpenseDialog(false);
+        toast.success(bn ? 'হিসাব সফলভাবে আপডেট করা হয়েছে' : 'Expense updated successfully');
+      } else {
+        toast.success(bn ? 'সংরক্ষিত! নতুন এন্ট্রি দিন' : 'Saved! Add new entry');
+      }
     },
-    onError: () => toast.error(bn ? 'ত্রুটি হয়েছে' : 'Error occurred')
+    onError: (err: any) => {
+      console.error('Expense add/edit error:', err);
+      toast.error(err?.message || (bn ? 'সংরক্ষণে ত্রুটি হয়েছে' : 'Error saving expense'));
+    }
   });
 
   const payDueMutation = useMutation({
@@ -1314,17 +1438,28 @@ const AdminExpenses = () => {
 
   const openEditExpense = (e: any) => {
     setEditingExpenseId(e.id);
+    const cat = categories.find((c: any) => c.id === e.category_id);
+    const unit = getUnit(e.description, cat?.name || cat?.name_bn);
     const method = getMethod(e.description);
-    const isKnownMethod = EXPENSE_METHODS.includes(method);
     const memo = getMemo(e.description);
     const rem = getRemarks(e.description);
+
+    const isStandard = DEFAULT_QUANTITY_UNITS.includes(unit) || unit === '';
+    if (!isStandard && unit) {
+      setIsCustomUnitActive(true);
+      setCustomUnitText(unit);
+    } else {
+      setIsCustomUnitActive(false);
+      setCustomUnitText('');
+    }
+
     setExpenseForm({
       institution_id: e.institution_id,
       category_id: e.category_id,
       expense_date: e.expense_date,
       description: cleanDesc(e.description) === '-' ? '' : cleanDesc(e.description),
       quantity: String(e.quantity || 1),
-      quantity_unit: getUnit(e.description),
+      quantity_unit: unit || 'none',
       has_receipt: !!e.has_receipt,
       receipt_url: e.receipt_url || '',
       amount: String(e.amount),
@@ -1448,7 +1583,15 @@ const AdminExpenses = () => {
     setCategoryForm({ institution_id: (c as any).institution_id || '', name: c.name, name_bn: c.name_bn });
     setCategoryDialog(true);
   };
-  const resetExpenseDialog = (open: boolean) => { if (!open) { setEditingExpenseId(null); setExpenseForm(defaultExpenseForm); } setExpenseDialog(open); };
+  const resetExpenseDialog = (open: boolean) => {
+    if (!open) {
+      setEditingExpenseId(null);
+      setExpenseForm(defaultExpenseForm);
+      setIsCustomUnitActive(false);
+      setCustomUnitText('');
+    }
+    setExpenseDialog(open);
+  };
   const resetDepositDialog = (open: boolean) => {
     if (!open) {
       setEditingDepositId(null);
@@ -1978,8 +2121,8 @@ const AdminExpenses = () => {
                                 const memoStr = getMemo(e.description);
                                 const remarksStr = getRemarks(e.description);
                                 const rawQty = e.quantity ? String(e.quantity) : '১';
-                                const unit = getUnit(e.description);
-                                const displayQty = `${rawQty} ${unit}`;
+                                const unit = getUnit(e.description, catLabel);
+                                const displayQty = unit ? `${rawQty} ${unit}` : `${rawQty}`;
                                 const rowInst = allInstitutions.find((i: any) => i.id === e.institution_id);
 
                                 return (
@@ -2140,8 +2283,8 @@ const AdminExpenses = () => {
                                   const catObj = categories.find((c: any) => c.id === due.category_id);
                                   const catLabel = catObj ? (bn ? catObj.name_bn || catObj.name : catObj.name) : '-';
                                   const rawQty = due.quantity ? String(due.quantity) : '১';
-                                  const unit = getUnit(due.description);
-                                  const displayQty = `${rawQty} ${unit}`;
+                                  const unit = getUnit(due.description, catLabel);
+                                  const displayQty = unit ? `${rawQty} ${unit}` : `${rawQty}`;
                                   const memoStr = getMemo(due.description);
                                   const remarksStr = getRemarks(due.description);
                                   const rowInst = allInstitutions.find((i: any) => i.id === due.institution_id);
@@ -3113,7 +3256,7 @@ const AdminExpenses = () => {
                             <td className="border p-1">{i + 1}</td>
                             <td className="border p-1">{e.expense_date}</td>
                             <td className="border p-1">{cleanDesc(e.description)}</td>
-                            <td className="border p-1 text-center">{e.quantity || 1} {getUnit(e.description)}</td>
+                            <td className="border p-1 text-center">{e.quantity || 1}{getUnit(e.description) ? ` ${getUnit(e.description)}` : ''}</td>
                             <td className="border p-1 text-center">{getMethod(e.description)}</td>
                             <td className="border p-1 text-right">৳{formatNum(Number(e.amount))}</td>
                             <td className="border p-1 text-center">{e.has_receipt ? '✓' : '-'}</td>
@@ -3189,7 +3332,13 @@ const AdminExpenses = () => {
                   const catName = (cat?.name || '').toLowerCase();
                   const catNameBn = cat?.name_bn || '';
                   const isInventoryCategory = catName.includes('grocery') || catName.includes('stationar') || catNameBn.includes('খাদ্য') || catNameBn.includes('স্টেশনার') || catNameBn.includes('মুদি');
-                  setExpenseForm(f => ({ ...f, category_id: value, add_to_inventory: isInventoryCategory ? true : f.add_to_inventory }));
+                  const isSalaryCategory = catName.includes('salary') || catNameBn.includes('বেতন') || catNameBn.includes('সম্মানী');
+                  setExpenseForm(f => ({ 
+                    ...f, 
+                    category_id: value, 
+                    add_to_inventory: isInventoryCategory ? true : f.add_to_inventory,
+                    quantity_unit: isSalaryCategory ? (f.quantity_unit === 'পিস' ? 'জন' : f.quantity_unit) : f.quantity_unit
+                  }));
                 }}
               >
                 <SelectTrigger><SelectValue placeholder={bn ? 'ক্যাটেগরি নির্বাচন করুন' : 'Select category'} /></SelectTrigger>
@@ -3211,7 +3360,22 @@ const AdminExpenses = () => {
                 <DatePicker bengali={bn} value={expenseForm.expense_date} onChange={v => setExpenseForm(f => ({ ...f, expense_date: v }))} />
               </div>
               <div>
-                <Label>{bn ? 'পরিমাণ' : 'Quantity'}</Label>
+                <div className="flex items-center justify-between mb-1">
+                  <Label>{bn ? 'পরিমাণ ও ধরণ' : 'Quantity & Unit'}</Label>
+                  {isCustomUnitActive && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomUnitActive(false);
+                        setCustomUnitText('');
+                        setExpenseForm(f => ({ ...f, quantity_unit: 'পিস' }));
+                      }}
+                      className="text-[11px] text-primary hover:underline font-medium"
+                    >
+                      {bn ? '← তালিকা' : '← List'}
+                    </button>
+                  )}
+                </div>
                 <div className="flex gap-2">
                   <Input 
                     className="flex-1" 
@@ -3220,14 +3384,49 @@ const AdminExpenses = () => {
                     placeholder="১"
                     inputMode="decimal"
                   />
-                  <Select value={expenseForm.quantity_unit} onValueChange={v => setExpenseForm(f => ({ ...f, quantity_unit: v }))}>
-                    <SelectTrigger className="w-24">
-                      <SelectValue placeholder={bn ? 'একক' : 'Unit'} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {QUANTITY_UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  {!isCustomUnitActive ? (
+                    <Select 
+                      value={expenseForm.quantity_unit || 'none'} 
+                      onValueChange={v => {
+                        if (v === '__custom__') {
+                          setIsCustomUnitActive(true);
+                          setCustomUnitText('');
+                          setExpenseForm(f => ({ ...f, quantity_unit: '' }));
+                        } else if (v === 'none') {
+                          setExpenseForm(f => ({ ...f, quantity_unit: 'none' }));
+                        } else {
+                          setExpenseForm(f => ({ ...f, quantity_unit: v }));
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="w-36">
+                        <SelectValue placeholder={bn ? 'একক' : 'Unit'} />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-56">
+                        <SelectItem value="none">{bn ? 'কোনোটি নয় (ফাঁকা)' : 'None (Blank)'}</SelectItem>
+                        {allAvailableUnits.map(u => (
+                          <SelectItem key={u} value={u}>{u}</SelectItem>
+                        ))}
+                        <SelectItem value="__custom__" className="text-primary font-medium border-t mt-1 pt-1">
+                          {bn ? '✏️ কাস্টম (নিজে লিখুন)' : '✏️ Custom Unit'}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="flex items-center gap-1 w-36">
+                      <Input
+                        placeholder={bn ? 'উদা: কার্টুন' : 'e.g. Box'}
+                        value={customUnitText}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setCustomUnitText(val);
+                          setExpenseForm(f => ({ ...f, quantity_unit: val.trim() }));
+                        }}
+                        className="h-10 text-xs"
+                        autoFocus
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -3416,7 +3615,7 @@ const AdminExpenses = () => {
             </div>
 
             <Button className="w-full" onClick={() => addExpense.mutate()} disabled={addExpense.isPending || uploading}>
-              {uploading ? (bn ? 'আপলোড হচ্ছে...' : 'Uploading...') : (bn ? 'সংরক্ষণ করুন' : 'Save')}
+              {uploading ? (bn ? 'আপলোড হচ্ছে...' : 'Uploading...') : (editingExpenseId ? (bn ? 'হিসাব আপডেট করুন' : 'Update Expense') : (bn ? 'সংরক্ষণ করুন' : 'Save'))}
             </Button>
           </div>
         </DialogContent>
@@ -3640,7 +3839,7 @@ const AdminExpenses = () => {
                               <TableCell>{i + 1}</TableCell>
                               <TableCell>{e.expense_date}</TableCell>
                               <TableCell>{cleanDesc(e.description)}</TableCell>
-                              <TableCell>{e.quantity || 1} {getUnit(e.description)}</TableCell>
+                              <TableCell>{e.quantity || 1}{getUnit(e.description) ? ` ${getUnit(e.description)}` : ''}</TableCell>
                               <TableCell>{getMethod(e.description)}</TableCell>
                               <TableCell className="text-right">৳{formatNum(Number(e.amount))}</TableCell>
                               <TableCell className="text-center">
@@ -3864,7 +4063,7 @@ const AdminExpenses = () => {
                                     <td className="border p-1 text-center">{i + 1}</td>
                                     <td className="border p-1 text-center">{e.expense_date}</td>
                                     <td className="border p-1">{cleanDesc(e.description)}</td>
-                                    <td className="border p-1 text-center">{e.quantity || 1} {getUnit(e.description)}</td>
+                                    <td className="border p-1 text-center">{e.quantity || 1}{getUnit(e.description) ? ` ${getUnit(e.description)}` : ''}</td>
                                     <td className="border p-1 text-center">{getMethod(e.description)}</td>
                                     <td className="border p-1 text-center font-mono">{getMemo(e.description)}</td>
                                     <td className="border p-1 text-right font-semibold">৳{formatNum(Number(e.amount))}</td>
@@ -3906,7 +4105,7 @@ const AdminExpenses = () => {
                                     <td className="border p-1 text-center">{i + 1}</td>
                                     <td className="border p-1 text-center">{e.expense_date}</td>
                                     <td className="border p-1">{cleanDesc(e.description)}</td>
-                                    <td className="border p-1 text-center">{e.quantity || 1} {getUnit(e.description)}</td>
+                                    <td className="border p-1 text-center">{e.quantity || 1}{getUnit(e.description) ? ` ${getUnit(e.description)}` : ''}</td>
                                     <td className="border p-1 text-center">{getMethod(e.description)}</td>
                                     <td className="border p-1 text-center font-mono">{getMemo(e.description)}</td>
                                     <td className="border p-1 text-right font-semibold">৳{formatNum(Number(e.amount))}</td>
@@ -3943,7 +4142,7 @@ const AdminExpenses = () => {
                                   <td className="border p-1 text-center">{di + 1}</td>
                                   <td className="border p-1 text-center">{due.expense_date}</td>
                                   <td className="border p-1">{cleanDesc(due.description)}</td>
-                                  <td className="border p-1 text-center">{due.quantity || 1} {getUnit(due.description)}</td>
+                                  <td className="border p-1 text-center">{due.quantity || 1}{getUnit(due.description) ? ` ${getUnit(due.description)}` : ''}</td>
                                   <td className="border p-1 text-center font-mono">{getMemo(due.description)}</td>
                                   <td className="border p-1 text-right font-semibold text-amber-700">৳{formatNum(Number(due.amount))}</td>
                                   <td className="border p-1 text-muted-foreground">{getRemarks(due.description)}</td>
