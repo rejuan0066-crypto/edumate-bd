@@ -27,7 +27,7 @@ import AnimatedCounter from '@/components/expenses/AnimatedCounter';
 import MiniSparkline from '@/components/expenses/MiniSparkline';
 import { generateBilingualReport } from '@/lib/reportPdfGenerator';
 import { useConfirm } from "@/contexts/ConfirmContext";
-import { exportExpensesMultiTabExcel, exportSingleInstitutionExcel } from '@/lib/expenseExcelExport';
+import { exportExpensesMultiTabExcel, exportSingleInstitutionExcel, getInstShortName } from '@/lib/expenseExcelExport';
 
 const QUANTITY_UNITS = ['পিস', 'কেজি', 'গ্রাম', 'লিটার', 'ফুট', 'মিটার', 'সেট', 'প্যাকেট', 'বস্তা', 'রিম'];
 const EXPENSE_METHODS = ['ক্যাশ', 'চেক', 'বিকাশ', 'নগদ', 'রকেট', 'ব্যাংক ট্রান্সফার', 'অন্যান্য'];
@@ -90,7 +90,10 @@ const AdminExpenses = () => {
   const confirm = useConfirm();
   const { language } = useLanguage();
   const qc = useQueryClient();
-  const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/expenses');
+  const { canAddItem: permCanAdd, canEditItem: permCanEdit, canDeleteItem: permCanDelete } = usePagePermissions('/admin/expenses');
+  const canAddItem = permCanAdd ?? true;
+  const canEditItem = permCanEdit ?? true;
+  const canDeleteItem = permCanDelete ?? true;
   const bn = language === 'bn';
 
   const [selectedMonthYear, setSelectedMonthYear] = useState(`${MONTHS[new Date().getMonth()]}-${currentYear}`);
@@ -1248,52 +1251,21 @@ const AdminExpenses = () => {
           );
         })()}
 
-        {/* Project & Category Breakdown Tabs */}
-        {(institutionBreakdown.length > 0 || categoryBreakdown.length > 0) && (
-            <div>
-              <div className="flex flex-wrap gap-2 mb-3">
-                <button
-                  onClick={() => { setActiveTab(''); setBreakdownTab(prev => prev === 'hierarchy' ? null : 'hierarchy'); }}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 whitespace-nowrap ${breakdownTab === 'hierarchy' ? 'bg-primary/10 border-primary text-primary shadow-sm' : 'bg-background border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'}`}
-                >
-                  {bn ? 'প্রতিষ্ঠান ভিত্তিক হিসাব' : 'Institution-wise'}
-                </button>
-                <button
-                  onClick={() => { setBreakdownTab(null); setActiveTab(activeTab === 'deposits' ? '' : 'deposits'); }}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 whitespace-nowrap ${activeTab === 'deposits' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 shadow-sm' : 'bg-background border-border text-muted-foreground hover:border-emerald-400/40 hover:text-foreground'}`}
-                >
-                  {bn ? 'টাকা আয়/উত্তোলন' : 'Deposits'}
-                </button>
-                <button
-                  onClick={() => { setBreakdownTab(null); setActiveTab(activeTab === 'settings' ? '' : 'settings'); }}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 whitespace-nowrap ${activeTab === 'settings' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 shadow-sm' : 'bg-background border-border text-muted-foreground hover:border-emerald-400/40 hover:text-foreground'}`}
-                >
-                  {bn ? 'প্রতিষ্ঠান' : 'Institutions'}
-                </button>
-              </div>
-              {breakdownTab === 'hierarchy' && (
-                <ExpenseHierarchyReport
-                  expenses={expenses as any}
-                  bn={bn}
-                  formatNum={formatNum}
-                  cleanDesc={cleanDesc}
-                  periodLabel={selectedMonthName}
-                />
-              )}
-            </div>
-        )}
-
+        {/* Main Navigation Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="flex flex-wrap gap-2 mb-4">
             {[
-              { value: 'dashboard', label: bn ? 'হিসাব' : 'Expenses' },
+              { value: 'dashboard', label: bn ? 'হিসাব ও ব্যয় এন্ট্রি' : 'Expenses' },
+              { value: 'deposits', label: bn ? 'টাকা আয়/উত্তোলন' : 'Deposits' },
+              { value: 'hierarchy', label: bn ? 'প্রতিষ্ঠান ভিত্তিক রিপোর্ট' : 'Institution Report' },
               { value: 'summary', label: bn ? 'সারাংশ' : 'Summary' },
               { value: 'ledger', label: bn ? 'লেজার' : 'Ledger' },
+              { value: 'settings', label: bn ? 'প্রতিষ্ঠান ও ক্যাটাগরি সেটিংস' : 'Institution Setup' },
             ].map(tab => (
               <button
                 key={tab.value}
-                onClick={() => { setBreakdownTab(null); setActiveTab(activeTab === tab.value ? '' : tab.value); }}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-2xl text-sm font-semibold transition-all whitespace-nowrap ${activeTab === tab.value
+                onClick={() => setActiveTab(tab.value)}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${activeTab === tab.value
                   ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25'
                   : 'bg-white/60 dark:bg-white/10 backdrop-blur border border-emerald-200/30 dark:border-emerald-800/30 text-muted-foreground hover:text-foreground hover:shadow-md hover:border-emerald-300/50'}`}
               >
@@ -1346,7 +1318,37 @@ const AdminExpenses = () => {
                     })}
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <motion.button
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => {
+                        const targetInst = (selectedInstId && selectedInstId !== 'all')
+                          ? allInstitutions.find((p: any) => p.id === selectedInstId)
+                          : allInstitutions[0];
+                        const targetId = targetInst?.id || '';
+                        setReceiptFile(null);
+                        setEditingExpenseId(null);
+                        const availCats = getCategoriesForInst(targetId);
+                        setExpenseForm({
+                          ...defaultExpenseForm,
+                          institution_id: targetId,
+                          category_id: availCats[0]?.id || '',
+                        });
+                        setExpenseDialog(true);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-md shadow-emerald-500/25 transition-all cursor-pointer bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>
+                        {bn
+                          ? (selectedInstId && selectedInstId !== 'all'
+                              ? `+ খরচ যোগ (${getInstShortName(getInstName(allInstitutions.find((p: any) => p.id === selectedInstId), bn))})`
+                              : '+ খরচ যোগ')
+                          : '+ Add Expense'}
+                      </span>
+                    </motion.button>
+
                     <Button
                       variant="outline"
                       size="sm"
@@ -1440,7 +1442,7 @@ const AdminExpenses = () => {
 
                           {/* Action Buttons: Add Expense, Excel, Print */}
                           <div className="flex flex-wrap items-center gap-2">
-                            {canAddItem && (
+                            {(canAddItem ?? true) && (
                               <motion.button
                                 whileHover={{ scale: 1.03 }}
                                 whileTap={{ scale: 0.96 }}
@@ -1455,7 +1457,7 @@ const AdminExpenses = () => {
                                   });
                                   setExpenseDialog(true);
                                 }}
-                                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white shadow-md transition-all"
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white shadow-md transition-all cursor-pointer"
                                 style={{ background: 'linear-gradient(135deg, hsl(160 84% 30%), hsl(160 70% 36%))' }}
                               >
                                 <Plus className="w-4 h-4" />
@@ -1915,8 +1917,72 @@ const AdminExpenses = () => {
             </div>
           </TabsContent>
 
-          {/* Projects & Categories Tab */}
+          {/* Hierarchy Report Tab */}
+          <TabsContent value="hierarchy" className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-white/60 dark:bg-card/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 shadow-sm">
+              <div>
+                <h3 className="font-bold text-base text-foreground">{bn ? 'প্রতিষ্ঠান ও ক্যাটাগরিভিত্তিক ব্যয় রিপোর্ট' : 'Hierarchy Report'}</h3>
+                <p className="text-xs text-muted-foreground">{bn ? 'প্রতিষ্ঠান ও ক্যাটাগরি অনুযায়ী ব্যয়ের শ্রেণীবদ্ধ বিবরণ' : 'Hierarchical breakdown by institution and category'}</p>
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => {
+                  setActiveTab('dashboard');
+                  const targetId = allInstitutions[0]?.id || '';
+                  const availCats = getCategoriesForInst(targetId);
+                  setExpenseForm({
+                    ...defaultExpenseForm,
+                    institution_id: targetId,
+                    category_id: availCats[0]?.id || '',
+                  });
+                  setExpenseDialog(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-md shadow-emerald-500/25 transition-all cursor-pointer bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500"
+              >
+                <Plus className="w-4 h-4" />
+                <span>{bn ? '+ খরচ যোগ' : '+ Add Expense'}</span>
+              </motion.button>
+            </div>
+            <ExpenseHierarchyReport
+              expenses={expenses as any}
+              bn={bn}
+              formatNum={formatNum}
+              cleanDesc={cleanDesc}
+              periodLabel={selectedMonthName}
+            />
+          </TabsContent>
+
+          {/* Projects & Categories Settings Tab */}
           <TabsContent value="settings" className="space-y-4">
+            {/* Quick Helper Banner */}
+            <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/20">
+              <div className="flex items-center gap-2 text-sm text-foreground">
+                <Building2 className="w-5 h-5 text-emerald-600" />
+                <div>
+                  <div className="font-semibold">{bn ? 'প্রতিষ্ঠান ও ক্যাটাগরি কনফিগারেশন' : 'Institution & Category Setup'}</div>
+                  <div className="text-xs text-muted-foreground">{bn ? 'নতুন প্রতিষ্ঠান বা ব্যয়ের ক্যাটাগরি সেটআপ করুন। খরচের হিসাব এন্ট্রি করতে "হিসাব ও ব্যয় এন্ট্রি" ট্যাবে যান।' : 'Configure institutions or categories. Go to "Expenses" tab to enter expenses.'}</div>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setActiveTab('dashboard');
+                  const targetId = allInstitutions[0]?.id || '';
+                  const availCats = getCategoriesForInst(targetId);
+                  setExpenseForm({
+                    ...defaultExpenseForm,
+                    institution_id: targetId,
+                    category_id: availCats[0]?.id || '',
+                  });
+                  setExpenseDialog(true);
+                }}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>{bn ? '+ খরচ যোগ করুন' : '+ Add Expense'}</span>
+              </Button>
+            </div>
             <div className="grid md:grid-cols-2 gap-6">
               {/* Projects */}
               <Card>
