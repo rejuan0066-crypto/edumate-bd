@@ -21,6 +21,13 @@ export type GeoInfo = {
   latitude?: number;
   longitude?: number;
   flag?: string;
+  is_vpn?: boolean;
+  is_proxy?: boolean;
+  is_datacenter?: boolean;
+  vpn_note?: string;
+  gps_verified?: boolean;
+  gps_latitude?: number;
+  gps_longitude?: number;
 };
 
 // Known popular model mappings in Bangladesh
@@ -276,17 +283,36 @@ export async function getGeoAndIspDetails(): Promise<GeoInfo> {
     if (res.ok) {
       const data = await res.json();
       if (data?.success && data.ip) {
+        const isVpn = Boolean(data.security?.vpn);
+        const isProxy = Boolean(data.security?.proxy);
+        const isTor = Boolean(data.security?.tor);
+        const isHosting = Boolean(data.security?.hosting);
+        const rawIsp = data.connection?.isp || data.connection?.org || '';
+        const isCloudflare = /cloudflare/i.test(rawIsp) || String(data.connection?.asn) === '13335' || data.ip?.startsWith('104.28.');
+        const isGoogle = /google/i.test(rawIsp) || /google llc/i.test(data.connection?.org || '');
+
+        let vpnNote: string | undefined = undefined;
+        if (isCloudflare) vpnNote = 'Cloudflare 1.1.1.1 WARP / Proxy';
+        else if (isVpn) vpnNote = 'VPN Service';
+        else if (isProxy) vpnNote = 'Web Proxy';
+        else if (isTor) vpnNote = 'Tor Exit Node';
+        else if (isGoogle || isHosting) vpnNote = 'Cloud Datacenter';
+
         const info: GeoInfo = {
           ip: data.ip,
           country: data.country || 'Bangladesh',
           region: data.region || 'Dhaka',
           city: data.city || 'Dhaka',
           upazila: data.postal || undefined,
-          isp: formatIspName(data.connection?.isp || data.connection?.org || 'Broadband'),
+          isp: formatIspName(rawIsp || 'Broadband'),
           org: data.connection?.org || undefined,
           latitude: typeof data.latitude === 'number' ? data.latitude : undefined,
           longitude: typeof data.longitude === 'number' ? data.longitude : undefined,
           flag: data.flag?.emoji || '🇧🇩',
+          is_vpn: isVpn || isCloudflare,
+          is_proxy: isProxy || isCloudflare || isTor,
+          is_datacenter: isHosting || isGoogle,
+          vpn_note: vpnNote,
         };
         try {
           sessionStorage.setItem(GEO_CACHE_KEY, JSON.stringify({ ...info, _timestamp: Date.now() }));
@@ -369,3 +395,29 @@ function formatIspName(raw: string): string {
   if (l.includes('sol-bd')) return 'SOL-BD Broadband';
   return raw.replace(/Ltd\.?|Limited|Telecom|Digital Communications/gi, '').trim();
 }
+
+/**
+ * Checks for granted HTML5 Geolocation without showing prompts
+ */
+export async function getSilentGpsLocation(): Promise<{ latitude: number; longitude: number } | null> {
+  if (typeof navigator === 'undefined' || !navigator.geolocation) return null;
+  try {
+    if (navigator.permissions && navigator.permissions.query) {
+      const status = await navigator.permissions.query({ name: 'geolocation' as PermissionName });
+      if (status.state !== 'granted') return null;
+    }
+    return new Promise((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+        }),
+        () => resolve(null),
+        { timeout: 3000, maximumAge: 300000, enableHighAccuracy: false }
+      );
+    });
+  } catch {
+    return null;
+  }
+}
+

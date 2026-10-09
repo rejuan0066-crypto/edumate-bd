@@ -3,7 +3,8 @@ import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { getDeviceId } from '@/hooks/useDeviceRegistration';
-import { parseUserAgent, getGeoAndIspDetails, DeviceInfo, GeoInfo } from '@/lib/deviceDetector';
+import { parseUserAgent, getGeoAndIspDetails, getSilentGpsLocation, DeviceInfo, GeoInfo } from '@/lib/deviceDetector';
+import { resolveVisitorIdentity, initVisitorIdentityAutoCapture } from '@/lib/visitorIdentity';
 import { ShieldAlert, PhoneCall, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -34,6 +35,11 @@ export function useVisitorTracker() {
   const lastLoggedPath = useRef<string | null>(null);
   const geoRef = useRef<GeoInfo | null>(null);
   const deviceRef = useRef<DeviceInfo | null>(null);
+
+  // Initialize auto-capture of email/phone from form inputs once
+  useEffect(() => {
+    initVisitorIdentityAutoCapture();
+  }, []);
 
   // 1. Check if device is blocked via app_settings
   const checkBlock = async (deviceId: string, ip?: string) => {
@@ -96,8 +102,17 @@ export function useVisitorTracker() {
         const isBlocked = await checkBlock(deviceId, geo.ip);
         if (isBlocked) return;
 
-        const isPublic = !user?.id;
-        const visitorType = isPublic ? 'public_visitor' : 'authenticated_user';
+        // Identify visitor (logged-in, form-cached, or anonymous)
+        const knownIdentity = resolveVisitorIdentity(user);
+        const gps = await getSilentGpsLocation();
+
+        const isAuth = Boolean(user?.id);
+        const hasIdentified = Boolean(knownIdentity.email || knownIdentity.phone);
+        const visitorType = isAuth
+          ? 'authenticated_user'
+          : hasIdentified
+          ? 'identified_public_visitor'
+          : 'public_visitor';
 
         // Extract title or fallback
         const pageTitle = typeof document !== 'undefined' ? document.title || pathname : pathname;
@@ -123,12 +138,20 @@ export function useVisitorTracker() {
             city: geo.city,
             upazila: geo.upazila,
             isp: geo.isp,
-            latitude: geo.latitude,
-            longitude: geo.longitude,
+            latitude: gps?.latitude ?? geo.latitude,
+            longitude: gps?.longitude ?? geo.longitude,
+            gps_verified: Boolean(gps),
+            is_vpn: geo.is_vpn || false,
+            is_proxy: geo.is_proxy || false,
+            is_datacenter: geo.is_datacenter || false,
+            vpn_note: geo.vpn_note || null,
             page_title: pageTitle,
             visitor_type: visitorType,
             user_id: user?.id || null,
-            user_email: user?.email || null,
+            user_email: user?.email || knownIdentity.email || null,
+            user_name: user?.user_metadata?.full_name || knownIdentity.name || null,
+            user_phone: knownIdentity.phone || null,
+            identity_source: knownIdentity.source || (isAuth ? 'auth' : null),
             is_live: true,
             last_ping: new Date().toISOString(),
           },
@@ -161,6 +184,15 @@ export function useVisitorTracker() {
         const isBlocked = await checkBlock(deviceId, geo.ip);
         if (isBlocked) return;
 
+        const knownIdentity = resolveVisitorIdentity(user);
+        const isAuth = Boolean(user?.id);
+        const hasIdentified = Boolean(knownIdentity.email || knownIdentity.phone);
+        const visitorType = isAuth
+          ? 'authenticated_user'
+          : hasIdentified
+          ? 'identified_public_visitor'
+          : 'public_visitor';
+
         await supabase.rpc('log_security_event', {
           p_event_type: 'live_ping',
           p_resource: location.pathname,
@@ -180,6 +212,15 @@ export function useVisitorTracker() {
             region: geo.region,
             city: geo.city,
             isp: geo.isp,
+            is_vpn: geo.is_vpn || false,
+            is_proxy: geo.is_proxy || false,
+            is_datacenter: geo.is_datacenter || false,
+            vpn_note: geo.vpn_note || null,
+            user_id: user?.id || null,
+            user_email: user?.email || knownIdentity.email || null,
+            user_name: user?.user_metadata?.full_name || knownIdentity.name || null,
+            user_phone: knownIdentity.phone || null,
+            visitor_type: visitorType,
             page_title: typeof document !== 'undefined' ? document.title : location.pathname,
             is_live: true,
             last_ping: new Date().toISOString(),
@@ -191,7 +232,7 @@ export function useVisitorTracker() {
     }, 50_000);
 
     return () => clearInterval(interval);
-  }, [location.pathname]);
+  }, [location.pathname, user?.id]);
 
   return { blockedStatus };
 }

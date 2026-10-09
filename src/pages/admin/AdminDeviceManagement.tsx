@@ -598,6 +598,14 @@ const Inner = () => {
                 </div>
               ) : (
                 <div className="overflow-x-auto">
+                  <div className="flex items-center gap-2 px-3 py-2 mb-2 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 text-xs text-blue-900 dark:text-blue-200">
+                    <ShieldAlert className="h-4 w-4 text-blue-600 shrink-0" />
+                    <p className="leading-tight">
+                      {bn
+                        ? '💡 সিকিউরিটি তথ্য: পাবলিক ভিজিটররা ওয়েবসাইটে পূর্বে কোনো আবেদন/ফরম পূরণ করলে বা লগইন করলে তাদের ইমেইল/মোবাইল স্বয়ংক্রিয়ভাবে শনাক্ত হয়। ভিপিএন (Cloudflare/Proxy) ব্যবহারকারীদের আসল আইপি গোপন থাকায় তাদের ভিপিএন সার্ভার লোকেশন প্রদর্শিত হয়।'
+                        : '💡 Security Notice: Public visitors are identified if they previously submitted any application/form or logged in on this browser. VPN/Proxy users route through gateway server locations.'}
+                    </p>
+                  </div>
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -616,6 +624,9 @@ const Inner = () => {
                         const devId = meta.device_id || '';
                         const isBlocked = devId ? blockedDeviceIds.has(devId) : false;
                         const isPublic = !v.user_id;
+                        const identifiedEmail = v.user_email || meta.user_email;
+                        const identifiedPhone = meta.user_phone;
+                        const isVpnOrProxy = Boolean(meta.is_vpn || meta.is_proxy || (meta.isp && /cloudflare|vpn|proxy|hosting|google llc/i.test(meta.isp)));
 
                         return (
                           <TableRow key={v.id} className="hover:bg-muted/30">
@@ -624,15 +635,37 @@ const Inner = () => {
                               <div className="flex items-center gap-2">
                                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                                 <div>
-                                  <p className="font-semibold text-sm">
-                                    {isPublic ? (
-                                      <span className="text-blue-600 dark:text-blue-400 font-medium">
-                                        {bn ? 'পাবলিক ভিজিটর' : 'Public Guest'}
-                                      </span>
+                                  <div className="font-semibold text-sm">
+                                    {identifiedEmail ? (
+                                      <div className="flex flex-wrap items-center gap-1">
+                                        <span className="text-foreground font-semibold">{identifiedEmail}</span>
+                                        {isPublic && (
+                                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-medium">
+                                            {bn ? 'চিহ্নিত ভিজিটর' : 'Identified'}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    ) : identifiedPhone ? (
+                                      <div className="flex flex-wrap items-center gap-1">
+                                        <span className="text-foreground font-semibold">{identifiedPhone}</span>
+                                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-medium">
+                                          {bn ? 'চিহ্নিত মোবাইল' : 'Identified'}
+                                        </Badge>
+                                      </div>
                                     ) : (
-                                      v.user_email || 'Authenticated User'
+                                      <div>
+                                        <span className="text-blue-600 dark:text-blue-400 font-medium">
+                                          {bn ? 'পাবলিক ভিজিটর' : 'Public Guest'}
+                                        </span>
+                                        <span className="block text-[10px] text-muted-foreground font-normal">
+                                          {bn ? 'অজ্ঞাত (কোনো ফরম পূরণ করেনি)' : 'Anonymous (No form submitted)'}
+                                        </span>
+                                      </div>
                                     )}
-                                  </p>
+                                  </div>
+                                  {meta.user_name && (
+                                    <p className="text-xs text-muted-foreground font-medium">{meta.user_name}</p>
+                                  )}
                                   <p className="text-[11px] text-muted-foreground">
                                     {meta.session_id ? `সেশন: ${meta.session_id.slice(0, 10)}…` : '—'}
                                   </p>
@@ -681,11 +714,18 @@ const Inner = () => {
                                   <p className="text-xs font-medium text-foreground truncate max-w-[150px]">
                                     {meta.isp || 'Broadband'}
                                   </p>
-                                  {meta.network_type && (
-                                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-mono">
-                                      {meta.network_type}
-                                    </Badge>
-                                  )}
+                                  <div className="flex items-center gap-1 flex-wrap mt-0.5">
+                                    {meta.network_type && (
+                                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-mono">
+                                        {meta.network_type}
+                                      </Badge>
+                                    )}
+                                    {isVpnOrProxy && (
+                                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-amber-400 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-medium">
+                                        {bn ? '🛡️ ভিপিএন / প্রক্সি' : '🛡️ VPN/Proxy'}
+                                      </Badge>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </TableCell>
@@ -698,6 +738,16 @@ const Inner = () => {
                                   <p className="text-xs font-medium leading-tight">
                                     {[meta.city, meta.region, meta.country].filter(Boolean).join(', ') || 'বাংলাদেশ'}
                                   </p>
+                                  {meta.gps_verified && (
+                                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-3.5 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 mt-0.5">
+                                      {bn ? '📍 জিপিএস নিশ্চিত' : '📍 GPS Verified'}
+                                    </Badge>
+                                  )}
+                                  {isVpnOrProxy && (
+                                    <span className="block text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                                      {meta.vpn_note || (bn ? 'গেটওয়ে আইপি (আসল অবস্থান গোপন)' : 'Gateway IP (Hidden)')}
+                                    </span>
+                                  )}
                                   <code className="text-[10px] text-muted-foreground font-mono">
                                     {v.ip_address || '—'}
                                   </code>
@@ -837,13 +887,39 @@ const Inner = () => {
 
                             {/* Visitor */}
                             <TableCell>
-                              <p className="text-xs font-semibold">
-                                {isPublic ? (
-                                  <span className="text-blue-600 dark:text-blue-400">{bn ? 'পাবলিক ভিজিটর' : 'Public'}</span>
+                              <div className="text-xs font-semibold">
+                                {log.user_email ? (
+                                  <div className="flex flex-wrap items-center gap-1">
+                                    <span className="text-foreground">{log.user_email}</span>
+                                    {isPublic && (
+                                      <Badge variant="secondary" className="text-[9px] px-1 py-0 bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-medium">
+                                        {bn ? 'চিহ্নিত' : 'Identified'}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                ) : meta.user_email ? (
+                                  <div className="flex flex-wrap items-center gap-1">
+                                    <span className="text-foreground">{meta.user_email}</span>
+                                    <Badge variant="secondary" className="text-[9px] px-1 py-0 bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-medium">
+                                      {bn ? 'চিহ্নিত' : 'Identified'}
+                                    </Badge>
+                                  </div>
+                                ) : meta.user_phone ? (
+                                  <div className="flex flex-wrap items-center gap-1">
+                                    <span className="text-foreground">{meta.user_phone}</span>
+                                    <Badge variant="secondary" className="text-[9px] px-1 py-0 bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-medium">
+                                      {bn ? 'মোবাইল' : 'Phone'}
+                                    </Badge>
+                                  </div>
                                 ) : (
-                                  log.user_email || 'Staff'
+                                  <span className="text-blue-600 dark:text-blue-400 font-medium">
+                                    {bn ? 'পাবলিক ভিজিটর' : 'Public Guest'}
+                                  </span>
                                 )}
-                              </p>
+                              </div>
+                              {meta.user_name && (
+                                <p className="text-[10px] text-muted-foreground">{meta.user_name}</p>
+                              )}
                               {meta.session_id && (
                                 <p className="text-[10px] text-muted-foreground font-mono">{meta.session_id.slice(0, 8)}</p>
                               )}
@@ -883,11 +959,18 @@ const Inner = () => {
                             {/* ISP / Network */}
                             <TableCell>
                               <p className="text-xs truncate max-w-[140px] font-medium">{meta.isp || '—'}</p>
-                              {meta.network_type && (
-                                <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">
-                                  {meta.network_type}
-                                </Badge>
-                              )}
+                              <div className="flex items-center gap-1 flex-wrap mt-0.5">
+                                {meta.network_type && (
+                                  <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">
+                                    {meta.network_type}
+                                  </Badge>
+                                )}
+                                {(meta.is_vpn || meta.is_proxy || (meta.isp && /cloudflare|vpn|proxy|hosting|google llc/i.test(meta.isp))) && (
+                                  <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5 border-amber-400 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-medium">
+                                    {bn ? '🛡️ ভিপিএন' : '🛡️ VPN'}
+                                  </Badge>
+                                )}
+                              </div>
                             </TableCell>
 
                             {/* Location */}
@@ -898,6 +981,11 @@ const Inner = () => {
                                   {[meta.city, meta.country].filter(Boolean).join(', ') || '—'}
                                 </span>
                               </div>
+                              {meta.gps_verified && (
+                                <span className="block text-[9px] text-emerald-600 font-medium">
+                                  {bn ? '📍 জিপিএস সঠিক' : '📍 GPS Verified'}
+                                </span>
+                              )}
                             </TableCell>
 
                             {/* IP */}
@@ -1391,6 +1479,24 @@ const Inner = () => {
                   <p className="text-muted-foreground">{bn ? 'সময়' : 'Time'}</p>
                   <p className="font-semibold mt-0.5">{format(new Date(detailsLog.created_at), 'dd/MM/yyyy hh:mm:ss a')}</p>
                 </div>
+                <div className="p-3 bg-muted/30 rounded-2xl col-span-2">
+                  <p className="text-muted-foreground">{bn ? 'শনাক্তকৃত পরিচয় / ইমেইল' : 'Visitor Identity / Email'}</p>
+                  <p className="font-semibold mt-0.5 text-foreground flex items-center gap-1.5">
+                    {detailsLog.user_email || detailsLog.metadata?.user_email || detailsLog.metadata?.user_phone ? (
+                      <>
+                        <span className="text-primary font-bold">{detailsLog.user_email || detailsLog.metadata?.user_email || detailsLog.metadata?.user_phone}</span>
+                        {detailsLog.metadata?.user_name && <span className="text-muted-foreground font-normal">({detailsLog.metadata?.user_name})</span>}
+                        <Badge variant="secondary" className="text-[10px] bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
+                          {bn ? 'শনাক্তকৃত' : 'Identified'}
+                        </Badge>
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground font-normal italic">
+                        {bn ? 'অজ্ঞাত পাবলিক ভিজিটর (ডিভাইসে কোনো ফরম পূরণ বা লগইন রেকর্ড নেই)' : 'Anonymous Guest (No form filled or login record)'}
+                      </span>
+                    )}
+                  </p>
+                </div>
                 <div className="p-3 bg-muted/30 rounded-2xl">
                   <p className="text-muted-foreground">{bn ? 'আইপি অ্যাড্রেস' : 'IP Address'}</p>
                   <p className="font-mono font-semibold mt-0.5">{detailsLog.ip_address || '—'}</p>
@@ -1404,9 +1510,28 @@ const Inner = () => {
                   <p className="font-semibold mt-0.5">{detailsLog.metadata?.isp || '—'}</p>
                 </div>
                 <div className="p-3 bg-muted/30 rounded-2xl">
-                  <p className="text-muted-foreground">{bn ? 'লোকেশন' : 'Location'}</p>
+                  <p className="text-muted-foreground">{bn ? 'ভিপিএন / প্রক্সি স্ট্যাটাস' : 'VPN / Proxy Status'}</p>
+                  <p className="font-semibold mt-0.5">
+                    {detailsLog.metadata?.is_vpn || detailsLog.metadata?.is_proxy || (detailsLog.metadata?.isp && /cloudflare|vpn|proxy|hosting/i.test(detailsLog.metadata.isp)) ? (
+                      <span className="text-amber-600 dark:text-amber-400 font-medium">
+                        🛡️ {detailsLog.metadata?.vpn_note || 'ভিপিএন / প্রক্সি শনাক্তকৃত'}
+                      </span>
+                    ) : (
+                      <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                        ✓ সাধারণ ইন্টারনেট সংযোগ
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <div className="p-3 bg-muted/30 rounded-2xl col-span-2">
+                  <p className="text-muted-foreground">{bn ? 'অবস্থান (লোকেশন)' : 'Location'}</p>
                   <p className="font-semibold mt-0.5">
                     {[detailsLog.metadata?.city, detailsLog.metadata?.region, detailsLog.metadata?.country].filter(Boolean).join(', ') || '—'}
+                    {detailsLog.metadata?.gps_verified && (
+                      <Badge variant="secondary" className="ml-2 text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                        {bn ? '📍 জিপিএস নিশ্চিত' : '📍 GPS Verified'}
+                      </Badge>
+                    )}
                   </p>
                 </div>
               </div>
