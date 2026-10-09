@@ -70,6 +70,22 @@ const getMonthYearOptions = (lang: string) => {
   return opts;
 };
 
+const getInstName = (inst: any, isBn: boolean = true): string => {
+  if (!inst) return '';
+  if (isBn) {
+    return inst.name_bn || inst.name || inst.name_en || '';
+  }
+  return inst.name_en || inst.name || inst.name_bn || '';
+};
+
+const getCatName = (cat: any, isBn: boolean = true): string => {
+  if (!cat) return '';
+  if (isBn) {
+    return cat.name_bn || cat.name || '';
+  }
+  return cat.name || cat.name_bn || '';
+};
+
 const AdminExpenses = () => {
   const confirm = useConfirm();
   const { language } = useLanguage();
@@ -92,6 +108,9 @@ const AdminExpenses = () => {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleteConfirmType, setDeleteConfirmType] = useState<'expense' | 'deposit'>('expense');
   const [selectedInstitutionId, setSelectedInstitutionId] = useState<string>('');
+  const [selectedInstId, setSelectedInstId] = useState<string | null>(null);
+  const [tableCategoryId, setTableCategoryId] = useState<string>('all');
+  const [tableSearchText, setTableSearchText] = useState<string>('');
   const [breakdownTab, setBreakdownTab] = useState<'institution' | 'category' | 'hierarchy' | null>(null);
   const [voucherExpense, setVoucherExpense] = useState<any>(null);
 
@@ -283,17 +302,85 @@ const AdminExpenses = () => {
     },
   });
 
+  // Unified institutions list from expense_institutions and system institutions
+  const allInstitutions = useMemo(() => {
+    const map = new Map<string, any>();
+    expenseInstitutions.forEach((ei: any) => {
+      map.set(ei.id, {
+        id: ei.id,
+        name: ei.name,
+        name_bn: ei.name_bn || ei.name,
+        name_en: ei.name,
+        source: 'expense_institutions'
+      });
+    });
+    institutions.forEach((i: any) => {
+      const existing = map.get(i.id);
+      if (!existing) {
+        map.set(i.id, {
+          id: i.id,
+          name: i.name_en || i.name,
+          name_bn: i.name, // In institutions table, 'name' is in Bangla
+          name_en: i.name_en || i.name,
+          address: i.address,
+          phone: i.phone,
+          email: i.email,
+          other_info: i.other_info,
+          logo_url: i.logo_url,
+          is_default: i.is_default,
+          source: 'institutions'
+        });
+      } else {
+        map.set(i.id, {
+          ...existing,
+          name_bn: existing.name_bn || i.name,
+          name_en: i.name_en || existing.name,
+          address: i.address || existing.address,
+          phone: i.phone || existing.phone,
+          email: i.email || existing.email,
+          other_info: i.other_info || existing.other_info,
+          logo_url: i.logo_url || existing.logo_url,
+          is_default: i.is_default || existing.is_default,
+        });
+      }
+    });
+    return Array.from(map.values());
+  }, [expenseInstitutions, institutions]);
+
+  // Auto-sync missing institutions into expense_institutions for foreign key integrity
+  useEffect(() => {
+    if (institutions.length > 0 && expenseInstitutions) {
+      const missing = institutions.filter((inst: any) => !expenseInstitutions.some((ei: any) => ei.id === inst.id));
+      if (missing.length > 0) {
+        const rows = missing.map((inst: any) => ({
+          id: inst.id,
+          name: inst.name_en || inst.name,
+          name_bn: inst.name,
+        }));
+        supabase.from('expense_institutions').upsert(rows).then(({ error }) => {
+          if (!error) {
+            qc.invalidateQueries({ queryKey: ['expense_institutions'] });
+          }
+        });
+      }
+    }
+  }, [institutions, expenseInstitutions, qc]);
+
   // Auto-select default institution
   useEffect(() => {
-    if (institutions.length > 0 && !selectedInstitutionId) {
-      const def = institutions.find((i: any) => i.is_default);
-      setSelectedInstitutionId(def?.id || institutions[0].id);
+    if (allInstitutions.length > 0 && !selectedInstitutionId) {
+      const def = institutions.find((i: any) => i.is_default) || allInstitutions[0];
+      const targetId = def?.id || allInstitutions[0]?.id;
+      setSelectedInstitutionId(targetId);
+      if (!selectedInstId) {
+        setSelectedInstId(targetId);
+      }
     }
-  }, [institutions, selectedInstitutionId]);
+  }, [allInstitutions, institutions, selectedInstitutionId, selectedInstId]);
 
-  const selectedInstitution = institutions.find((i: any) => i.id === selectedInstitutionId) || institutions[0];
-  const instName = selectedInstitution?.name || '';
-  const instNameEn = selectedInstitution?.name_en || '';
+  const selectedInstitution = allInstitutions.find((i: any) => i.id === (selectedInstitutionId || selectedInstId)) || allInstitutions[0] || institutions[0];
+  const instName = getInstName(selectedInstitution, true);
+  const instNameEn = getInstName(selectedInstitution, false);
   const instAddress = selectedInstitution?.address || '';
   const instPhone = selectedInstitution?.phone || '';
   const instEmail = selectedInstitution?.email || '';
@@ -657,14 +744,24 @@ const AdminExpenses = () => {
     onError: () => toast.error(bn ? 'ত্রুটি হয়েছে' : 'Error')
   });
 
-  // filteredInstitutions no longer needed - institutions are top-level
-  const filteredCategories = categories.filter((c: any) => {
-    if (!expenseForm.institution_id) return false;
-    if (c.institution_id !== expenseForm.institution_id) return false;
-    if (expenseForm.institution_id && (c as any).institution_id && (c as any).institution_id !== expenseForm.institution_id) return false;
-    return true;
-  });
-  const selectedExpenseProject = expenseInstitutions.find((p: any) => p.id === expenseForm.institution_id);
+  // Dynamic category filtering:
+  // If categories specifically match the institution, return those + any global categories;
+  // If no category is specifically bound to the institution, return all active categories so the dropdown is NEVER empty!
+  const getCategoriesForInst = useCallback((instId?: string | null) => {
+    if (!instId || instId === 'all') return categories;
+    const matched = categories.filter((c: any) => c.institution_id === instId);
+    if (matched.length > 0) {
+      const globals = categories.filter((c: any) => !c.institution_id);
+      return [...matched, ...globals];
+    }
+    return categories;
+  }, [categories]);
+
+  const filteredCategories = useMemo(() => {
+    return getCategoriesForInst(expenseForm.institution_id);
+  }, [expenseForm.institution_id, getCategoriesForInst]);
+
+  const selectedExpenseProject = allInstitutions.find((p: any) => p.id === expenseForm.institution_id);
   const selectedExpenseCategory = categories.find((c: any) => c.id === expenseForm.category_id);
 
   // Load summary defaults
@@ -677,20 +774,27 @@ const AdminExpenses = () => {
     }));
   }, [summaryData]);
 
-  // Institution view state for expenses tab
-  const [selectedInstId, setSelectedInstId] = useState<string | null>(null);
-  const [tableCategoryId, setTableCategoryId] = useState<string>('all');
-  const [tableSearchText, setTableSearchText] = useState<string>('');
-
   // Auto-select first institution
   useEffect(() => {
-    if (expenseInstitutions.length > 0 && !selectedInstId) {
-      setSelectedInstId(expenseInstitutions[0].id);
+    if (allInstitutions.length > 0 && !selectedInstId) {
+      const def = institutions.find((i: any) => i.is_default) || allInstitutions[0];
+      const targetId = def?.id || allInstitutions[0]?.id;
+      setSelectedInstId(targetId);
     }
-  }, [expenseInstitutions, selectedInstId]);
+  }, [allInstitutions, institutions, selectedInstId]);
 
-  const selectedInst = expenseInstitutions.find((p: any) => p.id === selectedInstId);
-  const instCategories = categories.filter((c: any) => c.institution_id === selectedInstId);
+  const handleSelectInstitution = (instId: string) => {
+    setSelectedInstId(instId);
+    setTableCategoryId('all');
+    if (instId !== 'all') {
+      setSelectedInstitutionId(instId);
+    }
+  };
+
+  const selectedInst = allInstitutions.find((p: any) => p.id === selectedInstId) || allInstitutions[0];
+  const instCategories = useMemo(() => {
+    return getCategoriesForInst(selectedInstId);
+  }, [getCategoriesForInst, selectedInstId]);
 
   // Institution monthly cash and dues
   const getInstMonthly = (pid: string) => expenses.filter((e: any) => e.institution_id === pid && !isUnpaidDue(e.description)).reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
@@ -816,7 +920,7 @@ const AdminExpenses = () => {
       institutionName: instName || (bn ? 'সকল প্রতিষ্ঠান' : 'All Institutions'),
       reportPeriod: selectedMonthName,
       selectedMonthYear,
-      institutions: expenseInstitutions,
+      institutions: allInstitutions,
       categories,
       expenses,
       unpaidDues: allExpenses.filter((e: any) => isUnpaidDue(e.description)),
@@ -873,14 +977,14 @@ const AdminExpenses = () => {
   };
 
   const handleInstExcelDownload = (instId: string) => {
-    const inst = expenseInstitutions.find((p: any) => p.id === instId);
+    const inst = allInstitutions.find((p: any) => p.id === instId);
     if (!inst) return;
     exportSingleInstitutionExcel({
       selectedInstId: instId,
       institutionName: instName || '',
       reportPeriod: selectedMonthName,
       selectedMonthYear,
-      institutions: expenseInstitutions,
+      institutions: allInstitutions,
       categories,
       expenses,
       unpaidDues: allExpenses.filter((e: any) => isUnpaidDue(e.description)),
@@ -1167,14 +1271,14 @@ const AdminExpenses = () => {
           {/* Expenses Tab - Institution-based tables & Dues tables */}
           <TabsContent value="dashboard" className="space-y-6">
             {/* Institution Selector Pills */}
-            {expenseInstitutions.length === 0 ? (
+            {allInstitutions.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">{bn ? 'কোনো প্রতিষ্ঠান নেই। সেটিংস ট্যাব থেকে যোগ করুন।' : 'No institutions. Add from Settings tab.'}</p>
             ) : (
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-2 items-center justify-between">
                   <div className="flex flex-wrap gap-2 items-center">
                     <button
-                      onClick={() => { setSelectedInstId('all'); setTableCategoryId('all'); }}
+                      onClick={() => handleSelectInstitution('all')}
                       className={`group px-4 py-2.5 rounded-2xl text-sm font-semibold transition-all ${selectedInstId === 'all'
                         ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/25'
                         : 'bg-white/60 dark:bg-white/10 backdrop-blur border border-emerald-200/30 dark:border-emerald-800/30 text-foreground hover:shadow-md hover:border-emerald-300/50'}`}
@@ -1183,20 +1287,20 @@ const AdminExpenses = () => {
                       {bn ? 'সকল প্রতিষ্ঠান' : 'All Institutions'}
                       <span className="ml-2 text-[11px] opacity-80">৳{formatNum(monthlyTotalExpense)}</span>
                     </button>
-                    {expenseInstitutions.map((p: any) => {
+                    {allInstitutions.map((p: any) => {
                       const instMonthly = getInstMonthly(p.id);
                       const instDue = getInstDueTotal(p.id);
                       const isSelected = selectedInstId === p.id;
                       return (
                         <button
                           key={p.id}
-                          onClick={() => { setSelectedInstId(p.id); setTableCategoryId('all'); }}
+                          onClick={() => handleSelectInstitution(p.id)}
                           className={`group px-4 py-2.5 rounded-2xl text-sm font-medium transition-all ${isSelected
                             ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25'
                             : 'bg-white/60 dark:bg-white/10 backdrop-blur border border-emerald-200/30 dark:border-emerald-800/30 text-foreground hover:shadow-md hover:border-emerald-300/50'}`}
                         >
                           <Building2 className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
-                          {bn ? p.name_bn || p.name : p.name}
+                          {getInstName(p, bn)}
                           <span className="ml-2 text-[11px] opacity-80">৳{formatNum(instMonthly)}</span>
                           {instDue > 0 && (
                             <span className={`ml-1.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold ${isSelected ? 'bg-amber-300 text-amber-950' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'}`}>
@@ -1227,12 +1331,12 @@ const AdminExpenses = () => {
                 {/* Render tables for selected institution(s) */}
                 {(() => {
                   const targetInstitutions = selectedInstId === 'all'
-                    ? expenseInstitutions
-                    : expenseInstitutions.filter((p: any) => p.id === (selectedInstId || expenseInstitutions[0]?.id));
+                    ? allInstitutions
+                    : allInstitutions.filter((p: any) => p.id === (selectedInstId || allInstitutions[0]?.id));
 
                   return targetInstitutions.map((inst: any) => {
                     const instPaidAll = expenses.filter((e: any) => e.institution_id === inst.id && !isUnpaidDue(e.description));
-                    const instCats = categories.filter((c: any) => c.institution_id === inst.id);
+                    const instCats = getCategoriesForInst(inst.id);
                     const instDues = allExpenses.filter((e: any) => e.institution_id === inst.id && isUnpaidDue(e.description));
                     const instPaidSum = instPaidAll.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
                     const instDueSum = instDues.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
@@ -1275,7 +1379,7 @@ const AdminExpenses = () => {
                             <div className="flex items-center gap-2">
                               <Building2 className="w-5 h-5 text-emerald-600" />
                               <h3 className="text-lg font-bold text-foreground">
-                                {bn ? inst.name_bn || inst.name : inst.name}
+                                {getInstName(inst, bn)}
                               </h3>
                             </div>
                             <div className="flex flex-wrap items-center gap-2 mt-2 text-xs">
@@ -1309,7 +1413,12 @@ const AdminExpenses = () => {
                                 onClick={() => {
                                   setReceiptFile(null);
                                   setEditingExpenseId(null);
-                                  setExpenseForm({ ...defaultExpenseForm, institution_id: inst.id });
+                                  const availCats = getCategoriesForInst(inst.id);
+                                  setExpenseForm({
+                                    ...defaultExpenseForm,
+                                    institution_id: inst.id,
+                                    category_id: availCats[0]?.id || '',
+                                  });
                                   setExpenseDialog(true);
                                 }}
                                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white shadow-md transition-all"
@@ -1353,7 +1462,7 @@ const AdminExpenses = () => {
                               <SelectContent>
                                 <SelectItem value="all">{bn ? 'সকল ক্যাটাগরি' : 'All Categories'}</SelectItem>
                                 {instCats.map((c: any) => (
-                                  <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn || c.name : c.name}</SelectItem>
+                                  <SelectItem key={c.id} value={c.id}>{getCatName(c, bn)}</SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
@@ -1403,7 +1512,7 @@ const AdminExpenses = () => {
                               ) : (
                                 displayExpenses.map((e: any, idx: number) => {
                                   const catObj = categories.find((c: any) => c.id === e.category_id);
-                                  const catLabel = catObj ? (bn ? catObj.name_bn || catObj.name : catObj.name) : '-';
+                                  const catLabel = catObj ? getCatName(catObj, bn) : (e.expense_categories ? getCatName(e.expense_categories, bn) : '-');
                                   const memoStr = getMemo(e.description);
                                   const remarksStr = getRemarks(e.description);
                                   const rawQty = e.quantity ? String(e.quantity) : '১';
@@ -1792,11 +1901,11 @@ const AdminExpenses = () => {
                   </Dialog>
                 </CardHeader>
                 <CardContent>
-                  {expenseInstitutions.length === 0 ? <p className="text-sm text-muted-foreground">{bn ? 'কোনো প্রতিষ্ঠান নেই' : 'No institutions'}</p> : (
+                  {allInstitutions.length === 0 ? <p className="text-sm text-muted-foreground">{bn ? 'কোনো প্রতিষ্ঠান নেই' : 'No institutions'}</p> : (
                     <ul className="space-y-2">
-                      {expenseInstitutions.map((p: any) => (
+                      {allInstitutions.map((p: any) => (
                         <li key={p.id} className="flex items-center justify-between p-2 rounded-lg bg-secondary/30">
-                          <span className="text-sm font-medium">{bn ? p.name_bn : p.name}</span>
+                          <span className="text-sm font-medium">{getInstName(p, bn)}</span>
                           <Button variant="ghost" size="icon" onClick={() => openEditExpInst(p)}><Edit2 className="w-4 h-4 text-muted-foreground" /></Button>
                         </li>
                       ))}
@@ -1818,7 +1927,7 @@ const AdminExpenses = () => {
                           <Label>{bn ? 'প্রতিষ্ঠান' : 'Institution'} *</Label>
                           <Select value={expInstForm.name} onValueChange={v => setExpInstForm(f => ({ ...f, name: v }))}>
                             <SelectTrigger><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
-                            <SelectContent>{expenseInstitutions.map((p: any) => <SelectItem key={p.id} value={p.id}>{bn ? p.name_bn : p.name}</SelectItem>)}</SelectContent>
+                            <SelectContent>{allInstitutions.map((p: any) => <SelectItem key={p.id} value={p.id}>{getInstName(p, bn)}</SelectItem>)}</SelectContent>
                           </Select>
                         </div>
                         <div><Label>{bn ? 'নাম (ইংরেজি)' : 'Name (English)'} *</Label><Input value={expInstForm.name} onChange={e => setExpInstForm(f => ({ ...f, name: e.target.value }))} /></div>
@@ -1829,16 +1938,16 @@ const AdminExpenses = () => {
                   </Dialog>
                 </CardHeader>
                 <CardContent>
-                  {expenseInstitutions.length === 0 ? <p className="text-sm text-muted-foreground">{bn ? 'কোনো শাখা নেই' : 'No institutions'}</p> : (
+                  {allInstitutions.length === 0 ? <p className="text-sm text-muted-foreground">{bn ? 'কোনো শাখা নেই' : 'No institutions'}</p> : (
                     <ul className="space-y-2">
-                      {expenseInstitutions.map((inst: any) => {
-                        const proj = expenseInstitutions.find((p: any) => p.id === inst.id);
+                      {allInstitutions.map((inst: any) => {
+                        const proj = allInstitutions.find((p: any) => p.id === inst.id);
                         return (
                           <li key={inst.id} className="flex items-center justify-between p-2 rounded-[12px] bg-primary/5 border border-primary/10">
                             <div>
                               <Building2 className="w-3.5 h-3.5 inline mr-1.5 text-primary" />
-                              <span className="text-sm font-medium">{bn ? inst.name_bn : inst.name}</span>
-                              {proj && <span className="text-xs text-muted-foreground ml-2">({bn ? proj.name_bn : proj.name})</span>}
+                              <span className="text-sm font-medium">{getInstName(inst, bn)}</span>
+                              {proj && <span className="text-xs text-muted-foreground ml-2">({getInstName(proj, bn)})</span>}
                             </div>
                             <div className="flex gap-1">
                               <Button variant="ghost" size="icon" onClick={() => { setEditingExpInstId(inst.id); setExpInstForm({ name: inst.name, name_bn: inst.name_bn }); setExpInstDialog(true); }}><Edit2 className="w-4 h-4 text-muted-foreground" /></Button>
@@ -1866,7 +1975,7 @@ const AdminExpenses = () => {
                         <Label>{bn ? 'প্রতিষ্ঠান' : 'Institution'} *</Label>
                         <Select value={categoryForm.institution_id} onValueChange={v => setCategoryForm(f => ({ ...f, institution_id: v }))}>
                           <SelectTrigger><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
-                          <SelectContent>{expenseInstitutions.map((p: any) => <SelectItem key={p.id} value={p.id}>{bn ? p.name_bn : p.name}</SelectItem>)}</SelectContent>
+                          <SelectContent>{allInstitutions.map((p: any) => <SelectItem key={p.id} value={p.id}>{getInstName(p, bn)}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
                       <div><Label>{bn ? 'নাম (ইংরেজি)' : 'Name (English)'} *</Label><Input value={categoryForm.name} onChange={e => setCategoryForm(f => ({ ...f, name: e.target.value }))} /></div>
@@ -1880,13 +1989,12 @@ const AdminExpenses = () => {
                 {categories.length === 0 ? <p className="text-sm text-muted-foreground">{bn ? 'কোনো ক্যাটেগরি নেই' : 'No categories'}</p> : (
                   <ul className="space-y-2">
                     {categories.map((c: any) => {
-                      const catInst = expenseInstitutions.find((i: any) => i.id === (c as any).institution_id);
+                      const catInst = allInstitutions.find((i: any) => i.id === (c as any).institution_id);
                       return (
                         <li key={c.id} className="flex items-center justify-between p-2 rounded-lg bg-secondary/30">
                           <div>
-                            <span className="text-sm font-medium">{bn ? c.name_bn : c.name}</span>
-                            <span className="text-xs text-muted-foreground ml-2">({bn ? (c as any).expense_institutions?.name_bn : (c as any).expense_institutions?.name})</span>
-                            {catInst && <span className="text-xs text-primary ml-1">• {bn ? catInst.name_bn : catInst.name}</span>}
+                            <span className="text-sm font-medium">{getCatName(c, bn)}</span>
+                            {catInst && <span className="text-xs text-primary ml-1">• {getInstName(catInst, bn)}</span>}
                           </div>
                           <Button variant="ghost" size="icon" onClick={() => openEditCategory(c)}><Edit2 className="w-4 h-4 text-muted-foreground" /></Button>
                         </li>
@@ -1985,14 +2093,14 @@ const AdminExpenses = () => {
                     <p className="text-sm text-muted-foreground">{bn ? 'কোনো প্রতিষ্ঠান নেই' : 'No institutions'}</p>
                   ) : (
                     <div className="space-y-2">
-                      {institutions.map((inst: any) => (
-                        <div key={inst.id} className={`stat-card flex items-center justify-between ${selectedInstitutionId === inst.id ? 'border-primary bg-primary/5' : ''}`}>
-                          <div className="cursor-pointer flex-1 flex items-center gap-2" onClick={() => setSelectedInstitutionId(inst.id)}>
+                      {allInstitutions.map((inst: any) => (
+                        <div key={inst.id} className={`stat-card flex items-center justify-between ${(selectedInstitutionId === inst.id || selectedInstId === inst.id) ? 'border-primary bg-primary/5' : ''}`}>
+                          <div className="cursor-pointer flex-1 flex items-center gap-2" onClick={() => handleSelectInstitution(inst.id)}>
                             {inst.logo_url && <img src={inst.logo_url} alt="Logo" className="w-8 h-8 object-contain rounded" />}
                             <div>
-                              <span className="text-sm font-medium">{bn ? inst.name : (inst.name_en || inst.name)}</span>
+                              <span className="text-sm font-medium">{getInstName(inst, bn)}</span>
                               {inst.address && <span className="text-xs text-muted-foreground ml-2">— {inst.address}</span>}
-                              {selectedInstitutionId === inst.id && <span className="text-xs text-primary ml-2">✓ {bn ? 'নির্বাচিত' : 'Selected'}</span>}
+                              {(selectedInstitutionId === inst.id || selectedInstId === inst.id) && <span className="text-xs text-primary ml-2">✓ {bn ? 'নির্বাচিত' : 'Selected'}</span>}
                             </div>
                           </div>
                           <div className="flex gap-1">
@@ -2071,31 +2179,31 @@ const AdminExpenses = () => {
                 </div>
 
                 {/* Per-institution download */}
-                {expenseInstitutions.length > 0 && (
+                {allInstitutions.length > 0 && (
                   <div className="card-elevated p-4">
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="text-sm font-semibold text-foreground">{bn ? 'প্রতিষ্ঠান ভিত্তিক ডাউনলোড' : 'Per-Project Download'}</h4>
-                      {institutions.length > 1 && (
+                      {allInstitutions.length > 1 && (
                         <div className="flex items-center gap-2">
                           <Label className="text-xs">{bn ? 'প্রতিষ্ঠান:' : 'Institution:'}</Label>
-                          <Select value={selectedInstitutionId} onValueChange={setSelectedInstitutionId}>
+                          <Select value={selectedInstitutionId} onValueChange={handleSelectInstitution}>
                             <SelectTrigger className="w-[200px] h-8 text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent>
-                              {institutions.map((inst: any) => <SelectItem key={inst.id} value={inst.id}>{bn ? inst.name : (inst.name_en || inst.name)}</SelectItem>)}
+                              {allInstitutions.map((inst: any) => <SelectItem key={inst.id} value={inst.id}>{getInstName(inst, bn)}</SelectItem>)}
                             </SelectContent>
                           </Select>
                         </div>
                       )}
                     </div>
                     <div className="space-y-2">
-                      {expenseInstitutions.map((p: any) => {
+                      {allInstitutions.map((p: any) => {
                         const projExp = expenses.filter((e: any) => e.institution_id === p.id);
                         const instTotal = projExp.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
                         if (projExp.length === 0) return null;
                         return (
                           <div key={p.id} className="stat-card flex items-center justify-between">
                             <div>
-                              <span className="text-sm font-medium">{bn ? p.name_bn : p.name}</span>
+                              <span className="text-sm font-medium">{getInstName(p, bn)}</span>
                               <span className="text-xs text-muted-foreground ml-2">৳{formatNum(instTotal)}</span>
                             </div>
                             <div className="flex gap-1">
@@ -2123,7 +2231,7 @@ const AdminExpenses = () => {
           <TabsContent value="ledger" className="space-y-4">
             <LedgerReport
               bn={bn}
-              expenseInstitutions={expenseInstitutions}
+              expenseInstitutions={allInstitutions}
               categories={categories as any[]}
               cleanDesc={cleanDesc}
             />
@@ -2164,16 +2272,16 @@ const AdminExpenses = () => {
         </table>
 
         {/* Project & Category wise detailed breakdown */}
-        {expenseInstitutions.map((inst: any) => {
+        {allInstitutions.map((inst: any) => {
           const instExpenses = expenses.filter((e: any) => e.institution_id === inst.id);
           if (instExpenses.length === 0) return null;
           const instTotal = instExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-          const instCatsForPrint = categories.filter((c: any) => c.institution_id === inst.id);
+          const instCatsForPrint = getCategoriesForInst(inst.id);
           
           return (
             <div key={inst.id} className="mb-6" style={{ pageBreakInside: 'avoid' }}>
               <h2 className="text-base font-bold mb-1 border-b pb-1">
-                {bn ? 'প্রতিষ্ঠান' : 'Institution'}: {bn ? inst.name_bn : inst.name}
+                {bn ? 'প্রতিষ্ঠান' : 'Institution'}: {getInstName(inst, bn)}
                 <span className="float-right">{bn ? 'মোট' : 'Total'}: ৳{formatNum(instTotal)}</span>
               </h2>
               
@@ -2185,7 +2293,7 @@ const AdminExpenses = () => {
                 return (
                   <div key={cat.id} className="mb-3 ml-2">
                     <h3 className="text-sm font-semibold mb-1">
-                      {bn ? 'ক্যাটেগরি' : 'Category'}: {bn ? cat.name_bn : cat.name}
+                      {bn ? 'ক্যাটেগরি' : 'Category'}: {getCatName(cat, bn)}
                       <span className="float-right">৳{formatNum(catTotal)}</span>
                     </h3>
                     <table className="w-full border-collapse border text-sm">
@@ -2258,11 +2366,18 @@ const AdminExpenses = () => {
               <Label>{bn ? 'প্রতিষ্ঠান' : 'Institution'} *</Label>
               <Select
                 value={expenseForm.institution_id || undefined}
-                onValueChange={value => setExpenseForm(f => ({ ...f, institution_id: value, category_id: '' }))}
+                onValueChange={value => {
+                  const availCats = getCategoriesForInst(value);
+                  setExpenseForm(f => ({ ...f, institution_id: value, category_id: availCats[0]?.id || '' }));
+                }}
               >
                 <SelectTrigger><SelectValue placeholder={bn ? 'প্রতিষ্ঠান নির্বাচন করুন' : 'Select institution'} /></SelectTrigger>
                 <SelectContent>
-                  {expenseInstitutions.map((inst: any) => <SelectItem key={inst.id} value={inst.id}>{bn ? inst.name_bn : inst.name}</SelectItem>)}
+                  {allInstitutions.map((inst: any) => (
+                    <SelectItem key={inst.id} value={inst.id}>
+                      {getInstName(inst, bn)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -2277,11 +2392,14 @@ const AdminExpenses = () => {
                   const isInventoryCategory = catName.includes('grocery') || catName.includes('stationar') || catNameBn.includes('খাদ্য') || catNameBn.includes('স্টেশনার') || catNameBn.includes('মুদি');
                   setExpenseForm(f => ({ ...f, category_id: value, add_to_inventory: isInventoryCategory ? true : f.add_to_inventory }));
                 }}
-                disabled={!expenseForm.institution_id}
               >
                 <SelectTrigger><SelectValue placeholder={bn ? 'ক্যাটেগরি নির্বাচন করুন' : 'Select category'} /></SelectTrigger>
                 <SelectContent>
-                  {filteredCategories.map((category: any) => <SelectItem key={category.id} value={category.id}>{bn ? category.name_bn : category.name}</SelectItem>)}
+                  {filteredCategories.map((category: any) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {getCatName(category, bn)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               {selectedExpenseProject && !selectedExpenseCategory && (
@@ -2604,7 +2722,7 @@ const AdminExpenses = () => {
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
-              <span>{bn ? 'প্রতিষ্ঠানের এন্ট্রি সম্পাদনা' : 'Edit Institution Entries'} — {(() => { const p = expenseInstitutions.find((p: any) => p.id === editInstitutionEntriesId); return p ? (bn ? p.name_bn : p.name) : ''; })()}</span>
+              <span>{bn ? 'প্রতিষ্ঠানের এন্ট্রি সম্পাদনা' : 'Edit Institution Entries'} — {(() => { const p = allInstitutions.find((p: any) => p.id === editInstitutionEntriesId); return p ? getInstName(p, bn) : ''; })()}</span>
               <Button size="sm" onClick={() => {
                 const pid = editInstitutionEntriesId || '';
                 setEditInstitutionEntriesId(null);
@@ -2623,8 +2741,8 @@ const AdminExpenses = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{bn ? 'সব ক্যাটেগরি' : 'All Categories'}</SelectItem>
-                {categories.filter((c: any) => c.institution_id === editInstitutionEntriesId).map((c: any) => (
-                  <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}</SelectItem>
+                {getCategoriesForInst(editInstitutionEntriesId).map((c: any) => (
+                  <SelectItem key={c.id} value={c.id}>{getCatName(c, bn)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -2638,7 +2756,7 @@ const AdminExpenses = () => {
 
           {(() => {
             let instExpenses = expenses.filter((e: any) => e.institution_id === editInstitutionEntriesId);
-            const instCatsForPrint = categories.filter((c: any) => c.institution_id === editInstitutionEntriesId);
+            const instCatsForPrint = getCategoriesForInst(editInstitutionEntriesId);
             if (instExpenses.length === 0) return <p className="text-sm text-muted-foreground">{bn ? 'কোনো এন্ট্রি নেই' : 'No entries'}</p>;
 
             // Apply category filter
@@ -2790,11 +2908,11 @@ const AdminExpenses = () => {
             </div>
           ) : (
           (() => {
-            const inst = expenseInstitutions.find((p: any) => p.id === printInstitutionId);
+            const inst = allInstitutions.find((p: any) => p.id === printInstitutionId);
             if (!inst) return null;
             const instExpenses = expenses.filter((e: any) => e.institution_id === printInstitutionId);
             const instTotal = instExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-            const instCatsForPrint = categories.filter((c: any) => c.institution_id === printInstitutionId);
+            const instCatsForPrint = getCategoriesForInst(printInstitutionId);
             const ed = printEditData;
             const dInstName = ed.instName || (bn ? instName : instNameEn);
             const dInstAddress = ed.instAddress || instAddress;
