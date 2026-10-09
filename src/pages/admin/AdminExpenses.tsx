@@ -397,6 +397,36 @@ const AdminExpenses = () => {
   const currentArrears = rawCash < 0 ? Math.abs(rawCash) : 0;
   const totalArrears = previousArrears + currentArrears;
 
+  // Calculate previous month key e.g. September-2026 for October-2026
+  const prevMonthKey = useMemo(() => {
+    const parts = selectedMonthYear.split('-');
+    const mStr = parts[0];
+    const yr = parseInt(parts[1]) || currentYear;
+    const idx = MONTHS.indexOf(mStr);
+    if (idx > 0) {
+      return `${MONTHS[idx - 1]}-${yr}`;
+    }
+    return `${MONTHS[11]}-${yr - 1}`;
+  }, [selectedMonthYear]);
+
+  // Previous month statistics for opening balance / arrears adjustment
+  const { previousMonthCash, previousMonthDue } = useMemo(() => {
+    const prevPaid = allExpenses.filter((e: any) => e.month_year === prevMonthKey && !isUnpaidDue(e.description));
+    const prevExpSum = prevPaid.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+    const prevDeps = allDeposits.filter((d: any) => d.month_year === prevMonthKey);
+    const prevDepSum = prevDeps.reduce((s: number, d: any) => s + Number(d.amount || 0), 0);
+    const rawPrevCash = prevDepSum - prevExpSum;
+
+    const manualPrevArrears = Number(summaryData?.previous_arrears || 0);
+    const prevCash = rawPrevCash > 0 ? rawPrevCash : 0;
+    const prevDue = manualPrevArrears > 0 ? manualPrevArrears : (rawPrevCash < 0 ? Math.abs(rawPrevCash) : 0);
+
+    return {
+      previousMonthCash: prevCash,
+      previousMonthDue: prevDue,
+    };
+  }, [allExpenses, allDeposits, prevMonthKey, summaryData]);
+
   // Helper: check if month_year matches current filter
   const matchesFilter = (monthYear: string) => {
     if (filterMode === 'yearly') {
@@ -927,6 +957,8 @@ const AdminExpenses = () => {
       monthlyTotalExpense,
       monthlyTotalDeposit,
       previousArrears,
+      previousMonthCash,
+      previousMonthDue,
       monthlyCash,
       deposits,
       bn,
@@ -981,7 +1013,7 @@ const AdminExpenses = () => {
     if (!inst) return;
     exportSingleInstitutionExcel({
       selectedInstId: instId,
-      institutionName: instName || '',
+      institutionName: getInstName(inst, bn),
       reportPeriod: selectedMonthName,
       selectedMonthYear,
       institutions: allInstitutions,
@@ -991,6 +1023,8 @@ const AdminExpenses = () => {
       monthlyTotalExpense,
       monthlyTotalDeposit,
       previousArrears,
+      previousMonthCash,
+      previousMonthDue,
       monthlyCash,
       deposits,
       bn,
@@ -2948,23 +2982,27 @@ const AdminExpenses = () => {
                       <table className="w-full border-collapse border text-xs">
                         <thead>
                           <tr className="bg-muted">
-                            <th className="border p-1 text-left w-8">#</th>
-                            <th className="border p-1 text-left">{bn ? 'তারিখ' : 'Date'}</th>
-                            <th className="border p-1 text-left">{bn ? 'বিবরণ' : 'Description'}</th>
-                            <th className="border p-1 text-left">{bn ? 'পরিমাণ' : 'Qty'}</th>
-                            <th className="border p-1 text-left">{bn ? 'মাধ্যম' : 'Method'}</th>
-                            <th className="border p-1 text-right">{bn ? 'টাকা' : 'Amount'}</th>
+                            <th className="border p-1 text-center w-8">#</th>
+                            <th className="border p-1 text-center w-20">{bn ? 'তারিখ' : 'Date'}</th>
+                            <th className="border p-1 text-left">{bn ? 'ব্যয়ের বিবরণ' : 'Description'}</th>
+                            <th className="border p-1 text-center w-20">{bn ? 'পরিমাণ' : 'Quantity'}</th>
+                            <th className="border p-1 text-center w-20">{bn ? 'ব্যয়ের মাধ্যম' : 'Method'}</th>
+                            <th className="border p-1 text-center w-24">{bn ? 'মেমো / রশিদ' : 'Memo/Receipt'}</th>
+                            <th className="border p-1 text-right w-24">{bn ? 'ব্যয় টাকা (৳)' : 'Amount (৳)'}</th>
+                            <th className="border p-1 text-left w-28">{bn ? 'মন্তব্য' : 'Remarks'}</th>
                           </tr>
                         </thead>
                         <tbody>
                           {catExpenses.map((e: any, i: number) => (
                             <tr key={e.id}>
-                              <td className="border p-1">{i + 1}</td>
-                              <td className="border p-1">{e.expense_date}</td>
+                              <td className="border p-1 text-center">{i + 1}</td>
+                              <td className="border p-1 text-center">{e.expense_date}</td>
                               <td className="border p-1">{cleanDesc(e.description)}</td>
-                              <td className="border p-1">{e.quantity || 1} {getUnit(e.description)}</td>
-                              <td className="border p-1">{getMethod(e.description)}</td>
-                              <td className="border p-1 text-right">৳{formatNum(Number(e.amount))}</td>
+                              <td className="border p-1 text-center">{e.quantity || 1} {getUnit(e.description)}</td>
+                              <td className="border p-1 text-center">{getMethod(e.description)}</td>
+                              <td className="border p-1 text-center font-mono">{getMemo(e.description)}</td>
+                              <td className="border p-1 text-right font-semibold">৳{formatNum(Number(e.amount))}</td>
+                              <td className="border p-1 text-muted-foreground">{getRemarks(e.description)}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -2973,8 +3011,48 @@ const AdminExpenses = () => {
                   );
                 })}
 
+                {/* Dues Section in Print */}
+                {(() => {
+                  const instDues = allExpenses.filter((e: any) => e.institution_id === printInstitutionId && isUnpaidDue(e.description));
+                  if (instDues.length === 0) return null;
+                  const duesTotal = instDues.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+                  return (
+                    <div className="mb-4 mt-6 border-t border-dashed border-amber-500 pt-3">
+                      <h3 className="text-sm font-bold text-amber-900 dark:text-amber-300 mb-1">
+                        {bn ? 'বকেয়া খরচের হিসাব (পরিশোধ বাকি)' : 'Outstanding Payable Dues'} — ৳{formatNum(duesTotal)}
+                      </h3>
+                      <table className="w-full border-collapse border text-xs">
+                        <thead>
+                          <tr className="bg-amber-100/60 dark:bg-amber-950/40">
+                            <th className="border p-1 text-center w-8">#</th>
+                            <th className="border p-1 text-center w-20">{bn ? 'তারিখ' : 'Date'}</th>
+                            <th className="border p-1 text-left">{bn ? 'ব্যয়ের বিবরণ ও পাওনাদার' : 'Description & Vendor'}</th>
+                            <th className="border p-1 text-center w-20">{bn ? 'পরিমাণ' : 'Quantity'}</th>
+                            <th className="border p-1 text-center w-24">{bn ? 'মেমো / চালান' : 'Memo/Invoice'}</th>
+                            <th className="border p-1 text-right w-24">{bn ? 'বকেয়া টাকা (৳)' : 'Due Amount'}</th>
+                            <th className="border p-1 text-left w-28">{bn ? 'মন্তব্য' : 'Remarks'}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {instDues.map((due: any, di: number) => (
+                            <tr key={due.id}>
+                              <td className="border p-1 text-center">{di + 1}</td>
+                              <td className="border p-1 text-center">{due.expense_date}</td>
+                              <td className="border p-1">{cleanDesc(due.description)}</td>
+                              <td className="border p-1 text-center">{due.quantity || 1} {getUnit(due.description)}</td>
+                              <td className="border p-1 text-center font-mono">{getMemo(due.description)}</td>
+                              <td className="border p-1 text-right font-semibold text-amber-700">৳{formatNum(Number(due.amount))}</td>
+                              <td className="border p-1 text-muted-foreground">{getRemarks(due.description)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })()}
+
                 <div className="border-t-2 border-foreground pt-2 text-right font-bold text-sm">
-                  {bn ? 'প্রকল্প মোট হিসাব' : 'Project Total'}: ৳{formatNum(instTotal)}
+                  {bn ? 'প্রকল্প মোট পরিশোধিত ব্যয়' : 'Project Paid Total'}: ৳{formatNum(instTotal)}
                 </div>
 
                 <div className="flex justify-between mt-12 pt-8">

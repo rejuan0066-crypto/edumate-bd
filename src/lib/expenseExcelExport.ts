@@ -1,6 +1,6 @@
 import XLSX from 'xlsx-js-style';
 
-interface ExpenseItem {
+export interface ExpenseItem {
   id: string;
   month_year: string;
   amount: number | string;
@@ -15,17 +15,19 @@ interface ExpenseItem {
   expense_categories?: { name?: string; name_bn?: string } | null;
 }
 
-interface ExportExcelParams {
+export interface ExportExcelParams {
   institutionName: string;
   reportPeriod: string;
   selectedMonthYear: string;
-  institutions: { id: string; name: string; name_bn: string }[];
-  categories: { id: string; name: string; name_bn: string; institution_id?: string }[];
+  institutions: { id: string; name: string; name_bn?: string }[];
+  categories: { id: string; name: string; name_bn?: string; institution_id?: string }[];
   expenses: ExpenseItem[];
   unpaidDues: ExpenseItem[];
   monthlyTotalExpense: number;
   monthlyTotalDeposit: number;
   previousArrears: number;
+  previousMonthCash?: number; // Last month cash balance
+  previousMonthDue?: number;  // Last month due/arrears
   monthlyCash: number;
   deposits: any[];
   bn: boolean;
@@ -37,10 +39,45 @@ interface ExportExcelParams {
   formatNum: (n: number) => string;
 }
 
-// Sanitize sheet names to conform to Excel limits (max 31 chars, no reserved chars)
+// Convert numbers or digits to Bengali if required
+const toBnDigit = (num: any): string => {
+  const s = String(num ?? '');
+  return s.replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'['0123456789'.indexOf(d)]);
+};
+
+// Format date to Bengali short style if requested (e.g. 2026-10-05 -> ০৫/১০/২৬)
+const formatShortDate = (dateStr: string, bn: boolean): string => {
+  if (!dateStr) return '-';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    const yr = parts[0].slice(-2);
+    const mo = parts[1];
+    const da = parts[2];
+    const formatted = `${da}/${mo}/${yr}`;
+    return bn ? toBnDigit(formatted) : formatted;
+  }
+  return bn ? toBnDigit(dateStr) : dateStr;
+};
+
+// Generate an intuitive short name for institution tabs
+export const getInstShortName = (name: string): string => {
+  if (!name) return 'প্রতিষ্ঠান';
+  const trimmed = name.trim();
+  if (trimmed.includes('মাদরাসা')) return 'মাদরাসা';
+  if (trimmed.includes('এম এইচ') || trimmed.includes('এম.এইচ') || trimmed.includes('এমএইচ')) return 'এম.এইচ সেন্টার';
+  // Fallback: take first 2 words or up to 10 characters
+  const words = trimmed.split(/\s+/);
+  if (words.length > 1 && words[0].length + words[1].length < 12) {
+    return `${words[0]} ${words[1]}`;
+  }
+  return words[0] || trimmed.slice(0, 10);
+};
+
+// Sanitize sheet name to conform to Excel limits (max 31 chars, no reserved chars)
 const sanitizeSheetName = (name: string, usedNames: Set<string>): string => {
   let clean = (name || 'Sheet')
-    .replace(/[\\/?*[\]:]/g, '')
+    .replace(/[\\/?*[\]:]/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim()
     .substring(0, 28);
   if (!clean) clean = 'Sheet';
@@ -55,108 +92,88 @@ const sanitizeSheetName = (name: string, usedNames: Set<string>): string => {
   return candidate;
 };
 
-// Styling definitions
+// Border styles
+const borderThin = {
+  top: { style: 'thin', color: { rgb: '000000' } },
+  bottom: { style: 'thin', color: { rgb: '000000' } },
+  left: { style: 'thin', color: { rgb: '000000' } },
+  right: { style: 'thin', color: { rgb: '000000' } },
+};
+
+const borderMedium = {
+  top: { style: 'medium', color: { rgb: '000000' } },
+  bottom: { style: 'medium', color: { rgb: '000000' } },
+  left: { style: 'medium', color: { rgb: '000000' } },
+  right: { style: 'medium', color: { rgb: '000000' } },
+};
+
+// Cell styles matching user screenshot template
 const STYLES = {
-  mainTitle: {
-    font: { name: 'Noto Sans Bengali', sz: 14, bold: true, color: { rgb: '0F172A' } },
-    alignment: { vertical: 'center', horizontal: 'left' },
+  sheetTitle: {
+    font: { name: 'Calibri', sz: 13, bold: true, color: { rgb: '000000' } },
+    alignment: { horizontal: 'center', vertical: 'center' },
   },
-  subTitle: {
-    font: { name: 'Noto Sans Bengali', sz: 10, italic: true, color: { rgb: '64748B' } },
-    alignment: { vertical: 'center', horizontal: 'left' },
+  sheetSubtitle: {
+    font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: '000000' } },
+    alignment: { horizontal: 'center', vertical: 'center' },
   },
-  sectionTitle: {
-    font: { name: 'Noto Sans Bengali', sz: 11, bold: true, color: { rgb: '047857' } },
-    fill: { fgColor: { rgb: 'ECFDF5' } },
-    border: {
-      top: { style: 'thin', color: { rgb: 'A7F3D0' } },
-      bottom: { style: 'thin', color: { rgb: 'A7F3D0' } },
-      left: { style: 'thin', color: { rgb: 'A7F3D0' } },
-      right: { style: 'thin', color: { rgb: 'A7F3D0' } },
-    },
-    alignment: { vertical: 'center', horizontal: 'left' },
-  },
-  header: {
-    font: { name: 'Noto Sans Bengali', sz: 10, bold: true, color: { rgb: 'FFFFFF' } },
-    fill: { fgColor: { rgb: '059669' } }, // Emerald 600
-    border: {
-      top: { style: 'thin', color: { rgb: '047857' } },
-      bottom: { style: 'thin', color: { rgb: '047857' } },
-      left: { style: 'thin', color: { rgb: '047857' } },
-      right: { style: 'thin', color: { rgb: '047857' } },
-    },
-    alignment: { vertical: 'center', horizontal: 'center' },
-  },
-  dueHeader: {
-    font: { name: 'Noto Sans Bengali', sz: 10, bold: true, color: { rgb: 'FFFFFF' } },
-    fill: { fgColor: { rgb: 'D97706' } }, // Amber 600
-    border: {
-      top: { style: 'thin', color: { rgb: 'B45309' } },
-      bottom: { style: 'thin', color: { rgb: 'B45309' } },
-      left: { style: 'thin', color: { rgb: 'B45309' } },
-      right: { style: 'thin', color: { rgb: 'B45309' } },
-    },
-    alignment: { vertical: 'center', horizontal: 'center' },
+  tableHeader: {
+    font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '000000' } },
+    alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+    border: borderThin,
+    fill: { fgColor: { rgb: 'F1F5F9' } },
   },
   cellText: {
-    font: { name: 'Noto Sans Bengali', sz: 9, color: { rgb: '1E293B' } },
-    border: {
-      top: { style: 'thin', color: { rgb: 'E2E8F0' } },
-      bottom: { style: 'thin', color: { rgb: 'E2E8F0' } },
-      left: { style: 'thin', color: { rgb: 'E2E8F0' } },
-      right: { style: 'thin', color: { rgb: 'E2E8F0' } },
-    },
-    alignment: { vertical: 'center', horizontal: 'left' },
+    font: { name: 'Calibri', sz: 10, color: { rgb: '000000' } },
+    alignment: { horizontal: 'left', vertical: 'center' },
+    border: borderThin,
   },
   cellCenter: {
-    font: { name: 'Noto Sans Bengali', sz: 9, color: { rgb: '1E293B' } },
-    border: {
-      top: { style: 'thin', color: { rgb: 'E2E8F0' } },
-      bottom: { style: 'thin', color: { rgb: 'E2E8F0' } },
-      left: { style: 'thin', color: { rgb: 'E2E8F0' } },
-      right: { style: 'thin', color: { rgb: 'E2E8F0' } },
-    },
-    alignment: { vertical: 'center', horizontal: 'center' },
+    font: { name: 'Calibri', sz: 10, color: { rgb: '000000' } },
+    alignment: { horizontal: 'center', vertical: 'center' },
+    border: borderThin,
   },
-  cellMoney: {
-    font: { name: 'Noto Sans Bengali', sz: 9, bold: true, color: { rgb: '0F172A' } },
-    border: {
-      top: { style: 'thin', color: { rgb: 'E2E8F0' } },
-      bottom: { style: 'thin', color: { rgb: 'E2E8F0' } },
-      left: { style: 'thin', color: { rgb: 'E2E8F0' } },
-      right: { style: 'thin', color: { rgb: 'E2E8F0' } },
-    },
-    alignment: { vertical: 'center', horizontal: 'right' },
-    numFmt: '#,##0.00',
+  cellNumber: {
+    font: { name: 'Calibri', sz: 10, color: { rgb: '000000' } },
+    alignment: { horizontal: 'right', vertical: 'center' },
+    border: borderThin,
+    numFmt: '#,##0',
   },
-  totalRowLabel: {
-    font: { name: 'Noto Sans Bengali', sz: 10, bold: true, color: { rgb: 'FFFFFF' } },
-    fill: { fgColor: { rgb: '1E293B' } },
-    alignment: { vertical: 'center', horizontal: 'right' },
-    border: {
-      top: { style: 'medium', color: { rgb: '0F172A' } },
-      bottom: { style: 'medium', color: { rgb: '0F172A' } },
-    },
+  cellEmpty: {
+    border: borderThin,
   },
-  totalRowMoney: {
-    font: { name: 'Noto Sans Bengali', sz: 10, bold: true, color: { rgb: 'FFFFFF' } },
-    fill: { fgColor: { rgb: '1E293B' } },
-    alignment: { vertical: 'center', horizontal: 'right' },
-    numFmt: '#,##0.00',
-    border: {
-      top: { style: 'medium', color: { rgb: '0F172A' } },
-      bottom: { style: 'medium', color: { rgb: '0F172A' } },
-    },
+  totalLabel: {
+    font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '000000' } },
+    alignment: { horizontal: 'center', vertical: 'center' },
+    border: borderThin,
+  },
+  totalNumber: {
+    font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '000000' } },
+    alignment: { horizontal: 'right', vertical: 'center' },
+    border: borderThin,
+    numFmt: '#,##0',
+  },
+  sectionBanner: {
+    font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: '000000' } },
+    alignment: { horizontal: 'left', vertical: 'center' },
+    fill: { fgColor: { rgb: 'E2E8F0' } },
+    border: borderThin,
   },
 };
 
 /**
- * Creates styled worksheet from array of cells with metadata
+ * Creates styled worksheet with exact column widths, merges, row heights, and tab styling
  */
-function createStyledSheet(rows: any[][], colWidths: number[] = []) {
-  const ws = XLSX.utils.aoa_to_sheet(rows.map(r => r.map(c => (c && typeof c === 'object' && 'v' in c ? c.v : c))));
+function createStyledSheet(
+  rows: any[][],
+  colWidths: number[] = [],
+  merges: XLSX.Range[] = [],
+  tabColor: string = '107C41'
+) {
+  const ws = XLSX.utils.aoa_to_sheet(
+    rows.map(r => r.map(c => (c && typeof c === 'object' && 'v' in c ? c.v : c)))
+  );
 
-  // Apply cell styling
   rows.forEach((row, rIdx) => {
     row.forEach((cell, cIdx) => {
       const cellRef = XLSX.utils.encode_cell({ r: rIdx, c: cIdx });
@@ -172,25 +189,343 @@ function createStyledSheet(rows: any[][], colWidths: number[] = []) {
     ws['!cols'] = colWidths.map(w => ({ wch: w }));
   }
 
+  if (merges.length > 0) {
+    ws['!merges'] = merges;
+  }
+
+  // Row heights
+  ws['!rows'] = [
+    { hpt: 26 }, // Row 1: Title
+    { hpt: 22 }, // Row 2: Subtitle
+    { hpt: 24 }, // Row 3: Header
+  ];
+
+  // Excel sheet properties: tab color and gridlines
+  (ws as any)['!tabColor'] = { rgb: tabColor };
+  (ws as any)['!sheetViews'] = [{ showGridLines: true }];
+
   return ws;
 }
 
 /**
- * Export all expenses into a unified workbook with separate Category tabs
+ * Helper to build an Expense / Category Worksheet exactly as shown in Screenshots 1-7
+ */
+function buildExpenseCategorySheet(
+  instName: string,
+  subTitle: string,
+  items: ExpenseItem[],
+  totalLabel: string,
+  cleanDesc: (d: string) => string,
+  getUnit: (d: string) => string,
+  getMethod: (d: string) => string,
+  getMemo: (d: string) => string,
+  getRemarks: (d: string) => string,
+  bn: boolean,
+  tabColor: string = '107C41'
+) {
+  const rows: any[][] = [];
+
+  // Row 1: Institution Name (Merged A1:G1)
+  rows.push([
+    { v: instName, s: STYLES.sheetTitle },
+    '', '', '', '', '', '',
+  ]);
+
+  // Row 2: Subtitle (Merged A2:G2)
+  rows.push([
+    { v: subTitle, s: STYLES.sheetSubtitle },
+    '', '', '', '', '', '',
+  ]);
+
+  // Row 3: Table Headers (7 Columns matching screenshot)
+  rows.push([
+    { v: bn ? 'তারিখ' : 'Date', s: STYLES.tableHeader },
+    { v: bn ? 'ব্যয়ের বিবরণ' : 'Description', s: STYLES.tableHeader },
+    { v: bn ? 'পরিমাণ' : 'Quantity', s: STYLES.tableHeader },
+    { v: bn ? 'ব্যয়ের মাধ্যম' : 'Method', s: STYLES.tableHeader },
+    { v: bn ? 'মেমো / রশিদ' : 'Memo / Receipt', s: STYLES.tableHeader },
+    { v: bn ? 'ব্যয় টাকা (৳)' : 'Amount (৳)', s: STYLES.tableHeader },
+    { v: bn ? 'মন্তব্য' : 'Remarks', s: STYLES.tableHeader },
+  ]);
+
+  let totalAmount = 0;
+
+  // Data Rows
+  items.forEach(item => {
+    const amt = Number(item.amount || 0);
+    totalAmount += amt;
+
+    const rawQty = item.quantity ? String(item.quantity) : '১';
+    const unit = getUnit(item.description || '');
+    const displayQty = `${rawQty} ${unit !== 'পিস' ? unit : (bn ? 'টি' : 'pcs')}`;
+
+    rows.push([
+      { v: formatShortDate(item.expense_date, bn), s: STYLES.cellCenter },
+      { v: cleanDesc(item.description || ''), s: STYLES.cellText },
+      { v: displayQty, s: STYLES.cellCenter },
+      { v: getMethod(item.description || ''), s: STYLES.cellCenter },
+      { v: getMemo(item.description || ''), s: STYLES.cellCenter },
+      { v: amt, s: STYLES.cellNumber },
+      { v: getRemarks(item.description || ''), s: STYLES.cellText },
+    ]);
+  });
+
+  // Pad empty bordered rows up to row 32 to replicate the exact template seen in screenshot
+  const targetRowCount = Math.max(30, items.length + 5);
+  while (rows.length < targetRowCount) {
+    rows.push([
+      { v: '', s: STYLES.cellEmpty },
+      { v: '', s: STYLES.cellEmpty },
+      { v: '', s: STYLES.cellEmpty },
+      { v: '', s: STYLES.cellEmpty },
+      { v: '', s: STYLES.cellEmpty },
+      { v: '', s: STYLES.cellEmpty },
+      { v: '', s: STYLES.cellEmpty },
+    ]);
+  }
+
+  // Summary Row: Col E: মোট ব্যয় / মোট বকেয়া, Col F: totalAmount
+  rows.push([
+    { v: '', s: STYLES.cellEmpty },
+    { v: '', s: STYLES.cellEmpty },
+    { v: '', s: STYLES.cellEmpty },
+    { v: '', s: STYLES.cellEmpty },
+    { v: totalLabel, s: STYLES.totalLabel },
+    { v: totalAmount, s: STYLES.totalNumber },
+    { v: '', s: STYLES.cellEmpty },
+  ]);
+
+  const merges: XLSX.Range[] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, // A1:G1
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }, // A2:G2
+  ];
+
+  // Column widths matching layout
+  const colWidths = [12, 32, 14, 15, 15, 16, 20];
+
+  return createStyledSheet(rows, colWidths, merges, tabColor);
+}
+
+/**
+ * Master Income / Withdrawal / Bank Deposit & Cash Balance Worksheet (Screenshot 9)
+ */
+function buildIncomeWithdrawalSheet(params: {
+  institutionNames: string[];
+  reportPeriod: string;
+  deposits: any[];
+  allInstitutions: { id: string; name: string; name_bn?: string }[];
+  allCategories: { id: string; name: string; name_bn?: string; institution_id?: string }[];
+  paidExpenses: ExpenseItem[];
+  previousMonthCash: number;
+  previousMonthDue: number;
+  bn: boolean;
+  tabColor?: string;
+}) {
+  const {
+    institutionNames,
+    reportPeriod,
+    deposits,
+    allInstitutions,
+    allCategories,
+    paidExpenses,
+    previousMonthCash,
+    previousMonthDue,
+    bn,
+    tabColor = '047857',
+  } = params;
+
+  const rows: any[][] = [];
+  const merges: XLSX.Range[] = [];
+
+  // Title rows for each institution
+  institutionNames.forEach(name => {
+    const rIdx = rows.length;
+    rows.push([
+      { v: name, s: STYLES.sheetTitle },
+      '', '', '', '', '',
+    ]);
+    merges.push({ s: { r: rIdx, c: 0 }, e: { r: rIdx, c: 5 } });
+  });
+
+  // Report Title
+  const titleRIdx = rows.length;
+  rows.push([
+    { v: `${bn ? 'টাকা আয়/ উত্তোলন প্রতিবেদন' : 'Deposit & Income Statement'} - ${reportPeriod}`, s: STYLES.sheetSubtitle },
+    '', '', '', '', '',
+  ]);
+  merges.push({ s: { r: titleRIdx, c: 0 }, e: { r: titleRIdx, c: 5 } });
+
+  // Table Headers (Screenshot 9: তারিখ, ব্যাংক বিবরণ ও অন্যান্য উৎস, উৎস, টাকা, নগদ আছে, বকেয়া)
+  rows.push([
+    { v: bn ? 'তারিখ' : 'Date', s: STYLES.tableHeader },
+    { v: bn ? 'ব্যাংক বিবরণ ও অন্যান্য উৎস' : 'Bank & Source Details', s: STYLES.tableHeader },
+    { v: bn ? 'উৎস' : 'Source', s: STYLES.tableHeader },
+    { v: bn ? 'টাকা' : 'Amount', s: STYLES.tableHeader },
+    { v: bn ? 'নগদ আছে' : 'Cash in Hand', s: STYLES.tableHeader },
+    { v: bn ? 'বকেয়া' : 'Due', s: STYLES.tableHeader },
+  ]);
+
+  let totalDepositAmount = 0;
+
+  // 1. PREVIOUS MONTH CASH SURPLUS (যদি গত মাসে নগদ থাকে, টাকার কলামে বসবে)
+  if (previousMonthCash > 0) {
+    totalDepositAmount += previousMonthCash;
+    rows.push([
+      { v: bn ? '০১ তারিখ' : '01', s: STYLES.cellCenter },
+      { v: bn ? 'গত মাসের খরচ শেষে নগদ আছে (জের)' : 'Last Month Ending Cash in Hand', s: STYLES.cellText },
+      { v: bn ? 'নগদ তহবিল' : 'Opening Cash', s: STYLES.cellCenter },
+      { v: previousMonthCash, s: STYLES.cellNumber },
+      { v: previousMonthCash, s: STYLES.cellNumber },
+      { v: '', s: STYLES.cellEmpty },
+    ]);
+  }
+
+  // 2. THIS MONTH DEPOSITS / WITHDRAWALS
+  deposits.forEach(d => {
+    const amt = Number(d.amount || 0);
+    totalDepositAmount += amt;
+
+    const bankDetails = d.bank_details || d.other_details || d.source || (bn ? 'ব্যাংক জমা' : 'Bank Deposit');
+    const sourceLabel = d.source || (bn ? 'ব্যাংক' : 'Bank');
+
+    rows.push([
+      { v: formatShortDate(d.deposit_date, bn), s: STYLES.cellCenter },
+      { v: bankDetails, s: STYLES.cellText },
+      { v: sourceLabel, s: STYLES.cellCenter },
+      { v: amt, s: STYLES.cellNumber },
+      { v: '', s: STYLES.cellEmpty },
+      { v: '', s: STYLES.cellEmpty },
+    ]);
+  });
+
+  // Pad empty rows to match screenshot aesthetic
+  const minDepositRows = Math.max(18, deposits.length + (previousMonthCash > 0 ? 1 : 0) + 4);
+  while (rows.length < minDepositRows) {
+    rows.push([
+      { v: '', s: STYLES.cellEmpty },
+      { v: '', s: STYLES.cellEmpty },
+      { v: '', s: STYLES.cellEmpty },
+      { v: '', s: STYLES.cellEmpty },
+      { v: '', s: STYLES.cellEmpty },
+      { v: '', s: STYLES.cellEmpty },
+    ]);
+  }
+
+  // Subtotal Row for Deposits
+  rows.push([
+    { v: '', s: STYLES.cellEmpty },
+    { v: '', s: STYLES.cellEmpty },
+    { v: bn ? 'মোট' : 'Total', s: STYLES.totalLabel },
+    { v: totalDepositAmount, s: STYLES.totalNumber },
+    { v: '', s: STYLES.cellEmpty },
+    { v: '', s: STYLES.cellEmpty },
+  ]);
+
+  // 3. PREVIOUS MONTH ARREARS DEDUCTION (যদি বকেয়া দেখায় তাইলে মোট উত্তোলন থেকে বাদ যাবে গত মাসের বকেয়া বাবদ)
+  let netAvailableFunds = totalDepositAmount;
+  if (previousMonthDue > 0) {
+    netAvailableFunds = totalDepositAmount - previousMonthDue;
+    rows.push([
+      { v: '', s: STYLES.cellEmpty },
+      { v: bn ? '(-) গত মাসের বকেয়া পরিশোধ বাবদ' : '(-) Previous Month Arrears Settle', s: STYLES.cellText },
+      { v: bn ? 'বকেয়া কর্তন' : 'Arrears Deduct', s: STYLES.cellCenter },
+      { v: -previousMonthDue, s: STYLES.cellNumber },
+      { v: '', s: STYLES.cellEmpty },
+      { v: previousMonthDue, s: STYLES.cellNumber },
+    ]);
+    rows.push([
+      { v: '', s: STYLES.cellEmpty },
+      { v: '', s: STYLES.cellEmpty },
+      { v: bn ? 'নিট তহবিল' : 'Net Fund', s: STYLES.totalLabel },
+      { v: netAvailableFunds, s: STYLES.totalNumber },
+      { v: '', s: STYLES.cellEmpty },
+      { v: '', s: STYLES.cellEmpty },
+    ]);
+  }
+
+  // Empty separator
+  rows.push([
+    { v: '', s: STYLES.cellEmpty },
+    { v: '', s: STYLES.cellEmpty },
+    { v: '', s: STYLES.cellEmpty },
+    { v: '', s: STYLES.cellEmpty },
+    { v: '', s: STYLES.cellEmpty },
+    { v: '', s: STYLES.cellEmpty },
+  ]);
+
+  // 4. CATEGORIES BREAKDOWN SECTION (DYNAMICALLY FOR ALL INSTITUTIONS & CATEGORIES)
+  const catHeaderRIdx = rows.length;
+  rows.push([
+    { v: '', s: STYLES.cellEmpty },
+    { v: bn ? 'ক্যাটাগরি' : 'Category', s: STYLES.sectionBanner },
+    { v: '', s: STYLES.sectionBanner },
+    { v: '', s: STYLES.sectionBanner },
+    { v: '', s: STYLES.cellEmpty },
+    { v: '', s: STYLES.cellEmpty },
+  ]);
+  merges.push({ s: { r: catHeaderRIdx, c: 1 }, e: { r: catHeaderRIdx, c: 3 } });
+
+  let totalExpensesSum = 0;
+
+  allInstitutions.forEach(inst => {
+    const instName = bn ? inst.name_bn || inst.name : inst.name;
+    const shortInst = getInstShortName(instName);
+
+    // Categories belonging to this institution, or global active categories
+    const instCats = allCategories.filter(c => !c.institution_id || c.institution_id === inst.id);
+    const targetCats = instCats.length > 0 ? instCats : allCategories;
+
+    targetCats.forEach(cat => {
+      const catExpenses = paidExpenses.filter(e => e.institution_id === inst.id && e.category_id === cat.id);
+      const catTotal = catExpenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+      if (catTotal === 0 && targetCats.length > 8) return; // Keep clean if unused and many
+
+      totalExpensesSum += catTotal;
+      const catName = bn ? cat.name_bn || cat.name : cat.name;
+
+      rows.push([
+        { v: '', s: STYLES.cellEmpty },
+        { v: `${shortInst} - ${catName}`, s: STYLES.cellText },
+        { v: '', s: STYLES.cellEmpty },
+        { v: catTotal, s: STYLES.cellNumber },
+        { v: '', s: STYLES.cellEmpty },
+        { v: '', s: STYLES.cellEmpty },
+      ]);
+    });
+  });
+
+  // Final Cash Balance = Net Available Funds - Total Expenses
+  const finalCashBalance = netAvailableFunds - totalExpensesSum;
+
+  // Total Expense & Cash Balance Row (Screenshot 9: মোট ব্যয় ৮০০০০, নগদ আছে ১২০০০০)
+  rows.push([
+    { v: '', s: STYLES.cellEmpty },
+    { v: '', s: STYLES.cellEmpty },
+    { v: bn ? 'মোট ব্যয়' : 'Total Expense', s: STYLES.totalLabel },
+    { v: totalExpensesSum, s: STYLES.totalNumber },
+    { v: finalCashBalance, s: STYLES.totalNumber },
+    { v: '', s: STYLES.cellEmpty },
+  ]);
+
+  const colWidths = [12, 32, 14, 16, 16, 16];
+  return createStyledSheet(rows, colWidths, merges, tabColor);
+}
+
+/**
+ * Export all expenses into a unified workbook with separate tabs for every institution + category,
+ * dues tabs, and the Income/Deposit sheet matching the user's screenshots.
  */
 export function exportExpensesMultiTabExcel(params: ExportExcelParams) {
   const {
-    institutionName,
-    reportPeriod,
     selectedMonthYear,
     institutions,
     categories,
     expenses,
     unpaidDues,
-    monthlyTotalExpense,
-    monthlyTotalDeposit,
+    deposits,
     previousArrears,
-    monthlyCash,
+    previousMonthCash = 0,
+    previousMonthDue = previousArrears,
     bn,
     cleanDesc,
     getUnit,
@@ -202,328 +537,114 @@ export function exportExpensesMultiTabExcel(params: ExportExcelParams) {
   const wb = XLSX.utils.book_new();
   const usedSheetNames = new Set<string>();
 
-  // Filter regular paid expenses (excluding active unpaid dues)
+  // Filter regular paid expenses
   const paidExpenses = expenses.filter(e => !e.description?.includes('[due:unpaid]'));
 
-  // =========================================================================
-  // TAB 1: সার্বিক সারসংক্ষেপ (Overview / Summary Sheet)
-  // =========================================================================
-  const summaryRows: any[][] = [];
+  // Collect institution display names
+  const institutionFullNames = institutions.map(i => (bn ? i.name_bn || i.name : i.name));
 
-  // Title block
-  summaryRows.push([
-    { v: institutionName, s: STYLES.mainTitle },
-    '', '', '', '',
-  ]);
-  summaryRows.push([
-    { v: `${bn ? 'হিসাব সারসংক্ষেপ' : 'Expense Summary Report'} - ${reportPeriod}`, s: STYLES.subTitle },
-    '', '', '', '',
-  ]);
-  summaryRows.push([]);
-
-  // Overall Financial Metric Boxes
-  summaryRows.push([
-    { v: bn ? 'আর্থিক পরিস্থিতি সারাংশ' : 'Financial Status Overview', s: STYLES.sectionTitle },
-    '', '', '', '',
-  ]);
-  summaryRows.push([
-    { v: bn ? 'বিবরণ' : 'Description', s: STYLES.header },
-    { v: bn ? 'টাকা (৳)' : 'Amount (BDT)', s: STYLES.header },
-    '', '', '',
-  ]);
-
-  const totalUnpaidDues = unpaidDues.reduce((s, d) => s + Number(d.amount || 0), 0);
-
-  summaryRows.push([
-    { v: bn ? 'মোট জমা / আয়' : 'Total Deposits', s: STYLES.cellText },
-    { v: monthlyTotalDeposit, s: STYLES.cellMoney },
-  ]);
-  summaryRows.push([
-    { v: bn ? 'মোট পরিশোধিত ব্যয়' : 'Total Paid Expenses', s: STYLES.cellText },
-    { v: monthlyTotalExpense, s: STYLES.cellMoney },
-  ]);
-  summaryRows.push([
-    { v: bn ? 'মোট বকেয়া দায়' : 'Total Outstanding Dues', s: STYLES.cellText },
-    { v: totalUnpaidDues, s: STYLES.cellMoney },
-  ]);
-  summaryRows.push([
-    { v: bn ? 'পূর্ববর্তী বকেয়া' : 'Previous Arrears', s: STYLES.cellText },
-    { v: previousArrears, s: STYLES.cellMoney },
-  ]);
-  summaryRows.push([
-    { v: bn ? 'চলতি ক্যাশ স্থিতি' : 'Net Cash Balance', s: STYLES.totalRowLabel },
-    { v: monthlyCash, s: STYLES.totalRowMoney },
-  ]);
-
-  summaryRows.push([]);
-  summaryRows.push([]);
-
-  // Institution-wise Breakdown in Summary Sheet
-  summaryRows.push([
-    { v: bn ? 'প্রতিষ্ঠান ভিত্তিক ব্যয়ের সারসংক্ষেপ' : 'Institution-wise Breakdown', s: STYLES.sectionTitle },
-    '', '', '', '',
-  ]);
-  summaryRows.push([
-    { v: '#', s: STYLES.header },
-    { v: bn ? 'প্রতিষ্ঠানের নাম' : 'Institution Name', s: STYLES.header },
-    { v: bn ? 'নগদ খরচ (৳)' : 'Cash Expense', s: STYLES.header },
-    { v: bn ? 'বকেয়া খরচ (৳)' : 'Due Expense', s: STYLES.header },
-    { v: bn ? 'সর্বমোট (৳)' : 'Total (BDT)', s: STYLES.header },
-  ]);
-
-  let totalInstCash = 0;
-  let totalInstDue = 0;
-
-  institutions.forEach((inst, i) => {
-    const instPaid = paidExpenses.filter(e => e.institution_id === inst.id);
-    const instCashTotal = instPaid.reduce((s, e) => s + Number(e.amount || 0), 0);
-    const instDue = unpaidDues.filter(e => e.institution_id === inst.id);
-    const instDueTotal = instDue.reduce((s, e) => s + Number(e.amount || 0), 0);
-    const instCombined = instCashTotal + instDueTotal;
-
-    totalInstCash += instCashTotal;
-    totalInstDue += instDueTotal;
-
-    summaryRows.push([
-      { v: i + 1, s: STYLES.cellCenter },
-      { v: bn ? inst.name_bn || inst.name : inst.name, s: STYLES.cellText },
-      { v: instCashTotal, s: STYLES.cellMoney },
-      { v: instDueTotal, s: STYLES.cellMoney },
-      { v: instCombined, s: STYLES.cellMoney },
-    ]);
-  });
-
-  summaryRows.push([
-    { v: '', s: STYLES.totalRowLabel },
-    { v: bn ? 'সর্বমোট প্রতিষ্ঠান ব্যয়:' : 'Total Institutional:', s: STYLES.totalRowLabel },
-    { v: totalInstCash, s: STYLES.totalRowMoney },
-    { v: totalInstDue, s: STYLES.totalRowMoney },
-    { v: totalInstCash + totalInstDue, s: STYLES.totalRowMoney },
-  ]);
-
-  summaryRows.push([]);
-  summaryRows.push([]);
-
-  // Category-wise Breakdown in Summary Sheet
-  summaryRows.push([
-    { v: bn ? 'ক্যাটাগরি ভিত্তিক ব্যয়ের সারসংক্ষেপ' : 'Category-wise Breakdown', s: STYLES.sectionTitle },
-    '', '', '',
-  ]);
-  summaryRows.push([
-    { v: '#', s: STYLES.header },
-    { v: bn ? 'ক্যাটাগরির নাম' : 'Category Name', s: STYLES.header },
-    { v: bn ? 'মোট ব্যয় (৳)' : 'Total Expense', s: STYLES.header },
-    { v: bn ? 'শতকরা হার (%)' : 'Percentage (%)', s: STYLES.header },
-  ]);
-
-  let catIdx = 1;
-  categories.forEach(cat => {
-    const catExpenses = paidExpenses.filter(e => e.category_id === cat.id);
-    const catTotal = catExpenses.reduce((s, e) => s + Number(e.amount || 0), 0);
-    if (catTotal === 0) return;
-
-    const percent = monthlyTotalExpense > 0 ? (catTotal / monthlyTotalExpense) * 100 : 0;
-
-    summaryRows.push([
-      { v: catIdx++, s: STYLES.cellCenter },
-      { v: bn ? cat.name_bn || cat.name : cat.name, s: STYLES.cellText },
-      { v: catTotal, s: STYLES.cellMoney },
-      { v: `${percent.toFixed(1)}%`, s: STYLES.cellCenter },
-    ]);
-  });
-
-  summaryRows.push([
-    { v: '', s: STYLES.totalRowLabel },
-    { v: bn ? 'সর্বমোট ক্যাটাগরি ব্যয়:' : 'Total Category Expense:', s: STYLES.totalRowLabel },
-    { v: monthlyTotalExpense, s: STYLES.totalRowMoney },
-    { v: '100%', s: STYLES.totalRowMoney },
-  ]);
-
-  const summarySheetName = sanitizeSheetName(bn ? 'সারসংক্ষেপ' : 'Summary', usedSheetNames);
-  const wsSummary = createStyledSheet(summaryRows, [6, 32, 18, 18, 20]);
-  XLSX.utils.book_append_sheet(wb, wsSummary, summarySheetName);
+  // Institution color accents for tabs (matching screenshot pastel/emerald tones)
+  const tabColors = ['107C41', '047857', '0D9488', '0891B2', '2563EB'];
 
   // =========================================================================
-  // TABS 2..N: প্রতিটি ক্যাটাগরির জন্য আলাদা আলাদা ট্যাব (Category Worksheets)
+  // 1. TABS FOR EACH INSTITUTION & EACH CATEGORY + DUES SHEET
   // =========================================================================
-  // Process all categories that have expenses
-  categories.forEach(cat => {
-    const catExpenses = paidExpenses.filter(e => e.category_id === cat.id);
-    if (catExpenses.length === 0) return;
+  institutions.forEach((inst, instIdx) => {
+    const instFullName = bn ? inst.name_bn || inst.name : inst.name;
+    const shortInst = getInstShortName(instFullName);
+    const color = tabColors[instIdx % tabColors.length];
 
-    const catName = bn ? cat.name_bn || cat.name : cat.name;
-    const sheetName = sanitizeSheetName(catName, usedSheetNames);
+    // Find categories for this institution
+    const instCats = categories.filter(c => !c.institution_id || c.institution_id === inst.id);
+    const targetCats = instCats.length > 0 ? instCats : categories;
 
-    const catRows: any[][] = [];
+    // For each category, create a worksheet
+    targetCats.forEach(cat => {
+      const catExpenses = paidExpenses.filter(e => e.institution_id === inst.id && e.category_id === cat.id);
+      const catName = bn ? cat.name_bn || cat.name : cat.name;
 
-    // Header info
-    catRows.push([
-      { v: `${institutionName} - ${catName}`, s: STYLES.mainTitle },
-      '', '', '', '', '', '', '', '',
-    ]);
-    catRows.push([
-      { v: `${bn ? 'হিসাবের সময়কাল' : 'Period'}: ${reportPeriod} | ${bn ? 'ক্যাটাগরি' : 'Category'}: ${catName}`, s: STYLES.subTitle },
-      '', '', '', '', '', '', '', '',
-    ]);
-    catRows.push([]);
+      // Tab name e.g. "মাদরাসা - শিক্ষা বিভাগ", "এম.এইচ সেন্টার - হসপিটাল"
+      const tabName = sanitizeSheetName(`${shortInst} - ${catName}`, usedSheetNames);
+      const subTitle = `${bn ? 'হিসাব সারসংক্ষেপ' : 'Expense Summary'} - ${params.reportPeriod}`;
 
-    // Table Column Headers
-    catRows.push([
-      { v: '#', s: STYLES.header },
-      { v: bn ? 'তারিখ' : 'Date', s: STYLES.header },
-      { v: bn ? 'প্রতিষ্ঠান' : 'Institution', s: STYLES.header },
-      { v: bn ? 'ব্যয়ের বিবরণ' : 'Description', s: STYLES.header },
-      { v: bn ? 'পরিমাণ' : 'Quantity', s: STYLES.header },
-      { v: bn ? 'ব্যয়ের মাধ্যম' : 'Method', s: STYLES.header },
-      { v: bn ? 'মেমো / রশিদ নং' : 'Memo/Receipt #', s: STYLES.header },
-      { v: bn ? 'ব্যয় টাকা (৳)' : 'Amount (BDT)', s: STYLES.header },
-      { v: bn ? 'মন্তব্য' : 'Remarks', s: STYLES.header },
-    ]);
+      const ws = buildExpenseCategorySheet(
+        instFullName,
+        subTitle,
+        catExpenses,
+        bn ? 'মোট ব্যয়' : 'Total Expense',
+        cleanDesc,
+        getUnit,
+        getMethod,
+        getMemo,
+        getRemarks,
+        bn,
+        color
+      );
 
-    let catSubTotal = 0;
-    catExpenses.forEach((exp, idx) => {
-      const amt = Number(exp.amount || 0);
-      catSubTotal += amt;
-
-      const instObj = institutions.find(i => i.id === exp.institution_id);
-      const instName = instObj ? (bn ? instObj.name_bn || instObj.name : instObj.name) : '-';
-      const rawQty = exp.quantity ? String(exp.quantity) : '১';
-      const unit = getUnit(exp.description || '');
-      const displayQty = `${rawQty} ${unit !== 'পিস' ? unit : (bn ? 'টি/পিস' : 'pcs')}`;
-
-      catRows.push([
-        { v: idx + 1, s: STYLES.cellCenter },
-        { v: exp.expense_date, s: STYLES.cellCenter },
-        { v: instName, s: STYLES.cellText },
-        { v: cleanDesc(exp.description || ''), s: STYLES.cellText },
-        { v: displayQty, s: STYLES.cellCenter },
-        { v: getMethod(exp.description || ''), s: STYLES.cellCenter },
-        { v: getMemo(exp.description || ''), s: STYLES.cellCenter },
-        { v: amt, s: STYLES.cellMoney },
-        { v: getRemarks(exp.description || ''), s: STYLES.cellText },
-      ]);
+      XLSX.utils.book_append_sheet(wb, ws, tabName);
     });
 
-    // Subtotal Row
-    catRows.push([
-      { v: '', s: STYLES.totalRowLabel },
-      { v: '', s: STYLES.totalRowLabel },
-      { v: '', s: STYLES.totalRowLabel },
-      { v: '', s: STYLES.totalRowLabel },
-      { v: '', s: STYLES.totalRowLabel },
-      { v: '', s: STYLES.totalRowLabel },
-      { v: bn ? 'মোট ব্যয়:' : 'Total Amount:', s: STYLES.totalRowLabel },
-      { v: catSubTotal, s: STYLES.totalRowMoney },
-      { v: '', s: STYLES.totalRowMoney },
-    ]);
+    // Dues sheet for this institution: e.g. "মাদরাসা - বকেয়া হিসাব", "এম.এইচ সেন্টার - বকেয়া"
+    const instDues = unpaidDues.filter(e => e.institution_id === inst.id);
+    const duesTabName = sanitizeSheetName(`${shortInst} - ${bn ? 'বকেয়া হিসাব' : 'Due Expenses'}`, usedSheetNames);
+    const duesSubTitle = `${bn ? 'হিসাব সারসংক্ষেপ বকেয়া' : 'Outstanding Expenses Report'} - ${params.reportPeriod}`;
 
-    const wsCat = createStyledSheet(catRows, [6, 14, 22, 34, 14, 14, 16, 18, 25]);
-    XLSX.utils.book_append_sheet(wb, wsCat, sheetName);
+    const wsDue = buildExpenseCategorySheet(
+      instFullName,
+      duesSubTitle,
+      instDues,
+      bn ? 'মোট বকেয়া' : 'Total Due',
+      cleanDesc,
+      getUnit,
+      getMethod,
+      getMemo,
+      getRemarks,
+      bn,
+      'B45309' // Warm amber/due color
+    );
+
+    XLSX.utils.book_append_sheet(wb, wsDue, duesTabName);
   });
 
   // =========================================================================
-  // TAB LAST: বকেয়া হিসাব (Dues / Outstanding Payables Sheet)
+  // 2. MASTER SHEET: টাকা আয়-উত্তোলন (Deposit, Income & Net Cash Balance)
   // =========================================================================
-  const dueRows: any[][] = [];
+  const incomeSheetName = sanitizeSheetName(bn ? 'টাকা আয়-উত্তোলন' : 'Income & Withdrawals', usedSheetNames);
+  const wsIncome = buildIncomeWithdrawalSheet({
+    institutionNames: institutionFullNames,
+    reportPeriod: params.reportPeriod,
+    deposits,
+    allInstitutions: institutions,
+    allCategories: categories,
+    paidExpenses,
+    previousMonthCash,
+    previousMonthDue,
+    bn,
+    tabColor: '047857',
+  });
 
-  dueRows.push([
-    { v: `${institutionName} - ${bn ? 'বকেয়া খরচের হিসাব' : 'Outstanding Expenses Report'}`, s: STYLES.mainTitle },
-    '', '', '', '', '', '', '', '', '',
-  ]);
-  dueRows.push([
-    { v: `${bn ? 'হিসাবের সময়কাল' : 'Period'}: ${reportPeriod}`, s: STYLES.subTitle },
-    '', '', '', '', '', '', '', '', '',
-  ]);
-  dueRows.push([]);
-
-  dueRows.push([
-    { v: '#', s: STYLES.dueHeader },
-    { v: bn ? 'বকেয়ার তারিখ' : 'Due Date', s: STYLES.dueHeader },
-    { v: bn ? 'প্রতিষ্ঠান' : 'Institution', s: STYLES.dueHeader },
-    { v: bn ? 'ক্যাটাগরি' : 'Category', s: STYLES.dueHeader },
-    { v: bn ? 'ব্যয়ের বিবরণ ও পাওনাদার' : 'Description & Vendor', s: STYLES.dueHeader },
-    { v: bn ? 'পরিমাণ' : 'Quantity', s: STYLES.dueHeader },
-    { v: bn ? 'মেমো / চালান নং' : 'Memo/Invoice #', s: STYLES.dueHeader },
-    { v: bn ? 'বকেয়া টাকা (৳)' : 'Due Amount (BDT)', s: STYLES.dueHeader },
-    { v: bn ? 'অবস্থা' : 'Status', s: STYLES.dueHeader },
-    { v: bn ? 'মন্তব্য' : 'Remarks', s: STYLES.dueHeader },
-  ]);
-
-  if (unpaidDues.length === 0) {
-    dueRows.push([
-      { v: 1, s: STYLES.cellCenter },
-      { v: '-', s: STYLES.cellCenter },
-      { v: '-', s: STYLES.cellCenter },
-      { v: '-', s: STYLES.cellCenter },
-      { v: bn ? 'কোনো বকেয়া খরচ নেই' : 'No outstanding dues', s: STYLES.cellText },
-      { v: '-', s: STYLES.cellCenter },
-      { v: '-', s: STYLES.cellCenter },
-      { v: 0, s: STYLES.cellMoney },
-      { v: bn ? 'পরিশোধিত' : 'Clear', s: STYLES.cellCenter },
-      { v: '-', s: STYLES.cellText },
-    ]);
-  } else {
-    unpaidDues.forEach((due, dIdx) => {
-      const amt = Number(due.amount || 0);
-      const instObj = institutions.find(i => i.id === due.institution_id);
-      const catObj = categories.find(c => c.id === due.category_id);
-      const instName = instObj ? (bn ? instObj.name_bn || instObj.name : instObj.name) : '-';
-      const catName = catObj ? (bn ? catObj.name_bn || catObj.name : catObj.name) : '-';
-      const rawQty = due.quantity ? String(due.quantity) : '১';
-      const unit = getUnit(due.description || '');
-      const displayQty = `${rawQty} ${unit !== 'পিস' ? unit : (bn ? 'টি/পিস' : 'pcs')}`;
-
-      dueRows.push([
-        { v: dIdx + 1, s: STYLES.cellCenter },
-        { v: due.expense_date, s: STYLES.cellCenter },
-        { v: instName, s: STYLES.cellText },
-        { v: catName, s: STYLES.cellText },
-        { v: cleanDesc(due.description || ''), s: STYLES.cellText },
-        { v: displayQty, s: STYLES.cellCenter },
-        { v: getMemo(due.description || ''), s: STYLES.cellCenter },
-        { v: amt, s: STYLES.cellMoney },
-        { v: bn ? 'বকেয়া' : 'Due', s: STYLES.cellCenter },
-        { v: getRemarks(due.description || ''), s: STYLES.cellText },
-      ]);
-    });
-  }
-
-  // Dues total row
-  dueRows.push([
-    { v: '', s: STYLES.totalRowLabel },
-    { v: '', s: STYLES.totalRowLabel },
-    { v: '', s: STYLES.totalRowLabel },
-    { v: '', s: STYLES.totalRowLabel },
-    { v: '', s: STYLES.totalRowLabel },
-    { v: '', s: STYLES.totalRowLabel },
-    { v: bn ? 'মোট বকেয়া:' : 'Total Due:', s: STYLES.totalRowLabel },
-    { v: totalUnpaidDues, s: STYLES.totalRowMoney },
-    { v: '', s: STYLES.totalRowMoney },
-    { v: '', s: STYLES.totalRowMoney },
-  ]);
-
-  const dueSheetName = sanitizeSheetName(bn ? 'বকেয়া হিসাব' : 'Due Expenses', usedSheetNames);
-  const wsDues = createStyledSheet(dueRows, [6, 14, 20, 20, 32, 14, 16, 18, 12, 25]);
-  XLSX.utils.book_append_sheet(wb, wsDues, dueSheetName);
+  XLSX.utils.book_append_sheet(wb, wsIncome, incomeSheetName);
 
   // Write file
-  const fileName = `Expense_Report_${selectedMonthYear}.xlsx`;
+  const fileName = `Expense_${selectedMonthYear}.xlsx`;
   XLSX.writeFile(wb, fileName);
 }
 
 /**
- * Export a single selected institution's expenses with its categories as separate sheets
+ * Export a single institution's expenses with its categories, dues, and income sheet
  */
 export function exportSingleInstitutionExcel(params: ExportExcelParams & { selectedInstId: string }) {
   const {
     selectedInstId,
-    institutionName,
-    reportPeriod,
     selectedMonthYear,
     institutions,
     categories,
     expenses,
     unpaidDues,
+    deposits,
+    previousArrears,
+    previousMonthCash = 0,
+    previousMonthDue = previousArrears,
     bn,
     cleanDesc,
     getUnit,
@@ -535,157 +656,82 @@ export function exportSingleInstitutionExcel(params: ExportExcelParams & { selec
   const inst = institutions.find(i => i.id === selectedInstId);
   if (!inst) return;
 
-  const targetInstName = bn ? inst.name_bn || inst.name : inst.name;
-  const instExpenses = expenses.filter(e => e.institution_id === selectedInstId && !e.description?.includes('[due:unpaid]'));
-  const instDues = unpaidDues.filter(e => e.institution_id === selectedInstId);
+  const instFullName = bn ? inst.name_bn || inst.name : inst.name;
+  const shortInst = getInstShortName(instFullName);
 
   const wb = XLSX.utils.book_new();
   const usedSheetNames = new Set<string>();
 
-  // Summary sheet for this institution
-  const summaryRows: any[][] = [
-    [{ v: `${institutionName} - ${targetInstName}`, s: STYLES.mainTitle }, '', '', ''],
-    [{ v: `${bn ? 'হিসাব সারসংক্ষেপ' : 'Expense Summary'} - ${reportPeriod}`, s: STYLES.subTitle }, '', '', ''],
-    [],
-    [{ v: '#', s: STYLES.header }, { v: bn ? 'ক্যাটাগরি' : 'Category', s: STYLES.header }, { v: bn ? 'ব্যয় টাকা (৳)' : 'Amount (BDT)', s: STYLES.header }, { v: bn ? 'শতকরা (%)' : '%', s: STYLES.header }],
-  ];
+  const instExpenses = expenses.filter(e => e.institution_id === selectedInstId && !e.description?.includes('[due:unpaid]'));
+  const instDues = unpaidDues.filter(e => e.institution_id === selectedInstId);
 
-  const instTotal = instExpenses.reduce((s, e) => s + Number(e.amount || 0), 0);
-  let cIdx = 1;
+  // Find categories for this institution
+  const instCats = categories.filter(c => !c.institution_id || c.institution_id === selectedInstId);
+  const targetCats = instCats.length > 0 ? instCats : categories;
 
-  const instCategories = categories.filter(c => c.institution_id === selectedInstId);
-  instCategories.forEach(cat => {
+  // Category sheets
+  targetCats.forEach(cat => {
     const catExpenses = instExpenses.filter(e => e.category_id === cat.id);
-    const catTotal = catExpenses.reduce((s, e) => s + Number(e.amount || 0), 0);
-    if (catTotal === 0) return;
-
-    const percent = instTotal > 0 ? (catTotal / instTotal) * 100 : 0;
-    summaryRows.push([
-      { v: cIdx++, s: STYLES.cellCenter },
-      { v: bn ? cat.name_bn || cat.name : cat.name, s: STYLES.cellText },
-      { v: catTotal, s: STYLES.cellMoney },
-      { v: `${percent.toFixed(1)}%`, s: STYLES.cellCenter },
-    ]);
-  });
-
-  summaryRows.push([
-    { v: '', s: STYLES.totalRowLabel },
-    { v: bn ? 'মোট ব্যয়:' : 'Total Amount:', s: STYLES.totalRowLabel },
-    { v: instTotal, s: STYLES.totalRowMoney },
-    { v: '100%', s: STYLES.totalRowMoney },
-  ]);
-
-  const wsSum = createStyledSheet(summaryRows, [6, 28, 18, 14]);
-  XLSX.utils.book_append_sheet(wb, wsSum, sanitizeSheetName(bn ? 'সারসংক্ষেপ' : 'Summary', usedSheetNames));
-
-  // Category sheets for this institution
-  instCategories.forEach(cat => {
-    const catExpenses = instExpenses.filter(e => e.category_id === cat.id);
-    if (catExpenses.length === 0) return;
-
     const catName = bn ? cat.name_bn || cat.name : cat.name;
-    const catRows: any[][] = [
-      [{ v: `${targetInstName} - ${catName}`, s: STYLES.mainTitle }, '', '', '', '', '', '', ''],
-      [{ v: `${reportPeriod}`, s: STYLES.subTitle }, '', '', '', '', '', '', ''],
-      [],
-      [
-        { v: '#', s: STYLES.header },
-        { v: bn ? 'তারিখ' : 'Date', s: STYLES.header },
-        { v: bn ? 'ব্যয়ের বিবরণ' : 'Description', s: STYLES.header },
-        { v: bn ? 'পরিমাণ' : 'Quantity', s: STYLES.header },
-        { v: bn ? 'ব্যয়ের মাধ্যম' : 'Method', s: STYLES.header },
-        { v: bn ? 'মেমো / রশিদ নং' : 'Memo/Receipt #', s: STYLES.header },
-        { v: bn ? 'ব্যয় টাকা (৳)' : 'Amount', s: STYLES.header },
-        { v: bn ? 'মন্তব্য' : 'Remarks', s: STYLES.header },
-      ],
-    ];
 
-    let catTotal = 0;
-    catExpenses.forEach((exp, idx) => {
-      const amt = Number(exp.amount || 0);
-      catTotal += amt;
-      const rawQty = exp.quantity ? String(exp.quantity) : '১';
-      const unit = getUnit(exp.description || '');
-      const displayQty = `${rawQty} ${unit !== 'পিস' ? unit : (bn ? 'টি/পিস' : 'pcs')}`;
+    const tabName = sanitizeSheetName(`${shortInst} - ${catName}`, usedSheetNames);
+    const subTitle = `${bn ? 'হিসাব সারসংক্ষেপ' : 'Expense Summary'} - ${params.reportPeriod}`;
 
-      catRows.push([
-        { v: idx + 1, s: STYLES.cellCenter },
-        { v: exp.expense_date, s: STYLES.cellCenter },
-        { v: cleanDesc(exp.description || ''), s: STYLES.cellText },
-        { v: displayQty, s: STYLES.cellCenter },
-        { v: getMethod(exp.description || ''), s: STYLES.cellCenter },
-        { v: getMemo(exp.description || ''), s: STYLES.cellCenter },
-        { v: amt, s: STYLES.cellMoney },
-        { v: getRemarks(exp.description || ''), s: STYLES.cellText },
-      ]);
-    });
+    const ws = buildExpenseCategorySheet(
+      instFullName,
+      subTitle,
+      catExpenses,
+      bn ? 'মোট ব্যয়' : 'Total Expense',
+      cleanDesc,
+      getUnit,
+      getMethod,
+      getMemo,
+      getRemarks,
+      bn,
+      '107C41'
+    );
 
-    catRows.push([
-      { v: '', s: STYLES.totalRowLabel },
-      { v: '', s: STYLES.totalRowLabel },
-      { v: '', s: STYLES.totalRowLabel },
-      { v: '', s: STYLES.totalRowLabel },
-      { v: '', s: STYLES.totalRowLabel },
-      { v: bn ? 'মোট:' : 'Total:', s: STYLES.totalRowLabel },
-      { v: catTotal, s: STYLES.totalRowMoney },
-      { v: '', s: STYLES.totalRowMoney },
-    ]);
-
-    const wsC = createStyledSheet(catRows, [6, 14, 34, 14, 14, 16, 18, 25]);
-    XLSX.utils.book_append_sheet(wb, wsC, sanitizeSheetName(catName, usedSheetNames));
+    XLSX.utils.book_append_sheet(wb, ws, tabName);
   });
 
-  // Dues sheet for this institution
-  if (instDues.length > 0) {
-    const dueRows: any[][] = [
-      [{ v: `${targetInstName} - ${bn ? 'বকেয়া হিসাব' : 'Due Expenses'}`, s: STYLES.mainTitle }, '', '', '', '', '', '', ''],
-      [{ v: reportPeriod, s: STYLES.subTitle }, '', '', '', '', '', '', ''],
-      [],
-      [
-        { v: '#', s: STYLES.dueHeader },
-        { v: bn ? 'তারিখ' : 'Date', s: STYLES.dueHeader },
-        { v: bn ? 'বিবরণ ও পাওনাদার' : 'Description', s: STYLES.dueHeader },
-        { v: bn ? 'পরিমাণ' : 'Quantity', s: STYLES.dueHeader },
-        { v: bn ? 'মেমো নং' : 'Memo #', s: STYLES.dueHeader },
-        { v: bn ? 'বকেয়া টাকা (৳)' : 'Due Amount', s: STYLES.dueHeader },
-        { v: bn ? 'অবস্থা' : 'Status', s: STYLES.dueHeader },
-        { v: bn ? 'মন্তব্য' : 'Remarks', s: STYLES.dueHeader },
-      ],
-    ];
+  // Dues sheet
+  const duesTabName = sanitizeSheetName(`${shortInst} - ${bn ? 'বকেয়া হিসাব' : 'Due Expenses'}`, usedSheetNames);
+  const duesSubTitle = `${bn ? 'হিসাব সারসংক্ষেপ বকেয়া' : 'Outstanding Expenses Report'} - ${params.reportPeriod}`;
 
-    let totalDue = 0;
-    instDues.forEach((d, idx) => {
-      const amt = Number(d.amount || 0);
-      totalDue += amt;
-      const rawQty = d.quantity ? String(d.quantity) : '১';
-      const unit = getUnit(d.description || '');
-      dueRows.push([
-        { v: idx + 1, s: STYLES.cellCenter },
-        { v: d.expense_date, s: STYLES.cellCenter },
-        { v: cleanDesc(d.description || ''), s: STYLES.cellText },
-        { v: `${rawQty} ${unit}`, s: STYLES.cellCenter },
-        { v: getMemo(d.description || ''), s: STYLES.cellCenter },
-        { v: amt, s: STYLES.cellMoney },
-        { v: bn ? 'বকেয়া' : 'Due', s: STYLES.cellCenter },
-        { v: getRemarks(d.description || ''), s: STYLES.cellText },
-      ]);
-    });
+  const wsDue = buildExpenseCategorySheet(
+    instFullName,
+    duesSubTitle,
+    instDues,
+    bn ? 'মোট বকেয়া' : 'Total Due',
+    cleanDesc,
+    getUnit,
+    getMethod,
+    getMemo,
+    getRemarks,
+    bn,
+    'B45309'
+  );
 
-    dueRows.push([
-      { v: '', s: STYLES.totalRowLabel },
-      { v: '', s: STYLES.totalRowLabel },
-      { v: '', s: STYLES.totalRowLabel },
-      { v: '', s: STYLES.totalRowLabel },
-      { v: bn ? 'মোট বকেয়া:' : 'Total Due:', s: STYLES.totalRowLabel },
-      { v: totalDue, s: STYLES.totalRowMoney },
-      { v: '', s: STYLES.totalRowMoney },
-      { v: '', s: STYLES.totalRowMoney },
-    ]);
+  XLSX.utils.book_append_sheet(wb, wsDue, duesTabName);
 
-    const wsD = createStyledSheet(dueRows, [6, 14, 34, 14, 16, 18, 12, 25]);
-    XLSX.utils.book_append_sheet(wb, wsD, sanitizeSheetName(bn ? 'বকেয়া হিসাব' : 'Due Expenses', usedSheetNames));
-  }
+  // Income / Deposit sheet for this institution
+  const incomeSheetName = sanitizeSheetName(bn ? 'টাকা আয়-উত্তোলন' : 'Income & Withdrawals', usedSheetNames);
+  const wsIncome = buildIncomeWithdrawalSheet({
+    institutionNames: [instFullName],
+    reportPeriod: params.reportPeriod,
+    deposits,
+    allInstitutions: [inst],
+    allCategories: targetCats,
+    paidExpenses: instExpenses,
+    previousMonthCash,
+    previousMonthDue,
+    bn,
+    tabColor: '047857',
+  });
 
-  const fileName = `${targetInstName}_ব্যয়_${selectedMonthYear}.xlsx`;
+  XLSX.utils.book_append_sheet(wb, wsIncome, incomeSheetName);
+
+  // Write file
+  const fileName = `${shortInst}_ব্যয়_${selectedMonthYear}.xlsx`;
   XLSX.writeFile(wb, fileName);
 }
