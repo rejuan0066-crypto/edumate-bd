@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { getDeviceId } from '@/hooks/useDeviceRegistration';
-import { parseUserAgent, getGeoAndIspDetails, getSilentGpsLocation, DeviceInfo, GeoInfo } from '@/lib/deviceDetector';
+import { parseUserAgent, detectDeviceInfo, getGeoAndIspDetails, getSilentGpsLocation, DeviceInfo, GeoInfo } from '@/lib/deviceDetector';
 import { resolveVisitorIdentity, initVisitorIdentityAutoCapture } from '@/lib/visitorIdentity';
 import { ShieldAlert, PhoneCall, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -84,9 +84,9 @@ export function useVisitorTracker() {
 
     const timer = setTimeout(async () => {
       try {
-        // Resolve device details once
+        // Resolve device details once (async with client hints)
         if (!deviceRef.current) {
-          deviceRef.current = parseUserAgent();
+          deviceRef.current = await detectDeviceInfo();
         }
         const dev = deviceRef.current;
 
@@ -145,6 +145,9 @@ export function useVisitorTracker() {
             is_proxy: geo.is_proxy || false,
             is_datacenter: geo.is_datacenter || false,
             vpn_note: geo.vpn_note || null,
+            vpn_gateway_location: geo.vpn_gateway_location || null,
+            display_location: geo.display_location,
+            location_accuracy: gps ? 'gps_exact' : geo.location_accuracy,
             page_title: pageTitle,
             visitor_type: visitorType,
             user_id: user?.id || null,
@@ -152,6 +155,7 @@ export function useVisitorTracker() {
             user_name: user?.user_metadata?.full_name || knownIdentity.name || null,
             user_phone: knownIdentity.phone || null,
             identity_source: knownIdentity.source || (isAuth ? 'auth' : null),
+            source_label: knownIdentity.source_label || (isAuth ? 'লগইন একাউন্ট' : null),
             is_live: true,
             last_ping: new Date().toISOString(),
           },
@@ -216,10 +220,14 @@ export function useVisitorTracker() {
             is_proxy: geo.is_proxy || false,
             is_datacenter: geo.is_datacenter || false,
             vpn_note: geo.vpn_note || null,
+            vpn_gateway_location: geo.vpn_gateway_location || null,
+            display_location: geo.display_location,
             user_id: user?.id || null,
             user_email: user?.email || knownIdentity.email || null,
             user_name: user?.user_metadata?.full_name || knownIdentity.name || null,
             user_phone: knownIdentity.phone || null,
+            identity_source: knownIdentity.source || (isAuth ? 'auth' : null),
+            source_label: knownIdentity.source_label || (isAuth ? 'লগইন একাউন্ট' : null),
             visitor_type: visitorType,
             page_title: typeof document !== 'undefined' ? document.title : location.pathname,
             is_live: true,

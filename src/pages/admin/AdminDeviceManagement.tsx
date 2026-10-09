@@ -598,12 +598,12 @@ const Inner = () => {
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <div className="flex items-center gap-2 px-3 py-2 mb-2 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 text-xs text-blue-900 dark:text-blue-200">
-                    <ShieldAlert className="h-4 w-4 text-blue-600 shrink-0" />
-                    <p className="leading-tight">
+                  <div className="flex items-start gap-2.5 px-3.5 py-2.5 mb-2 rounded-xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50 text-xs text-blue-900 dark:text-blue-100">
+                    <ShieldAlert className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                    <p className="leading-relaxed">
                       {bn
-                        ? '💡 সিকিউরিটি তথ্য: পাবলিক ভিজিটররা ওয়েবসাইটে পূর্বে কোনো আবেদন/ফরম পূরণ করলে বা লগইন করলে তাদের ইমেইল/মোবাইল স্বয়ংক্রিয়ভাবে শনাক্ত হয়। ভিপিএন (Cloudflare/Proxy) ব্যবহারকারীদের আসল আইপি গোপন থাকায় তাদের ভিপিএন সার্ভার লোকেশন প্রদর্শিত হয়।'
-                        : '💡 Security Notice: Public visitors are identified if they previously submitted any application/form or logged in on this browser. VPN/Proxy users route through gateway server locations.'}
+                        ? '💡 নির্ভুল তথ্য নির্দেশিকা: (১) পরিচিতি: শুধুমাত্র পূর্বের লগইন বা পাবলিক ভর্তি/আবেদন ফরম থেকে নিশ্চিতভাবে পাওয়া ইমেইল/ফোন দেখানো হয় (অনুমান নয়)। (২) লোকেশন: ভিপিএন বা Cloudflare 1.1.1.1 WARP চালু থাকলে ব্যবহারকারীর আসল অবস্থান গোপন থাকে—সিস্টেম সেটিকে “ভিপিএন গেটওয়ে” হিসেবে চিহ্নিত করে রাখে যাতে কোনো ভুল ধারণা তৈরি না হয়।'
+                        : '💡 Accuracy Guide: (1) Identity: Only emails/phones verified from previous logins or public forms are displayed. (2) Location: If VPN or Cloudflare WARP is active, the real location is masked—the system explicitly flags it as a "VPN Gateway" so there is no confusion.'}
                     </p>
                   </div>
                   <Table>
@@ -663,6 +663,9 @@ const Inner = () => {
                                       </div>
                                     )}
                                   </div>
+                                  {meta.source_label && (
+                                    <p className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">{meta.source_label}</p>
+                                  )}
                                   {meta.user_name && (
                                     <p className="text-xs text-muted-foreground font-medium">{meta.user_name}</p>
                                   )}
@@ -712,7 +715,7 @@ const Inner = () => {
                                 <Signal className="h-3.5 w-3.5 text-blue-500 shrink-0" />
                                 <div className="min-w-0">
                                   <p className="text-xs font-medium text-foreground truncate max-w-[150px]">
-                                    {meta.isp || 'Broadband'}
+                                    {meta.isp || 'ইন্টারনেট সংযোগ'}
                                   </p>
                                   <div className="flex items-center gap-1 flex-wrap mt-0.5">
                                     {meta.network_type && (
@@ -732,26 +735,50 @@ const Inner = () => {
 
                             {/* Location & IP */}
                             <TableCell>
-                              <div className="flex items-start gap-1">
-                                <MapPin className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
-                                <div className="min-w-0">
-                                  <p className="text-xs font-medium leading-tight">
-                                    {[meta.city, meta.region, meta.country].filter(Boolean).join(', ') || 'বাংলাদেশ'}
-                                  </p>
-                                  {meta.gps_verified && (
-                                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-3.5 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 mt-0.5">
-                                      {bn ? '📍 জিপিএস নিশ্চিত' : '📍 GPS Verified'}
+                              <div className="min-w-0">
+                                {isVpnOrProxy ? (
+                                  <div className="space-y-1">
+                                    <div className="flex items-center gap-1 text-amber-700 dark:text-amber-400 font-semibold text-xs leading-tight">
+                                      <ShieldAlert className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                                      <span>
+                                        {bn ? 'ভিপিএন গেটওয়ে: ' : 'VPN Gateway: '}
+                                        {meta.vpn_gateway_location || [meta.city, meta.country].filter(Boolean).join(', ') || 'সার্ভার আইপি'}
+                                      </span>
+                                    </div>
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-500/50 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-200 font-medium">
+                                      {bn ? '⚠️ আসল অবস্থান ভিপিএন দিয়ে গোপন' : '⚠️ Hidden by VPN'}
                                     </Badge>
-                                  )}
-                                  {isVpnOrProxy && (
-                                    <span className="block text-[10px] text-amber-600 dark:text-amber-400 font-medium">
-                                      {meta.vpn_note || (bn ? 'গেটওয়ে আইপি (আসল অবস্থান গোপন)' : 'Gateway IP (Hidden)')}
-                                    </span>
-                                  )}
-                                  <code className="text-[10px] text-muted-foreground font-mono">
-                                    {v.ip_address || '—'}
-                                  </code>
-                                </div>
+                                    {meta.gps_verified && (
+                                      <Badge variant="secondary" className="text-[9px] px-1.5 py-0 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
+                                        <MapPin className="h-2.5 w-2.5" />
+                                        {bn ? '📍 জিপিএস নিশ্চিত' : '📍 GPS Verified'}
+                                      </Badge>
+                                    )}
+                                    <code className="text-[10px] text-muted-foreground font-mono block">
+                                      {v.ip_address || '—'}
+                                    </code>
+                                  </div>
+                                ) : (
+                                  <div>
+                                    <p className="text-xs font-semibold leading-tight text-foreground">
+                                      {[meta.city, meta.region, meta.country].filter(Boolean).join(', ') || (bn ? 'অবস্থান অপ্রাপ্ত' : 'Location unavailable')}
+                                    </p>
+                                    <div className="flex items-center gap-1 flex-wrap mt-0.5">
+                                      {meta.gps_verified ? (
+                                        <Badge variant="secondary" className="text-[9px] px-1.5 py-0 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                                          {bn ? '📍 জিপিএস সঠিক' : '📍 GPS Verified'}
+                                        </Badge>
+                                      ) : meta.city ? (
+                                        <span className="text-[10px] text-muted-foreground">
+                                          {bn ? '📡 আইপি গেটওয়ে (আনুমানিক)' : '📡 ISP Gateway'}
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                    <code className="text-[10px] text-muted-foreground font-mono block mt-0.5">
+                                      {v.ip_address || '—'}
+                                    </code>
+                                  </div>
+                                )}
                               </div>
                             </TableCell>
 
@@ -917,6 +944,9 @@ const Inner = () => {
                                   </span>
                                 )}
                               </div>
+                              {meta.source_label && (
+                                <p className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">{meta.source_label}</p>
+                              )}
                               {meta.user_name && (
                                 <p className="text-[10px] text-muted-foreground">{meta.user_name}</p>
                               )}
@@ -975,16 +1005,33 @@ const Inner = () => {
 
                             {/* Location */}
                             <TableCell>
-                              <div className="flex items-center gap-1">
-                                <Globe className="h-3 w-3 text-primary shrink-0" />
-                                <span className="text-xs truncate max-w-[130px]">
-                                  {[meta.city, meta.country].filter(Boolean).join(', ') || '—'}
-                                </span>
-                              </div>
-                              {meta.gps_verified && (
-                                <span className="block text-[9px] text-emerald-600 font-medium">
-                                  {bn ? '📍 জিপিএস সঠিক' : '📍 GPS Verified'}
-                                </span>
+                              {(meta.is_vpn || meta.is_proxy || (meta.isp && /cloudflare|vpn|proxy|hosting|google llc/i.test(meta.isp))) ? (
+                                <div className="space-y-0.5">
+                                  <div className="flex items-center gap-1 text-amber-700 dark:text-amber-400 font-semibold text-[11px] truncate max-w-[150px]">
+                                    <ShieldAlert className="h-3 w-3 text-amber-600 shrink-0" />
+                                    <span>{bn ? 'ভিপিএন: ' : 'VPN: '}{meta.vpn_gateway_location || [meta.city, meta.country].filter(Boolean).join(', ') || 'সার্ভার আইপি'}</span>
+                                  </div>
+                                  <span className="block text-[9px] text-amber-600 dark:text-amber-400 font-medium">
+                                    {bn ? '⚠️ আসল অবস্থান গোপন' : '⚠️ Hidden location'}
+                                  </span>
+                                  {meta.gps_verified && (
+                                    <span className="block text-[9px] text-emerald-600 font-semibold">
+                                      {bn ? '📍 জিপিএস সঠিক' : '📍 GPS Verified'}
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <div>
+                                  <div className="flex items-center gap-1">
+                                    <Globe className="h-3 w-3 text-primary shrink-0" />
+                                    <span className="text-xs truncate max-w-[130px]">
+                                      {[meta.city, meta.country].filter(Boolean).join(', ') || (bn ? 'অবস্থান অপ্রাপ্ত' : 'Unavailable')}
+                                    </span>
+                                  </div>
+                                  <span className="block text-[9px] text-muted-foreground">
+                                    {meta.gps_verified ? (bn ? '📍 জিপিএস নিশ্চিত' : '📍 GPS Verified') : (meta.city ? (bn ? '📡 আইপি গেটওয়ে' : '📡 IP Gateway') : '')}
+                                  </span>
+                                </div>
                               )}
                             </TableCell>
 
@@ -1481,21 +1528,21 @@ const Inner = () => {
                 </div>
                 <div className="p-3 bg-muted/30 rounded-2xl col-span-2">
                   <p className="text-muted-foreground">{bn ? 'শনাক্তকৃত পরিচয় / ইমেইল' : 'Visitor Identity / Email'}</p>
-                  <p className="font-semibold mt-0.5 text-foreground flex items-center gap-1.5">
+                  <div className="mt-0.5">
                     {detailsLog.user_email || detailsLog.metadata?.user_email || detailsLog.metadata?.user_phone ? (
-                      <>
-                        <span className="text-primary font-bold">{detailsLog.user_email || detailsLog.metadata?.user_email || detailsLog.metadata?.user_phone}</span>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-primary font-bold text-sm">{detailsLog.user_email || detailsLog.metadata?.user_email || detailsLog.metadata?.user_phone}</span>
                         {detailsLog.metadata?.user_name && <span className="text-muted-foreground font-normal">({detailsLog.metadata?.user_name})</span>}
                         <Badge variant="secondary" className="text-[10px] bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
-                          {bn ? 'শনাক্তকৃত' : 'Identified'}
+                          {detailsLog.metadata?.source_label || (bn ? 'যাচাইকৃত' : 'Verified')}
                         </Badge>
-                      </>
+                      </div>
                     ) : (
                       <span className="text-muted-foreground font-normal italic">
-                        {bn ? 'অজ্ঞাত পাবলিক ভিজিটর (ডিভাইসে কোনো ফরম পূরণ বা লগইন রেকর্ড নেই)' : 'Anonymous Guest (No form filled or login record)'}
+                        {bn ? 'অজ্ঞাত পাবলিক ভিজিটর (ডিভাইসে কোনো আবেদন ফরম পূরণ বা লগইন রেকর্ড নেই)' : 'Anonymous Guest (No form filled or login record)'}
                       </span>
                     )}
-                  </p>
+                  </div>
                 </div>
                 <div className="p-3 bg-muted/30 rounded-2xl">
                   <p className="text-muted-foreground">{bn ? 'আইপি অ্যাড্রেস' : 'IP Address'}</p>
@@ -1525,14 +1572,32 @@ const Inner = () => {
                 </div>
                 <div className="p-3 bg-muted/30 rounded-2xl col-span-2">
                   <p className="text-muted-foreground">{bn ? 'অবস্থান (লোকেশন)' : 'Location'}</p>
-                  <p className="font-semibold mt-0.5">
-                    {[detailsLog.metadata?.city, detailsLog.metadata?.region, detailsLog.metadata?.country].filter(Boolean).join(', ') || '—'}
-                    {detailsLog.metadata?.gps_verified && (
-                      <Badge variant="secondary" className="ml-2 text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                        {bn ? '📍 জিপিএস নিশ্চিত' : '📍 GPS Verified'}
-                      </Badge>
+                  <div className="mt-1">
+                    {(detailsLog.metadata?.is_vpn || detailsLog.metadata?.is_proxy || (detailsLog.metadata?.isp && /cloudflare|vpn|proxy|hosting/i.test(detailsLog.metadata.isp))) ? (
+                      <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/40">
+                        <div className="flex items-center gap-1.5 font-bold text-amber-800 dark:text-amber-200 text-xs">
+                          <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0" />
+                          <span>{bn ? 'ভিপিএন গেটওয়ে সার্ভার: ' : 'VPN Gateway: '}{detailsLog.metadata?.vpn_gateway_location || [detailsLog.metadata?.city, detailsLog.metadata?.country].filter(Boolean).join(', ') || 'বিদেশি গেটওয়ে'}</span>
+                        </div>
+                        <p className="text-[11px] text-amber-700 dark:text-amber-300 mt-1 leading-relaxed">
+                          {bn
+                            ? '⚠️ সতর্কতা: ভিজিটরের ডিভাইসে ভিপিএন (Cloudflare 1.1.1.1 WARP বা প্রক্সি) চালু থাকায় আসল অবস্থান গোপন রয়েছে এবং এখানে ভিপিএন সার্ভারের ডাটা সেন্টার দেখাচ্ছে।'
+                            : '⚠️ Warning: The visitor has active VPN/Proxy (e.g. Cloudflare WARP). Physical location is masked behind this gateway datacenter.'}
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="font-semibold text-sm">
+                          {[detailsLog.metadata?.city, detailsLog.metadata?.region, detailsLog.metadata?.country].filter(Boolean).join(', ') || (bn ? 'অবস্থান অপ্রাপ্ত (শুধু আইপি সংরক্ষিত)' : 'Location unavailable')}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          {detailsLog.metadata?.gps_verified
+                            ? (bn ? '📍 স্যাটেলাইট জিপিএস নিশ্চিত (সঠিক কো-অর্ডিনেট)' : '📍 Satellite GPS Verified')
+                            : (bn ? '📡 আইপি গেটওয়ে ভিত্তিক আনুমানিক অবস্থান' : '📡 Approximate IP Gateway')}
+                        </p>
+                      </div>
                     )}
-                  </p>
+                  </div>
                 </div>
               </div>
 
