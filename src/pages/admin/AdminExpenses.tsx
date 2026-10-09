@@ -617,8 +617,9 @@ const AdminExpenses = () => {
       
       let descWithTags = (expenseForm.description || '').trim();
       if (expenseForm.quantity_unit && expenseForm.quantity_unit !== 'পিস') descWithTags += `[unit:${expenseForm.quantity_unit}]`;
-      const finalMethod = expenseForm.expense_method === 'অন্যান্য' ? expenseForm.expense_method_other.trim() || 'অন্যান্য' : expenseForm.expense_method;
-      if (finalMethod && finalMethod !== 'ক্যাশ') descWithTags += `[method:${finalMethod}]`;
+      const rawMethod = (expenseForm.expense_method || '').trim() || 'ক্যাশ';
+      const finalMethod = rawMethod.replace(/[\[\]]/g, '');
+      if (finalMethod) descWithTags += `[method:${finalMethod}]`;
       if (expenseForm.memo_no && expenseForm.memo_no.trim()) descWithTags += `[memo:${expenseForm.memo_no.trim()}]`;
       if (expenseForm.remarks && expenseForm.remarks.trim()) descWithTags += `[remarks:${expenseForm.remarks.trim()}]`;
       if (expenseForm.is_due) descWithTags += `[due:unpaid]`;
@@ -686,9 +687,8 @@ const AdminExpenses = () => {
       if (!payDueExpense) return;
       const pDate = new Date(payDueForm.payment_date);
       const pMonthYear = `${MONTHS[pDate.getMonth()]}-${pDate.getFullYear()}`;
-      const finalMethod = payDueForm.payment_method === 'অন্যান্য'
-        ? payDueForm.payment_method_other.trim() || 'অন্যান্য'
-        : payDueForm.payment_method;
+      const rawPayMethod = (payDueForm.payment_method || '').trim() || 'ক্যাশ';
+      const finalMethod = rawPayMethod.replace(/[\[\]]/g, '');
 
       // 1. Mark original expense as paid
       const originalDesc = payDueExpense.description || '';
@@ -705,7 +705,7 @@ const AdminExpenses = () => {
       let paidDesc = `[বকেয়া পরিশোধ] ${cleanDesc(originalDesc)}`;
       if (payDueForm.remarks.trim()) paidDesc += `[remarks:${payDueForm.remarks.trim()}]`;
       if (payDueForm.memo_no.trim()) paidDesc += `[memo:${payDueForm.memo_no.trim()}]`;
-      if (finalMethod && finalMethod !== 'ক্যাশ') paidDesc += `[method:${finalMethod}]`;
+      if (finalMethod) paidDesc += `[method:${finalMethod}]`;
       paidDesc += `[original_due_id:${payDueExpense.id}]`;
 
       const { error: insertError } = await supabase.from('expenses').insert({
@@ -987,8 +987,8 @@ const AdminExpenses = () => {
       has_receipt: !!e.has_receipt,
       receipt_url: e.receipt_url || '',
       amount: String(e.amount),
-      expense_method: isKnownMethod ? method : 'অন্যান্য',
-      expense_method_other: isKnownMethod ? '' : method,
+      expense_method: method || 'ক্যাশ',
+      expense_method_other: '',
       memo_no: memo === '-' ? '' : memo,
       remarks: rem === '-' ? '' : rem,
       is_due: isUnpaidDue(e.description),
@@ -1605,7 +1605,7 @@ const AdminExpenses = () => {
                               <th className="px-3 py-2 text-left font-bold text-slate-700 dark:text-slate-300 w-36">{bn ? 'ক্যাটাগরি' : 'Category'}</th>
                               <th className="px-3 py-2 text-left font-bold text-slate-700 dark:text-slate-300">{bn ? 'ব্যয়ের বিবরণ' : 'Description'}</th>
                               <th className="px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 w-24">{bn ? 'পরিমাণ' : 'Quantity'}</th>
-                              <th className="px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 w-24">{bn ? 'ব্যয়ের মাধ্যম' : 'Method'}</th>
+                              <th className="px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 min-w-[110px]">{bn ? 'ব্যয়ের মাধ্যম' : 'Method'}</th>
                               <th className="px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 w-28">{bn ? 'মেমো / রশিদ' : 'Memo/Receipt'}</th>
                               <th className="px-3 py-2 text-right font-bold text-slate-700 dark:text-slate-300 w-32">{bn ? 'ব্যয় টাকা (৳)' : 'Amount (৳)'}</th>
                               <th className="px-3 py-2 text-left font-bold text-slate-700 dark:text-slate-300 w-36">{bn ? 'মন্তব্য' : 'Remarks'}</th>
@@ -1653,7 +1653,7 @@ const AdminExpenses = () => {
                                       {displayQty}
                                     </td>
                                     <td className="px-3 py-2 text-center">
-                                      <span className="inline-block px-2 py-0.5 rounded text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                                      <span className="inline-block px-2 py-0.5 rounded text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 max-w-[150px] truncate" title={getMethod(e.description)}>
                                         {getMethod(e.description)}
                                       </span>
                                     </td>
@@ -2705,22 +2705,42 @@ const AdminExpenses = () => {
             </div>
 
             {!expenseForm.is_due ? (
-              <div>
-                <Label>{bn ? 'ব্যয়ের মাধ্যম' : 'Expense Method'} *</Label>
-                <Select value={expenseForm.expense_method} onValueChange={v => setExpenseForm(f => ({ ...f, expense_method: v, expense_method_other: v === 'অন্যান্য' ? f.expense_method_other : '' }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {EXPENSE_METHODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                {expenseForm.expense_method === 'অন্যান্য' && (
-                  <Input 
-                    className="mt-2" 
-                    placeholder={bn ? 'মাধ্যমের নাম লিখুন...' : 'Enter method name...'} 
-                    value={expenseForm.expense_method_other} 
-                    onChange={e => setExpenseForm(f => ({ ...f, expense_method_other: e.target.value }))} 
-                  />
-                )}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label>{bn ? 'ব্যয়ের মাধ্যম (কার মাধ্যমে / কিভাবে ব্যয়)' : 'Expense Method / Paid Via'} *</Label>
+                  <span className="text-[11px] text-muted-foreground">{bn ? 'টাইপ করুন বা নিচে দ্রুত নির্বাচন করুন' : 'Type or quick select'}</span>
+                </div>
+                <Input 
+                  placeholder={bn ? 'উদা: ক্যাশ, বিকাশ, রহিমের মাধ্যমে, ব্যাংক...' : 'e.g. Cash, bKash, via Rahim, Bank...'} 
+                  value={expenseForm.expense_method} 
+                  onChange={e => setExpenseForm(f => ({ ...f, expense_method: e.target.value }))} 
+                />
+                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                  <span className="text-[11px] text-muted-foreground mr-1">{bn ? 'দ্রুত বাছাই:' : 'Quick select:'}</span>
+                  {EXPENSE_METHODS.filter(m => m !== 'অন্যান্য').map(m => (
+                    <button
+                      type="button"
+                      key={m}
+                      onClick={() => setExpenseForm(f => ({ ...f, expense_method: m }))}
+                      className={`text-[11px] px-2.5 py-0.5 rounded-full border transition-all ${
+                        expenseForm.expense_method === m
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs font-semibold'
+                          : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                  {expenseForm.expense_method && !expenseForm.expense_method.includes('মাধ্যমে') && (
+                    <button
+                      type="button"
+                      onClick={() => setExpenseForm(f => ({ ...f, expense_method: `${f.expense_method ? f.expense_method + ' - ' : ''}কার মাধ্যমে: ` }))}
+                      className="text-[11px] px-2 py-0.5 rounded-full border border-dashed border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+                    >
+                      {bn ? '+ ব্যক্তির নাম যুক্ত করুন' : '+ Add Person'}
+                    </button>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="p-2.5 rounded-lg bg-amber-100/50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 text-xs flex items-center gap-2">
@@ -2862,22 +2882,33 @@ const AdminExpenses = () => {
                   </p>
                 </div>
 
-                <div>
-                  <Label>{bn ? 'পরিশোধের মাধ্যম' : 'Payment Method'} *</Label>
-                  <Select value={payDueForm.payment_method} onValueChange={v => setPayDueForm(f => ({ ...f, payment_method: v, payment_method_other: v === 'অন্যান্য' ? f.payment_method_other : '' }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {EXPENSE_METHODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  {payDueForm.payment_method === 'অন্যান্য' && (
-                    <Input
-                      className="mt-2"
-                      placeholder={bn ? 'মাধ্যমের নাম লিখুন...' : 'Enter method name...'}
-                      value={payDueForm.payment_method_other}
-                      onChange={e => setPayDueForm(f => ({ ...f, payment_method_other: e.target.value }))}
-                    />
-                  )}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label>{bn ? 'পরিশোধের মাধ্যম (কার মাধ্যমে / কিভাবে পরিশোধ)' : 'Payment Method / Paid Via'} *</Label>
+                    <span className="text-[11px] text-muted-foreground">{bn ? 'টাইপ করুন বা নিচে দ্রুত নির্বাচন করুন' : 'Type or quick select'}</span>
+                  </div>
+                  <Input 
+                    placeholder={bn ? 'উদা: ক্যাশ, বিকাশ, রহিমের মাধ্যমে, ব্যাংক...' : 'e.g. Cash, bKash, via Rahim...'} 
+                    value={payDueForm.payment_method} 
+                    onChange={e => setPayDueForm(f => ({ ...f, payment_method: e.target.value }))} 
+                  />
+                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                    <span className="text-[11px] text-muted-foreground mr-1">{bn ? 'দ্রুত বাছাই:' : 'Quick select:'}</span>
+                    {EXPENSE_METHODS.filter(m => m !== 'অন্যান্য').map(m => (
+                      <button
+                        type="button"
+                        key={m}
+                        onClick={() => setPayDueForm(f => ({ ...f, payment_method: m }))}
+                        className={`text-[11px] px-2.5 py-0.5 rounded-full border transition-all ${
+                          payDueForm.payment_method === m
+                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs font-semibold'
+                            : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div>
