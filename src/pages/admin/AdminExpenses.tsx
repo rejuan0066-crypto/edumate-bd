@@ -1902,7 +1902,7 @@ const AdminExpenses = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setPrintInstitutionId(isAll ? (allInstitutions[0]?.id || null) : inst?.id)}
+                            onClick={() => setPrintInstitutionId(isAll ? 'all' : (inst?.id || null))}
                             className="text-xs h-9 gap-1.5"
                           >
                             <Printer className="w-3.5 h-3.5" />
@@ -3682,14 +3682,34 @@ const AdminExpenses = () => {
       }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <span>{bn ? 'প্রকল্প প্রিন্ট প্রিভিউ' : 'Project Print Preview'}</span>
+            <DialogTitle className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span>{bn ? 'প্রকল্প প্রিন্ট প্রিভিউ' : 'Project Print Preview'}</span>
+                <Select
+                  value={printInstitutionId || 'all'}
+                  onValueChange={(val) => setPrintInstitutionId(val)}
+                >
+                  <SelectTrigger className="w-[230px] h-8 text-xs font-normal">
+                    <SelectValue placeholder={bn ? 'প্রতিষ্ঠান বাছাই' : 'Select Institution'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      🏢 {bn ? 'সকল প্রতিষ্ঠান (একত্রিত)' : 'All Institutions (Combined)'}
+                    </SelectItem>
+                    {allInstitutions.map((p: any) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {getInstName(p, bn)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <Button variant={printEditMode ? 'default' : 'outline'} size="sm" onClick={() => {
                 if (!printEditMode) {
                   setPrintEditData({
                     instName: instName, instNameEn: instNameEn, instAddress: instAddress,
                     instPhone: instPhone, instEmail: instEmail, instOther: instOther, instLogo: instLogo,
-                    reportTitle: bn ? 'প্রকল্প হিসাব প্রতিবেদন' : 'Project Expense Report',
+                    reportTitle: bn ? (printInstitutionId === 'all' ? 'সকল প্রতিষ্ঠানের একত্রিত হিসাব প্রতিবেদন' : 'প্রকল্প হিসাব প্রতিবেদন') : (printInstitutionId === 'all' ? 'All Institutions Combined Report' : 'Project Expense Report'),
                     reportSubtitle: '',
                     casherName: summaryData?.casher_name || '',
                     principalName: summaryData?.principal_name || '',
@@ -3738,11 +3758,15 @@ const AdminExpenses = () => {
             </div>
           ) : (
           (() => {
-            const inst = allInstitutions.find((p: any) => p.id === printInstitutionId);
-            if (!inst) return null;
-            const instExpenses = expenses.filter((e: any) => e.institution_id === printInstitutionId);
-            const instTotal = instExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-            const instCatsForPrint = getCategoriesForInst(printInstitutionId);
+            const isAllPrint = printInstitutionId === 'all';
+            const singleInst = !isAllPrint ? allInstitutions.find((p: any) => p.id === printInstitutionId) : null;
+            if (!isAllPrint && !singleInst) return null;
+
+            const institutionsToPrint = isAllPrint ? allInstitutions : (singleInst ? [singleInst] : []);
+            const totalPaid = isAllPrint 
+              ? expenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0)
+              : (singleInst ? expenses.filter((e: any) => e.institution_id === singleInst.id).reduce((s: number, e: any) => s + Number(e.amount || 0), 0) : 0);
+
             const ed = printEditData;
             const dInstName = ed.instName || (bn ? instName : instNameEn);
             const dInstAddress = ed.instAddress || instAddress;
@@ -3750,9 +3774,12 @@ const AdminExpenses = () => {
             const dInstEmail = ed.instEmail || instEmail;
             const dInstOther = ed.instOther || instOther;
             const dInstLogo = ed.instLogo || instLogo;
-            const dReportTitle = ed.reportTitle || (bn ? 'প্রকল্প হিসাব প্রতিবেদন' : 'Project Expense Report');
+            const dReportTitle = ed.reportTitle || (isAllPrint 
+              ? (bn ? 'সকল প্রতিষ্ঠানের একত্রিত হিসাব প্রতিবেদন' : 'All Institutions Combined Expense Report')
+              : (bn ? 'প্রকল্প হিসাব প্রতিবেদন' : 'Project Expense Report'));
             const dCasher = ed.casherName || summaryData?.casher_name || (bn ? 'ক্যাশিয়ার' : 'Cashier');
             const dPrincipal = ed.principalName || summaryData?.principal_name || (bn ? 'অধ্যক্ষ' : 'Principal');
+
             return (
               <div id="project-print-content">
                 <div className="text-center mb-4 border-b-2 border-foreground pb-3">
@@ -3763,92 +3790,189 @@ const AdminExpenses = () => {
                   {dInstOther && <p className="text-xs">{dInstOther}</p>}
                   <p className="text-base font-semibold mt-2">{dReportTitle}</p>
                   {ed.reportSubtitle && <p className="text-sm">{ed.reportSubtitle}</p>}
-                  <p className="text-sm">{bn ? 'প্রতিষ্ঠান' : 'Institution'}: {bn ? inst.name_bn : inst.name} | {selectedMonthYear}</p>
+                  <p className="text-sm font-medium">
+                    {bn ? 'প্রতিষ্ঠান' : 'Institution'}:{' '}
+                    <span className="font-bold">
+                      {isAllPrint ? (bn ? 'সকল প্রতিষ্ঠান (একত্রিত হিসাব)' : 'All Institutions (Combined)') : (bn ? singleInst.name_bn : singleInst.name)}
+                    </span>{' '}
+                    | {selectedMonthYear}
+                  </p>
                 </div>
 
                 {ed.extraNote && <p className="text-xs mb-3 italic border-l-2 border-primary pl-2">{ed.extraNote}</p>}
 
-                {instCatsForPrint.map((cat: any) => {
-                  const catExpenses = instExpenses.filter((e: any) => e.category_id === cat.id);
-                  if (catExpenses.length === 0) return null;
-                  const catTotal = catExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+                {institutionsToPrint.map((inst: any, instIndex: number) => {
+                  const instExpenses = expenses.filter((e: any) => e.institution_id === inst.id);
+                  const instDues = allExpenses.filter((e: any) => e.institution_id === inst.id && isUnpaidDue(e.description));
+                  const instTotal = instExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+                  const duesTotal = instDues.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+                  const instCatsForPrint = getCategoriesForInst(inst.id);
+
+                  // If printing all and this institution has neither expenses nor dues, skip it to keep report concise
+                  if (isAllPrint && instExpenses.length === 0 && instDues.length === 0) {
+                    return null;
+                  }
+
                   return (
-                    <div key={cat.id} className="mb-4">
-                      <h3 className="text-sm font-semibold mb-1">{bn ? cat.name_bn : cat.name} — ৳{formatNum(catTotal)}</h3>
-                      <table className="w-full border-collapse border text-xs">
-                        <thead>
-                          <tr className="bg-muted">
-                            <th className="border p-1 text-center w-8">#</th>
-                            <th className="border p-1 text-center w-20">{bn ? 'তারিখ' : 'Date'}</th>
-                            <th className="border p-1 text-left">{bn ? 'ব্যয়ের বিবরণ' : 'Description'}</th>
-                            <th className="border p-1 text-center w-20">{bn ? 'পরিমাণ' : 'Quantity'}</th>
-                            <th className="border p-1 text-center w-20">{bn ? 'ব্যয়ের মাধ্যম' : 'Method'}</th>
-                            <th className="border p-1 text-center w-24">{bn ? 'মেমো / রশিদ' : 'Memo/Receipt'}</th>
-                            <th className="border p-1 text-right w-24">{bn ? 'ব্যয় টাকা (৳)' : 'Amount (৳)'}</th>
-                            <th className="border p-1 text-left w-28">{bn ? 'মন্তব্য' : 'Remarks'}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {catExpenses.map((e: any, i: number) => (
-                            <tr key={e.id}>
-                              <td className="border p-1 text-center">{i + 1}</td>
-                              <td className="border p-1 text-center">{e.expense_date}</td>
-                              <td className="border p-1">{cleanDesc(e.description)}</td>
-                              <td className="border p-1 text-center">{e.quantity || 1} {getUnit(e.description)}</td>
-                              <td className="border p-1 text-center">{getMethod(e.description)}</td>
-                              <td className="border p-1 text-center font-mono">{getMemo(e.description)}</td>
-                              <td className="border p-1 text-right font-semibold">৳{formatNum(Number(e.amount))}</td>
-                              <td className="border p-1 text-muted-foreground">{getRemarks(e.description)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                    <div key={inst.id} className={`mb-6 ${isAllPrint ? 'border rounded-xl p-3 bg-muted/20 border-border/70 print:border-foreground/30 print:shadow-none' : ''}`}>
+                      {/* Institution Banner when in All mode */}
+                      {isAllPrint && (
+                        <div className="bg-muted/70 p-2.5 rounded-lg mb-3 flex items-center justify-between border">
+                          <div className="flex items-center gap-2">
+                            <span className="h-6 w-6 rounded bg-primary/20 text-primary flex items-center justify-center text-xs font-bold">
+                              {instIndex + 1}
+                            </span>
+                            <h2 className="text-sm font-bold text-foreground">
+                              🏢 {bn ? (inst.name_bn || inst.name) : (inst.name || inst.name_bn)}
+                            </h2>
+                          </div>
+                          <span className="text-xs font-bold text-primary">
+                            {bn ? 'এই প্রতিষ্ঠানের মোট ব্যয়' : 'Subtotal'}: ৳{formatNum(instTotal)}
+                          </span>
+                        </div>
+                      )}
+
+                      {instExpenses.length === 0 && instDues.length === 0 && (
+                        <p className="text-xs text-muted-foreground italic py-2 text-center">
+                          {bn ? 'এই প্রতিষ্ঠানে কোনো ব্যয়ের রেকর্ড নেই।' : 'No expense records found for this institution.'}
+                        </p>
+                      )}
+
+                      {instCatsForPrint.map((cat: any) => {
+                        const catExpenses = instExpenses.filter((e: any) => e.category_id === cat.id);
+                        if (catExpenses.length === 0) return null;
+                        const catTotal = catExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+                        return (
+                          <div key={cat.id} className="mb-4">
+                            <h3 className="text-sm font-semibold mb-1">{bn ? cat.name_bn : cat.name} — ৳{formatNum(catTotal)}</h3>
+                            <table className="w-full border-collapse border text-xs">
+                              <thead>
+                                <tr className="bg-muted">
+                                  <th className="border p-1 text-center w-8">#</th>
+                                  <th className="border p-1 text-center w-20">{bn ? 'তারিখ' : 'Date'}</th>
+                                  <th className="border p-1 text-left">{bn ? 'ব্যয়ের বিবরণ' : 'Description'}</th>
+                                  <th className="border p-1 text-center w-20">{bn ? 'পরিমাণ' : 'Quantity'}</th>
+                                  <th className="border p-1 text-center w-20">{bn ? 'ব্যয়ের মাধ্যম' : 'Method'}</th>
+                                  <th className="border p-1 text-center w-24">{bn ? 'মেমো / রশিদ' : 'Memo/Receipt'}</th>
+                                  <th className="border p-1 text-right w-24">{bn ? 'ব্যয় টাকা (৳)' : 'Amount (৳)'}</th>
+                                  <th className="border p-1 text-left w-28">{bn ? 'মন্তব্য' : 'Remarks'}</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {catExpenses.map((e: any, i: number) => (
+                                  <tr key={e.id}>
+                                    <td className="border p-1 text-center">{i + 1}</td>
+                                    <td className="border p-1 text-center">{e.expense_date}</td>
+                                    <td className="border p-1">{cleanDesc(e.description)}</td>
+                                    <td className="border p-1 text-center">{e.quantity || 1} {getUnit(e.description)}</td>
+                                    <td className="border p-1 text-center">{getMethod(e.description)}</td>
+                                    <td className="border p-1 text-center font-mono">{getMemo(e.description)}</td>
+                                    <td className="border p-1 text-right font-semibold">৳{formatNum(Number(e.amount))}</td>
+                                    <td className="border p-1 text-muted-foreground">{getRemarks(e.description)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        );
+                      })}
+
+                      {/* Uncategorized expenses if any */}
+                      {(() => {
+                        const uncatExpenses = instExpenses.filter((e: any) => !e.category_id || !instCatsForPrint.some((c: any) => c.id === e.category_id));
+                        if (uncatExpenses.length === 0) return null;
+                        const uncatTotal = uncatExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+                        return (
+                          <div className="mb-4">
+                            <h3 className="text-sm font-semibold mb-1 text-amber-800 dark:text-amber-300">
+                              {bn ? 'অন্যান্য / সাধারণ ব্যয়' : 'Other Expenses'} — ৳{formatNum(uncatTotal)}
+                            </h3>
+                            <table className="w-full border-collapse border text-xs">
+                              <thead>
+                                <tr className="bg-muted">
+                                  <th className="border p-1 text-center w-8">#</th>
+                                  <th className="border p-1 text-center w-20">{bn ? 'তারিখ' : 'Date'}</th>
+                                  <th className="border p-1 text-left">{bn ? 'ব্যয়ের বিবরণ' : 'Description'}</th>
+                                  <th className="border p-1 text-center w-20">{bn ? 'পরিমাণ' : 'Quantity'}</th>
+                                  <th className="border p-1 text-center w-20">{bn ? 'ব্যয়ের মাধ্যম' : 'Method'}</th>
+                                  <th className="border p-1 text-center w-24">{bn ? 'মেমো / রশিদ' : 'Memo/Receipt'}</th>
+                                  <th className="border p-1 text-right w-24">{bn ? 'ব্যয় টাকা (৳)' : 'Amount (৳)'}</th>
+                                  <th className="border p-1 text-left w-28">{bn ? 'মন্তব্য' : 'Remarks'}</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {uncatExpenses.map((e: any, i: number) => (
+                                  <tr key={e.id}>
+                                    <td className="border p-1 text-center">{i + 1}</td>
+                                    <td className="border p-1 text-center">{e.expense_date}</td>
+                                    <td className="border p-1">{cleanDesc(e.description)}</td>
+                                    <td className="border p-1 text-center">{e.quantity || 1} {getUnit(e.description)}</td>
+                                    <td className="border p-1 text-center">{getMethod(e.description)}</td>
+                                    <td className="border p-1 text-center font-mono">{getMemo(e.description)}</td>
+                                    <td className="border p-1 text-right font-semibold">৳{formatNum(Number(e.amount))}</td>
+                                    <td className="border p-1 text-muted-foreground">{getRemarks(e.description)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Dues Section in Print */}
+                      {instDues.length > 0 && (
+                        <div className="mb-4 mt-4 border-t border-dashed border-amber-500 pt-3">
+                          <h3 className="text-sm font-bold text-amber-900 dark:text-amber-300 mb-1">
+                            {bn ? 'বকেয়া খরচের হিসাব (পরিশোধ বাকি)' : 'Outstanding Payable Dues'} — ৳{formatNum(duesTotal)}
+                          </h3>
+                          <table className="w-full border-collapse border text-xs">
+                            <thead>
+                              <tr className="bg-amber-100/60 dark:bg-amber-950/40">
+                                <th className="border p-1 text-center w-8">#</th>
+                                <th className="border p-1 text-center w-20">{bn ? 'তারিখ' : 'Date'}</th>
+                                <th className="border p-1 text-left">{bn ? 'ব্যয়ের বিবরণ ও পাওনাদার' : 'Description & Vendor'}</th>
+                                <th className="border p-1 text-center w-20">{bn ? 'পরিমাণ' : 'Quantity'}</th>
+                                <th className="border p-1 text-center w-24">{bn ? 'মেমো / চালান' : 'Memo/Invoice'}</th>
+                                <th className="border p-1 text-right w-24">{bn ? 'বকেয়া টাকা (৳)' : 'Due Amount'}</th>
+                                <th className="border p-1 text-left w-28">{bn ? 'মন্তব্য' : 'Remarks'}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {instDues.map((due: any, di: number) => (
+                                <tr key={due.id}>
+                                  <td className="border p-1 text-center">{di + 1}</td>
+                                  <td className="border p-1 text-center">{due.expense_date}</td>
+                                  <td className="border p-1">{cleanDesc(due.description)}</td>
+                                  <td className="border p-1 text-center">{due.quantity || 1} {getUnit(due.description)}</td>
+                                  <td className="border p-1 text-center font-mono">{getMemo(due.description)}</td>
+                                  <td className="border p-1 text-right font-semibold text-amber-700">৳{formatNum(Number(due.amount))}</td>
+                                  <td className="border p-1 text-muted-foreground">{getRemarks(due.description)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+
+                      {/* Subtotal footer for each institution in All mode */}
+                      {isAllPrint && (
+                        <div className="border-t border-dashed pt-2 mt-2 text-right font-semibold text-xs text-muted-foreground">
+                          {bn ? `“${inst.name_bn || inst.name}”-এর মোট পরিশোধিত ব্যয়` : `Subtotal for ${inst.name}`}: ৳{formatNum(instTotal)}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
 
-                {/* Dues Section in Print */}
-                {(() => {
-                  const instDues = allExpenses.filter((e: any) => e.institution_id === printInstitutionId && isUnpaidDue(e.description));
-                  if (instDues.length === 0) return null;
-                  const duesTotal = instDues.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-                  return (
-                    <div className="mb-4 mt-6 border-t border-dashed border-amber-500 pt-3">
-                      <h3 className="text-sm font-bold text-amber-900 dark:text-amber-300 mb-1">
-                        {bn ? 'বকেয়া খরচের হিসাব (পরিশোধ বাকি)' : 'Outstanding Payable Dues'} — ৳{formatNum(duesTotal)}
-                      </h3>
-                      <table className="w-full border-collapse border text-xs">
-                        <thead>
-                          <tr className="bg-amber-100/60 dark:bg-amber-950/40">
-                            <th className="border p-1 text-center w-8">#</th>
-                            <th className="border p-1 text-center w-20">{bn ? 'তারিখ' : 'Date'}</th>
-                            <th className="border p-1 text-left">{bn ? 'ব্যয়ের বিবরণ ও পাওনাদার' : 'Description & Vendor'}</th>
-                            <th className="border p-1 text-center w-20">{bn ? 'পরিমাণ' : 'Quantity'}</th>
-                            <th className="border p-1 text-center w-24">{bn ? 'মেমো / চালান' : 'Memo/Invoice'}</th>
-                            <th className="border p-1 text-right w-24">{bn ? 'বকেয়া টাকা (৳)' : 'Due Amount'}</th>
-                            <th className="border p-1 text-left w-28">{bn ? 'মন্তব্য' : 'Remarks'}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {instDues.map((due: any, di: number) => (
-                            <tr key={due.id}>
-                              <td className="border p-1 text-center">{di + 1}</td>
-                              <td className="border p-1 text-center">{due.expense_date}</td>
-                              <td className="border p-1">{cleanDesc(due.description)}</td>
-                              <td className="border p-1 text-center">{due.quantity || 1} {getUnit(due.description)}</td>
-                              <td className="border p-1 text-center font-mono">{getMemo(due.description)}</td>
-                              <td className="border p-1 text-right font-semibold text-amber-700">৳{formatNum(Number(due.amount))}</td>
-                              <td className="border p-1 text-muted-foreground">{getRemarks(due.description)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  );
-                })()}
-
-                <div className="border-t-2 border-foreground pt-2 text-right font-bold text-sm">
-                  {bn ? 'প্রকল্প মোট পরিশোধিত ব্যয়' : 'Project Paid Total'}: ৳{formatNum(instTotal)}
+                <div className="border-t-2 border-foreground pt-3 mt-4 text-right font-bold text-sm bg-muted/40 p-3 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-2">
+                  <span>
+                    {isAllPrint 
+                      ? (bn ? 'সকল প্রতিষ্ঠানের সর্বমোট পরিশোধিত ব্যয়' : 'Grand Total Paid (All Institutions)')
+                      : (bn ? 'প্রকল্প মোট পরিশোধিত ব্যয়' : 'Project Paid Total')}
+                  </span>
+                  <span className="text-base font-black text-emerald-700 dark:text-emerald-400">
+                    ৳{formatNum(totalPaid)}
+                  </span>
                 </div>
 
                 <div className="flex justify-between mt-12 pt-8">
