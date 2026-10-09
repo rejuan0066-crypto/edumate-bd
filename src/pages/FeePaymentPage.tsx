@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import PublicLayout from '@/components/PublicLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -19,7 +19,7 @@ import {
   CreditCard, Receipt, Search, Calendar, Building2, CheckCircle2,
   Download, Printer, User, Banknote, Shield, ArrowRight, Clock,
   AlertTriangle, Loader2, Sparkles, Phone, RefreshCw, X, ChevronRight,
-  Check
+  Check, GraduationCap
 } from 'lucide-react';
 
 interface ReceiptData {
