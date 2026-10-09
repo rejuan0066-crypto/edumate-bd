@@ -207,12 +207,26 @@ const AdminExpenses = () => {
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses', selectedMonthYear],
     queryFn: async () => {
-      const { data, error } = await supabase.from('expenses')
+      const parts = selectedMonthYear.split('-');
+      const mIdx = MONTHS.indexOf(parts[0]) + 1;
+      const isoPrefix = parts[1] && mIdx > 0 ? `${parts[1]}-${String(mIdx).padStart(2, '0')}` : null;
+
+      let query = supabase.from('expenses')
         .select('*, expense_institutions(name, name_bn), expense_categories(name, name_bn)')
-        .eq('month_year', selectedMonthYear)
         .order('expense_date', { ascending: false });
+
+      if (typeof (query as any).is === 'function') {
+        query = (query as any).is('deleted_at', null);
+      }
+      if (isoPrefix && typeof (query as any).or === 'function') {
+        query = (query as any).or(`month_year.eq.${selectedMonthYear},and(expense_date.gte.${isoPrefix}-01,expense_date.lte.${isoPrefix}-31)`);
+      } else {
+        query = query.eq('month_year', selectedMonthYear);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
-      return data;
+      return data || [];
     }
   });
 
@@ -351,6 +365,38 @@ const AdminExpenses = () => {
       }
     }
   }, [allInstitutions, institutions, selectedInstitutionId, selectedInstId]);
+
+  // Auto-align any salary/other expenses where payment date falls in this month but month_year was mismatched
+  useEffect(() => {
+    if (!selectedMonthYear || !allExpenses || allExpenses.length === 0) return;
+    const parts = selectedMonthYear.split('-');
+    const mIdx = MONTHS.indexOf(parts[0]) + 1;
+    if (!mIdx || !parts[1]) return;
+    const isoPrefix = `${parts[1]}-${String(mIdx).padStart(2, '0')}`;
+
+    const mismatched = allExpenses.filter((e: any) =>
+      e.expense_date &&
+      typeof e.expense_date === 'string' &&
+      e.expense_date.startsWith(isoPrefix) &&
+      e.month_year !== selectedMonthYear
+    );
+
+    if (mismatched.length > 0) {
+      const ids = mismatched.map((m: any) => m.id);
+      const builder = supabase.from('expenses');
+      if (typeof (builder as any).update === 'function') {
+        const updateBuilder = (builder as any).update({ month_year: selectedMonthYear });
+        if (typeof updateBuilder.in === 'function') {
+          updateBuilder.in('id', ids)
+            .then(() => {
+              qc.invalidateQueries({ queryKey: ['expenses', selectedMonthYear] });
+              qc.invalidateQueries({ queryKey: ['all_expenses'] });
+            })
+            .catch((err: any) => console.error('Failed to align mismatched expense dates:', err));
+        }
+      }
+    }
+  }, [selectedMonthYear, allExpenses]);
 
   const selectedInstitution = allInstitutions.find((i: any) => i.id === (selectedInstitutionId || selectedInstId)) || allInstitutions[0] || institutions[0];
   const instName = getInstName(selectedInstitution, true);

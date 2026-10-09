@@ -119,6 +119,13 @@ const getMonthsElapsed = (currentMonthYear: string, startMonth: string): number 
   return (cy * 12 + cm) - (sy * 12 + sm) + 1;
 };
 
+const getExpenseMonthYearFromDate = (dateStr: string): string => {
+  const [year, month] = dateStr.split('-');
+  const monthIndex = Math.max(0, Math.min(11, (Number(month) || 1) - 1));
+  const monthNamesEn = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return `${monthNamesEn[monthIndex]}-${year}`;
+};
+
 const getExpenseMonthYearFromSalaryMonth = (salaryMonthYear: string): string => {
   const [year, month] = salaryMonthYear.split('-');
   const monthIndex = Math.max(0, Math.min(11, Number(month) - 1));
@@ -742,13 +749,13 @@ const AdminSalary = () => {
   // Fetch expenses for current salary month to track which salaries are linked to expenses
   const expenseMonthYear = getExpenseMonthYearFromSalaryMonth(monthYear);
   const { data: monthSalaryExpenses = [] } = useQuery({
-    queryKey: ['salary-expenses-for-month', expenseMonthYear],
+    queryKey: ['salary-expenses-for-month', expenseMonthYear, monthYear],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('expenses')
         .select('*')
-        .eq('month_year', expenseMonthYear)
-        .is('deleted_at', null);
+        .is('deleted_at', null)
+        .or(`month_year.eq.${expenseMonthYear},description.like.%[salary_month:${monthYear}]%`);
       if (error) throw error;
       return data || [];
     },
@@ -2209,15 +2216,19 @@ const AdminSalary = () => {
             ? `${supabaseUrl}/functions/v1/salary-pdf`
             : (projectRef ? `https://${projectRef}.supabase.co/functions/v1/salary-pdf` : null);
 
-          // হিসাব/লেজারে বেতন অবশ্যই নির্বাচিত salary month-এই যাবে — payment date/current month নয়।
-          const expenseMonthYear = getExpenseMonthYearFromSalaryMonth(record.month_year || monthYear);
+          // বেতন যে তারিখে ও মাসে পরিশোধ হয়েছে, খরচের লেজারে সেই পরিশোধের চলতি মাসেই (payment date month) রেকর্ড হবে
+          const paymentDate = record.payment_date || toIsoDateInTz(new Date(), appTz);
+          const paymentMonthYear = getExpenseMonthYearFromDate(paymentDate);
+          const salaryMonthTag = ` [salary_month:${record.month_year || monthYear}]`;
+          const finalDesc = description.includes('[salary_month:') ? description : `${description}${salaryMonthTag}`;
+
           const { error: expError } = await supabase.from('expenses').insert({
             institution_id: projectId,
             category_id: categoryId,
-            month_year: expenseMonthYear,
-            expense_date: toIsoDateInTz(new Date(), appTz),
+            month_year: paymentMonthYear,
+            expense_date: paymentDate,
             amount: Number(payableRecord.net_salary),
-            description,
+            description: finalDesc,
             has_receipt: true,
             receipt_url: pdfUrl,
           });
@@ -2261,8 +2272,9 @@ const AdminSalary = () => {
 
       const monthName = MONTHS.find(m => m.value === selectedMonth);
       const staffName = staffMember?.name_bn || staffMember?.name_en || 'Staff';
-      const description = `${bn ? 'বেতন' : 'Salary'}: ${staffName} - ${bn ? monthName?.bn : monthName?.en} ${selectedYear} [staff_id:${staffId}]`;
-      const expenseMonthYear = getExpenseMonthYearFromSalaryMonth(record.month_year || monthYear);
+      const paymentDate = record.payment_date || toIsoDateInTz(new Date(), appTz);
+      const paymentMonthYear = getExpenseMonthYearFromDate(paymentDate);
+      const description = `${bn ? 'বেতন' : 'Salary'}: ${staffName} - ${bn ? monthName?.bn : monthName?.en} ${selectedYear} [staff_id:${staffId}] [salary_month:${record.month_year || monthYear}]`;
 
       const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').replace(/\/$/, '');
       const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID;
@@ -2273,8 +2285,8 @@ const AdminSalary = () => {
       const { error: expError } = await supabase.from('expenses').insert({
         institution_id: projectId,
         category_id: categoryId,
-        month_year: expenseMonthYear,
-        expense_date: toIsoDateInTz(new Date(), appTz),
+        month_year: paymentMonthYear,
+        expense_date: paymentDate,
         amount: Number(payableRecord.net_salary),
         description,
         has_receipt: true,
@@ -2349,13 +2361,15 @@ const AdminSalary = () => {
           const payable = staffMember ? getSalaryDisplaySnapshot(staffMember, r).record : r;
           const sName = staffMember?.name_bn || staffMember?.name_en || 'Staff';
           const sDesig = staffMember?.designation ? ` (${staffMember.designation})` : '';
+          const paymentDate = r.payment_date || toIsoDateInTz(new Date(), appTz);
+          const paymentMonthYear = getExpenseMonthYearFromDate(paymentDate);
           return {
             institution_id: projectId,
             category_id: categoryId,
-            month_year: expenseMonthYear,
-            expense_date: toIsoDateInTz(new Date(), appTz),
+            month_year: paymentMonthYear,
+            expense_date: paymentDate,
             amount: Number(payable.net_salary),
-            description: `${bn ? 'বেতন' : 'Salary'}: ${sName}${sDesig} - ${monthLabel} [staff_id:${r.staff_id}]`,
+            description: `${bn ? 'বেতন' : 'Salary'}: ${sName}${sDesig} - ${monthLabel} [staff_id:${r.staff_id}] [salary_month:${monthYear}]`,
             has_receipt: true,
           };
         });
@@ -2369,13 +2383,15 @@ const AdminSalary = () => {
           return sum + Number(payable.net_salary || 0);
         }, 0);
 
-        const description = `${bn ? 'মোট শিক্ষক-স্টাফ বেতন' : 'Total Staff Salary'}: ${monthLabel} (${toBnDigits(paidRecords.length)} জন) [salary_bulk_total]`;
+        const paymentDate = toIsoDateInTz(new Date(), appTz);
+        const paymentMonthYear = getExpenseMonthYearFromDate(paymentDate);
+        const description = `${bn ? 'মোট শিক্ষক-স্টাফ বেতন' : 'Total Staff Salary'}: ${monthLabel} (${toBnDigits(paidRecords.length)} জন) [salary_bulk_total] [salary_month:${monthYear}]`;
 
         const { error: insErr } = await supabase.from('expenses').insert({
           institution_id: projectId,
           category_id: categoryId,
-          month_year: expenseMonthYear,
-          expense_date: toIsoDateInTz(new Date(), appTz),
+          month_year: paymentMonthYear,
+          expense_date: paymentDate,
           amount: totalPaidNet,
           description,
           has_receipt: true,

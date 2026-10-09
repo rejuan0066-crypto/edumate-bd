@@ -423,24 +423,50 @@ function buildIncomeWithdrawalSheet(params: {
 
   // 3. PREVIOUS MONTH ARREARS DEDUCTION (যদি বকেয়া দেখায় তাইলে মোট উত্তোলন থেকে বাদ যাবে গত মাসের বকেয়া বাবদ)
   let netAvailableFunds = totalDepositAmount;
+  let arrearsDeducted = 0;
+  let remainingDue = previousMonthDue;
+
   if (previousMonthDue > 0) {
-    netAvailableFunds = totalDepositAmount - previousMonthDue;
-    rows.push([
-      { v: '', s: STYLES.cellEmpty },
-      { v: bn ? '(-) গত মাসের বকেয়া পরিশোধ বাবদ' : '(-) Previous Month Arrears Settle', s: STYLES.cellText },
-      { v: bn ? 'বকেয়া কর্তন' : 'Arrears Deduct', s: STYLES.cellCenter },
-      { v: -previousMonthDue, s: STYLES.cellNumber },
-      { v: '', s: STYLES.cellEmpty },
-      { v: previousMonthDue, s: STYLES.cellNumber },
-    ]);
-    rows.push([
-      { v: '', s: STYLES.cellEmpty },
-      { v: '', s: STYLES.cellEmpty },
-      { v: bn ? 'নিট তহবিল' : 'Net Fund', s: STYLES.totalLabel },
-      { v: netAvailableFunds, s: STYLES.totalNumber },
-      { v: '', s: STYLES.cellEmpty },
-      { v: '', s: STYLES.cellEmpty },
-    ]);
+    if (totalDepositAmount > 0) {
+      arrearsDeducted = Math.min(totalDepositAmount, previousMonthDue);
+      remainingDue = previousMonthDue - arrearsDeducted;
+      netAvailableFunds = Math.max(0, totalDepositAmount - arrearsDeducted);
+
+      rows.push([
+        { v: '', s: STYLES.cellEmpty },
+        { v: bn ? '(-) গত মাসের বকেয়া পরিশোধ বাবদ' : '(-) Previous Month Arrears Settle', s: STYLES.cellText },
+        { v: bn ? 'বকেয়া কর্তন' : 'Arrears Deduct', s: STYLES.cellCenter },
+        { v: -arrearsDeducted, s: STYLES.cellNumber },
+        { v: '', s: STYLES.cellEmpty },
+        { v: remainingDue > 0 ? remainingDue : 0, s: STYLES.cellNumber },
+      ]);
+      rows.push([
+        { v: '', s: STYLES.cellEmpty },
+        { v: '', s: STYLES.cellEmpty },
+        { v: bn ? 'নিট তহবিল' : 'Net Fund', s: STYLES.totalLabel },
+        { v: netAvailableFunds, s: STYLES.totalNumber },
+        { v: '', s: STYLES.cellEmpty },
+        { v: '', s: STYLES.cellEmpty },
+      ]);
+    } else {
+      netAvailableFunds = 0;
+      rows.push([
+        { v: '', s: STYLES.cellEmpty },
+        { v: bn ? 'পূর্বের অপরিশোধিত বকেয়া' : 'Previous Unpaid Arrears', s: STYLES.cellText },
+        { v: bn ? 'বকেয়া স্থিতি' : 'Due Balance', s: STYLES.cellCenter },
+        { v: 0, s: STYLES.cellNumber },
+        { v: '', s: STYLES.cellEmpty },
+        { v: previousMonthDue, s: STYLES.cellNumber },
+      ]);
+      rows.push([
+        { v: '', s: STYLES.cellEmpty },
+        { v: '', s: STYLES.cellEmpty },
+        { v: bn ? 'নিট তহবিল' : 'Net Fund', s: STYLES.totalLabel },
+        { v: 0, s: STYLES.totalNumber },
+        { v: '', s: STYLES.cellEmpty },
+        { v: '', s: STYLES.cellEmpty },
+      ]);
+    }
   }
 
   // Empty separator
@@ -495,16 +521,19 @@ function buildIncomeWithdrawalSheet(params: {
   });
 
   // Final Cash Balance = Net Available Funds - Total Expenses
-  const finalCashBalance = netAvailableFunds - totalExpensesSum;
+  const rawCashBalance = netAvailableFunds - totalExpensesSum;
+  const finalCashBalance = rawCashBalance > 0 ? rawCashBalance : 0;
+  const currentShortfall = rawCashBalance < 0 ? Math.abs(rawCashBalance) : 0;
+  const totalArrearsEnd = remainingDue + currentShortfall;
 
-  // Total Expense & Cash Balance Row (Screenshot 9: মোট ব্যয় ৮০০০০, নগদ আছে ১২০০০০)
+  // Total Expense & Cash Balance Row (Col D: টাকা, Col E: নগদ আছে, Col F: বকেয়া)
   rows.push([
     { v: '', s: STYLES.cellEmpty },
     { v: '', s: STYLES.cellEmpty },
     { v: bn ? 'মোট ব্যয়' : 'Total Expense', s: STYLES.totalLabel },
     { v: totalExpensesSum, s: STYLES.totalNumber },
     { v: finalCashBalance, s: STYLES.totalNumber },
-    { v: '', s: STYLES.cellEmpty },
+    { v: totalArrearsEnd > 0 ? totalArrearsEnd : '', s: STYLES.totalNumber },
   ]);
 
   const colWidths = [12, 32, 14, 16, 16, 16];
