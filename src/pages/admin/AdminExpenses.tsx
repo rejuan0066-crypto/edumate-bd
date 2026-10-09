@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -97,7 +97,7 @@ const AdminExpenses = () => {
   const [filterMode, setFilterMode] = useState<'monthly' | 'yearly' | 'session'>('monthly');
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedSessionId, setSelectedSessionId] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
