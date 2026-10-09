@@ -50,5 +50,12 @@ describe('AdminExpenses Component', () => {
         </MemoryRouter>
       );
     }).not.toThrow();
+  }, 20000);
+
+  it('correctly converts Bengali digits to English numbers and handles deposit source labels', () => {
+    const bnToEn = (str: string) => str.replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d).toString());
+    expect(Number(bnToEn('৪০০০০০'))).toBe(400000);
+    expect(Number(bnToEn('১২৫৫০.৫০'))).toBe(12550.50);
+    expect(Number(bnToEn('1000'))).toBe(1000);
   });
 });

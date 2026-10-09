@@ -9,7 +9,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Plus, Trash2, Edit2, DollarSign, TrendingDown, TrendingUp, Wallet, Printer, FolderPlus, TagIcon, Upload, Download, Eye, ScanLine, Building2, Package, AlertTriangle, FileText, FileBarChart, CheckCircle2, Clock } from 'lucide-react';
+import { Plus, Trash2, Edit2, DollarSign, TrendingDown, TrendingUp, Wallet, Printer, FolderPlus, TagIcon, Upload, Download, Eye, ScanLine, Building2, Package, AlertTriangle, FileText, FileBarChart, CheckCircle2, Clock, Coins, Check } from 'lucide-react';
 import ExpenseVoucherPrint from '@/components/expenses/ExpenseVoucherPrint';
 import ExpenseHierarchyReport from '@/components/expenses/ExpenseHierarchyReport';
 import LedgerReport from '@/components/expenses/LedgerReport';
@@ -35,6 +35,23 @@ import { exportExpensesMultiTabExcel, exportSingleInstitutionExcel, getInstShort
 
 const QUANTITY_UNITS = ['পিস', 'কেজি', 'গ্রাম', 'লিটার', 'ফুট', 'মিটার', 'সেট', 'প্যাকেট', 'বস্তা', 'রিম'];
 const EXPENSE_METHODS = ['ক্যাশ', 'চেক', 'বিকাশ', 'নগদ', 'রকেট', 'ব্যাংক ট্রান্সফার', 'অন্যান্য'];
+
+export const BUILTIN_DEPOSIT_SOURCES = [
+  { id: 'manual', name_bn: 'ম্যানুয়াল / সাধারণ', name_en: 'Manual / General' },
+  { id: 'fees', name_bn: 'শিক্ষার্থীদের ফি', name_en: 'Student Fees' },
+  { id: 'donation', name_bn: 'দান ও অনুদান', name_en: 'Donation' },
+  { id: 'bank', name_bn: 'ব্যাংক জমা / উত্তোলন', name_en: 'Bank Deposit / Withdrawal' },
+  { id: 'other', name_bn: 'অন্যান্য', name_en: 'Other' },
+];
+
+export const getSourceLabel = (sourceKey: string, bn: boolean, customSources: any[] = []) => {
+  if (!sourceKey) return '-';
+  const builtin = BUILTIN_DEPOSIT_SOURCES.find(s => s.id === sourceKey);
+  if (builtin) return bn ? builtin.name_bn : builtin.name_en;
+  const custom = customSources.find((s: any) => s.id === sourceKey || s.name_bn === sourceKey || s.name === sourceKey);
+  if (custom) return bn ? (custom.name_bn || custom.name) : (custom.name_en || custom.name_bn || custom.name);
+  return sourceKey;
+};
 
 const bnToEnDigit = (str: string) => str.replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d).toString());
 const onlyNumbers = (str: string) => str.replace(/[^0-9০-৯.]/g, '');
@@ -166,6 +183,9 @@ const AdminExpenses = () => {
   const [categoryForm, setCategoryForm] = useState({ institution_id: '', name: '', name_bn: '' });
   const [expenseForm, setExpenseForm] = useState(defaultExpenseForm);
   const [depositForm, setDepositForm] = useState(defaultDepositForm);
+  const [isAddingNewSource, setIsAddingNewSource] = useState(false);
+  const [newSourceInput, setNewSourceInput] = useState('');
+  const [settingNewSourceInput, setSettingNewSourceInput] = useState('');
   const [institutionForm, setInstitutionForm] = useState({ name: '', name_en: '', address: '', phone: '', email: '', other_info: '', logo_url: '' });
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoUploading, setLogoUploading] = useState(false);
@@ -283,6 +303,92 @@ const AdminExpenses = () => {
       return data;
     }
   });
+
+  const customDepositSources = useMemo<Array<{ id: string; name_bn: string; name_en?: string }>>(() => {
+    const row = (websiteSettings as any[]).find((s: any) => s.key === 'deposit_sources');
+    if (!row || !row.value) return [];
+    if (Array.isArray(row.value)) {
+      return row.value.map((item: any, idx: number) => {
+        if (typeof item === 'string') {
+          return { id: item, name_bn: item, name_en: item };
+        }
+        return {
+          id: item.id || `custom_src_${idx}`,
+          name_bn: item.name_bn || item.name || String(item),
+          name_en: item.name_en || item.name || item.name_bn || String(item),
+        };
+      });
+    }
+    return [];
+  }, [websiteSettings]);
+
+  const saveDepositSourcesMutation = useMutation({
+    mutationFn: async (updatedSources: Array<{ id: string; name_bn: string; name_en?: string }>) => {
+      const { error } = await supabase.from('website_settings').upsert(
+        { key: 'deposit_sources', value: updatedSources },
+        { onConflict: 'key' }
+      );
+      if (error) throw error;
+      await logAccountsAudit({
+        action: 'category_update',
+        entity_type: 'category',
+        title: 'টাকা আয়/উত্তোলনের উৎস তালিকা হালনাগাদ',
+        new_data: { sources: updatedSources },
+        user_id: user?.id,
+        user_name: user?.user_metadata?.full_name || user?.email,
+        user_email: user?.email,
+        user_role: role,
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['website_settings'] });
+      toast.success(bn ? 'উৎস তালিকা হালনাগাদ হয়েছে' : 'Deposit sources updated');
+    },
+    onError: (err: any) => {
+      console.error('Failed to update deposit sources:', err);
+      toast.error(err?.message || (bn ? 'উৎস সংরক্ষণ ব্যর্থ হয়েছে' : 'Failed to save source'));
+    }
+  });
+
+  const handleQuickAddSource = async () => {
+    const trimmed = newSourceInput.trim();
+    if (!trimmed) {
+      toast.error(bn ? 'উৎসের নাম লিখুন' : 'Enter source name');
+      return;
+    }
+    const exists = customDepositSources.some(
+      s => s.name_bn.toLowerCase() === trimmed.toLowerCase() || s.id.toLowerCase() === trimmed.toLowerCase()
+    );
+    if (!exists) {
+      const newEntry = { id: trimmed, name_bn: trimmed, name_en: trimmed };
+      await saveDepositSourcesMutation.mutateAsync([...customDepositSources, newEntry]);
+    }
+    setDepositForm(f => ({ ...f, source: trimmed }));
+    setNewSourceInput('');
+    setIsAddingNewSource(false);
+    toast.success(bn ? `"${trimmed}" উৎস যোগ ও নির্বাচন করা হয়েছে` : `Added "${trimmed}" source`);
+  };
+
+  const handleAddSettingSource = async () => {
+    const trimmed = settingNewSourceInput.trim();
+    if (!trimmed) {
+      toast.error(bn ? 'উৎসের নাম লিখুন' : 'Enter source name');
+      return;
+    }
+    const isBuiltin = BUILTIN_DEPOSIT_SOURCES.some(
+      s => s.name_bn.toLowerCase() === trimmed.toLowerCase() || s.id.toLowerCase() === trimmed.toLowerCase()
+    );
+    const isCustom = customDepositSources.some(
+      s => s.name_bn.toLowerCase() === trimmed.toLowerCase() || s.id.toLowerCase() === trimmed.toLowerCase()
+    );
+    if (isBuiltin || isCustom) {
+      toast.error(bn ? 'এই উৎসটি ইতিমধ্যে তালিকায় রয়েছে' : 'Source already exists');
+      return;
+    }
+    const newEntry = { id: trimmed, name_bn: trimmed, name_en: trimmed };
+    await saveDepositSourcesMutation.mutateAsync([...customDepositSources, newEntry]);
+    setSettingNewSourceInput('');
+  };
 
   const { data: institutions = [] } = useQuery({
     queryKey: ['institutions'],
@@ -873,13 +979,34 @@ const AdminExpenses = () => {
   const addDeposit = useMutation({
     mutationFn: async () => {
       if (!depositForm.amount) { toast.error(bn ? 'পরিমাণ দিন' : 'Enter amount'); return; }
+      const parsedAmount = Number(bnToEnDigit(depositForm.amount));
+      if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        toast.error(bn ? 'সঠিক টাকার পরিমাণ প্রদান করুন' : 'Enter a valid amount');
+        return;
+      }
+      if (!depositForm.deposit_date) {
+        toast.error(bn ? 'তারিখ নির্বাচন করুন' : 'Select date');
+        return;
+      }
+
+      // Calculate month_year based on deposit_date or fallback to selectedMonthYear
+      let depositMonthYear = selectedMonthYear;
+      if (depositForm.deposit_date) {
+        const d = new Date(depositForm.deposit_date);
+        if (!isNaN(d.getTime())) {
+          depositMonthYear = `${MONTHS[d.getMonth()]}-${d.getFullYear()}`;
+        }
+      }
+
+      const finalSource = depositForm.source || 'manual';
+
       const payload = {
-        month_year: selectedMonthYear,
+        month_year: depositMonthYear,
         deposit_date: depositForm.deposit_date,
         bank_details: depositForm.bank_details || null,
         other_details: depositForm.other_details || null,
-        amount: Number(depositForm.amount),
-        source: depositForm.source
+        amount: parsedAmount,
+        source: finalSource
       };
       if (editingDepositId) {
         const oldDep = (deposits || []).find((d: any) => d.id === editingDepositId);
@@ -893,8 +1020,8 @@ const AdminExpenses = () => {
           title: payload.source || 'Deposit',
           amount: payload.amount,
           month_year: payload.month_year,
-          old_data: oldDep ? { amount: oldDep.amount, source: oldDep.source, deposit_date: oldDep.deposit_date } : null,
-          new_data: { amount: payload.amount, source: payload.source, deposit_date: payload.deposit_date },
+          old_data: oldDep ? { amount: oldDep.amount, source: oldDep.source, deposit_date: oldDep.deposit_date, bank_details: oldDep.bank_details, other_details: oldDep.other_details } : null,
+          new_data: { amount: payload.amount, source: payload.source, deposit_date: payload.deposit_date, bank_details: payload.bank_details, other_details: payload.other_details },
           user_id: user?.id,
           user_name: user?.user_metadata?.full_name || user?.email,
           user_email: user?.email,
@@ -910,7 +1037,7 @@ const AdminExpenses = () => {
           title: payload.source || 'Deposit',
           amount: payload.amount,
           month_year: payload.month_year,
-          new_data: { amount: payload.amount, source: payload.source, deposit_date: payload.deposit_date },
+          new_data: { amount: payload.amount, source: payload.source, deposit_date: payload.deposit_date, bank_details: payload.bank_details, other_details: payload.other_details },
           user_id: user?.id,
           user_name: user?.user_metadata?.full_name || user?.email,
           user_email: user?.email,
@@ -924,9 +1051,15 @@ const AdminExpenses = () => {
       qc.invalidateQueries({ queryKey: ['accounts-audit-logs'] });
       setDepositForm(defaultDepositForm);
       setEditingDepositId(null);
-      toast.success(bn ? 'সংরক্ষিত! নতুন এন্ট্রি দিন' : 'Saved! Add new entry');
+      setIsAddingNewSource(false);
+      setNewSourceInput('');
+      setDepositDialog(false);
+      toast.success(bn ? 'টাকা আয়/উত্তোলন সফলভাবে সংরক্ষিত হয়েছে' : 'Deposit saved successfully');
     },
-    onError: () => toast.error(bn ? 'ত্রুটি হয়েছে' : 'Error occurred')
+    onError: (err: any) => {
+      console.error('Failed to save deposit:', err);
+      toast.error(err?.message || (bn ? 'ত্রুটি হয়েছে' : 'Error occurred'));
+    }
   });
 
   const deleteExpense = useMutation({
@@ -996,7 +1129,7 @@ const AdminExpenses = () => {
         month_year: selectedMonthYear,
         total_expense: monthlyTotalExpense,
         total_deposit: monthlyTotalDeposit,
-        previous_arrears: Number(summaryForm.previous_arrears) || 0,
+        previous_arrears: Number(bnToEnDigit(summaryForm.previous_arrears || '0')) || 0,
         cash_amount: monthlyCash,
         principal_name: summaryForm.principal_name || null,
         casher_name: summaryForm.casher_name || null,
@@ -1208,6 +1341,8 @@ const AdminExpenses = () => {
   const openEditDeposit = (d: any) => {
     setEditingDepositId(d.id);
     setDepositForm({ deposit_date: d.deposit_date, bank_details: d.bank_details || '', other_details: d.other_details || '', amount: String(d.amount), source: d.source || 'manual' });
+    setIsAddingNewSource(false);
+    setNewSourceInput('');
     setDepositDialog(true);
   };
   const openEditExpInst = (p: any) => {
@@ -1261,7 +1396,7 @@ const AdminExpenses = () => {
     rows.push([]);
     rows.push(['#', bn ? 'তারিখ' : 'Date', bn ? 'ব্যাংক বিবরণ' : 'Bank Details', bn ? 'অন্যান্য বিবরণ' : 'Other Details', bn ? 'উৎস' : 'Source', bn ? 'টাকা' : 'Amount']);
     deposits.forEach((d: any, i: number) => {
-      rows.push([String(i + 1), d.deposit_date, d.bank_details || '-', d.other_details || '-', d.source || '-', `৳${formatNum(Number(d.amount))}`]);
+      rows.push([String(i + 1), d.deposit_date, d.bank_details || '-', d.other_details || '-', getSourceLabel(d.source, bn, customDepositSources), `৳${formatNum(Number(d.amount))}`]);
     });
     rows.push([]);
     rows.push([bn ? 'মোট টাকা আয়/উত্তোলন' : 'Total Deposit', `৳${formatNum(monthlyTotalDeposit)}`]);
@@ -1314,7 +1449,15 @@ const AdminExpenses = () => {
     setCategoryDialog(true);
   };
   const resetExpenseDialog = (open: boolean) => { if (!open) { setEditingExpenseId(null); setExpenseForm(defaultExpenseForm); } setExpenseDialog(open); };
-  const resetDepositDialog = (open: boolean) => { if (!open) { setEditingDepositId(null); setDepositForm(defaultDepositForm); } setDepositDialog(open); };
+  const resetDepositDialog = (open: boolean) => {
+    if (!open) {
+      setEditingDepositId(null);
+      setDepositForm(defaultDepositForm);
+      setIsAddingNewSource(false);
+      setNewSourceInput('');
+    }
+    setDepositDialog(open);
+  };
   const resetExpInstDialog = (open: boolean) => { if (!open) { setEditingExpInstId(null); setExpInstForm({ name: '', name_bn: '' }); } setExpInstDialog(open); };
   const resetCategoryDialog = (open: boolean) => { if (!open) { setEditingCategoryId(null); setCategoryForm({ institution_id: '', name: '', name_bn: '' }); } setCategoryDialog(open); };
 
@@ -2132,39 +2275,153 @@ const AdminExpenses = () => {
                   <DialogTrigger asChild>
                     <Button size="sm"><Plus className="w-4 h-4 mr-1" />{bn ? 'টাকা আয়/উত্তোলন যোগ' : 'Add Deposit'}</Button>
                   </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader><DialogTitle>{editingDepositId ? (bn ? 'টাকা আয়/উত্তোলন সম্পাদনা' : 'Edit Deposit') : (bn ? 'নতুন টাকা আয়/উত্তোলন' : 'New Deposit')}</DialogTitle></DialogHeader>
-                    <div className="space-y-3">
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>{editingDepositId ? (bn ? 'টাকা আয়/উত্তোলন সম্পাদনা' : 'Edit Deposit') : (bn ? 'নতুন টাকা আয়/উত্তোলন' : 'New Deposit')}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-3 pt-2">
                       <div>
                         <Label>{bn ? 'তারিখ' : 'Date'} *</Label>
                         <DatePicker bengali={bn} value={depositForm.deposit_date} onChange={v => setDepositForm(f => ({ ...f, deposit_date: v }))} />
                       </div>
                       <div>
                         <Label>{bn ? 'ব্যাংক বিবরণ' : 'Bank Details'}</Label>
-                        <Input value={depositForm.bank_details} onChange={e => setDepositForm(f => ({ ...f, bank_details: e.target.value }))} />
+                        <Input
+                          placeholder={bn ? 'যেমন: এক্সিম ব্যাংক, হিসাব নং...' : 'e.g. Exim Bank, A/C...'}
+                          value={depositForm.bank_details}
+                          onChange={e => setDepositForm(f => ({ ...f, bank_details: e.target.value }))}
+                        />
                       </div>
                       <div>
                         <Label>{bn ? 'অন্যান্য বিবরণ' : 'Other Details'}</Label>
-                        <Input value={depositForm.other_details} onChange={e => setDepositForm(f => ({ ...f, other_details: e.target.value }))} />
+                        <Input
+                          placeholder={bn ? 'বিবরণ বা মন্তব্য' : 'Details or remarks'}
+                          value={depositForm.other_details}
+                          onChange={e => setDepositForm(f => ({ ...f, other_details: e.target.value }))}
+                        />
                       </div>
-                      <div>
-                        <Label>{bn ? 'উৎস' : 'Source'}</Label>
-                        <Select value={depositForm.source} onValueChange={v => setDepositForm(f => ({ ...f, source: v }))}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="manual">{bn ? 'ম্যানুয়াল' : 'Manual'}</SelectItem>
-                            <SelectItem value="fees">{bn ? 'ফি' : 'Fees'}</SelectItem>
-                            <SelectItem value="donation">{bn ? 'অনুদান' : 'Donation'}</SelectItem>
-                            <SelectItem value="other">{bn ? 'অন্যান্য' : 'Other'}</SelectItem>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <Label>{bn ? 'উৎস' : 'Source'}</Label>
+                          {!isAddingNewSource && (
+                            <button
+                              type="button"
+                              onClick={() => setIsAddingNewSource(true)}
+                              className="text-xs text-emerald-600 hover:text-emerald-700 font-medium inline-flex items-center gap-1 cursor-pointer"
+                            >
+                              <Plus className="w-3 h-3" />
+                              {bn ? 'নতুন উৎস যোগ' : 'Add custom'}
+                            </button>
+                          )}
+                        </div>
+                        <Select
+                          value={depositForm.source}
+                          onValueChange={v => {
+                            if (v === '__add_custom__') {
+                              setIsAddingNewSource(true);
+                            } else {
+                              setDepositForm(f => ({ ...f, source: v }));
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder={bn ? 'উৎস নির্বাচন করুন' : 'Select source'} />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-64">
+                            <SelectGroup>
+                              <SelectLabel className="text-xs text-muted-foreground">{bn ? 'সিস্টেম উৎস' : 'System Sources'}</SelectLabel>
+                              {BUILTIN_DEPOSIT_SOURCES.map(s => (
+                                <SelectItem key={s.id} value={s.id}>
+                                  {bn ? s.name_bn : s.name_en}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                            {customDepositSources.length > 0 && (
+                              <SelectGroup>
+                                <SelectLabel className="text-xs text-muted-foreground">{bn ? 'কাস্টম উৎসসমূহ' : 'Custom Sources'}</SelectLabel>
+                                {customDepositSources.map(s => (
+                                  <SelectItem key={s.id} value={s.id}>
+                                    {bn ? s.name_bn : (s.name_en || s.name_bn)}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            )}
+                            {depositForm.source &&
+                              !BUILTIN_DEPOSIT_SOURCES.some(s => s.id === depositForm.source) &&
+                              !customDepositSources.some(s => s.id === depositForm.source || s.name_bn === depositForm.source) && (
+                                <SelectItem value={depositForm.source}>
+                                  {depositForm.source}
+                                </SelectItem>
+                              )}
+                            <div className="p-1 border-t border-slate-200 dark:border-slate-800">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-start text-xs text-emerald-600 font-semibold h-8 px-2"
+                                onClick={() => setIsAddingNewSource(true)}
+                              >
+                                <Plus className="w-3.5 h-3.5 mr-1.5" />
+                                {bn ? '+ নতুন উৎস কাস্টমাইজ করুন' : '+ Add Custom Source'}
+                              </Button>
+                            </div>
                           </SelectContent>
                         </Select>
+
+                        {isAddingNewSource && (
+                          <div className="p-2.5 rounded-lg border border-dashed border-emerald-400 bg-emerald-50/60 dark:bg-emerald-950/30 space-y-2 mt-2">
+                            <Label className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">
+                              {bn ? 'নতুন উৎসের নাম লিখুন:' : 'New Source Name:'}
+                            </Label>
+                            <div className="flex gap-2">
+                              <Input
+                                autoFocus
+                                placeholder={bn ? 'যেমন: চেয়ারম্যান সাহেব নগদ(এক্সিম ব্যাংক)' : 'e.g. Chairman Cash'}
+                                value={newSourceInput}
+                                onChange={e => setNewSourceInput(e.target.value)}
+                                className="h-8 text-xs bg-white dark:bg-slate-900"
+                                onKeyDown={e => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleQuickAddSource();
+                                  }
+                                }}
+                              />
+                              <Button
+                                type="button"
+                                size="sm"
+                                className="h-8 px-2.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+                                onClick={handleQuickAddSource}
+                                disabled={saveDepositSourcesMutation.isPending}
+                              >
+                                <Check className="w-3.5 h-3.5 mr-1" />
+                                {bn ? 'যোগ' : 'Add'}
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 px-2 text-xs"
+                                onClick={() => { setIsAddingNewSource(false); setNewSourceInput(''); }}
+                              >
+                                {bn ? 'বাতিল' : 'Cancel'}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                       <div>
                         <Label>{bn ? 'পরিমাণ (টাকা)' : 'Amount (BDT)'} *</Label>
-                        <Input type="text" inputMode="decimal" value={depositForm.amount} onChange={e => setDepositForm(f => ({ ...f, amount: onlyNumbers(e.target.value) }))} />
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="0"
+                          value={depositForm.amount}
+                          onChange={e => setDepositForm(f => ({ ...f, amount: onlyNumbers(e.target.value) }))}
+                        />
                       </div>
-                      <Button className="w-full" onClick={() => addDeposit.mutate()} disabled={addDeposit.isPending}>
-                        {bn ? 'সংরক্ষণ করুন' : 'Save'}
+                      <Button className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-medium cursor-pointer" onClick={() => addDeposit.mutate()} disabled={addDeposit.isPending}>
+                        {addDeposit.isPending ? (bn ? 'সংরক্ষণ হচ্ছে...' : 'Saving...') : (bn ? 'সংরক্ষণ করুন' : 'Save')}
                       </Button>
                     </div>
                   </DialogContent>
@@ -2180,7 +2437,7 @@ const AdminExpenses = () => {
                     <th className="border border-slate-300 px-3 py-1.5 text-center font-semibold text-slate-800 w-32">{bn ? 'তারিখ' : 'Date'}</th>
                     <th className="border border-slate-300 px-3 py-1.5 text-left font-semibold text-slate-800">{bn ? 'ব্যাংক/অন্যান্য' : 'Bank/Other'}</th>
                     <th className="border border-slate-300 px-3 py-1.5 text-left font-semibold text-slate-800">{bn ? 'বিবরণ' : 'Details'}</th>
-                    <th className="border border-slate-300 px-3 py-1.5 text-left font-semibold text-slate-800 w-32">{bn ? 'উৎস' : 'Source'}</th>
+                    <th className="border border-slate-300 px-3 py-1.5 text-left font-semibold text-slate-800 w-36">{bn ? 'উৎস' : 'Source'}</th>
                     <th className="border border-slate-300 px-3 py-1.5 text-right font-semibold text-slate-800 w-40">{bn ? 'টাকা' : 'Amount'}</th>
                     <th className="border border-slate-300 px-3 py-1.5 text-center font-semibold text-slate-800 w-24"></th>
                   </tr>
@@ -2199,7 +2456,11 @@ const AdminExpenses = () => {
                       <td className="border border-slate-300 px-3 py-1.5 text-center tabular-nums">{d.deposit_date}</td>
                       <td className="border border-slate-300 px-3 py-1.5 text-left">{d.bank_details || '-'}</td>
                       <td className="border border-slate-300 px-3 py-1.5 text-left">{d.other_details || '-'}</td>
-                      <td className="border border-slate-300 px-3 py-1.5 text-left">{d.source}</td>
+                      <td className="border border-slate-300 px-3 py-1.5 text-left">
+                        <span className="inline-block px-2 py-0.5 rounded text-xs bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium">
+                          {getSourceLabel(d.source, bn, customDepositSources)}
+                        </span>
+                      </td>
                       <td className="border border-slate-300 px-3 py-1.5 text-right tabular-nums font-medium">৳{formatNum(Number(d.amount))}</td>
                       <td className="border border-slate-300 px-2 py-1 text-center">
                         <div className="flex gap-0.5 justify-center">
@@ -2287,7 +2548,7 @@ const AdminExpenses = () => {
                 <span>{bn ? '+ খরচ যোগ করুন' : '+ Add Expense'}</span>
               </Button>
             </div>
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Institutions List Card */}
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -2432,6 +2693,100 @@ const AdminExpenses = () => {
                       })}
                     </ul>
                   )}
+                </CardContent>
+              </Card>
+
+              {/* Deposit Sources Management Card */}
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Coins className="w-4 h-4 text-emerald-600" />
+                    <span>{bn ? 'আয়/উত্তোলনের উৎসসমূহ' : 'Deposit Sources'}</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Add new source input */}
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder={bn ? 'নতুন উৎস (যেমন: চেয়ারম্যান অনুদান)' : 'New source name'}
+                      value={settingNewSourceInput}
+                      onChange={e => setSettingNewSourceInput(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddSettingSource();
+                        }
+                      }}
+                    />
+                    <Button
+                      size="sm"
+                      onClick={handleAddSettingSource}
+                      disabled={saveDepositSourcesMutation.isPending || !settingNewSourceInput.trim()}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      {bn ? 'যোগ' : 'Add'}
+                    </Button>
+                  </div>
+
+                  {/* Sources list */}
+                  <div className="space-y-2 max-h-[480px] overflow-y-auto pr-1">
+                    <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                      {bn ? 'সিস্টেম ডিফল্ট উৎস' : 'Default Sources'}
+                    </div>
+                    {BUILTIN_DEPOSIT_SOURCES.map(s => (
+                      <div key={s.id} className="flex items-center justify-between p-2 rounded-lg bg-secondary/20 text-sm">
+                        <span className="font-medium text-foreground">{bn ? s.name_bn : s.name_en}</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-muted-foreground font-medium">
+                          {bn ? 'ডিফল্ট' : 'Default'}
+                        </span>
+                      </div>
+                    ))}
+
+                    <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider pt-2">
+                      {bn ? 'কাস্টম তৈরিকৃত উৎস' : 'Custom Sources'} ({customDepositSources.length})
+                    </div>
+                    {customDepositSources.length === 0 ? (
+                      <p className="text-xs text-muted-foreground py-2 italic">
+                        {bn ? 'কোনো কাস্টম উৎস যোগ করা হয়নি। উপরের বক্সে লিখে যোগ করুন।' : 'No custom sources added.'}
+                      </p>
+                    ) : (
+                      customDepositSources.map(s => {
+                        const usageCount = allDeposits.filter((d: any) => d.source === s.id || d.source === s.name_bn).length;
+                        return (
+                          <div key={s.id} className="flex items-center justify-between p-2 rounded-lg bg-secondary/30 text-sm">
+                            <div>
+                              <span className="font-medium text-foreground">{bn ? s.name_bn : (s.name_en || s.name_bn)}</span>
+                              {usageCount > 0 && (
+                                <span className="text-xs text-muted-foreground ml-2">
+                                  ({usageCount} {bn ? 'টি এন্ট্রি' : 'entries'})
+                                </span>
+                              )}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-rose-600 hover:bg-rose-50"
+                              onClick={async () => {
+                                if (await confirm({
+                                  title: bn ? 'উৎস মুছে ফেলুন' : 'Delete Source',
+                                  description: bn
+                                    ? `"${s.name_bn}" উৎসটি তালিকা থেকে মুছে ফেলতে চান?${usageCount > 0 ? ` (সতর্কতা: ${usageCount}টি পূর্বে সংরক্ষিত আয়ে এই উৎস রয়েছে)` : ''}`
+                                    : `Delete source "${s.name_bn}"?`,
+                                  variant: 'destructive'
+                                })) {
+                                  const filtered = customDepositSources.filter(cs => cs.id !== s.id);
+                                  saveDepositSourcesMutation.mutate(filtered);
+                                }
+                              }}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </div>
