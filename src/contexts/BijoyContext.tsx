@@ -45,12 +45,14 @@ export const BijoyProvider = ({ children }: { children: ReactNode }) => {
 
       if (!isInput && !isTextarea && !isContentEditable) return;
 
+      if (target.getAttribute('data-lang') === 'en' || target.getAttribute('data-bijoy') === 'false') return;
+
       if (isInput) {
         const inputType = (target as HTMLInputElement).type?.toLowerCase() || 'text';
         // Passwords must remain byte-for-byte identical to the value saved by auth.
         // Never run Bijoy conversion inside a password field.
         if (inputType === 'password') return;
-        if (!['text', 'search', 'email', 'url', 'tel', ''].includes(inputType)) return;
+        if (!['text', 'search', ''].includes(inputType)) return;
       }
 
       const char = e.key;

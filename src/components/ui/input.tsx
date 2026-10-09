@@ -7,15 +7,27 @@ import {
   loadHistory,
   pushHistory,
 } from "@/lib/inputHistory";
+import {
+  detectInputLang,
+  filterEnglishInput,
+  filterBanglaInput,
+  InputLangType,
+} from "@/lib/inputLanguageFilter";
 
-interface InputProps extends React.ComponentProps<"input"> {
+export interface InputProps extends React.ComponentProps<"input"> {
   /** Set to false to disable input history suggestions for this field */
   history?: boolean;
+  /** Enforce input language: 'en' (English only, auto-convert digits), 'bn' (Bangla, auto-convert digits), 'auto' (detect) */
+  langType?: InputLangType;
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, onChange, onBlur, list, name, id, autoComplete, placeholder, history = true, ...props }, ref) => {
+  ({ className, type, onChange, onBlur, list, name, id, autoComplete, placeholder, history = true, langType, ...props }, ref) => {
     const { bijoyEnabled } = useBijoy();
+    const effectiveLang = React.useMemo(() => {
+      return detectInputLang({ type, name, id, placeholder, langType });
+    }, [type, name, id, placeholder, langType]);
+
     const eligible = history && isHistoryEligible(type, name, id, autoComplete, placeholder);
     const listId = React.useMemo(() => {
       if (!eligible || list) return list;
@@ -29,15 +41,38 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       setItems(loadHistory(historyKey(name, id, placeholder)));
     }, [eligible, list, name, id, placeholder]);
 
-    const handleChange = type === 'number' && onChange
-      ? (e: React.ChangeEvent<HTMLInputElement>) => {
-          if (e.target.value === '') {
-            onChange(e);
-            return;
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const el = e.target;
+      const prevVal = el.value;
+      const prevStart = el.selectionStart;
+      const prevEnd = el.selectionEnd;
+
+      if (effectiveLang === 'en') {
+        const filtered = filterEnglishInput(prevVal);
+        if (filtered !== prevVal) {
+          el.value = filtered;
+          if (prevStart !== null && prevEnd !== null && prevVal.length === filtered.length) {
+            try { el.setSelectionRange(prevStart, prevEnd); } catch {}
           }
-          onChange(e);
         }
-      : onChange;
+      } else if (effectiveLang === 'bn') {
+        const filtered = filterBanglaInput(prevVal);
+        if (filtered !== prevVal) {
+          el.value = filtered;
+          if (prevStart !== null && prevEnd !== null && prevVal.length === filtered.length) {
+            try { el.setSelectionRange(prevStart, prevEnd); } catch {}
+          }
+        }
+      }
+
+      if (type === 'number') {
+        if (el.value === '') {
+          onChange?.(e);
+          return;
+        }
+      }
+      onChange?.(e);
+    };
 
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
       if (eligible && !list) {
@@ -50,7 +85,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       <>
       <div className="relative w-full">
         <input
-          data-bijoy={bijoyEnabled ? "true" : "false"}
+          data-bijoy={effectiveLang === 'en' ? 'false' : (bijoyEnabled ? 'true' : 'false')}
+          data-lang={effectiveLang}
           type={type}
           className={cn(
             "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
