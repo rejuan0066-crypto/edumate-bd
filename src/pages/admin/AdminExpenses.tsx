@@ -219,7 +219,10 @@ const AdminExpenses = () => {
     inventory_item_id: ''
   };
   const defaultDepositForm = { deposit_date: new Date().toISOString().split('T')[0], bank_details: '', other_details: '', amount: '', source: 'manual' };
-  const [expInstForm, setExpInstForm] = useState({ name: '', name_bn: '' });
+  const defaultExpInstForm = { name: '', name_bn: '', address: '', phone: '', email: '', other_info: '', logo_url: '' };
+  const [expInstForm, setExpInstForm] = useState(defaultExpInstForm);
+  const [expInstLogoFile, setExpInstLogoFile] = useState<File | null>(null);
+  const [expInstLogoUploading, setExpInstLogoUploading] = useState(false);
   const [categoryForm, setCategoryForm] = useState({ institution_id: '', name: '', name_bn: '' });
   const [expenseForm, setExpenseForm] = useState(defaultExpenseForm);
   const [isCustomUnitActive, setIsCustomUnitActive] = useState(false);
@@ -490,17 +493,17 @@ const AdminExpenses = () => {
   const allInstitutions = useMemo(() => {
     if (expenseInstitutions && expenseInstitutions.length > 0) {
       return expenseInstitutions.map((ei: any) => {
-        const instMatch = institutions.find((i: any) => i.id === ei.id);
+        const instMatch = institutions.find((i: any) => i.id === ei.id || (i.name && (ei.name_bn || ei.name) && i.name.trim() === (ei.name_bn || ei.name).trim()));
         return {
           id: ei.id,
           name: ei.name || ei.name_bn,
           name_bn: ei.name_bn || ei.name,
           name_en: ei.name || ei.name_bn,
-          address: instMatch?.address || '',
-          phone: instMatch?.phone || '',
-          email: instMatch?.email || '',
-          other_info: instMatch?.other_info || '',
-          logo_url: instMatch?.logo_url || '',
+          address: (ei as any).address || instMatch?.address || '',
+          phone: (ei as any).phone || instMatch?.phone || '',
+          email: (ei as any).email || instMatch?.email || '',
+          other_info: (ei as any).other_info || instMatch?.other_info || '',
+          logo_url: (ei as any).logo_url || instMatch?.logo_url || '',
           is_default: instMatch?.is_default || false,
           source: 'expense_institutions'
         };
@@ -511,11 +514,11 @@ const AdminExpenses = () => {
       name: i.name_en || i.name,
       name_bn: i.name,
       name_en: i.name_en || i.name,
-      address: i.address,
-      phone: i.phone,
-      email: i.email,
-      other_info: i.other_info,
-      logo_url: i.logo_url,
+      address: i.address || '',
+      phone: i.phone || '',
+      email: i.email || '',
+      other_info: i.other_info || '',
+      logo_url: i.logo_url || '',
       is_default: i.is_default,
       source: 'institutions'
     }));
@@ -685,26 +688,94 @@ const AdminExpenses = () => {
         toast.error(bn ? 'প্রতিষ্ঠানের নাম লিখুন' : 'Please enter institution name');
         return;
       }
-      const payload = { name: nameEn, name_bn: nameBn };
+
+      let finalLogoUrl = expInstForm.logo_url || '';
+      if (expInstLogoFile) {
+        setExpInstLogoUploading(true);
+        try {
+          const fileExt = expInstLogoFile.name.split('.').pop() || 'png';
+          const fileName = `inst_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+          const { data: uploadData, error: uploadErr } = await supabase.storage
+            .from('institution-logos')
+            .upload(fileName, expInstLogoFile);
+          if (uploadErr) {
+            console.warn('Upload to institution-logos bucket failed, trying receipts bucket:', uploadErr);
+            const { data: recData, error: recErr } = await supabase.storage
+              .from('receipts')
+              .upload(fileName, expInstLogoFile);
+            if (recErr) throw uploadErr;
+            const { data: urlData } = supabase.storage.from('receipts').getPublicUrl(recData.path);
+            finalLogoUrl = urlData.publicUrl;
+          } else {
+            const { data: urlData } = supabase.storage.from('institution-logos').getPublicUrl(uploadData.path);
+            finalLogoUrl = urlData.publicUrl;
+          }
+        } finally {
+          setExpInstLogoUploading(false);
+        }
+      }
+
+      const expInstPayload = { name: nameEn, name_bn: nameBn };
+      const instPayload = {
+        name: nameBn,
+        name_en: nameEn,
+        address: expInstForm.address || null,
+        phone: expInstForm.phone || null,
+        email: expInstForm.email || null,
+        other_info: expInstForm.other_info || null,
+        logo_url: finalLogoUrl || null,
+      };
+
+      let targetId = editingExpInstId;
+
       if (editingExpInstId) {
-        const { error } = await supabase.from('expense_institutions').update(payload).eq('id', editingExpInstId);
+        const { error } = await supabase.from('expense_institutions').update(expInstPayload).eq('id', editingExpInstId);
         if (error) {
-          const { error: upsertErr } = await supabase.from('expense_institutions').upsert({ id: editingExpInstId, ...payload });
+          const { error: upsertErr } = await supabase.from('expense_institutions').upsert({ id: editingExpInstId, ...expInstPayload });
           if (upsertErr) throw upsertErr;
         }
-        await supabase.from('institutions').update({ name: nameBn, name_en: nameEn }).eq('id', editingExpInstId);
+        const { error: instErr } = await supabase.from('institutions').upsert({ id: editingExpInstId, ...instPayload });
+        if (instErr) {
+          await supabase.from('institutions').update(instPayload).eq('id', editingExpInstId);
+        }
       } else {
-        const { error } = await supabase.from('expense_institutions').insert(payload);
-        if (error) throw error;
+        const { data: inserted, error: expInsertErr } = await supabase
+          .from('expense_institutions')
+          .insert(expInstPayload)
+          .select('id')
+          .single();
+        if (expInsertErr) throw expInsertErr;
+
+        targetId = inserted?.id;
+        if (targetId) {
+          await supabase.from('institutions').upsert({ id: targetId, ...instPayload });
+        }
+      }
+
+      if (targetId) {
+        try {
+          await (supabase.from('expense_institutions') as any)
+            .update({
+              address: expInstForm.address || null,
+              phone: expInstForm.phone || null,
+              email: expInstForm.email || null,
+              other_info: expInstForm.other_info || null,
+              logo_url: finalLogoUrl || null,
+            })
+            .eq('id', targetId);
+        } catch {
+          // ignore if optional columns are not yet present in expense_institutions
+        }
       }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['expense_institutions'] });
       qc.invalidateQueries({ queryKey: ['institutions'] });
       setExpInstDialog(false);
-      setExpInstForm({ name: '', name_bn: '' });
+      setExpInstForm(defaultExpInstForm);
+      setExpInstLogoFile(null);
       setEditingExpInstId(null);
-      toast.success(bn ? 'সংরক্ষিত' : 'Saved');
+      toast.success(bn ? 'প্রতিষ্ঠানের তথ্য সংরক্ষিত হয়েছে' : 'Institution saved successfully');
     },
     onError: (err: any) => {
       console.error('Save institution error:', err);
@@ -1366,6 +1437,11 @@ const AdminExpenses = () => {
   // Annual Financial Summary PDF (Income / Expense / Net Balance per month)
   const handleAnnualFinancialPDF = () => {
     const yearStr = String(selectedYear);
+    const isAll = !selectedInstId || selectedInstId === 'all';
+    const targetInst = isAll
+      ? (institutions.find((i: any) => i.is_default) || allInstitutions[0])
+      : (allInstitutions.find((p: any) => p.id === selectedInstId) || allInstitutions[0]);
+
     const monthlyRows = MONTHS.map((m, i) => {
       const monthKey = `${MONTHS[i]}-${selectedYear}`;
       // Income = deposits for that month + paid fee_payments for that month
@@ -1377,7 +1453,7 @@ const AdminExpenses = () => {
         .reduce((s: number, f: any) => s + Number(f.paid_amount || 0), 0);
       const income = monthDeposits + monthFees;
       const expense = allExpenses
-        .filter((e: any) => e.month_year === monthKey)
+        .filter((e: any) => e.month_year === monthKey && (isAll || e.institution_id === targetInst?.id))
         .reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
       return { monthIdx: i, income, expense, profit: income - expense };
     });
@@ -1388,14 +1464,14 @@ const AdminExpenses = () => {
 
     generateBilingualReport(
       {
-        institution_name: instName || '',
-        institution_name_en: instNameEn || '',
-        address: instAddress || '',
-        phone: instPhone || '',
-        email: instEmail || '',
-        logo_url: selectedInstitution?.logo_url,
-        report_title_bn: 'মাসিক আর্থিক সারসংক্ষেপ',
-        report_title_en: 'Monthly Financial Summary',
+        institution_name: isAll ? (bn ? 'সকল প্রতিষ্ঠান (সমন্বিত হিসাব)' : 'All Institutions (Consolidated)') : getInstName(targetInst, true),
+        institution_name_en: isAll ? 'All Institutions (Consolidated)' : getInstName(targetInst, false),
+        address: targetInst?.address || '',
+        phone: targetInst?.phone || '',
+        email: targetInst?.email || '',
+        logo_url: targetInst?.logo_url,
+        report_title_bn: isAll ? 'সকল প্রতিষ্ঠানের বার্ষিক আর্থিক সারসংক্ষেপ' : `${getInstName(targetInst, true)} - বার্ষিক আর্থিক সারসংক্ষেপ`,
+        report_title_en: isAll ? 'All Institutions Annual Financial Summary' : `${getInstName(targetInst, false)} - Annual Financial Summary`,
         period_label_bn: `সাল: ${yearStr}`,
         period_label_en: `Year: ${yearStr}`,
       },
@@ -1482,8 +1558,255 @@ const AdminExpenses = () => {
   };
   const openEditExpInst = (p: any) => {
     setEditingExpInstId(p.id);
-    setExpInstForm({ name: p.name, name_bn: p.name_bn });
+    setExpInstForm({
+      name: p.name || p.name_en || '',
+      name_bn: p.name_bn || p.name || '',
+      address: p.address || '',
+      phone: p.phone || '',
+      email: p.email || '',
+      other_info: p.other_info || '',
+      logo_url: p.logo_url || ''
+    });
+    setExpInstLogoFile(null);
     setExpInstDialog(true);
+  };
+
+  // Comprehensive Bilingual PDF Export (Supports All Institutions or Specific Institution)
+  const handleExpensesPDF = (instId?: string | null) => {
+    const isAll = !instId || instId === 'all';
+    const defaultInst = institutions.find((i: any) => i.is_default) || allInstitutions[0];
+
+    if (isAll) {
+      // 1. ALL INSTITUTIONS CONSOLIDATED REPORT
+      const paidAllExpenses = expenses.filter((e: any) => !isUnpaidDue(e.description));
+      const allDues = allExpenses.filter((e: any) => isUnpaidDue(e.description));
+      const totalExp = paidAllExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+      const totalDep = deposits.reduce((s: number, d: any) => s + Number(d.amount || 0), 0);
+      const totalDue = allDues.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+      const cash = totalDep - totalExp - previousArrears;
+
+      // Institution summary rows
+      const instSummaryRows = allInstitutions.map((inst: any) => {
+        const instExp = expenses.filter((e: any) => e.institution_id === inst.id && !isUnpaidDue(e.description));
+        const instDue = allExpenses.filter((e: any) => e.institution_id === inst.id && isUnpaidDue(e.description));
+        const instExpTotal = instExp.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+        const instDueTotal = instDue.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+        const pct = totalExp > 0 ? ((instExpTotal / totalExp) * 100).toFixed(1) + '%' : '0%';
+        return [
+          getInstName(inst, bn),
+          instExp.length,
+          instExpTotal,
+          instDueTotal,
+          pct
+        ];
+      });
+
+      // Detailed transactions across all institutions
+      const detailRows: (string | number)[][] = paidAllExpenses.map((e: any, idx: number) => {
+        const rowInst = allInstitutions.find((i: any) => i.id === e.institution_id);
+        const cat = categories.find((c: any) => c.id === e.category_id);
+        const unit = getUnit(e.description, cat?.name || cat?.name_bn);
+        const qtyStr = e.quantity ? `${e.quantity} ${unit || ''}`.trim() : '-';
+        return [
+          idx + 1,
+          getInstName(rowInst, bn) || '-',
+          getCatName(cat, bn) || '-',
+          e.expense_date || '-',
+          cleanDesc(e.description) || '-',
+          qtyStr,
+          getMethod(e.description) || 'ক্যাশ',
+          Number(e.amount || 0)
+        ];
+      });
+
+      const duesRows: (string | number)[][] = allDues.map((d: any, idx: number) => {
+        const rowInst = allInstitutions.find((i: any) => i.id === d.institution_id);
+        const cat = categories.find((c: any) => c.id === d.category_id);
+        return [
+          idx + 1,
+          getInstName(rowInst, bn) || '-',
+          getCatName(cat, bn) || '-',
+          d.expense_date || '-',
+          cleanDesc(d.description) || '-',
+          Number(d.amount || 0)
+        ];
+      });
+
+      const sections: any[] = [
+        {
+          title_bn: 'প্রতিষ্ঠানভিত্তিক সারসংক্ষেপ',
+          title_en: 'Institution Breakdown Summary',
+          headers: [
+            { bn: 'প্রতিষ্ঠানের নাম', en: 'Institution' },
+            { bn: 'মোট এন্ট্রি', en: 'Entries' },
+            { bn: 'মোট খরচ (৳)', en: 'Total Expense (৳)' },
+            { bn: 'বকেয়া (৳)', en: 'Dues (৳)' },
+            { bn: 'অংশ', en: 'Share' }
+          ],
+          rows: instSummaryRows,
+          totals: [
+            { bn: 'সর্বমোট খরচ', en: 'Grand Total Expense', value: totalExp },
+            { bn: 'সর্বমোট বকেয়া', en: 'Grand Total Dues', value: totalDue }
+          ]
+        },
+        {
+          title_bn: 'সকল প্রতিষ্ঠানের ব্যয়ের বিস্তারিত হিসাব',
+          title_en: 'Detailed Expenses for All Institutions',
+          headers: [
+            { bn: 'ক্রম', en: 'SL' },
+            { bn: 'প্রতিষ্ঠান', en: 'Institution' },
+            { bn: 'ক্যাটাগরি', en: 'Category' },
+            { bn: 'তারিখ', en: 'Date' },
+            { bn: 'বিবরণ', en: 'Description' },
+            { bn: 'পরিমাণ', en: 'Qty' },
+            { bn: 'মাধ্যম', en: 'Method' },
+            { bn: 'টাকা (৳)', en: 'Amount (৳)' }
+          ],
+          rows: detailRows,
+          totals: [
+            { bn: 'মোট ব্যয়', en: 'Total Expense', value: totalExp }
+          ]
+        }
+      ];
+
+      if (duesRows.length > 0) {
+        sections.push({
+          title_bn: 'সকল প্রতিষ্ঠানের বকেয়া হিসাব',
+          title_en: 'Outstanding Dues Across Institutions',
+          headers: [
+            { bn: 'ক্রম', en: 'SL' },
+            { bn: 'প্রতিষ্ঠান', en: 'Institution' },
+            { bn: 'ক্যাটাগরি', en: 'Category' },
+            { bn: 'তারিখ', en: 'Date' },
+            { bn: 'বিবরণ', en: 'Description' },
+            { bn: 'বকেয়া টাকা (৳)', en: 'Due Amount (৳)' }
+          ],
+          rows: duesRows,
+          totals: [
+            { bn: 'মোট বকেয়া', en: 'Total Dues', value: totalDue }
+          ]
+        });
+      }
+
+      generateBilingualReport(
+        {
+          institution_name: 'সকল প্রতিষ্ঠান (সমন্বিত হিসাব)',
+          institution_name_en: 'All Institutions (Consolidated)',
+          address: defaultInst?.address || '',
+          phone: defaultInst?.phone || '',
+          email: defaultInst?.email || '',
+          logo_url: defaultInst?.logo_url,
+          report_title_bn: 'সকল প্রতিষ্ঠানের মাসিক সমন্বিত হিসাব বিবরণী',
+          report_title_en: 'All Institutions Consolidated Monthly Expense Statement',
+          period_label_bn: `মাস: ${selectedMonthName}`,
+          period_label_en: `Period: ${selectedMonthName}`
+        },
+        sections,
+        [
+          { label_bn: 'মোট খরচ', label_en: 'Total Expense', value: '৳' + totalExp.toLocaleString(), tone: 'negative' },
+          { label_bn: 'মোট জমা/উত্তোলন', label_en: 'Total Deposit', value: '৳' + totalDep.toLocaleString(), tone: 'positive' },
+          { label_bn: 'নগদ উদ্বৃত্ত', label_en: 'Cash Balance', value: '৳' + (cash >= 0 ? cash : 0).toLocaleString(), tone: cash >= 0 ? 'positive' : 'negative' },
+          { label_bn: 'মোট বকেয়া', label_en: 'Total Dues', value: '৳' + totalDue.toLocaleString(), tone: 'accent' }
+        ]
+      );
+    } else {
+      // 2. SPECIFIC INSTITUTION DEDICATED REPORT
+      const targetInst = allInstitutions.find((p: any) => p.id === instId);
+      if (!targetInst) return;
+
+      const instPaid = expenses.filter((e: any) => e.institution_id === targetInst.id && !isUnpaidDue(e.description));
+      const instDues = allExpenses.filter((e: any) => e.institution_id === targetInst.id && isUnpaidDue(e.description));
+      const totalExp = instPaid.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+      const totalDue = instDues.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+
+      const detailRows: (string | number)[][] = instPaid.map((e: any, idx: number) => {
+        const cat = categories.find((c: any) => c.id === e.category_id);
+        const unit = getUnit(e.description, cat?.name || cat?.name_bn);
+        const qtyStr = e.quantity ? `${e.quantity} ${unit || ''}`.trim() : '-';
+        const memo = getMemo(e.description);
+        return [
+          idx + 1,
+          e.expense_date || '-',
+          getCatName(cat, bn) || '-',
+          cleanDesc(e.description) || '-',
+          qtyStr,
+          memo === '-' ? '' : memo,
+          getMethod(e.description) || 'ক্যাশ',
+          Number(e.amount || 0)
+        ];
+      });
+
+      const duesRows: (string | number)[][] = instDues.map((d: any, idx: number) => {
+        const cat = categories.find((c: any) => c.id === d.category_id);
+        return [
+          idx + 1,
+          d.expense_date || '-',
+          getCatName(cat, bn) || '-',
+          cleanDesc(d.description) || '-',
+          Number(d.amount || 0)
+        ];
+      });
+
+      const sections: any[] = [
+        {
+          title_bn: 'ব্যয়ের বিস্তারিত বিবরণী',
+          title_en: 'Detailed Expense Statement',
+          headers: [
+            { bn: 'ক্রম', en: 'SL' },
+            { bn: 'তারিখ', en: 'Date' },
+            { bn: 'ক্যাটাগরি', en: 'Category' },
+            { bn: 'বিবরণ', en: 'Description' },
+            { bn: 'পরিমাণ', en: 'Qty' },
+            { bn: 'ভাউচার/মেমো', en: 'Memo/Voucher' },
+            { bn: 'মাধ্যম', en: 'Method' },
+            { bn: 'টাকা (৳)', en: 'Amount (৳)' }
+          ],
+          rows: detailRows,
+          totals: [
+            { bn: 'সর্বমোট ব্যয়', en: 'Total Expense', value: totalExp }
+          ]
+        }
+      ];
+
+      if (duesRows.length > 0) {
+        sections.push({
+          title_bn: 'বকেয়া হিসাব বিবরণী',
+          title_en: 'Outstanding Dues Statement',
+          headers: [
+            { bn: 'ক্রম', en: 'SL' },
+            { bn: 'তারিখ', en: 'Date' },
+            { bn: 'ক্যাটাগরি', en: 'Category' },
+            { bn: 'বিবরণ', en: 'Description' },
+            { bn: 'বকেয়া টাকা (৳)', en: 'Due Amount (৳)' }
+          ],
+          rows: duesRows,
+          totals: [
+            { bn: 'মোট বকেয়া', en: 'Total Dues', value: totalDue }
+          ]
+        });
+      }
+
+      generateBilingualReport(
+        {
+          institution_name: getInstName(targetInst, true),
+          institution_name_en: getInstName(targetInst, false),
+          address: targetInst.address || defaultInst?.address || '',
+          phone: targetInst.phone || defaultInst?.phone || '',
+          email: targetInst.email || defaultInst?.email || '',
+          logo_url: targetInst.logo_url || defaultInst?.logo_url,
+          report_title_bn: `${getInstName(targetInst, true)} - মাসিক খরচ বিবরণী`,
+          report_title_en: `${getInstName(targetInst, false)} - Monthly Expense Statement`,
+          period_label_bn: `মাস: ${selectedMonthName}`,
+          period_label_en: `Period: ${selectedMonthName}`
+        },
+        sections,
+        [
+          { label_bn: 'মোট ব্যয়', label_en: 'Total Expense', value: '৳' + totalExp.toLocaleString(), tone: 'negative' },
+          { label_bn: 'মোট এন্ট্রি সংখ্যা', label_en: 'Total Entries', value: instPaid.length, tone: 'neutral' },
+          { label_bn: 'মোট বকেয়া', label_en: 'Total Dues', value: '৳' + totalDue.toLocaleString(), tone: totalDue > 0 ? 'accent' : 'positive' }
+        ]
+      );
+    }
   };
   const handleExcelDownload = () => {
     exportExpensesMultiTabExcel({
@@ -1601,7 +1924,14 @@ const AdminExpenses = () => {
     }
     setDepositDialog(open);
   };
-  const resetExpInstDialog = (open: boolean) => { if (!open) { setEditingExpInstId(null); setExpInstForm({ name: '', name_bn: '' }); } setExpInstDialog(open); };
+  const resetExpInstDialog = (open: boolean) => {
+    if (!open) {
+      setEditingExpInstId(null);
+      setExpInstForm(defaultExpInstForm);
+      setExpInstLogoFile(null);
+    }
+    setExpInstDialog(open);
+  };
   const resetCategoryDialog = (open: boolean) => { if (!open) { setEditingCategoryId(null); setCategoryForm({ institution_id: '', name: '', name_bn: '' }); } setCategoryDialog(open); };
 
   return (
@@ -2040,6 +2370,17 @@ const AdminExpenses = () => {
                           >
                             <Download className="w-3.5 h-3.5" />
                             <span>{bn ? 'এক্সেল ডাউনলোড' : 'Excel'}</span>
+                          </Button>
+
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleExpensesPDF(isAll ? 'all' : (inst?.id || selectedInstId))}
+                            className="text-xs h-9 gap-1.5 border-rose-300 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                            title={isAll ? (bn ? 'সকল প্রতিষ্ঠানের সমন্বিত PDF ডাউনলোড' : 'Download All Institutions PDF') : (bn ? 'এই প্রতিষ্ঠানের PDF ডাউনলোড' : 'Download Institution PDF')}
+                          >
+                            <FileText className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                            <span>{bn ? 'PDF ডাউনলোড' : 'PDF'}</span>
                           </Button>
 
                           <Button
@@ -2706,21 +3047,128 @@ const AdminExpenses = () => {
                         {bn ? 'নতুন প্রতিষ্ঠান' : 'Add Institution'}
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-w-lg max-h-[85vh] overflow-auto">
                       <DialogHeader>
                         <DialogTitle>{editingExpInstId ? (bn ? 'প্রতিষ্ঠান সম্পাদনা' : 'Edit Institution') : (bn ? 'নতুন প্রতিষ্ঠান' : 'New Institution')}</DialogTitle>
                       </DialogHeader>
-                      <div className="space-y-3">
-                        <div>
-                          <Label>{bn ? 'প্রতিষ্ঠানের নাম (বাংলা)' : 'Name (Bangla)'} *</Label>
-                          <Input value={expInstForm.name_bn} onChange={e => setExpInstForm(f => ({ ...f, name_bn: e.target.value }))} placeholder="যেমন: মাদরাসা" />
+                      <div className="space-y-3.5 pt-1">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <Label className="text-xs">{bn ? 'প্রতিষ্ঠানের নাম (বাংলা)' : 'Name (Bangla)'} *</Label>
+                            <Input
+                              value={expInstForm.name_bn}
+                              onChange={e => setExpInstForm(f => ({ ...f, name_bn: e.target.value }))}
+                              placeholder="যেমন: এম এইচ সেন্টার"
+                              className="h-9 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">{bn ? 'নাম (ইংরেজি - ঐচ্ছিক)' : 'Name (English - Optional)'}</Label>
+                            <Input
+                              value={expInstForm.name}
+                              onChange={e => setExpInstForm(f => ({ ...f, name: e.target.value }))}
+                              placeholder="e.g. MH Center"
+                              className="h-9 text-sm"
+                            />
+                          </div>
                         </div>
+
                         <div>
-                          <Label>{bn ? 'নাম (ইংরেজি - ঐচ্ছিক)' : 'Name (English - Optional)'}</Label>
-                          <Input value={expInstForm.name} onChange={e => setExpInstForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Madrasah" />
+                          <Label className="text-xs">{bn ? 'প্রতিষ্ঠানের ঠিকানা' : 'Address'}</Label>
+                          <Input
+                            value={expInstForm.address}
+                            onChange={e => setExpInstForm(f => ({ ...f, address: e.target.value }))}
+                            placeholder={bn ? 'যেমন: বন্দর, নারায়ণগঞ্জ' : 'e.g. Bandar, Narayanganj'}
+                            className="h-9 text-sm"
+                          />
                         </div>
-                        <Button className="w-full" onClick={() => addExpInst.mutate()} disabled={addExpInst.isPending}>
-                          {bn ? 'সংরক্ষণ' : 'Save'}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <Label className="text-xs">{bn ? 'মোবাইল / ফোন নম্বর' : 'Phone'}</Label>
+                            <Input
+                              value={expInstForm.phone}
+                              onChange={e => setExpInstForm(f => ({ ...f, phone: e.target.value }))}
+                              placeholder="01XXXXXXXXX"
+                              className="h-9 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">{bn ? 'ইমেইল অ্যাড্রেস' : 'Email'}</Label>
+                            <Input
+                              type="email"
+                              value={expInstForm.email}
+                              onChange={e => setExpInstForm(f => ({ ...f, email: e.target.value }))}
+                              placeholder="info@institution.com"
+                              className="h-9 text-sm"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label className="text-xs">{bn ? 'অন্যান্য তথ্য / স্লোগান' : 'Other Info / Slogan'}</Label>
+                          <Input
+                            value={expInstForm.other_info}
+                            onChange={e => setExpInstForm(f => ({ ...f, other_info: e.target.value }))}
+                            placeholder={bn ? 'যেমন: সততা ও সেবায় নিয়োজিত' : 'e.g. Slogan or note'}
+                            className="h-9 text-sm"
+                          />
+                        </div>
+
+                        <div>
+                          <Label className="text-xs">{bn ? 'প্রতিষ্ঠানের লোগো' : 'Institution Logo'}</Label>
+                          {(expInstForm.logo_url || expInstLogoFile) && (
+                            <div className="mb-2 flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-900 rounded-lg border">
+                              <img
+                                src={expInstLogoFile ? URL.createObjectURL(expInstLogoFile) : expInstForm.logo_url}
+                                alt="Logo Preview"
+                                className="w-12 h-12 object-contain rounded border bg-white"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium truncate">{expInstLogoFile ? expInstLogoFile.name : (bn ? 'বর্তমান লোগো' : 'Current logo')}</p>
+                                <p className="text-[10px] text-muted-foreground">{bn ? 'প্রিন্ট ও পিডিএফের হেডারে প্রদর্শিত হবে' : 'Shown in reports & PDF'}</p>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 h-7 text-xs"
+                                onClick={() => {
+                                  setExpInstLogoFile(null);
+                                  setExpInstForm(f => ({ ...f, logo_url: '' }));
+                                }}
+                              >
+                                <Trash2 className="w-3.5 h-3.5 mr-1" />
+                                {bn ? 'সরান' : 'Remove'}
+                              </Button>
+                            </div>
+                          )}
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            onChange={e => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                if (file.size > 500 * 1024) {
+                                  toast.error(bn ? 'সর্বোচ্চ ৫০০KB সাইজ হতে হবে' : 'File must be under 500KB');
+                                  return;
+                                }
+                                setExpInstLogoFile(file);
+                              }
+                            }}
+                            className="h-9 text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                          />
+                          <p className="text-[11px] text-muted-foreground mt-1">
+                            {bn ? 'PNG বা JPG ফরম্যাট (সর্বোচ্চ ৫০০KB)' : 'PNG or JPG (max 500KB)'}
+                          </p>
+                        </div>
+
+                        <Button
+                          className="w-full mt-2"
+                          onClick={() => addExpInst.mutate()}
+                          disabled={addExpInst.isPending || expInstLogoUploading}
+                        >
+                          {expInstLogoUploading ? (bn ? 'লোগো আপলোড হচ্ছে...' : 'Uploading Logo...') : (bn ? 'সংরক্ষণ করুন' : 'Save')}
                         </Button>
                       </div>
                     </DialogContent>
@@ -2733,9 +3181,16 @@ const AdminExpenses = () => {
                     <ul className="space-y-2">
                       {allInstitutions.map((p: any) => (
                         <li key={p.id} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800">
-                          <div className="flex items-center gap-2">
-                            <Building2 className="w-4 h-4 text-emerald-600" />
-                            <span className="text-sm font-medium text-foreground">{getInstName(p, bn)}</span>
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            {p.logo_url ? (
+                              <img src={p.logo_url} alt="" className="w-7 h-7 object-contain rounded border bg-white flex-shrink-0" />
+                            ) : (
+                              <Building2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                            )}
+                            <div className="min-w-0">
+                              <span className="text-sm font-medium text-foreground block truncate">{getInstName(p, bn)}</span>
+                              {p.address && <p className="text-[11px] text-muted-foreground truncate">{p.address}</p>}
+                            </div>
                           </div>
                           <div className="flex gap-1">
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600 hover:bg-emerald-50" onClick={() => openEditExpInst(p)} title={bn ? 'সম্পাদনা' : 'Edit'}>
@@ -3139,11 +3594,14 @@ const AdminExpenses = () => {
                               <Button variant="outline" size="sm" onClick={() => setEditInstitutionEntriesId(p.id)}>
                                 <Edit2 className="w-3 h-3 mr-1" />{bn ? 'এডিট' : 'Edit'}
                               </Button>
+                              <Button variant="outline" size="sm" onClick={() => handleExpensesPDF(p.id)} title={bn ? 'PDF ডাউনলোড' : 'PDF'}>
+                                <FileText className="w-3 h-3 mr-1 text-rose-600" />{bn ? 'PDF' : 'PDF'}
+                              </Button>
                               <Button variant="outline" size="sm" onClick={() => setPrintInstitutionId(p.id)}>
                                 <Printer className="w-3 h-3 mr-1" />{bn ? 'প্রিন্ট' : 'Print'}
                               </Button>
                               <Button variant="outline" size="sm" onClick={() => handleInstExcelDownload(p.id)}>
-                                <Download className="w-3 h-3 mr-1" />{bn ? 'এক্সেল' : 'Excel'}
+                                <Download className="w-3 h-3 mr-1 text-emerald-600" />{bn ? 'এক্সেল' : 'Excel'}
                               </Button>
                             </div>
                           </div>
@@ -3886,7 +4344,14 @@ const AdminExpenses = () => {
                 <span>{bn ? 'প্রকল্প প্রিন্ট প্রিভিউ' : 'Project Print Preview'}</span>
                 <Select
                   value={printInstitutionId || 'all'}
-                  onValueChange={(val) => setPrintInstitutionId(val)}
+                  onValueChange={(val) => {
+                    setPrintInstitutionId(val);
+                    setPrintEditMode(false);
+                    setPrintEditData({
+                      instName: '', instNameEn: '', instAddress: '', instPhone: '', instEmail: '', instOther: '', instLogo: '',
+                      reportTitle: '', reportSubtitle: '', casherName: '', principalName: '', extraNote: ''
+                    });
+                  }}
                 >
                   <SelectTrigger className="w-[230px] h-8 text-xs font-normal">
                     <SelectValue placeholder={bn ? 'প্রতিষ্ঠান বাছাই' : 'Select Institution'} />
@@ -3905,10 +4370,22 @@ const AdminExpenses = () => {
               </div>
               <Button variant={printEditMode ? 'default' : 'outline'} size="sm" onClick={() => {
                 if (!printEditMode) {
+                  const isAll = printInstitutionId === 'all';
+                  const singleForEdit = !isAll ? allInstitutions.find((p: any) => p.id === printInstitutionId) : null;
+                  const defaultSchool = institutions.find((i: any) => i.is_default) || allInstitutions[0];
+                  const targetForEdit = isAll ? defaultSchool : (singleForEdit || defaultSchool);
+
                   setPrintEditData({
-                    instName: instName, instNameEn: instNameEn, instAddress: instAddress,
-                    instPhone: instPhone, instEmail: instEmail, instOther: instOther, instLogo: instLogo,
-                    reportTitle: bn ? (printInstitutionId === 'all' ? 'সকল প্রতিষ্ঠানের একত্রিত হিসাব প্রতিবেদন' : 'প্রকল্প হিসাব প্রতিবেদন') : (printInstitutionId === 'all' ? 'All Institutions Combined Report' : 'Project Expense Report'),
+                    instName: isAll ? (bn ? 'সকল প্রতিষ্ঠান (একত্রিত হিসাব)' : 'All Institutions (Combined)') : getInstName(targetForEdit, true),
+                    instNameEn: isAll ? 'All Institutions (Combined)' : getInstName(targetForEdit, false),
+                    instAddress: targetForEdit?.address || '',
+                    instPhone: targetForEdit?.phone || '',
+                    instEmail: targetForEdit?.email || '',
+                    instOther: targetForEdit?.other_info || '',
+                    instLogo: targetForEdit?.logo_url || '',
+                    reportTitle: bn
+                      ? (isAll ? 'সকল প্রতিষ্ঠানের একত্রিত হিসাব প্রতিবেদন' : `${getInstName(targetForEdit, true)} - হিসাব প্রতিবেদন`)
+                      : (isAll ? 'All Institutions Combined Report' : `${getInstName(targetForEdit, false)} - Expense Report`),
                     reportSubtitle: '',
                     casherName: summaryData?.casher_name || '',
                     principalName: summaryData?.principal_name || '',
@@ -3961,21 +4438,24 @@ const AdminExpenses = () => {
             const singleInst = !isAllPrint ? allInstitutions.find((p: any) => p.id === printInstitutionId) : null;
             if (!isAllPrint && !singleInst) return null;
 
+            const defaultSchool = institutions.find((i: any) => i.is_default) || allInstitutions[0];
+            const activeInst = isAllPrint ? defaultSchool : singleInst;
+
             const institutionsToPrint = isAllPrint ? allInstitutions : (singleInst ? [singleInst] : []);
             const totalPaid = isAllPrint 
               ? expenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0)
               : (singleInst ? expenses.filter((e: any) => e.institution_id === singleInst.id).reduce((s: number, e: any) => s + Number(e.amount || 0), 0) : 0);
 
             const ed = printEditData;
-            const dInstName = ed.instName || (bn ? instName : instNameEn);
-            const dInstAddress = ed.instAddress || instAddress;
-            const dInstPhone = ed.instPhone || instPhone;
-            const dInstEmail = ed.instEmail || instEmail;
-            const dInstOther = ed.instOther || instOther;
-            const dInstLogo = ed.instLogo || instLogo;
+            const dInstName = ed.instName || (isAllPrint ? (bn ? 'সকল প্রতিষ্ঠান (একত্রিত হিসাব)' : 'All Institutions (Combined)') : getInstName(singleInst, bn));
+            const dInstAddress = ed.instAddress || activeInst?.address || '';
+            const dInstPhone = ed.instPhone || activeInst?.phone || '';
+            const dInstEmail = ed.instEmail || activeInst?.email || '';
+            const dInstOther = ed.instOther || activeInst?.other_info || '';
+            const dInstLogo = ed.instLogo || activeInst?.logo_url || '';
             const dReportTitle = ed.reportTitle || (isAllPrint 
               ? (bn ? 'সকল প্রতিষ্ঠানের একত্রিত হিসাব প্রতিবেদন' : 'All Institutions Combined Expense Report')
-              : (bn ? 'প্রকল্প হিসাব প্রতিবেদন' : 'Project Expense Report'));
+              : (bn ? `${getInstName(singleInst, true)} - হিসাব প্রতিবেদন` : `${getInstName(singleInst, false)} - Expense Report`));
             const dCasher = ed.casherName || summaryData?.casher_name || (bn ? 'ক্যাশিয়ার' : 'Cashier');
             const dPrincipal = ed.principalName || summaryData?.principal_name || (bn ? 'অধ্যক্ষ' : 'Principal');
 
