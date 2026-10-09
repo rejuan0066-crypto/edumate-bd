@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Plus, Trash2, Edit2, DollarSign, TrendingDown, TrendingUp, Wallet, Printer, FolderPlus, TagIcon, Upload, Download, Eye, ScanLine, Building2, Package, AlertTriangle, FileText, FileBarChart } from 'lucide-react';
+import { Plus, Trash2, Edit2, DollarSign, TrendingDown, TrendingUp, Wallet, Printer, FolderPlus, TagIcon, Upload, Download, Eye, ScanLine, Building2, Package, AlertTriangle, FileText, FileBarChart, CheckCircle2, Clock } from 'lucide-react';
 import ExpenseVoucherPrint from '@/components/expenses/ExpenseVoucherPrint';
 import ExpenseHierarchyReport from '@/components/expenses/ExpenseHierarchyReport';
 import LedgerReport from '@/components/expenses/LedgerReport';
@@ -27,6 +27,7 @@ import AnimatedCounter from '@/components/expenses/AnimatedCounter';
 import MiniSparkline from '@/components/expenses/MiniSparkline';
 import { generateBilingualReport } from '@/lib/reportPdfGenerator';
 import { useConfirm } from "@/contexts/ConfirmContext";
+import { exportExpensesMultiTabExcel, exportSingleInstitutionExcel } from '@/lib/expenseExcelExport';
 
 const QUANTITY_UNITS = ['পিস', 'কেজি', 'গ্রাম', 'লিটার', 'ফুট', 'মিটার', 'সেট', 'প্যাকেট', 'বস্তা', 'রিম'];
 const EXPENSE_METHODS = ['ক্যাশ', 'চেক', 'বিকাশ', 'নগদ', 'রকেট', 'ব্যাংক ট্রান্সফার', 'অন্যান্য'];
@@ -35,7 +36,18 @@ const bnToEnDigit = (str: string) => str.replace(/[০-৯]/g, d => '০১২�
 const onlyNumbers = (str: string) => str.replace(/[^0-9০-৯.]/g, '');
 const getUnit = (desc: string) => desc?.match(/\[unit:(.*?)\]/)?.[1] || 'পিস';
 const getMethod = (desc: string) => desc?.match(/\[method:(.*?)\]/)?.[1] || 'ক্যাশ';
-const cleanDesc = (desc: string) => (desc || '').replace(/\[unit:.*?\]/g, '').replace(/\[method:.*?\]/g, '').trim() || '-';
+const getMemo = (desc: string) => desc?.match(/\[memo:(.*?)\]/)?.[1] || '-';
+const getRemarks = (desc: string) => desc?.match(/\[remarks:(.*?)\]/)?.[1] || '-';
+const isUnpaidDue = (desc: string) => (desc || '').includes('[due:unpaid]');
+const isPaidDue = (desc: string) => (desc || '').includes('[due:paid]');
+const cleanDesc = (desc: string) => (desc || '')
+  .replace(/\[unit:.*?\]/g, '')
+  .replace(/\[method:.*?\]/g, '')
+  .replace(/\[memo:.*?\]/g, '')
+  .replace(/\[remarks:.*?\]/g, '')
+  .replace(/\[due:.*?\]/g, '')
+  .replace(/\[original_due_id:.*?\]/g, '')
+  .trim() || '-';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -103,7 +115,24 @@ const AdminExpenses = () => {
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
 
   // Form states
-  const defaultExpenseForm = { institution_id: '', category_id: '', expense_date: new Date().toISOString().split('T')[0], description: '', quantity: '', quantity_unit: '', has_receipt: false, receipt_url: '', amount: '', expense_method: 'ক্যাশ', expense_method_other: '', add_to_inventory: false, inventory_item_id: '' };
+  const defaultExpenseForm = {
+    institution_id: '',
+    category_id: '',
+    expense_date: new Date().toISOString().split('T')[0],
+    description: '',
+    quantity: '1',
+    quantity_unit: 'পিস',
+    has_receipt: false,
+    receipt_url: '',
+    amount: '',
+    expense_method: 'ক্যাশ',
+    expense_method_other: '',
+    memo_no: '',
+    remarks: '',
+    is_due: false,
+    add_to_inventory: false,
+    inventory_item_id: ''
+  };
   const defaultDepositForm = { deposit_date: new Date().toISOString().split('T')[0], bank_details: '', other_details: '', amount: '', source: 'manual' };
   const [expInstForm, setExpInstForm] = useState({ name: '', name_bn: '' });
   const [categoryForm, setCategoryForm] = useState({ institution_id: '', name: '', name_bn: '' });
@@ -113,6 +142,16 @@ const AdminExpenses = () => {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoUploading, setLogoUploading] = useState(false);
   const [summaryForm, setSummaryForm] = useState({ principal_name: '', casher_name: '', previous_arrears: '0' });
+
+  // Due settlement state
+  const [payDueExpense, setPayDueExpense] = useState<any>(null);
+  const [payDueForm, setPayDueForm] = useState({
+    payment_date: new Date().toISOString().split('T')[0],
+    payment_method: 'ক্যাশ',
+    payment_method_other: '',
+    memo_no: '',
+    remarks: '',
+  });
 
   // Queries
   const { data: academicSessions = [] } = useQuery({
@@ -168,7 +207,9 @@ const AdminExpenses = () => {
   const { data: allExpenses = [] } = useQuery({
     queryKey: ['all_expenses'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('expenses').select('month_year, amount, institution_id, category_id, expense_institutions(name, name_bn), expense_categories(name, name_bn)');
+      const { data, error } = await supabase.from('expenses')
+        .select('id, month_year, expense_date, amount, institution_id, category_id, description, quantity, has_receipt, receipt_url, expense_institutions(name, name_bn), expense_categories(name, name_bn)')
+        .order('expense_date', { ascending: false });
       if (error) throw error;
       return data;
     }
@@ -260,7 +301,8 @@ const AdminExpenses = () => {
   const instLogo = selectedInstitution?.logo_url || '';
 
   // Stats
-  const monthlyTotalExpense = useMemo(() => expenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0), [expenses]);
+  const paidExpenses = useMemo(() => expenses.filter((e: any) => !isUnpaidDue(e.description)), [expenses]);
+  const monthlyTotalExpense = useMemo(() => paidExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0), [paidExpenses]);
   const monthlyTotalDeposit = useMemo(() => deposits.reduce((s: number, d: any) => s + Number(d.amount || 0), 0), [deposits]);
   const previousArrears = Number(summaryData?.previous_arrears || 0);
   const rawCash = monthlyTotalDeposit - monthlyTotalExpense - previousArrears;
@@ -287,7 +329,7 @@ const AdminExpenses = () => {
     return true; // monthly mode - show all for "total" row
   };
 
-  const filteredExpenses = useMemo(() => allExpenses.filter((e: any) => matchesFilter(e.month_year)), [allExpenses, filterMode, selectedYear, selectedSessionId, academicSessions]);
+  const filteredExpenses = useMemo(() => allExpenses.filter((e: any) => matchesFilter(e.month_year) && !isUnpaidDue(e.description)), [allExpenses, filterMode, selectedYear, selectedSessionId, academicSessions]);
   const filteredDeposits = useMemo(() => allDeposits.filter((d: any) => matchesFilter(d.month_year)), [allDeposits, filterMode, selectedYear, selectedSessionId, academicSessions]);
 
   const totalExpenseAll = useMemo(() => filteredExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0), [filteredExpenses]);
@@ -398,6 +440,9 @@ const AdminExpenses = () => {
       if (expenseForm.quantity_unit && expenseForm.quantity_unit !== 'পিস') descWithTags += `[unit:${expenseForm.quantity_unit}]`;
       const finalMethod = expenseForm.expense_method === 'অন্যান্য' ? expenseForm.expense_method_other.trim() || 'অন্যান্য' : expenseForm.expense_method;
       if (finalMethod && finalMethod !== 'ক্যাশ') descWithTags += `[method:${finalMethod}]`;
+      if (expenseForm.memo_no && expenseForm.memo_no.trim()) descWithTags += `[memo:${expenseForm.memo_no.trim()}]`;
+      if (expenseForm.remarks && expenseForm.remarks.trim()) descWithTags += `[remarks:${expenseForm.remarks.trim()}]`;
+      if (expenseForm.is_due) descWithTags += `[due:unpaid]`;
       
       const payload = {
         month_year: selectedMonthYear,
@@ -453,6 +498,62 @@ const AdminExpenses = () => {
       setReceiptFile(null);
       setEditingExpenseId(null);
       toast.success(bn ? 'সংরক্ষিত! নতুন এন্ট্রি দিন' : 'Saved! Add new entry');
+    },
+    onError: () => toast.error(bn ? 'ত্রুটি হয়েছে' : 'Error occurred')
+  });
+
+  const payDueMutation = useMutation({
+    mutationFn: async () => {
+      if (!payDueExpense) return;
+      const pDate = new Date(payDueForm.payment_date);
+      const pMonthYear = `${MONTHS[pDate.getMonth()]}-${pDate.getFullYear()}`;
+      const finalMethod = payDueForm.payment_method === 'অন্যান্য'
+        ? payDueForm.payment_method_other.trim() || 'অন্যান্য'
+        : payDueForm.payment_method;
+
+      // 1. Mark original expense as paid
+      const originalDesc = payDueExpense.description || '';
+      const updatedOriginalDesc = originalDesc
+        .replace(/\[due:unpaid\]/g, `[due:paid][paid_date:${payDueForm.payment_date}]`);
+
+      const { error: updateError } = await supabase
+        .from('expenses')
+        .update({ description: updatedOriginalDesc })
+        .eq('id', payDueExpense.id);
+      if (updateError) throw updateError;
+
+      // 2. Insert new cash outflow expense in the month of payment
+      let paidDesc = `[বকেয়া পরিশোধ] ${cleanDesc(originalDesc)}`;
+      if (payDueForm.remarks.trim()) paidDesc += `[remarks:${payDueForm.remarks.trim()}]`;
+      if (payDueForm.memo_no.trim()) paidDesc += `[memo:${payDueForm.memo_no.trim()}]`;
+      if (finalMethod && finalMethod !== 'ক্যাশ') paidDesc += `[method:${finalMethod}]`;
+      paidDesc += `[original_due_id:${payDueExpense.id}]`;
+
+      const { error: insertError } = await supabase.from('expenses').insert({
+        month_year: pMonthYear,
+        institution_id: payDueExpense.institution_id,
+        category_id: payDueExpense.category_id,
+        expense_date: payDueForm.payment_date,
+        description: paidDesc,
+        quantity: payDueExpense.quantity || 1,
+        amount: Number(payDueExpense.amount),
+        has_receipt: payDueExpense.has_receipt,
+        receipt_url: payDueExpense.receipt_url,
+      });
+      if (insertError) throw insertError;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['expenses'] });
+      qc.invalidateQueries({ queryKey: ['all_expenses'] });
+      setPayDueExpense(null);
+      setPayDueForm({
+        payment_date: new Date().toISOString().split('T')[0],
+        payment_method: 'ক্যাশ',
+        payment_method_other: '',
+        memo_no: '',
+        remarks: '',
+      });
+      toast.success(bn ? 'বকেয়া পরিশোধ সম্পন্ন হয়েছে এবং চলতি মাসের ক্যাশ খরচে যুক্ত হয়েছে' : 'Due paid and recorded in payment month cash outflow');
     },
     onError: () => toast.error(bn ? 'ত্রুটি হয়েছে' : 'Error occurred')
   });
@@ -576,23 +677,27 @@ const AdminExpenses = () => {
     }));
   }, [summaryData]);
 
-  // Drill-down state for expenses tab
+  // Institution view state for expenses tab
   const [selectedInstId, setSelectedInstId] = useState<string | null>(null);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [tableCategoryId, setTableCategoryId] = useState<string>('all');
+  const [tableSearchText, setTableSearchText] = useState<string>('');
 
   // Auto-select first institution
+  useEffect(() => {
+    if (expenseInstitutions.length > 0 && !selectedInstId) {
+      setSelectedInstId(expenseInstitutions[0].id);
+    }
+  }, [expenseInstitutions, selectedInstId]);
 
   const selectedInst = expenseInstitutions.find((p: any) => p.id === selectedInstId);
   const instCategories = categories.filter((c: any) => c.institution_id === selectedInstId);
-  const categoryExpenses = expenses.filter((e: any) => e.institution_id === selectedInstId && e.category_id === selectedCategoryId);
-  const categoryExpenseTotal = categoryExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-  const selectedCategory = categories.find((c: any) => c.id === selectedCategoryId);
 
-  // Project monthly/total for drill-down
-  const getInstMonthly = (pid: string) => expenses.filter((e: any) => e.institution_id === pid).reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-  const getInstTotal = (pid: string) => allExpenses.filter((e: any) => e.institution_id === pid).reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-  const getCategoryMonthly = (cid: string) => expenses.filter((e: any) => e.category_id === cid).reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-  const getCategoryTotal = (cid: string) => allExpenses.filter((e: any) => e.category_id === cid).reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+  // Institution monthly cash and dues
+  const getInstMonthly = (pid: string) => expenses.filter((e: any) => e.institution_id === pid && !isUnpaidDue(e.description)).reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+  const getInstDueTotal = (pid: string) => allExpenses.filter((e: any) => e.institution_id === pid && isUnpaidDue(e.description)).reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+  const getInstTotal = (pid: string) => allExpenses.filter((e: any) => e.institution_id === pid && !isUnpaidDue(e.description)).reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+  const getCategoryMonthly = (cid: string) => expenses.filter((e: any) => e.category_id === cid && !isUnpaidDue(e.description)).reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+  const getCategoryTotal = (cid: string) => allExpenses.filter((e: any) => e.category_id === cid && !isUnpaidDue(e.description)).reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
 
   const handlePrint = () => window.print();
   const formatNum = (n: number) => n.toLocaleString(bn ? 'bn-BD' : 'en-BD');
@@ -674,9 +779,26 @@ const AdminExpenses = () => {
     setEditingExpenseId(e.id);
     const method = getMethod(e.description);
     const isKnownMethod = EXPENSE_METHODS.includes(method);
-    const cat = categories.find((c: any) => c.id === e.category_id);
-    const instId = (cat as any)?.institution_id || '';
-    setExpenseForm({ institution_id: e.institution_id, category_id: e.category_id, expense_date: e.expense_date, description: cleanDesc(e.description) === '-' ? '' : cleanDesc(e.description), quantity: String(e.quantity || 1), quantity_unit: getUnit(e.description), has_receipt: !!e.has_receipt, receipt_url: e.receipt_url || '', amount: String(e.amount), expense_method: isKnownMethod ? method : 'অন্যান্য', expense_method_other: isKnownMethod ? '' : method, add_to_inventory: false, inventory_item_id: '' });
+    const memo = getMemo(e.description);
+    const rem = getRemarks(e.description);
+    setExpenseForm({
+      institution_id: e.institution_id,
+      category_id: e.category_id,
+      expense_date: e.expense_date,
+      description: cleanDesc(e.description) === '-' ? '' : cleanDesc(e.description),
+      quantity: String(e.quantity || 1),
+      quantity_unit: getUnit(e.description),
+      has_receipt: !!e.has_receipt,
+      receipt_url: e.receipt_url || '',
+      amount: String(e.amount),
+      expense_method: isKnownMethod ? method : 'অন্যান্য',
+      expense_method_other: isKnownMethod ? '' : method,
+      memo_no: memo === '-' ? '' : memo,
+      remarks: rem === '-' ? '' : rem,
+      is_due: isUnpaidDue(e.description),
+      add_to_inventory: false,
+      inventory_item_id: ''
+    });
     setExpenseDialog(true);
   };
   const openEditDeposit = (d: any) => {
@@ -690,53 +812,28 @@ const AdminExpenses = () => {
     setExpInstDialog(true);
   };
   const handleExcelDownload = () => {
-    const rows: string[][] = [];
-    // Header
-    rows.push([bn ? 'প্রতিষ্ঠান' : 'Institution', bn ? instName : instNameEn]);
-    rows.push([bn ? 'ঠিকানা' : 'Address', instAddress]);
-    rows.push([bn ? 'ফোন' : 'Phone', instPhone]);
-    rows.push([bn ? 'ইমেইল' : 'Email', instEmail]);
-    if (instOther) rows.push([bn ? 'অন্যান্য' : 'Other', instOther]);
-    rows.push([]);
-    rows.push([bn ? 'হিসাব প্রতিবেদন' : 'Expense Report', selectedMonthYear]);
-    rows.push([]);
-    // Summary
-    rows.push([bn ? 'মোট হিসাব' : 'Total Expense', `৳${formatNum(monthlyTotalExpense)}`, bn ? 'মোট টাকা আয়/উত্তোলন' : 'Total Deposit', `৳${formatNum(monthlyTotalDeposit)}`]);
-    rows.push([bn ? 'পূর্ববর্তী বকেয়া' : 'Previous Arrears', `৳${formatNum(previousArrears)}`, bn ? 'ক্যাশ' : 'Cash', `৳${formatNum(monthlyCash)}`]);
-    rows.push([]);
-
-    expenseInstitutions.forEach((inst: any) => {
-      const instExpenses = expenses.filter((e: any) => e.institution_id === inst.id);
-      if (instExpenses.length === 0) return;
-      const instTotal = instExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-      rows.push([`${bn ? 'প্রতিষ্ঠান' : 'Institution'}: ${bn ? inst.name_bn : inst.name}`, '', '', '', `৳${formatNum(instTotal)}`]);
-
-      const instCatsForPrint = categories.filter((c: any) => c.institution_id === inst.id);
-      instCatsForPrint.forEach((cat: any) => {
-        const catExpenses = instExpenses.filter((e: any) => e.category_id === cat.id);
-        if (catExpenses.length === 0) return;
-        const catTotal = catExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-        rows.push([`  ${bn ? 'ক্যাটেগরি' : 'Category'}: ${bn ? cat.name_bn : cat.name}`, '', '', '', `৳${formatNum(catTotal)}`]);
-        rows.push(['#', bn ? 'তারিখ' : 'Date', bn ? 'বিবরণ' : 'Description', bn ? 'পরিমাণ' : 'Qty', bn ? 'মাধ্যম' : 'Method', bn ? 'টাকা' : 'Amount', bn ? 'রসিদ' : 'Receipt']);
-        catExpenses.forEach((e: any, i: number) => {
-          rows.push([String(i + 1), e.expense_date, cleanDesc(e.description), `${e.quantity || 1} ${getUnit(e.description)}`, getMethod(e.description), `৳${formatNum(Number(e.amount))}`, e.has_receipt ? '✓' : '-']);
-        });
-        rows.push([]);
-      });
+    exportExpensesMultiTabExcel({
+      institutionName: instName || (bn ? 'সকল প্রতিষ্ঠান' : 'All Institutions'),
+      reportPeriod: selectedMonthName,
+      selectedMonthYear,
+      institutions: expenseInstitutions,
+      categories,
+      expenses,
+      unpaidDues: allExpenses.filter((e: any) => isUnpaidDue(e.description)),
+      monthlyTotalExpense,
+      monthlyTotalDeposit,
+      previousArrears,
+      monthlyCash,
+      deposits,
+      bn,
+      cleanDesc,
+      getUnit,
+      getMethod,
+      getMemo,
+      getRemarks,
+      formatNum,
     });
-
-    rows.push([bn ? 'সর্বমোট হিসাব' : 'Grand Total Expense', `৳${formatNum(monthlyTotalExpense)}`]);
-
-    const csvContent = rows.map(r => r.map(c => `"${(c || '').replace(/"/g, '""')}"`).join(',')).join('\n');
-    const BOM = '\uFEFF';
-    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `expense_report_${selectedMonthYear}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success(bn ? 'ডাউনলোড হয়েছে' : 'Downloaded');
+    toast.success(bn ? 'সকল প্রতিষ্ঠানের মাল্টি-ট্যাব এক্সেল ডাউনলোড হয়েছে' : 'Multi-tab Excel downloaded successfully');
   };
 
   const [depositPrintPreview, setDepositPrintPreview] = useState(false);
@@ -778,42 +875,29 @@ const AdminExpenses = () => {
   const handleInstExcelDownload = (instId: string) => {
     const inst = expenseInstitutions.find((p: any) => p.id === instId);
     if (!inst) return;
-    const instExpensesFiltered = expenses.filter((e: any) => e.institution_id === instId);
-    const instTotal = instExpensesFiltered.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-    const rows: string[][] = [];
-    rows.push([bn ? 'প্রতিষ্ঠান' : 'Institution', bn ? instName : instNameEn]);
-    rows.push([bn ? 'ঠিকানা' : 'Address', instAddress]);
-    rows.push([bn ? 'ফোন' : 'Phone', instPhone]);
-    rows.push([bn ? 'ইমেইল' : 'Email', instEmail]);
-    if (instOther) rows.push([bn ? 'অন্যান্য' : 'Other', instOther]);
-    rows.push([]);
-    rows.push([`${bn ? 'প্রতিষ্ঠান' : 'Institution'}: ${bn ? inst.name_bn : inst.name}`, selectedMonthYear]);
-    rows.push([]);
-
-    const instCatsForPrint = categories.filter((c: any) => c.institution_id === instId);
-    instCatsForPrint.forEach((cat: any) => {
-      const catExpenses = instExpensesFiltered.filter((e: any) => e.category_id === cat.id);
-      if (catExpenses.length === 0) return;
-      const catTotal = catExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-      rows.push([`${bn ? 'ক্যাটেগরি' : 'Category'}: ${bn ? cat.name_bn : cat.name}`, '', '', '', '', `৳${formatNum(catTotal)}`]);
-      rows.push(['#', bn ? 'তারিখ' : 'Date', bn ? 'বিবরণ' : 'Description', bn ? 'পরিমাণ' : 'Qty', bn ? 'মাধ্যম' : 'Method', bn ? 'টাকা' : 'Amount', bn ? 'রসিদ' : 'Receipt']);
-      catExpenses.forEach((e: any, i: number) => {
-        rows.push([String(i + 1), e.expense_date, cleanDesc(e.description), `${e.quantity || 1} ${getUnit(e.description)}`, getMethod(e.description), `৳${formatNum(Number(e.amount))}`, e.has_receipt ? '✓' : '-']);
-      });
-      rows.push([]);
+    exportSingleInstitutionExcel({
+      selectedInstId: instId,
+      institutionName: instName || '',
+      reportPeriod: selectedMonthName,
+      selectedMonthYear,
+      institutions: expenseInstitutions,
+      categories,
+      expenses,
+      unpaidDues: allExpenses.filter((e: any) => isUnpaidDue(e.description)),
+      monthlyTotalExpense,
+      monthlyTotalDeposit,
+      previousArrears,
+      monthlyCash,
+      deposits,
+      bn,
+      cleanDesc,
+      getUnit,
+      getMethod,
+      getMemo,
+      getRemarks,
+      formatNum,
     });
-
-    rows.push([bn ? 'প্রকল্প মোট হিসাব' : 'Project Total', `৳${formatNum(instTotal)}`]);
-    const csvContent = rows.map(r => r.map(c => `"${(c || '').replace(/"/g, '""')}"`).join(',')).join('\n');
-    const BOM = '\uFEFF';
-    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${bn ? inst.name_bn : inst.name}_${selectedMonthYear}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success(bn ? 'ডাউনলোড হয়েছে' : 'Downloaded');
+    toast.success(bn ? 'প্রতিষ্ঠানের এক্সেল ফাইল ডাউনলোড হয়েছে' : 'Institution Excel downloaded');
   };
 
   const openEditCategory = (c: any) => {
@@ -1080,201 +1164,498 @@ const AdminExpenses = () => {
             ))}
           </div>
 
-          {/* Expenses Tab - Drill-down: Projects → Categories → Expenses */}
-          <TabsContent value="dashboard" className="space-y-4">
-            {/* Institution Tabs */}
+          {/* Expenses Tab - Institution-based tables & Dues tables */}
+          <TabsContent value="dashboard" className="space-y-6">
+            {/* Institution Selector Pills */}
             {expenseInstitutions.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">{bn ? 'কোনো প্রতিষ্ঠান নেই। সেটিংস ট্যাব থেকে যোগ করুন।' : 'No institutions. Add from Settings tab.'}</p>
             ) : (
-              <>
-                <div className="flex flex-wrap gap-2 items-center">
-                  {expenseInstitutions.map((p: any) => (
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-2 items-center justify-between">
+                  <div className="flex flex-wrap gap-2 items-center">
                     <button
-                      key={p.id}
-                      onClick={() => { setSelectedInstId(selectedInstId === p.id ? '' : p.id); setSelectedCategoryId(null); }}
-                      className={`group px-4 py-2.5 rounded-2xl text-sm font-medium transition-all ${selectedInstId === p.id
-                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25'
+                      onClick={() => { setSelectedInstId('all'); setTableCategoryId('all'); }}
+                      className={`group px-4 py-2.5 rounded-2xl text-sm font-semibold transition-all ${selectedInstId === 'all'
+                        ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/25'
                         : 'bg-white/60 dark:bg-white/10 backdrop-blur border border-emerald-200/30 dark:border-emerald-800/30 text-foreground hover:shadow-md hover:border-emerald-300/50'}`}
                     >
                       <Building2 className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
-                      {bn ? p.name_bn : p.name}
-                      <span className="ml-2 text-[11px] opacity-80">৳{formatNum(getInstMonthly(p.id))}</span>
+                      {bn ? 'সকল প্রতিষ্ঠান' : 'All Institutions'}
+                      <span className="ml-2 text-[11px] opacity-80">৳{formatNum(monthlyTotalExpense)}</span>
                     </button>
-                  ))}
-                  <div className="ml-auto flex items-center gap-3">
-                    <span className="text-sm font-semibold text-destructive">
-                      {bn ? 'মোট:' : 'Total:'} ৳{formatNum(monthlyTotalExpense)}
-                    </span>
-                    {canAddItem && !selectedInstId && (
-                      <motion.button
-                        whileHover={{ scale: 1.04, boxShadow: '0 8px 32px -4px rgba(16,185,129,0.45)' }}
-                        whileTap={{ scale: 0.92 }}
-                        onClick={() => {
-                          setReceiptFile(null);
-                          setEditingExpenseId(null);
-                          setExpenseForm(defaultExpenseForm);
-                          setExpenseDialog(true);
-                        }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold tracking-wide text-white border border-white/20 backdrop-blur-sm transition-all duration-300"
-                        style={{ background: 'linear-gradient(135deg, hsl(160 84% 30%), hsl(160 70% 36%))', boxShadow: '0 4px 20px -4px rgba(16,185,129,0.35)' }}
-                      >
-                        <Plus className="w-4 h-4" />
-                        <span>{bn ? 'হিসাব যোগ করুন' : 'Add Expense'}</span>
-                      </motion.button>
-                    )}
+                    {expenseInstitutions.map((p: any) => {
+                      const instMonthly = getInstMonthly(p.id);
+                      const instDue = getInstDueTotal(p.id);
+                      const isSelected = selectedInstId === p.id;
+                      return (
+                        <button
+                          key={p.id}
+                          onClick={() => { setSelectedInstId(p.id); setTableCategoryId('all'); }}
+                          className={`group px-4 py-2.5 rounded-2xl text-sm font-medium transition-all ${isSelected
+                            ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25'
+                            : 'bg-white/60 dark:bg-white/10 backdrop-blur border border-emerald-200/30 dark:border-emerald-800/30 text-foreground hover:shadow-md hover:border-emerald-300/50'}`}
+                        >
+                          <Building2 className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
+                          {bn ? p.name_bn || p.name : p.name}
+                          <span className="ml-2 text-[11px] opacity-80">৳{formatNum(instMonthly)}</span>
+                          {instDue > 0 && (
+                            <span className={`ml-1.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold ${isSelected ? 'bg-amber-300 text-amber-950' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'}`}>
+                              {bn ? 'বকেয়া' : 'Due'} ৳{formatNum(instDue)}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
-                </div>
 
-                {/* Breadcrumb when inside a category */}
-                {selectedInstId && selectedCategoryId && (
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <button onClick={() => setSelectedCategoryId(null)} className="text-primary hover:underline cursor-pointer">
-                      {bn ? selectedInst?.name_bn : selectedInst?.name}
-                    </button>
-                    <span>/</span>
-                    <span className="font-medium text-foreground">{bn ? selectedCategory?.name_bn : selectedCategory?.name}</span>
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* Level 2: Category List for selected project */}
-            {selectedInstId && !selectedCategoryId && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold">{bn ? 'ক্যাটেগরি নির্বাচন করুন' : 'Select Category'} — {bn ? selectedInst?.name_bn : selectedInst?.name}</h3>
-                  {canAddItem && (
-                    <motion.button
-                      whileHover={{ scale: 1.04, boxShadow: '0 8px 32px -4px rgba(16,185,129,0.45)' }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => {
-                        setReceiptFile(null);
-                        setEditingExpenseId(null);
-                        setExpenseForm({ ...defaultExpenseForm, institution_id: selectedInstId });
-                        setExpenseDialog(true);
-                      }}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[16px] text-sm font-semibold tracking-wide text-white border border-white/20 backdrop-blur-sm transition-all duration-300"
-                      style={{ background: 'linear-gradient(135deg, hsl(160 84% 30%), hsl(160 70% 36%))' , boxShadow: '0 4px 20px -4px rgba(16,185,129,0.35)' }}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleExcelDownload}
+                      className="border-emerald-300 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 gap-1.5"
                     >
-                      <Plus className="w-4 h-4" />{bn ? 'হিসাব এন্ট্রি' : 'Add Expense'}
-                    </motion.button>
-                  )}
+                      <Download className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>{bn ? 'সকল প্রতিষ্ঠান এক্সেল (ক্যাটাগরি ট্যাব)' : 'Export Multi-Tab Excel'}</span>
+                    </Button>
+                    <span className="text-sm font-semibold text-destructive px-2 py-1 rounded bg-destructive/10">
+                      {bn ? 'মাসিক মোট:' : 'Monthly Total:'} ৳{formatNum(monthlyTotalExpense)}
+                    </span>
+                  </div>
                 </div>
-                {instCategories.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">{bn ? 'এই প্রতিষ্ঠানে কোনো ক্যাটেগরি নেই।' : 'No categories in this institution.'}</p>
-                ) : (
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {instCategories.map((c: any) => (
-                      <motion.div
-                        key={c.id}
-                        whileHover={{ y: -4, boxShadow: '0 12px 30px rgba(16,185,129,0.12)' }}
-                        transition={{ duration: 0.2 }}
-                        className="flex items-center gap-3 cursor-pointer rounded-2xl border border-emerald-200/20 dark:border-emerald-800/20 bg-white/60 dark:bg-white/5 backdrop-blur-lg p-4 hover:border-emerald-300/40"
-                        onClick={() => setSelectedCategoryId(c.id)}
-                      >
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/20">
-                          <TagIcon className="w-5 h-5 text-white" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h4 className="font-semibold text-foreground text-sm leading-tight truncate">{bn ? c.name_bn : c.name}</h4>
-                          <div className="flex gap-3 text-[11px] text-muted-foreground mt-0.5">
-                            <span>{bn ? `${selectedMonthName}:` : `${selectedMonthName}:`} <span className="text-rose-500 font-medium">৳{formatNum(getCategoryMonthly(c.id))}</span></span>
+
+                {/* Render tables for selected institution(s) */}
+                {(() => {
+                  const targetInstitutions = selectedInstId === 'all'
+                    ? expenseInstitutions
+                    : expenseInstitutions.filter((p: any) => p.id === (selectedInstId || expenseInstitutions[0]?.id));
+
+                  return targetInstitutions.map((inst: any) => {
+                    const instPaidAll = expenses.filter((e: any) => e.institution_id === inst.id && !isUnpaidDue(e.description));
+                    const instCats = categories.filter((c: any) => c.institution_id === inst.id);
+                    const instDues = allExpenses.filter((e: any) => e.institution_id === inst.id && isUnpaidDue(e.description));
+                    const instPaidSum = instPaidAll.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+                    const instDueSum = instDues.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+
+                    // Filter by category and search
+                    let displayExpenses = instPaidAll;
+                    if (tableCategoryId !== 'all') {
+                      displayExpenses = displayExpenses.filter((e: any) => e.category_id === tableCategoryId);
+                    }
+                    if (tableSearchText.trim()) {
+                      const q = tableSearchText.trim().toLowerCase();
+                      displayExpenses = displayExpenses.filter((e: any) =>
+                        cleanDesc(e.description || '').toLowerCase().includes(q) ||
+                        (e.expense_date || '').includes(q) ||
+                        getMemo(e.description || '').toLowerCase().includes(q) ||
+                        getRemarks(e.description || '').toLowerCase().includes(q) ||
+                        String(e.amount).includes(q)
+                      );
+                    }
+                    const displayTotal = displayExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+
+                    // Filter dues by search as well
+                    let displayDues = instDues;
+                    if (tableSearchText.trim()) {
+                      const q = tableSearchText.trim().toLowerCase();
+                      displayDues = displayDues.filter((e: any) =>
+                        cleanDesc(e.description || '').toLowerCase().includes(q) ||
+                        (e.expense_date || '').includes(q) ||
+                        getMemo(e.description || '').toLowerCase().includes(q) ||
+                        getRemarks(e.description || '').toLowerCase().includes(q) ||
+                        String(e.amount).includes(q)
+                      );
+                    }
+
+                    return (
+                      <div key={inst.id} className="space-y-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-card p-4 sm:p-5 shadow-sm">
+                        {/* Institution Header Banner */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/20">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <Building2 className="w-5 h-5 text-emerald-600" />
+                              <h3 className="text-lg font-bold text-foreground">
+                                {bn ? inst.name_bn || inst.name : inst.name}
+                              </h3>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 mt-2 text-xs">
+                              <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 font-medium">
+                                {bn ? 'হিসাবের মাস' : 'Month'}: {selectedMonthName}
+                              </span>
+                              <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 font-medium">
+                                {bn ? 'পরিশোধিত ব্যয়' : 'Paid Expense'}: <strong className="text-emerald-600 ml-1">৳{formatNum(instPaidSum)}</strong>
+                              </span>
+                              {instDueSum > 0 ? (
+                                <span className="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200 font-semibold">
+                                  {bn ? 'বকেয়া খরচ' : 'Outstanding Due'}: <strong className="text-amber-600 ml-1">৳{formatNum(instDueSum)}</strong>
+                                </span>
+                              ) : (
+                                <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300 font-normal">
+                                  ✓ {bn ? 'কোনো বকেয়া নেই' : 'No dues'}
+                                </span>
+                              )}
+                              <span className="text-muted-foreground ml-1">
+                                ({displayExpenses.length} {bn ? 'টি এন্ট্রি' : 'items'})
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Action Buttons: Add Expense, Excel, Print */}
+                          <div className="flex flex-wrap items-center gap-2">
+                            {canAddItem && (
+                              <motion.button
+                                whileHover={{ scale: 1.03 }}
+                                whileTap={{ scale: 0.96 }}
+                                onClick={() => {
+                                  setReceiptFile(null);
+                                  setEditingExpenseId(null);
+                                  setExpenseForm({ ...defaultExpenseForm, institution_id: inst.id });
+                                  setExpenseDialog(true);
+                                }}
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white shadow-md transition-all"
+                                style={{ background: 'linear-gradient(135deg, hsl(160 84% 30%), hsl(160 70% 36%))' }}
+                              >
+                                <Plus className="w-4 h-4" />
+                                <span>{bn ? '+ ব্যয় এন্ট্রি' : '+ Add Expense'}</span>
+                              </motion.button>
+                            )}
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleInstExcelDownload(inst.id)}
+                              className="text-xs h-9 gap-1.5 border-emerald-300 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                              title={bn ? 'এই প্রতিষ্ঠানের ক্যাটাগরিভিত্তিক আলাদা ট্যাব এক্সেল' : 'Export institution excel with category tabs'}
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span>{bn ? 'এক্সেল ডাউনলোড' : 'Excel'}</span>
+                            </Button>
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setPrintInstitutionId(inst.id)}
+                              className="text-xs h-9 gap-1.5"
+                            >
+                              <Printer className="w-3.5 h-3.5" />
+                              <span>{bn ? 'প্রিন্ট / ভাউচার' : 'Print'}</span>
+                            </Button>
                           </div>
                         </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
 
-            {/* Level 3: Expenses for selected project+category */}
-            {selectedInstId && selectedCategoryId && (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="font-semibold">{bn ? 'হিসাব তালিকা' : 'Expense List'} ({selectedMonthYear})</h3>
-                </div>
+                        {/* Search & Category Filter Toolbar */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                          <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[260px]">
+                            <Select value={tableCategoryId} onValueChange={setTableCategoryId}>
+                              <SelectTrigger className="w-[180px] h-8 text-xs">
+                                <SelectValue placeholder={bn ? 'সকল ক্যাটাগরি' : 'All Categories'} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">{bn ? 'সকল ক্যাটাগরি' : 'All Categories'}</SelectItem>
+                                {instCats.map((c: any) => (
+                                  <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn || c.name : c.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
 
-                <div className="border border-slate-300 overflow-auto bg-white">
-                  <table className="w-full border-collapse text-sm text-slate-700">
-                    <thead>
-                      <tr className="bg-slate-100 border-b-2 border-slate-300">
-                        <th className="border border-slate-300 px-3 py-1.5 text-center font-semibold text-slate-800 w-12">#</th>
-                        <th className="border border-slate-300 px-3 py-1.5 text-center font-semibold text-slate-800 w-32">{bn ? 'তারিখ' : 'Date'}</th>
-                        <th className="border border-slate-300 px-3 py-1.5 text-left font-semibold text-slate-800">{bn ? 'বিবরণ' : 'Description'}</th>
-                        <th className="border border-slate-300 px-3 py-1.5 text-center font-semibold text-slate-800 w-20">{bn ? 'ভাউচার' : 'Receipt'}</th>
-                        <th className="border border-slate-300 px-3 py-1.5 text-right font-semibold text-slate-800 w-28">{bn ? 'পরিমাণ' : 'Qty'}</th>
-                        <th className="border border-slate-300 px-3 py-1.5 text-right font-semibold text-slate-800 w-36">{bn ? 'টাকা' : 'Amount'}</th>
-                        <th className="border border-slate-300 px-3 py-1.5 text-center font-semibold text-slate-800 w-28"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {categoryExpenses.length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="border border-slate-300 px-3 py-8 text-center text-slate-500">
-                            {bn ? 'কোনো হিসাব নেই' : 'No expenses'}
-                          </td>
-                        </tr>
-                      ) : (
-                        <>
-                          {categoryExpenses.map((e: any, i: number) => (
-                            <tr key={e.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                              <td className="border border-slate-300 px-3 py-1.5 text-center tabular-nums">{i + 1}</td>
-                              <td className="border border-slate-300 px-3 py-1.5 text-center tabular-nums">{e.expense_date}</td>
-                              <td className="border border-slate-300 px-3 py-1.5 text-left">
-                                <div className="flex items-center gap-2">
-                                  <span className="truncate">{cleanDesc(e.description)}</span>
-                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 whitespace-nowrap">{getMethod(e.description)}</span>
-                                </div>
-                              </td>
-                              <td className="border border-slate-300 px-2 py-1 text-center">
-                                <div className="flex items-center justify-center gap-1">
-                                  <span className={`inline-block w-2 h-2 rounded-full ${e.has_receipt ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                                  {e.has_receipt && e.receipt_url && (
-                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setReceiptPreview(e.receipt_url)}>
-                                      <Eye className="w-3.5 h-3.5 text-emerald-600" />
-                                    </Button>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="border border-slate-300 px-3 py-1.5 text-right tabular-nums">{e.quantity} <span className="text-xs text-slate-500">{getUnit(e.description)}</span></td>
-                              <td className="border border-slate-300 px-3 py-1.5 text-right tabular-nums font-medium">৳{formatNum(Number(e.amount))}</td>
-                              <td className="border border-slate-300 px-2 py-1 text-center">
-                                <div className="flex gap-0.5 justify-center">
-                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setVoucherExpense(e)} title={bn ? 'ভাউচার' : 'Voucher'}><FileText className="w-3.5 h-3.5 text-blue-500" /></Button>
-                                  {canEditItem && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditExpense(e)}><Edit2 className="w-3.5 h-3.5 text-emerald-600" /></Button>}
-                                  {canDeleteItem && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setDeleteConfirmId(e.id); setDeleteConfirmType('expense'); }}><Trash2 className="w-3.5 h-3.5 text-rose-500" /></Button>}
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                          <tr className="bg-slate-800 text-white font-bold">
-                            <td colSpan={5} className="border border-slate-700 px-3 py-2 text-right">{bn ? 'মোট হিসাব:' : 'Total:'}</td>
-                            <td className="border border-slate-700 px-3 py-2 text-right tabular-nums">৳{formatNum(categoryExpenseTotal)}</td>
-                            <td className="border border-slate-700 px-3 py-2"></td>
-                          </tr>
-                        </>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-                {canAddItem && (
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.96 }}
-                    onClick={() => {
-                      setReceiptFile(null);
-                      setEditingExpenseId(null);
-                      setExpenseForm({ ...defaultExpenseForm, institution_id: selectedInstId, category_id: selectedCategoryId });
-                      setExpenseDialog(true);
-                    }}
-                    className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-[16px] text-white text-sm font-semibold tracking-wide border border-white/20 mt-3 transition-all duration-300"
-                    style={{ background: 'linear-gradient(135deg, hsl(160 84% 30%), hsl(160 70% 36%))', boxShadow: '0 4px 20px -4px rgba(16,185,129,0.35)' }}
-                  >
-                    <Plus className="w-5 h-5" />
-                    <span>{bn ? 'হিসাব যোগ করুন' : 'Add Expense'}</span>
-                  </motion.button>
-                )}
+                            <Input
+                              className="h-8 text-xs max-w-xs flex-1"
+                              placeholder={bn ? 'বিবরণ, মেমো বা তারিখ দিয়ে খুঁজুন...' : 'Search description, memo, date...'}
+                              value={tableSearchText}
+                              onChange={e => setTableSearchText(e.target.value)}
+                            />
+                            {tableSearchText && (
+                              <Button variant="ghost" size="sm" className="h-8 text-xs px-2" onClick={() => setTableSearchText('')}>
+                                {bn ? 'ক্লিয়ার' : 'Clear'}
+                              </Button>
+                            )}
+                          </div>
+
+                          <div className="text-xs text-muted-foreground">
+                            {bn ? 'পরিশোধিত খরচ প্রদর্শিত হচ্ছে' : 'Showing paid expenses'}
+                          </div>
+                        </div>
+
+                        {/* Main Expenses Table */}
+                        <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-x-auto bg-card">
+                          <table className="w-full border-collapse text-sm text-foreground">
+                            <thead>
+                              <tr className="bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-xs">
+                                <th className="px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 w-10">#</th>
+                                <th className="px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 w-28">{bn ? 'তারিখ' : 'Date'}</th>
+                                <th className="px-3 py-2 text-left font-bold text-slate-700 dark:text-slate-300 w-36">{bn ? 'ক্যাটাগরি' : 'Category'}</th>
+                                <th className="px-3 py-2 text-left font-bold text-slate-700 dark:text-slate-300">{bn ? 'ব্যয়ের বিবরণ' : 'Description'}</th>
+                                <th className="px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 w-24">{bn ? 'পরিমাণ' : 'Quantity'}</th>
+                                <th className="px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 w-24">{bn ? 'ব্যয়ের মাধ্যম' : 'Method'}</th>
+                                <th className="px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 w-28">{bn ? 'মেমো / রশিদ' : 'Memo/Receipt'}</th>
+                                <th className="px-3 py-2 text-right font-bold text-slate-700 dark:text-slate-300 w-32">{bn ? 'ব্যয় টাকা (৳)' : 'Amount (৳)'}</th>
+                                <th className="px-3 py-2 text-left font-bold text-slate-700 dark:text-slate-300 w-36">{bn ? 'মন্তব্য' : 'Remarks'}</th>
+                                <th className="px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 w-28">{bn ? 'অ্যাকশন' : 'Action'}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {displayExpenses.length === 0 ? (
+                                <tr>
+                                  <td colSpan={10} className="px-3 py-10 text-center text-muted-foreground">
+                                    {bn ? 'এই ফিল্টারে কোনো ব্যয়ের হিসাব পাওয়া যায়নি।' : 'No expenses found for this filter.'}
+                                  </td>
+                                </tr>
+                              ) : (
+                                displayExpenses.map((e: any, idx: number) => {
+                                  const catObj = categories.find((c: any) => c.id === e.category_id);
+                                  const catLabel = catObj ? (bn ? catObj.name_bn || catObj.name : catObj.name) : '-';
+                                  const memoStr = getMemo(e.description);
+                                  const remarksStr = getRemarks(e.description);
+                                  const rawQty = e.quantity ? String(e.quantity) : '১';
+                                  const unit = getUnit(e.description);
+                                  const displayQty = `${rawQty} ${unit}`;
+
+                                  return (
+                                    <tr key={e.id} className={`border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50/80 dark:hover:bg-slate-900/40 transition-colors ${idx % 2 === 0 ? 'bg-white dark:bg-card' : 'bg-slate-50/40 dark:bg-slate-900/20'}`}>
+                                      <td className="px-3 py-2 text-center tabular-nums text-xs text-muted-foreground">{idx + 1}</td>
+                                      <td className="px-3 py-2 text-center tabular-nums text-xs whitespace-nowrap">{e.expense_date}</td>
+                                      <td className="px-3 py-2 text-left">
+                                        <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 truncate max-w-[140px]">
+                                          {catLabel}
+                                        </span>
+                                      </td>
+                                      <td className="px-3 py-2 text-left">
+                                        <span className="font-medium text-foreground">{cleanDesc(e.description)}</span>
+                                      </td>
+                                      <td className="px-3 py-2 text-center text-xs tabular-nums text-slate-700 dark:text-slate-300">
+                                        {displayQty}
+                                      </td>
+                                      <td className="px-3 py-2 text-center">
+                                        <span className="inline-block px-2 py-0.5 rounded text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                                          {getMethod(e.description)}
+                                        </span>
+                                      </td>
+                                      <td className="px-3 py-2 text-center text-xs">
+                                        <div className="flex items-center justify-center gap-1.5">
+                                          <span className="text-slate-600 dark:text-slate-400 font-mono text-[11px]">
+                                            {memoStr !== '-' ? memoStr : '-'}
+                                          </span>
+                                          {e.has_receipt && e.receipt_url && (
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-6 w-6 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                                              onClick={() => setReceiptPreview(e.receipt_url)}
+                                              title={bn ? 'রসিদ দেখুন' : 'View receipt'}
+                                            >
+                                              <Eye className="w-3.5 h-3.5" />
+                                            </Button>
+                                          )}
+                                        </div>
+                                      </td>
+                                      <td className="px-3 py-2 text-right tabular-nums font-bold text-foreground">
+                                        ৳{formatNum(Number(e.amount))}
+                                      </td>
+                                      <td className="px-3 py-2 text-left text-xs text-muted-foreground truncate max-w-[150px]" title={remarksStr !== '-' ? remarksStr : ''}>
+                                        {remarksStr !== '-' ? remarksStr : '-'}
+                                      </td>
+                                      <td className="px-2 py-2 text-center">
+                                        <div className="flex gap-1 justify-center items-center">
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7 text-blue-600 hover:bg-blue-50"
+                                            onClick={() => setVoucherExpense(e)}
+                                            title={bn ? 'ভাউচার প্রিন্ট' : 'Voucher print'}
+                                          >
+                                            <FileText className="w-3.5 h-3.5" />
+                                          </Button>
+                                          {canEditItem && (
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-7 w-7 text-emerald-600 hover:bg-emerald-50"
+                                              onClick={() => openEditExpense(e)}
+                                              title={bn ? 'সম্পাদনা' : 'Edit'}
+                                            >
+                                              <Edit2 className="w-3.5 h-3.5" />
+                                            </Button>
+                                          )}
+                                          {canDeleteItem && (
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-7 w-7 text-rose-600 hover:bg-rose-50"
+                                              onClick={() => { setDeleteConfirmId(e.id); setDeleteConfirmType('expense'); }}
+                                              title={bn ? 'মুছে ফেলুন' : 'Delete'}
+                                            >
+                                              <Trash2 className="w-3.5 h-3.5" />
+                                            </Button>
+                                          )}
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  );
+                                })
+                              )}
+                            </tbody>
+                            <tfoot>
+                              <tr className="bg-slate-800 text-white font-bold text-xs">
+                                <td colSpan={7} className="px-4 py-2.5 text-right">
+                                  {bn ? 'মোট পরিশোধিত ব্যয়:' : 'Total Paid Expense:'}
+                                </td>
+                                <td className="px-3 py-2.5 text-right tabular-nums text-sm text-emerald-300">
+                                  ৳{formatNum(displayTotal)}
+                                </td>
+                                <td colSpan={2} className="px-3 py-2.5 text-slate-400 text-right">
+                                  ({displayExpenses.length} {bn ? 'টি এন্ট্রি' : 'items'})
+                                </td>
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
+
+                        {/* Dedicated Dues Table (বকেয়া খরচের হিসাব) */}
+                        <div className="rounded-xl border border-amber-300 dark:border-amber-800/60 bg-amber-50/20 dark:bg-amber-950/10 p-4 space-y-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200 dark:border-amber-800/40 pb-3">
+                            <div className="flex items-center gap-2">
+                              <AlertTriangle className="w-4 h-4 text-amber-600" />
+                              <h4 className="font-bold text-sm text-amber-900 dark:text-amber-200">
+                                {bn ? 'বকেয়া খরচের হিসাব (পরিশোধ বাকি)' : 'Outstanding Payable Dues'}
+                              </h4>
+                              <span className="text-[11px] text-muted-foreground hidden sm:inline">
+                                — {bn ? 'পরিশোধ করলে পরিশোধের মাসের ক্যাশ খরচে এন্ট্রি হবে' : 'Settling records payment in that month cash flow'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="px-2.5 py-1 rounded-md text-xs font-bold bg-amber-200 text-amber-950 dark:bg-amber-900 dark:text-amber-100">
+                                {bn ? 'মোট বকেয়া:' : 'Total Due:'} ৳{formatNum(instDueSum)}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="border border-amber-200 dark:border-amber-800/40 rounded-lg overflow-x-auto bg-card">
+                            <table className="w-full border-collapse text-xs text-foreground">
+                              <thead>
+                                <tr className="bg-amber-100/60 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800/40">
+                                  <th className="px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-200 w-10">#</th>
+                                  <th className="px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-200 w-28">{bn ? 'বকেয়ার তারিখ' : 'Due Date'}</th>
+                                  <th className="px-3 py-2 text-left font-bold text-amber-950 dark:text-amber-200 w-36">{bn ? 'ক্যাটাগরি' : 'Category'}</th>
+                                  <th className="px-3 py-2 text-left font-bold text-amber-950 dark:text-amber-200">{bn ? 'ব্যয়ের বিবরণ ও পাওনাদার' : 'Description & Vendor'}</th>
+                                  <th className="px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-200 w-24">{bn ? 'পরিমাণ' : 'Quantity'}</th>
+                                  <th className="px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-200 w-28">{bn ? 'মেমো / চালান' : 'Memo/Invoice'}</th>
+                                  <th className="px-3 py-2 text-right font-bold text-amber-950 dark:text-amber-200 w-32">{bn ? 'বকেয়া টাকা (৳)' : 'Due Amount (৳)'}</th>
+                                  <th className="px-3 py-2 text-left font-bold text-amber-950 dark:text-amber-200 w-36">{bn ? 'মন্তব্য' : 'Remarks'}</th>
+                                  <th className="px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-200 w-36">{bn ? 'অ্যাকশন' : 'Action'}</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {displayDues.length === 0 ? (
+                                  <tr>
+                                    <td colSpan={9} className="px-3 py-6 text-center text-muted-foreground">
+                                      ✓ {bn ? 'এই প্রতিষ্ঠানে কোনো বকেয়া খরচ নেই। সব পরিশোধিত।' : 'No outstanding dues for this institution.'}
+                                    </td>
+                                  </tr>
+                                ) : (
+                                  displayDues.map((due: any, dIdx: number) => {
+                                    const catObj = categories.find((c: any) => c.id === due.category_id);
+                                    const catLabel = catObj ? (bn ? catObj.name_bn || catObj.name : catObj.name) : '-';
+                                    const rawQty = due.quantity ? String(due.quantity) : '১';
+                                    const unit = getUnit(due.description);
+                                    const memoStr = getMemo(due.description);
+                                    const remarksStr = getRemarks(due.description);
+
+                                    return (
+                                      <tr key={due.id} className="border-b border-amber-100/60 dark:border-amber-900/30 hover:bg-amber-50/50 dark:hover:bg-amber-950/20">
+                                        <td className="px-3 py-2 text-center tabular-nums text-muted-foreground">{dIdx + 1}</td>
+                                        <td className="px-3 py-2 text-center tabular-nums whitespace-nowrap">{due.expense_date}</td>
+                                        <td className="px-3 py-2 text-left">
+                                          <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-amber-100/70 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                                            {catLabel}
+                                          </span>
+                                        </td>
+                                        <td className="px-3 py-2 text-left font-medium">
+                                          {cleanDesc(due.description)}
+                                        </td>
+                                        <td className="px-3 py-2 text-center tabular-nums">
+                                          {rawQty} {unit}
+                                        </td>
+                                        <td className="px-3 py-2 text-center font-mono">
+                                          {memoStr !== '-' ? memoStr : '-'}
+                                        </td>
+                                        <td className="px-3 py-2 text-right tabular-nums font-bold text-amber-600 dark:text-amber-400">
+                                          ৳{formatNum(Number(due.amount))}
+                                        </td>
+                                        <td className="px-3 py-2 text-left text-muted-foreground truncate max-w-[140px]" title={remarksStr !== '-' ? remarksStr : ''}>
+                                          {remarksStr !== '-' ? remarksStr : '-'}
+                                        </td>
+                                        <td className="px-2 py-2 text-center">
+                                          <div className="flex items-center justify-center gap-1">
+                                            <Button
+                                              size="sm"
+                                              className="bg-emerald-600 hover:bg-emerald-700 text-white h-7 px-2 text-[11px] gap-1 shadow-sm font-semibold"
+                                              onClick={() => {
+                                                setPayDueExpense(due);
+                                                setPayDueForm({
+                                                  payment_date: new Date().toISOString().split('T')[0],
+                                                  payment_method: 'ক্যাশ',
+                                                  payment_method_other: '',
+                                                  memo_no: memoStr !== '-' ? memoStr : '',
+                                                  remarks: remarksStr !== '-' ? remarksStr : '',
+                                                });
+                                              }}
+                                            >
+                                              <CheckCircle2 className="w-3 h-3" />
+                                              <span>{bn ? 'পরিশোধ' : 'Pay'}</span>
+                                            </Button>
+
+                                            {canEditItem && (
+                                              <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-7 w-7 text-emerald-600 hover:bg-emerald-50"
+                                                onClick={() => openEditExpense(due)}
+                                                title={bn ? 'সম্পাদনা' : 'Edit'}
+                                              >
+                                                <Edit2 className="w-3 h-3" />
+                                              </Button>
+                                            )}
+
+                                            {canDeleteItem && (
+                                              <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-7 w-7 text-rose-600 hover:bg-rose-50"
+                                                onClick={() => { setDeleteConfirmId(due.id); setDeleteConfirmType('expense'); }}
+                                                title={bn ? 'মুছে ফেলুন' : 'Delete'}
+                                              >
+                                                <Trash2 className="w-3 h-3" />
+                                              </Button>
+                                            )}
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })
+                                )}
+                              </tbody>
+                              {displayDues.length > 0 && (
+                                <tfoot>
+                                  <tr className="bg-amber-900 text-white font-bold text-xs">
+                                    <td colSpan={6} className="px-4 py-2 text-right">
+                                      {bn ? 'সর্বমোট বকেয়া দায়:' : 'Total Outstanding:'}
+                                    </td>
+                                    <td className="px-3 py-2 text-right tabular-nums text-amber-200">
+                                      ৳{formatNum(instDueSum)}
+                                    </td>
+                                    <td colSpan={2} className="px-3 py-2 text-amber-300 text-right">
+                                      ({displayDues.length} {bn ? 'টি বকেয়া' : 'dues'})
+                                    </td>
+                                  </tr>
+                                </tfoot>
+                              )}
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             )}
           </TabsContent>
@@ -1937,32 +2318,76 @@ const AdminExpenses = () => {
               <Label>{bn ? 'বিবরণ' : 'Description'}</Label>
               <Textarea value={expenseForm.description} onChange={e => setExpenseForm(f => ({ ...f, description: e.target.value }))} />
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>{bn ? 'পরিমাণ (টাকা)' : 'Amount (BDT)'} *</Label>
+                <Input 
+                  value={expenseForm.amount} 
+                  onChange={e => setExpenseForm(f => ({ ...f, amount: onlyNumbers(e.target.value) }))} 
+                  placeholder="০" 
+                  inputMode="decimal"
+                />
+              </div>
+              <div>
+                <Label>{bn ? 'মেমো / রশিদ নং' : 'Memo / Receipt #'}</Label>
+                <Input 
+                  placeholder={bn ? 'উদা: MM-1042' : 'e.g. MM-1042'} 
+                  value={expenseForm.memo_no} 
+                  onChange={e => setExpenseForm(f => ({ ...f, memo_no: e.target.value }))} 
+                />
+              </div>
+            </div>
+
             <div>
-              <Label>{bn ? 'পরিমাণ (টাকা)' : 'Amount (BDT)'} *</Label>
+              <Label>{bn ? 'মন্তব্য' : 'Remarks'}</Label>
               <Input 
-                value={expenseForm.amount} 
-                onChange={e => setExpenseForm(f => ({ ...f, amount: onlyNumbers(e.target.value) }))} 
-                placeholder="০" 
-                inputMode="decimal"
+                placeholder={bn ? 'প্রয়োজনীয় মন্তব্য বা নোট...' : 'Notes or remarks...'} 
+                value={expenseForm.remarks} 
+                onChange={e => setExpenseForm(f => ({ ...f, remarks: e.target.value }))} 
               />
             </div>
-            <div>
-              <Label>{bn ? 'হিসাবের মাধ্যম' : 'Expense Method'} *</Label>
-              <Select value={expenseForm.expense_method} onValueChange={v => setExpenseForm(f => ({ ...f, expense_method: v, expense_method_other: v === 'অন্যান্য' ? f.expense_method_other : '' }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {EXPENSE_METHODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              {expenseForm.expense_method === 'অন্যান্য' && (
-                <Input 
-                  className="mt-2" 
-                  placeholder={bn ? 'মাধ্যমের নাম লিখুন...' : 'Enter method name...'} 
-                  value={expenseForm.expense_method_other} 
-                  onChange={e => setExpenseForm(f => ({ ...f, expense_method_other: e.target.value }))} 
+
+            {/* Due (বকেয়া) Checkbox */}
+            <div className="rounded-xl border border-amber-300/80 dark:border-amber-800/60 bg-amber-50/60 dark:bg-amber-950/20 p-3 space-y-1">
+              <div className="flex items-center gap-2">
+                <Checkbox 
+                  id="expense_is_due_cb"
+                  checked={expenseForm.is_due} 
+                  onCheckedChange={v => setExpenseForm(f => ({ ...f, is_due: !!v }))} 
                 />
-              )}
+                <Label htmlFor="expense_is_due_cb" className="text-sm font-semibold text-amber-900 dark:text-amber-200 cursor-pointer">
+                  {bn ? 'খরচটি বকেয়া (পরিশোধ বাকি)' : 'This expense is Due (Unpaid)'}
+                </Label>
+              </div>
+              <p className="text-[11px] text-muted-foreground ml-6">
+                {bn ? 'চিহ্নিত করলে এই খরচটি বকেয়া টেবিলে যাবে এবং নগদ ব্যালেন্স থেকে এখনই বাদ যাবে না।' : 'Will be tracked in the Dues table and not deducted from cash until settled.'}
+              </p>
             </div>
+
+            {!expenseForm.is_due ? (
+              <div>
+                <Label>{bn ? 'হিসাবের মাধ্যম' : 'Expense Method'} *</Label>
+                <Select value={expenseForm.expense_method} onValueChange={v => setExpenseForm(f => ({ ...f, expense_method: v, expense_method_other: v === 'অন্যান্য' ? f.expense_method_other : '' }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {EXPENSE_METHODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                {expenseForm.expense_method === 'অন্যান্য' && (
+                  <Input 
+                    className="mt-2" 
+                    placeholder={bn ? 'মাধ্যমের নাম লিখুন...' : 'Enter method name...'} 
+                    value={expenseForm.expense_method_other} 
+                    onChange={e => setExpenseForm(f => ({ ...f, expense_method_other: e.target.value }))} 
+                  />
+                )}
+              </div>
+            ) : (
+              <div className="p-2.5 rounded-lg bg-amber-100/50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 text-xs flex items-center gap-2">
+                <Clock className="w-4 h-4 shrink-0" />
+                <span>{bn ? 'বকেয়া খরচ পরিশোধের সময় ব্যয়ের মাধ্যম ও রশিদ নির্ধারণ করা যাবে।' : 'Payment method will be recorded upon settling the due.'}</span>
+              </div>
+            )}
             <div>
               <Label>{bn ? 'রসিদ সংযুক্ত করুন' : 'Attach Receipt'}</Label>
               <div className="flex flex-col gap-2">
@@ -2061,6 +2486,95 @@ const AdminExpenses = () => {
       </Dialog>
 
       <ExpenseVoucherPrint expense={voucherExpense} open={!!voucherExpense} onClose={() => setVoucherExpense(null)} />
+
+      {/* Pay Due Dialog */}
+      <Dialog open={!!payDueExpense} onOpenChange={(open) => { if (!open) setPayDueExpense(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-emerald-600">
+              <CheckCircle2 className="w-5 h-5" />
+              <span>{bn ? 'বকেয়া খরচ পরিশোধ' : 'Pay Due Expense'}</span>
+            </DialogTitle>
+          </DialogHeader>
+          {payDueExpense && (
+            <div className="space-y-4">
+              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 text-xs space-y-1.5">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{bn ? 'বিবরণ:' : 'Description:'}</span>
+                  <span className="font-semibold text-foreground text-right">{cleanDesc(payDueExpense.description)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{bn ? 'বকেয়ার তারিখ:' : 'Due Date:'}</span>
+                  <span>{payDueExpense.expense_date}</span>
+                </div>
+                <div className="flex justify-between font-bold text-sm text-destructive pt-1 border-t border-amber-200 dark:border-amber-800/60">
+                  <span>{bn ? 'বকেয়া পরিমাণ:' : 'Due Amount:'}</span>
+                  <span>৳{formatNum(Number(payDueExpense.amount))}</span>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <Label>{bn ? 'পরিশোধের তারিখ' : 'Payment Date'} *</Label>
+                  <DatePicker bengali={bn} value={payDueForm.payment_date} onChange={v => setPayDueForm(f => ({ ...f, payment_date: v }))} />
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    {bn ? 'যে তারিখে পরিশোধ করবেন, সেই মাসের ক্যাশ খরচে এই টাকা যুক্ত হবে।' : 'Expense will be recorded in this date\'s month cash flow.'}
+                  </p>
+                </div>
+
+                <div>
+                  <Label>{bn ? 'পরিশোধের মাধ্যম' : 'Payment Method'} *</Label>
+                  <Select value={payDueForm.payment_method} onValueChange={v => setPayDueForm(f => ({ ...f, payment_method: v, payment_method_other: v === 'অন্যান্য' ? f.payment_method_other : '' }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {EXPENSE_METHODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  {payDueForm.payment_method === 'অন্যান্য' && (
+                    <Input
+                      className="mt-2"
+                      placeholder={bn ? 'মাধ্যমের নাম লিখুন...' : 'Enter method name...'}
+                      value={payDueForm.payment_method_other}
+                      onChange={e => setPayDueForm(f => ({ ...f, payment_method_other: e.target.value }))}
+                    />
+                  )}
+                </div>
+
+                <div>
+                  <Label>{bn ? 'পরিশোধ মেমো / রশিদ নং' : 'Payment Memo / Receipt #'}</Label>
+                  <Input
+                    placeholder={bn ? 'উদা: VOUCH-012' : 'e.g. VOUCH-012'}
+                    value={payDueForm.memo_no}
+                    onChange={e => setPayDueForm(f => ({ ...f, memo_no: e.target.value }))}
+                  />
+                </div>
+
+                <div>
+                  <Label>{bn ? 'মন্তব্য' : 'Remarks'}</Label>
+                  <Input
+                    placeholder={bn ? 'পরিশোধ সংক্রান্ত নোট...' : 'Payment notes...'}
+                    value={payDueForm.remarks}
+                    onChange={e => setPayDueForm(f => ({ ...f, remarks: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button variant="outline" className="flex-1" onClick={() => setPayDueExpense(null)}>
+                  {bn ? 'বাতিল' : 'Cancel'}
+                </Button>
+                <Button
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={() => payDueMutation.mutate()}
+                  disabled={payDueMutation.isPending}
+                >
+                  {payDueMutation.isPending ? (bn ? 'পরিশোধ হচ্ছে...' : 'Processing...') : (bn ? 'পরিশোধ নিশ্চিত করুন' : 'Confirm Payment')}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!receiptPreview} onOpenChange={() => setReceiptPreview(null)}>
         <DialogContent className="max-w-3xl max-h-[90vh]">
