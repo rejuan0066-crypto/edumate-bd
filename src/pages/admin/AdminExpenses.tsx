@@ -305,69 +305,40 @@ const AdminExpenses = () => {
     },
   });
 
-  // Unified institutions list from expense_institutions and system institutions
+  // Unified institutions list: expense_institutions is the primary entity for expenses
   const allInstitutions = useMemo(() => {
-    const map = new Map<string, any>();
-    expenseInstitutions.forEach((ei: any) => {
-      map.set(ei.id, {
-        id: ei.id,
-        name: ei.name,
-        name_bn: ei.name_bn || ei.name,
-        name_en: ei.name,
-        source: 'expense_institutions'
+    if (expenseInstitutions && expenseInstitutions.length > 0) {
+      return expenseInstitutions.map((ei: any) => {
+        const instMatch = institutions.find((i: any) => i.id === ei.id);
+        return {
+          id: ei.id,
+          name: ei.name || ei.name_bn,
+          name_bn: ei.name_bn || ei.name,
+          name_en: ei.name || ei.name_bn,
+          address: instMatch?.address || '',
+          phone: instMatch?.phone || '',
+          email: instMatch?.email || '',
+          other_info: instMatch?.other_info || '',
+          logo_url: instMatch?.logo_url || '',
+          is_default: instMatch?.is_default || false,
+          source: 'expense_institutions'
+        };
       });
-    });
-    institutions.forEach((i: any) => {
-      const existing = map.get(i.id);
-      if (!existing) {
-        map.set(i.id, {
-          id: i.id,
-          name: i.name_en || i.name,
-          name_bn: i.name, // In institutions table, 'name' is in Bangla
-          name_en: i.name_en || i.name,
-          address: i.address,
-          phone: i.phone,
-          email: i.email,
-          other_info: i.other_info,
-          logo_url: i.logo_url,
-          is_default: i.is_default,
-          source: 'institutions'
-        });
-      } else {
-        map.set(i.id, {
-          ...existing,
-          name_bn: existing.name_bn || i.name,
-          name_en: i.name_en || existing.name,
-          address: i.address || existing.address,
-          phone: i.phone || existing.phone,
-          email: i.email || existing.email,
-          other_info: i.other_info || existing.other_info,
-          logo_url: i.logo_url || existing.logo_url,
-          is_default: i.is_default || existing.is_default,
-        });
-      }
-    });
-    return Array.from(map.values());
-  }, [expenseInstitutions, institutions]);
-
-  // Auto-sync missing institutions into expense_institutions for foreign key integrity
-  useEffect(() => {
-    if (institutions.length > 0 && expenseInstitutions) {
-      const missing = institutions.filter((inst: any) => !expenseInstitutions.some((ei: any) => ei.id === inst.id));
-      if (missing.length > 0) {
-        const rows = missing.map((inst: any) => ({
-          id: inst.id,
-          name: inst.name_en || inst.name,
-          name_bn: inst.name,
-        }));
-        supabase.from('expense_institutions').upsert(rows).then(({ error }) => {
-          if (!error) {
-            qc.invalidateQueries({ queryKey: ['expense_institutions'] });
-          }
-        });
-      }
     }
-  }, [institutions, expenseInstitutions, qc]);
+    return institutions.map((i: any) => ({
+      id: i.id,
+      name: i.name_en || i.name,
+      name_bn: i.name,
+      name_en: i.name_en || i.name,
+      address: i.address,
+      phone: i.phone,
+      email: i.email,
+      other_info: i.other_info,
+      logo_url: i.logo_url,
+      is_default: i.is_default,
+      source: 'institutions'
+    }));
+  }, [expenseInstitutions, institutions]);
 
   // Auto-select default institution
   useEffect(() => {
@@ -495,59 +466,129 @@ const AdminExpenses = () => {
   // Mutations
   const addExpInst = useMutation({
     mutationFn: async () => {
-      if (!expInstForm.name || !expInstForm.name_bn) { toast.error(bn ? 'সব তথ্য পূরণ করুন' : 'Fill all fields'); return; }
+      const nameBn = (expInstForm.name_bn || '').trim();
+      const nameEn = (expInstForm.name || '').trim() || nameBn;
+      if (!nameBn) {
+        toast.error(bn ? 'প্রতিষ্ঠানের নাম লিখুন' : 'Please enter institution name');
+        return;
+      }
+      const payload = { name: nameEn, name_bn: nameBn };
       if (editingExpInstId) {
-        const { error } = await supabase.from('expense_institutions').update(expInstForm).eq('id', editingExpInstId);
-        if (error) throw error;
+        const { error } = await supabase.from('expense_institutions').update(payload).eq('id', editingExpInstId);
+        if (error) {
+          const { error: upsertErr } = await supabase.from('expense_institutions').upsert({ id: editingExpInstId, ...payload });
+          if (upsertErr) throw upsertErr;
+        }
+        await supabase.from('institutions').update({ name: nameBn, name_en: nameEn }).eq('id', editingExpInstId);
       } else {
-        const { error } = await supabase.from('expense_institutions').insert(expInstForm);
+        const { error } = await supabase.from('expense_institutions').insert(payload);
         if (error) throw error;
       }
-    },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['expense_institutions'] }); setExpInstDialog(false); setExpInstForm({ name: '', name_bn: '' }); setEditingExpInstId(null); toast.success(bn ? 'সংরক্ষিত' : 'Saved'); },
-    onError: () => toast.error(bn ? 'ত্রুটি হয়েছে' : 'Error occurred')
-  });
-
-  const addCategory = useMutation({
-    mutationFn: async () => {
-      if (!categoryForm.institution_id || !categoryForm.name || !categoryForm.name_bn) { toast.error(bn ? 'সব তথ্য পূরণ করুন' : 'Fill all fields'); return; }
-      if (editingCategoryId) {
-        const { error } = await supabase.from('expense_categories').update(categoryForm).eq('id', editingCategoryId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('expense_categories').insert(categoryForm);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['expense_categories'] }); setCategoryDialog(false); setCategoryForm({ institution_id: '', name: '', name_bn: '' }); setEditingCategoryId(null); toast.success(bn ? 'সংরক্ষিত' : 'Saved'); },
-    onError: () => toast.error(bn ? 'ত্রুটি হয়েছে' : 'Error occurred')
-  });
-
-
-  const deleteExpInst = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('expense_institutions').delete().eq('id', id);
-      if (error) throw error;
-      await supabase.from('institutions').delete().eq('id', id);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['expense_institutions'] });
       qc.invalidateQueries({ queryKey: ['institutions'] });
-      toast.success(bn ? 'মুছে ফেলা হয়েছে' : 'Deleted');
+      setExpInstDialog(false);
+      setExpInstForm({ name: '', name_bn: '' });
+      setEditingExpInstId(null);
+      toast.success(bn ? 'সংরক্ষিত' : 'Saved');
     },
-    onError: () => toast.error(bn ? 'মুছে ফেলতে ব্যর্থ' : 'Failed to delete')
+    onError: (err: any) => {
+      console.error('Save institution error:', err);
+      toast.error(err?.message || (bn ? 'ত্রুটি হয়েছে' : 'Error occurred'));
+    }
+  });
+
+  const addCategory = useMutation({
+    mutationFn: async () => {
+      const nameBn = (categoryForm.name_bn || '').trim();
+      const nameEn = (categoryForm.name || '').trim() || nameBn;
+      if (!categoryForm.institution_id || !nameBn) {
+        toast.error(bn ? 'প্রতিষ্ঠান এবং ক্যাটাগরির নাম দিন' : 'Institution and Category name are required');
+        return;
+      }
+      const payload = {
+        institution_id: categoryForm.institution_id,
+        name: nameEn,
+        name_bn: nameBn
+      };
+      if (editingCategoryId) {
+        const { error } = await supabase.from('expense_categories').update(payload).eq('id', editingCategoryId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('expense_categories').insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['expense_categories'] });
+      qc.invalidateQueries({ queryKey: ['expenses'] });
+      qc.invalidateQueries({ queryKey: ['all_expenses'] });
+      setCategoryDialog(false);
+      setCategoryForm({ institution_id: '', name: '', name_bn: '' });
+      setEditingCategoryId(null);
+      toast.success(bn ? 'সংরক্ষিত' : 'Saved');
+    },
+    onError: (err: any) => {
+      console.error('Save category error:', err);
+      toast.error(err?.message || (bn ? 'ত্রুটি হয়েছে' : 'Error occurred'));
+    }
+  });
+
+  const deleteExpInst = useMutation({
+    mutationFn: async (id: string) => {
+      // 1. Delete associated expenses first to prevent foreign key errors
+      const { error: expErr } = await supabase.from('expenses').delete().eq('institution_id', id);
+      if (expErr) console.warn('Expenses delete warning:', expErr);
+
+      // 2. Delete associated categories
+      const { error: catErr } = await supabase.from('expense_categories').delete().eq('institution_id', id);
+      if (catErr) console.warn('Categories delete warning:', catErr);
+
+      // 3. Delete from expense_institutions
+      const { error: expInstErr } = await supabase.from('expense_institutions').delete().eq('id', id);
+      if (expInstErr) throw expInstErr;
+
+      // 4. If present in institutions table and NOT default school, delete from institutions
+      const targetInst = institutions.find((i: any) => i.id === id);
+      if (targetInst && !targetInst.is_default) {
+        await supabase.from('institutions').delete().eq('id', id);
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['expense_institutions'] });
+      qc.invalidateQueries({ queryKey: ['institutions'] });
+      qc.invalidateQueries({ queryKey: ['expense_categories'] });
+      qc.invalidateQueries({ queryKey: ['expenses'] });
+      qc.invalidateQueries({ queryKey: ['all_expenses'] });
+      toast.success(bn ? 'প্রতিষ্ঠান মুছে ফেলা হয়েছে' : 'Institution deleted');
+    },
+    onError: (err: any) => {
+      console.error('Delete institution error:', err);
+      toast.error(err?.message || (bn ? 'মুছে ফেলতে ব্যর্থ' : 'Failed to delete'));
+    }
   });
 
   const deleteCategory = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('expense_categories').delete().eq('id', id);
-      if (error) throw error;
+      // 1. Delete associated expenses first to prevent foreign key constraint violation
+      const { error: expErr } = await supabase.from('expenses').delete().eq('category_id', id);
+      if (expErr) console.warn('Expenses delete warning:', expErr);
+
+      // 2. Delete from expense_categories
+      const { error: catErr } = await supabase.from('expense_categories').delete().eq('id', id);
+      if (catErr) throw catErr;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['expense_categories'] });
+      qc.invalidateQueries({ queryKey: ['expenses'] });
+      qc.invalidateQueries({ queryKey: ['all_expenses'] });
       toast.success(bn ? 'ক্যাটেগরি মুছে ফেলা হয়েছে' : 'Category deleted');
     },
-    onError: () => toast.error(bn ? 'মুছে ফেলতে ব্যর্থ' : 'Failed to delete')
+    onError: (err: any) => {
+      console.error('Delete category error:', err);
+      toast.error(err?.message || (bn ? 'মুছে ফেলতে ব্যর্থ' : 'Failed to delete'));
+    }
   });
 
   const addExpense = useMutation({
@@ -2058,12 +2099,12 @@ const AdminExpenses = () => {
                       </DialogHeader>
                       <div className="space-y-3">
                         <div>
-                          <Label>{bn ? 'নাম (ইংরেজি)' : 'Name (English)'} *</Label>
-                          <Input value={expInstForm.name} onChange={e => setExpInstForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Madrasah" />
+                          <Label>{bn ? 'প্রতিষ্ঠানের নাম (বাংলা)' : 'Name (Bangla)'} *</Label>
+                          <Input value={expInstForm.name_bn} onChange={e => setExpInstForm(f => ({ ...f, name_bn: e.target.value }))} placeholder="যেমন: মাদরাসা" />
                         </div>
                         <div>
-                          <Label>{bn ? 'নাম (বাংলা)' : 'Name (Bangla)'} *</Label>
-                          <Input value={expInstForm.name_bn} onChange={e => setExpInstForm(f => ({ ...f, name_bn: e.target.value }))} placeholder="যেমন: মাদরাসা" />
+                          <Label>{bn ? 'নাম (ইংরেজি - ঐচ্ছিক)' : 'Name (English - Optional)'}</Label>
+                          <Input value={expInstForm.name} onChange={e => setExpInstForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Madrasah" />
                         </div>
                         <Button className="w-full" onClick={() => addExpInst.mutate()} disabled={addExpInst.isPending}>
                           {bn ? 'সংরক্ষণ' : 'Save'}
@@ -2088,7 +2129,15 @@ const AdminExpenses = () => {
                               <Edit2 className="w-3.5 h-3.5" />
                             </Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-rose-600 hover:bg-rose-50" onClick={async () => {
-                              if (await confirm({ description: bn ? 'এই প্রতিষ্ঠানটি মুছে ফেলতে চান? এর সাথে থাকা খরচের তথ্যও মুছে যেতে পারে।' : 'Delete this institution?', variant: 'destructive' })) {
+                              const expCount = allExpenses.filter((e: any) => e.institution_id === p.id).length;
+                              const catCount = categories.filter((c: any) => (c as any).institution_id === p.id).length;
+                              let desc = bn ? `"${getInstName(p, bn)}" প্রতিষ্ঠানটি মুছে ফেলতে চান?` : `Delete institution "${getInstName(p, bn)}"?`;
+                              if (expCount > 0 || catCount > 0) {
+                                desc += bn
+                                  ? `\n\nসতর্কতা: এতে ${expCount}টি খরচের হিসাব এবং ${catCount}টি ক্যাটাগরি রয়েছে। প্রতিষ্ঠানটি মুছে ফেললে এগুলোও মুছে যাবে।`
+                                  : `\n\nWarning: Contains ${expCount} expenses and ${catCount} categories that will also be removed.`;
+                              }
+                              if (await confirm({ title: bn ? 'প্রতিষ্ঠান মুছে ফেলুন' : 'Delete Institution', description: desc, variant: 'destructive' })) {
                                 deleteExpInst.mutate(p.id);
                               }
                             }} title={bn ? 'মুছে ফেলুন' : 'Delete'}>
@@ -2126,8 +2175,14 @@ const AdminExpenses = () => {
                             <SelectContent>{allInstitutions.map((p: any) => <SelectItem key={p.id} value={p.id}>{getInstName(p, bn)}</SelectItem>)}</SelectContent>
                           </Select>
                         </div>
-                        <div><Label>{bn ? 'নাম (ইংরেজি)' : 'Name (English)'} *</Label><Input value={categoryForm.name} onChange={e => setCategoryForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Food" /></div>
-                        <div><Label>{bn ? 'নাম (বাংলা)' : 'Name (Bangla)'} *</Label><Input value={categoryForm.name_bn} onChange={e => setCategoryForm(f => ({ ...f, name_bn: e.target.value }))} placeholder="যেমন: খাবার" /></div>
+                        <div>
+                          <Label>{bn ? 'ক্যাটাগরি নাম (বাংলা)' : 'Category Name (Bangla)'} *</Label>
+                          <Input value={categoryForm.name_bn} onChange={e => setCategoryForm(f => ({ ...f, name_bn: e.target.value }))} placeholder="যেমন: খাবার" />
+                        </div>
+                        <div>
+                          <Label>{bn ? 'ক্যাটাগরি নাম (ইংরেজি - ঐচ্ছিক)' : 'Category Name (English - Optional)'}</Label>
+                          <Input value={categoryForm.name} onChange={e => setCategoryForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Food" />
+                        </div>
                         <Button className="w-full" onClick={() => addCategory.mutate()} disabled={addCategory.isPending}>{bn ? 'সংরক্ষণ' : 'Save'}</Button>
                       </div>
                     </DialogContent>
@@ -2149,7 +2204,14 @@ const AdminExpenses = () => {
                                 <Edit2 className="w-3.5 h-3.5" />
                               </Button>
                               <Button variant="ghost" size="icon" className="h-8 w-8 text-rose-600 hover:bg-rose-50" onClick={async () => {
-                                if (await confirm({ description: bn ? 'এই ক্যাটেগরিটি মুছে ফেলতে চান?' : 'Delete this category?', variant: 'destructive' })) {
+                                const expCount = allExpenses.filter((e: any) => e.category_id === c.id).length;
+                                let desc = bn ? `"${getCatName(c, bn)}" ক্যাটাগরিটি মুছে ফেলতে চান?` : `Delete category "${getCatName(c, bn)}"?`;
+                                if (expCount > 0) {
+                                  desc += bn
+                                    ? `\n\nসতর্কতা: এই ক্যাটাগরিতে ${expCount}টি খরচের এন্ট্রি রয়েছে। ক্যাটাগরি মুছে ফেললে সংশ্লিষ্ট খরচও মুছে যাবে।`
+                                    : `\n\nWarning: Contains ${expCount} expenses that will also be removed.`;
+                                }
+                                if (await confirm({ title: bn ? 'ক্যাটাগরি মুছে ফেলুন' : 'Delete Category', description: desc, variant: 'destructive' })) {
                                   deleteCategory.mutate(c.id);
                                 }
                               }} title={bn ? 'মুছে ফেলুন' : 'Delete'}>
