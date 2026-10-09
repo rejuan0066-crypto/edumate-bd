@@ -142,7 +142,7 @@ const AdminExpenses = () => {
     category_id: '',
     expense_date: new Date().toISOString().split('T')[0],
     description: '',
-    quantity: '1',
+    quantity: '',
     quantity_unit: 'পিস',
     has_receipt: false,
     receipt_url: '',
@@ -593,7 +593,7 @@ const AdminExpenses = () => {
 
   const addExpense = useMutation({
     mutationFn: async () => {
-      if (!expenseForm.institution_id || !expenseForm.category_id || !expenseForm.amount || !expenseForm.quantity) { toast.error(bn ? 'পরিমাণ ও টাকা অবশ্যই পূরণ করুন' : 'Quantity & Amount are required'); return; }
+      if (!expenseForm.institution_id || !expenseForm.category_id || !expenseForm.amount) { toast.error(bn ? 'প্রতিষ্ঠান, ক্যাটাগরি ও টাকা প্রদান করুন' : 'Institution, Category & Amount are required'); return; }
       const parsedAmount = Number(bnToEnDigit(expenseForm.amount));
       const parsedQty = expenseForm.quantity ? Number(bnToEnDigit(expenseForm.quantity)) : 1;
       if (isNaN(parsedAmount) || parsedAmount <= 0) { toast.error(bn ? 'সঠিক টাকার পরিমাণ দিন' : 'Enter valid amount'); return; }
@@ -2706,7 +2706,7 @@ const AdminExpenses = () => {
 
             {!expenseForm.is_due ? (
               <div>
-                <Label>{bn ? 'হিসাবের মাধ্যম' : 'Expense Method'} *</Label>
+                <Label>{bn ? 'ব্যয়ের মাধ্যম' : 'Expense Method'} *</Label>
                 <Select value={expenseForm.expense_method} onValueChange={v => setExpenseForm(f => ({ ...f, expense_method: v, expense_method_other: v === 'অন্যান্য' ? f.expense_method_other : '' }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
