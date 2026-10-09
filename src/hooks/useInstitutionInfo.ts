@@ -50,7 +50,7 @@ const pick = (...vals: any[]) => {
 };
 
 export async function fetchInstitutionInfo(): Promise<InstitutionInfo> {
-  const [{ data: inst }, { data: wsRows }, { data: principalRows }] = await Promise.all([
+  const [{ data: inst }, { data: wsRows }, { data: principalRows }, { data: signatories }] = await Promise.all([
     supabase
       .from('institutions')
       .select('*')
@@ -68,6 +68,7 @@ export async function fetchInstitutionInfo(): Promise<InstitutionInfo> {
         'accountant_name', 'verifier_name',
       ]),
     supabase.rpc('get_public_principal' as any),
+    supabase.from('institution_signatories' as any).select('*'),
   ]);
 
   const ws: Record<string, string> = {};
@@ -79,6 +80,10 @@ export async function fetchInstitutionInfo(): Promise<InstitutionInfo> {
   // Single source of truth for the principal: public RPC over administrative_officers
   const principalOfficer: any = Array.isArray(principalRows) ? principalRows[0] : principalRows;
 
+  const sigList = (signatories || []) as any[];
+  const sigHead = sigList.find((s) => s.role_key === 'head_of_institute');
+  const sigAcc = sigList.find((s) => s.role_key === 'accountant_cashier');
+  const sigVer = sigList.find((s) => s.role_key === 'verifier_auditor');
 
   const result: InstitutionInfo = {
     id: i.id,
@@ -92,10 +97,10 @@ export async function fetchInstitutionInfo(): Promise<InstitutionInfo> {
     logo_url: pick(i.logo_url, ws.logo_url),
     established_year: pick(i.established_year, ws.established_year),
     registration_number: pick(i.registration_number, ws.registration_number),
-    principal_name: pick(principalOfficer?.name_bn, i.principal_name, ws.principal_name),
-    principal_name_en: pick(principalOfficer?.name_en, i.principal_name_en, ws.principal_name_en),
-    accountant_name: pick(i.accountant_name, ws.accountant_name),
-    verifier_name: pick(i.verifier_name, ws.verifier_name),
+    principal_name: pick(sigHead?.person_name_bn, principalOfficer?.name_bn, i.principal_name, ws.principal_name),
+    principal_name_en: pick(sigHead?.person_name_en, principalOfficer?.name_en, i.principal_name_en, ws.principal_name_en),
+    accountant_name: pick(sigAcc?.person_name_bn, i.accountant_name, ws.accountant_name),
+    verifier_name: pick(sigVer?.person_name_bn, i.verifier_name, ws.verifier_name),
     other_info: pick(i.other_info),
     other_info_en: pick(i.other_info_en),
   };

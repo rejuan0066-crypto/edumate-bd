@@ -17,7 +17,9 @@ import { useMemo, useState, useRef } from 'react';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { checkBanglaDesignation } from '@/lib/banglaDesignationSpellCheck';
 import { validateDesignationCsv, type ImportSummary } from '@/lib/bulkDesignationImport';
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ShieldCheck } from 'lucide-react';
+import SignatoryAuthoritiesTab from '@/components/admin/SignatoryAuthoritiesTab';
+import { CORE_SIGNATORY_ROLES } from '@/hooks/useSignatoryAuthorities';
 
 const COLOR_OPTIONS = [
   { value: 'blue', label: 'Blue', className: 'bg-blue-500/10 text-blue-600 border-blue-500/30' },
@@ -60,6 +62,7 @@ const AdminDesignations = () => {
   const [sortOrder, setSortOrder] = useState(0);
   const [isActive, setIsActive] = useState(true);
   const [staffCategory, setStaffCategory] = useState('');
+  const [authorityRole, setAuthorityRole] = useState<string>('none');
 
   // ─── Category Dialog ───
   const [catDialogOpen, setCatDialogOpen] = useState(false);
@@ -84,9 +87,9 @@ const AdminDesignations = () => {
   });
 
   // ─── Designation helpers ───
-  const resetForm = () => { setName(''); setNameBn(''); setDescription(''); setSortOrder(0); setIsActive(true); setStaffCategory(staffCategories[0]?.key || ''); setEditItem(null); };
-  const openAdd = () => { resetForm(); setStaffCategory(staffCategories[0]?.key || ''); setDialogOpen(true); };
-  const openEdit = (item: any) => { setEditItem(item); setName(item.name || ''); setNameBn(item.name_bn || ''); setDescription(item.description || ''); setSortOrder(item.sort_order || 0); setIsActive(item.is_active ?? true); setStaffCategory(item.staff_category || ''); setDialogOpen(true); };
+  const resetForm = () => { setName(''); setNameBn(''); setDescription(''); setSortOrder(0); setIsActive(true); setStaffCategory(staffCategories[0]?.key || ''); setAuthorityRole('none'); setEditItem(null); };
+  const openAdd = () => { resetForm(); setStaffCategory(staffCategories[0]?.key || ''); setAuthorityRole('none'); setDialogOpen(true); };
+  const openEdit = (item: any) => { setEditItem(item); setName(item.name || ''); setNameBn(item.name_bn || ''); setDescription(item.description || ''); setSortOrder(item.sort_order || 0); setIsActive(item.is_active ?? true); setStaffCategory(item.staff_category || ''); setAuthorityRole(item.authority_role || 'none'); setDialogOpen(true); };
 
   // Spelling check (excluding the row being edited)
   const nameBnCheck = useMemo(() => {
@@ -107,7 +110,15 @@ const AdminDesignations = () => {
     mutationFn: async () => {
       if (!name.trim() || !nameBn.trim()) throw new Error(bn ? 'নাম আবশ্যক' : 'Name is required');
       if (nameBnCheck.level === 'error') throw new Error(nameBnCheck.message || (bn ? 'বানান যাচাই করুন' : 'Check spelling'));
-      const record = { name: name.trim(), name_bn: nameBn.trim(), description: description.trim() || null, sort_order: sortOrder, is_active: isActive, staff_category: staffCategory };
+      const record = {
+        name: name.trim(),
+        name_bn: nameBn.trim(),
+        description: description.trim() || null,
+        sort_order: sortOrder,
+        is_active: isActive,
+        staff_category: staffCategory,
+        authority_role: authorityRole === 'none' ? null : authorityRole,
+      };
       if (editItem) { const { error } = await supabase.from('designations').update(record).eq('id', editItem.id); if (error) throw error; }
       else { const { error } = await supabase.from('designations').insert(record); if (error) throw error; }
     },
@@ -115,6 +126,7 @@ const AdminDesignations = () => {
       queryClient.invalidateQueries({ queryKey: ['designations'] });
       queryClient.invalidateQueries({ queryKey: ['designations-all'] });
       queryClient.invalidateQueries({ queryKey: ['designations-for-form-all'] });
+      queryClient.invalidateQueries({ queryKey: ['signatory-authorities'] });
       toast.success(editItem ? (bn ? 'পদবি আপডেট হয়েছে' : 'Designation updated') : (bn ? 'পদবি যোগ হয়েছে' : 'Designation added'));
       setDialogOpen(false);
       resetForm();
@@ -241,9 +253,10 @@ const AdminDesignations = () => {
         </div>
 
         <Tabs defaultValue="designations" className="space-y-4">
-          <TabsList>
+          <TabsList className="grid grid-cols-3 max-w-xl">
             <TabsTrigger value="designations" className="flex items-center gap-1.5"><Tag className="w-4 h-4" /> {bn ? 'পদবি' : 'Designations'}</TabsTrigger>
             <TabsTrigger value="categories" className="flex items-center gap-1.5"><FolderOpen className="w-4 h-4" /> {bn ? 'ডিপার্টমেন্ট' : 'Departments'}</TabsTrigger>
+            <TabsTrigger value="authorities" className="flex items-center gap-1.5"><ShieldCheck className="w-4 h-4 text-emerald-600" /> {bn ? 'স্বাক্ষরকারী কর্তৃপক্ষ' : 'Signatory Authority'}</TabsTrigger>
           </TabsList>
 
           {/* ─── Designations Tab ─── */}
@@ -301,7 +314,17 @@ const AdminDesignations = () => {
                       {filtered.map((d: any, i: number) => (
                         <tr key={d.id} className="hover:bg-secondary/30 transition-colors">
                           <td className="px-4 py-3 text-sm text-muted-foreground">{i + 1}</td>
-                          <td className="px-4 py-3 text-sm font-medium text-foreground">{d.name_bn}</td>
+                          <td className="px-4 py-3 text-sm font-medium text-foreground">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span>{d.name_bn}</span>
+                              {d.authority_role && (
+                                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 border-emerald-400/40 text-[11px] gap-1 py-0 font-normal">
+                                  <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                                  {CORE_SIGNATORY_ROLES.find(r => r.key === d.authority_role)?.label_bn || d.authority_role}
+                                </Badge>
+                              )}
+                            </div>
+                          </td>
                           <td className="px-4 py-3 text-sm text-muted-foreground">{d.name}</td>
                           <td className="px-4 py-3"><Badge variant="outline" className={getCategoryColor(d.staff_category)}>{getCategoryLabel(d.staff_category)}</Badge></td>
                           <td className="px-4 py-3">
@@ -385,6 +408,11 @@ const AdminDesignations = () => {
               )}
             </div>
           </TabsContent>
+
+          {/* ─── Signatory Authorities Tab ─── */}
+          <TabsContent value="authorities" className="space-y-4">
+            <SignatoryAuthoritiesTab canEdit={canEditItem} />
+          </TabsContent>
         </Tabs>
 
         {/* ─── Designation Add/Edit Dialog ─── */}
@@ -433,6 +461,28 @@ const AdminDesignations = () => {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div>
+                <Label>{bn ? 'স্বাক্ষরকারী / নীতিগত দায়িত্ব' : 'Signatory Authority Role'}</Label>
+                <Select value={authorityRole} onValueChange={setAuthorityRole}>
+                  <SelectTrigger className="bg-background mt-1">
+                    <SelectValue placeholder={bn ? 'দায়িত্ব নির্বাচন করুন (ঐচ্ছিক)' : 'Select authority role (Optional)'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{bn ? '— কোনো বিশেষ স্বাক্ষরকারী দায়িত্ব নেই —' : '— None —'}</SelectItem>
+                    {CORE_SIGNATORY_ROLES.map((r) => (
+                      <SelectItem key={r.key} value={r.key}>
+                        <div className="flex items-center gap-2">
+                          <span>{r.icon}</span>
+                          <span>{bn ? r.label_bn : r.label_en}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  {bn ? 'এই পদবিটি কি প্রতিষ্ঠানের কোনো বিশেষ স্বাক্ষরকারী বা নীতিগত দায়িত্ব পালন করবে?' : 'Select if this designation holds a signing authority role.'}
+                </p>
               </div>
               <div><Label>{bn ? 'ক্রম' : 'Sort Order'}</Label><Input type="number" className="bg-background mt-1 w-24" value={sortOrder || ''} onChange={e => setSortOrder(parseInt(e.target.value) || 0)} /></div>
               <div className="flex items-center gap-3"><Switch checked={isActive} onCheckedChange={setIsActive} /><Label>{bn ? 'সক্রিয়' : 'Active'}</Label></div>

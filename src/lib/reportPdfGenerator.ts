@@ -25,6 +25,8 @@ export interface ReportMeta {
   report_title_en: string;
   period_label_bn?: string;
   period_label_en?: string;
+  principal_name?: string;
+  accountant_name?: string;
 }
 
 export interface ReportSummaryStat {
@@ -408,6 +410,7 @@ export const generateBilingualReport = (
   <footer class="footer">
     <div class="signature">
       <div class="signature-line">
+        ${meta.accountant_name ? `<div style="font-weight:700; color:#0f172a; margin-bottom:2px;">${escapeHtml(meta.accountant_name)}</div>` : ''}
         ক্যাশিয়ার / অ্যাকাউন্ট্যান্ট
         <span class="en">Cashier / Accountant</span>
       </div>
@@ -418,7 +421,8 @@ export const generateBilingualReport = (
     </div>
     <div class="signature">
       <div class="signature-line">
-        অধ্যক্ষ
+        ${meta.principal_name ? `<div style="font-weight:700; color:#0f172a; margin-bottom:2px;">${escapeHtml(meta.principal_name)}</div>` : ''}
+        মুহতামিম / অধ্যক্ষ
         <span class="en">Principal</span>
       </div>
     </div>

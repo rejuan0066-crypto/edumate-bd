@@ -29,6 +29,7 @@ import { useConfirm } from "@/contexts/ConfirmContext";
 import { useMenuSettings } from '@/hooks/useMenuSettings';
 import { flattenMenuPaths, mergeMenuPaths } from '@/lib/menuPathList';
 import { Search } from 'lucide-react';
+import { useSignatoryAuthorities, CORE_SIGNATORY_ROLES } from '@/hooks/useSignatoryAuthorities';
 
 interface UserItem {
   id: string;
@@ -176,6 +177,7 @@ const AdminUserManagement = () => {
   const navigate = useNavigate();
   const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/user-management');
   const { role: currentUserRole } = useAuth();
+  const { authorities = [] } = useSignatoryAuthorities();
 
   const [activeTab, setActiveTab] = usePersistentTab<'users' | 'roles' | 'access'>('users', {
     paramName: 'tab',
@@ -1416,6 +1418,11 @@ const AdminUserManagement = () => {
                       const linked = staffByUser[u.id];
                       const officer = adminOfficerByUser[u.id];
                       const displayName = getUserDisplayName(u);
+                      const matchedAuthority = authorities.find(a =>
+                        (linked?.id && a.person_id === linked.id) ||
+                        (officer?.id && a.person_id === officer.id) ||
+                        (u.full_name && a.person_name_bn && u.full_name.trim().toLowerCase() === a.person_name_bn.trim().toLowerCase())
+                      );
                       return (
                       <TableRow key={u.id}>
                         <TableCell className="font-medium">{displayName}</TableCell>
@@ -1423,6 +1430,12 @@ const AdminUserManagement = () => {
                         <TableCell>
                           {linked ? (
                             <div className="flex flex-col gap-1">
+                              {matchedAuthority && (
+                                <Badge variant="outline" className="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-400/50 text-[10px] w-fit font-medium gap-1 py-0.5">
+                                  <ShieldCheck className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                  {matchedAuthority.role_name_bn || CORE_SIGNATORY_ROLES.find(r => r.key === matchedAuthority.role_key)?.label_bn || matchedAuthority.role_key}
+                                </Badge>
+                              )}
                               {linked.designation && (
                                 <Badge variant="outline" className="bg-primary/5 text-primary border-primary/30 w-fit">
                                   {linked.designation}
@@ -1436,6 +1449,12 @@ const AdminUserManagement = () => {
                             </div>
                           ) : officer ? (
                             <div className="flex flex-col gap-1">
+                              {matchedAuthority && (
+                                <Badge variant="outline" className="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-400/50 text-[10px] w-fit font-medium gap-1 py-0.5">
+                                  <ShieldCheck className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                  {matchedAuthority.role_name_bn || CORE_SIGNATORY_ROLES.find(r => r.key === matchedAuthority.role_key)?.label_bn || matchedAuthority.role_key}
+                                </Badge>
+                              )}
                               {officer.designation && (
                                 <Badge variant="outline" className="bg-amber-500/10 text-amber-700 border-amber-400/40 w-fit">
                                   {officer.designation}
@@ -1446,7 +1465,15 @@ const AdminUserManagement = () => {
                               </span>
                             </div>
                           ) : (
-                            <span className="text-muted-foreground text-xs">—</span>
+                            <div className="flex flex-col gap-1">
+                              {matchedAuthority && (
+                                <Badge variant="outline" className="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-400/50 text-[10px] w-fit font-medium gap-1 py-0.5">
+                                  <ShieldCheck className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                  {matchedAuthority.role_name_bn || CORE_SIGNATORY_ROLES.find(r => r.key === matchedAuthority.role_key)?.label_bn || matchedAuthority.role_key}
+                                </Badge>
+                              )}
+                              <span className="text-muted-foreground text-xs">—</span>
+                            </div>
                           )}
                         </TableCell>
                         <TableCell>{roleBadge(u.role)}</TableCell>

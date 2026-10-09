@@ -130,14 +130,23 @@ const ExpenseVoucherPrint = ({ expense, open, onClose }: ExpenseVoucherPrintProp
 
           {/* Signature lines */}
           <div className="flex justify-between mt-12 pt-2 text-xs text-gray-600">
-            <div className="text-center">
-              <div className="border-t border-gray-400 pt-1 min-w-[120px]">{bn ? 'প্রস্তুতকারী' : 'Prepared By'}</div>
+            <div className="text-center min-w-[120px]">
+              {institution?.accountant_name && (
+                <div className="font-semibold text-gray-900 text-xs mb-0.5">{institution.accountant_name}</div>
+              )}
+              <div className="border-t border-gray-400 pt-1">{bn ? 'ক্যাশিয়ার / প্রস্তুতকারী' : 'Cashier / Prepared By'}</div>
             </div>
-            <div className="text-center">
-              <div className="border-t border-gray-400 pt-1 min-w-[120px]">{bn ? 'যাচাইকারী' : 'Verified By'}</div>
+            <div className="text-center min-w-[120px]">
+              {institution?.verifier_name && (
+                <div className="font-semibold text-gray-900 text-xs mb-0.5">{institution.verifier_name}</div>
+              )}
+              <div className="border-t border-gray-400 pt-1">{bn ? 'যাচাইকারী / নিরীক্ষক' : 'Verified By / Auditor'}</div>
             </div>
-            <div className="text-center">
-              <div className="border-t border-gray-400 pt-1 min-w-[120px]">{bn ? 'অনুমোদনকারী' : 'Authorized By'}</div>
+            <div className="text-center min-w-[120px]">
+              {institution?.principal_name && (
+                <div className="font-semibold text-gray-900 text-xs mb-0.5">{institution.principal_name}</div>
+              )}
+              <div className="border-t border-gray-400 pt-1">{bn ? 'মুহতামিম / অধ্যক্ষ' : 'Principal / Authorized By'}</div>
             </div>
           </div>
         </div>
