@@ -118,9 +118,9 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     ? classes.filter((c: any) => c.division_id === selectedDivisionId)
     : classes;
 
-  const inferClassFromRoll = useCallback((roll: string | null | undefined, divId: string | null | undefined) => {
+  const inferClassFromRoll = useCallback((roll: any, divId: string | null | undefined) => {
     if (!roll || !classes.length) return '';
-    const cleanRoll = roll.replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+    const cleanRoll = String(roll).replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
     const num = parseInt(cleanRoll, 10);
     if (isNaN(num) || num < 1000) return '';
     const order = Math.floor(num / 1000);
@@ -406,13 +406,13 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
   }, [isEditMode, getRollStartForClass, academicSessions]);
 
   // Convert Bengali digits to English
-  const bnToEn = (str: string) => str.replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+  const bnToEn = (str: any) => String(str || '').replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
 
   // Auto-generate registration number = divisionPrefix + session first 4 digits + roll number
-  const updateRegistrationFromRoll = useCallback((sessionYear: string, rollNumber: string, force = false) => {
+  const updateRegistrationFromRoll = useCallback((sessionYear: any, rollNumber: any, force = false) => {
     if (!sessionYear || !rollNumber || (isEditMode && !force)) return;
-    const year = bnToEn(sessionYear.trim()).slice(0, 4);
-    const enRoll = bnToEn(rollNumber.trim());
+    const year = bnToEn(String(sessionYear).trim()).slice(0, 4);
+    const enRoll = bnToEn(String(rollNumber).trim());
     // Find division prefix from selectedDivisionId
     const div = divisions.find((d: any) => d.id === selectedDivisionId);
     const prefix = (div as any)?.prefix || '';

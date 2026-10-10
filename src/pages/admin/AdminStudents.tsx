@@ -226,11 +226,11 @@ const AdminStudents = () => {
     if (search) {
       const q = search.toLowerCase();
       return (
-        s.name_bn?.toLowerCase().includes(q) ||
-        s.student_id?.toLowerCase().includes(q) ||
-        s.registration_no?.toLowerCase().includes(q) ||
-        s.roll_number?.toLowerCase().includes(q) ||
-        s.name_en?.toLowerCase().includes(q)
+        String(s.name_bn || '').toLowerCase().includes(q) ||
+        String(s.student_id || '').toLowerCase().includes(q) ||
+        String(s.registration_no || '').toLowerCase().includes(q) ||
+        String(s.roll_number || '').toLowerCase().includes(q) ||
+        String(s.name_en || '').toLowerCase().includes(q)
       );
     }
     return true;
@@ -245,10 +245,12 @@ const AdminStudents = () => {
   const getEffectiveClassId = useCallback((student: any) => {
     if (!student) return null;
     if (student.class_id) return student.class_id;
-    if (student.admission_data?.admission_class) return student.admission_data.admission_class;
+    if (student.admission_data && typeof student.admission_data === 'object' && student.admission_data.admission_class) {
+      return student.admission_data.admission_class;
+    }
     // Fallback: infer from roll number and division if available
     if (student.roll_number && classes.length > 0) {
-      const cleanRoll = String(student.roll_number).replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+      const cleanRoll = String(student.roll_number || '').replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
       const rollNum = parseInt(cleanRoll, 10);
       if (!isNaN(rollNum) && rollNum >= 1000) {
         const order = Math.floor(rollNum / 1000);
@@ -266,7 +268,7 @@ const AdminStudents = () => {
   const sortedFiltered = [...filtered].sort((a: any, b: any) => {
     const rollDiff = parseRollNumber(a.roll_number) - parseRollNumber(b.roll_number);
     if (rollDiff !== 0) return rollDiff;
-    return (a.created_at || '').localeCompare(b.created_at || '');
+    return String(a.created_at || '').localeCompare(String(b.created_at || ''));
   });
 
   const getApprovalBadge = (status: string) => {
@@ -283,37 +285,51 @@ const AdminStudents = () => {
     return cls ? (bn ? cls.name_bn : cls.name) : '-';
   };
 
-  // Generate class-wise serial: 1, 2, 3... within each class
-  const getClassSerial = (student: any) => {
-    const classId = getEffectiveClassId(student);
-    if (!classId) return '-';
-    const sameClassStudents = students
-      .filter((s: any) => getEffectiveClassId(s) === classId)
-      .sort((a: any, b: any) => {
+  // Pre-calculate class-wise serials for all students
+  const classSerialMap = useMemo(() => {
+    const map = new Map<string, number>();
+    const byClass: Record<string, any[]> = {};
+    for (const s of students) {
+      const cId = getEffectiveClassId(s);
+      if (cId) {
+        if (!byClass[cId]) byClass[cId] = [];
+        byClass[cId].push(s);
+      }
+    }
+    for (const cId of Object.keys(byClass)) {
+      const sorted = [...byClass[cId]].sort((a: any, b: any) => {
         const rollA = parseRollNumber(a.roll_number);
         const rollB = parseRollNumber(b.roll_number);
         if (rollA !== rollB) return rollA - rollB;
-        return (a.created_at || '').localeCompare(b.created_at || '');
+        return String(a.created_at || '').localeCompare(String(b.created_at || ''));
       });
-    const idx = sameClassStudents.findIndex((s: any) => s.id === student.id);
-    return idx >= 0 ? idx + 1 : '-';
+      sorted.forEach((s, idx) => {
+        map.set(s.id, idx + 1);
+      });
+    }
+    return map;
+  }, [students, getEffectiveClassId]);
+
+  const getClassSerial = (student: any) => {
+    return classSerialMap.get(student?.id) ?? '-';
   };
 
-  const getSessionName = (sessionId: string | null, fallback: string | null) => {
+  const getSessionName = (sessionId: string | null, fallback: any) => {
     if (sessionId) {
       const session = academicSessions.find((s: any) => s.id === sessionId);
       if (session) return bn ? (session.name_bn || session.name) : session.name;
     }
-    if (fallback) {
-      const session = academicSessions.find((s: any) => s.name === fallback || s.name_bn === fallback || s.id === fallback);
+    if (fallback != null && fallback !== '') {
+      const fbStr = String(fallback);
+      const session = academicSessions.find((s: any) => s.name === fbStr || s.name_bn === fbStr || s.id === fbStr);
       if (session) return bn ? (session.name_bn || session.name) : session.name;
-      const cleanFb = fallback.replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+      const cleanFb = fbStr.replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
       const yearDigits = cleanFb.match(/\d{4}/)?.[0];
       if (yearDigits) {
         const matchYear = academicSessions.find((s: any) => (s.name || '').includes(yearDigits) || (s.name_bn || '').includes(yearDigits));
         if (matchYear) return bn ? (matchYear.name_bn || matchYear.name) : matchYear.name;
       }
-      return fallback;
+      return fbStr;
     }
     return '-';
   };

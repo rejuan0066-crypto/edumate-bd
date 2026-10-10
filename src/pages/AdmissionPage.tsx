@@ -163,11 +163,11 @@ const AdmissionPage = () => {
     }
   }, []);
 
-  const bnToEn = (str: string) => str.replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+  const bnToEn = (str: any) => String(str || '').replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
 
-  const updateRegistrationFromRoll = useCallback((sessionYear: string, rollNumber: string) => {
+  const updateRegistrationFromRoll = useCallback((sessionYear: any, rollNumber: any) => {
     if (!sessionYear || !rollNumber) return;
-    const year = bnToEn(sessionYear.trim()).slice(0, 4);
+    const year = bnToEn(String(sessionYear).trim()).slice(0, 4);
     setForm(prev => ({ ...prev, registration_no: `${year}${rollNumber}` }));
   }, []);
 
