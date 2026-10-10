@@ -1,31 +1,32 @@
 // @ts-nocheck -- generated DB types are stricter than these legacy dynamic shapes
-import { ShieldAlert, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import AuditDeviceGate from '@/components/admin/AuditDeviceGate';
-import { ShieldAlert, Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldAlert, Button } from '@/components/ui/button';
-import { ShieldAlert, Input } from '@/components/ui/input';
-import { ShieldAlert, Badge } from '@/components/ui/badge';
-import { ShieldAlert,
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { ShieldAlert,
+import {
   Tabs, TabsContent, TabsList, TabsTrigger,
 } from '@/components/ui/tabs';
-import { ShieldAlert,
+import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
-import { ShieldAlert, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ShieldAlert, supabase } from '@/integrations/supabase/client';
-import { ShieldAlert, useLanguage } from '@/contexts/LanguageContext';
-import { ShieldAlert, useAuth } from '@/hooks/useAuth';
-import { ShieldAlert, isAdminRole } from '@/lib/roles';
-import { ShieldAlert, toast } from 'sonner';
-import { ShieldAlert,
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/hooks/useAuth';
+import { isAdminRole } from '@/lib/roles';
+import { toast } from 'sonner';
+import {
   Loader2, Search, MapPin, ShieldOff, ShieldCheck, Smartphone, Monitor,
   Globe, AlertTriangle, Check, X, RefreshCw, FileJson, Lock,
   Activity, Users, Ban, Unlock, Wifi, Signal, Eye, Clock,
   ExternalLink, UserCheck, Radio,
+  ShieldAlert,
 } from 'lucide-react';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import { format, formatDistanceToNow } from 'date-fns';
