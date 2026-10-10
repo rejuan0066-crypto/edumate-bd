@@ -2,6 +2,7 @@
 // institution header, photo, and grouped info sections.
 import type { InstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { CANONICAL_BANGLA_LABELS as L } from './banglaCanonicalLabels';
+import { bnToEn } from './utils';
 
 const esc = (v: any): string => {
   if (v === null || v === undefined || v === '') return '—';
@@ -53,8 +54,8 @@ export const printStudentProfile = ({
       rows: [
         { label: t('Name (BN)', 'নাম (বাংলা)'), value: student.name_bn || student.name },
         { label: t('Name (EN)', 'নাম (ইংরেজি)'), value: student.name_en },
-        { label: t('Registration No', 'রেজিস্ট্রেশন নং'), value: student.registration_no || student.student_id },
-        { label: t('Roll', 'রোল'), value: student.roll_number },
+        { label: t('Registration No', 'রেজিস্ট্রেশন নং'), value: bnToEn(student.registration_no || student.student_id) },
+        { label: t('Roll', 'রোল'), value: bnToEn(student.roll_number) },
         { label: t('Date of Birth', 'জন্ম তারিখ'), value: student.date_of_birth },
         { label: t('Gender', 'লিঙ্গ'), value: student.gender },
         { label: t('Religion', 'ধর্ম'), value: student.religion },
@@ -216,9 +217,9 @@ export const printStudentProfile = ({
       </div>
       <div class="summary">
         <div><b>${t('Name', 'নাম')}:</b> ${esc(student.name_bn || student.name || student.name_en)}</div>
-        <div><b>${t('Reg No', 'রেজিস্ট্রেশন')}:</b> ${esc(student.registration_no || student.student_id)}</div>
+        <div><b>${t('Reg No', 'রেজিস্ট্রেশন')}:</b> ${esc(bnToEn(student.registration_no || student.student_id))}</div>
         <div><b>${t('Class', 'শ্রেণী')}:</b> ${esc(className)}</div>
-        <div><b>${t('Roll', 'রোল')}:</b> ${esc(student.roll_number)}</div>
+        <div><b>${t('Roll', 'রোল')}:</b> ${esc(bnToEn(student.roll_number))}</div>
         <div><b>${t('Session', 'সেশন')}:</b> ${esc(sessionName)}</div>
         <div><b>${t('DOB', 'জন্ম তারিখ')}:</b> ${esc(student.date_of_birth)}</div>
         <div><b>${t('Father', 'পিতা')}:</b> ${esc(student.father_name || student.father_name_en)}</div>

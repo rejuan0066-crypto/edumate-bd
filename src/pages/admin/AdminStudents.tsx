@@ -20,6 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import AdmissionForm from '@/components/admission/AdmissionForm';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
+import { bnToEn } from '@/lib/utils';
 
 const AdminStudents = () => {
   const { t, language } = useLanguage();
@@ -100,6 +101,34 @@ const AdminStudents = () => {
       return data;
     },
   });
+
+  // Self-healing migration: automatically convert any legacy Bengali digits in DB to English digits
+  useEffect(() => {
+    if (students && students.length > 0) {
+      const bengaliRegex = /[০-৯]/;
+      const needsFix = students.filter((s: any) => 
+        (s.registration_no && bengaliRegex.test(String(s.registration_no))) ||
+        (s.student_id && bengaliRegex.test(String(s.student_id))) ||
+        (s.roll_number && bengaliRegex.test(String(s.roll_number)))
+      );
+      if (needsFix.length > 0) {
+        Promise.all(needsFix.map((s: any) => {
+          const newReg = bnToEn(s.registration_no || s.student_id);
+          const newId = bnToEn(s.student_id || s.registration_no);
+          const newRoll = s.roll_number ? bnToEn(s.roll_number) : s.roll_number;
+          return supabase.from('students').update({
+            registration_no: newReg,
+            student_id: newId,
+            roll_number: newRoll,
+          } as any).eq('id', s.id);
+        })).then(() => {
+          queryClient.invalidateQueries({ queryKey: ['students'] });
+        }).catch(err => {
+          console.error('Self-healing student digits migration error:', err);
+        });
+      }
+    }
+  }, [students, queryClient]);
 
   const statusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
@@ -455,8 +484,8 @@ const AdminStudents = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-4 text-sm font-mono text-muted-foreground">{s.registration_no || s.student_id}</td>
-                      <td className="px-5 py-4 text-sm font-mono font-medium text-foreground/80">{s.roll_number || <span className="text-muted-foreground/30">—</span>}</td>
+                      <td className="px-5 py-4 text-sm font-mono text-muted-foreground">{bnToEn(s.registration_no || s.student_id)}</td>
+                      <td className="px-5 py-4 text-sm font-mono font-medium text-foreground/80">{s.roll_number ? bnToEn(s.roll_number) : <span className="text-muted-foreground/30">—</span>}</td>
                       <td className="px-5 py-4 text-sm text-muted-foreground">{bn ? s.divisions?.name_bn : s.divisions?.name || '-'}</td>
                       <td className="px-5 py-4 text-sm text-muted-foreground">{getSessionName(s.session_id, s.admission_session || s.session_year)}</td>
                       <td className="px-5 py-4 text-sm text-muted-foreground">{getClassName(getEffectiveClassId(s))}</td>

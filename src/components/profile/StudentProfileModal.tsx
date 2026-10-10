@@ -17,7 +17,7 @@ import {
 import ProfileInfoItem from './ProfileInfoItem';
 import ProfileSectionCard from './ProfileSectionCard';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+import { cn, bnToEn } from '@/lib/utils';
 import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { printStudentProfile } from '@/lib/studentProfilePrint';
 
@@ -301,11 +301,11 @@ const StudentProfileModal = ({
             )}
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-white/20 text-white border border-white/20">
-                <Hash className="w-3 h-3 text-white" /> {student.registration_no || student.student_id}
+                <Hash className="w-3 h-3 text-white" /> {bnToEn(student.registration_no || student.student_id)}
               </span>
               {student.roll_number && (
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-white/15 text-white border border-white/15">
-                  {bn ? 'রোল: ' : 'Roll: '}{student.roll_number}
+                  {bn ? 'রোল: ' : 'Roll: '}{bnToEn(student.roll_number)}
                 </span>
               )}
               {/* Neon Status Pill */}
@@ -365,7 +365,7 @@ const StudentProfileModal = ({
       {activeTab === 'profile' && (
         <div className="space-y-4">
           <ProfileSectionCard title={bn ? 'মৌলিক তথ্য' : 'Basic Info'} icon={User}>
-            <ProfileInfoItem icon={Fingerprint} label={bn ? 'রেজিস্ট্রেশন নং' : 'Reg No'} value={student.registration_no} />
+            <ProfileInfoItem icon={Fingerprint} label={bn ? 'রেজিস্ট্রেশন নং' : 'Reg No'} value={bnToEn(student.registration_no || student.student_id)} />
             <ProfileInfoItem icon={Calendar} label={bn ? 'জন্ম তারিখ' : 'Date of Birth'} value={student.date_of_birth} />
             <ProfileInfoItem icon={User} label={bn ? 'লিঙ্গ' : 'Gender'} value={translateGender(student.gender)} />
             <ProfileInfoItem icon={Heart} label={bn ? 'ধর্ম' : 'Religion'} value={translateReligion(student.religion)} />
