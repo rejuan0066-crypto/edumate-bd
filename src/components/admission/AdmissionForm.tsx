@@ -210,8 +210,8 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
         student_type: admData.student_type || (s.student_type || 'new'),
         residence_type: s.residence_type || 'non-resident',
         admission_session: studentSessionId,
-        roll_number: s.roll_number || '',
-        registration_no: s.registration_no || s.student_id || '',
+        roll_number: bnToEn(s.roll_number || ''),
+        registration_no: bnToEn(s.registration_no || s.student_id || ''),
         admission_date: s.admission_date || new Date().toISOString().split('T')[0],
         session_year: studentSessionYear,
         admission_class: studentClassId,
@@ -575,13 +575,14 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     const finalSessionId = selectedSession?.id || (form.admission_session && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(form.admission_session) ? form.admission_session : null);
     const finalSessionYear = form.session_year || selectedSession?.name || form.admission_session || null;
 
-    const studentRegNo = form.registration_no?.trim() || null;
-    const studentId = studentRegNo || (isEditMode ? editStudent.student_id : null);
+    const studentRegNo = form.registration_no?.trim() ? bnToEn(form.registration_no.trim()) : null;
+    const studentId = studentRegNo || (isEditMode ? (editStudent.student_id ? bnToEn(editStudent.student_id) : null) : null);
+    const studentRoll = form.roll_number?.trim() ? bnToEn(form.roll_number.trim()) : null;
 
     return {
       name_bn: form.first_name.trim(),
       name_en: form.last_name.trim() || null,
-      roll_number: form.roll_number?.trim() || null,
+      roll_number: studentRoll,
       father_name: form.father_name.trim() || null,
       father_name_en: form.father_name_en?.trim() || null,
       mother_name: form.mother_name.trim() || null,
@@ -622,10 +623,11 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
   const addMutation = useMutation({
     mutationFn: async () => {
       const payload = buildStudentPayload();
-      const studentId = form.registration_no?.trim() || `STU-${Date.now().toString().slice(-8)}`;
+      const studentId = (form.registration_no?.trim() ? bnToEn(form.registration_no.trim()) : null) || `STU-${Date.now().toString().slice(-8)}`;
       const { error } = await supabase.from('students').insert({
         ...payload,
         student_id: studentId,
+        registration_no: studentId,
         approval_status: 'pending',
       } as any);
       if (error) throw error;
@@ -660,11 +662,11 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
   const updateMutation = useMutation({
     mutationFn: async () => {
       const payload = buildStudentPayload();
-      const updatedStudentId = form.registration_no?.trim() || editStudent.student_id;
+      const updatedStudentId = (form.registration_no?.trim() ? bnToEn(form.registration_no.trim()) : null) || editStudent.student_id;
       const { error } = await supabase.from('students').update({
         ...payload,
         student_id: updatedStudentId,
-        registration_no: form.registration_no?.trim() || updatedStudentId,
+        registration_no: updatedStudentId,
       } as any).eq('id', editStudent.id);
       if (error) throw error;
     },
@@ -850,11 +852,11 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
               value={form.roll_number || ''}
               readOnly={!isEditMode}
               onChange={isEditMode ? (e => {
-                const val = e.target.value;
+                const val = bnToEn(e.target.value);
                 setForm(prev => {
                   const year = bnToEn(prev.session_year || '').trim().slice(0, 4);
                   const prevRoll = bnToEn(prev.roll_number || '').trim();
-                  const newRoll = bnToEn(val.trim());
+                  const newRoll = val.trim();
                   const div = divisions.find((d: any) => d.id === selectedDivisionId);
                   const prefix = (div as any)?.prefix || '';
                   const oldReg = prefix ? `${prefix}-${year}${prevRoll}` : `${year}${prevRoll}`;
@@ -881,7 +883,10 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
             <div className="relative">
               <Input className={`bg-background mt-1 pr-24 ${errorBorder}`}
                 value={form.registration_no || ''}
-                onChange={e => setForm(prev => ({ ...prev, registration_no: e.target.value }))}
+                onChange={e => {
+                  const converted = bnToEn(e.target.value);
+                  setForm(prev => ({ ...prev, registration_no: converted }));
+                }}
                 placeholder={bn ? 'অটো জেনারেট / টাইপ করুন' : 'Auto / Type'} />
               <button type="button"
                 className="absolute right-1 top-1/2 -translate-y-1/2 mt-0.5 text-xs px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
@@ -921,9 +926,9 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
             <Input className={`bg-background mt-1 ${errorBorder}`}
               value={form.session_year || ''}
               onChange={e => {
-                const val = e.target.value;
+                const val = bnToEn(e.target.value);
                 setForm(prev => {
-                  const match = academicSessions.find((s: any) => s.name === val || s.name_bn === val);
+                  const match = findMatchingSession(val, val);
                   return {
                     ...prev,
                     session_year: val,
