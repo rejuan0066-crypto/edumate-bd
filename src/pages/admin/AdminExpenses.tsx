@@ -4876,7 +4876,7 @@ const AdminExpenses = () => {
             };
 
             return (
-              <div id="project-print-content" className="space-y-6">
+              <div id="project-print-content" className="print-section space-y-6">
                 {pagesToRender.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground italic bg-muted/20 rounded-xl border">
                     {bn ? 'এই প্রতিষ্ঠানে কোনো ব্যয়ের রেকর্ড নেই।' : 'No expense records found for this period.'}
@@ -5161,10 +5161,6 @@ const AdminExpenses = () => {
                 const win = window.open('', '_blank');
                 if (!win) return;
 
-                const headStyles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
-                  .map(el => el.outerHTML)
-                  .join('\n');
-
                 win.document.write(`<!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -5174,7 +5170,6 @@ const AdminExpenses = () => {
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
-  ${headStyles}
   <style>
     @page {
       size: A4 portrait;
@@ -5192,16 +5187,24 @@ const AdminExpenses = () => {
       color: #000000 !important;
       font-family: 'Hind Siliguri', 'Noto Sans Bengali', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
       -webkit-font-smoothing: antialiased;
+      width: 100% !important;
+    }
+    body, body * {
+      visibility: visible !important;
+    }
+    .print\\:hidden, [class*="print:hidden"] {
+      display: none !important;
+      visibility: hidden !important;
     }
     .print-page {
       box-sizing: border-box !important;
-      min-height: 265mm !important;
+      min-height: 260mm !important;
       display: flex !important;
       flex-direction: column !important;
       justify-content: space-between !important;
       page-break-after: always !important;
       break-after: page !important;
-      padding: 2mm 0 6mm 0 !important;
+      padding: 0 0 4mm 0 !important;
       margin: 0 !important;
       background: #ffffff !important;
       border: none !important;
@@ -5215,6 +5218,9 @@ const AdminExpenses = () => {
       margin-top: auto !important;
       page-break-inside: avoid !important;
       break-inside: avoid !important;
+      display: flex !important;
+      justify-content: space-between !important;
+      width: 100% !important;
     }
     table {
       width: 100% !important;
@@ -5254,9 +5260,18 @@ const AdminExpenses = () => {
     .items-center { align-items: center !important; }
     .w-full { width: 100% !important; }
     .w-40 { width: 160px !important; }
+    .w-32 { width: 128px !important; }
+    .w-28 { width: 112px !important; }
+    .w-24 { width: 96px !important; }
+    .w-20 { width: 80px !important; }
+    .w-16 { width: 64px !important; }
+    .w-10 { width: 40px !important; }
+    .w-8 { width: 32px !important; }
+    .h-16 { height: 64px !important; }
     .mx-auto { margin-left: auto !important; margin-right: auto !important; }
     .font-bold { font-weight: 700 !important; }
     .font-semibold { font-weight: 600 !important; }
+    .font-medium { font-weight: 500 !important; }
     .font-black { font-weight: 900 !important; }
     .font-mono { font-family: monospace !important; }
     .border-b-2 { border-bottom: 2px solid #000000 !important; }
@@ -5266,23 +5281,29 @@ const AdminExpenses = () => {
     .text-amber-700, .text-amber-800 { color: #b45309 !important; }
     .text-emerald-700, .text-emerald-800 { color: #047857 !important; }
     .text-rose-700 { color: #be123c !important; }
-    .text-muted-foreground { color: #64748b !important; }
-    .print\\:hidden, [class*="print:hidden"] {
-      display: none !important;
-    }
+    .text-muted-foreground { color: #475569 !important; }
+    .text-primary { color: #0f172a !important; }
+    .text-foreground { color: #000000 !important; }
+    .text-sm { font-size: 13px !important; }
+    .text-xs { font-size: 11px !important; }
+    .text-base { font-size: 15px !important; }
+    .text-lg { font-size: 18px !important; }
     @media print {
-      html, body {
-        margin: 0 !important;
-        padding: 0 !important;
-        background: #ffffff !important;
+      body, body * {
+        visibility: visible !important;
+      }
+      .print\\:hidden, [class*="print:hidden"] {
+        display: none !important;
+        visibility: hidden !important;
       }
       .print-page {
-        min-height: 265mm !important;
+        min-height: 260mm !important;
         page-break-after: always !important;
         break-after: page !important;
         border: none !important;
         box-shadow: none !important;
         padding: 0 !important;
+        visibility: visible !important;
       }
       .print-page:last-child {
         page-break-after: auto !important;
@@ -5296,40 +5317,10 @@ const AdminExpenses = () => {
 </body>
 </html>`);
                 win.document.close();
-
-                const triggerPrint = () => {
-                  win.focus();
-                  setTimeout(() => {
-                    win.print();
-                  }, 350);
-                };
-
-                const images = Array.from(win.document.images);
-                const checkReadyAndPrint = () => {
-                  if (images.length === 0) {
-                    triggerPrint();
-                  } else {
-                    let loaded = 0;
-                    const onImgDone = () => {
-                      loaded++;
-                      if (loaded >= images.length) triggerPrint();
-                    };
-                    images.forEach(img => {
-                      if (img.complete) onImgDone();
-                      else {
-                        img.onload = onImgDone;
-                        img.onerror = onImgDone;
-                      }
-                    });
-                    setTimeout(triggerPrint, 1500);
-                  }
-                };
-
-                if (win.document.fonts && win.document.fonts.ready) {
-                  win.document.fonts.ready.then(checkReadyAndPrint).catch(checkReadyAndPrint);
-                } else {
-                  checkReadyAndPrint();
-                }
+                win.focus();
+                setTimeout(() => {
+                  win.print();
+                }, 400);
               }}>
                 <Printer className="w-4 h-4 mr-1" />{bn ? 'প্রিন্ট করুন' : 'Print'}
               </Button>
@@ -5496,9 +5487,6 @@ const AdminExpenses = () => {
                 if (!content) return;
                 const win = window.open('', '_blank');
                 if (!win) return;
-                const headStyles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
-                  .map(el => el.outerHTML)
-                  .join('\n');
                 win.document.write(`<!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -5508,7 +5496,6 @@ const AdminExpenses = () => {
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
-  ${headStyles}
   <style>
     @page { size: A4 portrait; margin: 10mm; }
     * { box-sizing: border-box !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -5519,6 +5506,10 @@ const AdminExpenses = () => {
       color: #000000 !important;
       font-family: 'Hind Siliguri', 'Noto Sans Bengali', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
       -webkit-font-smoothing: antialiased;
+      width: 100% !important;
+    }
+    body, body * {
+      visibility: visible !important;
     }
     table { width: 100% !important; border-collapse: collapse !important; font-size: 11px !important; margin-top: 8px !important; }
     th, td { border: 1px solid #334155 !important; padding: 4.5px 7px !important; }
@@ -5532,19 +5523,15 @@ const AdminExpenses = () => {
     .border-t { border-top: 1px solid #334155 !important; }
     .italic { font-style: italic; }
     @media print {
-      body { margin: 0 !important; padding: 0 !important; }
+      body, body * { margin: 0 !important; padding: 0 !important; visibility: visible !important; }
     }
   </style>
 </head>
 <body>${content.innerHTML}</body>
 </html>`);
                 win.document.close();
-                const triggerPrint = () => { win.focus(); setTimeout(() => { win.print(); }, 350); };
-                if (win.document.fonts && win.document.fonts.ready) {
-                  win.document.fonts.ready.then(triggerPrint).catch(triggerPrint);
-                } else {
-                  triggerPrint();
-                }
+                win.focus();
+                setTimeout(() => { win.print(); }, 400);
               }}>
                 <Printer className="w-4 h-4 mr-1" />{bn ? 'প্রিন্ট করুন' : 'Print'}
               </Button>
