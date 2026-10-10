@@ -4782,27 +4782,45 @@ const AdminExpenses = () => {
             }
 
             const renderSignatures = () => (
-              <div className="flex justify-between mt-12 pt-6 border-t print:mt-10 page-footer">
-                <div className="text-center min-w-[140px]">
-                  <div className="border-t border-foreground w-40 mx-auto mb-1"></div>
+              <div 
+                className="flex justify-between mt-12 pt-6 border-t print:mt-10 page-footer"
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  width: '100%',
+                  marginTop: '36px',
+                  paddingTop: '16px',
+                  borderTop: '1px solid #cbd5e1',
+                  pageBreakInside: 'avoid'
+                }}
+              >
+                <div className="text-center min-w-[140px]" style={{ textAlign: 'center', minWidth: '150px' }}>
+                  <div 
+                    className="border-t border-foreground w-40 mx-auto mb-1"
+                    style={{ borderTop: '1.5px solid #000000', width: '160px', margin: '0 auto 6px auto' }}
+                  ></div>
                   {casherPerson && casherPerson !== casherDesignation ? (
                     <>
-                      <p className="text-sm font-semibold">{casherPerson}</p>
-                      <p className="text-xs text-muted-foreground">{casherDesignation}</p>
+                      <p className="text-sm font-semibold" style={{ fontSize: '13px', fontWeight: 700, margin: '2px 0' }}>{casherPerson}</p>
+                      <p className="text-xs text-muted-foreground" style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>{casherDesignation}</p>
                     </>
                   ) : (
-                    <p className="text-sm font-medium">{casherDesignation}</p>
+                    <p className="text-sm font-medium" style={{ fontSize: '13px', fontWeight: 600, margin: '2px 0' }}>{casherDesignation}</p>
                   )}
                 </div>
-                <div className="text-center min-w-[140px]">
-                  <div className="border-t border-foreground w-40 mx-auto mb-1"></div>
+                <div className="text-center min-w-[140px]" style={{ textAlign: 'center', minWidth: '150px' }}>
+                  <div 
+                    className="border-t border-foreground w-40 mx-auto mb-1"
+                    style={{ borderTop: '1.5px solid #000000', width: '160px', margin: '0 auto 6px auto' }}
+                  ></div>
                   {principalPerson && principalPerson !== principalDesignation ? (
                     <>
-                      <p className="text-sm font-semibold">{principalPerson}</p>
-                      <p className="text-xs text-muted-foreground">{principalDesignation}</p>
+                      <p className="text-sm font-semibold" style={{ fontSize: '13px', fontWeight: 700, margin: '2px 0' }}>{principalPerson}</p>
+                      <p className="text-xs text-muted-foreground" style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>{principalDesignation}</p>
                     </>
                   ) : (
-                    <p className="text-sm font-medium">{principalDesignation}</p>
+                    <p className="text-sm font-medium" style={{ fontSize: '13px', fontWeight: 600, margin: '2px 0' }}>{principalDesignation}</p>
                   )}
                 </div>
               </div>
@@ -4819,25 +4837,38 @@ const AdminExpenses = () => {
               const pOther = pageInst?.other_info || dInstOther;
 
               return (
-                <div className="text-center mb-4 border-b-2 border-foreground pb-3 page-header">
-                  {pLogo && <img src={pLogo} alt="Logo" className="w-16 h-16 object-contain mx-auto mb-1" />}
-                  <h1 className="text-lg font-bold">{pName}</h1>
-                  {pAddr && <p className="text-sm">{pAddr}</p>}
+                <div 
+                  className="text-center mb-4 border-b-2 border-foreground pb-3 page-header"
+                  style={{ textAlign: 'center', marginBottom: '16px', borderBottom: '2px solid #000000', paddingBottom: '10px' }}
+                >
+                  {pLogo && (
+                    <img 
+                      src={pLogo} 
+                      alt="Logo" 
+                      className="w-16 h-16 object-contain mx-auto mb-1" 
+                      style={{ width: '60px', height: '60px', objectFit: 'contain', margin: '0 auto 4px auto', display: 'block' }}
+                    />
+                  )}
+                  <h1 className="text-lg font-bold" style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 3px 0', color: '#000000' }}>{pName}</h1>
+                  {pAddr && <p className="text-sm" style={{ fontSize: '12px', margin: '1px 0', color: '#334155' }}>{pAddr}</p>}
                   {(pPhone || pEmail) && (
-                    <p className="text-xs">
+                    <p className="text-xs" style={{ fontSize: '11px', margin: '1px 0', color: '#64748b' }}>
                       {pPhone ? `${bn ? 'ফোন' : 'Phone'}: ${pPhone}` : ''}
                       {pPhone && pEmail ? ' | ' : ''}
                       {pEmail ? `${bn ? 'ইমেইল' : 'Email'}: ${pEmail}` : ''}
                     </p>
                   )}
-                  {pOther && <p className="text-xs">{pOther}</p>}
+                  {pOther && <p className="text-xs" style={{ fontSize: '11px', margin: '1px 0', color: '#64748b' }}>{pOther}</p>}
                   
-                  <div className="mt-2.5 pt-2 border-t border-dashed">
-                    <h2 className="text-base font-bold text-primary">
+                  <div 
+                    className="mt-2.5 pt-2 border-t border-dashed"
+                    style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed #cbd5e1' }}
+                  >
+                    <h2 className="text-base font-bold text-primary" style={{ fontSize: '15px', fontWeight: 700, margin: '2px 0', color: '#0f172a' }}>
                       {pageTitle}
                     </h2>
-                    <p className="text-xs font-medium text-muted-foreground mt-0.5">
-                      {bn ? 'হিসাবের মাস' : 'Report Month'}: <span className="font-bold text-foreground">{selectedMonthYear}</span>
+                    <p className="text-xs font-medium text-muted-foreground mt-0.5" style={{ fontSize: '11px', color: '#64748b', margin: '2px 0' }}>
+                      {bn ? 'হিসাবের মাস' : 'Report Month'}: <span className="font-bold text-foreground" style={{ fontWeight: 700, color: '#000000' }}>{selectedMonthYear}</span>
                     </p>
                   </div>
                 </div>
@@ -4860,6 +4891,14 @@ const AdminExpenses = () => {
                         <div
                           key={page.id}
                           className="print-page bg-background border rounded-xl p-6 shadow-sm print:shadow-none print:border-none print:p-0 print:m-0 print:min-h-[96vh] flex flex-col justify-between"
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            pageBreakAfter: pageIndex === pagesToRender.length - 1 ? 'auto' : 'always',
+                            breakAfter: pageIndex === pagesToRender.length - 1 ? 'auto' : 'page',
+                            boxSizing: 'border-box'
+                          }}
                         >
                           <div>
                             {/* Screen-only Page Tracker */}
@@ -4879,7 +4918,10 @@ const AdminExpenses = () => {
                               <p className="text-xs mb-3 italic border-l-2 border-primary pl-2">{ed.extraNote}</p>
                             )}
 
-                            <table className="w-full border-collapse border text-xs">
+                            <table 
+                              className="w-full border-collapse border text-xs"
+                              style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', marginTop: '10px' }}
+                            >
                               <thead>
                                 <tr className="bg-muted">
                                   <th className="border p-1.5 text-center w-8">#</th>
@@ -4928,6 +4970,14 @@ const AdminExpenses = () => {
                         <div
                           key={page.id}
                           className="print-page bg-background border rounded-xl p-6 shadow-sm print:shadow-none print:border-none print:p-0 print:m-0 print:min-h-[96vh] flex flex-col justify-between"
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            pageBreakAfter: pageIndex === pagesToRender.length - 1 ? 'auto' : 'always',
+                            breakAfter: pageIndex === pagesToRender.length - 1 ? 'auto' : 'page',
+                            boxSizing: 'border-box'
+                          }}
                         >
                           <div>
                             <div className="flex items-center justify-between text-xs text-muted-foreground pb-2 mb-3 border-b print:hidden">
@@ -4942,7 +4992,10 @@ const AdminExpenses = () => {
 
                             {renderLetterhead(page.inst, page.categoryName)}
 
-                            <table className="w-full border-collapse border text-xs">
+                            <table 
+                              className="w-full border-collapse border text-xs"
+                              style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', marginTop: '10px' }}
+                            >
                               <thead>
                                 <tr className="bg-amber-100/60 dark:bg-amber-950/40">
                                   <th className="border p-1.5 text-center w-8">#</th>
@@ -4989,6 +5042,14 @@ const AdminExpenses = () => {
                       <div
                         key={page.id}
                         className="print-page bg-background border rounded-xl p-6 shadow-sm print:shadow-none print:border-none print:p-0 print:m-0 print:min-h-[96vh] flex flex-col justify-between"
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          pageBreakAfter: pageIndex === pagesToRender.length - 1 ? 'auto' : 'always',
+                          breakAfter: pageIndex === pagesToRender.length - 1 ? 'auto' : 'page',
+                          boxSizing: 'border-box'
+                        }}
                       >
                         <div>
                           <div className="flex items-center justify-between text-xs text-muted-foreground pb-2 mb-3 border-b print:hidden">
@@ -5008,7 +5069,10 @@ const AdminExpenses = () => {
                             <h3 className="text-xs font-bold uppercase tracking-wider mb-2 text-foreground">
                               {bn ? '🏢 প্রতিষ্ঠানভিত্তিক মোট ব্যয়ের সারসংক্ষেপ' : '🏢 Institution Expense Summary'}
                             </h3>
-                            <table className="w-full border-collapse border text-xs">
+                            <table 
+                              className="w-full border-collapse border text-xs"
+                              style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', marginTop: '8px' }}
+                            >
                               <thead>
                                 <tr className="bg-muted">
                                   <th className="border p-1.5 text-center w-10">#</th>
@@ -5053,7 +5117,10 @@ const AdminExpenses = () => {
                             <h3 className="text-xs font-bold uppercase tracking-wider mb-2 text-foreground">
                               {bn ? '💰 নগদ তহবিল ও জমার অবস্থা (ক্যাশ ব্যালেন্স)' : '💰 Cash & Fund Status'}
                             </h3>
-                            <table className="w-full border-collapse border text-xs">
+                            <table 
+                              className="w-full border-collapse border text-xs"
+                              style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', marginTop: '8px' }}
+                            >
                               <tbody>
                                 <tr>
                                   <td className="border p-2 font-medium bg-muted/40 w-1/2">{bn ? 'মোট পরিশোধিত ব্যয়' : 'Total Expense Paid'}</td>
@@ -5093,76 +5160,129 @@ const AdminExpenses = () => {
                 if (!content) return;
                 const win = window.open('', '_blank');
                 if (!win) return;
-                win.document.write(`<html>
+
+                const headStyles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+                  .map(el => el.outerHTML)
+                  .join('\n');
+
+                win.document.write(`<!DOCTYPE html>
+<html lang="bn">
 <head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${bn ? 'সকল প্রতিষ্ঠানের হিসাব প্রতিবেদন' : 'All Institutions Expense Report'} - ${selectedMonthYear}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+  ${headStyles}
   <style>
     @page {
       size: A4 portrait;
-      margin: 12mm 12mm;
+      margin: 10mm;
     }
     * {
-      box-sizing: border-box;
+      box-sizing: border-box !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
     }
-    body {
-      font-family: 'SutonnyOMJ', 'Noto Sans Bengali', sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #fff;
-      color: #000;
+    html, body {
+      margin: 0 !important;
+      padding: 0 !important;
+      background: #ffffff !important;
+      color: #000000 !important;
+      font-family: 'Hind Siliguri', 'Noto Sans Bengali', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+      -webkit-font-smoothing: antialiased;
     }
     .print-page {
-      page-break-after: always;
-      break-after: page;
-      min-height: 96vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 10px 0 24px 0;
-      box-sizing: border-box;
+      box-sizing: border-box !important;
+      min-height: 265mm !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+      page-break-after: always !important;
+      break-after: page !important;
+      padding: 2mm 0 6mm 0 !important;
+      margin: 0 !important;
+      background: #ffffff !important;
+      border: none !important;
+      box-shadow: none !important;
     }
     .print-page:last-child {
-      page-break-after: auto;
-      break-after: auto;
+      page-break-after: auto !important;
+      break-after: auto !important;
+    }
+    .page-footer {
+      margin-top: auto !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
     }
     table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-      font-size: 11px;
+      width: 100% !important;
+      border-collapse: collapse !important;
+      font-size: 11px !important;
+      page-break-inside: auto;
+      margin-top: 8px !important;
+    }
+    thead {
+      display: table-header-group;
+    }
+    tr {
+      page-break-inside: avoid;
+      page-break-after: auto;
     }
     th, td {
-      border: 1px solid #333;
-      padding: 5px 8px;
+      border: 1px solid #334155 !important;
+      padding: 4.5px 6px !important;
     }
     th {
-      background: #f1f5f9;
-      text-align: left;
-      font-weight: bold;
+      background-color: #f1f5f9 !important;
+      color: #0f172a !important;
+      font-weight: 700 !important;
     }
-    .text-right { text-align: right; }
-    .text-center { text-align: center; }
-    .text-left { text-align: left; }
-    .font-bold { font-weight: bold; }
-    .font-semibold { font-weight: 600; }
-    .font-black { font-weight: 900; }
-    .font-mono { font-family: monospace; }
-    .border-b-2 { border-bottom: 2px solid #000; }
-    .border-t-2 { border-top: 2px solid #000; }
-    .border-t { border-top: 1px solid #333; }
-    h1 { font-size: 18px; margin: 0 0 4px 0; }
-    h2 { font-size: 14px; margin: 4px 0; }
-    h3 { font-size: 12px; margin: 4px 0; }
-    p { margin: 2px 0; }
+    .bg-muted, [class*="bg-muted"] {
+      background-color: #f1f5f9 !important;
+    }
+    .bg-amber-100, [class*="bg-amber"] {
+      background-color: #fef3c7 !important;
+    }
+    .text-right { text-align: right !important; }
+    .text-center { text-align: center !important; }
+    .text-left { text-align: left !important; }
+    .flex { display: flex !important; }
+    .flex-col { flex-direction: column !important; }
+    .justify-between { justify-content: space-between !important; }
+    .items-center { align-items: center !important; }
+    .w-full { width: 100% !important; }
+    .w-40 { width: 160px !important; }
+    .mx-auto { margin-left: auto !important; margin-right: auto !important; }
+    .font-bold { font-weight: 700 !important; }
+    .font-semibold { font-weight: 600 !important; }
+    .font-black { font-weight: 900 !important; }
+    .font-mono { font-family: monospace !important; }
+    .border-b-2 { border-bottom: 2px solid #000000 !important; }
+    .border-t-2 { border-top: 2px solid #000000 !important; }
+    .border-t { border-top: 1px solid #334155 !important; }
+    .border { border: 1px solid #334155 !important; }
+    .text-amber-700, .text-amber-800 { color: #b45309 !important; }
+    .text-emerald-700, .text-emerald-800 { color: #047857 !important; }
+    .text-rose-700 { color: #be123c !important; }
+    .text-muted-foreground { color: #64748b !important; }
     .print\\:hidden, [class*="print:hidden"] {
       display: none !important;
     }
     @media print {
-      body { padding: 0; }
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+      }
       .print-page {
+        min-height: 265mm !important;
         page-break-after: always !important;
         break-after: page !important;
-        min-height: 98vh;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
       }
       .print-page:last-child {
         page-break-after: auto !important;
@@ -5176,8 +5296,40 @@ const AdminExpenses = () => {
 </body>
 </html>`);
                 win.document.close();
-                win.focus();
-                win.print();
+
+                const triggerPrint = () => {
+                  win.focus();
+                  setTimeout(() => {
+                    win.print();
+                  }, 350);
+                };
+
+                const images = Array.from(win.document.images);
+                const checkReadyAndPrint = () => {
+                  if (images.length === 0) {
+                    triggerPrint();
+                  } else {
+                    let loaded = 0;
+                    const onImgDone = () => {
+                      loaded++;
+                      if (loaded >= images.length) triggerPrint();
+                    };
+                    images.forEach(img => {
+                      if (img.complete) onImgDone();
+                      else {
+                        img.onload = onImgDone;
+                        img.onerror = onImgDone;
+                      }
+                    });
+                    setTimeout(triggerPrint, 1500);
+                  }
+                };
+
+                if (win.document.fonts && win.document.fonts.ready) {
+                  win.document.fonts.ready.then(checkReadyAndPrint).catch(checkReadyAndPrint);
+                } else {
+                  checkReadyAndPrint();
+                }
               }}>
                 <Printer className="w-4 h-4 mr-1" />{bn ? 'প্রিন্ট করুন' : 'Print'}
               </Button>
@@ -5289,27 +5441,45 @@ const AdminExpenses = () => {
                 const dCasherTitle = bn ? 'ক্যাশিয়ার' : 'Cashier';
                 const dPrincipalTitle = bn ? 'অধ্যক্ষ' : 'Principal';
                 return (
-                  <div className="flex justify-between mt-12 pt-8">
-                    <div className="text-center min-w-[140px]">
-                      <div className="border-t border-foreground w-40 mx-auto mb-1"></div>
+                  <div 
+                    className="flex justify-between mt-12 pt-8"
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      width: '100%',
+                      marginTop: '36px',
+                      paddingTop: '16px',
+                      borderTop: '1px solid #cbd5e1',
+                      pageBreakInside: 'avoid'
+                    }}
+                  >
+                    <div className="text-center min-w-[140px]" style={{ textAlign: 'center', minWidth: '150px' }}>
+                      <div 
+                        className="border-t border-foreground w-40 mx-auto mb-1"
+                        style={{ borderTop: '1.5px solid #000000', width: '160px', margin: '0 auto 6px auto' }}
+                      ></div>
                       {dCasherPerson && dCasherPerson !== dCasherTitle ? (
                         <>
-                          <p className="text-sm font-semibold">{dCasherPerson}</p>
-                          <p className="text-xs text-muted-foreground">{dCasherTitle}</p>
+                          <p className="text-sm font-semibold" style={{ fontSize: '13px', fontWeight: 700, margin: '2px 0' }}>{dCasherPerson}</p>
+                          <p className="text-xs text-muted-foreground" style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>{dCasherTitle}</p>
                         </>
                       ) : (
-                        <p className="text-sm font-medium">{dCasherTitle}</p>
+                        <p className="text-sm font-medium" style={{ fontSize: '13px', fontWeight: 600, margin: '2px 0' }}>{dCasherTitle}</p>
                       )}
                     </div>
-                    <div className="text-center min-w-[140px]">
-                      <div className="border-t border-foreground w-40 mx-auto mb-1"></div>
+                    <div className="text-center min-w-[140px]" style={{ textAlign: 'center', minWidth: '150px' }}>
+                      <div 
+                        className="border-t border-foreground w-40 mx-auto mb-1"
+                        style={{ borderTop: '1.5px solid #000000', width: '160px', margin: '0 auto 6px auto' }}
+                      ></div>
                       {dPrincipalPerson && dPrincipalPerson !== dPrincipalTitle ? (
                         <>
-                          <p className="text-sm font-semibold">{dPrincipalPerson}</p>
-                          <p className="text-xs text-muted-foreground">{dPrincipalTitle}</p>
+                          <p className="text-sm font-semibold" style={{ fontSize: '13px', fontWeight: 700, margin: '2px 0' }}>{dPrincipalPerson}</p>
+                          <p className="text-xs text-muted-foreground" style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>{dPrincipalTitle}</p>
                         </>
                       ) : (
-                        <p className="text-sm font-medium">{dPrincipalTitle}</p>
+                        <p className="text-sm font-medium" style={{ fontSize: '13px', fontWeight: 600, margin: '2px 0' }}>{dPrincipalTitle}</p>
                       )}
                     </div>
                   </div>
@@ -5326,10 +5496,55 @@ const AdminExpenses = () => {
                 if (!content) return;
                 const win = window.open('', '_blank');
                 if (!win) return;
-                win.document.write(`<html><head><title>${bn ? 'টাকা আয়/উত্তোলন প্রতিবেদন' : 'Deposit Report'}</title><style>body{font-family:'SutonnyOMJ','Noto Sans Bengali',sans-serif;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #333;padding:4px 8px}th{background:#f0f0f0;text-align:left}.text-right{text-align:right}.text-center{text-align:center}.italic{font-style:italic}@media print{body{padding:0}}</style></head><body>${content.innerHTML}</body></html>`);
+                const headStyles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+                  .map(el => el.outerHTML)
+                  .join('\n');
+                win.document.write(`<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${bn ? 'টাকা আয়/উত্তোলন প্রতিবেদন' : 'Deposit Report'}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+  ${headStyles}
+  <style>
+    @page { size: A4 portrait; margin: 10mm; }
+    * { box-sizing: border-box !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    html, body {
+      margin: 0 !important;
+      padding: 0 !important;
+      background: #ffffff !important;
+      color: #000000 !important;
+      font-family: 'Hind Siliguri', 'Noto Sans Bengali', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+      -webkit-font-smoothing: antialiased;
+    }
+    table { width: 100% !important; border-collapse: collapse !important; font-size: 11px !important; margin-top: 8px !important; }
+    th, td { border: 1px solid #334155 !important; padding: 4.5px 7px !important; }
+    th { background: #f1f5f9 !important; font-weight: 700 !important; }
+    .text-right { text-align: right !important; }
+    .text-center { text-align: center !important; }
+    .flex { display: flex !important; }
+    .justify-between { justify-content: space-between !important; }
+    .w-40 { width: 160px !important; }
+    .mx-auto { margin-left: auto !important; margin-right: auto !important; }
+    .border-t { border-top: 1px solid #334155 !important; }
+    .italic { font-style: italic; }
+    @media print {
+      body { margin: 0 !important; padding: 0 !important; }
+    }
+  </style>
+</head>
+<body>${content.innerHTML}</body>
+</html>`);
                 win.document.close();
-                win.focus();
-                win.print();
+                const triggerPrint = () => { win.focus(); setTimeout(() => { win.print(); }, 350); };
+                if (win.document.fonts && win.document.fonts.ready) {
+                  win.document.fonts.ready.then(triggerPrint).catch(triggerPrint);
+                } else {
+                  triggerPrint();
+                }
               }}>
                 <Printer className="w-4 h-4 mr-1" />{bn ? 'প্রিন্ট করুন' : 'Print'}
               </Button>
