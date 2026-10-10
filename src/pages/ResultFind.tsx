@@ -9,6 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useGradingSystem } from '@/hooks/useGradingSystem';
 import IndividualMarksheet from '@/components/results/IndividualMarksheet';
+import { bnToEn, enToBn } from '@/lib/utils';
 
 const ResultFind = () => {
   const { t, language } = useLanguage();
@@ -73,11 +74,36 @@ const ResultFind = () => {
 
       // Find the matching student via a security-definer RPC (only returns the
       // single matched student for a published session — no bulk UUID exposure).
-      const { data: matched } = await (supabase as any).rpc('public_find_exam_student', {
+      const rawRoll = rollNumber.trim();
+      const enRoll = bnToEn(rawRoll);
+      const bnRoll = enToBn(rawRoll);
+
+      // Try English normalized roll first (since DB stores standard digits)
+      let { data: matched } = await (supabase as any).rpc('public_find_exam_student', {
         p_session_id: examSessionId,
-        p_roll: rollNumber.trim(),
+        p_roll: enRoll,
         p_class_id: classId,
       });
+
+      // If not found and input had Bengali digits or legacy records, try raw/Bengali
+      if (!matched || (Array.isArray(matched) && matched.length === 0)) {
+        if (rawRoll !== enRoll) {
+          const { data: matchedRaw } = await (supabase as any).rpc('public_find_exam_student', {
+            p_session_id: examSessionId,
+            p_roll: rawRoll,
+            p_class_id: classId,
+          });
+          matched = matchedRaw;
+        } else if (rawRoll !== bnRoll) {
+          const { data: matchedBn } = await (supabase as any).rpc('public_find_exam_student', {
+            p_session_id: examSessionId,
+            p_roll: bnRoll,
+            p_class_id: classId,
+          });
+          matched = matchedBn;
+        }
+      }
+
       const found = Array.isArray(matched) ? matched[0] : matched;
 
       if (!found?.student_id) {
@@ -204,7 +230,7 @@ const ResultFind = () => {
               </Select>
 
               <Input
-                placeholder={bn ? 'রোল / রেজিস্ট্রেশন নম্বর' : 'Roll / Registration Number'}
+                placeholder={bn ? 'রোল / রেজিস্ট্রেশন নম্বর (বাংলা বা ইংরেজি)' : 'Roll / Registration Number (BN or EN)'}
                 className="bg-background"
                 value={rollNumber}
                 onChange={(e) => setRollNumber(e.target.value)}

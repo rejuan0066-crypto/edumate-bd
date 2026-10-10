@@ -21,6 +21,7 @@ import GradingSettings from '@/components/results/GradingSettings';
 import { GraduationCap } from 'lucide-react';
 import { exportResultCSV, exportResultPDF, printResultSheet, DEFAULT_RESULT_SIGNATORIES, DEFAULT_PRINT_FOOTER_OPTIONS, DEFAULT_PRINT_MARGINS, PRINT_MARGIN_PRESETS, sanitizeMargins, type ResultSignatory, type ResultPrintFooterOptions, type PrintMargins } from '@/lib/resultExport';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { bnToEn, enToBn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -301,11 +302,19 @@ const AdminResults = () => {
     }
 
     if (searchMode === 'individual') {
-      const found = students.find((st: any) =>
-        String(st.roll_number) === rollNumber.trim() ||
-        st.student_id === rollNumber.trim() ||
-        st.registration_number === rollNumber.trim()
-      );
+      const q = rollNumber.trim();
+      const qEn = bnToEn(q);
+      const qBn = enToBn(q);
+      const found = students.find((st: any) => {
+        const r = String(st.roll_number ?? '').trim();
+        const sid = String(st.student_id ?? '').trim();
+        const reg = String((st.registration_no || st.registration_number) ?? '').trim();
+        return (
+          r === q || r === qEn || r === qBn ||
+          sid === q || sid === qEn || sid === qBn ||
+          reg === q || reg === qEn || reg === qBn
+        );
+      });
       if (found) {
         setViewingStudentId(found.id);
       } else {

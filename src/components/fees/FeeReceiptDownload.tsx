@@ -12,6 +12,7 @@ import { useReceiptSettings } from '@/hooks/useReceiptSettings';
 import { Link } from 'react-router-dom';
 import { buildSingleStudentPrintHtml, buildBulkClassPrintHtml, ReceiptData, ReceiptStyleConfig } from './receiptPrintLayouts';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { bnToEn, enToBn } from '@/lib/utils';
 
 interface Props {
   collectorName?: string;
@@ -116,8 +117,16 @@ const FeeReceiptDownload = ({ collectorName }: Props) => {
       }
 
       if (selectedClass) studentQuery = studentQuery.eq('class_id', selectedClass);
-      if (rollNumber.trim()) studentQuery = studentQuery.eq('roll_number', rollNumber.trim());
-      if (regNumber.trim()) studentQuery = studentQuery.eq('student_id', regNumber.trim());
+      if (rollNumber.trim()) {
+        const enRoll = bnToEn(rollNumber.trim());
+        const bnRoll = enToBn(rollNumber.trim());
+        studentQuery = studentQuery.or(`roll_number.eq.${enRoll},roll_number.eq.${bnRoll}`);
+      }
+      if (regNumber.trim()) {
+        const enReg = bnToEn(regNumber.trim());
+        const bnReg = enToBn(regNumber.trim());
+        studentQuery = studentQuery.or(`student_id.eq.${enReg},student_id.eq.${bnReg},registration_no.eq.${enReg},registration_no.eq.${bnReg}`);
+      }
 
       const { data: students, error: studErr } = await studentQuery.order('roll_number');
       if (studErr) throw studErr;
