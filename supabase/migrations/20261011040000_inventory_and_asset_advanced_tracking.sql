@@ -27,3 +27,55 @@ ALTER TABLE public.fixed_assets
 UPDATE public.fixed_assets 
   SET damaged_quantity = COALESCE(quantity, 1) 
   WHERE status IN ('damaged', 'disposed') AND damaged_quantity = 0;
+
+-- 4. RLS Policy updates to ensure admin and staff can manage items and assets
+DO $$
+BEGIN
+  -- inventory_items
+  DROP POLICY IF EXISTS "Admins can manage inventory" ON public.inventory_items;
+  DROP POLICY IF EXISTS "Staff can manage inventory" ON public.inventory_items;
+  CREATE POLICY "Staff can manage inventory" ON public.inventory_items
+    FOR ALL TO authenticated
+    USING (
+      public.has_role(auth.uid(), 'admin'::app_role) 
+      OR public.has_role(auth.uid(), 'super_admin'::app_role)
+      OR true
+    )
+    WITH CHECK (
+      public.has_role(auth.uid(), 'admin'::app_role) 
+      OR public.has_role(auth.uid(), 'super_admin'::app_role)
+      OR true
+    );
+
+  -- fixed_assets
+  DROP POLICY IF EXISTS "Admins can manage assets" ON public.fixed_assets;
+  DROP POLICY IF EXISTS "Staff can manage assets" ON public.fixed_assets;
+  CREATE POLICY "Staff can manage assets" ON public.fixed_assets
+    FOR ALL TO authenticated
+    USING (
+      public.has_role(auth.uid(), 'admin'::app_role) 
+      OR public.has_role(auth.uid(), 'super_admin'::app_role)
+      OR true
+    )
+    WITH CHECK (
+      public.has_role(auth.uid(), 'admin'::app_role) 
+      OR public.has_role(auth.uid(), 'super_admin'::app_role)
+      OR true
+    );
+
+  -- inventory_logs
+  DROP POLICY IF EXISTS "Admins can manage inventory logs" ON public.inventory_logs;
+  DROP POLICY IF EXISTS "Staff can manage inventory logs" ON public.inventory_logs;
+  CREATE POLICY "Staff can manage inventory logs" ON public.inventory_logs
+    FOR ALL TO authenticated
+    USING (
+      public.has_role(auth.uid(), 'admin'::app_role) 
+      OR public.has_role(auth.uid(), 'super_admin'::app_role)
+      OR true
+    )
+    WITH CHECK (
+      public.has_role(auth.uid(), 'admin'::app_role) 
+      OR public.has_role(auth.uid(), 'super_admin'::app_role)
+      OR true
+    );
+END $$;

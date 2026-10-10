@@ -11,6 +11,10 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+} from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import {
@@ -19,7 +23,6 @@ import {
   PlusCircle, MinusCircle, Eye, CheckCircle2, History, Wrench, XCircle
 } from 'lucide-react';
 import InventoryConsumptionReport from '@/components/inventory/InventoryConsumptionReport';
-import { useConfirm } from "@/contexts/ConfirmContext";
 
 // Comprehensive units supporting construction, food, and general materials
 const UNITS = [
@@ -96,7 +99,6 @@ const ASSET_STATUS_BN: Record<string, string> = {
 };
 
 const AdminInventory = () => {
-  const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
   const qc = useQueryClient();
@@ -106,6 +108,9 @@ const AdminInventory = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [stockStatusFilter, setStockStatusFilter] = useState('all');
 
+  // Dedicated Delete Confirmation Dialog state
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string; type: 'item' | 'asset' } | null>(null);
+
   // Item Create / Edit dialog
   const [itemOpen, setItemOpen] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
@@ -114,6 +119,7 @@ const AdminInventory = () => {
     name_en: '',
     category: 'construction',
     current_stock: '0',
+    total_purchased: '0',
     unit: 'bag',
     min_stock_level: '5',
     buying_price: '0',
@@ -213,11 +219,16 @@ const AdminInventory = () => {
   const saveItem = useMutation({
     mutationFn: async (form: any) => {
       const curStock = Number(form.current_stock) || 0;
-      const payload: any = {
+      const totalPurchased = form.total_purchased !== undefined && form.total_purchased !== '' 
+        ? Number(form.total_purchased) 
+        : (editItem ? Number(editItem.total_purchased ?? curStock) : curStock);
+
+      const payload: Record<string, any> = {
         name_bn: form.name_bn,
         name_en: form.name_en || null,
         category: form.category,
         current_stock: curStock,
+        total_purchased: totalPurchased,
         unit: form.unit,
         min_stock_level: Number(form.min_stock_level) || 0,
         buying_price: Number(form.buying_price) || 0,
@@ -225,45 +236,102 @@ const AdminInventory = () => {
       };
 
       if (editItem) {
+        // Try update with all columns
         const { error } = await supabase.from('inventory_items').update(payload).eq('id', editItem.id);
-        if (error) throw error;
+        if (error) {
+          // Fallback if advanced columns do not exist in remote table
+          if (error.message?.includes('column') || error.code === '42703') {
+            const fallbackPayload = {
+              name_bn: form.name_bn,
+              name_en: form.name_en || null,
+              category: form.category,
+              current_stock: curStock,
+              unit: form.unit,
+              min_stock_level: Number(form.min_stock_level) || 0,
+              buying_price: Number(form.buying_price) || 0,
+              notes: form.notes || null,
+            };
+            const { error: fallbackErr } = await supabase.from('inventory_items').update(fallbackPayload).eq('id', editItem.id);
+            if (fallbackErr) throw fallbackErr;
+          } else {
+            throw error;
+          }
+        }
       } else {
         payload.total_purchased = curStock;
         payload.total_consumed = 0;
-        const { data: inserted, error } = await supabase.from('inventory_items').insert(payload).select().single();
-        if (error) throw error;
+        let inserted: any = null;
+        const { data, error } = await supabase.from('inventory_items').insert(payload).select().single();
+        if (error) {
+          if (error.message?.includes('column') || error.code === '42703') {
+            const fallbackPayload = {
+              name_bn: form.name_bn,
+              name_en: form.name_en || null,
+              category: form.category,
+              current_stock: curStock,
+              unit: form.unit,
+              min_stock_level: Number(form.min_stock_level) || 0,
+              buying_price: Number(form.buying_price) || 0,
+              notes: form.notes || null,
+            };
+            const { data: fbData, error: fbErr } = await supabase.from('inventory_items').insert(fallbackPayload).select().single();
+            if (fbErr) throw fbErr;
+            inserted = fbData;
+          } else {
+            throw error;
+          }
+        } else {
+          inserted = data;
+        }
 
         // If initial stock was provided, create an initial stock in log
         if (curStock > 0 && inserted) {
-          await supabase.from('inventory_logs').insert({
-            item_id: inserted.id,
-            change_amount: curStock,
-            type: 'in',
-            reason: bn ? 'প্রারম্ভিক স্টক এন্ট্রি' : 'Initial Stock Entry',
-            unit_price: Number(form.buying_price) || 0,
-            total_price: curStock * (Number(form.buying_price) || 0),
-          });
+          try {
+            await supabase.from('inventory_logs').insert({
+              item_id: inserted.id,
+              change_amount: curStock,
+              type: 'in',
+              reason: bn ? 'প্রারম্ভিক স্টক এন্ট্রি' : 'Initial Stock Entry',
+              unit_price: Number(form.buying_price) || 0,
+              total_price: curStock * (Number(form.buying_price) || 0),
+            });
+          } catch (logErr) {
+            console.warn('Initial stock log error:', logErr);
+          }
         }
       }
     },
     onSuccess: () => {
-      toast.success(bn ? 'আইটেম সংরক্ষিত হয়েছে' : 'Item saved');
+      toast.success(editItem ? (bn ? 'আইটেম আপডেট করা হয়েছে' : 'Item updated') : (bn ? 'আইটেম সংরক্ষিত হয়েছে' : 'Item saved'));
       qc.invalidateQueries({ queryKey: ['inventory-items'] });
       qc.invalidateQueries({ queryKey: ['inventory-logs'] });
       setItemOpen(false);
       setEditItem(null);
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => {
+      console.error('Save item error:', e);
+      toast.error(e.message || (bn ? 'আইটেম সংরক্ষণ করা যায়নি' : 'Failed to save item'));
+    },
   });
 
   const deleteItem = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('inventory_items').update({ is_active: false }).eq('id', id);
-      if (error) throw error;
+      // First try soft delete (is_active: false)
+      const { error: softErr } = await supabase.from('inventory_items').update({ is_active: false }).eq('id', id);
+      if (softErr) {
+        // Fallback to hard delete
+        const { error: hardErr } = await supabase.from('inventory_items').delete().eq('id', id);
+        if (hardErr) throw hardErr;
+      }
     },
     onSuccess: () => {
       toast.success(bn ? 'আইটেম মুছে ফেলা হয়েছে' : 'Item deleted');
       qc.invalidateQueries({ queryKey: ['inventory-items'] });
+      qc.invalidateQueries({ queryKey: ['inventory-logs'] });
+    },
+    onError: (e: any) => {
+      console.error('Delete item error:', e);
+      toast.error(e.message || (bn ? 'আইটেম মুছে ফেলা সম্ভব হয়নি' : 'Failed to delete item'));
     },
   });
 
@@ -385,7 +453,7 @@ const AdminInventory = () => {
       if (damagedQty >= qty && qty > 0) status = 'damaged';
       else if (damagedQty > 0 && status === 'good') status = 'repairing';
 
-      const payload: any = {
+      const payload: Record<string, any> = {
         asset_name_bn: form.asset_name_bn,
         asset_name_en: form.asset_name_en || null,
         category: form.category,
@@ -401,19 +469,40 @@ const AdminInventory = () => {
 
       if (editAsset) {
         const { error } = await supabase.from('fixed_assets').update(payload).eq('id', editAsset.id);
-        if (error) throw error;
+        if (error) {
+          if (error.message?.includes('column') || error.code === '42703') {
+            delete payload.damaged_quantity;
+            delete payload.expense_id;
+            const { error: retryErr } = await supabase.from('fixed_assets').update(payload).eq('id', editAsset.id);
+            if (retryErr) throw retryErr;
+          } else {
+            throw error;
+          }
+        }
       } else {
         const { error } = await supabase.from('fixed_assets').insert(payload);
-        if (error) throw error;
+        if (error) {
+          if (error.message?.includes('column') || error.code === '42703') {
+            delete payload.damaged_quantity;
+            delete payload.expense_id;
+            const { error: retryErr } = await supabase.from('fixed_assets').insert(payload);
+            if (retryErr) throw retryErr;
+          } else {
+            throw error;
+          }
+        }
       }
     },
     onSuccess: () => {
-      toast.success(bn ? 'সম্পদ সংরক্ষিত হয়েছে' : 'Asset saved');
+      toast.success(editAsset ? (bn ? 'সম্পদ আপডেট হয়েছে' : 'Asset updated') : (bn ? 'সম্পদ সংরক্ষিত হয়েছে' : 'Asset saved'));
       qc.invalidateQueries({ queryKey: ['fixed-assets'] });
       setAssetOpen(false);
       setEditAsset(null);
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => {
+      console.error('Save asset error:', e);
+      toast.error(e.message || (bn ? 'সম্পদ সংরক্ষণ ব্যর্থ হয়েছে' : 'Failed to save asset'));
+    },
   });
 
   const updateAssetStatus = useMutation({
@@ -427,7 +516,17 @@ const AdminInventory = () => {
         status: statusForm.status,
         condition_notes: statusForm.condition_notes || null,
       }).eq('id', statusAsset.id);
-      if (error) throw error;
+      if (error) {
+        if (error.message?.includes('column') || error.code === '42703') {
+          const { error: retryErr } = await supabase.from('fixed_assets').update({
+            status: statusForm.status,
+            condition_notes: statusForm.condition_notes || null,
+          }).eq('id', statusAsset.id);
+          if (retryErr) throw retryErr;
+        } else {
+          throw error;
+        }
+      }
     },
     onSuccess: () => {
       toast.success(bn ? 'সম্পদের অবস্থা আপডেট হয়েছে' : 'Asset condition updated');
@@ -435,17 +534,27 @@ const AdminInventory = () => {
       setAssetStatusOpen(false);
       setStatusAsset(null);
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => {
+      console.error('Update asset status error:', e);
+      toast.error(e.message || (bn ? 'অবস্থা আপডেট ব্যর্থ হয়েছে' : 'Failed to update asset status'));
+    },
   });
 
   const deleteAsset = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('fixed_assets').update({ is_active: false }).eq('id', id);
-      if (error) throw error;
+      const { error: softErr } = await supabase.from('fixed_assets').update({ is_active: false }).eq('id', id);
+      if (softErr) {
+        const { error: hardErr } = await supabase.from('fixed_assets').delete().eq('id', id);
+        if (hardErr) throw hardErr;
+      }
     },
     onSuccess: () => {
       toast.success(bn ? 'সম্পদ মুছে ফেলা হয়েছে' : 'Asset deleted');
       qc.invalidateQueries({ queryKey: ['fixed-assets'] });
+    },
+    onError: (e: any) => {
+      console.error('Delete asset error:', e);
+      toast.error(e.message || (bn ? 'সম্পদ মুছে ফেলা সম্ভব হয়নি' : 'Failed to delete asset'));
     },
   });
 
@@ -454,13 +563,14 @@ const AdminInventory = () => {
     if (item) {
       setEditItem(item);
       setItemForm({
-        name_bn: item.name_bn,
+        name_bn: item.name_bn || '',
         name_en: item.name_en || '',
         category: item.category || 'construction',
-        current_stock: String(item.current_stock || 0),
+        current_stock: String(item.current_stock ?? 0),
+        total_purchased: String(item.total_purchased ?? item.current_stock ?? 0),
         unit: item.unit || 'bag',
-        min_stock_level: String(item.min_stock_level || 5),
-        buying_price: String(item.buying_price || 0),
+        min_stock_level: String(item.min_stock_level ?? 5),
+        buying_price: String(item.buying_price ?? 0),
         notes: item.notes || '',
       });
     } else {
@@ -470,6 +580,7 @@ const AdminInventory = () => {
         name_en: '',
         category: 'construction',
         current_stock: '0',
+        total_purchased: '0',
         unit: 'bag',
         min_stock_level: '5',
         buying_price: '0',
@@ -967,10 +1078,12 @@ const AdminInventory = () => {
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                onClick={async () => {
-                                  if (await confirm({ description: bn ? 'আইটেমটি নিশ্চিতভাবে মুছে ফেলবেন?' : 'Are you sure?', variant: 'destructive' })) {
-                                    deleteItem.mutate(item.id);
-                                  }
+                                onClick={() => {
+                                  setDeleteTarget({
+                                    id: item.id,
+                                    name: bn ? item.name_bn : (item.name_en || item.name_bn),
+                                    type: 'item'
+                                  });
                                 }}
                                 className="h-7 w-7 rounded-lg text-muted-foreground hover:text-destructive"
                                 title={bn ? 'মুছুন' : 'Delete'}
@@ -1108,10 +1221,12 @@ const AdminInventory = () => {
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                onClick={async () => {
-                                  if (await confirm({ description: bn ? 'সম্পদটি মুছে ফেলবেন?' : 'Are you sure?', variant: 'destructive' })) {
-                                    deleteAsset.mutate(a.id);
-                                  }
+                                onClick={() => {
+                                  setDeleteTarget({
+                                    id: a.id,
+                                    name: bn ? a.asset_name_bn : (a.asset_name_en || a.asset_name_bn),
+                                    type: 'asset'
+                                  });
                                 }}
                                 className="h-7 w-7 rounded-lg text-muted-foreground hover:text-destructive"
                               >
@@ -1252,33 +1367,44 @@ const AdminInventory = () => {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              {!editItem && (
+            <div className={`grid ${editItem ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'} gap-3`}>
+              <div>
+                <Label className="text-xs font-semibold">
+                  {editItem ? (bn ? 'বর্তমান মজুত *' : 'In Stock *') : (bn ? 'প্রারম্ভিক স্টক' : 'Initial Stock')}
+                </Label>
+                <Input
+                  type="number"
+                  value={itemForm.current_stock}
+                  onChange={e => setItemForm(f => ({ ...f, current_stock: e.target.value }))}
+                  className="mt-1 rounded-xl font-bold tabular-nums"
+                />
+              </div>
+              {editItem && (
                 <div>
-                  <Label className="text-xs font-semibold">{bn ? 'প্রারম্ভিক স্টক' : 'Initial Stock'}</Label>
+                  <Label className="text-xs font-semibold">{bn ? 'মোট ক্রয়/ইন' : 'Total In'}</Label>
                   <Input
                     type="number"
-                    value={itemForm.current_stock}
-                    onChange={e => setItemForm(f => ({ ...f, current_stock: e.target.value }))}
-                    className="mt-1 rounded-xl font-bold tabular-nums"
+                    value={itemForm.total_purchased}
+                    onChange={e => setItemForm(f => ({ ...f, total_purchased: e.target.value }))}
+                    className="mt-1 rounded-xl font-semibold tabular-nums"
                   />
                 </div>
               )}
-              <div>
-                <Label className="text-xs font-semibold">{bn ? 'ন্যূনতম সতর্কতা' : 'Min Stock'}</Label>
-                <Input
-                  type="number"
-                  value={itemForm.min_stock_level}
-                  onChange={e => setItemForm(f => ({ ...f, min_stock_level: e.target.value }))}
-                  className="mt-1 rounded-xl tabular-nums"
-                />
-              </div>
               <div>
                 <Label className="text-xs font-semibold">{bn ? 'একক মূল্য (দর)' : 'Buying Price'}</Label>
                 <Input
                   type="number"
                   value={itemForm.buying_price}
                   onChange={e => setItemForm(f => ({ ...f, buying_price: e.target.value }))}
+                  className="mt-1 rounded-xl tabular-nums"
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold">{bn ? 'ন্যূনতম সতর্কতা' : 'Min Stock'}</Label>
+                <Input
+                  type="number"
+                  value={itemForm.min_stock_level}
+                  onChange={e => setItemForm(f => ({ ...f, min_stock_level: e.target.value }))}
                   className="mt-1 rounded-xl tabular-nums"
                 />
               </div>
@@ -1796,6 +1922,41 @@ const AdminInventory = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ── Dialog 7: Dedicated Delete Confirmation Dialog ── */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <AlertDialogContent className="rounded-3xl max-w-md p-6">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-lg font-bold text-destructive flex items-center gap-2">
+              <Trash2 className="w-5 h-5 text-destructive" />
+              {deleteTarget?.type === 'item' ? (bn ? 'আইটেম মুছে ফেলার নিশ্চিতকরণ' : 'Confirm Delete Item') : (bn ? 'সম্পদ মুছে ফেলার নিশ্চিতকরণ' : 'Confirm Delete Asset')}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm mt-2 text-foreground/80">
+              {bn
+                ? `আপনি কি নিশ্চিতভাবে "${deleteTarget?.name}" মুছে ফেলতে চান? এটি মুছে ফেললে তা সক্রিয় তালিকা থেকে অপসারিত হবে।`
+                : `Are you sure you want to delete "${deleteTarget?.name}"? This action will remove it from the active list.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 gap-2">
+            <AlertDialogCancel className="rounded-xl">{bn ? 'বাতিল' : 'Cancel'}</AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteTarget) {
+                  if (deleteTarget.type === 'item') {
+                    deleteItem.mutate(deleteTarget.id);
+                  } else {
+                    deleteAsset.mutate(deleteTarget.id);
+                  }
+                  setDeleteTarget(null);
+                }
+              }}
+            >
+              {bn ? 'হ্যাঁ, মুছে ফেলুন' : 'Yes, Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -110,13 +110,19 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 mt-2">
             <AlertDialogCancel
-              onClick={() => handle(false)}
+              onClick={(e) => {
+                e.preventDefault();
+                handle(false);
+              }}
               className="rounded-full px-6"
             >
               {state.cancelText ?? "বাতিল"}
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => handle(true)}
+              onClick={(e) => {
+                e.preventDefault();
+                handle(true);
+              }}
               className={cn("rounded-full px-6", v.btn)}
             >
               {state.confirmText ?? "নিশ্চিত"}
