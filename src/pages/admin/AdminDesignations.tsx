@@ -86,10 +86,44 @@ const AdminDesignations = () => {
     },
   });
 
+  // Fallback map stored in website_settings if authority_role column has not yet been added to remote DB
+  const { data: desigAuthorityMap = {} } = useQuery<Record<string, string>>({
+    queryKey: ['desig_authority_mapping'],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('website_settings')
+          .select('value')
+          .eq('key', 'desig_authority_roles')
+          .maybeSingle();
+        if (!error && data?.value && typeof data.value === 'object') {
+          return data.value as Record<string, string>;
+        }
+      } catch (err) {
+        console.warn('Fallback desig authority map fetch error:', err);
+      }
+      return {};
+    },
+  });
+
+  const getDesignationAuthorityRole = (d: any) => {
+    return d?.authority_role || desigAuthorityMap[d?.id] || desigAuthorityMap[d?.name_bn] || null;
+  };
+
   // ─── Designation helpers ───
   const resetForm = () => { setName(''); setNameBn(''); setDescription(''); setSortOrder(0); setIsActive(true); setStaffCategory(staffCategories[0]?.key || ''); setAuthorityRole('none'); setEditItem(null); };
   const openAdd = () => { resetForm(); setStaffCategory(staffCategories[0]?.key || ''); setAuthorityRole('none'); setDialogOpen(true); };
-  const openEdit = (item: any) => { setEditItem(item); setName(item.name || ''); setNameBn(item.name_bn || ''); setDescription(item.description || ''); setSortOrder(item.sort_order || 0); setIsActive(item.is_active ?? true); setStaffCategory(item.staff_category || ''); setAuthorityRole(item.authority_role || 'none'); setDialogOpen(true); };
+  const openEdit = (item: any) => {
+    setEditItem(item);
+    setName(item.name || '');
+    setNameBn(item.name_bn || '');
+    setDescription(item.description || '');
+    setSortOrder(item.sort_order || 0);
+    setIsActive(item.is_active ?? true);
+    setStaffCategory(item.staff_category || '');
+    setAuthorityRole(getDesignationAuthorityRole(item) || 'none');
+    setDialogOpen(true);
+  };
 
   // Spelling check (excluding the row being edited)
   const nameBnCheck = useMemo(() => {
@@ -110,22 +144,74 @@ const AdminDesignations = () => {
     mutationFn: async () => {
       if (!name.trim() || !nameBn.trim()) throw new Error(bn ? 'নাম আবশ্যক' : 'Name is required');
       if (nameBnCheck.level === 'error') throw new Error(nameBnCheck.message || (bn ? 'বানান যাচাই করুন' : 'Check spelling'));
-      const record = {
+
+      const baseRecord = {
         name: name.trim(),
         name_bn: nameBn.trim(),
         description: description.trim() || null,
         sort_order: sortOrder,
         is_active: isActive,
         staff_category: staffCategory,
+      };
+
+      const recordWithAuth = {
+        ...baseRecord,
         authority_role: authorityRole === 'none' ? null : authorityRole,
       };
-      if (editItem) { const { error } = await supabase.from('designations').update(record).eq('id', editItem.id); if (error) throw error; }
-      else { const { error } = await supabase.from('designations').insert(record); if (error) throw error; }
+
+      let savedId = editItem?.id;
+
+      if (editItem) {
+        // Try with authority_role first; if column does not exist in schema cache, fallback cleanly to baseRecord
+        const { error } = await supabase.from('designations').update(recordWithAuth).eq('id', editItem.id);
+        if (error) {
+          if (error.message?.includes('authority_role') || (error as any).code === 'PGRST204') {
+            const retry = await supabase.from('designations').update(baseRecord).eq('id', editItem.id);
+            if (retry.error) throw retry.error;
+          } else {
+            throw error;
+          }
+        }
+      } else {
+        const { data, error } = await supabase.from('designations').insert(recordWithAuth).select('id').maybeSingle();
+        if (error) {
+          if (error.message?.includes('authority_role') || (error as any).code === 'PGRST204') {
+            const retry = await supabase.from('designations').insert(baseRecord).select('id').maybeSingle();
+            if (retry.error) throw retry.error;
+            savedId = retry.data?.id;
+          } else {
+            throw error;
+          }
+        } else {
+          savedId = data?.id;
+        }
+      }
+
+      // Persist in website_settings mapping so authority_role is 100% saved without failing schema cache
+      try {
+        const updatedMap = { ...(desigAuthorityMap || {}) };
+        if (savedId) {
+          if (authorityRole && authorityRole !== 'none') {
+            updatedMap[savedId] = authorityRole;
+            updatedMap[nameBn.trim()] = authorityRole;
+          } else {
+            delete updatedMap[savedId];
+            delete updatedMap[nameBn.trim()];
+          }
+          await supabase.from('website_settings').upsert({
+            key: 'desig_authority_roles',
+            value: updatedMap,
+          });
+        }
+      } catch (mapErr) {
+        console.warn('Failed to persist fallback desig authority map:', mapErr);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['designations'] });
       queryClient.invalidateQueries({ queryKey: ['designations-all'] });
       queryClient.invalidateQueries({ queryKey: ['designations-for-form-all'] });
+      queryClient.invalidateQueries({ queryKey: ['desig_authority_mapping'] });
       queryClient.invalidateQueries({ queryKey: ['signatory-authorities'] });
       toast.success(editItem ? (bn ? 'পদবি আপডেট হয়েছে' : 'Designation updated') : (bn ? 'পদবি যোগ হয়েছে' : 'Designation added'));
       setDialogOpen(false);
@@ -317,10 +403,10 @@ const AdminDesignations = () => {
                           <td className="px-4 py-3 text-sm font-medium text-foreground">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span>{d.name_bn}</span>
-                              {d.authority_role && (
+                              {getDesignationAuthorityRole(d) && (
                                 <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 border-emerald-400/40 text-[11px] gap-1 py-0 font-normal">
                                   <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                                  {CORE_SIGNATORY_ROLES.find(r => r.key === d.authority_role)?.label_bn || d.authority_role}
+                                  {CORE_SIGNATORY_ROLES.find(r => r.key === getDesignationAuthorityRole(d))?.label_bn || getDesignationAuthorityRole(d)}
                                 </Badge>
                               )}
                             </div>
