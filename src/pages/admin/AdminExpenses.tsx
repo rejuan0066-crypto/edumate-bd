@@ -34,6 +34,7 @@ import { generateBilingualReport } from '@/lib/reportPdfGenerator';
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { exportExpensesMultiTabExcel, exportSingleInstitutionExcel, getInstShortName } from '@/lib/expenseExcelExport';
 import { toBnDigits } from '@/lib/digits';
+import { useSignatoryAuthorities } from '@/hooks/useSignatoryAuthorities';
 
 export const DEFAULT_QUANTITY_UNITS = [
   'পিস',
@@ -223,10 +224,15 @@ const AdminExpenses = () => {
   const [depositDialog, setDepositDialog] = useState(false);
   const [institutionDialog, setInstitutionDialog] = useState(false);
   const [editingInstitutionId, setEditingInstitutionId] = useState<string | null>(null);
+  const { headOfInstitute, accountantCashier, verifierAuditor } = useSignatoryAuthorities();
   const [printEditMode, setPrintEditMode] = useState(false);
   const [printEditData, setPrintEditData] = useState({
     instName: '', instNameEn: '', instAddress: '', instPhone: '', instEmail: '', instOther: '', instLogo: '',
-    reportTitle: '', reportSubtitle: '', casherName: '', principalName: '', extraNote: ''
+    reportTitle: '', reportSubtitle: '',
+    casherName: '', casherDesignation: '',
+    verifierName: '', verifierDesignation: '',
+    principalName: '', principalDesignation: '',
+    extraNote: ''
   });
 
   // Edit IDs
@@ -1504,11 +1510,11 @@ const AdminExpenses = () => {
   useEffect(() => {
     setSummaryForm(f => ({
       ...f,
-      principal_name: summaryData?.principal_name || f.principal_name || '',
-      casher_name: summaryData?.casher_name || f.casher_name || '',
-      previous_arrears: String(summaryData?.previous_arrears || f.previous_arrears || '0'),
+      principal_name: summaryData?.principal_name ?? (f.principal_name || headOfInstitute?.person_name_bn || ''),
+      casher_name: summaryData?.casher_name ?? (f.casher_name || accountantCashier?.person_name_bn || ''),
+      previous_arrears: String(summaryData?.previous_arrears ?? (f.previous_arrears || '0')),
     }));
-  }, [summaryData]);
+  }, [summaryData, headOfInstitute, accountantCashier]);
 
   // Auto-select first institution
   useEffect(() => {
@@ -2110,7 +2116,11 @@ const AdminExpenses = () => {
   const [depositPrintEditMode, setDepositPrintEditMode] = useState(false);
   const [depositPrintEditData, setDepositPrintEditData] = useState({
     instName: '', instNameEn: '', instAddress: '', instPhone: '', instEmail: '', instOther: '', instLogo: '',
-    reportTitle: '', reportSubtitle: '', casherName: '', principalName: '', extraNote: ''
+    reportTitle: '', reportSubtitle: '',
+    casherName: '', casherDesignation: '',
+    verifierName: '', verifierDesignation: '',
+    principalName: '', principalDesignation: '',
+    extraNote: ''
   });
 
   const handleDepositExcelDownload = () => {
@@ -3309,7 +3319,14 @@ const AdminExpenses = () => {
                   setDepositPrintEditData({
                     instName, instNameEn, instAddress, instPhone, instEmail, instOther, instLogo,
                     reportTitle: bn ? 'টাকা আয়/উত্তোলন প্রতিবেদন' : 'Deposit Report',
-                    reportSubtitle: '', casherName: summaryData?.casher_name || '', principalName: summaryData?.principal_name || '', extraNote: ''
+                    reportSubtitle: '',
+                    casherName: summaryData?.casher_name || selectedInst?.accountant_name || accountantCashier?.person_name_bn || '',
+                    casherDesignation: selectedInst?.accountant_designation || accountantCashier?.person_designation_bn || (bn ? 'ক্যাশিয়ার / প্রস্তুতকারী' : 'Cashier / Prepared By'),
+                    verifierName: selectedInst?.verifier_name || verifierAuditor?.person_name_bn || '',
+                    verifierDesignation: selectedInst?.verifier_designation || verifierAuditor?.person_designation_bn || (bn ? 'যাচাইকারী / নিরীক্ষক' : 'Verified By / Auditor'),
+                    principalName: summaryData?.principal_name || selectedInst?.principal_name || headOfInstitute?.person_name_bn || '',
+                    principalDesignation: selectedInst?.principal_designation || headOfInstitute?.person_designation_bn || (bn ? 'মুহতামিম / অধ্যক্ষ' : 'Principal / Authorized By'),
+                    extraNote: ''
                   });
                   setDepositPrintEditMode(false);
                   setDepositPrintPreview(true);
@@ -4309,30 +4326,72 @@ const AdminExpenses = () => {
         </table>
 
         {/* Signatures */}
-        <div className="flex justify-between mt-12 pt-8">
-          <div className="text-center min-w-[140px]">
-            <div className="border-t border-black w-40 mx-auto mb-1"></div>
-            {summaryData?.casher_name && summaryData.casher_name.trim() !== (bn ? 'ক্যাশিয়ার' : 'Cashier') ? (
-              <>
-                <p className="text-sm font-semibold">{summaryData.casher_name}</p>
-                <p className="text-xs">{bn ? 'ক্যাশিয়ার' : 'Cashier'}</p>
-              </>
-            ) : (
-              <p className="text-sm font-medium">{bn ? 'ক্যাশিয়ার' : 'Cashier'}</p>
-            )}
-          </div>
-          <div className="text-center min-w-[140px]">
-            <div className="border-t border-black w-40 mx-auto mb-1"></div>
-            {summaryData?.principal_name && summaryData.principal_name.trim() !== (bn ? 'অধ্যক্ষ' : 'Principal') ? (
-              <>
-                <p className="text-sm font-semibold">{summaryData.principal_name}</p>
-                <p className="text-xs">{bn ? 'অধ্যক্ষ' : 'Principal'}</p>
-              </>
-            ) : (
-              <p className="text-sm font-medium">{bn ? 'অধ্যক্ষ' : 'Principal'}</p>
-            )}
-          </div>
-        </div>
+        {(() => {
+          const sumCasherPerson = (summaryData?.casher_name || selectedInst?.accountant_name || accountantCashier?.person_name_bn || '').trim();
+          const sumCasherTitle = (selectedInst?.accountant_designation || accountantCashier?.person_designation_bn || (bn ? 'ক্যাশিয়ার / প্রস্তুতকারী' : 'Cashier / Prepared By')).trim();
+          const sumVerPerson = (selectedInst?.verifier_name || verifierAuditor?.person_name_bn || '').trim();
+          const sumVerTitle = (selectedInst?.verifier_designation || verifierAuditor?.person_designation_bn || (bn ? 'যাচাইকারী / নিরীক্ষক' : 'Verified By / Auditor')).trim();
+          const sumPrincPerson = (summaryData?.principal_name || selectedInst?.principal_name || headOfInstitute?.person_name_bn || '').trim();
+          const sumPrincTitle = (selectedInst?.principal_designation || headOfInstitute?.person_designation_bn || (bn ? 'মুহতামিম / অধ্যক্ষ' : 'Principal / Authorized By')).trim();
+          const showVer = Boolean(sumVerPerson || verifierAuditor?.is_active || selectedInst?.verifier_name);
+
+          return (
+            <div className="flex justify-between items-end mt-12 pt-8">
+              <div className="text-center min-w-[140px]">
+                {accountantCashier?.signature_url ? (
+                  <img src={accountantCashier.signature_url} alt="Signature" className="h-9 mx-auto mb-1 object-contain" />
+                ) : (
+                  <div className="h-6"></div>
+                )}
+                <div className="border-t border-black w-40 mx-auto mb-1"></div>
+                {sumCasherPerson ? (
+                  <>
+                    <p className="text-sm font-semibold">{sumCasherPerson}</p>
+                    <p className="text-xs text-muted-foreground">{sumCasherTitle}</p>
+                  </>
+                ) : (
+                  <p className="text-sm font-medium">{sumCasherTitle}</p>
+                )}
+              </div>
+
+              {showVer && (
+                <div className="text-center min-w-[140px]">
+                  {verifierAuditor?.signature_url ? (
+                    <img src={verifierAuditor.signature_url} alt="Signature" className="h-9 mx-auto mb-1 object-contain" />
+                  ) : (
+                    <div className="h-6"></div>
+                  )}
+                  <div className="border-t border-black w-40 mx-auto mb-1"></div>
+                  {sumVerPerson ? (
+                    <>
+                      <p className="text-sm font-semibold">{sumVerPerson}</p>
+                      <p className="text-xs text-muted-foreground">{sumVerTitle}</p>
+                    </>
+                  ) : (
+                    <p className="text-sm font-medium">{sumVerTitle}</p>
+                  )}
+                </div>
+              )}
+
+              <div className="text-center min-w-[140px]">
+                {headOfInstitute?.signature_url ? (
+                  <img src={headOfInstitute.signature_url} alt="Signature" className="h-9 mx-auto mb-1 object-contain" />
+                ) : (
+                  <div className="h-6"></div>
+                )}
+                <div className="border-t border-black w-40 mx-auto mb-1"></div>
+                {sumPrincPerson ? (
+                  <>
+                    <p className="text-sm font-semibold">{sumPrincPerson}</p>
+                    <p className="text-xs text-muted-foreground">{sumPrincTitle}</p>
+                  </>
+                ) : (
+                  <p className="text-sm font-medium">{sumPrincTitle}</p>
+                )}
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Receipt Preview Dialog */}
@@ -4927,7 +4986,11 @@ const AdminExpenses = () => {
                     setPrintEditMode(false);
                     setPrintEditData({
                       instName: '', instNameEn: '', instAddress: '', instPhone: '', instEmail: '', instOther: '', instLogo: '',
-                      reportTitle: '', reportSubtitle: '', casherName: '', principalName: '', extraNote: ''
+                      reportTitle: '', reportSubtitle: '',
+                      casherName: '', casherDesignation: '',
+                      verifierName: '', verifierDesignation: '',
+                      principalName: '', principalDesignation: '',
+                      extraNote: ''
                     });
                   }}
                 >
@@ -4965,9 +5028,13 @@ const AdminExpenses = () => {
                       ? (isAll ? 'সকল প্রতিষ্ঠানের একত্রিত হিসাব প্রতিবেদন' : 'মাসিক হিসাব প্রতিবেদন')
                       : (isAll ? 'All Institutions Combined Report' : 'Monthly Expense Report'),
                     reportSubtitle: '',
-                    casherName: summaryData?.casher_name || '',
-                    principalName: summaryData?.principal_name || '',
-                    extraNote: ''
+                    casherName: printEditData.casherName || summaryData?.casher_name || targetForEdit?.accountant_name || accountantCashier?.person_name_bn || '',
+                    casherDesignation: printEditData.casherDesignation || targetForEdit?.accountant_designation || accountantCashier?.person_designation_bn || (bn ? 'ক্যাশিয়ার / প্রস্তুতকারী' : 'Cashier / Prepared By'),
+                    verifierName: printEditData.verifierName || targetForEdit?.verifier_name || verifierAuditor?.person_name_bn || '',
+                    verifierDesignation: printEditData.verifierDesignation || targetForEdit?.verifier_designation || verifierAuditor?.person_designation_bn || (bn ? 'যাচাইকারী / নিরীক্ষক' : 'Verified By / Auditor'),
+                    principalName: printEditData.principalName || summaryData?.principal_name || targetForEdit?.principal_name || headOfInstitute?.person_name_bn || '',
+                    principalDesignation: printEditData.principalDesignation || targetForEdit?.principal_designation || headOfInstitute?.person_designation_bn || (bn ? 'মুহতামিম / অধ্যক্ষ' : 'Principal / Authorized By'),
+                    extraNote: printEditData.extraNote || ''
                   });
                 }
                 setPrintEditMode(!printEditMode);
@@ -5001,12 +5068,44 @@ const AdminExpenses = () => {
                 <div><Label>{bn ? 'অতিরিক্ত সাবটাইটেল' : 'Subtitle'}</Label>
                   <Input value={printEditData.reportSubtitle} onChange={e => setPrintEditData(p => ({ ...p, reportSubtitle: e.target.value }))} /></div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>{bn ? 'ক্যাশিয়ারের নাম' : 'Cashier Name'}</Label>
-                  <Input value={printEditData.casherName} onChange={e => setPrintEditData(p => ({ ...p, casherName: e.target.value }))} /></div>
-                <div><Label>{bn ? 'প্রিন্সিপালের নাম' : 'Principal Name'}</Label>
-                  <Input value={printEditData.principalName} onChange={e => setPrintEditData(p => ({ ...p, principalName: e.target.value }))} /></div>
+
+              {/* Signatories Formula Inputs */}
+              <div className="border rounded-lg p-3 bg-muted/20 space-y-3">
+                <div className="font-semibold text-xs text-foreground flex items-center gap-1.5">
+                  <span>✍️ {bn ? 'স্বাক্ষরকারীদের নাম ও পদবি (পৃষ্ঠা ফর্মুলা)' : 'Signatories Name & Designation (Page Formula)'}</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label>{bn ? 'ক্যাশিয়ার / প্রস্তুতকারীর নাম' : 'Cashier / Prepared By Name'}</Label>
+                    <Input value={printEditData.casherName} onChange={e => setPrintEditData(p => ({ ...p, casherName: e.target.value }))} placeholder={bn ? 'নাম লিখুন' : 'Enter name'} />
+                  </div>
+                  <div>
+                    <Label>{bn ? 'ক্যাশিয়ারের পদবি' : 'Cashier Designation'}</Label>
+                    <Input value={printEditData.casherDesignation} onChange={e => setPrintEditData(p => ({ ...p, casherDesignation: e.target.value }))} placeholder={bn ? 'যেমন: ক্যাশিয়ার / হিসাবরক্ষক' : 'e.g. Cashier'} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label>{bn ? 'যাচাইকারী / নিরীক্ষকের নাম' : 'Verifier / Auditor Name'}</Label>
+                    <Input value={printEditData.verifierName} onChange={e => setPrintEditData(p => ({ ...p, verifierName: e.target.value }))} placeholder={bn ? 'নাম লিখুন (ঐচ্ছিক)' : 'Enter name (Optional)'} />
+                  </div>
+                  <div>
+                    <Label>{bn ? 'যাচাইকারীর পদবি' : 'Verifier Designation'}</Label>
+                    <Input value={printEditData.verifierDesignation} onChange={e => setPrintEditData(p => ({ ...p, verifierDesignation: e.target.value }))} placeholder={bn ? 'যেমন: যাচাইকারী / নিরীক্ষক' : 'e.g. Auditor'} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label>{bn ? 'প্রতিষ্ঠান প্রধান / অধ্যক্ষের নাম' : 'Principal / Head Name'}</Label>
+                    <Input value={printEditData.principalName} onChange={e => setPrintEditData(p => ({ ...p, principalName: e.target.value }))} placeholder={bn ? 'নাম লিখুন' : 'Enter name'} />
+                  </div>
+                  <div>
+                    <Label>{bn ? 'প্রতিষ্ঠান প্রধানের পদবি' : 'Principal Designation'}</Label>
+                    <Input value={printEditData.principalDesignation} onChange={e => setPrintEditData(p => ({ ...p, principalDesignation: e.target.value }))} placeholder={bn ? 'যেমন: মুহতামিম / অধ্যক্ষ' : 'e.g. Principal / Muhtamim'} />
+                  </div>
+                </div>
               </div>
+
               <div><Label>{bn ? 'অতিরিক্ত নোট (প্রিন্টে দেখাবে)' : 'Extra Note (shown in print)'}</Label>
                 <Textarea value={printEditData.extraNote} onChange={e => setPrintEditData(p => ({ ...p, extraNote: e.target.value }))} rows={2} /></div>
             </div>
@@ -5034,10 +5133,46 @@ const AdminExpenses = () => {
             const dReportTitle = ed.reportTitle || (isAllPrint 
               ? (bn ? 'সকল প্রতিষ্ঠানের একত্রিত হিসাব প্রতিবেদন' : 'All Institutions Combined Expense Report')
               : (bn ? 'মাসিক হিসাব প্রতিবেদন' : 'Monthly Expense Report'));
-            const casherPerson = (ed.casherName || summaryData?.casher_name || '').trim();
-            const principalPerson = (ed.principalName || summaryData?.principal_name || '').trim();
-            const casherDesignation = bn ? 'ক্যাশিয়ার' : 'Cashier';
-            const principalDesignation = bn ? 'অধ্যক্ষ' : 'Principal';
+            const casherPerson = (
+              ed.casherName ||
+              summaryData?.casher_name ||
+              activeInst?.accountant_name ||
+              accountantCashier?.person_name_bn ||
+              ''
+            ).trim();
+            const casherDesignation = (
+              ed.casherDesignation ||
+              activeInst?.accountant_designation ||
+              accountantCashier?.person_designation_bn ||
+              (bn ? 'ক্যাশিয়ার / প্রস্তুতকারী' : 'Cashier / Prepared By')
+            ).trim();
+
+            const verifierPerson = (
+              ed.verifierName ||
+              activeInst?.verifier_name ||
+              verifierAuditor?.person_name_bn ||
+              ''
+            ).trim();
+            const verifierDesignation = (
+              ed.verifierDesignation ||
+              activeInst?.verifier_designation ||
+              verifierAuditor?.person_designation_bn ||
+              (bn ? 'যাচাইকারী / নিরীক্ষক' : 'Verified By / Auditor')
+            ).trim();
+
+            const principalPerson = (
+              ed.principalName ||
+              summaryData?.principal_name ||
+              activeInst?.principal_name ||
+              headOfInstitute?.person_name_bn ||
+              ''
+            ).trim();
+            const principalDesignation = (
+              ed.principalDesignation ||
+              activeInst?.principal_designation ||
+              headOfInstitute?.person_designation_bn ||
+              (bn ? 'মুহতামিম / অধ্যক্ষ' : 'Principal / Authorized By')
+            ).trim();
 
             // Build printable pages: 1 page per category, dues, bank deposit, and master summary (matching Excel tabs)
             type PrintablePage = {
@@ -5131,50 +5266,151 @@ const AdminExpenses = () => {
               subtotal: totalPaid
             });
 
-            const renderSignatures = () => (
-              <div 
-                className="flex justify-between mt-12 pt-6 border-t print:mt-10 page-footer"
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  width: '100%',
-                  marginTop: '36px',
-                  paddingTop: '16px',
-                  borderTop: '1px solid #cbd5e1',
-                  pageBreakInside: 'avoid'
-                }}
-              >
-                <div className="text-center min-w-[140px]" style={{ textAlign: 'center', minWidth: '150px' }}>
-                  <div 
-                    className="border-t border-foreground w-40 mx-auto mb-1"
-                    style={{ borderTop: '1.5px solid #000000', width: '160px', margin: '0 auto 6px auto' }}
-                  ></div>
-                  {casherPerson && casherPerson !== casherDesignation ? (
-                    <>
-                      <p className="text-sm font-semibold" style={{ fontSize: '13px', fontWeight: 700, margin: '2px 0' }}>{casherPerson}</p>
-                      <p className="text-xs text-muted-foreground" style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>{casherDesignation}</p>
-                    </>
-                  ) : (
-                    <p className="text-sm font-medium" style={{ fontSize: '13px', fontWeight: 600, margin: '2px 0' }}>{casherDesignation}</p>
+            const renderSignatures = (pageInst?: any) => {
+              const currentInst = pageInst || activeInst;
+
+              const cPerson = (
+                ed.casherName ||
+                summaryData?.casher_name ||
+                currentInst?.accountant_name ||
+                accountantCashier?.person_name_bn ||
+                ''
+              ).trim();
+
+              const cDesig = (
+                ed.casherDesignation ||
+                currentInst?.accountant_designation ||
+                accountantCashier?.person_designation_bn ||
+                (bn ? 'ক্যাশিয়ার / প্রস্তুতকারী' : 'Cashier / Prepared By')
+              ).trim();
+
+              const vPerson = (
+                ed.verifierName ||
+                currentInst?.verifier_name ||
+                verifierAuditor?.person_name_bn ||
+                ''
+              ).trim();
+
+              const vDesig = (
+                ed.verifierDesignation ||
+                currentInst?.verifier_designation ||
+                verifierAuditor?.person_designation_bn ||
+                (bn ? 'যাচাইকারী / নিরীক্ষক' : 'Verified By / Auditor')
+              ).trim();
+
+              const pPerson = (
+                ed.principalName ||
+                summaryData?.principal_name ||
+                currentInst?.principal_name ||
+                headOfInstitute?.person_name_bn ||
+                ''
+              ).trim();
+
+              const pDesig = (
+                ed.principalDesignation ||
+                currentInst?.principal_designation ||
+                headOfInstitute?.person_designation_bn ||
+                (bn ? 'মুহতামিম / অধ্যক্ষ' : 'Principal / Authorized By')
+              ).trim();
+
+              const showVerifier = Boolean(vPerson || verifierAuditor?.is_active || currentInst?.verifier_name);
+
+              return (
+                <div 
+                  className="flex justify-between items-end mt-12 pt-6 border-t print:mt-10 page-footer"
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-end',
+                    width: '100%',
+                    marginTop: '36px',
+                    paddingTop: '16px',
+                    borderTop: '1px solid #cbd5e1',
+                    pageBreakInside: 'avoid'
+                  }}
+                >
+                  {/* 1. Cashier / Prepared By */}
+                  <div className="text-center min-w-[140px]" style={{ textAlign: 'center', minWidth: '150px' }}>
+                    {accountantCashier?.signature_url ? (
+                      <img 
+                        src={accountantCashier.signature_url} 
+                        alt="Signature" 
+                        className="h-9 mx-auto mb-1 object-contain" 
+                        style={{ height: '36px', margin: '0 auto 4px auto', objectFit: 'contain', display: 'block' }} 
+                      />
+                    ) : (
+                      <div style={{ height: '24px' }}></div>
+                    )}
+                    <div 
+                      className="border-t border-foreground w-40 mx-auto mb-1"
+                      style={{ borderTop: '1.5px solid #000000', width: '160px', margin: '0 auto 6px auto' }}
+                    ></div>
+                    {cPerson ? (
+                      <>
+                        <p className="text-sm font-semibold" style={{ fontSize: '13px', fontWeight: 700, margin: '2px 0' }}>{cPerson}</p>
+                        <p className="text-xs text-muted-foreground" style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>{cDesig}</p>
+                      </>
+                    ) : (
+                      <p className="text-sm font-medium" style={{ fontSize: '13px', fontWeight: 600, margin: '2px 0' }}>{cDesig}</p>
+                    )}
+                  </div>
+
+                  {/* 2. Verifier / Auditor (shown when verifier is present/configured) */}
+                  {showVerifier && (
+                    <div className="text-center min-w-[140px]" style={{ textAlign: 'center', minWidth: '150px' }}>
+                      {verifierAuditor?.signature_url ? (
+                        <img 
+                          src={verifierAuditor.signature_url} 
+                          alt="Signature" 
+                          className="h-9 mx-auto mb-1 object-contain" 
+                          style={{ height: '36px', margin: '0 auto 4px auto', objectFit: 'contain', display: 'block' }} 
+                        />
+                      ) : (
+                        <div style={{ height: '24px' }}></div>
+                      )}
+                      <div 
+                        className="border-t border-foreground w-40 mx-auto mb-1"
+                        style={{ borderTop: '1.5px solid #000000', width: '160px', margin: '0 auto 6px auto' }}
+                      ></div>
+                      {vPerson ? (
+                        <>
+                          <p className="text-sm font-semibold" style={{ fontSize: '13px', fontWeight: 700, margin: '2px 0' }}>{vPerson}</p>
+                          <p className="text-xs text-muted-foreground" style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>{vDesig}</p>
+                        </>
+                      ) : (
+                        <p className="text-sm font-medium" style={{ fontSize: '13px', fontWeight: 600, margin: '2px 0' }}>{vDesig}</p>
+                      )}
+                    </div>
                   )}
+
+                  {/* 3. Principal / Authorized By */}
+                  <div className="text-center min-w-[140px]" style={{ textAlign: 'center', minWidth: '150px' }}>
+                    {headOfInstitute?.signature_url ? (
+                      <img 
+                        src={headOfInstitute.signature_url} 
+                        alt="Signature" 
+                        className="h-9 mx-auto mb-1 object-contain" 
+                        style={{ height: '36px', margin: '0 auto 4px auto', objectFit: 'contain', display: 'block' }} 
+                      />
+                    ) : (
+                      <div style={{ height: '24px' }}></div>
+                    )}
+                    <div 
+                      className="border-t border-foreground w-40 mx-auto mb-1"
+                      style={{ borderTop: '1.5px solid #000000', width: '160px', margin: '0 auto 6px auto' }}
+                    ></div>
+                    {pPerson ? (
+                      <>
+                        <p className="text-sm font-semibold" style={{ fontSize: '13px', fontWeight: 700, margin: '2px 0' }}>{pPerson}</p>
+                        <p className="text-xs text-muted-foreground" style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>{pDesig}</p>
+                      </>
+                    ) : (
+                      <p className="text-sm font-medium" style={{ fontSize: '13px', fontWeight: 600, margin: '2px 0' }}>{pDesig}</p>
+                    )}
+                  </div>
                 </div>
-                <div className="text-center min-w-[140px]" style={{ textAlign: 'center', minWidth: '150px' }}>
-                  <div 
-                    className="border-t border-foreground w-40 mx-auto mb-1"
-                    style={{ borderTop: '1.5px solid #000000', width: '160px', margin: '0 auto 6px auto' }}
-                  ></div>
-                  {principalPerson && principalPerson !== principalDesignation ? (
-                    <>
-                      <p className="text-sm font-semibold" style={{ fontSize: '13px', fontWeight: 700, margin: '2px 0' }}>{principalPerson}</p>
-                      <p className="text-xs text-muted-foreground" style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>{principalDesignation}</p>
-                    </>
-                  ) : (
-                    <p className="text-sm font-medium" style={{ fontSize: '13px', fontWeight: 600, margin: '2px 0' }}>{principalDesignation}</p>
-                  )}
-                </div>
-              </div>
-            );
+              );
+            };
 
             const renderLetterhead = (pageInst: any, pageTitle: string, isSummary: boolean = false) => {
               const pLogo = pageInst?.logo_url || dInstLogo;
@@ -5318,7 +5554,7 @@ const AdminExpenses = () => {
                             </table>
                           </div>
 
-                          {renderSignatures()}
+                          {renderSignatures(page.inst)}
                         </div>
                       );
                     }
@@ -5398,7 +5634,7 @@ const AdminExpenses = () => {
                             </table>
                           </div>
 
-                          {renderSignatures()}
+                          {renderSignatures(page.inst)}
                         </div>
                       );
                     }
@@ -5658,7 +5894,7 @@ const AdminExpenses = () => {
                             </div>
                           </div>
 
-                          {renderSignatures()}
+                          {renderSignatures(page.inst)}
                         </div>
                       );
                     }
@@ -5769,7 +6005,7 @@ const AdminExpenses = () => {
                           </div>
                         </div>
 
-                        {renderSignatures()}
+                        {renderSignatures(page.inst)}
                       </div>
                     );
                   })
@@ -5804,7 +6040,14 @@ const AdminExpenses = () => {
                   setDepositPrintEditData({
                     instName, instNameEn, instAddress, instPhone, instEmail, instOther, instLogo,
                     reportTitle: bn ? 'টাকা আয়/উত্তোলন প্রতিবেদন' : 'Deposit Report',
-                    reportSubtitle: '', casherName: summaryData?.casher_name || '', principalName: summaryData?.principal_name || '', extraNote: ''
+                    reportSubtitle: '',
+                    casherName: depositPrintEditData.casherName || summaryData?.casher_name || selectedInst?.accountant_name || accountantCashier?.person_name_bn || '',
+                    casherDesignation: depositPrintEditData.casherDesignation || selectedInst?.accountant_designation || accountantCashier?.person_designation_bn || (bn ? 'ক্যাশিয়ার / প্রস্তুতকারী' : 'Cashier / Prepared By'),
+                    verifierName: depositPrintEditData.verifierName || selectedInst?.verifier_name || verifierAuditor?.person_name_bn || '',
+                    verifierDesignation: depositPrintEditData.verifierDesignation || selectedInst?.verifier_designation || verifierAuditor?.person_designation_bn || (bn ? 'যাচাইকারী / নিরীক্ষক' : 'Verified By / Auditor'),
+                    principalName: depositPrintEditData.principalName || summaryData?.principal_name || selectedInst?.principal_name || headOfInstitute?.person_name_bn || '',
+                    principalDesignation: depositPrintEditData.principalDesignation || selectedInst?.principal_designation || headOfInstitute?.person_designation_bn || (bn ? 'মুহতামিম / অধ্যক্ষ' : 'Principal / Authorized By'),
+                    extraNote: depositPrintEditData.extraNote || ''
                   });
                 }
                 setDepositPrintEditMode(!depositPrintEditMode);
@@ -5838,12 +6081,44 @@ const AdminExpenses = () => {
                 <div><Label>{bn ? 'সাবটাইটেল' : 'Subtitle'}</Label>
                   <Input value={depositPrintEditData.reportSubtitle} onChange={e => setDepositPrintEditData(p => ({ ...p, reportSubtitle: e.target.value }))} /></div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>{bn ? 'ক্যাশিয়ারের নাম' : 'Cashier Name'}</Label>
-                  <Input value={depositPrintEditData.casherName} onChange={e => setDepositPrintEditData(p => ({ ...p, casherName: e.target.value }))} /></div>
-                <div><Label>{bn ? 'প্রিন্সিপালের নাম' : 'Principal Name'}</Label>
-                  <Input value={depositPrintEditData.principalName} onChange={e => setDepositPrintEditData(p => ({ ...p, principalName: e.target.value }))} /></div>
+
+              {/* Signatories Formula Inputs */}
+              <div className="border rounded-lg p-3 bg-muted/20 space-y-3">
+                <div className="font-semibold text-xs text-foreground flex items-center gap-1.5">
+                  <span>✍️ {bn ? 'স্বাক্ষরকারীদের নাম ও পদবি (পৃষ্ঠা ফর্মুলা)' : 'Signatories Name & Designation (Page Formula)'}</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label>{bn ? 'ক্যাশিয়ার / প্রস্তুতকারীর নাম' : 'Cashier / Prepared By Name'}</Label>
+                    <Input value={depositPrintEditData.casherName} onChange={e => setDepositPrintEditData(p => ({ ...p, casherName: e.target.value }))} placeholder={bn ? 'নাম লিখুন' : 'Enter name'} />
+                  </div>
+                  <div>
+                    <Label>{bn ? 'ক্যাশিয়ারের পদবি' : 'Cashier Designation'}</Label>
+                    <Input value={depositPrintEditData.casherDesignation} onChange={e => setDepositPrintEditData(p => ({ ...p, casherDesignation: e.target.value }))} placeholder={bn ? 'যেমন: ক্যাশিয়ার / হিসাবরক্ষক' : 'e.g. Cashier'} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label>{bn ? 'যাচাইকারী / নিরীক্ষকের নাম' : 'Verifier / Auditor Name'}</Label>
+                    <Input value={depositPrintEditData.verifierName} onChange={e => setDepositPrintEditData(p => ({ ...p, verifierName: e.target.value }))} placeholder={bn ? 'নাম লিখুন (ঐচ্ছিক)' : 'Enter name (Optional)'} />
+                  </div>
+                  <div>
+                    <Label>{bn ? 'যাচাইকারীর পদবি' : 'Verifier Designation'}</Label>
+                    <Input value={depositPrintEditData.verifierDesignation} onChange={e => setDepositPrintEditData(p => ({ ...p, verifierDesignation: e.target.value }))} placeholder={bn ? 'যেমন: যাচাইকারী / নিরীক্ষক' : 'e.g. Auditor'} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label>{bn ? 'প্রতিষ্ঠান প্রধান / অধ্যক্ষের নাম' : 'Principal / Head Name'}</Label>
+                    <Input value={depositPrintEditData.principalName} onChange={e => setDepositPrintEditData(p => ({ ...p, principalName: e.target.value }))} placeholder={bn ? 'নাম লিখুন' : 'Enter name'} />
+                  </div>
+                  <div>
+                    <Label>{bn ? 'প্রতিষ্ঠান প্রধানের পদবি' : 'Principal Designation'}</Label>
+                    <Input value={depositPrintEditData.principalDesignation} onChange={e => setDepositPrintEditData(p => ({ ...p, principalDesignation: e.target.value }))} placeholder={bn ? 'যেমন: মুহতামিম / অধ্যক্ষ' : 'e.g. Principal / Muhtamim'} />
+                  </div>
+                </div>
               </div>
+
               <div><Label>{bn ? 'অতিরিক্ত নোট' : 'Extra Note'}</Label>
                 <Textarea value={depositPrintEditData.extraNote} onChange={e => setDepositPrintEditData(p => ({ ...p, extraNote: e.target.value }))} rows={2} /></div>
             </div>
@@ -6032,17 +6307,59 @@ const AdminExpenses = () => {
               })()}
 
               {(() => {
-                const dCasherPerson = (depositPrintEditData.casherName || summaryData?.casher_name || '').trim();
-                const dPrincipalPerson = (depositPrintEditData.principalName || summaryData?.principal_name || '').trim();
-                const dCasherTitle = bn ? 'ক্যাশিয়ার' : 'Cashier';
-                const dPrincipalTitle = bn ? 'অধ্যক্ষ' : 'Principal';
+                const dCasherPerson = (
+                  depositPrintEditData.casherName ||
+                  summaryData?.casher_name ||
+                  selectedInst?.accountant_name ||
+                  accountantCashier?.person_name_bn ||
+                  ''
+                ).trim();
+
+                const dCasherTitle = (
+                  depositPrintEditData.casherDesignation ||
+                  selectedInst?.accountant_designation ||
+                  accountantCashier?.person_designation_bn ||
+                  (bn ? 'ক্যাশিয়ার / প্রস্তুতকারী' : 'Cashier / Prepared By')
+                ).trim();
+
+                const dVerifierPerson = (
+                  depositPrintEditData.verifierName ||
+                  selectedInst?.verifier_name ||
+                  verifierAuditor?.person_name_bn ||
+                  ''
+                ).trim();
+
+                const dVerifierTitle = (
+                  depositPrintEditData.verifierDesignation ||
+                  selectedInst?.verifier_designation ||
+                  verifierAuditor?.person_designation_bn ||
+                  (bn ? 'যাচাইকারী / নিরীক্ষক' : 'Verified By / Auditor')
+                ).trim();
+
+                const dPrincipalPerson = (
+                  depositPrintEditData.principalName ||
+                  summaryData?.principal_name ||
+                  selectedInst?.principal_name ||
+                  headOfInstitute?.person_name_bn ||
+                  ''
+                ).trim();
+
+                const dPrincipalTitle = (
+                  depositPrintEditData.principalDesignation ||
+                  selectedInst?.principal_designation ||
+                  headOfInstitute?.person_designation_bn ||
+                  (bn ? 'মুহতামিম / অধ্যক্ষ' : 'Principal / Authorized By')
+                ).trim();
+
+                const showVerifier = Boolean(dVerifierPerson || verifierAuditor?.is_active || selectedInst?.verifier_name);
+
                 return (
                   <div 
-                    className="flex justify-between mt-12 pt-8"
+                    className="flex justify-between items-end mt-12 pt-8"
                     style={{
                       display: 'flex',
                       justifyContent: 'space-between',
-                      alignItems: 'flex-start',
+                      alignItems: 'flex-end',
                       width: '100%',
                       marginTop: '36px',
                       paddingTop: '16px',
@@ -6050,12 +6367,23 @@ const AdminExpenses = () => {
                       pageBreakInside: 'avoid'
                     }}
                   >
+                    {/* 1. Cashier / Prepared By */}
                     <div className="text-center min-w-[140px]" style={{ textAlign: 'center', minWidth: '150px' }}>
+                      {accountantCashier?.signature_url ? (
+                        <img 
+                          src={accountantCashier.signature_url} 
+                          alt="Signature" 
+                          className="h-9 mx-auto mb-1 object-contain" 
+                          style={{ height: '36px', margin: '0 auto 4px auto', objectFit: 'contain', display: 'block' }} 
+                        />
+                      ) : (
+                        <div style={{ height: '24px' }}></div>
+                      )}
                       <div 
                         className="border-t border-foreground w-40 mx-auto mb-1"
                         style={{ borderTop: '1.5px solid #000000', width: '160px', margin: '0 auto 6px auto' }}
                       ></div>
-                      {dCasherPerson && dCasherPerson !== dCasherTitle ? (
+                      {dCasherPerson ? (
                         <>
                           <p className="text-sm font-semibold" style={{ fontSize: '13px', fontWeight: 700, margin: '2px 0' }}>{dCasherPerson}</p>
                           <p className="text-xs text-muted-foreground" style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>{dCasherTitle}</p>
@@ -6064,12 +6392,52 @@ const AdminExpenses = () => {
                         <p className="text-sm font-medium" style={{ fontSize: '13px', fontWeight: 600, margin: '2px 0' }}>{dCasherTitle}</p>
                       )}
                     </div>
+
+                    {/* 2. Verifier / Auditor (shown when verifier is present/configured) */}
+                    {showVerifier && (
+                      <div className="text-center min-w-[140px]" style={{ textAlign: 'center', minWidth: '150px' }}>
+                        {verifierAuditor?.signature_url ? (
+                          <img 
+                            src={verifierAuditor.signature_url} 
+                            alt="Signature" 
+                            className="h-9 mx-auto mb-1 object-contain" 
+                            style={{ height: '36px', margin: '0 auto 4px auto', objectFit: 'contain', display: 'block' }} 
+                          />
+                        ) : (
+                          <div style={{ height: '24px' }}></div>
+                        )}
+                        <div 
+                          className="border-t border-foreground w-40 mx-auto mb-1"
+                          style={{ borderTop: '1.5px solid #000000', width: '160px', margin: '0 auto 6px auto' }}
+                        ></div>
+                        {dVerifierPerson ? (
+                          <>
+                            <p className="text-sm font-semibold" style={{ fontSize: '13px', fontWeight: 700, margin: '2px 0' }}>{dVerifierPerson}</p>
+                            <p className="text-xs text-muted-foreground" style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>{dVerifierTitle}</p>
+                          </>
+                        ) : (
+                          <p className="text-sm font-medium" style={{ fontSize: '13px', fontWeight: 600, margin: '2px 0' }}>{dVerifierTitle}</p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* 3. Principal / Authorized By */}
                     <div className="text-center min-w-[140px]" style={{ textAlign: 'center', minWidth: '150px' }}>
+                      {headOfInstitute?.signature_url ? (
+                        <img 
+                          src={headOfInstitute.signature_url} 
+                          alt="Signature" 
+                          className="h-9 mx-auto mb-1 object-contain" 
+                          style={{ height: '36px', margin: '0 auto 4px auto', objectFit: 'contain', display: 'block' }} 
+                        />
+                      ) : (
+                        <div style={{ height: '24px' }}></div>
+                      )}
                       <div 
                         className="border-t border-foreground w-40 mx-auto mb-1"
                         style={{ borderTop: '1.5px solid #000000', width: '160px', margin: '0 auto 6px auto' }}
                       ></div>
-                      {dPrincipalPerson && dPrincipalPerson !== dPrincipalTitle ? (
+                      {dPrincipalPerson ? (
                         <>
                           <p className="text-sm font-semibold" style={{ fontSize: '13px', fontWeight: 700, margin: '2px 0' }}>{dPrincipalPerson}</p>
                           <p className="text-xs text-muted-foreground" style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>{dPrincipalTitle}</p>

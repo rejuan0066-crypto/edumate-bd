@@ -125,4 +125,28 @@ describe('AdminExpenses Component', () => {
     expect(Number(bnToEn('১২৫৫০.৫০'))).toBe(12550.50);
     expect(Number(bnToEn('1000'))).toBe(1000);
   });
+
+  it('renders signatory designations and names according to page formula', async () => {
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    render(
+      <MemoryRouter>
+        <QueryClientProvider client={qc}>
+          <LanguageProvider>
+            <ConfirmProvider>
+              <AdminExpenses />
+            </ConfirmProvider>
+          </LanguageProvider>
+        </QueryClientProvider>
+      </MemoryRouter>
+    );
+
+    // Verify signatory designation text is rendered (e.g. ক্যাশিয়ার, অধ্যক্ষ)
+    const cashierElements = await screen.findAllByText(/ক্যাশিয়ার/i);
+    expect(cashierElements.length).toBeGreaterThan(0);
+    const principalElements = await screen.findAllByText(/অধ্যক্ষ/i);
+    expect(principalElements.length).toBeGreaterThan(0);
+  });
 });
