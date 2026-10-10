@@ -177,6 +177,7 @@ const AdminExpenses = () => {
   const [selectedInstId, setSelectedInstId] = useState<string | null>(null);
   const [tableCategoryId, setTableCategoryId] = useState<string>('all');
   const [tableSearchText, setTableSearchText] = useState<string>('');
+  const [expenseListTab, setExpenseListTab] = useState<'paid' | 'dues'>('paid');
   const [breakdownTab, setBreakdownTab] = useState<'institution' | 'category' | 'hierarchy' | null>(null);
   const [voucherExpense, setVoucherExpense] = useState<any>(null);
 
@@ -2287,8 +2288,11 @@ const AdminExpenses = () => {
                   }
                   const displayTotal = displayExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
 
-                  // Filter dues by search as well
+                  // Filter dues by category and search as well
                   let displayDues = instDues;
+                  if (tableCategoryId !== 'all') {
+                    displayDues = displayDues.filter((e: any) => e.category_id === tableCategoryId);
+                  }
                   if (tableSearchText.trim()) {
                     const q = tableSearchText.trim().toLowerCase();
                     displayDues = displayDues.filter((e: any) =>
@@ -2299,6 +2303,7 @@ const AdminExpenses = () => {
                       String(e.amount).includes(q)
                     );
                   }
+                  const displayDuesTotal = displayDues.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
 
                   return (
                     <div className="space-y-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-card p-4 sm:p-5 shadow-sm">
@@ -2395,6 +2400,70 @@ const AdminExpenses = () => {
                         </div>
                       </div>
 
+                      {/* ─── Two Dedicated Tabs: Paid Expenses vs Due Expenses ─── */}
+                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-2.5">
+                        <div className="inline-flex p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                          {/* Tab 1: Paid Expenses */}
+                          <button
+                            type="button"
+                            onClick={() => setExpenseListTab('paid')}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                              expenseListTab === 'paid'
+                                ? 'bg-white dark:bg-card text-emerald-700 dark:text-emerald-300 shadow-sm border border-emerald-500/20'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-foreground'
+                            }`}
+                          >
+                            <CheckCircle2 className={`w-4 h-4 ${expenseListTab === 'paid' ? 'text-emerald-600' : 'text-slate-400'}`} />
+                            <span>{bn ? 'পরিশোধিত খরচ (নগদ ব্যয়)' : 'Paid Expenses (Cash)'}</span>
+                            <Badge
+                              variant="outline"
+                              className="ml-1 text-[11px] font-bold bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+                            >
+                              ৳{formatNum(displayTotal)} ({displayExpenses.length})
+                            </Badge>
+                          </button>
+
+                          {/* Tab 2: Due Expenses */}
+                          <button
+                            type="button"
+                            onClick={() => setExpenseListTab('dues')}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                              expenseListTab === 'dues'
+                                ? 'bg-white dark:bg-card text-amber-700 dark:text-amber-300 shadow-sm border border-amber-500/30'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-foreground'
+                            }`}
+                          >
+                            <AlertTriangle className={`w-4 h-4 ${displayDues.length > 0 ? 'text-amber-600 animate-pulse' : 'text-slate-400'}`} />
+                            <span>{bn ? 'বকেয়া খরচের হিসাব (পরিশোধ বাকি)' : 'Outstanding Dues (Payable)'}</span>
+                            <Badge
+                              variant="outline"
+                              className={`ml-1 text-[11px] font-bold ${
+                                displayDues.length > 0
+                                  ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 border-amber-300 dark:border-amber-700'
+                                  : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                              }`}
+                            >
+                              ৳{formatNum(displayDuesTotal)} ({displayDues.length})
+                            </Badge>
+                          </button>
+                        </div>
+
+                        {/* Status Hint */}
+                        <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+                          {expenseListTab === 'paid' ? (
+                            <>
+                              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                              <span>{bn ? 'পরিশোধিত নগদ খরচের তালিকা প্রদর্শিত হচ্ছে' : 'Showing paid expenses list'}</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                              <span>{bn ? 'বকেয়া খরচের হিসাব প্রদর্শিত হচ্ছে — পরিশোধ করলে ক্যাশ হিসেবে যোগ হবে' : 'Showing outstanding dues list'}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
                       {/* Search & Category Filter Toolbar */}
                       <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
                         <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[260px]">
@@ -2412,7 +2481,7 @@ const AdminExpenses = () => {
 
                           <Input
                             className="h-8 text-xs max-w-xs flex-1"
-                            placeholder={bn ? 'বিবরণ, মেমো বা তারিখ দিয়ে খুঁজুন...' : 'Search description, memo, date...'}
+                            placeholder={expenseListTab === 'paid' ? (bn ? 'বিবরণ, মেমো বা তারিখ দিয়ে খুঁজুন...' : 'Search description, memo, date...') : (bn ? 'পাওনাদার, বিবরণ বা মেমো দিয়ে খুঁজুন...' : 'Search vendor, description, memo...')}
                             value={tableSearchText}
                             onChange={e => setTableSearchText(e.target.value)}
                           />
@@ -2423,285 +2492,140 @@ const AdminExpenses = () => {
                           )}
                         </div>
 
-                        <div className="text-xs text-muted-foreground">
-                          {bn ? 'পরিশোধিত খরচ প্রদর্শিত হচ্ছে' : 'Showing paid expenses'}
+                        <div className="text-xs font-medium">
+                          {expenseListTab === 'paid' ? (
+                            <span className="text-emerald-700 dark:text-emerald-300">
+                              {bn ? `মোট পরিশোধিত: ৳${formatNum(displayTotal)} (${displayExpenses.length}টি এন্ট্রি)` : `Total Paid: ৳${formatNum(displayTotal)} (${displayExpenses.length} items)`}
+                            </span>
+                          ) : (
+                            <span className="text-amber-700 dark:text-amber-300">
+                              {bn ? `মোট বকেয়া: ৳${formatNum(displayDuesTotal)} (${displayDues.length}টি বকেয়া)` : `Total Due: ৳${formatNum(displayDuesTotal)} (${displayDues.length} dues)`}
+                            </span>
+                          )}
                         </div>
                       </div>
 
-                      {/* Main Expenses Table */}
-                      <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-x-auto bg-card">
-                        <table className="w-full border-collapse text-sm text-foreground">
-                          <thead>
-                            <tr className="bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-xs">
-                              <th className="px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 w-10">#</th>
-                              <th className="px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 w-28">{bn ? 'তারিখ' : 'Date'}</th>
-                              {isAll && (
-                                <th className="px-3 py-2 text-left font-bold text-slate-700 dark:text-slate-300 w-36">{bn ? 'প্রতিষ্ঠান' : 'Institution'}</th>
-                              )}
-                              <th className="px-3 py-2 text-left font-bold text-slate-700 dark:text-slate-300 w-36">{bn ? 'ক্যাটাগরি' : 'Category'}</th>
-                              <th className="px-3 py-2 text-left font-bold text-slate-700 dark:text-slate-300">{bn ? 'ব্যয়ের বিবরণ' : 'Description'}</th>
-                              <th className="px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 w-24">{bn ? 'পরিমাণ' : 'Quantity'}</th>
-                              <th className="px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 min-w-[110px]">{bn ? 'ব্যয়ের মাধ্যম' : 'Method'}</th>
-                              <th className="px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 w-28">{bn ? 'মেমো / রশিদ' : 'Memo/Receipt'}</th>
-                              <th className="px-3 py-2 text-right font-bold text-slate-700 dark:text-slate-300 w-32">{bn ? 'ব্যয় টাকা (৳)' : 'Amount (৳)'}</th>
-                              <th className="px-3 py-2 text-left font-bold text-slate-700 dark:text-slate-300 w-36">{bn ? 'মন্তব্য' : 'Remarks'}</th>
-                              <th className="px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 w-28">{bn ? 'অ্যাকশন' : 'Action'}</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {displayExpenses.length === 0 ? (
-                              <tr>
-                                <td colSpan={isAll ? 11 : 10} className="px-3 py-10 text-center text-muted-foreground">
-                                  {bn ? 'এই ফিল্টারে কোনো ব্যয়ের হিসাব পাওয়া যায়নি।' : 'No expenses found for this filter.'}
-                                </td>
-                              </tr>
-                            ) : (
-                              displayExpenses.map((e: any, idx: number) => {
-                                const catObj = categories.find((c: any) => c.id === e.category_id);
-                                const catLabel = catObj ? getCatName(catObj, bn) : (e.expense_categories ? getCatName(e.expense_categories, bn) : '-');
-                                const memoStr = getMemo(e.description);
-                                const remarksStr = getRemarks(e.description);
-                                const rawQty = e.quantity ? String(e.quantity) : '১';
-                                const unit = getUnit(e.description, catLabel);
-                                const displayQty = unit ? `${rawQty} ${unit}` : `${rawQty}`;
-                                const rowInst = allInstitutions.find((i: any) => i.id === e.institution_id);
-
-                                return (
-                                  <tr key={e.id} className={`border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50/80 dark:hover:bg-slate-900/40 transition-colors ${idx % 2 === 0 ? 'bg-white dark:bg-card' : 'bg-slate-50/40 dark:bg-slate-900/20'}`}>
-                                    <td className="px-3 py-2 text-center tabular-nums text-xs text-muted-foreground">{idx + 1}</td>
-                                    <td className="px-3 py-2 text-center tabular-nums text-xs whitespace-nowrap">{e.expense_date}</td>
-                                    {isAll && (
-                                      <td className="px-3 py-2 text-left">
-                                        <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 truncate max-w-[140px]">
-                                          {rowInst ? getInstShortName(getInstName(rowInst, bn)) : '-'}
-                                        </span>
-                                      </td>
-                                    )}
-                                    <td className="px-3 py-2 text-left">
-                                      <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 truncate max-w-[140px]">
-                                        {catLabel}
-                                      </span>
-                                    </td>
-                                    <td className="px-3 py-2 text-left">
-                                      <span className="font-medium text-foreground">{cleanDesc(e.description)}</span>
-                                    </td>
-                                    <td className="px-3 py-2 text-center text-xs tabular-nums text-slate-700 dark:text-slate-300">
-                                      {displayQty}
-                                    </td>
-                                    <td className="px-3 py-2 text-center">
-                                      <span className="inline-block px-2 py-0.5 rounded text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 max-w-[150px] truncate" title={getMethod(e.description)}>
-                                        {getMethod(e.description)}
-                                      </span>
-                                    </td>
-                                    <td className="px-3 py-2 text-center text-xs">
-                                      <div className="flex items-center justify-center gap-1.5">
-                                        <span className="text-slate-600 dark:text-slate-400 font-mono text-[11px]">
-                                          {memoStr !== '-' ? memoStr : '-'}
-                                        </span>
-                                        {e.has_receipt && e.receipt_url && (
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-6 w-6 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                                            onClick={() => setReceiptPreview(e.receipt_url)}
-                                            title={bn ? 'রসিদ দেখুন' : 'View receipt'}
-                                          >
-                                            <Eye className="w-3.5 h-3.5" />
-                                          </Button>
-                                        )}
-                                      </div>
-                                    </td>
-                                    <td className="px-3 py-2 text-right tabular-nums font-bold text-foreground">
-                                      ৳{formatNum(Number(e.amount))}
-                                    </td>
-                                    <td className="px-3 py-2 text-left text-xs text-muted-foreground truncate max-w-[150px]" title={remarksStr !== '-' ? remarksStr : ''}>
-                                      {remarksStr !== '-' ? remarksStr : '-'}
-                                    </td>
-                                    <td className="px-2 py-2 text-center">
-                                      <div className="flex gap-1 justify-center items-center">
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-7 w-7 text-blue-600 hover:bg-blue-50"
-                                          onClick={() => setVoucherExpense(e)}
-                                          title={bn ? 'ভাউচার প্রিন্ট' : 'Voucher print'}
-                                        >
-                                          <FileText className="w-3.5 h-3.5" />
-                                        </Button>
-                                        {(canEditItem ?? true) && (
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-7 w-7 text-emerald-600 hover:bg-emerald-50"
-                                            onClick={() => openEditExpense(e)}
-                                            title={bn ? 'সম্পাদনা' : 'Edit'}
-                                          >
-                                            <Edit2 className="w-3.5 h-3.5" />
-                                          </Button>
-                                        )}
-                                        {(canDeleteItem ?? true) && (
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-7 w-7 text-rose-600 hover:bg-rose-50"
-                                            onClick={() => { setDeleteConfirmId(e.id); setDeleteConfirmType('expense'); }}
-                                            title={bn ? 'মুছে ফেলুন' : 'Delete'}
-                                          >
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                          </Button>
-                                        )}
-                                      </div>
-                                    </td>
-                                  </tr>
-                                );
-                              })
-                            )}
-                          </tbody>
-                          <tfoot>
-                            <tr className="bg-slate-800 text-white font-bold text-xs">
-                              <td colSpan={isAll ? 8 : 7} className="px-4 py-2.5 text-right">
-                                {bn ? 'মোট পরিশোধিত ব্যয়:' : 'Total Paid Expense:'}
-                              </td>
-                              <td className="px-3 py-2.5 text-right tabular-nums text-sm text-emerald-300">
-                                ৳{formatNum(displayTotal)}
-                              </td>
-                              <td colSpan={2} className="px-3 py-2.5 text-slate-400 text-right">
-                                ({displayExpenses.length} {bn ? 'টি এন্ট্রি' : 'items'})
-                              </td>
-                            </tr>
-                          </tfoot>
-                        </table>
-                      </div>
-
-                      {/* Dedicated Dues Table (বকেয়া খরচের হিসাব) */}
-                      <div className="rounded-xl border border-amber-300 dark:border-amber-800/60 bg-amber-50/20 dark:bg-amber-950/10 p-4 space-y-3">
-                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200 dark:border-amber-800/40 pb-3">
-                          <div className="flex items-center gap-2">
-                            <AlertTriangle className="w-4 h-4 text-amber-600" />
-                            <h4 className="font-bold text-sm text-amber-900 dark:text-amber-200">
-                              {isAll
-                                ? (bn ? 'সকল প্রতিষ্ঠানের বকেয়া খরচের হিসাব (পরিশোধ বাকি)' : 'All Institutions Outstanding Dues')
-                                : (bn ? 'বকেয়া খরচের হিসাব (পরিশোধ বাকি)' : 'Outstanding Dues for Institution')}
-                            </h4>
-                            <span className="text-xs text-amber-700 dark:text-amber-300">
-                              — {bn ? 'পরিশোধ করলে পরিশোধের মাসের ক্যাশ খরচে এন্ট্রি হবে' : 'Settling records payment in settlement month'}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="px-2.5 py-1 rounded-md text-xs font-bold bg-amber-200 text-amber-950 dark:bg-amber-900 dark:text-amber-100">
-                              {bn ? 'মোট বকেয়া:' : 'Total Due:'} ৳{formatNum(instDueSum)}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="border border-amber-200 dark:border-amber-800/40 rounded-lg overflow-x-auto bg-card">
-                          <table className="w-full border-collapse text-xs text-foreground">
+                      {/* ─── Tab 1: Paid Expenses Table ─── */}
+                      {expenseListTab === 'paid' && (
+                        <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-x-auto bg-card">
+                          <table className="w-full border-collapse text-sm text-foreground">
                             <thead>
-                              <tr className="bg-amber-100/60 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800/40">
-                                <th className="px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-200 w-10">#</th>
-                                <th className="px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-200 w-28">{bn ? 'বকেয়ার তারিখ' : 'Due Date'}</th>
+                              <tr className="bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-xs">
+                                <th className="px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 w-10">#</th>
+                                <th className="px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 w-28">{bn ? 'তারিখ' : 'Date'}</th>
                                 {isAll && (
-                                  <th className="px-3 py-2 text-left font-bold text-amber-950 dark:text-amber-200 w-36">{bn ? 'প্রতিষ্ঠান' : 'Institution'}</th>
+                                  <th className="px-3 py-2 text-left font-bold text-slate-700 dark:text-slate-300 w-36">{bn ? 'প্রতিষ্ঠান' : 'Institution'}</th>
                                 )}
-                                <th className="px-3 py-2 text-left font-bold text-amber-950 dark:text-amber-200 w-36">{bn ? 'ক্যাটাগরি' : 'Category'}</th>
-                                <th className="px-3 py-2 text-left font-bold text-amber-950 dark:text-amber-200">{bn ? 'ব্যয়ের বিবরণ ও পাওনাদার' : 'Description & Vendor'}</th>
-                                <th className="px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-200 w-24">{bn ? 'পরিমাণ' : 'Quantity'}</th>
-                                <th className="px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-200 w-28">{bn ? 'মেমো / চালান' : 'Memo/Invoice'}</th>
-                                <th className="px-3 py-2 text-right font-bold text-amber-950 dark:text-amber-200 w-32">{bn ? 'বকেয়া টাকা (৳)' : 'Due Amount (৳)'}</th>
-                                <th className="px-3 py-2 text-left font-bold text-amber-950 dark:text-amber-200 w-36">{bn ? 'মন্তব্য' : 'Remarks'}</th>
-                                <th className="px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-200 w-36">{bn ? 'অ্যাকশন' : 'Action'}</th>
+                                <th className="px-3 py-2 text-left font-bold text-slate-700 dark:text-slate-300 w-36">{bn ? 'ক্যাটাগরি' : 'Category'}</th>
+                                <th className="px-3 py-2 text-left font-bold text-slate-700 dark:text-slate-300">{bn ? 'ব্যয়ের বিবরণ' : 'Description'}</th>
+                                <th className="px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 w-24">{bn ? 'পরিমাণ' : 'Quantity'}</th>
+                                <th className="px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 min-w-[110px]">{bn ? 'ব্যয়ের মাধ্যম' : 'Method'}</th>
+                                <th className="px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 w-28">{bn ? 'মেমো / রশিদ' : 'Memo/Receipt'}</th>
+                                <th className="px-3 py-2 text-right font-bold text-slate-700 dark:text-slate-300 w-32">{bn ? 'ব্যয় টাকা (৳)' : 'Amount (৳)'}</th>
+                                <th className="px-3 py-2 text-left font-bold text-slate-700 dark:text-slate-300 w-36">{bn ? 'মন্তব্য' : 'Remarks'}</th>
+                                <th className="px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 w-28">{bn ? 'অ্যাকশন' : 'Action'}</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {displayDues.length === 0 ? (
+                              {displayExpenses.length === 0 ? (
                                 <tr>
-                                  <td colSpan={isAll ? 10 : 9} className="px-3 py-6 text-center text-muted-foreground">
-                                    ✓ {bn ? 'কোনো বকেয়া খরচ নেই। সব পরিশোধিত।' : 'No outstanding dues.'}
+                                  <td colSpan={isAll ? 11 : 10} className="px-3 py-10 text-center text-muted-foreground">
+                                    {bn ? 'এই ফিল্টারে কোনো ব্যয়ের হিসাব পাওয়া যায়নি।' : 'No expenses found for this filter.'}
                                   </td>
                                 </tr>
                               ) : (
-                                displayDues.map((due: any, dIdx: number) => {
-                                  const catObj = categories.find((c: any) => c.id === due.category_id);
-                                  const catLabel = catObj ? (bn ? catObj.name_bn || catObj.name : catObj.name) : '-';
-                                  const rawQty = due.quantity ? String(due.quantity) : '১';
-                                  const unit = getUnit(due.description, catLabel);
+                                displayExpenses.map((e: any, idx: number) => {
+                                  const catObj = categories.find((c: any) => c.id === e.category_id);
+                                  const catLabel = catObj ? getCatName(catObj, bn) : (e.expense_categories ? getCatName(e.expense_categories, bn) : '-');
+                                  const memoStr = getMemo(e.description);
+                                  const remarksStr = getRemarks(e.description);
+                                  const rawQty = e.quantity ? String(e.quantity) : '১';
+                                  const unit = getUnit(e.description, catLabel);
                                   const displayQty = unit ? `${rawQty} ${unit}` : `${rawQty}`;
-                                  const memoStr = getMemo(due.description);
-                                  const remarksStr = getRemarks(due.description);
-                                  const rowInst = allInstitutions.find((i: any) => i.id === due.institution_id);
+                                  const rowInst = allInstitutions.find((i: any) => i.id === e.institution_id);
 
                                   return (
-                                    <tr key={due.id} className="border-b border-amber-100 dark:border-amber-950/60 hover:bg-amber-50/40 dark:hover:bg-amber-950/20">
-                                      <td className="px-3 py-2 text-center tabular-nums text-muted-foreground">{dIdx + 1}</td>
-                                      <td className="px-3 py-2 text-center tabular-nums whitespace-nowrap">{due.expense_date}</td>
+                                    <tr key={e.id} className={`border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50/80 dark:hover:bg-slate-900/40 transition-colors ${idx % 2 === 0 ? 'bg-white dark:bg-card' : 'bg-slate-50/40 dark:bg-slate-900/20'}`}>
+                                      <td className="px-3 py-2 text-center tabular-nums text-xs text-muted-foreground">{idx + 1}</td>
+                                      <td className="px-3 py-2 text-center tabular-nums text-xs whitespace-nowrap">{e.expense_date}</td>
                                       {isAll && (
                                         <td className="px-3 py-2 text-left">
-                                          <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-200/80 text-amber-950 dark:bg-amber-900 dark:text-amber-100 truncate max-w-[140px]">
+                                          <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 truncate max-w-[140px]">
                                             {rowInst ? getInstShortName(getInstName(rowInst, bn)) : '-'}
                                           </span>
                                         </td>
                                       )}
                                       <td className="px-3 py-2 text-left">
-                                        <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-amber-100/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200">
+                                        <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 truncate max-w-[140px]">
                                           {catLabel}
                                         </span>
                                       </td>
                                       <td className="px-3 py-2 text-left">
-                                        <span className="font-medium text-foreground">{cleanDesc(due.description)}</span>
+                                        <span className="font-medium text-foreground">{cleanDesc(e.description)}</span>
                                       </td>
-                                      <td className="px-3 py-2 text-center tabular-nums text-slate-700 dark:text-slate-300">
+                                      <td className="px-3 py-2 text-center text-xs tabular-nums text-slate-700 dark:text-slate-300">
                                         {displayQty}
                                       </td>
-                                      <td className="px-3 py-2 text-center font-mono text-[11px] text-slate-600 dark:text-slate-400">
-                                        {memoStr !== '-' ? memoStr : '-'}
+                                      <td className="px-3 py-2 text-center">
+                                        <span className="inline-block px-2 py-0.5 rounded text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 max-w-[150px] truncate" title={getMethod(e.description)}>
+                                          {getMethod(e.description)}
+                                        </span>
                                       </td>
-                                      <td className="px-3 py-2 text-right tabular-nums font-bold text-amber-700 dark:text-amber-300">
-                                        ৳{formatNum(Number(due.amount))}
+                                      <td className="px-3 py-2 text-center text-xs">
+                                        <div className="flex items-center justify-center gap-1.5">
+                                          <span className="text-slate-600 dark:text-slate-400 font-mono text-[11px]">
+                                            {memoStr !== '-' ? memoStr : '-'}
+                                          </span>
+                                          {e.has_receipt && e.receipt_url && (
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-6 w-6 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                                              onClick={() => setReceiptPreview(e.receipt_url)}
+                                              title={bn ? 'রসিদ দেখুন' : 'View receipt'}
+                                            >
+                                              <Eye className="w-3.5 h-3.5" />
+                                            </Button>
+                                          )}
+                                        </div>
                                       </td>
-                                      <td className="px-3 py-2 text-left text-muted-foreground truncate max-w-[140px]" title={remarksStr !== '-' ? remarksStr : ''}>
+                                      <td className="px-3 py-2 text-right tabular-nums font-bold text-foreground">
+                                        ৳{formatNum(Number(e.amount))}
+                                      </td>
+                                      <td className="px-3 py-2 text-left text-xs text-muted-foreground truncate max-w-[150px]" title={remarksStr !== '-' ? remarksStr : ''}>
                                         {remarksStr !== '-' ? remarksStr : '-'}
                                       </td>
                                       <td className="px-2 py-2 text-center">
                                         <div className="flex gap-1 justify-center items-center">
                                           <Button
-                                            size="sm"
-                                            className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1 px-2.5 cursor-pointer"
-                                            onClick={() => {
-                                              setPayDueExpense(due);
-                                              setPayDueForm({
-                                                payment_date: new Date().toISOString().split('T')[0],
-                                                payment_method: 'ক্যাশ',
-                                                payment_method_other: '',
-                                                memo_no: memoStr !== '-' ? memoStr : '',
-                                                remarks: remarksStr !== '-' ? remarksStr : '',
-                                              });
-                                            }}
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7 text-blue-600 hover:bg-blue-50"
+                                            onClick={() => setVoucherExpense(e)}
+                                            title={bn ? 'ভাউচার প্রিন্ট' : 'Voucher print'}
                                           >
-                                            <CheckCircle2 className="w-3 h-3" />
-                                            <span>{bn ? 'পরিশোধ' : 'Pay'}</span>
+                                            <FileText className="w-3.5 h-3.5" />
                                           </Button>
-
                                           {(canEditItem ?? true) && (
                                             <Button
                                               variant="ghost"
                                               size="icon"
                                               className="h-7 w-7 text-emerald-600 hover:bg-emerald-50"
-                                              onClick={() => openEditExpense(due)}
+                                              onClick={() => openEditExpense(e)}
                                               title={bn ? 'সম্পাদনা' : 'Edit'}
                                             >
-                                              <Edit2 className="w-3 h-3" />
+                                              <Edit2 className="w-3.5 h-3.5" />
                                             </Button>
                                           )}
-
                                           {(canDeleteItem ?? true) && (
                                             <Button
                                               variant="ghost"
                                               size="icon"
                                               className="h-7 w-7 text-rose-600 hover:bg-rose-50"
-                                              onClick={() => { setDeleteConfirmId(due.id); setDeleteConfirmType('expense'); }}
+                                              onClick={() => { setDeleteConfirmId(e.id); setDeleteConfirmType('expense'); }}
                                               title={bn ? 'মুছে ফেলুন' : 'Delete'}
                                             >
-                                              <Trash2 className="w-3 h-3" />
+                                              <Trash2 className="w-3.5 h-3.5" />
                                             </Button>
                                           )}
                                         </div>
@@ -2711,24 +2635,181 @@ const AdminExpenses = () => {
                                 })
                               )}
                             </tbody>
-                            {displayDues.length > 0 && (
-                              <tfoot>
-                                <tr className="bg-amber-900 text-white font-bold text-xs">
-                                  <td colSpan={isAll ? 7 : 6} className="px-4 py-2 text-right">
-                                    {bn ? 'সর্বমোট বকেয়া দায়:' : 'Total Outstanding:'}
-                                  </td>
-                                  <td className="px-3 py-2 text-right tabular-nums text-amber-200">
-                                    ৳{formatNum(instDueSum)}
-                                  </td>
-                                  <td colSpan={2} className="px-3 py-2 text-amber-300 text-right">
-                                    ({displayDues.length} {bn ? 'টি বকেয়া' : 'dues'})
-                                  </td>
-                                </tr>
-                              </tfoot>
-                            )}
+                            <tfoot>
+                              <tr className="bg-slate-800 text-white font-bold text-xs">
+                                <td colSpan={isAll ? 8 : 7} className="px-4 py-2.5 text-right">
+                                  {bn ? 'মোট পরিশোধিত ব্যয়:' : 'Total Paid Expense:'}
+                                </td>
+                                <td className="px-3 py-2.5 text-right tabular-nums text-sm text-emerald-300">
+                                  ৳{formatNum(displayTotal)}
+                                </td>
+                                <td colSpan={2} className="px-3 py-2.5 text-slate-400 text-right">
+                                  ({displayExpenses.length} {bn ? 'টি এন্ট্রি' : 'items'})
+                                </td>
+                              </tr>
+                            </tfoot>
                           </table>
                         </div>
-                      </div>
+                      )}
+
+                      {/* ─── Tab 2: Dedicated Dues Table (বকেয়া খরচের হিসাব) ─── */}
+                      {expenseListTab === 'dues' && (
+                        <div className="rounded-xl border border-amber-300 dark:border-amber-800/60 bg-amber-50/20 dark:bg-amber-950/10 p-4 space-y-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200 dark:border-amber-800/40 pb-3">
+                            <div className="flex items-center gap-2">
+                              <AlertTriangle className="w-4 h-4 text-amber-600" />
+                              <h4 className="font-bold text-sm text-amber-900 dark:text-amber-200">
+                                {isAll
+                                  ? (bn ? 'সকল প্রতিষ্ঠানের বকেয়া খরচের হিসাব (পরিশোধ বাকি)' : 'All Institutions Outstanding Dues')
+                                  : (bn ? 'বকেয়া খরচের হিসাব (পরিশোধ বাকি)' : 'Outstanding Dues for Institution')}
+                              </h4>
+                              <span className="text-xs text-amber-700 dark:text-amber-300">
+                                — {bn ? 'পরিশোধ করলে পরিশোধের মাসের ক্যাশ খরচে এন্ট্রি হবে' : 'Settling records payment in settlement month'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="px-2.5 py-1 rounded-md text-xs font-bold bg-amber-200 text-amber-950 dark:bg-amber-900 dark:text-amber-100">
+                                {bn ? 'মোট বকেয়া:' : 'Total Due:'} ৳{formatNum(displayDuesTotal)}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="border border-amber-200 dark:border-amber-800/40 rounded-lg overflow-x-auto bg-card">
+                            <table className="w-full border-collapse text-xs text-foreground">
+                              <thead>
+                                <tr className="bg-amber-100/60 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800/40">
+                                  <th className="px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-200 w-10">#</th>
+                                  <th className="px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-200 w-28">{bn ? 'বকেয়ার তারিখ' : 'Due Date'}</th>
+                                  {isAll && (
+                                    <th className="px-3 py-2 text-left font-bold text-amber-950 dark:text-amber-200 w-36">{bn ? 'প্রতিষ্ঠান' : 'Institution'}</th>
+                                  )}
+                                  <th className="px-3 py-2 text-left font-bold text-amber-950 dark:text-amber-200 w-36">{bn ? 'ক্যাটাগরি' : 'Category'}</th>
+                                  <th className="px-3 py-2 text-left font-bold text-amber-950 dark:text-amber-200">{bn ? 'ব্যয়ের বিবরণ ও পাওনাদার' : 'Description & Vendor'}</th>
+                                  <th className="px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-200 w-24">{bn ? 'পরিমাণ' : 'Quantity'}</th>
+                                  <th className="px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-200 w-28">{bn ? 'মেমো / চালান' : 'Memo/Invoice'}</th>
+                                  <th className="px-3 py-2 text-right font-bold text-amber-950 dark:text-amber-200 w-32">{bn ? 'বকেয়া টাকা (৳)' : 'Due Amount (৳)'}</th>
+                                  <th className="px-3 py-2 text-left font-bold text-amber-950 dark:text-amber-200 w-36">{bn ? 'মন্তব্য' : 'Remarks'}</th>
+                                  <th className="px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-200 w-36">{bn ? 'অ্যাকশন' : 'Action'}</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {displayDues.length === 0 ? (
+                                  <tr>
+                                    <td colSpan={isAll ? 10 : 9} className="px-3 py-6 text-center text-muted-foreground">
+                                      ✓ {bn ? 'কোনো বকেয়া খরচ নেই। সব পরিশোধিত।' : 'No outstanding dues.'}
+                                    </td>
+                                  </tr>
+                                ) : (
+                                  displayDues.map((due: any, dIdx: number) => {
+                                    const catObj = categories.find((c: any) => c.id === due.category_id);
+                                    const catLabel = catObj ? (bn ? catObj.name_bn || catObj.name : catObj.name) : '-';
+                                    const rawQty = due.quantity ? String(due.quantity) : '১';
+                                    const unit = getUnit(due.description, catLabel);
+                                    const displayQty = unit ? `${rawQty} ${unit}` : `${rawQty}`;
+                                    const memoStr = getMemo(due.description);
+                                    const remarksStr = getRemarks(due.description);
+                                    const rowInst = allInstitutions.find((i: any) => i.id === due.institution_id);
+
+                                    return (
+                                      <tr key={due.id} className="border-b border-amber-100 dark:border-amber-950/60 hover:bg-amber-50/40 dark:hover:bg-amber-950/20">
+                                        <td className="px-3 py-2 text-center tabular-nums text-muted-foreground">{dIdx + 1}</td>
+                                        <td className="px-3 py-2 text-center tabular-nums whitespace-nowrap">{due.expense_date}</td>
+                                        {isAll && (
+                                          <td className="px-3 py-2 text-left">
+                                            <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-200/80 text-amber-950 dark:bg-amber-900 dark:text-amber-100 truncate max-w-[140px]">
+                                              {rowInst ? getInstShortName(getInstName(rowInst, bn)) : '-'}
+                                            </span>
+                                          </td>
+                                        )}
+                                        <td className="px-3 py-2 text-left">
+                                          <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-amber-100/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200">
+                                            {catLabel}
+                                          </span>
+                                        </td>
+                                        <td className="px-3 py-2 text-left">
+                                          <span className="font-medium text-foreground">{cleanDesc(due.description)}</span>
+                                        </td>
+                                        <td className="px-3 py-2 text-center tabular-nums text-slate-700 dark:text-slate-300">
+                                          {displayQty}
+                                        </td>
+                                        <td className="px-3 py-2 text-center font-mono text-[11px] text-slate-600 dark:text-slate-400">
+                                          {memoStr !== '-' ? memoStr : '-'}
+                                        </td>
+                                        <td className="px-3 py-2 text-right tabular-nums font-bold text-amber-700 dark:text-amber-300">
+                                          ৳{formatNum(Number(due.amount))}
+                                        </td>
+                                        <td className="px-3 py-2 text-left text-muted-foreground truncate max-w-[140px]" title={remarksStr !== '-' ? remarksStr : ''}>
+                                          {remarksStr !== '-' ? remarksStr : '-'}
+                                        </td>
+                                        <td className="px-2 py-2 text-center">
+                                          <div className="flex gap-1 justify-center items-center">
+                                            <Button
+                                              size="sm"
+                                              className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1 px-2.5 cursor-pointer"
+                                              onClick={() => {
+                                                setPayDueExpense(due);
+                                                setPayDueForm({
+                                                  payment_date: new Date().toISOString().split('T')[0],
+                                                  payment_method: 'ক্যাশ',
+                                                  payment_method_other: '',
+                                                  memo_no: memoStr !== '-' ? memoStr : '',
+                                                  remarks: remarksStr !== '-' ? remarksStr : '',
+                                                });
+                                              }}
+                                            >
+                                              <CheckCircle2 className="w-3 h-3" />
+                                              <span>{bn ? 'পরিশোধ' : 'Pay'}</span>
+                                            </Button>
+
+                                            {(canEditItem ?? true) && (
+                                              <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-7 w-7 text-emerald-600 hover:bg-emerald-50"
+                                                onClick={() => openEditExpense(due)}
+                                                title={bn ? 'সম্পাদনা' : 'Edit'}
+                                              >
+                                                <Edit2 className="w-3 h-3" />
+                                              </Button>
+                                            )}
+
+                                            {(canDeleteItem ?? true) && (
+                                              <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-7 w-7 text-rose-600 hover:bg-rose-50"
+                                                onClick={() => { setDeleteConfirmId(due.id); setDeleteConfirmType('expense'); }}
+                                                title={bn ? 'মুছে ফেলুন' : 'Delete'}
+                                              >
+                                                <Trash2 className="w-3 h-3" />
+                                              </Button>
+                                            )}
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })
+                                )}
+                              </tbody>
+                              {displayDues.length > 0 && (
+                                <tfoot>
+                                  <tr className="bg-amber-900 text-white font-bold text-xs">
+                                    <td colSpan={isAll ? 7 : 6} className="px-4 py-2 text-right">
+                                      {bn ? 'সর্বমোট বকেয়া দায়:' : 'Total Outstanding:'}
+                                    </td>
+                                    <td className="px-3 py-2 text-right tabular-nums text-amber-200">
+                                      ৳{formatNum(displayDuesTotal)}
+                                    </td>
+                                    <td colSpan={2} className="px-3 py-2 text-amber-300 text-right">
+                                      ({displayDues.length} {bn ? 'টি বকেয়া' : 'dues'})
+                                    </td>
+                                  </tr>
+                                </tfoot>
+                              )}
+                            </table>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
