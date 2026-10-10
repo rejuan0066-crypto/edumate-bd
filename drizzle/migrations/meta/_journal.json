@@ -8,6 +8,13 @@
       "when": 1791609604053,
       "tag": "0000_restrict_internal_reads_to_staff",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791616577769,
+      "tag": "0001_results_photos_signed_in_only",
+      "breakpoints": true
     }
   ]
 }
