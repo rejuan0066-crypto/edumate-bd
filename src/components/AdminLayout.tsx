@@ -46,9 +46,9 @@ const MENU_SCROLL_STORAGE_KEYS = {
   mobile: 'admin-layout-menu-scroll-mobile',
 } as const;
 
-const getIcon = (name: string): LucideIcon => ICON_MAP[name] || FileBox;
+import { AdminLayoutNestingContext } from '@/contexts/AdminLayoutNestingContext';
 
-const AdminLayoutNestingContext = createContext(false);
+const getIcon = (name: string): LucideIcon => ICON_MAP[name] || FileBox;
 
 const AdminLayout = ({ children }: { children: ReactNode }) => {
   const isEmbedded = useIsEmbedded();
@@ -619,7 +619,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   );
 
   return (
-    <AdminLayoutNestingContext.Provider value>
+    <AdminLayoutNestingContext.Provider value={true}>
       <div className="min-h-screen bg-transparent w-full overflow-x-auto" style={{ ['--admin-sidebar-width' as string]: `${desktopSidebarWidth}px` }}>
         {renderSidebar(false)}
         {mobileSidebarOpen && renderSidebar(true)}

@@ -1,4 +1,3 @@
-import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -579,8 +578,7 @@ const AdminResignLetters = () => {
   };
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
             <FileText className="w-6 h-6 text-destructive" />
@@ -1025,7 +1023,6 @@ const AdminResignLetters = () => {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </AdminLayout>
   );
 };
 
