@@ -2604,60 +2604,6 @@ const AdminExpenses = () => {
           ))}
         </div>
 
-        {/* Inventory Summary Card */}
-        {inventoryItems.length > 0 && (() => {
-          const totalStockValue = inventoryItems.reduce((s: number, item: any) => s + (Number(item.current_stock || 0) * Number(item.buying_price || 0)), 0);
-          const lowStockItems = inventoryItems.filter((item: any) => Number(item.current_stock || 0) < Number(item.min_stock_level || 5));
-          return (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="relative overflow-hidden rounded-2xl border border-emerald-200/20 dark:border-emerald-800/20 bg-gradient-to-br from-teal-500/10 via-cyan-400/5 to-transparent bg-white/60 dark:bg-white/5 backdrop-blur-lg p-4"
-                style={{ boxShadow: '0 4px 20px rgba(16,185,129,0.04)' }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-400 flex items-center justify-center shadow-lg">
-                    <Package className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <AnimatedCounter value={totalStockValue} className="text-lg font-bold text-teal-600 dark:text-teal-400" />
-                    <p className="text-[11px] text-muted-foreground mt-0.5">{bn ? 'মোট স্টক মূল্য' : 'Total Stock Value'}</p>
-                  </div>
-                </div>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                className={`relative overflow-hidden rounded-2xl border ${lowStockItems.length > 0 ? 'border-amber-300/30 dark:border-amber-700/30' : 'border-emerald-200/20 dark:border-emerald-800/20'} bg-gradient-to-br ${lowStockItems.length > 0 ? 'from-amber-500/10 via-orange-400/5 to-transparent' : 'from-emerald-500/10 via-green-400/5 to-transparent'} bg-white/60 dark:bg-white/5 backdrop-blur-lg p-4`}
-                style={{ boxShadow: '0 4px 20px rgba(16,185,129,0.04)' }}
-              >
-                <div className="flex items-start gap-3">
-                  <div className={`w-10 h-10 rounded-xl ${lowStockItems.length > 0 ? 'bg-gradient-to-br from-amber-500 to-orange-400' : 'bg-gradient-to-br from-emerald-500 to-green-400'} flex items-center justify-center shadow-lg shrink-0`}>
-                    <AlertTriangle className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className={`text-lg font-bold ${lowStockItems.length > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>{lowStockItems.length}</p>
-                    <p className="text-[11px] text-muted-foreground">{bn ? 'কম স্টক সতর্কতা' : 'Low Stock Alerts'}</p>
-                    {lowStockItems.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {lowStockItems.slice(0, 3).map((item: any) => (
-                          <span key={item.id} className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
-                            {bn ? item.name_bn : (item.name_en || item.name_bn)}: {item.current_stock}
-                          </span>
-                        ))}
-                        {lowStockItems.length > 3 && <span className="text-[10px] text-muted-foreground">+{lowStockItems.length - 3}</span>}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          );
-        })()}
-
         {/* Main Navigation Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="flex flex-wrap gap-2 mb-4">
