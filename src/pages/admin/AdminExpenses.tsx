@@ -2205,6 +2205,219 @@ const AdminExpenses = () => {
   };
   const resetCategoryDialog = (open: boolean) => { if (!open) { setEditingCategoryId(null); setCategoryForm({ institution_id: '', name: '', name_bn: '' }); } setCategoryDialog(open); };
 
+  const printDocumentHtml = (contentHtml: string, title: string) => {
+    const win = window.open('', '_blank');
+    if (!win) return;
+
+    const parentStyles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+      .map(el => el.outerHTML)
+      .join('\n');
+
+    win.document.write(`<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${title}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+  ${parentStyles}
+  <style>
+    @font-face {
+      font-family: 'Kalpurush';
+      src: url('/fonts/Kalpurush.ttf') format('truetype'),
+           url('https://cdn.jsdelivr.net/gh/maateen/bangla-web-fonts/fonts/kalpurush/Kalpurush-v0.258.ttf') format('truetype');
+      font-display: block;
+    }
+    @font-face {
+      font-family: 'SolaimanLipi';
+      src: url('https://cdn.jsdelivr.net/gh/maateen/bangla-web-fonts/fonts/solaiman-lipi/SolaimanLipi-v0.258.ttf') format('truetype');
+      font-display: block;
+    }
+    @page {
+      size: A4 portrait;
+      margin: 8mm 10mm;
+    }
+    * {
+      box-sizing: border-box !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    html, body {
+      margin: 0 !important;
+      padding: 0 !important;
+      background: #ffffff !important;
+      color: #000000 !important;
+      font-family: 'Kalpurush', 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+      -webkit-font-smoothing: antialiased;
+      width: 100% !important;
+    }
+    body, body * {
+      visibility: visible !important;
+      font-family: 'Kalpurush', 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    }
+    .print\\:hidden, [class*="print:hidden"] {
+      display: none !important;
+      visibility: hidden !important;
+    }
+    .print-page {
+      box-sizing: border-box !important;
+      min-height: 265mm !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+      page-break-after: always !important;
+      break-after: page !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      background: #ffffff !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+    .print-page:last-child {
+      page-break-after: auto !important;
+      break-after: auto !important;
+    }
+    .page-header {
+      margin-bottom: 12px !important;
+      border-bottom: 2px solid #000000 !important;
+      padding-bottom: 8px !important;
+    }
+    .page-footer {
+      margin-top: auto !important;
+      padding-top: 14px !important;
+      border-top: 1px solid #cbd5e1 !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      display: flex !important;
+      justify-content: space-between !important;
+      width: 100% !important;
+    }
+    table {
+      width: 100% !important;
+      border-collapse: collapse !important;
+      font-size: 11px !important;
+      page-break-inside: auto;
+      margin-top: 6px !important;
+    }
+    thead {
+      display: table-header-group;
+    }
+    tr {
+      page-break-inside: avoid;
+      page-break-after: auto;
+    }
+    th, td {
+      border: 1px solid #334155 !important;
+      padding: 4px 6px !important;
+      font-size: 11px !important;
+    }
+    th {
+      background-color: #f1f5f9 !important;
+      color: #0f172a !important;
+      font-weight: 700 !important;
+    }
+    .bg-muted, [class*="bg-muted"] {
+      background-color: #f1f5f9 !important;
+    }
+    .bg-amber-100, [class*="bg-amber"] {
+      background-color: #fef3c7 !important;
+    }
+    .bg-teal-50, [class*="bg-teal-50"] {
+      background-color: #f0fdfa !important;
+    }
+    .bg-teal-100, [class*="bg-teal-100"] {
+      background-color: #ccfbf1 !important;
+    }
+    .bg-emerald-100, [class*="bg-emerald-100"] {
+      background-color: #d1fae5 !important;
+    }
+    .text-right { text-align: right !important; }
+    .text-center { text-align: center !important; }
+    .text-left { text-align: left !important; }
+    .flex { display: flex !important; }
+    .flex-col { flex-direction: column !important; }
+    .justify-between { justify-content: space-between !important; }
+    .items-center { align-items: center !important; }
+    .w-full { width: 100% !important; }
+    .w-40 { width: 160px !important; }
+    .w-32 { width: 128px !important; }
+    .w-28 { width: 112px !important; }
+    .w-24 { width: 96px !important; }
+    .w-20 { width: 80px !important; }
+    .w-16 { width: 64px !important; }
+    .w-10 { width: 40px !important; }
+    .w-8 { width: 32px !important; }
+    .h-16 { height: 64px !important; }
+    .mx-auto { margin-left: auto !important; margin-right: auto !important; }
+    .font-bold { font-weight: 700 !important; }
+    .font-semibold { font-weight: 600 !important; }
+    .font-medium { font-weight: 500 !important; }
+    .font-black { font-weight: 900 !important; }
+    .font-mono { font-family: monospace !important; }
+    .border-b-2 { border-bottom: 2px solid #000000 !important; }
+    .border-t-2 { border-top: 2px solid #000000 !important; }
+    .border-t { border-top: 1px solid #334155 !important; }
+    .border { border: 1px solid #334155 !important; }
+    .text-amber-700, .text-amber-800 { color: #b45309 !important; }
+    .text-emerald-700, .text-emerald-800, .text-emerald-900 { color: #047857 !important; }
+    .text-teal-700, .text-teal-800, .text-teal-900 { color: #0f766e !important; }
+    .text-rose-700 { color: #be123c !important; }
+    .text-muted-foreground { color: #475569 !important; }
+    .text-primary { color: #0f172a !important; }
+    .text-foreground { color: #000000 !important; }
+    .text-sm { font-size: 13px !important; }
+    .text-xs { font-size: 11px !important; }
+    .text-base { font-size: 15px !important; }
+    .text-lg { font-size: 18px !important; }
+    @media print {
+      body, body * {
+        visibility: visible !important;
+      }
+      .print\\:hidden, [class*="print:hidden"] {
+        display: none !important;
+        visibility: hidden !important;
+      }
+      .print-page {
+        min-height: 265mm !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        visibility: visible !important;
+      }
+      .print-page:last-child {
+        page-break-after: auto !important;
+        break-after: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  ${contentHtml}
+</body>
+</html>`);
+
+    win.document.close();
+    win.focus();
+    const triggerPrint = () => {
+      setTimeout(() => {
+        win.print();
+      }, 250);
+    };
+    if (win.document.fonts && win.document.fonts.ready) {
+      win.document.fonts.ready.then(triggerPrint).catch(triggerPrint);
+    } else {
+      setTimeout(triggerPrint, 500);
+    }
+  };
+
   return (
     <>
       <div className="space-y-6 relative">
@@ -5191,6 +5404,91 @@ const AdminExpenses = () => {
                     }
 
                     if (page.type === 'bank_deposit') {
+                      // 1. Total deposits amount including previous cash
+                      let totalDepositAmount = 0;
+                      if (previousMonthCash > 0) {
+                        totalDepositAmount += previousMonthCash;
+                      }
+                      deposits.forEach((d: any) => {
+                        totalDepositAmount += Number(d.amount || 0);
+                      });
+
+                      // 2. Previous arrears deduction
+                      let netAvailableFunds = totalDepositAmount;
+                      let arrearsDeducted = 0;
+                      let remainingDue = previousArrears;
+
+                      if (previousArrears > 0) {
+                        if (totalDepositAmount > 0) {
+                          arrearsDeducted = Math.min(totalDepositAmount, previousArrears);
+                          remainingDue = previousArrears - arrearsDeducted;
+                          netAvailableFunds = Math.max(0, totalDepositAmount - arrearsDeducted);
+                        } else {
+                          netAvailableFunds = 0;
+                        }
+                      }
+
+                      // 3. Category Breakdown for all institutions (matching Excel buildIncomeWithdrawalSheet)
+                      const targetBreakdownInstitutions = isAllPrint ? allInstitutions : (singleInst ? [singleInst] : []);
+                      type CategoryRow = {
+                        key: string;
+                        name: string;
+                        amount: number;
+                      };
+                      const categoryRows: CategoryRow[] = [];
+                      let totalExpensesSum = 0;
+
+                      targetBreakdownInstitutions.forEach((inst: any) => {
+                        const instName = getInstName(inst, bn);
+                        const shortInst = getInstShortName(instName);
+                        const instPaidExp = expenses.filter((e: any) => e.institution_id === inst.id && !isUnpaidDue(e.description));
+                        
+                        const instSpecificCats = (categories || []).filter((c: any) => c.institution_id === inst.id);
+                        const targetCats = instSpecificCats.length > 0 ? instSpecificCats : getCategoriesForInst(inst.id);
+                        const catsWithExp = (categories || []).filter((c: any) => instPaidExp.some((e: any) => e.category_id === c.id));
+                        
+                        const seenCatIds = new Set<string>();
+                        const finalCats: any[] = [];
+                        [...targetCats, ...catsWithExp].forEach((c: any) => {
+                          if (c && !seenCatIds.has(c.id)) {
+                            seenCatIds.add(c.id);
+                            finalCats.push(c);
+                          }
+                        });
+
+                        finalCats.forEach((cat: any) => {
+                          const catExpenses = instPaidExp.filter((e: any) => e.category_id === cat.id);
+                          const catTotal = catExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+                          if (catTotal === 0 && finalCats.length > 8) return;
+
+                          totalExpensesSum += catTotal;
+                          const catName = getCatName(cat, bn);
+                          categoryRows.push({
+                            key: `${inst.id}-${cat.id}`,
+                            name: isAllPrint ? `${shortInst} - ${catName}` : catName,
+                            amount: catTotal
+                          });
+                        });
+
+                        // Check uncategorized expenses for this institution
+                        const uncatExp = instPaidExp.filter((e: any) => !e.category_id || !finalCats.some((c: any) => c.id === e.category_id));
+                        if (uncatExp.length > 0) {
+                          const uncatTotal = uncatExp.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+                          totalExpensesSum += uncatTotal;
+                          categoryRows.push({
+                            key: `${inst.id}-uncat`,
+                            name: isAllPrint ? `${shortInst} - ${bn ? 'অন্যান্য / সাধারণ ব্যয়' : 'Other Expenses'}` : (bn ? 'অন্যান্য / সাধারণ ব্যয়' : 'Other Expenses'),
+                            amount: uncatTotal
+                          });
+                        }
+                      });
+
+                      // 4. Final Cash Balance = Net Available Funds - Total Expenses
+                      const rawCashBalance = netAvailableFunds - totalExpensesSum;
+                      const finalCashBalance = rawCashBalance > 0 ? rawCashBalance : 0;
+                      const currentShortfall = rawCashBalance < 0 ? Math.abs(rawCashBalance) : 0;
+                      const totalArrearsEnd = remainingDue + currentShortfall;
+
                       return (
                         <div
                           key={page.id}
@@ -5208,110 +5506,152 @@ const AdminExpenses = () => {
                             <div className="flex items-center justify-between text-xs text-muted-foreground pb-2 mb-3 border-b print:hidden">
                               <span className="font-bold text-teal-700 dark:text-teal-400 flex items-center gap-1.5">
                                 <FileText className="w-3.5 h-3.5" />
-                                {bn ? `পৃষ্ঠা ${toBnDigits(pageNum)} / ${toBnDigits(totalPagesCount)}: ব্যাংক হিসাব ও টাকা জমা/উত্তোলন` : `Page ${pageNum} of ${totalPagesCount}: Bank & Deposits`}
+                                {bn ? `পৃষ্ঠা ${toBnDigits(pageNum)} / ${toBnDigits(totalPagesCount)}: টাকা আয়/উত্তোলন ও ব্যাংক হিসাব বিবরণী` : `Page ${pageNum} of ${totalPagesCount}: Deposit & Bank Statement`}
                               </span>
                               <span className="font-medium bg-muted px-2 py-0.5 rounded text-[11px]">
-                                {isAllPrint ? (bn ? 'সমন্বিত ব্যাংক হিসাব' : 'Consolidated Bank') : getInstName(page.inst, bn)}
+                                {isAllPrint ? (bn ? 'সকল প্রতিষ্ঠানের ব্যাংক ও তহবিল হিসাব' : 'All Institutions Bank & Fund') : getInstName(page.inst, bn)}
                               </span>
                             </div>
 
                             {renderLetterhead(page.inst, page.categoryName, isAllPrint)}
 
-                            {/* Bank Deposits & Withdrawals Table */}
+                            {/* Excel-identical 6-column statement table */}
                             <div className="mb-4">
-                              <h3 className="text-xs font-bold uppercase tracking-wider mb-2 text-foreground">
-                                {bn ? '🏦 ব্যাংক হিসাব ও অর্থ জমা / উত্তোলন বিবরণী' : '🏦 Bank Account & Deposit Statements'}
-                              </h3>
                               <table 
                                 className="w-full border-collapse border text-xs"
                                 style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', marginTop: '6px' }}
                               >
                                 <thead>
                                   <tr className="bg-teal-50 dark:bg-teal-950/40 text-teal-900 dark:text-teal-200">
-                                    <th className="border p-1.5 text-center w-8">#</th>
-                                    <th className="border p-1.5 text-center w-20">{bn ? 'তারিখ' : 'Date'}</th>
-                                    <th className="border p-1.5 text-left">{bn ? 'ব্যাংক বিবরণ' : 'Bank Details'}</th>
-                                    <th className="border p-1.5 text-left">{bn ? 'অন্যান্য বিবরণ' : 'Other Details'}</th>
+                                    <th className="border p-1.5 text-center w-24">{bn ? 'তারিখ' : 'Date'}</th>
+                                    <th className="border p-1.5 text-left">{bn ? 'ব্যাংক বিবরণ ও অন্যান্য উৎস' : 'Bank & Source Details'}</th>
                                     <th className="border p-1.5 text-center w-28">{bn ? 'উৎস' : 'Source'}</th>
                                     <th className="border p-1.5 text-right w-28">{bn ? 'টাকা (৳)' : 'Amount (৳)'}</th>
+                                    <th className="border p-1.5 text-right w-28">{bn ? 'নগদ আছে (৳)' : 'Cash in Hand (৳)'}</th>
+                                    <th className="border p-1.5 text-right w-28">{bn ? 'বকেয়া (৳)' : 'Due (৳)'}</th>
                                   </tr>
                                 </thead>
                                 <tbody>
+                                  {/* 1. Opening Cash */}
                                   {previousMonthCash > 0 && (
                                     <tr className="bg-teal-50/50">
-                                      <td className="border p-1.5 text-center font-bold">০১</td>
-                                      <td className="border p-1.5 text-center">{bn ? '০১ তারিখ' : '01'}</td>
-                                      <td className="border p-1.5 font-semibold text-teal-900">{bn ? 'গত মাসের খরচ শেষে নগদ আছে (জের)' : 'Last Month Ending Cash in Hand'}</td>
-                                      <td className="border p-1.5 text-muted-foreground">{bn ? 'প্রারম্ভিক নগদ স্থিতি' : 'Opening Cash'}</td>
+                                      <td className="border p-1.5 text-center font-medium">{bn ? '০১ তারিখ' : '01'}</td>
+                                      <td className="border p-1.5 font-semibold text-teal-900 dark:text-teal-300">
+                                        {bn ? 'গত মাসের খরচ শেষে নগদ আছে (জের)' : 'Last Month Ending Cash in Hand'}
+                                      </td>
                                       <td className="border p-1.5 text-center font-medium">{bn ? 'নগদ তহবিল' : 'Cash Fund'}</td>
-                                      <td className="border p-1.5 text-right font-bold text-teal-800">৳{formatNum(previousMonthCash)}</td>
+                                      <td className="border p-1.5 text-right font-bold text-teal-800 dark:text-teal-400">৳{formatNum(previousMonthCash)}</td>
+                                      <td className="border p-1.5 text-right font-bold text-teal-800 dark:text-teal-400">৳{formatNum(previousMonthCash)}</td>
+                                      <td className="border p-1.5 text-center text-muted-foreground">-</td>
                                     </tr>
                                   )}
 
+                                  {/* 2. Deposit rows */}
                                   {deposits.length === 0 && previousMonthCash <= 0 ? (
                                     <tr>
-                                      <td colSpan={6} className="border p-4 text-center text-muted-foreground italic">
+                                      <td colSpan={6} className="border p-3 text-center text-muted-foreground italic">
                                         {bn ? 'এই মাসে কোনো ব্যাংক জমা বা উত্তোলনের রেকর্ড নেই।' : 'No deposit records found for this period.'}
                                       </td>
                                     </tr>
                                   ) : (
                                     deposits.map((d: any, idx: number) => (
                                       <tr key={d.id || idx}>
-                                        <td className="border p-1.5 text-center">{bn ? toBnDigits((previousMonthCash > 0 ? 1 : 0) + idx + 1) : (previousMonthCash > 0 ? 1 : 0) + idx + 1}</td>
                                         <td className="border p-1.5 text-center">{formatDateBn(d.deposit_date, bn)}</td>
-                                        <td className="border p-1.5 font-medium">{d.bank_details || '-'}</td>
-                                        <td className="border p-1.5 text-muted-foreground">{d.other_details || '-'}</td>
+                                        <td className="border p-1.5 font-medium">{d.bank_details || d.other_details || d.source || (bn ? 'ব্যাংক জমা' : 'Bank Deposit')}</td>
                                         <td className="border p-1.5 text-center font-medium">{getSourceLabel(d.source, bn, customDepositSources)}</td>
                                         <td className="border p-1.5 text-right font-semibold">৳{formatNum(Number(d.amount))}</td>
+                                        <td className="border p-1.5 text-center text-muted-foreground">-</td>
+                                        <td className="border p-1.5 text-center text-muted-foreground">-</td>
                                       </tr>
                                     ))
                                   )}
 
+                                  {/* 3. Subtotal for deposits */}
                                   <tr className="font-bold bg-teal-100/60 dark:bg-teal-950/60 border-t-2">
-                                    <td colSpan={5} className="border p-2 text-right">
-                                      {bn ? 'মোট টাকা আয় / উত্তোলন (জমা):' : 'Total Deposits & Income:'}
+                                    <td className="border p-1.5"></td>
+                                    <td className="border p-1.5"></td>
+                                    <td className="border p-1.5 text-center font-bold text-teal-900 dark:text-teal-200">
+                                      {bn ? 'মোট' : 'Total'}
                                     </td>
-                                    <td className="border p-2 text-right font-black text-teal-900 dark:text-teal-200">
-                                      ৳{formatNum(monthlyTotalDeposit)}
+                                    <td className="border p-1.5 text-right font-black text-teal-900 dark:text-teal-200">
+                                      ৳{formatNum(totalDepositAmount)}
                                     </td>
+                                    <td className="border p-1.5"></td>
+                                    <td className="border p-1.5"></td>
                                   </tr>
-                                </tbody>
-                              </table>
-                            </div>
 
-                            {/* Fund Calculation Statement Table matching Excel */}
-                            <div>
-                              <h3 className="text-xs font-bold uppercase tracking-wider mb-2 text-foreground">
-                                {bn ? '📊 নগদ তহবিল ও হিসাব সমীকরণ' : '📊 Fund Calculation & Cash Reconciliation'}
-                              </h3>
-                              <table 
-                                className="w-full border-collapse border text-xs"
-                                style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', marginTop: '6px' }}
-                              >
-                                <tbody>
-                                  <tr>
-                                    <td className="border p-2 font-medium bg-muted/40 w-1/2">{bn ? 'মোট টাকা আয় / উত্তোলন (জমা)' : 'Total Deposits / Receipts'}</td>
-                                    <td className="border p-2 text-right font-bold text-teal-700 dark:text-teal-400">৳{formatNum(monthlyTotalDeposit)}</td>
-                                  </tr>
+                                  {/* 4. Previous Arrears Deduction */}
                                   {previousArrears > 0 && (
                                     <>
                                       <tr>
-                                        <td className="border p-2 font-medium bg-muted/40">{bn ? '(-) গত মাসের অপরিশোধিত বকেয়া কর্তন বাবদ' : '(-) Previous Arrears Deduction'}</td>
-                                        <td className="border p-2 text-right font-bold text-rose-700">-৳{formatNum(previousArrears)}</td>
+                                        <td className="border p-1.5"></td>
+                                        <td className="border p-1.5 font-medium text-rose-700">
+                                          {bn ? '(-) গত মাসের বকেয়া পরিশোধ বাবদ' : '(-) Previous Month Arrears Settle'}
+                                        </td>
+                                        <td className="border p-1.5 text-center text-muted-foreground">
+                                          {bn ? 'বকেয়া কর্তন' : 'Arrears Deduct'}
+                                        </td>
+                                        <td className="border p-1.5 text-right font-semibold text-rose-700">
+                                          -৳{formatNum(arrearsDeducted)}
+                                        </td>
+                                        <td className="border p-1.5 text-center text-muted-foreground">-</td>
+                                        <td className="border p-1.5 text-right font-semibold text-rose-700">
+                                          {remainingDue > 0 ? `৳${formatNum(remainingDue)}` : '-'}
+                                        </td>
                                       </tr>
-                                      <tr className="bg-muted/30">
-                                        <td className="border p-2 font-semibold">{bn ? 'নিট ব্যবহারযোগ্য তহবিল' : 'Net Available Funds'}</td>
-                                        <td className="border p-2 text-right font-bold">৳{formatNum(Math.max(0, monthlyTotalDeposit - previousArrears))}</td>
+                                      <tr className="bg-muted/40 font-bold">
+                                        <td className="border p-1.5"></td>
+                                        <td className="border p-1.5"></td>
+                                        <td className="border p-1.5 text-center font-bold">
+                                          {bn ? 'নিট তহবিল' : 'Net Fund'}
+                                        </td>
+                                        <td className="border p-1.5 text-right font-bold text-teal-800 dark:text-teal-400">
+                                          ৳{formatNum(netAvailableFunds)}
+                                        </td>
+                                        <td className="border p-1.5"></td>
+                                        <td className="border p-1.5"></td>
                                       </tr>
                                     </>
                                   )}
-                                  <tr>
-                                    <td className="border p-2 font-medium bg-muted/40">{bn ? '(-) চলতি মাসের মোট পরিশোধিত ব্যয়' : '(-) Total Paid Expenses'}</td>
-                                    <td className="border p-2 text-right font-bold text-rose-700">-৳{formatNum(monthlyTotalExpense)}</td>
+
+                                  {/* 5. Category Banner */}
+                                  <tr className="bg-teal-100/70 dark:bg-teal-950/60 font-bold text-teal-950 dark:text-teal-200">
+                                    <td className="border p-1 text-center"></td>
+                                    <td colSpan={3} className="border p-1 text-center tracking-wide font-black">
+                                      {bn ? 'ক্যাটাগরি' : 'Category'}
+                                    </td>
+                                    <td className="border p-1 text-center"></td>
+                                    <td className="border p-1 text-center"></td>
                                   </tr>
-                                  <tr className="font-black bg-emerald-100/70 dark:bg-emerald-950/60 text-sm">
-                                    <td className="border p-2">{bn ? 'অবশিষ্ট নগদ তহবিল (ক্যাশ জের)' : 'Closing Cash Balance'}</td>
-                                    <td className="border p-2 text-right text-emerald-800 dark:text-emerald-300">৳{formatNum(monthlyCash)}</td>
+
+                                  {/* 6. Category breakdown rows */}
+                                  {categoryRows.map((catRow) => (
+                                    <tr key={catRow.key}>
+                                      <td className="border p-1 text-center"></td>
+                                      <td className="border p-1 font-medium">{catRow.name}</td>
+                                      <td className="border p-1 text-center"></td>
+                                      <td className="border p-1 text-right font-semibold">৳{formatNum(catRow.amount)}</td>
+                                      <td className="border p-1 text-center text-muted-foreground">-</td>
+                                      <td className="border p-1 text-center text-muted-foreground">-</td>
+                                    </tr>
+                                  ))}
+
+                                  {/* 7. Grand Total Row */}
+                                  <tr className="font-black bg-emerald-100/80 dark:bg-emerald-950/80 border-t-2 text-xs">
+                                    <td className="border p-2"></td>
+                                    <td className="border p-2"></td>
+                                    <td className="border p-2 text-center text-foreground font-black">
+                                      {bn ? 'মোট ব্যয়' : 'Total Expense'}
+                                    </td>
+                                    <td className="border p-2 text-right text-foreground font-black">
+                                      ৳{formatNum(totalExpensesSum)}
+                                    </td>
+                                    <td className="border p-2 text-right text-emerald-800 dark:text-emerald-300 font-black">
+                                      ৳{formatNum(finalCashBalance)}
+                                    </td>
+                                    <td className="border p-2 text-right text-rose-700 dark:text-rose-400 font-black">
+                                      {totalArrearsEnd > 0 ? `৳${formatNum(totalArrearsEnd)}` : '-'}
+                                    </td>
                                   </tr>
                                 </tbody>
                               </table>
@@ -5444,169 +5784,8 @@ const AdminExpenses = () => {
               <Button onClick={() => {
                 const content = document.getElementById('project-print-content');
                 if (!content) return;
-                const win = window.open('', '_blank');
-                if (!win) return;
-
-                win.document.write(`<!DOCTYPE html>
-<html lang="bn">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${bn ? 'সকল প্রতিষ্ঠানের হিসাব প্রতিবেদন' : 'All Institutions Expense Report'} - ${bn ? selectedMonthName : selectedMonthYear}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    @page {
-      size: A4 portrait;
-      margin: 10mm;
-    }
-    * {
-      box-sizing: border-box !important;
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-    }
-    html, body {
-      margin: 0 !important;
-      padding: 0 !important;
-      background: #ffffff !important;
-      color: #000000 !important;
-      font-family: 'Hind Siliguri', 'Noto Sans Bengali', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-      -webkit-font-smoothing: antialiased;
-      width: 100% !important;
-    }
-    body, body * {
-      visibility: visible !important;
-    }
-    .print\\:hidden, [class*="print:hidden"] {
-      display: none !important;
-      visibility: hidden !important;
-    }
-    .print-page {
-      box-sizing: border-box !important;
-      min-height: 260mm !important;
-      display: flex !important;
-      flex-direction: column !important;
-      justify-content: space-between !important;
-      page-break-after: always !important;
-      break-after: page !important;
-      padding: 0 0 4mm 0 !important;
-      margin: 0 !important;
-      background: #ffffff !important;
-      border: none !important;
-      box-shadow: none !important;
-    }
-    .print-page:last-child {
-      page-break-after: auto !important;
-      break-after: auto !important;
-    }
-    .page-footer {
-      margin-top: auto !important;
-      page-break-inside: avoid !important;
-      break-inside: avoid !important;
-      display: flex !important;
-      justify-content: space-between !important;
-      width: 100% !important;
-    }
-    table {
-      width: 100% !important;
-      border-collapse: collapse !important;
-      font-size: 11px !important;
-      page-break-inside: auto;
-      margin-top: 8px !important;
-    }
-    thead {
-      display: table-header-group;
-    }
-    tr {
-      page-break-inside: avoid;
-      page-break-after: auto;
-    }
-    th, td {
-      border: 1px solid #334155 !important;
-      padding: 4.5px 6px !important;
-    }
-    th {
-      background-color: #f1f5f9 !important;
-      color: #0f172a !important;
-      font-weight: 700 !important;
-    }
-    .bg-muted, [class*="bg-muted"] {
-      background-color: #f1f5f9 !important;
-    }
-    .bg-amber-100, [class*="bg-amber"] {
-      background-color: #fef3c7 !important;
-    }
-    .text-right { text-align: right !important; }
-    .text-center { text-align: center !important; }
-    .text-left { text-align: left !important; }
-    .flex { display: flex !important; }
-    .flex-col { flex-direction: column !important; }
-    .justify-between { justify-content: space-between !important; }
-    .items-center { align-items: center !important; }
-    .w-full { width: 100% !important; }
-    .w-40 { width: 160px !important; }
-    .w-32 { width: 128px !important; }
-    .w-28 { width: 112px !important; }
-    .w-24 { width: 96px !important; }
-    .w-20 { width: 80px !important; }
-    .w-16 { width: 64px !important; }
-    .w-10 { width: 40px !important; }
-    .w-8 { width: 32px !important; }
-    .h-16 { height: 64px !important; }
-    .mx-auto { margin-left: auto !important; margin-right: auto !important; }
-    .font-bold { font-weight: 700 !important; }
-    .font-semibold { font-weight: 600 !important; }
-    .font-medium { font-weight: 500 !important; }
-    .font-black { font-weight: 900 !important; }
-    .font-mono { font-family: monospace !important; }
-    .border-b-2 { border-bottom: 2px solid #000000 !important; }
-    .border-t-2 { border-top: 2px solid #000000 !important; }
-    .border-t { border-top: 1px solid #334155 !important; }
-    .border { border: 1px solid #334155 !important; }
-    .text-amber-700, .text-amber-800 { color: #b45309 !important; }
-    .text-emerald-700, .text-emerald-800 { color: #047857 !important; }
-    .text-rose-700 { color: #be123c !important; }
-    .text-muted-foreground { color: #475569 !important; }
-    .text-primary { color: #0f172a !important; }
-    .text-foreground { color: #000000 !important; }
-    .text-sm { font-size: 13px !important; }
-    .text-xs { font-size: 11px !important; }
-    .text-base { font-size: 15px !important; }
-    .text-lg { font-size: 18px !important; }
-    @media print {
-      body, body * {
-        visibility: visible !important;
-      }
-      .print\\:hidden, [class*="print:hidden"] {
-        display: none !important;
-        visibility: hidden !important;
-      }
-      .print-page {
-        min-height: 260mm !important;
-        page-break-after: always !important;
-        break-after: page !important;
-        border: none !important;
-        box-shadow: none !important;
-        padding: 0 !important;
-        visibility: visible !important;
-      }
-      .print-page:last-child {
-        page-break-after: auto !important;
-        break-after: auto !important;
-      }
-    }
-  </style>
-</head>
-<body>
-  ${content.innerHTML}
-</body>
-</html>`);
-                win.document.close();
-                win.focus();
-                setTimeout(() => {
-                  win.print();
-                }, 400);
+                const title = `${bn ? 'সকল প্রতিষ্ঠানের হিসাব প্রতিবেদন' : 'All Institutions Expense Report'} - ${bn ? selectedMonthName : selectedMonthYear}`;
+                printDocumentHtml(content.innerHTML, title);
               }}>
                 <Printer className="w-4 h-4 mr-1" />{bn ? 'প্রিন্ট করুন' : 'Print'}
               </Button>
@@ -5683,34 +5862,174 @@ const AdminExpenses = () => {
 
               {depositPrintEditData.extraNote && <p className="text-xs mb-3 italic border-l-2 border-primary pl-2">{depositPrintEditData.extraNote}</p>}
 
-              <table className="w-full border-collapse border text-sm">
-                <thead>
-                  <tr className="bg-muted">
-                    <th className="border p-1 text-left w-8">#</th>
-                    <th className="border p-1 text-left">{bn ? 'তারিখ' : 'Date'}</th>
-                    <th className="border p-1 text-left">{bn ? 'ব্যাংক বিবরণ' : 'Bank Details'}</th>
-                    <th className="border p-1 text-left">{bn ? 'অন্যান্য বিবরণ' : 'Other Details'}</th>
-                    <th className="border p-1 text-left">{bn ? 'উৎস' : 'Source'}</th>
-                    <th className="border p-1 text-right">{bn ? 'টাকা' : 'Amount'}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {deposits.map((d: any, i: number) => (
-                    <tr key={d.id}>
-                      <td className="border p-1">{i + 1}</td>
-                      <td className="border p-1">{d.deposit_date}</td>
-                      <td className="border p-1">{d.bank_details || '-'}</td>
-                      <td className="border p-1">{d.other_details || '-'}</td>
-                      <td className="border p-1">{d.source || '-'}</td>
-                      <td className="border p-1 text-right">৳{formatNum(Number(d.amount))}</td>
-                    </tr>
-                  ))}
-                  <tr className="font-bold bg-muted/50">
-                    <td colSpan={5} className="border p-1 text-right">{bn ? 'মোট টাকা আয়/উত্তোলন:' : 'Total:'}</td>
-                    <td className="border p-1 text-right">৳{formatNum(monthlyTotalDeposit)}</td>
-                  </tr>
-                </tbody>
-              </table>
+              {(() => {
+                let totalDepositAmount = 0;
+                if (previousMonthCash > 0) totalDepositAmount += previousMonthCash;
+                deposits.forEach((d: any) => { totalDepositAmount += Number(d.amount || 0); });
+
+                let netAvailableFunds = totalDepositAmount;
+                let arrearsDeducted = 0;
+                let remainingDue = previousArrears;
+                if (previousArrears > 0) {
+                  if (totalDepositAmount > 0) {
+                    arrearsDeducted = Math.min(totalDepositAmount, previousArrears);
+                    remainingDue = previousArrears - arrearsDeducted;
+                    netAvailableFunds = Math.max(0, totalDepositAmount - arrearsDeducted);
+                  } else {
+                    netAvailableFunds = 0;
+                  }
+                }
+
+                type CategoryRow = { key: string; name: string; amount: number; };
+                const categoryRows: CategoryRow[] = [];
+                let totalExpensesSum = 0;
+
+                allInstitutions.forEach((inst: any) => {
+                  const instName = getInstName(inst, bn);
+                  const shortInst = getInstShortName(instName);
+                  const instPaidExp = expenses.filter((e: any) => e.institution_id === inst.id && !isUnpaidDue(e.description));
+                  
+                  const instSpecificCats = (categories || []).filter((c: any) => c.institution_id === inst.id);
+                  const targetCats = instSpecificCats.length > 0 ? instSpecificCats : getCategoriesForInst(inst.id);
+                  const catsWithExp = (categories || []).filter((c: any) => instPaidExp.some((e: any) => e.category_id === c.id));
+                  
+                  const seenCatIds = new Set<string>();
+                  const finalCats: any[] = [];
+                  [...targetCats, ...catsWithExp].forEach((c: any) => {
+                    if (c && !seenCatIds.has(c.id)) {
+                      seenCatIds.add(c.id);
+                      finalCats.push(c);
+                    }
+                  });
+
+                  finalCats.forEach((cat: any) => {
+                    const catExpenses = instPaidExp.filter((e: any) => e.category_id === cat.id);
+                    const catTotal = catExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+                    if (catTotal === 0 && finalCats.length > 8) return;
+
+                    totalExpensesSum += catTotal;
+                    const catName = getCatName(cat, bn);
+                    categoryRows.push({
+                      key: `${inst.id}-${cat.id}`,
+                      name: `${shortInst} - ${catName}`,
+                      amount: catTotal
+                    });
+                  });
+
+                  const uncatExp = instPaidExp.filter((e: any) => !e.category_id || !finalCats.some((c: any) => c.id === e.category_id));
+                  if (uncatExp.length > 0) {
+                    const uncatTotal = uncatExp.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+                    totalExpensesSum += uncatTotal;
+                    categoryRows.push({
+                      key: `${inst.id}-uncat`,
+                      name: `${shortInst} - ${bn ? 'অন্যান্য / সাধারণ ব্যয়' : 'Other Expenses'}`,
+                      amount: uncatTotal
+                    });
+                  }
+                });
+
+                const rawCashBalance = netAvailableFunds - totalExpensesSum;
+                const finalCashBalance = rawCashBalance > 0 ? rawCashBalance : 0;
+                const currentShortfall = rawCashBalance < 0 ? Math.abs(rawCashBalance) : 0;
+                const totalArrearsEnd = remainingDue + currentShortfall;
+
+                return (
+                  <table className="w-full border-collapse border text-xs" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', marginTop: '6px' }}>
+                    <thead>
+                      <tr className="bg-teal-50 dark:bg-teal-950/40 text-teal-900 dark:text-teal-200">
+                        <th className="border p-1.5 text-center w-24">{bn ? 'তারিখ' : 'Date'}</th>
+                        <th className="border p-1.5 text-left">{bn ? 'ব্যাংক বিবরণ ও অন্যান্য উৎস' : 'Bank & Source Details'}</th>
+                        <th className="border p-1.5 text-center w-28">{bn ? 'উৎস' : 'Source'}</th>
+                        <th className="border p-1.5 text-right w-28">{bn ? 'টাকা (৳)' : 'Amount (৳)'}</th>
+                        <th className="border p-1.5 text-right w-28">{bn ? 'নগদ আছে (৳)' : 'Cash in Hand (৳)'}</th>
+                        <th className="border p-1.5 text-right w-28">{bn ? 'বকেয়া (৳)' : 'Due (৳)'}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {previousMonthCash > 0 && (
+                        <tr className="bg-teal-50/50">
+                          <td className="border p-1.5 text-center font-medium">{bn ? '০১ তারিখ' : '01'}</td>
+                          <td className="border p-1.5 font-semibold text-teal-900 dark:text-teal-300">{bn ? 'গত মাসের খরচ শেষে নগদ আছে (জের)' : 'Last Month Ending Cash in Hand'}</td>
+                          <td className="border p-1.5 text-center font-medium">{bn ? 'নগদ তহবিল' : 'Cash Fund'}</td>
+                          <td className="border p-1.5 text-right font-bold text-teal-800 dark:text-teal-400">৳{formatNum(previousMonthCash)}</td>
+                          <td className="border p-1.5 text-right font-bold text-teal-800 dark:text-teal-400">৳{formatNum(previousMonthCash)}</td>
+                          <td className="border p-1.5 text-center text-muted-foreground">-</td>
+                        </tr>
+                      )}
+                      {deposits.length === 0 && previousMonthCash <= 0 ? (
+                        <tr>
+                          <td colSpan={6} className="border p-3 text-center text-muted-foreground italic">
+                            {bn ? 'এই মাসে কোনো ব্যাংক জমা বা উত্তোলনের রেকর্ড নেই।' : 'No deposit records found for this period.'}
+                          </td>
+                        </tr>
+                      ) : (
+                        deposits.map((d: any, idx: number) => (
+                          <tr key={d.id || idx}>
+                            <td className="border p-1.5 text-center">{formatDateBn(d.deposit_date, bn)}</td>
+                            <td className="border p-1.5 font-medium">{d.bank_details || d.other_details || d.source || (bn ? 'ব্যাংক জমা' : 'Bank Deposit')}</td>
+                            <td className="border p-1.5 text-center font-medium">{getSourceLabel(d.source, bn, customDepositSources)}</td>
+                            <td className="border p-1.5 text-right font-semibold">৳{formatNum(Number(d.amount))}</td>
+                            <td className="border p-1.5 text-center text-muted-foreground">-</td>
+                            <td className="border p-1.5 text-center text-muted-foreground">-</td>
+                          </tr>
+                        ))
+                      )}
+                      <tr className="font-bold bg-teal-100/60 dark:bg-teal-950/60 border-t-2">
+                        <td className="border p-1.5"></td>
+                        <td className="border p-1.5"></td>
+                        <td className="border p-1.5 text-center font-bold text-teal-900 dark:text-teal-200">{bn ? 'মোট' : 'Total'}</td>
+                        <td className="border p-1.5 text-right font-black text-teal-900 dark:text-teal-200">৳{formatNum(totalDepositAmount)}</td>
+                        <td className="border p-1.5"></td>
+                        <td className="border p-1.5"></td>
+                      </tr>
+                      {previousArrears > 0 && (
+                        <>
+                          <tr>
+                            <td className="border p-1.5"></td>
+                            <td className="border p-1.5 font-medium text-rose-700">{bn ? '(-) গত মাসের বকেয়া পরিশোধ বাবদ' : '(-) Previous Month Arrears Settle'}</td>
+                            <td className="border p-1.5 text-center text-muted-foreground">{bn ? 'বকেয়া কর্তন' : 'Arrears Deduct'}</td>
+                            <td className="border p-1.5 text-right font-semibold text-rose-700">-৳{formatNum(arrearsDeducted)}</td>
+                            <td className="border p-1.5 text-center text-muted-foreground">-</td>
+                            <td className="border p-1.5 text-right font-semibold text-rose-700">{remainingDue > 0 ? `৳${formatNum(remainingDue)}` : '-'}</td>
+                          </tr>
+                          <tr className="bg-muted/40 font-bold">
+                            <td className="border p-1.5"></td>
+                            <td className="border p-1.5"></td>
+                            <td className="border p-1.5 text-center font-bold">{bn ? 'নিট তহবিল' : 'Net Fund'}</td>
+                            <td className="border p-1.5 text-right font-bold text-teal-800 dark:text-teal-400">৳{formatNum(netAvailableFunds)}</td>
+                            <td className="border p-1.5"></td>
+                            <td className="border p-1.5"></td>
+                          </tr>
+                        </>
+                      )}
+                      <tr className="bg-teal-100/70 dark:bg-teal-950/60 font-bold text-teal-950 dark:text-teal-200">
+                        <td className="border p-1 text-center"></td>
+                        <td colSpan={3} className="border p-1 text-center tracking-wide font-black">{bn ? 'ক্যাটাগরি' : 'Category'}</td>
+                        <td className="border p-1 text-center"></td>
+                        <td className="border p-1 text-center"></td>
+                      </tr>
+                      {categoryRows.map((catRow) => (
+                        <tr key={catRow.key}>
+                          <td className="border p-1 text-center"></td>
+                          <td className="border p-1 font-medium">{catRow.name}</td>
+                          <td className="border p-1 text-center"></td>
+                          <td className="border p-1 text-right font-semibold">৳{formatNum(catRow.amount)}</td>
+                          <td className="border p-1 text-center text-muted-foreground">-</td>
+                          <td className="border p-1 text-center text-muted-foreground">-</td>
+                        </tr>
+                      ))}
+                      <tr className="font-black bg-emerald-100/80 dark:bg-emerald-950/80 border-t-2 text-xs">
+                        <td className="border p-2"></td>
+                        <td className="border p-2"></td>
+                        <td className="border p-2 text-center text-foreground font-black">{bn ? 'মোট ব্যয়' : 'Total Expense'}</td>
+                        <td className="border p-2 text-right text-foreground font-black">৳{formatNum(totalExpensesSum)}</td>
+                        <td className="border p-2 text-right text-emerald-800 dark:text-emerald-300 font-black">৳{formatNum(finalCashBalance)}</td>
+                        <td className="border p-2 text-right text-rose-700 dark:text-rose-400 font-black">{totalArrearsEnd > 0 ? `৳${formatNum(totalArrearsEnd)}` : '-'}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                );
+              })()}
 
               {(() => {
                 const dCasherPerson = (depositPrintEditData.casherName || summaryData?.casher_name || '').trim();
@@ -5771,53 +6090,8 @@ const AdminExpenses = () => {
               <Button onClick={() => {
                 const content = document.getElementById('deposit-print-preview-content');
                 if (!content) return;
-                const win = window.open('', '_blank');
-                if (!win) return;
-                win.document.write(`<!DOCTYPE html>
-<html lang="bn">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${bn ? 'টাকা আয়/উত্তোলন প্রতিবেদন' : 'Deposit Report'}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    @page { size: A4 portrait; margin: 10mm; }
-    * { box-sizing: border-box !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-    html, body {
-      margin: 0 !important;
-      padding: 0 !important;
-      background: #ffffff !important;
-      color: #000000 !important;
-      font-family: 'Hind Siliguri', 'Noto Sans Bengali', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-      -webkit-font-smoothing: antialiased;
-      width: 100% !important;
-    }
-    body, body * {
-      visibility: visible !important;
-    }
-    table { width: 100% !important; border-collapse: collapse !important; font-size: 11px !important; margin-top: 8px !important; }
-    th, td { border: 1px solid #334155 !important; padding: 4.5px 7px !important; }
-    th { background: #f1f5f9 !important; font-weight: 700 !important; }
-    .text-right { text-align: right !important; }
-    .text-center { text-align: center !important; }
-    .flex { display: flex !important; }
-    .justify-between { justify-content: space-between !important; }
-    .w-40 { width: 160px !important; }
-    .mx-auto { margin-left: auto !important; margin-right: auto !important; }
-    .border-t { border-top: 1px solid #334155 !important; }
-    .italic { font-style: italic; }
-    @media print {
-      body, body * { margin: 0 !important; padding: 0 !important; visibility: visible !important; }
-    }
-  </style>
-</head>
-<body>${content.innerHTML}</body>
-</html>`);
-                win.document.close();
-                win.focus();
-                setTimeout(() => { win.print(); }, 400);
+                const title = bn ? 'টাকা আয়/উত্তোলন প্রতিবেদন' : 'Deposit Report';
+                printDocumentHtml(content.innerHTML, title);
               }}>
                 <Printer className="w-4 h-4 mr-1" />{bn ? 'প্রিন্ট করুন' : 'Print'}
               </Button>
