@@ -1703,12 +1703,22 @@ const AdminExpenses = () => {
       allInstitutions.forEach((inst: any) => {
         const instExp = paidAllExpenses.filter((e: any) => e.institution_id === inst.id);
         const instDue = allDues.filter((e: any) => e.institution_id === inst.id);
-        if (instExp.length === 0 && instDue.length === 0) return;
 
-        const instCats = getCategoriesForInst(inst.id);
-        instCats.forEach((cat: any) => {
+        // Find categories for this institution exactly like Excel export
+        const instSpecificCats = (categories || []).filter((c: any) => c.institution_id === inst.id);
+        const targetCats = instSpecificCats.length > 0 ? instSpecificCats : getCategoriesForInst(inst.id);
+        const catsWithExpenses = (categories || []).filter((c: any) => instExp.some((e: any) => e.category_id === c.id));
+        const seenCatIds = new Set<string>();
+        const finalCats: any[] = [];
+        [...targetCats, ...catsWithExpenses].forEach((c: any) => {
+          if (c && !seenCatIds.has(c.id)) {
+            seenCatIds.add(c.id);
+            finalCats.push(c);
+          }
+        });
+
+        finalCats.forEach((cat: any) => {
           const catExp = instExp.filter((e: any) => e.category_id === cat.id);
-          if (catExp.length === 0) return;
           const catTot = catExp.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
 
           sections.push({
@@ -1723,7 +1733,9 @@ const AdminExpenses = () => {
               { bn: 'মেমো/রশিদ', en: 'Memo/Receipt' },
               { bn: 'টাকা (৳)', en: 'Amount (৳)' },
             ],
-            rows: catExp.map((e: any, idx: number) => {
+            rows: catExp.length === 0 ? [
+              ['-', '-', bn ? 'কোনো ব্যয়ের রেকর্ড নেই' : 'No expenses', '-', '-', '-', 0]
+            ] : catExp.map((e: any, idx: number) => {
               const unit = getUnit(e.description, cat?.name || cat?.name_bn);
               const qtyStr = e.quantity ? `${e.quantity} ${unit || ''}`.trim() : '-';
               return [
@@ -1744,7 +1756,7 @@ const AdminExpenses = () => {
         });
 
         // Uncategorized expenses
-        const uncatExp = instExp.filter((e: any) => !e.category_id || !instCats.some((c: any) => c.id === e.category_id));
+        const uncatExp = instExp.filter((e: any) => !e.category_id || !finalCats.some((c: any) => c.id === e.category_id));
         if (uncatExp.length > 0) {
           const uncatTot = uncatExp.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
           sections.push({
@@ -1775,34 +1787,63 @@ const AdminExpenses = () => {
           });
         }
 
-        // Dues if any
-        if (instDue.length > 0) {
-          const instDueTotal = instDue.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-          sections.push({
-            title_bn: `${getInstName(inst, true)} — বকেয়া খরচের হিসাব`,
-            title_en: `${getInstName(inst, false)} — Outstanding Dues`,
-            headers: [
-              { bn: 'ক্রম', en: 'SL' },
-              { bn: 'তারিখ', en: 'Date' },
-              { bn: 'বিবরণ ও পাওনাদার', en: 'Description & Vendor' },
-              { bn: 'পরিমাণ', en: 'Qty' },
-              { bn: 'মেমো/চালান', en: 'Memo/Invoice' },
-              { bn: 'বকেয়া টাকা (৳)', en: 'Due Amount (৳)' }
-            ],
-            rows: instDue.map((d: any, idx: number) => [
-              idx + 1,
-              d.expense_date || '-',
-              cleanDesc(d.description) || '-',
-              d.quantity || 1,
-              getMemo(d.description) === '-' ? '' : getMemo(d.description),
-              Number(d.amount || 0)
-            ]),
-            totals: [
-              { bn: 'মোট বকেয়া', en: 'Total Dues', value: instDueTotal }
-            ],
-            pageBreakAfter: true,
-          });
-        }
+        // Dues section: ALWAYS include for institution (matching Excel dues sheet)
+        const instDueTotal = instDue.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+        sections.push({
+          title_bn: `${getInstName(inst, true)} — বকেয়া খরচের হিসাব`,
+          title_en: `${getInstName(inst, false)} — Outstanding Dues`,
+          headers: [
+            { bn: 'ক্রম', en: 'SL' },
+            { bn: 'তারিখ', en: 'Date' },
+            { bn: 'বিবরণ ও পাওনাদার', en: 'Description & Vendor' },
+            { bn: 'পরিমাণ', en: 'Qty' },
+            { bn: 'মেমো/চালান', en: 'Memo/Invoice' },
+            { bn: 'বকেয়া টাকা (৳)', en: 'Due Amount (৳)' }
+          ],
+          rows: instDue.length === 0 ? [
+            ['-', '-', bn ? 'কোনো বকেয়া নেই' : 'No dues', '-', '-', 0]
+          ] : instDue.map((d: any, idx: number) => [
+            idx + 1,
+            d.expense_date || '-',
+            cleanDesc(d.description) || '-',
+            d.quantity || 1,
+            getMemo(d.description) === '-' ? '' : getMemo(d.description),
+            Number(d.amount || 0)
+          ]),
+          totals: [
+            { bn: 'মোট বকেয়া', en: 'Total Dues', value: instDueTotal }
+          ],
+          pageBreakAfter: true,
+        });
+      });
+
+      // Dedicated Bank & Deposit Statement Section (matching Excel 'টাকা আয়-উত্তোলন')
+      sections.push({
+        title_bn: 'টাকা আয়/উত্তোলন ও ব্যাংক হিসাব বিবরণী',
+        title_en: 'Deposit, Income & Bank Account Statement',
+        headers: [
+          { bn: 'ক্রম', en: 'SL' },
+          { bn: 'তারিখ', en: 'Date' },
+          { bn: 'ব্যাংক বিবরণ', en: 'Bank Details' },
+          { bn: 'অন্যান্য বিবরণ', en: 'Other Details' },
+          { bn: 'উৎস', en: 'Source' },
+          { bn: 'টাকা (৳)', en: 'Amount (৳)' }
+        ],
+        rows: deposits.length === 0 ? [
+          ['-', '-', bn ? 'কোনো ব্যাংক জমা বা উত্তোলনের রেকর্ড নেই' : 'No deposit records', '-', '-', 0]
+        ] : deposits.map((d: any, idx: number) => [
+          idx + 1,
+          d.deposit_date || '-',
+          d.bank_details || '-',
+          d.other_details || '-',
+          getSourceLabel(d.source, true, customDepositSources),
+          Number(d.amount || 0)
+        ]),
+        totals: [
+          { bn: 'মোট টাকা আয় / উত্তোলন', en: 'Total Deposit', value: totalDep },
+          { bn: 'অবশিষ্ট নগদ তহবিল (জের)', en: 'Closing Cash Balance', value: cash >= 0 ? cash : 0 }
+        ],
+        pageBreakAfter: true,
       });
 
       generateBilingualReport(
@@ -1835,13 +1876,25 @@ const AdminExpenses = () => {
       const instDues = allExpenses.filter((e: any) => e.institution_id === targetInst.id && isUnpaidDue(e.description));
       const totalExp = instPaid.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
       const totalDue = instDues.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+      const totalDep = deposits.reduce((s: number, d: any) => s + Number(d.amount || 0), 0);
+      const cash = totalDep - totalExp - previousArrears;
 
-      const instCats = getCategoriesForInst(targetInst.id);
+      const instSpecificCats = (categories || []).filter((c: any) => c.institution_id === targetInst.id);
+      const targetCats = instSpecificCats.length > 0 ? instSpecificCats : getCategoriesForInst(targetInst.id);
+      const catsWithExpenses = (categories || []).filter((c: any) => instPaid.some((e: any) => e.category_id === c.id));
+      const seenCatIds = new Set<string>();
+      const finalCats: any[] = [];
+      [...targetCats, ...catsWithExpenses].forEach((c: any) => {
+        if (c && !seenCatIds.has(c.id)) {
+          seenCatIds.add(c.id);
+          finalCats.push(c);
+        }
+      });
+
       const sections: any[] = [];
 
-      instCats.forEach((cat: any) => {
+      finalCats.forEach((cat: any) => {
         const catExpenses = instPaid.filter((e: any) => e.category_id === cat.id);
-        if (catExpenses.length === 0) return;
         const catTot = catExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
 
         sections.push({
@@ -1856,7 +1909,9 @@ const AdminExpenses = () => {
             { bn: 'মাধ্যম', en: 'Method' },
             { bn: 'টাকা (৳)', en: 'Amount (৳)' }
           ],
-          rows: catExpenses.map((e: any, idx: number) => {
+          rows: catExpenses.length === 0 ? [
+            ['-', '-', bn ? 'কোনো ব্যয়ের রেকর্ড নেই' : 'No expenses', '-', '-', '-', 0]
+          ] : catExpenses.map((e: any, idx: number) => {
             const unit = getUnit(e.description, cat?.name || cat?.name_bn);
             const qtyStr = e.quantity ? `${e.quantity} ${unit || ''}`.trim() : '-';
             const memo = getMemo(e.description);
@@ -1878,7 +1933,7 @@ const AdminExpenses = () => {
       });
 
       // Uncategorized expenses
-      const uncatExp = instPaid.filter((e: any) => !e.category_id || !instCats.some((c: any) => c.id === e.category_id));
+      const uncatExp = instPaid.filter((e: any) => !e.category_id || !finalCats.some((c: any) => c.id === e.category_id));
       if (uncatExp.length > 0) {
         const uncatTot = uncatExp.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
         sections.push({
@@ -1909,30 +1964,60 @@ const AdminExpenses = () => {
         });
       }
 
-      if (instDues.length > 0) {
-        sections.push({
-          title_bn: 'বকেয়া হিসাব বিবরণী (পরিশোধ বাকি)',
-          title_en: 'Outstanding Dues Statement',
-          headers: [
-            { bn: 'ক্রম', en: 'SL' },
-            { bn: 'তারিখ', en: 'Date' },
-            { bn: 'বিবরণ', en: 'Description' },
-            { bn: 'পরিমাণ', en: 'Qty' },
-            { bn: 'বকেয়া টাকা (৳)', en: 'Due Amount (৳)' }
-          ],
-          rows: instDues.map((d: any, idx: number) => [
-            idx + 1,
-            d.expense_date || '-',
-            cleanDesc(d.description) || '-',
-            d.quantity || 1,
-            Number(d.amount || 0)
-          ]),
-          totals: [
-            { bn: 'মোট বকেয়া', en: 'Total Dues', value: totalDue }
-          ],
-          pageBreakAfter: true,
-        });
-      }
+      // Dues section (ALWAYS included, even if 0)
+      sections.push({
+        title_bn: 'বকেয়া হিসাব বিবরণী (পরিশোধ বাকি)',
+        title_en: 'Outstanding Dues Statement',
+        headers: [
+          { bn: 'ক্রম', en: 'SL' },
+          { bn: 'তারিখ', en: 'Date' },
+          { bn: 'বিবরণ', en: 'Description' },
+          { bn: 'পরিমাণ', en: 'Qty' },
+          { bn: 'বকেয়া টাকা (৳)', en: 'Due Amount (৳)' }
+        ],
+        rows: instDues.length === 0 ? [
+          ['-', '-', bn ? 'কোনো বকেয়া নেই' : 'No dues', '-', 0]
+        ] : instDues.map((d: any, idx: number) => [
+          idx + 1,
+          d.expense_date || '-',
+          cleanDesc(d.description) || '-',
+          d.quantity || 1,
+          Number(d.amount || 0)
+        ]),
+        totals: [
+          { bn: 'মোট বকেয়া', en: 'Total Dues', value: totalDue }
+        ],
+        pageBreakAfter: true,
+      });
+
+      // Bank deposit & fund statement section
+      sections.push({
+        title_bn: 'টাকা আয়/উত্তোলন ও ব্যাংক হিসাব বিবরণী',
+        title_en: 'Deposit, Income & Bank Account Statement',
+        headers: [
+          { bn: 'ক্রম', en: 'SL' },
+          { bn: 'তারিখ', en: 'Date' },
+          { bn: 'ব্যাংক বিবরণ', en: 'Bank Details' },
+          { bn: 'অন্যান্য বিবরণ', en: 'Other Details' },
+          { bn: 'উৎস', en: 'Source' },
+          { bn: 'টাকা (৳)', en: 'Amount (৳)' }
+        ],
+        rows: deposits.length === 0 ? [
+          ['-', '-', bn ? 'কোনো ব্যাংক জমা বা উত্তোলনের রেকর্ড নেই' : 'No deposits', '-', '-', 0]
+        ] : deposits.map((d: any, idx: number) => [
+          idx + 1,
+          d.deposit_date || '-',
+          d.bank_details || '-',
+          d.other_details || '-',
+          getSourceLabel(d.source, true, customDepositSources),
+          Number(d.amount || 0)
+        ]),
+        totals: [
+          { bn: 'মোট জমা / উত্তোলন', en: 'Total Deposit', value: totalDep },
+          { bn: 'অবশিষ্ট নগদ তহবিল (জের)', en: 'Closing Cash Balance', value: cash >= 0 ? cash : 0 }
+        ],
+        pageBreakAfter: true,
+      });
 
       generateBilingualReport(
         {
@@ -4703,10 +4788,10 @@ const AdminExpenses = () => {
             const casherDesignation = bn ? 'ক্যাশিয়ার' : 'Cashier';
             const principalDesignation = bn ? 'অধ্যক্ষ' : 'Principal';
 
-            // Build printable pages: 1 page per category, exactly like Excel tabs
+            // Build printable pages: 1 page per category, dues, bank deposit, and master summary (matching Excel tabs)
             type PrintablePage = {
               id: string;
-              type: 'category' | 'uncategorized' | 'dues' | 'master_summary';
+              type: 'category' | 'uncategorized' | 'dues' | 'bank_deposit' | 'master_summary';
               inst: any;
               categoryName: string;
               items: any[];
@@ -4718,16 +4803,24 @@ const AdminExpenses = () => {
             institutionsToPrint.forEach((inst: any) => {
               const instExpenses = expenses.filter((e: any) => e.institution_id === inst.id && !isUnpaidDue(e.description));
               const instDues = allExpenses.filter((e: any) => e.institution_id === inst.id && isUnpaidDue(e.description));
-              const instCatsForPrint = getCategoriesForInst(inst.id);
+              
+              // Find categories for this institution matching Excel export exactly
+              const instSpecificCats = (categories || []).filter((c: any) => c.institution_id === inst.id);
+              const targetCats = instSpecificCats.length > 0 ? instSpecificCats : getCategoriesForInst(inst.id);
+              const catsWithExpenses = (categories || []).filter((c: any) => instExpenses.some((e: any) => e.category_id === c.id));
+              
+              const seenCatIds = new Set<string>();
+              const finalCats: any[] = [];
+              [...targetCats, ...catsWithExpenses].forEach((c: any) => {
+                if (c && !seenCatIds.has(c.id)) {
+                  seenCatIds.add(c.id);
+                  finalCats.push(c);
+                }
+              });
 
-              if (instExpenses.length === 0 && instDues.length === 0) {
-                return;
-              }
-
-              // 1. Pages for each category that has expenses
-              instCatsForPrint.forEach((cat: any) => {
+              // 1. Pages for each category belonging to this institution
+              finalCats.forEach((cat: any) => {
                 const catExpenses = instExpenses.filter((e: any) => e.category_id === cat.id);
-                if (catExpenses.length === 0) return;
                 const catTotal = catExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
                 pagesToRender.push({
                   id: `${inst.id}-cat-${cat.id}`,
@@ -4739,8 +4832,8 @@ const AdminExpenses = () => {
                 });
               });
 
-              // 2. Page for uncategorized expenses if any
-              const uncatExpenses = instExpenses.filter((e: any) => !e.category_id || !instCatsForPrint.some((c: any) => c.id === e.category_id));
+              // 2. Page for uncategorized expenses if any exist
+              const uncatExpenses = instExpenses.filter((e: any) => !e.category_id || !finalCats.some((c: any) => c.id === e.category_id));
               if (uncatExpenses.length > 0) {
                 const uncatTotal = uncatExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
                 pagesToRender.push({
@@ -4753,33 +4846,39 @@ const AdminExpenses = () => {
                 });
               }
 
-              // 3. Page for dues if any
-              if (instDues.length > 0) {
-                const duesTotal = instDues.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-                pagesToRender.push({
-                  id: `${inst.id}-dues`,
-                  type: 'dues',
-                  inst,
-                  categoryName: bn ? 'বকেয়া খরচের হিসাব (পরিশোধ বাকি)' : 'Outstanding Payable Dues',
-                  items: instDues,
-                  subtotal: duesTotal
-                });
-              }
+              // 3. Page for dues (ALWAYS render dues page for each institution, matching Excel dues sheet)
+              const duesTotal = instDues.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+              pagesToRender.push({
+                id: `${inst.id}-dues`,
+                type: 'dues',
+                inst,
+                categoryName: bn ? 'বকেয়া খরচের হিসাব (পরিশোধ বাকি)' : 'Outstanding Payable Dues',
+                items: instDues,
+                subtotal: duesTotal
+              });
             });
 
-            // 4. Master Summary Page at the end
-            if (isAllPrint || pagesToRender.length > 1) {
-              pagesToRender.push({
-                id: 'master-summary',
-                type: 'master_summary',
-                inst: activeInst,
-                categoryName: isAllPrint 
-                  ? (bn ? 'সকল প্রতিষ্ঠানের সর্বমোট হিসাব ও নগদ তহবিল সারসংক্ষেপ' : 'Consolidated Financial & Fund Summary')
-                  : (bn ? `${getInstName(singleInst, bn)} - সর্বমোট আর্থিক সারসংক্ষেপ` : 'Financial Summary'),
-                items: [],
-                subtotal: totalPaid
-              });
-            }
+            // 4. Dedicated Bank Account & Deposits/Withdrawals Page (matching Excel 'টাকা আয়-উত্তোলন' sheet)
+            pagesToRender.push({
+              id: 'bank-deposit-page',
+              type: 'bank_deposit',
+              inst: activeInst,
+              categoryName: bn ? 'টাকা আয়/উত্তোলন ও ব্যাংক হিসাব বিবরণী' : 'Deposit & Bank Account Statement',
+              items: deposits,
+              subtotal: monthlyTotalDeposit
+            });
+
+            // 5. Master Summary Page at the end
+            pagesToRender.push({
+              id: 'master-summary',
+              type: 'master_summary',
+              inst: activeInst,
+              categoryName: isAllPrint 
+                ? (bn ? 'সকল প্রতিষ্ঠানের সর্বমোট হিসাব ও নগদ তহবিল সারসংক্ষেপ' : 'Consolidated Financial & Fund Summary')
+                : (bn ? `${getInstName(singleInst, bn)} - সর্বমোট আর্থিক সারসংক্ষেপ` : 'Financial Summary'),
+              items: [],
+              subtotal: totalPaid
+            });
 
             const renderSignatures = () => (
               <div 
@@ -4935,18 +5034,26 @@ const AdminExpenses = () => {
                                 </tr>
                               </thead>
                               <tbody>
-                                {page.items.map((e: any, i: number) => (
-                                  <tr key={e.id}>
-                                    <td className="border p-1.5 text-center">{i + 1}</td>
-                                    <td className="border p-1.5 text-center">{e.expense_date}</td>
-                                    <td className="border p-1.5 font-medium">{cleanDesc(e.description)}</td>
-                                    <td className="border p-1.5 text-center">{e.quantity || 1}{getUnit(e.description) ? ` ${getUnit(e.description)}` : ''}</td>
-                                    <td className="border p-1.5 text-center">{getMethod(e.description)}</td>
-                                    <td className="border p-1.5 text-center font-mono">{getMemo(e.description)}</td>
-                                    <td className="border p-1.5 text-right font-semibold">৳{formatNum(Number(e.amount))}</td>
-                                    <td className="border p-1.5 text-muted-foreground">{getRemarks(e.description)}</td>
+                                {page.items.length === 0 ? (
+                                  <tr>
+                                    <td colSpan={8} className="border p-4 text-center text-muted-foreground italic">
+                                      {bn ? 'এই মাসে এই ক্যাটাগরিতে কোনো ব্যয়ের রেকর্ড নেই।' : 'No expenses recorded in this category for this month.'}
+                                    </td>
                                   </tr>
-                                ))}
+                                ) : (
+                                  page.items.map((e: any, i: number) => (
+                                    <tr key={e.id}>
+                                      <td className="border p-1.5 text-center">{i + 1}</td>
+                                      <td className="border p-1.5 text-center">{e.expense_date}</td>
+                                      <td className="border p-1.5 font-medium">{cleanDesc(e.description)}</td>
+                                      <td className="border p-1.5 text-center">{e.quantity || 1}{getUnit(e.description) ? ` ${getUnit(e.description)}` : ''}</td>
+                                      <td className="border p-1.5 text-center">{getMethod(e.description)}</td>
+                                      <td className="border p-1.5 text-center font-mono">{getMemo(e.description)}</td>
+                                      <td className="border p-1.5 text-right font-semibold">৳{formatNum(Number(e.amount))}</td>
+                                      <td className="border p-1.5 text-muted-foreground">{getRemarks(e.description)}</td>
+                                    </tr>
+                                  ))
+                                )}
                                 <tr className="font-bold bg-muted/60 border-t-2">
                                   <td colSpan={6} className="border p-2 text-right">
                                     {bn ? `“${page.categoryName}” মোট ব্যয়:` : `Total for ${page.categoryName}:`}
@@ -5008,17 +5115,25 @@ const AdminExpenses = () => {
                                 </tr>
                               </thead>
                               <tbody>
-                                {page.items.map((due: any, di: number) => (
-                                  <tr key={due.id}>
-                                    <td className="border p-1.5 text-center">{di + 1}</td>
-                                    <td className="border p-1.5 text-center">{due.expense_date}</td>
-                                    <td className="border p-1.5 font-medium">{cleanDesc(due.description)}</td>
-                                    <td className="border p-1.5 text-center">{due.quantity || 1}{getUnit(due.description) ? ` ${getUnit(due.description)}` : ''}</td>
-                                    <td className="border p-1.5 text-center font-mono">{getMemo(due.description)}</td>
-                                    <td className="border p-1.5 text-right font-semibold text-amber-700">৳{formatNum(Number(due.amount))}</td>
-                                    <td className="border p-1.5 text-muted-foreground">{getRemarks(due.description)}</td>
+                                {page.items.length === 0 ? (
+                                  <tr>
+                                    <td colSpan={7} className="border p-4 text-center text-emerald-600 dark:text-emerald-400 font-semibold italic">
+                                      {bn ? '✓ এই প্রতিষ্ঠানে এই মাসে কোনো বকেয়া খরচের হিসাব নেই।' : '✓ No outstanding dues for this institution this month.'}
+                                    </td>
                                   </tr>
-                                ))}
+                                ) : (
+                                  page.items.map((due: any, di: number) => (
+                                    <tr key={due.id}>
+                                      <td className="border p-1.5 text-center">{di + 1}</td>
+                                      <td className="border p-1.5 text-center">{due.expense_date}</td>
+                                      <td className="border p-1.5 font-medium">{cleanDesc(due.description)}</td>
+                                      <td className="border p-1.5 text-center">{due.quantity || 1}{getUnit(due.description) ? ` ${getUnit(due.description)}` : ''}</td>
+                                      <td className="border p-1.5 text-center font-mono">{getMemo(due.description)}</td>
+                                      <td className="border p-1.5 text-right font-semibold text-amber-700">৳{formatNum(Number(due.amount))}</td>
+                                      <td className="border p-1.5 text-muted-foreground">{getRemarks(due.description)}</td>
+                                    </tr>
+                                  ))
+                                )}
                                 <tr className="font-bold bg-amber-100/50 dark:bg-amber-950/50 border-t-2">
                                   <td colSpan={5} className="border p-2 text-right">
                                     {bn ? 'মোট বকেয়া টাকা:' : 'Total Outstanding Dues:'}
@@ -5030,6 +5145,139 @@ const AdminExpenses = () => {
                                 </tr>
                               </tbody>
                             </table>
+                          </div>
+
+                          {renderSignatures()}
+                        </div>
+                      );
+                    }
+
+                    if (page.type === 'bank_deposit') {
+                      return (
+                        <div
+                          key={page.id}
+                          className="print-page bg-background border rounded-xl p-6 shadow-sm print:shadow-none print:border-none print:p-0 print:m-0 print:min-h-[96vh] flex flex-col justify-between"
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            pageBreakAfter: pageIndex === pagesToRender.length - 1 ? 'auto' : 'always',
+                            breakAfter: pageIndex === pagesToRender.length - 1 ? 'auto' : 'page',
+                            boxSizing: 'border-box'
+                          }}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between text-xs text-muted-foreground pb-2 mb-3 border-b print:hidden">
+                              <span className="font-bold text-teal-700 dark:text-teal-400 flex items-center gap-1.5">
+                                <FileText className="w-3.5 h-3.5" />
+                                {bn ? `পৃষ্ঠা ${pageNum} / ${totalPagesCount}: ব্যাংক হিসাব ও টাকা জমা/উত্তোলন` : `Page ${pageNum} of ${totalPagesCount}: Bank & Deposits`}
+                              </span>
+                              <span className="font-medium bg-muted px-2 py-0.5 rounded text-[11px]">
+                                {isAllPrint ? (bn ? 'সমন্বিত ব্যাংক হিসাব' : 'Consolidated Bank') : getInstName(page.inst, bn)}
+                              </span>
+                            </div>
+
+                            {renderLetterhead(page.inst, page.categoryName, isAllPrint)}
+
+                            {/* Bank Deposits & Withdrawals Table */}
+                            <div className="mb-4">
+                              <h3 className="text-xs font-bold uppercase tracking-wider mb-2 text-foreground">
+                                {bn ? '🏦 ব্যাংক হিসাব ও অর্থ জমা / উত্তোলন বিবরণী' : '🏦 Bank Account & Deposit Statements'}
+                              </h3>
+                              <table 
+                                className="w-full border-collapse border text-xs"
+                                style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', marginTop: '6px' }}
+                              >
+                                <thead>
+                                  <tr className="bg-teal-50 dark:bg-teal-950/40 text-teal-900 dark:text-teal-200">
+                                    <th className="border p-1.5 text-center w-8">#</th>
+                                    <th className="border p-1.5 text-center w-20">{bn ? 'তারিখ' : 'Date'}</th>
+                                    <th className="border p-1.5 text-left">{bn ? 'ব্যাংক বিবরণ' : 'Bank Details'}</th>
+                                    <th className="border p-1.5 text-left">{bn ? 'অন্যান্য বিবরণ' : 'Other Details'}</th>
+                                    <th className="border p-1.5 text-center w-28">{bn ? 'উৎস' : 'Source'}</th>
+                                    <th className="border p-1.5 text-right w-28">{bn ? 'টাকা (৳)' : 'Amount (৳)'}</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {previousMonthCash > 0 && (
+                                    <tr className="bg-teal-50/50">
+                                      <td className="border p-1.5 text-center font-bold">০১</td>
+                                      <td className="border p-1.5 text-center">{bn ? '০১ তারিখ' : '01'}</td>
+                                      <td className="border p-1.5 font-semibold text-teal-900">{bn ? 'গত মাসের খরচ শেষে নগদ আছে (জের)' : 'Last Month Ending Cash in Hand'}</td>
+                                      <td className="border p-1.5 text-muted-foreground">{bn ? 'প্রারম্ভিক নগদ স্থিতি' : 'Opening Cash'}</td>
+                                      <td className="border p-1.5 text-center font-medium">{bn ? 'নগদ তহবিল' : 'Cash Fund'}</td>
+                                      <td className="border p-1.5 text-right font-bold text-teal-800">৳{formatNum(previousMonthCash)}</td>
+                                    </tr>
+                                  )}
+
+                                  {deposits.length === 0 && previousMonthCash <= 0 ? (
+                                    <tr>
+                                      <td colSpan={6} className="border p-4 text-center text-muted-foreground italic">
+                                        {bn ? 'এই মাসে কোনো ব্যাংক জমা বা উত্তোলনের রেকর্ড নেই।' : 'No deposit records found for this period.'}
+                                      </td>
+                                    </tr>
+                                  ) : (
+                                    deposits.map((d: any, idx: number) => (
+                                      <tr key={d.id || idx}>
+                                        <td className="border p-1.5 text-center">{(previousMonthCash > 0 ? 1 : 0) + idx + 1}</td>
+                                        <td className="border p-1.5 text-center">{d.deposit_date}</td>
+                                        <td className="border p-1.5 font-medium">{d.bank_details || '-'}</td>
+                                        <td className="border p-1.5 text-muted-foreground">{d.other_details || '-'}</td>
+                                        <td className="border p-1.5 text-center font-medium">{getSourceLabel(d.source, bn, customDepositSources)}</td>
+                                        <td className="border p-1.5 text-right font-semibold">৳{formatNum(Number(d.amount))}</td>
+                                      </tr>
+                                    ))
+                                  )}
+
+                                  <tr className="font-bold bg-teal-100/60 dark:bg-teal-950/60 border-t-2">
+                                    <td colSpan={5} className="border p-2 text-right">
+                                      {bn ? 'মোট টাকা আয় / উত্তোলন (জমা):' : 'Total Deposits & Income:'}
+                                    </td>
+                                    <td className="border p-2 text-right font-black text-teal-900 dark:text-teal-200">
+                                      ৳{formatNum(monthlyTotalDeposit)}
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+
+                            {/* Fund Calculation Statement Table matching Excel */}
+                            <div>
+                              <h3 className="text-xs font-bold uppercase tracking-wider mb-2 text-foreground">
+                                {bn ? '📊 নগদ তহবিল ও হিসাব সমীকরণ' : '📊 Fund Calculation & Cash Reconciliation'}
+                              </h3>
+                              <table 
+                                className="w-full border-collapse border text-xs"
+                                style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', marginTop: '6px' }}
+                              >
+                                <tbody>
+                                  <tr>
+                                    <td className="border p-2 font-medium bg-muted/40 w-1/2">{bn ? 'মোট টাকা আয় / উত্তোলন (জমা)' : 'Total Deposits / Receipts'}</td>
+                                    <td className="border p-2 text-right font-bold text-teal-700 dark:text-teal-400">৳{formatNum(monthlyTotalDeposit)}</td>
+                                  </tr>
+                                  {previousArrears > 0 && (
+                                    <>
+                                      <tr>
+                                        <td className="border p-2 font-medium bg-muted/40">{bn ? '(-) গত মাসের অপরিশোধিত বকেয়া কর্তন বাবদ' : '(-) Previous Arrears Deduction'}</td>
+                                        <td className="border p-2 text-right font-bold text-rose-700">-৳{formatNum(previousArrears)}</td>
+                                      </tr>
+                                      <tr className="bg-muted/30">
+                                        <td className="border p-2 font-semibold">{bn ? 'নিট ব্যবহারযোগ্য তহবিল' : 'Net Available Funds'}</td>
+                                        <td className="border p-2 text-right font-bold">৳{formatNum(Math.max(0, monthlyTotalDeposit - previousArrears))}</td>
+                                      </tr>
+                                    </>
+                                  )}
+                                  <tr>
+                                    <td className="border p-2 font-medium bg-muted/40">{bn ? '(-) চলতি মাসের মোট পরিশোধিত ব্যয়' : '(-) Total Paid Expenses'}</td>
+                                    <td className="border p-2 text-right font-bold text-rose-700">-৳{formatNum(monthlyTotalExpense)}</td>
+                                  </tr>
+                                  <tr className="font-black bg-emerald-100/70 dark:bg-emerald-950/60 text-sm">
+                                    <td className="border p-2">{bn ? 'অবশিষ্ট নগদ তহবিল (ক্যাশ জের)' : 'Closing Cash Balance'}</td>
+                                    <td className="border p-2 text-right text-emerald-800 dark:text-emerald-300">৳{formatNum(monthlyCash)}</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
                           </div>
 
                           {renderSignatures()}
