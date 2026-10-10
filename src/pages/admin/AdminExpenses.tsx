@@ -3904,15 +3904,27 @@ const AdminExpenses = () => {
 
         {/* Signatures */}
         <div className="flex justify-between mt-12 pt-8">
-          <div className="text-center">
+          <div className="text-center min-w-[140px]">
             <div className="border-t border-black w-40 mx-auto mb-1"></div>
-            <p className="text-sm font-medium">{summaryData?.casher_name || (bn ? 'ক্যাশিয়ার' : 'Cashier')}</p>
-            <p className="text-xs">{bn ? 'ক্যাশিয়ার' : 'Cashier'}</p>
+            {summaryData?.casher_name && summaryData.casher_name.trim() !== (bn ? 'ক্যাশিয়ার' : 'Cashier') ? (
+              <>
+                <p className="text-sm font-semibold">{summaryData.casher_name}</p>
+                <p className="text-xs">{bn ? 'ক্যাশিয়ার' : 'Cashier'}</p>
+              </>
+            ) : (
+              <p className="text-sm font-medium">{bn ? 'ক্যাশিয়ার' : 'Cashier'}</p>
+            )}
           </div>
-          <div className="text-center">
+          <div className="text-center min-w-[140px]">
             <div className="border-t border-black w-40 mx-auto mb-1"></div>
-            <p className="text-sm font-medium">{summaryData?.principal_name || (bn ? 'অধ্যক্ষ' : 'Principal')}</p>
-            <p className="text-xs">{bn ? 'অধ্যক্ষ' : 'Principal'}</p>
+            {summaryData?.principal_name && summaryData.principal_name.trim() !== (bn ? 'অধ্যক্ষ' : 'Principal') ? (
+              <>
+                <p className="text-sm font-semibold">{summaryData.principal_name}</p>
+                <p className="text-xs">{bn ? 'অধ্যক্ষ' : 'Principal'}</p>
+              </>
+            ) : (
+              <p className="text-sm font-medium">{bn ? 'অধ্যক্ষ' : 'Principal'}</p>
+            )}
           </div>
         </div>
       </div>
@@ -4544,8 +4556,8 @@ const AdminExpenses = () => {
                     instOther: targetForEdit?.other_info || '',
                     instLogo: targetForEdit?.logo_url || '',
                     reportTitle: bn
-                      ? (isAll ? 'সকল প্রতিষ্ঠানের একত্রিত হিসাব প্রতিবেদন' : `${getInstName(targetForEdit, true)} - হিসাব প্রতিবেদন`)
-                      : (isAll ? 'All Institutions Combined Report' : `${getInstName(targetForEdit, false)} - Expense Report`),
+                      ? (isAll ? 'সকল প্রতিষ্ঠানের একত্রিত হিসাব প্রতিবেদন' : 'মাসিক হিসাব প্রতিবেদন')
+                      : (isAll ? 'All Institutions Combined Report' : 'Monthly Expense Report'),
                     reportSubtitle: '',
                     casherName: summaryData?.casher_name || '',
                     principalName: summaryData?.principal_name || '',
@@ -4615,9 +4627,11 @@ const AdminExpenses = () => {
             const dInstLogo = ed.instLogo || activeInst?.logo_url || '';
             const dReportTitle = ed.reportTitle || (isAllPrint 
               ? (bn ? 'সকল প্রতিষ্ঠানের একত্রিত হিসাব প্রতিবেদন' : 'All Institutions Combined Expense Report')
-              : (bn ? `${getInstName(singleInst, true)} - হিসাব প্রতিবেদন` : `${getInstName(singleInst, false)} - Expense Report`));
-            const dCasher = ed.casherName || summaryData?.casher_name || (bn ? 'ক্যাশিয়ার' : 'Cashier');
-            const dPrincipal = ed.principalName || summaryData?.principal_name || (bn ? 'অধ্যক্ষ' : 'Principal');
+              : (bn ? 'মাসিক হিসাব প্রতিবেদন' : 'Monthly Expense Report'));
+            const casherPerson = (ed.casherName || summaryData?.casher_name || '').trim();
+            const principalPerson = (ed.principalName || summaryData?.principal_name || '').trim();
+            const casherDesignation = bn ? 'ক্যাশিয়ার' : 'Cashier';
+            const principalDesignation = bn ? 'অধ্যক্ষ' : 'Principal';
 
             return (
               <div id="project-print-content">
@@ -4629,13 +4643,17 @@ const AdminExpenses = () => {
                   {dInstOther && <p className="text-xs">{dInstOther}</p>}
                   <p className="text-base font-semibold mt-2">{dReportTitle}</p>
                   {ed.reportSubtitle && <p className="text-sm">{ed.reportSubtitle}</p>}
-                  <p className="text-sm font-medium">
-                    {bn ? 'প্রতিষ্ঠান' : 'Institution'}:{' '}
-                    <span className="font-bold">
-                      {isAllPrint ? (bn ? 'সকল প্রতিষ্ঠান (একত্রিত হিসাব)' : 'All Institutions (Combined)') : (bn ? singleInst.name_bn : singleInst.name)}
-                    </span>{' '}
-                    | {selectedMonthYear}
-                  </p>
+                  {isAllPrint ? (
+                    <p className="text-sm font-medium">
+                      {bn ? 'প্রতিষ্ঠান' : 'Scope'}:{' '}
+                      <span className="font-bold">{bn ? 'সকল প্রতিষ্ঠান (একত্রিত হিসাব)' : 'All Institutions (Combined)'}</span>{' '}
+                      | {bn ? 'হিসাবের মাস' : 'Month'}: <span className="font-bold">{selectedMonthYear}</span>
+                    </p>
+                  ) : (
+                    <p className="text-sm font-medium">
+                      {bn ? 'হিসাবের মাস' : 'Month'}: <span className="font-bold">{selectedMonthYear}</span>
+                    </p>
+                  )}
                 </div>
 
                 {ed.extraNote && <p className="text-xs mb-3 italic border-l-2 border-primary pl-2">{ed.extraNote}</p>}
@@ -4815,15 +4833,27 @@ const AdminExpenses = () => {
                 </div>
 
                 <div className="flex justify-between mt-12 pt-8">
-                  <div className="text-center">
+                  <div className="text-center min-w-[140px]">
                     <div className="border-t border-foreground w-40 mx-auto mb-1"></div>
-                    <p className="text-sm font-medium">{dCasher}</p>
-                    <p className="text-xs">{bn ? 'ক্যাশিয়ার' : 'Cashier'}</p>
+                    {casherPerson && casherPerson !== casherDesignation ? (
+                      <>
+                        <p className="text-sm font-semibold">{casherPerson}</p>
+                        <p className="text-xs text-muted-foreground">{casherDesignation}</p>
+                      </>
+                    ) : (
+                      <p className="text-sm font-medium">{casherDesignation}</p>
+                    )}
                   </div>
-                  <div className="text-center">
+                  <div className="text-center min-w-[140px]">
                     <div className="border-t border-foreground w-40 mx-auto mb-1"></div>
-                    <p className="text-sm font-medium">{dPrincipal}</p>
-                    <p className="text-xs">{bn ? 'অধ্যক্ষ' : 'Principal'}</p>
+                    {principalPerson && principalPerson !== principalDesignation ? (
+                      <>
+                        <p className="text-sm font-semibold">{principalPerson}</p>
+                        <p className="text-xs text-muted-foreground">{principalDesignation}</p>
+                      </>
+                    ) : (
+                      <p className="text-sm font-medium">{principalDesignation}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -4947,18 +4977,38 @@ const AdminExpenses = () => {
                 </tbody>
               </table>
 
-              <div className="flex justify-between mt-12 pt-8">
-                <div className="text-center">
-                  <div className="border-t border-foreground w-40 mx-auto mb-1"></div>
-                  <p className="text-sm font-medium">{depositPrintEditData.casherName || summaryData?.casher_name || (bn ? 'ক্যাশিয়ার' : 'Cashier')}</p>
-                  <p className="text-xs">{bn ? 'ক্যাশিয়ার' : 'Cashier'}</p>
-                </div>
-                <div className="text-center">
-                  <div className="border-t border-foreground w-40 mx-auto mb-1"></div>
-                  <p className="text-sm font-medium">{depositPrintEditData.principalName || summaryData?.principal_name || (bn ? 'অধ্যক্ষ' : 'Principal')}</p>
-                  <p className="text-xs">{bn ? 'অধ্যক্ষ' : 'Principal'}</p>
-                </div>
-              </div>
+              {(() => {
+                const dCasherPerson = (depositPrintEditData.casherName || summaryData?.casher_name || '').trim();
+                const dPrincipalPerson = (depositPrintEditData.principalName || summaryData?.principal_name || '').trim();
+                const dCasherTitle = bn ? 'ক্যাশিয়ার' : 'Cashier';
+                const dPrincipalTitle = bn ? 'অধ্যক্ষ' : 'Principal';
+                return (
+                  <div className="flex justify-between mt-12 pt-8">
+                    <div className="text-center min-w-[140px]">
+                      <div className="border-t border-foreground w-40 mx-auto mb-1"></div>
+                      {dCasherPerson && dCasherPerson !== dCasherTitle ? (
+                        <>
+                          <p className="text-sm font-semibold">{dCasherPerson}</p>
+                          <p className="text-xs text-muted-foreground">{dCasherTitle}</p>
+                        </>
+                      ) : (
+                        <p className="text-sm font-medium">{dCasherTitle}</p>
+                      )}
+                    </div>
+                    <div className="text-center min-w-[140px]">
+                      <div className="border-t border-foreground w-40 mx-auto mb-1"></div>
+                      {dPrincipalPerson && dPrincipalPerson !== dPrincipalTitle ? (
+                        <>
+                          <p className="text-sm font-semibold">{dPrincipalPerson}</p>
+                          <p className="text-xs text-muted-foreground">{dPrincipalTitle}</p>
+                        </>
+                      ) : (
+                        <p className="text-sm font-medium">{dPrincipalTitle}</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           )}
 
