@@ -217,12 +217,15 @@ const DatePicker = ({
         classNames={{
           caption: "hidden",
           nav: "hidden",
-          head_cell: "text-primary/70 rounded-md w-9 font-bold text-[0.68rem] uppercase tracking-wider",
-          cell: "h-9 w-9 text-center text-sm p-0 relative",
-          day: "h-9 w-9 p-0 font-medium rounded-xl transition-all duration-150 hover:bg-primary/10 hover:text-primary aria-selected:opacity-100",
-          day_selected: "bg-primary text-primary-foreground shadow-lg hover:bg-primary hover:text-primary-foreground focus:bg-primary scale-110",
-          day_today: "ring-2 ring-primary/50 text-primary font-bold",
-          day_outside: "text-muted-foreground/30",
+          table: "rdp-table w-full border-collapse",
+          head_row: "rdp-head_row flex justify-between",
+          head_cell: "rdp-head_cell text-primary/80 rounded-md w-9 font-bold text-[0.68rem] tracking-wider text-center",
+          row: "rdp-row flex w-full justify-between mt-1",
+          cell: "rdp-cell h-9 w-9 text-center text-sm p-0 relative",
+          day: "rdp-day h-9 w-9 p-0 font-medium rounded-xl transition-all duration-150 hover:bg-primary/10 hover:text-primary aria-selected:opacity-100",
+          day_selected: "rdp-day_selected bg-primary text-primary-foreground shadow-lg hover:bg-primary hover:text-primary-foreground focus:bg-primary scale-110",
+          day_today: "rdp-day_today ring-2 ring-primary/50 text-primary font-bold",
+          day_outside: "rdp-day_outside text-muted-foreground/30",
         }}
         components={{
           IconLeft: () => <ChevronLeft className="h-4 w-4" />,

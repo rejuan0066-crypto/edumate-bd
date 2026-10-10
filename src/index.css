@@ -414,56 +414,70 @@
   }
 
   /* ── Next-Gen Table Styles ── */
-  table:not(.rdp-table):not([class*="rdp"]) {
+  table:not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) {
     @apply w-full text-sm;
     border-collapse: separate;
     border-spacing: 0 8px;
   }
-  table:not(.rdp-table):not([class*="rdp"]) thead th {
+  table:not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) thead th {
     @apply text-left text-[11px] uppercase tracking-widest font-bold py-4 px-6;
     color: hsl(var(--aqua) / 0.85);
     background: transparent;
     border-bottom: 1px solid hsl(var(--glass-border) / 0.25);
     text-shadow: 0 1px 1px hsl(0 0% 100% / 0.4);
   }
-  .dark table:not(.rdp-table):not([class*="rdp"]) thead th { text-shadow: 0 1px 2px hsl(0 0% 0% / 0.5); }
-  table:not(.rdp-table):not([class*="rdp"]) tbody tr {
+  .dark table:not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) thead th { text-shadow: 0 1px 2px hsl(0 0% 0% / 0.5); }
+  table:not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) tbody tr {
     @apply transition-all duration-300;
     border-radius: 20px;
     background-color: hsl(0 0% 100% / 0.5);
     box-shadow: inset 0 0 0 1px hsl(var(--glass-border) / 0.14);
   }
-  .dark table:not(.rdp-table):not([class*="rdp"]) tbody tr {
+  .dark table:not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) tbody tr {
     background-color: hsl(200 30% 12% / 0.4);
   }
-  table:not(.rdp-table):not([class*="rdp"]) tbody tr:nth-child(even) {
+  table:not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) tbody tr:nth-child(even) {
     background-color: hsl(172 40% 96% / 0.45);
   }
-  .dark table:not(.rdp-table):not([class*="rdp"]) tbody tr:nth-child(even) {
+  .dark table:not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) tbody tr:nth-child(even) {
     background-color: hsl(200 30% 14% / 0.35);
   }
-  table:not(.rdp-table):not([class*="rdp"]) tbody tr:hover {
+  table:not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) tbody tr:hover {
     background-color: hsl(var(--muted) / 0.6);
   }
-  table:not(.rdp-table):not([class*="rdp"]) tbody td {
+  table:not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) tbody td {
     @apply py-3 px-4;
     border-bottom: 1px solid hsl(var(--border) / 0.3);
   }
-  table:not(.rdp-table):not([class*="rdp"]) tbody td:first-child {
+  table:not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) tbody td:first-child {
     border-radius: 8px 0 0 8px;
   }
-  table:not(.rdp-table):not([class*="rdp"]) tbody td:last-child {
+  table:not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) tbody td:last-child {
     border-radius: 0 8px 8px 0;
   }
 
   /* ── Calendar / DatePicker DayPicker Reset ── */
   .rdp,
   .rdp-table,
+  .rdp table,
+  table[class*="rdp"],
+  [data-radix-popper-content-wrapper] table {
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
   .rdp-table tbody,
   .rdp-table thead,
-  .rdp-table tr,
-  .rdp-table th,
-  .rdp-table td {
+  .rdp tbody,
+  .rdp thead,
+  [data-radix-popper-content-wrapper] table tbody,
+  [data-radix-popper-content-wrapper] table thead {
     border-collapse: collapse !important;
     border-spacing: 0 !important;
     border: none !important;
@@ -473,11 +487,11 @@
     padding: 0 !important;
     margin: 0 !important;
   }
-  .rdp-table {
-    width: 100% !important;
-  }
+  .rdp-table tr,
+  .rdp tr,
   .rdp-head_row,
-  .rdp-row {
+  .rdp-row,
+  [data-radix-popper-content-wrapper] table tr {
     display: flex !important;
     width: 100% !important;
     justify-content: space-between !important;
@@ -485,6 +499,8 @@
     background: transparent !important;
     border-radius: 0 !important;
     box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
   }
   .rdp-head_cell {
     color: hsl(var(--primary) / 0.7) !important;
