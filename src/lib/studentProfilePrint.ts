@@ -2,7 +2,7 @@
 // institution header, photo, and grouped info sections.
 import type { InstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { CANONICAL_BANGLA_LABELS as L } from './banglaCanonicalLabels';
-import { bnToEn } from './utils';
+import { formatDigits } from './utils';
 
 const esc = (v: any): string => {
   if (v === null || v === undefined || v === '') return '—';
@@ -54,14 +54,14 @@ export const printStudentProfile = ({
       rows: [
         { label: t('Name (BN)', 'নাম (বাংলা)'), value: student.name_bn || student.name },
         { label: t('Name (EN)', 'নাম (ইংরেজি)'), value: student.name_en },
-        { label: t('Registration No', 'রেজিস্ট্রেশন নং'), value: bnToEn(student.registration_no || student.student_id) },
-        { label: t('Roll', 'রোল'), value: bnToEn(student.roll_number) },
-        { label: t('Date of Birth', 'জন্ম তারিখ'), value: student.date_of_birth },
+        { label: t('Registration No', 'রেজিস্ট্রেশন নং'), value: formatDigits(student.registration_no || student.student_id, bn) },
+        { label: t('Roll', 'রোল'), value: formatDigits(student.roll_number, bn) },
+        { label: t('Date of Birth', 'জন্ম তারিখ'), value: formatDigits(student.date_of_birth, bn) },
         { label: t('Gender', 'লিঙ্গ'), value: student.gender },
         { label: t('Religion', 'ধর্ম'), value: student.religion },
         { label: t('Blood Group', 'রক্তের গ্রুপ'), value: student.blood_group },
-        { label: t('Birth Reg', 'জন্ম নিবন্ধন'), value: student.birth_reg_no },
-        { label: t('Phone', 'ফোন'), value: student.phone },
+        { label: t('Birth Reg', 'জন্ম নিবন্ধন'), value: formatDigits(student.birth_reg_no, bn) },
+        { label: t('Phone', 'ফোন'), value: formatDigits(student.phone, bn) },
         { label: t('Email', 'ইমেইল'), value: student.email },
       ],
     },
@@ -69,9 +69,9 @@ export const printStudentProfile = ({
       title: t('Academic Information', 'একাডেমিক তথ্য'),
       rows: [
         { label: t('Class', 'শ্রেণী'), value: className },
-        { label: t('Session', 'সেশন'), value: sessionName },
-        { label: t('Session Year', 'সেশন বছর'), value: student.session_year },
-        { label: t('Admission Date', 'ভর্তির তারিখ'), value: student.admission_date },
+        { label: t('Session', 'সেশন'), value: formatDigits(sessionName, bn) },
+        { label: t('Session Year', 'সেশন বছর'), value: formatDigits(student.session_year, bn) },
+        { label: t('Admission Date', 'ভর্তির তারিখ'), value: formatDigits(student.admission_date, bn) },
         { label: t('Previous Class', 'পূর্বের শ্রেণী'), value: student.previous_class },
         { label: t('Previous Institute', 'পূর্বের প্রতিষ্ঠান'), value: student.previous_institute },
         { label: t('Status', 'অবস্থা'), value: student.status || 'active' },
@@ -82,13 +82,13 @@ export const printStudentProfile = ({
       rows: [
         { label: t("Father's Name", 'পিতার নাম'), value: student.father_name || student.father_name_en },
         { label: t("Father's Occupation", 'পিতার পেশা'), value: student.father_occupation },
-        { label: t("Father's NID", 'পিতার NID'), value: student.father_nid },
-        { label: t("Father's Phone", 'পিতার ফোন'), value: student.father_phone },
+        { label: t("Father's NID", 'পিতার NID'), value: formatDigits(student.father_nid, bn) },
+        { label: t("Father's Phone", 'পিতার ফোন'), value: formatDigits(student.father_phone, bn) },
         { label: t("Mother's Name", 'মাতার নাম'), value: student.mother_name || student.mother_name_en },
         { label: t("Mother's Occupation", 'মাতার পেশা'), value: student.mother_occupation },
-        { label: t("Mother's NID", 'মাতার NID'), value: student.mother_nid },
-        { label: t("Mother's Phone", 'মাতার ফোন'), value: student.mother_phone },
-        { label: t('Guardian Phone', 'অভিভাবক ফোন'), value: student.guardian_phone },
+        { label: t("Mother's NID", 'মাতার NID'), value: formatDigits(student.mother_nid, bn) },
+        { label: t("Mother's Phone", 'মাতার ফোন'), value: formatDigits(student.mother_phone, bn) },
+        { label: t('Guardian Phone', 'অভিভাবক ফোন'), value: formatDigits(student.guardian_phone, bn) },
       ],
     },
     {
@@ -217,13 +217,13 @@ export const printStudentProfile = ({
       </div>
       <div class="summary">
         <div><b>${t('Name', 'নাম')}:</b> ${esc(student.name_bn || student.name || student.name_en)}</div>
-        <div><b>${t('Reg No', 'রেজিস্ট্রেশন')}:</b> ${esc(bnToEn(student.registration_no || student.student_id))}</div>
+        <div><b>${t('Reg No', 'রেজিস্ট্রেশন')}:</b> ${esc(formatDigits(student.registration_no || student.student_id, bn))}</div>
         <div><b>${t('Class', 'শ্রেণী')}:</b> ${esc(className)}</div>
-        <div><b>${t('Roll', 'রোল')}:</b> ${esc(bnToEn(student.roll_number))}</div>
-        <div><b>${t('Session', 'সেশন')}:</b> ${esc(sessionName)}</div>
-        <div><b>${t('DOB', 'জন্ম তারিখ')}:</b> ${esc(student.date_of_birth)}</div>
+        <div><b>${t('Roll', 'রোল')}:</b> ${esc(formatDigits(student.roll_number, bn))}</div>
+        <div><b>${t('Session', 'সেশন')}:</b> ${esc(formatDigits(sessionName, bn))}</div>
+        <div><b>${t('DOB', 'জন্ম তারিখ')}:</b> ${esc(formatDigits(student.date_of_birth, bn))}</div>
         <div><b>${t('Father', 'পিতা')}:</b> ${esc(student.father_name || student.father_name_en)}</div>
-        <div><b>${t('Phone', 'ফোন')}:</b> ${esc(student.guardian_phone || student.phone)}</div>
+        <div><b>${t('Phone', 'ফোন')}:</b> ${esc(formatDigits(student.guardian_phone || student.phone, bn))}</div>
       </div>
     </div>
 

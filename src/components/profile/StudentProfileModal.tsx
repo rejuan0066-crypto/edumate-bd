@@ -17,7 +17,7 @@ import {
 import ProfileInfoItem from './ProfileInfoItem';
 import ProfileSectionCard from './ProfileSectionCard';
 import { toast } from 'sonner';
-import { cn, bnToEn } from '@/lib/utils';
+import { cn, formatDigits } from '@/lib/utils';
 import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { printStudentProfile } from '@/lib/studentProfilePrint';
 
@@ -301,11 +301,11 @@ const StudentProfileModal = ({
             )}
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-white/20 text-white border border-white/20">
-                <Hash className="w-3 h-3 text-white" /> {bnToEn(student.registration_no || student.student_id)}
+                <Hash className="w-3 h-3 text-white" /> {formatDigits(student.registration_no || student.student_id, bn)}
               </span>
               {student.roll_number && (
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-white/15 text-white border border-white/15">
-                  {bn ? 'রোল: ' : 'Roll: '}{bnToEn(student.roll_number)}
+                  {bn ? 'রোল: ' : 'Roll: '}{formatDigits(student.roll_number, bn)}
                 </span>
               )}
               {/* Neon Status Pill */}
@@ -329,15 +329,15 @@ const StudentProfileModal = ({
         <div className="relative grid grid-cols-3 border-t border-white/20">
           <div className="px-4 py-3.5 text-center border-r border-white/20">
             <p className="text-[10px] font-bold uppercase tracking-wider text-white/70">{bn ? 'উপস্থিতি' : 'Attendance'}</p>
-            <p className="text-xl font-black text-white">{attendanceStats.percentage}%</p>
+            <p className="text-xl font-black text-white">{formatDigits(attendanceStats.percentage, bn)}%</p>
           </div>
           <div className="px-4 py-3.5 text-center border-r border-white/20">
             <p className="text-[10px] font-bold uppercase tracking-wider text-white/70">{bn ? 'পরিশোধিত' : 'Paid'}</p>
-            <p className="text-xl font-black text-white">৳{totalPaid.toLocaleString()}</p>
+            <p className="text-xl font-black text-white">৳{formatDigits(totalPaid.toLocaleString(), bn)}</p>
           </div>
           <div className="px-4 py-3.5 text-center">
             <p className="text-[10px] font-bold uppercase tracking-wider text-red-300">{bn ? 'বকেয়া' : 'Due'}</p>
-            <p className="text-xl font-black text-red-400">৳{totalDue.toLocaleString()}</p>
+            <p className="text-xl font-black text-red-400">৳{formatDigits(totalDue.toLocaleString(), bn)}</p>
           </div>
         </div>
       </div>
@@ -365,36 +365,36 @@ const StudentProfileModal = ({
       {activeTab === 'profile' && (
         <div className="space-y-4">
           <ProfileSectionCard title={bn ? 'মৌলিক তথ্য' : 'Basic Info'} icon={User}>
-            <ProfileInfoItem icon={Fingerprint} label={bn ? 'রেজিস্ট্রেশন নং' : 'Reg No'} value={bnToEn(student.registration_no || student.student_id)} />
-            <ProfileInfoItem icon={Calendar} label={bn ? 'জন্ম তারিখ' : 'Date of Birth'} value={student.date_of_birth} />
+            <ProfileInfoItem icon={Fingerprint} label={bn ? 'রেজিস্ট্রেশন নং' : 'Reg No'} value={formatDigits(student.registration_no || student.student_id, bn)} />
+            <ProfileInfoItem icon={Calendar} label={bn ? 'জন্ম তারিখ' : 'Date of Birth'} value={student.date_of_birth ? formatDigits(student.date_of_birth, bn) : undefined} />
             <ProfileInfoItem icon={User} label={bn ? 'লিঙ্গ' : 'Gender'} value={translateGender(student.gender)} />
             <ProfileInfoItem icon={Heart} label={bn ? 'ধর্ম' : 'Religion'} value={translateReligion(student.religion)} />
-            <ProfileInfoItem icon={CreditCard} label={bn ? 'জন্ম নিবন্ধন' : 'Birth Reg'} value={student.birth_reg_no} />
+            <ProfileInfoItem icon={CreditCard} label={bn ? 'জন্ম নিবন্ধন' : 'Birth Reg'} value={student.birth_reg_no ? formatDigits(student.birth_reg_no, bn) : undefined} />
             <ProfileInfoItem icon={Mail} label={bn ? 'ইমেইল' : 'Email'} value={student.email} />
-            <ProfileInfoItem icon={Phone} label={bn ? 'ফোন' : 'Phone'} value={student.phone} />
-            <ProfileInfoItem icon={Phone} label={bn ? 'অভিভাবক ফোন' : 'Guardian Phone'} value={student.guardian_phone} />
+            <ProfileInfoItem icon={Phone} label={bn ? 'ফোন' : 'Phone'} value={student.phone ? formatDigits(student.phone, bn) : undefined} />
+            <ProfileInfoItem icon={Phone} label={bn ? 'অভিভাবক ফোন' : 'Guardian Phone'} value={student.guardian_phone ? formatDigits(student.guardian_phone, bn) : undefined} />
           </ProfileSectionCard>
 
           <ProfileSectionCard title={bn ? 'অভিভাবক তথ্য' : 'Parents Info'} icon={Users}>
             <ProfileInfoItem icon={User} label={bn ? 'পিতা (বাংলা)' : 'Father (BN)'} value={student.father_name} />
             <ProfileInfoItem icon={User} label={bn ? 'পিতা (ইংরেজি)' : 'Father (EN)'} value={student.father_name_en} />
             <ProfileInfoItem icon={ClipboardList} label={bn ? 'পিতার পেশা' : 'Father Occupation'} value={student.father_occupation} />
-            <ProfileInfoItem icon={CreditCard} label={bn ? 'পিতার NID' : 'Father NID'} value={student.father_nid} />
-            <ProfileInfoItem icon={Phone} label={bn ? 'পিতার ফোন' : 'Father Phone'} value={student.father_phone} />
+            <ProfileInfoItem icon={CreditCard} label={bn ? 'পিতার NID' : 'Father NID'} value={student.father_nid ? formatDigits(student.father_nid, bn) : undefined} />
+            <ProfileInfoItem icon={Phone} label={bn ? 'পিতার ফোন' : 'Father Phone'} value={student.father_phone ? formatDigits(student.father_phone, bn) : undefined} />
             <div className="col-span-full border-t border-border/15 my-1" />
             <ProfileInfoItem icon={User} label={bn ? 'মাতা (বাংলা)' : 'Mother (BN)'} value={student.mother_name} />
             <ProfileInfoItem icon={User} label={bn ? 'মাতা (ইংরেজি)' : 'Mother (EN)'} value={student.mother_name_en} />
             <ProfileInfoItem icon={ClipboardList} label={bn ? 'মাতার পেশা' : 'Mother Occupation'} value={student.mother_occupation} />
-            <ProfileInfoItem icon={CreditCard} label={bn ? 'মাতার NID' : 'Mother NID'} value={student.mother_nid} />
-            <ProfileInfoItem icon={Phone} label={bn ? 'মাতার ফোন' : 'Mother Phone'} value={student.mother_phone} />
+            <ProfileInfoItem icon={CreditCard} label={bn ? 'মাতার NID' : 'Mother NID'} value={student.mother_nid ? formatDigits(student.mother_nid, bn) : undefined} />
+            <ProfileInfoItem icon={Phone} label={bn ? 'মাতার ফোন' : 'Mother Phone'} value={student.mother_phone ? formatDigits(student.mother_phone, bn) : undefined} />
           </ProfileSectionCard>
 
           <ProfileSectionCard title={bn ? 'একাডেমিক তথ্য' : 'Academic Info'} icon={GraduationCap}>
             <ProfileInfoItem icon={Building2} label={bn ? 'বিভাগ' : 'Division'} value={bn ? student.divisions?.name_bn : student.divisions?.name} />
             <ProfileInfoItem icon={School} label={bn ? 'শ্রেণী' : 'Class'} value={getClassName(student.class_id)} />
             <ProfileInfoItem icon={CalendarCheck} label={bn ? 'সেশন' : 'Session'} value={getSessionName(student.session_id, student.admission_session)} />
-            <ProfileInfoItem icon={Calendar} label={bn ? 'সেশন বছর' : 'Session Year'} value={student.session_year} />
-            <ProfileInfoItem icon={Calendar} label={bn ? 'ভর্তির তারিখ' : 'Admission Date'} value={student.admission_date} />
+            <ProfileInfoItem icon={Calendar} label={bn ? 'সেশন বছর' : 'Session Year'} value={student.session_year ? formatDigits(student.session_year, bn) : undefined} />
+            <ProfileInfoItem icon={Calendar} label={bn ? 'ভর্তির তারিখ' : 'Admission Date'} value={student.admission_date ? formatDigits(student.admission_date, bn) : undefined} />
             <ProfileInfoItem icon={School} label={bn ? 'পূর্বের শ্রেণী' : 'Previous Class'} value={student.previous_class} />
             <ProfileInfoItem icon={School} label={bn ? 'পূর্বের প্রতিষ্ঠান' : 'Previous Institute'} value={student.previous_institute} fullWidth />
           </ProfileSectionCard>
@@ -421,13 +421,13 @@ const StudentProfileModal = ({
               <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-xl" />
               <Banknote className="w-5 h-5 text-emerald-600 mx-auto mb-1.5" />
               <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700/60">{bn ? 'মোট পরিশোধিত' : 'Total Paid'}</p>
-              <p className="text-2xl font-black text-emerald-600 mt-1">৳{totalPaid.toLocaleString()}</p>
+              <p className="text-2xl font-black text-emerald-600 mt-1">৳{formatDigits(totalPaid.toLocaleString(), bn)}</p>
             </div>
             <div className="relative overflow-hidden rounded-[18px] bg-gradient-to-br from-rose-500/15 via-rose-500/8 to-orange-500/5 border border-rose-500/15 p-4 text-center">
               <div className="absolute top-0 right-0 w-20 h-20 bg-rose-500/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-xl" />
               <CreditCard className="w-5 h-5 text-rose-600 mx-auto mb-1.5" />
               <p className="text-[10px] font-bold uppercase tracking-widest text-rose-700/60">{bn ? 'মোট বকেয়া' : 'Total Due'}</p>
-              <p className="text-2xl font-black text-rose-600 mt-1">৳{totalDue.toLocaleString()}</p>
+              <p className="text-2xl font-black text-rose-600 mt-1">৳{formatDigits(totalDue.toLocaleString(), bn)}</p>
             </div>
           </div>
 

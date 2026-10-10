@@ -20,7 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import AdmissionForm from '@/components/admission/AdmissionForm';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
-import { bnToEn } from '@/lib/utils';
+import { bnToEn, enToBn, formatDigits } from '@/lib/utils';
 
 const AdminStudents = () => {
   const { t, language } = useLanguage();
@@ -254,11 +254,19 @@ const AdminStudents = () => {
     // Text search
     if (search) {
       const q = search.toLowerCase();
+      const qEn = bnToEn(q);
+      const qBn = enToBn(q);
       return (
         String(s.name_bn || '').toLowerCase().includes(q) ||
         String(s.student_id || '').toLowerCase().includes(q) ||
+        String(s.student_id || '').toLowerCase().includes(qEn) ||
+        String(s.student_id || '').toLowerCase().includes(qBn) ||
         String(s.registration_no || '').toLowerCase().includes(q) ||
+        String(s.registration_no || '').toLowerCase().includes(qEn) ||
+        String(s.registration_no || '').toLowerCase().includes(qBn) ||
         String(s.roll_number || '').toLowerCase().includes(q) ||
+        String(s.roll_number || '').toLowerCase().includes(qEn) ||
+        String(s.roll_number || '').toLowerCase().includes(qBn) ||
         String(s.name_en || '').toLowerCase().includes(q)
       );
     }
@@ -344,30 +352,35 @@ const AdminStudents = () => {
   };
 
   const getSessionName = (sessionId: string | null, fallback: any) => {
+    let name = '';
     if (sessionId) {
       const session = academicSessions.find((s: any) => s.id === sessionId);
-      if (session) return bn ? (session.name_bn || session.name) : session.name;
+      if (session) name = bn ? (session.name_bn || session.name) : session.name;
     }
-    if (fallback != null && fallback !== '') {
+    if (!name && fallback != null && fallback !== '') {
       const fbStr = String(fallback);
       const session = academicSessions.find((s: any) => s.name === fbStr || s.name_bn === fbStr || s.id === fbStr);
-      if (session) return bn ? (session.name_bn || session.name) : session.name;
-      const cleanFb = fbStr.replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
-      const yearDigits = cleanFb.match(/\d{4}/)?.[0];
-      if (yearDigits) {
-        const matchYear = academicSessions.find((s: any) => (s.name || '').includes(yearDigits) || (s.name_bn || '').includes(yearDigits));
-        if (matchYear) return bn ? (matchYear.name_bn || matchYear.name) : matchYear.name;
+      if (session) {
+        name = bn ? (session.name_bn || session.name) : session.name;
+      } else {
+        const cleanFb = fbStr.replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+        const yearDigits = cleanFb.match(/\d{4}/)?.[0];
+        if (yearDigits) {
+          const matchYear = academicSessions.find((s: any) => (s.name || '').includes(yearDigits) || (s.name_bn || '').includes(yearDigits));
+          if (matchYear) name = bn ? (matchYear.name_bn || matchYear.name) : matchYear.name;
+        }
+        if (!name) name = fbStr;
       }
-      return fbStr;
     }
-    return '-';
+    if (!name) return '-';
+    return formatDigits(name, bn);
   };
 
   const studentListContent = (
     <div className="space-y-6">
         {/* Action bar */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <p className="text-sm text-muted-foreground">{bn ? `মোট ${filtered.length} জন ছাত্র` : `Total ${filtered.length} students`}</p>
+          <p className="text-sm text-muted-foreground">{bn ? `মোট ${formatDigits(filtered.length, true)} জন ছাত্র` : `Total ${filtered.length} students`}</p>
           {canAddItem && (
             <Button onClick={() => setShowAdd(true)} className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 rounded-full px-6 h-11 text-sm font-semibold transition-all duration-300">
               <Plus className="w-4 h-4" /> {bn ? 'নতুন ভর্তি' : 'New Admission'}
@@ -465,7 +478,7 @@ const AdminStudents = () => {
                 <tbody>
                   {sortedFiltered.map((s: any, idx: number) => (
                     <tr key={s.id} className="group border-b border-border/15 last:border-b-0 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/10 transition-all duration-200 hover:scale-[1.005] origin-center">
-                      <td className="px-5 py-4 text-sm font-mono font-bold text-primary/80">{getClassSerial(s)}</td>
+                      <td className="px-5 py-4 text-sm font-mono font-bold text-primary/80">{getClassSerial(s) !== '-' ? formatDigits(getClassSerial(s), bn) : '-'}</td>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3.5">
                           {s.photo_url ? (
@@ -484,8 +497,8 @@ const AdminStudents = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-4 text-sm font-mono text-muted-foreground">{bnToEn(s.registration_no || s.student_id)}</td>
-                      <td className="px-5 py-4 text-sm font-mono font-medium text-foreground/80">{s.roll_number ? bnToEn(s.roll_number) : <span className="text-muted-foreground/30">—</span>}</td>
+                      <td className="px-5 py-4 text-sm font-mono text-muted-foreground">{formatDigits(s.registration_no || s.student_id, bn)}</td>
+                      <td className="px-5 py-4 text-sm font-mono font-medium text-foreground/80">{s.roll_number ? formatDigits(s.roll_number, bn) : <span className="text-muted-foreground/30">—</span>}</td>
                       <td className="px-5 py-4 text-sm text-muted-foreground">{bn ? s.divisions?.name_bn : s.divisions?.name || '-'}</td>
                       <td className="px-5 py-4 text-sm text-muted-foreground">{getSessionName(s.session_id, s.admission_session || s.session_year)}</td>
                       <td className="px-5 py-4 text-sm text-muted-foreground">{getClassName(getEffectiveClassId(s))}</td>
