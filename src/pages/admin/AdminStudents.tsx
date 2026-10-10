@@ -11,7 +11,7 @@ import { printStudentProfile } from '@/lib/studentProfilePrint';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { useConfirm } from '@/contexts/ConfirmContext';
