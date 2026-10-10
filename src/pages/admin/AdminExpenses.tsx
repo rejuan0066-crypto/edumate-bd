@@ -344,7 +344,7 @@ const AdminExpenses = () => {
 
       try {
         let query = supabase.from('expenses')
-          .select('*, expense_institutions(name, name_bn), expense_categories(name, name_bn)')
+          .select('*, expense_institutions(*), expense_categories(*)')
           .order('expense_date', { ascending: false });
 
         if (isoPrefix) {
@@ -361,7 +361,7 @@ const AdminExpenses = () => {
 
       try {
         const { data, error } = await supabase.from('expenses')
-          .select('*, expense_institutions(name, name_bn), expense_categories(name, name_bn)')
+          .select('*, expense_institutions(*), expense_categories(*)')
           .eq('month_year', selectedMonthYear)
           .order('expense_date', { ascending: false });
 
@@ -400,7 +400,7 @@ const AdminExpenses = () => {
     queryFn: async () => {
       try {
         const { data, error } = await supabase.from('expenses')
-          .select('id, month_year, expense_date, amount, institution_id, category_id, description, quantity, has_receipt, receipt_url, expense_institutions(name, name_bn), expense_categories(name, name_bn)')
+          .select('id, month_year, expense_date, amount, institution_id, category_id, description, quantity, has_receipt, receipt_url, expense_institutions(*), expense_categories(*)')
           .order('expense_date', { ascending: false });
         if (error) {
           console.error('allExpenses query error:', error);
