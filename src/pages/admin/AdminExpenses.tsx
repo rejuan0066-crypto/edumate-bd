@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Plus, Trash2, Edit2, DollarSign, TrendingDown, TrendingUp, Wallet, Printer, FolderPlus, TagIcon, Upload, Download, Eye, ScanLine, Building2, Package, AlertTriangle, FileText, FileBarChart, CheckCircle2, Clock, Coins, Check } from 'lucide-react';
 import ExpenseVoucherPrint from '@/components/expenses/ExpenseVoucherPrint';
@@ -261,18 +262,35 @@ const AdminExpenses = () => {
   const { data: expenseInstitutions = [] } = useQuery({
     queryKey: ['expense_institutions'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('expense_institutions').select('*').order('name');
-      if (error) throw error;
-      return data as any[];
+      try {
+        const { data, error } = await supabase.from('expense_institutions').select('*').order('name');
+        if (error) {
+          console.error('expenseInstitutions query error:', error);
+          return [];
+        }
+        return data || [];
+      } catch (err) {
+        console.error('expenseInstitutions exception:', err);
+        return [];
+      }
     }
   });
 
   const { data: categories = [] } = useQuery({
     queryKey: ['expense_categories'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('expense_categories').select('*, expense_institutions(name, name_bn)').order('name');
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabase.from('expense_categories').select('*, expense_institutions(name, name_bn)').order('name');
+        if (error) {
+          console.error('Categories query error:', error);
+          const { data: fallbackData } = await supabase.from('expense_categories').select('*').order('name');
+          return fallbackData || [];
+        }
+        return data || [];
+      } catch (err) {
+        console.error('Categories exception:', err);
+        return [];
+      }
     }
   });
 
@@ -283,56 +301,99 @@ const AdminExpenses = () => {
       const mIdx = MONTHS.indexOf(parts[0]) + 1;
       const isoPrefix = parts[1] && mIdx > 0 ? `${parts[1]}-${String(mIdx).padStart(2, '0')}` : null;
 
-      let query = supabase.from('expenses')
-        .select('*, expense_institutions(name, name_bn), expense_categories(name, name_bn)')
-        .order('expense_date', { ascending: false });
+      try {
+        let query = supabase.from('expenses')
+          .select('*, expense_institutions(name, name_bn), expense_categories(name, name_bn)')
+          .order('expense_date', { ascending: false });
 
-      if (typeof (query as any).is === 'function') {
-        query = (query as any).is('deleted_at', null);
-      }
-      if (isoPrefix && typeof (query as any).or === 'function') {
-        query = (query as any).or(`month_year.eq.${selectedMonthYear},and(expense_date.gte.${isoPrefix}-01,expense_date.lte.${isoPrefix}-31)`);
-      } else {
-        query = query.eq('month_year', selectedMonthYear);
+        if (isoPrefix) {
+          query = query.or(`month_year.eq.${selectedMonthYear},and(expense_date.gte.${isoPrefix}-01,expense_date.lte.${isoPrefix}-31)`);
+        } else {
+          query = query.eq('month_year', selectedMonthYear);
+        }
+
+        const { data, error } = await query;
+        if (!error && data) return data;
+      } catch (err) {
+        console.warn('Advanced expense query error, attempting simple query:', err);
       }
 
-      const { data, error } = await query;
-      if (error) throw error;
-      return data || [];
+      try {
+        const { data, error } = await supabase.from('expenses')
+          .select('*, expense_institutions(name, name_bn), expense_categories(name, name_bn)')
+          .eq('month_year', selectedMonthYear)
+          .order('expense_date', { ascending: false });
+
+        if (error) {
+          console.error('Expenses fallback query error:', error);
+          return [];
+        }
+        return data || [];
+      } catch (err) {
+        console.error('Expenses fallback query exception:', err);
+        return [];
+      }
     }
   });
 
   const { data: deposits = [] } = useQuery({
     queryKey: ['deposits', selectedMonthYear],
     queryFn: async () => {
-      const { data, error } = await supabase.from('deposits')
-        .select('*').eq('month_year', selectedMonthYear).order('deposit_date', { ascending: false });
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabase.from('deposits')
+          .select('*').eq('month_year', selectedMonthYear).order('deposit_date', { ascending: false });
+        if (error) {
+          console.error('deposits query error:', error);
+          return [];
+        }
+        return data || [];
+      } catch (err) {
+        console.error('deposits exception:', err);
+        return [];
+      }
     }
   });
 
   const { data: allExpenses = [] } = useQuery({
     queryKey: ['all_expenses'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('expenses')
-        .select('id, month_year, expense_date, amount, institution_id, category_id, description, quantity, has_receipt, receipt_url, expense_institutions(name, name_bn), expense_categories(name, name_bn)')
-        .order('expense_date', { ascending: false });
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabase.from('expenses')
+          .select('id, month_year, expense_date, amount, institution_id, category_id, description, quantity, has_receipt, receipt_url, expense_institutions(name, name_bn), expense_categories(name, name_bn)')
+          .order('expense_date', { ascending: false });
+        if (error) {
+          console.error('allExpenses query error:', error);
+          const { data: fallbackData } = await supabase.from('expenses')
+            .select('id, month_year, expense_date, amount, institution_id, category_id, description, quantity, has_receipt, receipt_url')
+            .order('expense_date', { ascending: false });
+          return fallbackData || [];
+        }
+        return data || [];
+      } catch (err) {
+        console.error('allExpenses exception:', err);
+        return [];
+      }
     }
   });
 
   const { data: allDeposits = [] } = useQuery({
     queryKey: ['all_deposits'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('deposits').select('month_year, amount');
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabase.from('deposits').select('month_year, amount');
+        if (error) {
+          console.error('allDeposits error:', error);
+          return [];
+        }
+        return data || [];
+      } catch (err) {
+        console.error('allDeposits exception:', err);
+        return [];
+      }
     }
   });
 
-  const allCategories = categories;
+  const allCategories = categories || [];
 
   const allAvailableUnits = useMemo(() => {
     const unitsSet = new Set<string>(DEFAULT_QUANTITY_UNITS);
@@ -452,9 +513,17 @@ const AdminExpenses = () => {
   const { data: institutions = [] } = useQuery({
     queryKey: ['institutions'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('institutions').select('*').order('created_at');
-      if (error) throw error;
-      return data as any[];
+      try {
+        const { data, error } = await supabase.from('institutions').select('*').order('created_at');
+        if (error) {
+          console.error('institutions query error:', error);
+          return [];
+        }
+        return (data || []) as any[];
+      } catch (err) {
+        console.error('institutions exception:', err);
+        return [];
+      }
     }
   });
 
@@ -492,14 +561,17 @@ const AdminExpenses = () => {
 
   // Unified institutions list: expense_institutions is the primary entity for expenses
   const allInstitutions = useMemo(() => {
-    if (expenseInstitutions && expenseInstitutions.length > 0) {
-      return expenseInstitutions.map((ei: any) => {
-        const instMatch = institutions.find((i: any) => i.id === ei.id || (i.name && (ei.name_bn || ei.name) && i.name.trim() === (ei.name_bn || ei.name).trim()));
+    const safeExpInsts = expenseInstitutions || [];
+    const safeInsts = institutions || [];
+
+    if (safeExpInsts.length > 0) {
+      return safeExpInsts.map((ei: any) => {
+        const instMatch = safeInsts.find((i: any) => i.id === ei.id || (i.name && (ei.name_bn || ei.name) && i.name.trim() === (ei.name_bn || ei.name).trim()));
         return {
           id: ei.id,
-          name: ei.name || ei.name_bn,
-          name_bn: ei.name_bn || ei.name,
-          name_en: ei.name || ei.name_bn,
+          name: ei.name || ei.name_bn || '',
+          name_bn: ei.name_bn || ei.name || '',
+          name_en: ei.name || ei.name_bn || '',
           address: (ei as any).address || instMatch?.address || '',
           phone: (ei as any).phone || instMatch?.phone || '',
           email: (ei as any).email || instMatch?.email || '',
@@ -510,11 +582,11 @@ const AdminExpenses = () => {
         };
       });
     }
-    return institutions.map((i: any) => ({
+    return safeInsts.map((i: any) => ({
       id: i.id,
-      name: i.name_en || i.name,
-      name_bn: i.name,
-      name_en: i.name_en || i.name,
+      name: i.name_en || i.name || '',
+      name_bn: i.name || '',
+      name_en: i.name_en || i.name || '',
       address: i.address || '',
       phone: i.phone || '',
       email: i.email || '',
@@ -545,7 +617,7 @@ const AdminExpenses = () => {
     if (!mIdx || !parts[1]) return;
     const isoPrefix = `${parts[1]}-${String(mIdx).padStart(2, '0')}`;
 
-    const mismatched = allExpenses.filter((e: any) =>
+    const mismatched = (allExpenses || []).filter((e: any) =>
       e.expense_date &&
       typeof e.expense_date === 'string' &&
       e.expense_date.startsWith(isoPrefix) &&
@@ -569,7 +641,7 @@ const AdminExpenses = () => {
     }
   }, [selectedMonthYear, allExpenses]);
 
-  const selectedInstitution = allInstitutions.find((i: any) => i.id === (selectedInstitutionId || selectedInstId)) || allInstitutions[0] || institutions[0];
+  const selectedInstitution = (allInstitutions || []).find((i: any) => i.id === (selectedInstitutionId || selectedInstId)) || allInstitutions[0] || institutions[0];
   const instName = getInstName(selectedInstitution, true);
   const instNameEn = getInstName(selectedInstitution, false);
   const instAddress = selectedInstitution?.address || '';
@@ -579,9 +651,9 @@ const AdminExpenses = () => {
   const instLogo = selectedInstitution?.logo_url || '';
 
   // Stats
-  const paidExpenses = useMemo(() => expenses.filter((e: any) => !isUnpaidDue(e.description)), [expenses]);
+  const paidExpenses = useMemo(() => (expenses || []).filter((e: any) => !isUnpaidDue(e.description)), [expenses]);
   const monthlyTotalExpense = useMemo(() => paidExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0), [paidExpenses]);
-  const monthlyTotalDeposit = useMemo(() => deposits.reduce((s: number, d: any) => s + Number(d.amount || 0), 0), [deposits]);
+  const monthlyTotalDeposit = useMemo(() => (deposits || []).reduce((s: number, d: any) => s + Number(d.amount || 0), 0), [deposits]);
   const previousArrears = Number(summaryData?.previous_arrears || 0);
   const rawCash = monthlyTotalDeposit - monthlyTotalExpense - previousArrears;
   const monthlyCash = rawCash >= 0 ? rawCash : 0;
@@ -602,9 +674,9 @@ const AdminExpenses = () => {
 
   // Previous month statistics for opening balance / arrears adjustment
   const { previousMonthCash, previousMonthDue } = useMemo(() => {
-    const prevPaid = allExpenses.filter((e: any) => e.month_year === prevMonthKey && !isUnpaidDue(e.description));
+    const prevPaid = (allExpenses || []).filter((e: any) => e.month_year === prevMonthKey && !isUnpaidDue(e.description));
     const prevExpSum = prevPaid.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-    const prevDeps = allDeposits.filter((d: any) => d.month_year === prevMonthKey);
+    const prevDeps = (allDeposits || []).filter((d: any) => d.month_year === prevMonthKey);
     const prevDepSum = prevDeps.reduce((s: number, d: any) => s + Number(d.amount || 0), 0);
     const rawPrevCash = prevDepSum - prevExpSum;
 
@@ -637,8 +709,8 @@ const AdminExpenses = () => {
     return true; // monthly mode - show all for "total" row
   };
 
-  const filteredExpenses = useMemo(() => allExpenses.filter((e: any) => matchesFilter(e.month_year) && !isUnpaidDue(e.description)), [allExpenses, filterMode, selectedYear, selectedSessionId, academicSessions]);
-  const filteredDeposits = useMemo(() => allDeposits.filter((d: any) => matchesFilter(d.month_year)), [allDeposits, filterMode, selectedYear, selectedSessionId, academicSessions]);
+  const filteredExpenses = useMemo(() => (allExpenses || []).filter((e: any) => matchesFilter(e.month_year) && !isUnpaidDue(e.description)), [allExpenses, filterMode, selectedYear, selectedSessionId, academicSessions]);
+  const filteredDeposits = useMemo(() => (allDeposits || []).filter((d: any) => matchesFilter(d.month_year)), [allDeposits, filterMode, selectedYear, selectedSessionId, academicSessions]);
 
   const totalExpenseAll = useMemo(() => filteredExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0), [filteredExpenses]);
   const totalDepositAll = useMemo(() => filteredDeposits.reduce((s: number, d: any) => s + Number(d.amount || 0), 0), [filteredDeposits]);
@@ -655,7 +727,7 @@ const AdminExpenses = () => {
   // Institution-wise breakdown
   const institutionBreakdown = useMemo(() => {
     const map: Record<string, { name: string, name_bn: string, monthly: number, total: number }> = {};
-    filteredExpenses.forEach((e: any) => {
+    (filteredExpenses || []).forEach((e: any) => {
       if (!e.institution_id) return;
       if (!map[e.institution_id]) {
         map[e.institution_id] = { name: e.expense_institutions?.name || '', name_bn: e.expense_institutions?.name_bn || '', monthly: 0, total: 0 };
@@ -669,7 +741,7 @@ const AdminExpenses = () => {
   // Category-wise breakdown
   const categoryBreakdown = useMemo(() => {
     const map: Record<string, { name: string, name_bn: string, monthly: number, total: number }> = {};
-    filteredExpenses.forEach((e: any) => {
+    (filteredExpenses || []).forEach((e: any) => {
       if (!e.category_id) return;
       if (!map[e.category_id]) {
         map[e.category_id] = { name: e.expense_categories?.name || '', name_bn: e.expense_categories?.name_bn || '', monthly: 0, total: 0 };
@@ -678,7 +750,7 @@ const AdminExpenses = () => {
       if (e.month_year === selectedMonthYear) map[e.category_id].monthly += Number(e.amount || 0);
     });
     return Object.values(map);
-  }, [allExpenses, selectedMonthYear]);
+  }, [filteredExpenses, selectedMonthYear]);
 
   // Mutations
   const addExpInst = useMutation({
@@ -1377,21 +1449,22 @@ const AdminExpenses = () => {
   // If categories specifically match the institution, return those + any global categories;
   // If no category is specifically bound to the institution, return all active categories so the dropdown is NEVER empty!
   const getCategoriesForInst = useCallback((instId?: string | null) => {
-    if (!instId || instId === 'all') return categories;
-    const matched = categories.filter((c: any) => c.institution_id === instId);
+    const safeCats = categories || [];
+    if (!instId || instId === 'all') return safeCats;
+    const matched = safeCats.filter((c: any) => c.institution_id === instId);
     if (matched.length > 0) {
-      const globals = categories.filter((c: any) => !c.institution_id);
+      const globals = safeCats.filter((c: any) => !c.institution_id);
       return [...matched, ...globals];
     }
-    return categories;
+    return safeCats;
   }, [categories]);
 
   const filteredCategories = useMemo(() => {
     return getCategoriesForInst(expenseForm.institution_id);
   }, [expenseForm.institution_id, getCategoriesForInst]);
 
-  const selectedExpenseProject = allInstitutions.find((p: any) => p.id === expenseForm.institution_id);
-  const selectedExpenseCategory = categories.find((c: any) => c.id === expenseForm.category_id);
+  const selectedExpenseProject = (allInstitutions || []).find((p: any) => p.id === expenseForm.institution_id);
+  const selectedExpenseCategory = (categories || []).find((c: any) => c.id === expenseForm.category_id);
 
   // Load summary defaults
   useEffect(() => {
@@ -1420,20 +1493,24 @@ const AdminExpenses = () => {
     }
   };
 
-  const selectedInst = allInstitutions.find((p: any) => p.id === selectedInstId) || allInstitutions[0];
+  const selectedInst = (allInstitutions || []).find((p: any) => p.id === selectedInstId) || allInstitutions[0];
   const instCategories = useMemo(() => {
     return getCategoriesForInst(selectedInstId);
   }, [getCategoriesForInst, selectedInstId]);
 
   // Institution monthly cash and dues
-  const getInstMonthly = (pid: string) => expenses.filter((e: any) => e.institution_id === pid && !isUnpaidDue(e.description)).reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-  const getInstDueTotal = (pid: string) => allExpenses.filter((e: any) => e.institution_id === pid && isUnpaidDue(e.description)).reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-  const getInstTotal = (pid: string) => allExpenses.filter((e: any) => e.institution_id === pid && !isUnpaidDue(e.description)).reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-  const getCategoryMonthly = (cid: string) => expenses.filter((e: any) => e.category_id === cid && !isUnpaidDue(e.description)).reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-  const getCategoryTotal = (cid: string) => allExpenses.filter((e: any) => e.category_id === cid && !isUnpaidDue(e.description)).reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+  const getInstMonthly = (pid: string) => (expenses || []).filter((e: any) => e.institution_id === pid && !isUnpaidDue(e.description)).reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+  const getInstDueTotal = (pid: string) => (allExpenses || []).filter((e: any) => e.institution_id === pid && isUnpaidDue(e.description)).reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+  const getInstTotal = (pid: string) => (allExpenses || []).filter((e: any) => e.institution_id === pid && !isUnpaidDue(e.description)).reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+  const getCategoryMonthly = (cid: string) => (expenses || []).filter((e: any) => e.category_id === cid && !isUnpaidDue(e.description)).reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+  const getCategoryTotal = (cid: string) => (allExpenses || []).filter((e: any) => e.category_id === cid && !isUnpaidDue(e.description)).reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
 
   const handlePrint = () => window.print();
-  const formatNum = (n: number) => n.toLocaleString(bn ? 'bn-BD' : 'en-BD');
+  const formatNum = (n: any) => {
+    const num = Number(n ?? 0);
+    if (isNaN(num)) return bn ? '০' : '0';
+    return num.toLocaleString(bn ? 'bn-BD' : 'en-BD');
+  };
 
   // Annual Financial Summary PDF (Income / Expense / Net Balance per month)
   const handleAnnualFinancialPDF = () => {
@@ -2254,19 +2331,19 @@ const AdminExpenses = () => {
                   const isAll = selectedInstId === 'all';
                   const inst = isAll
                     ? null
-                    : (allInstitutions.find((p: any) => p.id === selectedInstId) || allInstitutions[0]);
+                    : ((allInstitutions || []).find((p: any) => p.id === selectedInstId) || allInstitutions[0]);
 
                   const instPaidAll = isAll
-                    ? expenses.filter((e: any) => !isUnpaidDue(e.description))
-                    : expenses.filter((e: any) => e.institution_id === inst?.id && !isUnpaidDue(e.description));
+                    ? (expenses || []).filter((e: any) => !isUnpaidDue(e.description))
+                    : (expenses || []).filter((e: any) => e.institution_id === inst?.id && !isUnpaidDue(e.description));
 
                   const instCats = isAll
-                    ? categories
+                    ? (categories || [])
                     : getCategoriesForInst(inst?.id);
 
                   const instDues = isAll
-                    ? allExpenses.filter((e: any) => isUnpaidDue(e.description))
-                    : allExpenses.filter((e: any) => e.institution_id === inst?.id && isUnpaidDue(e.description));
+                    ? (allExpenses || []).filter((e: any) => isUnpaidDue(e.description))
+                    : (allExpenses || []).filter((e: any) => e.institution_id === inst?.id && isUnpaidDue(e.description));
 
                   const instPaidSum = instPaidAll.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
                   const instDueSum = instDues.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
@@ -2283,7 +2360,7 @@ const AdminExpenses = () => {
                       (e.expense_date || '').includes(q) ||
                       getMemo(e.description || '').toLowerCase().includes(q) ||
                       getRemarks(e.description || '').toLowerCase().includes(q) ||
-                      String(e.amount).includes(q)
+                      String(e.amount ?? '').includes(q)
                     );
                   }
                   const displayTotal = displayExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
@@ -2300,7 +2377,7 @@ const AdminExpenses = () => {
                       (e.expense_date || '').includes(q) ||
                       getMemo(e.description || '').toLowerCase().includes(q) ||
                       getRemarks(e.description || '').toLowerCase().includes(q) ||
-                      String(e.amount).includes(q)
+                      String(e.amount ?? '').includes(q)
                     );
                   }
                   const displayDuesTotal = displayDues.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
@@ -2535,14 +2612,14 @@ const AdminExpenses = () => {
                                 </tr>
                               ) : (
                                 displayExpenses.map((e: any, idx: number) => {
-                                  const catObj = categories.find((c: any) => c.id === e.category_id);
+                                  const catObj = (categories || []).find((c: any) => c.id === e.category_id);
                                   const catLabel = catObj ? getCatName(catObj, bn) : (e.expense_categories ? getCatName(e.expense_categories, bn) : '-');
                                   const memoStr = getMemo(e.description);
                                   const remarksStr = getRemarks(e.description);
                                   const rawQty = e.quantity ? String(e.quantity) : '১';
                                   const unit = getUnit(e.description, catLabel);
                                   const displayQty = unit ? `${rawQty} ${unit}` : `${rawQty}`;
-                                  const rowInst = allInstitutions.find((i: any) => i.id === e.institution_id);
+                                  const rowInst = (allInstitutions || []).find((i: any) => i.id === e.institution_id);
 
                                   return (
                                     <tr key={e.id} className={`border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50/80 dark:hover:bg-slate-900/40 transition-colors ${idx % 2 === 0 ? 'bg-white dark:bg-card' : 'bg-slate-50/40 dark:bg-slate-900/20'}`}>
@@ -2701,14 +2778,14 @@ const AdminExpenses = () => {
                                   </tr>
                                 ) : (
                                   displayDues.map((due: any, dIdx: number) => {
-                                    const catObj = categories.find((c: any) => c.id === due.category_id);
+                                    const catObj = (categories || []).find((c: any) => c.id === due.category_id);
                                     const catLabel = catObj ? (bn ? catObj.name_bn || catObj.name : catObj.name) : '-';
                                     const rawQty = due.quantity ? String(due.quantity) : '১';
                                     const unit = getUnit(due.description, catLabel);
                                     const displayQty = unit ? `${rawQty} ${unit}` : `${rawQty}`;
                                     const memoStr = getMemo(due.description);
                                     const remarksStr = getRemarks(due.description);
-                                    const rowInst = allInstitutions.find((i: any) => i.id === due.institution_id);
+                                    const rowInst = (allInstitutions || []).find((i: any) => i.id === due.institution_id);
 
                                     return (
                                       <tr key={due.id} className="border-b border-amber-100 dark:border-amber-950/60 hover:bg-amber-50/40 dark:hover:bg-amber-950/20">
@@ -3817,10 +3894,12 @@ const AdminExpenses = () => {
 
         {/* Grand Total */}
         <table className="w-full border-collapse border mb-6 text-sm">
-          <tr className="font-bold bg-muted">
-            <td className="border p-2">{bn ? 'সর্বমোট হিসাব' : 'Grand Total Expense'}</td>
-            <td className="border p-2 text-right">৳{formatNum(monthlyTotalExpense)}</td>
-          </tr>
+          <tbody>
+            <tr className="font-bold bg-muted">
+              <td className="border p-2">{bn ? 'সর্বমোট হিসাব' : 'Grand Total Expense'}</td>
+              <td className="border p-2 text-right">৳{formatNum(monthlyTotalExpense)}</td>
+            </tr>
+          </tbody>
         </table>
 
         {/* Signatures */}
