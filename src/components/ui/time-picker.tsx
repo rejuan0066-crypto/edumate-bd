@@ -38,7 +38,12 @@ const TimePicker = ({
   const isMobile = useIsMobile();
 
   const touchStartY = React.useRef<number | null>(null);
-  const pointerStartY = React.useRef<number | null>(null);
+  const lastTouchTime = React.useRef(0);
+  const lastHourWheel = React.useRef(0);
+  const lastMinuteWheel = React.useRef(0);
+
+  const [hourEl, setHourEl] = React.useState<HTMLDivElement | null>(null);
+  const [minuteEl, setMinuteEl] = React.useState<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
     if (value) {
@@ -85,32 +90,37 @@ const TimePicker = ({
     if (p === 'PM' && h24 < 12) setH24(h24 + 12);
   };
 
-  const [hourEl, setHourEl] = React.useState<HTMLDivElement | null>(null);
-  const [minuteEl, setMinuteEl] = React.useState<HTMLDivElement | null>(null);
-
+  // Dedicated throttled non-passive wheel listener on Hour box
   React.useEffect(() => {
     if (!hourEl) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      const now = Date.now();
+      if (now - lastHourWheel.current < 75) return;
+      lastHourWheel.current = now;
       stepHour(e.deltaY < 0 ? 1 : -1);
     };
     hourEl.addEventListener('wheel', onWheel, { passive: false });
     return () => hourEl.removeEventListener('wheel', onWheel);
   }, [hourEl, stepHour]);
 
+  // Dedicated throttled non-passive wheel listener on Minute box
   React.useEffect(() => {
     if (!minuteEl) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      const now = Date.now();
+      if (now - lastMinuteWheel.current < 75) return;
+      lastMinuteWheel.current = now;
       stepMinute(e.deltaY < 0 ? 1 : -1);
     };
     minuteEl.addEventListener('wheel', onWheel, { passive: false });
     return () => minuteEl.removeEventListener('wheel', onWheel);
   }, [minuteEl, stepMinute]);
 
-  // Touch handlers for mobile swipe
+  // Clean touch swipe handlers for mobile
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
   };
@@ -119,7 +129,9 @@ const TimePicker = ({
     if (touchStartY.current === null) return;
     const currentY = e.touches[0].clientY;
     const diff = touchStartY.current - currentY;
-    if (Math.abs(diff) >= 8) {
+    const now = Date.now();
+    if (Math.abs(diff) >= 14 && now - lastTouchTime.current > 70) {
+      lastTouchTime.current = now;
       const dir = diff > 0 ? 1 : -1;
       if (type === 'hour') stepHour(dir);
       else stepMinute(dir);
@@ -129,33 +141,6 @@ const TimePicker = ({
 
   const handleTouchEnd = () => {
     touchStartY.current = null;
-  };
-
-  // Pointer drag handlers for mouse/pen drag
-  const handlePointerDown = (e: React.PointerEvent) => {
-    try {
-      e.currentTarget.setPointerCapture?.(e.pointerId);
-    } catch {}
-    pointerStartY.current = e.clientY;
-  };
-
-  const handlePointerMove = (e: React.PointerEvent, type: 'hour' | 'minute') => {
-    if (pointerStartY.current === null) return;
-    const currentY = e.clientY;
-    const diff = pointerStartY.current - currentY;
-    if (Math.abs(diff) >= 8) {
-      const dir = diff > 0 ? 1 : -1;
-      if (type === 'hour') stepHour(dir);
-      else stepMinute(dir);
-      pointerStartY.current = currentY;
-    }
-  };
-
-  const handlePointerUp = (e: React.PointerEvent) => {
-    pointerStartY.current = null;
-    try {
-      e.currentTarget.releasePointerCapture?.(e.pointerId);
-    } catch {}
   };
 
   // Keyboard navigation
@@ -265,31 +250,30 @@ const TimePicker = ({
             <button
               type="button"
               onClick={() => stepHour(1)}
-              className="h-5 w-12 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
+              className="h-7 w-14 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted/80 transition-all active:scale-95"
               aria-label="ঘণ্টা বাড়ান"
             >
-              <ChevronUp className="h-3.5 w-3.5" />
+              <ChevronUp className="h-4 w-4" />
             </button>
             <div
               ref={setHourEl}
               onClick={() => setActiveUnit('hour')}
               onWheel={(e) => {
                 e.preventDefault();
+                const now = Date.now();
+                if (now - lastHourWheel.current < 75) return;
+                lastHourWheel.current = now;
                 stepHour(e.deltaY < 0 ? 1 : -1);
               }}
               onTouchStart={handleTouchStart}
               onTouchMove={(e) => handleTouchMove(e, 'hour')}
               onTouchEnd={handleTouchEnd}
-              onPointerDown={handlePointerDown}
-              onPointerMove={(e) => handlePointerMove(e, 'hour')}
-              onPointerUp={handlePointerUp}
-              onPointerCancel={handlePointerUp}
               onKeyDown={(e) => handleKeyDown(e, 'hour')}
               role="listbox"
               aria-label="ঘণ্টা"
               tabIndex={0}
               className={cn(
-                "h-14 w-14 rounded-xl text-2xl font-bold tabular-nums transition-all flex items-center justify-center select-none touch-none cursor-ns-resize",
+                "h-14 w-14 rounded-xl text-2xl font-bold tabular-nums transition-all flex items-center justify-center select-none touch-none cursor-ns-resize outline-none",
                 "overscroll-contain overflow-y-auto id-preview-scroll",
                 activeUnit === 'hour'
                   ? "bg-primary text-primary-foreground shadow-md scale-105"
@@ -301,10 +285,10 @@ const TimePicker = ({
             <button
               type="button"
               onClick={() => stepHour(-1)}
-              className="h-5 w-12 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
+              className="h-7 w-14 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted/80 transition-all active:scale-95"
               aria-label="ঘণ্টা কমান"
             >
-              <ChevronDown className="h-3.5 w-3.5" />
+              <ChevronDown className="h-4 w-4" />
             </button>
           </div>
 
@@ -316,31 +300,30 @@ const TimePicker = ({
             <button
               type="button"
               onClick={() => stepMinute(1)}
-              className="h-5 w-12 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
+              className="h-7 w-14 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted/80 transition-all active:scale-95"
               aria-label="মিনিট বাড়ান"
             >
-              <ChevronUp className="h-3.5 w-3.5" />
+              <ChevronUp className="h-4 w-4" />
             </button>
             <div
               ref={setMinuteEl}
               onClick={() => setActiveUnit('minute')}
               onWheel={(e) => {
                 e.preventDefault();
+                const now = Date.now();
+                if (now - lastMinuteWheel.current < 75) return;
+                lastMinuteWheel.current = now;
                 stepMinute(e.deltaY < 0 ? 1 : -1);
               }}
               onTouchStart={handleTouchStart}
               onTouchMove={(e) => handleTouchMove(e, 'minute')}
               onTouchEnd={handleTouchEnd}
-              onPointerDown={handlePointerDown}
-              onPointerMove={(e) => handlePointerMove(e, 'minute')}
-              onPointerUp={handlePointerUp}
-              onPointerCancel={handlePointerUp}
               onKeyDown={(e) => handleKeyDown(e, 'minute')}
               role="listbox"
               aria-label="মিনিট"
               tabIndex={0}
               className={cn(
-                "h-14 w-14 rounded-xl text-2xl font-bold tabular-nums transition-all flex items-center justify-center select-none touch-none cursor-ns-resize",
+                "h-14 w-14 rounded-xl text-2xl font-bold tabular-nums transition-all flex items-center justify-center select-none touch-none cursor-ns-resize outline-none",
                 "overscroll-contain overflow-y-auto id-preview-scroll",
                 activeUnit === 'minute'
                   ? "bg-primary text-primary-foreground shadow-md scale-105"
@@ -352,10 +335,10 @@ const TimePicker = ({
             <button
               type="button"
               onClick={() => stepMinute(-1)}
-              className="h-5 w-12 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
+              className="h-7 w-14 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted/80 transition-all active:scale-95"
               aria-label="মিনিট কমান"
             >
-              <ChevronDown className="h-3.5 w-3.5" />
+              <ChevronDown className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -385,7 +368,7 @@ const TimePicker = ({
 
       {/* Helpful scroll hint */}
       <p className="text-[10px] text-center text-muted-foreground/70">
-        মাউস স্ক্রল বা সোয়াইপ করে সময় পরিবর্তন করুন
+        মাউস স্ক্রল বা বোতাম চেপে সময় পরিবর্তন করুন
       </p>
 
       {/* Action Buttons */}
