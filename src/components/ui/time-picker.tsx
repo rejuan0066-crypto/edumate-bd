@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Clock, X } from "lucide-react";
+import { Clock, X, ChevronUp, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "@/components/ui/dialog";
@@ -24,7 +24,7 @@ const HOURS_12 = Array.from({ length: 12 }, (_, i) => i + 1); // 1..12
 const HOURS_24 = Array.from({ length: 24 }, (_, i) => i); // 0..23
 const PERIODS = ['AM', 'PM'] as const;
 
-const ITEM_H = 40; // px height per wheel item
+const ITEM_H = 44; // px height per wheel item
 const VISIBLE = 5;
 
 /** A single scrollable wheel column with snap + center highlight. */
@@ -50,7 +50,7 @@ function Wheel<T>({
     const el = ref.current;
     if (!el) return;
     programmatic.current = true;
-    el.scrollTop = top; // instant — avoids smooth-scroll event storms that fight the user
+    el.scrollTop = top;
     requestAnimationFrame(() => { programmatic.current = false; });
   };
 
@@ -64,7 +64,7 @@ function Wheel<T>({
   }, [idx]);
 
   const handleScroll = () => {
-    if (programmatic.current) return; // ignore our own snap scrolls
+    if (programmatic.current) return;
     if (scrollTimer.current) clearTimeout(scrollTimer.current);
     scrollTimer.current = setTimeout(() => {
       const el = ref.current;
@@ -73,7 +73,7 @@ function Wheel<T>({
       const target = clamped * ITEM_H;
       if (Math.abs(el.scrollTop - target) > 1) snapTo(target);
       if (items[clamped] !== value) onChange(items[clamped]);
-    }, 110);
+    }, 100);
   };
 
   const commitVisibleItem = () => {
@@ -89,8 +89,7 @@ function Wheel<T>({
     if (scrollTimer.current) clearTimeout(scrollTimer.current);
   }, []);
 
-  // Discrete mouse-wheel: hover over the column and scroll moves one item per tick.
-  // Native non-passive listener so we can preventDefault and avoid the page scrolling.
+  // Discrete mouse-wheel
   React.useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -123,18 +122,56 @@ function Wheel<T>({
     if (next !== idx) { snapTo(next * ITEM_H); onChange(items[next]); }
   };
 
+  const stepUp = () => {
+    const next = Math.max(0, idx - 1);
+    snapTo(next * ITEM_H);
+    onChange(items[next]);
+  };
+
+  const stepDown = () => {
+    const next = Math.min(items.length - 1, idx + 1);
+    snapTo(next * ITEM_H);
+    onChange(items[next]);
+  };
+
   return (
-    <div className="flex flex-col items-center flex-1 min-w-0">
-      <p className="text-[10px] font-semibold text-muted-foreground/80 mb-2 uppercase tracking-[0.14em]">{label}</p>
-      <div className="relative" style={{ height: ITEM_H * VISIBLE }}>
-        {/* center highlight band */}
+    <div className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
+      {/* Column label */}
+      <p className="text-[10px] font-bold text-muted-foreground/70 mb-1 uppercase tracking-widest">{label}</p>
+
+      {/* Up arrow */}
+      <button
+        type="button"
+        onClick={stepUp}
+        disabled={idx === 0}
+        className="flex h-7 w-full items-center justify-center text-muted-foreground hover:text-primary transition-colors disabled:opacity-20 disabled:cursor-not-allowed rounded-xl"
+        aria-label={`${label} বাড়ান`}
+      >
+        <ChevronUp className="h-4 w-4" />
+      </button>
+
+      {/* Wheel */}
+      <div className="relative rounded-2xl overflow-hidden" style={{ height: ITEM_H * VISIBLE }}>
+        {/* Center highlight band */}
         <div
-          className="pointer-events-none absolute inset-x-0 rounded-2xl bg-primary/10 ring-1 ring-inset ring-primary/25"
-          style={{ top: ITEM_H * 2, height: ITEM_H }}
+          className="pointer-events-none absolute inset-x-0 z-10 rounded-xl"
+          style={{
+            top: ITEM_H * 2,
+            height: ITEM_H,
+            background: 'linear-gradient(135deg, hsl(var(--primary)/0.1), hsl(var(--primary)/0.06))',
+            boxShadow: 'inset 0 0 0 1.5px hsl(var(--primary)/0.25)',
+          }}
         />
-        {/* top / bottom fade masks */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-10 z-10 bg-gradient-to-b from-background to-transparent" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 z-10 bg-gradient-to-t from-background to-transparent" />
+        {/* Top fade */}
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 z-20"
+          style={{ height: ITEM_H * 2, background: 'linear-gradient(to bottom, hsl(var(--popover)) 30%, transparent)' }}
+        />
+        {/* Bottom fade */}
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-20"
+          style={{ height: ITEM_H * 2, background: 'linear-gradient(to top, hsl(var(--popover)) 30%, transparent)' }}
+        />
         <div
           ref={ref}
           onScroll={handleScroll}
@@ -150,21 +187,22 @@ function Wheel<T>({
           {/* top spacer */}
           <div style={{ height: ITEM_H * 2 }} />
           {items.map((it, i) => {
+            const isSelected = it === value;
             const dist = Math.abs(i - idx);
             return (
               <button
                 key={i}
                 type="button"
                 role="option"
-                aria-selected={it === value}
+                aria-selected={isSelected}
                 onClick={() => { snapTo(i * ITEM_H); onChange(it); }}
                 className={cn(
-                  "w-full snap-center flex items-center justify-center tabular-nums transition-all duration-200",
-                  it === value
-                    ? "text-primary font-bold text-lg"
+                  "w-full snap-center flex items-center justify-center tabular-nums transition-all duration-150 font-semibold",
+                  isSelected
+                    ? "text-primary text-xl scale-110"
                     : dist === 1
-                      ? "text-foreground/60 text-sm"
-                      : "text-muted-foreground/40 text-sm"
+                      ? "text-foreground/55 text-base scale-100"
+                      : "text-muted-foreground/30 text-sm scale-95"
                 )}
                 style={{ height: ITEM_H }}
               >
@@ -176,6 +214,17 @@ function Wheel<T>({
           <div style={{ height: ITEM_H * 2 }} />
         </div>
       </div>
+
+      {/* Down arrow */}
+      <button
+        type="button"
+        onClick={stepDown}
+        disabled={idx === items.length - 1}
+        className="flex h-7 w-full items-center justify-center text-muted-foreground hover:text-primary transition-colors disabled:opacity-20 disabled:cursor-not-allowed rounded-xl"
+        aria-label={`${label} কমান`}
+      >
+        <ChevronDown className="h-4 w-4" />
+      </button>
     </div>
   );
 }
@@ -226,7 +275,7 @@ const TimePicker = ({
     if (is24) return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
     const p = h >= 12 ? 'PM' : 'AM';
     const h12 = h % 12 || 12;
-    return `${h12}:${String(m).padStart(2, '0')} ${p}`;
+    return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${p}`;
   };
 
   const formatDisplay = (val: string) => {
@@ -287,50 +336,77 @@ const TimePicker = ({
 
   const panel = (
     <div className="w-full">
-      {/* live preview header */}
-      <div className="flex items-center justify-between gap-2 border-b border-border/60 bg-muted/30 px-5 py-3">
+      {/* Live preview header */}
+      <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-border/60 bg-muted/30">
         <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">নির্বাচিত সময়</p>
-          <p className="text-xl font-bold tabular-nums text-foreground">{fmt(h24, minute)}</p>
+          <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground mb-0.5">নির্বাচিত সময়</p>
+          <p className="text-2xl font-bold tabular-nums text-foreground tracking-tight leading-none">
+            {fmt(h24, minute)}
+          </p>
         </div>
         <Button
           type="button"
           variant="secondary"
           size="sm"
           onClick={handleNow}
-          className="h-8 rounded-full px-3 text-[11px] font-semibold"
+          className="h-8 shrink-0 rounded-full px-3 text-[11px] font-semibold"
         >
           এখন
         </Button>
       </div>
 
+      {/* AM/PM toggle */}
       {!is24 && (
-        <div className="px-4 pt-4">
-          <div className="grid grid-cols-2 rounded-2xl border border-border/70 bg-muted/40 p-1" role="group" aria-label="AM বা PM নির্বাচন">
+        <div className="px-4 pt-4 pb-2">
+          <div
+            className="relative grid grid-cols-2 gap-1 rounded-2xl border border-border/60 bg-muted/40 p-1"
+            role="group"
+            aria-label="AM বা PM নির্বাচন"
+          >
+            {/* Sliding indicator */}
+            <div
+              className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl bg-primary shadow-md transition-all duration-200 ease-in-out"
+              style={{ left: period === 'AM' ? '4px' : 'calc(50%)' }}
+            />
             {PERIODS.map((item) => (
-              <Button
+              <button
                 key={item}
                 type="button"
-                variant={period === item ? 'default' : 'ghost'}
                 onClick={() => setPeriod(item)}
                 aria-pressed={period === item}
-                className="h-11 rounded-xl text-sm font-bold"
+                className={cn(
+                  "relative z-10 h-9 rounded-xl text-sm font-bold transition-all duration-200",
+                  period === item
+                    ? "text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
               >
                 {item}
-              </Button>
+              </button>
             ))}
           </div>
         </div>
       )}
 
-      <div className="flex items-stretch gap-3 px-4 pt-4">
+      {/* Separator line */}
+      <div className="flex items-center px-4 pt-2 pb-0.5">
+        <div className="flex-1 h-px bg-border/50" />
+      </div>
+
+      {/* Wheel columns */}
+      <div className="flex items-stretch gap-2 px-4 pt-2 pb-2">
+        {/* Colon separator (visual) */}
         <Wheel
           label={"ঘণ্টা"}
           items={is24 ? HOURS_24 : HOURS_12}
           value={is24 ? h24 : hour12}
           onChange={setHour}
-          render={(v) => (is24 ? String(v).padStart(2, '0') : String(v))}
+          render={(v) => String(is24 ? v : v).padStart(2, '0')}
         />
+        {/* Center colon */}
+        <div className="flex items-center justify-center text-3xl font-bold text-muted-foreground/40 pb-1 shrink-0">
+          :
+        </div>
         <Wheel
           label={"মিনিট"}
           items={MINUTES}
@@ -340,7 +416,8 @@ const TimePicker = ({
         />
       </div>
 
-      <div className="flex items-center gap-2 px-4 pb-4 pt-3">
+      {/* Action buttons */}
+      <div className="flex items-center gap-2 px-4 pb-4 pt-2 border-t border-border/50">
         {clearable && (
           <Button
             type="button"
@@ -356,9 +433,9 @@ const TimePicker = ({
           type="button"
           size="sm"
           onClick={handleDone}
-          className="h-10 flex-1 rounded-xl text-xs font-semibold shadow-lg transition-all duration-300 hover:shadow-xl active:scale-[0.98]"
+          className="h-10 flex-1 rounded-xl text-sm font-bold shadow-md transition-all duration-200 hover:shadow-lg active:scale-[0.98] bg-primary hover:bg-primary/90"
         >
-          সম্পন্ন
+          ✓ সম্পন্ন
         </Button>
       </div>
     </div>
@@ -368,7 +445,7 @@ const TimePicker = ({
     return (
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>{trigger}</DialogTrigger>
-        <DialogContent className="w-[calc(100vw-24px)] max-w-[360px] gap-0 overflow-hidden rounded-[28px] border-0 p-0 shadow-2xl [&>button]:hidden">
+        <DialogContent className="w-[calc(100vw-24px)] max-w-[340px] gap-0 overflow-hidden rounded-[28px] border-0 p-0 shadow-2xl [&>button]:hidden">
           <DialogTitle className="sr-only">সময় নির্বাচন</DialogTitle>
           {panel}
         </DialogContent>
@@ -380,7 +457,7 @@ const TimePicker = ({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent
-        className="w-[280px] overflow-hidden rounded-[28px] border-0 bg-background/95 p-0 shadow-2xl backdrop-blur-xl"
+        className="w-[280px] overflow-hidden rounded-[28px] border-0 bg-popover p-0 shadow-2xl"
         align="start"
         sideOffset={6}
         collisionPadding={12}

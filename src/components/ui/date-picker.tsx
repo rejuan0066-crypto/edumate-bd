@@ -169,33 +169,33 @@ const DatePicker = ({
     <div className="w-full">
       {/* selected date header */}
       <div className="border-b border-border/60 bg-muted/30 px-5 py-3">
-        <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+        <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground mb-0.5">
           {bengali ? 'নির্বাচিত তারিখ' : 'Selected date'}
         </p>
-        <p className={cn("text-base font-bold", !displayValue && "text-muted-foreground font-medium text-sm")}>
+        <p className={cn("text-xl font-bold leading-tight", !displayValue && "text-muted-foreground font-medium text-base")}>
           {headerLabel}
         </p>
       </div>
 
       {/* Month/Year Quick Selector */}
-      <div className="flex items-center gap-2 px-4 pt-4 pb-1">
+      <div className="flex items-center gap-2 px-4 pt-3 pb-1">
         <Select value={String(viewMonth.getMonth())} onValueChange={handleMonthChange}>
-          <SelectTrigger className="h-9 flex-1 rounded-xl text-xs font-medium border-input/60">
+          <SelectTrigger className="h-9 flex-1 rounded-xl text-sm font-semibold border-input/60 bg-background/60">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="rounded-xl max-h-[220px]">
             {(bengali ? BENGALI_MONTHS : ENGLISH_MONTHS).map((m, i) => (
-              <SelectItem key={i} value={String(i)} className="text-xs">{m}</SelectItem>
+              <SelectItem key={i} value={String(i)} className="text-sm">{m}</SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select value={String(viewMonth.getFullYear())} onValueChange={handleYearChange}>
-          <SelectTrigger className="h-9 w-24 rounded-xl text-xs font-medium border-input/60">
+          <SelectTrigger className="h-9 w-24 rounded-xl text-sm font-semibold border-input/60 bg-background/60">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="rounded-xl max-h-[220px]">
             {years.map(y => (
-              <SelectItem key={y} value={String(y)} className="text-xs">
+              <SelectItem key={y} value={String(y)} className="text-sm">
                 {bengali ? toBengaliDigit(y) : y}
               </SelectItem>
             ))}
@@ -212,16 +212,17 @@ const DatePicker = ({
         locale={bengali ? bnLocale : undefined}
         modifiers={{ holiday: holidayDayObjects }}
         modifiersClassNames={{
-          holiday: "text-destructive font-bold bg-destructive/10 rounded-lg",
+          holiday: "text-destructive font-bold bg-destructive/10 rounded-xl",
         }}
         classNames={{
           caption: "hidden",
           nav: "hidden",
-          head_cell: "text-muted-foreground rounded-md w-9 font-medium text-[0.7rem] uppercase tracking-wider",
+          head_cell: "text-primary/70 rounded-md w-9 font-bold text-[0.68rem] uppercase tracking-wider",
           cell: "h-9 w-9 text-center text-sm p-0 relative",
-          day: "h-9 w-9 p-0 font-medium rounded-xl transition-all duration-200 hover:bg-primary/10 aria-selected:opacity-100",
-          day_selected: "bg-primary text-primary-foreground shadow-md hover:bg-primary hover:text-primary-foreground focus:bg-primary",
-          day_today: "ring-1 ring-inset ring-primary/40 text-primary font-bold",
+          day: "h-9 w-9 p-0 font-medium rounded-xl transition-all duration-150 hover:bg-primary/10 hover:text-primary aria-selected:opacity-100",
+          day_selected: "bg-primary text-primary-foreground shadow-lg hover:bg-primary hover:text-primary-foreground focus:bg-primary scale-110",
+          day_today: "ring-2 ring-primary/50 text-primary font-bold",
+          day_outside: "text-muted-foreground/30",
         }}
         components={{
           IconLeft: () => <ChevronLeft className="h-4 w-4" />,
@@ -247,16 +248,16 @@ const DatePicker = ({
           },
         }}
         initialFocus
-        className="p-3 pointer-events-auto"
+        className="px-3 pb-2 pt-1 pointer-events-auto"
       />
 
       {/* Quick actions */}
-      <div className="flex items-center gap-2 px-4 pb-4">
+      <div className="flex items-center gap-2 px-4 pb-4 pt-1 border-t border-border/50">
         <Button
           type="button"
           variant="secondary"
           size="sm"
-          className="h-9 flex-1 rounded-xl text-xs font-semibold"
+          className="h-9 flex-1 rounded-xl text-sm font-semibold"
           onClick={() => {
             const t = new Date();
             onChange(format(t, 'yyyy-MM-dd'));
@@ -271,7 +272,7 @@ const DatePicker = ({
             type="button"
             variant="ghost"
             size="sm"
-            className="h-9 rounded-xl px-3 text-xs font-medium text-muted-foreground hover:text-destructive"
+            className="h-9 rounded-xl px-3 text-sm font-medium text-muted-foreground hover:text-destructive"
             onClick={() => { onChange(''); setOpen(false); }}
           >
             {bengali ? 'মুছুন' : 'Clear'}
@@ -297,7 +298,7 @@ const DatePicker = ({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent
-        className="w-auto overflow-hidden rounded-[28px] border-0 bg-background/95 p-0 shadow-2xl backdrop-blur-xl"
+        className="w-auto overflow-hidden rounded-[28px] border-0 bg-popover p-0 shadow-2xl"
         align="start"
         sideOffset={6}
         collisionPadding={12}
@@ -310,3 +311,4 @@ const DatePicker = ({
 };
 
 export { DatePicker };
+
