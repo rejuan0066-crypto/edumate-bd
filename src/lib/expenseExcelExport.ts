@@ -45,18 +45,31 @@ const toBnDigit = (num: any): string => {
   return s.replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'['0123456789'.indexOf(d)]);
 };
 
-// Format date to Bengali short style if requested (e.g. 2026-10-05 -> ০৫/১০/২৬)
+// Format date to Bengali short style if requested (e.g. 2026-10-05 -> ০৫/১০/২০২৬)
 const formatShortDate = (dateStr: string, bn: boolean): string => {
   if (!dateStr) return '-';
-  const parts = dateStr.split('-');
+  const parts = String(dateStr).trim().split('-');
   if (parts.length === 3) {
-    const yr = parts[0].slice(-2);
+    const yr = parts[0];
     const mo = parts[1];
     const da = parts[2];
     const formatted = `${da}/${mo}/${yr}`;
     return bn ? toBnDigit(formatted) : formatted;
   }
-  return bn ? toBnDigit(dateStr) : dateStr;
+  return bn ? toBnDigit(dateStr) : String(dateStr);
+};
+
+const getMethodLabel = (m: string, bn: boolean): string => {
+  if (!m) return bn ? 'ক্যাশ' : 'Cash';
+  const lower = m.toLowerCase().trim();
+  if (lower === 'cash' || lower === 'ক্যাশ') return bn ? 'ক্যাশ' : 'Cash';
+  if (lower === 'bank' || lower === 'ব্যাংক') return bn ? 'ব্যাংক' : 'Bank';
+  if (lower === 'cheque' || lower === 'check' || lower === 'চেক') return bn ? 'চেক' : 'Cheque';
+  if (lower === 'bkash' || lower === 'বিকাশ') return bn ? 'বিকাশ' : 'bKash';
+  if (lower === 'nagad' || lower === 'নগদ') return bn ? 'নগদ' : 'Nagad';
+  if (lower === 'rocket' || lower === 'রকেট') return bn ? 'রকেট' : 'Rocket';
+  if (lower === 'online' || lower === 'অনলাইন') return bn ? 'অনলাইন' : 'Online';
+  return m;
 };
 
 // Generate an intuitive short name for institution tabs
@@ -255,17 +268,20 @@ function buildExpenseCategorySheet(
     const amt = Number(item.amount || 0);
     totalAmount += amt;
 
-    const rawQty = item.quantity ? String(item.quantity) : '১';
+    const rawQty = item.quantity ? (bn ? toBnDigit(item.quantity) : String(item.quantity)) : (bn ? '১' : '1');
     const unit = getUnit(item.description || '');
     const displayQty = unit ? `${rawQty} ${unit !== 'পিস' ? unit : (bn ? 'টি' : 'pcs')}` : `${rawQty}`;
+    const memoVal = getMemo(item.description || '');
+    const displayMemo = memoVal === '-' ? '-' : (bn ? toBnDigit(memoVal) : memoVal);
+    const methodVal = getMethodLabel(getMethod(item.description || ''), bn);
 
     rows.push([
       { v: formatShortDate(item.expense_date, bn), s: STYLES.cellCenter },
       { v: cleanDesc(item.description || ''), s: STYLES.cellText },
       { v: displayQty, s: STYLES.cellCenter },
-      { v: getMethod(item.description || ''), s: STYLES.cellCenter },
-      { v: getMemo(item.description || ''), s: STYLES.cellCenter },
-      { v: amt, s: STYLES.cellNumber },
+      { v: methodVal, s: STYLES.cellCenter },
+      { v: displayMemo, s: STYLES.cellCenter },
+      { v: amt, s: bn ? { ...STYLES.cellNumber, numFmt: '[$-bn-BD,100]#,##0' } : STYLES.cellNumber },
       { v: getRemarks(item.description || ''), s: STYLES.cellText },
     ]);
   });
@@ -291,7 +307,7 @@ function buildExpenseCategorySheet(
     { v: '', s: STYLES.cellEmpty },
     { v: '', s: STYLES.cellEmpty },
     { v: totalLabel, s: STYLES.totalLabel },
-    { v: totalAmount, s: STYLES.totalNumber },
+    { v: totalAmount, s: bn ? { ...STYLES.totalNumber, numFmt: '[$-bn-BD,100]#,##0' } : STYLES.totalNumber },
     { v: '', s: STYLES.cellEmpty },
   ]);
 
@@ -374,8 +390,8 @@ function buildIncomeWithdrawalSheet(params: {
       { v: bn ? '০১ তারিখ' : '01', s: STYLES.cellCenter },
       { v: bn ? 'গত মাসের খরচ শেষে নগদ আছে (জের)' : 'Last Month Ending Cash in Hand', s: STYLES.cellText },
       { v: bn ? 'নগদ তহবিল' : 'Opening Cash', s: STYLES.cellCenter },
-      { v: previousMonthCash, s: STYLES.cellNumber },
-      { v: previousMonthCash, s: STYLES.cellNumber },
+      { v: previousMonthCash, s: bn ? { ...STYLES.cellNumber, numFmt: '[$-bn-BD,100]#,##0' } : STYLES.cellNumber },
+      { v: previousMonthCash, s: bn ? { ...STYLES.cellNumber, numFmt: '[$-bn-BD,100]#,##0' } : STYLES.cellNumber },
       { v: '', s: STYLES.cellEmpty },
     ]);
   }
@@ -392,7 +408,7 @@ function buildIncomeWithdrawalSheet(params: {
       { v: formatShortDate(d.deposit_date, bn), s: STYLES.cellCenter },
       { v: bankDetails, s: STYLES.cellText },
       { v: sourceLabel, s: STYLES.cellCenter },
-      { v: amt, s: STYLES.cellNumber },
+      { v: amt, s: bn ? { ...STYLES.cellNumber, numFmt: '[$-bn-BD,100]#,##0' } : STYLES.cellNumber },
       { v: '', s: STYLES.cellEmpty },
       { v: '', s: STYLES.cellEmpty },
     ]);
@@ -416,7 +432,7 @@ function buildIncomeWithdrawalSheet(params: {
     { v: '', s: STYLES.cellEmpty },
     { v: '', s: STYLES.cellEmpty },
     { v: bn ? 'মোট' : 'Total', s: STYLES.totalLabel },
-    { v: totalDepositAmount, s: STYLES.totalNumber },
+    { v: totalDepositAmount, s: bn ? { ...STYLES.totalNumber, numFmt: '[$-bn-BD,100]#,##0' } : STYLES.totalNumber },
     { v: '', s: STYLES.cellEmpty },
     { v: '', s: STYLES.cellEmpty },
   ]);
@@ -531,9 +547,9 @@ function buildIncomeWithdrawalSheet(params: {
     { v: '', s: STYLES.cellEmpty },
     { v: '', s: STYLES.cellEmpty },
     { v: bn ? 'মোট ব্যয়' : 'Total Expense', s: STYLES.totalLabel },
-    { v: totalExpensesSum, s: STYLES.totalNumber },
-    { v: finalCashBalance, s: STYLES.totalNumber },
-    { v: totalArrearsEnd > 0 ? totalArrearsEnd : '', s: STYLES.totalNumber },
+    { v: totalExpensesSum, s: bn ? { ...STYLES.totalNumber, numFmt: '[$-bn-BD,100]#,##0' } : STYLES.totalNumber },
+    { v: finalCashBalance, s: bn ? { ...STYLES.totalNumber, numFmt: '[$-bn-BD,100]#,##0' } : STYLES.totalNumber },
+    { v: totalArrearsEnd > 0 ? totalArrearsEnd : '', s: bn ? { ...STYLES.totalNumber, numFmt: '[$-bn-BD,100]#,##0' } : STYLES.totalNumber },
   ]);
 
   const colWidths = [12, 32, 14, 16, 16, 16];

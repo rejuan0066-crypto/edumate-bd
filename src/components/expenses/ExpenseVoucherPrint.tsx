@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Printer } from 'lucide-react';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { toBnDigits } from '@/lib/digits';
 
 interface ExpenseVoucherPrintProps {
   expense: any;
@@ -25,6 +26,16 @@ const ExpenseVoucherPrint = ({ expense, open, onClose }: ExpenseVoucherPrintProp
   });
 
   if (!expense) return null;
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '-';
+    const parts = String(dateStr).trim().split('-');
+    if (parts.length === 3) {
+      const formatted = `${parts[2]}/${parts[1]}/${parts[0]}`;
+      return bn ? toBnDigits(formatted) : formatted;
+    }
+    return bn ? toBnDigits(dateStr) : dateStr;
+  };
 
   const cleanDesc = (desc: string) => (desc || '')
     .replace(/\[unit:.*?\]/g, '')
@@ -50,8 +61,21 @@ const ExpenseVoucherPrint = ({ expense, open, onClose }: ExpenseVoucherPrintProp
     }
     return 'পিস';
   };
-  const getMethod = (desc: string) => desc?.match(/\[method:(.*?)\]/)?.[1] || 'ক্যাশ';
-  const fmt = (n: number) => `৳${n.toLocaleString('en-IN')}`;
+  const getMethod = (desc: string) => {
+    const m = desc?.match(/\[method:(.*?)\]/)?.[1] || 'ক্যাশ';
+    if (!bn) return m;
+    const lower = m.toLowerCase().trim();
+    if (lower === 'cash' || lower === 'ক্যাশ') return 'ক্যাশ';
+    if (lower === 'bank' || lower === 'ব্যাংক') return 'ব্যাংক';
+    if (lower === 'cheque' || lower === 'check' || lower === 'চেক') return 'চেক';
+    if (lower === 'bkash' || lower === 'বিকাশ') return 'বিকাশ';
+    if (lower === 'nagad' || lower === 'নগদ') return 'নগদ';
+    return m;
+  };
+  const fmt = (n: number) => {
+    const val = n.toLocaleString('en-US');
+    return `৳${bn ? toBnDigits(val) : val}`;
+  };
 
   const handlePrint = () => {
     const printContent = document.getElementById('expense-voucher-content');
@@ -93,7 +117,7 @@ const ExpenseVoucherPrint = ({ expense, open, onClose }: ExpenseVoucherPrintProp
           {/* Details */}
           <div className="grid grid-cols-2 gap-2 text-sm mb-4">
             <div><span className="text-gray-500">{bn ? 'ভাউচার নং:' : 'Voucher #:'}</span> <strong>{expense.id?.slice(0, 8).toUpperCase()}</strong></div>
-            <div className="text-right"><span className="text-gray-500">{bn ? 'তারিখ:' : 'Date:'}</span> <strong>{expense.expense_date}</strong></div>
+            <div className="text-right"><span className="text-gray-500">{bn ? 'তারিখ:' : 'Date:'}</span> <strong>{formatDate(expense.expense_date)}</strong></div>
             <div><span className="text-gray-500">{bn ? 'প্রকল্প:' : 'Project:'}</span> <strong>{bn ? expense.expense_institutions?.name_bn : expense.expense_institutions?.name}</strong></div>
             <div className="text-right"><span className="text-gray-500">{bn ? 'ক্যাটেগরি:' : 'Category:'}</span> <strong>{bn ? expense.expense_categories?.name_bn : expense.expense_categories?.name}</strong></div>
           </div>
@@ -111,7 +135,7 @@ const ExpenseVoucherPrint = ({ expense, open, onClose }: ExpenseVoucherPrintProp
             <tbody>
               <tr>
                 <td className="border border-gray-300 px-2 py-1.5">{cleanDesc(expense.description)}</td>
-                <td className="border border-gray-300 px-2 py-1.5 text-center">{expense.quantity || 1}{getUnit(expense.description) ? ` ${getUnit(expense.description)}` : ''}</td>
+                <td className="border border-gray-300 px-2 py-1.5 text-center">{bn ? toBnDigits(expense.quantity || 1) : (expense.quantity || 1)}{getUnit(expense.description) ? ` ${getUnit(expense.description)}` : ''}</td>
                 <td className="border border-gray-300 px-2 py-1.5 text-center">{getMethod(expense.description)}</td>
                 <td className="border border-gray-300 px-2 py-1.5 text-right font-bold">{fmt(Number(expense.amount))}</td>
               </tr>
@@ -125,7 +149,7 @@ const ExpenseVoucherPrint = ({ expense, open, onClose }: ExpenseVoucherPrintProp
           </table>
 
           {expense.month_year && (
-            <p className="text-xs text-gray-500 mb-4">{bn ? 'মাস' : 'Period'}: {expense.month_year}</p>
+            <p className="text-xs text-gray-500 mb-4">{bn ? 'মাস' : 'Period'}: {bn ? toBnDigits(expense.month_year) : expense.month_year}</p>
           )}
 
           {/* Signature lines */}

@@ -33,6 +33,7 @@ import MiniSparkline from '@/components/expenses/MiniSparkline';
 import { generateBilingualReport } from '@/lib/reportPdfGenerator';
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { exportExpensesMultiTabExcel, exportSingleInstitutionExcel, getInstShortName } from '@/lib/expenseExcelExport';
+import { toBnDigits } from '@/lib/digits';
 
 export const DEFAULT_QUANTITY_UNITS = [
   'পিস',
@@ -93,8 +94,41 @@ const getUnit = (desc: string, categoryName?: string) => {
   return 'পিস';
 };
 
-const getMethod = (desc: string) => desc?.match(/\[method:(.*?)\]/)?.[1] || 'ক্যাশ';
-const getMemo = (desc: string) => desc?.match(/\[memo:(.*?)\]/)?.[1] || '-';
+export const formatDateBn = (dateStr: string | null | undefined, isBn: boolean = true) => {
+  if (!dateStr) return '-';
+  const str = String(dateStr).trim();
+  const parts = str.split('-');
+  if (parts.length === 3) {
+    const [y, m, d] = parts;
+    const formatted = `${d}/${m}/${y}`;
+    return isBn ? toBnDigits(formatted) : formatted;
+  }
+  return isBn ? toBnDigits(str) : str;
+};
+
+export const getMethodBn = (methodStr: string) => {
+  if (!methodStr) return 'ক্যাশ';
+  const m = methodStr.toLowerCase().trim();
+  if (m === 'cash' || m === 'ক্যাশ') return 'ক্যাশ';
+  if (m === 'bank' || m === 'ব্যাংক') return 'ব্যাংক';
+  if (m === 'cheque' || m === 'check' || m === 'চেক') return 'চেক';
+  if (m === 'bkash' || m === 'বিকাশ') return 'বিকাশ';
+  if (m === 'nagad' || m === 'নগদ') return 'নগদ';
+  if (m === 'rocket' || m === 'রকেট') return 'রকেট';
+  if (m === 'online' || m === 'অনলাইন') return 'অনলাইন';
+  return methodStr;
+};
+
+const getMethod = (desc: string, isBn: boolean = true) => {
+  const m = desc?.match(/\[method:(.*?)\]/)?.[1] || (isBn ? 'ক্যাশ' : 'Cash');
+  return isBn ? getMethodBn(m) : m;
+};
+
+const getMemo = (desc: string, isBn: boolean = false) => {
+  const memo = desc?.match(/\[memo:(.*?)\]/)?.[1] || '-';
+  if (memo === '-') return '-';
+  return isBn ? toBnDigits(memo) : memo;
+};
 const getRemarks = (desc: string) => desc?.match(/\[remarks:(.*?)\]/)?.[1] || '-';
 const isUnpaidDue = (desc: string) => (desc || '').includes('[due:unpaid]');
 const isPaidDue = (desc: string) => (desc || '').includes('[due:paid]');
@@ -1509,7 +1543,8 @@ const AdminExpenses = () => {
   const formatNum = (n: any) => {
     const num = Number(n ?? 0);
     if (isNaN(num)) return bn ? '০' : '0';
-    return num.toLocaleString(bn ? 'bn-BD' : 'en-BD');
+    const formatted = num.toLocaleString('en-US');
+    return bn ? toBnDigits(formatted) : formatted;
   };
 
   // Annual Financial Summary PDF (Income / Expense / Net Balance per month)
@@ -1550,8 +1585,9 @@ const AdminExpenses = () => {
         logo_url: targetInst?.logo_url,
         report_title_bn: isAll ? 'সকল প্রতিষ্ঠানের বার্ষিক আর্থিক সারসংক্ষেপ' : `${getInstName(targetInst, true)} - বার্ষিক আর্থিক সারসংক্ষেপ`,
         report_title_en: isAll ? 'All Institutions Annual Financial Summary' : `${getInstName(targetInst, false)} - Annual Financial Summary`,
-        period_label_bn: `সাল: ${yearStr}`,
+        period_label_bn: `সাল: ${bn ? toBnDigits(yearStr) : yearStr}`,
         period_label_en: `Year: ${yearStr}`,
+        bengali_digits: bn,
       },
       [{
         title_bn: 'মাসিক আয়-ব্যয় বিবরণী',
@@ -1575,10 +1611,10 @@ const AdminExpenses = () => {
         ],
       }],
       [
-        { label_bn: 'মোট আয়', label_en: 'Income', value: '৳' + totalIncome.toLocaleString(), tone: 'positive' },
-        { label_bn: 'মোট ব্যয়', label_en: 'Expense', value: '৳' + totalExpense.toLocaleString(), tone: 'negative' },
-        { label_bn: 'নেট ব্যালেন্স', label_en: 'Net Balance', value: '৳' + (totalIncome - totalExpense).toLocaleString(), tone: totalIncome >= totalExpense ? 'positive' : 'negative' },
-        { label_bn: 'অনুদান', label_en: 'Donations', value: '৳' + totalDonation.toLocaleString(), tone: 'accent' },
+        { label_bn: 'মোট আয়', label_en: 'Income', value: '৳' + formatNum(totalIncome), tone: 'positive' },
+        { label_bn: 'মোট ব্যয়', label_en: 'Expense', value: '৳' + formatNum(totalExpense), tone: 'negative' },
+        { label_bn: 'নেট ব্যালেন্স', label_en: 'Net Balance', value: '৳' + formatNum(totalIncome - totalExpense), tone: totalIncome >= totalExpense ? 'positive' : 'negative' },
+        { label_bn: 'অনুদান', label_en: 'Donations', value: '৳' + formatNum(totalDonation), tone: 'accent' },
       ],
     );
   };
@@ -1587,7 +1623,7 @@ const AdminExpenses = () => {
   const selectedMonthIndex = MONTHS.indexOf(selectedMonthYear.split('-')[0]);
   const selectedMonthYearStr = selectedMonthYear.split('-')[1];
   const selectedMonthName = bn 
-    ? `${MONTHS_BN[selectedMonthIndex]} ${selectedMonthYearStr}` 
+    ? `${MONTHS_BN[selectedMonthIndex]} ${toBnDigits(selectedMonthYearStr)}` 
     : `${MONTHS[selectedMonthIndex]} ${selectedMonthYearStr}`;
 
   const openEditExpense = (e: any) => {
@@ -1737,14 +1773,14 @@ const AdminExpenses = () => {
               ['-', '-', bn ? 'কোনো ব্যয়ের রেকর্ড নেই' : 'No expenses', '-', '-', '-', 0]
             ] : catExp.map((e: any, idx: number) => {
               const unit = getUnit(e.description, cat?.name || cat?.name_bn);
-              const qtyStr = e.quantity ? `${e.quantity} ${unit || ''}`.trim() : '-';
+              const qtyStr = e.quantity ? `${bn ? toBnDigits(e.quantity) : e.quantity} ${unit || ''}`.trim() : (bn ? '১' : '1');
               return [
-                idx + 1,
-                e.expense_date || '-',
+                bn ? toBnDigits(idx + 1) : idx + 1,
+                formatDateBn(e.expense_date, bn),
                 cleanDesc(e.description) || '-',
                 qtyStr,
-                getMethod(e.description) || 'ক্যাশ',
-                getMemo(e.description) === '-' ? '' : getMemo(e.description),
+                getMethod(e.description, bn),
+                getMemo(e.description, bn) === '-' ? '' : getMemo(e.description, bn),
                 Number(e.amount || 0)
               ];
             }),
@@ -1772,12 +1808,12 @@ const AdminExpenses = () => {
               { bn: 'টাকা (৳)', en: 'Amount (৳)' },
             ],
             rows: uncatExp.map((e: any, idx: number) => [
-              idx + 1,
-              e.expense_date || '-',
+              bn ? toBnDigits(idx + 1) : idx + 1,
+              formatDateBn(e.expense_date, bn),
               cleanDesc(e.description) || '-',
-              e.quantity || 1,
-              getMethod(e.description) || 'ক্যাশ',
-              getMemo(e.description) === '-' ? '' : getMemo(e.description),
+              bn ? toBnDigits(e.quantity || 1) : (e.quantity || 1),
+              getMethod(e.description, bn),
+              getMemo(e.description, bn) === '-' ? '' : getMemo(e.description, bn),
               Number(e.amount || 0)
             ]),
             totals: [
@@ -1803,11 +1839,11 @@ const AdminExpenses = () => {
           rows: instDue.length === 0 ? [
             ['-', '-', bn ? 'কোনো বকেয়া নেই' : 'No dues', '-', '-', 0]
           ] : instDue.map((d: any, idx: number) => [
-            idx + 1,
-            d.expense_date || '-',
+            bn ? toBnDigits(idx + 1) : idx + 1,
+            formatDateBn(d.expense_date, bn),
             cleanDesc(d.description) || '-',
-            d.quantity || 1,
-            getMemo(d.description) === '-' ? '' : getMemo(d.description),
+            bn ? toBnDigits(d.quantity || 1) : (d.quantity || 1),
+            getMemo(d.description, bn) === '-' ? '' : getMemo(d.description, bn),
             Number(d.amount || 0)
           ]),
           totals: [
@@ -1832,11 +1868,11 @@ const AdminExpenses = () => {
         rows: deposits.length === 0 ? [
           ['-', '-', bn ? 'কোনো ব্যাংক জমা বা উত্তোলনের রেকর্ড নেই' : 'No deposit records', '-', '-', 0]
         ] : deposits.map((d: any, idx: number) => [
-          idx + 1,
-          d.deposit_date || '-',
+          bn ? toBnDigits(idx + 1) : idx + 1,
+          formatDateBn(d.deposit_date, bn),
           d.bank_details || '-',
           d.other_details || '-',
-          getSourceLabel(d.source, true, customDepositSources),
+          getSourceLabel(d.source, bn, customDepositSources),
           Number(d.amount || 0)
         ]),
         totals: [
@@ -1857,14 +1893,15 @@ const AdminExpenses = () => {
           report_title_bn: 'সকল প্রতিষ্ঠানের মাসিক সমন্বিত হিসাব বিবরণী',
           report_title_en: 'All Institutions Consolidated Monthly Expense Statement',
           period_label_bn: `মাস: ${selectedMonthName}`,
-          period_label_en: `Period: ${selectedMonthName}`
+          period_label_en: `Period: ${selectedMonthName}`,
+          bengali_digits: bn,
         },
         sections,
         [
-          { label_bn: 'মোট খরচ', label_en: 'Total Expense', value: '৳' + totalExp.toLocaleString(), tone: 'negative' },
-          { label_bn: 'মোট জমা/উত্তোলন', label_en: 'Total Deposit', value: '৳' + totalDep.toLocaleString(), tone: 'positive' },
-          { label_bn: 'নগদ উদ্বৃত্ত', label_en: 'Cash Balance', value: '৳' + (cash >= 0 ? cash : 0).toLocaleString(), tone: cash >= 0 ? 'positive' : 'negative' },
-          { label_bn: 'মোট বকেয়া', label_en: 'Total Dues', value: '৳' + totalDue.toLocaleString(), tone: 'accent' }
+          { label_bn: 'মোট খরচ', label_en: 'Total Expense', value: '৳' + formatNum(totalExp), tone: 'negative' },
+          { label_bn: 'মোট জমা/উত্তোলন', label_en: 'Total Deposit', value: '৳' + formatNum(totalDep), tone: 'positive' },
+          { label_bn: 'নগদ উদ্বৃত্ত', label_en: 'Cash Balance', value: '৳' + formatNum(cash >= 0 ? cash : 0), tone: cash >= 0 ? 'positive' : 'negative' },
+          { label_bn: 'মোট বকেয়া', label_en: 'Total Dues', value: '৳' + formatNum(totalDue), tone: 'accent' }
         ]
       );
     } else {
@@ -1913,15 +1950,15 @@ const AdminExpenses = () => {
             ['-', '-', bn ? 'কোনো ব্যয়ের রেকর্ড নেই' : 'No expenses', '-', '-', '-', 0]
           ] : catExpenses.map((e: any, idx: number) => {
             const unit = getUnit(e.description, cat?.name || cat?.name_bn);
-            const qtyStr = e.quantity ? `${e.quantity} ${unit || ''}`.trim() : '-';
-            const memo = getMemo(e.description);
+            const qtyStr = e.quantity ? `${bn ? toBnDigits(e.quantity) : e.quantity} ${unit || ''}`.trim() : (bn ? '১' : '1');
+            const memo = getMemo(e.description, bn);
             return [
-              idx + 1,
-              e.expense_date || '-',
+              bn ? toBnDigits(idx + 1) : idx + 1,
+              formatDateBn(e.expense_date, bn),
               cleanDesc(e.description) || '-',
               qtyStr,
               memo === '-' ? '' : memo,
-              getMethod(e.description) || 'ক্যাশ',
+              getMethod(e.description, bn),
               Number(e.amount || 0)
             ];
           }),
@@ -1949,12 +1986,12 @@ const AdminExpenses = () => {
             { bn: 'টাকা (৳)', en: 'Amount (৳)' }
           ],
           rows: uncatExp.map((e: any, idx: number) => [
-            idx + 1,
-            e.expense_date || '-',
+            bn ? toBnDigits(idx + 1) : idx + 1,
+            formatDateBn(e.expense_date, bn),
             cleanDesc(e.description) || '-',
-            e.quantity || 1,
-            getMemo(e.description) === '-' ? '' : getMemo(e.description),
-            getMethod(e.description) || 'ক্যাশ',
+            bn ? toBnDigits(e.quantity || 1) : (e.quantity || 1),
+            getMemo(e.description, bn) === '-' ? '' : getMemo(e.description, bn),
+            getMethod(e.description, bn),
             Number(e.amount || 0)
           ]),
           totals: [
@@ -1978,10 +2015,10 @@ const AdminExpenses = () => {
         rows: instDues.length === 0 ? [
           ['-', '-', bn ? 'কোনো বকেয়া নেই' : 'No dues', '-', 0]
         ] : instDues.map((d: any, idx: number) => [
-          idx + 1,
-          d.expense_date || '-',
+          bn ? toBnDigits(idx + 1) : idx + 1,
+          formatDateBn(d.expense_date, bn),
           cleanDesc(d.description) || '-',
-          d.quantity || 1,
+          bn ? toBnDigits(d.quantity || 1) : (d.quantity || 1),
           Number(d.amount || 0)
         ]),
         totals: [
@@ -2005,11 +2042,11 @@ const AdminExpenses = () => {
         rows: deposits.length === 0 ? [
           ['-', '-', bn ? 'কোনো ব্যাংক জমা বা উত্তোলনের রেকর্ড নেই' : 'No deposits', '-', '-', 0]
         ] : deposits.map((d: any, idx: number) => [
-          idx + 1,
-          d.deposit_date || '-',
+          bn ? toBnDigits(idx + 1) : idx + 1,
+          formatDateBn(d.deposit_date, bn),
           d.bank_details || '-',
           d.other_details || '-',
-          getSourceLabel(d.source, true, customDepositSources),
+          getSourceLabel(d.source, bn, customDepositSources),
           Number(d.amount || 0)
         ]),
         totals: [
@@ -2030,13 +2067,14 @@ const AdminExpenses = () => {
           report_title_bn: `${getInstName(targetInst, true)} - মাসিক খরচ বিবরণী`,
           report_title_en: `${getInstName(targetInst, false)} - Monthly Expense Statement`,
           period_label_bn: `মাস: ${selectedMonthName}`,
-          period_label_en: `Period: ${selectedMonthName}`
+          period_label_en: `Period: ${selectedMonthName}`,
+          bengali_digits: bn,
         },
         sections,
         [
-          { label_bn: 'মোট ব্যয়', label_en: 'Total Expense', value: '৳' + totalExp.toLocaleString(), tone: 'negative' },
-          { label_bn: 'মোট এন্ট্রি সংখ্যা', label_en: 'Total Entries', value: instPaid.length, tone: 'neutral' },
-          { label_bn: 'মোট বকেয়া', label_en: 'Total Dues', value: '৳' + totalDue.toLocaleString(), tone: totalDue > 0 ? 'accent' : 'positive' }
+          { label_bn: 'মোট ব্যয়', label_en: 'Total Expense', value: '৳' + formatNum(totalExp), tone: 'negative' },
+          { label_bn: 'মোট এন্ট্রি সংখ্যা', label_en: 'Total Entries', value: bn ? toBnDigits(instPaid.length) : instPaid.length, tone: 'neutral' },
+          { label_bn: 'মোট বকেয়া', label_en: 'Total Dues', value: '৳' + formatNum(totalDue), tone: totalDue > 0 ? 'accent' : 'positive' }
         ]
       );
     }
@@ -2083,11 +2121,11 @@ const AdminExpenses = () => {
     rows.push([bn ? 'ইমেইল' : 'Email', instEmail]);
     if (instOther) rows.push([bn ? 'অন্যান্য' : 'Other', instOther]);
     rows.push([]);
-    rows.push([bn ? 'টাকা আয়/উত্তোলন প্রতিবেদন' : 'Deposit Report', selectedMonthYear]);
+    rows.push([bn ? 'টাকা আয়/উত্তোলন প্রতিবেদন' : 'Deposit Report', bn ? selectedMonthName : selectedMonthYear]);
     rows.push([]);
     rows.push(['#', bn ? 'তারিখ' : 'Date', bn ? 'ব্যাংক বিবরণ' : 'Bank Details', bn ? 'অন্যান্য বিবরণ' : 'Other Details', bn ? 'উৎস' : 'Source', bn ? 'টাকা' : 'Amount']);
     deposits.forEach((d: any, i: number) => {
-      rows.push([String(i + 1), d.deposit_date, d.bank_details || '-', d.other_details || '-', getSourceLabel(d.source, bn, customDepositSources), `৳${formatNum(Number(d.amount))}`]);
+      rows.push([bn ? toBnDigits(i + 1) : String(i + 1), formatDateBn(d.deposit_date, bn), d.bank_details || '-', d.other_details || '-', getSourceLabel(d.source, bn, customDepositSources), `৳${formatNum(Number(d.amount))}`]);
     });
     rows.push([]);
     rows.push([bn ? 'মোট টাকা আয়/উত্তোলন' : 'Total Deposit', `৳${formatNum(monthlyTotalDeposit)}`]);
@@ -2195,7 +2233,7 @@ const AdminExpenses = () => {
                 <SelectTrigger className="w-[110px] rounded-xl border-emerald-200/50 bg-white/60 dark:bg-white/10 backdrop-blur"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {years.map(y => (
-                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                    <SelectItem key={y} value={String(y)}>{bn ? toBnDigits(y) : y}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -2217,7 +2255,7 @@ const AdminExpenses = () => {
                   if (filterMode === 'yearly') {
                     return MONTHS.map((m, i) => (
                       <SelectItem key={`${m}-${selectedYear}`} value={`${m}-${selectedYear}`}>
-                        {bn ? `${MONTHS_BN[i]} ${selectedYear}` : `${m} ${selectedYear}`}
+                        {bn ? `${MONTHS_BN[i]} ${toBnDigits(selectedYear)}` : `${m} ${selectedYear}`}
                       </SelectItem>
                     ));
                   }
@@ -2232,7 +2270,7 @@ const AdminExpenses = () => {
                         const mi = cur.getMonth();
                         const yr = cur.getFullYear();
                         const val = `${MONTHS[mi]}-${yr}`;
-                        opts.push({ key: val, label: bn ? `${MONTHS_BN[mi]} ${yr}` : `${MONTHS[mi]} ${yr}` });
+                        opts.push({ key: val, label: bn ? `${MONTHS_BN[mi]} ${toBnDigits(yr)}` : `${MONTHS[mi]} ${yr}` });
                         cur.setMonth(cur.getMonth() + 1);
                       }
                       return opts.map(o => (
@@ -2243,7 +2281,7 @@ const AdminExpenses = () => {
                   }
                   return years.map(y => MONTHS.map((m, i) => (
                     <SelectItem key={`${m}-${y}`} value={`${m}-${y}`}>
-                      {bn ? `${MONTHS_BN[i]} ${y}` : `${m} ${y}`}
+                      {bn ? `${MONTHS_BN[i]} ${toBnDigits(y)}` : `${m} ${y}`}
                     </SelectItem>
                   )));
                 })()}
@@ -2769,17 +2807,17 @@ const AdminExpenses = () => {
                                 displayExpenses.map((e: any, idx: number) => {
                                   const catObj = (categories || []).find((c: any) => c.id === e.category_id);
                                   const catLabel = catObj ? getCatName(catObj, bn) : (e.expense_categories ? getCatName(e.expense_categories, bn) : '-');
-                                  const memoStr = getMemo(e.description);
+                                  const memoStr = getMemo(e.description, bn);
                                   const remarksStr = getRemarks(e.description);
-                                  const rawQty = e.quantity ? String(e.quantity) : '১';
+                                  const rawQty = e.quantity ? (bn ? toBnDigits(e.quantity) : String(e.quantity)) : (bn ? '১' : '1');
                                   const unit = getUnit(e.description, catLabel);
                                   const displayQty = unit ? `${rawQty} ${unit}` : `${rawQty}`;
                                   const rowInst = (allInstitutions || []).find((i: any) => i.id === e.institution_id);
 
                                   return (
                                     <tr key={e.id} className={`border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50/80 dark:hover:bg-slate-900/40 transition-colors ${idx % 2 === 0 ? 'bg-white dark:bg-card' : 'bg-slate-50/40 dark:bg-slate-900/20'}`}>
-                                      <td className="px-3 py-2 text-center tabular-nums text-xs text-muted-foreground">{idx + 1}</td>
-                                      <td className="px-3 py-2 text-center tabular-nums text-xs whitespace-nowrap">{e.expense_date}</td>
+                                      <td className="px-3 py-2 text-center tabular-nums text-xs text-muted-foreground">{bn ? toBnDigits(idx + 1) : idx + 1}</td>
+                                      <td className="px-3 py-2 text-center tabular-nums text-xs whitespace-nowrap">{formatDateBn(e.expense_date, bn)}</td>
                                       {isAll && (
                                         <td className="px-3 py-2 text-left">
                                           <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 truncate max-w-[140px]">
@@ -2799,8 +2837,8 @@ const AdminExpenses = () => {
                                         {displayQty}
                                       </td>
                                       <td className="px-3 py-2 text-center">
-                                        <span className="inline-block px-2 py-0.5 rounded text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 max-w-[150px] truncate" title={getMethod(e.description)}>
-                                          {getMethod(e.description)}
+                                        <span className="inline-block px-2 py-0.5 rounded text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 max-w-[150px] truncate" title={getMethod(e.description, bn)}>
+                                          {getMethod(e.description, bn)}
                                         </span>
                                       </td>
                                       <td className="px-3 py-2 text-center text-xs">
@@ -2935,17 +2973,17 @@ const AdminExpenses = () => {
                                   displayDues.map((due: any, dIdx: number) => {
                                     const catObj = (categories || []).find((c: any) => c.id === due.category_id);
                                     const catLabel = catObj ? (bn ? catObj.name_bn || catObj.name : catObj.name) : '-';
-                                    const rawQty = due.quantity ? String(due.quantity) : '১';
+                                    const rawQty = due.quantity ? (bn ? toBnDigits(due.quantity) : String(due.quantity)) : (bn ? '১' : '1');
                                     const unit = getUnit(due.description, catLabel);
                                     const displayQty = unit ? `${rawQty} ${unit}` : `${rawQty}`;
-                                    const memoStr = getMemo(due.description);
+                                    const memoStr = getMemo(due.description, bn);
                                     const remarksStr = getRemarks(due.description);
                                     const rowInst = (allInstitutions || []).find((i: any) => i.id === due.institution_id);
 
                                     return (
                                       <tr key={due.id} className="border-b border-amber-100 dark:border-amber-950/60 hover:bg-amber-50/40 dark:hover:bg-amber-950/20">
-                                        <td className="px-3 py-2 text-center tabular-nums text-muted-foreground">{dIdx + 1}</td>
-                                        <td className="px-3 py-2 text-center tabular-nums whitespace-nowrap">{due.expense_date}</td>
+                                        <td className="px-3 py-2 text-center tabular-nums text-muted-foreground">{bn ? toBnDigits(dIdx + 1) : dIdx + 1}</td>
+                                        <td className="px-3 py-2 text-center tabular-nums whitespace-nowrap">{formatDateBn(due.expense_date, bn)}</td>
                                         {isAll && (
                                           <td className="px-3 py-2 text-left">
                                             <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-200/80 text-amber-950 dark:bg-amber-900 dark:text-amber-100 truncate max-w-[140px]">
@@ -3249,8 +3287,8 @@ const AdminExpenses = () => {
                   )}
                   {deposits.map((d: any, i: number) => (
                     <tr key={d.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                      <td className="border border-slate-300 px-3 py-1.5 text-center tabular-nums">{i + 1}</td>
-                      <td className="border border-slate-300 px-3 py-1.5 text-center tabular-nums">{d.deposit_date}</td>
+                      <td className="border border-slate-300 px-3 py-1.5 text-center tabular-nums">{bn ? toBnDigits(i + 1) : i + 1}</td>
+                      <td className="border border-slate-300 px-3 py-1.5 text-center tabular-nums">{formatDateBn(d.deposit_date, bn)}</td>
                       <td className="border border-slate-300 px-3 py-1.5 text-left">{d.bank_details || '-'}</td>
                       <td className="border border-slate-300 px-3 py-1.5 text-left">{d.other_details || '-'}</td>
                       <td className="border border-slate-300 px-3 py-1.5 text-left">
@@ -4967,7 +5005,7 @@ const AdminExpenses = () => {
                       {pageTitle}
                     </h2>
                     <p className="text-xs font-medium text-muted-foreground mt-0.5" style={{ fontSize: '11px', color: '#64748b', margin: '2px 0' }}>
-                      {bn ? 'হিসাবের মাস' : 'Report Month'}: <span className="font-bold text-foreground" style={{ fontWeight: 700, color: '#000000' }}>{selectedMonthYear}</span>
+                      {bn ? 'হিসাবের মাস' : 'Report Month'}: <span className="font-bold text-foreground" style={{ fontWeight: 700, color: '#000000' }}>{bn ? selectedMonthName : selectedMonthYear}</span>
                     </p>
                   </div>
                 </div>
@@ -5004,7 +5042,7 @@ const AdminExpenses = () => {
                             <div className="flex items-center justify-between text-xs text-muted-foreground pb-2 mb-3 border-b print:hidden">
                               <span className="font-bold text-primary flex items-center gap-1.5">
                                 <FileText className="w-3.5 h-3.5" />
-                                {bn ? `পৃষ্ঠা ${pageNum} / ${totalPagesCount}: ${page.categoryName}` : `Page ${pageNum} of ${totalPagesCount}: ${page.categoryName}`}
+                                {bn ? `পৃষ্ঠা ${toBnDigits(pageNum)} / ${toBnDigits(totalPagesCount)}: ${page.categoryName}` : `Page ${pageNum} of ${totalPagesCount}: ${page.categoryName}`}
                               </span>
                               <span className="font-medium bg-muted px-2 py-0.5 rounded text-[11px]">
                                 🏢 {getInstName(page.inst, bn)}
@@ -5043,12 +5081,12 @@ const AdminExpenses = () => {
                                 ) : (
                                   page.items.map((e: any, i: number) => (
                                     <tr key={e.id}>
-                                      <td className="border p-1.5 text-center">{i + 1}</td>
-                                      <td className="border p-1.5 text-center">{e.expense_date}</td>
+                                      <td className="border p-1.5 text-center">{bn ? toBnDigits(i + 1) : i + 1}</td>
+                                      <td className="border p-1.5 text-center">{formatDateBn(e.expense_date, bn)}</td>
                                       <td className="border p-1.5 font-medium">{cleanDesc(e.description)}</td>
-                                      <td className="border p-1.5 text-center">{e.quantity || 1}{getUnit(e.description) ? ` ${getUnit(e.description)}` : ''}</td>
-                                      <td className="border p-1.5 text-center">{getMethod(e.description)}</td>
-                                      <td className="border p-1.5 text-center font-mono">{getMemo(e.description)}</td>
+                                      <td className="border p-1.5 text-center">{bn ? toBnDigits(e.quantity || 1) : (e.quantity || 1)}{getUnit(e.description) ? ` ${getUnit(e.description)}` : ''}</td>
+                                      <td className="border p-1.5 text-center">{getMethod(e.description, bn)}</td>
+                                      <td className="border p-1.5 text-center font-mono">{getMemo(e.description, bn)}</td>
                                       <td className="border p-1.5 text-right font-semibold">৳{formatNum(Number(e.amount))}</td>
                                       <td className="border p-1.5 text-muted-foreground">{getRemarks(e.description)}</td>
                                     </tr>
@@ -5090,7 +5128,7 @@ const AdminExpenses = () => {
                             <div className="flex items-center justify-between text-xs text-muted-foreground pb-2 mb-3 border-b print:hidden">
                               <span className="font-bold text-amber-600 flex items-center gap-1.5">
                                 <FileText className="w-3.5 h-3.5" />
-                                {bn ? `পৃষ্ঠা ${pageNum} / ${totalPagesCount}: বকেয়া খরচের হিসাব` : `Page ${pageNum} of ${totalPagesCount}: Outstanding Dues`}
+                                {bn ? `পৃষ্ঠা ${toBnDigits(pageNum)} / ${toBnDigits(totalPagesCount)}: বকেয়া খরচের হিসাব` : `Page ${pageNum} of ${totalPagesCount}: Outstanding Dues`}
                               </span>
                               <span className="font-medium bg-muted px-2 py-0.5 rounded text-[11px]">
                                 🏢 {getInstName(page.inst, bn)}
@@ -5124,11 +5162,11 @@ const AdminExpenses = () => {
                                 ) : (
                                   page.items.map((due: any, di: number) => (
                                     <tr key={due.id}>
-                                      <td className="border p-1.5 text-center">{di + 1}</td>
-                                      <td className="border p-1.5 text-center">{due.expense_date}</td>
+                                      <td className="border p-1.5 text-center">{bn ? toBnDigits(di + 1) : di + 1}</td>
+                                      <td className="border p-1.5 text-center">{formatDateBn(due.expense_date, bn)}</td>
                                       <td className="border p-1.5 font-medium">{cleanDesc(due.description)}</td>
-                                      <td className="border p-1.5 text-center">{due.quantity || 1}{getUnit(due.description) ? ` ${getUnit(due.description)}` : ''}</td>
-                                      <td className="border p-1.5 text-center font-mono">{getMemo(due.description)}</td>
+                                      <td className="border p-1.5 text-center">{bn ? toBnDigits(due.quantity || 1) : (due.quantity || 1)}{getUnit(due.description) ? ` ${getUnit(due.description)}` : ''}</td>
+                                      <td className="border p-1.5 text-center font-mono">{getMemo(due.description, bn)}</td>
                                       <td className="border p-1.5 text-right font-semibold text-amber-700">৳{formatNum(Number(due.amount))}</td>
                                       <td className="border p-1.5 text-muted-foreground">{getRemarks(due.description)}</td>
                                     </tr>
@@ -5170,7 +5208,7 @@ const AdminExpenses = () => {
                             <div className="flex items-center justify-between text-xs text-muted-foreground pb-2 mb-3 border-b print:hidden">
                               <span className="font-bold text-teal-700 dark:text-teal-400 flex items-center gap-1.5">
                                 <FileText className="w-3.5 h-3.5" />
-                                {bn ? `পৃষ্ঠা ${pageNum} / ${totalPagesCount}: ব্যাংক হিসাব ও টাকা জমা/উত্তোলন` : `Page ${pageNum} of ${totalPagesCount}: Bank & Deposits`}
+                                {bn ? `পৃষ্ঠা ${toBnDigits(pageNum)} / ${toBnDigits(totalPagesCount)}: ব্যাংক হিসাব ও টাকা জমা/উত্তোলন` : `Page ${pageNum} of ${totalPagesCount}: Bank & Deposits`}
                               </span>
                               <span className="font-medium bg-muted px-2 py-0.5 rounded text-[11px]">
                                 {isAllPrint ? (bn ? 'সমন্বিত ব্যাংক হিসাব' : 'Consolidated Bank') : getInstName(page.inst, bn)}
@@ -5219,8 +5257,8 @@ const AdminExpenses = () => {
                                   ) : (
                                     deposits.map((d: any, idx: number) => (
                                       <tr key={d.id || idx}>
-                                        <td className="border p-1.5 text-center">{(previousMonthCash > 0 ? 1 : 0) + idx + 1}</td>
-                                        <td className="border p-1.5 text-center">{d.deposit_date}</td>
+                                        <td className="border p-1.5 text-center">{bn ? toBnDigits((previousMonthCash > 0 ? 1 : 0) + idx + 1) : (previousMonthCash > 0 ? 1 : 0) + idx + 1}</td>
+                                        <td className="border p-1.5 text-center">{formatDateBn(d.deposit_date, bn)}</td>
                                         <td className="border p-1.5 font-medium">{d.bank_details || '-'}</td>
                                         <td className="border p-1.5 text-muted-foreground">{d.other_details || '-'}</td>
                                         <td className="border p-1.5 text-center font-medium">{getSourceLabel(d.source, bn, customDepositSources)}</td>
@@ -5303,7 +5341,7 @@ const AdminExpenses = () => {
                           <div className="flex items-center justify-between text-xs text-muted-foreground pb-2 mb-3 border-b print:hidden">
                             <span className="font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
                               <FileText className="w-3.5 h-3.5" />
-                              {bn ? `পৃষ্ঠা ${pageNum} / ${totalPagesCount}: সর্বমোট হিসাব ও তহবিল সারসংক্ষেপ` : `Page ${pageNum} of ${totalPagesCount}: Master Summary`}
+                              {bn ? `পৃষ্ঠা ${toBnDigits(pageNum)} / ${toBnDigits(totalPagesCount)}: সর্বমোট হিসাব ও তহবিল সারসংক্ষেপ` : `Page ${pageNum} of ${totalPagesCount}: Master Summary`}
                             </span>
                             <span className="font-medium bg-muted px-2 py-0.5 rounded text-[11px]">
                               {bn ? 'সারসংক্ষেপ পৃষ্ঠা' : 'Summary Page'}
@@ -5340,21 +5378,21 @@ const AdminExpenses = () => {
                                   const pct = totalPaid > 0 ? ((instPaidTot / totalPaid) * 100).toFixed(1) + '%' : '0%';
                                   return (
                                     <tr key={inst.id}>
-                                      <td className="border p-1.5 text-center">{idx + 1}</td>
+                                      <td className="border p-1.5 text-center">{bn ? toBnDigits(idx + 1) : idx + 1}</td>
                                       <td className="border p-1.5 font-medium">{getInstName(inst, bn)}</td>
-                                      <td className="border p-1.5 text-center">{instPaidExp.length}</td>
+                                      <td className="border p-1.5 text-center">{bn ? toBnDigits(instPaidExp.length) : instPaidExp.length}</td>
                                       <td className="border p-1.5 text-right font-semibold">৳{formatNum(instPaidTot)}</td>
                                       <td className="border p-1.5 text-right font-semibold text-amber-700">৳{formatNum(instDueTot)}</td>
-                                      <td className="border p-1.5 text-right">{pct}</td>
+                                      <td className="border p-1.5 text-right">{bn ? toBnDigits(pct) : pct}</td>
                                     </tr>
                                   );
                                 })}
                                 <tr className="font-bold bg-muted/70 border-t-2">
                                   <td colSpan={2} className="border p-2 text-right">{bn ? 'সর্বমোট:' : 'Grand Total:'}</td>
-                                  <td className="border p-2 text-center">{expenses.filter((e: any) => !isUnpaidDue(e.description)).length}</td>
+                                  <td className="border p-2 text-center">{bn ? toBnDigits(expenses.filter((e: any) => !isUnpaidDue(e.description)).length) : expenses.filter((e: any) => !isUnpaidDue(e.description)).length}</td>
                                   <td className="border p-2 text-right font-black text-emerald-700 dark:text-emerald-400">৳{formatNum(totalPaid)}</td>
                                   <td className="border p-2 text-right font-black text-amber-700">৳{formatNum(allExpenses.filter((e: any) => isUnpaidDue(e.description)).reduce((s: number, e: any) => s + Number(e.amount || 0), 0))}</td>
-                                  <td className="border p-2 text-right">100%</td>
+                                  <td className="border p-2 text-right">{bn ? '১০০%' : '100%'}</td>
                                 </tr>
                               </tbody>
                             </table>
@@ -5414,7 +5452,7 @@ const AdminExpenses = () => {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${bn ? 'সকল প্রতিষ্ঠানের হিসাব প্রতিবেদন' : 'All Institutions Expense Report'} - ${selectedMonthYear}</title>
+  <title>${bn ? 'সকল প্রতিষ্ঠানের হিসাব প্রতিবেদন' : 'All Institutions Expense Report'} - ${bn ? selectedMonthName : selectedMonthYear}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">

@@ -4,6 +4,7 @@
  * User triggers browser "Save as PDF" via print dialog.
  */
 import { toast } from "sonner";
+import { toBnDigits } from "@/lib/digits";
 
 export interface ReportSection {
   title_bn: string;
@@ -29,6 +30,7 @@ export interface ReportMeta {
   period_label_en?: string;
   principal_name?: string;
   accountant_name?: string;
+  bengali_digits?: boolean;
 }
 
 export interface ReportSummaryStat {
@@ -46,11 +48,12 @@ const escapeHtml = (s: any): string =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 
-const formatCell = (v: string | number): string => {
+const formatCell = (v: string | number, bengaliDigits: boolean = false): string => {
   if (typeof v === 'number') {
-    return v.toLocaleString('en-US');
+    const formatted = v.toLocaleString('en-US');
+    return bengaliDigits ? toBnDigits(formatted) : formatted;
   }
-  return escapeHtml(v);
+  return bengaliDigits ? toBnDigits(escapeHtml(v)) : escapeHtml(v);
 };
 
 const toneColor = (t?: string) => {
@@ -73,9 +76,10 @@ export const generateBilingualReport = (
     return;
   }
 
+  const isBnDigits = !!meta.bengali_digits;
   const date = new Date();
   const dateStr = date.toLocaleDateString('en-GB');
-  const dateStrBn = date.toLocaleDateString('bn-BD');
+  const dateStrBn = toBnDigits(date.toLocaleDateString('en-GB'));
 
   const logoHtml = meta.logo_url
     ? `<img src="${meta.logo_url}" alt="logo" style="height:72px;width:72px;object-fit:contain;border-radius:12px;border:1px solid #e2e8f0;" />`
@@ -90,7 +94,7 @@ export const generateBilingualReport = (
               <span class="en">${escapeHtml(s.label_en)}</span>
             </div>
             <div class="summary-value" style="color:${toneColor(s.tone)};">
-              ${typeof s.value === 'number' ? s.value.toLocaleString('en-US') : escapeHtml(s.value)}
+              ${typeof s.value === 'number' ? (isBnDigits ? toBnDigits(s.value.toLocaleString('en-US')) : s.value.toLocaleString('en-US')) : (isBnDigits ? toBnDigits(escapeHtml(s.value)) : escapeHtml(s.value))}
             </div>
           </div>
         `).join('')}
@@ -118,7 +122,7 @@ export const generateBilingualReport = (
         <tbody>
           ${sec.rows.length > 0 ? sec.rows.map((row, i) => `
             <tr class="${i % 2 === 0 ? 'even' : 'odd'}">
-              ${row.map(cell => `<td>${formatCell(cell)}</td>`).join('')}
+              ${row.map(cell => `<td>${formatCell(cell, isBnDigits)}</td>`).join('')}
             </tr>
           `).join('') : `
             <tr><td colspan="${sec.headers.length}" class="empty">No data available / কোনো তথ্য পাওয়া যায়নি</td></tr>
@@ -132,7 +136,7 @@ export const generateBilingualReport = (
                   <strong>${escapeHtml(t.bn)} / ${escapeHtml(t.en)}</strong>
                 </td>
                 <td class="total-value">
-                  <strong>${typeof t.value === 'number' ? t.value.toLocaleString('en-US') : escapeHtml(t.value)}</strong>
+                  <strong>${typeof t.value === 'number' ? (isBnDigits ? toBnDigits(t.value.toLocaleString('en-US')) : t.value.toLocaleString('en-US')) : (isBnDigits ? toBnDigits(escapeHtml(t.value)) : escapeHtml(t.value))}</strong>
                 </td>
               </tr>
             `).join('')}
