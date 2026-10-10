@@ -18,75 +18,9 @@ interface TimePickerProps {
   clearable?: boolean;
 }
 
-const MINUTES = Array.from({ length: 60 }, (_, i) => i);
-const HOURS_12 = Array.from({ length: 12 }, (_, i) => i + 1); // 1..12
-const HOURS_24 = Array.from({ length: 24 }, (_, i) => i); // 0..23
+const HOURS_12 = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+const MINUTE_STEPS = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 const PERIODS = ['AM', 'PM'] as const;
-
-interface ScrollColumnProps<T> {
-  label: string;
-  items: T[];
-  value: T;
-  onChange: (v: T) => void;
-  render: (v: T) => string;
-}
-
-function ScrollColumn<T extends number | string>({
-  label,
-  items,
-  value,
-  onChange,
-  render,
-}: ScrollColumnProps<T>) {
-  const containerRef = React.useRef<HTMLDivElement>(null);
-
-  // Auto-scroll selected item to center when opened or value changes
-  React.useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const selectedEl = el.querySelector<HTMLButtonElement>('[data-selected="true"]');
-    if (selectedEl) {
-      const top = selectedEl.offsetTop - el.clientHeight / 2 + selectedEl.clientHeight / 2;
-      el.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
-    }
-  }, [value]);
-
-  return (
-    <div className="flex flex-1 flex-col items-center min-w-0">
-      <div className="text-[11px] font-bold text-muted-foreground/80 mb-1.5 uppercase tracking-wider">
-        {label}
-      </div>
-      <div
-        ref={containerRef}
-        role="listbox"
-        aria-label={label}
-        className="h-[190px] w-full overflow-y-auto overscroll-contain id-preview-scroll rounded-xl border border-border/50 bg-muted/20 p-1 space-y-1"
-      >
-        {items.map((item) => {
-          const isSelected = item === value;
-          return (
-            <button
-              key={String(item)}
-              type="button"
-              role="option"
-              aria-selected={isSelected}
-              data-selected={isSelected}
-              onClick={() => onChange(item)}
-              className={cn(
-                "h-8 w-full rounded-lg text-xs font-semibold tabular-nums transition-all flex items-center justify-center",
-                isSelected
-                  ? "bg-primary text-primary-foreground shadow-sm font-bold scale-[1.02]"
-                  : "text-foreground/75 hover:bg-primary/10 hover:text-primary"
-              )}
-            >
-              {render(item)}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 const TimePicker = ({
   id,
@@ -100,8 +34,9 @@ const TimePicker = ({
   clearable = false,
 }: TimePickerProps) => {
   const [open, setOpen] = React.useState(false);
-  const [h24, setH24] = React.useState<number>(0);
-  const [minute, setMinute] = React.useState<number>(0);
+  const [h24, setH24] = React.useState<number>(11);
+  const [minute, setMinute] = React.useState<number>(30);
+  const [activeMode, setActiveMode] = React.useState<'hour' | 'minute'>('hour');
   const isMobile = useIsMobile();
 
   React.useEffect(() => {
@@ -155,6 +90,44 @@ const TimePicker = ({
     setMinute(now.getMinutes());
   };
 
+  // Clock Dial Geometry
+  const DIAL_RADIUS = 110;
+  const NUM_RADIUS = 82;
+
+  const getPos = (index: number, total: number) => {
+    const angleDeg = (index / total) * 360;
+    const rad = (angleDeg * Math.PI) / 180;
+    const x = DIAL_RADIUS + NUM_RADIUS * Math.sin(rad);
+    const y = DIAL_RADIUS - NUM_RADIUS * Math.cos(rad);
+    return { x, y, angleDeg };
+  };
+
+  const activeAngle = activeMode === 'hour'
+    ? ((hour12 % 12) / 12) * 360
+    : (minute / 60) * 360;
+
+  const handRad = (activeAngle * Math.PI) / 180;
+  const handTipX = DIAL_RADIUS + NUM_RADIUS * Math.sin(handRad);
+  const handTipY = DIAL_RADIUS - NUM_RADIUS * Math.cos(handRad);
+
+  const handleDialClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - (rect.left + rect.width / 2);
+    const y = e.clientY - (rect.top + rect.height / 2);
+    let deg = Math.atan2(x, -y) * (180 / Math.PI);
+    if (deg < 0) deg += 360;
+
+    if (activeMode === 'hour') {
+      const step = 360 / 12;
+      const h = Math.round(deg / step) % 12 || 12;
+      setHour(h);
+      setActiveMode('minute');
+    } else {
+      const m = Math.round(deg / 6) % 60;
+      setMinute(m);
+    }
+  };
+
   const trigger = (
     <button
       id={id}
@@ -194,36 +167,56 @@ const TimePicker = ({
   );
 
   const panel = (
-    <div className="w-full">
-      {/* Live preview header */}
-      <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-border/60 bg-muted/30">
-        <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground mb-0.5">
-            নির্বাচিত সময়
-          </p>
-          <p className="text-xl font-bold tabular-nums text-foreground tracking-tight leading-none">
-            {fmt(h24, minute)}
-          </p>
-        </div>
+    <div className="w-[300px] select-none p-4 space-y-4">
+      {/* Top Header & Digital Display Card */}
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground">
+          {activeMode === 'hour' ? 'ঘণ্টা নির্ধারণ' : 'মিনিট নির্ধারণ'}
+        </span>
         <Button
           type="button"
           variant="secondary"
           size="sm"
           onClick={handleNow}
-          className="h-7 shrink-0 rounded-full px-3 text-[11px] font-semibold"
+          className="h-7 rounded-full px-3 text-[11px] font-semibold"
         >
           এখন
         </Button>
       </div>
 
-      {/* AM/PM toggle */}
-      {!is24 && (
-        <div className="px-4 pt-3 pb-1">
-          <div
-            className="grid grid-cols-2 gap-1 rounded-xl border border-border/60 bg-muted/40 p-1"
-            role="group"
-            aria-label="AM বা PM নির্বাচন"
+      {/* Digital Digits + AM/PM Pill */}
+      <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center gap-1.5 rounded-2xl bg-muted/40 p-1.5 border border-border/50">
+          <button
+            type="button"
+            onClick={() => setActiveMode('hour')}
+            className={cn(
+              "h-12 w-14 rounded-xl text-2xl font-bold tabular-nums transition-all flex items-center justify-center",
+              activeMode === 'hour'
+                ? "bg-primary text-primary-foreground shadow-md scale-105"
+                : "text-foreground hover:bg-muted"
+            )}
           >
+            {is24 ? String(h24).padStart(2, '0') : hour12}
+          </button>
+          <span className="text-xl font-bold text-muted-foreground/60 animate-pulse">:</span>
+          <button
+            type="button"
+            onClick={() => setActiveMode('minute')}
+            className={cn(
+              "h-12 w-14 rounded-xl text-2xl font-bold tabular-nums transition-all flex items-center justify-center",
+              activeMode === 'minute'
+                ? "bg-primary text-primary-foreground shadow-md scale-105"
+                : "text-foreground hover:bg-muted"
+            )}
+          >
+            {String(minute).padStart(2, '0')}
+          </button>
+        </div>
+
+        {/* AM / PM Segmented Control */}
+        {!is24 && (
+          <div className="flex flex-col gap-1 rounded-2xl bg-muted/40 p-1 border border-border/50" role="group" aria-label="AM বা PM নির্বাচন">
             {PERIODS.map((item) => (
               <button
                 key={item}
@@ -231,7 +224,7 @@ const TimePicker = ({
                 onClick={() => setPeriod(item)}
                 aria-pressed={period === item}
                 className={cn(
-                  "h-8 rounded-lg text-xs font-bold transition-all",
+                  "h-6 px-2.5 rounded-lg text-xs font-bold transition-all",
                   period === item
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -241,29 +234,119 @@ const TimePicker = ({
               </button>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* Columns: Hour & Minute */}
-      <div className="flex items-stretch gap-2.5 px-4 py-3">
-        <ScrollColumn
-          label="ঘণ্টা"
-          items={is24 ? HOURS_24 : HOURS_12}
-          value={is24 ? h24 : hour12}
-          onChange={setHour}
-          render={(v) => (is24 ? String(v).padStart(2, '0') : String(v))}
-        />
-        <ScrollColumn
-          label="মিনিট"
-          items={MINUTES}
-          value={minute}
-          onChange={setMinute}
-          render={(v) => String(v).padStart(2, '0')}
-        />
+        )}
       </div>
 
-      {/* Action buttons */}
-      <div className="flex items-center gap-2 px-4 pb-4 pt-2 border-t border-border/50">
+      {/* Circular Clock Dial */}
+      <div className="flex justify-center">
+        <div
+          onClick={handleDialClick}
+          className="relative w-[220px] h-[220px] rounded-full bg-muted/25 border border-border/60 shadow-inner flex items-center justify-center cursor-pointer touch-none"
+        >
+          {/* SVG Clock Hand & Center */}
+          <svg className="absolute inset-0 w-full h-full pointer-events-none">
+            {/* Hand Line */}
+            <line
+              x1={DIAL_RADIUS}
+              y1={DIAL_RADIUS}
+              x2={handTipX}
+              y2={handTipY}
+              stroke="hsl(var(--primary))"
+              strokeWidth="2.5"
+            />
+            {/* Center Pin */}
+            <circle cx={DIAL_RADIUS} cy={DIAL_RADIUS} r="4" fill="hsl(var(--primary))" />
+            {/* Active Tip Glow Circle */}
+            <circle
+              cx={handTipX}
+              cy={handTipY}
+              r="17"
+              fill="hsl(var(--primary))"
+              className="drop-shadow-sm"
+            />
+          </svg>
+
+          {/* Numbers on Dial */}
+          {activeMode === 'hour' ? (
+            HOURS_12.map((h, i) => {
+              const { x, y } = getPos(i, 12);
+              const isSelected = hour12 === h;
+              return (
+                <button
+                  key={h}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setHour(h);
+                    setActiveMode('minute');
+                  }}
+                  style={{ left: `${x}px`, top: `${y}px`, transform: 'translate(-50%, -50%)' }}
+                  className={cn(
+                    "absolute w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all z-10",
+                    isSelected
+                      ? "text-primary-foreground font-black scale-110"
+                      : "text-foreground/85 hover:text-primary"
+                  )}
+                >
+                  {h}
+                </button>
+              );
+            })
+          ) : (
+            MINUTE_STEPS.map((m, i) => {
+              const { x, y } = getPos(i, 12);
+              const isSelected = minute === m;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMinute(m);
+                  }}
+                  style={{ left: `${x}px`, top: `${y}px`, transform: 'translate(-50%, -50%)' }}
+                  className={cn(
+                    "absolute w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all z-10",
+                    isSelected
+                      ? "text-primary-foreground font-black scale-110"
+                      : "text-foreground/85 hover:text-primary"
+                  )}
+                >
+                  {String(m).padStart(2, '0')}
+                </button>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* Quick Minutes Strip (Scrollable) */}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between text-[10px] uppercase font-bold text-muted-foreground/75 px-1">
+          <span>দ্রুত মিনিট বাছাই</span>
+          <span className="text-primary font-bold">{fmt(h24, minute)}</span>
+        </div>
+        <div className="flex items-center gap-1 overflow-x-auto overflow-y-auto overscroll-contain id-preview-scroll p-1 rounded-xl bg-muted/20 border border-border/40">
+          {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMinute(m)}
+              className={cn(
+                "h-7 min-w-[34px] px-2 rounded-lg text-xs font-bold tabular-nums transition-all flex items-center justify-center shrink-0",
+                minute === m
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+              )}
+            >
+              {String(m).padStart(2, '0')}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex items-center gap-2 pt-2 border-t border-border/50">
         {clearable && (
           <Button
             type="button"
@@ -291,7 +374,7 @@ const TimePicker = ({
     return (
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>{trigger}</DialogTrigger>
-        <DialogContent className="w-[calc(100vw-24px)] max-w-[320px] gap-0 overflow-hidden rounded-[24px] border-0 p-0 shadow-2xl [&>button]:hidden">
+        <DialogContent className="w-[calc(100vw-24px)] max-w-[340px] gap-0 overflow-hidden rounded-[28px] border-0 p-0 shadow-2xl [&>button]:hidden">
           <DialogTitle className="sr-only">সময় নির্বাচন</DialogTitle>
           {panel}
         </DialogContent>
@@ -303,7 +386,7 @@ const TimePicker = ({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent
-        className="w-[260px] overflow-hidden rounded-[24px] border-0 bg-popover p-0 shadow-2xl"
+        className="w-auto overflow-hidden rounded-[28px] border-0 bg-popover p-0 shadow-2xl"
         align="start"
         sideOffset={6}
         collisionPadding={12}
