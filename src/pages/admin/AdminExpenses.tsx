@@ -19,7 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Plus, Trash2, Edit2, DollarSign, TrendingDown, TrendingUp, Wallet, Printer, FolderPlus, TagIcon, Upload, Download, Eye, ScanLine, Building2, Package, AlertTriangle, FileText, FileBarChart, CheckCircle2, Clock, Coins, Check } from 'lucide-react';
+import { Plus, Trash2, Edit2, DollarSign, TrendingDown, TrendingUp, Wallet, Printer, FolderPlus, TagIcon, Upload, Download, Eye, ScanLine, Building2, Package, AlertTriangle, FileText, FileBarChart, CheckCircle2, Clock, Coins, Check, ExternalLink } from 'lucide-react';
 import ExpenseVoucherPrint from '@/components/expenses/ExpenseVoucherPrint';
 import ExpenseHierarchyReport from '@/components/expenses/ExpenseHierarchyReport';
 import LedgerReport from '@/components/expenses/LedgerReport';
@@ -47,13 +47,17 @@ export const DEFAULT_QUANTITY_UNITS = [
   'টি',
   'কেজি',
   'গ্রাম',
+  'টন',
+  'বস্তা',
+  'সিএফটি (cft)',
+  'ট্রাক',
+  'স্কয়ার ফিট (sqft)',
   'লিটার',
   'ফুট',
   'মিটার',
   'গজ',
   'সেট',
   'প্যাকেট',
-  'বস্তা',
   'বক্স',
   'বান্ডিল',
   'রিম'
@@ -1156,24 +1160,49 @@ const AdminExpenses = () => {
           user_role: role,
         });
 
-        // Inventory integration: update stock and create log
+        // Inventory integration: update stock, total_purchased, and create rich log
         if (expenseForm.add_to_inventory && expenseForm.inventory_item_id && insertedExpense) {
           try {
+            const { data: currentItem } = await supabase
+              .from('inventory_items')
+              .select('current_stock, total_purchased, buying_price')
+              .eq('id', expenseForm.inventory_item_id)
+              .single();
+
+            const curStock = Number(currentItem?.current_stock || 0);
+            const curPurchased = Number(currentItem?.total_purchased ?? currentItem?.current_stock ?? 0);
+            const newStock = curStock + parsedQty;
+            const newPurchased = curPurchased + parsedQty;
+            const unitPrice = parsedQty > 0 ? (parsedAmount / parsedQty) : Number(currentItem?.buying_price || 0);
+
+            // Attempt RPC increment first
             const { error: stockError } = await supabase.rpc('increment_inventory_stock' as any, {
               p_item_id: expenseForm.inventory_item_id,
               p_amount: parsedQty
             });
-            if (stockError) {
-              const { data: currentItem } = await supabase.from('inventory_items').select('current_stock').eq('id', expenseForm.inventory_item_id).single();
-              if (currentItem) {
-                await supabase.from('inventory_items').update({ current_stock: (currentItem.current_stock || 0) + parsedQty }).eq('id', expenseForm.inventory_item_id);
-              }
+
+            // Sync total_purchased and fallback stock update if RPC had issues
+            const updatePayload: Record<string, any> = {
+              total_purchased: newPurchased,
+            };
+            if (unitPrice > 0) {
+              updatePayload.buying_price = Math.round(unitPrice * 100) / 100;
             }
+            if (stockError || !currentItem) {
+              updatePayload.current_stock = newStock;
+            }
+            await supabase.from('inventory_items').update(updatePayload).eq('id', expenseForm.inventory_item_id);
+
+            // Insert detailed inventory log
             await supabase.from('inventory_logs').insert({
               item_id: expenseForm.inventory_item_id,
               type: 'in',
               change_amount: parsedQty,
-              reason: `Purchased via Expense ID: ${insertedExpense.id}`,
+              project_name: payload.description || 'খরচ এন্ট্রি হতে ক্রয়',
+              unit_price: unitPrice > 0 ? Math.round(unitPrice * 100) / 100 : 0,
+              total_price: parsedAmount,
+              recipient: payload.vendor_name || expenseForm.expense_method || 'হিসাব শাখা',
+              reason: `খরচ এন্ট্রি হতে ক্রয় (ভাউচার #${insertedExpense.voucher_no || insertedExpense.id?.slice(0, 8)})`,
               expense_id: insertedExpense.id,
             });
           } catch (invErr) {
@@ -4676,11 +4705,14 @@ const AdminExpenses = () => {
             </div>
 
             {/* Inventory Integration Toggle */}
-            <div className="rounded-xl border border-emerald-200/30 dark:border-emerald-800/30 bg-emerald-50/50 dark:bg-emerald-950/20 p-3 space-y-3">
+            <div className="rounded-xl border border-emerald-200/50 dark:border-emerald-800/40 bg-emerald-50/60 dark:bg-emerald-950/20 p-3.5 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Package className="w-4 h-4 text-emerald-600" />
-                  <Label className="text-sm font-semibold">{bn ? 'ইনভেন্টরিতে যোগ হবে?' : 'Add to Inventory?'}</Label>
+                  <Package className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <div>
+                    <Label className="text-sm font-semibold">{bn ? 'ইনভেন্টরিতে স্টক ও ক্রয় যোগ হবে?' : 'Add to Inventory Stock & Purchase?'}</Label>
+                    <p className="text-[11px] text-muted-foreground">{bn ? 'ক্রয়কৃত মালামাল সরাসরি ইনভেন্টরি হিসেবে যুক্ত হবে' : 'Automatically syncs count with inventory stock'}</p>
+                  </div>
                 </div>
                 <Switch
                   checked={expenseForm.add_to_inventory}
@@ -4688,23 +4720,40 @@ const AdminExpenses = () => {
                 />
               </div>
               {expenseForm.add_to_inventory && (
-                <div>
-                  <Label className="text-xs">{bn ? 'ইনভেন্টরি আইটেম নির্বাচন করুন' : 'Select Inventory Item'}</Label>
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-medium">{bn ? 'ইনভেন্টরি আইটেম নির্বাচন করুন' : 'Select Inventory Item'}</Label>
+                    <a 
+                      href="/admin/inventory" 
+                      target="_blank" 
+                      rel="noreferrer" 
+                      className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 font-medium"
+                    >
+                      <span>{bn ? 'ইনভেন্টরি তালিকা / নতুন আইটেম' : 'Open Inventory'}</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
                   <Select
                     value={expenseForm.inventory_item_id || undefined}
                     onValueChange={v => setExpenseForm(f => ({ ...f, inventory_item_id: v }))}
                   >
-                    <SelectTrigger className="mt-1"><SelectValue placeholder={bn ? 'আইটেম বাছুন...' : 'Select item...'} /></SelectTrigger>
+                    <SelectTrigger className="mt-1 bg-white dark:bg-neutral-900"><SelectValue placeholder={bn ? 'আইটেম বাছুন...' : 'Select item...'} /></SelectTrigger>
                     <SelectContent className="max-h-60">
                       {inventoryItems.map((item: any) => (
                         <SelectItem key={item.id} value={item.id}>
-                          {bn ? item.name_bn : (item.name_en || item.name_bn)} — {bn ? 'স্টক:' : 'Stock:'} {item.current_stock} {item.unit}
+                          {bn ? item.name_bn : (item.name_en || item.name_bn)} — {bn ? 'মজুত:' : 'Stock:'} {item.current_stock} {item.unit}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  {inventoryItems.length === 0 && (
-                    <p className="text-[11px] text-muted-foreground mt-1">{bn ? 'ইনভেন্টরি পেজ থেকে আইটেম যোগ করুন' : 'Add items from Inventory page first'}</p>
+                  {inventoryItems.length === 0 ? (
+                    <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1">
+                      {bn ? 'ইনভেন্টরিতে এখনো কোনো আইটেম নেই। উপরের লিংক থেকে ইনভেন্টরি পেজে আইটেম তৈরি করুন।' : 'No inventory items found. Please create items first.'}
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80">
+                      {bn ? '✓ সংরক্ষণ করলে খরচের পরিমাণটি এই আইটেমের মোট ক্রয় এবং বর্তমান স্টকে যুক্ত হবে।' : '✓ Saving will add this quantity to total purchased and in-stock inventory.'}
+                    </p>
                   )}
                 </div>
               )}
