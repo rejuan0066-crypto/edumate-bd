@@ -11419,6 +11419,7 @@ export type Database = {
         Args: { _conv: string; _user: string }
         Returns: boolean
       }
+      is_staff_member: { Args: { _user_id: string }; Returns: boolean }
       is_valid_result_signatories: { Args: { v: Json }; Returns: boolean }
       link_administrative_officer_by_email: {
         Args: never
