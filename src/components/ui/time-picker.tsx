@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Clock, X } from "lucide-react";
+import { Clock, X, ChevronUp, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "@/components/ui/dialog";
@@ -18,8 +18,6 @@ interface TimePickerProps {
   clearable?: boolean;
 }
 
-const HOURS_12 = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
-const MINUTE_STEPS = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 const PERIODS = ['AM', 'PM'] as const;
 
 const TimePicker = ({
@@ -34,10 +32,14 @@ const TimePicker = ({
   clearable = false,
 }: TimePickerProps) => {
   const [open, setOpen] = React.useState(false);
-  const [h24, setH24] = React.useState<number>(11);
+  const [h24, setH24] = React.useState<number>(9);
   const [minute, setMinute] = React.useState<number>(30);
-  const [activeMode, setActiveMode] = React.useState<'hour' | 'minute'>('hour');
+  const [activeUnit, setActiveUnit] = React.useState<'hour' | 'minute'>('hour');
   const isMobile = useIsMobile();
+
+  const hourRef = React.useRef<HTMLDivElement>(null);
+  const minuteRef = React.useRef<HTMLDivElement>(null);
+  const touchStartY = React.useRef<number | null>(null);
 
   React.useEffect(() => {
     if (value) {
@@ -60,9 +62,72 @@ const TimePicker = ({
     }
   };
 
+  const stepHour = React.useCallback((delta: number) => {
+    if (is24) {
+      setH24((prev) => (prev + delta + 24) % 24);
+    } else {
+      const current12 = h24 % 12 || 12;
+      let next12 = current12 + delta;
+      if (next12 > 12) next12 = 1;
+      if (next12 < 1) next12 = 12;
+      const newH = period === 'AM' ? (next12 % 12) : (next12 % 12) + 12;
+      setH24(newH);
+    }
+  }, [is24, h24, period]);
+
+  const stepMinute = React.useCallback((delta: number) => {
+    setMinute((prev) => (prev + delta + 60) % 60);
+  }, []);
+
   const setPeriod = (p: typeof PERIODS[number]) => {
     if (p === 'AM' && h24 >= 12) setH24(h24 - 12);
     if (p === 'PM' && h24 < 12) setH24(h24 + 12);
+  };
+
+  // Discrete mouse wheel on Hour box
+  React.useEffect(() => {
+    const el = hourRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      stepHour(e.deltaY < 0 ? 1 : -1);
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [stepHour]);
+
+  // Discrete mouse wheel on Minute box
+  React.useEffect(() => {
+    const el = minuteRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      stepMinute(e.deltaY < 0 ? 1 : -1);
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [stepMinute]);
+
+  // Touch swipe support for mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent, type: 'hour' | 'minute') => {
+    if (touchStartY.current === null) return;
+    const diff = touchStartY.current - e.touches[0].clientY;
+    if (Math.abs(diff) >= 20) {
+      const dir = diff > 0 ? 1 : -1;
+      if (type === 'hour') stepHour(dir);
+      else stepMinute(dir);
+      touchStartY.current = e.touches[0].clientY;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    touchStartY.current = null;
   };
 
   const fmt = (h: number, m: number) => {
@@ -88,44 +153,6 @@ const TimePicker = ({
     const now = new Date();
     setH24(now.getHours());
     setMinute(now.getMinutes());
-  };
-
-  // Clock Dial Geometry
-  const DIAL_RADIUS = 110;
-  const NUM_RADIUS = 82;
-
-  const getPos = (index: number, total: number) => {
-    const angleDeg = (index / total) * 360;
-    const rad = (angleDeg * Math.PI) / 180;
-    const x = DIAL_RADIUS + NUM_RADIUS * Math.sin(rad);
-    const y = DIAL_RADIUS - NUM_RADIUS * Math.cos(rad);
-    return { x, y, angleDeg };
-  };
-
-  const activeAngle = activeMode === 'hour'
-    ? ((hour12 % 12) / 12) * 360
-    : (minute / 60) * 360;
-
-  const handRad = (activeAngle * Math.PI) / 180;
-  const handTipX = DIAL_RADIUS + NUM_RADIUS * Math.sin(handRad);
-  const handTipY = DIAL_RADIUS - NUM_RADIUS * Math.cos(handRad);
-
-  const handleDialClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - (rect.left + rect.width / 2);
-    const y = e.clientY - (rect.top + rect.height / 2);
-    let deg = Math.atan2(x, -y) * (180 / Math.PI);
-    if (deg < 0) deg += 360;
-
-    if (activeMode === 'hour') {
-      const step = 360 / 12;
-      const h = Math.round(deg / step) % 12 || 12;
-      setHour(h);
-      setActiveMode('minute');
-    } else {
-      const m = Math.round(deg / 6) % 60;
-      setMinute(m);
-    }
   };
 
   const trigger = (
@@ -167,12 +194,17 @@ const TimePicker = ({
   );
 
   const panel = (
-    <div className="w-[300px] select-none p-4 space-y-4">
+    <div className="w-[280px] select-none p-4 space-y-3.5">
       {/* Top Header & Digital Display Card */}
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground">
-          {activeMode === 'hour' ? 'ঘণ্টা নির্ধারণ' : 'মিনিট নির্ধারণ'}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground">
+            সময় নির্ধারণ
+          </span>
+          <span className="text-xs font-bold text-primary tabular-nums">
+            {fmt(h24, minute)}
+          </span>
+        </div>
         <Button
           type="button"
           variant="secondary"
@@ -184,39 +216,94 @@ const TimePicker = ({
         </Button>
       </div>
 
-      {/* Digital Digits + AM/PM Pill */}
-      <div className="flex items-center justify-center gap-2">
-        <div className="flex items-center gap-1.5 rounded-2xl bg-muted/40 p-1.5 border border-border/50">
-          <button
-            type="button"
-            onClick={() => setActiveMode('hour')}
-            className={cn(
-              "h-12 w-14 rounded-xl text-2xl font-bold tabular-nums transition-all flex items-center justify-center",
-              activeMode === 'hour'
-                ? "bg-primary text-primary-foreground shadow-md scale-105"
-                : "text-foreground hover:bg-muted"
-            )}
-          >
-            {is24 ? String(h24).padStart(2, '0') : hour12}
-          </button>
-          <span className="text-xl font-bold text-muted-foreground/60 animate-pulse">:</span>
-          <button
-            type="button"
-            onClick={() => setActiveMode('minute')}
-            className={cn(
-              "h-12 w-14 rounded-xl text-2xl font-bold tabular-nums transition-all flex items-center justify-center",
-              activeMode === 'minute'
-                ? "bg-primary text-primary-foreground shadow-md scale-105"
-                : "text-foreground hover:bg-muted"
-            )}
-          >
-            {String(minute).padStart(2, '0')}
-          </button>
+      {/* Main Interactive Digits Card with Scroll */}
+      <div className="flex items-center justify-center gap-2.5 py-1">
+        <div className="flex items-center gap-1.5 rounded-2xl bg-muted/40 p-2 border border-border/50 shadow-sm">
+          {/* Hour Unit Column */}
+          <div className="flex flex-col items-center">
+            <button
+              type="button"
+              onClick={() => stepHour(1)}
+              className="h-5 w-12 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
+              aria-label="ঘণ্টা বাড়ান"
+            >
+              <ChevronUp className="h-3.5 w-3.5" />
+            </button>
+            <div
+              ref={hourRef}
+              onClick={() => setActiveUnit('hour')}
+              onTouchStart={handleTouchStart}
+              onTouchMove={(e) => handleTouchMove(e, 'hour')}
+              onTouchEnd={handleTouchEnd}
+              role="listbox"
+              aria-label="ঘণ্টা"
+              tabIndex={0}
+              className={cn(
+                "h-14 w-14 rounded-xl text-2xl font-bold tabular-nums transition-all flex items-center justify-center cursor-ns-resize select-none",
+                "overscroll-contain overflow-y-auto id-preview-scroll",
+                activeUnit === 'hour'
+                  ? "bg-primary text-primary-foreground shadow-md scale-105"
+                  : "bg-background/80 text-foreground hover:bg-muted border border-border/40"
+              )}
+            >
+              {is24 ? String(h24).padStart(2, '0') : hour12}
+            </div>
+            <button
+              type="button"
+              onClick={() => stepHour(-1)}
+              className="h-5 w-12 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
+              aria-label="ঘণ্টা কমান"
+            >
+              <ChevronDown className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          {/* Colon Separator */}
+          <span className="text-2xl font-bold text-muted-foreground/60 pb-1">:</span>
+
+          {/* Minute Unit Column */}
+          <div className="flex flex-col items-center">
+            <button
+              type="button"
+              onClick={() => stepMinute(1)}
+              className="h-5 w-12 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
+              aria-label="মিনিট বাড়ান"
+            >
+              <ChevronUp className="h-3.5 w-3.5" />
+            </button>
+            <div
+              ref={minuteRef}
+              onClick={() => setActiveUnit('minute')}
+              onTouchStart={handleTouchStart}
+              onTouchMove={(e) => handleTouchMove(e, 'minute')}
+              onTouchEnd={handleTouchEnd}
+              role="listbox"
+              aria-label="মিনিট"
+              tabIndex={0}
+              className={cn(
+                "h-14 w-14 rounded-xl text-2xl font-bold tabular-nums transition-all flex items-center justify-center cursor-ns-resize select-none",
+                "overscroll-contain overflow-y-auto id-preview-scroll",
+                activeUnit === 'minute'
+                  ? "bg-primary text-primary-foreground shadow-md scale-105"
+                  : "bg-background/80 text-foreground hover:bg-muted border border-border/40"
+              )}
+            >
+              {String(minute).padStart(2, '0')}
+            </div>
+            <button
+              type="button"
+              onClick={() => stepMinute(-1)}
+              className="h-5 w-12 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
+              aria-label="মিনিট কমান"
+            >
+              <ChevronDown className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
 
         {/* AM / PM Segmented Control */}
         {!is24 && (
-          <div className="flex flex-col gap-1 rounded-2xl bg-muted/40 p-1 border border-border/50" role="group" aria-label="AM বা PM নির্বাচন">
+          <div className="flex flex-col gap-1 rounded-2xl bg-muted/40 p-1.5 border border-border/50 shadow-sm" role="group" aria-label="AM বা PM নির্বাচন">
             {PERIODS.map((item) => (
               <button
                 key={item}
@@ -224,7 +311,7 @@ const TimePicker = ({
                 onClick={() => setPeriod(item)}
                 aria-pressed={period === item}
                 className={cn(
-                  "h-6 px-2.5 rounded-lg text-xs font-bold transition-all",
+                  "h-8 px-3 rounded-xl text-xs font-bold transition-all",
                   period === item
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -237,116 +324,13 @@ const TimePicker = ({
         )}
       </div>
 
-      {/* Circular Clock Dial */}
-      <div className="flex justify-center">
-        <div
-          onClick={handleDialClick}
-          className="relative w-[220px] h-[220px] rounded-full bg-muted/25 border border-border/60 shadow-inner flex items-center justify-center cursor-pointer touch-none"
-        >
-          {/* SVG Clock Hand & Center */}
-          <svg className="absolute inset-0 w-full h-full pointer-events-none">
-            {/* Hand Line */}
-            <line
-              x1={DIAL_RADIUS}
-              y1={DIAL_RADIUS}
-              x2={handTipX}
-              y2={handTipY}
-              stroke="hsl(var(--primary))"
-              strokeWidth="2.5"
-            />
-            {/* Center Pin */}
-            <circle cx={DIAL_RADIUS} cy={DIAL_RADIUS} r="4" fill="hsl(var(--primary))" />
-            {/* Active Tip Glow Circle */}
-            <circle
-              cx={handTipX}
-              cy={handTipY}
-              r="17"
-              fill="hsl(var(--primary))"
-              className="drop-shadow-sm"
-            />
-          </svg>
-
-          {/* Numbers on Dial */}
-          {activeMode === 'hour' ? (
-            HOURS_12.map((h, i) => {
-              const { x, y } = getPos(i, 12);
-              const isSelected = hour12 === h;
-              return (
-                <button
-                  key={h}
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setHour(h);
-                    setActiveMode('minute');
-                  }}
-                  style={{ left: `${x}px`, top: `${y}px`, transform: 'translate(-50%, -50%)' }}
-                  className={cn(
-                    "absolute w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all z-10",
-                    isSelected
-                      ? "text-primary-foreground font-black scale-110"
-                      : "text-foreground/85 hover:text-primary"
-                  )}
-                >
-                  {h}
-                </button>
-              );
-            })
-          ) : (
-            MINUTE_STEPS.map((m, i) => {
-              const { x, y } = getPos(i, 12);
-              const isSelected = minute === m;
-              return (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setMinute(m);
-                  }}
-                  style={{ left: `${x}px`, top: `${y}px`, transform: 'translate(-50%, -50%)' }}
-                  className={cn(
-                    "absolute w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all z-10",
-                    isSelected
-                      ? "text-primary-foreground font-black scale-110"
-                      : "text-foreground/85 hover:text-primary"
-                  )}
-                >
-                  {String(m).padStart(2, '0')}
-                </button>
-              );
-            })
-          )}
-        </div>
-      </div>
-
-      {/* Quick Minutes Strip (Scrollable) */}
-      <div className="space-y-1">
-        <div className="flex items-center justify-between text-[10px] uppercase font-bold text-muted-foreground/75 px-1">
-          <span>দ্রুত মিনিট বাছাই</span>
-          <span className="text-primary font-bold">{fmt(h24, minute)}</span>
-        </div>
-        <div className="flex items-center gap-1 overflow-x-auto overflow-y-auto overscroll-contain id-preview-scroll p-1 rounded-xl bg-muted/20 border border-border/40">
-          {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => setMinute(m)}
-              className={cn(
-                "h-7 min-w-[34px] px-2 rounded-lg text-xs font-bold tabular-nums transition-all flex items-center justify-center shrink-0",
-                minute === m
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-              )}
-            >
-              {String(m).padStart(2, '0')}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Helpful scroll hint */}
+      <p className="text-[10px] text-center text-muted-foreground/70">
+        মাউস স্ক্রল বা বোতাম চেপে সময় পরিবর্তন করুন
+      </p>
 
       {/* Action Buttons */}
-      <div className="flex items-center gap-2 pt-2 border-t border-border/50">
+      <div className="flex items-center gap-2 pt-1 border-t border-border/50">
         {clearable && (
           <Button
             type="button"
@@ -374,7 +358,7 @@ const TimePicker = ({
     return (
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>{trigger}</DialogTrigger>
-        <DialogContent className="w-[calc(100vw-24px)] max-w-[340px] gap-0 overflow-hidden rounded-[28px] border-0 p-0 shadow-2xl [&>button]:hidden">
+        <DialogContent className="w-[calc(100vw-24px)] max-w-[320px] gap-0 overflow-hidden rounded-[28px] border-0 p-0 shadow-2xl [&>button]:hidden">
           <DialogTitle className="sr-only">সময় নির্বাচন</DialogTitle>
           {panel}
         </DialogContent>
