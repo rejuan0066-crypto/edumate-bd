@@ -12,6 +12,8 @@ export interface ReportSection {
   rows: (string | number)[][];
   /** Optional totals/summary row appended at the bottom */
   totals?: { bn: string; en: string; value: string | number }[];
+  /** Optional page break after this section */
+  pageBreakAfter?: boolean;
 }
 
 export interface ReportMeta {
@@ -96,7 +98,7 @@ export const generateBilingualReport = (
     : '';
 
   const sectionsHtml = sections.map((sec) => `
-    <section class="report-section">
+    <section class="report-section"${sec.pageBreakAfter ? ' style="page-break-after: always; break-after: page;"' : ''}>
       <h2 class="section-title">
         <span class="bn">${escapeHtml(sec.title_bn)}</span>
         <span class="sep">|</span>

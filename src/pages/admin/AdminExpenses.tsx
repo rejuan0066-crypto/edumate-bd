@@ -1679,37 +1679,6 @@ const AdminExpenses = () => {
         ];
       });
 
-      // Detailed transactions across all institutions
-      const detailRows: (string | number)[][] = paidAllExpenses.map((e: any, idx: number) => {
-        const rowInst = allInstitutions.find((i: any) => i.id === e.institution_id);
-        const cat = categories.find((c: any) => c.id === e.category_id);
-        const unit = getUnit(e.description, cat?.name || cat?.name_bn);
-        const qtyStr = e.quantity ? `${e.quantity} ${unit || ''}`.trim() : '-';
-        return [
-          idx + 1,
-          getInstName(rowInst, bn) || '-',
-          getCatName(cat, bn) || '-',
-          e.expense_date || '-',
-          cleanDesc(e.description) || '-',
-          qtyStr,
-          getMethod(e.description) || 'ক্যাশ',
-          Number(e.amount || 0)
-        ];
-      });
-
-      const duesRows: (string | number)[][] = allDues.map((d: any, idx: number) => {
-        const rowInst = allInstitutions.find((i: any) => i.id === d.institution_id);
-        const cat = categories.find((c: any) => c.id === d.category_id);
-        return [
-          idx + 1,
-          getInstName(rowInst, bn) || '-',
-          getCatName(cat, bn) || '-',
-          d.expense_date || '-',
-          cleanDesc(d.description) || '-',
-          Number(d.amount || 0)
-        ];
-      });
-
       const sections: any[] = [
         {
           title_bn: 'প্রতিষ্ঠানভিত্তিক সারসংক্ষেপ',
@@ -1725,46 +1694,116 @@ const AdminExpenses = () => {
           totals: [
             { bn: 'সর্বমোট খরচ', en: 'Grand Total Expense', value: totalExp },
             { bn: 'সর্বমোট বকেয়া', en: 'Grand Total Dues', value: totalDue }
-          ]
-        },
-        {
-          title_bn: 'সকল প্রতিষ্ঠানের ব্যয়ের বিস্তারিত হিসাব',
-          title_en: 'Detailed Expenses for All Institutions',
-          headers: [
-            { bn: 'ক্রম', en: 'SL' },
-            { bn: 'প্রতিষ্ঠান', en: 'Institution' },
-            { bn: 'ক্যাটাগরি', en: 'Category' },
-            { bn: 'তারিখ', en: 'Date' },
-            { bn: 'বিবরণ', en: 'Description' },
-            { bn: 'পরিমাণ', en: 'Qty' },
-            { bn: 'মাধ্যম', en: 'Method' },
-            { bn: 'টাকা (৳)', en: 'Amount (৳)' }
           ],
-          rows: detailRows,
-          totals: [
-            { bn: 'মোট ব্যয়', en: 'Total Expense', value: totalExp }
-          ]
+          pageBreakAfter: true,
         }
       ];
 
-      if (duesRows.length > 0) {
-        sections.push({
-          title_bn: 'সকল প্রতিষ্ঠানের বকেয়া হিসাব',
-          title_en: 'Outstanding Dues Across Institutions',
-          headers: [
-            { bn: 'ক্রম', en: 'SL' },
-            { bn: 'প্রতিষ্ঠান', en: 'Institution' },
-            { bn: 'ক্যাটাগরি', en: 'Category' },
-            { bn: 'তারিখ', en: 'Date' },
-            { bn: 'বিবরণ', en: 'Description' },
-            { bn: 'বকেয়া টাকা (৳)', en: 'Due Amount (৳)' }
-          ],
-          rows: duesRows,
-          totals: [
-            { bn: 'মোট বকেয়া', en: 'Total Dues', value: totalDue }
-          ]
+      // For each institution, create category-wise sections with pageBreakAfter (matching Excel tabs)
+      allInstitutions.forEach((inst: any) => {
+        const instExp = paidAllExpenses.filter((e: any) => e.institution_id === inst.id);
+        const instDue = allDues.filter((e: any) => e.institution_id === inst.id);
+        if (instExp.length === 0 && instDue.length === 0) return;
+
+        const instCats = getCategoriesForInst(inst.id);
+        instCats.forEach((cat: any) => {
+          const catExp = instExp.filter((e: any) => e.category_id === cat.id);
+          if (catExp.length === 0) return;
+          const catTot = catExp.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+
+          sections.push({
+            title_bn: `${getInstName(inst, true)} — ${getCatName(cat, true)}`,
+            title_en: `${getInstName(inst, false)} — ${getCatName(cat, false)}`,
+            headers: [
+              { bn: 'ক্রম', en: 'SL' },
+              { bn: 'তারিখ', en: 'Date' },
+              { bn: 'বিবরণ', en: 'Description' },
+              { bn: 'পরিমাণ', en: 'Qty' },
+              { bn: 'মাধ্যম', en: 'Method' },
+              { bn: 'মেমো/রশিদ', en: 'Memo/Receipt' },
+              { bn: 'টাকা (৳)', en: 'Amount (৳)' },
+            ],
+            rows: catExp.map((e: any, idx: number) => {
+              const unit = getUnit(e.description, cat?.name || cat?.name_bn);
+              const qtyStr = e.quantity ? `${e.quantity} ${unit || ''}`.trim() : '-';
+              return [
+                idx + 1,
+                e.expense_date || '-',
+                cleanDesc(e.description) || '-',
+                qtyStr,
+                getMethod(e.description) || 'ক্যাশ',
+                getMemo(e.description) === '-' ? '' : getMemo(e.description),
+                Number(e.amount || 0)
+              ];
+            }),
+            totals: [
+              { bn: `“${getCatName(cat, true)}” মোট ব্যয়`, en: `Total for ${getCatName(cat, false)}`, value: catTot }
+            ],
+            pageBreakAfter: true,
+          });
         });
-      }
+
+        // Uncategorized expenses
+        const uncatExp = instExp.filter((e: any) => !e.category_id || !instCats.some((c: any) => c.id === e.category_id));
+        if (uncatExp.length > 0) {
+          const uncatTot = uncatExp.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+          sections.push({
+            title_bn: `${getInstName(inst, true)} — সাধারণ / অন্যান্য ব্যয়`,
+            title_en: `${getInstName(inst, false)} — Other Expenses`,
+            headers: [
+              { bn: 'ক্রম', en: 'SL' },
+              { bn: 'তারিখ', en: 'Date' },
+              { bn: 'বিবরণ', en: 'Description' },
+              { bn: 'পরিমাণ', en: 'Qty' },
+              { bn: 'মাধ্যম', en: 'Method' },
+              { bn: 'মেমো/রশিদ', en: 'Memo/Receipt' },
+              { bn: 'টাকা (৳)', en: 'Amount (৳)' },
+            ],
+            rows: uncatExp.map((e: any, idx: number) => [
+              idx + 1,
+              e.expense_date || '-',
+              cleanDesc(e.description) || '-',
+              e.quantity || 1,
+              getMethod(e.description) || 'ক্যাশ',
+              getMemo(e.description) === '-' ? '' : getMemo(e.description),
+              Number(e.amount || 0)
+            ]),
+            totals: [
+              { bn: 'অন্যান্য মোট ব্যয়', en: 'Total Other Expense', value: uncatTot }
+            ],
+            pageBreakAfter: true,
+          });
+        }
+
+        // Dues if any
+        if (instDue.length > 0) {
+          const instDueTotal = instDue.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+          sections.push({
+            title_bn: `${getInstName(inst, true)} — বকেয়া খরচের হিসাব`,
+            title_en: `${getInstName(inst, false)} — Outstanding Dues`,
+            headers: [
+              { bn: 'ক্রম', en: 'SL' },
+              { bn: 'তারিখ', en: 'Date' },
+              { bn: 'বিবরণ ও পাওনাদার', en: 'Description & Vendor' },
+              { bn: 'পরিমাণ', en: 'Qty' },
+              { bn: 'মেমো/চালান', en: 'Memo/Invoice' },
+              { bn: 'বকেয়া টাকা (৳)', en: 'Due Amount (৳)' }
+            ],
+            rows: instDue.map((d: any, idx: number) => [
+              idx + 1,
+              d.expense_date || '-',
+              cleanDesc(d.description) || '-',
+              d.quantity || 1,
+              getMemo(d.description) === '-' ? '' : getMemo(d.description),
+              Number(d.amount || 0)
+            ]),
+            totals: [
+              { bn: 'মোট বকেয়া', en: 'Total Dues', value: instDueTotal }
+            ],
+            pageBreakAfter: true,
+          });
+        }
+      });
 
       generateBilingualReport(
         {
@@ -1797,70 +1836,101 @@ const AdminExpenses = () => {
       const totalExp = instPaid.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
       const totalDue = instDues.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
 
-      const detailRows: (string | number)[][] = instPaid.map((e: any, idx: number) => {
-        const cat = categories.find((c: any) => c.id === e.category_id);
-        const unit = getUnit(e.description, cat?.name || cat?.name_bn);
-        const qtyStr = e.quantity ? `${e.quantity} ${unit || ''}`.trim() : '-';
-        const memo = getMemo(e.description);
-        return [
-          idx + 1,
-          e.expense_date || '-',
-          getCatName(cat, bn) || '-',
-          cleanDesc(e.description) || '-',
-          qtyStr,
-          memo === '-' ? '' : memo,
-          getMethod(e.description) || 'ক্যাশ',
-          Number(e.amount || 0)
-        ];
-      });
+      const instCats = getCategoriesForInst(targetInst.id);
+      const sections: any[] = [];
 
-      const duesRows: (string | number)[][] = instDues.map((d: any, idx: number) => {
-        const cat = categories.find((c: any) => c.id === d.category_id);
-        return [
-          idx + 1,
-          d.expense_date || '-',
-          getCatName(cat, bn) || '-',
-          cleanDesc(d.description) || '-',
-          Number(d.amount || 0)
-        ];
-      });
+      instCats.forEach((cat: any) => {
+        const catExpenses = instPaid.filter((e: any) => e.category_id === cat.id);
+        if (catExpenses.length === 0) return;
+        const catTot = catExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
 
-      const sections: any[] = [
-        {
-          title_bn: 'ব্যয়ের বিস্তারিত বিবরণী',
-          title_en: 'Detailed Expense Statement',
+        sections.push({
+          title_bn: `${getCatName(cat, true)} (ব্যয় বিবরণী)`,
+          title_en: `${getCatName(cat, false)} (Expense Statement)`,
           headers: [
             { bn: 'ক্রম', en: 'SL' },
             { bn: 'তারিখ', en: 'Date' },
-            { bn: 'ক্যাটাগরি', en: 'Category' },
             { bn: 'বিবরণ', en: 'Description' },
             { bn: 'পরিমাণ', en: 'Qty' },
             { bn: 'ভাউচার/মেমো', en: 'Memo/Voucher' },
             { bn: 'মাধ্যম', en: 'Method' },
             { bn: 'টাকা (৳)', en: 'Amount (৳)' }
           ],
-          rows: detailRows,
+          rows: catExpenses.map((e: any, idx: number) => {
+            const unit = getUnit(e.description, cat?.name || cat?.name_bn);
+            const qtyStr = e.quantity ? `${e.quantity} ${unit || ''}`.trim() : '-';
+            const memo = getMemo(e.description);
+            return [
+              idx + 1,
+              e.expense_date || '-',
+              cleanDesc(e.description) || '-',
+              qtyStr,
+              memo === '-' ? '' : memo,
+              getMethod(e.description) || 'ক্যাশ',
+              Number(e.amount || 0)
+            ];
+          }),
           totals: [
-            { bn: 'সর্বমোট ব্যয়', en: 'Total Expense', value: totalExp }
-          ]
-        }
-      ];
+            { bn: `“${getCatName(cat, true)}” মোট ব্যয়`, en: `Total for ${getCatName(cat, false)}`, value: catTot }
+          ],
+          pageBreakAfter: true,
+        });
+      });
 
-      if (duesRows.length > 0) {
+      // Uncategorized expenses
+      const uncatExp = instPaid.filter((e: any) => !e.category_id || !instCats.some((c: any) => c.id === e.category_id));
+      if (uncatExp.length > 0) {
+        const uncatTot = uncatExp.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
         sections.push({
-          title_bn: 'বকেয়া হিসাব বিবরণী',
+          title_bn: 'সাধারণ / অন্যান্য ব্যয়',
+          title_en: 'Other Expenses',
+          headers: [
+            { bn: 'ক্রম', en: 'SL' },
+            { bn: 'তারিখ', en: 'Date' },
+            { bn: 'বিবরণ', en: 'Description' },
+            { bn: 'পরিমাণ', en: 'Qty' },
+            { bn: 'ভাউচার/মেমো', en: 'Memo/Voucher' },
+            { bn: 'মাধ্যম', en: 'Method' },
+            { bn: 'টাকা (৳)', en: 'Amount (৳)' }
+          ],
+          rows: uncatExp.map((e: any, idx: number) => [
+            idx + 1,
+            e.expense_date || '-',
+            cleanDesc(e.description) || '-',
+            e.quantity || 1,
+            getMemo(e.description) === '-' ? '' : getMemo(e.description),
+            getMethod(e.description) || 'ক্যাশ',
+            Number(e.amount || 0)
+          ]),
+          totals: [
+            { bn: 'অন্যান্য মোট ব্যয়', en: 'Total Other Expense', value: uncatTot }
+          ],
+          pageBreakAfter: true,
+        });
+      }
+
+      if (instDues.length > 0) {
+        sections.push({
+          title_bn: 'বকেয়া হিসাব বিবরণী (পরিশোধ বাকি)',
           title_en: 'Outstanding Dues Statement',
           headers: [
             { bn: 'ক্রম', en: 'SL' },
             { bn: 'তারিখ', en: 'Date' },
-            { bn: 'ক্যাটাগরি', en: 'Category' },
             { bn: 'বিবরণ', en: 'Description' },
+            { bn: 'পরিমাণ', en: 'Qty' },
             { bn: 'বকেয়া টাকা (৳)', en: 'Due Amount (৳)' }
           ],
-          rows: duesRows,
+          rows: instDues.map((d: any, idx: number) => [
+            idx + 1,
+            d.expense_date || '-',
+            cleanDesc(d.description) || '-',
+            d.quantity || 1,
+            Number(d.amount || 0)
+          ]),
           totals: [
             { bn: 'মোট বকেয়া', en: 'Total Dues', value: totalDue }
-          ]
+          ],
+          pageBreakAfter: true,
         });
       }
 
@@ -4633,229 +4703,384 @@ const AdminExpenses = () => {
             const casherDesignation = bn ? 'ক্যাশিয়ার' : 'Cashier';
             const principalDesignation = bn ? 'অধ্যক্ষ' : 'Principal';
 
-            return (
-              <div id="project-print-content">
-                <div className="text-center mb-4 border-b-2 border-foreground pb-3">
-                  {dInstLogo && <img src={dInstLogo} alt="Logo" className="w-16 h-16 object-contain mx-auto mb-1" />}
-                  <h1 className="text-lg font-bold">{dInstName}</h1>
-                  <p className="text-sm">{dInstAddress}</p>
-                  <p className="text-xs">{bn ? 'ফোন' : 'Phone'}: {dInstPhone} | {bn ? 'ইমেইল' : 'Email'}: {dInstEmail}</p>
-                  {dInstOther && <p className="text-xs">{dInstOther}</p>}
-                  <p className="text-base font-semibold mt-2">{dReportTitle}</p>
-                  {ed.reportSubtitle && <p className="text-sm">{ed.reportSubtitle}</p>}
-                  {isAllPrint ? (
-                    <p className="text-sm font-medium">
-                      {bn ? 'প্রতিষ্ঠান' : 'Scope'}:{' '}
-                      <span className="font-bold">{bn ? 'সকল প্রতিষ্ঠান (একত্রিত হিসাব)' : 'All Institutions (Combined)'}</span>{' '}
-                      | {bn ? 'হিসাবের মাস' : 'Month'}: <span className="font-bold">{selectedMonthYear}</span>
-                    </p>
+            // Build printable pages: 1 page per category, exactly like Excel tabs
+            type PrintablePage = {
+              id: string;
+              type: 'category' | 'uncategorized' | 'dues' | 'master_summary';
+              inst: any;
+              categoryName: string;
+              items: any[];
+              subtotal: number;
+            };
+
+            const pagesToRender: PrintablePage[] = [];
+
+            institutionsToPrint.forEach((inst: any) => {
+              const instExpenses = expenses.filter((e: any) => e.institution_id === inst.id && !isUnpaidDue(e.description));
+              const instDues = allExpenses.filter((e: any) => e.institution_id === inst.id && isUnpaidDue(e.description));
+              const instCatsForPrint = getCategoriesForInst(inst.id);
+
+              if (instExpenses.length === 0 && instDues.length === 0) {
+                return;
+              }
+
+              // 1. Pages for each category that has expenses
+              instCatsForPrint.forEach((cat: any) => {
+                const catExpenses = instExpenses.filter((e: any) => e.category_id === cat.id);
+                if (catExpenses.length === 0) return;
+                const catTotal = catExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+                pagesToRender.push({
+                  id: `${inst.id}-cat-${cat.id}`,
+                  type: 'category',
+                  inst,
+                  categoryName: getCatName(cat, bn),
+                  items: catExpenses,
+                  subtotal: catTotal
+                });
+              });
+
+              // 2. Page for uncategorized expenses if any
+              const uncatExpenses = instExpenses.filter((e: any) => !e.category_id || !instCatsForPrint.some((c: any) => c.id === e.category_id));
+              if (uncatExpenses.length > 0) {
+                const uncatTotal = uncatExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+                pagesToRender.push({
+                  id: `${inst.id}-uncat`,
+                  type: 'uncategorized',
+                  inst,
+                  categoryName: bn ? 'অন্যান্য / সাধারণ ব্যয়' : 'Other Expenses',
+                  items: uncatExpenses,
+                  subtotal: uncatTotal
+                });
+              }
+
+              // 3. Page for dues if any
+              if (instDues.length > 0) {
+                const duesTotal = instDues.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+                pagesToRender.push({
+                  id: `${inst.id}-dues`,
+                  type: 'dues',
+                  inst,
+                  categoryName: bn ? 'বকেয়া খরচের হিসাব (পরিশোধ বাকি)' : 'Outstanding Payable Dues',
+                  items: instDues,
+                  subtotal: duesTotal
+                });
+              }
+            });
+
+            // 4. Master Summary Page at the end
+            if (isAllPrint || pagesToRender.length > 1) {
+              pagesToRender.push({
+                id: 'master-summary',
+                type: 'master_summary',
+                inst: activeInst,
+                categoryName: isAllPrint 
+                  ? (bn ? 'সকল প্রতিষ্ঠানের সর্বমোট হিসাব ও নগদ তহবিল সারসংক্ষেপ' : 'Consolidated Financial & Fund Summary')
+                  : (bn ? `${getInstName(singleInst, bn)} - সর্বমোট আর্থিক সারসংক্ষেপ` : 'Financial Summary'),
+                items: [],
+                subtotal: totalPaid
+              });
+            }
+
+            const renderSignatures = () => (
+              <div className="flex justify-between mt-12 pt-6 border-t print:mt-10 page-footer">
+                <div className="text-center min-w-[140px]">
+                  <div className="border-t border-foreground w-40 mx-auto mb-1"></div>
+                  {casherPerson && casherPerson !== casherDesignation ? (
+                    <>
+                      <p className="text-sm font-semibold">{casherPerson}</p>
+                      <p className="text-xs text-muted-foreground">{casherDesignation}</p>
+                    </>
                   ) : (
-                    <p className="text-sm font-medium">
-                      {bn ? 'হিসাবের মাস' : 'Month'}: <span className="font-bold">{selectedMonthYear}</span>
-                    </p>
+                    <p className="text-sm font-medium">{casherDesignation}</p>
                   )}
                 </div>
+                <div className="text-center min-w-[140px]">
+                  <div className="border-t border-foreground w-40 mx-auto mb-1"></div>
+                  {principalPerson && principalPerson !== principalDesignation ? (
+                    <>
+                      <p className="text-sm font-semibold">{principalPerson}</p>
+                      <p className="text-xs text-muted-foreground">{principalDesignation}</p>
+                    </>
+                  ) : (
+                    <p className="text-sm font-medium">{principalDesignation}</p>
+                  )}
+                </div>
+              </div>
+            );
 
-                {ed.extraNote && <p className="text-xs mb-3 italic border-l-2 border-primary pl-2">{ed.extraNote}</p>}
+            const renderLetterhead = (pageInst: any, pageTitle: string, isSummary: boolean = false) => {
+              const pLogo = pageInst?.logo_url || dInstLogo;
+              const pName = isSummary && isAllPrint 
+                ? (ed.instName || (bn ? 'সকল প্রতিষ্ঠান (একত্রিত হিসাব)' : 'All Institutions (Combined)'))
+                : getInstName(pageInst, bn);
+              const pAddr = pageInst?.address || dInstAddress;
+              const pPhone = pageInst?.phone || dInstPhone;
+              const pEmail = pageInst?.email || dInstEmail;
+              const pOther = pageInst?.other_info || dInstOther;
 
-                {institutionsToPrint.map((inst: any, instIndex: number) => {
-                  const instExpenses = expenses.filter((e: any) => e.institution_id === inst.id);
-                  const instDues = allExpenses.filter((e: any) => e.institution_id === inst.id && isUnpaidDue(e.description));
-                  const instTotal = instExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-                  const duesTotal = instDues.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-                  const instCatsForPrint = getCategoriesForInst(inst.id);
+              return (
+                <div className="text-center mb-4 border-b-2 border-foreground pb-3 page-header">
+                  {pLogo && <img src={pLogo} alt="Logo" className="w-16 h-16 object-contain mx-auto mb-1" />}
+                  <h1 className="text-lg font-bold">{pName}</h1>
+                  {pAddr && <p className="text-sm">{pAddr}</p>}
+                  {(pPhone || pEmail) && (
+                    <p className="text-xs">
+                      {pPhone ? `${bn ? 'ফোন' : 'Phone'}: ${pPhone}` : ''}
+                      {pPhone && pEmail ? ' | ' : ''}
+                      {pEmail ? `${bn ? 'ইমেইল' : 'Email'}: ${pEmail}` : ''}
+                    </p>
+                  )}
+                  {pOther && <p className="text-xs">{pOther}</p>}
+                  
+                  <div className="mt-2.5 pt-2 border-t border-dashed">
+                    <h2 className="text-base font-bold text-primary">
+                      {pageTitle}
+                    </h2>
+                    <p className="text-xs font-medium text-muted-foreground mt-0.5">
+                      {bn ? 'হিসাবের মাস' : 'Report Month'}: <span className="font-bold text-foreground">{selectedMonthYear}</span>
+                    </p>
+                  </div>
+                </div>
+              );
+            };
 
-                  // If printing all and this institution has neither expenses nor dues, skip it to keep report concise
-                  if (isAllPrint && instExpenses.length === 0 && instDues.length === 0) {
-                    return null;
-                  }
+            return (
+              <div id="project-print-content" className="space-y-6">
+                {pagesToRender.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground italic bg-muted/20 rounded-xl border">
+                    {bn ? 'এই প্রতিষ্ঠানে কোনো ব্যয়ের রেকর্ড নেই।' : 'No expense records found for this period.'}
+                  </div>
+                ) : (
+                  pagesToRender.map((page, pageIndex) => {
+                    const pageNum = pageIndex + 1;
+                    const totalPagesCount = pagesToRender.length;
 
-                  return (
-                    <div key={inst.id} className={`mb-6 ${isAllPrint ? 'border rounded-xl p-3 bg-muted/20 border-border/70 print:border-foreground/30 print:shadow-none' : ''}`}>
-                      {/* Institution Banner when in All mode */}
-                      {isAllPrint && (
-                        <div className="bg-muted/70 p-2.5 rounded-lg mb-3 flex items-center justify-between border">
-                          <div className="flex items-center gap-2">
-                            <span className="h-6 w-6 rounded bg-primary/20 text-primary flex items-center justify-center text-xs font-bold">
-                              {instIndex + 1}
-                            </span>
-                            <h2 className="text-sm font-bold text-foreground">
-                              🏢 {bn ? (inst.name_bn || inst.name) : (inst.name || inst.name_bn)}
-                            </h2>
-                          </div>
-                          <span className="text-xs font-bold text-primary">
-                            {bn ? 'এই প্রতিষ্ঠানের মোট ব্যয়' : 'Subtotal'}: ৳{formatNum(instTotal)}
-                          </span>
-                        </div>
-                      )}
+                    if (page.type === 'category' || page.type === 'uncategorized') {
+                      return (
+                        <div
+                          key={page.id}
+                          className="print-page bg-background border rounded-xl p-6 shadow-sm print:shadow-none print:border-none print:p-0 print:m-0 print:min-h-[96vh] flex flex-col justify-between"
+                        >
+                          <div>
+                            {/* Screen-only Page Tracker */}
+                            <div className="flex items-center justify-between text-xs text-muted-foreground pb-2 mb-3 border-b print:hidden">
+                              <span className="font-bold text-primary flex items-center gap-1.5">
+                                <FileText className="w-3.5 h-3.5" />
+                                {bn ? `পৃষ্ঠা ${pageNum} / ${totalPagesCount}: ${page.categoryName}` : `Page ${pageNum} of ${totalPagesCount}: ${page.categoryName}`}
+                              </span>
+                              <span className="font-medium bg-muted px-2 py-0.5 rounded text-[11px]">
+                                🏢 {getInstName(page.inst, bn)}
+                              </span>
+                            </div>
 
-                      {instExpenses.length === 0 && instDues.length === 0 && (
-                        <p className="text-xs text-muted-foreground italic py-2 text-center">
-                          {bn ? 'এই প্রতিষ্ঠানে কোনো ব্যয়ের রেকর্ড নেই।' : 'No expense records found for this institution.'}
-                        </p>
-                      )}
+                            {renderLetterhead(page.inst, `${bn ? 'হিসাব সারসংক্ষেপ' : 'Expense Summary'} — ${page.categoryName}`)}
 
-                      {instCatsForPrint.map((cat: any) => {
-                        const catExpenses = instExpenses.filter((e: any) => e.category_id === cat.id);
-                        if (catExpenses.length === 0) return null;
-                        const catTotal = catExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-                        return (
-                          <div key={cat.id} className="mb-4">
-                            <h3 className="text-sm font-semibold mb-1">{bn ? cat.name_bn : cat.name} — ৳{formatNum(catTotal)}</h3>
+                            {ed.extraNote && (
+                              <p className="text-xs mb-3 italic border-l-2 border-primary pl-2">{ed.extraNote}</p>
+                            )}
+
                             <table className="w-full border-collapse border text-xs">
                               <thead>
                                 <tr className="bg-muted">
-                                  <th className="border p-1 text-center w-8">#</th>
-                                  <th className="border p-1 text-center w-20">{bn ? 'তারিখ' : 'Date'}</th>
-                                  <th className="border p-1 text-left">{bn ? 'ব্যয়ের বিবরণ' : 'Description'}</th>
-                                  <th className="border p-1 text-center w-20">{bn ? 'পরিমাণ' : 'Quantity'}</th>
-                                  <th className="border p-1 text-center w-20">{bn ? 'ব্যয়ের মাধ্যম' : 'Method'}</th>
-                                  <th className="border p-1 text-center w-24">{bn ? 'মেমো / রশিদ' : 'Memo/Receipt'}</th>
-                                  <th className="border p-1 text-right w-24">{bn ? 'ব্যয় টাকা (৳)' : 'Amount (৳)'}</th>
-                                  <th className="border p-1 text-left w-28">{bn ? 'মন্তব্য' : 'Remarks'}</th>
+                                  <th className="border p-1.5 text-center w-8">#</th>
+                                  <th className="border p-1.5 text-center w-20">{bn ? 'তারিখ' : 'Date'}</th>
+                                  <th className="border p-1.5 text-left">{bn ? 'ব্যয়ের বিবরণ' : 'Description'}</th>
+                                  <th className="border p-1.5 text-center w-20">{bn ? 'পরিমাণ' : 'Quantity'}</th>
+                                  <th className="border p-1.5 text-center w-20">{bn ? 'ব্যয়ের মাধ্যম' : 'Method'}</th>
+                                  <th className="border p-1.5 text-center w-24">{bn ? 'মেমো / রশিদ' : 'Memo/Receipt'}</th>
+                                  <th className="border p-1.5 text-right w-24">{bn ? 'ব্যয় টাকা (৳)' : 'Amount (৳)'}</th>
+                                  <th className="border p-1.5 text-left w-28">{bn ? 'মন্তব্য' : 'Remarks'}</th>
                                 </tr>
                               </thead>
                               <tbody>
-                                {catExpenses.map((e: any, i: number) => (
+                                {page.items.map((e: any, i: number) => (
                                   <tr key={e.id}>
-                                    <td className="border p-1 text-center">{i + 1}</td>
-                                    <td className="border p-1 text-center">{e.expense_date}</td>
-                                    <td className="border p-1">{cleanDesc(e.description)}</td>
-                                    <td className="border p-1 text-center">{e.quantity || 1}{getUnit(e.description) ? ` ${getUnit(e.description)}` : ''}</td>
-                                    <td className="border p-1 text-center">{getMethod(e.description)}</td>
-                                    <td className="border p-1 text-center font-mono">{getMemo(e.description)}</td>
-                                    <td className="border p-1 text-right font-semibold">৳{formatNum(Number(e.amount))}</td>
-                                    <td className="border p-1 text-muted-foreground">{getRemarks(e.description)}</td>
+                                    <td className="border p-1.5 text-center">{i + 1}</td>
+                                    <td className="border p-1.5 text-center">{e.expense_date}</td>
+                                    <td className="border p-1.5 font-medium">{cleanDesc(e.description)}</td>
+                                    <td className="border p-1.5 text-center">{e.quantity || 1}{getUnit(e.description) ? ` ${getUnit(e.description)}` : ''}</td>
+                                    <td className="border p-1.5 text-center">{getMethod(e.description)}</td>
+                                    <td className="border p-1.5 text-center font-mono">{getMemo(e.description)}</td>
+                                    <td className="border p-1.5 text-right font-semibold">৳{formatNum(Number(e.amount))}</td>
+                                    <td className="border p-1.5 text-muted-foreground">{getRemarks(e.description)}</td>
                                   </tr>
                                 ))}
+                                <tr className="font-bold bg-muted/60 border-t-2">
+                                  <td colSpan={6} className="border p-2 text-right">
+                                    {bn ? `“${page.categoryName}” মোট ব্যয়:` : `Total for ${page.categoryName}:`}
+                                  </td>
+                                  <td className="border p-2 text-right font-black text-emerald-700 dark:text-emerald-400">
+                                    ৳{formatNum(page.subtotal)}
+                                  </td>
+                                  <td className="border p-2"></td>
+                                </tr>
                               </tbody>
                             </table>
                           </div>
-                        );
-                      })}
 
-                      {/* Uncategorized expenses if any */}
-                      {(() => {
-                        const uncatExpenses = instExpenses.filter((e: any) => !e.category_id || !instCatsForPrint.some((c: any) => c.id === e.category_id));
-                        if (uncatExpenses.length === 0) return null;
-                        const uncatTotal = uncatExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-                        return (
-                          <div className="mb-4">
-                            <h3 className="text-sm font-semibold mb-1 text-amber-800 dark:text-amber-300">
-                              {bn ? 'অন্যান্য / সাধারণ ব্যয়' : 'Other Expenses'} — ৳{formatNum(uncatTotal)}
+                          {renderSignatures()}
+                        </div>
+                      );
+                    }
+
+                    if (page.type === 'dues') {
+                      return (
+                        <div
+                          key={page.id}
+                          className="print-page bg-background border rounded-xl p-6 shadow-sm print:shadow-none print:border-none print:p-0 print:m-0 print:min-h-[96vh] flex flex-col justify-between"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between text-xs text-muted-foreground pb-2 mb-3 border-b print:hidden">
+                              <span className="font-bold text-amber-600 flex items-center gap-1.5">
+                                <FileText className="w-3.5 h-3.5" />
+                                {bn ? `পৃষ্ঠা ${pageNum} / ${totalPagesCount}: বকেয়া খরচের হিসাব` : `Page ${pageNum} of ${totalPagesCount}: Outstanding Dues`}
+                              </span>
+                              <span className="font-medium bg-muted px-2 py-0.5 rounded text-[11px]">
+                                🏢 {getInstName(page.inst, bn)}
+                              </span>
+                            </div>
+
+                            {renderLetterhead(page.inst, page.categoryName)}
+
+                            <table className="w-full border-collapse border text-xs">
+                              <thead>
+                                <tr className="bg-amber-100/60 dark:bg-amber-950/40">
+                                  <th className="border p-1.5 text-center w-8">#</th>
+                                  <th className="border p-1.5 text-center w-20">{bn ? 'তারিখ' : 'Date'}</th>
+                                  <th className="border p-1.5 text-left">{bn ? 'ব্যয়ের বিবরণ ও পাওনাদার' : 'Description & Vendor'}</th>
+                                  <th className="border p-1.5 text-center w-20">{bn ? 'পরিমাণ' : 'Quantity'}</th>
+                                  <th className="border p-1.5 text-center w-24">{bn ? 'মেমো / চালান' : 'Memo/Invoice'}</th>
+                                  <th className="border p-1.5 text-right w-24">{bn ? 'বকেয়া টাকা (৳)' : 'Due Amount'}</th>
+                                  <th className="border p-1.5 text-left w-28">{bn ? 'মন্তব্য' : 'Remarks'}</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {page.items.map((due: any, di: number) => (
+                                  <tr key={due.id}>
+                                    <td className="border p-1.5 text-center">{di + 1}</td>
+                                    <td className="border p-1.5 text-center">{due.expense_date}</td>
+                                    <td className="border p-1.5 font-medium">{cleanDesc(due.description)}</td>
+                                    <td className="border p-1.5 text-center">{due.quantity || 1}{getUnit(due.description) ? ` ${getUnit(due.description)}` : ''}</td>
+                                    <td className="border p-1.5 text-center font-mono">{getMemo(due.description)}</td>
+                                    <td className="border p-1.5 text-right font-semibold text-amber-700">৳{formatNum(Number(due.amount))}</td>
+                                    <td className="border p-1.5 text-muted-foreground">{getRemarks(due.description)}</td>
+                                  </tr>
+                                ))}
+                                <tr className="font-bold bg-amber-100/50 dark:bg-amber-950/50 border-t-2">
+                                  <td colSpan={5} className="border p-2 text-right">
+                                    {bn ? 'মোট বকেয়া টাকা:' : 'Total Outstanding Dues:'}
+                                  </td>
+                                  <td className="border p-2 text-right font-black text-amber-800 dark:text-amber-400">
+                                    ৳{formatNum(page.subtotal)}
+                                  </td>
+                                  <td className="border p-2"></td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+
+                          {renderSignatures()}
+                        </div>
+                      );
+                    }
+
+                    // Master Summary Page
+                    return (
+                      <div
+                        key={page.id}
+                        className="print-page bg-background border rounded-xl p-6 shadow-sm print:shadow-none print:border-none print:p-0 print:m-0 print:min-h-[96vh] flex flex-col justify-between"
+                      >
+                        <div>
+                          <div className="flex items-center justify-between text-xs text-muted-foreground pb-2 mb-3 border-b print:hidden">
+                            <span className="font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                              <FileText className="w-3.5 h-3.5" />
+                              {bn ? `পৃষ্ঠা ${pageNum} / ${totalPagesCount}: সর্বমোট হিসাব ও তহবিল সারসংক্ষেপ` : `Page ${pageNum} of ${totalPagesCount}: Master Summary`}
+                            </span>
+                            <span className="font-medium bg-muted px-2 py-0.5 rounded text-[11px]">
+                              {bn ? 'সারসংক্ষেপ পৃষ্ঠা' : 'Summary Page'}
+                            </span>
+                          </div>
+
+                          {renderLetterhead(page.inst, page.categoryName, true)}
+
+                          {/* Table 1: Institution Breakdown */}
+                          <div className="mb-5">
+                            <h3 className="text-xs font-bold uppercase tracking-wider mb-2 text-foreground">
+                              {bn ? '🏢 প্রতিষ্ঠানভিত্তিক মোট ব্যয়ের সারসংক্ষেপ' : '🏢 Institution Expense Summary'}
                             </h3>
                             <table className="w-full border-collapse border text-xs">
                               <thead>
                                 <tr className="bg-muted">
-                                  <th className="border p-1 text-center w-8">#</th>
-                                  <th className="border p-1 text-center w-20">{bn ? 'তারিখ' : 'Date'}</th>
-                                  <th className="border p-1 text-left">{bn ? 'ব্যয়ের বিবরণ' : 'Description'}</th>
-                                  <th className="border p-1 text-center w-20">{bn ? 'পরিমাণ' : 'Quantity'}</th>
-                                  <th className="border p-1 text-center w-20">{bn ? 'ব্যয়ের মাধ্যম' : 'Method'}</th>
-                                  <th className="border p-1 text-center w-24">{bn ? 'মেমো / রশিদ' : 'Memo/Receipt'}</th>
-                                  <th className="border p-1 text-right w-24">{bn ? 'ব্যয় টাকা (৳)' : 'Amount (৳)'}</th>
-                                  <th className="border p-1 text-left w-28">{bn ? 'মন্তব্য' : 'Remarks'}</th>
+                                  <th className="border p-1.5 text-center w-10">#</th>
+                                  <th className="border p-1.5 text-left">{bn ? 'প্রতিষ্ঠানের নাম' : 'Institution Name'}</th>
+                                  <th className="border p-1.5 text-center w-24">{bn ? 'ভাউচার সংখ্যা' : 'Entries'}</th>
+                                  <th className="border p-1.5 text-right w-32">{bn ? 'পরিশোধিত ব্যয় (৳)' : 'Paid Expense (৳)'}</th>
+                                  <th className="border p-1.5 text-right w-32">{bn ? 'বকেয়া (৳)' : 'Due (৳)'}</th>
+                                  <th className="border p-1.5 text-right w-24">{bn ? 'অংশ (%)' : 'Share (%)'}</th>
                                 </tr>
                               </thead>
                               <tbody>
-                                {uncatExpenses.map((e: any, i: number) => (
-                                  <tr key={e.id}>
-                                    <td className="border p-1 text-center">{i + 1}</td>
-                                    <td className="border p-1 text-center">{e.expense_date}</td>
-                                    <td className="border p-1">{cleanDesc(e.description)}</td>
-                                    <td className="border p-1 text-center">{e.quantity || 1}{getUnit(e.description) ? ` ${getUnit(e.description)}` : ''}</td>
-                                    <td className="border p-1 text-center">{getMethod(e.description)}</td>
-                                    <td className="border p-1 text-center font-mono">{getMemo(e.description)}</td>
-                                    <td className="border p-1 text-right font-semibold">৳{formatNum(Number(e.amount))}</td>
-                                    <td className="border p-1 text-muted-foreground">{getRemarks(e.description)}</td>
-                                  </tr>
-                                ))}
+                                {institutionsToPrint.map((inst: any, idx: number) => {
+                                  const instPaidExp = expenses.filter((e: any) => e.institution_id === inst.id && !isUnpaidDue(e.description));
+                                  const instDueExp = allExpenses.filter((e: any) => e.institution_id === inst.id && isUnpaidDue(e.description));
+                                  const instPaidTot = instPaidExp.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+                                  const instDueTot = instDueExp.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+                                  const pct = totalPaid > 0 ? ((instPaidTot / totalPaid) * 100).toFixed(1) + '%' : '0%';
+                                  return (
+                                    <tr key={inst.id}>
+                                      <td className="border p-1.5 text-center">{idx + 1}</td>
+                                      <td className="border p-1.5 font-medium">{getInstName(inst, bn)}</td>
+                                      <td className="border p-1.5 text-center">{instPaidExp.length}</td>
+                                      <td className="border p-1.5 text-right font-semibold">৳{formatNum(instPaidTot)}</td>
+                                      <td className="border p-1.5 text-right font-semibold text-amber-700">৳{formatNum(instDueTot)}</td>
+                                      <td className="border p-1.5 text-right">{pct}</td>
+                                    </tr>
+                                  );
+                                })}
+                                <tr className="font-bold bg-muted/70 border-t-2">
+                                  <td colSpan={2} className="border p-2 text-right">{bn ? 'সর্বমোট:' : 'Grand Total:'}</td>
+                                  <td className="border p-2 text-center">{expenses.filter((e: any) => !isUnpaidDue(e.description)).length}</td>
+                                  <td className="border p-2 text-right font-black text-emerald-700 dark:text-emerald-400">৳{formatNum(totalPaid)}</td>
+                                  <td className="border p-2 text-right font-black text-amber-700">৳{formatNum(allExpenses.filter((e: any) => isUnpaidDue(e.description)).reduce((s: number, e: any) => s + Number(e.amount || 0), 0))}</td>
+                                  <td className="border p-2 text-right">100%</td>
+                                </tr>
                               </tbody>
                             </table>
                           </div>
-                        );
-                      })()}
 
-                      {/* Dues Section in Print */}
-                      {instDues.length > 0 && (
-                        <div className="mb-4 mt-4 border-t border-dashed border-amber-500 pt-3">
-                          <h3 className="text-sm font-bold text-amber-900 dark:text-amber-300 mb-1">
-                            {bn ? 'বকেয়া খরচের হিসাব (পরিশোধ বাকি)' : 'Outstanding Payable Dues'} — ৳{formatNum(duesTotal)}
-                          </h3>
-                          <table className="w-full border-collapse border text-xs">
-                            <thead>
-                              <tr className="bg-amber-100/60 dark:bg-amber-950/40">
-                                <th className="border p-1 text-center w-8">#</th>
-                                <th className="border p-1 text-center w-20">{bn ? 'তারিখ' : 'Date'}</th>
-                                <th className="border p-1 text-left">{bn ? 'ব্যয়ের বিবরণ ও পাওনাদার' : 'Description & Vendor'}</th>
-                                <th className="border p-1 text-center w-20">{bn ? 'পরিমাণ' : 'Quantity'}</th>
-                                <th className="border p-1 text-center w-24">{bn ? 'মেমো / চালান' : 'Memo/Invoice'}</th>
-                                <th className="border p-1 text-right w-24">{bn ? 'বকেয়া টাকা (৳)' : 'Due Amount'}</th>
-                                <th className="border p-1 text-left w-28">{bn ? 'মন্তব্য' : 'Remarks'}</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {instDues.map((due: any, di: number) => (
-                                <tr key={due.id}>
-                                  <td className="border p-1 text-center">{di + 1}</td>
-                                  <td className="border p-1 text-center">{due.expense_date}</td>
-                                  <td className="border p-1">{cleanDesc(due.description)}</td>
-                                  <td className="border p-1 text-center">{due.quantity || 1}{getUnit(due.description) ? ` ${getUnit(due.description)}` : ''}</td>
-                                  <td className="border p-1 text-center font-mono">{getMemo(due.description)}</td>
-                                  <td className="border p-1 text-right font-semibold text-amber-700">৳{formatNum(Number(due.amount))}</td>
-                                  <td className="border p-1 text-muted-foreground">{getRemarks(due.description)}</td>
+                          {/* Table 2: Financial Statement (Cash, Deposit, Arrears) */}
+                          <div>
+                            <h3 className="text-xs font-bold uppercase tracking-wider mb-2 text-foreground">
+                              {bn ? '💰 নগদ তহবিল ও জমার অবস্থা (ক্যাশ ব্যালেন্স)' : '💰 Cash & Fund Status'}
+                            </h3>
+                            <table className="w-full border-collapse border text-xs">
+                              <tbody>
+                                <tr>
+                                  <td className="border p-2 font-medium bg-muted/40 w-1/2">{bn ? 'মোট পরিশোধিত ব্যয়' : 'Total Expense Paid'}</td>
+                                  <td className="border p-2 text-right font-bold text-rose-700 dark:text-rose-400">৳{formatNum(monthlyTotalExpense)}</td>
                                 </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                                <tr>
+                                  <td className="border p-2 font-medium bg-muted/40">{bn ? 'মোট টাকা আয় / উত্তোলন' : 'Total Deposits & Income'}</td>
+                                  <td className="border p-2 text-right font-bold text-emerald-700 dark:text-emerald-400">৳{formatNum(monthlyTotalDeposit)}</td>
+                                </tr>
+                                <tr>
+                                  <td className="border p-2 font-medium bg-muted/40">{bn ? 'পূর্ববর্তী বকেয়া (জের)' : 'Previous Arrears / Due'}</td>
+                                  <td className="border p-2 text-right font-bold text-amber-700">৳{formatNum(previousArrears)}</td>
+                                </tr>
+                                <tr className="font-black bg-muted/70 text-sm">
+                                  <td className="border p-2">{bn ? 'অবশিষ্ট নগদ তহবিল (ক্যাশ জের)' : 'Closing Cash in Hand'}</td>
+                                  <td className="border p-2 text-right text-emerald-800 dark:text-emerald-300">৳{formatNum(monthlyCash)}</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
                         </div>
-                      )}
 
-                      {/* Subtotal footer for each institution in All mode */}
-                      {isAllPrint && (
-                        <div className="border-t border-dashed pt-2 mt-2 text-right font-semibold text-xs text-muted-foreground">
-                          {bn ? `“${inst.name_bn || inst.name}”-এর মোট পরিশোধিত ব্যয়` : `Subtotal for ${inst.name}`}: ৳{formatNum(instTotal)}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-
-                <div className="border-t-2 border-foreground pt-3 mt-4 text-right font-bold text-sm bg-muted/40 p-3 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-2">
-                  <span>
-                    {isAllPrint 
-                      ? (bn ? 'সকল প্রতিষ্ঠানের সর্বমোট পরিশোধিত ব্যয়' : 'Grand Total Paid (All Institutions)')
-                      : (bn ? 'প্রকল্প মোট পরিশোধিত ব্যয়' : 'Project Paid Total')}
-                  </span>
-                  <span className="text-base font-black text-emerald-700 dark:text-emerald-400">
-                    ৳{formatNum(totalPaid)}
-                  </span>
-                </div>
-
-                <div className="flex justify-between mt-12 pt-8">
-                  <div className="text-center min-w-[140px]">
-                    <div className="border-t border-foreground w-40 mx-auto mb-1"></div>
-                    {casherPerson && casherPerson !== casherDesignation ? (
-                      <>
-                        <p className="text-sm font-semibold">{casherPerson}</p>
-                        <p className="text-xs text-muted-foreground">{casherDesignation}</p>
-                      </>
-                    ) : (
-                      <p className="text-sm font-medium">{casherDesignation}</p>
-                    )}
-                  </div>
-                  <div className="text-center min-w-[140px]">
-                    <div className="border-t border-foreground w-40 mx-auto mb-1"></div>
-                    {principalPerson && principalPerson !== principalDesignation ? (
-                      <>
-                        <p className="text-sm font-semibold">{principalPerson}</p>
-                        <p className="text-xs text-muted-foreground">{principalDesignation}</p>
-                      </>
-                    ) : (
-                      <p className="text-sm font-medium">{principalDesignation}</p>
-                    )}
-                  </div>
-                </div>
+                        {renderSignatures()}
+                      </div>
+                    );
+                  })
+                )}
               </div>
             );
           })()
@@ -4868,7 +5093,88 @@ const AdminExpenses = () => {
                 if (!content) return;
                 const win = window.open('', '_blank');
                 if (!win) return;
-                win.document.write(`<html><head><title>${bn ? 'প্রকল্প প্রতিবেদন' : 'Project Report'}</title><style>body{font-family:'SutonnyOMJ','Noto Sans Bengali',sans-serif;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #333;padding:4px 8px}th{background:#f0f0f0;text-align:left}.text-right{text-align:right}.text-center{text-align:center}h1{font-size:18px}h3{font-size:14px}.italic{font-style:italic}@media print{body{padding:0}}</style></head><body>${content.innerHTML}</body></html>`);
+                win.document.write(`<html>
+<head>
+  <title>${bn ? 'সকল প্রতিষ্ঠানের হিসাব প্রতিবেদন' : 'All Institutions Expense Report'} - ${selectedMonthYear}</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 12mm 12mm;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'SutonnyOMJ', 'Noto Sans Bengali', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #fff;
+      color: #000;
+    }
+    .print-page {
+      page-break-after: always;
+      break-after: page;
+      min-height: 96vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 10px 0 24px 0;
+      box-sizing: border-box;
+    }
+    .print-page:last-child {
+      page-break-after: auto;
+      break-after: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 11px;
+    }
+    th, td {
+      border: 1px solid #333;
+      padding: 5px 8px;
+    }
+    th {
+      background: #f1f5f9;
+      text-align: left;
+      font-weight: bold;
+    }
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+    .text-left { text-align: left; }
+    .font-bold { font-weight: bold; }
+    .font-semibold { font-weight: 600; }
+    .font-black { font-weight: 900; }
+    .font-mono { font-family: monospace; }
+    .border-b-2 { border-bottom: 2px solid #000; }
+    .border-t-2 { border-top: 2px solid #000; }
+    .border-t { border-top: 1px solid #333; }
+    h1 { font-size: 18px; margin: 0 0 4px 0; }
+    h2 { font-size: 14px; margin: 4px 0; }
+    h3 { font-size: 12px; margin: 4px 0; }
+    p { margin: 2px 0; }
+    .print\\:hidden, [class*="print:hidden"] {
+      display: none !important;
+    }
+    @media print {
+      body { padding: 0; }
+      .print-page {
+        page-break-after: always !important;
+        break-after: page !important;
+        min-height: 98vh;
+      }
+      .print-page:last-child {
+        page-break-after: auto !important;
+        break-after: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  ${content.innerHTML}
+</body>
+</html>`);
                 win.document.close();
                 win.focus();
                 win.print();
