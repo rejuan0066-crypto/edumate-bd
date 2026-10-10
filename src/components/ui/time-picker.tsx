@@ -34,12 +34,11 @@ const TimePicker = ({
   const [open, setOpen] = React.useState(false);
   const [h24, setH24] = React.useState<number>(9);
   const [minute, setMinute] = React.useState<number>(30);
-  const [activeUnit, setActiveUnit] = React.useState<'hour' | 'minute'>('hour');
+  const [activeUnit, setActiveUnit] = React.useState<'hour' | 'minute'>('minute');
   const isMobile = useIsMobile();
 
-  const hourRef = React.useRef<HTMLDivElement>(null);
-  const minuteRef = React.useRef<HTMLDivElement>(null);
   const touchStartY = React.useRef<number | null>(null);
+  const pointerStartY = React.useRef<number | null>(null);
 
   React.useEffect(() => {
     if (value) {
@@ -66,14 +65,16 @@ const TimePicker = ({
     if (is24) {
       setH24((prev) => (prev + delta + 24) % 24);
     } else {
-      const current12 = h24 % 12 || 12;
-      let next12 = current12 + delta;
-      if (next12 > 12) next12 = 1;
-      if (next12 < 1) next12 = 12;
-      const newH = period === 'AM' ? (next12 % 12) : (next12 % 12) + 12;
-      setH24(newH);
+      setH24((prev) => {
+        const cur12 = prev % 12 || 12;
+        let next12 = cur12 + delta;
+        if (next12 > 12) next12 = 1;
+        if (next12 < 1) next12 = 12;
+        const curPeriod = prev >= 12 ? 'PM' : 'AM';
+        return curPeriod === 'AM' ? (next12 % 12) : (next12 % 12) + 12;
+      });
     }
-  }, [is24, h24, period]);
+  }, [is24]);
 
   const stepMinute = React.useCallback((delta: number) => {
     setMinute((prev) => (prev + delta + 60) % 60);
@@ -84,50 +85,90 @@ const TimePicker = ({
     if (p === 'PM' && h24 < 12) setH24(h24 + 12);
   };
 
-  // Discrete mouse wheel on Hour box
+  const [hourEl, setHourEl] = React.useState<HTMLDivElement | null>(null);
+  const [minuteEl, setMinuteEl] = React.useState<HTMLDivElement | null>(null);
+
   React.useEffect(() => {
-    const el = hourRef.current;
-    if (!el) return;
+    if (!hourEl) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       e.stopPropagation();
       stepHour(e.deltaY < 0 ? 1 : -1);
     };
-    el.addEventListener('wheel', onWheel, { passive: false });
-    return () => el.removeEventListener('wheel', onWheel);
-  }, [stepHour]);
+    hourEl.addEventListener('wheel', onWheel, { passive: false });
+    return () => hourEl.removeEventListener('wheel', onWheel);
+  }, [hourEl, stepHour]);
 
-  // Discrete mouse wheel on Minute box
   React.useEffect(() => {
-    const el = minuteRef.current;
-    if (!el) return;
+    if (!minuteEl) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       e.stopPropagation();
       stepMinute(e.deltaY < 0 ? 1 : -1);
     };
-    el.addEventListener('wheel', onWheel, { passive: false });
-    return () => el.removeEventListener('wheel', onWheel);
-  }, [stepMinute]);
+    minuteEl.addEventListener('wheel', onWheel, { passive: false });
+    return () => minuteEl.removeEventListener('wheel', onWheel);
+  }, [minuteEl, stepMinute]);
 
-  // Touch swipe support for mobile
+  // Touch handlers for mobile swipe
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
   };
 
   const handleTouchMove = (e: React.TouchEvent, type: 'hour' | 'minute') => {
     if (touchStartY.current === null) return;
-    const diff = touchStartY.current - e.touches[0].clientY;
-    if (Math.abs(diff) >= 20) {
+    const currentY = e.touches[0].clientY;
+    const diff = touchStartY.current - currentY;
+    if (Math.abs(diff) >= 8) {
       const dir = diff > 0 ? 1 : -1;
       if (type === 'hour') stepHour(dir);
       else stepMinute(dir);
-      touchStartY.current = e.touches[0].clientY;
+      touchStartY.current = currentY;
     }
   };
 
   const handleTouchEnd = () => {
     touchStartY.current = null;
+  };
+
+  // Pointer drag handlers for mouse/pen drag
+  const handlePointerDown = (e: React.PointerEvent) => {
+    try {
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+    } catch {}
+    pointerStartY.current = e.clientY;
+  };
+
+  const handlePointerMove = (e: React.PointerEvent, type: 'hour' | 'minute') => {
+    if (pointerStartY.current === null) return;
+    const currentY = e.clientY;
+    const diff = pointerStartY.current - currentY;
+    if (Math.abs(diff) >= 8) {
+      const dir = diff > 0 ? 1 : -1;
+      if (type === 'hour') stepHour(dir);
+      else stepMinute(dir);
+      pointerStartY.current = currentY;
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    pointerStartY.current = null;
+    try {
+      e.currentTarget.releasePointerCapture?.(e.pointerId);
+    } catch {}
+  };
+
+  // Keyboard navigation
+  const handleKeyDown = (e: React.KeyboardEvent, type: 'hour' | 'minute') => {
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (type === 'hour') stepHour(1);
+      else stepMinute(1);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (type === 'hour') stepHour(-1);
+      else stepMinute(-1);
+    }
   };
 
   const fmt = (h: number, m: number) => {
@@ -230,16 +271,25 @@ const TimePicker = ({
               <ChevronUp className="h-3.5 w-3.5" />
             </button>
             <div
-              ref={hourRef}
+              ref={setHourEl}
               onClick={() => setActiveUnit('hour')}
+              onWheel={(e) => {
+                e.preventDefault();
+                stepHour(e.deltaY < 0 ? 1 : -1);
+              }}
               onTouchStart={handleTouchStart}
               onTouchMove={(e) => handleTouchMove(e, 'hour')}
               onTouchEnd={handleTouchEnd}
+              onPointerDown={handlePointerDown}
+              onPointerMove={(e) => handlePointerMove(e, 'hour')}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerUp}
+              onKeyDown={(e) => handleKeyDown(e, 'hour')}
               role="listbox"
               aria-label="ঘণ্টা"
               tabIndex={0}
               className={cn(
-                "h-14 w-14 rounded-xl text-2xl font-bold tabular-nums transition-all flex items-center justify-center cursor-ns-resize select-none",
+                "h-14 w-14 rounded-xl text-2xl font-bold tabular-nums transition-all flex items-center justify-center select-none touch-none cursor-ns-resize",
                 "overscroll-contain overflow-y-auto id-preview-scroll",
                 activeUnit === 'hour'
                   ? "bg-primary text-primary-foreground shadow-md scale-105"
@@ -272,16 +322,25 @@ const TimePicker = ({
               <ChevronUp className="h-3.5 w-3.5" />
             </button>
             <div
-              ref={minuteRef}
+              ref={setMinuteEl}
               onClick={() => setActiveUnit('minute')}
+              onWheel={(e) => {
+                e.preventDefault();
+                stepMinute(e.deltaY < 0 ? 1 : -1);
+              }}
               onTouchStart={handleTouchStart}
               onTouchMove={(e) => handleTouchMove(e, 'minute')}
               onTouchEnd={handleTouchEnd}
+              onPointerDown={handlePointerDown}
+              onPointerMove={(e) => handlePointerMove(e, 'minute')}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerUp}
+              onKeyDown={(e) => handleKeyDown(e, 'minute')}
               role="listbox"
               aria-label="মিনিট"
               tabIndex={0}
               className={cn(
-                "h-14 w-14 rounded-xl text-2xl font-bold tabular-nums transition-all flex items-center justify-center cursor-ns-resize select-none",
+                "h-14 w-14 rounded-xl text-2xl font-bold tabular-nums transition-all flex items-center justify-center select-none touch-none cursor-ns-resize",
                 "overscroll-contain overflow-y-auto id-preview-scroll",
                 activeUnit === 'minute'
                   ? "bg-primary text-primary-foreground shadow-md scale-105"
@@ -326,7 +385,7 @@ const TimePicker = ({
 
       {/* Helpful scroll hint */}
       <p className="text-[10px] text-center text-muted-foreground/70">
-        মাউস স্ক্রল বা বোতাম চেপে সময় পরিবর্তন করুন
+        মাউস স্ক্রল বা সোয়াইপ করে সময় পরিবর্তন করুন
       </p>
 
       {/* Action Buttons */}
