@@ -301,7 +301,7 @@ const StudentProfileModal = ({
             )}
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-white/20 text-white border border-white/20">
-                <Hash className="w-3 h-3 text-white" /> {student.student_id}
+                <Hash className="w-3 h-3 text-white" /> {student.registration_no || student.student_id}
               </span>
               {student.roll_number && (
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-white/15 text-white border border-white/15">

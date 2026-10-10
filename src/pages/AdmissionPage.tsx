@@ -177,6 +177,24 @@ const AdmissionPage = () => {
   // by admin flows (e.g. inline edit) but disabled the public auto-fill.
   // void generateRollNumber; void updateRegistrationFromRoll;
 
+  // Auto-prefill running session if not set
+  useEffect(() => {
+    if (academicSessions.length > 0) {
+      setForm(prev => {
+        if (prev.admission_session) return prev;
+        const running = academicSessions.find((s: any) => s.is_active) || academicSessions[0];
+        if (running) {
+          return {
+            ...prev,
+            admission_session: running.id,
+            session_year: running.name || prev.session_year,
+          };
+        }
+        return prev;
+      });
+    }
+  }, [academicSessions]);
+
   // Auto-prefill from URL: ?class=<classId> → admission_class + division + running session/year
   const [searchParams] = useSearchParams();
   const urlClassId = searchParams.get('class');
@@ -188,9 +206,8 @@ const AdmissionPage = () => {
     setForm(prev => {
       const next: Record<string, any> = { ...prev };
       if (!prev.admission_class) next.admission_class = urlClassId;
-      // Auto-pick the first active session (sorted desc by name = current/running)
       if (!prev.admission_session && academicSessions.length > 0) {
-        const running = academicSessions[0] as any;
+        const running = academicSessions.find((s: any) => s.is_active) || academicSessions[0];
         next.admission_session = running.id;
         next.session_year = running.name || prev.session_year;
       }
@@ -322,7 +339,12 @@ const AdmissionPage = () => {
     mutationFn: async () => {
       const photoUrl = await uploadPhoto();
       const admissionData = buildAdmissionData();
-      const studentId = form.registration_no || `STU-${Date.now().toString().slice(-8)}`;
+      const selectedSession = academicSessions.find((s: any) => s.id === form.admission_session)
+        || academicSessions.find((s: any) => s.name === form.admission_session || s.name_bn === form.admission_session || s.name === form.session_year || s.name_bn === form.session_year);
+      const finalSessionName = selectedSession?.name || form.admission_session || form.session_year || null;
+      const finalSessionId = selectedSession?.id || (form.admission_session && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(form.admission_session) ? form.admission_session : null);
+      const finalSessionYear = form.session_year || selectedSession?.name || form.admission_session || null;
+
       const payload = {
         name_bn: form.first_name.trim(),
         name_en: form.last_name.trim() || null,
@@ -342,10 +364,10 @@ const AdmissionPage = () => {
         admission_date: form.admission_date || null,
         birth_reg_no: form.birth_reg_no || null,
         religion: form.religion,
-        admission_session: academicSessions.find((s: any) => s.id === form.admission_session)?.name || form.admission_session || null,
-        session_id: form.admission_session || null,
+        admission_session: finalSessionName,
+        session_id: finalSessionId,
         registration_no: form.registration_no || null,
-        session_year: form.session_year || null,
+        session_year: finalSessionYear,
         previous_class: form.previous_class || null,
         previous_institute: form.previous_institute || null,
         father_occupation: form.father_occupation || null,
@@ -536,6 +558,28 @@ const AdmissionPage = () => {
           </div>
         );
 
+      case 'session_year':
+        return (
+          <div data-field={fieldKey}>
+            <Label className={errorLabel}>{label} {reqStar}</Label>
+            <Input className={`bg-background mt-1 ${errorBorder}`}
+              value={form.session_year || ''}
+              onChange={e => {
+                const val = e.target.value;
+                setForm(prev => {
+                  const match = academicSessions.find((s: any) => s.name === val || s.name_bn === val);
+                  return {
+                    ...prev,
+                    session_year: val,
+                    admission_session: match ? match.id : prev.admission_session,
+                  };
+                });
+              }}
+              placeholder={bn ? 'যেমন: ২০২৬ বা 2026' : 'e.g. 2026'} />
+            <FieldError field={fieldKey} />
+          </div>
+        );
+
       case 'admission_class':
         if (!isFormFieldVisible('admission_class')) return null;
         return (
@@ -712,11 +756,8 @@ const AdmissionPage = () => {
             <Label className={errorLabel}>{label} {reqStar}</Label>
             <Input className={`bg-background mt-1 ${errorBorder}`}
               value={form.first_name || ''}
-              onChange={e => {
-                const val = e.target.value.replace(/[a-zA-Z0-9]/g, '');
-                setForm(prev => ({ ...prev, first_name: val }));
-              }}
-              placeholder={bn ? 'বাংলায় লিখুন' : 'Type in Bangla only'} />
+              onChange={e => setForm(prev => ({ ...prev, first_name: e.target.value }))}
+              placeholder={bn ? 'বাংলায় লিখুন' : 'Full Name (Bangla)'} />
             <FieldError field={fieldKey} />
           </div>
         );
@@ -727,11 +768,8 @@ const AdmissionPage = () => {
             <Label className={errorLabel}>{label} {reqStar}</Label>
             <Input className={`bg-background mt-1 ${errorBorder}`}
               value={form.last_name || ''}
-              onChange={e => {
-                const val = e.target.value.replace(/[^\x00-\x7F]/g, '');
-                setForm(prev => ({ ...prev, last_name: val }));
-              }}
-              placeholder={bn ? 'ইংরেজিতে লিখুন' : 'Type in English only'} />
+              onChange={e => setForm(prev => ({ ...prev, last_name: e.target.value }))}
+              placeholder={bn ? 'ইংরেজিতে লিখুন' : 'Full Name (English)'} />
             <FieldError field={fieldKey} />
           </div>
         );

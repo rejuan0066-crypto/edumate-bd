@@ -51,9 +51,9 @@ export const printStudentProfile = ({
     {
       title: t('Basic Information', 'মৌলিক তথ্য'),
       rows: [
-        { label: t('Name (BN)', 'নাম (বাংলা)'), value: student.name },
+        { label: t('Name (BN)', 'নাম (বাংলা)'), value: student.name_bn || student.name },
         { label: t('Name (EN)', 'নাম (ইংরেজি)'), value: student.name_en },
-        { label: t('Registration No', 'রেজিস্ট্রেশন নং'), value: student.registration_no },
+        { label: t('Registration No', 'রেজিস্ট্রেশন নং'), value: student.registration_no || student.student_id },
         { label: t('Roll', 'রোল'), value: student.roll_number },
         { label: t('Date of Birth', 'জন্ম তারিখ'), value: student.date_of_birth },
         { label: t('Gender', 'লিঙ্গ'), value: student.gender },
@@ -215,8 +215,8 @@ export const printStudentProfile = ({
         ${photo ? `<img src="${esc(photo)}" alt="photo" onerror="this.style.display='none'" />` : `<span class="placeholder">${t('No Photo', 'ছবি নেই')}</span>`}
       </div>
       <div class="summary">
-        <div><b>${t('Name', 'নাম')}:</b> ${esc(student.name || student.name_en)}</div>
-        <div><b>${t('Reg No', 'রেজিস্ট্রেশন')}:</b> ${esc(student.registration_no)}</div>
+        <div><b>${t('Name', 'নাম')}:</b> ${esc(student.name_bn || student.name || student.name_en)}</div>
+        <div><b>${t('Reg No', 'রেজিস্ট্রেশন')}:</b> ${esc(student.registration_no || student.student_id)}</div>
         <div><b>${t('Class', 'শ্রেণী')}:</b> ${esc(className)}</div>
         <div><b>${t('Roll', 'রোল')}:</b> ${esc(student.roll_number)}</div>
         <div><b>${t('Session', 'সেশন')}:</b> ${esc(sessionName)}</div>

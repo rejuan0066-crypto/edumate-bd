@@ -195,11 +195,22 @@ const AdminStudents = () => {
     }
     // Session filter
     if (filterSessionId !== 'all') {
-      if (s.session_id !== filterSessionId) return false;
+      const selectedSession = academicSessions.find((as: any) => as.id === filterSessionId);
+      const matchesId = s.session_id === filterSessionId;
+      let matchesName = selectedSession && (s.admission_session === selectedSession.name || s.session_year === selectedSession.name || s.admission_session === selectedSession.name_bn || s.session_year === selectedSession.name_bn);
+      if (!matchesId && !matchesName && selectedSession) {
+        const sessYearDigits = selectedSession.name?.match(/\d{4}/)?.[0];
+        const studentYearDigits = (String(s.session_year || s.admission_session || '')).replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d))).match(/\d{4}/)?.[0];
+        if (sessYearDigits && studentYearDigits && sessYearDigits === studentYearDigits) {
+          matchesName = true;
+        }
+      }
+      if (!matchesId && !matchesName) return false;
     }
     // Class filter
     if (filterClassId !== 'all') {
-      if (s.class_id !== filterClassId) return false;
+      const effectiveCId = getEffectiveClassId(s);
+      if (effectiveCId !== filterClassId) return false;
     }
     // Approval status filter
     if (filterApproval !== 'all') {
@@ -214,15 +225,43 @@ const AdminStudents = () => {
     // Text search
     if (search) {
       const q = search.toLowerCase();
-      return s.name_bn?.toLowerCase().includes(q) || s.student_id?.toLowerCase().includes(q) || s.roll_number?.toLowerCase().includes(q) || s.name_en?.toLowerCase().includes(q);
+      return (
+        s.name_bn?.toLowerCase().includes(q) ||
+        s.student_id?.toLowerCase().includes(q) ||
+        s.registration_no?.toLowerCase().includes(q) ||
+        s.roll_number?.toLowerCase().includes(q) ||
+        s.name_en?.toLowerCase().includes(q)
+      );
     }
     return true;
   });
 
   const parseRollNumber = (roll: string | null | undefined) => {
-    const parsed = Number.parseInt(roll || '', 10);
+    const clean = String(roll || '').replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+    const parsed = Number.parseInt(clean, 10);
     return Number.isNaN(parsed) ? Number.MAX_SAFE_INTEGER : parsed;
   };
+
+  const getEffectiveClassId = useCallback((student: any) => {
+    if (!student) return null;
+    if (student.class_id) return student.class_id;
+    if (student.admission_data?.admission_class) return student.admission_data.admission_class;
+    // Fallback: infer from roll number and division if available
+    if (student.roll_number && classes.length > 0) {
+      const cleanRoll = String(student.roll_number).replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+      const rollNum = parseInt(cleanRoll, 10);
+      if (!isNaN(rollNum) && rollNum >= 1000) {
+        const order = Math.floor(rollNum / 1000);
+        const divClasses = student.division_id
+          ? classes.filter((c: any) => c.division_id === student.division_id)
+          : classes;
+        if (divClasses.length > 0 && order >= 1 && order <= divClasses.length) {
+          return divClasses[order - 1].id;
+        }
+      }
+    }
+    return null;
+  }, [classes]);
 
   const sortedFiltered = [...filtered].sort((a: any, b: any) => {
     const rollDiff = parseRollNumber(a.roll_number) - parseRollNumber(b.roll_number);
@@ -246,9 +285,10 @@ const AdminStudents = () => {
 
   // Generate class-wise serial: 1, 2, 3... within each class
   const getClassSerial = (student: any) => {
-    if (!student.class_id) return '-';
+    const classId = getEffectiveClassId(student);
+    if (!classId) return '-';
     const sameClassStudents = students
-      .filter((s: any) => s.class_id === student.class_id)
+      .filter((s: any) => getEffectiveClassId(s) === classId)
       .sort((a: any, b: any) => {
         const rollA = parseRollNumber(a.roll_number);
         const rollB = parseRollNumber(b.roll_number);
@@ -256,7 +296,7 @@ const AdminStudents = () => {
         return (a.created_at || '').localeCompare(b.created_at || '');
       });
     const idx = sameClassStudents.findIndex((s: any) => s.id === student.id);
-    return idx + 1;
+    return idx >= 0 ? idx + 1 : '-';
   };
 
   const getSessionName = (sessionId: string | null, fallback: string | null) => {
@@ -264,7 +304,18 @@ const AdminStudents = () => {
       const session = academicSessions.find((s: any) => s.id === sessionId);
       if (session) return bn ? (session.name_bn || session.name) : session.name;
     }
-    return fallback || '-';
+    if (fallback) {
+      const session = academicSessions.find((s: any) => s.name === fallback || s.name_bn === fallback || s.id === fallback);
+      if (session) return bn ? (session.name_bn || session.name) : session.name;
+      const cleanFb = fallback.replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+      const yearDigits = cleanFb.match(/\d{4}/)?.[0];
+      if (yearDigits) {
+        const matchYear = academicSessions.find((s: any) => (s.name || '').includes(yearDigits) || (s.name_bn || '').includes(yearDigits));
+        if (matchYear) return bn ? (matchYear.name_bn || matchYear.name) : matchYear.name;
+      }
+      return fallback;
+    }
+    return '-';
   };
 
   const studentListContent = (
@@ -354,7 +405,7 @@ const AdminStudents = () => {
                   <tr className="border-b border-border/30">
                     <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'সি.' : '#'}</th>
                     <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'নাম' : 'Name'}</th>
-                    <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'আইডি' : 'ID'}</th>
+                    <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'রেজি / আইডি' : 'Reg / ID'}</th>
                     <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'রোল' : 'Roll'}</th>
                     <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'বিভাগ' : 'Division'}</th>
                     <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'সেশন' : 'Session'}</th>
@@ -388,11 +439,11 @@ const AdminStudents = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-4 text-sm font-mono text-muted-foreground">{s.student_id}</td>
+                      <td className="px-5 py-4 text-sm font-mono text-muted-foreground">{s.registration_no || s.student_id}</td>
                       <td className="px-5 py-4 text-sm font-mono font-medium text-foreground/80">{s.roll_number || <span className="text-muted-foreground/30">—</span>}</td>
                       <td className="px-5 py-4 text-sm text-muted-foreground">{bn ? s.divisions?.name_bn : s.divisions?.name || '-'}</td>
-                      <td className="px-5 py-4 text-sm text-muted-foreground">{getSessionName(s.session_id, s.admission_session)}</td>
-                      <td className="px-5 py-4 text-sm text-muted-foreground">{getClassName(s.class_id)}</td>
+                      <td className="px-5 py-4 text-sm text-muted-foreground">{getSessionName(s.session_id, s.admission_session || s.session_year)}</td>
+                      <td className="px-5 py-4 text-sm text-muted-foreground">{getClassName(getEffectiveClassId(s))}</td>
                       <td className="px-5 py-4">{getApprovalBadge(s.approval_status || 'pending')}</td>
                       <td className="px-5 py-4">
                         {isRecordPending(s.id) && (
@@ -455,7 +506,7 @@ const AdminStudents = () => {
                       <td className="px-5 py-4 text-right">
                         <div className="flex items-center justify-end gap-2 flex-nowrap">
                           <button onClick={() => setShowDetail(s)} className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/30 shadow-sm border border-blue-200/50 dark:border-blue-800/30 flex items-center justify-center text-blue-600 dark:text-blue-400 hover:shadow-md hover:scale-110 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all duration-200" title={bn ? 'দেখুন' : 'View'}><Eye className="w-4 h-4" strokeWidth={1.75} /></button>
-                          <button onClick={() => printStudentProfile({ student: s, bn, institution: institution || {}, className: getClassName(s.class_id), sessionName: getSessionName(s.session_id, s.admission_session) })} className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/30 shadow-sm border border-indigo-200/50 dark:border-indigo-800/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 hover:shadow-md hover:scale-110 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all duration-200" title={bn ? 'প্রোফাইল প্রিন্ট' : 'Print Profile'}><Printer className="w-4 h-4" strokeWidth={1.75} /></button>
+                          <button onClick={() => printStudentProfile({ student: s, bn, institution: institution || {}, className: getClassName(getEffectiveClassId(s)), sessionName: getSessionName(s.session_id, s.admission_session || s.session_year) })} className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/30 shadow-sm border border-indigo-200/50 dark:border-indigo-800/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 hover:shadow-md hover:scale-110 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all duration-200" title={bn ? 'প্রোফাইল প্রিন্ট' : 'Print Profile'}><Printer className="w-4 h-4" strokeWidth={1.75} /></button>
                           {canEditItem && (
                             <button 
                               disabled={isRecordPending(s.id)}
@@ -514,7 +565,7 @@ const AdminStudents = () => {
       <Dialog open={!!showDetail} onOpenChange={o => { if (!o) setShowDetail(null); }}>
         <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto rounded-[40px]">
           <DialogHeader><DialogTitle className="text-center">{bn ? 'ছাত্রের বিস্তারিত' : 'Student Details'}</DialogTitle></DialogHeader>
-          {showDetail && <StudentProfileModal student={showDetail} bn={bn} getApprovalBadge={getApprovalBadge} getSessionName={getSessionName} getClassName={getClassName} setEditStudent={setEditStudent} setShowDetail={setShowDetail} setShowAdd={setShowAdd} statusMutation={statusMutation} canEditItem={canEditItem} />}
+          {showDetail && <StudentProfileModal student={showDetail} bn={bn} getApprovalBadge={getApprovalBadge} getSessionName={getSessionName} getClassName={(cId: string) => getClassName(cId || getEffectiveClassId(showDetail))} setEditStudent={setEditStudent} setShowDetail={setShowDetail} setShowAdd={setShowAdd} statusMutation={statusMutation} canEditItem={canEditItem} />}
         </DialogContent>
       </Dialog>
     </div>

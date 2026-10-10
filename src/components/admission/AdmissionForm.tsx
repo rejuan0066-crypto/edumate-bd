@@ -84,20 +84,137 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
 
   const isEditMode = !!editStudent;
 
+  const [selectedDivisionId, setSelectedDivisionId] = useState('');
+
+  const { data: divisions = [] } = useQuery({
+    queryKey: ['divisions-active'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('divisions').select('*').eq('is_active', true).order('sort_order');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: studentCategories = [] } = useQuery({
+    queryKey: ['student_categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('student_categories').select('*').eq('is_active', true).order('sort_order');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: classes = [] } = useQuery({
+    queryKey: ['classes'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('classes').select('*, divisions(name, name_bn)').eq('is_active', true).order('sort_order');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Filter classes by selected division
+  const filteredClasses = selectedDivisionId
+    ? classes.filter((c: any) => c.division_id === selectedDivisionId)
+    : classes;
+
+  const inferClassFromRoll = useCallback((roll: string | null | undefined, divId: string | null | undefined) => {
+    if (!roll || !classes.length) return '';
+    const cleanRoll = roll.replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+    const num = parseInt(cleanRoll, 10);
+    if (isNaN(num) || num < 1000) return '';
+    const order = Math.floor(num / 1000);
+    const divClasses = divId 
+      ? classes.filter((c: any) => c.division_id === divId)
+      : classes;
+    if (divClasses.length > 0 && order >= 1 && order <= divClasses.length) {
+      return divClasses[order - 1].id;
+    }
+    return '';
+  }, [classes]);
+
+  const { data: academicSessions = [] } = useQuery({
+    queryKey: ['academic-sessions-active'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('academic_sessions').select('*').eq('is_active', true).order('name', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const findMatchingSession = useCallback((
+    sessionId?: string | null,
+    admissionSession?: string | null,
+    sessionYear?: string | null
+  ) => {
+    if (!academicSessions || academicSessions.length === 0) return null;
+
+    const normalizeYear = (val: string | null | undefined) => {
+      if (!val) return '';
+      return String(val)
+        .trim()
+        .replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)))
+        .toLowerCase();
+    };
+
+    const candidates = [sessionId, admissionSession, sessionYear].filter(Boolean) as string[];
+
+    // 1. Direct ID match
+    for (const c of candidates) {
+      const match = academicSessions.find((as: any) => as.id === c);
+      if (match) return match;
+    }
+
+    // 2. Exact match on name or name_bn
+    for (const c of candidates) {
+      const norm = normalizeYear(c);
+      const match = academicSessions.find(
+        (as: any) => normalizeYear(as.name) === norm || normalizeYear(as.name_bn) === norm
+      );
+      if (match) return match;
+    }
+
+    // 3. 4-digit year match (e.g. "2026" or "২০২৬" matches "2026-27" / "২০২৬-২৭")
+    for (const c of candidates) {
+      const norm = normalizeYear(c);
+      const digits = norm.match(/\d{4}/)?.[0];
+      if (digits) {
+        const match = academicSessions.find((as: any) => {
+          const asName = normalizeYear(as.name);
+          const asNameBn = normalizeYear(as.name_bn);
+          return asName.includes(digits) || asNameBn.includes(digits);
+        });
+        if (match) return match;
+      }
+    }
+
+    // 4. Default to active session if available
+    const active = academicSessions.find((as: any) => as.is_active);
+    if (active) return active;
+
+    return academicSessions[0] || null;
+  }, [academicSessions]);
+
   // Pre-fill form when editing
   useEffect(() => {
     if (editStudent && open) {
       const s = editStudent;
       const admData = s.admission_data || {};
+      const matchSession = findMatchingSession(s.session_id, s.admission_session, s.session_year);
+      const studentSessionId = matchSession?.id || s.session_id || (s.admission_session && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s.admission_session) ? s.admission_session : '');
+      const studentSessionYear = s.session_year || matchSession?.name || s.admission_session || new Date().getFullYear().toString();
+      const studentDivisionId = s.division_id || (s.class_id ? (classes.find((c: any) => c.id === s.class_id) as any)?.division_id : '') || '';
+      const studentClassId = admData.admission_class || s.class_id || inferClassFromRoll(s.roll_number, studentDivisionId) || '';
+
       setForm({
-        student_type: admData.student_type || 'new',
+        student_type: admData.student_type || (s.student_type || 'new'),
         residence_type: s.residence_type || 'non-resident',
-        admission_session: s.admission_session || '',
+        admission_session: studentSessionId,
         roll_number: s.roll_number || '',
-        registration_no: s.registration_no || '',
+        registration_no: s.registration_no || s.student_id || '',
         admission_date: s.admission_date || new Date().toISOString().split('T')[0],
-        session_year: s.session_year || new Date().getFullYear().toString(),
-        admission_class: admData.admission_class || '',
+        session_year: studentSessionYear,
+        admission_class: studentClassId,
         first_name: s.name_bn || '',
         last_name: s.name_en || '',
         gender: s.gender || 'male',
@@ -134,6 +251,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
         approver_date: admData.approver_date || '',
         approver_signature: admData.approver_signature || '',
       });
+      if (studentDivisionId) setSelectedDivisionId(studentDivisionId);
       if (admData.permanentAddr) setPermanentAddr(admData.permanentAddr);
       if (admData.presentAddr) setPresentAddr(admData.presentAddr);
       if (admData.parentPermanentAddr) setParentPermanentAddr(admData.parentPermanentAddr);
@@ -142,57 +260,51 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       if (admData.guardianPresAddr) setGuardianPresAddr(admData.guardianPresAddr);
       if (admData.custom_fields) setCustomFieldValues(admData.custom_fields);
     }
-  }, [editStudent, open]);
+  }, [editStudent, open, academicSessions, classes, inferClassFromRoll, findMatchingSession]);
 
-  const { data: divisions = [] } = useQuery({
-    queryKey: ['divisions-active'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('divisions').select('*').eq('is_active', true).order('sort_order');
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const { data: studentCategories = [] } = useQuery({
-    queryKey: ['student_categories'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('student_categories').select('*').eq('is_active', true).order('sort_order');
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const [selectedDivisionId, setSelectedDivisionId] = useState('');
-
-  // Pre-fill division from edit student
+  // Synchronize session if academicSessions loads after form is opened
   useEffect(() => {
-    if (editStudent && open && editStudent.division_id) {
-      setSelectedDivisionId(editStudent.division_id);
+    if (open && academicSessions.length > 0) {
+      setForm(prev => {
+        if (prev.admission_session && academicSessions.some((as: any) => as.id === prev.admission_session)) return prev;
+        const s = editStudent || {};
+        const match = findMatchingSession(
+          s.session_id || prev.admission_session,
+          s.admission_session || prev.admission_session,
+          s.session_year || prev.session_year
+        );
+        if (match) {
+          return {
+            ...prev,
+            admission_session: match.id,
+            session_year: prev.session_year || match.name,
+          };
+        }
+        return prev;
+      });
     }
-  }, [editStudent, open]);
+  }, [editStudent, open, academicSessions, findMatchingSession]);
 
-  const { data: classes = [] } = useQuery({
-    queryKey: ['classes'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('classes').select('*, divisions(name, name_bn)').eq('is_active', true).order('sort_order');
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  // Filter classes by selected division
-  const filteredClasses = selectedDivisionId
-    ? classes.filter((c: any) => c.division_id === selectedDivisionId)
-    : classes;
-
-  const { data: academicSessions = [] } = useQuery({
-    queryKey: ['academic-sessions-active'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('academic_sessions').select('*').eq('is_active', true).order('name', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
+  // Synchronize division and class if classes loads after form is opened
+  useEffect(() => {
+    if (editStudent && open && classes.length > 0) {
+      const clsId = editStudent.class_id || editStudent.admission_data?.admission_class;
+      if (clsId && !selectedDivisionId) {
+        const cls = classes.find((c: any) => c.id === clsId);
+        if (cls?.division_id) {
+          setSelectedDivisionId(cls.division_id);
+        }
+      }
+      setForm(prev => {
+        if (prev.admission_class) return prev;
+        const inferred = inferClassFromRoll(editStudent.roll_number, editStudent.division_id || selectedDivisionId);
+        if (inferred) {
+          return { ...prev, admission_class: inferred };
+        }
+        return prev;
+      });
+    }
+  }, [editStudent, open, classes, selectedDivisionId, inferClassFromRoll]);
 
   // Fetch form_settings for field visibility & footer text
   const { data: formSettings = [] } = useQuery({
@@ -262,14 +374,20 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
 
     let query = supabase
       .from('students')
-      .select('roll_number')
-      .eq('class_id', classId)
+      .select('roll_number, class_id')
       .not('roll_number', 'is', null)
       .order('roll_number', { ascending: false })
       .limit(50);
 
+    // Match this class or any student whose roll is already in this class's numeric range
+    query = query.or(`class_id.eq.${classId},roll_number.gte.${rollStart}`);
+
     if (sessionId) {
-      query = query.eq('session_id', sessionId);
+      const matchS = academicSessions.find((as: any) => as.id === sessionId || as.name === sessionId || as.name_bn === sessionId);
+      const sId = matchS?.id || (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sessionId) ? sessionId : null);
+      if (sId) {
+        query = query.eq('session_id', sId);
+      }
     }
 
     const { data } = await query;
@@ -285,19 +403,20 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     }
     const nextRoll = String(maxRoll + 1);
     setForm(prev => ({ ...prev, roll_number: nextRoll }));
-  }, [isEditMode, getRollStartForClass]);
+  }, [isEditMode, getRollStartForClass, academicSessions]);
 
   // Convert Bengali digits to English
   const bnToEn = (str: string) => str.replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
 
   // Auto-generate registration number = divisionPrefix + session first 4 digits + roll number
-  const updateRegistrationFromRoll = useCallback((sessionYear: string, rollNumber: string) => {
-    if (!sessionYear || !rollNumber || isEditMode) return;
+  const updateRegistrationFromRoll = useCallback((sessionYear: string, rollNumber: string, force = false) => {
+    if (!sessionYear || !rollNumber || (isEditMode && !force)) return;
     const year = bnToEn(sessionYear.trim()).slice(0, 4);
+    const enRoll = bnToEn(rollNumber.trim());
     // Find division prefix from selectedDivisionId
     const div = divisions.find((d: any) => d.id === selectedDivisionId);
     const prefix = (div as any)?.prefix || '';
-    const regNo = prefix ? `${prefix}-${year}${rollNumber}` : `${year}${rollNumber}`;
+    const regNo = prefix ? `${prefix}-${year}${enRoll}` : `${year}${enRoll}`;
     setForm(prev => ({ ...prev, registration_no: regNo }));
   }, [isEditMode, divisions, selectedDivisionId]);
 
@@ -393,11 +512,13 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
   };
 
   const resetForm = () => {
+    const defaultActiveSession = academicSessions.find((as: any) => as.is_active) || academicSessions[0];
     setForm({
       student_type: '', residence_type: '',
-      admission_session: '', roll_number: '', registration_no: '',
+      admission_session: defaultActiveSession?.id || '',
+      roll_number: '', registration_no: '',
       admission_date: new Date().toISOString().split('T')[0],
-      session_year: new Date().getFullYear().toString(),
+      session_year: defaultActiveSession?.name || new Date().getFullYear().toString(),
       admission_class: '', first_name: '', last_name: '',
       gender: 'male', religion: 'islam', date_of_birth: '',
       birth_reg_no: '', previous_class: '', previous_institute: '',
@@ -448,10 +569,19 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
 
   const buildStudentPayload = () => {
     const admissionData = buildAdmissionData();
+    const selectedSession = findMatchingSession(form.admission_session, form.session_year);
+
+    const finalSessionName = selectedSession?.name || form.admission_session || form.session_year || null;
+    const finalSessionId = selectedSession?.id || (form.admission_session && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(form.admission_session) ? form.admission_session : null);
+    const finalSessionYear = form.session_year || selectedSession?.name || form.admission_session || null;
+
+    const studentRegNo = form.registration_no?.trim() || null;
+    const studentId = studentRegNo || (isEditMode ? editStudent.student_id : null);
+
     return {
       name_bn: form.first_name.trim(),
       name_en: form.last_name.trim() || null,
-      roll_number: form.roll_number.trim() || null,
+      roll_number: form.roll_number?.trim() || null,
       father_name: form.father_name.trim() || null,
       father_name_en: form.father_name_en?.trim() || null,
       mother_name: form.mother_name.trim() || null,
@@ -470,10 +600,11 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       admission_date: form.admission_date || null,
       birth_reg_no: form.birth_reg_no || null,
       religion: form.religion,
-      admission_session: academicSessions.find((s: any) => s.id === form.admission_session)?.name || form.admission_session || null,
-      session_id: form.admission_session || null,
-      registration_no: form.registration_no || null,
-      session_year: form.session_year || null,
+      admission_session: finalSessionName,
+      session_id: finalSessionId,
+      registration_no: studentRegNo,
+      student_id: studentId,
+      session_year: finalSessionYear,
       previous_class: form.previous_class || null,
       previous_institute: form.previous_institute || null,
       father_occupation: form.father_occupation || null,
@@ -491,7 +622,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
   const addMutation = useMutation({
     mutationFn: async () => {
       const payload = buildStudentPayload();
-      const studentId = form.registration_no || `STU-${Date.now().toString().slice(-8)}`;
+      const studentId = form.registration_no?.trim() || `STU-${Date.now().toString().slice(-8)}`;
       const { error } = await supabase.from('students').insert({
         ...payload,
         student_id: studentId,
@@ -516,8 +647,9 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
         }
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['students'] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['students'] });
+      await queryClient.refetchQueries({ queryKey: ['students'] });
       resetForm();
       onOpenChange(false);
       toast.success(bn ? 'ভর্তি আবেদন সফলভাবে জমা হয়েছে! অনুমোদনের অপেক্ষায়।' : 'Admission submitted! Pending approval.');
@@ -528,11 +660,17 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
   const updateMutation = useMutation({
     mutationFn: async () => {
       const payload = buildStudentPayload();
-      const { error } = await supabase.from('students').update(payload as any).eq('id', editStudent.id);
+      const updatedStudentId = form.registration_no?.trim() || editStudent.student_id;
+      const { error } = await supabase.from('students').update({
+        ...payload,
+        student_id: updatedStudentId,
+        registration_no: form.registration_no?.trim() || updatedStudentId,
+      } as any).eq('id', editStudent.id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['students'] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['students'] });
+      await queryClient.refetchQueries({ queryKey: ['students'] });
       resetForm();
       onOpenChange(false);
       toast.success(bn ? 'ছাত্রের তথ্য সফলভাবে আপডেট হয়েছে!' : 'Student updated successfully!');
@@ -546,7 +684,15 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     console.log('[AdmissionForm] form state:', JSON.stringify(form, null, 2));
     console.log('[AdmissionForm] selectedDivisionId:', selectedDivisionId);
     console.log('[AdmissionForm] configFields count:', configFields.length, 'isLoaded:', isLoaded);
-    // In edit mode, admins can update without enforcing required fields
+
+    // Division & Class selection is required in both add and edit mode
+    if (!selectedDivisionId) {
+      errors['admission_class'] = bn ? 'বিভাগ নির্বাচন আবশ্যক' : 'Division selection is required';
+    } else if (!form.admission_class) {
+      errors['admission_class'] = bn ? 'শ্রেণী নির্বাচন আবশ্যক' : 'Class selection is required';
+    }
+
+    // In edit mode, admins can update without enforcing all public required fields
     if (!isEditMode) {
       configFields.forEach(f => {
         const key = f.default_value;
@@ -560,11 +706,6 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
           errors[key] = bn ? `${f.label_bn} আবশ্যক` : `${f.label} is required`;
         }
       });
-
-      // Division is required
-      if (!selectedDivisionId) {
-        errors['admission_class'] = bn ? 'বিভাগ নির্বাচন আবশ্যক' : 'Division selection is required';
-      }
     }
 
     // Special validations
@@ -705,11 +846,29 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
         return (
           <div data-field={fieldKey}>
             <Label className={errorLabel}>{label} {reqStar}</Label>
-            <Input className={`bg-muted mt-1 ${errorBorder}`}
+            <Input className={`${isEditMode ? 'bg-background' : 'bg-muted'} mt-1 ${errorBorder}`}
               value={form.roll_number || ''}
-              readOnly
+              readOnly={!isEditMode}
+              onChange={isEditMode ? (e => {
+                const val = e.target.value;
+                setForm(prev => {
+                  const year = bnToEn(prev.session_year || '').trim().slice(0, 4);
+                  const prevRoll = bnToEn(prev.roll_number || '').trim();
+                  const newRoll = bnToEn(val.trim());
+                  const div = divisions.find((d: any) => d.id === selectedDivisionId);
+                  const prefix = (div as any)?.prefix || '';
+                  const oldReg = prefix ? `${prefix}-${year}${prevRoll}` : `${year}${prevRoll}`;
+                  const isAuto = !prev.registration_no || prev.registration_no === oldReg;
+                  const newReg = isAuto && val ? (prefix ? `${prefix}-${year}${newRoll}` : `${year}${newRoll}`) : prev.registration_no;
+                  return {
+                    ...prev,
+                    roll_number: val,
+                    registration_no: newReg,
+                  };
+                });
+              }) : undefined}
               placeholder={bn ? 'শ্রেণী ও সেশন নির্বাচন করুন' : 'Select class & session first'} />
-            <p className="text-xs text-muted-foreground mt-0.5">{bn ? 'শ্রেণী ও সেশন অনুযায়ী অটো জেনারেট' : 'Auto-generated by class & session'}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{isEditMode ? (bn ? 'প্রয়োজনে রোল পরিবর্তন করতে পারেন' : 'Edit roll if needed') : (bn ? 'শ্রেণী ও সেশন অনুযায়ী অটো জেনারেট' : 'Auto-generated by class & session')}</p>
             <FieldError field={fieldKey} />
           </div>
         );
@@ -726,7 +885,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                 placeholder={bn ? 'অটো জেনারেট / টাইপ করুন' : 'Auto / Type'} />
               <button type="button"
                 className="absolute right-1 top-1/2 -translate-y-1/2 mt-0.5 text-xs px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                onClick={() => updateRegistrationFromRoll(form.session_year, form.roll_number || '')}>
+                onClick={() => updateRegistrationFromRoll(form.session_year, form.roll_number || '', true)}>
                 {bn ? 'অটো' : 'Auto'}
               </button>
             </div>
@@ -751,6 +910,28 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                 ))}
               </SelectContent>
             </Select>
+            <FieldError field={fieldKey} />
+          </div>
+        );
+
+      case 'session_year':
+        return (
+          <div data-field={fieldKey}>
+            <Label className={errorLabel}>{label} {reqStar}</Label>
+            <Input className={`bg-background mt-1 ${errorBorder}`}
+              value={form.session_year || ''}
+              onChange={e => {
+                const val = e.target.value;
+                setForm(prev => {
+                  const match = academicSessions.find((s: any) => s.name === val || s.name_bn === val);
+                  return {
+                    ...prev,
+                    session_year: val,
+                    admission_session: match ? match.id : prev.admission_session,
+                  };
+                });
+              }}
+              placeholder={bn ? 'যেমন: ২০২৬ বা 2026' : 'e.g. 2026'} />
             <FieldError field={fieldKey} />
           </div>
         );
@@ -944,11 +1125,8 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
             <Label className={errorLabel}>{label} {reqStar}</Label>
             <Input className={`bg-background mt-1 ${errorBorder}`}
               value={form.first_name || ''}
-              onChange={e => {
-                const val = e.target.value.replace(/[a-zA-Z0-9]/g, '');
-                setForm(prev => ({ ...prev, first_name: val }));
-              }}
-              placeholder={bn ? 'বাংলায় লিখুন' : 'Type in Bangla only'} />
+              onChange={e => setForm(prev => ({ ...prev, first_name: e.target.value }))}
+              placeholder={bn ? 'বাংলায় লিখুন' : 'Full Name (Bangla)'} />
             <FieldError field={fieldKey} />
           </div>
         );
@@ -959,11 +1137,8 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
             <Label className={errorLabel}>{label} {reqStar}</Label>
             <Input className={`bg-background mt-1 ${errorBorder}`}
               value={form.last_name || ''}
-              onChange={e => {
-                const val = e.target.value.replace(/[^\x00-\x7F]/g, '');
-                setForm(prev => ({ ...prev, last_name: val }));
-              }}
-              placeholder={bn ? 'ইংরেজিতে লিখুন' : 'Type in English only'} />
+              onChange={e => setForm(prev => ({ ...prev, last_name: e.target.value }))}
+              placeholder={bn ? 'ইংরেজিতে লিখুন' : 'Full Name (English)'} />
             <FieldError field={fieldKey} />
           </div>
         );
@@ -975,11 +1150,8 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
             <Label className={errorLabel}>{label}</Label>
             <Input className={`bg-background mt-1 ${errorBorder}`}
               value={form[fieldKey] || ''}
-              onChange={e => {
-                const val = e.target.value.replace(/[^\x00-\x7F]/g, '');
-                setForm(prev => ({ ...prev, [fieldKey]: val }));
-              }}
-              placeholder={bn ? 'ইংরেজিতে লিখুন' : 'Type in English only'} />
+              onChange={e => setForm(prev => ({ ...prev, [fieldKey]: e.target.value }))}
+              placeholder={bn ? 'ইংরেজিতে লিখুন' : 'Enter in English'} />
             <FieldError field={fieldKey} />
           </div>
         );
