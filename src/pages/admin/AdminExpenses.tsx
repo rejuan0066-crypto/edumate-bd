@@ -263,7 +263,13 @@ const AdminExpenses = () => {
     remarks: '',
     is_due: false,
     add_to_inventory: false,
-    inventory_item_id: ''
+    inventory_dest_type: 'inventory' as 'inventory' | 'asset',
+    inventory_mode: 'existing' as 'existing' | 'new',
+    inventory_item_id: '',
+    inventory_new_name: '',
+    inventory_category: 'construction',
+    asset_category: 'furniture',
+    asset_location: '',
   };
   const defaultDepositForm = { deposit_date: new Date().toISOString().split('T')[0], bank_details: '', other_details: '', amount: '', source: 'manual' };
   const defaultExpInstForm = { name: '', name_bn: '', address: '', phone: '', email: '', other_info: '', logo_url: '' };
@@ -1160,53 +1166,120 @@ const AdminExpenses = () => {
           user_role: role,
         });
 
-        // Inventory integration: update stock, total_purchased, and create rich log
-        if (expenseForm.add_to_inventory && expenseForm.inventory_item_id && insertedExpense) {
+        // Inventory and Asset Management Integration
+        if (expenseForm.add_to_inventory && insertedExpense) {
           try {
-            const { data: currentItem } = await supabase
-              .from('inventory_items')
-              .select('current_stock, total_purchased, buying_price')
-              .eq('id', expenseForm.inventory_item_id)
-              .single();
+            const destType = expenseForm.inventory_dest_type || 'inventory';
 
-            const curStock = Number(currentItem?.current_stock || 0);
-            const curPurchased = Number(currentItem?.total_purchased ?? currentItem?.current_stock ?? 0);
-            const newStock = curStock + parsedQty;
-            const newPurchased = curPurchased + parsedQty;
-            const unitPrice = parsedQty > 0 ? (parsedAmount / parsedQty) : Number(currentItem?.buying_price || 0);
+            if (destType === 'asset') {
+              // 1. Add to Fixed Assets (আসবাবপত্র / যন্ত্রপাতি / সম্পদ)
+              const assetQty = parsedQty > 0 ? Math.round(parsedQty) : 1;
+              const assetName = (expenseForm.description || payload.description || 'নতুন সম্পদ').trim();
+              const assetPayload: Record<string, any> = {
+                asset_name_bn: assetName,
+                category: expenseForm.asset_category || 'furniture',
+                quantity: assetQty,
+                damaged_quantity: 0,
+                purchase_price: parsedAmount,
+                purchase_date: payload.expense_date,
+                location_bn: expenseForm.asset_location?.trim() || null,
+                condition_notes: `খরচ ভাউচার #${insertedExpense.voucher_no || insertedExpense.id?.slice(0, 8)} হতে সংগৃহীত`,
+                status: 'good',
+                is_active: true,
+                expense_id: insertedExpense.id,
+              };
 
-            // Attempt RPC increment first
-            const { error: stockError } = await supabase.rpc('increment_inventory_stock' as any, {
-              p_item_id: expenseForm.inventory_item_id,
-              p_amount: parsedQty
-            });
+              const { error: assetErr } = await supabase.from('fixed_assets').insert(assetPayload);
+              if (assetErr && (assetErr.message?.includes('column') || assetErr.code === '42703')) {
+                delete assetPayload.damaged_quantity;
+                delete assetPayload.expense_id;
+                await supabase.from('fixed_assets').insert(assetPayload);
+              }
+            } else {
+              // 2. Add to Inventory Items (মালামাল / মালামাল স্টক)
+              const isNew = expenseForm.inventory_mode === 'new' || !expenseForm.inventory_item_id;
+              let targetItemId = expenseForm.inventory_item_id;
 
-            // Sync total_purchased and fallback stock update if RPC had issues
-            const updatePayload: Record<string, any> = {
-              total_purchased: newPurchased,
-            };
-            if (unitPrice > 0) {
-              updatePayload.buying_price = Math.round(unitPrice * 100) / 100;
+              if (isNew) {
+                // Auto create new item using expense description & quantity
+                const itemName = (expenseForm.inventory_new_name || expenseForm.description || payload.description || 'নতুন সামগ্রী').trim();
+                const unitPrice = parsedQty > 0 ? Math.round((parsedAmount / parsedQty) * 100) / 100 : parsedAmount;
+
+                const newPayload: Record<string, any> = {
+                  name_bn: itemName,
+                  category: expenseForm.inventory_category || 'construction',
+                  current_stock: parsedQty,
+                  total_purchased: parsedQty,
+                  total_consumed: 0,
+                  unit: (expenseForm.quantity_unit && expenseForm.quantity_unit !== 'none') ? expenseForm.quantity_unit : 'pcs',
+                  buying_price: unitPrice,
+                  min_stock_level: 5,
+                  notes: `খরচ ভাউচার #${insertedExpense.voucher_no || insertedExpense.id?.slice(0, 8)} হতে এন্ট্রি`,
+                  is_active: true,
+                };
+
+                let { data: createdItem, error: createErr } = await supabase
+                  .from('inventory_items')
+                  .insert(newPayload)
+                  .select('id')
+                  .single();
+
+                if (createErr && (createErr.message?.includes('column') || createErr.code === '42703')) {
+                  delete newPayload.total_purchased;
+                  delete newPayload.total_consumed;
+                  const retry = await supabase.from('inventory_items').insert(newPayload).select('id').single();
+                  createdItem = retry.data;
+                }
+
+                if (createdItem) {
+                  targetItemId = createdItem.id;
+                }
+              } else if (targetItemId) {
+                // Update existing item
+                const { data: currentItem } = await supabase
+                  .from('inventory_items')
+                  .select('current_stock, total_purchased, buying_price')
+                  .eq('id', targetItemId)
+                  .single();
+
+                const curStock = Number(currentItem?.current_stock || 0);
+                const curPurchased = Number(currentItem?.total_purchased ?? currentItem?.current_stock ?? 0);
+                const newStock = curStock + parsedQty;
+                const newPurchased = curPurchased + parsedQty;
+                const unitPrice = parsedQty > 0 ? (parsedAmount / parsedQty) : Number(currentItem?.buying_price || 0);
+
+                const { error: stockError } = await supabase.rpc('increment_inventory_stock' as any, {
+                  p_item_id: targetItemId,
+                  p_amount: parsedQty
+                });
+
+                const updatePayload: Record<string, any> = {
+                  total_purchased: newPurchased,
+                };
+                if (unitPrice > 0) updatePayload.buying_price = Math.round(unitPrice * 100) / 100;
+                if (stockError || !currentItem) updatePayload.current_stock = newStock;
+
+                await supabase.from('inventory_items').update(updatePayload).eq('id', targetItemId);
+              }
+
+              // Insert inventory log entry
+              if (targetItemId) {
+                const unitPrice = parsedQty > 0 ? Math.round((parsedAmount / parsedQty) * 100) / 100 : 0;
+                await supabase.from('inventory_logs').insert({
+                  item_id: targetItemId,
+                  type: 'in',
+                  change_amount: parsedQty,
+                  project_name: payload.description || 'খরচ এন্ট্রি হতে ক্রয়',
+                  unit_price: unitPrice,
+                  total_price: parsedAmount,
+                  recipient: payload.vendor_name || expenseForm.expense_method || 'হিসাব শাখা',
+                  reason: `খরচ এন্ট্রি হতে ক্রয় (ভাউচার #${insertedExpense.voucher_no || insertedExpense.id?.slice(0, 8)})`,
+                  expense_id: insertedExpense.id,
+                });
+              }
             }
-            if (stockError || !currentItem) {
-              updatePayload.current_stock = newStock;
-            }
-            await supabase.from('inventory_items').update(updatePayload).eq('id', expenseForm.inventory_item_id);
-
-            // Insert detailed inventory log
-            await supabase.from('inventory_logs').insert({
-              item_id: expenseForm.inventory_item_id,
-              type: 'in',
-              change_amount: parsedQty,
-              project_name: payload.description || 'খরচ এন্ট্রি হতে ক্রয়',
-              unit_price: unitPrice > 0 ? Math.round(unitPrice * 100) / 100 : 0,
-              total_price: parsedAmount,
-              recipient: payload.vendor_name || expenseForm.expense_method || 'হিসাব শাখা',
-              reason: `খরচ এন্ট্রি হতে ক্রয় (ভাউচার #${insertedExpense.voucher_no || insertedExpense.id?.slice(0, 8)})`,
-              expense_id: insertedExpense.id,
-            });
           } catch (invErr) {
-            console.warn('Inventory log error:', invErr);
+            console.warn('Inventory / Asset log error in expense:', invErr);
           }
         }
       }
@@ -1218,6 +1291,7 @@ const AdminExpenses = () => {
       qc.invalidateQueries({ queryKey: ['inventory-items-for-expense'] });
       qc.invalidateQueries({ queryKey: ['inventory-items'] });
       qc.invalidateQueries({ queryKey: ['inventory-logs'] });
+      qc.invalidateQueries({ queryKey: ['fixed-assets'] });
       
       const isEdit = !!editingExpenseId;
       const keepInstitutionId = expenseForm.institution_id || '';
@@ -4650,56 +4724,194 @@ const AdminExpenses = () => {
               <Label>{bn ? 'রসিদ আছে' : 'Has Receipt'}</Label>
             </div>
 
-            {/* Inventory Integration Toggle */}
-            <div className="rounded-xl border border-emerald-200/50 dark:border-emerald-800/40 bg-emerald-50/60 dark:bg-emerald-950/20 p-3.5 space-y-3">
+            {/* Inventory & Asset Management Integration */}
+            <div className="rounded-2xl border border-emerald-300/60 dark:border-emerald-800/50 bg-gradient-to-br from-emerald-50/70 to-teal-50/40 dark:from-emerald-950/30 dark:to-teal-950/20 p-4 space-y-3 shadow-xs">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Package className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <Package className="w-4 h-4" />
+                  </div>
                   <div>
-                    <Label className="text-sm font-semibold">{bn ? 'ইনভেন্টরিতে স্টক ও ক্রয় যোগ হবে?' : 'Add to Inventory Stock & Purchase?'}</Label>
-                    <p className="text-[11px] text-muted-foreground">{bn ? 'ক্রয়কৃত মালামাল সরাসরি ইনভেন্টরি হিসেবে যুক্ত হবে' : 'Automatically syncs count with inventory stock'}</p>
+                    <Label className="text-sm font-bold text-foreground">
+                      {bn ? 'ইনভেন্টরি বা সম্পদ ব্যবস্থাপনায় যোগ করবেন?' : 'Add to Inventory or Asset Management?'}
+                    </Label>
+                    <p className="text-[11px] text-muted-foreground">
+                      {bn ? 'খরচের বিবরণ ও পরিমাণ সরাসরি মালামাল স্টক বা স্থায়ী সম্পদে যুক্ত হবে' : 'Automatically syncs description & quantity to stock or assets'}
+                    </p>
                   </div>
                 </div>
                 <Switch
                   checked={expenseForm.add_to_inventory}
-                  onCheckedChange={v => setExpenseForm(f => ({ ...f, add_to_inventory: v, inventory_item_id: v ? f.inventory_item_id : '' }))}
+                  onCheckedChange={v => setExpenseForm(f => ({
+                    ...f,
+                    add_to_inventory: v,
+                    inventory_dest_type: f.inventory_dest_type || 'inventory',
+                    inventory_mode: f.inventory_mode || (inventoryItems.length > 0 ? 'existing' : 'new'),
+                  }))}
                 />
               </div>
+
               {expenseForm.add_to_inventory && (
-                <div className="space-y-2 pt-1">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs font-medium">{bn ? 'ইনভেন্টরি আইটেম নির্বাচন করুন' : 'Select Inventory Item'}</Label>
-                    <a 
-                      href="/admin/inventory" 
-                      target="_blank" 
-                      rel="noreferrer" 
-                      className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 font-medium"
+                <div className="space-y-3 pt-2 border-t border-emerald-200/50 dark:border-emerald-800/40">
+                  {/* Select Destination: Inventory goods VS Fixed Asset */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setExpenseForm(f => ({ ...f, inventory_dest_type: 'inventory' }))}
+                      className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border transition-all cursor-pointer ${
+                        expenseForm.inventory_dest_type === 'inventory'
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                          : 'bg-white dark:bg-neutral-900 text-foreground border-border hover:bg-emerald-50 dark:hover:bg-neutral-800'
+                      }`}
                     >
-                      <span>{bn ? 'ইনভেন্টরি তালিকা / নতুন আইটেম' : 'Open Inventory'}</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
+                      <Package className="w-3.5 h-3.5" />
+                      <span>{bn ? '📦 ইনভেন্টরি সামগ্রী' : '📦 Inventory Item'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExpenseForm(f => ({ ...f, inventory_dest_type: 'asset' }))}
+                      className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border transition-all cursor-pointer ${
+                        expenseForm.inventory_dest_type === 'asset'
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                          : 'bg-white dark:bg-neutral-900 text-foreground border-border hover:bg-emerald-50 dark:hover:bg-neutral-800'
+                      }`}
+                    >
+                      <Building2 className="w-3.5 h-3.5" />
+                      <span>{bn ? '🪑 স্থায়ী সম্পদ (Asset)' : '🪑 Fixed Asset'}</span>
+                    </button>
                   </div>
-                  <Select
-                    value={expenseForm.inventory_item_id || undefined}
-                    onValueChange={v => setExpenseForm(f => ({ ...f, inventory_item_id: v }))}
-                  >
-                    <SelectTrigger className="mt-1 bg-white dark:bg-neutral-900"><SelectValue placeholder={bn ? 'আইটেম বাছুন...' : 'Select item...'} /></SelectTrigger>
-                    <SelectContent className="max-h-60">
-                      {inventoryItems.map((item: any) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          {bn ? item.name_bn : (item.name_en || item.name_bn)} — {bn ? 'মজুত:' : 'Stock:'} {item.current_stock} {item.unit}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {inventoryItems.length === 0 ? (
-                    <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1">
-                      {bn ? 'ইনভেন্টরিতে এখনো কোনো আইটেম নেই। উপরের লিংক থেকে ইনভেন্টরি পেজে আইটেম তৈরি করুন।' : 'No inventory items found. Please create items first.'}
-                    </p>
-                  ) : (
-                    <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80">
-                      {bn ? '✓ সংরক্ষণ করলে খরচের পরিমাণটি এই আইটেমের মোট ক্রয় এবং বর্তমান স্টকে যুক্ত হবে।' : '✓ Saving will add this quantity to total purchased and in-stock inventory.'}
-                    </p>
+
+                  {/* Destination 1: INVENTORY GOODS */}
+                  {expenseForm.inventory_dest_type === 'inventory' && (
+                    <div className="space-y-2.5 bg-white/70 dark:bg-neutral-900/70 p-3 rounded-xl border border-emerald-200/40 dark:border-emerald-800/30">
+                      {/* Mode selection: Existing vs New */}
+                      <div className="flex items-center gap-4 text-xs font-medium">
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="inv_mode"
+                            checked={expenseForm.inventory_mode === 'existing'}
+                            onChange={() => setExpenseForm(f => ({ ...f, inventory_mode: 'existing' }))}
+                            className="text-emerald-600 focus:ring-emerald-500"
+                          />
+                          <span>{bn ? 'বিদ্যমান আইটেমে স্টক যোগ' : 'Add to Existing Item'}</span>
+                        </label>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="inv_mode"
+                            checked={expenseForm.inventory_mode === 'new'}
+                            onChange={() => setExpenseForm(f => ({ ...f, inventory_mode: 'new' }))}
+                            className="text-emerald-600 focus:ring-emerald-500"
+                          />
+                          <span>{bn ? 'এই বিবরণ দিয়ে নতুন আইটেম তৈরি' : 'Create New Item from Description'}</span>
+                        </label>
+                      </div>
+
+                      {expenseForm.inventory_mode === 'existing' ? (
+                        <div>
+                          <Label className="text-xs">{bn ? 'আইটেম বাছাই করুন *' : 'Select Item *'}</Label>
+                          <Select
+                            value={expenseForm.inventory_item_id || undefined}
+                            onValueChange={v => setExpenseForm(f => ({ ...f, inventory_item_id: v }))}
+                          >
+                            <SelectTrigger className="mt-1 bg-white dark:bg-neutral-900">
+                              <SelectValue placeholder={bn ? 'আইটেম বাছুন...' : 'Select item...'} />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-60">
+                              {inventoryItems.map((item: any) => (
+                                <SelectItem key={item.id} value={item.id}>
+                                  {bn ? item.name_bn : (item.name_en || item.name_bn)} — {bn ? 'মজুত:' : 'Stock:'} {item.current_stock} {item.unit}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {inventoryItems.length === 0 ? (
+                            <p className="text-[11px] text-amber-600 mt-1">
+                              {bn ? 'কোনো আইটেম পাওয়া যায়নি। পাশের "নতুন আইটেম তৈরি" বিকল্পটি বেছে নিন।' : 'No items found. Choose Create New Item.'}
+                            </p>
+                          ) : (
+                            <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80 mt-1">
+                              ✓ {bn ? `খরচের পরিমাণ (${expenseForm.quantity || 1} ${expenseForm.quantity_unit || ''}) এই আইটেমের মোট ক্রয় ও স্টকে যোগ হবে।` : 'Quantity will be added to stock.'}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <Label className="text-xs font-semibold">{bn ? 'নতুন আইটেমের ক্যাটাগরি' : 'Category'}</Label>
+                              <Select
+                                value={expenseForm.inventory_category || 'construction'}
+                                onValueChange={v => setExpenseForm(f => ({ ...f, inventory_category: v }))}
+                              >
+                                <SelectTrigger className="mt-1 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent className="max-h-56">
+                                  <SelectItem value="construction">{bn ? 'বিল্ডিং ও নির্মাণ সামগ্রী' : 'Construction'}</SelectItem>
+                                  <SelectItem value="hardware">{bn ? 'হার্ডওয়্যার ও ইলেকট্রিক্যাল' : 'Hardware & Electrical'}</SelectItem>
+                                  <SelectItem value="furniture">{bn ? 'আসবাবপত্র' : 'Furniture'}</SelectItem>
+                                  <SelectItem value="electronics">{bn ? 'ইলেকট্রনিক্স ও প্রযুক্তি' : 'Electronics'}</SelectItem>
+                                  <SelectItem value="stationery">{bn ? 'স্টেশনারি ও অফিস' : 'Stationery'}</SelectItem>
+                                  <SelectItem value="food">{bn ? 'মুদি ও খাদ্য সামগ্রী' : 'Food & Groceries'}</SelectItem>
+                                  <SelectItem value="sound_system">{bn ? 'সাউন্ড সিস্টেম' : 'Sound System'}</SelectItem>
+                                  <SelectItem value="other">{bn ? 'অন্যান্য' : 'Other'}</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label className="text-xs font-semibold">{bn ? 'আইটেমের নাম' : 'Item Name'}</Label>
+                              <Input
+                                value={expenseForm.inventory_new_name || expenseForm.description || ''}
+                                onChange={e => setExpenseForm(f => ({ ...f, inventory_new_name: e.target.value }))}
+                                placeholder={expenseForm.description || (bn ? 'বিবরণ হতে নাম' : 'From description')}
+                                className="mt-1 text-xs"
+                              />
+                            </div>
+                          </div>
+                          <p className="text-[11px] text-emerald-700 dark:text-emerald-300">
+                            ✓ {bn ? `নাম: "${expenseForm.inventory_new_name || expenseForm.description || 'বিবরণ'}", পরিমাণ: ${expenseForm.quantity || 1} ${expenseForm.quantity_unit || 'একক'} নিয়ে সরাসরি ইনভেন্টরিতে নতুন আইটেম খুলবে।` : `Will create new item with quantity ${expenseForm.quantity || 1}.`}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Destination 2: FIXED ASSETS */}
+                  {expenseForm.inventory_dest_type === 'asset' && (
+                    <div className="space-y-2.5 bg-white/70 dark:bg-neutral-900/70 p-3 rounded-xl border border-emerald-200/40 dark:border-emerald-800/30">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs font-semibold">{bn ? 'সম্পদের ক্যাটাগরি' : 'Asset Category'}</Label>
+                          <Select
+                            value={expenseForm.asset_category || 'furniture'}
+                            onValueChange={v => setExpenseForm(f => ({ ...f, asset_category: v }))}
+                          >
+                            <SelectTrigger className="mt-1 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent className="max-h-56">
+                              <SelectItem value="furniture">{bn ? 'আসবাবপত্র (টেবিল, চেয়ার, খাট)' : 'Furniture'}</SelectItem>
+                              <SelectItem value="electronics">{bn ? 'ইলেকট্রনিক্স (ফ্যান, কম্পিউটার, টিভি)' : 'Electronics'}</SelectItem>
+                              <SelectItem value="machinery">{bn ? 'যন্ত্রপাতি ও মোটর' : 'Machinery'}</SelectItem>
+                              <SelectItem value="vehicles">{bn ? 'যানবাহন' : 'Vehicles'}</SelectItem>
+                              <SelectItem value="sports">{bn ? 'খেলাধুলা' : 'Sports'}</SelectItem>
+                              <SelectItem value="books">{bn ? 'স্থায়ী বই ও কিতাব' : 'Books'}</SelectItem>
+                              <SelectItem value="other">{bn ? 'অন্যান্য স্থায়ী সম্পদ' : 'Other Assets'}</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs font-semibold">{bn ? 'রুম বা লোকেশন (ঐচ্ছিক)' : 'Room/Location'}</Label>
+                          <Input
+                            placeholder={bn ? 'উদা: হেফজখানা, রুম ২০২' : 'e.g. Office'}
+                            value={expenseForm.asset_location || ''}
+                            onChange={e => setExpenseForm(f => ({ ...f, asset_location: e.target.value }))}
+                            className="mt-1 text-xs"
+                          />
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-emerald-700 dark:text-emerald-300">
+                        ✓ {bn ? `নাম: "${expenseForm.description || 'বিবরণ'}", মোট সংখ্যা: ${expenseForm.quantity || 1} টি, ক্রয়মূল্য: ৳${expenseForm.amount || 0} হিসেবে স্থায়ী সম্পদে যুক্ত হবে।` : `Will add to Fixed Assets with quantity ${expenseForm.quantity || 1}.`}
+                      </p>
+                    </div>
                   )}
                 </div>
               )}
