@@ -711,14 +711,11 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     }
 
     // Joining date can never be in the future (prevents salary list hiding staff)
-    if (joiningDate) {
-      const todayStr = new Date().toLocaleDateString('en-CA');
-      if (joiningDate > todayStr) {
-        const msg = bn ? 'যোগদানের তারিখ ভবিষ্যতের হতে পারে না — সঠিক তারিখ দিন' : 'Joining date cannot be in the future';
-        setFieldErrors({ joining_date: msg });
-        toast.error(msg);
-        return;
-      }
+    if (isFutureJoiningDate(joiningDate)) {
+      const msg = bn ? 'যোগদানের তারিখ ভবিষ্যতের হতে পারে না — সঠিক তারিখ দিন' : 'Joining date cannot be in the future';
+      setFieldErrors({ joining_date: msg });
+      toast.error(msg);
+      return;
     }
 
     // Admin bypass: skip all field validation (still requires saveMutation server-side checks)
