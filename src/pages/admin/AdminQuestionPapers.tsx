@@ -393,7 +393,7 @@ interface LayoutSettings {
   watermark: boolean;
   headerStyle: 'compact' | 'ultra_compact' | 'simple' | 'decorative' | 'classic';
   headerPlacement: 'dual' | 'single'; // 'dual': Word booklet style (header on both parts when 2 columns)
-  columnFlow: 'auto' | 'fill_first';
+  columnFlow: 'fill_first' | 'balanced' | 'auto';
   columnBreakIndex?: number;
   questionLabelBn: string;
   questionLabelEn: string;
@@ -411,7 +411,7 @@ const DEFAULT_LAYOUT: LayoutSettings = {
   watermark: false,
   headerStyle: 'compact',
   headerPlacement: 'dual',
-  columnFlow: 'auto',
+  columnFlow: 'fill_first',
   questionLabelBn: 'প্রশ্ন (বাংলা/আরবি)',
   questionLabelEn: 'Question (BN/AR)',
   showQuestionMarks: true,
@@ -507,20 +507,53 @@ const formatDuration = (minutes: number, language: string): string => {
 };
 
 // ─── Exam Title Combiner ───
-const formatExamTitle = (sessionName: string, paperTitle: string, subjectName?: string) => {
+// ─── Exam & Subject Header Formatter ───
+const formatHeaderExamAndSubject = (
+  sessionName: string,
+  paperTitle: string,
+  subjectName?: string,
+  language: string = 'bn'
+) => {
   const s = (sessionName || '').trim();
-  const t = (paperTitle || '').trim();
+  const p = (paperTitle || '').trim();
   const subj = (subjectName || '').trim();
 
-  if (!s && !t) return '';
-  if (!s) return t;
-  if (!t) return s;
-  if (s.toLowerCase() === t.toLowerCase() || s.includes(t)) return s;
-  if (t.includes(s)) return t;
-  // If paperTitle matches subject, don't repeat it in the exam title line
-  if (subj && (t.toLowerCase() === subj.toLowerCase() || subj.includes(t))) return s;
+  // Detect if paper title indicates a "পত্র" (e.g. ১ম পত্র, ২য় পত্র, ১ম পাতা, Paper 1, Part 1)
+  const isPatra = /(?:[১-৯1-9]|\b(প্রথম|দ্বিতীয়|তৃতীয়|১ম|২য়|৩য়|৪র্থ|1st|2nd|3rd)\b)?\s*(?:পত্র|পাতা|paper|part)/i.test(p);
 
-  return `${s} • ${t}`;
+  let examLabel = s;
+  let subjectLabel = subj;
+
+  if (isPatra) {
+    // Attach "১ম পত্র" directly to the subject!
+    if (subj) {
+      if (!subj.includes(p)) {
+        subjectLabel = `${subj} (${p})`;
+      } else {
+        subjectLabel = subj;
+      }
+    } else {
+      subjectLabel = p;
+    }
+    examLabel = s || '';
+  } else if (p && p.toLowerCase() !== s.toLowerCase()) {
+    // If paper title is different from session name
+    if (subj && !subj.includes(p) && !s.includes(p)) {
+      subjectLabel = `${subj} (${p})`;
+      examLabel = s;
+    } else if (!s) {
+      examLabel = p;
+    } else if (!s.includes(p)) {
+      examLabel = `${s} • ${p}`;
+    }
+  }
+
+  // Fallback if examLabel is empty
+  if (!examLabel) {
+    examLabel = s || (subj ? '' : p);
+  }
+
+  return { examLabel, subjectLabel };
 };
 
 // ─── Header Renderers ───
@@ -538,7 +571,7 @@ const renderHeader = (
   isSecondary: boolean = false
 ) => {
   const paperTitle = language === 'bn' ? paper?.title_bn : paper?.title;
-  const examLabel = formatExamTitle(sessionName, paperTitle, subjectName);
+  const { examLabel, subjectLabel } = formatHeaderExamAndSubject(sessionName, paperTitle, subjectName, language);
   const instName = language === 'bn' ? institution?.name : institution?.name_en || institution?.name;
   const address = institution?.address;
   const bnMarks = language === 'bn' ? toBengaliNum(totalMarks) : totalMarks;
@@ -558,7 +591,7 @@ const renderHeader = (
           </div>
           <div className="flex items-center gap-1.5 text-[10px]">
             {examLabel && <span className="font-bold">{examLabel}</span>}
-            {subjectName && <span className="font-semibold text-primary/90">📖 {subjectName}</span>}
+            {subjectLabel && <span className="font-semibold text-primary/90">📖 {subjectLabel}</span>}
           </div>
         </div>
         <div className="flex justify-between items-center mt-0.5 text-[9px] font-medium px-0.5 text-gray-700">
@@ -585,7 +618,7 @@ const renderHeader = (
         </div>
         <div className="border-t border-b border-black py-0.5 my-0.5 text-center leading-tight">
           {examLabel && <div className="text-[10.5px] font-bold">{examLabel}</div>}
-          {subjectName && <div className="text-[9.5px] font-semibold text-gray-800 mt-0.5">📖 {language === 'bn' ? 'বিষয়: ' : 'Subject: '}{subjectName}</div>}
+          {subjectLabel && <div className="text-[9.5px] font-semibold text-gray-800 mt-0.5">📖 {language === 'bn' ? 'বিষয়: ' : 'Subject: '}{subjectLabel}</div>}
         </div>
         <div className="flex justify-between items-center text-[9px] font-medium px-1">
           <span>{language === 'bn' ? 'পূর্ণমান' : 'Marks'}: {bnMarks}</span>
@@ -611,7 +644,7 @@ const renderHeader = (
           <div className="border-t border-dashed border-gray-400 my-0.5" />
           <div className="my-0.5 leading-tight">
             {examLabel && <div className="text-[10.5px] font-bold">{examLabel}</div>}
-            {subjectName && <div className="text-[9.5px] font-semibold text-gray-800 mt-0.5">📖 {language === 'bn' ? 'বিষয়: ' : 'Subject: '}{subjectName}</div>}
+            {subjectLabel && <div className="text-[9.5px] font-semibold text-gray-800 mt-0.5">📖 {language === 'bn' ? 'বিষয়: ' : 'Subject: '}{subjectLabel}</div>}
           </div>
           <div className="flex justify-between items-center mt-0.5 text-[9px] font-medium px-1">
             <span>{language === 'bn' ? 'পূর্ণমান' : 'Marks'}: {bnMarks}</span>
@@ -646,9 +679,9 @@ const renderHeader = (
           {examLabel}
         </div>
       )}
-      {subjectName && (
+      {subjectLabel && (
         <div className="text-[10px] sm:text-[10.5px] font-semibold mt-0.5 leading-tight text-gray-800">
-          📖 {language === 'bn' ? 'বিষয়: ' : 'Subject: '}{subjectName}
+          📖 {language === 'bn' ? 'বিষয়: ' : 'Subject: '}{subjectLabel}
         </div>
       )}
       <div className="flex justify-between items-center mt-0.5 text-[9.5px] font-medium px-1">
@@ -725,10 +758,16 @@ const LivePreview = ({ paper, questions, fontConfig, headerConfig, institution, 
     if (breakIndex !== -1) {
       return breakIndex === 0 ? 1 : breakIndex;
     }
-    if (layout.columnFlow === 'fill_first' && questions.length <= 4) {
-      return questions.length;
+    // If user explicitly chose balanced (50/50 split) in layout settings:
+    if (layout.columnFlow === 'balanced' && questions.length > 2) {
+      return Math.ceil(questions.length / 2);
     }
-    return Math.ceil(questions.length / 2);
+    // Default & 'fill_first': Fill Column 1 (Part 1) fully before jumping to Part 2!
+    const col1Capacity = layout.orientation === 'landscape' ? 8 : 12;
+    if (questions.length <= col1Capacity) {
+      return questions.length; // All questions stay in Part 1!
+    }
+    return col1Capacity;
   };
 
   const isDualHeader = layout.columns === 2 && layout.headerPlacement === 'dual';
@@ -956,11 +995,11 @@ const LayoutSettingsPanel = ({
             </div>
             <div>
               <Label className="text-xs font-semibold text-primary">{language === 'bn' ? 'কলামের লেখা প্রবাহ' : 'Column Flow'}</Label>
-              <Select value={layout.columnFlow} onValueChange={(v: 'auto' | 'fill_first') => setLayout({ ...layout, columnFlow: v })}>
+              <Select value={layout.columnFlow === 'balanced' ? 'balanced' : 'fill_first'} onValueChange={(v: 'fill_first' | 'balanced') => setLayout({ ...layout, columnFlow: v })}>
                 <SelectTrigger className="h-8 text-xs bg-background"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="auto">{language === 'bn' ? '⚡ স্বয়ংক্রিয় সুষম বণ্টন' : 'Auto Balanced'}</SelectItem>
-                  <SelectItem value="fill_first">{language === 'bn' ? '📝 ১ম পার্ট পূর্ণ করে ২য় পার্ট' : 'Fill Col 1 First'}</SelectItem>
+                  <SelectItem value="fill_first">{language === 'bn' ? '📝 ১ম পার্ট পূর্ণ করে ২য় পার্ট (প্রস্তাবিত)' : 'Fill Part 1 First (Recommended)'}</SelectItem>
+                  <SelectItem value="balanced">{language === 'bn' ? '⚖️ সমান দুভাগ (৫০/৫০ ভাগ)' : 'Balanced (50/50 Split)'}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1670,14 +1709,14 @@ const AdminQuestionPapers = () => {
     // Header HTML based on style
     const buildHeaderHtml = (isSecondary = false) => {
       const title = language === 'bn' ? selectedPaper.title_bn : selectedPaper.title;
-      const examLabel = formatExamTitle(sessionName, title, subjectName);
+      const { examLabel, subjectLabel } = formatHeaderExamAndSubject(sessionName, title, subjectName, language);
       const bnMarks = language === 'bn' ? toBengaliNum(totalMarks) : totalMarks;
       const formattedDur = formatDuration(selectedPaper.duration_minutes || 0, language);
       const instName = headerConfig.showInstitutionName && institution ? (language === 'bn' ? institution.name : institution.name_en || institution.name) : '';
       const address = institution?.address || '';
       const logo = headerConfig.showLogo && institution?.logo_url ? `<img src="${institution.logo_url}" style="height:24px;max-width:26px;object-fit:contain;margin-right:6px;vertical-align:middle;display:inline-block" />` : '';
 
-      const subLine = [examLabel, subjectName ? '📖 ' + subjectName : ''].filter(Boolean).join(' &nbsp;•&nbsp; ');
+      const subLine = [examLabel, subjectLabel ? '📖 ' + subjectLabel : ''].filter(Boolean).join(' &nbsp;•&nbsp; ');
 
       if (ls.headerStyle === 'ultra_compact') {
         return `<div style="text-align:center;margin-bottom:4px;padding-bottom:2px;border-bottom:1.2px solid #000;line-height:1.15">
@@ -1708,7 +1747,7 @@ const AdminQuestionPapers = () => {
           </div>
           <div style="border-top:1px solid #000;border-bottom:1px solid #000;padding:2px 0;margin:2px 0">
             ${examLabel ? `<div style="font-size:11px;font-weight:700">${examLabel}</div>` : ''}
-            ${subjectName ? `<div style="font-size:10px;font-weight:600;margin-top:1px">📖 ${language === 'bn' ? 'বিষয়: ' : 'Subject: '}${subjectName}</div>` : ''}
+            ${subjectLabel ? `<div style="font-size:10px;font-weight:600;margin-top:1px">📖 ${language === 'bn' ? 'বিষয়: ' : 'Subject: '}${subjectLabel}</div>` : ''}
           </div>
           <div style="display:flex;justify-content:space-between;font-size:10px;font-weight:600;padding:0 2px">
             <span>${language === 'bn' ? 'পূর্ণমান' : 'Marks'}: ${bnMarks}</span>
@@ -1730,7 +1769,7 @@ const AdminQuestionPapers = () => {
           <div style="border-top:1px dashed #777;margin:2px 0"></div>
           <div style="margin:2px 0">
             ${examLabel ? `<div style="font-size:11px;font-weight:700">${examLabel}</div>` : ''}
-            ${subjectName ? `<div style="font-size:10px;font-weight:600;margin-top:1px">📖 ${language === 'bn' ? 'বিষয়: ' : 'Subject: '}${subjectName}</div>` : ''}
+            ${subjectLabel ? `<div style="font-size:10px;font-weight:600;margin-top:1px">📖 ${language === 'bn' ? 'বিষয়: ' : 'Subject: '}${subjectLabel}</div>` : ''}
           </div>
           <div style="display:flex;justify-content:space-between;font-size:9.5px;font-weight:600;padding:0 2px">
             <span>${language === 'bn' ? 'পূর্ণমান' : 'Marks'}: ${bnMarks}</span>
@@ -1750,7 +1789,7 @@ const AdminQuestionPapers = () => {
           </div>
         </div>
         ${examLabel ? `<div style="font-size:11.5px;font-weight:700;margin:1px 0">${examLabel}</div>` : ''}
-        ${subjectName ? `<div style="font-size:10.5px;font-weight:600;margin:1px 0">📖 ${language === 'bn' ? 'বিষয়: ' : 'Subject: '}${subjectName}</div>` : ''}
+        ${subjectLabel ? `<div style="font-size:10.5px;font-weight:600;margin:1px 0">📖 ${language === 'bn' ? 'বিষয়: ' : 'Subject: '}${subjectLabel}</div>` : ''}
         <div style="display:flex;justify-content:space-between;font-size:10px;font-weight:600;margin-top:2px;padding:0 2px">
           <span>${language === 'bn' ? 'পূর্ণমান' : 'Full Marks'}: ${bnMarks}</span>
           ${isSecondary ? '<span style="font-size:8.5px;color:#555">(২য় অংশ / পাতা)</span>' : ''}
@@ -1780,8 +1819,15 @@ const AdminQuestionPapers = () => {
     const getSplitIndex = () => {
       const breakIndex = questions.findIndex(q => q.column_break);
       if (breakIndex !== -1) return breakIndex === 0 ? 1 : breakIndex;
-      if (ls.columnFlow === 'fill_first' && questions.length <= 4) return questions.length;
-      return Math.ceil(questions.length / 2);
+      if (ls.columnFlow === 'balanced' && questions.length > 2) {
+        return Math.ceil(questions.length / 2);
+      }
+      // Fill Column 1 (Part 1) fully before jumping to Part 2!
+      const col1Capacity = ls.orientation === 'landscape' ? 8 : 12;
+      if (questions.length <= col1Capacity) {
+        return questions.length; // All questions stay in Part 1!
+      }
+      return col1Capacity;
     };
 
     const instructionsHtml = (selectedPaper.instructions_bn || selectedPaper.instructions)
