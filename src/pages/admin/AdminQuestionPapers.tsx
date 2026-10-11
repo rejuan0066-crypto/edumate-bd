@@ -291,8 +291,9 @@ const FONT_PRESETS = {
 };
 
 const HEADER_STYLES = [
-  { value: 'compact', labelBn: 'আঁটসাঁট (কম্প্যাক্ট - সর্বোচ্চ স্পেস সেভিং)', labelEn: 'Compact (Space Saving)' },
-  { value: 'simple', labelBn: 'সিম্পল', labelEn: 'Simple' },
+  { value: 'compact', labelBn: 'আঁটসাঁট (কম্প্যাক্ট - ২ লাইন)', labelEn: 'Compact (2-Line)' },
+  { value: 'ultra_compact', labelBn: 'অতি স্লিম (১ লাইন - সর্বোচ্চ স্পেস সেভিং)', labelEn: 'Ultra Slim (1-Line)' },
+  { value: 'simple', labelBn: 'সাধারণ স্লিম', labelEn: 'Simple Slim' },
   { value: 'classic', labelBn: 'ক্লাসিক ERP', labelEn: 'Classic ERP' },
   { value: 'decorative', labelBn: 'ডেকোরেটিভ বক্স', labelEn: 'Decorative Box' },
 ];
@@ -319,7 +320,7 @@ interface LayoutSettings {
   marginRight: number;
   lineSpacing: number;
   watermark: boolean;
-  headerStyle: 'compact' | 'simple' | 'decorative' | 'classic';
+  headerStyle: 'compact' | 'ultra_compact' | 'simple' | 'decorative' | 'classic';
   headerPlacement: 'dual' | 'single'; // 'dual': Word booklet style (header on both parts when 2 columns)
   columnFlow: 'auto' | 'fill_first';
   columnBreakIndex?: number;
@@ -331,11 +332,11 @@ interface LayoutSettings {
 const DEFAULT_LAYOUT: LayoutSettings = {
   orientation: 'portrait',
   columns: 1,
-  marginTop: 10,
-  marginBottom: 10,
-  marginLeft: 10,
-  marginRight: 10,
-  lineSpacing: 1.25,
+  marginTop: 6,
+  marginBottom: 6,
+  marginLeft: 8,
+  marginRight: 8,
+  lineSpacing: 1.2,
   watermark: false,
   headerStyle: 'compact',
   headerPlacement: 'dual',
@@ -405,6 +406,18 @@ const StatusBadge = ({ status, language }: { status: string; language: string })
   );
 };
 
+// ─── Exam Title Combiner ───
+const formatExamTitle = (sessionName: string, paperTitle: string) => {
+  const s = (sessionName || '').trim();
+  const t = (paperTitle || '').trim();
+  if (!s && !t) return '';
+  if (!s) return t;
+  if (!t) return s;
+  if (s.toLowerCase() === t.toLowerCase() || s.includes(t)) return s;
+  if (t.includes(s)) return t;
+  return `${s} • ${t}`;
+};
+
 // ─── Header Renderers ───
 const renderHeader = (
   style: string,
@@ -419,98 +432,121 @@ const renderHeader = (
   showName: boolean,
   isSecondary: boolean = false
 ) => {
-  // Ultra-compact header (minimal vertical space, professional exam look)
-  if (style === 'compact' || !style) {
+  const paperTitle = language === 'bn' ? paper?.title_bn : paper?.title;
+  const examLabel = formatExamTitle(sessionName, paperTitle);
+  const instName = language === 'bn' ? institution?.name : institution?.name_en || institution?.name;
+  const address = institution?.address;
+  const bnMarks = language === 'bn' ? toBengaliNum(totalMarks) : totalMarks;
+  const bnDur = language === 'bn' ? toBengaliNum(paper?.duration_minutes || 0) : paper?.duration_minutes || 0;
+
+  // Ultra-compact: 1-2 lines maximum (saves maximum vertical space)
+  if (style === 'ultra_compact') {
     return (
-      <div className="mb-2 pb-1 border-b border-black text-center leading-tight select-none" style={{ fontFamily }}>
-        <div className="flex items-center justify-center gap-2 mb-0.5">
-          {showLogo && institution?.logo_url && (
-            <img src={institution.logo_url} alt="" className="h-7 max-w-[32px] object-contain shrink-0" />
-          )}
-          <div>
-            {showName && institution && (
-              <h2 className="text-sm font-bold leading-tight m-0 tracking-tight">
-                {language === 'bn' ? institution.name : institution.name_en || institution.name}
-              </h2>
+      <div className="mb-1 pb-0.5 border-b border-black text-center leading-tight select-none" style={{ fontFamily }}>
+        <div className="flex items-center justify-between gap-1 flex-wrap text-xs">
+          <div className="flex items-center gap-1.5">
+            {showLogo && institution?.logo_url && (
+              <img src={institution.logo_url} alt="" className="h-5 max-w-[20px] object-contain shrink-0" />
             )}
-            {institution?.address && (
-              <p className="text-[9px] text-gray-500 leading-none m-0">{institution.address}</p>
-            )}
+            {showName && instName && <strong className="text-xs">{instName}</strong>}
+            {address && <span className="text-[8.5px] text-gray-500 hidden sm:inline">({address})</span>}
+          </div>
+          <div className="flex items-center gap-1.5 text-[10px]">
+            {examLabel && <span className="font-bold">{examLabel}</span>}
+            {subjectName && <span className="font-semibold text-primary/90">📖 {subjectName}</span>}
           </div>
         </div>
-        <div className="text-[11px] font-semibold mt-0.5 leading-tight flex items-center justify-center gap-1.5 flex-wrap">
-          {sessionName && <span>{sessionName}</span>}
-          {sessionName && <span className="text-gray-400">•</span>}
-          <span className="font-bold">{language === 'bn' ? paper?.title_bn : paper?.title}</span>
+        <div className="flex justify-between items-center mt-0.5 text-[9px] font-medium px-0.5 text-gray-700">
+          <span>{language === 'bn' ? 'পূর্ণমান' : 'Marks'}: {bnMarks}</span>
+          {isSecondary && <span className="text-[8.5px] text-gray-500 font-normal bg-gray-100 px-1 rounded">(২য় অংশ)</span>}
+          <span>{language === 'bn' ? 'সময়' : 'Time'}: {bnDur} {language === 'bn' ? 'মি.' : 'min'}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Classic ERP
+  if (style === 'classic') {
+    return (
+      <div className="mb-1.5 pb-0.5 text-center select-none leading-tight" style={{ fontFamily }}>
+        <div className="flex items-center justify-center gap-2 mb-0.5">
+          {showLogo && institution?.logo_url && (
+            <img src={institution.logo_url} alt="" className="h-5 max-w-[24px] object-contain shrink-0" />
+          )}
+          <div>
+            {showName && instName && <h2 className="text-xs sm:text-sm font-bold m-0 leading-tight">{instName}</h2>}
+            {address && <p className="text-[8.5px] text-gray-500 m-0 leading-none">{address}</p>}
+          </div>
+        </div>
+        <div className="border-t border-b border-black py-0.5 my-0.5 text-[10px] font-semibold flex items-center justify-center gap-1.5 flex-wrap">
+          {examLabel && <span>{examLabel}</span>}
           {subjectName && <span className="text-gray-400">•</span>}
           {subjectName && <span>📖 {subjectName}</span>}
         </div>
-        <div className="flex justify-between items-center mt-1 text-[10px] font-medium px-1">
-          <span>{language === 'bn' ? 'পূর্ণমান' : 'Full Marks'}: {language === 'bn' ? toBengaliNum(totalMarks) : totalMarks}</span>
-          {isSecondary && <span className="text-[9px] text-gray-500 font-normal bg-gray-100 px-1 rounded">(২য় অংশ / পাতা)</span>}
-          <span>{language === 'bn' ? 'সময়' : 'Time'}: {language === 'bn' ? toBengaliNum(paper?.duration_minutes || 0) : paper?.duration_minutes} {language === 'bn' ? 'মিনিট' : 'min'}</span>
+        <div className="flex justify-between items-center text-[9px] font-medium px-1">
+          <span>{language === 'bn' ? 'পূর্ণমান' : 'Marks'}: {bnMarks}</span>
+          {isSecondary && <span className="text-[8.5px] text-gray-500 font-normal bg-gray-100 px-1 rounded">(২য় অংশ)</span>}
+          <span>{language === 'bn' ? 'সময়' : 'Time'}: {bnDur} {language === 'bn' ? 'মিনিট' : 'min'}</span>
         </div>
       </div>
     );
   }
+
+  // Decorative box
   if (style === 'decorative') {
     return (
-      <div className="mb-2 pb-2 text-center" style={{ fontFamily }}>
-        <div className="border border-black p-2 rounded-lg">
-          <div className="border border-black/30 p-1.5 rounded">
-            {showLogo && institution?.logo_url && <img src={institution.logo_url} alt="" className="h-9 mx-auto mb-0.5" />}
-            {showName && institution && <h2 className="text-base font-bold tracking-wide">{language === 'bn' ? institution.name : institution.name_en || institution.name}</h2>}
-            {institution?.address && <p className="text-[9px] text-gray-500">{institution.address}</p>}
-            <div className="my-0.5 border-t border-dashed border-black/30" />
-            {sessionName && <p className="text-xs font-semibold">{sessionName}</p>}
-            <h1 className="text-xs font-bold mt-0.5">{language === 'bn' ? paper?.title_bn : paper?.title}</h1>
-            {subjectName && <p className="text-[11px]">📖 {subjectName}</p>}
-            <div className="flex justify-between mt-1 text-[9px] font-medium">
-              <span>{language === 'bn' ? 'পূর্ণমান' : 'Full Marks'}: {language === 'bn' ? toBengaliNum(totalMarks) : totalMarks}</span>
-              {isSecondary && <span className="text-gray-500">(২য় অংশ)</span>}
-              <span>{language === 'bn' ? 'সময়' : 'Time'}: {language === 'bn' ? toBengaliNum(paper?.duration_minutes || 0) : paper?.duration_minutes} {language === 'bn' ? 'মিনিট' : 'min'}</span>
+      <div className="mb-1.5 pb-0.5 text-center select-none" style={{ fontFamily }}>
+        <div className="border border-black p-1.5 rounded-md">
+          <div className="flex items-center justify-center gap-1.5 mb-0.5">
+            {showLogo && institution?.logo_url && <img src={institution.logo_url} alt="" className="h-5 max-w-[22px] object-contain" />}
+            <div>
+              {showName && instName && <h2 className="text-xs sm:text-sm font-bold m-0 leading-tight">{instName}</h2>}
+              {address && <p className="text-[8.5px] text-gray-500 m-0 leading-none">{address}</p>}
             </div>
           </div>
-        </div>
-      </div>
-    );
-  }
-  if (style === 'classic') {
-    return (
-      <div className="mb-2 pb-1 text-center" style={{ fontFamily }}>
-        <div className="flex items-center justify-center gap-2 mb-0.5">
-          {showLogo && institution?.logo_url && <img src={institution.logo_url} alt="" className="h-9" />}
-          <div>
-            {showName && institution && <h2 className="text-base font-bold">{language === 'bn' ? institution.name : institution.name_en || institution.name}</h2>}
-            {institution?.address && <p className="text-[9px] text-gray-500">{institution.address}</p>}
+          <div className="border-t border-dashed border-gray-400 my-0.5" />
+          <div className="text-[10px] font-semibold flex items-center justify-center gap-1 flex-wrap">
+            {examLabel && <span>{examLabel}</span>}
+            {subjectName && <span className="text-gray-400">•</span>}
+            {subjectName && <span>📖 {subjectName}</span>}
+          </div>
+          <div className="flex justify-between items-center mt-0.5 text-[9px] font-medium px-1">
+            <span>{language === 'bn' ? 'পূর্ণমান' : 'Marks'}: {bnMarks}</span>
+            {isSecondary && <span className="text-[8.5px] text-gray-500 font-normal">(২য় অংশ)</span>}
+            <span>{language === 'bn' ? 'সময়' : 'Time'}: {bnDur} {language === 'bn' ? 'মি.' : 'min'}</span>
           </div>
         </div>
-        <div className="border-t border-b border-black my-0.5 py-0.5">
-          {sessionName && <p className="text-[11px] font-semibold">{sessionName}</p>}
-          <h1 className="text-xs font-bold">{language === 'bn' ? paper?.title_bn : paper?.title}</h1>
-        </div>
-        <div className="flex justify-between items-center mt-0.5 text-[9px]">
-          {subjectName && <span className="font-medium">📖 {subjectName}</span>}
-          <span>{language === 'bn' ? 'পূর্ণমান' : 'Marks'}: {language === 'bn' ? toBengaliNum(totalMarks) : totalMarks}</span>
-          {isSecondary && <span className="text-gray-500">(২য় অংশ)</span>}
-          <span>{language === 'bn' ? 'সময়' : 'Time'}: {language === 'bn' ? toBengaliNum(paper?.duration_minutes || 0) : paper?.duration_minutes} {language === 'bn' ? 'মিনিট' : 'min'}</span>
-        </div>
       </div>
     );
   }
-  // simple
+
+  // Compact (Default) & Simple (Both streamlined so they NEVER take half the page)
   return (
-    <div className="mb-2 pb-1 border-b border-black text-center" style={{ fontFamily }}>
-      {showLogo && institution?.logo_url && <img src={institution.logo_url} alt="" className="h-9 mx-auto mb-1" />}
-      {showName && institution && <h2 className="text-base font-bold">{language === 'bn' ? institution.name : institution.name_en || institution.name}</h2>}
-      {institution?.address && <p className="text-[10px] text-gray-600">{institution.address}</p>}
-      {sessionName && <p className="text-xs font-semibold mt-0.5">{sessionName}</p>}
-      <h1 className="text-xs font-bold mt-0.5">{language === 'bn' ? paper?.title_bn : paper?.title}</h1>
-      {subjectName && <p className="text-xs">📖 {subjectName}</p>}
-      <div className="flex justify-between mt-1 text-[10px]">
-        <span>{language === 'bn' ? 'পূর্ণমান' : 'Full Marks'}: {language === 'bn' ? toBengaliNum(totalMarks) : totalMarks}</span>
-        {isSecondary && <span className="text-gray-500">(২য় অংশ)</span>}
-        <span>{language === 'bn' ? 'সময়' : 'Time'}: {language === 'bn' ? toBengaliNum(paper?.duration_minutes || 0) : paper?.duration_minutes} {language === 'bn' ? 'মিনিট' : 'min'}</span>
+    <div className="mb-1.5 pb-1 border-b border-black text-center leading-tight select-none" style={{ fontFamily }}>
+      <div className="flex items-center justify-center gap-1.5 mb-0.5">
+        {showLogo && institution?.logo_url && (
+          <img src={institution.logo_url} alt="" className="h-6 max-w-[26px] object-contain shrink-0" />
+        )}
+        <div className="leading-tight">
+          {showName && instName && (
+            <h2 className="text-xs sm:text-sm font-bold leading-tight m-0 tracking-tight">
+              {instName}
+            </h2>
+          )}
+          {address && (
+            <p className="text-[8.5px] text-gray-500 leading-none m-0 mt-0.5">{address}</p>
+          )}
+        </div>
+      </div>
+      <div className="text-[10.5px] font-semibold mt-0.5 leading-tight flex items-center justify-center gap-1.5 flex-wrap">
+        {examLabel && <span>{examLabel}</span>}
+        {subjectName && <span className="text-gray-400">•</span>}
+        {subjectName && <span>📖 {subjectName}</span>}
+      </div>
+      <div className="flex justify-between items-center mt-0.5 text-[9.5px] font-medium px-1">
+        <span>{language === 'bn' ? 'পূর্ণমান' : 'Full Marks'}: {bnMarks}</span>
+        {isSecondary && <span className="text-[8.5px] text-gray-500 font-normal bg-gray-100 px-1 rounded">(২য় অংশ / পাতা)</span>}
+        <span>{language === 'bn' ? 'সময়' : 'Time'}: {bnDur} {language === 'bn' ? 'মিনিট' : 'min'}</span>
       </div>
     </div>
   );
@@ -717,34 +753,69 @@ const LivePreview = ({ paper, questions, fontConfig, headerConfig, institution, 
 };
 
 // ─── Layout Settings Panel ───
-const LayoutSettingsPanel = ({ layout, setLayout, language }: { layout: LayoutSettings; setLayout: (l: LayoutSettings) => void; language: string }) => {
+const LayoutSettingsPanel = ({
+  layout,
+  setLayout,
+  headerConfig,
+  setHeaderConfig,
+  language
+}: {
+  layout: LayoutSettings;
+  setLayout: (l: LayoutSettings) => void;
+  headerConfig: HeaderConfig;
+  setHeaderConfig: React.Dispatch<React.SetStateAction<HeaderConfig>>;
+  language: string;
+}) => {
+  const applyMarginPreset = (m: number) => {
+    setLayout({ ...layout, marginTop: m, marginBottom: m, marginLeft: m, marginRight: m });
+  };
+
   return (
     <Card className="card-elevated">
       <CardContent className="pt-4 pb-3 space-y-3">
-        <div className="flex items-center gap-2 mb-1">
-          <Settings2 className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold">{language === 'bn' ? 'পেজ সেটআপ' : 'Page Setup'}</span>
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <div className="flex items-center gap-2">
+            <Settings2 className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold">{language === 'bn' ? 'পেজ ও মার্জিন সেটআপ' : 'Page & Margin Setup'}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-muted-foreground mr-1">{language === 'bn' ? 'মার্জিন প্রিসেট:' : 'Preset:'}</span>
+            <button
+              onClick={() => applyMarginPreset(4)}
+              className="text-[10px] px-2 py-0.5 rounded bg-secondary hover:bg-primary/20 text-foreground font-medium transition-colors"
+              title="4px Margin"
+            >
+              {language === 'bn' ? '⚡ অতি স্লিম (৪px)' : 'Ultra Slim (4px)'}
+            </button>
+            <button
+              onClick={() => applyMarginPreset(8)}
+              className="text-[10px] px-2 py-0.5 rounded bg-secondary hover:bg-primary/20 text-foreground font-medium transition-colors"
+              title="8px Margin"
+            >
+              {language === 'bn' ? '📐 সাধারণ (৮px)' : 'Standard (8px)'}
+            </button>
+          </div>
         </div>
 
         {/* Row 1: Orientation + Columns + Header Style */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <Label className="text-xs">{language === 'bn' ? 'ওরিয়েন্টেশন' : 'Orientation'}</Label>
             <Select value={layout.orientation} onValueChange={(v: 'portrait' | 'landscape') => setLayout({ ...layout, orientation: v })}>
               <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="portrait">{language === 'bn' ? '📄 লম্বালম্বি' : '📄 Portrait'}</SelectItem>
-                <SelectItem value="landscape">{language === 'bn' ? '📄 আড়াআড়ি' : '📄 Landscape'}</SelectItem>
+                <SelectItem value="portrait">{language === 'bn' ? '📄 লম্বালম্বি (Portrait)' : '📄 Portrait'}</SelectItem>
+                <SelectItem value="landscape">{language === 'bn' ? '📄 আড়াআড়ি (Landscape)' : '📄 Landscape'}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div>
-            <Label className="text-xs">{language === 'bn' ? 'কলাম' : 'Columns'}</Label>
+            <Label className="text-xs">{language === 'bn' ? 'কলাম (পার্ট)' : 'Columns'}</Label>
             <Select value={String(layout.columns)} onValueChange={v => setLayout({ ...layout, columns: Number(v) as 1 | 2 })}>
               <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="1">{language === 'bn' ? '১ কলাম (পূর্ণ)' : '1 Column'}</SelectItem>
-                <SelectItem value="2">{language === 'bn' ? '২ কলাম (স্প্লিট)' : '2 Columns'}</SelectItem>
+                <SelectItem value="1">{language === 'bn' ? '১ কলাম (পূর্ণ পেজ)' : '1 Column'}</SelectItem>
+                <SelectItem value="2">{language === 'bn' ? '২ কলাম (২ পার্ট স্প্লিট)' : '2 Columns'}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -787,43 +858,56 @@ const LayoutSettingsPanel = ({ layout, setLayout, language }: { layout: LayoutSe
           </div>
         )}
 
-        {/* Row 2: Margins */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {/* Row 2: Header Visibility Toggles */}
+        <div className="flex flex-wrap items-center gap-5 pt-1 border-t border-border/50 text-xs">
+          <span className="font-semibold text-muted-foreground">{language === 'bn' ? 'হেডার প্রদর্শন:' : 'Header Controls:'}</span>
+          <label className="flex items-center gap-1.5 cursor-pointer">
+            <Switch checked={headerConfig.showLogo} onCheckedChange={v => setHeaderConfig(p => ({ ...p, showLogo: v }))} />
+            <span>{language === 'bn' ? 'লোগো' : 'Logo'}</span>
+          </label>
+          <label className="flex items-center gap-1.5 cursor-pointer">
+            <Switch checked={headerConfig.showInstitutionName} onCheckedChange={v => setHeaderConfig(p => ({ ...p, showInstitutionName: v }))} />
+            <span>{language === 'bn' ? 'প্রতিষ্ঠানের নাম' : 'Institution Name'}</span>
+          </label>
+        </div>
+
+        {/* Row 3: Margins */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 border-t border-border/50">
           <div>
             <Label className="text-xs">{language === 'bn' ? 'উপরের মার্জিন' : 'Top'}: {layout.marginTop}px</Label>
-            <Slider value={[layout.marginTop]} onValueChange={([v]) => setLayout({ ...layout, marginTop: v })} min={5} max={50} step={1} className="mt-1" />
+            <Slider value={[layout.marginTop]} onValueChange={([v]) => setLayout({ ...layout, marginTop: v })} min={2} max={30} step={1} className="mt-1" />
           </div>
           <div>
             <Label className="text-xs">{language === 'bn' ? 'নিচের মার্জিন' : 'Bottom'}: {layout.marginBottom}px</Label>
-            <Slider value={[layout.marginBottom]} onValueChange={([v]) => setLayout({ ...layout, marginBottom: v })} min={5} max={50} step={1} className="mt-1" />
+            <Slider value={[layout.marginBottom]} onValueChange={([v]) => setLayout({ ...layout, marginBottom: v })} min={2} max={30} step={1} className="mt-1" />
           </div>
           <div>
             <Label className="text-xs">{language === 'bn' ? 'বাম মার্জিন' : 'Left'}: {layout.marginLeft}px</Label>
-            <Slider value={[layout.marginLeft]} onValueChange={([v]) => setLayout({ ...layout, marginLeft: v })} min={5} max={40} step={1} className="mt-1" />
+            <Slider value={[layout.marginLeft]} onValueChange={([v]) => setLayout({ ...layout, marginLeft: v })} min={2} max={30} step={1} className="mt-1" />
           </div>
           <div>
             <Label className="text-xs">{language === 'bn' ? 'ডান মার্জিন' : 'Right'}: {layout.marginRight}px</Label>
-            <Slider value={[layout.marginRight]} onValueChange={([v]) => setLayout({ ...layout, marginRight: v })} min={5} max={40} step={1} className="mt-1" />
+            <Slider value={[layout.marginRight]} onValueChange={([v]) => setLayout({ ...layout, marginRight: v })} min={2} max={30} step={1} className="mt-1" />
           </div>
         </div>
 
-        {/* Row 3: Line Spacing + Watermark */}
+        {/* Row 4: Line Spacing + Watermark + Question Marks */}
         <div className="flex items-center gap-6 pt-1 border-t border-border/50">
           <div className="flex-1">
             <Label className="text-xs">{language === 'bn' ? 'লাইন স্পেসিং' : 'Line Spacing'}: {layout.lineSpacing}</Label>
-            <Slider value={[layout.lineSpacing]} onValueChange={([v]) => setLayout({ ...layout, lineSpacing: v })} min={1} max={3} step={0.1} className="mt-1" />
+            <Slider value={[layout.lineSpacing]} onValueChange={([v]) => setLayout({ ...layout, lineSpacing: v })} min={1} max={2.2} step={0.05} className="mt-1" />
           </div>
-          <label className="flex items-center gap-2 text-xs whitespace-nowrap">
+          <label className="flex items-center gap-2 text-xs whitespace-nowrap cursor-pointer">
             <Switch checked={layout.watermark} onCheckedChange={v => setLayout({ ...layout, watermark: v })} />
             {language === 'bn' ? 'ওয়াটারমার্ক' : 'Watermark'}
           </label>
-          <label className="flex items-center gap-2 text-xs whitespace-nowrap">
+          <label className="flex items-center gap-2 text-xs whitespace-nowrap cursor-pointer">
             <Switch checked={layout.showQuestionMarks} onCheckedChange={v => setLayout({ ...layout, showQuestionMarks: v })} />
             {language === 'bn' ? 'প্রশ্নের নম্বর' : 'Question Marks'}
           </label>
         </div>
 
-        {/* Row 4: Custom Question Labels */}
+        {/* Row 5: Custom Question Labels */}
         <div className="grid grid-cols-2 gap-3 pt-1 border-t border-border/50">
           <div>
             <Label className="text-xs">{language === 'bn' ? 'প্রশ্ন লেবেল (বাংলা)' : 'Question Label (BN)'}</Label>
@@ -1403,46 +1487,87 @@ const AdminQuestionPapers = () => {
 
     // Header HTML based on style
     const buildHeaderHtml = (isSecondary = false) => {
-      const isCompact = ls.headerStyle === 'compact' || !ls.headerStyle;
       const title = language === 'bn' ? selectedPaper.title_bn : selectedPaper.title;
+      const examLabel = formatExamTitle(sessionName, title);
       const bnMarks = language === 'bn' ? toBengaliNum(totalMarks) : totalMarks;
       const bnDur = language === 'bn' ? toBengaliNum(selectedPaper.duration_minutes) : selectedPaper.duration_minutes;
-      
-      if (isCompact) {
-        const logo = headerConfig.showLogo && institution?.logo_url ? `<img src="${institution.logo_url}" style="height:32px;max-width:32px;object-fit:contain;margin-right:8px;vertical-align:middle;display:inline-block" />` : '';
-        const instName = headerConfig.showInstitutionName && institution ? `<h2 style="font-size:15px;font-weight:700;margin:0;line-height:1.2;display:inline-block;vertical-align:middle">${language === 'bn' ? institution.name : institution.name_en || institution.name}</h2>` : '';
-        const address = institution?.address ? `<p style="font-size:9.5px;color:#444;margin:1px 0 0;line-height:1.1">${institution.address}</p>` : '';
-        const subLine = [sessionName, title, subjectName ? '📖 ' + subjectName : ''].filter(Boolean).join(' &nbsp;•&nbsp; ');
-        
-        return `<div style="text-align:center;margin-bottom:6px;padding-bottom:3px;border-bottom:1.5px solid #000;line-height:1.2">
-          <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:1px">
-            ${logo}
-            <div style="display:inline-block">${instName}${address}</div>
+      const instName = headerConfig.showInstitutionName && institution ? (language === 'bn' ? institution.name : institution.name_en || institution.name) : '';
+      const address = institution?.address || '';
+      const logo = headerConfig.showLogo && institution?.logo_url ? `<img src="${institution.logo_url}" style="height:24px;max-width:26px;object-fit:contain;margin-right:6px;vertical-align:middle;display:inline-block" />` : '';
+
+      const subLine = [examLabel, subjectName ? '📖 ' + subjectName : ''].filter(Boolean).join(' &nbsp;•&nbsp; ');
+
+      if (ls.headerStyle === 'ultra_compact') {
+        return `<div style="text-align:center;margin-bottom:4px;padding-bottom:2px;border-bottom:1.2px solid #000;line-height:1.15">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;font-size:10.5px">
+            <div style="display:flex;align-items:center">
+              ${logo}
+              ${instName ? `<strong style="font-size:12px">${instName}</strong>` : ''}
+              ${address ? `<span style="font-size:8.5px;color:#555;margin-left:4px">(${address})</span>` : ''}
+            </div>
+            <div style="font-size:10.5px;font-weight:600">${subLine}</div>
           </div>
-          <div style="font-size:11.5px;font-weight:700;margin:2px 0">${subLine}</div>
-          <div style="display:flex;justify-content:space-between;font-size:10.5px;font-weight:600;margin-top:2px;padding:0 2px">
-            <span>${language === 'bn' ? 'পূর্ণমান' : 'Full Marks'}: ${bnMarks}</span>
-            ${isSecondary ? '<span style="font-size:9.5px;color:#555">(২য় অংশ / পাতা)</span>' : ''}
-            <span>${language === 'bn' ? 'সময়' : 'Time'}: ${bnDur} ${language === 'bn' ? 'মিনিট' : 'min'}</span>
+          <div style="display:flex;justify-content:space-between;font-size:9.5px;font-weight:600;margin-top:2px;padding:0 2px">
+            <span>${language === 'bn' ? 'পূর্ণমান' : 'Marks'}: ${bnMarks}</span>
+            ${isSecondary ? '<span style="font-size:8.5px;color:#555">(২য় অংশ)</span>' : ''}
+            <span>${language === 'bn' ? 'সময়' : 'Time'}: ${bnDur} ${language === 'bn' ? 'মি.' : 'min'}</span>
           </div>
         </div>`;
       }
 
-      const logoHtml = headerConfig.showLogo && institution?.logo_url ? `<img src="${institution.logo_url}" style="height:40px;margin:0 auto 4px;display:block" />` : '';
-      const nameHtml = headerConfig.showInstitutionName && institution ? `<h2 style="font-size:17px;font-weight:700;margin:0;line-height:1.2">${language === 'bn' ? institution.name : institution.name_en || institution.name}</h2>` : '';
-      const addressHtml = institution?.address ? `<p style="font-size:10px;color:#555;margin:1px 0">${institution.address}</p>` : '';
-      const sessionHtml = sessionName ? `<p style="font-size:12px;font-weight:600;margin:2px 0">${sessionName}</p>` : '';
-      const titleHtml = `<h1 style="font-size:14px;font-weight:700;margin:2px 0">${title}</h1>`;
-      const subjectHtml = subjectName ? `<p style="font-size:12px;margin:1px 0">📖 ${subjectName}</p>` : '';
-      const metaHtml = `<div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px"><span>${language === 'bn' ? 'পূর্ণমান' : 'Full Marks'}: ${bnMarks}</span>${isSecondary ? '<span style="font-size:9.5px;color:#555">(২য় অংশ)</span>' : ''}<span>${language === 'bn' ? 'সময়' : 'Time'}: ${bnDur} ${language === 'bn' ? 'মিনিট' : 'min'}</span></div>`;
+      if (ls.headerStyle === 'classic') {
+        return `<div style="text-align:center;margin-bottom:5px;line-height:1.2">
+          <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:2px">
+            ${logo}
+            <div>
+              ${instName ? `<h2 style="font-size:13.5px;font-weight:700;margin:0;line-height:1.1">${instName}</h2>` : ''}
+              ${address ? `<p style="font-size:8.5px;color:#555;margin:1px 0 0;line-height:1">${address}</p>` : ''}
+            </div>
+          </div>
+          <div style="border-top:1px solid #000;border-bottom:1px solid #000;padding:2px 0;margin:2px 0;font-size:10.5px;font-weight:700">${subLine}</div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;font-weight:600;padding:0 2px">
+            <span>${language === 'bn' ? 'পূর্ণমান' : 'Marks'}: ${bnMarks}</span>
+            ${isSecondary ? '<span style="font-size:8.5px;color:#555">(২য় অংশ)</span>' : ''}
+            <span>${language === 'bn' ? 'সময়' : 'Time'}: ${bnDur} ${language === 'bn' ? 'মি.' : 'min'}</span>
+          </div>
+        </div>`;
+      }
 
       if (ls.headerStyle === 'decorative') {
-        return `<div style="text-align:center;margin-bottom:8px;padding:6px;border:1.5px solid #000;border-radius:6px"><div style="border:1px solid rgba(0,0,0,0.3);padding:4px;border-radius:3px">${logoHtml}${nameHtml}${addressHtml}<div style="border-top:1px dashed rgba(0,0,0,0.3);margin:3px 0"></div>${sessionHtml}${titleHtml}${subjectHtml}${metaHtml}</div></div>`;
+        return `<div style="text-align:center;margin-bottom:5px;border:1px solid #000;border-radius:4px;padding:3px 5px;line-height:1.2">
+          <div style="display:flex;align-items:center;justify-content:center;gap:6px">
+            ${logo}
+            <div>
+              ${instName ? `<h2 style="font-size:13.5px;font-weight:700;margin:0;line-height:1.1">${instName}</h2>` : ''}
+              ${address ? `<p style="font-size:8.5px;color:#555;margin:1px 0 0;line-height:1">${address}</p>` : ''}
+            </div>
+          </div>
+          <div style="border-top:1px dashed #777;margin:2px 0"></div>
+          <div style="font-size:10.5px;font-weight:700;margin:1px 0">${subLine}</div>
+          <div style="display:flex;justify-content:space-between;font-size:9.5px;font-weight:600;padding:0 2px">
+            <span>${language === 'bn' ? 'পূর্ণমান' : 'Marks'}: ${bnMarks}</span>
+            ${isSecondary ? '<span style="font-size:8.5px;color:#555">(২য় অংশ)</span>' : ''}
+            <span>${language === 'bn' ? 'সময়' : 'Time'}: ${bnDur} ${language === 'bn' ? 'মি.' : 'min'}</span>
+          </div>
+        </div>`;
       }
-      if (ls.headerStyle === 'classic') {
-        return `<div style="text-align:center;margin-bottom:8px"><div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:2px">${logoHtml ? logoHtml.replace('display:block', 'display:inline') : ''}<div>${nameHtml}${addressHtml}</div></div><div style="border-top:1.5px solid #000;border-bottom:1px solid #000;padding:2px 0;margin:2px 0">${sessionHtml}${titleHtml}</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px;font-size:11px">${subjectHtml ? `<span style="font-weight:500">📖 ${subjectName}</span>` : ''}<span>${language === 'bn' ? 'পূর্ণমান' : 'Marks'}: ${bnMarks}</span><span>${language === 'bn' ? 'সময়' : 'Time'}: ${bnDur} ${language === 'bn' ? 'মিনিট' : 'min'}</span></div></div>`;
-      }
-      return `<div style="text-align:center;margin-bottom:8px;padding-bottom:4px;border-bottom:1.5px solid #000">${logoHtml}${nameHtml}${addressHtml}${sessionHtml}${titleHtml}${subjectHtml}${metaHtml}</div>`;
+
+      // Compact & Simple (Both slim and space-saving)
+      return `<div style="text-align:center;margin-bottom:5px;padding-bottom:2px;border-bottom:1.5px solid #000;line-height:1.2">
+        <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:1px">
+          ${logo}
+          <div>
+            ${instName ? `<h2 style="font-size:14px;font-weight:700;margin:0;line-height:1.15">${instName}</h2>` : ''}
+            ${address ? `<p style="font-size:8.5px;color:#555;margin:1px 0 0;line-height:1">${address}</p>` : ''}
+          </div>
+        </div>
+        <div style="font-size:11px;font-weight:700;margin:2px 0">${subLine}</div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;font-weight:600;margin-top:2px;padding:0 2px">
+          <span>${language === 'bn' ? 'পূর্ণমান' : 'Full Marks'}: ${bnMarks}</span>
+          ${isSecondary ? '<span style="font-size:8.5px;color:#555">(২য় অংশ / পাতা)</span>' : ''}
+          <span>${language === 'bn' ? 'সময়' : 'Time'}: ${bnDur} ${language === 'bn' ? 'মিনিট' : 'min'}</span>
+        </div>
+      </div>`;
     };
 
     const renderQuestionItem = (q: Question, i: number) => {
@@ -1755,7 +1880,15 @@ const AdminQuestionPapers = () => {
       {showSymbols && <QuickSymbolsBar onInsert={() => {}} activeInputRef={activeInputRef} />}
 
       {/* Layout Settings Panel */}
-      {showLayoutPanel && <LayoutSettingsPanel layout={layoutSettings} setLayout={setLayoutSettings} language={language} />}
+      {showLayoutPanel && (
+        <LayoutSettingsPanel
+          layout={layoutSettings}
+          setLayout={setLayoutSettings}
+          headerConfig={headerConfig}
+          setHeaderConfig={setHeaderConfig}
+          language={language}
+        />
+      )}
 
       {/* Font Panel */}
       {showFontPanel && (
