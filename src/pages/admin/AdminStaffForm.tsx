@@ -653,6 +653,12 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
         toast.error(msg);
         return;
       }
+      if (upper.includes('JOINING_DATE_FUTURE')) {
+        const msg = bn ? 'যোগদানের তারিখ ভবিষ্যতের হতে পারে না — সঠিক তারিখ দিন' : 'Joining date cannot be in the future';
+        setFieldErrors(prev => ({ ...prev, joining_date: msg }));
+        toast.error(msg);
+        return;
+      }
       if (upper.includes('CUSTOM_ROLE_CATEGORY_MISMATCH')) {
         toast.error(bn
           ? 'নির্বাচিত কাস্টম রোলটি এই স্টাফ ক্যাটেগরির জন্য অনুমোদিত নয়। অনুগ্রহ করে অন্য রোল বাছাই করুন।'
@@ -702,6 +708,17 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
       setFieldErrors({ joining_date: msg });
       toast.error(msg);
       return;
+    }
+
+    // Joining date can never be in the future (prevents salary list hiding staff)
+    if (joiningDate) {
+      const todayStr = new Date().toLocaleDateString('en-CA');
+      if (joiningDate > todayStr) {
+        const msg = bn ? 'যোগদানের তারিখ ভবিষ্যতের হতে পারে না — সঠিক তারিখ দিন' : 'Joining date cannot be in the future';
+        setFieldErrors({ joining_date: msg });
+        toast.error(msg);
+        return;
+      }
     }
 
     // Admin bypass: skip all field validation (still requires saveMutation server-side checks)
