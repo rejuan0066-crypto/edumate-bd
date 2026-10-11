@@ -291,9 +291,10 @@ const FONT_PRESETS = {
 };
 
 const HEADER_STYLES = [
+  { value: 'compact', labelBn: 'আঁটসাঁট (কম্প্যাক্ট - সর্বোচ্চ স্পেস সেভিং)', labelEn: 'Compact (Space Saving)' },
   { value: 'simple', labelBn: 'সিম্পল', labelEn: 'Simple' },
-  { value: 'decorative', labelBn: 'ডেকোরেটিভ', labelEn: 'Decorative' },
   { value: 'classic', labelBn: 'ক্লাসিক ERP', labelEn: 'Classic ERP' },
+  { value: 'decorative', labelBn: 'ডেকোরেটিভ বক্স', labelEn: 'Decorative Box' },
 ];
 
 interface FontConfig {
@@ -318,7 +319,10 @@ interface LayoutSettings {
   marginRight: number;
   lineSpacing: number;
   watermark: boolean;
-  headerStyle: 'simple' | 'decorative' | 'classic';
+  headerStyle: 'compact' | 'simple' | 'decorative' | 'classic';
+  headerPlacement: 'dual' | 'single'; // 'dual': Word booklet style (header on both parts when 2 columns)
+  columnFlow: 'auto' | 'fill_first';
+  columnBreakIndex?: number;
   questionLabelBn: string;
   questionLabelEn: string;
   showQuestionMarks: boolean;
@@ -327,13 +331,15 @@ interface LayoutSettings {
 const DEFAULT_LAYOUT: LayoutSettings = {
   orientation: 'portrait',
   columns: 1,
-  marginTop: 20,
-  marginBottom: 20,
-  marginLeft: 15,
-  marginRight: 15,
-  lineSpacing: 1.5,
+  marginTop: 10,
+  marginBottom: 10,
+  marginLeft: 10,
+  marginRight: 10,
+  lineSpacing: 1.25,
   watermark: false,
-  headerStyle: 'simple',
+  headerStyle: 'compact',
+  headerPlacement: 'dual',
+  columnFlow: 'auto',
   questionLabelBn: 'প্রশ্ন (বাংলা/আরবি)',
   questionLabelEn: 'Question (BN/AR)',
   showQuestionMarks: true,
@@ -352,6 +358,7 @@ interface Question {
   options: any;
   answer: string;
   custom_label?: string;
+  column_break?: boolean; // When true, starts Column 2 (Right side)
 }
 
 const toBengaliNum = (n: number): string => {
@@ -399,21 +406,68 @@ const StatusBadge = ({ status, language }: { status: string; language: string })
 };
 
 // ─── Header Renderers ───
-const renderHeader = (style: string, paper: any, institution: any, language: string, fontFamily: string, totalMarks: number, sessionName: string, subjectName: string, showLogo: boolean, showName: boolean) => {
+const renderHeader = (
+  style: string,
+  paper: any,
+  institution: any,
+  language: string,
+  fontFamily: string,
+  totalMarks: number,
+  sessionName: string,
+  subjectName: string,
+  showLogo: boolean,
+  showName: boolean,
+  isSecondary: boolean = false
+) => {
+  // Ultra-compact header (minimal vertical space, professional exam look)
+  if (style === 'compact' || !style) {
+    return (
+      <div className="mb-2 pb-1 border-b border-black text-center leading-tight select-none" style={{ fontFamily }}>
+        <div className="flex items-center justify-center gap-2 mb-0.5">
+          {showLogo && institution?.logo_url && (
+            <img src={institution.logo_url} alt="" className="h-7 max-w-[32px] object-contain shrink-0" />
+          )}
+          <div>
+            {showName && institution && (
+              <h2 className="text-sm font-bold leading-tight m-0 tracking-tight">
+                {language === 'bn' ? institution.name : institution.name_en || institution.name}
+              </h2>
+            )}
+            {institution?.address && (
+              <p className="text-[9px] text-gray-500 leading-none m-0">{institution.address}</p>
+            )}
+          </div>
+        </div>
+        <div className="text-[11px] font-semibold mt-0.5 leading-tight flex items-center justify-center gap-1.5 flex-wrap">
+          {sessionName && <span>{sessionName}</span>}
+          {sessionName && <span className="text-gray-400">•</span>}
+          <span className="font-bold">{language === 'bn' ? paper?.title_bn : paper?.title}</span>
+          {subjectName && <span className="text-gray-400">•</span>}
+          {subjectName && <span>📖 {subjectName}</span>}
+        </div>
+        <div className="flex justify-between items-center mt-1 text-[10px] font-medium px-1">
+          <span>{language === 'bn' ? 'পূর্ণমান' : 'Full Marks'}: {language === 'bn' ? toBengaliNum(totalMarks) : totalMarks}</span>
+          {isSecondary && <span className="text-[9px] text-gray-500 font-normal bg-gray-100 px-1 rounded">(২য় অংশ / পাতা)</span>}
+          <span>{language === 'bn' ? 'সময়' : 'Time'}: {language === 'bn' ? toBengaliNum(paper?.duration_minutes || 0) : paper?.duration_minutes} {language === 'bn' ? 'মিনিট' : 'min'}</span>
+        </div>
+      </div>
+    );
+  }
   if (style === 'decorative') {
     return (
-      <div className="mb-4 pb-3 text-center" style={{ fontFamily }}>
-        <div className="border-2 border-black p-3 rounded-lg">
-          <div className="border border-black/30 p-2 rounded">
-            {showLogo && institution?.logo_url && <img src={institution.logo_url} alt="" className="h-12 mx-auto mb-1" />}
-            {showName && institution && <h2 className="text-lg font-bold tracking-wide">{language === 'bn' ? institution.name : institution.name_en || institution.name}</h2>}
-            {institution?.address && <p className="text-[10px] text-gray-500">{institution.address}</p>}
-            <div className="my-1 border-t border-dashed border-black/30" />
+      <div className="mb-2 pb-2 text-center" style={{ fontFamily }}>
+        <div className="border border-black p-2 rounded-lg">
+          <div className="border border-black/30 p-1.5 rounded">
+            {showLogo && institution?.logo_url && <img src={institution.logo_url} alt="" className="h-9 mx-auto mb-0.5" />}
+            {showName && institution && <h2 className="text-base font-bold tracking-wide">{language === 'bn' ? institution.name : institution.name_en || institution.name}</h2>}
+            {institution?.address && <p className="text-[9px] text-gray-500">{institution.address}</p>}
+            <div className="my-0.5 border-t border-dashed border-black/30" />
             {sessionName && <p className="text-xs font-semibold">{sessionName}</p>}
-            <h1 className="text-sm font-bold mt-0.5">{language === 'bn' ? paper?.title_bn : paper?.title}</h1>
-            {subjectName && <p className="text-xs">📖 {subjectName}</p>}
-            <div className="flex justify-between mt-1.5 text-[10px] font-medium">
+            <h1 className="text-xs font-bold mt-0.5">{language === 'bn' ? paper?.title_bn : paper?.title}</h1>
+            {subjectName && <p className="text-[11px]">📖 {subjectName}</p>}
+            <div className="flex justify-between mt-1 text-[9px] font-medium">
               <span>{language === 'bn' ? 'পূর্ণমান' : 'Full Marks'}: {language === 'bn' ? toBengaliNum(totalMarks) : totalMarks}</span>
+              {isSecondary && <span className="text-gray-500">(২য় অংশ)</span>}
               <span>{language === 'bn' ? 'সময়' : 'Time'}: {language === 'bn' ? toBengaliNum(paper?.duration_minutes || 0) : paper?.duration_minutes} {language === 'bn' ? 'মিনিট' : 'min'}</span>
             </div>
           </div>
@@ -423,37 +477,39 @@ const renderHeader = (style: string, paper: any, institution: any, language: str
   }
   if (style === 'classic') {
     return (
-      <div className="mb-4 text-center" style={{ fontFamily }}>
-        <div className="flex items-center justify-center gap-3 mb-1">
-          {showLogo && institution?.logo_url && <img src={institution.logo_url} alt="" className="h-14" />}
+      <div className="mb-2 pb-1 text-center" style={{ fontFamily }}>
+        <div className="flex items-center justify-center gap-2 mb-0.5">
+          {showLogo && institution?.logo_url && <img src={institution.logo_url} alt="" className="h-9" />}
           <div>
-            {showName && institution && <h2 className="text-lg font-bold">{language === 'bn' ? institution.name : institution.name_en || institution.name}</h2>}
-            {institution?.address && <p className="text-[10px] text-gray-500">{institution.address}</p>}
+            {showName && institution && <h2 className="text-base font-bold">{language === 'bn' ? institution.name : institution.name_en || institution.name}</h2>}
+            {institution?.address && <p className="text-[9px] text-gray-500">{institution.address}</p>}
           </div>
         </div>
-        <div className="border-t-2 border-b border-black my-1 py-1">
-          {sessionName && <p className="text-xs font-semibold">{sessionName}</p>}
-          <h1 className="text-sm font-bold">{language === 'bn' ? paper?.title_bn : paper?.title}</h1>
+        <div className="border-t border-b border-black my-0.5 py-0.5">
+          {sessionName && <p className="text-[11px] font-semibold">{sessionName}</p>}
+          <h1 className="text-xs font-bold">{language === 'bn' ? paper?.title_bn : paper?.title}</h1>
         </div>
-        <div className="flex justify-between items-center mt-1 text-[10px]">
+        <div className="flex justify-between items-center mt-0.5 text-[9px]">
           {subjectName && <span className="font-medium">📖 {subjectName}</span>}
           <span>{language === 'bn' ? 'পূর্ণমান' : 'Marks'}: {language === 'bn' ? toBengaliNum(totalMarks) : totalMarks}</span>
+          {isSecondary && <span className="text-gray-500">(২য় অংশ)</span>}
           <span>{language === 'bn' ? 'সময়' : 'Time'}: {language === 'bn' ? toBengaliNum(paper?.duration_minutes || 0) : paper?.duration_minutes} {language === 'bn' ? 'মিনিট' : 'min'}</span>
         </div>
       </div>
     );
   }
-  // simple (default)
+  // simple
   return (
-    <div className="mb-4 pb-3 border-b-2 border-black text-center" style={{ fontFamily }}>
-      {showLogo && institution?.logo_url && <img src={institution.logo_url} alt="" className="h-14 mx-auto mb-2" />}
-      {showName && institution && <h2 className="text-lg font-bold">{language === 'bn' ? institution.name : institution.name_en || institution.name}</h2>}
-      {institution?.address && <p className="text-xs text-gray-600">{institution.address}</p>}
-      {sessionName && <p className="text-sm font-semibold mt-1">{sessionName}</p>}
-      <h1 className="text-base font-bold mt-1">{language === 'bn' ? paper?.title_bn : paper?.title}</h1>
-      {subjectName && <p className="text-sm">📖 {subjectName}</p>}
-      <div className="flex justify-between mt-2 text-xs">
+    <div className="mb-2 pb-1 border-b border-black text-center" style={{ fontFamily }}>
+      {showLogo && institution?.logo_url && <img src={institution.logo_url} alt="" className="h-9 mx-auto mb-1" />}
+      {showName && institution && <h2 className="text-base font-bold">{language === 'bn' ? institution.name : institution.name_en || institution.name}</h2>}
+      {institution?.address && <p className="text-[10px] text-gray-600">{institution.address}</p>}
+      {sessionName && <p className="text-xs font-semibold mt-0.5">{sessionName}</p>}
+      <h1 className="text-xs font-bold mt-0.5">{language === 'bn' ? paper?.title_bn : paper?.title}</h1>
+      {subjectName && <p className="text-xs">📖 {subjectName}</p>}
+      <div className="flex justify-between mt-1 text-[10px]">
         <span>{language === 'bn' ? 'পূর্ণমান' : 'Full Marks'}: {language === 'bn' ? toBengaliNum(totalMarks) : totalMarks}</span>
+        {isSecondary && <span className="text-gray-500">(২য় অংশ)</span>}
         <span>{language === 'bn' ? 'সময়' : 'Time'}: {language === 'bn' ? toBengaliNum(paper?.duration_minutes || 0) : paper?.duration_minutes} {language === 'bn' ? 'মিনিট' : 'min'}</span>
       </div>
     </div>
@@ -518,22 +574,117 @@ const LivePreview = ({ paper, questions, fontConfig, headerConfig, institution, 
     );
   });
 
-  // Split into columns if needed
-  const renderQuestions = () => {
-    if (layout.columns === 2 && questions.length > 0) {
-      const mid = Math.ceil(questions.length / 2);
+  // Split into columns (supports manual column_break or auto)
+  const getSplitIndex = () => {
+    const breakIndex = questions.findIndex(q => q.column_break);
+    if (breakIndex !== -1) {
+      return breakIndex === 0 ? 1 : breakIndex;
+    }
+    if (layout.columnFlow === 'fill_first' && questions.length <= 4) {
+      return questions.length;
+    }
+    return Math.ceil(questions.length / 2);
+  };
+
+  const isDualHeader = layout.columns === 2 && layout.headerPlacement === 'dual';
+  const splitIndex = getSplitIndex();
+  const col1Items = questionItems.slice(0, splitIndex);
+  const col2Items = questionItems.slice(splitIndex);
+
+  const header1 = renderHeader(
+    layout.headerStyle,
+    paper,
+    institution,
+    language,
+    effectiveBengaliFont,
+    totalMarks,
+    sessionName,
+    subjectName,
+    headerConfig.showLogo,
+    headerConfig.showInstitutionName,
+    false
+  );
+
+  const header2 = renderHeader(
+    layout.headerStyle,
+    paper,
+    institution,
+    language,
+    effectiveBengaliFont,
+    totalMarks,
+    sessionName,
+    subjectName,
+    headerConfig.showLogo,
+    headerConfig.showInstitutionName,
+    true
+  );
+
+  const instructionsEl = (paper?.instructions_bn || paper?.instructions) && (
+    <div className="mb-2 p-1.5 bg-gray-50 rounded text-[11px] italic leading-tight">
+      {language === 'bn' ? paper?.instructions_bn : paper?.instructions}
+    </div>
+  );
+
+  const renderContent = () => {
+    if (questions.length === 0) {
       return (
-        <div className="grid grid-cols-2 gap-4">
-          <div className="border-r border-gray-200 pr-3">
-            {questionItems.slice(0, mid)}
-          </div>
-          <div className="pl-1">
-            {questionItems.slice(mid)}
+        <div>
+          {header1}
+          {instructionsEl}
+          <div className="text-center text-gray-400 py-12 text-sm">
+            {language === 'bn' ? 'বাম পাশে প্রশ্ন যোগ করুন — এখানে লাইভ প্রিভিউ দেখাবে' : 'Add questions on the left — live preview will appear here'}
           </div>
         </div>
       );
     }
-    return <div>{questionItems}</div>;
+
+    if (layout.columns === 2) {
+      if (isDualHeader) {
+        // MS Word Booklet Style: Header on both parts!
+        return (
+          <div className="grid grid-cols-2 gap-4">
+            <div className="border-r border-dashed border-gray-300 pr-3">
+              {header1}
+              {instructionsEl}
+              {col1Items}
+            </div>
+            <div className="pl-1">
+              {header2}
+              {col2Items.length > 0 ? col2Items : (
+                <div className="text-center text-gray-300 py-8 text-xs border border-dashed rounded-lg">
+                  {language === 'bn' ? '২য় পার্ট (বামে প্রশ্ন যোগ করলে বা কলাম ব্রেক দিলে এখানে আসবে)' : 'Part 2'}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      // Single Header at top
+      return (
+        <div>
+          {header1}
+          {instructionsEl}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="border-r border-gray-200 pr-3">
+              {col1Items}
+            </div>
+            <div className="pl-1">
+              {col2Items}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // 1 Column
+    return (
+      <div>
+        {header1}
+        {instructionsEl}
+        <div>{questionItems}</div>
+      </div>
+    );
   };
 
   return (
@@ -544,7 +695,7 @@ const LivePreview = ({ paper, questions, fontConfig, headerConfig, institution, 
           fontFamily: effectiveBengaliFont,
           fontSize: `${fontConfig.fontSize}px`,
           aspectRatio,
-          maxHeight: '72vh',
+          maxHeight: '74vh',
           overflow: 'auto',
         }}>
           {/* Watermark */}
@@ -557,22 +708,7 @@ const LivePreview = ({ paper, questions, fontConfig, headerConfig, institution, 
           <div className="relative z-10" style={{
             padding: `${layout.marginTop}px ${layout.marginRight}px ${layout.marginBottom}px ${layout.marginLeft}px`,
           }}>
-            {/* Header */}
-            {renderHeader(layout.headerStyle, paper, institution, language, effectiveBengaliFont, totalMarks, sessionName, subjectName, headerConfig.showLogo, headerConfig.showInstitutionName)}
-
-            {/* Instructions */}
-            {(paper?.instructions_bn || paper?.instructions) && (
-              <div className="mb-3 p-2 bg-gray-50 rounded text-xs italic">
-                {language === 'bn' ? paper?.instructions_bn : paper?.instructions}
-              </div>
-            )}
-
-            {/* Questions */}
-            {questions.length > 0 ? renderQuestions() : (
-              <div className="text-center text-gray-400 py-12 text-sm">
-                {language === 'bn' ? 'বাম পাশে প্রশ্ন যোগ করুন — এখানে লাইভ প্রিভিউ দেখাবে' : 'Add questions on the left — live preview will appear here'}
-              </div>
-            )}
+            {renderContent()}
           </div>
         </div>
       </div>
@@ -624,6 +760,32 @@ const LayoutSettingsPanel = ({ layout, setLayout, language }: { layout: LayoutSe
             </Select>
           </div>
         </div>
+
+        {/* Row 1.5: If 2 columns, Header Placement & Column Flow */}
+        {layout.columns === 2 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-2.5 rounded-xl bg-primary/5 border border-primary/20">
+            <div>
+              <Label className="text-xs font-semibold text-primary">{language === 'bn' ? '২ পার্টে হেডার বিন্যাস' : '2-Part Header'}</Label>
+              <Select value={layout.headerPlacement} onValueChange={(v: 'dual' | 'single') => setLayout({ ...layout, headerPlacement: v })}>
+                <SelectTrigger className="h-8 text-xs bg-background"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dual">{language === 'bn' ? '📖 উভয় পাশে হেডার (ওয়ার্ড বুকলেট)' : 'Dual Headers (Booklet)'}</SelectItem>
+                  <SelectItem value="single">{language === 'bn' ? '📄 একক শীর্ষ হেডার (উপরে পুরো পেজ)' : 'Single Full-Width Header'}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-primary">{language === 'bn' ? 'কলামের লেখা প্রবাহ' : 'Column Flow'}</Label>
+              <Select value={layout.columnFlow} onValueChange={(v: 'auto' | 'fill_first') => setLayout({ ...layout, columnFlow: v })}>
+                <SelectTrigger className="h-8 text-xs bg-background"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">{language === 'bn' ? '⚡ স্বয়ংক্রিয় সুষম বণ্টন' : 'Auto Balanced'}</SelectItem>
+                  <SelectItem value="fill_first">{language === 'bn' ? '📝 ১ম পার্ট পূর্ণ করে ২য় পার্ট' : 'Fill Col 1 First'}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
 
         {/* Row 2: Margins */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -701,7 +863,19 @@ const AdminQuestionPapers = () => {
   const [headerConfig, setHeaderConfig] = useState<HeaderConfig>({ showLogo: true, showInstitutionName: true, centered: true });
   const [layoutSettings, setLayoutSettings] = useState<LayoutSettings>(DEFAULT_LAYOUT);
 
-  const bijoyMode = fontConfig.bengali === 'SutonnyMJ';
+  const [bijoyMode, setBijoyMode] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('edumate_bijoy_mode') === 'true' || fontConfig.bengali === 'SutonnyMJ';
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('edumate_bijoy_mode', String(bijoyMode));
+    } catch {}
+  }, [bijoyMode]);
 
   // Bijoy ASCII→Unicode keydown interceptor
   useEffect(() => {
@@ -722,25 +896,28 @@ const AdminQuestionPapers = () => {
       const char = e.key;
       if (char.length !== 1) return;
       if (!isBijoyKey(char)) return;
-      const unicodeChar = bijoyCharToUnicode(char);
-      if (unicodeChar === char) return;
+
+      const el = target as HTMLInputElement | HTMLTextAreaElement;
+      const start = el.selectionStart ?? el.value.length;
+      const prevChar = start > 0 ? el.value[start - 1] : undefined;
+      const { text: unicodeChar, replacePrev } = bijoyCharToUnicode(char, prevChar);
+      if (unicodeChar === char && !replacePrev) return;
+
       e.preventDefault();
       e.stopImmediatePropagation();
-      const el = target as HTMLInputElement | HTMLTextAreaElement;
       el.focus();
-      const success = document.execCommand('insertText', false, unicodeChar);
-      if (!success) {
-        const start = el.selectionStart ?? el.value.length;
-        const end = el.selectionEnd ?? start;
-        const newValue = el.value.slice(0, start) + unicodeChar + el.value.slice(end);
-        const newCursor = start + unicodeChar.length;
-        const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
-        const descriptor = Object.getOwnPropertyDescriptor(proto, 'value');
-        if (descriptor?.set) { descriptor.set.call(el, newValue); } else { el.value = newValue; }
-        el.dispatchEvent(new Event('input', { bubbles: true }));
-        el.dispatchEvent(new Event('change', { bubbles: true }));
-        requestAnimationFrame(() => el.setSelectionRange(newCursor, newCursor));
-      }
+
+      const replaceStart = replacePrev ? Math.max(0, start - 1) : start;
+      const end = el.selectionEnd ?? start;
+      const newValue = el.value.slice(0, replaceStart) + unicodeChar + el.value.slice(end);
+      const newCursor = replaceStart + unicodeChar.length;
+
+      const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+      const descriptor = Object.getOwnPropertyDescriptor(proto, 'value');
+      if (descriptor?.set) { descriptor.set.call(el, newValue); } else { el.value = newValue; }
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      requestAnimationFrame(() => el.setSelectionRange(newCursor, newCursor));
     };
     document.addEventListener('keydown', handler, true);
     return () => document.removeEventListener('keydown', handler, true);
@@ -909,16 +1086,27 @@ const AdminQuestionPapers = () => {
 
   useEffect(() => {
     if (selectedPaper && paperQuestions) {
-      setQuestions(paperQuestions.map((q: any) => ({
+      let breakIdx = -1;
+      if (selectedPaper.layout_settings) {
+        try {
+          const ls = typeof selectedPaper.layout_settings === 'string' ? JSON.parse(selectedPaper.layout_settings) : selectedPaper.layout_settings;
+          if (typeof ls.columnBreakIndex === 'number') breakIdx = ls.columnBreakIndex;
+        } catch { }
+      } else if (typeof layoutSettings.columnBreakIndex === 'number') {
+        breakIdx = layoutSettings.columnBreakIndex;
+      }
+
+      setQuestions(paperQuestions.map((q: any, i: number) => ({
         id: q.id, question_text: q.question_text || '', question_text_bn: q.question_text_bn || '',
         question_type: q.question_type || 'descriptive', marks: q.marks ?? 0, sort_order: q.sort_order || 0,
         group_label: q.group_label || '', group_label_bn: q.group_label_bn || '',
         group_marks: q.group_marks ?? null,
         options: q.options, answer: q.answer || '',
         custom_label: q.custom_label || '',
+        column_break: breakIdx === i,
       })));
     }
-  }, [selectedPaper?.id, paperQuestions]);
+  }, [selectedPaper?.id, selectedPaper?.layout_settings, paperQuestions]);
 
   // ─── Mutations ───
   const createPaper = useMutation({
@@ -961,10 +1149,15 @@ const AdminQuestionPapers = () => {
   const saveQuestions = useMutation({
     mutationFn: async () => {
       if (!selectedPaper?.id) return;
+      const breakIdx = questions.findIndex(q => q.column_break);
+      const updatedLayout: LayoutSettings = {
+        ...layoutSettings,
+        columnBreakIndex: breakIdx !== -1 ? breakIdx : undefined,
+      };
       await supabase.from('question_papers').update({
         font_config: fontConfig as any,
         header_config: headerConfig as any,
-        layout_settings: layoutSettings as any,
+        layout_settings: updatedLayout as any,
       }).eq('id', selectedPaper.id);
       await supabase.from('questions').delete().eq('paper_id', selectedPaper.id);
       if (questions.length > 0) {
@@ -980,6 +1173,7 @@ const AdminQuestionPapers = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['questions', selectedPaper?.id] });
+      queryClient.invalidateQueries({ queryKey: ['question-papers'] });
       toast.success(language === 'bn' ? 'সংরক্ষিত হয়েছে' : 'Saved');
     },
     onError: () => toast.error(language === 'bn' ? 'ত্রুটি' : 'Error'),
@@ -1208,76 +1402,106 @@ const AdminQuestionPapers = () => {
       : fontConfig.bengali;
 
     // Header HTML based on style
-    const buildHeaderHtml = () => {
-      const logoHtml = headerConfig.showLogo && institution?.logo_url ? `<img src="${institution.logo_url}" style="height:50px;margin:0 auto 8px;display:block" />` : '';
-      const nameHtml = headerConfig.showInstitutionName && institution ? `<h2 style="font-size:20px;font-weight:700;margin:0">${language === 'bn' ? institution.name : institution.name_en || institution.name}</h2>` : '';
-      const addressHtml = institution?.address ? `<p style="font-size:11px;color:#555;margin:2px 0">${institution.address}</p>` : '';
-      const sessionHtml = sessionName ? `<p style="font-size:13px;font-weight:600;margin:4px 0">${sessionName}</p>` : '';
-      const titleHtml = `<h1 style="font-size:16px;font-weight:700;margin:4px 0">${language === 'bn' ? selectedPaper.title_bn : selectedPaper.title}</h1>`;
-      const subjectHtml = subjectName ? `<p style="font-size:13px;margin:2px 0">📖 ${subjectName}</p>` : '';
+    const buildHeaderHtml = (isSecondary = false) => {
+      const isCompact = ls.headerStyle === 'compact' || !ls.headerStyle;
+      const title = language === 'bn' ? selectedPaper.title_bn : selectedPaper.title;
       const bnMarks = language === 'bn' ? toBengaliNum(totalMarks) : totalMarks;
       const bnDur = language === 'bn' ? toBengaliNum(selectedPaper.duration_minutes) : selectedPaper.duration_minutes;
-      const metaHtml = `<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:12px"><span>${language === 'bn' ? 'পূর্ণমান' : 'Full Marks'}: ${bnMarks}</span><span>${language === 'bn' ? 'সময়' : 'Time'}: ${bnDur} ${language === 'bn' ? 'মিনিট' : 'min'}</span></div>`;
+      
+      if (isCompact) {
+        const logo = headerConfig.showLogo && institution?.logo_url ? `<img src="${institution.logo_url}" style="height:32px;max-width:32px;object-fit:contain;margin-right:8px;vertical-align:middle;display:inline-block" />` : '';
+        const instName = headerConfig.showInstitutionName && institution ? `<h2 style="font-size:15px;font-weight:700;margin:0;line-height:1.2;display:inline-block;vertical-align:middle">${language === 'bn' ? institution.name : institution.name_en || institution.name}</h2>` : '';
+        const address = institution?.address ? `<p style="font-size:9.5px;color:#444;margin:1px 0 0;line-height:1.1">${institution.address}</p>` : '';
+        const subLine = [sessionName, title, subjectName ? '📖 ' + subjectName : ''].filter(Boolean).join(' &nbsp;•&nbsp; ');
+        
+        return `<div style="text-align:center;margin-bottom:6px;padding-bottom:3px;border-bottom:1.5px solid #000;line-height:1.2">
+          <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:1px">
+            ${logo}
+            <div style="display:inline-block">${instName}${address}</div>
+          </div>
+          <div style="font-size:11.5px;font-weight:700;margin:2px 0">${subLine}</div>
+          <div style="display:flex;justify-content:space-between;font-size:10.5px;font-weight:600;margin-top:2px;padding:0 2px">
+            <span>${language === 'bn' ? 'পূর্ণমান' : 'Full Marks'}: ${bnMarks}</span>
+            ${isSecondary ? '<span style="font-size:9.5px;color:#555">(২য় অংশ / পাতা)</span>' : ''}
+            <span>${language === 'bn' ? 'সময়' : 'Time'}: ${bnDur} ${language === 'bn' ? 'মিনিট' : 'min'}</span>
+          </div>
+        </div>`;
+      }
+
+      const logoHtml = headerConfig.showLogo && institution?.logo_url ? `<img src="${institution.logo_url}" style="height:40px;margin:0 auto 4px;display:block" />` : '';
+      const nameHtml = headerConfig.showInstitutionName && institution ? `<h2 style="font-size:17px;font-weight:700;margin:0;line-height:1.2">${language === 'bn' ? institution.name : institution.name_en || institution.name}</h2>` : '';
+      const addressHtml = institution?.address ? `<p style="font-size:10px;color:#555;margin:1px 0">${institution.address}</p>` : '';
+      const sessionHtml = sessionName ? `<p style="font-size:12px;font-weight:600;margin:2px 0">${sessionName}</p>` : '';
+      const titleHtml = `<h1 style="font-size:14px;font-weight:700;margin:2px 0">${title}</h1>`;
+      const subjectHtml = subjectName ? `<p style="font-size:12px;margin:1px 0">📖 ${subjectName}</p>` : '';
+      const metaHtml = `<div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px"><span>${language === 'bn' ? 'পূর্ণমান' : 'Full Marks'}: ${bnMarks}</span>${isSecondary ? '<span style="font-size:9.5px;color:#555">(২য় অংশ)</span>' : ''}<span>${language === 'bn' ? 'সময়' : 'Time'}: ${bnDur} ${language === 'bn' ? 'মিনিট' : 'min'}</span></div>`;
 
       if (ls.headerStyle === 'decorative') {
-        return `<div style="text-align:center;margin-bottom:16px;padding:12px;border:2px solid #000;border-radius:8px"><div style="border:1px solid rgba(0,0,0,0.3);padding:8px;border-radius:4px">${logoHtml}${nameHtml}${addressHtml}<div style="border-top:1px dashed rgba(0,0,0,0.3);margin:6px 0"></div>${sessionHtml}${titleHtml}${subjectHtml}${metaHtml}</div></div>`;
+        return `<div style="text-align:center;margin-bottom:8px;padding:6px;border:1.5px solid #000;border-radius:6px"><div style="border:1px solid rgba(0,0,0,0.3);padding:4px;border-radius:3px">${logoHtml}${nameHtml}${addressHtml}<div style="border-top:1px dashed rgba(0,0,0,0.3);margin:3px 0"></div>${sessionHtml}${titleHtml}${subjectHtml}${metaHtml}</div></div>`;
       }
       if (ls.headerStyle === 'classic') {
-        return `<div style="text-align:center;margin-bottom:16px"><div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:4px">${logoHtml ? logoHtml.replace('display:block', 'display:inline') : ''}<div>${nameHtml}${addressHtml}</div></div><div style="border-top:2px solid #000;border-bottom:1px solid #000;padding:4px 0;margin:4px 0">${sessionHtml}${titleHtml}</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;font-size:11px">${subjectHtml ? `<span style="font-weight:500">📖 ${subjectName}</span>` : ''}<span>${language === 'bn' ? 'পূর্ণমান' : 'Marks'}: ${bnMarks}</span><span>${language === 'bn' ? 'সময়' : 'Time'}: ${bnDur} ${language === 'bn' ? 'মিনিট' : 'min'}</span></div></div>`;
+        return `<div style="text-align:center;margin-bottom:8px"><div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:2px">${logoHtml ? logoHtml.replace('display:block', 'display:inline') : ''}<div>${nameHtml}${addressHtml}</div></div><div style="border-top:1.5px solid #000;border-bottom:1px solid #000;padding:2px 0;margin:2px 0">${sessionHtml}${titleHtml}</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px;font-size:11px">${subjectHtml ? `<span style="font-weight:500">📖 ${subjectName}</span>` : ''}<span>${language === 'bn' ? 'পূর্ণমান' : 'Marks'}: ${bnMarks}</span><span>${language === 'bn' ? 'সময়' : 'Time'}: ${bnDur} ${language === 'bn' ? 'মিনিট' : 'min'}</span></div></div>`;
       }
-      return `<div style="text-align:center;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #000">${logoHtml}${nameHtml}${addressHtml}${sessionHtml}${titleHtml}${subjectHtml}${metaHtml}</div>`;
+      return `<div style="text-align:center;margin-bottom:8px;padding-bottom:4px;border-bottom:1.5px solid #000">${logoHtml}${nameHtml}${addressHtml}${sessionHtml}${titleHtml}${subjectHtml}${metaHtml}</div>`;
     };
 
-    const buildQuestionsHtml = () => {
-      let currentGroup = '';
-      const items = questions.map((q, i) => {
-        let groupHtml = '';
-        const gl = language === 'bn' ? q.group_label_bn : q.group_label;
-        if (gl && gl !== currentGroup) { currentGroup = gl; groupHtml = '<div class="group-label">' + gl + '</div>'; }
-        const qText = language === 'bn' ? q.question_text_bn || q.question_text : q.question_text;
-        const isArabic = /[\u0600-\u06FF]/.test(qText);
-        const dir = isArabic ? 'rtl' : 'ltr';
-        const ff = isArabic ? fontConfig.arabic : effectiveBengaliFont;
-        const serial = language === 'bn' ? toBengaliNum(i + 1) : String(i + 1);
-        const labelText = (q.custom_label && q.custom_label.trim()) ? q.custom_label.trim() : `${serial}।`;
-        const opts = Array.isArray(q.options) ? '<div class="options">' + q.options.map((o: any, oi: number) => {
-          const prefix = getOptionPrefix(o, oi, language === 'bn' || !!o.text_bn);
-          const text = language === 'bn' ? o.text_bn || o.text : o.text || o.text_bn;
-          return '<span class="option"><strong>' + prefix + '</strong> ' + text + '</span>';
-        }).join('') + '</div>' : '';
-        return groupHtml + `<div class="question" style="font-family:'${ff}';direction:${dir}"><div class="q-header"><span><strong>${labelText}</strong> ${qText}</span><span>[${language === 'bn' ? toBengaliNum(q.marks) : q.marks}]</span></div>${opts}</div>`;
-      }).join('');
-
-      if (ls.columns === 2) {
-        const mid = Math.ceil(questions.length / 2);
-        const allItems = items.split('<div class="question"');
-        // Re-split properly
-        let col1 = '', col2 = '';
-        let count = 0;
-        questions.forEach((q, i) => {
-          let groupHtml = '';
-          const gl = language === 'bn' ? q.group_label_bn : q.group_label;
-          if (gl && (i === 0 || gl !== (language === 'bn' ? questions[i-1]?.group_label_bn : questions[i-1]?.group_label))) {
-            groupHtml = '<div class="group-label">' + gl + '</div>';
-          }
-          const qText = language === 'bn' ? q.question_text_bn || q.question_text : q.question_text;
-          const isArabic = /[\u0600-\u06FF]/.test(qText);
-          const dir = isArabic ? 'rtl' : 'ltr';
-          const ff = isArabic ? fontConfig.arabic : effectiveBengaliFont;
-          const serial = language === 'bn' ? toBengaliNum(i + 1) : String(i + 1);
-          const labelText = (q.custom_label && q.custom_label.trim()) ? q.custom_label.trim() : `${serial}।`;
-          const opts = Array.isArray(q.options) ? '<div class="options">' + q.options.map((o: any, oi: number) => {
-            const prefix = getOptionPrefix(o, oi, language === 'bn' || !!o.text_bn);
-            const text = language === 'bn' ? o.text_bn || o.text : o.text || o.text_bn;
-            return '<span class="option"><strong>' + prefix + '</strong> ' + text + '</span>';
-          }).join('') + '</div>' : '';
-          const html = groupHtml + `<div class="question" style="font-family:'${ff}';direction:${dir}"><div class="q-header"><span><strong>${labelText}</strong> ${qText}</span><span>[${language === 'bn' ? toBengaliNum(q.marks) : q.marks}]</span></div>${opts}</div>`;
-          if (i < mid) col1 += html; else col2 += html;
-        });
-        return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px"><div style="border-right:1px solid #ddd;padding-right:12px">${col1}</div><div style="padding-left:4px">${col2}</div></div>`;
-      }
-      return items;
+    const renderQuestionItem = (q: Question, i: number) => {
+      let groupHtml = '';
+      const gl = language === 'bn' ? q.group_label_bn : q.group_label;
+      if (gl) { groupHtml = '<div class="group-label">' + gl + '</div>'; }
+      const qText = language === 'bn' ? q.question_text_bn || q.question_text : q.question_text;
+      const isArabic = /[\u0600-\u06FF]/.test(qText);
+      const dir = isArabic ? 'rtl' : 'ltr';
+      const ff = isArabic ? fontConfig.arabic : effectiveBengaliFont;
+      const serial = language === 'bn' ? toBengaliNum(i + 1) : String(i + 1);
+      const labelText = (q.custom_label && q.custom_label.trim()) ? q.custom_label.trim() : `${serial}।`;
+      const opts = Array.isArray(q.options) ? '<div class="options">' + q.options.map((o: any, oi: number) => {
+        const prefix = getOptionPrefix(o, oi, language === 'bn' || !!o.text_bn);
+        const text = language === 'bn' ? o.text_bn || o.text : o.text || o.text_bn;
+        return '<span class="option"><strong>' + prefix + '</strong> ' + text + '</span>';
+      }).join('') + '</div>' : '';
+      return groupHtml + `<div class="question" style="font-family:'${ff}';direction:${dir}"><div class="q-header"><span><strong>${labelText}</strong> ${qText}</span><span>[${language === 'bn' ? toBengaliNum(q.marks) : q.marks}]</span></div>${opts}</div>`;
     };
+
+    const getSplitIndex = () => {
+      const breakIndex = questions.findIndex(q => q.column_break);
+      if (breakIndex !== -1) return breakIndex === 0 ? 1 : breakIndex;
+      if (ls.columnFlow === 'fill_first' && questions.length <= 4) return questions.length;
+      return Math.ceil(questions.length / 2);
+    };
+
+    const instructionsHtml = (selectedPaper.instructions_bn || selectedPaper.instructions)
+      ? '<div style="background:#f7f7f7;padding:5px 8px;border-radius:4px;margin-bottom:8px;font-size:11px;font-style:italic">' + (language === 'bn' ? selectedPaper.instructions_bn : selectedPaper.instructions) + '</div>'
+      : '';
+
+    let contentHtml = '';
+    if (ls.columns === 2) {
+      const splitAt = getSplitIndex();
+      const col1Questions = questions.slice(0, splitAt);
+      const col2Questions = questions.slice(splitAt);
+      const col1ItemsHtml = col1Questions.map((q, i) => renderQuestionItem(q, i)).join('');
+      const col2ItemsHtml = col2Questions.map((q, i) => renderQuestionItem(q, splitAt + i)).join('');
+
+      if (ls.headerPlacement === 'dual') {
+        // MS Word Booklet Style: Header on both parts!
+        const col1Full = buildHeaderHtml(false) + instructionsHtml + col1ItemsHtml;
+        const col2Full = buildHeaderHtml(true) + col2ItemsHtml;
+        contentHtml = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+          <div style="border-right:1px solid #777;padding-right:12px">${col1Full}</div>
+          <div style="padding-left:4px">${col2Full}</div>
+        </div>`;
+      } else {
+        // Single Full-Width Header
+        contentHtml = buildHeaderHtml(false) + instructionsHtml + `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+          <div style="border-right:1px solid #777;padding-right:12px">${col1ItemsHtml}</div>
+          <div style="padding-left:4px">${col2ItemsHtml}</div>
+        </div>`;
+      }
+    } else {
+      // 1 Column
+      contentHtml = buildHeaderHtml(false) + instructionsHtml + questions.map((q, i) => renderQuestionItem(q, i)).join('');
+    }
 
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;700&family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
@@ -1287,17 +1511,15 @@ const AdminQuestionPapers = () => {
       body { font-family: ${effectiveBengaliFont}, 'Noto Sans Bengali', sans-serif; font-size: ${fontConfig.fontSize}px; line-height: ${ls.lineSpacing};
         padding: ${ls.marginTop}mm ${ls.marginRight}mm ${ls.marginBottom}mm ${ls.marginLeft}mm;
         position: relative; }
-      ${ls.watermark && institution?.logo_url ? `body::before { content: ''; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 60%; height: auto; background: url(${institution.logo_url}) no-repeat center; background-size: contain; opacity: 0.06; z-index: 0; pointer-events: none; }` : ''}
+      ${ls.watermark && institution?.logo_url ? `body::before { content: ''; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 50%; height: auto; background: url(${institution.logo_url}) no-repeat center; background-size: contain; opacity: 0.05; z-index: 0; pointer-events: none; }` : ''}
       .content { position: relative; z-index: 1; }
-      .question { margin-bottom: 14px; page-break-inside: avoid; }
-      .q-header { display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 3px; }
-      .options { margin-left: 40px; margin-top: 4px; display: grid; grid-template-columns: 1fr 1fr; gap: 2px 16px; font-size: 13px; }
-      .group-label { font-weight: 700; font-size: 14px; margin: 14px 0 6px; padding: 3px 8px; background: #e8e8e8; }
+      .question { margin-bottom: 8px; page-break-inside: avoid; }
+      .q-header { display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 2px; }
+      .options { margin-left: 20px; margin-top: 3px; display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; font-size: 12px; }
+      .group-label { font-weight: 700; font-size: 13px; margin: 8px 0 4px; padding: 2px 6px; background: #eee; }
     </style></head><body>
     <div class="content">
-      ${buildHeaderHtml()}
-      ${(selectedPaper.instructions_bn || selectedPaper.instructions) ? '<div style="background:#f5f5f5;padding:10px;border-radius:4px;margin-bottom:16px;font-size:12px;font-style:italic">' + (language === 'bn' ? selectedPaper.instructions_bn : selectedPaper.instructions) + '</div>' : ''}
-      ${buildQuestionsHtml()}
+      ${contentHtml}
     </div>
     <script>window.onload=function(){window.print()}<\/script></body></html>`;
 
@@ -1472,9 +1694,24 @@ const AdminQuestionPapers = () => {
           <Button variant={showArabicKeyboard ? 'default' : 'outline'} size="sm" onClick={() => setShowArabicKeyboard(!showArabicKeyboard)}>
             <Keyboard className="h-4 w-4 mr-1" />AR
           </Button>
-          {bijoyMode && (
-            <Badge variant="secondary" className="bg-primary/10 text-primary text-xs font-bold animate-pulse">বিজয় ON</Badge>
-          )}
+          <Button
+            variant={bijoyMode ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => {
+              const next = !bijoyMode;
+              setBijoyMode(next);
+              if (next) {
+                toast.success(language === 'bn' ? 'বিজয় কিবোর্ড মোড চালু হয়েছে (SutonnyMJ লেআউট)' : 'Bijoy mode enabled');
+              } else {
+                toast.info(language === 'bn' ? 'বিজয় কিবোর্ড বন্ধ করা হয়েছে' : 'Bijoy mode disabled');
+              }
+            }}
+            className={bijoyMode ? 'bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-sm' : ''}
+            title={language === 'bn' ? 'বিজয় ৫২ / SutonnyMJ টাইপিং অন/অফ করুন' : 'Toggle Bijoy layout'}
+          >
+            <Keyboard className="h-4 w-4 mr-1" />
+            {bijoyMode ? (language === 'bn' ? 'বিজয়: ON' : 'Bijoy: ON') : (language === 'bn' ? 'বিজয়' : 'Bijoy')}
+          </Button>
           <Button variant={showSymbols ? 'default' : 'outline'} size="sm" onClick={() => setShowSymbols(!showSymbols)}>
             <Hash className="h-4 w-4 mr-1" />{language === 'bn' ? 'সিম্বল' : 'Symbols'}
           </Button>
@@ -1592,14 +1829,48 @@ const AdminQuestionPapers = () => {
                     title={language === 'bn' ? 'নিজের পছন্দমতো লিখুন (আরবি/বাংলা/ইংরেজি)' : 'Custom label (Arabic/Bangla/English)'}
                   />
                 </div>
-                <button
-                  onClick={() => removeQuestion(qi)}
-                  className="w-7 h-7 rounded-full flex items-center justify-center bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
-                  title={language === 'bn' ? 'মুছুন' : 'Delete'}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {layoutSettings.columns === 2 && (
+                    <Button
+                      type="button"
+                      variant={q.column_break ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => updateQuestion(qi, 'column_break', !q.column_break)}
+                      className={`h-7 text-[10px] px-2 rounded-lg font-medium transition-colors ${
+                        q.column_break
+                          ? 'bg-amber-600 hover:bg-amber-700 text-white font-bold border-amber-600 shadow-sm'
+                          : 'text-muted-foreground border-border/50 hover:bg-primary/10 hover:text-primary'
+                      }`}
+                      title={language === 'bn' ? 'এই প্রশ্ন থেকে ২য় পার্ট (ডান কলাম) শুরু হবে' : 'Start Column 2 from here'}
+                    >
+                      <Columns className="h-3 w-3 mr-1" />
+                      {q.column_break
+                        ? (language === 'bn' ? '✂️ ২য় পার্ট ব্রেক' : 'Col 2 Break')
+                        : (language === 'bn' ? '২য় পার্টে নিন' : 'Start Col 2')}
+                    </Button>
+                  )}
+                  <button
+                    onClick={() => removeQuestion(qi)}
+                    className="w-7 h-7 rounded-full flex items-center justify-center bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                    title={language === 'bn' ? 'মুছুন' : 'Delete'}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
+
+              {q.column_break && (
+                <div className="mx-4 mt-1 mb-2 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-[11px] font-semibold flex items-center justify-between">
+                  <span>✂️ এই প্রশ্ন থেকে ২য় পার্ট (ডান পাশ) শুরু হবে</span>
+                  <button
+                    type="button"
+                    onClick={() => updateQuestion(qi, 'column_break', false)}
+                    className="hover:underline text-[10px] font-normal"
+                  >
+                    {language === 'bn' ? 'ব্রেক বাতিল' : 'Cancel break'}
+                  </button>
+                </div>
+              )}
 
               <div className="px-4 pb-3 space-y-2.5">
                 {/* Two-Column Question Textareas */}
