@@ -406,15 +406,46 @@ const StatusBadge = ({ status, language }: { status: string; language: string })
   );
 };
 
+// ─── Format Duration in Hours & Minutes ───
+const formatDuration = (minutes: number, language: string): string => {
+  if (!minutes || minutes <= 0) return language === 'bn' ? '০ মিনিট' : '0 min';
+  const hours = Math.floor(minutes / 60);
+  const remMinutes = minutes % 60;
+
+  if (language === 'bn') {
+    if (hours > 0 && remMinutes > 0) {
+      return `${toBengaliNum(hours)} ঘণ্টা ${toBengaliNum(remMinutes)} মিনিট`;
+    }
+    if (hours > 0) {
+      return `${toBengaliNum(hours)} ঘণ্টা`;
+    }
+    return `${toBengaliNum(remMinutes)} মিনিট`;
+  }
+
+  // English
+  if (hours > 0 && remMinutes > 0) {
+    return `${hours} hr ${remMinutes} min`;
+  }
+  if (hours > 0) {
+    return `${hours} hr${hours > 1 ? 's' : ''}`;
+  }
+  return `${remMinutes} min`;
+};
+
 // ─── Exam Title Combiner ───
-const formatExamTitle = (sessionName: string, paperTitle: string) => {
+const formatExamTitle = (sessionName: string, paperTitle: string, subjectName?: string) => {
   const s = (sessionName || '').trim();
   const t = (paperTitle || '').trim();
+  const subj = (subjectName || '').trim();
+
   if (!s && !t) return '';
   if (!s) return t;
   if (!t) return s;
   if (s.toLowerCase() === t.toLowerCase() || s.includes(t)) return s;
   if (t.includes(s)) return t;
+  // If paperTitle matches subject, don't repeat it in the exam title line
+  if (subj && (t.toLowerCase() === subj.toLowerCase() || subj.includes(t))) return s;
+
   return `${s} • ${t}`;
 };
 
@@ -433,11 +464,11 @@ const renderHeader = (
   isSecondary: boolean = false
 ) => {
   const paperTitle = language === 'bn' ? paper?.title_bn : paper?.title;
-  const examLabel = formatExamTitle(sessionName, paperTitle);
+  const examLabel = formatExamTitle(sessionName, paperTitle, subjectName);
   const instName = language === 'bn' ? institution?.name : institution?.name_en || institution?.name;
   const address = institution?.address;
   const bnMarks = language === 'bn' ? toBengaliNum(totalMarks) : totalMarks;
-  const bnDur = language === 'bn' ? toBengaliNum(paper?.duration_minutes || 0) : paper?.duration_minutes || 0;
+  const formattedDur = formatDuration(paper?.duration_minutes || 0, language);
 
   // Ultra-compact: 1-2 lines maximum (saves maximum vertical space)
   if (style === 'ultra_compact') {
@@ -459,7 +490,7 @@ const renderHeader = (
         <div className="flex justify-between items-center mt-0.5 text-[9px] font-medium px-0.5 text-gray-700">
           <span>{language === 'bn' ? 'পূর্ণমান' : 'Marks'}: {bnMarks}</span>
           {isSecondary && <span className="text-[8.5px] text-gray-500 font-normal bg-gray-100 px-1 rounded">(২য় অংশ)</span>}
-          <span>{language === 'bn' ? 'সময়' : 'Time'}: {bnDur} {language === 'bn' ? 'মি.' : 'min'}</span>
+          <span>{language === 'bn' ? 'সময়' : 'Time'}: {formattedDur}</span>
         </div>
       </div>
     );
@@ -485,7 +516,7 @@ const renderHeader = (
         <div className="flex justify-between items-center text-[9px] font-medium px-1">
           <span>{language === 'bn' ? 'পূর্ণমান' : 'Marks'}: {bnMarks}</span>
           {isSecondary && <span className="text-[8.5px] text-gray-500 font-normal bg-gray-100 px-1 rounded">(২য় অংশ)</span>}
-          <span>{language === 'bn' ? 'সময়' : 'Time'}: {bnDur} {language === 'bn' ? 'মিনিট' : 'min'}</span>
+          <span>{language === 'bn' ? 'সময়' : 'Time'}: {formattedDur}</span>
         </div>
       </div>
     );
@@ -511,7 +542,7 @@ const renderHeader = (
           <div className="flex justify-between items-center mt-0.5 text-[9px] font-medium px-1">
             <span>{language === 'bn' ? 'পূর্ণমান' : 'Marks'}: {bnMarks}</span>
             {isSecondary && <span className="text-[8.5px] text-gray-500 font-normal">(২য় অংশ)</span>}
-            <span>{language === 'bn' ? 'সময়' : 'Time'}: {bnDur} {language === 'bn' ? 'মি.' : 'min'}</span>
+            <span>{language === 'bn' ? 'সময়' : 'Time'}: {formattedDur}</span>
           </div>
         </div>
       </div>
@@ -549,7 +580,7 @@ const renderHeader = (
       <div className="flex justify-between items-center mt-0.5 text-[9.5px] font-medium px-1">
         <span>{language === 'bn' ? 'পূর্ণমান' : 'Full Marks'}: {bnMarks}</span>
         {isSecondary && <span className="text-[8.5px] text-gray-500 font-normal bg-gray-100 px-1 rounded">(২য় অংশ / পাতা)</span>}
-        <span>{language === 'bn' ? 'সময়' : 'Time'}: {bnDur} {language === 'bn' ? 'মিনিট' : 'min'}</span>
+        <span>{language === 'bn' ? 'সময়' : 'Time'}: {formattedDur}</span>
       </div>
     </div>
   );
@@ -1198,14 +1229,28 @@ const AdminQuestionPapers = () => {
   // ─── Mutations ───
   const createPaper = useMutation({
     mutationFn: async () => {
+      const selectedSubject = subjects.find((s: any) => s.id === newPaper.subject_id);
+      const selectedSession = examSessions.find((s: any) => s.id === newPaper.exam_session_id);
+
+      const resolvedTitleBn = newPaper.title_bn.trim() || selectedSubject?.name_bn || selectedSession?.name_bn || 'প্রশ্নপত্র';
+      const resolvedTitle = newPaper.title.trim() || selectedSubject?.name || selectedSession?.name || 'Question Paper';
+
       const { error } = await supabase.from('question_papers').insert({
-        title: newPaper.title, title_bn: newPaper.title_bn, subject_type: newPaper.subject_type,
-        total_marks: newPaper.total_marks, duration_minutes: newPaper.duration_minutes,
-        instructions: newPaper.instructions, instructions_bn: newPaper.instructions_bn,
-        exam_session_id: newPaper.exam_session_id || null, class_id: newPaper.class_id || null,
-        division_id: newPaper.division_id || null, subject_id: newPaper.subject_id || null,
-        status: 'pending', created_by: user?.id || null,
-        font_config: fontConfig as any, header_config: headerConfig as any,
+        title: resolvedTitle,
+        title_bn: resolvedTitleBn,
+        subject_type: newPaper.subject_type,
+        total_marks: newPaper.total_marks,
+        duration_minutes: newPaper.duration_minutes,
+        instructions: newPaper.instructions,
+        instructions_bn: newPaper.instructions_bn,
+        exam_session_id: newPaper.exam_session_id || null,
+        class_id: newPaper.class_id || null,
+        division_id: newPaper.division_id || null,
+        subject_id: newPaper.subject_id || null,
+        status: 'pending',
+        created_by: user?.id || null,
+        font_config: fontConfig as any,
+        header_config: headerConfig as any,
         layout_settings: layoutSettings as any,
       });
       if (error) throw error;
@@ -1491,9 +1536,9 @@ const AdminQuestionPapers = () => {
     // Header HTML based on style
     const buildHeaderHtml = (isSecondary = false) => {
       const title = language === 'bn' ? selectedPaper.title_bn : selectedPaper.title;
-      const examLabel = formatExamTitle(sessionName, title);
+      const examLabel = formatExamTitle(sessionName, title, subjectName);
       const bnMarks = language === 'bn' ? toBengaliNum(totalMarks) : totalMarks;
-      const bnDur = language === 'bn' ? toBengaliNum(selectedPaper.duration_minutes) : selectedPaper.duration_minutes;
+      const formattedDur = formatDuration(selectedPaper.duration_minutes || 0, language);
       const instName = headerConfig.showInstitutionName && institution ? (language === 'bn' ? institution.name : institution.name_en || institution.name) : '';
       const address = institution?.address || '';
       const logo = headerConfig.showLogo && institution?.logo_url ? `<img src="${institution.logo_url}" style="height:24px;max-width:26px;object-fit:contain;margin-right:6px;vertical-align:middle;display:inline-block" />` : '';
@@ -1513,7 +1558,7 @@ const AdminQuestionPapers = () => {
           <div style="display:flex;justify-content:space-between;font-size:9.5px;font-weight:600;margin-top:2px;padding:0 2px">
             <span>${language === 'bn' ? 'পূর্ণমান' : 'Marks'}: ${bnMarks}</span>
             ${isSecondary ? '<span style="font-size:8.5px;color:#555">(২য় অংশ)</span>' : ''}
-            <span>${language === 'bn' ? 'সময়' : 'Time'}: ${bnDur} ${language === 'bn' ? 'মি.' : 'min'}</span>
+            <span>${language === 'bn' ? 'সময়' : 'Time'}: ${formattedDur}</span>
           </div>
         </div>`;
       }
@@ -1534,7 +1579,7 @@ const AdminQuestionPapers = () => {
           <div style="display:flex;justify-content:space-between;font-size:10px;font-weight:600;padding:0 2px">
             <span>${language === 'bn' ? 'পূর্ণমান' : 'Marks'}: ${bnMarks}</span>
             ${isSecondary ? '<span style="font-size:8.5px;color:#555">(২য় অংশ)</span>' : ''}
-            <span>${language === 'bn' ? 'সময়' : 'Time'}: ${bnDur} ${language === 'bn' ? 'মি.' : 'min'}</span>
+            <span>${language === 'bn' ? 'সময়' : 'Time'}: ${formattedDur}</span>
           </div>
         </div>`;
       }
@@ -1556,7 +1601,7 @@ const AdminQuestionPapers = () => {
           <div style="display:flex;justify-content:space-between;font-size:9.5px;font-weight:600;padding:0 2px">
             <span>${language === 'bn' ? 'পূর্ণমান' : 'Marks'}: ${bnMarks}</span>
             ${isSecondary ? '<span style="font-size:8.5px;color:#555">(২য় অংশ)</span>' : ''}
-            <span>${language === 'bn' ? 'সময়' : 'Time'}: ${bnDur} ${language === 'bn' ? 'মি.' : 'min'}</span>
+            <span>${language === 'bn' ? 'সময়' : 'Time'}: ${formattedDur}</span>
           </div>
         </div>`;
       }
@@ -1575,7 +1620,7 @@ const AdminQuestionPapers = () => {
         <div style="display:flex;justify-content:space-between;font-size:10px;font-weight:600;margin-top:2px;padding:0 2px">
           <span>${language === 'bn' ? 'পূর্ণমান' : 'Full Marks'}: ${bnMarks}</span>
           ${isSecondary ? '<span style="font-size:8.5px;color:#555">(২য় অংশ / পাতা)</span>' : ''}
-          <span>${language === 'bn' ? 'সময়' : 'Time'}: ${bnDur} ${language === 'bn' ? 'মিনিট' : 'min'}</span>
+          <span>${language === 'bn' ? 'সময়' : 'Time'}: ${formattedDur}</span>
         </div>
       </div>`;
     };
@@ -1727,23 +1772,115 @@ const AdminQuestionPapers = () => {
                   </div>
                   <div>
                     <Label>{language === 'bn' ? 'বিষয়' : 'Subject'}</Label>
-                    <Select value={newPaper.subject_id} onValueChange={v => setNewPaper(p => ({ ...p, subject_id: v }))} disabled={!newPaper.class_id}>
+                    <Select
+                      value={newPaper.subject_id}
+                      onValueChange={v => {
+                        const sObj = subjects.find((s: any) => s.id === v);
+                        setNewPaper(p => ({
+                          ...p,
+                          subject_id: v,
+                          title_bn: p.title_bn.trim() ? p.title_bn : (sObj?.name_bn || ''),
+                          title: p.title.trim() ? p.title : (sObj?.name || ''),
+                        }));
+                      }}
+                      disabled={!newPaper.class_id}
+                    >
                       <SelectTrigger><SelectValue placeholder={language === 'bn' ? 'বিষয় নির্বাচন' : 'Select subject'} /></SelectTrigger>
                       <SelectContent>{subjects.filter((s: any) => !newPaper.class_id || s.class_id === newPaper.class_id).map((s: any) => (<SelectItem key={s.id} value={s.id}>{language === 'bn' ? s.name_bn : s.name}</SelectItem>))}</SelectContent>
                     </Select>
                   </div>
+
+                  {/* Title Fields (Optional) */}
                   <div className="grid grid-cols-2 gap-3">
-                    <div><Label>{language === 'bn' ? 'শিরোনাম (ইংরেজি)' : 'Title (English)'}</Label><Input value={newPaper.title} onChange={e => setNewPaper(p => ({ ...p, title: e.target.value }))} /></div>
-                    <div><Label>{language === 'bn' ? 'শিরোনাম (বাংলা)' : 'Title (Bengali)'}</Label><Input value={newPaper.title_bn} onChange={e => setNewPaper(p => ({ ...p, title_bn: e.target.value }))} /></div>
+                    <div>
+                      <Label className="text-xs">{language === 'bn' ? 'শিরোনাম / পত্র (বাংলা) — ঐচ্ছিক' : 'Title / Paper (BN) — Optional'}</Label>
+                      <Input
+                        value={newPaper.title_bn}
+                        onChange={e => setNewPaper(p => ({ ...p, title_bn: e.target.value }))}
+                        placeholder={language === 'bn' ? 'যেমন: ১ম পত্র, মডেল টেস্ট (খালি রাখলে বিষয়ের নাম)' : 'e.g. Paper 1 (defaults to subject)'}
+                        className="text-xs"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">{language === 'bn' ? 'শিরোনাম (ইংরেজি) — ঐচ্ছিক' : 'Title (English) — Optional'}</Label>
+                      <Input
+                        value={newPaper.title}
+                        onChange={e => setNewPaper(p => ({ ...p, title: e.target.value }))}
+                        placeholder={language === 'bn' ? 'ঐচ্ছিক' : 'Optional'}
+                        className="text-xs"
+                      />
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><Label>{language === 'bn' ? 'পূর্ণমান' : 'Total Marks'}</Label><Input type="text" inputMode="numeric" dir="auto" value={marksInput} onChange={e => { const v = e.target.value; setMarksInput(v); setNewPaper(p => ({ ...p, total_marks: parseMultilingualNum(v) })); }} data-arabic="true" /></div>
-                    <div><Label>{language === 'bn' ? 'সময় (মিনিট)' : 'Duration (min)'}</Label><Input type="text" inputMode="numeric" dir="auto" value={durationInput} onChange={e => { const v = e.target.value; setDurationInput(v); setNewPaper(p => ({ ...p, duration_minutes: parseMultilingualNum(v) })); }} data-arabic="true" /></div>
+
+                  {/* Marks & Duration with Hour Conversion */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">{language === 'bn' ? 'পূর্ণমান' : 'Total Marks'}</Label>
+                      <Input type="text" inputMode="numeric" dir="auto" value={marksInput} onChange={e => { const v = e.target.value; setMarksInput(v); setNewPaper(p => ({ ...p, total_marks: parseMultilingualNum(v) })); }} data-arabic="true" className="text-xs" />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs">{language === 'bn' ? 'সময় (ঘণ্টা / মিনিট)' : 'Duration'}</Label>
+                        <span className="text-[11px] font-bold text-primary">
+                          ⏱️ {formatDuration(newPaper.duration_minutes, language)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          dir="auto"
+                          value={durationInput}
+                          onChange={e => {
+                            const v = e.target.value;
+                            setDurationInput(v);
+                            setNewPaper(p => ({ ...p, duration_minutes: parseMultilingualNum(v) }));
+                          }}
+                          placeholder="120"
+                          data-arabic="true"
+                          className="text-xs"
+                        />
+                        <span className="text-xs text-muted-foreground shrink-0">{language === 'bn' ? 'মিনিট' : 'min'}</span>
+                      </div>
+                      {/* Quick Hour Preset Buttons */}
+                      <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                        {[
+                          { labelBn: '১ ঘণ্টা', mins: 60 },
+                          { labelBn: '১.৫ ঘণ্টা', mins: 90 },
+                          { labelBn: '২ ঘণ্টা', mins: 120 },
+                          { labelBn: '২.৫ ঘণ্টা', mins: 150 },
+                          { labelBn: '৩ ঘণ্টা', mins: 180 },
+                        ].map(preset => (
+                          <button
+                            key={preset.mins}
+                            type="button"
+                            onClick={() => {
+                              setDurationInput(String(preset.mins));
+                              setNewPaper(p => ({ ...p, duration_minutes: preset.mins }));
+                            }}
+                            className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors ${
+                              newPaper.duration_minutes === preset.mins
+                                ? 'bg-primary text-primary-foreground border-primary font-bold'
+                                : 'bg-secondary/70 hover:bg-primary/20 text-foreground border-border/50'
+                            }`}
+                          >
+                            {language === 'bn' ? preset.labelBn : `${preset.mins}m`}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                  <div><Label>{language === 'bn' ? 'নির্দেশনা (বাংলা)' : 'Instructions (BN)'}</Label><Textarea value={newPaper.instructions_bn} onChange={e => setNewPaper(p => ({ ...p, instructions_bn: e.target.value }))} rows={2} /></div>
-                  <div><Label>{language === 'bn' ? 'নির্দেশনা (ইংরেজি)' : 'Instructions (EN)'}</Label><Textarea value={newPaper.instructions} onChange={e => setNewPaper(p => ({ ...p, instructions: e.target.value }))} rows={2} /></div>
-                  <Button onClick={() => createPaper.mutate()} disabled={!newPaper.title_bn || !newPaper.exam_session_id || createPaper.isPending} className="w-full btn-primary-gradient">
-                    {language === 'bn' ? 'তৈরি করুন (অপেক্ষমান হিসেবে)' : 'Create (as Pending)'}
+
+                  <div><Label className="text-xs">{language === 'bn' ? 'নির্দেশনা (বাংলা)' : 'Instructions (BN)'}</Label><Textarea value={newPaper.instructions_bn} onChange={e => setNewPaper(p => ({ ...p, instructions_bn: e.target.value }))} rows={2} className="text-xs" /></div>
+                  <div><Label className="text-xs">{language === 'bn' ? 'নির্দেশনা (ইংরেজি)' : 'Instructions (EN)'}</Label><Textarea value={newPaper.instructions} onChange={e => setNewPaper(p => ({ ...p, instructions: e.target.value }))} rows={2} className="text-xs" /></div>
+                  <Button
+                    onClick={() => createPaper.mutate()}
+                    disabled={!newPaper.exam_session_id || createPaper.isPending}
+                    className="w-full btn-primary-gradient mt-1"
+                  >
+                    {createPaper.isPending
+                      ? (language === 'bn' ? 'তৈরি হচ্ছে...' : 'Creating...')
+                      : (language === 'bn' ? 'তৈরি করুন (অপেক্ষমান হিসেবে)' : 'Create (as Pending)')}
                   </Button>
                 </div>
               </DialogContent>
@@ -1783,7 +1920,7 @@ const AdminQuestionPapers = () => {
                     <div className="flex gap-1.5 flex-wrap">
                       {subjectName && <Badge variant="secondary" className="text-xs">📖 {subjectName}</Badge>}
                       <Badge variant="outline" className="text-xs">{language === 'bn' ? toBengaliNum(paper.total_marks) : paper.total_marks} {language === 'bn' ? 'নম্বর' : 'marks'}</Badge>
-                      <Badge variant="outline" className="text-xs">{language === 'bn' ? toBengaliNum(paper.duration_minutes) : paper.duration_minutes} {language === 'bn' ? 'মি' : 'min'}</Badge>
+                      <Badge variant="outline" className="text-xs">⏱️ {formatDuration(paper.duration_minutes, language)}</Badge>
                     </div>
                     {status === 'rejected' && paper.rejection_note && (
                       <p className="text-xs text-destructive mt-2 line-clamp-2">⚠️ {paper.rejection_note}</p>
