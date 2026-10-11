@@ -262,7 +262,7 @@ const AdminInventory = () => {
         payload.total_purchased = curStock;
         payload.total_consumed = 0;
         let inserted: any = null;
-        const { data, error } = await supabase.from('inventory_items').insert(payload).select().single();
+        const { data, error } = await supabase.from('inventory_items').insert(payload as any).select().single();
         if (error) {
           if (error.message?.includes('column') || error.code === '42703') {
             const fallbackPayload = {
@@ -481,12 +481,12 @@ const AdminInventory = () => {
           }
         }
       } else {
-        const { error } = await supabase.from('fixed_assets').insert(payload);
+        const { error } = await supabase.from('fixed_assets').insert(payload as any);
         if (error) {
           if (error.message?.includes('column') || error.code === '42703') {
             delete payload.damaged_quantity;
             delete payload.expense_id;
-            const { error: retryErr } = await supabase.from('fixed_assets').insert(payload);
+            const { error: retryErr } = await supabase.from('fixed_assets').insert(payload as any);
             if (retryErr) throw retryErr;
           } else {
             throw error;

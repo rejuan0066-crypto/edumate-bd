@@ -344,6 +344,9 @@ const AdmissionPage = () => {
       const finalSessionName = selectedSession?.name || form.admission_session || form.session_year || null;
       const finalSessionId = selectedSession?.id || (form.admission_session && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(form.admission_session) ? form.admission_session : null);
       const finalSessionYear = form.session_year || selectedSession?.name || form.admission_session || null;
+      // Pending admissions have no generated student ID yet (roll/reg is assigned on approval);
+      // use the applicant-provided registration number as a reference if present.
+      const studentId = form.registration_no || null;
 
       const payload = {
         name_bn: form.first_name.trim(),
