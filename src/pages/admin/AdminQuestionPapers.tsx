@@ -154,7 +154,7 @@ const ArabicKeyboard = ({
 
   const rows = shifted ? ARABIC_ROWS_SHIFTED : ARABIC_ROWS_NORMAL;
 
-  // Press handler that works on both touch & mouse without firing twice
+  // Press handler that works on both touch & mouse without losing focus or double firing
   const pressKey = (char: string) => (e: React.SyntheticEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -231,10 +231,16 @@ const ArabicKeyboard = ({
           })}
           {ri === 0 && (
             <button
-              className={`${isMobile ? 'h-10 px-2 text-[10px]' : 'h-9 px-3 text-[10px]'} rounded-lg bg-muted text-muted-foreground font-bold hover:bg-destructive/20 shrink-0`}
+              type="button"
+              className={`${isMobile ? 'h-10 px-3 text-xs' : 'h-9 px-3 text-xs'} rounded-lg bg-destructive/15 text-destructive hover:bg-destructive hover:text-destructive-foreground font-bold shrink-0 transition-colors flex items-center justify-center gap-1 active:scale-95`}
+              title="মুছুন (Backspace / ⌫)"
               onTouchStart={pressKey('BACKSPACE')}
               onMouseDown={(e) => { if (isMobile) return; pressKey('BACKSPACE')(e); }}
-            >⌫</button>
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onKeyPress('BACKSPACE'); }}
+            >
+              <span>⌫</span>
+              <span className="text-[10px] hidden sm:inline">মুছুন</span>
+            </button>
           )}
           {ri === 2 && (
             <button
@@ -1120,42 +1126,27 @@ const AdminQuestionPapers = () => {
     };
   }, []);
 
-  // While Arabic keyboard is open, prevent the device's native (mobile) keyboard
-  // from popping up by marking Arabic-capable inputs as readOnly. Our virtual
-  // keyboard writes via the native value setter, so input still works.
+  // While Arabic keyboard is open on small touchscreens (mobile), prevent the OS keyboard
+  // from covering our virtual keyboard using inputmode="none", without locking readOnly on desktop.
   useEffect(() => {
+    const isTouchMobile = typeof window !== 'undefined' && window.innerWidth < 768;
     const nodes = Array.from(
       document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-arabic="true"]')
     );
-    if (showArabicKeyboard) {
+    if (showArabicKeyboard && isTouchMobile) {
       nodes.forEach(el => {
-        if (!el.dataset.prevReadonly) {
-          el.dataset.prevReadonly = el.readOnly ? '1' : '0';
-        }
-        el.readOnly = true;
-        // Hint to mobile browsers not to surface autocorrect/keyboard UI
         el.setAttribute('inputmode', 'none');
       });
-      // If currently focused element is one of them, blur+refocus to dismiss any open OS keyboard
-      const active = document.activeElement as HTMLElement | null;
-      if (active && active.matches('[data-arabic="true"]')) {
-        active.blur();
-        requestAnimationFrame(() => (active as HTMLElement).focus({ preventScroll: true }));
-      }
     } else {
       nodes.forEach(el => {
-        el.readOnly = el.dataset.prevReadonly === '1';
-        delete el.dataset.prevReadonly;
         el.removeAttribute('inputmode');
+        if (el.readOnly && el.dataset.prevReadonly !== '1') {
+          el.readOnly = false;
+        }
       });
     }
     return () => {
-      // Cleanup on unmount: restore
       nodes.forEach(el => {
-        if (el.dataset.prevReadonly !== undefined) {
-          el.readOnly = el.dataset.prevReadonly === '1';
-          delete el.dataset.prevReadonly;
-        }
         el.removeAttribute('inputmode');
       });
     };
@@ -1517,28 +1508,59 @@ const AdminQuestionPapers = () => {
 
   // Arabic keyboard handler
   const handleArabicKey = useCallback((char: string) => {
-    if (!activeInputRef) return;
-    const el = activeInputRef;
+    // If activeInputRef is not set or disconnected, fallback to focused element or the first Arabic textarea
+    let el = activeInputRef;
+    if (!el || !document.body.contains(el)) {
+      const active = document.activeElement;
+      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+        el = active as HTMLInputElement | HTMLTextAreaElement;
+      } else {
+        el = document.querySelector<HTMLTextAreaElement>('textarea[data-arabic="true"]') ||
+             document.querySelector<HTMLInputElement>('input[data-arabic="true"]');
+      }
+    }
+    if (!el) return;
+
+    setActiveInputRef(el);
     el.focus();
     const start = el.selectionStart ?? el.value.length;
     const end = el.selectionEnd ?? start;
+
     if (char === 'BACKSPACE') {
-      if (start > 0) {
-        const newVal = el.value.slice(0, start - 1) + el.value.slice(end);
+      if (start > 0 || start !== end) {
+        // If text is selected (start !== end), remove the selected range; otherwise remove 1 char before cursor
+        const deleteFrom = start === end ? Math.max(0, start - 1) : start;
+        const newVal = el.value.slice(0, deleteFrom) + el.value.slice(end);
         const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
         const setter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
-        setter?.call(el, newVal);
-        el.dispatchEvent(new InputEvent('input', { bubbles: true }));
-        requestAnimationFrame(() => el.setSelectionRange(start - 1, start - 1));
+        if (setter) {
+          setter.call(el, newVal);
+        } else {
+          el.value = newVal;
+        }
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        requestAnimationFrame(() => {
+          el.focus();
+          el.setSelectionRange(deleteFrom, deleteFrom);
+        });
       }
     } else {
       const newVal = el.value.slice(0, start) + char + el.value.slice(end);
       const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
       const setter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
-      setter?.call(el, newVal);
-      el.dispatchEvent(new InputEvent('input', { bubbles: true }));
+      if (setter) {
+        setter.call(el, newVal);
+      } else {
+        el.value = newVal;
+      }
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
       const newPos = start + char.length;
-      requestAnimationFrame(() => el.setSelectionRange(newPos, newPos));
+      requestAnimationFrame(() => {
+        el.focus();
+        el.setSelectionRange(newPos, newPos);
+      });
     }
   }, [activeInputRef]);
 
