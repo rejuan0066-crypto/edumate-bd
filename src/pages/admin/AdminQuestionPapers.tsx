@@ -15,10 +15,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
-import { Plus, Trash2, Printer, ArrowLeft, Check, X, Clock, Eye, Keyboard, Type, ChevronDown, ChevronUp, GripVertical, FileCheck, AlertCircle, Settings2, Columns, RotateCcw, Bold, Italic, Underline, Hash, ScanLine, Loader2, Sparkles } from 'lucide-react';
+import { Plus, Trash2, Printer, ArrowLeft, Check, X, Clock, Eye, Keyboard, Type, ChevronDown, ChevronUp, GripVertical, FileCheck, AlertCircle, Settings2, Columns, RotateCcw, Bold, Italic, Underline, Hash, ScanLine, Loader2, Sparkles, Upload } from 'lucide-react';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import { useAuth } from '@/hooks/useAuth';
 import AIQuestionGeneratorDialog from '@/components/admin/AIQuestionGeneratorDialog';
+import QuestionImportDialog, { ImportedQuestion } from '@/components/admin/QuestionImportDialog';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 
 // ─── Arabic Virtual Keyboard Layout (IBM PC Arabic Keyboard) ───
@@ -439,6 +440,9 @@ const toBengaliNum = (n: number): string => {
 
 const BENGALI_MCQ_LABELS = ['(ক)', '(খ)', '(গ)', '(ঘ)', '(ঙ)', '(চ)', '(ছ)', '(জ)'];
 const BENGALI_MCQ_DOT_LABELS = ['ক.', 'খ.', 'গ.', 'ঘ.', 'ঙ.', 'চ.', 'ছ.', 'জ.'];
+const ROMAN_MCQ_LABELS = ['(i)', '(ii)', '(iii)', '(iv)', '(v)', '(vi)', '(vii)', '(viii)'];
+const ROMAN_MCQ_DOT_LABELS = ['i.', 'ii.', 'iii.', 'iv.', 'v.', 'vi.', 'vii.', 'viii.'];
+const ROMAN_UPPER_MCQ_LABELS = ['(I)', '(II)', '(III)', '(IV)', '(V)', '(VI)', '(VII)', '(VIII)'];
 const ENGLISH_MCQ_LABELS = ['(A)', '(B)', '(C)', '(D)', '(E)', '(F)', '(G)', '(H)'];
 const ENGLISH_MCQ_DOT_LABELS = ['A.', 'B.', 'C.', 'D.', 'E.', 'F.', 'G.', 'H.'];
 
@@ -698,13 +702,14 @@ const LivePreview = ({ paper, questions, fontConfig, headerConfig, institution, 
           )}
         </div>
         {q.question_type === 'mcq' && Array.isArray(q.options) && (
-          <div className="ml-6 mt-1 grid grid-cols-2 gap-x-4 text-xs">
+          <div className="ml-6 mt-1 flex flex-wrap items-baseline gap-x-5 gap-y-1 text-xs">
             {q.options.map((opt: any, oi: number) => {
               const prefix = getOptionPrefix(opt, oi, language === 'bn' || !!opt.text_bn);
               const text = language === 'bn' ? opt.text_bn || opt.text : opt.text || opt.text_bn;
               return (
-                <span key={oi}>
-                  <strong className="mr-1 text-primary/80">{prefix}</strong> {text}
+                <span key={oi} className="inline-flex items-baseline gap-1">
+                  <strong className="text-primary/90 font-bold">{prefix}</strong>
+                  <span>{text}</span>
                 </span>
               );
             })}
@@ -1393,7 +1398,35 @@ const AdminQuestionPapers = () => {
 
   const [scanning, setScanning] = useState(false);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const scanInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImportQuestions = (imported: ImportedQuestion[]) => {
+    setQuestions(prev => {
+      const startOrder = prev.length;
+      const newQs = imported.map((imp, i) => ({
+        question_text: imp.question_text || '',
+        question_text_bn: imp.question_text_bn || '',
+        question_type: imp.question_type || (imp.options && imp.options.length > 0 ? 'mcq' : 'descriptive'),
+        marks: imp.marks || (imp.question_type === 'mcq' ? 1 : 5),
+        sort_order: startOrder + i,
+        group_label: '',
+        group_label_bn: '',
+        group_marks: null,
+        custom_label: imp.custom_label || '',
+        options: Array.isArray(imp.options) && imp.options.length > 0
+          ? imp.options.map((o, oi) => ({
+              text: o.text || '',
+              text_bn: o.text_bn || '',
+              label: o.label || (language === 'bn' ? (BENGALI_MCQ_LABELS[oi] || `(${oi + 1})`) : `${String.fromCharCode(65 + oi)}.`),
+              is_correct: !!o.is_correct,
+            }))
+          : null,
+        answer: imp.answer || '',
+      }));
+      return [...prev, ...newQs];
+    });
+  };
 
   const handleScanImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1404,8 +1437,8 @@ const AdminQuestionPapers = () => {
       toast.error(language === 'bn' ? 'শুধুমাত্র ছবি ফাইল গ্রহণযোগ্য' : 'Only image files accepted');
       return;
     }
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error(language === 'bn' ? 'ফাইল সাইজ ১০MB এর বেশি হতে পারবে না' : 'File must be under 10MB');
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error(language === 'bn' ? 'ফাইল সাইজ ১৫MB এর বেশি হতে পারবে না' : 'File must be under 15MB');
       return;
     }
 
@@ -1436,12 +1469,25 @@ const AdminQuestionPapers = () => {
 
       setQuestions(prev => {
         const startOrder = prev.length;
-        const newQs = scannedQuestions.map((sq: { text: string; marks: number }, i: number) => ({
-          question_text: '', question_text_bn: sq.text || '',
-          question_type: 'descriptive' as const,
-          marks: sq.marks || 0, sort_order: startOrder + i,
-          group_label: '', group_label_bn: '',
-          group_marks: null, options: null, answer: '',
+        const newQs = scannedQuestions.map((sq: any, i: number) => ({
+          question_text: '',
+          question_text_bn: sq.question_text || sq.text || '',
+          question_type: (sq.question_type || (sq.options && sq.options.length > 0 ? 'mcq' : 'descriptive')) as any,
+          marks: sq.marks || (sq.question_type === 'mcq' ? 1 : 5),
+          sort_order: startOrder + i,
+          group_label: '',
+          group_label_bn: '',
+          group_marks: null,
+          custom_label: sq.custom_label || '',
+          options: Array.isArray(sq.options) && sq.options.length > 0
+            ? sq.options.map((o: any, oi: number) => ({
+                text: o.text || '',
+                text_bn: o.text_bn || o.text || '',
+                label: o.label || (language === 'bn' ? (BENGALI_MCQ_LABELS[oi] || `(${oi + 1})`) : `${String.fromCharCode(65 + oi)}.`),
+                is_correct: !!o.is_correct,
+              }))
+            : null,
+          answer: sq.answer || '',
         }));
         return [...prev, ...newQs];
       });
@@ -1453,7 +1499,9 @@ const AdminQuestionPapers = () => {
       );
     } catch (err: any) {
       console.error('Scan error:', err);
-      toast.error(err.message || (language === 'bn' ? 'স্ক্যান ব্যর্থ হয়েছে' : 'Scan failed'));
+      toast.error(err.message || (language === 'bn' ? 'স্ক্যান ব্যর্থ হয়েছে। টেক্সট পেস্ট অপশনটি ব্যবহার করুন।' : 'Scan failed. Try pasting text.'));
+      // Open import dialog so user isn't stuck
+      setShowImportDialog(true);
     } finally {
       setScanning(false);
     }
@@ -1781,7 +1829,8 @@ const AdminQuestionPapers = () => {
       .content { position: relative; z-index: 1; }
       .question { margin-bottom: 8px; page-break-inside: avoid; }
       .q-header { display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 2px; }
-      .options { margin-left: 20px; margin-top: 3px; display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; font-size: 12px; }
+      .options { margin-left: 20px; margin-top: 3px; display: flex; flex-wrap: wrap; column-gap: 20px; row-gap: 3px; font-size: 12px; }
+      .options .option { display: inline-flex; align-items: baseline; gap: 4px; white-space: nowrap; }
       .group-label { font-weight: 700; font-size: 13px; margin: 8px 0 4px; padding: 2px 6px; background: #eee; }
     </style></head><body>
     <div class="content">
@@ -2192,8 +2241,34 @@ const AdminQuestionPapers = () => {
                     dir="auto"
                     placeholder={language === 'bn' ? `প্রশ্ন #${toBengaliNum(qi + 1)}` : `Question #${qi + 1}`}
                     className="h-7 text-[11px] font-medium bg-transparent border-dashed border-border/40 hover:border-border focus:bg-background rounded-lg px-2 flex-1 min-w-0"
-                    title={language === 'bn' ? 'নিজের পছন্দমতো লিখুন (আরবি/বাংলা/ইংরেজি)' : 'Custom label (Arabic/Bangla/English)'}
+                    title={language === 'bn' ? 'নিজের পছন্দমতো লিখুন (যেমন: (ক), ১., ক.)' : 'Custom label (Arabic/Bangla/English)'}
                   />
+                  <div className="hidden sm:flex items-center gap-0.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => updateQuestion(qi, 'custom_label', BENGALI_MCQ_LABELS[qi] || `(${qi + 1})`)}
+                      className="px-1.5 py-0.5 text-[10px] rounded bg-muted/80 hover:bg-primary/20 text-muted-foreground hover:text-primary font-semibold transition-colors"
+                      title="বাংলা বন্ধনী: (ক), (খ), ..."
+                    >
+                      (ক)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateQuestion(qi, 'custom_label', `${toBengaliNum(qi + 1)}.`)}
+                      className="px-1.5 py-0.5 text-[10px] rounded bg-muted/80 hover:bg-primary/20 text-muted-foreground hover:text-primary font-semibold transition-colors"
+                      title="বাংলা ক্রম: ১., ২., ..."
+                    >
+                      ১.
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateQuestion(qi, 'custom_label', ROMAN_MCQ_LABELS[qi] || `(${qi + 1})`)}
+                      className="px-1.5 py-0.5 text-[10px] rounded bg-muted/80 hover:bg-primary/20 text-muted-foreground hover:text-primary font-semibold transition-colors"
+                      title="রোমান ক্রম: (i), (ii), ..."
+                    >
+                      (i)
+                    </button>
+                  </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {layoutSettings.columns === 2 && (
@@ -2374,6 +2449,30 @@ const AdminQuestionPapers = () => {
                           type="button"
                           onClick={() => {
                             const opts = Array.isArray(q.options) ? [...q.options] : [];
+                            const newOpts = opts.map((o: any, oi: number) => ({ ...o, label: ROMAN_MCQ_LABELS[oi] || `(${oi + 1})` }));
+                            updateQuestion(qi, 'options', newOpts);
+                          }}
+                          className="px-1.5 py-0.5 text-[10px] rounded bg-muted/80 hover:bg-primary/20 font-bold transition-colors text-primary"
+                          title="রোমান বন্ধনী: (i), (ii), (iii), (iv)"
+                        >
+                          (i)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const opts = Array.isArray(q.options) ? [...q.options] : [];
+                            const newOpts = opts.map((o: any, oi: number) => ({ ...o, label: ROMAN_MCQ_DOT_LABELS[oi] || `${oi + 1}.` }));
+                            updateQuestion(qi, 'options', newOpts);
+                          }}
+                          className="px-1.5 py-0.5 text-[10px] rounded bg-muted/80 hover:bg-primary/20 font-bold transition-colors text-primary"
+                          title="রোমান ডট: i., ii., iii., iv."
+                        >
+                          i.
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const opts = Array.isArray(q.options) ? [...q.options] : [];
                             const newOpts = opts.map((o: any, oi: number) => ({ ...o, label: ENGLISH_MCQ_LABELS[oi] || `(${oi + 1})` }));
                             updateQuestion(qi, 'options', newOpts);
                           }}
@@ -2393,6 +2492,18 @@ const AdminQuestionPapers = () => {
                           title="English Dot: A., B., C., D."
                         >
                           A.
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const opts = Array.isArray(q.options) ? [...q.options] : [];
+                            const newOpts = opts.map((o: any, oi: number) => ({ ...o, label: ROMAN_UPPER_MCQ_LABELS[oi] || `(${oi + 1})` }));
+                            updateQuestion(qi, 'options', newOpts);
+                          }}
+                          className="px-1.5 py-0.5 text-[10px] rounded bg-muted/80 hover:bg-primary/20 font-bold transition-colors"
+                          title="রোমান ক্যাপিটাল: (I), (II), (III), (IV)"
+                        >
+                          (I)
                         </button>
                       </div>
                     </div>
@@ -2464,24 +2575,12 @@ const AdminQuestionPapers = () => {
             </Button>
             <Button
               variant="outline"
-              className="flex-1 min-w-[140px] h-10 rounded-xl border-dashed border-2"
-              disabled={scanning}
-              onClick={() => scanInputRef.current?.click()}
+              className="flex-1 min-w-[140px] h-10 rounded-xl border-dashed border-2 bg-background hover:bg-primary/5 border-primary/40 text-primary font-semibold transition-all"
+              onClick={() => setShowImportDialog(true)}
             >
-              {scanning ? (
-                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-              ) : (
-                <ScanLine className="h-4 w-4 mr-1.5" />
-              )}
-              {language === 'bn' ? (scanning ? 'স্ক্যান হচ্ছে...' : 'স্ক্যান ও ইম্পোর্ট') : (scanning ? 'Scanning...' : 'Scan & Import')}
+              <Upload className="h-4 w-4 mr-1.5" />
+              {language === 'bn' ? 'ফাইল / স্ক্যান / টেক্সট ইম্পোর্ট' : 'Import / Scan File'}
             </Button>
-            <input
-              ref={scanInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleScanImport}
-            />
           </div>
         </div>
 
@@ -2556,6 +2655,14 @@ const AdminQuestionPapers = () => {
             return [...prev, ...newQs];
           });
         }}
+      />
+
+      {/* Question Import Dialog (Image Scan OCR, Text File, or Direct Paste) */}
+      <QuestionImportDialog
+        open={showImportDialog}
+        onOpenChange={setShowImportDialog}
+        language={language}
+        onImport={handleImportQuestions}
       />
     </div>
   );

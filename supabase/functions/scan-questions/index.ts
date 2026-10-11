@@ -13,31 +13,54 @@ serve(async (req) => {
   if (!guard.ok) return unauthorized(guard.status, guard.error, corsHeaders);
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
-
-    const { image_base64 } = await req.json();
-    if (!image_base64) {
-      return new Response(JSON.stringify({ error: "image_base64 is required" }), {
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY") || Deno.env.get("GEMINI_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      return new Response(JSON.stringify({ 
+        error: "AI API Key is not configured on the server. Please paste text directly using the Text Import tab." 
+      }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const systemPrompt = `You are an expert OCR system specialized in extracting questions from handwritten exam/question papers. You can read Bengali (বাংলা), Arabic (العربية), and English handwriting.
+    const { image_base64, text_content } = await req.json();
+    if (!image_base64 && !text_content) {
+      return new Response(JSON.stringify({ error: "image_base64 or text_content is required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const systemPrompt = `You are an expert exam question OCR and parsing system specialized in extracting questions from exam/question papers in Bengali (বাংলা), Arabic (العربية), and English.
 
 Your task:
-1. Extract each question from the image.
-2. For each question, identify the question text and marks (if written).
-3. Return the data as a JSON array using the tool provided.
+1. Extract each question from the image or text.
+2. For each question, extract:
+   - question_text: The main question statement (in original script/language).
+   - question_type: 'mcq' if it has multiple choice options (like (i), (ii), (iii) or (ক), (খ), (গ), (ঘ) or (A), (B), (C)), otherwise 'descriptive' or 'short'.
+   - custom_label: The question serial or prefix if present (e.g. '(ক)', '(খ)', '১.', '1.', 'Q1.').
+   - marks: Numeric marks (e.g. 1, 5, 10). If not visible, return 1 for MCQ or 5 for descriptive.
+   - options: For MCQ questions, an array of options with 'label' (e.g. '(i)', '(ii)', '(iii)', '(ক)', '(খ)', '(A)') and 'text' (the option content).
+3. Preserve the original language and script (Bengali, Arabic, English) accurately.
+4. Support 2, 3, or 4 options for MCQs (e.g. (i) ১১ টি (ii) ১৩ টি (iii) ১৪ টি).
+5. Return data using the extract_questions tool.`;
 
-Rules:
-- Preserve the original language and script of each question exactly as written.
-- If marks are written next to a question (e.g., "5", "১০", "٥"), extract them as a number.
-- If no marks are visible for a question, set marks to 0.
-- Maintain the order of questions as they appear in the image.
-- Include any sub-questions as separate entries with appropriate numbering in the text.
-- If text is unclear, make your best guess and include it.`;
+    const userMessageContent: any[] = [];
+    if (image_base64) {
+      userMessageContent.push({
+        type: "image_url",
+        image_url: { url: `data:image/jpeg;base64,${image_base64}` },
+      });
+      userMessageContent.push({
+        type: "text",
+        text: "Extract all questions, their numbering/labels, MCQ options, and marks from this question paper image.",
+      });
+    } else if (text_content) {
+      userMessageContent.push({
+        type: "text",
+        text: `Extract all questions, labels, options, and marks from this text:\n\n${text_content}`,
+      });
+    }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -49,26 +72,14 @@ Rules:
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          {
-            role: "user",
-            content: [
-              {
-                type: "image_url",
-                image_url: { url: `data:image/jpeg;base64,${image_base64}` },
-              },
-              {
-                type: "text",
-                text: "Extract all questions and their marks from this handwritten question paper image. Use the extract_questions tool to return the structured data.",
-              },
-            ],
-          },
+          { role: "user", content: userMessageContent },
         ],
         tools: [
           {
             type: "function",
             function: {
               name: "extract_questions",
-              description: "Extract questions and marks from a scanned question paper image",
+              description: "Extract questions, labels, types, options, and marks from a question paper",
               parameters: {
                 type: "object",
                 properties: {
@@ -77,10 +88,29 @@ Rules:
                     items: {
                       type: "object",
                       properties: {
-                        text: { type: "string", description: "The question text in its original language/script" },
-                        marks: { type: "number", description: "Marks allocated for this question, 0 if not visible" },
+                        custom_label: { type: "string", description: "Question serial e.g. (ক), ১., 1." },
+                        question_text: { type: "string", description: "The question statement in its original language/script" },
+                        question_type: { 
+                          type: "string", 
+                          enum: ["mcq", "descriptive", "short", "fill_blank", "true_false"],
+                          description: "Type of question"
+                        },
+                        marks: { type: "number", description: "Marks allocated, 0 if not specified" },
+                        options: {
+                          type: "array",
+                          description: "MCQ options if applicable",
+                          items: {
+                            type: "object",
+                            properties: {
+                              label: { type: "string", description: "Option prefix e.g. (i), (ii), (ক), A." },
+                              text: { type: "string", description: "Option text" }
+                            },
+                            required: ["label", "text"],
+                            additionalProperties: false,
+                          }
+                        }
                       },
-                      required: ["text", "marks"],
+                      required: ["question_text", "question_type"],
                       additionalProperties: false,
                     },
                   },
@@ -97,18 +127,20 @@ Rules:
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limited. Please try again shortly." }), {
+        return new Response(JSON.stringify({ error: "অনুরোধের সীমা অতিক্রম করেছে। কিছুক্ষণ পর আবার চেষ্টা করুন।" }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add funds." }), {
+        return new Response(JSON.stringify({ error: "AI স্ক্যান ক্রেডিট শেষ হয়েছে। আপনি সরাসরি টেক্সট পেস্ট করে প্রশ্ন যোগ করতে পারেন।" }), {
           status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const t = await response.text();
       console.error("AI gateway error:", response.status, t);
-      throw new Error("AI processing failed");
+      return new Response(JSON.stringify({ error: "AI প্রক্রিয়াকরণ সাময়িক ব্যর্থ হয়েছে। অনুগ্রহ করে টেক্সট পেস্ট ট্যাব ব্যবহার করুন।" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const data = await response.json();
@@ -125,7 +157,9 @@ Rules:
     });
   } catch (e) {
     console.error("scan-questions error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
+    return new Response(JSON.stringify({ 
+      error: e instanceof Error ? e.message : "অপ্রত্যাশিত ত্রুটি ঘটেছে। সরাসরি টেক্সট পেস্ট করুন।" 
+    }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
