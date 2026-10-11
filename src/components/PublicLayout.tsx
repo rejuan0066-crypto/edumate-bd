@@ -150,7 +150,7 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
       {/* Top bar */}
       {(hs?.topbar_visible !== false) && (
         <div
-          className="islamic-pattern"
+          className="islamic-pattern print:hidden no-print"
           style={{
             backgroundColor: hs?.topbar_bg_color || undefined,
             color: hs?.topbar_text_color || undefined,
@@ -182,7 +182,7 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
 
       {/* Header */}
       <header
-        className={`${hs?.header_sticky !== false ? 'sticky top-0 z-50' : ''} ${hs?.header_border !== false ? 'border-b' : ''}`}
+        className={`print:hidden no-print ${hs?.header_sticky !== false ? 'sticky top-0 z-50' : ''} ${hs?.header_border !== false ? 'border-b' : ''}`}
         style={{
           backgroundColor: hs?.header_bg_color || undefined,
           color: hs?.header_text_color || undefined,
@@ -295,7 +295,7 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
 
       {/* Footer */}
       <footer
-        className="islamic-pattern"
+        className="islamic-pattern print:hidden no-print"
         style={{
           backgroundColor: fs?.footer_bg_color || undefined,
           color: fs?.footer_text_color || undefined,

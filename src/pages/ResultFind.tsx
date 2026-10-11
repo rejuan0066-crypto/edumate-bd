@@ -199,7 +199,7 @@ const ResultFind = () => {
 
   return (
     <PublicLayout>
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-12 print:p-0 print:m-0 print:max-w-none">
         <div className="flex items-center gap-3 mb-8 print:hidden">
           <div className="p-2.5 rounded-xl bg-primary/10">
             <GraduationCap className="w-7 h-7 text-primary" />

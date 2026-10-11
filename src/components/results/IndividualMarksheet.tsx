@@ -86,6 +86,105 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
   const resolvedSession = sessionName || titleParts[2] || (bn ? '২০২৬-২৭' : '2026-27');
 
   const handlePrint = () => {
+    const el = document.getElementById('marksheet-printable-area');
+    if (!el) {
+      window.print();
+      return;
+    }
+
+    try {
+      let iframe = document.getElementById('marksheet-print-frame') as HTMLIFrameElement | null;
+      if (iframe && iframe.parentNode) {
+        iframe.parentNode.removeChild(iframe);
+      }
+      iframe = document.createElement('iframe');
+      iframe.id = 'marksheet-print-frame';
+      iframe.style.position = 'fixed';
+      iframe.style.top = '-99999px';
+      iframe.style.left = '-99999px';
+      iframe.style.width = '210mm';
+      iframe.style.height = '297mm';
+      iframe.style.border = '0';
+      document.body.appendChild(iframe);
+
+      const doc = iframe.contentWindow?.document || iframe.contentDocument;
+      if (doc) {
+        const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+          .map(s => s.outerHTML)
+          .join('\n');
+
+        doc.open();
+        doc.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="utf-8" />
+              <title>${bn ? 'মার্কশিট' : 'Marksheet'} - ${studentName}</title>
+              ${styles}
+              <style>
+                @page {
+                  size: A4 portrait;
+                  margin: 0;
+                }
+                * {
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
+                  color-adjust: exact !important;
+                  box-sizing: border-box;
+                }
+                html, body {
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  background: #ffffff !important;
+                  width: 210mm !important;
+                  height: 297mm !important;
+                  overflow: hidden !important;
+                  font-family: 'Hind Siliguri', system-ui, -apple-system, sans-serif;
+                }
+                #marksheet-printable-area {
+                  position: absolute !important;
+                  top: 0 !important;
+                  left: 0 !important;
+                  width: 210mm !important;
+                  height: 297mm !important;
+                  max-height: 297mm !important;
+                  margin: 0 !important;
+                  padding: 8mm 10mm !important;
+                  box-sizing: border-box !important;
+                  box-shadow: none !important;
+                  border: 2px solid #064e3b !important;
+                  background: #ffffff !important;
+                  overflow: hidden !important;
+                }
+                .marksheet-table th {
+                  background-color: #064e3b !important;
+                  color: #ffffff !important;
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
+                }
+              </style>
+            </head>
+            <body>
+              ${el.outerHTML}
+            </body>
+          </html>
+        `);
+        doc.close();
+
+        setTimeout(() => {
+          try {
+            iframe?.contentWindow?.focus();
+            iframe?.contentWindow?.print();
+          } catch (e) {
+            window.print();
+          }
+        }, 350);
+        return;
+      }
+    } catch (e) {
+      console.warn('Iframe print error, falling back to window.print', e);
+    }
+
     window.print();
   };
 
@@ -116,7 +215,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
       {/* Main A4 Container */}
       <div 
         id="marksheet-printable-area" 
-        className="relative bg-white shadow-[0_0_20px_rgba(0,0,0,0.1)] w-[210mm] min-h-[297mm] p-[8mm] flex flex-col print:shadow-none print:w-full print:p-[8mm] printable-marksheet"
+        className="relative bg-white shadow-[0_0_20px_rgba(0,0,0,0.1)] w-[210mm] min-h-[297mm] p-[8mm] flex flex-col print:shadow-none print:w-full print:p-[8mm] printable-marksheet border-2 border-[#064e3b]"
         style={{ boxSizing: 'border-box' }}
       >
         <style dangerouslySetInnerHTML={{ __html: `
@@ -124,56 +223,51 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           
           #marksheet-printable-area {
             font-family: 'Hind Siliguri', system-ui, -apple-system, sans-serif;
-            color: #334155;
+            color: #0f172a;
           }
 
           @media print {
-            /* Hide every single element on the page by default */
-            body * {
-              visibility: hidden !important;
+            header, nav, footer, .no-print, [role="navigation"], .public-header, .top-bar {
+              display: none !important;
             }
 
-            /* Force clean white page background */
+            body * {
+              visibility: hidden;
+            }
+
             html, body {
               background: #ffffff !important;
               background-image: none !important;
               margin: 0 !important;
               padding: 0 !important;
-              height: 100% !important;
+              width: 210mm !important;
+              height: 297mm !important;
               overflow: hidden !important;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
               color-adjust: exact !important;
             }
-            .grade-badge, .bg-emerald-600, .bg-rose-600, .bg-slate-50, .bg-emerald-50, .bg-emerald-50\/20, .bg-emerald-50\/80 {
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
 
-            /* Make ONLY the printable marksheet and its children visible */
-            .printable-marksheet, 
-            .printable-marksheet * {
+            #marksheet-printable-area,
+            #marksheet-printable-area * {
               visibility: visible !important;
             }
 
-            /* Position the marksheet at the absolute top-left of the A4 page */
-            .printable-marksheet {
-              position: absolute !important;
+            #marksheet-printable-area {
+              position: fixed !important;
               left: 0 !important;
               top: 0 !important;
-              width: 100% !important;
-              max-width: 210mm !important;
+              width: 210mm !important;
               height: 297mm !important;
               max-height: 297mm !important;
               background: #ffffff !important;
               box-shadow: none !important;
-              border: none !important;
+              border: 2px solid #064e3b !important;
               padding: 8mm 10mm !important;
               margin: 0 !important;
               overflow: hidden !important;
-              page-break-after: avoid !important;
-              page-break-before: avoid !important;
-              page-break-inside: avoid !important;
+              z-index: 9999999 !important;
+              box-sizing: border-box !important;
             }
 
             @page {
@@ -185,48 +279,55 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           .marksheet-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            margin-top: 6px;
+            border: 1.5px solid #064e3b;
           }
           .marksheet-table th, .marksheet-table td {
-            border: 1px solid #e2e8f0;
-            padding: 1.5px 6px;
+            border: 1px solid #cbd5e1;
+            padding: 4px 6px;
             text-align: center;
           }
           .marksheet-table th {
-            background-color: #065F46;
-            color: white;
+            background-color: #064e3b !important;
+            color: #ffffff !important;
             font-weight: 700;
-            font-size: 14px;
-            padding: 8px 6px;
+            font-size: 13px;
+            padding: 6.5px 6px;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
           .marksheet-table tr:nth-child(even) {
             background-color: #f8fafc;
           }
           .marksheet-table td {
-            font-size: 14px;
+            font-size: 13.5px;
+            color: #0f172a;
           }
           .marksheet-table .subject-col {
             text-align: left;
-            font-weight: 500;
+            font-weight: 600;
+            color: #0f172a;
           }
 
           .grade-badge {
-            padding: 4px 12px;
+            padding: 2.5px 10px;
             border-radius: 9999px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
             display: inline-block;
-            min-width: 45px;
+            min-width: 42px;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
-          .grade-a-plus { background-color: #059669; color: #FFFFFF; border: 1px solid #047857; }
-          .grade-a { background-color: #10B981; color: #FFFFFF; border: 1px solid #059669; }
-          .grade-a-minus { background-color: #0D9488; color: #FFFFFF; border: 1px solid #0F766E; }
+          .grade-a-plus { background-color: #047857; color: #FFFFFF; border: 1px solid #065f46; }
+          .grade-a { background-color: #059669; color: #FFFFFF; border: 1px solid #047857; }
+          .grade-a-minus { background-color: #0d9488; color: #FFFFFF; border: 1px solid #0f766e; }
           .grade-b { background-color: #2563EB; color: #FFFFFF; border: 1px solid #1D4ED8; }
           .grade-c { background-color: #D97706; color: #FFFFFF; border: 1px solid #B45309; }
           .grade-d { background-color: #EA580C; color: #FFFFFF; border: 1px solid #C2410C; }
           .grade-f { background-color: #DC2626; color: #FFFFFF; border: 1px solid #B91C1C; }
-          .grade-none { background-color: #F1F5F9; color: #94A3B8; border: 1px solid #E2E8F0; }
+          .grade-none { background-color: #F1F5F9; color: #64748B; border: 1px solid #CBD5E1; }
         `}} />
 
         {/* Watermark Logo */}
@@ -246,79 +347,79 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         <div className="absolute top-[6px] left-0 w-full h-[2px] bg-[#d97706]"></div>
 
         {/* Header Section */}
-        <div className="flex justify-between items-start py-2 mb-4">
+        <div className="flex justify-between items-center py-1 mb-2">
           {/* Logo */}
-          <div className="w-[85px] h-[85px] rounded-full border-[2px] border-[#065f46] p-[3px] flex items-center justify-center bg-white shadow-md overflow-hidden relative group">
-            <div className="w-full h-full rounded-full border border-emerald-100 flex items-center justify-center bg-emerald-50/20">
+          <div className="w-[80px] h-[80px] rounded-full border-[2px] border-[#064e3b] p-[2px] flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
+            <div className="w-full h-full rounded-full border border-emerald-100 flex items-center justify-center bg-emerald-50/30">
               {institution?.logo_url ? (
                 <img src={institution.logo_url} alt="Logo" className="w-14 h-14 object-contain" />
               ) : (
-                <div className="text-[#065f46] font-bold text-[10px] text-center leading-tight">LOGO</div>
+                <div className="text-[#064e3b] font-bold text-[10px] text-center leading-tight">LOGO</div>
               )}
             </div>
           </div>
 
           {/* Institution Info */}
-          <div className="flex-1 text-center px-4">
-            <h1 className="text-[#065f46] text-[24px] font-bold mb-1 leading-tight">
+          <div className="flex-1 text-center px-3">
+            <div className="text-[11px] text-emerald-800 font-medium mb-0.5 tracking-wider">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
+            <h1 className="text-[#064e3b] text-[22px] font-bold mb-0.5 leading-tight tracking-tight">
               {instName}
             </h1>
-            <p className="text-slate-500 text-[13px] font-medium max-w-[450px] mx-auto">
+            <p className="text-slate-600 text-[11.5px] font-medium leading-relaxed max-w-[480px] mx-auto">
               {addressLine}
             </p>
           </div>
 
           {/* QR/Document ID */}
-          <div className="w-[85px] text-right">
-            <div className="inline-block border border-slate-200 p-1.5 rounded-lg bg-slate-50 shadow-sm print:shadow-none print:border-slate-100">
-              <div className="bg-white p-1 rounded border border-slate-100 flex items-center justify-center">
+          <div className="w-[80px] text-right shrink-0">
+            <div className="inline-block border border-slate-300 p-1 rounded-md bg-white shadow-sm">
+              <div className="bg-white p-0.5 rounded flex items-center justify-center">
                 <QRCodeSVG 
                   value={`${typeof window !== 'undefined' ? window.location.origin : ''}/result?roll=${student.roll_number || student.student_id}`}
-                  size={58}
+                  size={52}
                   level="L"
                   includeMargin={false}
                 />
               </div>
-              <div className="text-[8px] mt-1 font-mono text-slate-500 text-center leading-none tracking-tighter">ID: {student.student_id || student.registration_no || (isSample ? '20261002' : '-')}</div>
+              <div className="text-[7.5px] mt-0.5 font-mono text-slate-600 text-center leading-none tracking-tighter">ID: {student.student_id || student.registration_no || (isSample ? '20261002' : '-')}</div>
             </div>
           </div>
         </div>
 
-        {/* Divider & Title */}
-        <div className="relative mb-6 text-center">
-          <div className="absolute top-1/2 left-0 w-full h-[1px] bg-slate-100"></div>
-          <div className="relative inline-block bg-white px-8">
-            <div className="text-emerald-700 flex flex-col items-center">
-              <div className="bg-emerald-50/80 px-8 py-2.5 rounded-full border border-emerald-200 shadow-sm backdrop-blur-sm">
-                <h2 className="text-[#065F46] text-[18px] font-bold leading-none mb-1 tracking-tight">{bn ? 'একাডেমিক ট্রান্সক্রিপ্ট / মার্কশিট' : 'ACADEMIC TRANSCRIPT / MARKSHEET'}</h2>
-                <p className="text-emerald-700/70 text-[11px] font-semibold tracking-wide uppercase">{resolvedExam} — {resolvedClass}</p>
-              </div>
-            </div>
+        {/* Title Banner */}
+        <div className="mb-2.5 text-center">
+          <div className="inline-block bg-[#064e3b] text-white px-8 py-1.5 rounded-md shadow-sm border border-[#043e2f]">
+            <h2 className="text-[15.5px] font-bold tracking-wider leading-none text-white">
+              {bn ? 'একাডেমিক ট্রান্সক্রিপ্ট / নম্বরপত্র' : 'ACADEMIC TRANSCRIPT / MARKSHEET'}
+            </h2>
+            <p className="text-emerald-100 text-[10.5px] font-medium tracking-wide uppercase mt-1">
+              {resolvedExam} • {resolvedClass} • {bn ? 'শিক্ষাবর্ষ:' : 'Session:'} {resolvedSession}
+            </p>
           </div>
         </div>
 
         {/* Student Information Card */}
-        <div className="bg-slate-50/80 border border-slate-200 rounded-xl px-4 py-2 mb-4 grid grid-cols-3 gap-y-1.5 gap-x-8 shadow-sm">
+        <div className="bg-slate-50/90 border border-slate-300 rounded-lg px-3.5 py-2 mb-2.5 grid grid-cols-3 gap-y-1.5 gap-x-6 shadow-sm">
           <div className="flex flex-col">
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">{bn ? 'শিক্ষার্থী নাম (STUDENT NAME)' : 'STUDENT NAME'}</span>
-            <span className="text-[14px] font-bold text-slate-800">{studentName}</span>
+            <span className="text-[9.5px] text-slate-600 font-bold uppercase tracking-wider mb-0.5">{bn ? 'শিক্ষার্থীর নাম (STUDENT NAME)' : 'STUDENT NAME'}</span>
+            <span className="text-[13.5px] font-bold text-slate-900 leading-tight">{studentName}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">{bn ? "পিতার নাম (FATHER'S NAME)" : "FATHER'S NAME"}</span>
-            <span className="text-[14px] font-bold text-slate-800">
+            <span className="text-[9.5px] text-slate-600 font-bold uppercase tracking-wider mb-0.5">{bn ? "পিতার নাম (FATHER'S NAME)" : "FATHER'S NAME"}</span>
+            <span className="text-[13.5px] font-bold text-slate-900 leading-tight">
               {isSample 
                 ? (bn ? 'আব্দুর রহমান' : 'Abdur Rahman') 
                 : (bn ? (student.father_name || student.fathers_name || student.father_name_en || '-') : (student.father_name_en || student.father_name || student.fathers_name || '-'))}
             </span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">{bn ? 'রোল নম্বর (ROLL NO)' : 'ROLL NO'}</span>
-            <span className="text-[14px] font-bold text-slate-800">{isSample ? (bn ? '১০০১' : '1001') : (bn ? toBnDigits(student.roll_number) : student.roll_number)}</span>
+            <span className="text-[9.5px] text-slate-600 font-bold uppercase tracking-wider mb-0.5">{bn ? 'রোল নম্বর (ROLL NO)' : 'ROLL NO'}</span>
+            <span className="text-[13.5px] font-bold text-slate-900 leading-tight">{isSample ? (bn ? '১০০১' : '1001') : (bn ? toBnDigits(student.roll_number) : student.roll_number)}</span>
           </div>
           
           <div className="flex flex-col">
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">{bn ? 'রেজিস্ট্রেশন (REG NO)' : 'REG NO'}</span>
-            <span className="text-[14px] font-bold text-slate-800">
+            <span className="text-[9.5px] text-slate-600 font-bold uppercase tracking-wider mb-0.5">{bn ? 'রেজিস্ট্রেশন (REG NO)' : 'REG NO'}</span>
+            <span className="text-[13.5px] font-bold text-slate-900 leading-tight">
               {(() => {
                 const reg = student.registration_no || student.registration_number || student.student_id;
                 if (isSample) return bn ? '২০২৬১০০২' : '20261002';
@@ -327,17 +428,17 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             </span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">{bn ? 'শ্রেণি (CLASS)' : 'CLASS'}</span>
-            <span className="text-[14px] font-bold text-slate-800">{resolvedClass}</span>
+            <span className="text-[9.5px] text-slate-600 font-bold uppercase tracking-wider mb-0.5">{bn ? 'শ্রেণি (CLASS)' : 'CLASS'}</span>
+            <span className="text-[13.5px] font-bold text-slate-900 leading-tight">{resolvedClass}</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">{bn ? 'শিক্ষাবর্ষ (SESSION)' : 'SESSION'}</span>
-            <span className="text-[14px] font-bold text-slate-800">{resolvedSession}</span>
+            <span className="text-[9.5px] text-slate-600 font-bold uppercase tracking-wider mb-0.5">{bn ? 'শিক্ষাবর্ষ (SESSION)' : 'SESSION'}</span>
+            <span className="text-[13.5px] font-bold text-slate-900 leading-tight">{resolvedSession}</span>
           </div>
           
           <div className="flex flex-col">
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">{bn ? 'জন্ম তারিখ (DOB)' : 'DATE OF BIRTH'}</span>
-            <span className="text-[14px] font-bold text-slate-800">
+            <span className="text-[9.5px] text-slate-600 font-bold uppercase tracking-wider mb-0.5">{bn ? 'জন্ম তারিখ (DOB)' : 'DATE OF BIRTH'}</span>
+            <span className="text-[13.5px] font-bold text-slate-900 leading-tight">
               {(() => {
                 if (isSample) return bn ? '১৫ মে, ২০১৮' : '15 May, 2018';
                 return formatDob(student.date_of_birth, bn);
@@ -345,14 +446,22 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             </span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">{bn ? 'বিভাগ/শাখা (SECTION)' : 'SECTION'}</span>
-            <span className="text-[14px] font-bold text-slate-800">
+            <span className="text-[9.5px] text-slate-600 font-bold uppercase tracking-wider mb-0.5">{bn ? 'বিভাগ/শাখা (SECTION)' : 'SECTION'}</span>
+            <span className="text-[13.5px] font-bold text-slate-900 leading-tight">
               {isSample 
                 ? (bn ? 'ক' : 'A') 
                 : (student.section || student.branch || (bn ? (student.divisions?.name_bn || student.division_name_bn) : (student.divisions?.name || student.division_name)) || student.division_name || '-')}
             </span>
           </div>
-          <div></div>
+          <div className="flex flex-col">
+            <span className="text-[9.5px] text-slate-600 font-bold uppercase tracking-wider mb-0.5">{bn ? 'ফলাফল অবস্থা (STATUS)' : 'RESULT STATUS'}</span>
+            <span className={cn(
+              "text-[13.5px] font-bold leading-tight",
+              hasFailedSubject ? "text-rose-700" : "text-emerald-700"
+            )}>
+              {hasFailedSubject ? (bn ? 'অকৃতকার্য' : 'FAILED') : (bn ? 'কৃতকার্য' : 'PASSED')}
+            </span>
+          </div>
         </div>
 
         {/* Marks Details Table */}
@@ -360,21 +469,21 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           <table className="marksheet-table">
             <thead>
               <tr>
-                <th className="w-[50px]">{bn ? 'ক্রমিক' : 'Sl No'}</th>
-                <th className="text-left">{bn ? 'বিষয়\u00a0' : 'Subject'}</th>
-                <th className="w-[100px]">{bn ? 'পূর্ণমান' : 'Full Marks'}</th>
-                <th className="w-[120px]">{bn ? 'প্রাপ্ত নম্বর' : 'Obtained Marks'}</th>
-                <th className="w-[100px]">{bn ? 'লেটার গ্রেড' : 'Letter Grade'}</th>
-                <th className="w-[100px]">{bn ? 'গ্রেড পয়েন্ট' : 'Grade Point'}</th>
+                <th style={{ backgroundColor: '#064e3b', color: '#ffffff' }} className="w-[50px] font-bold">{bn ? 'ক্রমিক' : 'Sl No'}</th>
+                <th style={{ backgroundColor: '#064e3b', color: '#ffffff' }} className="text-left font-bold">{bn ? 'বিষয়\u00a0' : 'Subject'}</th>
+                <th style={{ backgroundColor: '#064e3b', color: '#ffffff' }} className="w-[100px] font-bold">{bn ? 'পূর্ণমান' : 'Full Marks'}</th>
+                <th style={{ backgroundColor: '#064e3b', color: '#ffffff' }} className="w-[120px] font-bold">{bn ? 'প্রাপ্ত নম্বর' : 'Obtained Marks'}</th>
+                <th style={{ backgroundColor: '#064e3b', color: '#ffffff' }} className="w-[100px] font-bold">{bn ? 'লেটার গ্রেড' : 'Letter Grade'}</th>
+                <th style={{ backgroundColor: '#064e3b', color: '#ffffff' }} className="w-[100px] font-bold">{bn ? 'গ্রেড পয়েন্ট' : 'Grade Point'}</th>
               </tr>
             </thead>
             <tbody>
               {subjectResults.map((r, i) => (
                 <tr key={i}>
-                  <td className="text-slate-400">{bn ? toBnDigits(i + 1) : (i + 1)}</td>
-                  <td className="subject-col text-slate-700">{bn ? r.subject.name_bn : (r.subject.name_en || r.subject.name)}</td>
-                  <td className="font-medium text-slate-600">{bn ? toBnDigits(r.subject.full_marks || maxMarks || 100) : (r.subject.full_marks || maxMarks || 100)}</td>
-                  <td className="font-bold text-slate-900">{!r.entered ? '-' : (isSample || bn ? toBnDigits(r.marks) : r.marks)}</td>
+                  <td className="text-slate-700 font-medium">{bn ? toBnDigits(i + 1) : (i + 1)}</td>
+                  <td className="subject-col text-slate-900 font-semibold">{bn ? r.subject.name_bn : (r.subject.name_en || r.subject.name)}</td>
+                  <td className="font-semibold text-slate-700">{bn ? toBnDigits(r.subject.full_marks || maxMarks || 100) : (r.subject.full_marks || maxMarks || 100)}</td>
+                  <td className="font-bold text-slate-900 text-[14.5px]">{!r.entered ? '-' : (isSample || bn ? toBnDigits(r.marks) : r.marks)}</td>
                   <td>
                      <span className={cn(
                        "grade-badge",
@@ -389,7 +498,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
                       {r.grade}
                     </span>
                   </td>
-                  <td className="font-bold text-emerald-700">
+                  <td className="font-bold text-slate-900 text-[14px]">
                     {!r.entered ? '-' : (isSample || bn ? toBnDigits(Number(r.gpa).toFixed(2)) : Number(r.gpa).toFixed(2))}
                   </td>
                 </tr>
