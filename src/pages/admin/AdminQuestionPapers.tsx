@@ -747,11 +747,11 @@ const LivePreview = ({ paper, questions, fontConfig, headerConfig, institution, 
           </div>
         ) : null}
         <div className="flex justify-between items-baseline text-sm" dir="ltr">
-          <div className="flex items-baseline gap-1.5 flex-1 min-w-0" style={{ unicodeBidi: 'isolate' }}>
-            <strong className="shrink-0 select-none font-bold" dir="ltr" style={{ unicodeBidi: 'isolate' }}>
+          <div className="flex-1 min-w-0 leading-relaxed" dir="ltr">
+            <span className="inline-block mr-1.5 font-bold" dir="ltr" style={{ unicodeBidi: 'isolate' }}>
               {q.custom_label?.trim() || `${serial}.`}
-            </strong>
-            <bdi className="flex-1" dir="auto" style={{ unicodeBidi: 'plaintext' }}>
+            </span>
+            <bdi dir="auto" className="inline whitespace-pre-wrap" style={{ unicodeBidi: 'isolate' }}>
               {qText || ''}
             </bdi>
           </div>
@@ -2036,7 +2036,7 @@ const AdminQuestionPapers = () => {
         ? `<span class="q-marks" dir="ltr" style="margin-left:8px;flex-shrink:0">[${language === 'bn' ? toBengaliNum(q.marks) : q.marks}]</span>`
         : '';
 
-      return groupHtml + `<div class="question" style="font-family:${combinedFont};direction:ltr"><div class="q-header" style="display:flex;justify-content:space-between;align-items:baseline;direction:ltr"><div style="display:flex;align-items:baseline;gap:6px;flex:1;min-width:0;unicode-bidi:isolate"><strong class="q-serial" dir="ltr" style="unicode-bidi:isolate;flex-shrink:0">${labelText}</strong> <bdi class="q-text" dir="auto" style="unicode-bidi:plaintext;flex:1">${qText || ''}</bdi></div>${marksHtml}</div>${stHtml}${opts}</div>`;
+      return groupHtml + `<div class="question" style="font-family:${combinedFont};direction:ltr"><div class="q-header" style="display:flex;justify-content:space-between;align-items:baseline;direction:ltr"><div style="flex:1;min-width:0;line-height:1.4"><strong class="q-serial" dir="ltr" style="unicode-bidi:isolate;margin-right:6px">${labelText}</strong><bdi class="q-text" dir="auto" style="unicode-bidi:isolate;white-space:pre-wrap">${qText || ''}</bdi></div>${marksHtml}</div>${stHtml}${opts}</div>`;
     };
 
     const getSplitIndex = () => {
