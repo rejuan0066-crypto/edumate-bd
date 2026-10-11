@@ -521,6 +521,9 @@ const AdminAdministrative = () => {
         errs.nid = bn ? 'এনআইডি ১০, ১৩ অথবা ১৭ সংখ্যা হতে হবে।' : 'NID must be 10, 13, or 17 digits.';
       }
     }
+    if (f.joining_date && f.joining_date > new Date().toLocaleDateString('en-CA')) {
+      errs.joining_date = bn ? 'যোগদানের তারিখ ভবিষ্যতের হতে পারে না — সঠিক তারিখ দিন।' : 'Joining date cannot be in the future.';
+    }
     setFieldErrors(errs);
     if (Object.keys(errs).length > 0) {
       setFormError(bn ? 'অনুগ্রহ করে নিচের ভুলগুলো ঠিক করুন।' : 'Please fix the errors below.');
