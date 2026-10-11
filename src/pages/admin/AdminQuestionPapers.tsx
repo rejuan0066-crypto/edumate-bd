@@ -478,10 +478,9 @@ const renderHeader = (
             {address && <p className="text-[8.5px] text-gray-500 m-0 leading-none">{address}</p>}
           </div>
         </div>
-        <div className="border-t border-b border-black py-0.5 my-0.5 text-[10px] font-semibold flex items-center justify-center gap-1.5 flex-wrap">
-          {examLabel && <span>{examLabel}</span>}
-          {subjectName && <span className="text-gray-400">•</span>}
-          {subjectName && <span>📖 {subjectName}</span>}
+        <div className="border-t border-b border-black py-0.5 my-0.5 text-center leading-tight">
+          {examLabel && <div className="text-[10.5px] font-bold">{examLabel}</div>}
+          {subjectName && <div className="text-[9.5px] font-semibold text-gray-800 mt-0.5">📖 {language === 'bn' ? 'বিষয়: ' : 'Subject: '}{subjectName}</div>}
         </div>
         <div className="flex justify-between items-center text-[9px] font-medium px-1">
           <span>{language === 'bn' ? 'পূর্ণমান' : 'Marks'}: {bnMarks}</span>
@@ -505,10 +504,9 @@ const renderHeader = (
             </div>
           </div>
           <div className="border-t border-dashed border-gray-400 my-0.5" />
-          <div className="text-[10px] font-semibold flex items-center justify-center gap-1 flex-wrap">
-            {examLabel && <span>{examLabel}</span>}
-            {subjectName && <span className="text-gray-400">•</span>}
-            {subjectName && <span>📖 {subjectName}</span>}
+          <div className="my-0.5 leading-tight">
+            {examLabel && <div className="text-[10.5px] font-bold">{examLabel}</div>}
+            {subjectName && <div className="text-[9.5px] font-semibold text-gray-800 mt-0.5">📖 {language === 'bn' ? 'বিষয়: ' : 'Subject: '}{subjectName}</div>}
           </div>
           <div className="flex justify-between items-center mt-0.5 text-[9px] font-medium px-1">
             <span>{language === 'bn' ? 'পূর্ণমান' : 'Marks'}: {bnMarks}</span>
@@ -538,11 +536,16 @@ const renderHeader = (
           )}
         </div>
       </div>
-      <div className="text-[10.5px] font-semibold mt-0.5 leading-tight flex items-center justify-center gap-1.5 flex-wrap">
-        {examLabel && <span>{examLabel}</span>}
-        {subjectName && <span className="text-gray-400">•</span>}
-        {subjectName && <span>📖 {subjectName}</span>}
-      </div>
+      {examLabel && (
+        <div className="text-[11px] sm:text-xs font-bold mt-0.5 leading-tight tracking-tight">
+          {examLabel}
+        </div>
+      )}
+      {subjectName && (
+        <div className="text-[10px] sm:text-[10.5px] font-semibold mt-0.5 leading-tight text-gray-800">
+          📖 {language === 'bn' ? 'বিষয়: ' : 'Subject: '}{subjectName}
+        </div>
+      )}
       <div className="flex justify-between items-center mt-0.5 text-[9.5px] font-medium px-1">
         <span>{language === 'bn' ? 'পূর্ণমান' : 'Full Marks'}: {bnMarks}</span>
         {isSecondary && <span className="text-[8.5px] text-gray-500 font-normal bg-gray-100 px-1 rounded">(২য় অংশ / পাতা)</span>}
@@ -1524,7 +1527,10 @@ const AdminQuestionPapers = () => {
               ${address ? `<p style="font-size:8.5px;color:#555;margin:1px 0 0;line-height:1">${address}</p>` : ''}
             </div>
           </div>
-          <div style="border-top:1px solid #000;border-bottom:1px solid #000;padding:2px 0;margin:2px 0;font-size:10.5px;font-weight:700">${subLine}</div>
+          <div style="border-top:1px solid #000;border-bottom:1px solid #000;padding:2px 0;margin:2px 0">
+            ${examLabel ? `<div style="font-size:11px;font-weight:700">${examLabel}</div>` : ''}
+            ${subjectName ? `<div style="font-size:10px;font-weight:600;margin-top:1px">📖 ${language === 'bn' ? 'বিষয়: ' : 'Subject: '}${subjectName}</div>` : ''}
+          </div>
           <div style="display:flex;justify-content:space-between;font-size:10px;font-weight:600;padding:0 2px">
             <span>${language === 'bn' ? 'পূর্ণমান' : 'Marks'}: ${bnMarks}</span>
             ${isSecondary ? '<span style="font-size:8.5px;color:#555">(২য় অংশ)</span>' : ''}
@@ -1543,7 +1549,10 @@ const AdminQuestionPapers = () => {
             </div>
           </div>
           <div style="border-top:1px dashed #777;margin:2px 0"></div>
-          <div style="font-size:10.5px;font-weight:700;margin:1px 0">${subLine}</div>
+          <div style="margin:2px 0">
+            ${examLabel ? `<div style="font-size:11px;font-weight:700">${examLabel}</div>` : ''}
+            ${subjectName ? `<div style="font-size:10px;font-weight:600;margin-top:1px">📖 ${language === 'bn' ? 'বিষয়: ' : 'Subject: '}${subjectName}</div>` : ''}
+          </div>
           <div style="display:flex;justify-content:space-between;font-size:9.5px;font-weight:600;padding:0 2px">
             <span>${language === 'bn' ? 'পূর্ণমান' : 'Marks'}: ${bnMarks}</span>
             ${isSecondary ? '<span style="font-size:8.5px;color:#555">(২য় অংশ)</span>' : ''}
@@ -1561,7 +1570,8 @@ const AdminQuestionPapers = () => {
             ${address ? `<p style="font-size:8.5px;color:#555;margin:1px 0 0;line-height:1">${address}</p>` : ''}
           </div>
         </div>
-        <div style="font-size:11px;font-weight:700;margin:2px 0">${subLine}</div>
+        ${examLabel ? `<div style="font-size:11.5px;font-weight:700;margin:1px 0">${examLabel}</div>` : ''}
+        ${subjectName ? `<div style="font-size:10.5px;font-weight:600;margin:1px 0">📖 ${language === 'bn' ? 'বিষয়: ' : 'Subject: '}${subjectName}</div>` : ''}
         <div style="display:flex;justify-content:space-between;font-size:10px;font-weight:600;margin-top:2px;padding:0 2px">
           <span>${language === 'bn' ? 'পূর্ণমান' : 'Full Marks'}: ${bnMarks}</span>
           ${isSecondary ? '<span style="font-size:8.5px;color:#555">(২য় অংশ / পাতা)</span>' : ''}
