@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
-import { Plus, Trash2, Printer, ArrowLeft, Check, X, Clock, Eye, Keyboard, Type, ChevronDown, ChevronUp, GripVertical, FileCheck, AlertCircle, Settings2, Columns, RotateCcw, Bold, Italic, Underline, Hash, ScanLine, Loader2, Sparkles, Upload } from 'lucide-react';
+import { Plus, Trash2, Printer, ArrowLeft, Check, X, Clock, Eye, Keyboard, Type, ChevronDown, ChevronUp, GripVertical, FileCheck, AlertCircle, Settings2, Columns, RotateCcw, Bold, Italic, Underline, Hash, ScanLine, Loader2, Sparkles, Upload, ListPlus, CornerDownRight } from 'lucide-react';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import { useAuth } from '@/hooks/useAuth';
 import AIQuestionGeneratorDialog from '@/components/admin/AIQuestionGeneratorDialog';
@@ -417,6 +417,18 @@ const DEFAULT_LAYOUT: LayoutSettings = {
   showQuestionMarks: true,
 };
 
+export interface McqSubOption {
+  label: string;
+  text_bn: string;
+  text?: string;
+}
+
+export interface McqStatement {
+  label: string;
+  text_bn: string;
+  text?: string;
+}
+
 interface Question {
   id?: string;
   question_text: string;
@@ -428,6 +440,7 @@ interface Question {
   group_label_bn: string;
   group_marks: number | null;
   options: any;
+  statements?: McqStatement[];
   answer: string;
   custom_label?: string;
   column_break?: boolean; // When true, starts Column 2 (Right side)
@@ -445,6 +458,13 @@ const ROMAN_MCQ_DOT_LABELS = ['i.', 'ii.', 'iii.', 'iv.', 'v.', 'vi.', 'vii.', '
 const ROMAN_UPPER_MCQ_LABELS = ['(I)', '(II)', '(III)', '(IV)', '(V)', '(VI)', '(VII)', '(VIII)'];
 const ENGLISH_MCQ_LABELS = ['(A)', '(B)', '(C)', '(D)', '(E)', '(F)', '(G)', '(H)'];
 const ENGLISH_MCQ_DOT_LABELS = ['A.', 'B.', 'C.', 'D.', 'E.', 'F.', 'G.', 'H.'];
+
+const SUB_OPTION_ROMAN_LABELS = ['(i)', '(ii)', '(iii)', '(iv)', '(v)', '(vi)', '(vii)', '(viii)'];
+const SUB_OPTION_ROMAN_DOT_LABELS = ['i.', 'ii.', 'iii.', 'iv.', 'v.', 'vi.', 'vii.', 'viii.'];
+const SUB_OPTION_NUM_LABELS = ['১.', '২.', '৩.', '৪.', '৫.', '৬.', '৭.', '৮.'];
+const SUB_OPTION_NUM_BRACKET_LABELS = ['(১)', '(২)', '(৩)', '(৪)', '(৫)', '(৬)', '(৭)', '(৮)'];
+const SUB_OPTION_ENG_LABELS = ['a.', 'b.', 'c.', 'd.', 'e.', 'f.', 'g.', 'h.'];
+const SUB_OPTION_ENG_BRACKET_LABELS = ['(a)', '(b)', '(c)', '(d)', '(e)', '(f)', '(g)', '(h)'];
 
 const getOptionPrefix = (opt: any, index: number, isBn: boolean = true) => {
   if (opt?.label && String(opt.label).trim()) {
@@ -734,16 +754,51 @@ const LivePreview = ({ paper, questions, fontConfig, headerConfig, institution, 
             <span className="text-gray-500 shrink-0 ml-2">[{language === 'bn' ? toBengaliNum(q.marks) : q.marks}]</span>
           )}
         </div>
+        {/* Multistatement (বহুপদী বিবৃতি) */}
+        {Array.isArray(q.statements) && q.statements.length > 0 && (
+          <div className="ml-5 mt-1 space-y-0.5 text-xs text-foreground/90">
+            {q.statements.map((st: any, sti: number) => {
+              const stPrefix = st.label || `${ROMAN_MCQ_DOT_LABELS[sti] || `${sti + 1}.`}`;
+              const stText = language === 'bn' ? st.text_bn || st.text : st.text || st.text_bn;
+              return (
+                <div key={sti} className="flex items-baseline gap-1.5">
+                  <span className="font-semibold text-primary shrink-0">{stPrefix}</span>
+                  <span>{stText}</span>
+                </div>
+              );
+            })}
+            <div className="font-semibold text-[11px] text-muted-foreground pt-0.5">
+              {language === 'bn' ? 'নিচের কোনটি সঠিক?' : 'Which of the following is correct?'}
+            </div>
+          </div>
+        )}
         {q.question_type === 'mcq' && Array.isArray(q.options) && (
-          <div className="ml-6 mt-1 flex flex-wrap items-baseline gap-x-5 gap-y-1 text-xs">
+          <div className="ml-6 mt-1 flex flex-wrap items-baseline gap-x-5 gap-y-1.5 text-xs">
             {q.options.map((opt: any, oi: number) => {
               const prefix = getOptionPrefix(opt, oi, language === 'bn' || !!opt.text_bn);
               const text = language === 'bn' ? opt.text_bn || opt.text : opt.text || opt.text_bn;
+              const hasSubOptions = Array.isArray(opt.sub_options) && opt.sub_options.length > 0;
               return (
-                <span key={oi} className="inline-flex items-baseline gap-1">
-                  <strong className="text-primary/90 font-bold">{prefix}</strong>
-                  <span>{text}</span>
-                </span>
+                <div key={oi} className={`inline-flex ${hasSubOptions ? 'flex-col w-full' : 'items-baseline gap-1'}`}>
+                  <div className="inline-flex items-baseline gap-1">
+                    <strong className="text-primary/90 font-bold">{prefix}</strong>
+                    <span>{text}</span>
+                  </div>
+                  {hasSubOptions && (
+                    <div className="ml-4 flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-muted-foreground mt-0.5">
+                      {opt.sub_options.map((so: any, soi: number) => {
+                        const soPrefix = so.label || `(${soi + 1})`;
+                        const soText = language === 'bn' ? so.text_bn || so.text : so.text || so.text_bn;
+                        return (
+                          <span key={soi} className="inline-flex items-baseline gap-1">
+                            <span className="font-semibold text-foreground/80">{soPrefix}</span>
+                            <span>{soText}</span>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -1313,15 +1368,25 @@ const AdminQuestionPapers = () => {
         breakIdx = layoutSettings.columnBreakIndex;
       }
 
-      setQuestions(paperQuestions.map((q: any, i: number) => ({
-        id: q.id, question_text: q.question_text || '', question_text_bn: q.question_text_bn || '',
-        question_type: q.question_type || 'descriptive', marks: q.marks ?? 0, sort_order: q.sort_order || 0,
-        group_label: q.group_label || '', group_label_bn: q.group_label_bn || '',
-        group_marks: q.group_marks ?? null,
-        options: q.options, answer: q.answer || '',
-        custom_label: q.custom_label || '',
-        column_break: breakIdx === i,
-      })));
+      setQuestions(paperQuestions.map((q: any, i: number) => {
+        let opts = q.options;
+        let statements: any = undefined;
+        if (opts && !Array.isArray(opts) && typeof opts === 'object') {
+          statements = opts.statements;
+          opts = opts.items || [];
+        }
+        return {
+          id: q.id, question_text: q.question_text || '', question_text_bn: q.question_text_bn || '',
+          question_type: q.question_type || 'descriptive', marks: q.marks ?? 0, sort_order: q.sort_order || 0,
+          group_label: q.group_label || '', group_label_bn: q.group_label_bn || '',
+          group_marks: q.group_marks ?? null,
+          options: opts,
+          statements: statements,
+          answer: q.answer || '',
+          custom_label: q.custom_label || '',
+          column_break: breakIdx === i,
+        };
+      }));
     }
   }, [selectedPaper?.id, selectedPaper?.layout_settings, paperQuestions]);
 
@@ -1392,12 +1457,23 @@ const AdminQuestionPapers = () => {
       }).eq('id', selectedPaper.id);
       await supabase.from('questions').delete().eq('paper_id', selectedPaper.id);
       if (questions.length > 0) {
-        const rows = questions.map((q, i) => ({
-          paper_id: selectedPaper.id, question_text: q.question_text, question_text_bn: q.question_text_bn,
-          question_type: q.question_type, marks: q.marks, sort_order: i,
-          group_label: q.group_label, group_label_bn: q.group_label_bn, options: q.options, answer: q.answer,
-          custom_label: q.custom_label || null,
-        }));
+        const rows = questions.map((q, i) => {
+          let savedOptions = q.options;
+          if (Array.isArray(q.statements) && q.statements.length > 0) {
+            savedOptions = {
+              items: Array.isArray(q.options) ? q.options : [],
+              statements: q.statements,
+            };
+          }
+          return {
+            paper_id: selectedPaper.id, question_text: q.question_text, question_text_bn: q.question_text_bn,
+            question_type: q.question_type, marks: q.marks, sort_order: i,
+            group_label: q.group_label, group_label_bn: q.group_label_bn,
+            options: savedOptions,
+            answer: q.answer,
+            custom_label: q.custom_label || null,
+          };
+        });
         const { error } = await supabase.from('questions').insert(rows);
         if (error) throw error;
       }
@@ -1590,6 +1666,114 @@ const AdminQuestionPapers = () => {
     setQuestions(prev => prev.map((q, i) => {
       if (i !== qIndex) return q;
       return { ...q, options: (q.options || []).filter((_: any, oi: number) => oi !== optIndex) };
+    }));
+  };
+
+  // ─── Sub-Options under an Option (উপ-অপশন) ───
+  const addSubOption = (qIndex: number, optIndex: number, style: 'roman_bracket' | 'roman_dot' | 'num_bracket' | 'num_dot' = 'roman_bracket') => {
+    setQuestions(prev => prev.map((q, i) => {
+      if (i !== qIndex) return q;
+      const opts = Array.isArray(q.options) ? [...q.options] : [];
+      if (!opts[optIndex]) return q;
+      const curSubOpts = Array.isArray(opts[optIndex].sub_options) ? [...opts[optIndex].sub_options] : [];
+      const len = curSubOpts.length;
+      let label = SUB_OPTION_ROMAN_LABELS[len] || `(${len + 1})`;
+      if (style === 'roman_dot') label = SUB_OPTION_ROMAN_DOT_LABELS[len] || `${len + 1}.`;
+      else if (style === 'num_bracket') label = SUB_OPTION_NUM_BRACKET_LABELS[len] || `(${toBengaliNum(len + 1)})`;
+      else if (style === 'num_dot') label = SUB_OPTION_NUM_LABELS[len] || `${toBengaliNum(len + 1)}.`;
+
+      curSubOpts.push({ label, text_bn: '', text: '' });
+      opts[optIndex] = { ...opts[optIndex], sub_options: curSubOpts };
+      return { ...q, options: opts };
+    }));
+  };
+
+  const updateSubOption = (qIndex: number, optIndex: number, subIndex: number, field: string, val: any) => {
+    setQuestions(prev => prev.map((q, i) => {
+      if (i !== qIndex) return q;
+      const opts = Array.isArray(q.options) ? [...q.options] : [];
+      if (!opts[optIndex] || !Array.isArray(opts[optIndex].sub_options)) return q;
+      const curSubOpts = [...opts[optIndex].sub_options];
+      curSubOpts[subIndex] = { ...curSubOpts[subIndex], [field]: val };
+      opts[optIndex] = { ...opts[optIndex], sub_options: curSubOpts };
+      return { ...q, options: opts };
+    }));
+  };
+
+  const removeSubOption = (qIndex: number, optIndex: number, subIndex: number) => {
+    setQuestions(prev => prev.map((q, i) => {
+      if (i !== qIndex) return q;
+      const opts = Array.isArray(q.options) ? [...q.options] : [];
+      if (!opts[optIndex] || !Array.isArray(opts[optIndex].sub_options)) return q;
+      const curSubOpts = opts[optIndex].sub_options.filter((_: any, si: number) => si !== subIndex);
+      opts[optIndex] = { ...opts[optIndex], sub_options: curSubOpts };
+      return { ...q, options: opts };
+    }));
+  };
+
+  const setSubOptionStyle = (qIndex: number, optIndex: number, style: 'roman_bracket' | 'roman_dot' | 'num_bracket' | 'num_dot' | 'eng_dot') => {
+    setQuestions(prev => prev.map((q, i) => {
+      if (i !== qIndex) return q;
+      const opts = Array.isArray(q.options) ? [...q.options] : [];
+      if (!opts[optIndex] || !Array.isArray(opts[optIndex].sub_options)) return q;
+      const curSubOpts = opts[optIndex].sub_options.map((so: any, si: number) => {
+        let label = SUB_OPTION_ROMAN_LABELS[si] || `(${si + 1})`;
+        if (style === 'roman_dot') label = SUB_OPTION_ROMAN_DOT_LABELS[si] || `${si + 1}.`;
+        else if (style === 'num_bracket') label = SUB_OPTION_NUM_BRACKET_LABELS[si] || `(${toBengaliNum(si + 1)})`;
+        else if (style === 'num_dot') label = SUB_OPTION_NUM_LABELS[si] || `${toBengaliNum(si + 1)}.`;
+        else if (style === 'eng_dot') label = SUB_OPTION_ENG_LABELS[si] || `${String.fromCharCode(97 + si)}.`;
+        return { ...so, label };
+      });
+      opts[optIndex] = { ...opts[optIndex], sub_options: curSubOpts };
+      return { ...q, options: opts };
+    }));
+  };
+
+  // ─── Multistatement (বহুপদী বিবৃতি / রোমান তথ্য i, ii, iii) ───
+  const addStatement = (qIndex: number) => {
+    setQuestions(prev => prev.map((q, i) => {
+      if (i !== qIndex) return q;
+      const stmts = Array.isArray(q.statements) ? [...q.statements] : [];
+      const len = stmts.length;
+      const label = ROMAN_MCQ_DOT_LABELS[len] || `${len + 1}.`;
+      stmts.push({ label, text_bn: '', text: '' });
+      return { ...q, statements: stmts };
+    }));
+  };
+
+  const updateStatement = (qIndex: number, stIndex: number, field: string, val: any) => {
+    setQuestions(prev => prev.map((q, i) => {
+      if (i !== qIndex) return q;
+      const stmts = Array.isArray(q.statements) ? [...q.statements] : [];
+      if (!stmts[stIndex]) return q;
+      stmts[stIndex] = { ...stmts[stIndex], [field]: val };
+      return { ...q, statements: stmts };
+    }));
+  };
+
+  const removeStatement = (qIndex: number, stIndex: number) => {
+    setQuestions(prev => prev.map((q, i) => {
+      if (i !== qIndex) return q;
+      const stmts = Array.isArray(q.statements) ? q.statements.filter((_: any, si: number) => si !== stIndex) : [];
+      return { ...q, statements: stmts };
+    }));
+  };
+
+  const applyMultistatementPreset = (qIndex: number) => {
+    setQuestions(prev => prev.map((q, i) => {
+      if (i !== qIndex) return q;
+      const newOpts = [
+        { label: '(ক)', text_bn: 'i ও ii', text: 'i & ii', is_correct: false },
+        { label: '(খ)', text_bn: 'ii ও iii', text: 'ii & iii', is_correct: false },
+        { label: '(গ)', text_bn: 'i ও iii', text: 'i & iii', is_correct: false },
+        { label: '(ঘ)', text_bn: 'i, ii ও iii', text: 'i, ii & iii', is_correct: true },
+      ];
+      let curStmts = Array.isArray(q.statements) && q.statements.length > 0 ? q.statements : [
+        { label: 'i.', text_bn: '', text: '' },
+        { label: 'ii.', text_bn: '', text: '' },
+        { label: 'iii.', text_bn: '', text: '' },
+      ];
+      return { ...q, statements: curStmts, options: newOpts };
     }));
   };
 
@@ -1808,12 +1992,39 @@ const AdminQuestionPapers = () => {
       const ff = isArabic ? fontConfig.arabic : effectiveBengaliFont;
       const serial = language === 'bn' ? toBengaliNum(i + 1) : String(i + 1);
       const labelText = (q.custom_label && q.custom_label.trim()) ? q.custom_label.trim() : `${serial}।`;
+
+      // Multistatement statements (বহুপদী বিবৃতি)
+      let stHtml = '';
+      if (Array.isArray(q.statements) && q.statements.length > 0) {
+        stHtml = '<div class="statements">' +
+          q.statements.map((st: any, sti: number) => {
+            const stPrefix = st.label || `${ROMAN_MCQ_DOT_LABELS[sti] || `${sti + 1}.`}`;
+            const stText = language === 'bn' ? st.text_bn || st.text : st.text || st.text_bn;
+            return `<div class="statement"><strong>${stPrefix}</strong> ${stText || ''}</div>`;
+          }).join('') +
+          `<div class="statements-prompt">${language === 'bn' ? 'নিচের কোনটি সঠিক?' : 'Which of the following is correct?'}</div>` +
+        '</div>';
+      }
+
       const opts = Array.isArray(q.options) ? '<div class="options">' + q.options.map((o: any, oi: number) => {
         const prefix = getOptionPrefix(o, oi, language === 'bn' || !!o.text_bn);
         const text = language === 'bn' ? o.text_bn || o.text : o.text || o.text_bn;
+        let subHtml = '';
+        if (Array.isArray(o.sub_options) && o.sub_options.length > 0) {
+          subHtml = '<div class="sub-options">' +
+            o.sub_options.map((so: any, soi: number) => {
+              const soPrefix = so.label || `(${soi + 1})`;
+              const soText = language === 'bn' ? so.text_bn || so.text : so.text || so.text_bn;
+              return `<span class="sub-option"><strong>${soPrefix}</strong> ${soText || ''}</span>`;
+            }).join('') +
+          '</div>';
+        }
+        if (subHtml) {
+          return '<div class="option-wrapper"><span class="option"><strong>' + prefix + '</strong> ' + text + '</span>' + subHtml + '</div>';
+        }
         return '<span class="option"><strong>' + prefix + '</strong> ' + text + '</span>';
       }).join('') + '</div>' : '';
-      return groupHtml + `<div class="question" style="font-family:'${ff}';direction:${dir}"><div class="q-header"><span><strong>${labelText}</strong> ${qText}</span><span>[${language === 'bn' ? toBengaliNum(q.marks) : q.marks}]</span></div>${opts}</div>`;
+      return groupHtml + `<div class="question" style="font-family:'${ff}';direction:${dir}"><div class="q-header"><span><strong>${labelText}</strong> ${qText}</span><span>[${language === 'bn' ? toBengaliNum(q.marks) : q.marks}]</span></div>${stHtml}${opts}</div>`;
     };
 
     const getSplitIndex = () => {
@@ -1877,6 +2088,12 @@ const AdminQuestionPapers = () => {
       .q-header { display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 2px; }
       .options { margin-left: 20px; margin-top: 3px; display: flex; flex-wrap: wrap; column-gap: 20px; row-gap: 3px; font-size: 12px; }
       .options .option { display: inline-flex; align-items: baseline; gap: 4px; white-space: nowrap; }
+      .option-wrapper { display: inline-flex; flex-direction: column; align-items: flex-start; margin-right: 15px; margin-bottom: 2px; }
+      .sub-options { margin-left: 10px; margin-top: 1px; display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 11px; }
+      .sub-options .sub-option { display: inline-flex; align-items: baseline; gap: 3px; white-space: nowrap; }
+      .statements { margin-left: 18px; margin-top: 2px; margin-bottom: 3px; font-size: 11.5px; line-height: 1.35; }
+      .statements .statement { margin-bottom: 1px; }
+      .statements-prompt { font-size: 11px; font-weight: 600; margin-top: 2px; }
       .group-label { font-weight: 700; font-size: 13px; margin: 8px 0 4px; padding: 2px 6px; background: #eee; }
     </style></head><body>
     <div class="content">
@@ -2460,147 +2677,354 @@ const AdminQuestionPapers = () => {
                   </div>
                 </div>
 
-                {/* MCQ Options */}
+                {/* MCQ Options and Multistatement */}
                 {q.question_type === 'mcq' && (
-                  <div className="space-y-1.5 pl-3 pt-1 border-l-2 border-primary/20">
-                    <div className="flex flex-wrap items-center justify-between gap-1">
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{language === 'bn' ? 'অপশনসমূহ' : 'Options'}</span>
-                      <div className="flex items-center gap-1">
-                        <span className="text-[10px] text-muted-foreground">{language === 'bn' ? 'ক্রম শৈলী:' : 'Prefix:'}</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const opts = Array.isArray(q.options) ? [...q.options] : [];
-                            const newOpts = opts.map((o: any, oi: number) => ({ ...o, label: BENGALI_MCQ_LABELS[oi] || `(${oi + 1})` }));
-                            updateQuestion(qi, 'options', newOpts);
-                          }}
-                          className="px-1.5 py-0.5 text-[10px] rounded bg-muted/80 hover:bg-primary/20 font-bold transition-colors"
-                          title="বাংলা বন্ধনী: (ক), (খ), (গ), (ঘ)"
-                        >
-                          (ক)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const opts = Array.isArray(q.options) ? [...q.options] : [];
-                            const newOpts = opts.map((o: any, oi: number) => ({ ...o, label: BENGALI_MCQ_DOT_LABELS[oi] || `${oi + 1}.` }));
-                            updateQuestion(qi, 'options', newOpts);
-                          }}
-                          className="px-1.5 py-0.5 text-[10px] rounded bg-muted/80 hover:bg-primary/20 font-bold transition-colors"
-                          title="বাংলা ডট: ক., খ., গ., ঘ."
-                        >
-                          ক.
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const opts = Array.isArray(q.options) ? [...q.options] : [];
-                            const newOpts = opts.map((o: any, oi: number) => ({ ...o, label: ROMAN_MCQ_LABELS[oi] || `(${oi + 1})` }));
-                            updateQuestion(qi, 'options', newOpts);
-                          }}
-                          className="px-1.5 py-0.5 text-[10px] rounded bg-muted/80 hover:bg-primary/20 font-bold transition-colors text-primary"
-                          title="রোমান বন্ধনী: (i), (ii), (iii), (iv)"
-                        >
-                          (i)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const opts = Array.isArray(q.options) ? [...q.options] : [];
-                            const newOpts = opts.map((o: any, oi: number) => ({ ...o, label: ROMAN_MCQ_DOT_LABELS[oi] || `${oi + 1}.` }));
-                            updateQuestion(qi, 'options', newOpts);
-                          }}
-                          className="px-1.5 py-0.5 text-[10px] rounded bg-muted/80 hover:bg-primary/20 font-bold transition-colors text-primary"
-                          title="রোমান ডট: i., ii., iii., iv."
-                        >
-                          i.
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const opts = Array.isArray(q.options) ? [...q.options] : [];
-                            const newOpts = opts.map((o: any, oi: number) => ({ ...o, label: ENGLISH_MCQ_LABELS[oi] || `(${oi + 1})` }));
-                            updateQuestion(qi, 'options', newOpts);
-                          }}
-                          className="px-1.5 py-0.5 text-[10px] rounded bg-muted/80 hover:bg-primary/20 font-bold transition-colors"
-                          title="English Brackets: (A), (B), (C), (D)"
-                        >
-                          (A)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const opts = Array.isArray(q.options) ? [...q.options] : [];
-                            const newOpts = opts.map((o: any, oi: number) => ({ ...o, label: `${String.fromCharCode(65 + oi)}.` }));
-                            updateQuestion(qi, 'options', newOpts);
-                          }}
-                          className="px-1.5 py-0.5 text-[10px] rounded bg-muted/80 hover:bg-primary/20 font-bold transition-colors"
-                          title="English Dot: A., B., C., D."
-                        >
-                          A.
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const opts = Array.isArray(q.options) ? [...q.options] : [];
-                            const newOpts = opts.map((o: any, oi: number) => ({ ...o, label: ROMAN_UPPER_MCQ_LABELS[oi] || `(${oi + 1})` }));
-                            updateQuestion(qi, 'options', newOpts);
-                          }}
-                          className="px-1.5 py-0.5 text-[10px] rounded bg-muted/80 hover:bg-primary/20 font-bold transition-colors"
-                          title="রোমান ক্যাপিটাল: (I), (II), (III), (IV)"
-                        >
-                          (I)
-                        </button>
-                      </div>
-                    </div>
-                    {Array.isArray(q.options) && q.options.map((opt: any, oi: number) => {
-                      const defaultPrefix = language === 'bn' ? (BENGALI_MCQ_LABELS[oi] || `(${oi + 1})`) : `${String.fromCharCode(65 + oi)}.`;
-                      return (
-                        <div key={oi} className="flex flex-wrap sm:flex-nowrap gap-1.5 items-center">
-                          <Input
-                            className="w-14 h-8 text-xs font-bold text-center px-1 bg-background/80 border-border/40 rounded-lg text-primary shrink-0"
-                            placeholder={defaultPrefix}
-                            value={opt.label || ''}
-                            onChange={e => updateMcqOption(qi, oi, 'label', e.target.value)}
-                            onFocus={e => setActiveInputRef(e.target)}
-                            title={language === 'bn' ? 'অপশন ক্রম (ক্লিক করে যেকোনো অক্ষর দিন: (ক), ক., A.)' : 'Option label'}
-                          />
-                          <Input
-                            className="flex-1 min-w-[120px] h-8 text-sm rounded-lg bg-background/90 border-border/50 px-2.5"
-                            placeholder={language === 'bn' ? 'বাংলা/আরবি অপশন লিখুন...' : 'Bengali/Arabic text'}
-                            value={opt.text_bn || ''}
-                            onChange={e => updateMcqOption(qi, oi, 'text_bn', e.target.value)}
-                            onFocus={e => setActiveInputRef(e.target)}
-                            data-arabic="true"
-                            dir="auto"
-                            style={bijoyMode ? { fontFamily: 'SutonnyMJ, SutonnyOMJ, "Noto Sans Bengali", sans-serif' } : undefined}
-                          />
-                          <Input
-                            className="flex-1 min-w-[120px] h-8 text-sm rounded-lg bg-background/90 border-border/50 px-2.5"
-                            placeholder="English option (optional)"
-                            value={opt.text || ''}
-                            onChange={e => updateMcqOption(qi, oi, 'text', e.target.value)}
-                            onFocus={e => setActiveInputRef(e.target)}
-                          />
-                          <label className="flex items-center gap-1.5 text-xs whitespace-nowrap shrink-0 px-2 py-1 rounded-md bg-muted/30 cursor-pointer hover:bg-muted/60 transition-colors">
-                            <input
-                              type="radio"
-                              name={`correct-${qi}`}
-                              checked={opt.is_correct}
-                              onChange={() => updateMcqOption(qi, oi, 'is_correct', true)}
-                              className="accent-primary h-3.5 w-3.5"
-                            />
-                            <span className="text-[11px] font-medium">{language === 'bn' ? 'সঠিক' : 'Correct'}</span>
-                          </label>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-destructive/10 hover:text-destructive shrink-0" onClick={() => removeMcqOption(qi, oi)}>
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                  <div className="space-y-2.5 pl-3 pt-1 border-l-2 border-primary/20">
+                    {/* Multistatement (বহুপদী সমাপ্তিসূচক বিবৃতি i, ii, iii) */}
+                    <div className="p-2 rounded-lg bg-muted/20 border border-border/40 space-y-1.5">
+                      <div className="flex flex-wrap items-center justify-between gap-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                            {language === 'bn' ? 'বহুপদী রোমান তথ্য / বিবৃতি (i, ii, iii)' : 'Roman Statements (i, ii, iii)'}
+                          </span>
+                          {(!q.statements || q.statements.length === 0) && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-6 px-2 text-[10px] rounded border-dashed text-primary hover:bg-primary/10"
+                              onClick={() => addStatement(qi)}
+                            >
+                              <Plus className="h-3 w-3 mr-1" />
+                              {language === 'bn' ? '+ বহুপদী তথ্য যোগ' : '+ Add Statement'}
+                            </Button>
+                          )}
                         </div>
-                      );
-                    })}
-                    <Button variant="outline" size="sm" className="h-7 text-xs rounded-lg" onClick={() => addMcqOption(qi)}>
-                      <Plus className="h-3 w-3 mr-1" />{language === 'bn' ? 'অপশন যোগ' : 'Option'}
-                    </Button>
+                        {Array.isArray(q.statements) && q.statements.length > 0 && (
+                          <div className="flex items-center gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-[10px] text-primary hover:bg-primary/15 font-bold"
+                              onClick={() => applyMultistatementPreset(qi)}
+                              title="অপশনগুলোতে স্বয়ংক্রিয়ভাবে (ক) i ও ii, (খ) ii ও iii... সেট করুন"
+                            >
+                              <Sparkles className="h-3 w-3 mr-1" />
+                              {language === 'bn' ? 'স্ট্যান্ডার্ড কম্বো অপশন সেট' : 'Fill Combo Options'}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-6 px-2 text-[10px] rounded text-primary"
+                              onClick={() => addStatement(qi)}
+                            >
+                              <Plus className="h-3 w-3 mr-1" />
+                              {language === 'bn' ? 'তথ্য যোগ' : 'Add'}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+
+                      {Array.isArray(q.statements) && q.statements.length > 0 && (
+                        <div className="space-y-1 pt-1">
+                          {q.statements.map((st: any, sti: number) => (
+                            <div key={sti} className="flex gap-1.5 items-center">
+                              <Input
+                                className="w-12 h-7 text-xs font-bold text-center px-1 bg-background border-border/40 rounded text-primary shrink-0"
+                                value={st.label || ''}
+                                onChange={e => updateStatement(qi, sti, 'label', e.target.value)}
+                                onFocus={e => setActiveInputRef(e.target)}
+                                title="রোমান ক্রম (যেমন: i., ii., iii.)"
+                              />
+                              <Input
+                                className="flex-1 min-w-[120px] h-7 text-xs rounded bg-background border-border/50 px-2"
+                                placeholder={language === 'bn' ? `বিবৃতি ${sti + 1} (যেমন: পদ্মা সেতুর দৈর্ঘ্য ৬.১৫ কিমি)` : `Statement ${sti + 1}`}
+                                value={st.text_bn || ''}
+                                onChange={e => updateStatement(qi, sti, 'text_bn', e.target.value)}
+                                onFocus={e => setActiveInputRef(e.target)}
+                                data-arabic="true"
+                                dir="auto"
+                                style={bijoyMode ? { fontFamily: 'SutonnyMJ, SutonnyOMJ, "Noto Sans Bengali", sans-serif' } : undefined}
+                              />
+                              <Input
+                                className="flex-1 min-w-[100px] h-7 text-xs rounded bg-background border-border/50 px-2"
+                                placeholder="English statement (optional)"
+                                value={st.text || ''}
+                                onChange={e => updateStatement(qi, sti, 'text', e.target.value)}
+                                onFocus={e => setActiveInputRef(e.target)}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 rounded-full hover:bg-destructive/10 hover:text-destructive shrink-0"
+                                onClick={() => removeStatement(qi, sti)}
+                                title="বিবৃতি মুছুন"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ))}
+                          <div className="text-[10px] text-muted-foreground pt-0.5">
+                            💡 {language === 'bn' ? 'বিবৃতি শেষে প্রশ্নপত্রে স্বয়ংক্রিয়ভাবে "নিচের কোনটি সঠিক?" প্রদর্শিত হবে।' : 'Statements render before the options.'}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* MCQ Options List */}
+                    <div className="space-y-1.5">
+                      <div className="flex flex-wrap items-center justify-between gap-1">
+                        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                          {language === 'bn' ? 'অপশনসমূহ (Options)' : 'Options'}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] text-muted-foreground">{language === 'bn' ? 'ক্রম শৈলী:' : 'Prefix:'}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const opts = Array.isArray(q.options) ? [...q.options] : [];
+                              const newOpts = opts.map((o: any, oi: number) => ({ ...o, label: BENGALI_MCQ_LABELS[oi] || `(${oi + 1})` }));
+                              updateQuestion(qi, 'options', newOpts);
+                            }}
+                            className="px-1.5 py-0.5 text-[10px] rounded bg-muted/80 hover:bg-primary/20 font-bold transition-colors"
+                            title="বাংলা বন্ধনী: (ক), (খ), (গ), (ঘ)"
+                          >
+                            (ক)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const opts = Array.isArray(q.options) ? [...q.options] : [];
+                              const newOpts = opts.map((o: any, oi: number) => ({ ...o, label: BENGALI_MCQ_DOT_LABELS[oi] || `${oi + 1}.` }));
+                              updateQuestion(qi, 'options', newOpts);
+                            }}
+                            className="px-1.5 py-0.5 text-[10px] rounded bg-muted/80 hover:bg-primary/20 font-bold transition-colors"
+                            title="বাংলা ডট: ক., খ., গ., ঘ."
+                          >
+                            ক.
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const opts = Array.isArray(q.options) ? [...q.options] : [];
+                              const newOpts = opts.map((o: any, oi: number) => ({ ...o, label: ROMAN_MCQ_LABELS[oi] || `(${oi + 1})` }));
+                              updateQuestion(qi, 'options', newOpts);
+                            }}
+                            className="px-1.5 py-0.5 text-[10px] rounded bg-muted/80 hover:bg-primary/20 font-bold transition-colors text-primary"
+                            title="রোমান বন্ধনী: (i), (ii), (iii), (iv)"
+                          >
+                            (i)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const opts = Array.isArray(q.options) ? [...q.options] : [];
+                              const newOpts = opts.map((o: any, oi: number) => ({ ...o, label: ROMAN_MCQ_DOT_LABELS[oi] || `${oi + 1}.` }));
+                              updateQuestion(qi, 'options', newOpts);
+                            }}
+                            className="px-1.5 py-0.5 text-[10px] rounded bg-muted/80 hover:bg-primary/20 font-bold transition-colors text-primary"
+                            title="রোমান ডট: i., ii., iii., iv."
+                          >
+                            i.
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const opts = Array.isArray(q.options) ? [...q.options] : [];
+                              const newOpts = opts.map((o: any, oi: number) => ({ ...o, label: ENGLISH_MCQ_LABELS[oi] || `(${oi + 1})` }));
+                              updateQuestion(qi, 'options', newOpts);
+                            }}
+                            className="px-1.5 py-0.5 text-[10px] rounded bg-muted/80 hover:bg-primary/20 font-bold transition-colors"
+                            title="English Brackets: (A), (B), (C), (D)"
+                          >
+                            (A)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const opts = Array.isArray(q.options) ? [...q.options] : [];
+                              const newOpts = opts.map((o: any, oi: number) => ({ ...o, label: `${String.fromCharCode(65 + oi)}.` }));
+                              updateQuestion(qi, 'options', newOpts);
+                            }}
+                            className="px-1.5 py-0.5 text-[10px] rounded bg-muted/80 hover:bg-primary/20 font-bold transition-colors"
+                            title="English Dot: A., B., C., D."
+                          >
+                            A.
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const opts = Array.isArray(q.options) ? [...q.options] : [];
+                              const newOpts = opts.map((o: any, oi: number) => ({ ...o, label: ROMAN_UPPER_MCQ_LABELS[oi] || `(${oi + 1})` }));
+                              updateQuestion(qi, 'options', newOpts);
+                            }}
+                            className="px-1.5 py-0.5 text-[10px] rounded bg-muted/80 hover:bg-primary/20 font-bold transition-colors"
+                            title="রোমান ক্যাপিটাল: (I), (II), (III), (IV)"
+                          >
+                            (I)
+                          </button>
+                        </div>
+                      </div>
+
+                      {Array.isArray(q.options) && q.options.map((opt: any, oi: number) => {
+                        const defaultPrefix = language === 'bn' ? (BENGALI_MCQ_LABELS[oi] || `(${oi + 1})`) : `${String.fromCharCode(65 + oi)}.`;
+                        const hasSubOptions = Array.isArray(opt.sub_options) && opt.sub_options.length > 0;
+                        return (
+                          <div key={oi} className="space-y-1">
+                            <div className="flex flex-wrap sm:flex-nowrap gap-1.5 items-center">
+                              <Input
+                                className="w-14 h-8 text-xs font-bold text-center px-1 bg-background/80 border-border/40 rounded-lg text-primary shrink-0"
+                                placeholder={defaultPrefix}
+                                value={opt.label || ''}
+                                onChange={e => updateMcqOption(qi, oi, 'label', e.target.value)}
+                                onFocus={e => setActiveInputRef(e.target)}
+                                title={language === 'bn' ? 'অপশন ক্রম (ক্লিক করে যেকোনো অক্ষর দিন: (ক), ক., A.)' : 'Option label'}
+                              />
+                              <Input
+                                className="flex-1 min-w-[120px] h-8 text-sm rounded-lg bg-background/90 border-border/50 px-2.5"
+                                placeholder={language === 'bn' ? 'বাংলা/আরবি অপশন লিখুন...' : 'Bengali/Arabic text'}
+                                value={opt.text_bn || ''}
+                                onChange={e => updateMcqOption(qi, oi, 'text_bn', e.target.value)}
+                                onFocus={e => setActiveInputRef(e.target)}
+                                data-arabic="true"
+                                dir="auto"
+                                style={bijoyMode ? { fontFamily: 'SutonnyMJ, SutonnyOMJ, "Noto Sans Bengali", sans-serif' } : undefined}
+                              />
+                              <Input
+                                className="flex-1 min-w-[120px] h-8 text-sm rounded-lg bg-background/90 border-border/50 px-2.5"
+                                placeholder="English option (optional)"
+                                value={opt.text || ''}
+                                onChange={e => updateMcqOption(qi, oi, 'text', e.target.value)}
+                                onFocus={e => setActiveInputRef(e.target)}
+                              />
+                              <label className="flex items-center gap-1.5 text-xs whitespace-nowrap shrink-0 px-2 py-1 rounded-md bg-muted/30 cursor-pointer hover:bg-muted/60 transition-colors">
+                                <input
+                                  type="radio"
+                                  name={`correct-${qi}`}
+                                  checked={opt.is_correct}
+                                  onChange={() => updateMcqOption(qi, oi, 'is_correct', true)}
+                                  className="accent-primary h-3.5 w-3.5"
+                                />
+                                <span className="text-[11px] font-medium">{language === 'bn' ? 'সঠিক' : 'Correct'}</span>
+                              </label>
+
+                              {/* Add Sub-option button */}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-7 px-2 text-[10px] gap-1 rounded-md text-primary border-primary/30 hover:bg-primary/10 shrink-0"
+                                onClick={() => addSubOption(qi, oi)}
+                                title={language === 'bn' ? 'এই অপশনের আন্ডারে রোমান বা সংখ্যা উপ-অপশন যোগ করুন' : 'Add sub-options under this option'}
+                              >
+                                <ListPlus className="h-3 w-3" />
+                                <span>{language === 'bn' ? '+ উপ-অপশন' : '+ Sub-opt'}</span>
+                              </Button>
+
+                              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-destructive/10 hover:text-destructive shrink-0" onClick={() => removeMcqOption(qi, oi)}>
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+
+                            {/* Sub-options under this option */}
+                            {hasSubOptions && (
+                              <div className="ml-5 sm:ml-8 pl-3 border-l-2 border-primary/40 space-y-1.5 my-1 bg-muted/25 p-2 rounded-r-lg">
+                                <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
+                                  <span className="font-semibold text-primary flex items-center gap-1">
+                                    <CornerDownRight className="h-3 w-3" />
+                                    {language === 'bn' ? 'উপ-অপশনসমূহ (Sub-options):' : 'Sub-options:'}
+                                  </span>
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-[10px]">{language === 'bn' ? 'শৈলী:' : 'Style:'}</span>
+                                    <button
+                                      type="button"
+                                      className="px-1 py-0.5 text-[9px] rounded bg-background hover:bg-primary/20 border font-semibold text-primary"
+                                      onClick={() => setSubOptionStyle(qi, oi, 'roman_bracket')}
+                                      title="রোমান বন্ধনী: (i), (ii), (iii)"
+                                    >(i)</button>
+                                    <button
+                                      type="button"
+                                      className="px-1 py-0.5 text-[9px] rounded bg-background hover:bg-primary/20 border font-semibold text-primary"
+                                      onClick={() => setSubOptionStyle(qi, oi, 'roman_dot')}
+                                      title="রোমান ডট: i., ii., iii."
+                                    >i.</button>
+                                    <button
+                                      type="button"
+                                      className="px-1 py-0.5 text-[9px] rounded bg-background hover:bg-primary/20 border font-semibold"
+                                      onClick={() => setSubOptionStyle(qi, oi, 'num_dot')}
+                                      title="বাংলা ডট: ১., ২., ৩."
+                                    >১.</button>
+                                    <button
+                                      type="button"
+                                      className="px-1 py-0.5 text-[9px] rounded bg-background hover:bg-primary/20 border font-semibold"
+                                      onClick={() => setSubOptionStyle(qi, oi, 'num_bracket')}
+                                      title="বাংলা বন্ধনী: (১), (২), (৩)"
+                                    >(১)</button>
+                                    <button
+                                      type="button"
+                                      className="px-1 py-0.5 text-[9px] rounded bg-background hover:bg-primary/20 border font-semibold"
+                                      onClick={() => setSubOptionStyle(qi, oi, 'eng_dot')}
+                                      title="ইংরেজি ডট: a., b., c."
+                                    >a.</button>
+                                  </div>
+                                </div>
+                                {opt.sub_options.map((so: any, soi: number) => (
+                                  <div key={soi} className="flex flex-wrap sm:flex-nowrap gap-1.5 items-center">
+                                    <Input
+                                      className="w-12 h-7 text-xs font-bold text-center px-1 bg-background border-border/40 rounded text-primary shrink-0"
+                                      value={so.label || ''}
+                                      onChange={e => updateSubOption(qi, oi, soi, 'label', e.target.value)}
+                                      onFocus={e => setActiveInputRef(e.target)}
+                                      title="উপ-অপশন ক্রম (যেমন: (i), i., ১., ইত্যাদি)"
+                                    />
+                                    <Input
+                                      className="flex-1 min-w-[120px] h-7 text-xs rounded bg-background border-border/50 px-2"
+                                      placeholder={language === 'bn' ? 'উপ-অপশনের বিবরণ (বাংলা/আরবি)...' : 'Sub-option text'}
+                                      value={so.text_bn || ''}
+                                      onChange={e => updateSubOption(qi, oi, soi, 'text_bn', e.target.value)}
+                                      onFocus={e => setActiveInputRef(e.target)}
+                                      data-arabic="true"
+                                      dir="auto"
+                                      style={bijoyMode ? { fontFamily: 'SutonnyMJ, SutonnyOMJ, "Noto Sans Bengali", sans-serif' } : undefined}
+                                    />
+                                    <Input
+                                      className="flex-1 min-w-[100px] h-7 text-xs rounded bg-background border-border/50 px-2"
+                                      placeholder="English sub-option (optional)"
+                                      value={so.text || ''}
+                                      onChange={e => updateSubOption(qi, oi, soi, 'text', e.target.value)}
+                                      onFocus={e => setActiveInputRef(e.target)}
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6 rounded-full hover:bg-destructive/10 hover:text-destructive shrink-0"
+                                      onClick={() => removeSubOption(qi, oi, soi)}
+                                      title="উপ-অপশন মুছুন"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                ))}
+                                <button
+                                  type="button"
+                                  onClick={() => addSubOption(qi, oi)}
+                                  className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline font-medium mt-0.5"
+                                >
+                                  <Plus className="h-3 w-3" /> {language === 'bn' ? 'আরেকটি উপ-অপশন যোগ করুন' : 'Add another sub-option'}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                      <Button variant="outline" size="sm" className="h-7 text-xs rounded-lg" onClick={() => addMcqOption(qi)}>
+                        <Plus className="h-3 w-3 mr-1" />{language === 'bn' ? 'অপশন যোগ' : 'Option'}
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
