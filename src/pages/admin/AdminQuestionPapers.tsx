@@ -729,14 +729,15 @@ const LivePreview = ({ paper, questions, fontConfig, headerConfig, institution, 
 
   const questionItems = questions.map((q, i) => {
     const qText = language === 'bn' ? q.question_text_bn || q.question_text : q.question_text;
-    const isArabic = /[\u0600-\u06FF]/.test(qText);
-    const fontFamily = isArabic ? fontConfig.arabic : effectiveBengaliFont;
     const serial = language === 'bn' ? toBengaliNum(i + 1) : String(i + 1);
+    const combinedFont = fontConfig.bengali === 'SutonnyMJ'
+      ? `"${fontConfig.arabic}", "Noto Sans Bengali", sans-serif`
+      : `"${effectiveBengaliFont}", "${fontConfig.arabic}", "Noto Sans Bengali", "Amiri", sans-serif`;
 
     return (
-      <div key={i} className="mb-2" style={{ fontFamily, lineHeight: layout.lineSpacing }}>
+      <div key={i} className="mb-2" style={{ fontFamily: combinedFont, lineHeight: layout.lineSpacing, direction: 'ltr' }}>
         {((language === 'bn' ? q.group_label_bn : q.group_label) || '').trim() && (i === 0 || (language === 'bn' ? q.group_label_bn : q.group_label) !== (language === 'bn' ? questions[i - 1]?.group_label_bn : questions[i - 1]?.group_label)) ? (
-          <div className="font-bold text-center mb-2 mt-3 py-1 border-b border-gray-300">
+          <div className="font-bold text-center mb-2 mt-3 py-1 border-b border-gray-300" dir="ltr">
             <span className="text-sm tracking-wide">{language === 'bn' ? q.group_label_bn : q.group_label}</span>
             {q.group_marks != null && q.group_marks > 0 && (
               <span className="text-xs font-semibold text-gray-500 ml-2">
@@ -745,54 +746,60 @@ const LivePreview = ({ paper, questions, fontConfig, headerConfig, institution, 
             )}
           </div>
         ) : null}
-        <div className="flex justify-between text-sm" dir={isArabic ? 'rtl' : 'ltr'}>
-          <span>
-            <strong className="mr-1">{q.custom_label?.trim() || `${serial}.`}</strong>
-            {qText || ''}
-          </span>
+        <div className="flex justify-between items-baseline text-sm" dir="ltr">
+          <div className="flex items-baseline gap-1.5 flex-1 min-w-0" style={{ unicodeBidi: 'isolate' }}>
+            <strong className="shrink-0 select-none font-bold" dir="ltr" style={{ unicodeBidi: 'isolate' }}>
+              {q.custom_label?.trim() || `${serial}.`}
+            </strong>
+            <bdi className="flex-1" dir="auto" style={{ unicodeBidi: 'plaintext' }}>
+              {qText || ''}
+            </bdi>
+          </div>
           {layout.showQuestionMarks && q.marks > 0 && (
-            <span className="text-gray-500 shrink-0 ml-2">[{language === 'bn' ? toBengaliNum(q.marks) : q.marks}]</span>
+            <span className="text-gray-500 shrink-0 ml-2 select-none" dir="ltr">
+              [{language === 'bn' ? toBengaliNum(q.marks) : q.marks}]
+            </span>
           )}
         </div>
         {/* Multistatement (বহুপদী বিবৃতি) */}
         {Array.isArray(q.statements) && q.statements.length > 0 && (
-          <div className="ml-5 mt-1 space-y-0.5 text-xs text-foreground/90">
+          <div className="ml-5 mt-1 space-y-0.5 text-xs text-foreground/90" dir="ltr">
             {q.statements.map((st: any, sti: number) => {
               const stPrefix = st.label || `${ROMAN_MCQ_DOT_LABELS[sti] || `${sti + 1}.`}`;
               const stText = language === 'bn' ? st.text_bn || st.text : st.text || st.text_bn;
               return (
-                <div key={sti} className="flex items-baseline gap-1.5">
-                  <span className="font-semibold text-primary shrink-0">{stPrefix}</span>
-                  <span>{stText}</span>
+                <div key={sti} className="flex items-baseline gap-1.5" dir="ltr" style={{ unicodeBidi: 'isolate' }}>
+                  <strong className="font-semibold text-primary shrink-0" dir="ltr" style={{ unicodeBidi: 'isolate' }}>{stPrefix}</strong>
+                  <bdi dir="auto" style={{ unicodeBidi: 'plaintext' }}>{stText}</bdi>
                 </div>
               );
             })}
-            <div className="font-semibold text-[11px] text-muted-foreground pt-0.5">
+            <div className="font-semibold text-[11px] text-muted-foreground pt-0.5" dir="ltr">
               {language === 'bn' ? 'নিচের কোনটি সঠিক?' : 'Which of the following is correct?'}
             </div>
           </div>
         )}
         {q.question_type === 'mcq' && Array.isArray(q.options) && (
-          <div className="ml-6 mt-1 flex flex-wrap items-baseline gap-x-5 gap-y-1.5 text-xs">
+          <div className="ml-6 mt-1 flex flex-wrap items-baseline gap-x-5 gap-y-1.5 text-xs" dir="ltr">
             {q.options.map((opt: any, oi: number) => {
               const prefix = getOptionPrefix(opt, oi, language === 'bn' || !!opt.text_bn);
               const text = language === 'bn' ? opt.text_bn || opt.text : opt.text || opt.text_bn;
               const hasSubOptions = Array.isArray(opt.sub_options) && opt.sub_options.length > 0;
               return (
-                <div key={oi} className={`inline-flex ${hasSubOptions ? 'flex-col w-full' : 'items-baseline gap-1'}`}>
-                  <div className="inline-flex items-baseline gap-1">
-                    <strong className="text-primary/90 font-bold">{prefix}</strong>
-                    <span>{text}</span>
+                <div key={oi} className={`inline-flex ${hasSubOptions ? 'flex-col w-full' : 'items-baseline gap-1'}`} dir="ltr">
+                  <div className="inline-flex items-baseline gap-1" dir="ltr" style={{ unicodeBidi: 'isolate' }}>
+                    <strong className="text-primary/90 font-bold shrink-0" dir="ltr" style={{ unicodeBidi: 'isolate' }}>{prefix}</strong>
+                    <bdi dir="auto" style={{ unicodeBidi: 'plaintext' }}>{text}</bdi>
                   </div>
                   {hasSubOptions && (
-                    <div className="ml-4 flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-muted-foreground mt-0.5">
+                    <div className="ml-4 flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-muted-foreground mt-0.5" dir="ltr">
                       {opt.sub_options.map((so: any, soi: number) => {
                         const soPrefix = so.label || `(${soi + 1})`;
                         const soText = language === 'bn' ? so.text_bn || so.text : so.text || so.text_bn;
                         return (
-                          <span key={soi} className="inline-flex items-baseline gap-1">
-                            <span className="font-semibold text-foreground/80">{soPrefix}</span>
-                            <span>{soText}</span>
+                          <span key={soi} className="inline-flex items-baseline gap-1" dir="ltr" style={{ unicodeBidi: 'isolate' }}>
+                            <strong className="font-semibold text-foreground/80 shrink-0" dir="ltr" style={{ unicodeBidi: 'isolate' }}>{soPrefix}</strong>
+                            <bdi dir="auto" style={{ unicodeBidi: 'plaintext' }}>{soText}</bdi>
                           </span>
                         );
                       })}
@@ -1987,44 +1994,49 @@ const AdminQuestionPapers = () => {
       const gl = language === 'bn' ? q.group_label_bn : q.group_label;
       if (gl) { groupHtml = '<div class="group-label">' + gl + '</div>'; }
       const qText = language === 'bn' ? q.question_text_bn || q.question_text : q.question_text;
-      const isArabic = /[\u0600-\u06FF]/.test(qText);
-      const dir = isArabic ? 'rtl' : 'ltr';
-      const ff = isArabic ? fontConfig.arabic : effectiveBengaliFont;
       const serial = language === 'bn' ? toBengaliNum(i + 1) : String(i + 1);
       const labelText = (q.custom_label && q.custom_label.trim()) ? q.custom_label.trim() : `${serial}।`;
+      const combinedFont = fontConfig.bengali === 'SutonnyMJ'
+        ? `'${fontConfig.arabic}', 'Noto Sans Bengali', sans-serif`
+        : `'${effectiveBengaliFont}', '${fontConfig.arabic}', 'Noto Sans Bengali', 'Amiri', sans-serif`;
 
       // Multistatement statements (বহুপদী বিবৃতি)
       let stHtml = '';
       if (Array.isArray(q.statements) && q.statements.length > 0) {
-        stHtml = '<div class="statements">' +
+        stHtml = '<div class="statements" dir="ltr">' +
           q.statements.map((st: any, sti: number) => {
             const stPrefix = st.label || `${ROMAN_MCQ_DOT_LABELS[sti] || `${sti + 1}.`}`;
             const stText = language === 'bn' ? st.text_bn || st.text : st.text || st.text_bn;
-            return `<div class="statement"><strong>${stPrefix}</strong> ${stText || ''}</div>`;
+            return `<div class="statement" dir="ltr" style="unicode-bidi:isolate"><strong dir="ltr" style="unicode-bidi:isolate">${stPrefix}</strong> <bdi dir="auto" style="unicode-bidi:plaintext">${stText || ''}</bdi></div>`;
           }).join('') +
-          `<div class="statements-prompt">${language === 'bn' ? 'নিচের কোনটি সঠিক?' : 'Which of the following is correct?'}</div>` +
+          `<div class="statements-prompt" dir="ltr">${language === 'bn' ? 'নিচের কোনটি সঠিক?' : 'Which of the following is correct?'}</div>` +
         '</div>';
       }
 
-      const opts = Array.isArray(q.options) ? '<div class="options">' + q.options.map((o: any, oi: number) => {
+      const opts = Array.isArray(q.options) ? '<div class="options" dir="ltr">' + q.options.map((o: any, oi: number) => {
         const prefix = getOptionPrefix(o, oi, language === 'bn' || !!o.text_bn);
         const text = language === 'bn' ? o.text_bn || o.text : o.text || o.text_bn;
         let subHtml = '';
         if (Array.isArray(o.sub_options) && o.sub_options.length > 0) {
-          subHtml = '<div class="sub-options">' +
+          subHtml = '<div class="sub-options" dir="ltr">' +
             o.sub_options.map((so: any, soi: number) => {
               const soPrefix = so.label || `(${soi + 1})`;
               const soText = language === 'bn' ? so.text_bn || so.text : so.text || so.text_bn;
-              return `<span class="sub-option"><strong>${soPrefix}</strong> ${soText || ''}</span>`;
+              return `<span class="sub-option" dir="ltr" style="unicode-bidi:isolate"><strong dir="ltr" style="unicode-bidi:isolate">${soPrefix}</strong> <bdi dir="auto" style="unicode-bidi:plaintext">${soText || ''}</bdi></span>`;
             }).join('') +
           '</div>';
         }
         if (subHtml) {
-          return '<div class="option-wrapper"><span class="option"><strong>' + prefix + '</strong> ' + text + '</span>' + subHtml + '</div>';
+          return '<div class="option-wrapper" dir="ltr"><span class="option" dir="ltr" style="unicode-bidi:isolate"><strong dir="ltr" style="unicode-bidi:isolate">' + prefix + '</strong> <bdi dir="auto" style="unicode-bidi:plaintext">' + text + '</bdi></span>' + subHtml + '</div>';
         }
-        return '<span class="option"><strong>' + prefix + '</strong> ' + text + '</span>';
+        return '<span class="option" dir="ltr" style="unicode-bidi:isolate"><strong dir="ltr" style="unicode-bidi:isolate">' + prefix + '</strong> <bdi dir="auto" style="unicode-bidi:plaintext">' + text + '</bdi></span>';
       }).join('') + '</div>' : '';
-      return groupHtml + `<div class="question" style="font-family:'${ff}';direction:${dir}"><div class="q-header"><span><strong>${labelText}</strong> ${qText}</span><span>[${language === 'bn' ? toBengaliNum(q.marks) : q.marks}]</span></div>${stHtml}${opts}</div>`;
+
+      const marksHtml = (ls.showQuestionMarks && q.marks > 0)
+        ? `<span class="q-marks" dir="ltr" style="margin-left:8px;flex-shrink:0">[${language === 'bn' ? toBengaliNum(q.marks) : q.marks}]</span>`
+        : '';
+
+      return groupHtml + `<div class="question" style="font-family:${combinedFont};direction:ltr"><div class="q-header" style="display:flex;justify-content:space-between;align-items:baseline;direction:ltr"><div style="display:flex;align-items:baseline;gap:6px;flex:1;min-width:0;unicode-bidi:isolate"><strong class="q-serial" dir="ltr" style="unicode-bidi:isolate;flex-shrink:0">${labelText}</strong> <bdi class="q-text" dir="auto" style="unicode-bidi:plaintext;flex:1">${qText || ''}</bdi></div>${marksHtml}</div>${stHtml}${opts}</div>`;
     };
 
     const getSplitIndex = () => {
