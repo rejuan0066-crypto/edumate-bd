@@ -279,7 +279,7 @@ const AdminWebsite = () => {
       await updateMultiple.mutateAsync(updates);
 
       // If institution info was updated, sync to primary 'institutions' table and invalidate all institution caches
-      const instKeys = ['institution_name', 'institution_name_en', 'address', 'phone', 'email', 'logo_url'];
+      const instKeys = ['institution_name', 'institution_name_en', 'address', 'phone', 'email', 'logo_url', 'registration_number', 'established_year'];
       if (keys.some(k => instKeys.includes(k))) {
         try {
           const { data: instRow } = await supabase
@@ -295,6 +295,8 @@ const AdminWebsite = () => {
           if (form.phone) instPayload.phone = form.phone.trim();
           if (form.email) instPayload.email = form.email.trim();
           if (form.logo_url) instPayload.logo_url = form.logo_url.trim();
+          if (form.registration_number) instPayload.registration_number = form.registration_number.trim();
+          if (form.established_year) instPayload.established_year = form.established_year.trim();
 
           if (instRow?.id) {
             await supabase.from('institutions').update(instPayload).eq('id', instRow.id);
@@ -661,8 +663,16 @@ const AdminWebsite = () => {
                   <Label>{language === 'bn' ? 'ইমেইল' : 'Email'}</Label>
                   <Input className="bg-background mt-1" value={form.email} onChange={e => updateField('email', e.target.value)} />
                 </div>
+                <div>
+                  <Label>{language === 'bn' ? 'মাদরাসা রেজি/EIIN নম্বর' : 'Madrasa Reg/EIIN Number'}</Label>
+                  <Input className="bg-background mt-1" value={form.registration_number || ''} onChange={e => updateField('registration_number', e.target.value)} placeholder="যেমন: REG-2024 / EIIN" />
+                </div>
+                <div>
+                  <Label>{language === 'bn' ? 'স্থাপিত সাল' : 'Established Year'}</Label>
+                  <Input className="bg-background mt-1" value={form.established_year || ''} onChange={e => updateField('established_year', e.target.value)} placeholder="যেমন: ২০০৫" />
+                </div>
               </div>
-              <Button className="btn-primary-gradient mt-3" onClick={() => saveSection(['institution_name', 'institution_name_en', 'address', 'phone', 'email'])} disabled={saving}>
+              <Button className="btn-primary-gradient mt-3" onClick={() => saveSection(['institution_name', 'institution_name_en', 'address', 'phone', 'email', 'registration_number', 'established_year'])} disabled={saving}>
                 <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'তথ্য সংরক্ষণ' : 'Save Info'}
               </Button>
 

@@ -195,6 +195,8 @@ export interface WebsiteSettings {
   address: string;
   phone: string;
   email: string;
+  registration_number: string;
+  established_year: string;
   logo_url: string;
   favicon_url: string;
   loader_logo_url: string;
@@ -289,6 +291,8 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   address: '',
   phone: '',
   email: '',
+  registration_number: '',
+  established_year: '',
   logo_url: '',
   favicon_url: '',
   loader_logo_url: '',
@@ -498,7 +502,7 @@ export const useWebsiteSettings = () => {
       const [{ data, error }, { data: instData }, { data: principalRows }] = await Promise.all([
         supabase.from('website_settings').select('key, value'),
         supabase.from('institutions')
-          .select('principal_name, accountant_name, verifier_name, name, name_en, address, address_en, phone, email, logo_url')
+          .select('principal_name, accountant_name, verifier_name, name, name_en, address, address_en, phone, email, logo_url, registration_number, established_year')
           .eq('is_default', true).maybeSingle(),
         supabase.rpc('get_public_principal' as any),
       ]);
@@ -528,6 +532,8 @@ export const useWebsiteSettings = () => {
           accountant_name: pick((instData as any).accountant_name, (parsed as any).accountant_name),
           verifier_name: pick((instData as any).verifier_name, (parsed as any).verifier_name),
           logo_url: pick((instData as any).logo_url, parsed.logo_url),
+          registration_number: pick((instData as any).registration_number, parsed.registration_number),
+          established_year: pick((instData as any).established_year, parsed.established_year),
         } as WebsiteSettings;
       };
 

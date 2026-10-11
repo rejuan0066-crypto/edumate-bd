@@ -73,15 +73,20 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
     ? (institution?.name || "আল-আরাবিয়া হোসাইনিয়া হাফিজিয়া মাদরাসা") 
     : (institution?.name_en || institution?.name || "Al-Arabia Subhania Hafizia Madrasa");
 
-  // Construct complete address including phone and email if available
+  // Construct complete address including phone, email, and madrasa registration number if available
   const addressLine = (() => {
     const addr = bn ? (institution?.address || institution?.address_en) : (institution?.address_en || institution?.address);
     const phone = institution?.phone;
     const email = institution?.email;
+    const regNo = institution?.registration_number;
+    const estYear = institution?.established_year;
+
     const parts: string[] = [];
     if (addr) parts.push(addr);
     if (phone) parts.push(bn ? `মোবাইল: ${toBnDigits(phone)}` : `Mobile: ${phone}`);
     if (email) parts.push(bn ? `ইমেইল: ${email}` : `Email: ${email}`);
+    if (regNo) parts.push(bn ? `মাদরাসা রেজি: ${toBnDigits(regNo)}` : `Madrasa Reg: ${regNo}`);
+    else if (estYear) parts.push(bn ? `স্থাপিত: ${toBnDigits(estYear)}` : `Est: ${estYear}`);
 
     if (parts.length > 0) return parts.join(' • ');
     return bn 
