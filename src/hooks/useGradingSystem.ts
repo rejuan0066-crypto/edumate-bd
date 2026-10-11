@@ -75,14 +75,16 @@ export const useGradingSystem = () => {
         .eq('module', 'result')
         .eq('field_name', 'grace_pass')
         .maybeSingle();
-      if (error || !data) return { enabled: false, max_subjects: 1, grade: 'C', apply_to: 'all' as const, class_rules: {} as Record<string, number> };
+      if (error || !data) return { enabled: false, max_subjects: 1, grade: 'D', apply_to: 'all' as const, class_rules: {} as Record<string, number>, min_aggregate_percent: 0, max_mark_deficit: 0 };
       const c: any = typeof data.config === 'object' && data.config ? data.config : {};
       return {
         enabled: !!data.is_active && c.enabled !== false,
         max_subjects: c.max_subjects ?? 1,
-        grade: c.grade || 'C',
+        grade: c.grade || 'D',
         apply_to: (c.apply_to === 'selected' ? 'selected' : 'all') as 'all' | 'selected',
         class_rules: (c.class_rules && typeof c.class_rules === 'object' ? c.class_rules : {}) as Record<string, number>,
+        min_aggregate_percent: Number(c.min_aggregate_percent) || 0,
+        max_mark_deficit: Number(c.max_mark_deficit) || 0,
       };
     },
     staleTime: 5 * 60 * 1000,
@@ -103,6 +105,9 @@ export const useGradingSystem = () => {
       passMark: passMarkConfig ?? 33,
       fullMarks: marksConfig?.max ?? 100,
       graceLimit: getGraceLimit(classId),
+      graceGrade: gracePass?.grade,
+      minAggregatePercent: gracePass?.min_aggregate_percent,
+      maxMarkDeficit: gracePass?.max_mark_deficit,
     });
 
 
@@ -111,7 +116,7 @@ export const useGradingSystem = () => {
     getGrade,
     getOverallGrade,
     getGraceLimit,
-    gracePass: gracePass ?? { enabled: false, max_subjects: 1, grade: 'C', apply_to: 'all' as const, class_rules: {} as Record<string, number> },
+    gracePass: gracePass ?? { enabled: false, max_subjects: 1, grade: 'D', apply_to: 'all' as const, class_rules: {} as Record<string, number>, min_aggregate_percent: 0, max_mark_deficit: 0 },
     maxMarks: marksConfig?.max ?? 100,
     minMarks: marksConfig?.min ?? 0,
     passMark: passMarkConfig ?? 33,

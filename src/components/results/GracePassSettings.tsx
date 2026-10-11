@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { toBnDigits, toEnDigits } from '@/lib/digits';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -37,9 +38,11 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
 
   const [enabled, setEnabled] = useState(false);
   const [maxSubjects, setMaxSubjects] = useState(1);
-  const [grade, setGrade] = useState('C');
+  const [grade, setGrade] = useState('D');
   const [applyTo, setApplyTo] = useState<'all' | 'selected'>('all');
   const [classRules, setClassRules] = useState<Record<string, number>>({});
+  const [minAggregatePercent, setMinAggregatePercent] = useState<number>(0);
+  const [maxMarkDeficit, setMaxMarkDeficit] = useState<number>(0);
 
   const { data: classes = [], refetch: refetchClasses } = useQuery({
     queryKey: ['grace-pass-classes'],
@@ -68,9 +71,11 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
     const c: any = (row?.config && typeof row.config === 'object') ? row.config : {};
     setEnabled(!!row?.is_active && c.enabled !== false);
     setMaxSubjects(c.max_subjects ?? 1);
-    setGrade(c.grade || 'C');
+    setGrade(c.grade || 'D');
     setApplyTo(c.apply_to === 'selected' ? 'selected' : 'all');
     setClassRules((c.class_rules && typeof c.class_rules === 'object') ? c.class_rules : {});
+    setMinAggregatePercent(Number(c.min_aggregate_percent) || 0);
+    setMaxMarkDeficit(Number(c.max_mark_deficit) || 0);
   }, [row]);
 
   const saveM = useMutation({
@@ -86,11 +91,13 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
         config: {
           enabled,
           max_subjects: Math.max(1, Number(maxSubjects) || 1),
-          grade,
+          grade: grade.trim().toUpperCase() || 'D',
           apply_to: applyTo,
           class_rules: Object.fromEntries(
             Object.entries(classRules).filter(([, v]) => Number(v) > 0).map(([k, v]) => [k, Number(v)])
           ),
+          min_aggregate_percent: Math.max(0, Number(minAggregatePercent) || 0),
+          max_mark_deficit: Math.max(0, Number(maxMarkDeficit) || 0),
         } as any,
       };
       if (row?.id) {
@@ -164,6 +171,70 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
                   if (isNaN(val)) setMaxSubjects(0);
                   else setMaxSubjects(val);
                 }} />
+            </div>
+
+            {/* Condition 1: Minimum aggregate % */}
+            <div className="space-y-1.5 p-3 rounded-xl border bg-muted/20">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold">{bn ? 'শর্ত ১: মোট নম্বরের ন্যূনতম শতকরা হার (%)' : 'Condition 1: Min aggregate marks (%)'}</Label>
+                <span className="text-[11px] text-muted-foreground font-mono">{minAggregatePercent > 0 ? (bn ? `${toBnDigits(minAggregatePercent)}% প্রয়োজন` : `${minAggregatePercent}% required`) : (bn ? 'কোনো শর্ত নেই' : 'No requirement')}</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                {bn 
+                  ? '০ দিলে যে কোনো মোট নম্বরে বিবেচনা পাবে। যেমন: ৫০ দিলে ছাত্রের সব বিষয়ের মোট নম্বর কমপক্ষে ৫০% হতে হবে (দুর্বল ছাত্ররা অযথা ছাড় পাবে না)।' 
+                  : '0 = no limit. E.g. 50 requires student to have at least 50% overall marks to qualify for grace pass.'}
+              </p>
+              <Input
+                type="text"
+                disabled={!enabled}
+                value={bn ? (minAggregatePercent === 0 ? '' : toBnDigits(minAggregatePercent)) : (minAggregatePercent || '')}
+                placeholder={bn ? '০ (নিষ্ক্রিয়)' : '0 (disabled)'}
+                data-bijoy={bn}
+                onChange={(e) => {
+                  const num = parseInt(toEnDigits(e.target.value).replace(/[^0-9]/g, ''), 10);
+                  setMinAggregatePercent(isNaN(num) ? 0 : Math.min(100, num));
+                }}
+              />
+            </div>
+
+            {/* Condition 2: Max mark deficit */}
+            <div className="space-y-1.5 p-3 rounded-xl border bg-muted/20">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold">{bn ? 'শর্ত ২: ফেল বিষয়ে সর্বোচ্চ নম্বরের ঘাটতি' : 'Condition 2: Max mark deficit below pass'}</Label>
+                <span className="text-[11px] text-muted-foreground font-mono">{maxMarkDeficit > 0 ? (bn ? `সর্বোচ্চ ${toBnDigits(maxMarkDeficit)} নম্বর কম` : `Max ${maxMarkDeficit} marks short`) : (bn ? 'কোনো সীমা নেই' : 'No limit')}</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                {bn 
+                  ? '০ দিলে যে কোনো ফেল নম্বরে ছাড় পাবে। যেমন: ৫ দিলে পাস মার্কের চেয়ে সর্বোচ্চ ৫ নম্বর কম পর্যন্ত (যেমন পাস ৩৩ হলে ২৮-৩২ পেলে) বিবেচনা কার্যকর হবে।' 
+                  : '0 = any failed mark qualifies. E.g. 5 means subject mark cannot be more than 5 marks below pass mark.'}
+              </p>
+              <Input
+                type="text"
+                disabled={!enabled}
+                value={bn ? (maxMarkDeficit === 0 ? '' : toBnDigits(maxMarkDeficit)) : (maxMarkDeficit || '')}
+                placeholder={bn ? '০ (নিষ্ক্রিয়)' : '0 (disabled)'}
+                data-bijoy={bn}
+                onChange={(e) => {
+                  const num = parseInt(toEnDigits(e.target.value).replace(/[^0-9]/g, ''), 10);
+                  setMaxMarkDeficit(isNaN(num) ? 0 : Math.min(100, num));
+                }}
+              />
+            </div>
+
+            {/* Consideration pass grade */}
+            <div className="space-y-1.5 p-3 rounded-xl border bg-muted/20">
+              <Label className="text-xs font-semibold">{bn ? 'বিবেচনায় পাস প্রাপ্ত ছাত্রের চূড়ান্ত গ্রেড' : 'Grade awarded for consideration pass'}</Label>
+              <Input
+                type="text"
+                disabled={!enabled}
+                value={grade}
+                placeholder="D"
+                className="w-24 uppercase font-bold"
+                onChange={(e) => setGrade(e.target.value.trim().toUpperCase() || 'D')}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                {bn ? 'ডিফল্ট: D (মর্যাদা: "মাকবুল (বিবেচনায়)")' : 'Default: D (Title: "Maqbul (Considered)")'}
+              </p>
             </div>
 
             <div className="flex items-center justify-between rounded-xl border p-3 bg-muted/30">

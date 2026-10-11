@@ -106,10 +106,24 @@ describe('overallGrade — failures and consideration pass', () => {
     expect(r).toMatchObject({ grade: 'D', gpa: '1.00', graced: true, hasFail: false, title_bn: 'যয়ীফ (বিবেচনায়)' });
   });
 
-  it('still fails when failures exceed the consideration limit', () => {
-    const r = overallGrade([20, 25, 80], { passMark: PASS, graceLimit: 1 });
-    expect(r.grade).toBe('F');
-    expect(r.failedCount).toBe(2);
+  it('denies consideration pass when total aggregate percent falls below minAggregatePercent', () => {
+    const rFail = overallGrade([50, 50, 30], { passMark: PASS, graceLimit: 1, minAggregatePercent: 50 });
+    expect(rFail.graced).toBe(false);
+    expect(rFail.grade).toBe('F');
+
+    const rPass = overallGrade([80, 80, 30], { passMark: PASS, graceLimit: 1, minAggregatePercent: 50 });
+    expect(rPass.graced).toBe(true);
+    expect(rPass.grade).toBe('D');
+  });
+
+  it('denies consideration pass when mark deficit exceeds maxMarkDeficit', () => {
+    const rFail = overallGrade([80, 80, 20], { passMark: PASS, graceLimit: 1, maxMarkDeficit: 5 });
+    expect(rFail.graced).toBe(false);
+    expect(rFail.grade).toBe('F');
+
+    const rPass = overallGrade([80, 80, 30], { passMark: PASS, graceLimit: 1, maxMarkDeficit: 5 });
+    expect(rPass.graced).toBe(true);
+    expect(rPass.grade).toBe('D');
   });
 });
 

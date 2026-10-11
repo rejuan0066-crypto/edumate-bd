@@ -92,6 +92,12 @@ export interface OverallGradeOptions {
   fullMarks?: number;
   /** Number of failed subjects allowed as a consideration pass (0 = off). */
   graceLimit?: number;
+  /** Target grade for consideration pass (e.g. 'D' or 'C', defaults to 'D'). */
+  graceGrade?: string;
+  /** Minimum aggregate percentage required across all subjects to qualify for consideration pass (0 = off). */
+  minAggregatePercent?: number;
+  /** Maximum mark shortfall allowed below pass mark in any failed subject (0 = off). */
+  maxMarkDeficit?: number;
 }
 
 
@@ -99,7 +105,7 @@ export interface OverallGradeOptions {
  * Final grade for a student — based on the TOTAL marks obtained against the
  * total obtainable marks. No average is calculated.
  * - Entered marks below the pass mark are failures; blanks are excluded by the caller.
- * - Within the consideration limit → fixed "Maqbul (Considered)" (D / 1.00).
+ * - Within the consideration limit and meeting all deficit/aggregate criteria → consideration pass ("মাকবুল (বিবেচনায়)").
  * - A student who passed every subject can never be F, even if the total lands in the F band.
  */
 export const overallGrade = (subjectMarks: number[], options: OverallGradeOptions = {}): OverallGradeResult => {
@@ -107,9 +113,30 @@ export const overallGrade = (subjectMarks: number[], options: OverallGradeOption
   const pm = options.passMark ?? 33;
   const graceLimit = options.graceLimit ?? 0;
   const fullMarks = options.fullMarks ?? DEFAULT_FULL_MARKS;
+  const targetGraceGrade = options.graceGrade || 'D';
+  const minAggregatePercent = options.minAggregatePercent ?? 0;
+  const maxMarkDeficit = options.maxMarkDeficit ?? 0;
 
-  const failedCount = subjectMarks.filter((m) => Number(m) < pm).length;
-  const graced = graceLimit > 0 && failedCount > 0 && failedCount <= graceLimit;
+  const failedSubjects = subjectMarks.filter((m) => Number(m) < pm);
+  const failedCount = failedSubjects.length;
+
+  let graced = graceLimit > 0 && failedCount > 0 && failedCount <= graceLimit;
+
+  if (graced && maxMarkDeficit > 0) {
+    const hasExcessiveDeficit = failedSubjects.some((m) => (pm - Number(m)) > maxMarkDeficit);
+    if (hasExcessiveDeficit) {
+      graced = false;
+    }
+  }
+
+  if (graced && minAggregatePercent > 0) {
+    const total = subjectMarks.reduce((a, b) => a + b, 0);
+    const fullTotal = subjectMarks.length * fullMarks;
+    const aggregatePct = fullTotal > 0 ? (total / fullTotal) * 100 : 0;
+    if (aggregatePct < minAggregatePercent) {
+      graced = false;
+    }
+  }
 
   if (failedCount > 0 && subjectMarks.length > 0 && !graced) {
     const failScale = scales.find((s) => s.grade === 'F') || DEFAULT_SCALES[DEFAULT_SCALES.length - 1];
@@ -126,13 +153,13 @@ export const overallGrade = (subjectMarks: number[], options: OverallGradeOption
   }
 
   if (graced) {
-    const dScale = scales.find((s) => s.grade === 'D') || DEFAULT_SCALES.find((s) => s.grade === 'D');
+    const targetScale = scales.find((s) => s.grade === targetGraceGrade) || scales.find((s) => s.grade === 'D') || DEFAULT_SCALES.find((s) => s.grade === 'D');
     return {
-      grade: dScale?.grade || 'D',
-      gpa: dScale?.gpa || '1.00',
-      color: colorMap[dScale?.color || 'orange'] || colorMap.orange,
-      title: dScale?.title ? `${dScale.title} (Considered)` : 'Maqbul (Considered)',
-      title_bn: dScale?.title_bn ? `${dScale.title_bn} (বিবেচনায়)` : 'মাকবুল (বিবেচনায়)',
+      grade: targetScale?.grade || 'D',
+      gpa: targetScale?.gpa || '1.00',
+      color: colorMap[targetScale?.color || 'orange'] || colorMap.orange,
+      title: targetScale?.title ? `${targetScale.title} (Considered)` : 'Maqbul (Considered)',
+      title_bn: targetScale?.title_bn ? `${targetScale.title_bn} (বিবেচনায়)` : 'মাকবুল (বিবেচনায়)',
       hasFail: false,
       graced: true,
       failedCount,
@@ -228,8 +255,11 @@ export const rankStudents = (stats: StudentStats[]): Map<string, number> => {
 export interface GracePassConfig {
   enabled: boolean;
   max_subjects: number;
+  grade?: string;
   apply_to: 'all' | 'selected';
   class_rules: Record<string, number>;
+  min_aggregate_percent?: number;
+  max_mark_deficit?: number;
 }
 
 /** Allowed number of failed subjects for a class (0 = consideration pass off). */

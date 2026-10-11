@@ -36,7 +36,7 @@ const AdminResults = () => {
   const [searchParams] = useSearchParams();
   const { checkApproval } = useApprovalCheck('/admin/results', 'results');
   const { canAddItem, canEditItem } = usePagePermissions('/admin/results');
-  const { getGrade, getOverallGrade, scales, maxMarks, passMark, getGraceLimit } = useGradingSystem();
+  const { getGrade, getOverallGrade, scales, maxMarks, passMark, getGraceLimit, gracePass } = useGradingSystem();
   const { role } = useAuth();
   const isAdmin = isAdminRole(role);
   const [rejectPublishOpen, setRejectPublishOpen] = useState(false);
@@ -695,11 +695,14 @@ const AdminResults = () => {
         passMark,
         fullMarks: maxMarks,
         graceLimit: getGraceLimit(st.class_id),
+        graceGrade: gracePass?.grade,
+        minAggregatePercent: gracePass?.min_aggregate_percent,
+        maxMarkDeficit: gracePass?.max_mark_deficit,
       });
     });
     const rankMap = rankStudents(statsList);
     return rankMap.get(viewingStudentId);
-  }, [viewingStudentId, students, subjects, marksMap, scales, passMark, maxMarks, getGraceLimit]);
+  }, [viewingStudentId, students, subjects, marksMap, scales, passMark, maxMarks, getGraceLimit, gracePass]);
 
   return (
     <AdminLayout>

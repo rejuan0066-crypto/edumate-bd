@@ -39,7 +39,7 @@ interface ClassResultTableProps {
 const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave, isSaving, title, onViewMarksheet, onClose, lastSaved, readOnly = false, onEdit, className: classNameProp, examName, sessionName }: ClassResultTableProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
-  const { getOverallGrade, getGraceLimit, scales, maxMarks, minMarks, passMark } = useGradingSystem();
+  const { getOverallGrade, getGraceLimit, scales, maxMarks, minMarks, passMark, gracePass } = useGradingSystem();
   
   const tableRef = useRef<HTMLDivElement>(null);
   const [explainStudent, setExplainStudent] = useState<any | null>(null);
@@ -90,6 +90,9 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
       passMark,
       fullMarks: maxMarks,
       graceLimit: getGraceLimit(st.class_id),
+      graceGrade: gracePass?.grade,
+      minAggregatePercent: gracePass?.min_aggregate_percent,
+      maxMarkDeficit: gracePass?.max_mark_deficit,
     });
 
     return { st, ...stats, originalIdx: idx };
