@@ -70,10 +70,37 @@ for (const [code, ar] of Object.entries(PHYSICAL_CODE_TO_ARABIC)) {
   ARABIC_TO_PHYSICAL[ar] = code;
 }
 
+// ─── Arabic Tashkeel / Harakat Quick Reference ───
+export interface TashkeelItem {
+  char: string;
+  nameBn: string;
+  nameEn: string;
+  shortcut: string;
+  sample: string;
+}
+
+const ARABIC_TASHKEEL: TashkeelItem[] = [
+  { char: '\u064E', nameBn: 'যবর (ফাতহাহ)', nameEn: 'Fatha', shortcut: 'Shift+Q', sample: 'بَ' },
+  { char: '\u0650', nameBn: 'যের (কাসরাহ)', nameEn: 'Kasra', shortcut: 'Shift+A', sample: 'بِ' },
+  { char: '\u064F', nameBn: 'পেশ (দাম্মাহ)', nameEn: 'Damma', shortcut: 'Shift+E', sample: 'بُ' },
+  { char: '\u064B', nameBn: 'দুই যবর (তানভীন)', nameEn: 'Tanween Fath', shortcut: 'Shift+W', sample: 'باً' },
+  { char: '\u064D', nameBn: 'দুই যের (তানভীন)', nameEn: 'Tanween Kasr', shortcut: 'Shift+S', sample: 'بٍ' },
+  { char: '\u064C', nameBn: 'দুই পেশ (তানভীন)', nameEn: 'Tanween Damm', shortcut: 'Shift+R', sample: 'بٌ' },
+  { char: '\u0652', nameBn: 'জযম / সুকূন', nameEn: 'Sukun', shortcut: 'Shift+X', sample: 'بْ' },
+  { char: '\u0651', nameBn: 'তাশদীদ', nameEn: 'Shaddah', shortcut: 'Shift+~', sample: 'بّ' },
+  { char: '\u0670', nameBn: 'খাড়া যবর', nameEn: 'Dagger Alif', shortcut: 'Shift+B', sample: 'بٰ' },
+  { char: '\u0651\u064E', nameBn: 'তাশদীদ + যবর', nameEn: 'Shaddah + Fatha', shortcut: '', sample: 'بَّ' },
+  { char: '\u0651\u0650', nameBn: 'তাশদীদ + যের', nameEn: 'Shaddah + Kasra', shortcut: '', sample: 'بِّ' },
+  { char: '\u0651\u064F', nameBn: 'তাশদীদ + পেশ', nameEn: 'Shaddah + Damma', shortcut: '', sample: 'بُّ' },
+  { char: '\u0653', nameBn: 'মাদ্দাহ চিহ্ন', nameEn: 'Maddah', shortcut: 'Shift+Z', sample: 'آ' },
+  { char: 'ء', nameBn: 'হামযাহ', nameEn: 'Hamza', shortcut: 'X', sample: 'ء' },
+];
+
 // ─── Quick Symbols ───
 const QUICK_SYMBOLS = {
+  tashkeel: ARABIC_TASHKEEL.map(t => t.char),
+  arabic: ['بسم الله الرحمن الرحيم', 'ﷺ', 'ﷻ', '﷽', 'ؐ', '۞', '۩', '﴿', '﴾', '،', '؛', '؟'],
   math: ['±', '×', '÷', '≠', '≤', '≥', '√', '∞', 'π', '∑', '∫', '°', '²', '³', '½', '¼', '¾', '%'],
-  arabic: ['بسم الله الرحمن الرحيم', 'ﷺ', 'ﷻ', '﷽', 'ؐ', '۞', '۩', '﴿', '﴾'],
   bengali: ['৳', '।', '॥', '্', 'ঃ', 'ং', 'ঁ', '়'],
 };
 
@@ -153,6 +180,29 @@ const ArabicKeyboard = ({
         </div>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}><X className="h-3.5 w-3.5" /></Button>
       </div>
+      {/* Dedicated Tashkeel / Harakat Palette Bar */}
+      <div className="mb-2 p-1 bg-muted/40 rounded-xl border border-border/40">
+        <div className="flex items-center justify-between px-1 mb-1 text-[10px] text-muted-foreground font-medium">
+          <span>হরকত / যের-যবর (Tashkeel):</span>
+          <span className="text-[9px] opacity-75">অক্ষরের পর ক্লিক করুন</span>
+        </div>
+        <div className="flex flex-wrap gap-1 justify-center" dir="rtl">
+          {ARABIC_TASHKEEL.map((t, ti) => (
+            <button
+              key={ti}
+              type="button"
+              className="h-8 min-w-[2.2rem] px-1.5 rounded-lg bg-secondary/90 hover:bg-primary/20 hover:text-primary active:scale-95 text-sm font-bold border border-border/40 transition-all flex flex-col items-center justify-center leading-none"
+              title={`${t.nameBn} ${t.shortcut ? `(${t.shortcut})` : ''}`}
+              onTouchStart={pressKey(t.char)}
+              onMouseDown={(e) => { if (isMobile) return; pressKey(t.char)(e); }}
+            >
+              <span className="text-base font-bold text-primary">{t.sample}</span>
+              <span className="text-[8px] text-muted-foreground font-normal leading-none mt-0.5" dir="ltr">{t.nameBn.split(' ')[0]}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {rows.map((row, ri) => (
         <div key={ri} className={`flex justify-center mb-1 ${isMobile ? 'gap-[3px]' : 'gap-1'}`} dir="rtl">
           {ri === 3 && (
@@ -212,7 +262,7 @@ const ArabicKeyboard = ({
 
 // ─── Quick Symbols Bar ───
 const QuickSymbolsBar = ({ onInsert, activeInputRef }: { onInsert: (char: string) => void; activeInputRef: HTMLInputElement | HTMLTextAreaElement | null }) => {
-  const [category, setCategory] = useState<'math' | 'arabic' | 'bengali'>('math');
+  const [category, setCategory] = useState<'tashkeel' | 'arabic' | 'math' | 'bengali'>('tashkeel');
   const symbols = QUICK_SYMBOLS[category];
 
   const handleInsert = (sym: string) => {
@@ -231,24 +281,38 @@ const QuickSymbolsBar = ({ onInsert, activeInputRef }: { onInsert: (char: string
   };
 
   return (
-    <div className="flex items-center gap-1 flex-wrap bg-muted/50 rounded-xl px-2 py-1.5">
+    <div className="flex items-center gap-1 flex-wrap bg-muted/50 rounded-xl px-2 py-1.5 border border-border/40 shadow-sm">
       <Hash className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
       <div className="flex gap-0.5 mr-1">
-        {(['math', 'arabic', 'bengali'] as const).map(cat => (
+        {(['tashkeel', 'arabic', 'math', 'bengali'] as const).map(cat => (
           <button key={cat} onClick={() => setCategory(cat)}
             className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-colors ${category === cat ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-primary/20'}`}>
-            {cat === 'math' ? '∑' : cat === 'arabic' ? 'عر' : 'বাং'}
+            {cat === 'tashkeel' ? 'হরকত (যের-যবর)' : cat === 'arabic' ? 'আরবি' : cat === 'math' ? 'গণিত (∑)' : 'বাংলা'}
           </button>
         ))}
       </div>
       <div className="flex gap-0.5 flex-wrap">
-        {symbols.map((sym, i) => (
-          <button key={i} onClick={() => handleInsert(sym)}
-            className="h-7 min-w-[1.8rem] px-1 rounded bg-secondary/80 hover:bg-primary/20 hover:text-primary text-xs font-medium transition-colors"
-            title={sym}>
-            {sym.length > 4 ? sym.slice(0, 4) + '…' : sym}
-          </button>
-        ))}
+        {category === 'tashkeel' ? (
+          ARABIC_TASHKEEL.map((t, i) => (
+            <button
+              key={i}
+              onClick={() => handleInsert(t.char)}
+              className="h-7 min-w-[2.2rem] px-1.5 rounded bg-secondary/80 hover:bg-primary/20 hover:text-primary text-xs font-bold transition-colors inline-flex items-center gap-1"
+              title={`${t.nameBn} ${t.shortcut ? `(${t.shortcut})` : ''}`}
+            >
+              <span className="text-sm font-bold text-primary">{t.sample}</span>
+              <span className="text-[9px] text-muted-foreground">{t.nameBn.split(' ')[0]}</span>
+            </button>
+          ))
+        ) : (
+          symbols.map((sym, i) => (
+            <button key={i} onClick={() => handleInsert(sym)}
+              className="h-7 min-w-[1.8rem] px-1 rounded bg-secondary/80 hover:bg-primary/20 hover:text-primary text-xs font-medium transition-colors"
+              title={sym}>
+              {sym.length > 4 ? sym.slice(0, 4) + '…' : sym}
+            </button>
+          ))
+        )}
       </div>
     </div>
   );
@@ -2156,7 +2220,37 @@ const AdminQuestionPapers = () => {
                 {/* Two-Column Question Textareas */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div className="relative">
+                    {/* Quick Harakat Strip for Arabic */}
+                    {(showArabicKeyboard || /[\u0600-\u06FF]/.test(q.question_text_bn)) && (
+                      <div className="flex items-center gap-1 mb-1 px-1 py-0.5 bg-primary/5 rounded-lg border border-primary/20 overflow-x-auto" dir="rtl">
+                        <span className="text-[9px] font-semibold text-primary pl-1 shrink-0" dir="ltr">হরকত:</span>
+                        {ARABIC_TASHKEEL.slice(0, 9).map((t, ti) => (
+                          <button
+                            key={ti}
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              const target = document.getElementById(`q-bn-textarea-${qi}`) as HTMLTextAreaElement | null;
+                              const el = target || activeInputRef;
+                              if (el) {
+                                el.focus();
+                                const start = el.selectionStart ?? el.value.length;
+                                const end = el.selectionEnd ?? start;
+                                const newVal = el.value.slice(0, start) + t.char + el.value.slice(end);
+                                updateQuestion(qi, 'question_text_bn', newVal);
+                                requestAnimationFrame(() => el.setSelectionRange(start + t.char.length, start + t.char.length));
+                              }
+                            }}
+                            className="h-6 min-w-[1.6rem] px-1 rounded bg-background hover:bg-primary/20 text-primary hover:text-primary-foreground font-bold text-xs border border-border/50 shrink-0 transition-colors"
+                            title={`${t.nameBn} (${t.shortcut})`}
+                          >
+                            {t.sample}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     <Textarea
+                      id={`q-bn-textarea-${qi}`}
                       value={q.question_text_bn}
                       onChange={e => updateQuestion(qi, 'question_text_bn', e.target.value)}
                       onFocus={e => setActiveInputRef(e.target)}
