@@ -15,6 +15,13 @@
       "when": 1791616577769,
       "tag": "0001_results_photos_signed_in_only",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791702916236,
+      "tag": "0002_enforce_joining_date_not_future",
+      "breakpoints": true
     }
   ]
 }

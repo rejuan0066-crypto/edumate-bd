@@ -344,6 +344,9 @@ const AdminAdministrative = () => {
     if (msg.includes('JOINING_DATE_REQUIRED')) {
       return { field: 'joining_date', message: bn ? 'যোগদানের তারিখ দিন' : 'Joining date is required' };
     }
+    if (msg.includes('JOINING_DATE_FUTURE')) {
+      return { field: 'joining_date', message: bn ? 'যোগদানের তারিখ ভবিষ্যতের হতে পারে না — সঠিক তারিখ দিন' : 'Joining date cannot be in the future' };
+    }
 
     // ---- Officer field-level violations ----
     if (msg.includes('DUPLICATE_PHONE') || raw.includes('uq_admin_officers_phone') || raw.includes('uq_staff_phone')) {
@@ -517,6 +520,9 @@ const AdminAdministrative = () => {
       if (![10, 13, 17].includes(nd.length)) {
         errs.nid = bn ? 'এনআইডি ১০, ১৩ অথবা ১৭ সংখ্যা হতে হবে।' : 'NID must be 10, 13, or 17 digits.';
       }
+    }
+    if (isFutureJoiningDate(f.joining_date)) {
+      errs.joining_date = bn ? 'যোগদানের তারিখ ভবিষ্যতের হতে পারে না — সঠিক তারিখ দিন।' : 'Joining date cannot be in the future.';
     }
     setFieldErrors(errs);
     if (Object.keys(errs).length > 0) {

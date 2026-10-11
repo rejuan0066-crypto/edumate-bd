@@ -653,6 +653,12 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
         toast.error(msg);
         return;
       }
+      if (upper.includes('JOINING_DATE_FUTURE')) {
+        const msg = bn ? 'যোগদানের তারিখ ভবিষ্যতের হতে পারে না — সঠিক তারিখ দিন' : 'Joining date cannot be in the future';
+        setFieldErrors(prev => ({ ...prev, joining_date: msg }));
+        toast.error(msg);
+        return;
+      }
       if (upper.includes('CUSTOM_ROLE_CATEGORY_MISMATCH')) {
         toast.error(bn
           ? 'নির্বাচিত কাস্টম রোলটি এই স্টাফ ক্যাটেগরির জন্য অনুমোদিত নয়। অনুগ্রহ করে অন্য রোল বাছাই করুন।'
@@ -699,6 +705,14 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     // Joining date is mandatory for new staff/teacher (prevents wrong salary proration)
     if (!isEditMode && !joiningDate) {
       const msg = bn ? 'যোগদানের তারিখ দিন — তারিখ ছাড়া নতুন কর্মী/শিক্ষক যোগ করা যাবে না' : 'Joining date is required to add a new staff/teacher';
+      setFieldErrors({ joining_date: msg });
+      toast.error(msg);
+      return;
+    }
+
+    // Joining date can never be in the future (prevents salary list hiding staff)
+    if (isFutureJoiningDate(joiningDate)) {
+      const msg = bn ? 'যোগদানের তারিখ ভবিষ্যতের হতে পারে না — সঠিক তারিখ দিন' : 'Joining date cannot be in the future';
       setFieldErrors({ joining_date: msg });
       toast.error(msg);
       return;
