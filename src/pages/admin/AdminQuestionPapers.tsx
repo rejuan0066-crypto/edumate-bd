@@ -359,6 +359,21 @@ const toBengaliNum = (n: number): string => {
   return String(n).replace(/[0-9]/g, d => digits[parseInt(d)]);
 };
 
+const BENGALI_MCQ_LABELS = ['(ক)', '(খ)', '(গ)', '(ঘ)', '(ঙ)', '(চ)', '(ছ)', '(জ)'];
+const BENGALI_MCQ_DOT_LABELS = ['ক.', 'খ.', 'গ.', 'ঘ.', 'ঙ.', 'চ.', 'ছ.', 'জ.'];
+const ENGLISH_MCQ_LABELS = ['(A)', '(B)', '(C)', '(D)', '(E)', '(F)', '(G)', '(H)'];
+const ENGLISH_MCQ_DOT_LABELS = ['A.', 'B.', 'C.', 'D.', 'E.', 'F.', 'G.', 'H.'];
+
+const getOptionPrefix = (opt: any, index: number, isBn: boolean = true) => {
+  if (opt?.label && String(opt.label).trim()) {
+    return String(opt.label).trim();
+  }
+  if (opt?.custom_label && String(opt.custom_label).trim()) {
+    return String(opt.custom_label).trim();
+  }
+  return isBn ? (BENGALI_MCQ_LABELS[index] || `(${index + 1})`) : `${String.fromCharCode(65 + index)}.`;
+};
+
 // Convert mixed-script digits (Bengali ০-৯, Arabic-Indic ٠-٩, English 0-9) to a number.
 // Returns 0 when input has no recognizable digits, so the controlled input stays valid.
 const parseMultilingualNum = (s: string): number => {
@@ -488,9 +503,15 @@ const LivePreview = ({ paper, questions, fontConfig, headerConfig, institution, 
         </div>
         {q.question_type === 'mcq' && Array.isArray(q.options) && (
           <div className="ml-6 mt-1 grid grid-cols-2 gap-x-4 text-xs">
-            {q.options.map((opt: any, oi: number) => (
-              <span key={oi}>{String.fromCharCode(65 + oi)}. {language === 'bn' ? opt.text_bn || opt.text : opt.text}</span>
-            ))}
+            {q.options.map((opt: any, oi: number) => {
+              const prefix = getOptionPrefix(opt, oi, language === 'bn' || !!opt.text_bn);
+              const text = language === 'bn' ? opt.text_bn || opt.text : opt.text || opt.text_bn;
+              return (
+                <span key={oi}>
+                  <strong className="mr-1 text-primary/80">{prefix}</strong> {text}
+                </span>
+              );
+            })}
           </div>
         )}
       </div>
@@ -1058,7 +1079,19 @@ const AdminQuestionPapers = () => {
   };
 
   const updateQuestion = (index: number, field: keyof Question, value: any) => {
-    setQuestions(prev => prev.map((q, i) => i === index ? { ...q, [field]: value } : q));
+    setQuestions(prev => prev.map((q, i) => {
+      if (i !== index) return q;
+      const updated = { ...q, [field]: value };
+      if (field === 'question_type' && value === 'mcq' && (!updated.options || updated.options.length === 0)) {
+        updated.options = [
+          { text: '', text_bn: '', label: language === 'bn' ? '(ক)' : 'A.', is_correct: false },
+          { text: '', text_bn: '', label: language === 'bn' ? '(খ)' : 'B.', is_correct: false },
+          { text: '', text_bn: '', label: language === 'bn' ? '(গ)' : 'C.', is_correct: false },
+          { text: '', text_bn: '', label: language === 'bn' ? '(ঘ)' : 'D.', is_correct: false },
+        ];
+      }
+      return updated;
+    }));
   };
 
   const removeQuestion = (index: number) => {
@@ -1069,7 +1102,8 @@ const AdminQuestionPapers = () => {
     setQuestions(prev => prev.map((q, i) => {
       if (i !== qIndex) return q;
       const opts = Array.isArray(q.options) ? [...q.options] : [];
-      opts.push({ text: '', text_bn: '', is_correct: false });
+      const defaultLabel = language === 'bn' ? (BENGALI_MCQ_LABELS[opts.length] || `(${opts.length + 1})`) : `${String.fromCharCode(65 + opts.length)}.`;
+      opts.push({ text: '', text_bn: '', label: defaultLabel, is_correct: false });
       return { ...q, options: opts };
     }));
   };
@@ -1206,9 +1240,11 @@ const AdminQuestionPapers = () => {
         const ff = isArabic ? fontConfig.arabic : effectiveBengaliFont;
         const serial = language === 'bn' ? toBengaliNum(i + 1) : String(i + 1);
         const labelText = (q.custom_label && q.custom_label.trim()) ? q.custom_label.trim() : `${serial}।`;
-        const opts = Array.isArray(q.options) ? '<div class="options">' + q.options.map((o: any, oi: number) =>
-          '<span class="option">' + String.fromCharCode(65 + oi) + '. ' + (language === 'bn' ? o.text_bn || o.text : o.text) + '</span>'
-        ).join('') + '</div>' : '';
+        const opts = Array.isArray(q.options) ? '<div class="options">' + q.options.map((o: any, oi: number) => {
+          const prefix = getOptionPrefix(o, oi, language === 'bn' || !!o.text_bn);
+          const text = language === 'bn' ? o.text_bn || o.text : o.text || o.text_bn;
+          return '<span class="option"><strong>' + prefix + '</strong> ' + text + '</span>';
+        }).join('') + '</div>' : '';
         return groupHtml + `<div class="question" style="font-family:'${ff}';direction:${dir}"><div class="q-header"><span><strong>${labelText}</strong> ${qText}</span><span>[${language === 'bn' ? toBengaliNum(q.marks) : q.marks}]</span></div>${opts}</div>`;
       }).join('');
 
@@ -1230,9 +1266,11 @@ const AdminQuestionPapers = () => {
           const ff = isArabic ? fontConfig.arabic : effectiveBengaliFont;
           const serial = language === 'bn' ? toBengaliNum(i + 1) : String(i + 1);
           const labelText = (q.custom_label && q.custom_label.trim()) ? q.custom_label.trim() : `${serial}।`;
-          const opts = Array.isArray(q.options) ? '<div class="options">' + q.options.map((o: any, oi: number) =>
-            '<span class="option">' + String.fromCharCode(65 + oi) + '. ' + (language === 'bn' ? o.text_bn || o.text : o.text) + '</span>'
-          ).join('') + '</div>' : '';
+          const opts = Array.isArray(q.options) ? '<div class="options">' + q.options.map((o: any, oi: number) => {
+            const prefix = getOptionPrefix(o, oi, language === 'bn' || !!o.text_bn);
+            const text = language === 'bn' ? o.text_bn || o.text : o.text || o.text_bn;
+            return '<span class="option"><strong>' + prefix + '</strong> ' + text + '</span>';
+          }).join('') + '</div>' : '';
           const html = groupHtml + `<div class="question" style="font-family:'${ff}';direction:${dir}"><div class="q-header"><span><strong>${labelText}</strong> ${qText}</span><span>[${language === 'bn' ? toBengaliNum(q.marks) : q.marks}]</span></div>${opts}</div>`;
           if (i < mid) col1 += html; else col2 += html;
         });
@@ -1637,21 +1675,105 @@ const AdminQuestionPapers = () => {
                 {/* MCQ Options */}
                 {q.question_type === 'mcq' && (
                   <div className="space-y-1.5 pl-3 pt-1 border-l-2 border-primary/20">
-                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{language === 'bn' ? 'অপশনসমূহ' : 'Options'}</span>
-                    {Array.isArray(q.options) && q.options.map((opt: any, oi: number) => (
-                      <div key={oi} className="flex flex-wrap gap-1.5 items-center">
-                        <span className="text-xs font-bold text-primary/70 w-5 text-center shrink-0">{String.fromCharCode(65 + oi)}</span>
-                        <Input className="flex-1 min-w-[120px] h-7 text-xs rounded-lg bg-muted/30 border-border/40" placeholder="বাংলা" value={opt.text_bn || ''} onChange={e => updateMcqOption(qi, oi, 'text_bn', e.target.value)} onFocus={e => setActiveInputRef(e.target)} data-arabic="true" />
-                        <Input className="flex-1 min-w-[120px] h-7 text-xs rounded-lg bg-muted/30 border-border/40" placeholder="English" value={opt.text || ''} onChange={e => updateMcqOption(qi, oi, 'text', e.target.value)} />
-                        <label className="flex items-center gap-0.5 text-xs whitespace-nowrap shrink-0">
-                          <input type="radio" name={`correct-${qi}`} checked={opt.is_correct} onChange={() => updateMcqOption(qi, oi, 'is_correct', true)} className="accent-primary" />
-                          ✓
-                        </label>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full hover:bg-destructive/10 hover:text-destructive shrink-0" onClick={() => removeMcqOption(qi, oi)}><Trash2 className="h-3 w-3" /></Button>
+                    <div className="flex flex-wrap items-center justify-between gap-1">
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{language === 'bn' ? 'অপশনসমূহ' : 'Options'}</span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] text-muted-foreground">{language === 'bn' ? 'ক্রম শৈলী:' : 'Prefix:'}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const opts = Array.isArray(q.options) ? [...q.options] : [];
+                            const newOpts = opts.map((o: any, oi: number) => ({ ...o, label: BENGALI_MCQ_LABELS[oi] || `(${oi + 1})` }));
+                            updateQuestion(qi, 'options', newOpts);
+                          }}
+                          className="px-1.5 py-0.5 text-[10px] rounded bg-muted/80 hover:bg-primary/20 font-bold transition-colors"
+                          title="বাংলা বন্ধনী: (ক), (খ), (গ), (ঘ)"
+                        >
+                          (ক)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const opts = Array.isArray(q.options) ? [...q.options] : [];
+                            const newOpts = opts.map((o: any, oi: number) => ({ ...o, label: BENGALI_MCQ_DOT_LABELS[oi] || `${oi + 1}.` }));
+                            updateQuestion(qi, 'options', newOpts);
+                          }}
+                          className="px-1.5 py-0.5 text-[10px] rounded bg-muted/80 hover:bg-primary/20 font-bold transition-colors"
+                          title="বাংলা ডট: ক., খ., গ., ঘ."
+                        >
+                          ক.
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const opts = Array.isArray(q.options) ? [...q.options] : [];
+                            const newOpts = opts.map((o: any, oi: number) => ({ ...o, label: ENGLISH_MCQ_LABELS[oi] || `(${oi + 1})` }));
+                            updateQuestion(qi, 'options', newOpts);
+                          }}
+                          className="px-1.5 py-0.5 text-[10px] rounded bg-muted/80 hover:bg-primary/20 font-bold transition-colors"
+                          title="English Brackets: (A), (B), (C), (D)"
+                        >
+                          (A)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const opts = Array.isArray(q.options) ? [...q.options] : [];
+                            const newOpts = opts.map((o: any, oi: number) => ({ ...o, label: `${String.fromCharCode(65 + oi)}.` }));
+                            updateQuestion(qi, 'options', newOpts);
+                          }}
+                          className="px-1.5 py-0.5 text-[10px] rounded bg-muted/80 hover:bg-primary/20 font-bold transition-colors"
+                          title="English Dot: A., B., C., D."
+                        >
+                          A.
+                        </button>
                       </div>
-                    ))}
+                    </div>
+                    {Array.isArray(q.options) && q.options.map((opt: any, oi: number) => {
+                      const defaultPrefix = language === 'bn' ? (BENGALI_MCQ_LABELS[oi] || `(${oi + 1})`) : `${String.fromCharCode(65 + oi)}.`;
+                      return (
+                        <div key={oi} className="flex flex-wrap sm:flex-nowrap gap-1.5 items-center">
+                          <Input
+                            className="w-12 h-7 text-xs font-bold text-center px-1 bg-background/80 border-border/40 rounded-lg text-primary shrink-0"
+                            placeholder={defaultPrefix}
+                            value={opt.label || ''}
+                            onChange={e => updateMcqOption(qi, oi, 'label', e.target.value)}
+                            onFocus={e => setActiveInputRef(e.target)}
+                            title={language === 'bn' ? 'অপশন ক্রম (ক্লিক করে যেকোনো অক্ষর দিন: (ক), ক., A.)' : 'Option label'}
+                          />
+                          <Input
+                            className="flex-1 min-w-[120px] h-7 text-xs rounded-lg bg-muted/30 border-border/40"
+                            placeholder={language === 'bn' ? 'বাংলা অপশন লিখুন...' : 'Bengali text'}
+                            value={opt.text_bn || ''}
+                            onChange={e => updateMcqOption(qi, oi, 'text_bn', e.target.value)}
+                            onFocus={e => setActiveInputRef(e.target)}
+                            style={bijoyMode ? { fontFamily: 'SutonnyMJ, SutonnyOMJ, "Noto Sans Bengali", sans-serif' } : undefined}
+                          />
+                          <Input
+                            className="flex-1 min-w-[120px] h-7 text-xs rounded-lg bg-muted/30 border-border/40"
+                            placeholder="English text"
+                            value={opt.text || ''}
+                            onChange={e => updateMcqOption(qi, oi, 'text', e.target.value)}
+                            onFocus={e => setActiveInputRef(e.target)}
+                          />
+                          <label className="flex items-center gap-1 text-xs whitespace-nowrap shrink-0 px-1.5 py-0.5 rounded cursor-pointer hover:bg-muted/40">
+                            <input
+                              type="radio"
+                              name={`correct-${qi}`}
+                              checked={opt.is_correct}
+                              onChange={() => updateMcqOption(qi, oi, 'is_correct', true)}
+                              className="accent-primary"
+                            />
+                            <span className="text-[11px] text-muted-foreground font-medium">{language === 'bn' ? 'সঠিক' : 'Correct'}</span>
+                          </label>
+                          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full hover:bg-destructive/10 hover:text-destructive shrink-0" onClick={() => removeMcqOption(qi, oi)}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      );
+                    })}
                     <Button variant="outline" size="sm" className="h-7 text-xs rounded-lg" onClick={() => addMcqOption(qi)}>
-                      <Plus className="h-3 w-3 mr-1" />{language === 'bn' ? 'অপশন' : 'Option'}
+                      <Plus className="h-3 w-3 mr-1" />{language === 'bn' ? 'অপশন যোগ' : 'Option'}
                     </Button>
                   </div>
                 )}
@@ -1753,7 +1875,12 @@ const AdminQuestionPapers = () => {
               group_label_bn: '',
               group_marks: null,
               options: g.options && g.options.length > 0
-                ? g.options.map(o => ({ text: '', text_bn: o.text, is_correct: !!o.is_correct }))
+                ? g.options.map((o, oi) => ({
+                    text: '',
+                    text_bn: o.text,
+                    label: language === 'bn' ? (BENGALI_MCQ_LABELS[oi] || `(${oi + 1})`) : `${String.fromCharCode(65 + oi)}.`,
+                    is_correct: !!o.is_correct
+                  }))
                 : null,
               answer: g.answer || '',
             }));
