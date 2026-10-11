@@ -176,6 +176,18 @@ describe('rankStudents — merit positions', () => {
     expect(ranks.get('gracedLo')).toBe(4);
   });
 
+  it('shares merit rank when total marks and tier are tied (competition ranking)', () => {
+    const stats = [
+      studentStats('s1', [90, 90, 90], opts), // 270
+      studentStats('s2', [90, 90, 90], opts), // 270 (tied)
+      studentStats('s3', [80, 80, 80], opts), // 240
+    ];
+    const ranks = rankStudents(stats);
+    expect(ranks.get('s1')).toBe(1);
+    expect(ranks.get('s2')).toBe(1);
+    expect(ranks.get('s3')).toBe(3);
+  });
+
   it('does not give a passing student a worse title than deserved', () => {
     const stats = studentStats('z', [60, 62, 64], opts);
     expect(stats.overall?.grade).toBe('A-');

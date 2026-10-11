@@ -12,6 +12,7 @@ import { isAdminRole } from '@/lib/roles';
 import ResultSelectionBrowser from '@/components/results/ResultSelectionBrowser';
 import ClassResultTable from '@/components/results/ClassResultTable';
 import ClassResultStatusList from '@/components/results/ClassResultStatusList';
+import { studentStats, rankStudents } from '@/lib/grading';
 import { useGradingSystem } from '@/hooks/useGradingSystem';
 import IndividualMarksheet from '@/components/results/IndividualMarksheet';
 import GradingChart from '@/components/results/GradingChart';
@@ -35,7 +36,7 @@ const AdminResults = () => {
   const [searchParams] = useSearchParams();
   const { checkApproval } = useApprovalCheck('/admin/results', 'results');
   const { canAddItem, canEditItem } = usePagePermissions('/admin/results');
-  const { getGrade, getOverallGrade } = useGradingSystem();
+  const { getGrade, getOverallGrade, scales, maxMarks, passMark, getGraceLimit } = useGradingSystem();
   const { role } = useAuth();
   const isAdmin = isAdminRole(role);
   const [rejectPublishOpen, setRejectPublishOpen] = useState(false);
@@ -50,7 +51,6 @@ const AdminResults = () => {
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [marksMap, setMarksMap] = useState<Record<string, number>>({});
   const [viewingStudentId, setViewingStudentId] = useState<string | null>(null);
-  const [viewingStudentRank, setViewingStudentRank] = useState<number | undefined>(undefined);
   const [exportingClassId, setExportingClassId] = useState<string | null>(null);
   const [readOnlyView, setReadOnlyView] = useState(false);
 
@@ -663,6 +663,20 @@ const AdminResults = () => {
   };
 
   const viewingStudent = viewingStudentId ? students.find((st: any) => st.id === viewingStudentId) : null;
+  const viewingStudentRank = useMemo(() => {
+    if (!viewingStudentId || !students?.length || !subjects?.length) return undefined;
+    const statsList = students.map((st: any) => {
+      const rawMarks = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`]);
+      return studentStats(st.id, rawMarks, {
+        scales,
+        passMark,
+        fullMarks: maxMarks,
+        graceLimit: getGraceLimit(st.class_id),
+      });
+    });
+    const rankMap = rankStudents(statsList);
+    return rankMap.get(viewingStudentId);
+  }, [viewingStudentId, students, subjects, marksMap, scales, passMark, maxMarks, getGraceLimit]);
 
   return (
     <AdminLayout>

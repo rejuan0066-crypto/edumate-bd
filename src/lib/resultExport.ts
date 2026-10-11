@@ -129,9 +129,23 @@ export const exportResultCSV = (params: ExportData) => {
     });
 
   const rankMap = new Map<number, number>();
+  let currentRank = 1;
   sortedByTotal.forEach((r, i) => {
+    if (r.failed) return;
     const meritRank = r.st.rank || r.st.merit_rank || r.st.merit_position;
-    if (!r.failed) rankMap.set(r.idx, meritRank || i + 1);
+    if (meritRank) {
+      rankMap.set(r.idx, meritRank);
+      return;
+    }
+    if (i > 0) {
+      const prev = sortedByTotal[i - 1];
+      if (meritTierOf(prev) === meritTierOf(r) && prev.total === r.total) {
+        rankMap.set(r.idx, rankMap.get(prev.idx) || currentRank);
+        return;
+      }
+    }
+    currentRank = i + 1;
+    rankMap.set(r.idx, currentRank);
   });
 
   const rows = computed.map(({ st, idx, marks, total, overall, failed, hasEnteredAnyMark }) => {
@@ -167,7 +181,7 @@ export const exportResultCSV = (params: ExportData) => {
 export const exportResultPDF = async (params: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
   let qrCodeDataUrl = '';
   try {
-    const qrUrl = `${window.location.origin}/verify-receipt/${params.title.replace(/\s+/g, '_')}`;
+    const qrUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/result`;
     qrCodeDataUrl = await QRCode.toDataURL(qrUrl, { margin: 1, width: 120 });
   } catch (err) {
     console.error('QR generation failed:', err);
@@ -239,13 +253,26 @@ export const getResultSheetHtml = ({
     return b.total - a.total;
   });
   const rankMap = new Map<number, number>();
+  let currentRank = 1;
   sortedByTotal.forEach((r, i) => {
-    const meritRank = r.st.rank || r.st.merit_rank || r.st.merit_position;
     if (r.failed) {
       rankMap.set(r.idx, 0); 
-    } else {
-      rankMap.set(r.idx, meritRank || i + 1);
+      return;
     }
+    const meritRank = r.st.rank || r.st.merit_rank || r.st.merit_position;
+    if (meritRank) {
+      rankMap.set(r.idx, meritRank);
+      return;
+    }
+    if (i > 0) {
+      const prev = sortedByTotal[i - 1];
+      if (meritTierOf(prev) === meritTierOf(r) && prev.total === r.total) {
+        rankMap.set(r.idx, rankMap.get(prev.idx) || currentRank);
+        return;
+      }
+    }
+    currentRank = i + 1;
+    rankMap.set(r.idx, currentRank);
   });
 
   const activeStudents = computed.filter(c => c.hasEnteredAnyMark);
@@ -258,7 +285,8 @@ export const getResultSheetHtml = ({
     const len = fullName.length;
     const sizeClass = len > 22 ? 'sub-name xs' : len > 16 ? 'sub-name sm' : len > 10 ? 'sub-name md' : 'sub-name';
     const safeTitle = fullName.replace(/"/g, '&quot;');
-    return `<th class="sub-th"><span class="${sizeClass}" title="${safeTitle}">${fullName}</span><span class="sub-max">100</span></th>`;
+    const fullMark = s.full_marks || 100;
+    return `<th class="sub-th"><span class="${sizeClass}" title="${safeTitle}">${fullName}</span><span class="sub-max">${bn ? toBnDigits(fullMark) : fullMark}</span></th>`;
   }).join('');
 
   const metaRow = (label: string, value: string) =>

@@ -209,8 +209,18 @@ export const rankStudents = (stats: StudentStats[]): Map<string, number> => {
     });
 
   const map = new Map<string, number>();
+  let currentRank = 1;
   ordered.forEach((s, i) => {
-    if (!s.failed) map.set(s.id, i + 1);
+    if (s.failed) return;
+    if (i > 0) {
+      const prev = ordered[i - 1];
+      if (meritTier(prev) === meritTier(s) && prev.total === s.total) {
+        map.set(s.id, map.get(prev.id) || currentRank);
+        return;
+      }
+    }
+    currentRank = i + 1;
+    map.set(s.id, currentRank);
   });
   return map;
 };
