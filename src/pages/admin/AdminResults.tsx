@@ -12,7 +12,7 @@ import { isAdminRole } from '@/lib/roles';
 import ResultSelectionBrowser from '@/components/results/ResultSelectionBrowser';
 import ClassResultTable from '@/components/results/ClassResultTable';
 import ClassResultStatusList from '@/components/results/ClassResultStatusList';
-import { studentStats, rankStudents } from '@/lib/grading';
+import { studentStats, rankStudents, gradeFromMark } from '@/lib/grading';
 import { useGradingSystem } from '@/hooks/useGradingSystem';
 import IndividualMarksheet from '@/components/results/IndividualMarksheet';
 import GradingChart from '@/components/results/GradingChart';
@@ -331,15 +331,25 @@ const AdminResults = () => {
     mutationFn: async () => {
       if (!selectedExamId) return { saved: false as const, reason: 'no-exam' as const };
       const upserts = Object.entries(marksMap)
-        .filter(([, marks]) => marks !== undefined && marks !== null)
+        .filter(([, marks]) => marks !== undefined && marks !== null && (marks as any) !== '' && !Number.isNaN(Number(marks)))
         .map(([key, marks]) => {
           const [student_id, subject_id] = key.split('_');
-          const { grade, gpa } = getGrade(marks);
-          return { exam_id: selectedExamId, student_id, subject_id, marks, grade, gpa: parseFloat(gpa) };
+          const markNum = Number(marks);
+          const sub = subjects.find((s: any) => s.id === subject_id);
+          const subFull = sub?.full_marks || maxMarks || 100;
+          const { grade, gpa } = gradeFromMark(markNum, subFull, scales);
+          return { exam_id: selectedExamId, student_id, subject_id, marks: markNum, grade, gpa: parseFloat(gpa) };
         });
-      
-      if (upserts.length === 0) return { saved: false as const, reason: 'empty' as const };
-      
+
+      const cleared = Object.entries(marksMap)
+        .filter(([, marks]) => marks === undefined || marks === null || (marks as any) === '')
+        .map(([key]) => {
+          const [student_id, subject_id] = key.split('_');
+          return { student_id, subject_id };
+        });
+
+      if (upserts.length === 0 && cleared.length === 0) return { saved: false as const, reason: 'empty' as const };
+
       const requiresApproval = await checkApproval(
         'edit', 
         { exam_id: selectedExamId, results_count: upserts.length, results: upserts }, 
@@ -351,8 +361,21 @@ const AdminResults = () => {
         return { saved: false as const, reason: 'approval' as const };
       }
 
-      const { error } = await supabase.from('results').upsert(upserts, { onConflict: 'exam_id,student_id,subject_id' });
-      if (error) throw error;
+      if (cleared.length > 0) {
+        for (const c of cleared) {
+          await supabase
+            .from('results')
+            .delete()
+            .eq('exam_id', selectedExamId)
+            .eq('student_id', c.student_id)
+            .eq('subject_id', c.subject_id);
+        }
+      }
+
+      if (upserts.length > 0) {
+        const { error } = await supabase.from('results').upsert(upserts, { onConflict: 'exam_id,student_id,subject_id' });
+        if (error) throw error;
+      }
       return { saved: true as const, count: upserts.length };
     },
     onSuccess: async (res: any) => {

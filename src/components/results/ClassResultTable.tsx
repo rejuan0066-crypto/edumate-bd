@@ -174,7 +174,36 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
     return () => window.removeEventListener('message', onMsg);
   }, []);
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, rowIdx: number, colIdx: number) => {
+    let targetRow = rowIdx;
+    let targetCol = colIdx;
 
+    if (e.key === 'Enter' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      targetRow = rowIdx + 1;
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      targetRow = rowIdx - 1;
+    } else if (e.key === 'ArrowRight' && (e.currentTarget.selectionStart === e.currentTarget.value.length || !e.currentTarget.value)) {
+      if (colIdx < subjects.length - 1) {
+        e.preventDefault();
+        targetCol = colIdx + 1;
+      }
+    } else if (e.key === 'ArrowLeft' && e.currentTarget.selectionStart === 0) {
+      if (colIdx > 0) {
+        e.preventDefault();
+        targetCol = colIdx - 1;
+      }
+    } else {
+      return;
+    }
+
+    const nextInput = document.querySelector<HTMLInputElement>(`input[data-row="${targetRow}"][data-col="${targetCol}"]`);
+    if (nextInput) {
+      nextInput.focus();
+      nextInput.select();
+    }
+  };
 
   return (
     <div className="card-elevated rounded-xl overflow-hidden relative flex flex-col h-full bg-background">
@@ -283,7 +312,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
             </tr>
           </thead>
           <tbody>
-            {studentsWithStats.map(({ st, originalIdx, failed, total, overall, hasEnteredAnyMark }) => {
+            {studentsWithStats.map(({ st, originalIdx, failed, total, overall, hasEnteredAnyMark }, rowIdx) => {
               const rank = rankMap.get(st.id) || st.rank || st.merit_rank || st.merit_position;
               const rankDisplay = formatOrdinalRank(rank, bn);
               
@@ -301,28 +330,39 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
                   </td>
 
                   {/* Scrollable Data Columns */}
-                  {subjects.map((sub: any) => {
-                    const mark = marksMap[`${st.id}_${sub.id}`] ?? 0;
-                    const isFail = mark < passMark && mark > 0;
+                  {subjects.map((sub: any, colIdx: number) => {
+                    const rawVal = marksMap[`${st.id}_${sub.id}`];
+                    const isEntered = rawVal !== undefined && rawVal !== null && (rawVal as any) !== '' && !Number.isNaN(Number(rawVal));
+                    const mark = isEntered ? Number(rawVal) : null;
+                    const isFail = isEntered && mark !== null && mark < passMark;
                     return (
                       <td key={sub.id} className="px-1 text-center border-b border-r border-border">
                         <div className="flex items-center justify-center h-full">
                           {readOnly ? (
-                            <span className={`text-[10px] sm:text-xs font-medium ${isFail ? 'text-destructive' : 'text-foreground'}`}>
-                              {mark === 0 ? '-' : toBnDigits(mark)}
+                            <span className={`text-[10px] sm:text-xs font-medium ${isFail ? 'text-destructive font-bold' : 'text-foreground'}`}>
+                              {!isEntered ? '-' : (bn ? toBnDigits(mark) : mark)}
                             </span>
                           ) : (
                             <Input
-                              className={`w-full max-w-[56px] h-8 px-1 text-center bg-white border-2 rounded-lg text-[10px] sm:text-xs transition-all focus:ring-2 focus:ring-primary/20 ${isFail ? 'border-destructive/40 text-destructive focus:border-destructive' : 'border-border/60 focus:border-primary'}`}
+                              data-row={rowIdx}
+                              data-col={colIdx}
+                              className={`w-full max-w-[56px] h-8 px-1 text-center bg-white border-2 rounded-lg text-[10px] sm:text-xs transition-all focus:ring-2 focus:ring-primary/20 ${isFail ? 'border-destructive/40 text-destructive focus:border-destructive font-bold' : 'border-border/60 focus:border-primary'}`}
                               type="text"
                               inputMode="numeric"
                               data-bijoy={bn}
-                              value={mark === 0 ? '' : toBnDigits(mark)}
+                              placeholder="-"
+                              value={!isEntered ? '' : (bn ? toBnDigits(mark) : String(mark))}
+                              onFocus={(e) => e.target.select()}
+                              onKeyDown={(e) => handleKeyDown(e, rowIdx, colIdx)}
                               onChange={(e) => {
                                 const raw = toEnDigits(e.target.value).replace(/[^0-9]/g, '');
-                                if (raw === '') { onMarksChange(`${st.id}_${sub.id}`, 0); return; }
+                                if (raw === '') {
+                                  onMarksChange(`${st.id}_${sub.id}`, '' as any);
+                                  return;
+                                }
                                 let num = parseInt(raw, 10) || 0;
-                                if (num > maxMarks) num = maxMarks;
+                                const subjectMax = sub.full_marks || maxMarks || 100;
+                                if (num > subjectMax) num = subjectMax;
                                 onMarksChange(`${st.id}_${sub.id}`, num);
                               }}
                             />
