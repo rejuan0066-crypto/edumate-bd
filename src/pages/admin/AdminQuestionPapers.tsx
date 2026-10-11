@@ -2240,12 +2240,12 @@ const AdminQuestionPapers = () => {
 
               <div className="px-4 pb-3 space-y-2.5">
                 {/* Two-Column Question Textareas */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div className="relative">
                     {/* Quick Harakat Strip for Arabic */}
                     {(showArabicKeyboard || /[\u0600-\u06FF]/.test(q.question_text_bn)) && (
-                      <div className="flex items-center gap-1 mb-1 px-1 py-0.5 bg-primary/5 rounded-lg border border-primary/20 overflow-x-auto" dir="rtl">
-                        <span className="text-[9px] font-semibold text-primary pl-1 shrink-0" dir="ltr">হরকত:</span>
+                      <div className="flex items-center gap-1 mb-1.5 px-2 py-1 bg-primary/5 rounded-lg border border-primary/20 overflow-x-auto shadow-xs" dir="rtl">
+                        <span className="text-[10px] font-semibold text-primary pl-1 shrink-0" dir="ltr">হরকত:</span>
                         {ARABIC_TASHKEEL.slice(0, 9).map((t, ti) => (
                           <button
                             key={ti}
@@ -2263,7 +2263,7 @@ const AdminQuestionPapers = () => {
                                 requestAnimationFrame(() => el.setSelectionRange(start + t.char.length, start + t.char.length));
                               }
                             }}
-                            className="h-6 min-w-[1.6rem] px-1 rounded bg-background hover:bg-primary/20 text-primary hover:text-primary-foreground font-bold text-xs border border-border/50 shrink-0 transition-colors"
+                            className="h-7 min-w-[1.8rem] px-1.5 rounded bg-background hover:bg-primary/20 text-primary hover:text-primary-foreground font-bold text-sm border border-border/50 shrink-0 transition-colors"
                             title={`${t.nameBn} (${t.shortcut})`}
                           >
                             {t.sample}
@@ -2276,14 +2276,14 @@ const AdminQuestionPapers = () => {
                       value={q.question_text_bn}
                       onChange={e => updateQuestion(qi, 'question_text_bn', e.target.value)}
                       onFocus={e => setActiveInputRef(e.target)}
-                      rows={2}
-                      className="text-sm pt-6 bg-muted/30 border-border/50 focus:bg-background focus:border-primary/40 rounded-xl resize-none transition-colors"
+                      rows={3}
+                      className="text-base sm:text-base pt-7 pb-2.5 px-3 min-h-[96px] bg-background/90 border-border/60 focus:bg-background focus:border-primary/50 focus:ring-1 focus:ring-primary/20 rounded-xl resize-y leading-relaxed transition-all shadow-xs"
                       dir="auto"
                       data-arabic="true"
-                      placeholder={language === 'bn' ? 'বাংলা/আরবি প্রশ্ন লিখুন...' : 'Bengali/Arabic question...'}
+                      placeholder={language === 'bn' ? 'বাংলা বা আরবি প্রশ্ন এখানে লিখুন...' : 'Write Bengali or Arabic question here...'}
                       style={bijoyMode ? { fontFamily: 'SutonnyMJ, SutonnyOMJ, "Noto Sans Bengali", sans-serif' } : undefined}
                     />
-                    <span className="absolute top-1.5 left-3 text-[10px] font-semibold text-muted-foreground/70 pointer-events-none">
+                    <span className="absolute top-2 left-3 text-[10px] font-semibold uppercase tracking-wider text-primary/80 pointer-events-none bg-background/80 px-1 rounded">
                       {language === 'bn' ? layoutSettings.questionLabelBn : layoutSettings.questionLabelEn}
                     </span>
                   </div>
@@ -2292,11 +2292,11 @@ const AdminQuestionPapers = () => {
                       value={q.question_text}
                       onChange={e => updateQuestion(qi, 'question_text', e.target.value)}
                       onFocus={e => setActiveInputRef(e.target)}
-                      rows={2}
-                      className="text-sm pt-6 bg-muted/30 border-border/50 focus:bg-background focus:border-primary/40 rounded-xl resize-none transition-colors"
-                      placeholder={language === 'bn' ? 'ইংরেজি প্রশ্ন লিখুন...' : 'English question...'}
+                      rows={3}
+                      className="text-sm sm:text-base pt-7 pb-2.5 px-3 min-h-[96px] bg-background/90 border-border/60 focus:bg-background focus:border-primary/50 focus:ring-1 focus:ring-primary/20 rounded-xl resize-y leading-relaxed transition-all shadow-xs"
+                      placeholder={language === 'bn' ? 'ইংরেজি প্রশ্ন লিখুন (যদি থাকে)...' : 'English question (optional)...'}
                     />
-                    <span className="absolute top-1.5 left-3 text-[10px] font-semibold text-muted-foreground/70 pointer-events-none">
+                    <span className="absolute top-2 left-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80 pointer-events-none bg-background/80 px-1 rounded">
                       {language === 'bn' ? 'প্রশ্ন (ইংরেজি)' : 'Question (EN)'}
                     </span>
                   </div>
@@ -2401,7 +2401,7 @@ const AdminQuestionPapers = () => {
                       return (
                         <div key={oi} className="flex flex-wrap sm:flex-nowrap gap-1.5 items-center">
                           <Input
-                            className="w-12 h-7 text-xs font-bold text-center px-1 bg-background/80 border-border/40 rounded-lg text-primary shrink-0"
+                            className="w-14 h-8 text-xs font-bold text-center px-1 bg-background/80 border-border/40 rounded-lg text-primary shrink-0"
                             placeholder={defaultPrefix}
                             value={opt.label || ''}
                             onChange={e => updateMcqOption(qi, oi, 'label', e.target.value)}
@@ -2409,32 +2409,34 @@ const AdminQuestionPapers = () => {
                             title={language === 'bn' ? 'অপশন ক্রম (ক্লিক করে যেকোনো অক্ষর দিন: (ক), ক., A.)' : 'Option label'}
                           />
                           <Input
-                            className="flex-1 min-w-[120px] h-7 text-xs rounded-lg bg-muted/30 border-border/40"
-                            placeholder={language === 'bn' ? 'বাংলা অপশন লিখুন...' : 'Bengali text'}
+                            className="flex-1 min-w-[120px] h-8 text-sm rounded-lg bg-background/90 border-border/50 px-2.5"
+                            placeholder={language === 'bn' ? 'বাংলা/আরবি অপশন লিখুন...' : 'Bengali/Arabic text'}
                             value={opt.text_bn || ''}
                             onChange={e => updateMcqOption(qi, oi, 'text_bn', e.target.value)}
                             onFocus={e => setActiveInputRef(e.target)}
+                            data-arabic="true"
+                            dir="auto"
                             style={bijoyMode ? { fontFamily: 'SutonnyMJ, SutonnyOMJ, "Noto Sans Bengali", sans-serif' } : undefined}
                           />
                           <Input
-                            className="flex-1 min-w-[120px] h-7 text-xs rounded-lg bg-muted/30 border-border/40"
-                            placeholder="English text"
+                            className="flex-1 min-w-[120px] h-8 text-sm rounded-lg bg-background/90 border-border/50 px-2.5"
+                            placeholder="English option (optional)"
                             value={opt.text || ''}
                             onChange={e => updateMcqOption(qi, oi, 'text', e.target.value)}
                             onFocus={e => setActiveInputRef(e.target)}
                           />
-                          <label className="flex items-center gap-1 text-xs whitespace-nowrap shrink-0 px-1.5 py-0.5 rounded cursor-pointer hover:bg-muted/40">
+                          <label className="flex items-center gap-1.5 text-xs whitespace-nowrap shrink-0 px-2 py-1 rounded-md bg-muted/30 cursor-pointer hover:bg-muted/60 transition-colors">
                             <input
                               type="radio"
                               name={`correct-${qi}`}
                               checked={opt.is_correct}
                               onChange={() => updateMcqOption(qi, oi, 'is_correct', true)}
-                              className="accent-primary"
+                              className="accent-primary h-3.5 w-3.5"
                             />
-                            <span className="text-[11px] text-muted-foreground font-medium">{language === 'bn' ? 'সঠিক' : 'Correct'}</span>
+                            <span className="text-[11px] font-medium">{language === 'bn' ? 'সঠিক' : 'Correct'}</span>
                           </label>
-                          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full hover:bg-destructive/10 hover:text-destructive shrink-0" onClick={() => removeMcqOption(qi, oi)}>
-                            <Trash2 className="h-3 w-3" />
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-destructive/10 hover:text-destructive shrink-0" onClick={() => removeMcqOption(qi, oi)}>
+                            <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
                       );
