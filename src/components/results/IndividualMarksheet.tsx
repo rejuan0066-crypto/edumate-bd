@@ -25,7 +25,7 @@ interface IndividualMarksheetProps {
 const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, rank, className, examName, sessionName }: IndividualMarksheetProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
-  const { getOverallGrade, getGrade: getSubjectGrade } = useGradingSystem();
+  const { getOverallGrade, getGrade: getSubjectGrade, maxMarks } = useGradingSystem();
   const [isSample, setIsSample] = useState(false);
 
   const { data: institution } = useQuery({
@@ -251,7 +251,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             <div className="inline-block border border-slate-200 p-1.5 rounded-lg bg-slate-50 shadow-sm print:shadow-none print:border-slate-100">
               <div className="bg-white p-1 rounded border border-slate-100 flex items-center justify-center">
                 <QRCodeSVG 
-                  value={`${window.location.origin}/verify-receipt/${student.student_id}`}
+                  value={`${typeof window !== 'undefined' ? window.location.origin : ''}/result?roll=${student.roll_number || student.student_id}`}
                   size={58}
                   level="L"
                   includeMargin={false}
@@ -332,8 +332,8 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
                 <tr key={i}>
                   <td className="text-slate-400">{bn ? toBnDigits(i + 1) : (i + 1)}</td>
                   <td className="subject-col text-slate-700">{bn ? r.subject.name_bn : (r.subject.name_en || r.subject.name)}</td>
-                  <td className="font-medium text-slate-600">{bn ? '১০০' : '100'}</td>
-                  <td className="font-bold text-slate-900">{isSample ? toBnDigits(r.marks) : (bn ? toBnDigits(r.marks) : r.marks)}</td>
+                  <td className="font-medium text-slate-600">{bn ? toBnDigits(r.subject.full_marks || maxMarks || 100) : (r.subject.full_marks || maxMarks || 100)}</td>
+                  <td className="font-bold text-slate-900">{!r.entered ? '-' : (isSample || bn ? toBnDigits(r.marks) : r.marks)}</td>
                   <td>
                      <span className={cn(
                        "grade-badge",
@@ -349,7 +349,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
                     </span>
                   </td>
                   <td className="font-bold text-emerald-700">
-                    {isSample ? toBnDigits(Number(r.gpa).toFixed(2)) : (bn ? toBnDigits(Number(r.gpa).toFixed(2)) : Number(r.gpa).toFixed(2))}
+                    {!r.entered ? '-' : (isSample || bn ? toBnDigits(Number(r.gpa).toFixed(2)) : Number(r.gpa).toFixed(2))}
                   </td>
                 </tr>
               ))}
@@ -430,14 +430,16 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
                 const gpa = Number(student.gpa || overall.gpa);
                 const isFail = student.letter_grade === 'F' || overall.grade === 'F' || gpa === 0 || hasFailedSubject;
 
-
                 if (isFail) return bn ? "রাসিব" : "FAIL";
                 if (student.division || student.status_text || student.madrasha_grade) {
                   return student.division || student.status_text || student.madrasha_grade;
                 }
+                if (bn && overall.title_bn) return overall.title_bn;
+                if (!bn && overall.title) return overall.title;
+
                 if (gpa >= 5.0) return bn ? "মুমতাজ" : "MUMTAZ";
                 if (gpa >= 4.0) return bn ? "জায়্যিদ জিদ্দান" : "JAYYID JIDDAN";
-                if (gpa >= 3.0) return bn ? "জায়্যিদ" : "JAYYID";
+                if (gpa >= 3.5) return bn ? "জায়্যিদ" : "JAYYID";
                 if (gpa >= 1.0) return bn ? "মাকবুল" : "MAQBUL";
                 return bn ? "রাসিব" : "FAIL";
               })()}
