@@ -49,6 +49,8 @@ const AdminStudents = () => {
       .channel('students-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () => {
         queryClient.invalidateQueries({ queryKey: ['students'] });
+        queryClient.invalidateQueries({ queryKey: ['exam-students'] });
+        queryClient.invalidateQueries({ queryKey: ['exam_session_students'] });
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -123,6 +125,7 @@ const AdminStudents = () => {
           } as any).eq('id', s.id);
         })).then(() => {
           queryClient.invalidateQueries({ queryKey: ['students'] });
+          queryClient.invalidateQueries({ queryKey: ['exam-students'] });
         }).catch(err => {
           console.error('Self-healing student digits migration error:', err);
         });
@@ -138,6 +141,7 @@ const AdminStudents = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['exam-students'] });
       toast.success(bn ? 'স্ট্যাটাস আপডেট হয়েছে' : 'Status updated');
     },
     onError: () => toast.error('Error'),
@@ -175,6 +179,7 @@ const AdminStudents = () => {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
       queryClient.invalidateQueries({ queryKey: ['student-type-history'] });
+      queryClient.invalidateQueries({ queryKey: ['exam-students'] });
     },
   });
 
@@ -198,6 +203,7 @@ const AdminStudents = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['exam-students'] });
       toast.success(bn ? 'স্ট্যাটাস আপডেট হয়েছে' : 'Status updated');
     },
     onError: () => toast.error('Error'),
@@ -212,6 +218,7 @@ const AdminStudents = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['exam-students'] });
       toast.success(bn ? 'ছাত্র মুছে ফেলা হয়েছে' : 'Student deleted');
     },
     onError: () => toast.error('Error'),

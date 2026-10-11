@@ -652,6 +652,8 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['students'] });
       await queryClient.refetchQueries({ queryKey: ['students'] });
+      await queryClient.invalidateQueries({ queryKey: ['exam-students'] });
+      await queryClient.invalidateQueries({ queryKey: ['exam_session_students'] });
       resetForm();
       onOpenChange(false);
       toast.success(bn ? 'ভর্তি আবেদন সফলভাবে জমা হয়েছে! অনুমোদনের অপেক্ষায়।' : 'Admission submitted! Pending approval.');
@@ -673,6 +675,8 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['students'] });
       await queryClient.refetchQueries({ queryKey: ['students'] });
+      await queryClient.invalidateQueries({ queryKey: ['exam-students'] });
+      await queryClient.invalidateQueries({ queryKey: ['exam_session_students'] });
       resetForm();
       onOpenChange(false);
       toast.success(bn ? 'ছাত্রের তথ্য সফলভাবে আপডেট হয়েছে!' : 'Student updated successfully!');

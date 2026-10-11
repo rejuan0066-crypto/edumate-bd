@@ -236,13 +236,14 @@ const AdminResults = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('exam_session_students')
-        .select('student_id, students(*)')
+        .select('student_id, students(*, divisions(name, name_bn))')
         .eq('exam_session_id', examSessionId)
         .eq('class_id', selectedClass);
       if (error) throw error;
       return data?.map((es: any) => es.students).filter(Boolean).sort((a: any, b: any) => (a.roll_number || 0) - (b.roll_number || 0)) || [];
     },
     enabled: !!examSessionId && !!selectedClass,
+    staleTime: 0,
   });
 
   // When class is selected from the list, auto-trigger search

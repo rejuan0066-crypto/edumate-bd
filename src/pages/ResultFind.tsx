@@ -111,6 +111,27 @@ const ResultFind = () => {
         return;
       }
 
+      const foundClassId = found.class_id;
+
+      // Get class info to find division
+      const { data: classInfo } = await supabase.from('classes').select('*, divisions(name, name_bn)').eq('id', foundClassId).single();
+      const divisionId = classInfo?.division_id;
+
+      // Try to fetch additional profile fields if available/authorized
+      let extraProfile: any = null;
+      try {
+        const { data: prof } = await supabase
+          .from('students')
+          .select('father_name, father_name_en, date_of_birth, section')
+          .eq('id', found.student_id)
+          .maybeSingle();
+        if (prof) extraProfile = prof;
+      } catch {
+        // Ignored for unauthenticated users
+      }
+
+      const divisionName = (classInfo as any)?.divisions?.name_bn || (classInfo as any)?.divisions?.name || null;
+
       // The verified public RPC returns only this student's safe profile and marks.
       const student = {
         id: found.student_id,
@@ -118,17 +139,18 @@ const ResultFind = () => {
         name_en: found.name_en,
         roll_number: found.roll_number,
         registration_no: found.registration_no,
+        registration_number: found.registration_no,
+        student_id: found.student_id,
+        father_name: extraProfile?.father_name || (found as any).father_name || null,
+        father_name_en: extraProfile?.father_name_en || (found as any).father_name_en || null,
+        date_of_birth: extraProfile?.date_of_birth || (found as any).date_of_birth || null,
+        section: extraProfile?.section || divisionName || '-',
+        division_name: divisionName,
         division_id: found.division_id,
         class_id: found.class_id,
         session_id: found.session_id,
         photo_url: found.photo_url,
       };
-
-      const foundClassId = found.class_id;
-
-      // Get class info to find division
-      const { data: classInfo } = await supabase.from('classes').select('*').eq('id', foundClassId).single();
-      const divisionId = classInfo?.division_id;
 
       const marksMap: Record<string, number> = {};
       Object.entries(found.marks || {}).forEach(([subjectId, marks]) => {
@@ -146,7 +168,10 @@ const ResultFind = () => {
         .sort((a: any, b: any) => (a.name_bn || '').localeCompare(b.name_bn || ''));
 
       const year = academicSessions.find((s: any) => s.id === examYear);
-      const examTitle = `${bn ? examSession.name_bn : examSession.name} — ${bn ? classInfo?.name_bn : classInfo?.name} — ${bn ? (year?.name_bn || year?.name) : year?.name}`;
+      const examNameStr = bn ? (examSession?.name_bn || examSession?.name) : (examSession?.name || examSession?.name_bn);
+      const classNameStr = bn ? (classInfo?.name_bn || classInfo?.name) : (classInfo?.name || classInfo?.name_bn);
+      const sessionNameStr = bn ? (year?.name_bn || year?.name) : (year?.name || year?.name_bn);
+      const examTitle = `${examNameStr} — ${classNameStr} — ${sessionNameStr}`;
 
       const meritRank = Number(found.merit_rank);
       const resolvedRank = Number.isInteger(meritRank) && meritRank > 0 ? meritRank : null;
@@ -160,7 +185,10 @@ const ResultFind = () => {
         rank: resolvedRank,
         subjects, 
         marksMap, 
-        examTitle 
+        examTitle,
+        className: classNameStr,
+        examName: examNameStr,
+        sessionName: sessionNameStr,
       });
     } catch (err: any) {
       setError(err.message || 'Error');
@@ -186,6 +214,9 @@ const ResultFind = () => {
             subjects={resultData.subjects}
             marksMap={resultData.marksMap}
             examTitle={resultData.examTitle}
+            className={resultData.className}
+            examName={resultData.examName}
+            sessionName={resultData.sessionName}
             rank={resultData.rank}
             onBack={() => setResultData(null)}
           />

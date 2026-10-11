@@ -22,6 +22,28 @@ interface IndividualMarksheetProps {
   sessionName?: string;
 }
 
+const formatDob = (dobStr: string | null | undefined, isBn: boolean): string => {
+  if (!dobStr) return '-';
+  const str = String(dobStr).trim();
+  const parts = str.split('-');
+  if (parts.length === 3) {
+    const [y, m, d] = parts;
+    const day = parseInt(d, 10);
+    const month = parseInt(m, 10);
+    const year = parseInt(y, 10);
+    if (!isNaN(day) && !isNaN(month) && !isNaN(year) && month >= 1 && month <= 12) {
+      const bnMonths = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
+      const enMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      if (isBn) {
+        return `${toBnDigits(day)} ${bnMonths[month - 1]}, ${toBnDigits(year)}`;
+      } else {
+        return `${day} ${enMonths[month - 1]}, ${year}`;
+      }
+    }
+  }
+  return isBn ? toBnDigits(str) : str;
+};
+
 const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, rank, className, examName, sessionName }: IndividualMarksheetProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
@@ -257,7 +279,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
                   includeMargin={false}
                 />
               </div>
-              <div className="text-[8px] mt-1 font-mono text-slate-500 text-center leading-none tracking-tighter">ID: {student.student_id || '20261002'}</div>
+              <div className="text-[8px] mt-1 font-mono text-slate-500 text-center leading-none tracking-tighter">ID: {student.student_id || student.registration_no || (isSample ? '20261002' : '-')}</div>
             </div>
           </div>
         </div>
@@ -283,7 +305,11 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           </div>
           <div className="flex flex-col">
             <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">{bn ? "পিতার নাম (FATHER'S NAME)" : "FATHER'S NAME"}</span>
-            <span className="text-[14px] font-bold text-slate-800">{student.father_name || student.fathers_name || '-'}</span>
+            <span className="text-[14px] font-bold text-slate-800">
+              {isSample 
+                ? (bn ? 'আব্দুর রহমান' : 'Abdur Rahman') 
+                : (bn ? (student.father_name || student.fathers_name || student.father_name_en || '-') : (student.father_name_en || student.father_name || student.fathers_name || '-'))}
+            </span>
           </div>
           <div className="flex flex-col">
             <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">{bn ? 'রোল নম্বর (ROLL NO)' : 'ROLL NO'}</span>
@@ -292,7 +318,13 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           
           <div className="flex flex-col">
             <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">{bn ? 'রেজিস্ট্রেশন (REG NO)' : 'REG NO'}</span>
-            <span className="text-[14px] font-bold text-slate-800">{student.registration_number || (bn ? '২০২৬১০০২' : '20261002')}</span>
+            <span className="text-[14px] font-bold text-slate-800">
+              {(() => {
+                const reg = student.registration_no || student.registration_number || student.student_id;
+                if (isSample) return bn ? '২০২৬১০০২' : '20261002';
+                return reg ? (bn ? toBnDigits(reg) : reg) : '-';
+              })()}
+            </span>
           </div>
           <div className="flex flex-col">
             <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">{bn ? 'শ্রেণি (CLASS)' : 'CLASS'}</span>
@@ -305,11 +337,20 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           
           <div className="flex flex-col">
             <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">{bn ? 'জন্ম তারিখ (DOB)' : 'DATE OF BIRTH'}</span>
-            <span className="text-[14px] font-bold text-slate-800">{student.date_of_birth || (bn ? '১৫ মে, ২০১৮' : '15 May, 2018')}</span>
+            <span className="text-[14px] font-bold text-slate-800">
+              {(() => {
+                if (isSample) return bn ? '১৫ মে, ২০১৮' : '15 May, 2018';
+                return formatDob(student.date_of_birth, bn);
+              })()}
+            </span>
           </div>
           <div className="flex flex-col">
             <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">{bn ? 'বিভাগ/শাখা (SECTION)' : 'SECTION'}</span>
-            <span className="text-[14px] font-bold text-slate-800">{student.section || student.branch || '-'}</span>
+            <span className="text-[14px] font-bold text-slate-800">
+              {isSample 
+                ? (bn ? 'ক' : 'A') 
+                : (student.section || student.branch || (bn ? (student.divisions?.name_bn || student.division_name_bn) : (student.divisions?.name || student.division_name)) || student.division_name || '-')}
+            </span>
           </div>
           <div></div>
         </div>
