@@ -3,8 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Printer, ArrowLeft } from 'lucide-react';
 
-import { useQuery } from '@tanstack/react-query';
-import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { useGradingSystem } from '@/hooks/useGradingSystem';
 import { toBnDigits } from '@/lib/digits';
 import { cn } from '@/lib/utils';
@@ -50,11 +49,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
   const { getOverallGrade, getGrade: getSubjectGrade, maxMarks } = useGradingSystem();
   const [isSample, setIsSample] = useState(false);
 
-  const { data: institution } = useQuery({
-    queryKey: ['institution-default'],
-    queryFn: async () => await fetchInstitutionInfo(),
-    staleTime: 10 * 60 * 1000,
-  });
+  const { data: institution } = useInstitutionInfo();
 
   const subjectResults = subjects.map((sub: any) => {
     const raw = isSample ? (Math.random() > 0.2 ? 70 + Math.floor(Math.random() * 30) : 30 + Math.floor(Math.random() * 10)) : marksMap[`${student.id}_${sub.id}`];
@@ -74,10 +69,25 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
   // Only subjects with an actual mark can cause a fail — blank subjects are ignored.
   const hasFailedSubject = !overall.graced && subjectResults.some(r => r.entered && r.grade === 'F');
 
+  const instName = bn 
+    ? (institution?.name || "আল-আরাবিয়া হোসাইনিয়া হাফিজিয়া মাদরাসা") 
+    : (institution?.name_en || institution?.name || "Al-Arabia Subhania Hafizia Madrasa");
 
+  // Construct complete address including phone and email if available
+  const addressLine = (() => {
+    const addr = bn ? (institution?.address || institution?.address_en) : (institution?.address_en || institution?.address);
+    const phone = institution?.phone;
+    const email = institution?.email;
+    const parts: string[] = [];
+    if (addr) parts.push(addr);
+    if (phone) parts.push(bn ? `মোবাইল: ${toBnDigits(phone)}` : `Mobile: ${phone}`);
+    if (email) parts.push(bn ? `ইমেইল: ${email}` : `Email: ${email}`);
 
-  const instName = bn ? (institution?.name || "আল-আরাবিয়া হোসাইনিয়া হাফিজিয়া মাদরাসা") : (institution?.name_en || "Al-Arabia Subhania Hafizia Madrasa");
-  const addressLine = bn ? (institution?.address || "এম.এইচ সেন্ট্রাল, খাজাঞ্চী রোড, বিশ্বনাথ, সিলেট • মোবাইল: ০১৭৪৯৮৪২৪০১") : (institution?.address_en || "M.H Central, Khajanchi Road, Bishwanath, Sylhet • Mobile: 01749842401");
+    if (parts.length > 0) return parts.join(' • ');
+    return bn 
+      ? "এম.এইচ সেন্ট্রাল, খাজাঞ্চী রোড, বিশ্বনাথ, সিলেট • মোবাইল: ০১৭৪৯৮৪২৪০১" 
+      : "M.H Central, Khajanchi Road, Bishwanath, Sylhet • Mobile: 01749842401";
+  })();
   const studentName = isSample ? (bn ? "তাহমিন আলী" : "Tahmin Ali") : (bn ? student.name_bn : (student.name_en || student.name_bn));
   
   const titleParts = String(examTitle || '').split('—').map(x => x.trim()).filter(Boolean);

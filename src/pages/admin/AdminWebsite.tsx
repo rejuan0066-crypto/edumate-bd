@@ -277,6 +277,41 @@ const AdminWebsite = () => {
     try {
       const updates = keys.map(key => ({ key, value: form[key] as Json }));
       await updateMultiple.mutateAsync(updates);
+
+      // If institution info was updated, sync to primary 'institutions' table and invalidate all institution caches
+      const instKeys = ['institution_name', 'institution_name_en', 'address', 'phone', 'email', 'logo_url'];
+      if (keys.some(k => instKeys.includes(k))) {
+        try {
+          const { data: instRow } = await supabase
+            .from('institutions')
+            .select('id')
+            .eq('is_default', true)
+            .maybeSingle();
+
+          const instPayload: Record<string, any> = {};
+          if (form.institution_name) instPayload.name = form.institution_name.trim();
+          if (form.institution_name_en) instPayload.name_en = form.institution_name_en.trim();
+          if (form.address) instPayload.address = form.address.trim();
+          if (form.phone) instPayload.phone = form.phone.trim();
+          if (form.email) instPayload.email = form.email.trim();
+          if (form.logo_url) instPayload.logo_url = form.logo_url.trim();
+
+          if (instRow?.id) {
+            await supabase.from('institutions').update(instPayload).eq('id', instRow.id);
+          } else if (Object.keys(instPayload).length > 0) {
+            await supabase.from('institutions').insert({ ...instPayload, is_default: true });
+          }
+        } catch (e) {
+          console.warn('Sync to institutions table error:', e);
+        }
+
+        await queryClient.invalidateQueries({ queryKey: ['institution-default'] });
+        await queryClient.invalidateQueries({ queryKey: ['institution-info-merged'] });
+        await queryClient.invalidateQueries({ queryKey: ['institution-info'] });
+        await queryClient.invalidateQueries({ queryKey: ['institutions'] });
+        window.dispatchEvent(new CustomEvent('institution-info-updated'));
+      }
+
       toast.success(language === 'bn' ? 'সংরক্ষিত!' : 'Saved!');
     } catch {
       toast.error(language === 'bn' ? 'ত্রুটি হয়েছে' : 'Error occurred');
