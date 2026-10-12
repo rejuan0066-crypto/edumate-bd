@@ -124,11 +124,13 @@ export const PermissionPageEditor = ({
         (mp) =>
           mp.path.toLowerCase().includes(q) ||
           (mp.label_bn && mp.label_bn.toLowerCase().includes(q)) ||
-          (mp.label_en && mp.label_en.toLowerCase().includes(q))
+          (mp.label_en && mp.label_en.toLowerCase().includes(q)) ||
+          (mp.group_bn && mp.group_bn.toLowerCase().includes(q))
       );
     }
     return list;
   }, [allMenuPaths, activeCategory, search]);
+
 
   // Summary counts
   const summaryCounts = useMemo(() => {
@@ -656,7 +658,11 @@ export const PermissionPageEditor = ({
               approval_edit: false,
               approval_delete: false,
             };
-            const subFeatures = KNOWN_PAGE_FEATURES[mp.path] || [];
+            const subFeatures = KNOWN_PAGE_FEATURES[mp.path] || [
+              { key: 'tab_main_view', label_bn: 'প্রধান তালিকা ও কন্টেন্ট ভিউ', label_en: 'Main View & Records', type: 'tab' as const },
+              { key: 'action_export_print', label_bn: 'এক্সপোর্ট ও প্রিন্ট বোতাম', label_en: 'Export & Print Action', type: 'action' as const },
+              { key: 'action_sensitive_edit', label_bn: 'গুরুত্বপূর্ণ সেটিংস পরিবর্তন', label_en: 'Edit Settings Action', type: 'action' as const },
+            ];
             const isExpanded = expandedPages.has(mp.path);
 
             const hiddenSubCount = subFeatures.filter(
