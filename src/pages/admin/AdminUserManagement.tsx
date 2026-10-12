@@ -30,7 +30,7 @@ import { useMenuSettings } from '@/hooks/useMenuSettings';
 import { flattenMenuPaths, mergeMenuPaths } from '@/lib/menuPathList';
 import { Search } from 'lucide-react';
 import { useSignatoryAuthorities, CORE_SIGNATORY_ROLES } from '@/hooks/useSignatoryAuthorities';
-import { RolePermissionCardModal, RolePermItem } from '@/components/admin/RolePermissionCardModal';
+import { PermissionPageEditor, PagePermItem } from '@/components/admin/PermissionPageEditor';
 
 interface UserItem {
   id: string;
@@ -300,8 +300,14 @@ const AdminUserManagement = () => {
   const [permDialogOpen, setPermDialogOpen] = useState(false);
   const [permUser, setPermUser] = useState<UserItem | null>(null);
   const [permLoading, setPermLoading] = useState(false);
-  const [permSaving, setPermSaving] = useState(false);
   const [userPerms, setUserPerms] = useState<UserPerm[]>([]);
+  const [activePermEditor, setActivePermEditor] = useState<{
+    mode: 'user' | 'role';
+    target: any;
+    perms: PagePermItem[];
+    hiddenFeatures: Record<string, boolean>;
+  } | null>(null);
+  const [permPageLoading, setPermPageLoading] = useState(false);
 
   // Fetch custom roles
   const { data: customRoles = [], isLoading: rolesLoading } = useQuery({
@@ -1001,11 +1007,10 @@ const AdminUserManagement = () => {
 
   const [roleFeatureSettings, setRoleFeatureSettings] = useState<Record<string, boolean>>({});
 
-  // Role permission functions
+  // Role permission page open
   const openRolePermDialog = async (role: CustomRole) => {
     setRolePermRole(role);
-    setRolePermDialogOpen(true);
-    setRolePermLoading(true);
+    setPermPageLoading(true);
     try {
       const [permsRes, featureRes] = await Promise.all([
         supabase.from('role_permissions').select('*').eq('role', role.name),
@@ -1014,7 +1019,10 @@ const AdminUserManagement = () => {
 
       if (permsRes.error) throw permsRes.error;
 
-      const merged = allMenuPaths.map(mp => {
+      const allFeats = (featureRes.data?.value as Record<string, Record<string, boolean>>) || {};
+      const roleFeats = allFeats[role.name] || {};
+
+      const merged: PagePermItem[] = allMenuPaths.map(mp => {
         const existing = (permsRes.data || []).find((d: any) => d.menu_path === mp.path);
         return {
           menu_path: mp.path,
@@ -1023,16 +1031,23 @@ const AdminUserManagement = () => {
           can_edit: existing?.can_edit ?? false,
           can_delete: existing?.can_delete ?? false,
           can_approve: existing?.can_approve ?? false,
+          approval_add: roleFeats[`${mp.path}:approval_add`] ?? false,
+          approval_edit: roleFeats[`${mp.path}:approval_edit`] ?? false,
+          approval_delete: roleFeats[`${mp.path}:approval_delete`] ?? false,
         };
       });
-      setRolePerms(merged);
 
-      const allFeats = (featureRes.data?.value as Record<string, Record<string, boolean>>) || {};
-      setRoleFeatureSettings(allFeats[role.name] || {});
+      setActivePermEditor({
+        mode: 'role',
+        target: role,
+        perms: merged,
+        hiddenFeatures: roleFeats,
+      });
     } catch {
       toast.error(bn ? 'পারমিশন লোড ব্যর্থ' : 'Failed to load permissions');
+    } finally {
+      setPermPageLoading(false);
     }
-    setRolePermLoading(false);
   };
 
   const toggleRolePerm = (menuPath: string, field: string) => {
@@ -1079,14 +1094,15 @@ const AdminUserManagement = () => {
     setRolePermSaving(false);
   };
 
+  // User permission page open
   const openPermDialog = async (user: UserItem) => {
     setPermUser(user);
-    setPermDialogOpen(true);
-    setPermLoading(true);
+    setPermPageLoading(true);
     try {
-      const [userPermsRes, rolePermsRes] = await Promise.all([
+      const [userPermsRes, rolePermsRes, featureRes] = await Promise.all([
         supabase.from('user_permissions').select('*').eq('user_id', user.id),
         supabase.from('role_permissions').select('*').eq('role', user.role),
+        supabase.from('website_settings').select('value').eq('key', 'role_feature_permissions').maybeSingle(),
       ]);
       if (userPermsRes.error) throw userPermsRes.error;
       const userPermsData = userPermsRes.data || [];
@@ -1094,7 +1110,10 @@ const AdminUserManagement = () => {
       const hasUserOverrides = userPermsData.length > 0;
       const data = hasUserOverrides ? userPermsData : rolePermsData;
 
-      const merged = allMenuPaths.map(mp => {
+      const allFeats = (featureRes.data?.value as Record<string, Record<string, boolean>>) || {};
+      const userFeats = allFeats[`user_${user.id}`] || allFeats[user.role] || {};
+
+      const merged: PagePermItem[] = allMenuPaths.map(mp => {
         const existing: any = (data || []).find((d: any) => d.menu_path === mp.path);
         return {
           menu_path: mp.path,
@@ -1103,18 +1122,30 @@ const AdminUserManagement = () => {
           can_edit: existing?.can_edit ?? false,
           can_delete: existing?.can_delete ?? false,
           can_approve: existing?.can_approve ?? false,
-          approval_view: existing?.approval_view ?? false,
-          approval_add: existing?.approval_add ?? false,
-          approval_edit: existing?.approval_edit ?? false,
-          approval_delete: existing?.approval_delete ?? false,
+          approval_add: existing?.approval_add ?? userFeats[`${mp.path}:approval_add`] ?? false,
+          approval_edit: existing?.approval_edit ?? userFeats[`${mp.path}:approval_edit`] ?? false,
+          approval_delete: existing?.approval_delete ?? userFeats[`${mp.path}:approval_delete`] ?? false,
         };
       });
-      setUserPerms(merged);
+
+      setActivePermEditor({
+        mode: 'user',
+        target: {
+          id: user.id,
+          name: getUserDisplayName(user),
+          email: user.email,
+          base_role: user.role,
+        },
+        perms: merged,
+        hiddenFeatures: userFeats,
+      });
     } catch {
       toast.error(bn ? 'পারমিশন লোড ব্যর্থ' : 'Failed to load permissions');
+    } finally {
+      setPermPageLoading(false);
     }
-    setPermLoading(false);
   };
+
 
   const togglePerm = (menuPath: string, field: keyof UserPerm) => {
     setUserPerms(prev => prev.map(p => p.menu_path !== menuPath ? p : { ...p, [field]: !(p as any)[field] }));
@@ -1253,8 +1284,36 @@ const AdminUserManagement = () => {
     return <Badge variant="outline" className={colors[r] || 'bg-secondary/50 text-secondary-foreground border-secondary'}>{displayName}</Badge>;
   };
 
+  if (activePermEditor) {
+    return (
+      <AdminLayout>
+        {permPageLoading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <PermissionPageEditor
+            mode={activePermEditor.mode}
+            target={activePermEditor.target}
+            allMenuPaths={allMenuPaths}
+            initialPerms={activePermEditor.perms}
+            initialHiddenFeatures={activePermEditor.hiddenFeatures}
+            onBack={() => setActivePermEditor(null)}
+            onSaved={() => {
+              queryClient.invalidateQueries({ queryKey: ['user-permissions'] });
+              queryClient.invalidateQueries({ queryKey: ['role-permissions'] });
+              queryClient.invalidateQueries({ queryKey: ['role_feature_permissions'] });
+              fetchUsers();
+            }}
+          />
+        )}
+      </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout>
+
       <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
@@ -1835,161 +1894,9 @@ const AdminUserManagement = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Permission Dialog */}
-        <Dialog open={permDialogOpen} onOpenChange={setPermDialogOpen}>
-          <DialogContent className="sm:max-w-4xl max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <KeyRound className="w-5 h-5 text-primary" />
-                {bn ? 'ব্যক্তিগত পারমিশন' : 'Individual Permissions'}
-                {permUser && (
-                  <Badge variant="outline" className="ml-2 font-normal">
-                    {getUserDisplayName(permUser)}
-                  </Badge>
-                )}
-              </DialogTitle>
-            </DialogHeader>
-
-            {permLoading ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-              </div>
-            ) : isAdminRole(permUser?.role) ? (
-              <div className="py-8 text-center space-y-2">
-                <ShieldCheck className="w-10 h-10 text-primary mx-auto" />
-                <p className="text-sm font-medium text-foreground">
-                  {bn ? 'অ্যাডমিন হিসেবে এই ইউজারের কাছে সব পারমিশন ডিফল্টভাবে আছে।' : 'As an Admin, this user has full access to all permissions by default.'}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {bn ? 'ব্যক্তিগত পারমিশন সেট করার প্রয়োজন নেই।' : 'No need to set individual permissions.'}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4 pt-2">
-                <p className="text-xs text-muted-foreground">
-                  {bn
-                    ? 'এখানে সেট করা পারমিশন রোল-ভিত্তিক পারমিশনের উপরে প্রযোজ্য হবে (ওভাররাইড)।'
-                    : 'Permissions set here will override role-based permissions for this user.'}
-                </p>
-
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                  <Input
-                    value={permSearch}
-                    onChange={e => setPermSearch(e.target.value)}
-                    placeholder={bn ? 'পেজ/ট্যাব খুঁজুন...' : 'Search page/tab...'}
-                    className="h-9 pl-8"
-                  />
-                </div>
-
-                <div className="border rounded-lg overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/50">
-                        <TableHead className="min-w-[140px]">{bn ? 'মেনু' : 'Menu'}</TableHead>
-                        <TableHead className="text-center w-16"><button type="button" onClick={() => bulkSetUserPerms('can_view')} className="hover:text-primary underline-offset-2 hover:underline">{bn ? 'দেখা' : 'View'}</button></TableHead>
-                        <TableHead className="text-center w-16"><button type="button" onClick={() => bulkSetUserPerms('can_add')} className="hover:text-primary underline-offset-2 hover:underline">{bn ? 'যোগ' : 'Add'}</button></TableHead>
-                        <TableHead className="text-center w-16"><button type="button" onClick={() => bulkSetUserPerms('can_edit')} className="hover:text-primary underline-offset-2 hover:underline">{bn ? 'সম্পাদনা' : 'Edit'}</button></TableHead>
-                        <TableHead className="text-center w-16"><button type="button" onClick={() => bulkSetUserPerms('can_delete')} className="hover:text-primary underline-offset-2 hover:underline">{bn ? 'মুছুন' : 'Delete'}</button></TableHead>
-                        <TableHead className="text-center w-16"><button type="button" onClick={() => bulkSetUserPerms('can_approve')} className="text-emerald-600 hover:underline underline-offset-2">{bn ? 'অনুমোদন' : 'Approve'}</button></TableHead>
-                        <TableHead className="text-center w-16">{bn ? 'সব' : 'All'}</TableHead>
-                        <TableHead className="text-center w-20" colSpan={3}>
-                          <span className="text-yellow-600">{bn ? 'অনুমোদন লাগবে' : 'Needs Approval'}</span>
-                          <div className="flex justify-center gap-2 mt-1 text-xs text-muted-foreground font-normal">
-                            <span className="w-10 text-center">{bn ? 'যোগ' : 'A'}</span>
-                            <span className="w-10 text-center">{bn ? 'সম্পা.' : 'E'}</span>
-                            <span className="w-10 text-center">{bn ? 'মুছুন' : 'D'}</span>
-                          </div>
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {userPerms.filter(p => matchesPermSearch(p.menu_path)).map(perm => {
-                        const menuInfo = allMenuPaths.find(m => m.path === perm.menu_path);
-                        const allOn = perm.can_view && perm.can_add && perm.can_edit && perm.can_delete && perm.can_approve;
-                        return (
-                          <TableRow key={perm.menu_path}>
-                            <TableCell className="font-medium text-sm">
-                              {bn ? menuInfo?.label_bn : menuInfo?.label_en}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Checkbox checked={perm.can_view} onCheckedChange={() => togglePerm(perm.menu_path, 'can_view')} />
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Checkbox checked={perm.can_add} onCheckedChange={() => togglePerm(perm.menu_path, 'can_add')} />
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Checkbox checked={perm.can_edit} onCheckedChange={() => togglePerm(perm.menu_path, 'can_edit')} />
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Checkbox checked={perm.can_delete} onCheckedChange={() => togglePerm(perm.menu_path, 'can_delete')} />
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Checkbox
-                                checked={perm.can_approve}
-                                onCheckedChange={() => togglePerm(perm.menu_path, 'can_approve')}
-                                className="border-emerald-500 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
-                              />
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Checkbox checked={allOn} onCheckedChange={() => toggleAllForPath(perm.menu_path)} />
-                            </TableCell>
-                            {(['approval_add', 'approval_edit', 'approval_delete'] as const).map((af, i) => {
-                              const relatedPerm = (['can_add', 'can_edit', 'can_delete'] as const)[i];
-                              return (
-                                <TableCell key={af} className="text-center">
-                                  <Checkbox
-                                    checked={perm[af]}
-                                    onCheckedChange={() => toggleApproval(perm.menu_path, af)}
-                                    className="border-yellow-500 data-[state=checked]:bg-yellow-500 data-[state=checked]:border-yellow-500"
-                                    disabled={!perm[relatedPerm]}
-                                  />
-                                </TableCell>
-                              );
-                            })}
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={resetToRoleDefaults}
-                    disabled={permSaving || permLoading}
-                    className="flex-1"
-                  >
-                    {bn ? 'রোল ডিফল্টে রিসেট' : 'Reset to Role Defaults'}
-                  </Button>
-                  <Button onClick={savePermissions} disabled={permSaving} className="flex-1 btn-primary-gradient">
-                    {permSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                    {bn ? 'পারমিশন সেভ করুন' : 'Save Permissions'}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Role Permission Card Modal */}
-        <RolePermissionCardModal
-          open={rolePermDialogOpen}
-          onOpenChange={setRolePermDialogOpen}
-          role={rolePermRole}
-          allMenuPaths={allMenuPaths}
-          initialPerms={rolePerms}
-          initialHiddenFeatures={roleFeatureSettings}
-          onSaved={() => {
-            queryClient.invalidateQueries({ queryKey: ['role-permissions'] });
-            queryClient.invalidateQueries({ queryKey: ['role_feature_permissions'] });
-            queryClient.invalidateQueries({ queryKey: ['role-hidden-features-settings'] });
-          }}
-        />
         {/* ===== PROFILE VIEW & EDIT DIALOG ===== */}
         <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
+
           <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">

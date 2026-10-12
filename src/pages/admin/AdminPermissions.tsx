@@ -38,7 +38,7 @@ import {
   LayoutGrid,
   Table as TableIcon,
 } from 'lucide-react';
-import { RolePermissionCardModal, RolePermItem } from '@/components/admin/RolePermissionCardModal';
+import { PermissionPageEditor, PagePermItem } from '@/components/admin/PermissionPageEditor';
 
 interface CustomRole {
   id: string;
@@ -143,10 +143,9 @@ const AdminPermissions = () => {
   const [roleBaseRole, setRoleBaseRole] = useState('staff');
   const [roleSaving, setRoleSaving] = useState(false);
 
-  // Role Permission Modal state
-  const [cardModalOpen, setCardModalOpen] = useState(false);
+  // Role Permission Page state
   const [selectedRoleForModal, setSelectedRoleForModal] = useState<CustomRole | null>(null);
-  const [rolePermsForModal, setRolePermsForModal] = useState<RolePermItem[]>([]);
+  const [rolePermsForModal, setRolePermsForModal] = useState<PagePermItem[]>([]);
   const [roleFeaturesForModal, setRoleFeaturesForModal] = useState<Record<string, boolean>>({});
   const [modalLoading, setModalLoading] = useState(false);
 
@@ -240,10 +239,9 @@ const AdminPermissions = () => {
     });
   }, [rolesList, baseFilter, search]);
 
-  // Open Permission Card Modal for a role
+  // Open Permission Page for a role
   const handleOpenPermModal = async (role: CustomRole) => {
     setSelectedRoleForModal(role);
-    setCardModalOpen(true);
     setModalLoading(true);
 
     try {
@@ -363,8 +361,35 @@ const AdminPermissions = () => {
     }
   };
 
+  if (selectedRoleForModal) {
+
+    return (
+      <AdminLayout>
+        {modalLoading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <PermissionPageEditor
+            mode="role"
+            target={selectedRoleForModal}
+            allMenuPaths={allMenuPaths}
+            initialPerms={rolePermsForModal}
+            initialHiddenFeatures={roleFeaturesForModal}
+            onBack={() => setSelectedRoleForModal(null)}
+            onSaved={() => {
+              queryClient.invalidateQueries({ queryKey: ['role-permissions-all'] });
+              queryClient.invalidateQueries({ queryKey: ['role_feature_permissions'] });
+            }}
+          />
+        )}
+      </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout>
+
       <div className="space-y-6">
         {/* Top Header Card */}
         <div className="rounded-2xl border border-primary/20 bg-card p-6 shadow-sm">
@@ -726,23 +751,10 @@ const AdminPermissions = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-
-        {/* The Card-based Permission & Tab Visibility Modal */}
-        <RolePermissionCardModal
-          open={cardModalOpen}
-          onOpenChange={setCardModalOpen}
-          role={selectedRoleForModal}
-          allMenuPaths={allMenuPaths}
-          initialPerms={rolePermsForModal}
-          initialHiddenFeatures={roleFeaturesForModal}
-          onSaved={() => {
-            queryClient.invalidateQueries({ queryKey: ['role-permissions-all'] });
-            queryClient.invalidateQueries({ queryKey: ['role_feature_permissions'] });
-          }}
-        />
       </div>
     </AdminLayout>
   );
 };
+
 
 export default AdminPermissions;
