@@ -11,6 +11,8 @@ export interface SubFeatureItem {
   type: 'tab' | 'action'; // 'tab' = page tab, 'action' = button or special configuration
   description_bn?: string;
   description_en?: string;
+  /** Granular capabilities customizable inside this tab (View, Add, Edit, Delete, Print, Approval) */
+  supportsActions?: boolean;
 }
 
 export interface PageFeatureGroup {

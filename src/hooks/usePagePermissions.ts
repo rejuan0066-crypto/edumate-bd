@@ -19,8 +19,8 @@ export const usePagePermissions = (menuPath: string) => {
       canEditItem: true,
       canDeleteItem: true,
       canApproveItem: true,
-      isFeatureAllowed: (_featureKey: string) => true,
-      requiresApproval: (_action?: 'view' | 'add' | 'edit' | 'delete') => false,
+      isFeatureAllowed: (_featureKey: string, _subAction?: 'view' | 'add' | 'edit' | 'delete' | 'print') => true,
+      requiresApproval: (_action?: 'view' | 'add' | 'edit' | 'delete', _tabKey?: string) => false,
       isLoading,
     };
   }
@@ -31,8 +31,8 @@ export const usePagePermissions = (menuPath: string) => {
     canEditItem: canEdit(menuPath),
     canDeleteItem: canDelete(menuPath),
     canApproveItem: canApprove(menuPath),
-    isFeatureAllowed: (featureKey: string) => isFeatureAllowed(menuPath, featureKey),
-    requiresApproval: (action?: 'view' | 'add' | 'edit' | 'delete') => requiresApproval(menuPath, action),
+    isFeatureAllowed: (featureKey: string, subAction?: 'view' | 'add' | 'edit' | 'delete' | 'print') => isFeatureAllowed(menuPath, featureKey, subAction),
+    requiresApproval: (action?: 'view' | 'add' | 'edit' | 'delete', tabKey?: string) => requiresApproval(menuPath, action, tabKey),
     isLoading,
   };
 };

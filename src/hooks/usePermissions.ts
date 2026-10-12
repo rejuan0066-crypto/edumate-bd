@@ -143,10 +143,12 @@ export const usePermissions = () => {
 
   /**
    * isFeatureAllowed
-   * Checks whether a specific internal tab or action button is allowed for the current role.
+   * Checks whether a specific internal tab, sub-feature, or action is allowed.
+   * Signature: isFeatureAllowed(menuPath, featureKey, subAction?)
+   * If subAction is provided, checks `${menuPath}:${featureKey}:${subAction}`
    * If false, the tab/button MUST BE COMPLETELY HIDDEN (not rendered) from the DOM.
    */
-  const isFeatureAllowed = (menuPath: string, featureKey: string): boolean => {
+  const isFeatureAllowed = (menuPath: string, featureKey: string, subAction?: 'view' | 'add' | 'edit' | 'delete' | 'print'): boolean => {
     if (isAdminRole(role)) return true;
     if (!role) return false;
 
@@ -154,11 +156,24 @@ export const usePermissions = () => {
     if (!canView(menuPath)) return false;
 
     // Check specific sub-feature permission for this role
-    // Format in hiddenFeatures: { [role]: { [`${menuPath}:${featureKey}`]: boolean } }
+    // Format in hiddenFeatures: { [role]: { [`${menuPath}:${featureKey}`]: boolean, [`${menuPath}:${featureKey}:${subAction}`]: boolean } }
     const roleMap = hiddenFeatures[role];
     if (!roleMap) return true; // Default allowed unless restricted
 
+    // 1. Check parent feature/tab visibility first
     const fullKey = `${menuPath}:${featureKey}`;
+    if (roleMap[fullKey] === false) {
+      return false; // Whole tab/feature is hidden
+    }
+
+    // 2. If sub-action is specified, check sub-action permission
+    if (subAction) {
+      const subActionKey = `${menuPath}:${featureKey}:${subAction}`;
+      if (roleMap[subActionKey] !== undefined) {
+        return !!roleMap[subActionKey];
+      }
+    }
+
     if (roleMap[fullKey] !== undefined) {
       return !!roleMap[fullKey];
     }
@@ -174,12 +189,27 @@ export const usePermissions = () => {
     return pickAction(userPerm, action);
   };
 
-  const requiresApproval = (menuPath: string, action?: 'view' | 'add' | 'edit' | 'delete'): boolean => {
+  /**
+   * requiresApproval
+   * Checks if an action on a page or inside a specific tab requires maker-checker approval.
+   * Signature: requiresApproval(menuPath, action?, tabKey?)
+   */
+  const requiresApproval = (menuPath: string, action?: 'view' | 'add' | 'edit' | 'delete', tabKey?: string): boolean => {
     if (isAdminRole(role)) return false;
     const userPerm = userPermissions.find(p => p.menu_path === menuPath);
     if (!userPerm) {
       if (!role) return false;
-      const roleFeatures = roleFeatureSettings[role] || {};
+      const roleFeatures = hiddenFeatures[role] || {};
+
+      // If checking for a specific tab's action approval
+      if (tabKey && action) {
+        const tabApprovalKey = `${menuPath}:${tabKey}:approval_${action}`;
+        if (roleFeatures[tabApprovalKey] !== undefined) {
+          return !!roleFeatures[tabApprovalKey];
+        }
+      }
+
+      // Check general page action approval
       if (action) {
         return !!roleFeatures[`${menuPath}:approval_${action}`];
       }

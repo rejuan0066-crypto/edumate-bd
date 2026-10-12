@@ -16,11 +16,21 @@ import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 const AdminIdCards = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
+  const { isFeatureAllowed, canEditItem } = usePagePermissions('/admin/id-cards');
+
+  // Granular tab permissions
+  const canViewStudentTab = isFeatureAllowed('tab_student_card', 'view');
+  const canViewStaffTab = isFeatureAllowed('tab_staff_card', 'view');
+  const canPrintStudentCards = isFeatureAllowed('tab_student_card', 'print') && isFeatureAllowed('action_bulk_print');
+  const canPrintStaffCards = isFeatureAllowed('tab_staff_card', 'print') && isFeatureAllowed('action_bulk_print');
+  const canSaveSettings = canEditItem && isFeatureAllowed('tab_card_template', 'edit');
+
   const { settings } = useWebsiteSettings();
-  const [activeTab, setActiveTab] = useState('');
+  const [activeTab, setActiveTab] = useState(canViewStudentTab ? 'student' : (canViewStaffTab ? 'staff' : ''));
   const [search, setSearch] = useState('');
   const [staffSearch, setStaffSearch] = useState('');
   const [filterSessionId, setFilterSessionId] = useState('');
@@ -671,7 +681,7 @@ const AdminIdCards = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {activeTab === 'student' && selectedIds.size > 0 && (
+          {activeTab === 'student' && selectedIds.size > 0 && canPrintStudentCards && (
             <>
               <Button onClick={handleBulkDownloadPdf} disabled={bulkDownloading} variant="outline" className="flex items-center gap-2">
                 {bulkDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
@@ -683,7 +693,7 @@ const AdminIdCards = () => {
               </Button>
             </>
           )}
-          {activeTab === 'staff' && selectedStaffIds.size > 0 && (
+          {activeTab === 'staff' && selectedStaffIds.size > 0 && canPrintStaffCards && (
             <>
               <Button onClick={handleBulkDownloadPdf} disabled={bulkDownloading} variant="outline" className="flex items-center gap-2">
                 {bulkDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
@@ -741,29 +751,36 @@ const AdminIdCards = () => {
               </div>
             )}
           </div>
-          <div className="flex items-end">
-            <Button onClick={saveSettings} disabled={savingSettings} variant="outline" size="sm" className="gap-1.5">
-              {savingSettings ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {bn ? 'সংরক্ষণ' : 'Save'}
-            </Button>
-          </div>
+          {canSaveSettings && (
+            <div className="flex items-end">
+              <Button onClick={saveSettings} disabled={savingSettings} variant="outline" size="sm" className="gap-1.5">
+                {savingSettings ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {bn ? 'সংরক্ষণ' : 'Save'}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="student" className="flex items-center gap-1.5">
-            <GraduationCap className="w-4 h-4" />
-            {bn ? 'ছাত্র' : 'Students'}
-          </TabsTrigger>
-          <TabsTrigger value="staff" className="flex items-center gap-1.5">
-            <Users className="w-4 h-4" />
-            {bn ? 'কর্মী' : 'Staff'}
-          </TabsTrigger>
+          {canViewStudentTab && (
+            <TabsTrigger value="student" className="flex items-center gap-1.5">
+              <GraduationCap className="w-4 h-4" />
+              {bn ? 'ছাত্র' : 'Students'}
+            </TabsTrigger>
+          )}
+          {canViewStaffTab && (
+            <TabsTrigger value="staff" className="flex items-center gap-1.5">
+              <Users className="w-4 h-4" />
+              {bn ? 'কর্মী' : 'Staff'}
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Student Tab */}
+        {canViewStudentTab && (
         <TabsContent value="student" className="space-y-4 mt-4">
           <div className="card-elevated p-4">
             <div className="flex flex-col sm:flex-row gap-3">
@@ -865,9 +882,11 @@ const AdminIdCards = () => {
                             <button onClick={() => setPreviewStudent(s)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary" title={bn ? 'প্রিভিউ' : 'Preview'}>
                               <Eye className="w-4 h-4" />
                             </button>
-                            <button onClick={() => handlePrintSingle(s)} className="p-2 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary" title={bn ? 'প্রিন্ট' : 'Print'}>
-                              <Printer className="w-4 h-4" />
-                            </button>
+                            {canPrintStudentCards && (
+                              <button onClick={() => handlePrintSingle(s)} className="p-2 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary" title={bn ? 'প্রিন্ট' : 'Print'}>
+                                <Printer className="w-4 h-4" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -881,8 +900,10 @@ const AdminIdCards = () => {
             )}
           </div>
         </TabsContent>
+        )}
 
         {/* Staff Tab */}
+        {canViewStaffTab && (
         <TabsContent value="staff" className="space-y-4 mt-4">
           <div className="card-elevated p-4">
             <div className="flex flex-col sm:flex-row gap-3">
@@ -957,9 +978,11 @@ const AdminIdCards = () => {
                             <button onClick={() => setPreviewStaff(s)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary" title={bn ? 'প্রিভিউ' : 'Preview'}>
                               <Eye className="w-4 h-4" />
                             </button>
-                            <button onClick={() => handlePrintStaffSingle(s)} className="p-2 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary" title={bn ? 'প্রিন্ট' : 'Print'}>
-                              <Printer className="w-4 h-4" />
-                            </button>
+                            {canPrintStaffCards && (
+                              <button onClick={() => handlePrintStaffSingle(s)} className="p-2 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary" title={bn ? 'প্রিন্ট' : 'Print'}>
+                                <Printer className="w-4 h-4" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -973,6 +996,7 @@ const AdminIdCards = () => {
             )}
           </div>
         </TabsContent>
+        )}
       </Tabs>
 
       {/* Student Preview Dialog */}

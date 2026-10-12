@@ -216,6 +216,25 @@ export const PermissionPageEditor = ({
     const key = `${path}:${featKey}`;
     setSubFeaturesMap((prev) => {
       const curr = prev[key] !== false; // default true
+      const nextVal = !curr;
+      const nextMap = { ...prev, [key]: nextVal };
+      // If toggling off the entire tab, also clear sub-actions
+      if (!nextVal) {
+        ['view', 'add', 'edit', 'delete', 'print'].forEach((act) => {
+          delete nextMap[`${path}:${featKey}:${act}`];
+        });
+        ['approval_add', 'approval_edit', 'approval_delete'].forEach((app) => {
+          delete nextMap[`${path}:${featKey}:${app}`];
+        });
+      }
+      return nextMap;
+    });
+  };
+
+  const toggleTabCapability = (path: string, featKey: string, capability: string) => {
+    const key = `${path}:${featKey}:${capability}`;
+    setSubFeaturesMap((prev) => {
+      const curr = prev[key] !== false; // default true
       return { ...prev, [key]: !curr };
     });
   };
@@ -871,42 +890,160 @@ export const PermissionPageEditor = ({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       {subFeatures.map((feat) => {
                         const featKey = `${mp.path}:${feat.key}`;
                         const isAllowed = subFeaturesMap[featKey] !== false; // default true unless explicitly toggled off
 
+                        // Granular action capabilities inside this tab/sub-feature
+                        const isTab = feat.type === 'tab';
+                        const canView = subFeaturesMap[`${featKey}:view`] !== false;
+                        const canAdd = subFeaturesMap[`${featKey}:add`] !== false;
+                        const canEdit = subFeaturesMap[`${featKey}:edit`] !== false;
+                        const canDelete = subFeaturesMap[`${featKey}:delete`] !== false;
+                        const canPrint = subFeaturesMap[`${featKey}:print`] !== false;
+
+                        // Maker-checker approval requirements inside this tab
+                        const appAdd = !!subFeaturesMap[`${featKey}:approval_add`];
+                        const appEdit = !!subFeaturesMap[`${featKey}:approval_edit`];
+                        const appDelete = !!subFeaturesMap[`${featKey}:approval_delete`];
+
                         return (
                           <div
                             key={feat.key}
-                            className={`flex items-center justify-between p-3 rounded-xl border text-xs transition-colors ${
+                            className={`rounded-2xl border text-xs transition-all overflow-hidden ${
                               isAllowed
                                 ? 'bg-card border-emerald-500/30 text-foreground shadow-sm'
                                 : 'bg-rose-500/5 border-rose-500/30 text-muted-foreground'
                             }`}
                           >
-                            <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                              <Checkbox
-                                checked={isAllowed}
-                                onCheckedChange={() => toggleSubFeature(mp.path, feat.key)}
-                                className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 h-4 w-4"
-                              />
-                              <div className="truncate">
-                                <p className="font-semibold truncate">{bn ? feat.label_bn : feat.label_en}</p>
-                                <p className="text-[10px] text-muted-foreground font-mono truncate">{feat.key}</p>
+                            {/* Card Header: Tab Switch */}
+                            <div className={`p-3.5 flex items-center justify-between gap-3 border-b ${
+                              isAllowed ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-rose-500/5 border-rose-500/20'
+                            }`}>
+                              <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                                <Checkbox
+                                  checked={isAllowed}
+                                  onCheckedChange={() => toggleSubFeature(mp.path, feat.key)}
+                                  className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 h-4 w-4"
+                                />
+                                <div className="truncate">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <p className="font-bold truncate text-sm">{bn ? feat.label_bn : feat.label_en}</p>
+                                    <Badge variant="outline" className="text-[9px] py-0 px-1 font-mono">
+                                      {isTab ? (bn ? 'ট্যাব' : 'Tab') : (bn ? 'অ্যাকশন' : 'Action')}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-[10px] text-muted-foreground font-mono truncate">{feat.key}</p>
+                                </div>
                               </div>
+
+                              <Badge
+                                variant={isAllowed ? 'outline' : 'secondary'}
+                                className={`text-[10px] shrink-0 font-medium ${
+                                  isAllowed
+                                    ? 'text-emerald-600 border-emerald-500/40 bg-emerald-500/10'
+                                    : 'text-rose-600 bg-rose-500/10 border-rose-500/30'
+                                }`}
+                              >
+                                {isAllowed ? (bn ? 'দৃশ্যমান' : 'Visible') : (bn ? '১০০% হাইড' : 'Hidden')}
+                              </Badge>
                             </div>
 
-                            <Badge
-                              variant={isAllowed ? 'outline' : 'secondary'}
-                              className={`text-[10px] shrink-0 font-medium ${
-                                isAllowed
-                                  ? 'text-emerald-600 border-emerald-500/40 bg-emerald-500/10'
-                                  : 'text-rose-600 bg-rose-500/10 border-rose-500/30'
-                              }`}
-                            >
-                              {isAllowed ? (bn ? 'দৃশ্যমান' : 'Visible') : (bn ? '১০০% হাইড' : 'Hidden')}
-                            </Badge>
+                            {/* Granular Controls: Only visible when the tab is allowed/visible */}
+                            {isAllowed ? (
+                              <div className="p-3.5 space-y-3 bg-background/50">
+                                {/* 1. What can they do inside this tab (Actions) */}
+                                <div className="space-y-1.5">
+                                  <p className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                                    <KeyRound className="w-3 h-3 text-primary" />
+                                    <span>{bn ? 'এই ট্যাবে যা যা করতে পারবে (Actions):' : 'Allowed Actions in this tab:'}</span>
+                                  </p>
+
+                                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-0.5">
+                                    <label className="flex items-center gap-1.5 p-1.5 rounded-lg border bg-muted/20 hover:bg-muted/40 cursor-pointer select-none">
+                                      <Checkbox
+                                        checked={canView}
+                                        onCheckedChange={() => toggleTabCapability(mp.path, feat.key, 'view')}
+                                        className="h-3.5 w-3.5"
+                                      />
+                                      <span className="text-[11px] font-medium">{bn ? 'দেখা' : 'View'}</span>
+                                    </label>
+
+                                    <label className="flex items-center gap-1.5 p-1.5 rounded-lg border bg-muted/20 hover:bg-muted/40 cursor-pointer select-none">
+                                      <Checkbox
+                                        checked={canAdd}
+                                        onCheckedChange={() => toggleTabCapability(mp.path, feat.key, 'add')}
+                                        className="h-3.5 w-3.5"
+                                      />
+                                      <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">{bn ? 'যোগ' : 'Add'}</span>
+                                    </label>
+
+                                    <label className="flex items-center gap-1.5 p-1.5 rounded-lg border bg-muted/20 hover:bg-muted/40 cursor-pointer select-none">
+                                      <Checkbox
+                                        checked={canEdit}
+                                        onCheckedChange={() => toggleTabCapability(mp.path, feat.key, 'edit')}
+                                        className="h-3.5 w-3.5"
+                                      />
+                                      <span className="text-[11px] font-medium text-blue-600 dark:text-blue-400">{bn ? 'এডিট' : 'Edit'}</span>
+                                    </label>
+
+                                    <label className="flex items-center gap-1.5 p-1.5 rounded-lg border bg-muted/20 hover:bg-muted/40 cursor-pointer select-none">
+                                      <Checkbox
+                                        checked={canDelete}
+                                        onCheckedChange={() => toggleTabCapability(mp.path, feat.key, 'delete')}
+                                        className="h-3.5 w-3.5"
+                                      />
+                                      <span className="text-[11px] font-medium text-rose-600 dark:text-rose-400">{bn ? 'ডিলিট' : 'Del'}</span>
+                                    </label>
+                                  </div>
+                                </div>
+
+                                {/* 2. Maker-Checker: Approval Requirements for this tab */}
+                                <div className="space-y-1.5 pt-2 border-t border-border/40">
+                                  <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1">
+                                    <AlertTriangle className="w-3 h-3 text-amber-500" />
+                                    <span>{bn ? 'অনুমোদন পলিসি (Maker-Checker):' : 'Requires Approval:'}</span>
+                                  </p>
+
+                                  <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                                    <label className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10 cursor-pointer select-none text-[11px]">
+                                      <Checkbox
+                                        checked={appAdd}
+                                        onCheckedChange={() => toggleTabCapability(mp.path, feat.key, 'approval_add')}
+                                        disabled={!canAdd}
+                                        className="border-amber-500 data-[state=checked]:bg-amber-500 h-3.5 w-3.5"
+                                      />
+                                      <span className="text-amber-800 dark:text-amber-300 font-medium">{bn ? 'যোগ করতে অনুমোদন' : 'Add Approval'}</span>
+                                    </label>
+
+                                    <label className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10 cursor-pointer select-none text-[11px]">
+                                      <Checkbox
+                                        checked={appEdit}
+                                        onCheckedChange={() => toggleTabCapability(mp.path, feat.key, 'approval_edit')}
+                                        disabled={!canEdit}
+                                        className="border-amber-500 data-[state=checked]:bg-amber-500 h-3.5 w-3.5"
+                                      />
+                                      <span className="text-amber-800 dark:text-amber-300 font-medium">{bn ? 'এডিট করতে অনুমোদন' : 'Edit Approval'}</span>
+                                    </label>
+
+                                    <label className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10 cursor-pointer select-none text-[11px]">
+                                      <Checkbox
+                                        checked={appDelete}
+                                        onCheckedChange={() => toggleTabCapability(mp.path, feat.key, 'approval_delete')}
+                                        disabled={!canDelete}
+                                        className="border-amber-500 data-[state=checked]:bg-amber-500 h-3.5 w-3.5"
+                                      />
+                                      <span className="text-amber-800 dark:text-amber-300 font-medium">{bn ? 'ডিলিট করতে অনুমোদন' : 'Delete Approval'}</span>
+                                    </label>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="p-3 bg-muted/20 text-center text-muted-foreground text-[11px]">
+                                {bn ? '❌ এই ট্যাব বা অপশনটি ব্যবহারকারীর স্ক্রিনে ১০০% অদৃশ্য থাকবে।' : '❌ This tab or option is 100% hidden in the DOM.'}
+                              </div>
+                            )}
                           </div>
                         );
                       })}
