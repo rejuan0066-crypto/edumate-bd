@@ -192,10 +192,15 @@ const AdminExpenses = () => {
   const confirm = useConfirm();
   const { language } = useLanguage();
   const qc = useQueryClient();
-  const { canAddItem: permCanAdd, canEditItem: permCanEdit, canDeleteItem: permCanDelete } = usePagePermissions('/admin/expenses');
-  const canAddItem = permCanAdd ?? true;
-  const canEditItem = permCanEdit ?? true;
-  const canDeleteItem = permCanDelete ?? true;
+  const { canAddItem: permCanAdd, canEditItem: permCanEdit, canDeleteItem: permCanDelete, isFeatureAllowed } = usePagePermissions('/admin/expenses');
+  const canAddItem = (permCanAdd ?? true) && isFeatureAllowed('action_add_expense');
+  const canAddDeposit = (permCanAdd ?? true) && isFeatureAllowed('action_add_deposit');
+  const canEditItem = (permCanEdit ?? true) && isFeatureAllowed('action_edit_transaction');
+  const canDeleteItem = (permCanDelete ?? true) && isFeatureAllowed('action_delete_transaction');
+  const canExportExcel = isFeatureAllowed('action_export_excel');
+  const canExportPdf = isFeatureAllowed('action_export_pdf');
+  const canPrintVoucher = isFeatureAllowed('action_print_voucher');
+  const canManageCategories = isFeatureAllowed('action_manage_categories');
   const bn = language === 'bn';
 
   const { user, role } = useOptionalAuth();
@@ -2679,28 +2684,49 @@ const AdminExpenses = () => {
         </div>
 
         {/* Main Navigation Tabs */}
+        {(() => {
+          const availableTabs = [
+            { value: 'dashboard', feature: 'tab_dashboard', label: bn ? 'হিসাব ও ব্যয় এন্ট্রি' : 'Expenses' },
+            { value: 'deposits', feature: 'tab_deposits', label: bn ? 'টাকা আয়/উত্তোলন' : 'Deposits' },
+            { value: 'hierarchy', feature: 'tab_hierarchy', label: bn ? 'প্রতিষ্ঠান ভিত্তিক রিপোর্ট' : 'Institution Report' },
+            { value: 'summary', feature: 'tab_summary', label: bn ? 'সারাংশ' : 'Summary' },
+            { value: 'ledger', feature: 'tab_ledger', label: bn ? 'লেজার' : 'Ledger' },
+            { value: 'settings', feature: 'tab_settings', label: bn ? 'প্রতিষ্ঠান ও ক্যাটাগরি সেটিংস' : 'Institution Setup' },
+            { value: 'audit', feature: 'tab_audit', label: bn ? 'অডিট লগ' : 'Audit Log' },
+          ].filter(tab => isFeatureAllowed(tab.feature));
+
+          // If current activeTab is hidden, fallback to first allowed tab
+          const effectiveActiveTab = availableTabs.some(t => t.value === activeTab)
+            ? activeTab
+            : (availableTabs[0]?.value || 'dashboard');
+
+          if (availableTabs.length === 0) {
+            return (
+              <div className="text-center py-12 text-muted-foreground">
+                <AlertTriangle className="w-8 h-8 mx-auto text-amber-500 mb-2" />
+                <p>{bn ? 'আপনার এই পেইজের কোনো ট্যাব দেখার অনুমতি নেই।' : 'You do not have permission to view any tabs on this page.'}</p>
+              </div>
+            );
+          }
+
+          return (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {availableTabs.map(tab => (
+                <button
+                  key={tab.value}
+                  onClick={() => setActiveTab(tab.value)}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${effectiveActiveTab === tab.value
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25'
+                    : 'bg-white/60 dark:bg-white/10 backdrop-blur border border-emerald-200/30 dark:border-emerald-800/30 text-muted-foreground hover:text-foreground hover:shadow-md hover:border-emerald-300/50'}`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          );
+        })()}
+
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="flex flex-wrap gap-2 mb-4">
-            {[
-              { value: 'dashboard', label: bn ? 'হিসাব ও ব্যয় এন্ট্রি' : 'Expenses' },
-              { value: 'deposits', label: bn ? 'টাকা আয়/উত্তোলন' : 'Deposits' },
-              { value: 'hierarchy', label: bn ? 'প্রতিষ্ঠান ভিত্তিক রিপোর্ট' : 'Institution Report' },
-              { value: 'summary', label: bn ? 'সারাংশ' : 'Summary' },
-              { value: 'ledger', label: bn ? 'লেজার' : 'Ledger' },
-              { value: 'settings', label: bn ? 'প্রতিষ্ঠান ও ক্যাটাগরি সেটিংস' : 'Institution Setup' },
-              { value: 'audit', label: bn ? 'অডিট লগ' : 'Audit Log' },
-            ].map(tab => (
-              <button
-                key={tab.value}
-                onClick={() => setActiveTab(tab.value)}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${activeTab === tab.value
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25'
-                  : 'bg-white/60 dark:bg-white/10 backdrop-blur border border-emerald-200/30 dark:border-emerald-800/30 text-muted-foreground hover:text-foreground hover:shadow-md hover:border-emerald-300/50'}`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
 
           {/* Expenses Tab - Institution-based tables & Dues tables */}
           <TabsContent value="dashboard" className="space-y-6">
@@ -2909,37 +2935,43 @@ const AdminExpenses = () => {
                             </motion.button>
                           )}
 
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => isAll ? handleExcelDownload() : handleInstExcelDownload(inst?.id)}
-                            className="text-xs h-9 gap-1.5 border-emerald-300 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-                            title={isAll ? (bn ? 'সকল প্রতিষ্ঠান এক্সেল ডাউনলোড' : 'Export Multi-Tab Excel') : (bn ? 'এই প্রতিষ্ঠানের ক্যাটাগরিভিত্তিক এক্সেল' : 'Export institution excel')}
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                            <span>{bn ? 'এক্সেল ডাউনলোড' : 'Excel'}</span>
-                          </Button>
+                          {canExportExcel && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => isAll ? handleExcelDownload() : handleInstExcelDownload(inst?.id)}
+                              className="text-xs h-9 gap-1.5 border-emerald-300 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                              title={isAll ? (bn ? 'সকল প্রতিষ্ঠান এক্সেল ডাউনলোড' : 'Export Multi-Tab Excel') : (bn ? 'এই প্রতিষ্ঠানের ক্যাটাগরিভিত্তিক এক্সেল' : 'Export institution excel')}
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span>{bn ? 'এক্সেল ডাউনলোড' : 'Excel'}</span>
+                            </Button>
+                          )}
 
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleExpensesPDF(isAll ? 'all' : (inst?.id || selectedInstId))}
-                            className="text-xs h-9 gap-1.5 border-rose-300 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40"
-                            title={isAll ? (bn ? 'সকল প্রতিষ্ঠানের সমন্বিত PDF ডাউনলোড' : 'Download All Institutions PDF') : (bn ? 'এই প্রতিষ্ঠানের PDF ডাউনলোড' : 'Download Institution PDF')}
-                          >
-                            <FileText className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-                            <span>{bn ? 'PDF ডাউনলোড' : 'PDF'}</span>
-                          </Button>
+                          {canExportPdf && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleExpensesPDF(isAll ? 'all' : (inst?.id || selectedInstId))}
+                              className="text-xs h-9 gap-1.5 border-rose-300 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                              title={isAll ? (bn ? 'সকল প্রতিষ্ঠানের সমন্বিত PDF ডাউনলোড' : 'Download All Institutions PDF') : (bn ? 'এই প্রতিষ্ঠানের PDF ডাউনলোড' : 'Download Institution PDF')}
+                            >
+                              <FileText className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                              <span>{bn ? 'PDF ডাউনলোড' : 'PDF'}</span>
+                            </Button>
+                          )}
 
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setPrintInstitutionId(isAll ? 'all' : (inst?.id || null))}
-                            className="text-xs h-9 gap-1.5"
-                          >
-                            <Printer className="w-3.5 h-3.5" />
-                            <span>{bn ? 'প্রিন্ট / ভাউচার' : 'Print'}</span>
-                          </Button>
+                          {canPrintVoucher && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setPrintInstitutionId(isAll ? 'all' : (inst?.id || null))}
+                              className="text-xs h-9 gap-1.5"
+                            >
+                              <Printer className="w-3.5 h-3.5" />
+                              <span>{bn ? 'প্রিন্ট / ভাউচার' : 'Print'}</span>
+                            </Button>
+                          )}
                         </div>
                       </div>
 
@@ -3383,17 +3415,20 @@ const AdminExpenses = () => {
                 }}>
                   <Eye className="w-4 h-4 mr-1" />{bn ? 'প্রিভিউ' : 'Preview'}
                 </Button>
-                <Button size="sm" variant="outline" onClick={handleDepositExcelDownload}>
-                  <Download className="w-4 h-4 mr-1" />{bn ? 'এক্সেল' : 'Excel'}
-                </Button>
-                {canAddItem && <Dialog open={depositDialog} onOpenChange={resetDepositDialog}>
-                  <DialogTrigger asChild>
-                    <Button size="sm"><Plus className="w-4 h-4 mr-1" />{bn ? 'টাকা আয়/উত্তোলন যোগ' : 'Add Deposit'}</Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>{editingDepositId ? (bn ? 'টাকা আয়/উত্তোলন সম্পাদনা' : 'Edit Deposit') : (bn ? 'নতুন টাকা আয়/উত্তোলন' : 'New Deposit')}</DialogTitle>
-                    </DialogHeader>
+                {canExportExcel && (
+                  <Button size="sm" variant="outline" onClick={handleDepositExcelDownload}>
+                    <Download className="w-4 h-4 mr-1" />{bn ? 'এক্সেল' : 'Excel'}
+                  </Button>
+                )}
+                {canAddDeposit && (
+                  <Dialog open={depositDialog} onOpenChange={resetDepositDialog}>
+                    <DialogTrigger asChild>
+                      <Button size="sm"><Plus className="w-4 h-4 mr-1" />{bn ? 'টাকা আয়/উত্তোলন যোগ' : 'Add Deposit'}</Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>{editingDepositId ? (bn ? 'টাকা আয়/উত্তোলন সম্পাদনা' : 'Edit Deposit') : (bn ? 'নতুন টাকা আয়/উত্তোলন' : 'New Deposit')}</DialogTitle>
+                      </DialogHeader>
                     <div className="space-y-3 pt-2">
                       <div>
                         <Label>{bn ? 'তারিখ' : 'Date'} *</Label>
@@ -3540,9 +3575,10 @@ const AdminExpenses = () => {
                       </Button>
                     </div>
                   </DialogContent>
-                </Dialog>}
-              </div>
+                </Dialog>
+              )}
             </div>
+          </div>
 
             <div className="border border-slate-300 overflow-auto bg-white">
               <table className="w-full border-collapse text-sm text-slate-700">
@@ -3671,17 +3707,18 @@ const AdminExpenses = () => {
                     <Building2 className="w-4 h-4 text-emerald-600" />
                     <span>{bn ? 'প্রতিষ্ঠান তালিকা' : 'Institutions'}</span>
                   </CardTitle>
-                  <Dialog open={expInstDialog} onOpenChange={resetExpInstDialog}>
-                    <DialogTrigger asChild>
-                      <Button size="sm" variant="outline" className="gap-1.5 cursor-pointer">
-                        <FolderPlus className="w-4 h-4 text-emerald-600" />
-                        {bn ? 'নতুন প্রতিষ্ঠান' : 'Add Institution'}
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-lg max-h-[85vh] overflow-auto">
-                      <DialogHeader>
-                        <DialogTitle>{editingExpInstId ? (bn ? 'প্রতিষ্ঠান সম্পাদনা' : 'Edit Institution') : (bn ? 'নতুন প্রতিষ্ঠান' : 'New Institution')}</DialogTitle>
-                      </DialogHeader>
+                  {canManageCategories && (
+                    <Dialog open={expInstDialog} onOpenChange={resetExpInstDialog}>
+                      <DialogTrigger asChild>
+                        <Button size="sm" variant="outline" className="gap-1.5 cursor-pointer">
+                          <FolderPlus className="w-4 h-4 text-emerald-600" />
+                          {bn ? 'নতুন প্রতিষ্ঠান' : 'Add Institution'}
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-lg max-h-[85vh] overflow-auto">
+                        <DialogHeader>
+                          <DialogTitle>{editingExpInstId ? (bn ? 'প্রতিষ্ঠান সম্পাদনা' : 'Edit Institution') : (bn ? 'নতুন প্রতিষ্ঠান' : 'New Institution')}</DialogTitle>
+                        </DialogHeader>
                       <div className="space-y-3.5 pt-1">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div>
@@ -3804,6 +3841,7 @@ const AdminExpenses = () => {
                       </div>
                     </DialogContent>
                   </Dialog>
+                  )}
                 </CardHeader>
                 <CardContent>
                   {allInstitutions.length === 0 ? (
@@ -3823,26 +3861,28 @@ const AdminExpenses = () => {
                               {p.address && <p className="text-[11px] text-muted-foreground truncate">{p.address}</p>}
                             </div>
                           </div>
-                          <div className="flex gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600 hover:bg-emerald-50" onClick={() => openEditExpInst(p)} title={bn ? 'সম্পাদনা' : 'Edit'}>
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-rose-600 hover:bg-rose-50" onClick={async () => {
-                              const expCount = allExpenses.filter((e: any) => e.institution_id === p.id).length;
-                              const catCount = categories.filter((c: any) => (c as any).institution_id === p.id).length;
-                              let desc = bn ? `"${getInstName(p, bn)}" প্রতিষ্ঠানটি মুছে ফেলতে চান?` : `Delete institution "${getInstName(p, bn)}"?`;
-                              if (expCount > 0 || catCount > 0) {
-                                desc += bn
-                                  ? `\n\nসতর্কতা: এতে ${expCount}টি খরচের হিসাব এবং ${catCount}টি ক্যাটাগরি রয়েছে। প্রতিষ্ঠানটি মুছে ফেললে এগুলোও মুছে যাবে।`
-                                  : `\n\nWarning: Contains ${expCount} expenses and ${catCount} categories that will also be removed.`;
-                              }
-                              if (await confirm({ title: bn ? 'প্রতিষ্ঠান মুছে ফেলুন' : 'Delete Institution', description: desc, variant: 'destructive' })) {
-                                deleteExpInst.mutate(p.id);
-                              }
-                            }} title={bn ? 'মুছে ফেলুন' : 'Delete'}>
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
+                          {canManageCategories && (
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600 hover:bg-emerald-50" onClick={() => openEditExpInst(p)} title={bn ? 'সম্পাদনা' : 'Edit'}>
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-rose-600 hover:bg-rose-50" onClick={async () => {
+                                const expCount = allExpenses.filter((e: any) => e.institution_id === p.id).length;
+                                const catCount = categories.filter((c: any) => (c as any).institution_id === p.id).length;
+                                let desc = bn ? `"${getInstName(p, bn)}" প্রতিষ্ঠানটি মুছে ফেলতে চান?` : `Delete institution "${getInstName(p, bn)}"?`;
+                                if (expCount > 0 || catCount > 0) {
+                                  desc += bn
+                                    ? `\n\nসতর্কতা: এতে ${expCount}টি খরচের হিসাব এবং ${catCount}টি ক্যাটাগরি রয়েছে। প্রতিষ্ঠানটি মুছে ফেললে এগুলোও মুছে যাবে।`
+                                    : `\n\nWarning: Contains ${expCount} expenses and ${catCount} categories that will also be removed.`;
+                                }
+                                if (await confirm({ title: bn ? 'প্রতিষ্ঠান মুছে ফেলুন' : 'Delete Institution', description: desc, variant: 'destructive' })) {
+                                  deleteExpInst.mutate(p.id);
+                                }
+                              }} title={bn ? 'মুছে ফেলুন' : 'Delete'}>
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          )}
                         </li>
                       ))}
                     </ul>
@@ -3857,15 +3897,16 @@ const AdminExpenses = () => {
                     <TagIcon className="w-4 h-4 text-emerald-600" />
                     <span>{bn ? 'ব্যয়ের ক্যাটাগরি' : 'Expense Categories'}</span>
                   </CardTitle>
-                  <Dialog open={categoryDialog} onOpenChange={resetCategoryDialog}>
-                    <DialogTrigger asChild>
-                      <Button size="sm" variant="outline" className="gap-1.5 cursor-pointer">
-                        <TagIcon className="w-4 h-4 text-emerald-600" />
-                        {bn ? 'নতুন ক্যাটাগরি' : 'Add Category'}
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader><DialogTitle>{editingCategoryId ? (bn ? 'ক্যাটেগরি সম্পাদনা' : 'Edit Category') : (bn ? 'নতুন ক্যাটেগরি' : 'New Category')}</DialogTitle></DialogHeader>
+                  {canManageCategories && (
+                    <Dialog open={categoryDialog} onOpenChange={resetCategoryDialog}>
+                      <DialogTrigger asChild>
+                        <Button size="sm" variant="outline" className="gap-1.5 cursor-pointer">
+                          <TagIcon className="w-4 h-4 text-emerald-600" />
+                          {bn ? 'নতুন ক্যাটাগরি' : 'Add Category'}
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader><DialogTitle>{editingCategoryId ? (bn ? 'ক্যাটেগরি সম্পাদনা' : 'Edit Category') : (bn ? 'নতুন ক্যাটেগরি' : 'New Category')}</DialogTitle></DialogHeader>
                       <div className="space-y-3">
                         <div>
                           <Label>{bn ? 'প্রতিষ্ঠান' : 'Institution'} *</Label>
@@ -3886,6 +3927,7 @@ const AdminExpenses = () => {
                       </div>
                     </DialogContent>
                   </Dialog>
+                  )}
                 </CardHeader>
                 <CardContent>
                   {categories.length === 0 ? <p className="text-sm text-muted-foreground">{bn ? 'কোনো ক্যাটেগরি নেই' : 'No categories'}</p> : (
@@ -3898,25 +3940,27 @@ const AdminExpenses = () => {
                               <span className="text-sm font-medium">{getCatName(c, bn)}</span>
                               {catInst && <span className="text-xs text-primary ml-1.5 font-normal">({getInstName(catInst, bn)})</span>}
                             </div>
-                            <div className="flex gap-1">
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600 hover:bg-emerald-50" onClick={() => openEditCategory(c)} title={bn ? 'সম্পাদনা' : 'Edit'}>
-                                <Edit2 className="w-3.5 h-3.5" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-rose-600 hover:bg-rose-50" onClick={async () => {
-                                const expCount = allExpenses.filter((e: any) => e.category_id === c.id).length;
-                                let desc = bn ? `"${getCatName(c, bn)}" ক্যাটাগরিটি মুছে ফেলতে চান?` : `Delete category "${getCatName(c, bn)}"?`;
-                                if (expCount > 0) {
-                                  desc += bn
-                                    ? `\n\nসতর্কতা: এই ক্যাটাগরিতে ${expCount}টি খরচের এন্ট্রি রয়েছে। ক্যাটাগরি মুছে ফেললে সংশ্লিষ্ট খরচও মুছে যাবে।`
-                                    : `\n\nWarning: Contains ${expCount} expenses that will also be removed.`;
-                                }
-                                if (await confirm({ title: bn ? 'ক্যাটাগরি মুছে ফেলুন' : 'Delete Category', description: desc, variant: 'destructive' })) {
-                                  deleteCategory.mutate(c.id);
-                                }
-                              }} title={bn ? 'মুছে ফেলুন' : 'Delete'}>
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
+                            {canManageCategories && (
+                              <div className="flex gap-1">
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600 hover:bg-emerald-50" onClick={() => openEditCategory(c)} title={bn ? 'সম্পাদনা' : 'Edit'}>
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-rose-600 hover:bg-rose-50" onClick={async () => {
+                                  const expCount = allExpenses.filter((e: any) => e.category_id === c.id).length;
+                                  let desc = bn ? `"${getCatName(c, bn)}" ক্যাটাগরিটি মুছে ফেলতে চান?` : `Delete category "${getCatName(c, bn)}"?`;
+                                  if (expCount > 0) {
+                                    desc += bn
+                                      ? `\n\nসতর্কতা: এই ক্যাটাগরিতে ${expCount}টি খরচের এন্ট্রি রয়েছে। ক্যাটাগরি মুছে ফেললে সংশ্লিষ্ট খরচও মুছে যাবে।`
+                                      : `\n\nWarning: Contains ${expCount} expenses that will also be removed.`;
+                                  }
+                                  if (await confirm({ title: bn ? 'ক্যাটাগরি মুছে ফেলুন' : 'Delete Category', description: desc, variant: 'destructive' })) {
+                                    deleteCategory.mutate(c.id);
+                                  }
+                                }} title={bn ? 'মুছে ফেলুন' : 'Delete'}>
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
+                            )}
                           </li>
                         );
                       })}

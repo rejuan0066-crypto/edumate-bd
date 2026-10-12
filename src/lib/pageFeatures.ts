@@ -68,14 +68,21 @@ export const KNOWN_PAGE_FEATURES: Record<string, SubFeatureItem[]> = {
 
   // হিসাব ও খরচ (/admin/expenses)
   '/admin/expenses': [
-    { key: 'tab_expenses_list', label_bn: 'খরচ তালিকা', label_en: 'Expense List', type: 'tab' },
-    { key: 'tab_income_list', label_bn: 'আয় তালিকা', label_en: 'Income List', type: 'tab' },
-    { key: 'tab_accounts_reports', label_bn: 'আয়-ব্যয় ক্যাশ রিপোর্ট', label_en: 'Cash Flow Reports', type: 'tab' },
-    { key: 'tab_bank_accounts', label_bn: 'ব্যাংক একাউন্ট ব্যালেন্স', label_en: 'Bank Accounts', type: 'tab' },
-    { key: 'tab_budgets', label_bn: 'বাজেট পরিকল্পনা', label_en: 'Budgets Planning', type: 'tab' },
-    { key: 'action_add_transaction', label_bn: 'নতুন আয়/ব্যয় এন্ট্রি বাটন', label_en: 'Add Transaction Button', type: 'action' },
-    { key: 'action_export_statement', label_bn: 'হিসাব স্টেটমেন্ট ডাউনলোড', label_en: 'Export Account Statement', type: 'action' },
-    { key: 'action_delete_expense', label_bn: 'খরচ ভাউচার মোছার বাটন', label_en: 'Delete Expense Button', type: 'action' },
+    { key: 'tab_dashboard', label_bn: 'ট্যাব: হিসাব ও ব্যয় এন্ট্রি', label_en: 'Tab: Expenses Entry', type: 'tab', description_bn: 'প্রতিষ্ঠান ভিত্তিক খরচ ও বকেয়া তালিকা দেখার ট্যাব' },
+    { key: 'tab_deposits', label_bn: 'ট্যাব: টাকা আয়/উত্তোলন', label_en: 'Tab: Deposits & Incomes', type: 'tab', description_bn: 'টাকা আয় ও ব্যাংকে জমা/উত্তোলন হিসাবের ট্যাব' },
+    { key: 'tab_hierarchy', label_bn: 'ট্যাব: প্রতিষ্ঠান ভিত্তিক রিপোর্ট', label_en: 'Tab: Institution Report', type: 'tab', description_bn: 'ক্যাটাগরি ও প্রতিষ্ঠান ভিত্তিক বিস্তারিত খরচের রিপোর্ট' },
+    { key: 'tab_summary', label_bn: 'ট্যাব: সারাংশ (Summary)', label_en: 'Tab: Financial Summary', type: 'tab', description_bn: 'আয়-ব্যয়, ক্যাশ ও মোট ব্যালেন্সের সারাংশ বিবরণী' },
+    { key: 'tab_ledger', label_bn: 'ট্যাব: লেজার (Ledger)', label_en: 'Tab: General Ledger', type: 'tab', description_bn: 'সাধারণ খতিয়ান ও ডেবিট-ক্রেডিট হিসাব খাতা' },
+    { key: 'tab_settings', label_bn: 'ট্যাব: প্রতিষ্ঠান ও ক্যাটাগরি সেটিংস', label_en: 'Tab: Institution & Category Settings', type: 'tab', description_bn: 'প্রতিষ্ঠান ও ব্যয়ের খাত/ক্যাটাগরি তৈরি ও কনফিগারেশন' },
+    { key: 'tab_audit', label_bn: 'ট্যাব: অডিট লগ (Audit Log)', label_en: 'Tab: Accounts Audit Log', type: 'tab', description_bn: 'হিসাব পরিবর্তন ও নিরীক্ষা ইতিহাস' },
+    { key: 'action_add_expense', label_bn: 'বাটন: ব্যয় এন্ট্রি (+ Add Expense)', label_en: 'Button: Add Expense Entry', type: 'action', description_bn: 'নতুন খরচের ভাউচার তৈরি করার বাটন' },
+    { key: 'action_add_deposit', label_bn: 'বাটন: টাকা আয়/উত্তোলন যোগ (+ Add Deposit)', label_en: 'Button: Add Deposit', type: 'action', description_bn: 'নতুন আয় অথবা জমা যুক্ত করার বাটন' },
+    { key: 'action_export_excel', label_bn: 'বাটন: এক্সেল ডাউনলোড (Excel Export)', label_en: 'Button: Export Excel', type: 'action', description_bn: 'হিসাবের এক্সেল শিট ডাউনলোড করার বাটন' },
+    { key: 'action_export_pdf', label_bn: 'বাটন: PDF ডাউনলোড (PDF Export)', label_en: 'Button: Export PDF', type: 'action', description_bn: 'অফিসিয়াল PDF রিপোর্ট ডাউনলোড করার বাটন' },
+    { key: 'action_print_voucher', label_bn: 'বাটন: প্রিন্ট ও ভাউচার (Print Voucher)', label_en: 'Button: Print Voucher', type: 'action', description_bn: 'ব্যয় ভাউচার ও রসিদ প্রিন্ট করার বাটন' },
+    { key: 'action_edit_transaction', label_bn: 'বাটন: হিসাব সম্পাদনা (Edit Expense/Deposit)', label_en: 'Button: Edit Transaction', type: 'action', description_bn: 'পূর্ববর্তী হিসাবের পরিমাণ বা বিবরণ এডিট করার বাটন' },
+    { key: 'action_delete_transaction', label_bn: 'বাটন: হিসাব মুছে ফেলা (Delete Expense/Deposit)', label_en: 'Button: Delete Transaction', type: 'action', description_bn: 'ভুল বা বাতিল লেনদেন মুছে ফেলার বাটন' },
+    { key: 'action_manage_categories', label_bn: 'বাটন: প্রতিষ্ঠান ও ক্যাটাগরি পরিবর্তন', label_en: 'Button: Manage Categories & Inst', type: 'action', description_bn: 'নতুন ক্যাটাগরি বা প্রতিষ্ঠান যুক্ত/মুছে ফেলার সুবিধা' },
   ],
 
   // বেতন ব্যবস্থাপনা (/admin/salary)

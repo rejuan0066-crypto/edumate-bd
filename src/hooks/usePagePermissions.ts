@@ -9,7 +9,7 @@ import { isAdminRole } from '@/lib/roles';
  */
 export const usePagePermissions = (menuPath: string) => {
   const { role } = useAuth();
-  const { canView, canAdd, canEdit, canDelete, canApprove, isLoading } = usePermissions();
+  const { canView, canAdd, canEdit, canDelete, canApprove, isFeatureAllowed, requiresApproval, isLoading } = usePermissions();
 
   // Admin/Super Admin has full access
   if (isAdminRole(role)) {
@@ -19,6 +19,8 @@ export const usePagePermissions = (menuPath: string) => {
       canEditItem: true,
       canDeleteItem: true,
       canApproveItem: true,
+      isFeatureAllowed: (_featureKey: string) => true,
+      requiresApproval: (_action?: 'view' | 'add' | 'edit' | 'delete') => false,
       isLoading,
     };
   }
@@ -29,6 +31,8 @@ export const usePagePermissions = (menuPath: string) => {
     canEditItem: canEdit(menuPath),
     canDeleteItem: canDelete(menuPath),
     canApproveItem: canApprove(menuPath),
+    isFeatureAllowed: (featureKey: string) => isFeatureAllowed(menuPath, featureKey),
+    requiresApproval: (action?: 'view' | 'add' | 'edit' | 'delete') => requiresApproval(menuPath, action),
     isLoading,
   };
 };
