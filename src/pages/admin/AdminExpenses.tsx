@@ -97,7 +97,7 @@ const getUnit = (desc: string, categoryName?: string) => {
     if (desc && desc.includes('জন')) return 'জন';
     return '';
   }
-  return 'পিস';
+  return '';
 };
 
 export const formatDateBn = (dateStr: string | null | undefined, isBn: boolean = true) => {
@@ -258,7 +258,7 @@ const AdminExpenses = () => {
     expense_date: new Date().toISOString().split('T')[0],
     description: '',
     quantity: '',
-    quantity_unit: 'পিস',
+    quantity_unit: 'none',
     has_receipt: false,
     receipt_url: '',
     amount: '',
@@ -1011,12 +1011,13 @@ const AdminExpenses = () => {
         throw new Error(bn ? 'প্রতিষ্ঠান, ক্যাটাগরি ও টাকা প্রদান করুন' : 'Institution, Category & Amount are required');
       }
       const parsedAmount = Number(bnToEnDigit(expenseForm.amount));
-      const parsedQty = expenseForm.quantity ? Number(bnToEnDigit(expenseForm.quantity)) : 1;
+      const hasQtyInput = expenseForm.quantity && expenseForm.quantity.trim() !== '';
+      const parsedQty = hasQtyInput ? Number(bnToEnDigit(expenseForm.quantity)) : null;
       if (isNaN(parsedAmount) || parsedAmount <= 0) {
         toast.error(bn ? 'সঠিক টাকার পরিমাণ দিন' : 'Enter valid amount');
         throw new Error(bn ? 'সঠিক টাকার পরিমাণ দিন' : 'Enter valid amount');
       }
-      if (isNaN(parsedQty) || parsedQty <= 0) {
+      if (hasQtyInput && (parsedQty === null || isNaN(parsedQty) || parsedQty <= 0)) {
         toast.error(bn ? 'সঠিক পরিমাণ দিন' : 'Enter valid quantity');
         throw new Error(bn ? 'সঠিক পরিমাণ দিন' : 'Enter valid quantity');
       }
@@ -1175,10 +1176,11 @@ const AdminExpenses = () => {
         if (expenseForm.add_to_inventory && insertedExpense) {
           try {
             const destType = expenseForm.inventory_dest_type || 'inventory';
+            const effectiveQty = (parsedQty !== null && parsedQty > 0) ? parsedQty : 1;
 
             if (destType === 'asset') {
               // 1. Add to Fixed Assets (আসবাবপত্র / যন্ত্রপাতি / সম্পদ)
-              const assetQty = parsedQty > 0 ? Math.round(parsedQty) : 1;
+              const assetQty = Math.round(effectiveQty);
               const assetName = (expenseForm.description || payload.description || 'নতুন সম্পদ').trim();
               const assetPayload: Record<string, any> = {
                 asset_name_bn: assetName,
@@ -1208,13 +1210,13 @@ const AdminExpenses = () => {
               if (isNew) {
                 // Auto create new item using expense description & quantity
                 const itemName = (expenseForm.inventory_new_name || expenseForm.description || payload.description || 'নতুন সামগ্রী').trim();
-                const unitPrice = parsedQty > 0 ? Math.round((parsedAmount / parsedQty) * 100) / 100 : parsedAmount;
+                const unitPrice = effectiveQty > 0 ? Math.round((parsedAmount / effectiveQty) * 100) / 100 : parsedAmount;
 
                 const newPayload: Record<string, any> = {
                   name_bn: itemName,
                   category: expenseForm.inventory_category || 'construction',
-                  current_stock: parsedQty,
-                  total_purchased: parsedQty,
+                  current_stock: effectiveQty,
+                  total_purchased: effectiveQty,
                   total_consumed: 0,
                   unit: (expenseForm.quantity_unit && expenseForm.quantity_unit !== 'none') ? expenseForm.quantity_unit : 'pcs',
                   buying_price: unitPrice,
@@ -1249,13 +1251,13 @@ const AdminExpenses = () => {
 
                 const curStock = Number(currentItem?.current_stock || 0);
                 const curPurchased = Number(currentItem?.total_purchased ?? currentItem?.current_stock ?? 0);
-                const newStock = curStock + parsedQty;
-                const newPurchased = curPurchased + parsedQty;
-                const unitPrice = parsedQty > 0 ? (parsedAmount / parsedQty) : Number(currentItem?.buying_price || 0);
+                const newStock = curStock + effectiveQty;
+                const newPurchased = curPurchased + effectiveQty;
+                const unitPrice = effectiveQty > 0 ? (parsedAmount / effectiveQty) : Number(currentItem?.buying_price || 0);
 
                 const { error: stockError } = await supabase.rpc('increment_inventory_stock' as any, {
                   p_item_id: targetItemId,
-                  p_amount: parsedQty
+                  p_amount: effectiveQty
                 });
 
                 const updatePayload: Record<string, any> = {
@@ -1775,7 +1777,7 @@ const AdminExpenses = () => {
       category_id: e.category_id,
       expense_date: e.expense_date,
       description: cleanDesc(e.description) === '-' ? '' : cleanDesc(e.description),
-      quantity: String(e.quantity || 1),
+      quantity: (e.quantity !== null && e.quantity !== undefined && e.quantity !== '') ? String(e.quantity) : '',
       quantity_unit: unit || 'none',
       has_receipt: !!e.has_receipt,
       receipt_url: e.receipt_url || '',
@@ -1900,7 +1902,7 @@ const AdminExpenses = () => {
               ['-', '-', bn ? 'কোনো ব্যয়ের রেকর্ড নেই' : 'No expenses', '-', '-', '-', 0]
             ] : catExp.map((e: any, idx: number) => {
               const unit = getUnit(e.description, cat?.name || cat?.name_bn);
-              const qtyStr = e.quantity ? `${bn ? toBnDigits(e.quantity) : e.quantity} ${unit || ''}`.trim() : (bn ? '১' : '1');
+              const qtyStr = e.quantity ? `${bn ? toBnDigits(e.quantity) : e.quantity} ${unit || ''}`.trim() : (unit || '-');
               return [
                 bn ? toBnDigits(idx + 1) : idx + 1,
                 formatDateBn(e.expense_date, bn),
@@ -2077,7 +2079,7 @@ const AdminExpenses = () => {
             ['-', '-', bn ? 'কোনো ব্যয়ের রেকর্ড নেই' : 'No expenses', '-', '-', '-', 0]
           ] : catExpenses.map((e: any, idx: number) => {
             const unit = getUnit(e.description, cat?.name || cat?.name_bn);
-            const qtyStr = e.quantity ? `${bn ? toBnDigits(e.quantity) : e.quantity} ${unit || ''}`.trim() : (bn ? '১' : '1');
+            const qtyStr = e.quantity ? `${bn ? toBnDigits(e.quantity) : e.quantity} ${unit || ''}`.trim() : (unit || '-');
             const memo = getMemo(e.description, bn);
             return [
               bn ? toBnDigits(idx + 1) : idx + 1,
@@ -3129,9 +3131,10 @@ const AdminExpenses = () => {
                                   const catLabel = catObj ? getCatName(catObj, bn) : (e.expense_categories ? getCatName(e.expense_categories, bn) : '-');
                                   const memoStr = getMemo(e.description, bn);
                                   const remarksStr = getRemarks(e.description);
-                                  const rawQty = e.quantity ? (bn ? toBnDigits(e.quantity) : String(e.quantity)) : (bn ? '১' : '1');
+                                  const hasQuantity = e.quantity !== null && e.quantity !== undefined && e.quantity !== '';
+                                  const rawQty = hasQuantity ? (bn ? toBnDigits(e.quantity) : String(e.quantity)) : '';
                                   const unit = getUnit(e.description, catLabel);
-                                  const displayQty = unit ? `${rawQty} ${unit}` : `${rawQty}`;
+                                  const displayQty = hasQuantity ? (unit ? `${rawQty} ${unit}` : `${rawQty}`) : (unit ? `${unit}` : '-');
                                   const rowInst = (allInstitutions || []).find((i: any) => i.id === e.institution_id);
 
                                   return (
@@ -3293,9 +3296,10 @@ const AdminExpenses = () => {
                                   displayDues.map((due: any, dIdx: number) => {
                                     const catObj = (categories || []).find((c: any) => c.id === due.category_id);
                                     const catLabel = catObj ? (bn ? catObj.name_bn || catObj.name : catObj.name) : '-';
-                                    const rawQty = due.quantity ? (bn ? toBnDigits(due.quantity) : String(due.quantity)) : (bn ? '১' : '1');
+                                    const hasDueQuantity = due.quantity !== null && due.quantity !== undefined && due.quantity !== '';
+                                    const rawQty = hasDueQuantity ? (bn ? toBnDigits(due.quantity) : String(due.quantity)) : '';
                                     const unit = getUnit(due.description, catLabel);
-                                    const displayQty = unit ? `${rawQty} ${unit}` : `${rawQty}`;
+                                    const displayQty = hasDueQuantity ? (unit ? `${rawQty} ${unit}` : `${rawQty}`) : (unit ? `${unit}` : '-');
                                     const memoStr = getMemo(due.description, bn);
                                     const remarksStr = getRemarks(due.description);
                                     const rowInst = (allInstitutions || []).find((i: any) => i.id === due.institution_id);
@@ -4404,7 +4408,9 @@ const AdminExpenses = () => {
                             <td className="border p-1">{i + 1}</td>
                             <td className="border p-1">{e.expense_date}</td>
                             <td className="border p-1">{cleanDesc(e.description)}</td>
-                            <td className="border p-1 text-center">{e.quantity || 1}{getUnit(e.description) ? ` ${getUnit(e.description)}` : ''}</td>
+                            <td className="border p-1 text-center">
+                              {e.quantity ? `${e.quantity}${getUnit(e.description) ? ` ${getUnit(e.description)}` : ''}` : (getUnit(e.description) || '-')}
+                            </td>
                             <td className="border p-1 text-center">{getMethod(e.description)}</td>
                             <td className="border p-1 text-right">৳{formatNum(Number(e.amount))}</td>
                             <td className="border p-1 text-center">{e.has_receipt ? '✓' : '-'}</td>
@@ -4592,7 +4598,7 @@ const AdminExpenses = () => {
                     className="flex-1" 
                     value={expenseForm.quantity} 
                     onChange={e => setExpenseForm(f => ({ ...f, quantity: onlyNumbers(e.target.value) }))} 
-                    placeholder="১"
+                    placeholder={bn ? "পরিমাণ (ঐচ্ছিক)" : "Qty (optional)"}
                     inputMode="decimal"
                   />
                   {!isCustomUnitActive ? (
@@ -4611,10 +4617,10 @@ const AdminExpenses = () => {
                       }}
                     >
                       <SelectTrigger className="w-36">
-                        <SelectValue placeholder={bn ? 'একক' : 'Unit'} />
+                        <SelectValue placeholder={bn ? 'একক (ঐচ্ছিক)' : 'Unit (optional)'} />
                       </SelectTrigger>
                       <SelectContent className="max-h-56">
-                        <SelectItem value="none">{bn ? 'কোনোটি নয় (ফাঁকা)' : 'None (Blank)'}</SelectItem>
+                        <SelectItem value="none">{bn ? 'কোনো একক নেই (ফাঁকা)' : 'None (Blank)'}</SelectItem>
                         {allAvailableUnits.map(u => (
                           <SelectItem key={u} value={u}>{u}</SelectItem>
                         ))}
@@ -5223,8 +5229,9 @@ const AdminExpenses = () => {
                             <TableRow key={e.id}>
                               <TableCell>{i + 1}</TableCell>
                               <TableCell>{e.expense_date}</TableCell>
-                              <TableCell>{cleanDesc(e.description)}</TableCell>
-                              <TableCell>{e.quantity || 1}{getUnit(e.description) ? ` ${getUnit(e.description)}` : ''}</TableCell>
+                              <TableCell>
+                                {e.quantity ? `${e.quantity}${getUnit(e.description) ? ` ${getUnit(e.description)}` : ''}` : (getUnit(e.description) || '-')}
+                              </TableCell>
                               <TableCell>{getMethod(e.description)}</TableCell>
                               <TableCell className="text-right">৳{formatNum(Number(e.amount))}</TableCell>
                               <TableCell className="text-center">
@@ -5823,7 +5830,9 @@ const AdminExpenses = () => {
                                       <td className="border p-1.5 text-center">{bn ? toBnDigits(i + 1) : i + 1}</td>
                                       <td className="border p-1.5 text-center">{formatDateBn(e.expense_date, bn)}</td>
                                       <td className="border p-1.5 font-medium">{cleanDesc(e.description)}</td>
-                                      <td className="border p-1.5 text-center">{bn ? toBnDigits(e.quantity || 1) : (e.quantity || 1)}{getUnit(e.description) ? ` ${getUnit(e.description)}` : ''}</td>
+                                      <td className="border p-1.5 text-center">
+                                        {e.quantity ? `${bn ? toBnDigits(e.quantity) : e.quantity}${getUnit(e.description) ? ` ${getUnit(e.description)}` : ''}` : (getUnit(e.description) || '-')}
+                                      </td>
                                       <td className="border p-1.5 text-center">{getMethod(e.description, bn)}</td>
                                       <td className="border p-1.5 text-center font-mono">{getMemo(e.description, bn)}</td>
                                       <td className="border p-1.5 text-right font-semibold">৳{formatNum(Number(e.amount))}</td>
@@ -5904,7 +5913,9 @@ const AdminExpenses = () => {
                                       <td className="border p-1.5 text-center">{bn ? toBnDigits(di + 1) : di + 1}</td>
                                       <td className="border p-1.5 text-center">{formatDateBn(due.expense_date, bn)}</td>
                                       <td className="border p-1.5 font-medium">{cleanDesc(due.description)}</td>
-                                      <td className="border p-1.5 text-center">{bn ? toBnDigits(due.quantity || 1) : (due.quantity || 1)}{getUnit(due.description) ? ` ${getUnit(due.description)}` : ''}</td>
+                                      <td className="border p-1.5 text-center">
+                                        {due.quantity ? `${bn ? toBnDigits(due.quantity) : due.quantity}${getUnit(due.description) ? ` ${getUnit(due.description)}` : ''}` : (getUnit(due.description) || '-')}
+                                      </td>
                                       <td className="border p-1.5 text-center font-mono">{getMemo(due.description, bn)}</td>
                                       <td className="border p-1.5 text-right font-semibold text-amber-700">৳{formatNum(Number(due.amount))}</td>
                                       <td className="border p-1.5 text-muted-foreground">{getRemarks(due.description)}</td>

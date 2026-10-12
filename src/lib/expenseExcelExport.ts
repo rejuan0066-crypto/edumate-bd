@@ -268,9 +268,10 @@ function buildExpenseCategorySheet(
     const amt = Number(item.amount || 0);
     totalAmount += amt;
 
-    const rawQty = item.quantity ? (bn ? toBnDigit(item.quantity) : String(item.quantity)) : (bn ? '১' : '1');
+    const hasItemQty = item.quantity !== null && item.quantity !== undefined && item.quantity !== '';
+    const rawQty = hasItemQty ? (bn ? toBnDigit(item.quantity) : String(item.quantity)) : '';
     const unit = getUnit(item.description || '');
-    const displayQty = unit ? `${rawQty} ${unit !== 'পিস' ? unit : (bn ? 'টি' : 'pcs')}` : `${rawQty}`;
+    const displayQty = hasItemQty ? (unit ? `${rawQty} ${unit !== 'পিস' ? unit : (bn ? 'টি' : 'pcs')}` : `${rawQty}`) : (unit ? `${unit}` : '-');
     const memoVal = getMemo(item.description || '');
     const displayMemo = memoVal === '-' ? '-' : (bn ? toBnDigit(memoVal) : memoVal);
     const methodVal = getMethodLabel(getMethod(item.description || ''), bn);
