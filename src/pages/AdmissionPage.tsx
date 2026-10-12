@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import AddressFields, { type AddressData } from '@/components/AddressFields';
 import PhoneInput from '@/components/PhoneInput';
-import { Camera, Search, Loader2, AlertCircle, CheckCircle, Plus, Printer, Download, RotateCcw } from 'lucide-react';
+import { Camera, Search, Loader2, AlertCircle, CheckCircle, Plus, Printer, Download, RotateCcw, ArrowLeft, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { DatePicker } from '@/components/ui/date-picker';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
@@ -29,6 +29,7 @@ const AdmissionPage = () => {
   const { fields: configFields, isLoaded, isFieldActive, getField, getFieldsBySection, getCustomFields, sections } = useAdmissionFormConfig();
 
   // Form state (same as admin form)
+  const [currentStep, setCurrentStep] = useState(0);
   const [form, setForm] = useState<Record<string, any>>({
     student_type: 'new', residence_type: 'non-resident',
     admission_session: '', roll_number: '', registration_no: '',
@@ -1022,10 +1023,104 @@ const AdmissionPage = () => {
     );
   };
 
+  const validateCurrentStep = (stepKey: string): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (stepKey === 'student_details') {
+      if (birthRegError) errors['birth_reg_no'] = birthRegError;
+      const secFields = getFieldsBySection('student_details');
+      secFields.forEach(f => {
+        const k = f.default_value;
+        if (f.is_required && f.is_active && k) {
+          if (!form[k] || (typeof form[k] === 'string' && !form[k].trim())) {
+            errors[k] = bn ? `${f.label_bn} আবশ্যক` : `${f.label} is required`;
+          }
+        }
+      });
+    } else if (stepKey === 'student_address') {
+      const secFields = getFieldsBySection('student_address');
+      secFields.forEach(f => {
+        const k = f.default_value;
+        if (f.is_required && f.is_active && k) {
+          if (k === 'present_address' && !sameAddress && !presentAddr.district) {
+            errors['present_address'] = bn ? 'বর্তমান ঠিকানা আবশ্যক' : 'Present address required';
+          }
+        }
+      });
+    } else if (stepKey === 'father_info') {
+      if (fatherNidError) errors['father_nid'] = fatherNidError;
+      if (isFieldActive('father_nid') && form.father_nid && form.father_nid.length !== 10 && form.father_nid.length !== 17) {
+        errors['father_nid'] = bn ? 'NID ১০ বা ১৭ ডিজিট' : 'NID must be 10 or 17 digits';
+      }
+      const secFields = getFieldsBySection('father_info');
+      secFields.forEach(f => {
+        const k = f.default_value;
+        if (f.is_required && f.is_active && k) {
+          if (!form[k] || (typeof form[k] === 'string' && !form[k].trim())) {
+            errors[k] = bn ? `${f.label_bn} আবশ্যক` : `${f.label} is required`;
+          }
+        }
+      });
+    } else if (stepKey === 'mother_info') {
+      if (motherNidError) errors['mother_nid'] = motherNidError;
+      if (isFieldActive('mother_nid') && form.mother_nid && form.mother_nid.length !== 10 && form.mother_nid.length !== 17) {
+        errors['mother_nid'] = bn ? 'NID ১০ বা ১৭ ডিজিট' : 'NID must be 10 or 17 digits';
+      }
+      const secFields = getFieldsBySection('mother_info');
+      secFields.forEach(f => {
+        const k = f.default_value;
+        if (f.is_required && f.is_active && k) {
+          if (!form[k] || (typeof form[k] === 'string' && !form[k].trim())) {
+            errors[k] = bn ? `${f.label_bn} আবশ্যক` : `${f.label} is required`;
+          }
+        }
+      });
+      if (isFieldActive('father_phone') && isFieldActive('mother_phone') && !form.father_phone && !form.mother_phone) {
+        const phoneMsg = bn ? 'পিতা বা মাতার যে কোন একজনের মোবাইল আবশ্যক' : 'At least one parent mobile is required';
+        errors['father_phone'] = phoneMsg;
+        errors['mother_phone'] = phoneMsg;
+      }
+    } else if (stepKey === 'guardian_info') {
+      if (isFieldActive('guardian_type') && !form.guardian_type) {
+        errors['guardian_type'] = bn ? 'অভিভাবক নির্বাচন করুন' : 'Select guardian';
+      }
+      if (form.guardian_type === 'other') {
+        if (guardianNidError) errors['guardian_nid'] = guardianNidError;
+        if (isFieldActive('guardian_nid') && form.guardian_nid && form.guardian_nid.length !== 10 && form.guardian_nid.length !== 17) {
+          errors['guardian_nid'] = bn ? 'NID ১০/১৭ ডিজিট' : 'NID 10/17 digits required';
+        }
+        if (!form.guardian_name?.trim()) errors['guardian_name'] = bn ? 'অভিভাবকের নাম আবশ্যক' : 'Guardian name required';
+        if (!form.guardian_relation?.trim()) errors['guardian_relation'] = bn ? 'সম্পর্ক আবশ্যক' : 'Relation required';
+        if (!form.guardian_phone?.trim()) errors['guardian_phone'] = bn ? 'মোবাইল আবশ্যক' : 'Phone required';
+      }
+    }
+
+    // Check custom fields for this section
+    const customSecFields = getFieldsBySection(stepKey).filter(f => !f.default_value);
+    customSecFields.forEach(f => {
+      if (f.is_required && f.is_active) {
+        const val = customFieldValues[f.id];
+        if (val === undefined || val === null || val === '') {
+          errors[f.id] = bn ? `${f.label_bn} আবশ্যক` : `${f.label} is required`;
+        }
+      }
+    });
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(prev => ({ ...prev, ...errors }));
+      const errorCount = Object.keys(errors).length;
+      toast.error(bn ? `এই সেকশনে ${errorCount}টি আবশ্যক তথ্য বাকি রয়েছে` : `Please fill ${errorCount} required field(s) in this section`);
+      return false;
+    }
+
+    return true;
+  };
+
   const activeSections = sections.filter(section => getFieldsBySection(section).length > 0);
 
   const resetForm = () => {
     setSubmittedData(null);
+    setCurrentStep(0);
     setForm({
       student_type: 'new', residence_type: 'non-resident',
       admission_session: '', roll_number: '', registration_no: '',
@@ -1320,20 +1415,99 @@ const AdmissionPage = () => {
     );
   }
 
+  const safeCurrentStep = Math.min(currentStep, Math.max(0, activeSections.length - 1));
+
+  const getStepTitle = (key: string) => {
+    const info = SECTION_INFO[key as keyof typeof SECTION_INFO];
+    if (info) return bn ? info.bn.trim() : info.en.trim();
+    return key;
+  };
+
+  const handleStepClick = (targetIdx: number) => {
+    if (targetIdx === safeCurrentStep) return;
+    if (targetIdx < safeCurrentStep) {
+      setCurrentStep(targetIdx);
+      window.scrollTo({ top: 120, behavior: 'smooth' });
+    } else {
+      if (validateCurrentStep(activeSections[safeCurrentStep])) {
+        setCurrentStep(targetIdx);
+        window.scrollTo({ top: 120, behavior: 'smooth' });
+      }
+    }
+  };
+
   return (
     <PublicLayout>
-      <div className="container mx-auto px-4 py-12 max-w-4xl">
-        <h1 className="text-3xl font-display font-bold text-foreground mb-2">
-          {bn ? 'ভর্তি আবেদন ফর্ম' : 'Admission Application Form'}
-        </h1>
-        <p className="text-muted-foreground mb-8">
-          {bn ? 'সকল তথ্য সঠিকভাবে পূরণ করুন' : 'Please fill all information correctly'}
-        </p>
+      <div className="container mx-auto px-4 py-8 sm:py-12 max-w-4xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground">
+              {bn ? 'ভর্তি আবেদন ফর্ম' : 'Admission Application Form'}
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              {bn ? 'ধাপে ধাপে সকল তথ্য সঠিকভাবে পূরণ করুন' : 'Please fill all information step by step'}
+            </p>
+          </div>
+          <span className="text-xs font-semibold text-primary bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-full w-fit">
+            {bn ? `ধাপ ${safeCurrentStep + 1} / ${activeSections.length}` : `Step ${safeCurrentStep + 1} of ${activeSections.length}`}
+          </span>
+        </div>
 
         {!isLoaded ? (
           <div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-6">
+            {/* Step Wizard Header */}
+            <div className="w-full bg-card border border-border rounded-xl p-3 sm:p-5 shadow-sm">
+              <div className="flex items-center justify-between overflow-x-auto pb-1 gap-2 sm:gap-4 scrollbar-none">
+                {activeSections.map((sectionKey, idx) => {
+                  const isCurrent = idx === safeCurrentStep;
+                  const isCompleted = idx < safeCurrentStep;
+                  return (
+                    <button
+                      key={sectionKey}
+                      type="button"
+                      onClick={() => handleStepClick(idx)}
+                      className={`flex flex-col items-center flex-1 min-w-[70px] sm:min-w-[90px] relative focus:outline-none transition-all group ${
+                        idx < safeCurrentStep ? 'cursor-pointer' : isCurrent ? 'cursor-default' : 'cursor-pointer hover:opacity-100 opacity-70'
+                      }`}
+                    >
+                      {/* Connecting Line */}
+                      {idx > 0 && (
+                        <div
+                          className={`hidden sm:block absolute top-4 -left-1/2 w-full h-[2px] -z-0 transition-colors ${
+                            idx <= safeCurrentStep ? 'bg-primary' : 'bg-muted'
+                          }`}
+                        />
+                      )}
+
+                      {/* Step Circle */}
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold z-10 transition-all shadow-sm ${
+                          isCompleted
+                            ? 'bg-primary text-primary-foreground ring-2 ring-primary/20'
+                            : isCurrent
+                            ? 'bg-primary text-primary-foreground ring-4 ring-primary/25 scale-110'
+                            : 'bg-muted text-muted-foreground border border-border'
+                        }`}
+                      >
+                        {isCompleted ? <CheckCircle className="w-4 h-4" /> : idx + 1}
+                      </div>
+
+                      {/* Step Title */}
+                      <span
+                        className={`mt-2 text-[11px] sm:text-xs text-center font-medium line-clamp-1 max-w-[85px] sm:max-w-none transition-colors ${
+                          isCurrent ? 'text-primary font-bold' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
+                        }`}
+                      >
+                        {getStepTitle(sectionKey)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Error summary */}
             {Object.keys(fieldErrors).length > 0 && (
               <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 space-y-2">
@@ -1361,10 +1535,13 @@ const AdmissionPage = () => {
               </div>
             )}
 
-            {activeSections.map(section => renderSection(section))}
+            {/* Render Current Section */}
+            <div className="transition-all duration-200">
+              {renderSection(activeSections[safeCurrentStep])}
+            </div>
 
-            {/* Footer: per-form override (form_settings or admission_footer_text) takes priority over global */}
-            {(() => {
+            {/* Footer: on the final step */}
+            {safeCurrentStep === activeSections.length - 1 && (() => {
               const overrideText = (footerParagraph?.is_visible && footerParagraph?.footer_text)
                 ? footerParagraph.footer_text
                 : websiteFooterText;
@@ -1389,18 +1566,68 @@ const AdmissionPage = () => {
               );
             })()}
 
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button onClick={handleSubmit} className="btn-primary-gradient flex-1 text-lg py-6" disabled={addMutation.isPending}>
-                {addMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
-                {bn ? 'আবেদন জমা দিন' : 'Submit Application'}
+            {/* Step Navigation Controls */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6 border-t mt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setCurrentStep(prev => Math.max(0, prev - 1));
+                  window.scrollTo({ top: 120, behavior: 'smooth' });
+                }}
+                disabled={safeCurrentStep === 0}
+                className="w-full sm:w-auto px-6 py-5 gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                {bn ? 'পূর্ববর্তী ধাপ' : 'Previous Step'}
               </Button>
-              <Button onClick={() => handleDownloadPDF(true)} variant="outline" className="flex-1 text-lg py-6 flex items-center justify-center gap-2">
-                <Download className="w-5 h-5" /> {bn ? 'ফর্ম ডাউনলোড করুন' : 'Download Form'}
-              </Button>
+
+              <div className="text-xs sm:text-sm font-medium text-muted-foreground order-first sm:order-none">
+                {bn ? `ধাপ ${safeCurrentStep + 1} / ${activeSections.length} : ${getStepTitle(activeSections[safeCurrentStep])}` : `Step ${safeCurrentStep + 1} of ${activeSections.length} : ${getStepTitle(activeSections[safeCurrentStep])}`}
+              </div>
+
+              {safeCurrentStep < activeSections.length - 1 ? (
+                <Button
+                  type="button"
+                  onClick={() => {
+                    if (validateCurrentStep(activeSections[safeCurrentStep])) {
+                      setCurrentStep(prev => Math.min(activeSections.length - 1, prev + 1));
+                      window.scrollTo({ top: 120, behavior: 'smooth' });
+                    }
+                  }}
+                  className="btn-primary-gradient w-full sm:w-auto px-8 py-5 gap-2"
+                >
+                  {bn ? 'পরবর্তী ধাপ' : 'Next Step'}
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              ) : (
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                  <Button
+                    type="button"
+                    onClick={handleSubmit}
+                    className="btn-primary-gradient px-8 py-5 gap-2"
+                    disabled={addMutation.isPending}
+                  >
+                    {addMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
+                    {bn ? 'আবেদন জমা দিন' : 'Submit Application'}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => handleDownloadPDF(true)}
+                    variant="outline"
+                    className="py-5 gap-2"
+                  >
+                    <Download className="w-4 h-4" /> {bn ? 'ফর্ম ডাউনলোড' : 'Download Form'}
+                  </Button>
+                </div>
+              )}
             </div>
-            <p className="text-center text-xs text-muted-foreground">
-              {bn ? 'জমা দেওয়ার পর অ্যাডমিনের অনুমোদন প্রয়োজন' : 'Admin approval required after submission'}
-            </p>
+
+            {safeCurrentStep === activeSections.length - 1 && (
+              <p className="text-center text-xs text-muted-foreground">
+                {bn ? 'জমা দেওয়ার পর অ্যাডমিনের অনুমোদন প্রয়োজন' : 'Admin approval required after submission'}
+              </p>
+            )}
           </div>
         )}
       </div>

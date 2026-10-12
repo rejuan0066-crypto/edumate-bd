@@ -12,7 +12,7 @@ import PhotoUpload from '@/components/PhotoUpload';
 import CardVerifySection from '@/components/CardVerifySection';
 import { useApiVerificationEnabled } from '@/hooks/useApiVerification';
 import { useState, useRef, useEffect } from 'react';
-import { Plus, AlertCircle, CheckCircle, Loader2, Upload, Trash2, Eye, Printer, Download, FileText, X, CalendarIcon, Mail } from 'lucide-react';
+import { Plus, AlertCircle, CheckCircle, Loader2, Upload, Trash2, Eye, Printer, Download, FileText, X, CalendarIcon, Mail, ArrowLeft, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
@@ -109,6 +109,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
   const titleConfig = CATEGORY_TITLES[staffCategory];
   const initialStaffCategory = staffCategory !== 'all' ? staffCategory : 'general';
   const [selectedStaffCategory, setSelectedStaffCategory] = useState<string>(initialStaffCategory);
+  const [currentStep, setCurrentStep] = useState(0);
   const printRef = useRef<HTMLDivElement>(null);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -798,6 +799,97 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     }
   };
 
+  const rawSteps = [
+    { id: 'employee', bn: 'ব্যক্তিগত তথ্য', en: 'Personal Info' },
+    { id: 'address', bn: 'ঠিকানা', en: 'Address' },
+    { id: 'parents', bn: 'পিতা-মাতা', en: 'Parents' },
+    ...(sectionConfig.showGuardian ? [{ id: 'guardian', bn: 'অভিভাবক', en: 'Guardian' }] : []),
+    ...((sectionConfig.showIdentifier || sectionConfig.showRelativesIdentifier) ? [{ id: 'identifier', bn: 'পরিচয়দাতা', en: 'Identifier' }] : []),
+    { id: 'docs_approval', bn: 'নথি ও অনুমোদন', en: 'Docs & Approval' },
+  ];
+
+  const steps = rawSteps.map((s, idx) => ({
+    ...s,
+    stepNumber: idx + 1,
+    displayBn: `${idx + 1}. ${s.bn}`,
+    displayEn: `${idx + 1}. ${s.en}`,
+  }));
+
+  const safeCurrentStep = Math.min(currentStep, Math.max(0, steps.length - 1));
+  const currentStepId = steps[safeCurrentStep].id;
+
+  const validateStaffStep = (stepId: string): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (stepId === 'employee') {
+      if (nidError) errors['nid'] = nidError;
+      if (isFutureJoiningDate(joiningDate)) {
+        errors['joining_date'] = bn ? 'যোগদানের তারিখ ভবিষ্যতের হতে পারে না — সঠিক তারিখ দিন' : 'Joining date cannot be in the future';
+      }
+      if (!isAdmin) {
+        if (isFieldActive('first_name') && isFieldRequired('first_name') && !firstName.trim()) errors['first_name'] = bn ? 'প্রথম নাম আবশ্যক' : 'First name required';
+        if (isFieldActive('last_name') && isFieldRequired('last_name') && !lastName.trim()) errors['last_name'] = bn ? 'শেষ নাম আবশ্যক' : 'Last name required';
+        if (isFieldActive('mobile') && isFieldRequired('mobile') && !mobile.trim()) errors['mobile'] = bn ? 'মোবাইল নম্বর আবশ্যক' : 'Mobile required';
+        if (isFieldActive('employment_type') && isFieldRequired('employment_type') && !employmentType) errors['employment_type'] = bn ? 'চাকরির ধরন নির্বাচন করুন' : 'Select employment type';
+        if (isFieldActive('designation') && isFieldRequired('designation') && !designation) errors['designation'] = bn ? 'পদবী নির্বাচন করুন' : 'Select designation';
+        if (isFieldActive('residence_type') && isFieldRequired('residence_type') && !residenceType) errors['residence_type'] = bn ? 'আবাসিক ধরন নির্বাচন করুন' : 'Select residence type';
+        if (isFieldActive('dob') && isFieldRequired('dob') && !dob) errors['dob'] = bn ? 'জন্ম তারিখ আবশ্যক' : 'Date of birth required';
+        if (isFieldActive('religion') && isFieldRequired('religion') && !religion) errors['religion'] = bn ? 'ধর্ম নির্বাচন করুন' : 'Select religion';
+        if (isFieldActive('nid') && isFieldRequired('nid') && (!nid || (nid.length !== 10 && nid.length !== 17))) errors['nid'] = bn ? 'NID ১০ বা ১৭ ডিজিট হতে হবে' : 'NID must be 10 or 17 digits';
+        if (isFieldActive('education') && isFieldRequired('education') && !education.trim()) errors['education'] = bn ? 'শিক্ষাগত যোগ্যতা আবশ্যক' : 'Education required';
+      }
+    } else if (stepId === 'address') {
+      if (!isAdmin) {
+        if (isFieldActive('address_permanent') && isFieldRequired('address_permanent') && !permanentAddr.district) {
+          errors['address_permanent'] = bn ? 'স্থায়ী ঠিকানা আবশ্যক' : 'Permanent address required';
+        }
+      }
+    } else if (stepId === 'parents') {
+      if (!isAdmin) {
+        if (isFieldActive('father_name') && isFieldRequired('father_name') && !fatherName.trim()) errors['father_name'] = bn ? 'পিতার নাম আবশ্যক' : 'Father name required';
+        if (isFieldActive('father_nid') && isFieldActive('mother_nid') && !fatherNid && !motherNid) errors['parent_nid'] = bn ? 'অন্তত একটি NID আবশ্যক' : 'At least one parent NID required';
+        if (isFieldActive('father_mobile') && isFieldActive('mother_mobile') && !fatherMobile && !motherMobile) errors['parent_mobile'] = bn ? 'অন্তত একটি মোবাইল নম্বর আবশ্যক' : 'At least one parent mobile required';
+      }
+    } else if (stepId === 'guardian') {
+      if (!isAdmin) {
+        if (isFieldActive('guardian_type') && isFieldRequired('guardian_type') && !guardianType) errors['guardian_type'] = bn ? 'অভিভাবক নির্বাচন করুন' : 'Select guardian';
+        if (guardianType === 'other') {
+          if (!guardianName.trim()) errors['guardian_name'] = bn ? 'অভিভাবকের নাম আবশ্যক' : 'Guardian name required';
+          if (!guardianRelation.trim()) errors['guardian_relation'] = bn ? 'সম্পর্ক আবশ্যক' : 'Relation required';
+          if (!guardianMobile.trim()) errors['guardian_mobile'] = bn ? 'মোবাইল আবশ্যক' : 'Phone required';
+          if (isFieldActive('guardian_nid') && isFieldRequired('guardian_nid') && (!guardianNid || (guardianNid.length !== 10 && guardianNid.length !== 17))) errors['guardian_nid'] = bn ? 'NID ১০/১৭ ডিজিট হতে হবে' : 'NID 10/17 digits required';
+        }
+      }
+    } else if (stepId === 'identifier') {
+      if (!isAdmin && sectionConfig.showIdentifier) {
+        if (isFieldActive('identifier_name') && isFieldRequired('identifier_name') && !identifierName.trim()) errors['identifier_name'] = bn ? 'পরিচয়দাতার নাম আবশ্যক' : 'Identifier name required';
+        if (isFieldActive('identifier_relation') && isFieldRequired('identifier_relation') && !identifierRelation.trim()) errors['identifier_relation'] = bn ? 'সম্পর্ক আবশ্যক' : 'Relation required';
+        if (isFieldActive('identifier_mobile') && isFieldRequired('identifier_mobile') && !identifierMobile.trim()) errors['identifier_mobile'] = bn ? 'মোবাইল আবশ্যক' : 'Mobile required';
+        if (isFieldActive('identifier_nid') && isFieldRequired('identifier_nid') && (!identifierNid || (identifierNid.length !== 10 && identifierNid.length !== 17))) errors['identifier_nid'] = bn ? 'NID ১০/১৭ ডিজিট হতে হবে' : 'NID 10/17 digits required';
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(prev => ({ ...prev, ...errors }));
+      toast.error(Object.values(errors)[0]);
+      return false;
+    }
+    return true;
+  };
+
+  const handleStaffStepClick = (targetIdx: number) => {
+    if (targetIdx === safeCurrentStep) return;
+    if (targetIdx < safeCurrentStep || isEditMode || isAdmin) {
+      setCurrentStep(targetIdx);
+      window.scrollTo({ top: 80, behavior: 'smooth' });
+    } else {
+      if (validateStaffStep(steps[safeCurrentStep].id)) {
+        setCurrentStep(targetIdx);
+        window.scrollTo({ top: 80, behavior: 'smooth' });
+      }
+    }
+  };
+
   const handleApproverSignatureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1054,29 +1146,97 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
   return (
     <AdminLayout>
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-display font-bold text-foreground">
-            {bn ? (isEditMode ? titleConfig.editBn : titleConfig.addBn) : (isEditMode ? titleConfig.editEn : titleConfig.addEn)}
-          </h1>
-          <Button variant="outline" onClick={() => navigate(backPath)}>{bn ? 'ফিরে যান' : 'Back'}</Button>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-display font-bold text-foreground">
+              {bn ? (isEditMode ? titleConfig.editBn : titleConfig.addBn) : (isEditMode ? titleConfig.editEn : titleConfig.addEn)}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {bn ? `ধাপ ${safeCurrentStep + 1} / ${steps.length} : ${steps[safeCurrentStep].bn}` : `Step ${safeCurrentStep + 1} of ${steps.length} : ${steps[safeCurrentStep].en}`}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={openPrintPreview}>
+              <Eye className="w-4 h-4" /> {bn ? 'প্রিভিউ' : 'Preview'}
+            </Button>
+            <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={handlePrint}>
+              <Printer className="w-4 h-4" /> {bn ? 'প্রিন্ট' : 'Print'}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => navigate(backPath)}>{bn ? 'ফিরে যান' : 'Back'}</Button>
+          </div>
+        </div>
+
+        {/* Step Wizard Progress Bar */}
+        <div className="w-full bg-card border border-border rounded-xl p-3 sm:p-5 shadow-sm">
+          <div className="flex items-center justify-between overflow-x-auto pb-1 gap-2 sm:gap-4 scrollbar-none">
+            {steps.map((st, idx) => {
+              const isCurrent = idx === safeCurrentStep;
+              const isCompleted = idx < safeCurrentStep;
+              return (
+                <button
+                  key={st.id}
+                  type="button"
+                  onClick={() => handleStaffStepClick(idx)}
+                  className={`flex flex-col items-center flex-1 min-w-[70px] sm:min-w-[95px] relative focus:outline-none transition-all group ${
+                    idx < safeCurrentStep ? 'cursor-pointer' : isCurrent ? 'cursor-default' : 'cursor-pointer hover:opacity-100 opacity-70'
+                  }`}
+                >
+                  {/* Connecting Line */}
+                  {idx > 0 && (
+                    <div
+                      className={`hidden sm:block absolute top-4 -left-1/2 w-full h-[2px] -z-0 transition-colors ${
+                        idx <= safeCurrentStep ? 'bg-primary' : 'bg-muted'
+                      }`}
+                    />
+                  )}
+
+                  {/* Step Circle */}
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold z-10 transition-all shadow-sm ${
+                      isCompleted
+                        ? 'bg-primary text-primary-foreground ring-2 ring-primary/20'
+                        : isCurrent
+                        ? 'bg-primary text-primary-foreground ring-4 ring-primary/25 scale-110'
+                        : 'bg-muted text-muted-foreground border border-border'
+                    }`}
+                  >
+                    {isCompleted ? <CheckCircle className="w-4 h-4" /> : idx + 1}
+                  </div>
+
+                  {/* Step Title */}
+                  <span
+                    className={`mt-2 text-[11px] sm:text-xs text-center font-medium line-clamp-1 max-w-[85px] sm:max-w-none transition-colors ${
+                      isCurrent ? 'text-primary font-bold' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
+                    }`}
+                  >
+                    {bn ? st.bn : st.en}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <form className="space-y-6" onSubmit={handleSubmit}>
-          <CardVerifySection
-            formType="staff"
-            isEnabled={apiVerifyEnabled === true}
-            onDataReceived={(data) => {
-              if (data.name_bn) setFirstName(data.name_bn);
-              if (data.name_en) setLastName(data.name_en);
-              if (data.father_name) setFatherName(data.father_name);
-              if (data.date_of_birth) setDob(data.date_of_birth);
-              if (data.phone) setMobile(data.phone);
-              if (data.email) { /* setEmail if exists */ }
-              if (data.nid) setNid(data.nid);
-              if (data.education) setEducation(data.education);
-            }}
-          />
+          {currentStepId === 'employee' && (
+            <CardVerifySection
+              formType="staff"
+              isEnabled={apiVerifyEnabled === true}
+              onDataReceived={(data) => {
+                if (data.name_bn) setFirstName(data.name_bn);
+                if (data.name_en) setLastName(data.name_en);
+                if (data.father_name) setFatherName(data.father_name);
+                if (data.date_of_birth) setDob(data.date_of_birth);
+                if (data.phone) setMobile(data.phone);
+                if (data.email) { /* setEmail if exists */ }
+                if (data.nid) setNid(data.nid);
+                if (data.education) setEducation(data.education);
+              }}
+            />
+          )}
+
           {/* ========== SECTION 1: Employee Details ========== */}
+          {currentStepId === 'employee' && (
           <div className="card-elevated p-6">
             <h2 className="font-display font-bold text-foreground mb-4 pb-2 border-b border-border text-2xl text-center">
               {bn ? 'ব্যক্তিগত তথ্য (Employee Details)' : '1. Employee Details'}
@@ -1276,23 +1436,34 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
             </div>
             )}
 
-            {isFieldActive('address_permanent') && <AddressFields label={bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'} value={permanentAddr} onChange={setPermanentAddr} />}
-            {isFieldActive('address_present') && (
-            <>
-            <div className="mt-4 flex items-center gap-2">
-              <Checkbox id="sameAddr" checked={sameAddress} onCheckedChange={(v) => { setSameAddress(!!v); if (v) setPresentAddr({ ...permanentAddr }); }} />
-              <Label htmlFor="sameAddr">{bn ? 'বর্তমান ঠিকানা স্থায়ী ঠিকানার মতো' : 'Present same as permanent'}</Label>
-            </div>
-            {!sameAddress && (
-              <div className="mt-4">
-                <AddressFields label={bn ? 'বর্তমান ঠিকানা' : 'Present Address'} value={presentAddr} onChange={setPresentAddr} />
-              </div>
-            )}
-            </>
-            )}
           </div>
+          )}
 
-          {/* ========== SECTION 2: Parents Details ========== */}
+          {/* ========== SECTION 2: Employee Address ========== */}
+          {currentStepId === 'address' && (
+            <div className="card-elevated p-6 space-y-4">
+              <h2 className="font-display font-bold text-foreground mb-4 pb-2 border-b border-border text-center text-2xl">
+                {bn ? '২. ঠিকানা (Employee Address)' : '2. Address'}
+              </h2>
+              {isFieldActive('address_permanent') && <AddressFields label={bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'} value={permanentAddr} onChange={setPermanentAddr} />}
+              {isFieldActive('address_present') && (
+              <>
+                <div className="mt-4 flex items-center gap-2">
+                  <Checkbox id="sameAddr" checked={sameAddress} onCheckedChange={(v) => { setSameAddress(!!v); if (v) setPresentAddr({ ...permanentAddr }); }} />
+                  <Label htmlFor="sameAddr">{bn ? 'বর্তমান ঠিকানা স্থায়ী ঠিকানার মতো' : 'Present same as permanent'}</Label>
+                </div>
+                {!sameAddress && (
+                  <div className="mt-4">
+                    <AddressFields label={bn ? 'বর্তমান ঠিকানা' : 'Present Address'} value={presentAddr} onChange={setPresentAddr} />
+                  </div>
+                )}
+              </>
+              )}
+            </div>
+          )}
+
+          {/* ========== SECTION 3: Parents Details ========== */}
+          {currentStepId === 'parents' && (
           <div className="card-elevated p-6">
             <h2 className="font-display font-bold text-foreground mb-4 pb-2 border-b border-border text-center text-2xl">
               {bn ? ' পিতা-মাতার তথ্য (Parents Details)' : '2. Parents Details'}
@@ -1365,10 +1536,10 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
             </>
             )}
           </div>
+          )}
 
-          {sectionConfig.showGuardian && (
-          <>
-          {/* ========== SECTION 3: Guardian Details ========== */}
+          {/* ========== SECTION 4: Guardian Details ========== */}
+          {sectionConfig.showGuardian && currentStepId === 'guardian' && (
           <div className="card-elevated p-6">
             <h2 className="font-display font-bold text-foreground mb-4 pb-2 border-b border-border text-center text-2xl">
               {bn ? ' অভিভাবক তথ্য (Guardian Details)' : 'Guardian Details'}
@@ -1422,73 +1593,73 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
               </div>
             )}
           </div>
-          </>
           )}
 
-          {sectionConfig.showIdentifier && (
+          {/* ========== SECTION 5: Identifier Details ========== */}
+          {(sectionConfig.showIdentifier || sectionConfig.showRelativesIdentifier) && currentStepId === 'identifier' && (
           <>
-          {/* ========== SECTION 4: Identifier Details ========== */}
-          <div className="card-elevated p-6">
-            <h2 className="font-display font-bold text-foreground mb-4 pb-2 border-b border-border text-center text-2xl">
-              {bn ? 'পরিচয সনাক্তকারী তথ্য (Identifier Details)' : '4. Identifier Details'}
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <Label>{bn ? 'পূর্ণ নাম' : 'Full Name'} <span className="text-destructive">*</span></Label>
-                <Input className={`bg-background mt-1 ${fieldErrors['identifier_name'] ? 'border-destructive' : ''}`} value={identifierName} onChange={e => handleFieldChange('identifier_name', e.target.value, setIdentifierName)} />
-                <FieldError field="identifier_name" />
-              </div>
-              <div>
-                <Label>{bn ? 'সম্পর্ক' : 'Relation'} <span className="text-destructive">*</span></Label>
-                <Input className={`bg-background mt-1 ${fieldErrors['identifier_relation'] ? 'border-destructive' : ''}`} value={identifierRelation} onChange={e => handleFieldChange('identifier_relation', e.target.value, setIdentifierRelation)} />
-                <FieldError field="identifier_relation" />
-              </div>
-              <PhoneInput label={bn ? 'মোবাইল' : 'Mobile'} required value={identifierMobile} countryCode={identifierMobileCode} onChange={(p, c) => { setIdentifierMobile(p); setIdentifierMobileCode(c); }} />
-              <div>
-                <Label>{bn ? 'NID (১০/১৭ ডিজিট)' : 'NID (10/17 digits)'} <span className="text-destructive">*</span></Label>
-                <Input className={`bg-background mt-1 ${fieldErrors['identifier_nid'] || identifierNidError ? 'border-destructive' : ''}`} maxLength={17} value={identifierNid} onChange={e => validateNid(e.target.value, setIdentifierNid, setIdentifierNidError)} />
-                {identifierNidError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {identifierNidError}</p>}
-                <FieldError field="identifier_nid" />
-              </div>
-              <div className="sm:col-span-2">
-                <AddressFields label={bn ? 'পূর্ণ ঠিকানা' : 'Full Address'} value={identifierAddr} onChange={setIdentifierAddr} />
+            {sectionConfig.showIdentifier && (
+            <div className="card-elevated p-6">
+              <h2 className="font-display font-bold text-foreground mb-4 pb-2 border-b border-border text-center text-2xl">
+                {bn ? 'পরিচয সনাক্তকারী তথ্য (Identifier Details)' : '4. Identifier Details'}
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label>{bn ? 'পূর্ণ নাম' : 'Full Name'} <span className="text-destructive">*</span></Label>
+                  <Input className={`bg-background mt-1 ${fieldErrors['identifier_name'] ? 'border-destructive' : ''}`} value={identifierName} onChange={e => handleFieldChange('identifier_name', e.target.value, setIdentifierName)} />
+                  <FieldError field="identifier_name" />
+                </div>
+                <div>
+                  <Label>{bn ? 'সম্পর্ক' : 'Relation'} <span className="text-destructive">*</span></Label>
+                  <Input className={`bg-background mt-1 ${fieldErrors['identifier_relation'] ? 'border-destructive' : ''}`} value={identifierRelation} onChange={e => handleFieldChange('identifier_relation', e.target.value, setIdentifierRelation)} />
+                  <FieldError field="identifier_relation" />
+                </div>
+                <PhoneInput label={bn ? 'মোবাইল' : 'Mobile'} required value={identifierMobile} countryCode={identifierMobileCode} onChange={(p, c) => { setIdentifierMobile(p); setIdentifierMobileCode(c); }} />
+                <div>
+                  <Label>{bn ? 'NID (১০/১৭ ডিজিট)' : 'NID (10/17 digits)'} <span className="text-destructive">*</span></Label>
+                  <Input className={`bg-background mt-1 ${fieldErrors['identifier_nid'] || identifierNidError ? 'border-destructive' : ''}`} maxLength={17} value={identifierNid} onChange={e => validateNid(e.target.value, setIdentifierNid, setIdentifierNidError)} />
+                  {identifierNidError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {identifierNidError}</p>}
+                  <FieldError field="identifier_nid" />
+                </div>
+                <div className="sm:col-span-2">
+                  <AddressFields label={bn ? 'পূর্ণ ঠিকানা' : 'Full Address'} value={identifierAddr} onChange={setIdentifierAddr} />
+                </div>
               </div>
             </div>
-          </div>
-          </>
-          )}
+            )}
 
-          {sectionConfig.showRelativesIdentifier && (
-          <>
-          {/* ========== SECTION 4b: Relatives Identifier ========== */}
-          <div className="card-elevated p-6">
-            <h2 className="font-display font-bold text-foreground mb-4 pb-2 border-b border-border text-center text-2xl">
-              {bn ? 'আত্মীয় শনাক্তকারীর তথ্য (Relatives Identifier Information)' : 'Relatives Identifier Information'}
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <Label>{bn ? 'পূর্ণ নাম' : 'Full Name'}</Label>
-                <Input className="bg-background mt-1" value={relIdName} onChange={e => setRelIdName(e.target.value)} />
-              </div>
-              <div>
-                <Label>{bn ? 'সম্পর্ক' : 'Relation'}</Label>
-                <Input className="bg-background mt-1" value={relIdRelation} onChange={e => setRelIdRelation(e.target.value)} />
-              </div>
-              <PhoneInput label={bn ? 'মোবাইল' : 'Mobile'} value={relIdMobile} countryCode={relIdMobileCode} onChange={(p, c) => { setRelIdMobile(p); setRelIdMobileCode(c); }} />
-              <div>
-                <Label>{bn ? 'NID (১০/১৭ ডিজিট)' : 'NID (10/17 digits)'}</Label>
-                <Input className={`bg-background mt-1 ${relIdNidError ? 'border-destructive' : ''}`} maxLength={17} value={relIdNid} onChange={e => validateNid(e.target.value, setRelIdNid, setRelIdNidError)} />
-                {relIdNidError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {relIdNidError}</p>}
-              </div>
-              <div className="sm:col-span-2">
-                <AddressFields label={bn ? 'পূর্ণ ঠিকানা' : 'Full Address'} value={relIdAddr} onChange={setRelIdAddr} />
+            {sectionConfig.showRelativesIdentifier && (
+            <div className="card-elevated p-6">
+              <h2 className="font-display font-bold text-foreground mb-4 pb-2 border-b border-border text-center text-2xl">
+                {bn ? 'আত্মীয় শনাক্তকারীর তথ্য (Relatives Identifier Information)' : 'Relatives Identifier Information'}
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label>{bn ? 'পূর্ণ নাম' : 'Full Name'}</Label>
+                  <Input className="bg-background mt-1" value={relIdName} onChange={e => setRelIdName(e.target.value)} />
+                </div>
+                <div>
+                  <Label>{bn ? 'সম্পর্ক' : 'Relation'}</Label>
+                  <Input className="bg-background mt-1" value={relIdRelation} onChange={e => setRelIdRelation(e.target.value)} />
+                </div>
+                <PhoneInput label={bn ? 'মোবাইল' : 'Mobile'} value={relIdMobile} countryCode={relIdMobileCode} onChange={(p, c) => { setRelIdMobile(p); setRelIdMobileCode(c); }} />
+                <div>
+                  <Label>{bn ? 'NID (১০/১৭ ডিজিট)' : 'NID (10/17 digits)'}</Label>
+                  <Input className={`bg-background mt-1 ${relIdNidError ? 'border-destructive' : ''}`} maxLength={17} value={relIdNid} onChange={e => validateNid(e.target.value, setRelIdNid, setRelIdNidError)} />
+                  {relIdNidError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {relIdNidError}</p>}
+                </div>
+                <div className="sm:col-span-2">
+                  <AddressFields label={bn ? 'পূর্ণ ঠিকানা' : 'Full Address'} value={relIdAddr} onChange={setRelIdAddr} />
+                </div>
               </div>
             </div>
-          </div>
+            )}
           </>
           )}
 
-          {/* ========== SECTION 5: Document Upload ========== */}
+          {/* ========== SECTION 6: Document Upload, Signatures & Approver ========== */}
+          {currentStepId === 'docs_approval' && (
+          <>
           <div className="card-elevated p-6">
             <h2 className="font-display font-bold text-foreground mb-4 pb-2 border-b border-border text-center text-2xl">
               {bn ? 'ডকুমেন্ট আপলোড (Document Upload)' : '5. Document Upload'}
@@ -1604,18 +1775,61 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
               </div>
             </div>
           </div>
+          </>
+          )}
 
-          <div className="flex gap-3">
-            <Button type="submit" className="btn-primary-gradient flex-1 text-lg py-6" disabled={saveMutation.isPending}>
-              {saveMutation.isPending ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Plus className="w-5 h-5 mr-2" />}
-              {bn ? (isEditMode ? 'আপডেট করুন' : `${titleConfig.bn} যোগ করুন`) : (isEditMode ? 'Update' : `Add ${titleConfig.en}`)}
+          {/* Step Navigation Controls */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6 border-t mt-6">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setCurrentStep(prev => Math.max(0, prev - 1));
+                window.scrollTo({ top: 80, behavior: 'smooth' });
+              }}
+              disabled={safeCurrentStep === 0}
+              className="w-full sm:w-auto px-6 py-5 gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              {bn ? 'পূর্ববর্তী ধাপ' : 'Previous Step'}
             </Button>
-            <Button type="button" variant="outline" className="py-6 gap-2" onClick={openPrintPreview}>
-              <Eye className="w-5 h-5" /> {bn ? 'প্রিভিউ' : 'Preview'}
-            </Button>
-            <Button type="button" variant="outline" className="py-6 gap-2" onClick={handlePrint}>
-              <Printer className="w-5 h-5" /> {bn ? 'প্রিন্ট' : 'Print'}
-            </Button>
+
+            <div className="text-xs sm:text-sm font-medium text-muted-foreground order-first sm:order-none">
+              {bn ? `ধাপ ${safeCurrentStep + 1} / ${steps.length} : ${steps[safeCurrentStep].bn}` : `Step ${safeCurrentStep + 1} of ${steps.length} : ${steps[safeCurrentStep].en}`}
+            </div>
+
+            {safeCurrentStep < steps.length - 1 ? (
+              <Button
+                type="button"
+                onClick={() => {
+                  if (validateStaffStep(steps[safeCurrentStep].id)) {
+                    setCurrentStep(prev => Math.min(steps.length - 1, prev + 1));
+                    window.scrollTo({ top: 80, behavior: 'smooth' });
+                  }
+                }}
+                className="btn-primary-gradient w-full sm:w-auto px-8 py-5 gap-2"
+              >
+                {bn ? 'পরবর্তী ধাপ' : 'Next Step'}
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            ) : (
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <Button
+                  type="submit"
+                  className="btn-primary-gradient px-8 py-5 gap-2"
+                  disabled={saveMutation.isPending}
+                >
+                  {saveMutation.isPending ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Plus className="w-5 h-5 mr-2" />}
+                  {bn ? (isEditMode ? 'আপডেট করুন' : `${titleConfig.bn} যোগ করুন`) : (isEditMode ? 'Update' : `Add ${titleConfig.en}`)}
+                </Button>
+                <Button type="button" variant="outline" className="py-5 gap-2" onClick={openPrintPreview}>
+                  <Eye className="w-4 h-4" /> {bn ? 'প্রিভিউ' : 'Preview'}
+                </Button>
+                <Button type="button" variant="outline" className="py-5 gap-2" onClick={handlePrint}>
+                  <Printer className="w-4 h-4" /> {bn ? 'প্রিন্ট' : 'Print'}
+                </Button>
+              </div>
+            )}
           </div>
         </form>
       </div>
