@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Plus, Loader2, Trash2, Eye, EyeOff, AlertTriangle, KeyRound, Save, Pencil, ShieldCheck, Tag, Shield, UserCircle, Mail, SendHorizonal, UserPlus, Users2 } from 'lucide-react';
+import { Users, Plus, Loader2, Trash2, Eye, EyeOff, AlertTriangle, KeyRound, Save, Pencil, ShieldCheck, Tag, Shield, UserCircle, Mail, SendHorizonal, UserPlus, Users2, LayoutGrid, Sliders } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AccessControlTab from '@/components/admin/AccessControlTab';
 import { toast } from 'sonner';
@@ -30,6 +30,7 @@ import { useMenuSettings } from '@/hooks/useMenuSettings';
 import { flattenMenuPaths, mergeMenuPaths } from '@/lib/menuPathList';
 import { Search } from 'lucide-react';
 import { useSignatoryAuthorities, CORE_SIGNATORY_ROLES } from '@/hooks/useSignatoryAuthorities';
+import { RolePermissionCardModal, RolePermItem } from '@/components/admin/RolePermissionCardModal';
 
 interface UserItem {
   id: string;
@@ -998,16 +999,23 @@ const AdminUserManagement = () => {
     }
   };
 
+  const [roleFeatureSettings, setRoleFeatureSettings] = useState<Record<string, boolean>>({});
+
   // Role permission functions
   const openRolePermDialog = async (role: CustomRole) => {
     setRolePermRole(role);
     setRolePermDialogOpen(true);
     setRolePermLoading(true);
     try {
-      const { data, error } = await supabase.from('role_permissions').select('*').eq('role', role.name);
-      if (error) throw error;
+      const [permsRes, featureRes] = await Promise.all([
+        supabase.from('role_permissions').select('*').eq('role', role.name),
+        supabase.from('website_settings').select('value').eq('key', 'role_feature_permissions').maybeSingle(),
+      ]);
+
+      if (permsRes.error) throw permsRes.error;
+
       const merged = allMenuPaths.map(mp => {
-        const existing = (data || []).find((d: any) => d.menu_path === mp.path);
+        const existing = (permsRes.data || []).find((d: any) => d.menu_path === mp.path);
         return {
           menu_path: mp.path,
           can_view: existing?.can_view ?? false,
@@ -1018,6 +1026,9 @@ const AdminUserManagement = () => {
         };
       });
       setRolePerms(merged);
+
+      const allFeats = (featureRes.data?.value as Record<string, Record<string, boolean>>) || {};
+      setRoleFeatureSettings(allFeats[role.name] || {});
     } catch {
       toast.error(bn ? 'পারমিশন লোড ব্যর্থ' : 'Failed to load permissions');
     }
@@ -1608,76 +1619,112 @@ const AdminUserManagement = () => {
               </Button>
             </div>
 
-            <div className="card-elevated overflow-hidden">
-              {rolesLoading ? (
-                <div className="flex justify-center py-12">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{bn ? 'রোল নাম' : 'Role Name'}</TableHead>
-                      <TableHead>{bn ? 'বাংলা নাম' : 'Bangla Name'}</TableHead>
-                      <TableHead>{bn ? 'বেস রোল' : 'Base Role'}</TableHead>
-                      <TableHead>{bn ? 'বিবরণ' : 'Description'}</TableHead>
-                      <TableHead>{bn ? 'টাইপ' : 'Type'}</TableHead>
-                      <TableHead className="text-right">{bn ? 'অ্যাকশন' : 'Actions'}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {customRoles.map(r => (
-                      <TableRow key={r.id}>
-                        <TableCell className="font-medium">{r.name}</TableCell>
-                        <TableCell>{r.name_bn}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{r.base_role}</Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">
-                          {bn ? r.description_bn : r.description || '—'}
-                        </TableCell>
-                        <TableCell>
-                          {r.is_system ? (
-                            <Badge variant="secondary" className="gap-1">
-                              <ShieldCheck className="w-3 h-3" />
-                              {bn ? 'সিস্টেম' : 'System'}
+            {/* Roles Grid Cards View */}
+            {rolesLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : customRoles.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Shield className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                {bn ? 'কোনো রোল পাওয়া যায়নি' : 'No roles found'}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {customRoles.map((r) => {
+                  const roleUsersCount = users.filter((u) => u.role === r.name).length;
+                  return (
+                    <div
+                      key={r.id}
+                      className="group relative bg-card hover:bg-card/90 rounded-2xl border border-border/80 hover:border-primary/40 p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+                    >
+                      <div>
+                        {/* Top bar of card */}
+                        <div className="flex items-start justify-between gap-2 mb-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
+                              <ShieldCheck className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-base text-foreground leading-tight">
+                                {bn ? r.name_bn || r.name : r.name}
+                              </h3>
+                              <p className="text-xs text-muted-foreground font-mono mt-0.5">{r.name}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col items-end gap-1">
+                            {r.is_system ? (
+                              <Badge variant="secondary" className="text-[10px] h-4">
+                                {bn ? 'সিস্টেম' : 'System'}
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[10px] h-4">
+                                {bn ? 'কাস্টম' : 'Custom'}
+                              </Badge>
+                            )}
+                            <Badge variant="outline" className="text-[10px] h-4 bg-primary/5 text-primary border-primary/20">
+                              Base: {r.base_role}
                             </Badge>
-                          ) : (
-                            <Badge variant="outline">{bn ? 'কাস্টম' : 'Custom'}</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button size="icon" variant="ghost" onClick={() => openRoleDialog(r)} title={bn ? 'এডিট' : 'Edit'}>
-                              <Pencil className="w-4 h-4" />
-                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Description */}
+                        <p className="text-xs text-muted-foreground line-clamp-2 min-h-[32px] mb-4">
+                          {(bn ? r.description_bn : r.description) || (bn ? 'কোনো বিবরণ যোগ করা হয়নি।' : 'No description provided.')}
+                        </p>
+
+                        {/* Quick Stats */}
+                        <div className="flex items-center justify-between text-xs py-2 px-3 rounded-xl bg-muted/40 mb-4 border border-border/40">
+                          <span className="text-muted-foreground flex items-center gap-1.5">
+                            <Users className="w-3.5 h-3.5" />
+                            {bn ? 'ইউজার সংখ্যা:' : 'Total Users:'}
+                          </span>
+                          <span className="font-bold text-foreground font-mono">
+                            {roleUsersCount} {bn ? 'জন' : ''}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Card Footer Actions */}
+                      <div className="pt-3 border-t border-border/50 flex items-center justify-between gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => openRolePermDialog(r)}
+                          className="flex-1 btn-primary-gradient h-8 text-xs gap-1.5 shadow-sm"
+                        >
+                          <KeyRound className="w-3.5 h-3.5" />
+                          <span>{bn ? 'পারমিশন কার্ড ওপেন' : 'Open Permissions'}</span>
+                        </Button>
+
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted"
+                            onClick={() => openRoleDialog(r)}
+                            title={bn ? 'রোল সম্পাদনা' : 'Edit Role'}
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                          {!r.is_system && (
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="text-primary hover:text-primary hover:bg-primary/10"
-                              onClick={() => openRolePermDialog(r)}
-                              title={bn ? 'পারমিশন সেট করুন' : 'Set Permissions'}
+                              className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
+                              onClick={() => deleteCustomRole(r.id)}
+                              title={bn ? 'মুছুন' : 'Delete Role'}
                             >
-                              <KeyRound className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </Button>
-                            {!r.is_system && (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="text-destructive hover:text-destructive"
-                                onClick={() => deleteCustomRole(r.id)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </TabsContent>
 
           {/* ===== ACCESS CONTROL TAB ===== */}
@@ -1927,102 +1974,19 @@ const AdminUserManagement = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Role Permission Dialog */}
-        <Dialog open={rolePermDialogOpen} onOpenChange={setRolePermDialogOpen}>
-          <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <KeyRound className="w-5 h-5 text-primary" />
-                {bn ? 'রোল পারমিশন' : 'Role Permissions'}
-                {rolePermRole && (
-                  <Badge variant="outline" className="ml-2 font-normal">
-                    {bn ? rolePermRole.name_bn : rolePermRole.name}
-                  </Badge>
-                )}
-              </DialogTitle>
-            </DialogHeader>
-
-            {rolePermLoading ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-              </div>
-            ) : (
-              <div className="space-y-4 pt-2">
-                <p className="text-xs text-muted-foreground">
-                  {bn
-                    ? 'এই রোলের ইউজাররা কোন কোন মেনু/ফিচারে কী কী করতে পারবে তা নির্ধারণ করুন।'
-                    : 'Set what users with this role can do on each menu/feature.'}
-                </p>
-
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                  <Input
-                    value={permSearch}
-                    onChange={e => setPermSearch(e.target.value)}
-                    placeholder={bn ? 'পেজ/ট্যাব খুঁজুন...' : 'Search page/tab...'}
-                    className="h-9 pl-8"
-                  />
-                </div>
-
-                <div className="border rounded-lg overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/50">
-                        <TableHead className="min-w-[140px]">{bn ? 'মেনু' : 'Menu'}</TableHead>
-                        <TableHead className="text-center w-16"><button type="button" onClick={() => bulkSetRolePerms('can_view')} className="hover:text-primary underline-offset-2 hover:underline">{bn ? 'দেখা' : 'View'}</button></TableHead>
-                        <TableHead className="text-center w-16"><button type="button" onClick={() => bulkSetRolePerms('can_add')} className="hover:text-primary underline-offset-2 hover:underline">{bn ? 'যোগ' : 'Add'}</button></TableHead>
-                        <TableHead className="text-center w-16"><button type="button" onClick={() => bulkSetRolePerms('can_edit')} className="hover:text-primary underline-offset-2 hover:underline">{bn ? 'সম্পাদনা' : 'Edit'}</button></TableHead>
-                        <TableHead className="text-center w-16"><button type="button" onClick={() => bulkSetRolePerms('can_delete')} className="hover:text-primary underline-offset-2 hover:underline">{bn ? 'মুছুন' : 'Delete'}</button></TableHead>
-                        <TableHead className="text-center w-16"><button type="button" onClick={() => bulkSetRolePerms('can_approve')} className="text-emerald-600 hover:underline underline-offset-2">{bn ? 'অনুমোদন' : 'Approve'}</button></TableHead>
-                        <TableHead className="text-center w-16">{bn ? 'সব' : 'All'}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {rolePerms.filter(p => matchesPermSearch(p.menu_path)).map(perm => {
-                        const menuInfo = allMenuPaths.find(m => m.path === perm.menu_path);
-                        const allOn = perm.can_view && perm.can_add && perm.can_edit && perm.can_delete && perm.can_approve;
-                        return (
-                          <TableRow key={perm.menu_path}>
-                            <TableCell className="font-medium text-sm">
-                              {bn ? menuInfo?.label_bn : menuInfo?.label_en}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Checkbox checked={perm.can_view} onCheckedChange={() => toggleRolePerm(perm.menu_path, 'can_view')} />
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Checkbox checked={perm.can_add} onCheckedChange={() => toggleRolePerm(perm.menu_path, 'can_add')} />
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Checkbox checked={perm.can_edit} onCheckedChange={() => toggleRolePerm(perm.menu_path, 'can_edit')} />
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Checkbox checked={perm.can_delete} onCheckedChange={() => toggleRolePerm(perm.menu_path, 'can_delete')} />
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Checkbox
-                                checked={perm.can_approve}
-                                onCheckedChange={() => toggleRolePerm(perm.menu_path, 'can_approve')}
-                                className="border-emerald-500 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
-                              />
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Checkbox checked={allOn} onCheckedChange={() => toggleAllRolePerms(perm.menu_path)} />
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                <Button onClick={saveRolePermissions} disabled={rolePermSaving} className="w-full btn-primary-gradient">
-                  {rolePermSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                  {bn ? 'পারমিশন সেভ করুন' : 'Save Permissions'}
-                </Button>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
+        {/* Role Permission Card Modal */}
+        <RolePermissionCardModal
+          open={rolePermDialogOpen}
+          onOpenChange={setRolePermDialogOpen}
+          role={rolePermRole}
+          allMenuPaths={allMenuPaths}
+          initialPerms={rolePerms}
+          initialHiddenFeatures={roleFeatureSettings}
+          onSaved={() => {
+            queryClient.invalidateQueries({ queryKey: ['role-permissions'] });
+            queryClient.invalidateQueries({ queryKey: ['role-hidden-features-settings'] });
+          }}
+        />
         {/* ===== PROFILE VIEW & EDIT DIALOG ===== */}
         <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
           <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">

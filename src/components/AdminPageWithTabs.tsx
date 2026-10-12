@@ -8,6 +8,7 @@ import { EmbeddedProvider } from '@/contexts/EmbeddedContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { usePermissions } from '@/hooks/usePermissions';
 
 // Lazy-load map: path → component
 const PAGE_MAP: Record<string, React.LazyExoticComponent<React.ComponentType<any>>> = {
@@ -82,9 +83,14 @@ const AdminPageWithTabs = ({ children }: Props) => {
   const { menuConfig } = useMenuSettings();
   const bn = language === 'bn';
 
+  const { canView, isFeatureAllowed } = usePermissions();
+
   const tabItems = useMemo(
-    () => collectTabItems(menuConfig.sidebar, location.pathname),
-    [menuConfig.sidebar, location.pathname]
+    () =>
+      collectTabItems(menuConfig.sidebar, location.pathname).filter(
+        (t) => canView(t.path) && isFeatureAllowed(location.pathname, t.id)
+      ),
+    [menuConfig.sidebar, location.pathname, canView, isFeatureAllowed]
   );
 
   const [activeTab, setActiveTab] = useState('main');

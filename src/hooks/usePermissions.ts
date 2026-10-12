@@ -49,11 +49,22 @@ export const usePermissions = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  const isLoading = authLoading || roleLoading || userLoading;
+  // Hidden tabs & sub-feature config from website_settings
+  const { data: hiddenFeatures = {} } = useQuery({
+    queryKey: ['role-hidden-features-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('website_settings')
+        .select('value')
+        .eq('key', 'role_feature_permissions')
+        .maybeSingle();
+      if (error) return {};
+      return (data?.value as Record<string, Record<string, boolean>>) || {};
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
-  // If user has ANY user_permissions entries, those become the sole authority
-  // (no fallback to role permissions). This ensures the individual permission
-  // modal is the complete source of truth when configured.
+  const isLoading = authLoading || roleLoading || userLoading;
   const hasUserOverrides = userPermissions.length > 0;
 
   const pickAction = (perm: any, action: PermAction): boolean => {
@@ -86,7 +97,6 @@ export const usePermissions = () => {
     '/admin/salary-memo-search': ['/admin/salary'],
   };
 
-  /** '/admin/students/add' -> ['/admin/students/add', '/admin/students', ...aliases] */
   const pathCandidates = (menuPath: string): string[] => {
     const out: string[] = [];
     let p = menuPath;
@@ -110,9 +120,6 @@ export const usePermissions = () => {
 
     const candidates = pathCandidates(menuPath);
 
-    // If user has individual permissions set, ONLY use those (strictly no role fallback).
-    // This ensures only the exact pages granted to the user will appear in the sidebar
-    // and be accessible across the app.
     if (hasUserOverrides) {
       for (const path of candidates) {
         const userPerm = userPermissions.find((p) => p.menu_path === path);
@@ -121,7 +128,6 @@ export const usePermissions = () => {
       return false;
     }
 
-    // No user overrides — use role-level permissions
     for (const path of candidates) {
       const perm = rolePermissions.find((p) => p.menu_path === path);
       if (perm) return pickAction(perm, action);
@@ -129,12 +135,36 @@ export const usePermissions = () => {
     return false;
   };
 
-
   const canView = (menuPath: string) => hasPermission(menuPath, 'view');
   const canAdd = (menuPath: string) => hasPermission(menuPath, 'add');
   const canEdit = (menuPath: string) => hasPermission(menuPath, 'edit');
   const canDelete = (menuPath: string) => hasPermission(menuPath, 'delete');
   const canApprove = (menuPath: string) => hasPermission(menuPath, 'approve');
+
+  /**
+   * isFeatureAllowed
+   * Checks whether a specific internal tab or action button is allowed for the current role.
+   * If false, the tab/button MUST BE COMPLETELY HIDDEN (not rendered) from the DOM.
+   */
+  const isFeatureAllowed = (menuPath: string, featureKey: string): boolean => {
+    if (isAdminRole(role)) return true;
+    if (!role) return false;
+
+    // Check if whole page is accessible first
+    if (!canView(menuPath)) return false;
+
+    // Check specific sub-feature permission for this role
+    // Format in hiddenFeatures: { [role]: { [`${menuPath}:${featureKey}`]: boolean } }
+    const roleMap = hiddenFeatures[role];
+    if (!roleMap) return true; // Default allowed unless restricted
+
+    const fullKey = `${menuPath}:${featureKey}`;
+    if (roleMap[fullKey] !== undefined) {
+      return !!roleMap[fullKey];
+    }
+
+    return true;
+  };
 
   // Check ONLY individual user_permissions (ignoring role_permissions)
   const hasUserPermission = (menuPath: string, action: PermAction): boolean => {
@@ -154,5 +184,19 @@ export const usePermissions = () => {
     return (userPerm as any)?.approval_view || (userPerm as any)?.approval_add || (userPerm as any)?.approval_edit || (userPerm as any)?.approval_delete || false;
   };
 
-  return { permissions: rolePermissions, userPermissions, isLoading, hasPermission, hasUserPermission, canView, canAdd, canEdit, canDelete, canApprove, requiresApproval, role };
+  return {
+    permissions: rolePermissions,
+    userPermissions,
+    isLoading,
+    hasPermission,
+    hasUserPermission,
+    canView,
+    canAdd,
+    canEdit,
+    canDelete,
+    canApprove,
+    requiresApproval,
+    isFeatureAllowed,
+    role,
+  };
 };
