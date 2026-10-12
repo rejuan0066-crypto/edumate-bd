@@ -19,6 +19,7 @@ import LanguageToggle from './LanguageToggle';
 import BijoyToggle from './BijoyToggle';
 import NotificationPanel from './NotificationPanel';
 import DarkModeToggle from './DarkModeToggle';
+import { preloadRouteChunk } from '@/lib/routePreload';
 import {
   LayoutDashboard, Users, UserCog, BookOpen, FileText, Bell,
   CreditCard, Settings, Globe, GraduationCap, Menu, X, LogOut,
@@ -515,6 +516,9 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
                               <Link
                                 key={`__parent_${item.path}`}
                                 to={item.path}
+                                onMouseEnter={() => preloadRouteChunk(item.path)}
+                                onFocus={() => preloadRouteChunk(item.path)}
+                                onTouchStart={() => preloadRouteChunk(item.path)}
                                 onClick={(e) => {
                                   if (mobile) setMobileSidebarOpen(false);
                                   if (adminTheme.sidebarStableNav) {
@@ -538,6 +542,9 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
                               <Link
                                 key={child.path}
                                 to={child.path}
+                                onMouseEnter={() => preloadRouteChunk(child.path)}
+                                onFocus={() => preloadRouteChunk(child.path)}
+                                onTouchStart={() => preloadRouteChunk(child.path)}
                                 onClick={() => { if (mobile) setMobileSidebarOpen(false); }}
                                 className={`sidebar-sub-item ${childActive ? 'active' : ''}`}
                               >
@@ -552,6 +559,9 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
                   ) : (
                     <Link
                       to={item.path}
+                      onMouseEnter={() => preloadRouteChunk(item.path)}
+                      onFocus={() => preloadRouteChunk(item.path)}
+                      onTouchStart={() => preloadRouteChunk(item.path)}
                       onClick={(e) => {
                         if (mobile) setMobileSidebarOpen(false);
                         if (adminTheme.sidebarStableNav) {

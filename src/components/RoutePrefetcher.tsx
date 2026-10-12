@@ -83,6 +83,7 @@ const L: Record<string, Loader> = {
   AdminSettings: () => import('@/pages/admin/AdminSettings'),
   AdminAttendance: () => import('@/pages/admin/AdminStudentAttendance'),
   AdminSalary: () => import('@/pages/admin/AdminSalary'),
+  AdminExpenses: () => import('@/pages/admin/AdminExpenses'),
 };
 
 // ───────── Predictor ─────────
@@ -107,8 +108,9 @@ const predict = (pathname: string): Task[] => {
   const onAdminBase: Task[] = [
     { label: 'AdminStudents',  priority: 1, load: L.AdminStudents },
     { label: 'AdminStaff',     priority: 1, load: L.AdminStaff },
+    { label: 'AdminExpenses',  priority: 2, load: L.AdminExpenses },
     { label: 'AdminFees',      priority: 2, load: L.AdminFees },
-    { label: 'AdminNotices',   priority: 2, load: L.AdminNotices },
+    { label: 'AdminNotices',   priority: 3, load: L.AdminNotices },
     { label: 'AdminFeeReceipts', priority: 3, load: L.AdminFeeReceipts },
     { label: 'AdminSettings',  priority: 4, load: L.AdminSettings },
   ];

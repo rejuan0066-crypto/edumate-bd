@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
 /**
@@ -76,14 +75,6 @@ const AdminShimmer = () => (
 const RouteShimmer = () => {
   const { pathname } = useLocation();
   const isAdmin = pathname.startsWith('/admin');
-  const [show, setShow] = useState(false);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setShow(true), isAdmin ? 280 : 160);
-    return () => window.clearTimeout(timer);
-  }, [isAdmin, pathname]);
-
-  if (!show) return null;
 
   return (
     <div className="w-full" role="status" aria-live="polite" aria-busy="true">
