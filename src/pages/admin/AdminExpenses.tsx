@@ -1109,7 +1109,7 @@ const AdminExpenses = () => {
         const instName = allInstitutions.find(i => i.id === (expenseForm.institution_id || oldExpense?.institution_id))?.name || '';
         const catName = categories.find(c => c.id === (expenseForm.category_id || oldExpense?.category_id))?.name || '';
 
-        await logAccountsAudit({
+        logAccountsAudit({
           action: 'expense_update',
           entity_type: 'expense',
           entity_id: editingExpenseId,
@@ -1138,7 +1138,7 @@ const AdminExpenses = () => {
           user_name: user?.user_metadata?.full_name || user?.email,
           user_email: user?.email,
           user_role: role,
-        });
+        }).catch(err => console.warn('Audit log in background:', err));
       } else {
         const { data: insertedExpense, error } = await supabase.from('expenses').insert(payload).select('id').single();
         if (error) throw error;
@@ -1146,7 +1146,7 @@ const AdminExpenses = () => {
         const instName = allInstitutions.find(i => i.id === expenseForm.institution_id)?.name || '';
         const catName = categories.find(c => c.id === expenseForm.category_id)?.name || '';
 
-        await logAccountsAudit({
+        logAccountsAudit({
           action: 'expense_create',
           entity_type: 'expense',
           entity_id: insertedExpense?.id,
@@ -1169,7 +1169,7 @@ const AdminExpenses = () => {
           user_name: user?.user_metadata?.full_name || user?.email,
           user_email: user?.email,
           user_role: role,
-        });
+        }).catch(err => console.warn('Audit log in background:', err));
 
         // Inventory and Asset Management Integration
         if (expenseForm.add_to_inventory && insertedExpense) {
@@ -1293,16 +1293,28 @@ const AdminExpenses = () => {
       qc.invalidateQueries({ queryKey: ['expenses'] });
       qc.invalidateQueries({ queryKey: ['all_expenses'] });
       qc.invalidateQueries({ queryKey: ['accounts-audit-logs'] });
-      qc.invalidateQueries({ queryKey: ['inventory-items-for-expense'] });
-      qc.invalidateQueries({ queryKey: ['inventory-items'] });
-      qc.invalidateQueries({ queryKey: ['inventory-logs'] });
-      qc.invalidateQueries({ queryKey: ['fixed-assets'] });
+      
+      if (expenseForm.add_to_inventory) {
+        qc.invalidateQueries({ queryKey: ['inventory-items-for-expense'] });
+        qc.invalidateQueries({ queryKey: ['inventory-items'] });
+        qc.invalidateQueries({ queryKey: ['inventory-logs'] });
+        qc.invalidateQueries({ queryKey: ['fixed-assets'] });
+      }
       
       const isEdit = !!editingExpenseId;
       const keepInstitutionId = expenseForm.institution_id || '';
       const keepCategoryId = expenseForm.category_id || '';
+      const keepExpenseDate = expenseForm.expense_date || new Date().toISOString().split('T')[0];
+      const keepExpenseMethod = expenseForm.expense_method || 'ক্যাশ';
       
-      setExpenseForm({ ...defaultExpenseForm, institution_id: keepInstitutionId, category_id: keepCategoryId });
+      // Preserve date, institution, category, and method for fast consecutive entry:
+      setExpenseForm({
+        ...defaultExpenseForm,
+        institution_id: keepInstitutionId,
+        category_id: keepCategoryId,
+        expense_date: keepExpenseDate,
+        expense_method: keepExpenseMethod,
+      });
       setReceiptFile(null);
       setEditingExpenseId(null);
       setIsCustomUnitActive(false);
@@ -1312,7 +1324,7 @@ const AdminExpenses = () => {
         setExpenseDialog(false);
         toast.success(bn ? 'হিসাব সফলভাবে আপডেট করা হয়েছে' : 'Expense updated successfully');
       } else {
-        toast.success(bn ? 'সংরক্ষিত! নতুন এন্ট্রি দিন' : 'Saved! Add new entry');
+        toast.success(bn ? 'সংরক্ষিত! পরবর্তী হিসাব এন্ট্রি দিন' : 'Saved! Add next record');
       }
     },
     onError: (err: any) => {
@@ -2299,7 +2311,10 @@ const AdminExpenses = () => {
   const resetExpenseDialog = (open: boolean) => {
     if (!open) {
       setEditingExpenseId(null);
-      setExpenseForm(defaultExpenseForm);
+      setExpenseForm({
+        ...defaultExpenseForm,
+        expense_date: new Date().toISOString().split('T')[0],
+      });
       setIsCustomUnitActive(false);
       setCustomUnitText('');
     }
@@ -4490,58 +4505,65 @@ const AdminExpenses = () => {
 
       {/* Receipt Preview Dialog */}
       <Dialog open={expenseDialog} onOpenChange={resetExpenseDialog}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{editingExpenseId ? (bn ? 'হিসাব সম্পাদনা' : 'Edit Expense') : (bn ? 'নতুন হিসাব' : 'New Expense')}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <Label>{bn ? 'প্রতিষ্ঠান' : 'Institution'} *</Label>
-              <Select
-                value={expenseForm.institution_id || undefined}
-                onValueChange={value => {
-                  const availCats = getCategoriesForInst(value);
-                  setExpenseForm(f => ({ ...f, institution_id: value, category_id: availCats[0]?.id || '' }));
-                }}
-              >
-                <SelectTrigger><SelectValue placeholder={bn ? 'প্রতিষ্ঠান নির্বাচন করুন' : 'Select institution'} /></SelectTrigger>
-                <SelectContent>
-                  {allInstitutions.map((inst: any) => (
-                    <SelectItem key={inst.id} value={inst.id}>
-                      {getInstName(inst, bn)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>{bn ? 'ক্যাটেগরি' : 'Category'} *</Label>
-              <Select
-                value={expenseForm.category_id || undefined}
-                onValueChange={value => {
-                  const cat = categories.find((c: any) => c.id === value);
-                  const catName = (cat?.name || '').toLowerCase();
-                  const catNameBn = cat?.name_bn || '';
-                  const isInventoryCategory = catName.includes('grocery') || catName.includes('stationar') || catNameBn.includes('খাদ্য') || catNameBn.includes('স্টেশনার') || catNameBn.includes('মুদি');
-                  const isSalaryCategory = catName.includes('salary') || catNameBn.includes('বেতন') || catNameBn.includes('সম্মানী');
-                  setExpenseForm(f => ({ 
-                    ...f, 
-                    category_id: value, 
-                    add_to_inventory: isInventoryCategory ? true : f.add_to_inventory,
-                    quantity_unit: isSalaryCategory ? (f.quantity_unit === 'পিস' ? 'জন' : f.quantity_unit) : f.quantity_unit
-                  }));
-                }}
-              >
-                <SelectTrigger><SelectValue placeholder={bn ? 'ক্যাটেগরি নির্বাচন করুন' : 'Select category'} /></SelectTrigger>
-                <SelectContent>
-                  {filteredCategories.map((category: any) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {getCatName(category, bn)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedExpenseProject && !selectedExpenseCategory && (
-                <p className="mt-1 text-xs text-muted-foreground">{bn ? 'এই প্রতিষ্ঠানের জন্য একটি ক্যাটেগরি নির্বাচন করুন' : 'Select a category for this institution'}</p>
-              )}
+        <DialogContent className="max-w-2xl sm:max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden shadow-2xl border-primary/20">
+          <DialogHeader className="px-6 py-3.5 border-b bg-muted/30 shrink-0">
+            <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+              <Coins className="w-5 h-5 text-emerald-600" />
+              <span>{editingExpenseId ? (bn ? 'হিসাব সম্পাদনা' : 'Edit Expense') : (bn ? 'নতুন হিসাব / ব্যয় এন্ট্রি' : 'New Expense Entry')}</span>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label>{bn ? 'প্রতিষ্ঠান' : 'Institution'} *</Label>
+                <Select
+                  value={expenseForm.institution_id || undefined}
+                  onValueChange={value => {
+                    const availCats = getCategoriesForInst(value);
+                    setExpenseForm(f => ({ ...f, institution_id: value, category_id: availCats[0]?.id || '' }));
+                  }}
+                >
+                  <SelectTrigger className="mt-1"><SelectValue placeholder={bn ? 'প্রতিষ্ঠান নির্বাচন করুন' : 'Select institution'} /></SelectTrigger>
+                  <SelectContent>
+                    {allInstitutions.map((inst: any) => (
+                      <SelectItem key={inst.id} value={inst.id}>
+                        {getInstName(inst, bn)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>{bn ? 'ক্যাটেগরি' : 'Category'} *</Label>
+                <Select
+                  value={expenseForm.category_id || undefined}
+                  onValueChange={value => {
+                    const cat = categories.find((c: any) => c.id === value);
+                    const catName = (cat?.name || '').toLowerCase();
+                    const catNameBn = cat?.name_bn || '';
+                    const isInventoryCategory = catName.includes('grocery') || catName.includes('stationar') || catNameBn.includes('খাদ্য') || catNameBn.includes('স্টেশনার') || catNameBn.includes('মুদি');
+                    const isSalaryCategory = catName.includes('salary') || catNameBn.includes('বেতন') || catNameBn.includes('সম্মানী');
+                    setExpenseForm(f => ({ 
+                      ...f, 
+                      category_id: value, 
+                      add_to_inventory: isInventoryCategory ? true : f.add_to_inventory,
+                      quantity_unit: isSalaryCategory ? (f.quantity_unit === 'পিস' ? 'জন' : f.quantity_unit) : f.quantity_unit
+                    }));
+                  }}
+                >
+                  <SelectTrigger className="mt-1"><SelectValue placeholder={bn ? 'ক্যাটেগরি নির্বাচন করুন' : 'Select category'} /></SelectTrigger>
+                  <SelectContent>
+                    {filteredCategories.map((category: any) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {getCatName(category, bn)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedExpenseProject && !selectedExpenseCategory && (
+                  <p className="mt-1 text-xs text-muted-foreground">{bn ? 'এই প্রতিষ্ঠানের জন্য একটি ক্যাটেগরি নির্বাচন করুন' : 'Select a category for this institution'}</p>
+                )}
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -4960,8 +4982,24 @@ const AdminExpenses = () => {
                 </div>
               )}
             </div>
+          </div>
 
-            <Button className="w-full" onClick={() => addExpense.mutate()} disabled={addExpense.isPending || uploading}>
+          {/* Fixed Sticky Footer - Save button always visible */}
+          <div className="px-6 py-3 border-t bg-card/95 backdrop-blur-xs flex items-center justify-end gap-2.5 shrink-0 sticky bottom-0 shadow-xs">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => resetExpenseDialog(false)}
+            >
+              {bn ? 'বাতিল' : 'Cancel'}
+            </Button>
+            <Button
+              size="sm"
+              className="btn-primary-gradient px-6 font-semibold"
+              onClick={() => addExpense.mutate()}
+              disabled={addExpense.isPending || uploading}
+            >
               {uploading ? (bn ? 'আপলোড হচ্ছে...' : 'Uploading...') : (editingExpenseId ? (bn ? 'হিসাব আপডেট করুন' : 'Update Expense') : (bn ? 'সংরক্ষণ করুন' : 'Save'))}
             </Button>
           </div>
