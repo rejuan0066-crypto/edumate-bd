@@ -35,6 +35,12 @@ import {
   AlertCircle,
   ExternalLink,
   Filter,
+  Coins,
+  PlusCircle,
+  Edit,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -47,6 +53,60 @@ const STATUS_COLORS: Record<string, string> = {
   rejected: 'bg-rose-500/10 text-rose-600 border-rose-500/30',
 };
 
+// Module mappings for human-friendly Bengali labels
+const TABLE_MODULE_MAP: Record<string, { labelBn: string; labelEn: string; category: string; icon: string }> = {
+  expenses: { labelBn: 'খরচ ও ব্যয় ভাউচার', labelEn: 'Expenses', category: 'finance', icon: '💰' },
+  fee_payments: { labelBn: 'ফি আদায় ও রসিদ', labelEn: 'Fee Payments', category: 'finance', icon: '💳' },
+  salary_records: { labelBn: 'বেতন শিট ও পরিশোধ', labelEn: 'Salary Records', category: 'finance', icon: '💵' },
+  budgets: { labelBn: 'বাজেট পরিকল্পনা', labelEn: 'Budgets', category: 'finance', icon: '📊' },
+  deposits: { labelBn: 'জমা ও ফান্ড', labelEn: 'Deposits', category: 'finance', icon: '🏦' },
+  students: { labelBn: 'শিক্ষার্থী তথ্য', labelEn: 'Students', category: 'students', icon: '🎓' },
+  classes: { labelBn: 'ক্লাস ও সেকশন', labelEn: 'Classes', category: 'students', icon: '🏫' },
+  subjects: { labelBn: 'পাঠ্য বিষয়', labelEn: 'Subjects', category: 'academic', icon: '📚' },
+  staff: { labelBn: 'শিক্ষক ও কর্মচারী', labelEn: 'Staff', category: 'staff', icon: '👨‍🏫' },
+  duty_roster: { labelBn: 'ডিউটি রোস্টার', labelEn: 'Duty Roster', category: 'staff', icon: '🕒' },
+  joining_letters: { labelBn: 'নিয়োগপত্র', labelEn: 'Joining Letters', category: 'staff', icon: '📄' },
+  resign_letters: { labelBn: 'পদত্যাগপত্র', labelEn: 'Resign Letters', category: 'staff', icon: '📑' },
+  question_papers: { labelBn: 'প্রশ্নপত্র', labelEn: 'Question Papers', category: 'academic', icon: '📖' },
+  results: { labelBn: 'পরীক্ষার ফলাফল / নম্বর', labelEn: 'Exam Results', category: 'academic', icon: '📝' },
+  exams: { labelBn: 'পরীক্ষা সময়সূচী', labelEn: 'Exams Routine', category: 'academic', icon: '🗓️' },
+  student_certificates: { labelBn: 'সনদপত্র ও প্রত্যয়ন', labelEn: 'Certificates', category: 'identity', icon: '📜' },
+  library_books: { labelBn: 'লাইব্রেরি বই', labelEn: 'Library Books', category: 'inventory', icon: '📕' },
+  library_issuances: { labelBn: 'বই ইস্যু ও রিটার্ন', labelEn: 'Library Issuances', category: 'inventory', icon: '🔖' },
+  fixed_assets: { labelBn: 'স্থায়ী সম্পদ', labelEn: 'Fixed Assets', category: 'inventory', icon: '🏢' },
+  inventory_items: { labelBn: 'মালামাল ও ইনভেন্টরি', labelEn: 'Inventory Items', category: 'inventory', icon: '📦' },
+  notices: { labelBn: 'নোটিশ ও বিজ্ঞপ্তি', labelEn: 'Notices', category: 'other', icon: '📢' },
+  attendance_records: { labelBn: 'উপস্থিতি তথ্য', labelEn: 'Attendance Records', category: 'other', icon: '⏱️' },
+};
+
+const FIELD_LABEL_MAP: Record<string, string> = {
+  title: 'শিরোনাম / খাত',
+  amount: 'টাকার পরিমাণ',
+  net_salary: 'নীট বেতন',
+  basic_salary: 'মূল বেতন',
+  expense_date: 'তারিখ',
+  voucher_no: 'ভাউচার নং',
+  name_bn: 'নাম (বাংলা)',
+  name_en: 'নাম (ইংরেজি)',
+  roll_number: 'রোল নম্বর',
+  class_id: 'শ্রেণি আইডি',
+  phone: 'মোবাইল নম্বর',
+  mobile: 'মোবাইল নম্বর',
+  email: 'ইমেইল',
+  designation: 'পদবী',
+  month_year: 'মাস ও বছর',
+  status: 'স্ট্যাটাস',
+  remarks: 'মন্তব্য',
+  description: 'বিবরণ',
+  father_name: 'পিতার নাম',
+  mother_name: 'মাতার নাম',
+  blood_group: 'রক্তের গ্রুপ',
+  address: 'ঠিকানা',
+  transaction_id: 'ট্রানজেকশন আইডি',
+  payment_method: 'পেমেন্ট মাধ্যম',
+  total_marks: 'পূর্ণমান',
+};
+
 const AdminApprovals = () => {
   const { language } = useLanguage();
   const { user } = useAuth();
@@ -57,6 +117,11 @@ const AdminApprovals = () => {
   const [activeTab, setActiveTab] = useState<string>('students');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
+
+  // Maker-checker Sub Filters
+  const [actionModuleFilter, setActionModuleFilter] = useState<string>('all');
+  const [actionTypeFilter, setActionTypeFilter] = useState<'all' | 'add' | 'edit' | 'delete'>('all');
+  const [showRawJson, setShowRawJson] = useState(false);
 
   // Modal / Detail States
   const [detailModal, setDetailModal] = useState<{ type: string; data: any } | null>(null);
@@ -234,9 +299,14 @@ const AdminApprovals = () => {
 
   // Pending counts for stat cards & badges
   const counts = useMemo(() => {
+    const financePending = pendingActions.filter((a: any) =>
+      a.status === 'pending' && ['expenses', 'fee_payments', 'salary_records', 'budgets', 'deposits'].includes(a.target_table)
+    ).length;
+
     return {
       students: students.filter((s: any) => s.approval_status === 'pending').length,
       staff: staffList.filter((s: any) => s.status === 'pending').length,
+      finance: financePending,
       payments: parentPayments.filter((p: any) => p.status === 'pending').length,
       accounts: studentAccounts.filter((a: any) => a.status === 'pending').length,
       papers: questionPapers.filter((q: any) => q.status === 'pending').length,
@@ -501,15 +571,47 @@ const AdminApprovals = () => {
     );
   }, [questionPapers, searchQuery]);
 
-  const filteredActions = useMemo(() => {
-    if (!searchQuery.trim()) return pendingActions;
-    const q = searchQuery.toLowerCase();
+  const financeActions = useMemo(() => {
     return pendingActions.filter((a: any) =>
+      ['expenses', 'fee_payments', 'salary_records', 'budgets', 'deposits'].includes(a.target_table)
+    );
+  }, [pendingActions]);
+
+  const filteredFinanceActions = useMemo(() => {
+    if (!searchQuery.trim()) return financeActions;
+    const q = searchQuery.toLowerCase();
+    return financeActions.filter((a: any) =>
       (a.user_name || '').toLowerCase().includes(q) ||
       (a.target_table || '').toLowerCase().includes(q) ||
-      (a.action_type || '').toLowerCase().includes(q)
+      (a.action_type || '').toLowerCase().includes(q) ||
+      JSON.stringify(a.payload || {}).toLowerCase().includes(q)
     );
-  }, [pendingActions, searchQuery]);
+  }, [financeActions, searchQuery]);
+
+  const filteredActions = useMemo(() => {
+    return pendingActions.filter((a: any) => {
+      // module filter
+      if (actionModuleFilter !== 'all') {
+        const meta = TABLE_MODULE_MAP[a.target_table];
+        const cat = meta ? meta.category : 'other';
+        if (cat !== actionModuleFilter) return false;
+      }
+      // action type filter
+      if (actionTypeFilter !== 'all') {
+        if (a.action_type !== actionTypeFilter) return false;
+      }
+      // search query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchesName = (a.user_name || '').toLowerCase().includes(q);
+        const matchesTable = (a.target_table || '').toLowerCase().includes(q);
+        const matchesType = (a.action_type || '').toLowerCase().includes(q);
+        const matchesPayload = JSON.stringify(a.payload || {}).toLowerCase().includes(q);
+        if (!matchesName && !matchesTable && !matchesType && !matchesPayload) return false;
+      }
+      return true;
+    });
+  }, [pendingActions, actionModuleFilter, actionTypeFilter, searchQuery]);
 
   return (
     <AdminLayout>
@@ -548,7 +650,7 @@ const AdminApprovals = () => {
         </div>
 
         {/* Top Stat Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
           <Card
             className={`cursor-pointer transition-all hover:shadow-md border-primary/20 ${activeTab === 'students' ? 'ring-2 ring-primary bg-primary/5' : 'bg-card'}`}
             onClick={() => setActiveTab('students')}
@@ -580,6 +682,21 @@ const AdminApprovals = () => {
           </Card>
 
           <Card
+            className={`cursor-pointer transition-all hover:shadow-md border-primary/20 ${activeTab === 'finance' ? 'ring-2 ring-primary bg-primary/5' : 'bg-card'}`}
+            onClick={() => setActiveTab('finance')}
+          >
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground font-medium">{bn ? 'হিসাব ও লেনদেন' : 'Finance'}</p>
+                <p className="text-2xl font-bold mt-1 text-foreground">{counts.finance}</p>
+              </div>
+              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600">
+                <Coins className="w-5 h-5" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card
             className={`cursor-pointer transition-all hover:shadow-md border-primary/20 ${activeTab === 'payments' ? 'ring-2 ring-primary bg-primary/5' : 'bg-card'}`}
             onClick={() => setActiveTab('payments')}
           >
@@ -588,7 +705,7 @@ const AdminApprovals = () => {
                 <p className="text-xs text-muted-foreground font-medium">{bn ? 'পেমেন্ট স্লিপ' : 'Payment Slips'}</p>
                 <p className="text-2xl font-bold mt-1 text-foreground">{counts.payments}</p>
               </div>
-              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600">
+              <div className="p-2.5 rounded-xl bg-teal-500/10 text-teal-600">
                 <Wallet className="w-5 h-5" />
               </div>
             </CardContent>
@@ -630,11 +747,26 @@ const AdminApprovals = () => {
           >
             <CardContent className="p-4 flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground font-medium">{bn ? 'এডিট/ডিলিট' : 'Edit/Delete'}</p>
+                <p className="text-xs text-muted-foreground font-medium">{bn ? 'মেকার-চেকার' : 'Maker-Checker'}</p>
                 <p className="text-2xl font-bold mt-1 text-foreground">{counts.actions}</p>
               </div>
               <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-600">
                 <ShieldCheck className="w-5 h-5" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card
+            className={`cursor-pointer transition-all hover:shadow-md border-primary/20 ${activeTab === 'devices' ? 'ring-2 ring-primary bg-primary/5' : 'bg-card'}`}
+            onClick={() => setActiveTab('devices')}
+          >
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground font-medium">{bn ? 'ডিভাইস' : 'Devices'}</p>
+                <p className="text-2xl font-bold mt-1 text-foreground">{counts.devices}</p>
+              </div>
+              <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-600">
+                <Smartphone className="w-5 h-5" />
               </div>
             </CardContent>
           </Card>
@@ -678,7 +810,7 @@ const AdminApprovals = () => {
 
         {/* Tabs Command Center */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-4">
-          <TabsList className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 h-auto p-1.5 gap-1.5 bg-muted/60 rounded-xl">
+          <TabsList className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 h-auto p-1.5 gap-1.5 bg-muted/60 rounded-xl">
             <TabsTrigger value="students" className="gap-2 py-2 text-xs">
               <GraduationCap className="w-3.5 h-3.5" />
               <span>{bn ? 'ভর্তি আবেদন' : 'Students'}</span>
@@ -691,10 +823,16 @@ const AdminApprovals = () => {
               {counts.staff > 0 && <span className="bg-purple-500 text-white rounded-full px-1.5 py-0.2 text-[10px] font-bold">{counts.staff}</span>}
             </TabsTrigger>
 
+            <TabsTrigger value="finance" className="gap-2 py-2 text-xs">
+              <Coins className="w-3.5 h-3.5" />
+              <span>{bn ? 'হিসাব ও লেনদেন' : 'Finance'}</span>
+              {counts.finance > 0 && <span className="bg-emerald-500 text-white rounded-full px-1.5 py-0.2 text-[10px] font-bold">{counts.finance}</span>}
+            </TabsTrigger>
+
             <TabsTrigger value="payments" className="gap-2 py-2 text-xs">
               <Wallet className="w-3.5 h-3.5" />
               <span>{bn ? 'পেমেন্ট স্লিপ' : 'Payments'}</span>
-              {counts.payments > 0 && <span className="bg-emerald-500 text-white rounded-full px-1.5 py-0.2 text-[10px] font-bold">{counts.payments}</span>}
+              {counts.payments > 0 && <span className="bg-teal-500 text-white rounded-full px-1.5 py-0.2 text-[10px] font-bold">{counts.payments}</span>}
             </TabsTrigger>
 
             <TabsTrigger value="accounts" className="gap-2 py-2 text-xs">
@@ -711,14 +849,14 @@ const AdminApprovals = () => {
 
             <TabsTrigger value="actions" className="gap-2 py-2 text-xs">
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>{bn ? 'এডিট/ডিলিট রিকোয়েস্ট' : 'Maker-Checker'}</span>
+              <span>{bn ? 'মেকার-চেকার হাব' : 'Maker-Checker'}</span>
               {counts.actions > 0 && <span className="bg-rose-500 text-white rounded-full px-1.5 py-0.2 text-[10px] font-bold">{counts.actions}</span>}
             </TabsTrigger>
 
             <TabsTrigger value="devices" className="gap-2 py-2 text-xs">
               <Smartphone className="w-3.5 h-3.5" />
               <span>{bn ? 'ডিভাইস লগইন' : 'Devices'}</span>
-              {counts.devices > 0 && <span className="bg-teal-500 text-white rounded-full px-1.5 py-0.2 text-[10px] font-bold">{counts.devices}</span>}
+              {counts.devices > 0 && <span className="bg-cyan-500 text-white rounded-full px-1.5 py-0.2 text-[10px] font-bold">{counts.devices}</span>}
             </TabsTrigger>
           </TabsList>
 
@@ -944,6 +1082,138 @@ const AdminApprovals = () => {
                           </TableCell>
                         </TableRow>
                       ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ══════════════ TAB: FINANCE & ACCOUNTS ══════════════ */}
+          <TabsContent value="finance" className="mt-0">
+            <Card className="rounded-2xl border-border shadow-sm overflow-hidden">
+              <CardHeader className="bg-muted/30 px-6 py-4 border-b border-border/60">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base font-bold flex items-center gap-2">
+                      <Coins className="w-5 h-5 text-emerald-600" />
+                      {bn ? 'হিসাব ও লেনদেন অনুমোদন (Finance & Accounts)' : 'Finance & Accounts Approvals'}
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      {bn ? 'সহকারী বা কর্মীদের এন্ট্রি করা ব্যয় ভাউচার, ফি ছাড়, বেতন ও অন্যান্য আর্থিক অনুমোদন' : 'Approve expense vouchers, fee discounts, payroll & financial records'}
+                    </CardDescription>
+                  </div>
+                  <Badge variant="outline" className="font-mono text-xs">
+                    {filteredFinanceActions.length} {bn ? 'টি লেনদেন' : 'Records'}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {loadingActions ? (
+                  <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+                ) : filteredFinanceActions.length === 0 ? (
+                  <div className="text-center py-16 text-muted-foreground">
+                    <Coins className="w-12 h-12 mx-auto mb-2 opacity-30 text-emerald-600" />
+                    {bn ? 'কোনো আর্থিক হিসাব বা ব্যয় ভাউচার অনুমোদনের অপেক্ষায় নেই' : 'No financial approval requests pending'}
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/10">
+                        <TableHead>{bn ? 'খাত / বিবরণ' : 'Description / Title'}</TableHead>
+                        <TableHead>{bn ? 'মডিউল' : 'Module'}</TableHead>
+                        <TableHead>{bn ? 'টাকার পরিমাণ' : 'Amount'}</TableHead>
+                        <TableHead>{bn ? 'অনুরোধকারী' : 'Prepared By'}</TableHead>
+                        <TableHead>{bn ? 'স্ট্যাটাস' : 'Status'}</TableHead>
+                        <TableHead>{bn ? 'তারিখ' : 'Date'}</TableHead>
+                        <TableHead className="text-right">{bn ? 'পদক্ষেপ' : 'Action'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredFinanceActions.map((action: any) => {
+                        const amount = action.payload?.amount || action.payload?.net_salary || action.payload?.total_amount || 0;
+                        const meta = TABLE_MODULE_MAP[action.target_table] || { labelBn: action.target_table, icon: '💰' };
+                        return (
+                          <TableRow key={action.id} className="hover:bg-muted/30">
+                            <TableCell>
+                              <div>
+                                <p className="font-semibold text-sm text-foreground">
+                                  {action.payload?.title || action.payload?.name || action.payload?._description || 'আর্থিক লেনদেন'}
+                                </p>
+                                <p className="text-xs text-muted-foreground font-mono">
+                                  {action.payload?.voucher_no ? `ভাউচার: ${action.payload.voucher_no}` : action.target_table}
+                                </p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="text-xs gap-1 border-primary/20 bg-primary/5">
+                                <span>{meta.icon}</span>
+                                <span>{meta.labelBn}</span>
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-mono font-bold text-base text-emerald-600">
+                                ৳ {Number(amount).toLocaleString('en-IN')}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium text-xs">{action.user_name || 'Staff'}</p>
+                                <p className="text-[11px] text-muted-foreground">{action.user_email}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className={STATUS_COLORS[action.status] || ''}>
+                                {action.status === 'approved' ? (bn ? 'অনুমোদিত' : 'Approved') : action.status === 'rejected' ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'অপেক্ষমান' : 'Pending')}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {new Date(action.created_at).toLocaleDateString(bn ? 'bn-BD' : 'en-US')}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    setDetailModal({ type: 'action', data: action });
+                                    setAdminNote(action.admin_note || '');
+                                  }}
+                                  title={bn ? 'বিস্তারিত' : 'View Details'}
+                                >
+                                  <Eye className="w-4 h-4 text-primary" />
+                                </Button>
+                                {action.status === 'pending' && (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 px-2.5"
+                                      onClick={() => pendingActionMutation.mutate({ id: action.id, status: 'approved' })}
+                                      disabled={pendingActionMutation.isPending}
+                                    >
+                                      <Check className="w-3.5 h-3.5 mr-1" />
+                                      {bn ? 'অনুমোদন' : 'Approve'}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      className="h-8 px-2.5"
+                                      onClick={() => {
+                                        setDetailModal({ type: 'action', data: action });
+                                        setAdminNote(action.admin_note || '');
+                                        toast.info(bn ? 'প্রত্যাখ্যানের কারণ লিখুন' : 'Enter rejection reason');
+                                      }}
+                                    >
+                                      <X className="w-3.5 h-3.5 mr-1" />
+                                      {bn ? 'বাতিল' : 'Reject'}
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 )}
@@ -1251,23 +1521,76 @@ const AdminApprovals = () => {
             </Card>
           </TabsContent>
 
-          {/* ══════════════ TAB 6: MAKER-CHECKER EDIT & DELETE ══════════════ */}
+          {/* ══════════════ TAB 6: MAKER-CHECKER HUB ══════════════ */}
           <TabsContent value="actions" className="mt-0">
             <Card className="rounded-2xl border-border shadow-sm overflow-hidden">
               <CardHeader className="bg-muted/30 px-6 py-4 border-b border-border/60">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
                     <CardTitle className="text-base font-bold flex items-center gap-2">
                       <ShieldCheck className="w-5 h-5 text-rose-600" />
-                      {bn ? 'হিসাব ও ডেটা পরিবর্তন অনুমোদন (Maker-Checker)' : 'Maker-Checker Data & Accounts Audit Approvals'}
+                      {bn ? 'সার্বিক মেকার-চেকার হাব (All Module Maker-Checker Hub)' : 'All Module Maker-Checker Hub'}
                     </CardTitle>
                     <CardDescription className="text-xs">
-                      {bn ? 'সাধারণ স্টাফ বা সহকারীদের করা সংবেদনশীল হিসাব যোগ, সম্পাদনা ও মোছার অনুমোদন' : 'Sensitive Add, Edit & Delete operations awaiting admin approval'}
+                      {bn ? 'সফটওয়্যারের যেকোনো মডিউলে সাধারণ কর্মীদের দ্বারা নতুন তথ্য যোগ, সম্পাদনা বা মোছার অনুমোদনের কেন্দ্রীয় কমান্ড সেন্টার' : 'Universal approval command center for Add, Edit & Delete operations across all modules'}
                     </CardDescription>
                   </div>
-                  <Badge variant="outline" className="font-mono text-xs">
-                    {filteredActions.length} {bn ? 'টি অ্যাকশন' : 'Actions'}
+                  <Badge variant="outline" className="font-mono text-xs self-start md:self-auto">
+                    {filteredActions.length} {bn ? 'টি রিকোয়েস্ট' : 'Requests'}
                   </Badge>
+                </div>
+
+                {/* Sub-Filters: Module Category and Action Type */}
+                <div className="pt-3 border-t border-border/40 mt-3 flex flex-col gap-2.5">
+                  {/* Category Filter */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] font-semibold text-muted-foreground mr-1">
+                      {bn ? 'মডিউল বিভাগ:' : 'Module Category:'}
+                    </span>
+                    {[
+                      { id: 'all', label: bn ? 'সব মডিউল' : 'All Modules' },
+                      { id: 'finance', label: bn ? '💰 হিসাব ও অর্থ' : '💰 Finance' },
+                      { id: 'students', label: bn ? '🎓 শিক্ষার্থী ও ক্লাস' : '🎓 Students' },
+                      { id: 'staff', label: bn ? '👨‍🏫 শিক্ষক ও কর্মী' : '👨‍🏫 Staff' },
+                      { id: 'academic', label: bn ? '📝 পরীক্ষা ও ফলাফল' : '📝 Academic' },
+                      { id: 'identity', label: bn ? '📜 আইডি ও সনদ' : '📜 Certificates' },
+                      { id: 'inventory', label: bn ? '📦 ইনভেন্টরি ও সম্পদ' : '📦 Assets' },
+                      { id: 'other', label: bn ? '⚙️ অন্যান্য' : '⚙️ Other' },
+                    ].map((cat) => (
+                      <Button
+                        key={cat.id}
+                        size="sm"
+                        variant={actionModuleFilter === cat.id ? 'default' : 'outline'}
+                        onClick={() => setActionModuleFilter(cat.id)}
+                        className={`h-7 px-2.5 text-[11px] rounded-lg ${actionModuleFilter === cat.id ? 'btn-primary-gradient shadow-xs' : 'bg-background/80'}`}
+                      >
+                        {cat.label}
+                      </Button>
+                    ))}
+                  </div>
+
+                  {/* Action Type Filter */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] font-semibold text-muted-foreground mr-1">
+                      {bn ? 'অ্যাকশন ধরন:' : 'Action Type:'}
+                    </span>
+                    {[
+                      { id: 'all', label: bn ? 'সব ধরন' : 'All Types', icon: Layers },
+                      { id: 'add', label: bn ? '➕ নতুন যোগ' : '➕ Add New', icon: PlusCircle },
+                      { id: 'edit', label: bn ? '✏️ সম্পাদনা' : '✏️ Edit', icon: Edit },
+                      { id: 'delete', label: bn ? '🗑️ মুছে ফেলা' : '🗑️ Delete', icon: Trash2 },
+                    ].map((act) => (
+                      <Button
+                        key={act.id}
+                        size="sm"
+                        variant={actionTypeFilter === act.id ? 'secondary' : 'ghost'}
+                        onClick={() => setActionTypeFilter(act.id as any)}
+                        className={`h-6 px-2 text-[11px] border border-transparent ${actionTypeFilter === act.id ? 'border-primary/30 font-bold bg-primary/10 text-primary' : 'text-muted-foreground'}`}
+                      >
+                        {act.label}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="p-0">
@@ -1275,8 +1598,8 @@ const AdminApprovals = () => {
                   <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
                 ) : filteredActions.length === 0 ? (
                   <div className="text-center py-16 text-muted-foreground">
-                    <ShieldCheck className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                    {bn ? 'কোনো পরিবর্তন অনুমোদন রিকোয়েস্ট নেই' : 'No audit action requests found'}
+                    <ShieldCheck className="w-12 h-12 mx-auto mb-2 opacity-30 text-rose-500" />
+                    {bn ? 'নির্বাচিত ফিল্টারে কোনো মেকার-চেকার অনুমোদন রিকোয়েস্ট নেই' : 'No audit action requests found in this filter'}
                   </div>
                 ) : (
                   <Table>
@@ -1284,97 +1607,105 @@ const AdminApprovals = () => {
                       <TableRow className="bg-muted/10">
                         <TableHead>{bn ? 'অনুরোধকারী' : 'User'}</TableHead>
                         <TableHead>{bn ? 'অ্যাকশন ধরন' : 'Action'}</TableHead>
-                        <TableHead>{bn ? 'টার্গেট টেবিল / মডিউল' : 'Module'}</TableHead>
-                        <TableHead>{bn ? 'বিবরণ' : 'Description'}</TableHead>
+                        <TableHead>{bn ? 'টার্গেট মডিউল / খাত' : 'Module'}</TableHead>
+                        <TableHead>{bn ? 'বিবরণ / সারসংক্ষেপ' : 'Description'}</TableHead>
                         <TableHead>{bn ? 'স্ট্যাটাস' : 'Status'}</TableHead>
                         <TableHead>{bn ? 'তারিখ' : 'Date'}</TableHead>
                         <TableHead className="text-right">{bn ? 'পদক্ষেপ' : 'Action'}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredActions.map((action: any) => (
-                        <TableRow key={action.id} className="hover:bg-muted/30">
-                          <TableCell>
-                            <div>
-                              <p className="font-medium text-sm">{action.user_name || '—'}</p>
-                              <p className="text-xs text-muted-foreground">{action.user_email}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant="outline"
-                              className={
-                                action.action_type === 'delete'
-                                  ? 'bg-rose-500/10 text-rose-600 border-rose-500/30'
-                                  : action.action_type === 'edit'
-                                  ? 'bg-amber-500/10 text-amber-600 border-amber-500/30'
-                                  : 'bg-blue-500/10 text-blue-600 border-blue-500/30'
-                              }
-                            >
-                              {action.action_type === 'add'
-                                ? bn ? 'যোগ' : 'Add'
-                                : action.action_type === 'edit'
-                                ? bn ? 'সম্পাদনা' : 'Edit'
-                                : action.action_type === 'delete'
-                                ? bn ? 'মুছুন' : 'Delete'
-                                : action.action_type}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-xs font-mono font-semibold">{action.target_table}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground max-w-xs truncate">
-                            {action.payload?._description || action.payload?.name_bn || action.payload?.full_name || '—'}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className={STATUS_COLORS[action.status] || ''}>
-                              {action.status === 'approved' ? (bn ? 'অনুমোদিত' : 'Approved') : action.status === 'rejected' ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'অপেক্ষমান' : 'Pending')}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-xs text-muted-foreground">
-                            {new Date(action.created_at).toLocaleDateString(bn ? 'bn-BD' : 'en-US')}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => {
-                                  setDetailModal({ type: 'action', data: action });
-                                  setAdminNote(action.admin_note || '');
-                                }}
-                                title={bn ? 'বিস্তারিত' : 'View Details'}
+                      {filteredActions.map((action: any) => {
+                        const meta = TABLE_MODULE_MAP[action.target_table] || { labelBn: action.target_table, icon: '📁' };
+                        return (
+                          <TableRow key={action.id} className="hover:bg-muted/30">
+                            <TableCell>
+                              <div>
+                                <p className="font-medium text-sm">{action.user_name || '—'}</p>
+                                <p className="text-xs text-muted-foreground">{action.user_email}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className={
+                                  action.action_type === 'delete'
+                                    ? 'bg-rose-500/10 text-rose-600 border-rose-500/30'
+                                    : action.action_type === 'edit'
+                                    ? 'bg-amber-500/10 text-amber-600 border-amber-500/30'
+                                    : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30'
+                                }
                               >
-                                <Eye className="w-4 h-4 text-primary" />
-                              </Button>
-                              {action.status === 'pending' && (
-                                <>
-                                  <Button
-                                    size="sm"
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 px-2.5"
-                                    onClick={() => pendingActionMutation.mutate({ id: action.id, status: 'approved' })}
-                                    disabled={pendingActionMutation.isPending}
-                                  >
-                                    <Check className="w-3.5 h-3.5 mr-1" />
-                                    {bn ? 'অনুমোদন' : 'Approve'}
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    className="h-8 px-2.5"
-                                    onClick={() => {
-                                      setDetailModal({ type: 'action', data: action });
-                                      setAdminNote(action.admin_note || '');
-                                      toast.info(bn ? 'প্রত্যাখ্যানের কারণ লিখুন' : 'Enter rejection reason');
-                                    }}
-                                  >
-                                    <X className="w-3.5 h-3.5 mr-1" />
-                                    {bn ? 'বাতিল' : 'Reject'}
-                                  </Button>
-                                </>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                                {action.action_type === 'add'
+                                  ? bn ? '➕ নতুন যোগ' : '➕ Add'
+                                  : action.action_type === 'edit'
+                                  ? bn ? '✏️ সম্পাদনা' : '✏️ Edit'
+                                  : action.action_type === 'delete'
+                                  ? bn ? '🗑️ মুছে ফেলা' : '🗑️ Delete'
+                                  : action.action_type}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="text-xs gap-1 border-muted-foreground/20 font-medium">
+                                <span>{meta.icon}</span>
+                                <span>{meta.labelBn}</span>
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground max-w-xs truncate">
+                              {action.payload?._description || action.payload?.title || action.payload?.name_bn || action.payload?.full_name || '—'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className={STATUS_COLORS[action.status] || ''}>
+                                {action.status === 'approved' ? (bn ? 'অনুমোদিত' : 'Approved') : action.status === 'rejected' ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'অপেক্ষমান' : 'Pending')}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {new Date(action.created_at).toLocaleDateString(bn ? 'bn-BD' : 'en-US')}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    setDetailModal({ type: 'action', data: action });
+                                    setAdminNote(action.admin_note || '');
+                                  }}
+                                  title={bn ? 'বিস্তারিত' : 'View Details'}
+                                >
+                                  <Eye className="w-4 h-4 text-primary" />
+                                </Button>
+                                {action.status === 'pending' && (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 px-2.5"
+                                      onClick={() => pendingActionMutation.mutate({ id: action.id, status: 'approved' })}
+                                      disabled={pendingActionMutation.isPending}
+                                    >
+                                      <Check className="w-3.5 h-3.5 mr-1" />
+                                      {bn ? 'অনুমোদন' : 'Approve'}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      className="h-8 px-2.5"
+                                      onClick={() => {
+                                        setDetailModal({ type: 'action', data: action });
+                                        setAdminNote(action.admin_note || '');
+                                        toast.info(bn ? 'প্রত্যাখ্যানের কারণ লিখুন' : 'Enter rejection reason');
+                                      }}
+                                    >
+                                      <X className="w-3.5 h-3.5 mr-1" />
+                                      {bn ? 'বাতিল' : 'Reject'}
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 )}
@@ -1565,61 +1896,140 @@ const AdminApprovals = () => {
                   </div>
                 )}
 
-                {detailModal.type === 'action' && (
-                  <div className="space-y-4">
-                    <div className="bg-muted/30 p-4 rounded-xl border space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs font-semibold uppercase text-muted-foreground">{bn ? 'ইউজার' : 'User'}</span>
-                        <span className="font-medium text-sm">{detailModal.data.user_name} ({detailModal.data.user_email})</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs font-semibold uppercase text-muted-foreground">{bn ? 'মডিউল / টেবিল' : 'Module'}</span>
-                        <span className="font-mono text-sm font-bold">{detailModal.data.target_table}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs font-semibold uppercase text-muted-foreground">{bn ? 'অ্যাকশন' : 'Action'}</span>
-                        <Badge variant="secondary" className="capitalize">{detailModal.data.action_type}</Badge>
-                      </div>
-                    </div>
+                {detailModal.type === 'action' && (() => {
+                  const action = detailModal.data;
+                  const payload = action.payload || {};
+                  const amount = payload.amount || payload.net_salary || payload.total_amount;
+                  const meta = TABLE_MODULE_MAP[action.target_table] || { labelBn: action.target_table, icon: '📁' };
+                  const displayEntries = Object.entries(payload).filter(([k]) => !k.startsWith('_'));
 
-                    <div>
-                      <h4 className="text-xs font-semibold mb-2 uppercase text-muted-foreground">{bn ? 'ডেটা পেলোড (JSON)' : 'Data Payload (JSON)'}</h4>
-                      <pre className="bg-slate-950 text-slate-50 rounded-xl p-4 text-xs overflow-auto max-h-56 scrollbar-thin font-mono shadow-inner">
-                        {JSON.stringify(detailModal.data.payload || {}, null, 2)}
-                      </pre>
-                    </div>
+                  return (
+                    <div className="space-y-4">
+                      {/* Action Header Card */}
+                      <div className="bg-muted/40 p-4 rounded-xl border space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/50 pb-3">
+                          <div>
+                            <span className="text-xs text-muted-foreground">{bn ? 'অনুরোধকারী:' : 'Requested By:'}</span>
+                            <p className="font-bold text-sm text-foreground">{action.user_name || '—'}</p>
+                            <p className="text-xs text-muted-foreground">{action.user_email}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs gap-1">
+                              <span>{meta.icon}</span>
+                              <span>{meta.labelBn}</span>
+                            </Badge>
+                            <Badge
+                              variant="outline"
+                              className={
+                                action.action_type === 'delete'
+                                  ? 'bg-rose-500/10 text-rose-600 border-rose-500/30'
+                                  : action.action_type === 'edit'
+                                  ? 'bg-amber-500/10 text-amber-600 border-amber-500/30'
+                                  : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30'
+                              }
+                            >
+                              {action.action_type === 'add'
+                                ? bn ? '➕ নতুন যোগ' : '➕ Add'
+                                : action.action_type === 'edit'
+                                ? bn ? '✏️ সম্পাদনা' : '✏️ Edit'
+                                : action.action_type === 'delete'
+                                ? bn ? '🗑️ মুছে ফেলা' : '🗑️ Delete'
+                                : action.action_type}
+                            </Badge>
+                          </div>
+                        </div>
 
-                    {detailModal.data.status === 'pending' && (
-                      <div className="space-y-3 pt-2">
-                        <Textarea
-                          placeholder={bn ? 'প্রত্যাখ্যান বা অনুমোদনের মন্তব্য লিখুন...' : 'Admin note for approval or rejection...'}
-                          value={adminNote}
-                          onChange={(e) => setAdminNote(e.target.value)}
-                          className="min-h-[80px]"
-                        />
-                        <div className="flex gap-2">
-                          <Button
-                            className="flex-1 btn-primary-gradient"
-                            onClick={() => pendingActionMutation.mutate({ id: detailModal.data.id, status: 'approved', note: adminNote })}
-                            disabled={pendingActionMutation.isPending}
-                          >
-                            <Check className="w-4 h-4 mr-2" />
-                            {bn ? 'অনুমোদন করুন' : 'Approve Action'}
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            className="flex-1"
-                            onClick={() => pendingActionMutation.mutate({ id: detailModal.data.id, status: 'rejected', note: adminNote })}
-                            disabled={pendingActionMutation.isPending || !adminNote.trim()}
-                          >
-                            <X className="w-4 h-4 mr-2" />
-                            {bn ? 'প্রত্যাখ্যান করুন' : 'Reject Action'}
-                          </Button>
+                        {payload._description && (
+                          <div className="text-xs bg-card p-2.5 rounded-lg border">
+                            <span className="font-semibold text-muted-foreground">{bn ? 'বিবরণ:' : 'Description:'} </span>
+                            <span className="text-foreground">{payload._description}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* If amount exists, prominent highlight card */}
+                      {amount !== undefined && (
+                        <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl text-center">
+                          <p className="text-xs text-muted-foreground uppercase">{bn ? 'টাকার পরিমাণ' : 'Amount'}</p>
+                          <p className="text-3xl font-extrabold text-emerald-600 mt-1">
+                            ৳ {Number(amount).toLocaleString('en-IN')}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Formatted Key-Value Grid */}
+                      <div className="space-y-2">
+                        <h4 className="text-xs font-semibold uppercase text-muted-foreground">
+                          {bn ? 'পরিবর্তন বা এন্ট্রিকৃত তথ্যাবলী' : 'Submitted Field Details'}
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 bg-card p-4 rounded-xl border max-h-60 overflow-y-auto">
+                          {displayEntries.length === 0 ? (
+                            <p className="text-xs text-muted-foreground col-span-2">{bn ? 'কোনো অতিরিক্ত তথ্য নেই' : 'No extra fields'}</p>
+                          ) : (
+                            displayEntries.map(([k, v]) => (
+                              <div key={k} className="p-2 rounded-lg bg-muted/20 border border-border/40 text-xs">
+                                <p className="text-muted-foreground font-medium text-[11px]">
+                                  {FIELD_LABEL_MAP[k] || k}
+                                </p>
+                                <p className="font-semibold text-foreground mt-0.5 break-all">
+                                  {typeof v === 'object' ? JSON.stringify(v) : String(v ?? '—')}
+                                </p>
+                              </div>
+                            ))
+                          )}
                         </div>
                       </div>
-                    )}
-                  </div>
-                )}
+
+                      {/* Collapsible Developer JSON */}
+                      <div className="border border-border/40 rounded-xl overflow-hidden">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-between px-4 py-2 text-xs text-muted-foreground hover:bg-muted/30"
+                          onClick={() => setShowRawJson(!showRawJson)}
+                        >
+                          <span>{bn ? '🛠️ ডেভেলপার কোড ভিউ (Raw JSON)' : '🛠️ Raw JSON View'}</span>
+                          {showRawJson ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </Button>
+                        {showRawJson && (
+                          <pre className="bg-slate-950 text-slate-50 p-4 text-xs overflow-auto max-h-48 font-mono border-t border-border/30">
+                            {JSON.stringify(payload, null, 2)}
+                          </pre>
+                        )}
+                      </div>
+
+                      {action.status === 'pending' && (
+                        <div className="space-y-3 pt-2">
+                          <Textarea
+                            placeholder={bn ? 'প্রত্যাখ্যান বা অনুমোদনের মন্তব্য লিখুন...' : 'Admin note for approval or rejection...'}
+                            value={adminNote}
+                            onChange={(e) => setAdminNote(e.target.value)}
+                            className="min-h-[80px]"
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              className="flex-1 btn-primary-gradient"
+                              onClick={() => pendingActionMutation.mutate({ id: action.id, status: 'approved', note: adminNote })}
+                              disabled={pendingActionMutation.isPending}
+                            >
+                              <Check className="w-4 h-4 mr-2" />
+                              {bn ? 'অনুমোদন করুন' : 'Approve Action'}
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              className="flex-1"
+                              onClick={() => pendingActionMutation.mutate({ id: action.id, status: 'rejected', note: adminNote })}
+                              disabled={pendingActionMutation.isPending || !adminNote.trim()}
+                            >
+                              <X className="w-4 h-4 mr-2" />
+                              {bn ? 'প্রত্যাখ্যান করুন' : 'Reject Action'}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </DialogContent>
