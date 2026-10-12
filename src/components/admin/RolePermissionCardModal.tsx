@@ -6,8 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent } from '@/components/ui/card';
 import {
   KeyRound,
   Search,
@@ -25,6 +23,8 @@ import {
   ChevronRight,
   Layers,
   Sparkles,
+  AlertTriangle,
+  FileCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { KNOWN_PAGE_FEATURES, SubFeatureItem } from '@/lib/pageFeatures';
@@ -37,6 +37,9 @@ export interface RolePermItem {
   can_edit: boolean;
   can_delete: boolean;
   can_approve: boolean;
+  approval_add?: boolean;
+  approval_edit?: boolean;
+  approval_delete?: boolean;
 }
 
 interface Props {
@@ -66,7 +69,7 @@ export const RolePermissionCardModal = ({
   const [expandedPages, setExpandedPages] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
 
-  // Local state for basic permissions (can_view, can_add, etc.)
+  // Local state for permissions (including approval_add, approval_edit, approval_delete)
   const [permsMap, setPermsMap] = useState<Record<string, RolePermItem>>(() => {
     const map: Record<string, RolePermItem> = {};
     allMenuPaths.forEach((mp) => {
@@ -78,6 +81,9 @@ export const RolePermissionCardModal = ({
         can_edit: found?.can_edit ?? false,
         can_delete: found?.can_delete ?? false,
         can_approve: found?.can_approve ?? false,
+        approval_add: initialHiddenFeatures[`${mp.path}:approval_add`] ?? found?.approval_add ?? false,
+        approval_edit: initialHiddenFeatures[`${mp.path}:approval_edit`] ?? found?.approval_edit ?? false,
+        approval_delete: initialHiddenFeatures[`${mp.path}:approval_delete`] ?? found?.approval_delete ?? false,
       };
     });
     return map;
@@ -100,6 +106,9 @@ export const RolePermissionCardModal = ({
         can_edit: found?.can_edit ?? false,
         can_delete: found?.can_delete ?? false,
         can_approve: found?.can_approve ?? false,
+        approval_add: initialHiddenFeatures[`${mp.path}:approval_add`] ?? found?.approval_add ?? false,
+        approval_edit: initialHiddenFeatures[`${mp.path}:approval_edit`] ?? found?.approval_edit ?? false,
+        approval_delete: initialHiddenFeatures[`${mp.path}:approval_delete`] ?? found?.approval_delete ?? false,
       };
     });
     setPermsMap(map);
@@ -133,7 +142,7 @@ export const RolePermissionCardModal = ({
     return list;
   }, [allMenuPaths, activeCategory, search]);
 
-  // Toggle helpers
+  // Toggle basic permission
   const togglePerm = (path: string, field: keyof Omit<RolePermItem, 'menu_path'>) => {
     setPermsMap((prev) => {
       const current = prev[path] || {
@@ -143,16 +152,51 @@ export const RolePermissionCardModal = ({
         can_edit: false,
         can_delete: false,
         can_approve: false,
+        approval_add: false,
+        approval_edit: false,
+        approval_delete: false,
       };
       const updated = { ...current, [field]: !current[field] };
-      // If toggling off view, automatically toggle off sub actions
+      // If toggling off view, automatically toggle off all sub actions & approvals
       if (field === 'can_view' && !updated.can_view) {
         updated.can_add = false;
         updated.can_edit = false;
         updated.can_delete = false;
         updated.can_approve = false;
+        updated.approval_add = false;
+        updated.approval_edit = false;
+        updated.approval_delete = false;
       }
+      // If toggling off add/edit/delete, clear their corresponding approval flag
+      if (field === 'can_add' && !updated.can_add) updated.approval_add = false;
+      if (field === 'can_edit' && !updated.can_edit) updated.approval_edit = false;
+      if (field === 'can_delete' && !updated.can_delete) updated.approval_delete = false;
+
       return { ...prev, [path]: updated };
+    });
+  };
+
+  // Toggle approval requirement (Maker-Checker)
+  const toggleApproval = (path: string, field: 'approval_add' | 'approval_edit' | 'approval_delete') => {
+    setPermsMap((prev) => {
+      const current = prev[path] || {
+        menu_path: path,
+        can_view: false,
+        can_add: false,
+        can_edit: false,
+        can_delete: false,
+        can_approve: false,
+        approval_add: false,
+        approval_edit: false,
+        approval_delete: false,
+      };
+      return {
+        ...prev,
+        [path]: {
+          ...current,
+          [field]: !current[field],
+        },
+      };
     });
   };
 
@@ -165,18 +209,24 @@ export const RolePermissionCardModal = ({
         can_edit: false,
         can_delete: false,
         can_approve: false,
+        approval_add: false,
+        approval_edit: false,
+        approval_delete: false,
       };
       const allOn =
         current.can_view && current.can_add && current.can_edit && current.can_delete && current.can_approve;
       return {
         ...prev,
         [path]: {
-          menu_path: path,
+          ...current,
           can_view: !allOn,
           can_add: !allOn,
           can_edit: !allOn,
           can_delete: !allOn,
           can_approve: !allOn,
+          approval_add: !allOn ? current.approval_add : false,
+          approval_edit: !allOn ? current.approval_edit : false,
+          approval_delete: !allOn ? current.approval_delete : false,
         },
       };
     });
@@ -211,8 +261,21 @@ export const RolePermissionCardModal = ({
           can_edit: false,
           can_delete: false,
           can_approve: false,
+          approval_add: false,
+          approval_edit: false,
+          approval_delete: false,
         };
-        next[mp.path] = { ...curr, [action]: val };
+        const updated = { ...curr, [action]: val };
+        if (action === 'can_view' && !val) {
+          updated.can_add = false;
+          updated.can_edit = false;
+          updated.can_delete = false;
+          updated.can_approve = false;
+          updated.approval_add = false;
+          updated.approval_edit = false;
+          updated.approval_delete = false;
+        }
+        next[mp.path] = updated;
       });
       return next;
     });
@@ -229,6 +292,36 @@ export const RolePermissionCardModal = ({
           can_edit: false,
           can_delete: false,
           can_approve: false,
+          approval_add: false,
+          approval_edit: false,
+          approval_delete: false,
+        };
+      });
+      return next;
+    });
+  };
+
+  // Bulk Maker-Checker approvals toggle
+  const bulkSetApprovals = (val: boolean) => {
+    setPermsMap((prev) => {
+      const next = { ...prev };
+      filteredPaths.forEach((mp) => {
+        const curr = next[mp.path] || {
+          menu_path: mp.path,
+          can_view: false,
+          can_add: false,
+          can_edit: false,
+          can_delete: false,
+          can_approve: false,
+          approval_add: false,
+          approval_edit: false,
+          approval_delete: false,
+        };
+        next[mp.path] = {
+          ...curr,
+          approval_add: val && curr.can_add,
+          approval_edit: val && curr.can_edit,
+          approval_delete: val && curr.can_delete,
         };
       });
       return next;
@@ -260,7 +353,21 @@ export const RolePermissionCardModal = ({
         if (permErr) throw permErr;
       }
 
-      // 2. Save hidden features into website_settings key 'role_feature_permissions'
+      // 2. Prepare sub-features map including approval flags: `${menuPath}:approval_${action}`
+      const finalFeaturesMap: Record<string, boolean> = { ...subFeaturesMap };
+      Object.values(permsMap).forEach((p) => {
+        // Save approval flags into features map
+        if (p.approval_add) finalFeaturesMap[`${p.menu_path}:approval_add`] = true;
+        else delete finalFeaturesMap[`${p.menu_path}:approval_add`];
+
+        if (p.approval_edit) finalFeaturesMap[`${p.menu_path}:approval_edit`] = true;
+        else delete finalFeaturesMap[`${p.menu_path}:approval_edit`];
+
+        if (p.approval_delete) finalFeaturesMap[`${p.menu_path}:approval_delete`] = true;
+        else delete finalFeaturesMap[`${p.menu_path}:approval_delete`];
+      });
+
+      // Save into website_settings key 'role_feature_permissions'
       const { data: existingSettings } = await supabase
         .from('website_settings')
         .select('id, value')
@@ -270,7 +377,7 @@ export const RolePermissionCardModal = ({
       const currentVal = (existingSettings?.value as Record<string, Record<string, boolean>>) || {};
       const updatedVal = {
         ...currentVal,
-        [role.name]: subFeaturesMap,
+        [role.name]: finalFeaturesMap,
       };
 
       if (existingSettings?.id) {
@@ -284,7 +391,7 @@ export const RolePermissionCardModal = ({
           .insert({ key: 'role_feature_permissions', value: updatedVal as any });
       }
 
-      toast.success(bn ? '✅ রোলের সকল পারমিশন ও অপশন সেভ সম্পন্ন!' : '✅ Role permissions & sub-features saved!');
+      toast.success(bn ? '✅ রোলের সকল পারমিশন, অনুমোদন ও অপশন সেভ সম্পন্ন!' : '✅ Role permissions, approvals & options saved!');
       onSaved();
       onOpenChange(false);
     } catch (err: any) {
@@ -296,28 +403,34 @@ export const RolePermissionCardModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-5xl max-h-[92vh] flex flex-col p-0 gap-0 overflow-hidden">
+      <DialogContent className="sm:max-w-6xl max-h-[94vh] flex flex-col p-0 gap-0 overflow-hidden shadow-2xl border-primary/20">
         {/* Header */}
         <DialogHeader className="px-6 py-4 border-b bg-muted/20">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <DialogTitle className="flex items-center gap-2.5 text-lg">
-              <div className="p-2 rounded-xl bg-primary/10 text-primary">
+              <div className="p-2.5 rounded-xl bg-primary/10 text-primary shadow-inner">
                 <KeyRound className="w-5 h-5" />
               </div>
               <div>
-                <span>{bn ? 'রোল পারমিশন ও অপশন নিয়ন্ত্রণ' : 'Role Permissions & Feature Controls'}</span>
+                <span className="font-bold">{bn ? 'রোল পারমিশন ও অনুমোদন নিয়ন্ত্রণ' : 'Role Permissions & Approval Controls'}</span>
                 {role && (
-                  <Badge variant="outline" className="ml-2.5 bg-primary/5 text-primary border-primary/20 text-xs">
-                    {bn ? role.name_bn || role.name : role.name}
+                  <Badge variant="outline" className="ml-2.5 bg-primary/10 text-primary border-primary/30 text-xs px-2.5 py-0.5">
+                    {bn ? role.name_bn || role.name : role.name} ({role.name})
                   </Badge>
                 )}
               </div>
             </DialogTitle>
+
+            {role?.base_role && (
+              <Badge variant="secondary" className="text-xs">
+                Base Role: {role.base_role}
+              </Badge>
+            )}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
             {bn
-              ? 'প্রতিটি পেজের ভিউ, অ্যাড, এডিট, ডিলিটের পাশাপাশি সংবেদনশীল ট্যাব/অপশন পারমিশন না থাকলে ব্যবহারকারীর স্ক্রিন থেকে সম্পূর্ণ উধাও (১০০% Invisible) থাকবে।'
-              : 'Configure page access, action permissions, and completely hide sensitive internal tabs/buttons.'}
+              ? 'প্রতিটি পেজের অ্যাক্সেস, অ্যাকশন ক্ষমতা, মেকার-চেকার অনুমোদন শর্ত এবং অভ্যন্তরীণ ট্যাব ১০০% অদৃশ্য করার নিয়ন্ত্রণ।'
+              : 'Configure page access, CRUD actions, maker-checker approval requirements, and complete visibility control for internal tabs.'}
           </p>
         </DialogHeader>
 
@@ -341,6 +454,23 @@ export const RolePermissionCardModal = ({
               </Button>
               <Button size="sm" variant="outline" onClick={setReadOnly} className="h-8 text-xs">
                 {bn ? 'শুধু রিড-অনলি' : 'Read Only'}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => bulkSetApprovals(true)}
+                className="h-8 text-xs border-amber-500/40 text-amber-600 hover:bg-amber-500/10"
+              >
+                <AlertTriangle className="w-3 h-3 mr-1 text-amber-500" />
+                {bn ? 'সব অনুমোদন আবশ্যক' : 'All Approvals On'}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => bulkSetApprovals(false)}
+                className="h-8 text-xs border-muted text-muted-foreground"
+              >
+                {bn ? 'অনুমোদন বন্ধ' : 'Approvals Off'}
               </Button>
               <Button size="sm" variant="outline" onClick={() => bulkSetAction('can_view', false)} className="h-8 text-xs">
                 {bn ? 'ক্লিয়ার সব' : 'Clear All'}
@@ -376,8 +506,35 @@ export const RolePermissionCardModal = ({
           )}
         </div>
 
+        {/* Legend bar */}
+        <div className="px-6 py-2 bg-muted/40 border-b flex items-center justify-between text-xs text-muted-foreground flex-wrap gap-2">
+          <div className="flex items-center gap-4 flex-wrap">
+            <span className="flex items-center gap-1">
+              <Eye className="w-3.5 h-3.5 text-primary" /> {bn ? 'দেখা (View)' : 'View'}
+            </span>
+            <span className="flex items-center gap-1">
+              <Plus className="w-3.5 h-3.5 text-primary" /> {bn ? 'যোগ (Add)' : 'Add'}
+            </span>
+            <span className="flex items-center gap-1">
+              <Pencil className="w-3.5 h-3.5 text-primary" /> {bn ? 'এডিট (Edit)' : 'Edit'}
+            </span>
+            <span className="flex items-center gap-1">
+              <Trash2 className="w-3.5 h-3.5 text-rose-500" /> {bn ? 'ডিলিট (Delete)' : 'Delete'}
+            </span>
+            <span className="flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> {bn ? 'অনুমোদন দেওয়া (Approve)' : 'Can Approve'}
+            </span>
+            <span className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 font-medium">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-500" /> {bn ? 'অনুমোদন লাগবে (Needs Approval)' : 'Needs Approval'}
+            </span>
+          </div>
+          <span className="text-[11px] text-muted-foreground italic">
+            {bn ? '💡 অপশন আনচেক করলে পেজে কোনো ধূসর লক দেখাবে না, সম্পূর্ণ উধাও থাকবে।' : '💡 Unchecked options are completely omitted from DOM.'}
+          </span>
+        </div>
+
         {/* Body: Page Cards List */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 bg-muted/10">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3.5 bg-muted/10">
           {filteredPaths.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Layers className="w-10 h-10 mx-auto mb-2 opacity-30" />
@@ -392,29 +549,39 @@ export const RolePermissionCardModal = ({
                 can_edit: false,
                 can_delete: false,
                 can_approve: false,
+                approval_add: false,
+                approval_edit: false,
+                approval_delete: false,
               };
               const subFeatures = KNOWN_PAGE_FEATURES[mp.path] || [];
               const isExpanded = expandedPages.has(mp.path);
               const allChecked =
                 perm.can_view && perm.can_add && perm.can_edit && perm.can_delete && perm.can_approve;
 
+              // Check if any sub-feature is hidden for this page
+              const hiddenSubCount = subFeatures.filter(
+                (sf) => subFeaturesMap[`${mp.path}:${sf.key}`] === false
+              ).length;
+
               return (
                 <div
                   key={mp.path}
-                  className={`border rounded-xl transition-all ${
-                    perm.can_view ? 'bg-card border-border/80 shadow-sm' : 'bg-muted/20 border-dashed border-border/40 opacity-75'
+                  className={`border rounded-2xl transition-all ${
+                    perm.can_view
+                      ? 'bg-card border-border/80 shadow-sm'
+                      : 'bg-muted/20 border-dashed border-border/40 opacity-70'
                   }`}
                 >
                   {/* Card Header Row */}
-                  <div className="p-3 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
+                  <div className="p-3.5 sm:p-4 flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+                    <div className="flex items-start sm:items-center gap-3">
                       <Checkbox
                         checked={perm.can_view}
                         onCheckedChange={() => togglePerm(mp.path, 'can_view')}
-                        className="data-[state=checked]:bg-primary"
+                        className="data-[state=checked]:bg-primary mt-1 sm:mt-0"
                       />
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-semibold text-sm text-foreground">
                             {bn ? mp.label_bn : mp.label_en}
                           </span>
@@ -423,63 +590,112 @@ export const RolePermissionCardModal = ({
                               {mp.group_bn}
                             </Badge>
                           )}
+                          {hiddenSubCount > 0 && (
+                            <Badge variant="outline" className="text-[10px] h-4 text-amber-600 border-amber-400 bg-amber-500/5">
+                              {hiddenSubCount} {bn ? 'টি অপশন হাইড' : 'hidden'}
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-[11px] text-muted-foreground font-mono mt-0.5">{mp.path}</p>
                       </div>
                     </div>
 
                     {/* Action Controls */}
-                    <div className="flex items-center gap-3 flex-wrap pl-7 md:pl-0">
-                      {/* View */}
-                      <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
-                        <Checkbox
-                          checked={perm.can_view}
-                          onCheckedChange={() => togglePerm(mp.path, 'can_view')}
-                        />
-                        <span className="text-muted-foreground">{bn ? 'দেখা' : 'View'}</span>
-                      </label>
+                    <div className="flex items-center gap-3 flex-wrap pl-7 xl:pl-0">
+                      {/* Standard Actions Group */}
+                      <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl bg-muted/40 border border-border/50">
+                        {/* View */}
+                        <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+                          <Checkbox
+                            checked={perm.can_view}
+                            onCheckedChange={() => togglePerm(mp.path, 'can_view')}
+                          />
+                          <span className="text-muted-foreground font-medium">{bn ? 'দেখা' : 'View'}</span>
+                        </label>
 
-                      {/* Add */}
-                      <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
-                        <Checkbox
-                          checked={perm.can_add}
-                          onCheckedChange={() => togglePerm(mp.path, 'can_add')}
-                          disabled={!perm.can_view}
-                        />
-                        <span className="text-muted-foreground">{bn ? 'যোগ' : 'Add'}</span>
-                      </label>
+                        {/* Add */}
+                        <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+                          <Checkbox
+                            checked={perm.can_add}
+                            onCheckedChange={() => togglePerm(mp.path, 'can_add')}
+                            disabled={!perm.can_view}
+                          />
+                          <span className="text-muted-foreground">{bn ? 'যোগ' : 'Add'}</span>
+                        </label>
 
-                      {/* Edit */}
-                      <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
-                        <Checkbox
-                          checked={perm.can_edit}
-                          onCheckedChange={() => togglePerm(mp.path, 'can_edit')}
-                          disabled={!perm.can_view}
-                        />
-                        <span className="text-muted-foreground">{bn ? 'এডিট' : 'Edit'}</span>
-                      </label>
+                        {/* Edit */}
+                        <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+                          <Checkbox
+                            checked={perm.can_edit}
+                            onCheckedChange={() => togglePerm(mp.path, 'can_edit')}
+                            disabled={!perm.can_view}
+                          />
+                          <span className="text-muted-foreground">{bn ? 'এডিট' : 'Edit'}</span>
+                        </label>
 
-                      {/* Delete */}
-                      <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
-                        <Checkbox
-                          checked={perm.can_delete}
-                          onCheckedChange={() => togglePerm(mp.path, 'can_delete')}
-                          disabled={!perm.can_view}
-                          className="border-rose-400 data-[state=checked]:bg-rose-600 data-[state=checked]:border-rose-600"
-                        />
-                        <span className="text-rose-600 dark:text-rose-400">{bn ? 'ডিলিট' : 'Delete'}</span>
-                      </label>
+                        {/* Delete */}
+                        <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+                          <Checkbox
+                            checked={perm.can_delete}
+                            onCheckedChange={() => togglePerm(mp.path, 'can_delete')}
+                            disabled={!perm.can_view}
+                            className="border-rose-400 data-[state=checked]:bg-rose-600 data-[state=checked]:border-rose-600"
+                          />
+                          <span className="text-rose-600 dark:text-rose-400 font-medium">{bn ? 'ডিলিট' : 'Delete'}</span>
+                        </label>
 
-                      {/* Approve */}
-                      <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
-                        <Checkbox
-                          checked={perm.can_approve}
-                          onCheckedChange={() => togglePerm(mp.path, 'can_approve')}
-                          disabled={!perm.can_view}
-                          className="border-emerald-500 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
-                        />
-                        <span className="text-emerald-600 dark:text-emerald-400 font-medium">{bn ? 'অনুমোদন' : 'Approve'}</span>
-                      </label>
+                        {/* Approve */}
+                        <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+                          <Checkbox
+                            checked={perm.can_approve}
+                            onCheckedChange={() => togglePerm(mp.path, 'can_approve')}
+                            disabled={!perm.can_view}
+                            className="border-emerald-500 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                          />
+                          <span className="text-emerald-600 dark:text-emerald-400 font-medium">{bn ? 'অনুমোদন' : 'Approve'}</span>
+                        </label>
+                      </div>
+
+                      {/* Maker-Checker: Needs Approval Group */}
+                      <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30">
+                        <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3 text-amber-500" />
+                          {bn ? 'অনুমোদন লাগবে:' : 'Needs Approval:'}
+                        </span>
+
+                        {/* Approval Add */}
+                        <label className="flex items-center gap-1 text-[11px] cursor-pointer select-none" title={bn ? 'যোগ করার পর অ্যাডমিন অনুমোদন লাগবে' : 'Needs admin approval on add'}>
+                          <Checkbox
+                            checked={perm.approval_add}
+                            onCheckedChange={() => toggleApproval(mp.path, 'approval_add')}
+                            disabled={!perm.can_add}
+                            className="border-amber-500 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500 h-3.5 w-3.5"
+                          />
+                          <span className="text-amber-800 dark:text-amber-300">{bn ? 'যোগ' : 'Add'}</span>
+                        </label>
+
+                        {/* Approval Edit */}
+                        <label className="flex items-center gap-1 text-[11px] cursor-pointer select-none" title={bn ? 'এডিট করার পর অ্যাডমিন অনুমোদন লাগবে' : 'Needs admin approval on edit'}>
+                          <Checkbox
+                            checked={perm.approval_edit}
+                            onCheckedChange={() => toggleApproval(mp.path, 'approval_edit')}
+                            disabled={!perm.can_edit}
+                            className="border-amber-500 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500 h-3.5 w-3.5"
+                          />
+                          <span className="text-amber-800 dark:text-amber-300">{bn ? 'এডিট' : 'Edit'}</span>
+                        </label>
+
+                        {/* Approval Delete */}
+                        <label className="flex items-center gap-1 text-[11px] cursor-pointer select-none" title={bn ? 'ডিলিট করার পর অ্যাডমিন অনুমোদন লাগবে' : 'Needs admin approval on delete'}>
+                          <Checkbox
+                            checked={perm.approval_delete}
+                            onCheckedChange={() => toggleApproval(mp.path, 'approval_delete')}
+                            disabled={!perm.can_delete}
+                            className="border-amber-500 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500 h-3.5 w-3.5"
+                          />
+                          <span className="text-amber-800 dark:text-amber-300">{bn ? 'ডিলিট' : 'Del'}</span>
+                        </label>
+                      </div>
 
                       {/* Expand sub-features button */}
                       {subFeatures.length > 0 && (
@@ -487,10 +703,15 @@ export const RolePermissionCardModal = ({
                           size="sm"
                           variant="ghost"
                           onClick={() => toggleExpand(mp.path)}
-                          className="h-7 px-2 text-xs text-primary gap-1"
+                          className={`h-8 px-2.5 text-xs gap-1.5 rounded-xl border ${
+                            isExpanded ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-muted/30 border-border/60 text-muted-foreground'
+                          }`}
                         >
                           <Sliders className="w-3.5 h-3.5" />
-                          <span>{bn ? 'ট্যাব/অপশন নিয়ন্ত্রণ' : 'Sub-Features'}</span>
+                          <span>{bn ? 'ট্যাব/অপশন নিয়ন্ত্রণ' : 'Tabs/Options'}</span>
+                          <Badge variant="secondary" className="text-[10px] h-4 px-1 font-mono">
+                            {subFeatures.length}
+                          </Badge>
                           {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                         </Button>
                       )}
@@ -499,15 +720,49 @@ export const RolePermissionCardModal = ({
 
                   {/* Sub-features accordion */}
                   {isExpanded && subFeatures.length > 0 && (
-                    <div className="px-4 py-3 border-t bg-muted/30 rounded-b-xl space-y-2">
-                      <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground mb-1">
-                        <span className="flex items-center gap-1 text-primary">
-                          <EyeOff className="w-3.5 h-3.5" />
-                          {bn ? 'অভ্যন্তরীণ ট্যাব ও সংবেদনশীল বাটন ভিজিবিলিটি (টিক না দিলে সম্পূর্ণ উধাও থাকবে):' : 'Tab & Action Visibility (Unchecked = 100% Invisible):'}
+                    <div className="px-4 py-3.5 border-t bg-muted/20 rounded-b-2xl space-y-2.5">
+                      <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground flex-wrap gap-2">
+                        <span className="flex items-center gap-1.5 text-primary">
+                          <EyeOff className="w-4 h-4 text-primary" />
+                          <span>{bn ? 'অভ্যন্তরীণ ট্যাব ও সংবেদনশীল বাটন ভিজিবিলিটি (আনচেক থাকলে পেজে ১০০% অদৃশ্য থাকবে):' : 'Internal Tab & Sensitive Action Visibility (Unchecked = 100% Invisible):'}</span>
                         </span>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSubFeaturesMap((prev) => {
+                                const next = { ...prev };
+                                subFeatures.forEach((f) => {
+                                  delete next[`${mp.path}:${f.key}`];
+                                });
+                                return next;
+                              });
+                            }}
+                            className="text-[11px] text-primary hover:underline"
+                          >
+                            {bn ? 'সব দৃশ্যমান করুন' : 'Show All'}
+                          </button>
+                          <span className="text-muted-foreground">|</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSubFeaturesMap((prev) => {
+                                const next = { ...prev };
+                                subFeatures.forEach((f) => {
+                                  next[`${mp.path}:${f.key}`] = false;
+                                });
+                                return next;
+                              });
+                            }}
+                            className="text-[11px] text-rose-500 hover:underline"
+                          >
+                            {bn ? 'সব হাইড করুন' : 'Hide All'}
+                          </button>
+                        </div>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
                         {subFeatures.map((feat) => {
                           const featKey = `${mp.path}:${feat.key}`;
                           const isAllowed = subFeaturesMap[featKey] !== false; // default true unless explicitly toggled off
@@ -515,37 +770,34 @@ export const RolePermissionCardModal = ({
                           return (
                             <div
                               key={feat.key}
-                              className={`flex items-center justify-between p-2 rounded-lg border text-xs transition-colors ${
+                              className={`flex items-center justify-between p-2.5 rounded-xl border text-xs transition-colors ${
                                 isAllowed
-                                  ? 'bg-card border-emerald-500/30 text-foreground'
-                                  : 'bg-rose-500/5 border-rose-500/20 text-muted-foreground'
+                                  ? 'bg-card border-emerald-500/30 text-foreground shadow-sm'
+                                  : 'bg-rose-500/5 border-rose-500/30 text-muted-foreground'
                               }`}
                             >
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 min-w-0 pr-2">
                                 <Checkbox
                                   checked={isAllowed}
                                   onCheckedChange={() => toggleSubFeature(mp.path, feat.key)}
-                                  disabled={!perm.can_view}
+                                  className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
                                 />
-                                <div>
-                                  <p className="font-medium">{bn ? feat.label_bn : feat.label_en}</p>
-                                  <Badge
-                                    variant="outline"
-                                    className={`text-[9px] px-1 py-0 h-3.5 mt-0.5 ${
-                                      feat.type === 'tab' ? 'bg-blue-500/10 text-blue-600' : 'bg-amber-500/10 text-amber-600'
-                                    }`}
-                                  >
-                                    {feat.type === 'tab' ? (bn ? 'ট্যাব' : 'Tab') : (bn ? 'বাটন' : 'Action')}
-                                  </Badge>
+                                <div className="truncate">
+                                  <p className="font-medium truncate">{bn ? feat.label_bn : feat.label_en}</p>
+                                  <p className="text-[10px] text-muted-foreground font-mono truncate">{feat.key}</p>
                                 </div>
                               </div>
-                              <span
-                                className={`text-[10px] font-semibold ${
-                                  isAllowed ? 'text-emerald-600' : 'text-rose-500'
+
+                              <Badge
+                                variant={isAllowed ? 'outline' : 'secondary'}
+                                className={`text-[10px] shrink-0 ${
+                                  isAllowed
+                                    ? 'text-emerald-600 border-emerald-500/40 bg-emerald-500/10'
+                                    : 'text-rose-600 bg-rose-500/10 border-rose-500/30'
                                 }`}
                               >
-                                {isAllowed ? (bn ? 'দেখবে' : 'Visible') : (bn ? 'উধাও' : 'Hidden')}
-                              </span>
+                                {isAllowed ? (bn ? 'দৃশ্যমান' : 'Visible') : (bn ? '১০০% হাইড' : 'Hidden')}
+                              </Badge>
                             </div>
                           );
                         })}
@@ -559,21 +811,22 @@ export const RolePermissionCardModal = ({
         </div>
 
         {/* Footer */}
-        <DialogFooter className="px-6 py-3 border-t bg-card flex items-center justify-between sm:justify-between">
+        <DialogFooter className="px-6 py-3.5 border-t bg-muted/20 flex items-center justify-between sm:justify-between">
           <div className="text-xs text-muted-foreground">
-            {role && (
+            {role ? (
               <span>
-                {bn ? 'রোল:' : 'Role:'} <strong className="text-foreground">{role.name_bn || role.name}</strong>
+                {bn ? 'রোল:' : 'Role:'} <strong className="text-foreground">{bn ? role.name_bn || role.name : role.name}</strong>
               </span>
-            )}
+            ) : null}
           </div>
+
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={saving}>
               {bn ? 'বাতিল' : 'Cancel'}
             </Button>
-            <Button onClick={handleSave} disabled={saving} className="btn-primary-gradient min-w-[120px]">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-              {bn ? 'সংরক্ষণ করুন' : 'Save Changes'}
+            <Button size="sm" onClick={handleSave} disabled={saving} className="btn-primary-gradient gap-1.5 shadow-md">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              <span>{bn ? 'সকল পারমিশন সেভ করুন' : 'Save All Permissions'}</span>
             </Button>
           </div>
         </DialogFooter>

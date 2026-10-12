@@ -177,12 +177,24 @@ export const usePermissions = () => {
   const requiresApproval = (menuPath: string, action?: 'view' | 'add' | 'edit' | 'delete'): boolean => {
     if (isAdminRole(role)) return false;
     const userPerm = userPermissions.find(p => p.menu_path === menuPath);
-    if (!userPerm) return false;
+    if (!userPerm) {
+      if (!role) return false;
+      const roleFeatures = roleFeatureSettings[role] || {};
+      if (action) {
+        return !!roleFeatures[`${menuPath}:approval_${action}`];
+      }
+      return !!(
+        roleFeatures[`${menuPath}:approval_add`] ||
+        roleFeatures[`${menuPath}:approval_edit`] ||
+        roleFeatures[`${menuPath}:approval_delete`]
+      );
+    }
     if (action) {
       return (userPerm as any)?.[`approval_${action}`] ?? false;
     }
     return (userPerm as any)?.approval_view || (userPerm as any)?.approval_add || (userPerm as any)?.approval_edit || (userPerm as any)?.approval_delete || false;
   };
+
 
   return {
     permissions: rolePermissions,

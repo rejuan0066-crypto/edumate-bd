@@ -1984,6 +1984,7 @@ const AdminUserManagement = () => {
           initialHiddenFeatures={roleFeatureSettings}
           onSaved={() => {
             queryClient.invalidateQueries({ queryKey: ['role-permissions'] });
+            queryClient.invalidateQueries({ queryKey: ['role_feature_permissions'] });
             queryClient.invalidateQueries({ queryKey: ['role-hidden-features-settings'] });
           }}
         />

@@ -2,412 +2,744 @@ import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useMenuSettings, type MenuItemConfig } from '@/hooks/useMenuSettings';
+import { useMenuSettings } from '@/hooks/useMenuSettings';
+import { flattenMenuPaths, mergeMenuPaths, DEFAULT_MENU_PATHS, MenuPathItem } from '@/lib/menuPathList';
+import { KNOWN_PAGE_FEATURES } from '@/lib/pageFeatures';
 import AdminLayout from '@/components/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Shield, Save, Loader2, Search } from 'lucide-react';
+import { useConfirm } from '@/contexts/ConfirmContext';
+import {
+  Shield,
+  ShieldCheck,
+  KeyRound,
+  Users,
+  Plus,
+  Search,
+  Pencil,
+  Trash2,
+  Loader2,
+  Sliders,
+  AlertTriangle,
+  Layers,
+  Eye,
+  FileCheck,
+  CheckCircle2,
+  Sparkles,
+  LayoutGrid,
+  Table as TableIcon,
+} from 'lucide-react';
+import { RolePermissionCardModal, RolePermItem } from '@/components/admin/RolePermissionCardModal';
 
-const ROLES = [
-  { value: 'staff', label: 'Staff', label_bn: 'স্টাফ' },
-  { value: 'teacher', label: 'Teacher', label_bn: 'শিক্ষক' },
+interface CustomRole {
+  id: string;
+  name: string;
+  name_bn: string;
+  description: string | null;
+  description_bn: string | null;
+  base_role: string;
+  is_system: boolean;
+  is_active: boolean;
+  sort_order: number;
+}
+
+// Built-in system roles fallback if custom_roles doesn't include them
+const DEFAULT_SYSTEM_ROLES: CustomRole[] = [
+  {
+    id: 'sys-super_admin',
+    name: 'super_admin',
+    name_bn: 'সুপার অ্যাডমিন',
+    description: 'Full system access & root administrator',
+    description_bn: 'সকল মডিউল ও সিস্টেমের পূর্ণ নিয়ন্ত্রক',
+    base_role: 'admin',
+    is_system: true,
+    is_active: true,
+    sort_order: 1,
+  },
+  {
+    id: 'sys-admin',
+    name: 'admin',
+    name_bn: 'অ্যাডমিন',
+    description: 'School administrator with management rights',
+    description_bn: 'প্রতিষ্ঠান প্রশাসনিক দায়িত্ব ও ব্যবস্থাপনা',
+    base_role: 'admin',
+    is_system: true,
+    is_active: true,
+    sort_order: 2,
+  },
+  {
+    id: 'sys-teacher',
+    name: 'teacher',
+    name_bn: 'শিক্ষক',
+    description: 'Academic and classroom management',
+    description_bn: 'একাডেমিক ও শ্রেণি পাঠদান ব্যবস্থাপনা',
+    base_role: 'teacher',
+    is_system: true,
+    is_active: true,
+    sort_order: 3,
+  },
+  {
+    id: 'sys-staff',
+    name: 'staff',
+    name_bn: 'স্টাফ / কর্মচারী',
+    description: 'General support and administrative staff',
+    description_bn: 'সাধারণ অফিস ও সহায়ক কার্যক্রম',
+    base_role: 'staff',
+    is_system: true,
+    is_active: true,
+    sort_order: 4,
+  },
+  {
+    id: 'sys-student',
+    name: 'student',
+    name_bn: 'শিক্ষার্থী',
+    description: 'Student portal read & limited submission',
+    description_bn: 'শিক্ষার্থী পোর্টাল ও পরীক্ষার ফলাফল',
+    base_role: 'student',
+    is_system: true,
+    is_active: true,
+    sort_order: 5,
+  },
+  {
+    id: 'sys-parent',
+    name: 'parent',
+    name_bn: 'অভিভাবক',
+    description: 'Guardian portal for fee & child reports',
+    description_bn: 'অভিভাবক পোর্টাল ও সন্তানের অগ্রগতি',
+    base_role: 'parent',
+    is_system: true,
+    is_active: true,
+    sort_order: 6,
+  },
 ];
-
-type FlatMenu = {
-  path: string;
-  label: string;
-  label_bn: string;
-  group?: string;
-  group_bn?: string;
-  depth: number;
-};
-
-// Flatten the nested sidebar tree into a single list, preserving group context
-// and de-duplicating by path so the same page never appears twice.
-const flattenMenu = (items: MenuItemConfig[]): FlatMenu[] => {
-  const seen = new Set<string>();
-  const out: FlatMenu[] = [];
-  items
-    .slice()
-    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-    .forEach((parent) => {
-      if (!seen.has(parent.path)) {
-        seen.add(parent.path);
-        out.push({
-          path: parent.path,
-          label: parent.label_en,
-          label_bn: parent.label_bn,
-          group: parent.label_en,
-          group_bn: parent.label_bn,
-          depth: 0,
-        });
-      }
-      (parent.children ?? [])
-        .slice()
-        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-        .forEach((child) => {
-          if (seen.has(child.path)) return;
-          seen.add(child.path);
-          out.push({
-            path: child.path,
-            label: child.label_en,
-            label_bn: child.label_bn,
-            group: parent.label_en,
-            group_bn: parent.label_bn,
-            depth: 1,
-          });
-        });
-    });
-  return out;
-};
-
-type PermRow = {
-  menu_path: string;
-  can_view: boolean;
-  can_add: boolean;
-  can_edit: boolean;
-  can_delete: boolean;
-  can_approve: boolean;
-};
 
 const AdminPermissions = () => {
   const { language } = useLanguage();
+  const bn = language === 'bn';
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
-  const { menuConfig, isLoading: menuLoading } = useMenuSettings();
-  const [selectedRole, setSelectedRole] = useState('staff');
-  const [localPerms, setLocalPerms] = useState<Record<string, PermRow>>({});
-  const [dirty, setDirty] = useState(false);
+  const { menuConfig } = useMenuSettings();
+
   const [search, setSearch] = useState('');
+  const [viewMode, setViewMode] = useState<'cards' | 'matrix'>('cards');
+  const [baseFilter, setBaseFilter] = useState<string>('all');
 
-  // Dynamically derive the full menu list from the saved menu config so any
-  // new page added through useMenuSettings (or Menu Manager) appears here
-  // automatically — no code changes needed.
-  const menuItems = useMemo(
-    () => flattenMenu(menuConfig?.sidebar ?? []),
-    [menuConfig],
-  );
+  // Role dialog (Create / Edit)
+  const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+  const [editingRole, setEditingRole] = useState<CustomRole | null>(null);
+  const [roleName, setRoleName] = useState('');
+  const [roleNameBn, setRoleNameBn] = useState('');
+  const [roleDesc, setRoleDesc] = useState('');
+  const [roleDescBn, setRoleDescBn] = useState('');
+  const [roleBaseRole, setRoleBaseRole] = useState('staff');
+  const [roleSaving, setRoleSaving] = useState(false);
 
-  const filteredItems = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return menuItems;
-    return menuItems.filter(
-      (m) =>
-        m.label.toLowerCase().includes(q) ||
-        m.label_bn.toLowerCase().includes(q) ||
-        m.path.toLowerCase().includes(q),
-    );
-  }, [menuItems, search]);
+  // Role Permission Modal state
+  const [cardModalOpen, setCardModalOpen] = useState(false);
+  const [selectedRoleForModal, setSelectedRoleForModal] = useState<CustomRole | null>(null);
+  const [rolePermsForModal, setRolePermsForModal] = useState<RolePermItem[]>([]);
+  const [roleFeaturesForModal, setRoleFeaturesForModal] = useState<Record<string, boolean>>({});
+  const [modalLoading, setModalLoading] = useState(false);
 
-  const { isLoading } = useQuery({
-    queryKey: ['role-permissions', selectedRole, menuItems.length],
-    enabled: menuItems.length > 0,
+  // Derive all menu paths
+  const allMenuPaths = useMemo(() => {
+    const dynamic = flattenMenuPaths(menuConfig?.sidebar ?? []);
+    return mergeMenuPaths(dynamic, DEFAULT_MENU_PATHS);
+  }, [menuConfig]);
+
+  // 1. Fetch custom roles from database
+  const { data: dbRoles = [], isLoading: rolesLoading } = useQuery({
+    queryKey: ['custom-roles'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await supabase.from('custom_roles').select('*').order('sort_order');
+      if (error) throw error;
+      return data as CustomRole[];
+    },
+  });
+
+  // Merge default system roles with database roles
+  const rolesList: CustomRole[] = useMemo(() => {
+    const list = [...DEFAULT_SYSTEM_ROLES];
+    dbRoles.forEach((dbRole) => {
+      const idx = list.findIndex((r) => r.name === dbRole.name);
+      if (idx >= 0) {
+        list[idx] = { ...list[idx], ...dbRole };
+      } else {
+        list.push(dbRole);
+      }
+    });
+    return list;
+  }, [dbRoles]);
+
+  // 2. Fetch all role permissions for stat counts & matrix
+  const { data: allRolePerms = [] } = useQuery({
+    queryKey: ['role-permissions-all'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('role_permissions').select('*');
+      if (error) throw error;
+      return (data || []) as {
+        role: string;
+        menu_path: string;
+        can_view: boolean;
+        can_add: boolean;
+        can_edit: boolean;
+        can_delete: boolean;
+        can_approve: boolean;
+      }[];
+    },
+  });
+
+  // 3. Fetch role feature permissions & approvals from website_settings
+  const { data: roleFeatureSettings = {} } = useQuery({
+    queryKey: ['role_feature_permissions'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('website_settings')
+        .select('value')
+        .eq('key', 'role_feature_permissions')
+        .maybeSingle();
+      return (data?.value as Record<string, Record<string, boolean>>) || {};
+    },
+  });
+
+  // 4. Fetch user counts per role
+  const { data: roleUserCounts = {} } = useQuery({
+    queryKey: ['role-user-counts'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('user_roles').select('role');
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      (data || []).forEach((row: any) => {
+        if (row.role) counts[row.role] = (counts[row.role] || 0) + 1;
+      });
+      return counts;
+    },
+  });
+
+  // Filtered roles
+  const filteredRoles = useMemo(() => {
+    return rolesList.filter((r) => {
+      if (baseFilter !== 'all' && r.base_role !== baseFilter) return false;
+      if (!search.trim()) return true;
+      const q = search.toLowerCase();
+      return (
+        r.name.toLowerCase().includes(q) ||
+        (r.name_bn && r.name_bn.toLowerCase().includes(q)) ||
+        (r.description && r.description.toLowerCase().includes(q)) ||
+        (r.description_bn && r.description_bn.toLowerCase().includes(q))
+      );
+    });
+  }, [rolesList, baseFilter, search]);
+
+  // Open Permission Card Modal for a role
+  const handleOpenPermModal = async (role: CustomRole) => {
+    setSelectedRoleForModal(role);
+    setCardModalOpen(true);
+    setModalLoading(true);
+
+    try {
+      // 1. Fetch current permissions for this role
+      const { data: permsData, error: permErr } = await supabase
         .from('role_permissions')
         .select('*')
-        .eq('role', selectedRole);
-      if (error) throw error;
+        .eq('role', role.name);
+      if (permErr) throw permErr;
 
-      // Build local state for every menu item currently in the dynamic list
-      const map: Record<string, PermRow> = {};
-      menuItems.forEach((item) => {
-        const saved = (data || []).find((d: any) => d.menu_path === item.path);
-        map[item.path] = {
-          menu_path: item.path,
-          can_view: saved?.can_view ?? false,
-          can_add: saved?.can_add ?? false,
-          can_edit: saved?.can_edit ?? false,
-          can_delete: saved?.can_delete ?? false,
-          can_approve: saved?.can_approve ?? false,
+      const permsMap = (permsData || []).map((p: any) => ({
+        menu_path: p.menu_path,
+        can_view: !!p.can_view,
+        can_add: !!p.can_add,
+        can_edit: !!p.can_edit,
+        can_delete: !!p.can_delete,
+        can_approve: !!p.can_approve,
+      }));
+      setRolePermsForModal(permsMap);
+
+      // 2. Fetch current sub-feature & approval settings
+      const currentFeatures = roleFeatureSettings[role.name] || {};
+      setRoleFeaturesForModal(currentFeatures);
+    } catch {
+      toast.error(bn ? 'পারমিশন লোড ব্যর্থ' : 'Failed to load permissions');
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  // Open Create/Edit role dialog
+  const openRoleDialog = (role?: CustomRole) => {
+    if (role) {
+      setEditingRole(role);
+      setRoleName(role.name);
+      setRoleNameBn(role.name_bn);
+      setRoleDesc(role.description || '');
+      setRoleDescBn(role.description_bn || '');
+      setRoleBaseRole(role.base_role);
+    } else {
+      setEditingRole(null);
+      setRoleName('');
+      setRoleNameBn('');
+      setRoleDesc('');
+      setRoleDescBn('');
+      setRoleBaseRole('staff');
+    }
+    setRoleDialogOpen(true);
+  };
+
+  // Save role
+  const saveCustomRole = async () => {
+    if (!roleName.trim() || !roleNameBn.trim()) {
+      toast.error(bn ? 'রোলের নাম ও বাংলা নাম দিন' : 'Enter role name');
+      return;
+    }
+    setRoleSaving(true);
+    try {
+      if (editingRole?.is_system) {
+        // System roles: only update description and bengali name
+        const { error } = await supabase
+          .from('custom_roles')
+          .update({
+            name_bn: roleNameBn.trim(),
+            description: roleDesc.trim() || null,
+            description_bn: roleDescBn.trim() || null,
+          })
+          .eq('id', editingRole.id);
+        if (error) throw error;
+      } else {
+        const payload = {
+          name: roleName.trim().toLowerCase(),
+          name_bn: roleNameBn.trim(),
+          description: roleDesc.trim() || null,
+          description_bn: roleDescBn.trim() || null,
+          base_role: roleBaseRole,
         };
-      });
-      setLocalPerms(map);
-      setDirty(false);
-      return data;
-    },
-  });
 
-  const saveMutation = useMutation({
-    mutationFn: async () => {
-      // Only persist rows for menu paths that currently exist — keeps the
-      // table free of stale entries for menus that have been removed.
-      const validPaths = new Set(menuItems.map((m) => m.path));
-      const rows = Object.values(localPerms)
-        .filter((p) => p.menu_path && validPaths.has(p.menu_path))
-        .map((p) => ({
-          role: selectedRole,
-          menu_path: p.menu_path,
-          can_view: !!p.can_view,
-          can_add: !!p.can_add,
-          can_edit: !!p.can_edit,
-          can_delete: !!p.can_delete,
-          can_approve: !!p.can_approve,
-          updated_at: new Date().toISOString(),
-        }));
-
-      // Always clear the role's existing rows, then insert only if we have rows.
-      const { error: delErr } = await supabase
-        .from('role_permissions')
-        .delete()
-        .eq('role', selectedRole);
-      if (delErr) throw delErr;
-
-      if (rows.length === 0) return;
-      const { error } = await supabase.from('role_permissions').insert(rows);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success(language === 'bn' ? 'পারমিশন সেভ হয়েছে' : 'Permissions saved');
-      queryClient.invalidateQueries({ queryKey: ['role-permissions'] });
-      setDirty(false);
-    },
-    onError: (err: any) => {
-      console.error('[AdminPermissions] save failed', err);
-      toast.error(language === 'bn' ? 'সেভ করতে সমস্যা হয়েছে' : 'Failed to save');
-    },
-  });
-
-  // Build a fresh permission row with all flags off — used as a safe default
-  // when a menu path has no existing role_permissions record yet.
-  const blankRow = (path: string): PermRow => ({
-    menu_path: path,
-    can_view: false,
-    can_add: false,
-    can_edit: false,
-    can_delete: false,
-    can_approve: false,
-  });
-
-  const togglePerm = (path: string, field: keyof PermRow) => {
-    if (field === 'menu_path') return;
-    setLocalPerms((prev) => {
-      const current = prev[path] ?? blankRow(path);
-      return {
-        ...prev,
-        [path]: { ...current, [field]: !current[field] },
-      };
-    });
-    setDirty(true);
-  };
-
-  const toggleAllForMenu = (path: string) => {
-    setLocalPerms((prev) => {
-      const current = prev[path] ?? blankRow(path);
-      const allChecked =
-        current.can_view && current.can_add && current.can_edit && current.can_delete && current.can_approve;
-      return {
-        ...prev,
-        [path]: {
-          ...current,
-          can_view: !allChecked,
-          can_add: !allChecked,
-          can_edit: !allChecked,
-          can_delete: !allChecked,
-          can_approve: !allChecked,
-        },
-      };
-    });
-    setDirty(true);
-  };
-
-  const toggleAllForAction = (field: 'can_view' | 'can_add' | 'can_edit' | 'can_delete' | 'can_approve') => {
-    const allChecked = filteredItems.every((item) => localPerms[item.path]?.[field]);
-    setLocalPerms((prev) => {
-      const updated = { ...prev };
-      filteredItems.forEach((item) => {
-        const current = updated[item.path] ?? blankRow(item.path);
-        updated[item.path] = { ...current, [field]: !allChecked };
-      });
-      return updated;
-    });
-    setDirty(true);
-  };
-
-  // Group filtered items by parent for cleaner display
-  const grouped = useMemo(() => {
-    const groups: { name: string; name_bn: string; items: FlatMenu[] }[] = [];
-    const idx = new Map<string, number>();
-    filteredItems.forEach((item) => {
-      const key = item.group ?? item.label;
-      const keyBn = item.group_bn ?? item.label_bn;
-      if (!idx.has(key)) {
-        idx.set(key, groups.length);
-        groups.push({ name: key, name_bn: keyBn, items: [] });
+        if (editingRole) {
+          const { error } = await supabase.from('custom_roles').update(payload).eq('id', editingRole.id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from('custom_roles').insert(payload);
+          if (error) throw error;
+        }
       }
-      groups[idx.get(key)!].items.push(item);
-    });
-    return groups;
-  }, [filteredItems]);
 
-  const loading = isLoading || menuLoading;
+      toast.success(bn ? '✅ রোল সফলভাবে সংরক্ষিত হয়েছে' : '✅ Role saved successfully');
+      setRoleDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['custom-roles'] });
+    } catch (err: any) {
+      toast.error(err?.message || (bn ? 'রোল সেভ ব্যর্থ' : 'Failed to save role'));
+    } finally {
+      setRoleSaving(false);
+    }
+  };
+
+  // Delete role
+  const deleteCustomRole = async (role: CustomRole) => {
+    if (
+      !(await confirm({
+        description: bn
+          ? `আপনি কি নিশ্চিতভাবে "${role.name_bn || role.name}" রোলটি মুছে ফেলতে চান?`
+          : `Are you sure you want to delete role "${role.name}"?`,
+        variant: 'destructive',
+      }))
+    )
+      return;
+
+    try {
+      const { error } = await supabase.from('custom_roles').delete().eq('id', role.id);
+      if (error) throw error;
+      toast.success(bn ? 'রোল মুছে ফেলা হয়েছে' : 'Role deleted');
+      queryClient.invalidateQueries({ queryKey: ['custom-roles'] });
+    } catch {
+      toast.error(bn ? 'ডিলিট ব্যর্থ' : 'Delete failed');
+    }
+  };
 
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Shield className="w-6 h-6 text-primary" />
-            <div>
-              <h1 className="text-2xl font-bold font-display">
-                {language === 'bn' ? 'পারমিশন ম্যানেজার' : 'Permission Manager'}
-              </h1>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {language === 'bn'
-                  ? `মেনু থেকে অটো-লোডকৃত ${menuItems.length}টি পেজ`
-                  : `${menuItems.length} pages auto-loaded from menu config`}
-              </p>
+        {/* Top Header Card */}
+        <div className="rounded-2xl border border-primary/20 bg-card p-6 shadow-sm">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="p-3 rounded-2xl bg-primary/10 text-primary shadow-inner">
+                <KeyRound className="w-7 h-7" />
+              </div>
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold text-foreground">
+                  {bn ? 'রোল ও পারমিশন কন্ট্রোল হাব' : 'Role & Permissions Hub'}
+                </h1>
+                <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
+                  {bn
+                    ? 'প্রতিটি পেজের অ্যাক্সেস, মেকার-চেকার অনুমোদন শর্ত এবং অভ্যন্তরীণ ট্যাব ১০০% হাইড করার কেন্দ্রীয় নিয়ন্ত্রণ।'
+                    : 'Manage page access, maker-checker approval controls, and 100% invisible sub-features for every role.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button
+                variant={viewMode === 'cards' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('cards')}
+                className={`gap-1.5 h-9 ${viewMode === 'cards' ? 'btn-primary-gradient' : ''}`}
+              >
+                <LayoutGrid className="w-4 h-4" />
+                <span>{bn ? 'কার্ড ভিউ' : 'Card View'}</span>
+              </Button>
+              <Button
+                variant={viewMode === 'matrix' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('matrix')}
+                className={`gap-1.5 h-9 ${viewMode === 'matrix' ? 'btn-primary-gradient' : ''}`}
+              >
+                <TableIcon className="w-4 h-4" />
+                <span>{bn ? 'ম্যাট্রিক্স ভিউ' : 'Matrix View'}</span>
+              </Button>
+              <Button onClick={() => openRoleDialog()} className="btn-primary-gradient gap-1.5 h-9 shadow-sm">
+                <Plus className="w-4 h-4" />
+                <span>{bn ? 'নতুন রোল তৈরি' : 'New Role'}</span>
+              </Button>
             </div>
           </div>
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+
+          {/* Filter Bar */}
+          <div className="mt-5 pt-4 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder={language === 'bn' ? 'মেনু খুঁজুন...' : 'Search menu...'}
+                placeholder={bn ? 'রোল নাম বা বিবরণ খুঁজুন...' : 'Search role name...'}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-9 pl-8 w-48"
+                className="pl-9 h-9"
               />
             </div>
-            <Select value={selectedRole} onValueChange={setSelectedRole}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ROLES.map((r) => (
-                  <SelectItem key={r.value} value={r.value}>
-                    {language === 'bn' ? r.label_bn : r.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button onClick={() => saveMutation.mutate()} disabled={!dirty || saveMutation.isPending}>
-              {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-              {language === 'bn' ? 'সেভ করুন' : 'Save'}
-            </Button>
+
+            <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+              <Button
+                size="sm"
+                variant={baseFilter === 'all' ? 'default' : 'ghost'}
+                onClick={() => setBaseFilter('all')}
+                className={`h-7 px-2.5 text-xs rounded-full ${baseFilter === 'all' ? 'btn-primary-gradient' : ''}`}
+              >
+                {bn ? 'সকল রোল' : 'All'} ({rolesList.length})
+              </Button>
+              {['admin', 'teacher', 'staff', 'student', 'parent'].map((bf) => (
+                <Button
+                  key={bf}
+                  size="sm"
+                  variant={baseFilter === bf ? 'default' : 'ghost'}
+                  onClick={() => setBaseFilter(bf)}
+                  className={`h-7 px-2.5 text-xs rounded-full capitalize ${
+                    baseFilter === bf ? 'btn-primary-gradient' : ''
+                  }`}
+                >
+                  {bf}
+                </Button>
+              ))}
+            </div>
           </div>
         </div>
 
-        <p className="text-sm text-muted-foreground">
-          {language === 'bn'
-            ? 'অ্যাডমিন সবসময় সম্পূর্ণ অ্যাক্সেস পাবে। মেনু কনফিগে নতুন পেজ যোগ করলে এই ম্যাট্রিক্সে অটো প্রদর্শিত হবে।'
-            : 'Admin always has full access. New pages added via the menu config appear here automatically.'}
-        </p>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">
-              {language === 'bn' ? 'পারমিশন ম্যাট্রিক্স' : 'Permission Matrix'} —{' '}
-              {ROLES.find((r) => r.value === selectedRole)?.[language === 'bn' ? 'label_bn' : 'label']}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+        {/* View Mode: Cards View */}
+        {viewMode === 'cards' && (
+          <div className="space-y-4">
+            {rolesLoading ? (
+              <div className="flex justify-center py-16">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
               </div>
-            ) : grouped.length === 0 ? (
-              <div className="py-12 text-center text-sm text-muted-foreground">
-                {language === 'bn' ? 'কোনো মেনু পাওয়া যায়নি' : 'No menu items found'}
+            ) : filteredRoles.length === 0 ? (
+              <div className="text-center py-16 text-muted-foreground border rounded-2xl bg-card">
+                <Shield className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p className="text-base font-semibold">{bn ? 'কোনো রোল পাওয়া যায়নি' : 'No roles found'}</p>
+                <p className="text-xs mt-1">{bn ? 'নতুন রোল তৈরি করতে উপরের বাটনে ক্লিক করুন।' : 'Click the button above to create a new role.'}</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="text-left p-3 font-medium min-w-[260px]">
-                        {language === 'bn' ? 'মেনু / ফিচার' : 'Menu / Feature'}
-                      </th>
-                      {(['can_view', 'can_add', 'can_edit', 'can_delete', 'can_approve'] as const).map((field) => (
-                        <th key={field} className="text-center p-3 font-medium w-24">
-                          <div className="flex flex-col items-center gap-1">
-                            <span className={field === 'can_approve' ? 'text-emerald-600 font-semibold' : ''}>
-                              {field === 'can_view'
-                                ? language === 'bn' ? 'দেখা' : 'View'
-                                : field === 'can_add'
-                                ? language === 'bn' ? 'যোগ' : 'Add'
-                                : field === 'can_edit'
-                                ? language === 'bn' ? 'সম্পাদনা' : 'Edit'
-                                : field === 'can_delete'
-                                ? language === 'bn' ? 'মুছুন' : 'Delete'
-                                : language === 'bn' ? 'অনুমোদন' : 'Approve'}
-                            </span>
-                            <Checkbox
-                              checked={
-                                filteredItems.length > 0 &&
-                                filteredItems.every((item) => localPerms[item.path]?.[field])
-                              }
-                              onCheckedChange={() => toggleAllForAction(field)}
-                              className="mt-1"
-                            />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {filteredRoles.map((r) => {
+                  const userCount = roleUserCounts[r.name] || 0;
+                  // Calculate permitted pages
+                  const rolePerms = allRolePerms.filter((p) => p.role === r.name && p.can_view);
+                  const allowedPagesCount = rolePerms.length;
+
+                  // Calculate approval requirements count
+                  const featSettings = roleFeatureSettings[r.name] || {};
+                  let approvalCount = 0;
+                  let hiddenFeaturesCount = 0;
+                  Object.entries(featSettings).forEach(([k, v]) => {
+                    if (k.includes(':approval_') && v === true) approvalCount++;
+                    else if (!k.includes(':approval_') && v === false) hiddenFeaturesCount++;
+                  });
+
+                  return (
+                    <div
+                      key={r.id}
+                      className="group relative bg-card hover:bg-card/90 rounded-2xl border border-border/80 hover:border-primary/40 p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+                    >
+                      <div>
+                        {/* Top bar */}
+                        <div className="flex items-start justify-between gap-2 mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-11 h-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold shadow-inner">
+                              <ShieldCheck className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-base text-foreground leading-tight">
+                                {bn ? r.name_bn || r.name : r.name}
+                              </h3>
+                              <p className="text-xs text-muted-foreground font-mono mt-0.5">{r.name}</p>
+                            </div>
                           </div>
-                        </th>
-                      ))}
-                      <th className="text-center p-3 font-medium w-20">
-                        {language === 'bn' ? 'সব' : 'All'}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {grouped.map((group) => (
-                      <>
-                        <tr key={`g-${group.name}`} className="bg-muted/40">
-                          <td colSpan={7} className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                            {language === 'bn' ? group.name_bn : group.name}
-                          </td>
-                        </tr>
-                        {group.items.map((item, idx) => {
-                          const perm =
-                            localPerms[item.path] ?? blankRow(item.path);
-                          const allChecked =
-                            perm.can_view && perm.can_add && perm.can_edit && perm.can_delete && perm.can_approve;
-                          return (
-                            <tr
-                              key={item.path}
-                              className={idx % 2 === 0 ? 'bg-background' : 'bg-muted/20'}
+
+                          <div className="flex flex-col items-end gap-1">
+                            {r.is_system ? (
+                              <Badge variant="secondary" className="text-[10px] h-4">
+                                {bn ? 'সিস্টেম' : 'System'}
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[10px] h-4 text-primary border-primary/30">
+                                {bn ? 'কাস্টম' : 'Custom'}
+                              </Badge>
+                            )}
+                            <Badge variant="outline" className="text-[10px] h-4 bg-muted text-muted-foreground">
+                              Base: {r.base_role}
+                            </Badge>
+                          </div>
+                        </div>
+
+                        {/* Description */}
+                        <p className="text-xs text-muted-foreground line-clamp-2 min-h-[32px] mb-4">
+                          {(bn ? r.description_bn : r.description) ||
+                            (bn ? 'এই রোলের জন্য কোনো বিশেষ বিবরণ যোগ করা হয়নি।' : 'No description provided.')}
+                        </p>
+
+                        {/* Quick Stats Grid */}
+                        <div className="grid grid-cols-2 gap-2 text-xs py-2.5 px-3 rounded-xl bg-muted/40 mb-4 border border-border/40">
+                          <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <Users className="w-3.5 h-3.5 text-primary" />
+                            <span>{bn ? 'ইউজার:' : 'Users:'}</span>
+                            <strong className="text-foreground font-mono">{userCount}</strong>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>{bn ? 'পেজ অ্যাক্সেস:' : 'Pages:'}</span>
+                            <strong className="text-foreground font-mono">{allowedPagesCount}</strong>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                            <span>{bn ? 'অনুমোদন শর্ত:' : 'Approvals:'}</span>
+                            <strong className="text-foreground font-mono">{approvalCount}</strong>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <Sliders className="w-3.5 h-3.5 text-rose-500" />
+                            <span>{bn ? 'ট্যাব হাইড:' : 'Hidden tabs:'}</span>
+                            <strong className="text-foreground font-mono">{hiddenFeaturesCount}</strong>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Card Footer Actions */}
+                      <div className="pt-3 border-t border-border/50 flex items-center justify-between gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleOpenPermModal(r)}
+                          className="flex-1 btn-primary-gradient h-8 text-xs gap-1.5 shadow-sm"
+                        >
+                          <KeyRound className="w-3.5 h-3.5" />
+                          <span>{bn ? 'পারমিশন কার্ড ওপেন করুন' : 'Open Permissions'}</span>
+                        </Button>
+
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted"
+                            onClick={() => openRoleDialog(r)}
+                            title={bn ? 'রোল সম্পাদনা' : 'Edit Role'}
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                          {!r.is_system && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
+                              onClick={() => deleteCustomRole(r)}
+                              title={bn ? 'মুছুন' : 'Delete Role'}
                             >
-                              <td className="p-3 font-medium">
-                                <div
-                                  className="flex flex-col"
-                                  style={{ paddingLeft: item.depth * 16 }}
-                                >
-                                  <span>{language === 'bn' ? item.label_bn : item.label}</span>
-                                  <span className="text-[10px] text-muted-foreground font-mono">
-                                    {item.path}
-                                  </span>
-                                </div>
-                              </td>
-                              {(['can_view', 'can_add', 'can_edit', 'can_delete', 'can_approve'] as const).map(
-                                (field) => (
-                                  <td key={field} className="text-center p-3">
-                                    <Checkbox
-                                      checked={perm[field]}
-                                      onCheckedChange={() => togglePerm(item.path, field)}
-                                      className={field === 'can_approve' ? 'border-emerald-500 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500' : ''}
-                                    />
-                                  </td>
-                                ),
-                              )}
-                              <td className="text-center p-3">
-                                <Checkbox
-                                  checked={allChecked}
-                                  onCheckedChange={() => toggleAllForMenu(item.path)}
-                                />
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </>
-                    ))}
-                  </tbody>
-                </table>
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        )}
+
+        {/* View Mode: Matrix View */}
+        {viewMode === 'matrix' && (
+          <div className="rounded-2xl border bg-card p-4 overflow-x-auto shadow-sm">
+            <table className="w-full text-xs text-left">
+              <thead>
+                <tr className="border-b bg-muted/30">
+                  <th className="p-3 font-semibold">{bn ? 'পেজ / মডিউল' : 'Page / Module'}</th>
+                  {filteredRoles.map((r) => (
+                    <th key={r.name} className="p-3 text-center font-semibold whitespace-nowrap">
+                      <div>{bn ? r.name_bn || r.name : r.name}</div>
+                      <span className="text-[10px] text-muted-foreground font-mono font-normal">({r.name})</span>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/40">
+                {allMenuPaths.map((mp) => (
+                  <tr key={mp.path} className="hover:bg-muted/10 transition-colors">
+                    <td className="p-3">
+                      <div className="font-medium text-foreground">{bn ? mp.label_bn : mp.label_en}</div>
+                      <div className="text-[11px] text-muted-foreground font-mono">{mp.path}</div>
+                    </td>
+                    {filteredRoles.map((r) => {
+                      const perm = allRolePerms.find((p) => p.role === r.name && p.menu_path === mp.path);
+                      const hasView = perm?.can_view;
+                      const hasApp =
+                        roleFeatureSettings[r.name]?.[`${mp.path}:approval_add`] ||
+                        roleFeatureSettings[r.name]?.[`${mp.path}:approval_edit`] ||
+                        roleFeatureSettings[r.name]?.[`${mp.path}:approval_delete`];
+
+                      return (
+                        <td key={r.name} className="p-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenPermModal(r)}
+                            className="inline-flex flex-col items-center gap-1 hover:opacity-80 transition-opacity"
+                          >
+                            {hasView ? (
+                              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 text-[10px]">
+                                {bn ? 'সক্রিয়' : 'Active'}
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="opacity-40 text-[10px]">
+                                {bn ? 'বন্ধ' : 'None'}
+                              </Badge>
+                            )}
+                            {hasApp && (
+                              <span className="text-[9px] text-amber-600 font-bold">
+                                {bn ? 'অনুমোদন শর্ত' : 'Needs Appr'}
+                              </span>
+                            )}
+                          </button>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Role Create / Edit Dialog */}
+        <Dialog open={roleDialogOpen} onOpenChange={setRoleDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-primary" />
+                <span>
+                  {editingRole
+                    ? (bn ? 'রোল সম্পাদনা' : 'Edit Role')
+                    : (bn ? 'নতুন কাস্টম রোল তৈরি' : 'Create Custom Role')}
+                </span>
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4 py-2">
+              <div className="space-y-1.5">
+                <Label>{bn ? 'রোলের আইডেন্টিফায়ার (ইংরেজি ছোট হাতের)' : 'Role Slug'}</Label>
+                <Input
+                  value={roleName}
+                  onChange={(e) => setRoleName(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
+                  placeholder="e.g. accountant, librarian, driver"
+                  disabled={editingRole?.is_system}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>{bn ? 'বাংলা নাম' : 'Bengali Name'}</Label>
+                <Input
+                  value={roleNameBn}
+                  onChange={(e) => setRoleNameBn(e.target.value)}
+                  placeholder="যেমন: একাউন্ট্যান্ট, লাইব্রেরিয়ান"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>{bn ? 'বেস রোল' : 'Base Role'}</Label>
+                <Select value={roleBaseRole} onValueChange={setRoleBaseRole} disabled={editingRole?.is_system}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="teacher">Teacher</SelectItem>
+                    <SelectItem value="staff">Staff</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground">
+                  {bn ? 'এই রোলটি কোন মূল ধরনের কাঠামোর অধীনে থাকবে।' : 'Determines default portal behavior.'}
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>{bn ? 'বিবরণ (বাংলা)' : 'Description (Bengali)'}</Label>
+                <Textarea
+                  value={roleDescBn}
+                  onChange={(e) => setRoleDescBn(e.target.value)}
+                  rows={2}
+                  placeholder="রোলের সংক্ষিপ্ত দায়িত্ব লিখুন..."
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setRoleDialogOpen(false)} disabled={roleSaving}>
+                {bn ? 'বাতিল' : 'Cancel'}
+              </Button>
+              <Button onClick={saveCustomRole} disabled={roleSaving} className="btn-primary-gradient">
+                {roleSaving ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
+                {bn ? 'রোল সেভ করুন' : 'Save Role'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* The Card-based Permission & Tab Visibility Modal */}
+        <RolePermissionCardModal
+          open={cardModalOpen}
+          onOpenChange={setCardModalOpen}
+          role={selectedRoleForModal}
+          allMenuPaths={allMenuPaths}
+          initialPerms={rolePermsForModal}
+          initialHiddenFeatures={roleFeaturesForModal}
+          onSaved={() => {
+            queryClient.invalidateQueries({ queryKey: ['role-permissions-all'] });
+            queryClient.invalidateQueries({ queryKey: ['role_feature_permissions'] });
+          }}
+        />
       </div>
     </AdminLayout>
   );
