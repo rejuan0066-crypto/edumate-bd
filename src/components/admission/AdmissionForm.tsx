@@ -697,72 +697,25 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       errors['admission_class'] = bn ? 'শ্রেণী নির্বাচন আবশ্যক' : 'Class selection is required';
     }
 
-    // In edit mode, admins can update without enforcing all public required fields
-    if (!isEditMode) {
-      configFields.forEach(f => {
-        const key = f.default_value;
-        if (!key || !f.is_active || !f.is_required) return;
-        const val = form[key];
-        if (key === 'address_permanent' || key === 'address_present') return; // address handled separately
-        if (key === 'guardian_name' || key === 'guardian_relation' || key === 'guardian_phone' || key === 'guardian_nid') {
-          if (form.guardian_type !== 'other') return; // only required for "other" guardian
-        }
-        if (!val || (typeof val === 'string' && !val.trim())) {
-          errors[key] = bn ? `${f.label_bn} আবশ্যক` : `${f.label} is required`;
-        }
-      });
+    // Admin panel form: minimal validation to allow flexible adding and updating
+    if (!form.first_name?.trim()) {
+      errors['first_name'] = bn ? 'শিক্ষার্থীর নাম আবশ্যক' : 'Student name is required';
     }
 
-    // Special validations
-    if (isFieldActive('birth_reg_no') && form.birth_reg_no && form.birth_reg_no.length !== 17) {
+    // Special format validations: only trigger if value is actually provided
+    if (form.birth_reg_no && form.birth_reg_no.length !== 17) {
       errors['birth_reg_no'] = bn ? 'জন্ম নিবন্ধন ১৭ ডিজিট হতে হবে' : 'Birth Reg must be 17 digits';
     }
-    if (isFieldActive('father_nid') && isFieldActive('mother_nid')) {
-      if (!isEditMode && !form.father_nid && !form.mother_nid) {
-        const nidMsg = bn ? 'পিতা বা মাতার যে কোন একজনের NID আবশ্যক' : 'At least one parent NID is required';
-        errors['father_nid'] = nidMsg;
-        errors['mother_nid'] = nidMsg;
-      }
-    }
-    if (isFieldActive('father_nid') && form.father_nid && form.father_nid.length !== 10 && form.father_nid.length !== 17) {
+    if (form.father_nid && form.father_nid.length !== 10 && form.father_nid.length !== 17) {
       errors['father_nid'] = bn ? 'NID ১০ বা ১৭ ডিজিট' : 'NID must be 10 or 17 digits';
     }
-    if (isFieldActive('mother_nid') && form.mother_nid && form.mother_nid.length !== 10 && form.mother_nid.length !== 17) {
+    if (form.mother_nid && form.mother_nid.length !== 10 && form.mother_nid.length !== 17) {
       errors['mother_nid'] = bn ? 'NID ১০ বা ১৭ ডিজিট' : 'NID must be 10 or 17 digits';
     }
-    if (isFieldActive('father_phone') && isFieldActive('mother_phone')) {
-      if (!isEditMode && !form.father_phone && !form.mother_phone) {
-        const phoneMsg = bn ? 'পিতা বা মাতার যে কোন একজনের মোবাইল আবশ্যক' : 'At least one parent mobile is required';
-        errors['father_phone'] = phoneMsg;
-        errors['mother_phone'] = phoneMsg;
-      }
-    }
-    if (!isEditMode && isFieldActive('guardian_type') && !form.guardian_type) {
-      errors['guardian_type'] = bn ? 'অভিভাবক নির্বাচন করুন' : 'Select guardian';
-    }
-    if (form.guardian_type === 'other' && isFieldActive('guardian_nid')) {
-      if (form.guardian_nid && form.guardian_nid.length !== 10 && form.guardian_nid.length !== 17) {
+    if (form.guardian_type === 'other' && form.guardian_nid) {
+      if (form.guardian_nid.length !== 10 && form.guardian_nid.length !== 17) {
         errors['guardian_nid'] = bn ? 'NID ১০/১৭ ডিজিট' : 'NID 10/17 digits required';
       }
-    }
-
-    // Validation manager rules — skip entirely in edit mode (admin update)
-    if (!isEditMode) {
-      const vmForm: Record<string, any> = {
-        ...form,
-        name_bn: form.first_name, // bangla name stored as first_name
-        name_en: form.last_name,
-        phone: form.father_phone || form.mother_phone || form.guardian_phone, // at least one phone
-      };
-      const vmErrors = validateAll(vmForm);
-      console.log('[AdmissionForm] vmErrors:', vmErrors);
-      // Skip vm errors for fields already validated above with custom logic
-      const skipVmKeys = ['father_phone', 'mother_phone', 'father_nid', 'mother_nid', 'guardian_nid', 'birth_reg_no'];
-      Object.entries(vmErrors).forEach(([key, msg]) => {
-        if (!skipVmKeys.includes(key) && !errors[key]) {
-          errors[key] = msg;
-        }
-      });
     }
     console.log('[AdmissionForm] final errors:', errors);
 
