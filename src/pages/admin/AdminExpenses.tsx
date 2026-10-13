@@ -360,7 +360,8 @@ const AdminExpenses = () => {
       try {
         let query = supabase.from('expenses')
           .select('*, expense_institutions(*), expense_categories(*)')
-          .order('expense_date', { ascending: false });
+          .order('expense_date', { ascending: true })
+          .order('created_at', { ascending: true });
 
         if (isoPrefix) {
           query = query.or(`month_year.eq.${selectedMonthYear},and(expense_date.gte.${isoPrefix}-01,expense_date.lte.${isoPrefix}-31)`);
@@ -378,7 +379,8 @@ const AdminExpenses = () => {
         const { data, error } = await supabase.from('expenses')
           .select('*, expense_institutions(*), expense_categories(*)')
           .eq('month_year', selectedMonthYear)
-          .order('expense_date', { ascending: false });
+          .order('expense_date', { ascending: true })
+          .order('created_at', { ascending: true });
 
         if (error) {
           console.error('Expenses fallback query error:', error);
@@ -397,7 +399,10 @@ const AdminExpenses = () => {
     queryFn: async () => {
       try {
         const { data, error } = await supabase.from('deposits')
-          .select('*').eq('month_year', selectedMonthYear).order('deposit_date', { ascending: false });
+          .select('*')
+          .eq('month_year', selectedMonthYear)
+          .order('deposit_date', { ascending: true })
+          .order('created_at', { ascending: true });
         if (error) {
           console.error('deposits query error:', error);
           return [];
@@ -416,12 +421,14 @@ const AdminExpenses = () => {
       try {
         const { data, error } = await supabase.from('expenses')
           .select('id, month_year, expense_date, amount, institution_id, category_id, description, quantity, has_receipt, receipt_url, expense_institutions(*), expense_categories(*)')
-          .order('expense_date', { ascending: false });
+          .order('expense_date', { ascending: true })
+          .order('created_at', { ascending: true });
         if (error) {
           console.error('allExpenses query error:', error);
           const { data: fallbackData } = await supabase.from('expenses')
             .select('id, month_year, expense_date, amount, institution_id, category_id, description, quantity, has_receipt, receipt_url')
-            .order('expense_date', { ascending: false });
+            .order('expense_date', { ascending: true })
+            .order('created_at', { ascending: true });
           return fallbackData || [];
         }
         return data || [];
@@ -2872,24 +2879,34 @@ const AdminExpenses = () => {
                       String(e.amount ?? '').includes(q)
                     );
                   }
+                  displayExpenses = displayExpenses.slice().sort((a: any, b: any) => {
+                    const dateCmp = (a.expense_date || '').localeCompare(b.expense_date || '');
+                    if (dateCmp !== 0) return dateCmp;
+                    return (a.created_at || '').localeCompare(b.created_at || '');
+                  });
                   const displayTotal = displayExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
 
-                  // Filter dues by category and search as well
-                  let displayDues = instDues;
-                  if (tableCategoryId !== 'all') {
-                    displayDues = displayDues.filter((e: any) => e.category_id === tableCategoryId);
-                  }
-                  if (tableSearchText.trim()) {
-                    const q = tableSearchText.trim().toLowerCase();
-                    displayDues = displayDues.filter((e: any) =>
-                      cleanDesc(e.description || '').toLowerCase().includes(q) ||
-                      (e.expense_date || '').includes(q) ||
-                      getMemo(e.description || '').toLowerCase().includes(q) ||
-                      getRemarks(e.description || '').toLowerCase().includes(q) ||
-                      String(e.amount ?? '').includes(q)
-                    );
-                  }
-                  const displayDuesTotal = displayDues.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+                    // Filter dues by category and search as well
+                    let displayDues = instDues;
+                    if (tableCategoryId !== 'all') {
+                      displayDues = displayDues.filter((e: any) => e.category_id === tableCategoryId);
+                    }
+                    if (tableSearchText.trim()) {
+                      const q = tableSearchText.trim().toLowerCase();
+                      displayDues = displayDues.filter((e: any) =>
+                        cleanDesc(e.description || '').toLowerCase().includes(q) ||
+                        (e.expense_date || '').includes(q) ||
+                        getMemo(e.description || '').toLowerCase().includes(q) ||
+                        getRemarks(e.description || '').toLowerCase().includes(q) ||
+                        String(e.amount ?? '').includes(q)
+                      );
+                    }
+                    displayDues = displayDues.slice().sort((a: any, b: any) => {
+                      const dateCmp = (a.expense_date || '').localeCompare(b.expense_date || '');
+                      if (dateCmp !== 0) return dateCmp;
+                      return (a.created_at || '').localeCompare(b.created_at || '');
+                    });
+                    const displayDuesTotal = displayDues.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
 
                   return (
                     <div className="space-y-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-card p-4 sm:p-5 shadow-sm">
