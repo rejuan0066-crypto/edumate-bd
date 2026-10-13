@@ -5,6 +5,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import SecureImage from '@/components/SecureImage';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 
 const MAX_SIZE = 300 * 1024; // 300KB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -61,26 +62,34 @@ const PhotoUpload = ({ value, onChange, folder = 'general', className, size = 'm
     reader.readAsDataURL(file);
 
     try {
-      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-      const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('photos')
-        .upload(fileName, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      // Store as "<bucket>/<path>" so SecureImage / useSecureUrl can resolve a
-      // short-lived signed URL on demand. Avoids getPublicUrl on a private bucket.
-      const storageRef = `photos/${fileName}`;
-
-      onChange(storageRef);
+      const res = await uploadToCloudinary(file, { folder: `photos/${folder}` });
+      onChange(res.secure_url);
       setPreview(null);
       toast.success(bn ? 'ফটো আপলোড সফল' : 'Photo uploaded');
-    } catch (err: any) {
-      setError(bn ? 'আপলোড ব্যর্থ' : 'Upload failed');
-      toast.error(err.message || 'Upload failed');
-      setPreview(null);
+    } catch (cErr) {
+      console.warn('Cloudinary photo upload failed, falling back to Supabase:', cErr);
+      try {
+        const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('photos')
+          .upload(fileName, file, { upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        // Store as "<bucket>/<path>" so SecureImage / useSecureUrl can resolve a
+        // short-lived signed URL on demand. Avoids getPublicUrl on a private bucket.
+        const storageRef = `photos/${fileName}`;
+
+        onChange(storageRef);
+        setPreview(null);
+        toast.success(bn ? 'ফটো আপলোড সফল' : 'Photo uploaded');
+      } catch (err: any) {
+        setError(bn ? 'আপলোড ব্যর্থ' : 'Upload failed');
+        toast.error(err.message || 'Upload failed');
+        setPreview(null);
+      }
     } finally {
       setUploading(false);
     }

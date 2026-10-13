@@ -18,6 +18,7 @@ import { Camera, Search, Loader2, AlertCircle, CheckCircle, Plus, Printer, Downl
 import { toast } from 'sonner';
 import { DatePicker } from '@/components/ui/date-picker';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 
 const formatAddress = (addr: AddressData) =>
@@ -304,14 +305,17 @@ const AdmissionPage = () => {
 
   const uploadPhoto = async (): Promise<string | null> => {
     if (!photoFile) return form.photo_url || null;
-    const ext = photoFile.name.split('.').pop();
-    // Anonymous public-form upload — must go under the `public-uploads/` prefix
-    // (the only path the anon RLS policy on the photos bucket allows).
-    const path = `public-uploads/students/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
-    const { error } = await supabase.storage.from('photos').upload(path, photoFile);
-    if (error) { toast.error('Photo upload failed'); return null; }
-    // Bucket is private; store the storage path so a signed URL can be issued on read.
-    return `photos/${path}`;
+    try {
+      const res = await uploadToCloudinary(photoFile, { folder: 'students' });
+      return res.secure_url;
+    } catch (cErr) {
+      console.warn('Cloudinary photo upload failed, falling back to Supabase:', cErr);
+      const ext = photoFile.name.split('.').pop();
+      const path = `public-uploads/students/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
+      const { error } = await supabase.storage.from('photos').upload(path, photoFile);
+      if (error) { toast.error('Photo upload failed'); return null; }
+      return `photos/${path}`;
+    }
   };
 
   const buildAdmissionData = (): Record<string, any> => ({

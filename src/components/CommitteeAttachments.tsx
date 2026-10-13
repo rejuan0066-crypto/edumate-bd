@@ -19,6 +19,7 @@ import {
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
 import SecureImage from "@/components/SecureImage";
 import { getSecureUrl } from "@/lib/secureStorage";
+import { uploadToCloudinary } from "@/lib/cloudinary";
 
 interface Props {
   committeeId: string;
@@ -74,14 +75,26 @@ export default function CommitteeAttachments({ committeeId, committeeName }: Pro
         throw new Error(bn ? "ফাইল ২০MB এর বেশি" : "File exceeds 20MB");
       }
       setUploading(true);
-      const ext = file.name.split(".").pop() || "bin";
-      const path = `${committeeId}/${Date.now()}-${Math.random()
-        .toString(36)
-        .slice(2, 8)}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("committee-attachments")
-        .upload(path, file, { contentType: file.type, upsert: false });
-      if (upErr) throw upErr;
+      let fileUrl = '';
+      let storagePath = '';
+
+      try {
+        const res = await uploadToCloudinary(file, { folder: `committee/${committeeId}` });
+        fileUrl = res.secure_url;
+        storagePath = res.public_id;
+      } catch (cErr) {
+        console.warn("Cloudinary upload failed, falling back to Supabase:", cErr);
+        const ext = file.name.split(".").pop() || "bin";
+        const path = `${committeeId}/${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2, 8)}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("committee-attachments")
+          .upload(path, file, { contentType: file.type, upsert: false });
+        if (upErr) throw upErr;
+        fileUrl = `committee-attachments/${path}`;
+        storagePath = path;
+      }
 
       const { data: userData } = await supabase.auth.getUser();
       const { error: insErr } = await supabase
@@ -89,10 +102,8 @@ export default function CommitteeAttachments({ committeeId, committeeName }: Pro
         .insert({
           committee_id: committeeId,
           file_name: file.name,
-          // Bucket is private; store the canonical "<bucket>/<path>" reference
-          // — clients fetch a signed URL on demand via secureStorage helpers.
-          file_url: `committee-attachments/${path}`,
-          storage_path: path,
+          file_url: fileUrl,
+          storage_path: storagePath,
           file_size: file.size,
           mime_type: file.type || null,
           description: description || null,

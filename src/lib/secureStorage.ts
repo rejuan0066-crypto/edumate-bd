@@ -36,6 +36,9 @@ export function parseStorageRef(input: string | null | undefined): ResolvedRef |
   if (!input) return null;
   const s = String(input).trim();
   if (!s) return null;
+  if (s.includes('res.cloudinary.com') || s.startsWith('http://') || (s.startsWith('https://') && !s.includes('/storage/v1/object/'))) {
+    return null; // External or Cloudinary URL — already directly accessible
+  }
 
   // Full URL form (public or sign endpoint)
   const m = s.match(/\/storage\/v1\/object\/(?:public|sign)\/([^/]+)\/(.+?)(?:\?.*)?$/);

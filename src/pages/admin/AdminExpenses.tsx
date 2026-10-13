@@ -36,6 +36,7 @@ import { useConfirm } from "@/contexts/ConfirmContext";
 import { exportExpensesMultiTabExcel, exportSingleInstitutionExcel, getInstShortName } from '@/lib/expenseExcelExport';
 import { toBnDigits } from '@/lib/digits';
 import { useSignatoryAuthorities } from '@/hooks/useSignatoryAuthorities';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 
 export const DEFAULT_QUANTITY_UNITS = [
   'পিস',
@@ -829,22 +830,29 @@ const AdminExpenses = () => {
       if (expInstLogoFile) {
         setExpInstLogoUploading(true);
         try {
-          const fileExt = expInstLogoFile.name.split('.').pop() || 'png';
-          const fileName = `inst_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
-          const { data: uploadData, error: uploadErr } = await supabase.storage
-            .from('institution-logos')
-            .upload(fileName, expInstLogoFile);
-          if (uploadErr) {
-            console.warn('Upload to institution-logos bucket failed, trying receipts bucket:', uploadErr);
-            const { data: recData, error: recErr } = await supabase.storage
-              .from('receipts')
+          const res = await uploadToCloudinary(expInstLogoFile, { folder: 'logos' });
+          finalLogoUrl = res.secure_url;
+        } catch (cErr) {
+          console.warn('Cloudinary logo upload failed, trying Supabase:', cErr);
+          try {
+            const fileExt = expInstLogoFile.name.split('.').pop() || 'png';
+            const fileName = `inst_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+            const { data: uploadData, error: uploadErr } = await supabase.storage
+              .from('institution-logos')
               .upload(fileName, expInstLogoFile);
-            if (recErr) throw uploadErr;
-            const { data: urlData } = supabase.storage.from('receipts').getPublicUrl(recData.path);
-            finalLogoUrl = urlData.publicUrl;
-          } else {
-            const { data: urlData } = supabase.storage.from('institution-logos').getPublicUrl(uploadData.path);
-            finalLogoUrl = urlData.publicUrl;
+            if (uploadErr) {
+              const { data: recData, error: recErr } = await supabase.storage
+                .from('receipts')
+                .upload(fileName, expInstLogoFile);
+              if (recErr) throw uploadErr;
+              const { data: urlData } = supabase.storage.from('receipts').getPublicUrl(recData.path);
+              finalLogoUrl = urlData.publicUrl;
+            } else {
+              const { data: urlData } = supabase.storage.from('institution-logos').getPublicUrl(uploadData.path);
+              finalLogoUrl = urlData.publicUrl;
+            }
+          } catch (sbErr) {
+            console.error('All logo uploads failed:', sbErr);
           }
         } finally {
           setExpInstLogoUploading(false);
@@ -1031,17 +1039,26 @@ const AdminExpenses = () => {
       
       let receiptUrl = expenseForm.receipt_url || null;
       
-      // Upload receipt file if exists
+      // Upload receipt file if exists (Cloudinary with Supabase fallback)
       if (receiptFile && expenseForm.has_receipt) {
         setUploading(true);
         try {
-          const fileExt = receiptFile.name.split('.').pop();
-          const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('receipts')
-            .upload(fileName, receiptFile);
-          if (uploadError) throw uploadError;
-          receiptUrl = `receipts/${uploadData.path}`;
+          const res = await uploadToCloudinary(receiptFile, { folder: 'receipts' });
+          receiptUrl = res.secure_url;
+        } catch (cErr) {
+          console.warn('Cloudinary receipt upload failed, falling back to Supabase:', cErr);
+          try {
+            const fileExt = receiptFile.name.split('.').pop();
+            const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+            const { data: uploadData, error: uploadError } = await supabase.storage
+              .from('receipts')
+              .upload(fileName, receiptFile);
+            if (uploadError) throw uploadError;
+            receiptUrl = `receipts/${uploadData.path}`;
+          } catch (sbErr) {
+            console.error('All receipt upload methods failed:', sbErr);
+            throw cErr;
+          }
         } finally {
           setUploading(false);
         }
@@ -1585,13 +1602,24 @@ const AdminExpenses = () => {
       let logoUrl = institutionForm.logo_url || null;
       if (logoFile) {
         setLogoUploading(true);
-        const fileExt = logoFile.name.split('.').pop();
-        const fileName = `logo_${Date.now()}.${fileExt}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage.from('institution-logos').upload(fileName, logoFile);
-        setLogoUploading(false);
-        if (uploadError) throw uploadError;
-        const { data: urlData } = supabase.storage.from('institution-logos').getPublicUrl(uploadData.path);
-        logoUrl = urlData.publicUrl;
+        try {
+          const res = await uploadToCloudinary(logoFile, { folder: 'logos' });
+          logoUrl = res.secure_url;
+        } catch (cErr) {
+          console.warn('Cloudinary logo upload failed, trying Supabase:', cErr);
+          try {
+            const fileExt = logoFile.name.split('.').pop();
+            const fileName = `logo_${Date.now()}.${fileExt}`;
+            const { data: uploadData, error: uploadError } = await supabase.storage.from('institution-logos').upload(fileName, logoFile);
+            if (uploadError) throw uploadError;
+            const { data: urlData } = supabase.storage.from('institution-logos').getPublicUrl(uploadData.path);
+            logoUrl = urlData.publicUrl;
+          } catch (sbErr) {
+            console.error('All logo uploads failed:', sbErr);
+          }
+        } finally {
+          setLogoUploading(false);
+        }
       }
       const payload = { name: institutionForm.name, name_en: institutionForm.name_en || null, address: institutionForm.address || null, phone: institutionForm.phone || null, email: institutionForm.email || null, other_info: institutionForm.other_info || null, logo_url: logoUrl };
       if (editingInstitutionId) {

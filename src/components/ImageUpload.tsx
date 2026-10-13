@@ -5,6 +5,7 @@ import { Upload, X, Loader2, Crop } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import ImageCropDialog from '@/components/ImageCropDialog';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 
 interface ImageUploadProps {
   value: string;
@@ -28,17 +29,24 @@ const ImageUpload = ({ value, onChange, folder = 'general', label, className = '
   const uploadBlob = async (blob: Blob, fileName: string, contentType: string) => {
     setUploading(true);
     try {
-      const { error: uploadError } = await supabase.storage
-        .from('website-assets')
-        .upload(fileName, blob, { upsert: true, contentType });
-
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage.from('website-assets').getPublicUrl(fileName);
-      onChange(data.publicUrl);
+      const res = await uploadToCloudinary(blob, { folder });
+      onChange(res.secure_url);
       toast.success(language === 'bn' ? 'ছবি আপলোড সফল!' : 'Image uploaded!');
-    } catch (err: any) {
-      toast.error(err.message || (language === 'bn' ? 'আপলোড ব্যর্থ' : 'Upload failed'));
+    } catch (cErr) {
+      console.warn('Cloudinary upload failed, falling back to Supabase:', cErr);
+      try {
+        const { error: uploadError } = await supabase.storage
+          .from('website-assets')
+          .upload(fileName, blob, { upsert: true, contentType });
+
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage.from('website-assets').getPublicUrl(fileName);
+        onChange(data.publicUrl);
+        toast.success(language === 'bn' ? 'ছবি আপলোড সফল!' : 'Image uploaded!');
+      } catch (err: any) {
+        toast.error(err.message || (language === 'bn' ? 'আপলোড ব্যর্থ' : 'Upload failed'));
+      }
     }
     setUploading(false);
   };
@@ -72,20 +80,27 @@ const ImageUpload = ({ value, onChange, folder = 'general', label, className = '
     // Direct upload without crop
     setUploading(true);
     try {
-      const ext = file.name.split('.').pop()?.toLowerCase();
-      const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('website-assets')
-        .upload(fileName, file, { upsert: true, contentType: file.type });
-
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage.from('website-assets').getPublicUrl(fileName);
-      onChange(data.publicUrl);
+      const res = await uploadToCloudinary(file, { folder });
+      onChange(res.secure_url);
       toast.success(language === 'bn' ? 'ছবি আপলোড সফল!' : 'Image uploaded!');
-    } catch (err: any) {
-      toast.error(err.message || (language === 'bn' ? 'আপলোড ব্যর্থ' : 'Upload failed'));
+    } catch (cErr) {
+      console.warn('Cloudinary upload failed, falling back to Supabase:', cErr);
+      try {
+        const ext = file.name.split('.').pop()?.toLowerCase();
+        const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('website-assets')
+          .upload(fileName, file, { upsert: true, contentType: file.type });
+
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage.from('website-assets').getPublicUrl(fileName);
+        onChange(data.publicUrl);
+        toast.success(language === 'bn' ? 'ছবি আপলোড সফল!' : 'Image uploaded!');
+      } catch (err: any) {
+        toast.error(err.message || (language === 'bn' ? 'আপলোড ব্যর্থ' : 'Upload failed'));
+      }
     }
     setUploading(false);
   };

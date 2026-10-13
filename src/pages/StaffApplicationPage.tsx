@@ -12,8 +12,8 @@ import PhotoUpload from '@/components/PhotoUpload';
 import { useState, useRef } from 'react';
 import { AlertCircle, CheckCircle, Loader2, Upload, Trash2, Eye } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 const formatAddress = (addr: AddressData) =>
@@ -153,17 +153,25 @@ const StaffApplicationPage = () => {
       toast.error(bn ? 'ডকুমেন্টের ধরন নির্বাচন করুন' : 'Select document type');
       return;
     }
-    const ext = file.name.split('.').pop();
-    // Public job-application upload — must use `public-uploads/` prefix (anon RLS).
-    const path = `public-uploads/staff-docs/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-    const { error } = await supabase.storage.from('photos').upload(path, file);
-    if (error) { toast.error(error.message); return; }
-    // Bucket is private; store storage path for signed-URL resolution on display.
-    setDocuments(prev => [...prev, { id: crypto.randomUUID(), type: selectedType, name: file.name, url: `photos/${path}` }]);
-    setDocType('');
-    setCustomDocType('');
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    toast.success(bn ? 'ডকুমেন্ট আপলোড হয়েছে' : 'Document uploaded');
+    try {
+      const res = await uploadToCloudinary(file, { folder: 'staff-docs' });
+      setDocuments(prev => [...prev, { id: crypto.randomUUID(), type: selectedType, name: file.name, url: res.secure_url }]);
+      setDocType('');
+      setCustomDocType('');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      toast.success(bn ? 'ডকুমেন্ট আপলোড হয়েছে' : 'Document uploaded');
+    } catch (cErr) {
+      console.warn('Cloudinary upload failed, falling back to Supabase:', cErr);
+      const ext = file.name.split('.').pop();
+      const path = `public-uploads/staff-docs/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase.storage.from('photos').upload(path, file);
+      if (error) { toast.error(error.message); return; }
+      setDocuments(prev => [...prev, { id: crypto.randomUUID(), type: selectedType, name: file.name, url: `photos/${path}` }]);
+      setDocType('');
+      setCustomDocType('');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      toast.success(bn ? 'ডকুমেন্ট আপলোড হয়েছে' : 'Document uploaded');
+    }
   };
 
   const validateNid = (val: string, setter: (v: string) => void, errorSetter?: (v: string) => void) => {
