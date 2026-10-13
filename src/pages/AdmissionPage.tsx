@@ -1213,11 +1213,13 @@ const AdmissionPage = () => {
       <div class="section">
         <div class="section-title">২. পিতা-মাতার তথ্য</div>
         <div class="field-grid">
-          <div class="field"><span class="field-label">পিতার নাম:</span><span class="field-value">${blank ? blankVal : (d.father_name || '-')}</span></div>
+          <div class="field"><span class="field-label">পিতার নাম (বাংলা):</span><span class="field-value">${blank ? blankVal : (d.father_name || '-')}</span></div>
+          <div class="field"><span class="field-label">পিতার নাম (ইংরেজি):</span><span class="field-value">${blank ? blankVal : (d.father_name_en || '-')}</span></div>
           <div class="field"><span class="field-label">পিতার পেশা:</span><span class="field-value">${blank ? blankVal : (d.father_occupation || '-')}</span></div>
           <div class="field"><span class="field-label">পিতার ফোন:</span><span class="field-value">${blank ? blankVal : (d.father_phone || '-')}</span></div>
           <div class="field"><span class="field-label">পিতার NID:</span><span class="field-value">${blank ? blankVal : (d.father_nid || '-')}</span></div>
-          <div class="field"><span class="field-label">মাতার নাম:</span><span class="field-value">${blank ? blankVal : (d.mother_name || '-')}</span></div>
+          <div class="field"><span class="field-label">মাতার নাম (বাংলা):</span><span class="field-value">${blank ? blankVal : (d.mother_name || '-')}</span></div>
+          <div class="field"><span class="field-label">মাতার নাম (ইংরেজি):</span><span class="field-value">${blank ? blankVal : (d.mother_name_en || '-')}</span></div>
           <div class="field"><span class="field-label">মাতার পেশা:</span><span class="field-value">${blank ? blankVal : (d.mother_occupation || '-')}</span></div>
           <div class="field"><span class="field-label">মাতার ফোন:</span><span class="field-value">${blank ? blankVal : (d.mother_phone || '-')}</span></div>
           <div class="field"><span class="field-label">মাতার NID:</span><span class="field-value">${blank ? blankVal : (d.mother_nid || '-')}</span></div>

@@ -80,11 +80,13 @@ export const printStudentProfile = ({
     {
       title: t('Parents Information', 'অভিভাবক তথ্য'),
       rows: [
-        { label: t("Father's Name", 'পিতার নাম'), value: student.father_name || student.father_name_en },
+        { label: t("Father's Name (BN)", 'পিতার নাম (বাংলা)'), value: student.father_name },
+        { label: t("Father's Name (EN)", 'পিতার নাম (ইংরেজি)'), value: student.father_name_en },
         { label: t("Father's Occupation", 'পিতার পেশা'), value: student.father_occupation },
         { label: t("Father's NID", 'পিতার NID'), value: formatDigits(student.father_nid, bn) },
         { label: t("Father's Phone", 'পিতার ফোন'), value: formatDigits(student.father_phone, bn) },
-        { label: t("Mother's Name", 'মাতার নাম'), value: student.mother_name || student.mother_name_en },
+        { label: t("Mother's Name (BN)", 'মাতার নাম (বাংলা)'), value: student.mother_name },
+        { label: t("Mother's Name (EN)", 'মাতার নাম (ইংরেজি)'), value: student.mother_name_en },
         { label: t("Mother's Occupation", 'মাতার পেশা'), value: student.mother_occupation },
         { label: t("Mother's NID", 'মাতার NID'), value: formatDigits(student.mother_nid, bn) },
         { label: t("Mother's Phone", 'মাতার ফোন'), value: formatDigits(student.mother_phone, bn) },
@@ -216,13 +218,15 @@ export const printStudentProfile = ({
         ${photo ? `<img src="${esc(photo)}" alt="photo" onerror="this.style.display='none'" />` : `<span class="placeholder">${t('No Photo', 'ছবি নেই')}</span>`}
       </div>
       <div class="summary">
-        <div><b>${t('Name', 'নাম')}:</b> ${esc(student.name_bn || student.name || student.name_en)}</div>
+        <div><b>${t('Name (BN)', 'নাম (বাংলা)')}:</b> ${esc(student.name_bn || student.name || '-')}</div>
+        ${student.name_en ? `<div><b>${t('Name (EN)', 'নাম (ইংরেজি)')}:</b> ${esc(student.name_en)}</div>` : ''}
         <div><b>${t('Reg No', 'রেজিস্ট্রেশন')}:</b> ${esc(formatDigits(student.registration_no || student.student_id, bn))}</div>
         <div><b>${t('Class', 'শ্রেণী')}:</b> ${esc(className)}</div>
         <div><b>${t('Roll', 'রোল')}:</b> ${esc(formatDigits(student.roll_number, bn))}</div>
         <div><b>${t('Session', 'সেশন')}:</b> ${esc(formatDigits(sessionName, bn))}</div>
         <div><b>${t('DOB', 'জন্ম তারিখ')}:</b> ${esc(formatDigits(student.date_of_birth, bn))}</div>
-        <div><b>${t('Father', 'পিতা')}:</b> ${esc(student.father_name || student.father_name_en)}</div>
+        <div><b>${t('Father (BN)', 'পিতা (বাংলা)')}:</b> ${esc(student.father_name || '-')}</div>
+        ${student.father_name_en ? `<div><b>${t('Father (EN)', 'পিতা (ইংরেজি)')}:</b> ${esc(student.father_name_en)}</div>` : ''}
         <div><b>${t('Phone', 'ফোন')}:</b> ${esc(formatDigits(student.guardian_phone || student.phone, bn))}</div>
       </div>
     </div>

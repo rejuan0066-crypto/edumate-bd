@@ -1022,7 +1022,8 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
         <div className="section-title">{bn ? '১. ব্যক্তিগত তথ্য' : '1. Employee Details'}</div>
         <table className="form-table">
           <tbody>
-            <tr><td className="label">{bn ? 'নাম' : 'Full Name'}</td><td className="value" colSpan={3}>{firstName} {lastName}</td></tr>
+            <tr><td className="label">{bn ? 'নাম (বাংলা)' : 'Name (Bangla)'}</td><td className="value" colSpan={3}>{firstName || `${firstName} ${lastName}`.trim() || '-'}</td></tr>
+            <tr><td className="label">{bn ? 'নাম (ইংরেজি)' : 'Name (English)'}</td><td className="value" colSpan={3}>{lastName || '-'}</td></tr>
             <tr><td className="label">{bn ? 'বেতন' : 'Salary'}</td><td className="value">৳{salary}</td><td className="label">{bn ? 'মোবাইল' : 'Mobile'}</td><td className="value">{mobileCode}{mobile}</td></tr>
             <tr><td className="label">{bn ? 'চাকরির ধরন' : 'Employment'}</td><td className="value">{employmentType === 'full_time' ? (bn ? 'পূর্ণকালীন' : 'Full Time') : (bn ? 'খণ্ডকালীন' : 'Part Time')}</td><td className="label">{bn ? 'পদবী' : 'Designation'}</td><td className="value">{desigLabel}</td></tr>
             <tr><td className="label">{bn ? 'আবাসিক/অনাবাসিক' : 'Residential'}</td><td className="value">{residenceType === 'residential' ? (bn ? 'আবাসিক' : 'Residential') : (bn ? 'অনাবাসিক' : 'Non-Residential')}</td><td className="label">{bn ? 'জন্ম তারিখ' : 'Date of Birth'}</td><td className="value">{dob}</td></tr>
@@ -1039,10 +1040,12 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
         <div className="section-title">{bn ? '২. পিতা-মাতার তথ্য' : '2. Parents Details'}</div>
         <table className="form-table">
           <tbody>
-            <tr><td className="label">{bn ? 'পিতার নাম' : "Father's Name"}</td><td className="value">{fatherName}</td><td className="label">{bn ? 'মোবাইল' : 'Mobile'}</td><td className="value">{fatherMobileCode}{fatherMobile}</td></tr>
-            <tr><td className="label">{bn ? 'পিতার NID' : "Father's NID"}</td><td className="value">{fatherNid}</td><td className="label">{bn ? 'পেশা' : 'Occupation'}</td><td className="value">{fatherOccupation}</td></tr>
-            <tr><td className="label">{bn ? 'মাতার নাম' : "Mother's Name"}</td><td className="value">{motherName}</td><td className="label">{bn ? 'মোবাইল' : 'Mobile'}</td><td className="value">{motherMobileCode}{motherMobile}</td></tr>
-            <tr><td className="label">{bn ? 'মাতার NID' : "Mother's NID"}</td><td className="value">{motherNid}</td><td className="label">{bn ? 'পেশা' : 'Occupation'}</td><td className="value">{motherOccupation}</td></tr>
+            <tr><td className="label">{bn ? 'পিতার নাম' : "Father's Name"}</td><td className="value" colSpan={3}>{fatherName || '-'}</td></tr>
+            <tr><td className="label">{bn ? 'পিতার NID' : "Father's NID"}</td><td className="value">{fatherNid || '-'}</td><td className="label">{bn ? 'পেশা' : 'Occupation'}</td><td className="value">{fatherOccupation || '-'}</td></tr>
+            <tr><td className="label">{bn ? 'পিতার মোবাইল' : "Father's Mobile"}</td><td className="value" colSpan={3}>{fatherMobile ? `${fatherMobileCode}${fatherMobile}` : '-'}</td></tr>
+            <tr><td className="label">{bn ? 'মাতার নাম' : "Mother's Name"}</td><td className="value" colSpan={3}>{motherName || '-'}</td></tr>
+            <tr><td className="label">{bn ? 'মাতার NID' : "Mother's NID"}</td><td className="value">{motherNid || '-'}</td><td className="label">{bn ? 'পেশা' : 'Occupation'}</td><td className="value">{motherOccupation || '-'}</td></tr>
+            <tr><td className="label">{bn ? 'মাতার মোবাইল' : "Mother's Mobile"}</td><td className="value" colSpan={3}>{motherMobile ? `${motherMobileCode}${motherMobile}` : '-'}</td></tr>
           </tbody>
         </table>
       </div>
