@@ -222,11 +222,19 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
         <div className="flex flex-col sm:flex-row gap-3 items-end">
           <div className="flex-1 w-full">
             <Input
-              className="bg-background shadow-xs"
+              className="bg-background shadow-xs font-mono"
               value={cardNumber}
-              onChange={(e) => { setCardNumber(e.target.value); setVerified(false); }}
-              placeholder={bn ? 'আইডি / কার্ড নম্বর লিখুন...' : 'Enter card or registration number...'}
+              onChange={(e) => {
+                // Convert Bengali numbers to English digits and allow digits only
+                const converted = e.target.value
+                  .replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)))
+                  .replace(/\D/g, ''); // english digits only
+                setCardNumber(converted);
+                setVerified(false);
+              }}
+              placeholder={bn ? 'আইডি / কার্ড নম্বর লিখুন (ইংরেজি সংখ্যা)...' : 'Enter card or registration number (digits only)...'}
               disabled={loading}
+              inputMode="numeric"
             />
           </div>
           <Button
