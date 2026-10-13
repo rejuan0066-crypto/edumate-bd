@@ -1312,6 +1312,15 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
 
       return (
         <div key={sectionKey} className="rounded-lg p-4 space-y-4 border-2 opacity-100 border-secondary border-solid shadow-md">
+          {/* Card Verification with Didit AI & ID Search */}
+          <CardVerifySection
+            formType="student"
+            isEnabled={true}
+            onDataReceived={(data) => {
+              setForm(prev => ({ ...prev, ...data }));
+            }}
+          />
+
           <h3 className="text-md font-display font-semibold text-foreground border-b pb-2 text-2xl text-center bg-secondary">{title}</h3>
 
           {/* Photo + type selectors */}
@@ -1638,17 +1647,6 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                   })}
                 </ul>
               </div>
-            )}
-
-            {/* Card Verify Section on Step 0 */}
-            {safeCurrentStep === 0 && (
-              <CardVerifySection
-                formType="student"
-                isEnabled={apiVerifyEnabled === true}
-                onDataReceived={(data) => {
-                  setForm(prev => ({ ...prev, ...data }));
-                }}
-              />
             )}
 
             {/* Active Section Content */}

@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { DatePicker } from '@/components/ui/date-picker';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { uploadToCloudinary } from '@/lib/cloudinary';
+import CardVerifySection from '@/components/CardVerifySection';
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 
 const formatAddress = (addr: AddressData) =>
@@ -861,6 +862,15 @@ const AdmissionPage = () => {
 
       return (
         <div key={sectionKey} className="card-elevated p-6 space-y-4">
+          {/* Card Verification with Didit AI & ID Search */}
+          <CardVerifySection
+            formType="student"
+            isEnabled={true}
+            onDataReceived={(data) => {
+              setForm(prev => ({ ...prev, ...data }));
+            }}
+          />
+
           <h2 className="text-lg font-display font-bold text-foreground border-b pb-2">{title}</h2>
           <div className="flex flex-col sm:flex-row gap-6">
             {photoField && renderSystemField('photo_url', photoField)}

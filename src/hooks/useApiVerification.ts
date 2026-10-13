@@ -27,7 +27,7 @@ export const useApiVerificationConfig = () => {
   });
 };
 
-// For forms - just check if enabled
+// For forms - check if enabled (defaults to true so Didit verification is accessible)
 export const useApiVerificationEnabled = () => {
   return useQuery({
     queryKey: ['api-verification-enabled'],
@@ -37,8 +37,8 @@ export const useApiVerificationEnabled = () => {
         .select('is_enabled')
         .limit(1)
         .maybeSingle();
-      if (error) return false;
-      return data?.is_enabled ?? false;
+      if (error || !data) return true; // Default enabled so Didit verification is always ready
+      return data.is_enabled ?? true;
     },
     staleTime: 60 * 1000,
   });

@@ -127,7 +127,6 @@ const AdminApiVerification = () => {
   };
 
   const handleSave = async () => {
-    if (!config?.id) return;
     setSaving(true);
 
     const studentMap: Record<string, string> = {};
@@ -153,14 +152,23 @@ const AdminApiVerification = () => {
       updateData.master_password = newMasterPassword.trim();
     }
 
-    const { error } = await supabase
-      .from('api_verification_config')
-      .update(updateData)
-      .eq('id', config.id);
+    let saveError = null;
+    if (config?.id) {
+      const { error } = await supabase
+        .from('api_verification_config')
+        .update(updateData)
+        .eq('id', config.id);
+      saveError = error;
+    } else {
+      const { error } = await supabase
+        .from('api_verification_config')
+        .insert([updateData]);
+      saveError = error;
+    }
 
     setSaving(false);
-    if (error) {
-      toast.error(error.message);
+    if (saveError) {
+      toast.error(saveError.message);
     } else {
       toast.success(bn ? 'সেটিংস সেভ হয়েছে' : 'Settings saved');
       setNewMasterPassword('');
@@ -399,15 +407,32 @@ const AdminApiVerification = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label>{bn ? 'API URL' : 'API URL'}</Label>
+              <div className="flex items-center justify-between mb-1">
+                <Label>{bn ? 'API URL' : 'API URL'}</Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-6 text-xs text-emerald-600 border-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950"
+                    onClick={() => {
+                      setApiUrl('https://verification.didit.me/v3/session/');
+                      setApiKey('oh4x2lCr8hnNmjMBjWY4fn3MGY-pzZ4ircZmx7uBvVo');
+                      toast.success(bn ? 'Didit ডিফল্ট কনফিগারেশন সেট করা হয়েছে' : 'Didit default config applied');
+                    }}
+                  >
+                    ⚡ {bn ? 'Didit কনফিগারেশন পূরণ করুন' : 'Use Didit Preset'}
+                  </Button>
+                </div>
+              </div>
               <Input
                 className="mt-1 bg-background font-mono text-sm"
                 value={apiUrl}
                 onChange={e => setApiUrl(e.target.value)}
-                placeholder="https://api.example.com/verify/{card_number}"
+                placeholder="https://verification.didit.me/v3/session/ অথবা https://api.example.com/verify/{card_number}"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                {bn ? '{card_number} জায়গায় কার্ড নম্বর বসবে' : '{card_number} will be replaced with actual card number'}
+                {bn ? 'Didit এআই ভেরিফিকেশন অথবা আপনার যেকোনো কাস্টম API URL ব্যবহার করতে পারেন।' : 'Use Didit AI Verification or your custom API endpoint.'}
               </p>
             </div>
             <div>

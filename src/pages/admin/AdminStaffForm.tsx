@@ -1224,7 +1224,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
           {currentStepId === 'employee' && (
             <CardVerifySection
               formType="staff"
-              isEnabled={apiVerifyEnabled === true}
+              isEnabled={apiVerifyEnabled !== false}
               onDataReceived={(data) => {
                 if (data.name_bn) setFirstName(data.name_bn);
                 if (data.name_en) setLastName(data.name_en);
