@@ -12,6 +12,7 @@ import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { generateReceiptQrDataUrl } from '@/lib/receiptQr';
+import { bnToEn, enToBn } from '@/lib/utils';
 
 interface ReceiptData {
   id: string;
@@ -94,9 +95,23 @@ const AdminFeeReceipts = () => {
     }
   });
 
-  const filteredPayments = (payments || []).filter(p =>
-    !searchRoll || p.roll?.includes(searchRoll) || p.student_id?.includes(searchRoll) || p.student_name?.includes(searchRoll)
-  );
+  const cleanSearch = searchRoll.trim();
+  const searchEn = bnToEn(cleanSearch).toLowerCase();
+  const searchBn = enToBn(cleanSearch);
+
+  const filteredPayments = (payments || []).filter(p => {
+    if (!cleanSearch) return true;
+    const rollStr = String(p.roll || '').toLowerCase();
+    const idStr = String(p.student_id || '').toLowerCase();
+    const nameStr = String(p.student_name || '').toLowerCase();
+    return (
+      rollStr.includes(searchEn) ||
+      rollStr.includes(searchBn) ||
+      idStr.includes(searchEn) ||
+      idStr.includes(searchBn) ||
+      nameStr.includes(cleanSearch.toLowerCase())
+    );
+  });
 
   const months = [
     { value: 'january', en: 'January', bn: 'জানুয়ারি' },

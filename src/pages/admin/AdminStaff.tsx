@@ -27,6 +27,7 @@ import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 import PasswordStrengthMeter, { isPasswordStrongAgainst, firstFailedRuleMessage, usePasswordPolicy } from '@/components/PasswordStrengthMeter';
 import { sanitizePasswordInput } from '@/lib/passwordInput';
 import { parseEdgeError } from '@/lib/edgeError';
+import { invalidateAllStaffQueries } from '@/lib/staffQueryInvalidator';
 
 
 export type StaffPageType = 'all' | 'staff' | 'teacher' | 'administrative' | 'support' | 'director' | 'committee_member';
@@ -208,7 +209,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
       return { previousStaff };
     },
     onSuccess: (_, { status }) => {
-      queryClient.invalidateQueries({ queryKey: ['staff'] });
+      invalidateAllStaffQueries(queryClient);
       queryClient.invalidateQueries({ queryKey: ['joining-letters'] });
       toast.success(status === 'active' ? (bn ? '✅ অনুমোদিত ও যোগদান পত্র তৈরি হয়েছে' : '✅ Approved & Joining Letter Created') : (bn ? '❌ বাতিল করা হয়েছে' : '❌ Rejected'));
     },
@@ -228,7 +229,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['staff'] });
+      invalidateAllStaffQueries(queryClient);
       toast.success(bn ? 'কর্মী মুছে ফেলা হয়েছে' : 'Staff deleted');
     },
     onError: () => toast.error('Error'),
@@ -247,7 +248,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['staff'] });
+      invalidateAllStaffQueries(queryClient);
       toast.success(bn ? 'ডিপার্টমেন্ট, পদবী ও আইডি পরিবর্তন হয়েছে' : 'Department, designation & ID updated');
     },
     onError: () => toast.error(bn ? 'সমস্যা হয়েছে' : 'Error'),
@@ -259,7 +260,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['staff'] });
+      invalidateAllStaffQueries(queryClient);
       toast.success(bn ? 'পদবী পরিবর্তন হয়েছে' : 'Designation updated');
     },
     onError: () => toast.error(bn ? 'সমস্যা হয়েছে' : 'Error'),
@@ -409,7 +410,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
       }
       toast.success(bn ? '✅ অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে!' : '✅ Account created successfully!');
       setAccountDialogOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['staff'] });
+      invalidateAllStaffQueries(queryClient);
     } catch {
       toast.error(bn ? 'অ্যাকাউন্ট তৈরি ব্যর্থ' : 'Failed to create account');
     }
@@ -427,7 +428,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
           supabase.from('staff').update({ updated_at: new Date().toISOString() }).eq('id', s.id)
         )
       );
-      queryClient.invalidateQueries({ queryKey: ['staff'] });
+      invalidateAllStaffQueries(queryClient);
       toast.success(bn ? `${staffWithoutId.length} জন কর্মীর আইডি জেনারেট হয়েছে` : `Generated IDs for ${staffWithoutId.length} staff`);
     } catch {
       toast.error(bn ? 'আইডি জেনারেট ব্যর্থ' : 'Failed to generate IDs');

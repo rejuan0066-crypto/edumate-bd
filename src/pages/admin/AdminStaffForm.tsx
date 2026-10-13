@@ -23,6 +23,7 @@ import OtpVerificationDialog from '@/components/OtpVerificationDialog';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { useStaffFormConfig } from '@/hooks/useStaffFormConfig';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { invalidateAllStaffQueries } from '@/lib/staffQueryInvalidator';
 import { useAuth } from '@/hooks/useAuth';
 import { isAdminRole } from '@/lib/roles';
 
@@ -634,11 +635,10 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
         if (error) throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       // Invalidate every cache that may show this staff record so the UI
-      // (sidebar, dashboard, profile, user list, etc.) reflects the change immediately.
-      queryClient.invalidateQueries({ queryKey: ['staff'] });
-      queryClient.invalidateQueries({ queryKey: ['current-staff'] });
+      // (sidebar, dashboard, profile, user list, id-cards, attendance, salary, etc.) reflects the change immediately.
+      await invalidateAllStaffQueries(queryClient);
       queryClient.invalidateQueries({ queryKey: ['my-profile'] });
       queryClient.invalidateQueries({ queryKey: ['sidebar-profile'] });
       queryClient.invalidateQueries({ queryKey: ['users'] });
