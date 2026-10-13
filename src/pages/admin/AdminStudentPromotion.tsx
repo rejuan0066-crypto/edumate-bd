@@ -17,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ArrowUp, ArrowDown, ArrowRight, Users, History, Search } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { invalidateAllStudentQueries } from '@/lib/studentQueryInvalidator';
 
 const AdminStudentPromotion = () => {
   const { language } = useLanguage();
@@ -223,6 +224,7 @@ const AdminStudentPromotion = () => {
 
       setSelectedStudents(new Set());
       setRemarks('');
+      await invalidateAllStudentQueries(queryClient);
       queryClient.invalidateQueries({ queryKey: ['promo-students'] });
       queryClient.invalidateQueries({ queryKey: ['promotion-history'] });
     } catch (err: any) {

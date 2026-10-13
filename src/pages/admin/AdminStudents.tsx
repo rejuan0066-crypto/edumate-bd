@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import AdmissionForm from '@/components/admission/AdmissionForm';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import { bnToEn, enToBn, formatDigits } from '@/lib/utils';
+import { invalidateAllStudentQueries } from '@/lib/studentQueryInvalidator';
 
 const AdminStudents = () => {
   const { t, language } = useLanguage();
@@ -48,9 +49,7 @@ const AdminStudents = () => {
     const channel = supabase
       .channel('students-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['students'] });
-        queryClient.invalidateQueries({ queryKey: ['exam-students'] });
-        queryClient.invalidateQueries({ queryKey: ['exam_session_students'] });
+        invalidateAllStudentQueries(queryClient);
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -140,8 +139,7 @@ const AdminStudents = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['students'] });
-      queryClient.invalidateQueries({ queryKey: ['exam-students'] });
+      invalidateAllStudentQueries(queryClient);
       toast.success(bn ? 'স্ট্যাটাস আপডেট হয়েছে' : 'Status updated');
     },
     onError: () => toast.error('Error'),
@@ -177,9 +175,8 @@ const AdminStudents = () => {
       toast.error(e?.message || 'Error');
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['students'] });
+      invalidateAllStudentQueries(queryClient);
       queryClient.invalidateQueries({ queryKey: ['student-type-history'] });
-      queryClient.invalidateQueries({ queryKey: ['exam-students'] });
     },
   });
 
@@ -202,8 +199,7 @@ const AdminStudents = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['students'] });
-      queryClient.invalidateQueries({ queryKey: ['exam-students'] });
+      invalidateAllStudentQueries(queryClient);
       toast.success(bn ? 'স্ট্যাটাস আপডেট হয়েছে' : 'Status updated');
     },
     onError: () => toast.error('Error'),
@@ -217,8 +213,7 @@ const AdminStudents = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['students'] });
-      queryClient.invalidateQueries({ queryKey: ['exam-students'] });
+      invalidateAllStudentQueries(queryClient);
       toast.success(bn ? 'ছাত্র মুছে ফেলা হয়েছে' : 'Student deleted');
     },
     onError: () => toast.error('Error'),
