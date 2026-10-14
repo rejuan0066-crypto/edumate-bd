@@ -74,7 +74,7 @@ vi.mock('@/integrations/supabase/client', () => ({
 }));
 
 vi.mock('@/hooks/usePagePermissions', () => ({
-  usePagePermissions: () => ({ canAddItem: true, canEditItem: true, canDeleteItem: true }),
+  usePagePermissions: () => ({ canAddItem: true, canEditItem: true, canDeleteItem: true, isFeatureAllowed: () => true }),
 }));
 
 vi.mock('framer-motion', async () => {

@@ -1186,9 +1186,8 @@ const AdminResults = () => {
 
 
 
-              onViewMarksheet={(id, rank) => {
+              onViewMarksheet={(id) => {
                 setViewingStudentId(id);
-                setViewingStudentRank(rank);
               }}
               onClose={() => {
                 setShowResults(false);

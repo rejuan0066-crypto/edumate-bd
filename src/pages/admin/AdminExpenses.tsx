@@ -192,16 +192,16 @@ const getCatName = (cat: any, isBn: boolean = true): string => {
 const AdminExpenses = () => {
   const confirm = useConfirm();
   const { language } = useLanguage();
-  const qc = useQueryClient();
   const { canAddItem: permCanAdd, canEditItem: permCanEdit, canDeleteItem: permCanDelete, isFeatureAllowed } = usePagePermissions('/admin/expenses');
-  const canAddItem = (permCanAdd ?? true) && isFeatureAllowed('action_add_expense');
-  const canAddDeposit = (permCanAdd ?? true) && isFeatureAllowed('action_add_deposit');
-  const canEditItem = (permCanEdit ?? true) && isFeatureAllowed('action_edit_transaction');
-  const canDeleteItem = (permCanDelete ?? true) && isFeatureAllowed('action_delete_transaction');
-  const canExportExcel = isFeatureAllowed('action_export_excel');
-  const canExportPdf = isFeatureAllowed('action_export_pdf');
-  const canPrintVoucher = isFeatureAllowed('action_print_voucher');
-  const canManageCategories = isFeatureAllowed('action_manage_categories');
+  const checkFeature = (f: string) => typeof isFeatureAllowed === 'function' ? isFeatureAllowed(f) : true;
+  const canAddItem = (permCanAdd ?? true) && checkFeature('action_add_expense');
+  const canAddDeposit = (permCanAdd ?? true) && checkFeature('action_add_deposit');
+  const canEditItem = (permCanEdit ?? true) && checkFeature('action_edit_transaction');
+  const canDeleteItem = (permCanDelete ?? true) && checkFeature('action_delete_transaction');
+  const canExportExcel = checkFeature('action_export_excel');
+  const canExportPdf = checkFeature('action_export_pdf');
+  const canPrintVoucher = checkFeature('action_print_voucher');
+  const canManageCategories = checkFeature('action_manage_categories');
   const bn = language === 'bn';
 
   const { user, role } = useOptionalAuth();

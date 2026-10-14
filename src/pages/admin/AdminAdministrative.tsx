@@ -22,6 +22,7 @@ import { format } from 'date-fns';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { useConfirm } from "@/contexts/ConfirmContext";
 import PasswordStrengthMeter, { isPasswordStrongAgainst, firstFailedRuleMessage, usePasswordPolicy } from '@/components/PasswordStrengthMeter';
+import { isFutureJoiningDate } from '@/lib/joiningDate';
 
 type Officer = {
   id: string;

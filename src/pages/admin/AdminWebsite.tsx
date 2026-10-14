@@ -301,7 +301,7 @@ const AdminWebsite = () => {
           if (instRow?.id) {
             await supabase.from('institutions').update(instPayload).eq('id', instRow.id);
           } else if (Object.keys(instPayload).length > 0) {
-            await supabase.from('institutions').insert({ ...instPayload, is_default: true });
+            await supabase.from('institutions').insert({ name: form.institution_name?.trim() || 'Institution', ...instPayload, is_default: true } as any);
           }
         } catch (e) {
           console.warn('Sync to institutions table error:', e);

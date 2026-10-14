@@ -59,7 +59,7 @@ export const BijoyProvider = ({ children }: { children: ReactNode }) => {
       if (char.length !== 1) return;
       if (!isBijoyKey(char)) return;
 
-      const unicodeChar = bijoyCharToUnicode(char);
+      const { text: unicodeChar } = bijoyCharToUnicode(char);
       if (unicodeChar === char) return;
 
       e.preventDefault();

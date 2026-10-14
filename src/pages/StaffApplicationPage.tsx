@@ -14,6 +14,7 @@ import { AlertCircle, CheckCircle, Loader2, Upload, Trash2, Eye } from 'lucide-r
 import { toast } from 'sonner';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { uploadToCloudinary } from '@/lib/cloudinary';
+import { supabase } from '@/integrations/supabase/client';
 
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 const formatAddress = (addr: AddressData) =>

@@ -1110,7 +1110,7 @@ const AdmissionPage = () => {
     }
 
     // Check custom fields for this section
-    const customSecFields = getFieldsBySection(stepKey).filter(f => !f.default_value);
+    const customSecFields = getFieldsBySection(stepKey as any).filter(f => !f.default_value);
     customSecFields.forEach(f => {
       if (f.is_required && f.is_active) {
         const val = customFieldValues[f.id];

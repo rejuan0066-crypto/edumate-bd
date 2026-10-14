@@ -318,6 +318,7 @@ const AdminUserManagement = () => {
   const [permDialogOpen, setPermDialogOpen] = useState(false);
   const [permUser, setPermUser] = useState<UserItem | null>(null);
   const [permLoading, setPermLoading] = useState(false);
+  const [permSaving, setPermSaving] = useState(false);
   const [userPerms, setUserPerms] = useState<UserPerm[]>([]);
   const [activePermEditor, setActivePermEditor] = useState<{
     mode: 'user' | 'role';
