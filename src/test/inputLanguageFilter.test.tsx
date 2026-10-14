@@ -25,8 +25,14 @@ describe('inputLanguageFilter unit logic', () => {
     expect(detectInputLang({ name: 'student_name_bn' })).toBe('bn');
     expect(detectInputLang({ id: 'address_bn' })).toBe('bn');
     expect(detectInputLang({ name: 'father_name_bn' })).toBe('bn');
-    expect(detectInputLang({ placeholder: 'যেমন: খাবার' })).toBe('bn');
-    expect(detectInputLang({ placeholder: 'মাদরাসার নাম' })).toBe('bn');
+    expect(detectInputLang({ placeholder: 'বাংলায় লিখুন' })).toBe('bn');
+    expect(detectInputLang({ placeholder: 'মাদরাসার নাম (বাংলা)' })).toBe('bn');
+  });
+
+  it('keeps generic fields with Bengali UI placeholders as auto', () => {
+    expect(detectInputLang({ placeholder: 'ইউজারের নাম' })).toBe('auto');
+    expect(detectInputLang({ placeholder: 'মাদরাসার নাম' })).toBe('auto');
+    expect(detectInputLang({ name: 'fullName', placeholder: 'ইউজারের নাম' })).toBe('auto');
   });
 
   it('never modifies password inputs', () => {

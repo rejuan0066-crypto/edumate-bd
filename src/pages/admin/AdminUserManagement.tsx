@@ -1318,7 +1318,14 @@ const AdminUserManagement = () => {
                     </p>
                     <div>
                       <Label>{bn ? 'নাম' : 'Full Name'}</Label>
-                      <Input className="mt-1" value={fullName} onChange={e => setFullName(e.target.value)} placeholder={bn ? 'ইউজারের নাম' : 'User name'} />
+                      <Input
+                        className="mt-1"
+                        name="fullName"
+                        langType="auto"
+                        value={fullName}
+                        onChange={e => setFullName(e.target.value)}
+                        placeholder={bn ? 'ইউজারের নাম' : 'User name'}
+                      />
                     </div>
                     <div>
                       <Label>{bn ? 'ইমেইল' : 'Email'} *</Label>

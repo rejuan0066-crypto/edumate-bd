@@ -54,7 +54,7 @@ export function detectInputLang(props: DetectLangProps): InputLangType {
     return 'en';
   }
 
-  // Bangla indicators in name/id/placeholder
+  // Bangla indicators in name/id/placeholder - only when specifically designated for Bangla
   if (
     name.endsWith('_bn') ||
     id.endsWith('_bn') ||
@@ -64,9 +64,8 @@ export function detectInputLang(props: DetectLangProps): InputLangType {
     targetKey.includes('bangla') ||
     targetKey.includes('father_name_bn') ||
     targetKey.includes('mother_name_bn') ||
-    containsBangla(props.placeholder || '') ||
-    placeholder.includes('যেমন') ||
-    placeholder.includes('বাংলা')
+    placeholder.includes('বাংলা') ||
+    placeholder.includes('বাংলায়')
   ) {
     return 'bn';
   }
