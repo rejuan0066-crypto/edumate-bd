@@ -665,7 +665,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                             </button>
                           </>
                         )}
-                        <button onClick={() => setViewStaff(s)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary" title={bn ? 'প্রোফail দেখুন' : 'View Profile'}><Eye className="w-4 h-4" /></button>
+                        <button onClick={() => setViewStaff(s)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary" title={bn ? 'প্রোফাইল দেখুন' : 'View Profile'}><Eye className="w-4 h-4" /></button>
                         {canEditItem && s.status === 'active' && (
                           <button 
                             onClick={() => setLetterStaff(s)} 
