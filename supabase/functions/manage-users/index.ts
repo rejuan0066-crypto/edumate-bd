@@ -364,41 +364,40 @@ Deno.serve(async (req) => {
 
       if (method === "otp") {
         try {
-          // Generate clean 6-digit OTP code
-          const code = String(Math.floor(100000 + Math.random() * 900000));
-          const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+          const { data: sendOtpData, error: sendOtpErr } = await supabaseAdmin.functions.invoke("send-otp", {
+            body: { email, purpose: "email_verification" },
+          });
 
-          // Invalidate old OTPs for this email
-          await supabaseAdmin
-            .from("otp_codes")
-            .update({ is_used: true })
-            .eq("email", email)
-            .eq("purpose", "email_verification")
-            .eq("is_used", false);
-
-          // Insert new OTP record
-          const { error: insErr } = await supabaseAdmin
-            .from("otp_codes")
-            .insert({ email, code, purpose: "email_verification", expires_at: expiresAt, max_attempts: 5 });
-
-          if (insErr) {
-            console.error("Failed to insert otp_codes:", insErr);
-          }
-
-          // Best-effort: send email via send-otp function
-          try {
-            await supabaseAdmin.functions.invoke("send-otp", {
-              body: { email, purpose: "email_verification" },
+          if (sendOtpErr) {
+            let errorMsg = "ওটিপি কোড পাঠাতে সমস্যা হয়েছে।";
+            if ((sendOtpErr as any).context) {
+              try {
+                const errJson = await (sendOtpErr as any).context.json();
+                if (errJson?.code === "EMAIL_SERVICE_UNCONFIGURED") {
+                  errorMsg = "কোনো ইমেইল সার্ভিস (SMTP/EmailJS) কনফিগার করা নেই। অনুগ্রহ করে অ্যাডমিন সেটিংস থেকে SMTP সেটআপ করুন।";
+                } else if (errJson?.code === "COOLDOWN_ACTIVE") {
+                  errorMsg = errJson.message || "অনুগ্রহ করে কিছুক্ষণ পর আবার ওটিপি কোড পাঠান।";
+                } else if (errJson?.error || errJson?.message) {
+                  errorMsg = errJson.error || errJson.message;
+                }
+              } catch (_) {}
+            }
+            return new Response(JSON.stringify({ success: false, error: errorMsg }), {
+              status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
-          } catch (sendErr) {
-            console.warn("send-otp dispatch warning:", sendErr);
           }
 
-          return new Response(JSON.stringify({ success: true, code, method: "otp" }), {
+          if (sendOtpData && !sendOtpData.success && sendOtpData.error) {
+            return new Response(JSON.stringify({ success: false, error: sendOtpData.error }), {
+              status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+
+          return new Response(JSON.stringify({ success: true, method: "otp" }), {
             status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         } catch (otpErr: any) {
-          return new Response(JSON.stringify({ success: false, error: otpErr?.message || 'ওটিপি তৈরিতে সমস্যা হয়েছে' }), {
+          return new Response(JSON.stringify({ success: false, error: otpErr?.message || 'ওটিপি পাঠাতে সমস্যা হয়েছে' }), {
             status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
@@ -410,7 +409,11 @@ Deno.serve(async (req) => {
             email,
           });
           if (resendErr) {
-            return new Response(JSON.stringify({ success: false, error: resendErr.message }), {
+            let msg = resendErr.message;
+            if (msg.toLowerCase().includes('rate limit')) {
+              msg = "অনুগ্রহ করে কিছুক্ষণ পর আবার ভেরিফিকেশন লিংক পাঠানোর চেষ্টা করুন।";
+            }
+            return new Response(JSON.stringify({ success: false, error: msg }), {
               status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
           }
@@ -418,7 +421,7 @@ Deno.serve(async (req) => {
             status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         } catch (err: any) {
-          return new Response(JSON.stringify({ success: false, error: err?.message || 'পুনরায় পাঠাতে সমস্যা হয়েছে' }), {
+          return new Response(JSON.stringify({ success: false, error: err?.message || 'পুনরায় লিংক পাঠাতে সমস্যা হয়েছে' }), {
             status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
@@ -797,14 +800,16 @@ Deno.serve(async (req) => {
         console.error("send-welcome-email failed (non-fatal):", mailErr);
       }
 
-      // Trigger Supabase Auth verification email (link/code)
-      try {
-        await supabaseAdmin.auth.resend({
-          type: 'signup',
-          email: trimmedEmail,
-        });
-      } catch (authResendErr) {
-        console.error("Supabase auth resend error (non-fatal):", authResendErr);
+      // Trigger Supabase Auth verification email (link) only if link method requested
+      if (body.verification_method === 'link') {
+        try {
+          await supabaseAdmin.auth.resend({
+            type: 'signup',
+            email: trimmedEmail,
+          });
+        } catch (authResendErr) {
+          console.error("Supabase auth resend error (non-fatal):", authResendErr);
+        }
       }
 
       // ── SUCCESS audit log ──

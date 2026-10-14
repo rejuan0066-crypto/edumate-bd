@@ -201,7 +201,6 @@ const AdminUserManagement = () => {
 
   // Step 3-A: OTP
   const [createOtpCode, setCreateOtpCode] = useState<string>('');
-  const [adminOtpPreview, setAdminOtpPreview] = useState<string | null>(null);
   const [createOtpSending, setCreateOtpSending] = useState<boolean>(false);
   const [createOtpVerifying, setCreateOtpVerifying] = useState<boolean>(false);
   const [createOtpCooldown, setCreateOtpCooldown] = useState<number>(0);
@@ -530,7 +529,6 @@ const AdminUserManagement = () => {
     setCreatedUserEmail('');
     setCreatedUserName('');
     setCreateOtpCode('');
-    setAdminOtpPreview(null);
     setCreateOtpCooldown(0);
     setLinkCooldown(0);
     setEmail('');
@@ -612,6 +610,7 @@ const AdminUserManagement = () => {
           name_bn: fullName.trim(),
           staff_category: createStaffCategory || undefined,
           designation: createDesignation || undefined,
+          verification_method: selectedMethod,
         },
       });
 
@@ -668,26 +667,38 @@ const AdminUserManagement = () => {
       setCreatedUserName(createdName);
       setCreateMethod(selectedMethod);
 
-      // Trigger verification email via edge function
-      try {
-        const { data: vData } = await supabase.functions.invoke('manage-users', {
-          body: { action: 'resend_verification', email: createdEmail, method: selectedMethod },
-        });
-        if (vData?.code) {
-          setAdminOtpPreview(vData.code);
+      // Trigger OTP dispatch via edge function if OTP method selected
+      let dispatchOk = true;
+      if (selectedMethod === 'otp') {
+        try {
+          let { data: vData, error: vError } = await supabase.functions.invoke('manage-users', {
+            body: { action: 'resend_verification', email: createdEmail, method: 'otp' },
+          });
+          if (vError && !vData) vData = await edgeErrorBody(vError);
+          if (vError || !vData?.success) {
+            dispatchOk = false;
+            const errMsg = vData?.error || (bn ? 'ওটিপি পাঠাতে সমস্যা হয়েছে' : 'Failed to send OTP');
+            toast.error(errMsg);
+          }
+        } catch (_) {
+          dispatchOk = false;
         }
-      } catch (_) {}
+      }
 
       fetchUsers();
 
       if (selectedMethod === 'otp') {
         setCreateOtpCooldown(60);
         setCreateStep(3);
-        toast.success(bn ? `📧 ${createdEmail} এ ৬-সংখ্যার OTP পাঠানো হয়েছে!` : `📧 6-digit OTP sent to ${createdEmail}!`);
+        if (dispatchOk) {
+          toast.success(bn ? `📧 ${createdEmail} এ ৬-সংখ্যার OTP পাঠানো হয়েছে!` : `📧 6-digit OTP sent to ${createdEmail}!`);
+        }
       } else {
         setLinkCooldown(60);
         setCreateStep(3);
-        toast.success(bn ? `📧 ${createdEmail} এ ভেরিফিকেশন লিংক পাঠানো হয়েছে!` : `📧 Verification link sent to ${createdEmail}!`);
+        if (dispatchOk) {
+          toast.success(bn ? `📧 ${createdEmail} এ ভেরিফিকেশন লিংক পাঠানো হয়েছে!` : `📧 Verification link sent to ${createdEmail}!`);
+        }
       }
     } catch {
       toast.error(bn ? 'ইউজার তৈরি ব্যর্থ' : 'Failed to create user');
@@ -741,7 +752,6 @@ const AdminUserManagement = () => {
       if (error || !data?.success) {
         toast.error(data?.error || (bn ? 'কোড পাঠাতে ব্যর্থ' : 'Failed to resend code'));
       } else {
-        if (data?.code) setAdminOtpPreview(data.code);
         toast.success(bn ? 'নতুন ওটিপি কোড পাঠানো হয়েছে!' : 'New OTP code sent!');
         setCreateOtpCooldown(60);
       }
@@ -1841,30 +1851,6 @@ const AdminUserManagement = () => {
                           </InputOTPGroup>
                         </InputOTP>
                       </div>
-
-                      {adminOtpPreview && (
-                        <div className="p-2.5 bg-primary/5 rounded-lg border border-primary/20 text-xs flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-left">
-                            <KeyRound className="w-4 h-4 text-primary shrink-0" />
-                            <div>
-                              <div className="text-[11px] text-muted-foreground">{bn ? 'অ্যাডমিন ওটিপি কোড প্রিভিউ:' : 'Admin OTP Code:'}</div>
-                              <div className="font-mono font-bold text-sm tracking-widest text-primary">{adminOtpPreview}</div>
-                            </div>
-                          </div>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setCreateOtpCode(adminOtpPreview);
-                              toast.success(bn ? 'কোড অটো-ফিল করা হয়েছে!' : 'Code applied!');
-                            }}
-                            className="text-xs text-primary border-primary/30 hover:bg-primary/10 h-7 px-2.5"
-                          >
-                            {bn ? 'অটো-ফিল করুন' : 'Auto Fill'}
-                          </Button>
-                        </div>
-                      )}
 
                       <div className="flex flex-col gap-2">
                         <Button
