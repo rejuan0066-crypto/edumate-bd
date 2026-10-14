@@ -201,6 +201,7 @@ const AdminUserManagement = () => {
 
   // Step 3-A: OTP
   const [createOtpCode, setCreateOtpCode] = useState<string>('');
+  const [adminOtpPreview, setAdminOtpPreview] = useState<string | null>(null);
   const [createOtpSending, setCreateOtpSending] = useState<boolean>(false);
   const [createOtpVerifying, setCreateOtpVerifying] = useState<boolean>(false);
   const [createOtpCooldown, setCreateOtpCooldown] = useState<number>(0);
@@ -529,6 +530,7 @@ const AdminUserManagement = () => {
     setCreatedUserEmail('');
     setCreatedUserName('');
     setCreateOtpCode('');
+    setAdminOtpPreview(null);
     setCreateOtpCooldown(0);
     setLinkCooldown(0);
     setEmail('');
@@ -668,9 +670,12 @@ const AdminUserManagement = () => {
 
       // Trigger verification email via edge function
       try {
-        await supabase.functions.invoke('manage-users', {
-          body: { action: 'resend_verification', email: createdEmail },
+        const { data: vData } = await supabase.functions.invoke('manage-users', {
+          body: { action: 'resend_verification', email: createdEmail, method: selectedMethod },
         });
+        if (vData?.code) {
+          setAdminOtpPreview(vData.code);
+        }
       } catch (_) {}
 
       fetchUsers();
@@ -699,7 +704,7 @@ const AdminUserManagement = () => {
     }
     setCreateOtpVerifying(true);
     try {
-      const { data, error } = await supabase.functions.invoke('manage-users', {
+      let { data, error } = await supabase.functions.invoke('manage-users', {
         body: {
           action: 'verify_otp',
           email: createdUserEmail,
@@ -708,6 +713,7 @@ const AdminUserManagement = () => {
         },
       });
 
+      if (error && !data) data = await edgeErrorBody(error);
       if (error || !data?.success) {
         toast.error(data?.error || (bn ? 'ভেরিফিকেশন কোড সঠিক নয় বা মেয়াদোত্তীর্ণ' : 'Invalid or expired verification code'));
         setCreateOtpVerifying(false);
@@ -728,12 +734,14 @@ const AdminUserManagement = () => {
     if (createOtpCooldown > 0 || createOtpSending) return;
     setCreateOtpSending(true);
     try {
-      const { data, error } = await supabase.functions.invoke('manage-users', {
-        body: { action: 'resend_verification', email: createdUserEmail },
+      let { data, error } = await supabase.functions.invoke('manage-users', {
+        body: { action: 'resend_verification', email: createdUserEmail, method: 'otp' },
       });
+      if (error && !data) data = await edgeErrorBody(error);
       if (error || !data?.success) {
         toast.error(data?.error || (bn ? 'কোড পাঠাতে ব্যর্থ' : 'Failed to resend code'));
       } else {
+        if (data?.code) setAdminOtpPreview(data.code);
         toast.success(bn ? 'নতুন ওটিপি কোড পাঠানো হয়েছে!' : 'New OTP code sent!');
         setCreateOtpCooldown(60);
       }
@@ -748,9 +756,10 @@ const AdminUserManagement = () => {
     if (linkChecking || !createdUserId) return;
     setLinkChecking(true);
     try {
-      const { data } = await supabase.functions.invoke('manage-users', {
+      let { data, error } = await supabase.functions.invoke('manage-users', {
         body: { action: 'check_email_confirmed', user_id: createdUserId, email: createdUserEmail },
       });
+      if (error && !data) data = await edgeErrorBody(error);
       if (data?.confirmed) {
         try {
           await supabase.from('profiles').update({ status: 'approved' }).eq('id', createdUserId);
@@ -771,9 +780,10 @@ const AdminUserManagement = () => {
   const handleResendLinkInWizard = async () => {
     if (linkCooldown > 0) return;
     try {
-      const { data, error } = await supabase.functions.invoke('manage-users', {
-        body: { action: 'resend_verification', email: createdUserEmail },
+      let { data, error } = await supabase.functions.invoke('manage-users', {
+        body: { action: 'resend_verification', email: createdUserEmail, method: 'link' },
       });
+      if (error && !data) data = await edgeErrorBody(error);
       if (error || !data?.success) {
         toast.error(data?.error || (bn ? 'লিংক পাঠাতে ব্যর্থ' : 'Failed to resend link'));
       } else {
@@ -1831,6 +1841,30 @@ const AdminUserManagement = () => {
                           </InputOTPGroup>
                         </InputOTP>
                       </div>
+
+                      {adminOtpPreview && (
+                        <div className="p-2.5 bg-primary/5 rounded-lg border border-primary/20 text-xs flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-left">
+                            <KeyRound className="w-4 h-4 text-primary shrink-0" />
+                            <div>
+                              <div className="text-[11px] text-muted-foreground">{bn ? 'অ্যাডমিন ওটিপি কোড প্রিভিউ:' : 'Admin OTP Code:'}</div>
+                              <div className="font-mono font-bold text-sm tracking-widest text-primary">{adminOtpPreview}</div>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setCreateOtpCode(adminOtpPreview);
+                              toast.success(bn ? 'কোড অটো-ফিল করা হয়েছে!' : 'Code applied!');
+                            }}
+                            className="text-xs text-primary border-primary/30 hover:bg-primary/10 h-7 px-2.5"
+                          >
+                            {bn ? 'অটো-ফিল করুন' : 'Auto Fill'}
+                          </Button>
+                        </div>
+                      )}
 
                       <div className="flex flex-col gap-2">
                         <Button

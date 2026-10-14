@@ -270,6 +270,42 @@ Deno.serve(async (req) => {
       }
 
       try {
+        // 1. Check in custom otp_codes table
+        const { data: otpMatch } = await supabaseAdmin
+          .from("otp_codes")
+          .select("id, code, expires_at, is_used")
+          .eq("email", email)
+          .eq("purpose", "email_verification")
+          .eq("is_used", false)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        let isOtpValid = false;
+        if (otpMatch && otpMatch.code === token) {
+          if (new Date(otpMatch.expires_at) > new Date()) {
+            isOtpValid = true;
+            await supabaseAdmin.from("otp_codes").update({ is_used: true }).eq("id", otpMatch.id);
+          }
+        }
+
+        // If matched via custom otp_codes table
+        if (isOtpValid) {
+          let targetId = user_id;
+          if (!targetId) {
+            const { data: uList } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 100 });
+            targetId = uList?.users?.find((u: any) => (u.email || '').toLowerCase() === email)?.id;
+          }
+          if (targetId) {
+            await supabaseAdmin.auth.admin.updateUserById(targetId, { email_confirm: true });
+            await supabaseAdmin.from('profiles').update({ status: 'approved' }).eq('id', targetId);
+          }
+          return new Response(JSON.stringify({ success: true, confirmed: true }), {
+            status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // 2. Fallback to Supabase native Auth verifyOtp
         const anonClient = createClient(
           Deno.env.get("SUPABASE_URL") ?? "",
           Deno.env.get("SUPABASE_ANON_KEY") ?? "",
@@ -318,28 +354,74 @@ Deno.serve(async (req) => {
     // RESEND VERIFICATION (OTP or Link)
     if (action === "resend_verification") {
       const email = (body.email || "").toLowerCase().trim();
+      const method = body.method || "otp";
+
       if (!email) {
         return new Response(JSON.stringify({ success: false, error: "ইমেইল প্রয়োজন" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      try {
-        const { error: resendErr } = await supabaseAdmin.auth.resend({
-          type: 'signup',
-          email,
-        });
-        if (resendErr) {
-          return new Response(JSON.stringify({ success: false, error: resendErr.message }), {
-            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+
+      if (method === "otp") {
+        try {
+          // Generate clean 6-digit OTP code
+          const code = String(Math.floor(100000 + Math.random() * 900000));
+          const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+
+          // Invalidate old OTPs for this email
+          await supabaseAdmin
+            .from("otp_codes")
+            .update({ is_used: true })
+            .eq("email", email)
+            .eq("purpose", "email_verification")
+            .eq("is_used", false);
+
+          // Insert new OTP record
+          const { error: insErr } = await supabaseAdmin
+            .from("otp_codes")
+            .insert({ email, code, purpose: "email_verification", expires_at: expiresAt, max_attempts: 5 });
+
+          if (insErr) {
+            console.error("Failed to insert otp_codes:", insErr);
+          }
+
+          // Best-effort: send email via send-otp function
+          try {
+            await supabaseAdmin.functions.invoke("send-otp", {
+              body: { email, purpose: "email_verification" },
+            });
+          } catch (sendErr) {
+            console.warn("send-otp dispatch warning:", sendErr);
+          }
+
+          return new Response(JSON.stringify({ success: true, code, method: "otp" }), {
+            status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        } catch (otpErr: any) {
+          return new Response(JSON.stringify({ success: false, error: otpErr?.message || 'ওটিপি তৈরিতে সমস্যা হয়েছে' }), {
+            status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
-        return new Response(JSON.stringify({ success: true }), {
-          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      } catch (err: any) {
-        return new Response(JSON.stringify({ success: false, error: err?.message || 'পুনরায় পাঠাতে সমস্যা হয়েছে' }), {
-          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      } else {
+        // Link method
+        try {
+          const { error: resendErr } = await supabaseAdmin.auth.resend({
+            type: 'signup',
+            email,
+          });
+          if (resendErr) {
+            return new Response(JSON.stringify({ success: false, error: resendErr.message }), {
+              status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+          return new Response(JSON.stringify({ success: true, method: "link" }), {
+            status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        } catch (err: any) {
+          return new Response(JSON.stringify({ success: false, error: err?.message || 'পুনরায় পাঠাতে সমস্যা হয়েছে' }), {
+            status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
       }
     }
 
