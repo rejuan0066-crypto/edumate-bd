@@ -99,7 +99,7 @@
 }
 @font-face {
   font-family: 'Kalpurush';
-  src: local('Kalpurush'),
+  src: local('Kalpurush'), local('Kalpurush Regular'), url('/fonts/Kalpurush.ttf') format('truetype'),
        url('https://cdn.jsdelivr.net/gh/maateen/bangla-web-fonts/fonts/kalpurush/Kalpurush-v0.258.ttf') format('truetype');
   font-style: normal;
   font-weight: 400;
