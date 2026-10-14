@@ -286,6 +286,7 @@ const AdminExpenses = () => {
   const [expenseForm, setExpenseForm] = useState(defaultExpenseForm);
   const [isCustomUnitActive, setIsCustomUnitActive] = useState(false);
   const [customUnitText, setCustomUnitText] = useState('');
+  const [isLongDescription, setIsLongDescription] = useState(false);
   const [depositForm, setDepositForm] = useState(defaultDepositForm);
   const [isAddingNewSource, setIsAddingNewSource] = useState(false);
   const [newSourceInput, setNewSourceInput] = useState('');
@@ -444,7 +445,7 @@ const AdminExpenses = () => {
     queryKey: ['all_deposits'],
     queryFn: async () => {
       try {
-        const { data, error } = await supabase.from('deposits').select('month_year, amount');
+        const { data, error } = await supabase.from('deposits').select('id, month_year, amount, deposit_date, bank_details, other_details, source');
         if (error) {
           console.error('allDeposits error:', error);
           return [];
@@ -469,6 +470,85 @@ const AdminExpenses = () => {
     });
     return Array.from(unitsSet);
   }, [allExpenses]);
+
+  // --- Shared Suggestions across all permitted users (from central database) ---
+  const savedExpenseDescriptions = useMemo(() => {
+    const map = new Map<string, { count: number; category_id: string; institution_id: string; latest_date: string }>();
+    (allExpenses || []).forEach((e: any) => {
+      const d = cleanDesc(e.description);
+      if (d && d !== '-' && d.length > 1) {
+        const existing = map.get(d);
+        if (existing) {
+          existing.count += 1;
+          if (e.expense_date > existing.latest_date) {
+            existing.latest_date = e.expense_date;
+            if (e.category_id) existing.category_id = e.category_id;
+          }
+        } else {
+          map.set(d, {
+            count: 1,
+            category_id: e.category_id || '',
+            institution_id: e.institution_id || '',
+            latest_date: e.expense_date || ''
+          });
+        }
+      }
+    });
+    return Array.from(map.entries())
+      .sort((a, b) => b[1].count - a[1].count || b[1].latest_date.localeCompare(a[1].latest_date))
+      .map(([title, meta]) => ({ title, ...meta }));
+  }, [allExpenses]);
+
+  const savedExpenseDescriptionTitles = useMemo(() => {
+    return savedExpenseDescriptions.map(d => d.title);
+  }, [savedExpenseDescriptions]);
+
+  const topFrequentExpenseDescriptions = useMemo(() => {
+    return savedExpenseDescriptions.slice(0, 6);
+  }, [savedExpenseDescriptions]);
+
+  const savedExpenseMethods = useMemo(() => {
+    const set = new Set<string>(EXPENSE_METHODS.filter(m => m !== 'অন্যান্য'));
+    (allExpenses || []).forEach((e: any) => {
+      const m = e.description?.match(/\[method:(.*?)\]/)?.[1];
+      if (m && m.trim()) set.add(m.trim());
+    });
+    return Array.from(set);
+  }, [allExpenses]);
+
+  const savedExpenseRemarks = useMemo(() => {
+    const set = new Set<string>();
+    (allExpenses || []).forEach((e: any) => {
+      const r = e.description?.match(/\[remarks:(.*?)\]/)?.[1];
+      if (r && r.trim() && r !== '-') set.add(r.trim());
+    });
+    return Array.from(set);
+  }, [allExpenses]);
+
+  const savedMemoNos = useMemo(() => {
+    const set = new Set<string>();
+    (allExpenses || []).forEach((e: any) => {
+      const m = e.description?.match(/\[memo:(.*?)\]/)?.[1];
+      if (m && m.trim() && m !== '-') set.add(m.trim());
+    });
+    return Array.from(set);
+  }, [allExpenses]);
+
+  const savedBankDetails = useMemo(() => {
+    const set = new Set<string>();
+    (allDeposits || []).forEach((d: any) => {
+      if (d.bank_details && d.bank_details.trim()) set.add(d.bank_details.trim());
+    });
+    return Array.from(set);
+  }, [allDeposits]);
+
+  const savedOtherDetails = useMemo(() => {
+    const set = new Set<string>();
+    (allDeposits || []).forEach((d: any) => {
+      if (d.other_details && d.other_details.trim()) set.add(d.other_details.trim());
+    });
+    return Array.from(set);
+  }, [allDeposits]);
 
   const { data: summaryData } = useQuery({
     queryKey: ['expense_summary', selectedMonthYear],
@@ -1807,11 +1887,14 @@ const AdminExpenses = () => {
       setCustomUnitText('');
     }
 
+    const cleanedDesc = cleanDesc(e.description) === '-' ? '' : cleanDesc(e.description);
+    setIsLongDescription(cleanedDesc.includes('\n'));
+
     setExpenseForm({
       institution_id: e.institution_id,
       category_id: e.category_id,
       expense_date: e.expense_date,
-      description: cleanDesc(e.description) === '-' ? '' : cleanDesc(e.description),
+      description: cleanedDesc,
       quantity: (e.quantity !== null && e.quantity !== undefined && e.quantity !== '') ? String(e.quantity) : '',
       quantity_unit: unit || 'none',
       has_receipt: !!e.has_receipt,
@@ -2354,6 +2437,7 @@ const AdminExpenses = () => {
       });
       setIsCustomUnitActive(false);
       setCustomUnitText('');
+      setIsLongDescription(false);
     }
     setExpenseDialog(open);
   };
@@ -3501,6 +3585,8 @@ const AdminExpenses = () => {
                       <div>
                         <Label>{bn ? 'ব্যাংক বিবরণ' : 'Bank Details'}</Label>
                         <Input
+                          name="deposit_bank_details"
+                          suggestions={savedBankDetails}
                           placeholder={bn ? 'যেমন: এক্সিম ব্যাংক, হিসাব নং...' : 'e.g. Exim Bank, A/C...'}
                           value={depositForm.bank_details}
                           onChange={e => setDepositForm(f => ({ ...f, bank_details: e.target.value }))}
@@ -3509,6 +3595,8 @@ const AdminExpenses = () => {
                       <div>
                         <Label>{bn ? 'অন্যান্য বিবরণ' : 'Other Details'}</Label>
                         <Input
+                          name="deposit_other_details"
+                          suggestions={savedOtherDetails}
                           placeholder={bn ? 'বিবরণ বা মন্তব্য' : 'Details or remarks'}
                           value={depositForm.other_details}
                           onChange={e => setDepositForm(f => ({ ...f, other_details: e.target.value }))}
@@ -4693,13 +4781,83 @@ const AdminExpenses = () => {
               </div>
             </div>
             <div>
-              <Label>{bn ? 'বিবরণ' : 'Description'}</Label>
-              <Textarea value={expenseForm.description} onChange={e => setExpenseForm(f => ({ ...f, description: e.target.value }))} />
+              <div className="flex items-center justify-between mb-1">
+                <Label>{bn ? 'বিবরণ' : 'Description'} *</Label>
+                <button
+                  type="button"
+                  onClick={() => setIsLongDescription(!isLongDescription)}
+                  className="text-[11px] text-primary hover:underline font-medium inline-flex items-center gap-1 cursor-pointer"
+                >
+                  {isLongDescription
+                    ? (bn ? '← সাধারণ এক-লাইন' : '← Single line')
+                    : (bn ? '✏️ বিস্তারিত বিবরণ' : '✏️ Multi-line')}
+                </button>
+              </div>
+
+              {!isLongDescription ? (
+                <div className="space-y-1.5">
+                  <Input 
+                    name="expense_description"
+                    suggestions={savedExpenseDescriptionTitles}
+                    value={expenseForm.description} 
+                    onChange={e => {
+                      const val = e.target.value;
+                      setExpenseForm(f => {
+                        const next = { ...f, description: val };
+                        // Check if typed title exactly matches a known saved description with category
+                        const match = savedExpenseDescriptions.find(d => d.title.trim().toLowerCase() === val.trim().toLowerCase());
+                        if (match && match.category_id && !f.category_id) {
+                          next.category_id = match.category_id;
+                        }
+                        return next;
+                      });
+                    }}
+                    placeholder={bn ? "উদা: বিদ্যুৎ বিল, শিক্ষকদের নাস্তা, মুদি মালামাল..." : "e.g. Electricity Bill, Refreshments, Stationery..."}
+                    className="h-10"
+                  />
+                  {topFrequentExpenseDescriptions.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                      <span className="text-[11px] text-muted-foreground mr-0.5">{bn ? 'কমন খরচ:' : 'Quick:'}</span>
+                      {topFrequentExpenseDescriptions.map(item => (
+                        <button
+                          key={item.title}
+                          type="button"
+                          onClick={() => {
+                            setExpenseForm(f => {
+                              const next = { ...f, description: item.title };
+                              if (item.category_id && (!f.category_id || f.category_id === '')) {
+                                next.category_id = item.category_id;
+                              }
+                              return next;
+                            });
+                            toast.success(bn ? `"${item.title}" নির্বাচিত হয়েছে` : `"${item.title}" selected`);
+                          }}
+                          className={`text-[11px] px-2 py-0.5 rounded-md border transition-all cursor-pointer ${
+                            expenseForm.description === item.title
+                              ? 'bg-emerald-600 text-white border-emerald-600 font-semibold'
+                              : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
+                          }`}
+                        >
+                          {item.title}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Textarea 
+                  value={expenseForm.description} 
+                  onChange={e => setExpenseForm(f => ({ ...f, description: e.target.value }))} 
+                  placeholder={bn ? "বিস্তারিত বিবরণ লিখুন..." : "Enter detailed description..."}
+                  rows={3}
+                />
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>{bn ? 'পরিমাণ (টাকা)' : 'Amount (BDT)'} *</Label>
                 <Input 
+                  name="expense_amount"
                   value={expenseForm.amount} 
                   onChange={e => setExpenseForm(f => ({ ...f, amount: onlyNumbers(e.target.value) }))} 
                   placeholder="০" 
@@ -4709,6 +4867,8 @@ const AdminExpenses = () => {
               <div>
                 <Label>{bn ? 'মেমো / রশিদ নং' : 'Memo / Receipt #'}</Label>
                 <Input 
+                  name="expense_memo_no"
+                  suggestions={savedMemoNos}
                   placeholder={bn ? 'উদা: MM-1042' : 'e.g. MM-1042'} 
                   value={expenseForm.memo_no} 
                   onChange={e => setExpenseForm(f => ({ ...f, memo_no: e.target.value }))} 
@@ -4719,6 +4879,8 @@ const AdminExpenses = () => {
             <div>
               <Label>{bn ? 'মন্তব্য' : 'Remarks'}</Label>
               <Input 
+                name="expense_remarks"
+                suggestions={savedExpenseRemarks}
                 placeholder={bn ? 'প্রয়োজনীয় মন্তব্য বা নোট...' : 'Notes or remarks...'} 
                 value={expenseForm.remarks} 
                 onChange={e => setExpenseForm(f => ({ ...f, remarks: e.target.value }))} 
@@ -4749,6 +4911,8 @@ const AdminExpenses = () => {
                   <span className="text-[11px] text-muted-foreground">{bn ? 'টাইপ করুন বা নিচে দ্রুত নির্বাচন করুন' : 'Type or quick select'}</span>
                 </div>
                 <Input 
+                  name="expense_method"
+                  suggestions={savedExpenseMethods}
                   placeholder={bn ? 'উদা: ক্যাশ, বিকাশ, রহিমের মাধ্যমে, ব্যাংক...' : 'e.g. Cash, bKash, via Rahim, Bank...'} 
                   value={expenseForm.expense_method} 
                   onChange={e => setExpenseForm(f => ({ ...f, expense_method: e.target.value }))} 
@@ -5100,6 +5264,8 @@ const AdminExpenses = () => {
                     <span className="text-[11px] text-muted-foreground">{bn ? 'টাইপ করুন বা নিচে দ্রুত নির্বাচন করুন' : 'Type or quick select'}</span>
                   </div>
                   <Input 
+                    name="paydue_payment_method"
+                    suggestions={savedExpenseMethods}
                     placeholder={bn ? 'উদা: ক্যাশ, বিকাশ, রহিমের মাধ্যমে, ব্যাংক...' : 'e.g. Cash, bKash, via Rahim...'} 
                     value={payDueForm.payment_method} 
                     onChange={e => setPayDueForm(f => ({ ...f, payment_method: e.target.value }))} 
@@ -5126,6 +5292,8 @@ const AdminExpenses = () => {
                 <div>
                   <Label>{bn ? 'পরিশোধ মেমো / রশিদ নং' : 'Payment Memo / Receipt #'}</Label>
                   <Input
+                    name="paydue_memo_no"
+                    suggestions={savedMemoNos}
                     placeholder={bn ? 'উদা: VOUCH-012' : 'e.g. VOUCH-012'}
                     value={payDueForm.memo_no}
                     onChange={e => setPayDueForm(f => ({ ...f, memo_no: e.target.value }))}
@@ -5135,6 +5303,8 @@ const AdminExpenses = () => {
                 <div>
                   <Label>{bn ? 'মন্তব্য' : 'Remarks'}</Label>
                   <Input
+                    name="paydue_remarks"
+                    suggestions={savedExpenseRemarks}
                     placeholder={bn ? 'পরিশোধ সংক্রান্ত নোট...' : 'Payment notes...'}
                     value={payDueForm.remarks}
                     onChange={e => setPayDueForm(f => ({ ...f, remarks: e.target.value }))}
