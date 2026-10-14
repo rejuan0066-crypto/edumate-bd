@@ -1,6 +1,11 @@
 import { Helmet } from "react-helmet-async";
 
-const SITE_URL = "https://subhaniabd.lovable.app";
+const getSiteUrl = () => {
+  if (typeof window !== "undefined" && window.location.origin) {
+    return window.location.origin;
+  }
+  return "";
+};
 
 interface SeoProps {
   title: string;
@@ -16,7 +21,7 @@ interface SeoProps {
 export function Seo({ title, description, path }: SeoProps) {
   const pathname =
     path ?? (typeof window !== "undefined" ? window.location.pathname : "/");
-  const url = `${SITE_URL}${pathname}`;
+  const url = `${getSiteUrl()}${pathname}`;
 
   return (
     <Helmet>

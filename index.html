@@ -16,12 +16,52 @@
         "@context": "https://schema.org",
         "@type": "EducationalOrganization",
         "name": "Al-Arabia Subhania Hafizia Madrasah",
-        "url": "https://subhaniabd.lovable.app/",
+        "url": "/",
         "description": "Islamic educational institution offering Hifz and Kitab education, online admissions, notices, results and more.",
         "sameAs": []
       }
     </script>
     <link rel="icon" id="dynamic-favicon" href="data:," />
+
+    <!-- Eradicate Lovable badge / watermarks -->
+    <script>
+      (function () {
+        function purgeLovableBadges() {
+          try {
+            var selectors = [
+              '#lovable-badge',
+              '[id^="lovable-badge"]',
+              '[id*="lovable-badge"]',
+              '.lovable-badge',
+              '[class*="lovable-badge"]',
+              '[class*="lovable_badge"]',
+              'lovable-badge',
+              'a[href*="lovable.dev"]',
+              'a[href*="lovable.app"]',
+              'a[aria-label*="Lovable" i]',
+              'a[aria-label*="Edit with Lovable" i]'
+            ];
+            selectors.forEach(function (sel) {
+              var nodes = document.querySelectorAll(sel);
+              for (var i = 0; i < nodes.length; i++) {
+                var node = nodes[i];
+                if (node && node.parentNode) {
+                  node.parentNode.removeChild(node);
+                }
+              }
+            });
+          } catch (_) {}
+        }
+        purgeLovableBadges();
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', purgeLovableBadges);
+        }
+        if (typeof MutationObserver !== 'undefined') {
+          var obs = new MutationObserver(purgeLovableBadges);
+          obs.observe(document.documentElement, { childList: true, subtree: true });
+        }
+      })();
+    </script>
 
     <!-- Preload the official Madinah Mushaf font (KFGQPC Uthmanic Hafs v18) for /quran -->
     <link
@@ -52,12 +92,7 @@
     <meta property="og:title" content="Al-Arabia Subhania Hafizia Madrasah" />
     <meta property="og:description" content="Islamic Education Management System" />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://subhaniabd.lovable.app/" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@Lovable" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta name="twitter:card" content="summary" />
   </head>
 
   <body>

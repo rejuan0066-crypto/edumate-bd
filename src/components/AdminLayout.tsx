@@ -20,6 +20,7 @@ import BijoyToggle from './BijoyToggle';
 import NotificationPanel from './NotificationPanel';
 import DarkModeToggle from './DarkModeToggle';
 import { preloadRouteChunk } from '@/lib/routePreload';
+import MobileBottomNav from './MobileBottomNav';
 import {
   LayoutDashboard, Users, UserCog, BookOpen, FileText, Bell,
   CreditCard, Settings, Globe, GraduationCap, Menu, X, LogOut,
@@ -638,11 +639,11 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           {/* Top bar */}
           <header className={`admin-header-glass px-3 sm:px-4 lg:px-6 ${headerPadClass} fixed top-0 right-0 left-0 lg:left-[var(--admin-sidebar-width)] z-40 flex items-center justify-between gap-2`} style={{ ...headerStyle, boxShadow: undefined, fontSize: 'var(--header-font-size, 13px)', paddingTop: `calc(env(safe-area-inset-top) + ${headerTopPadding})` }}>
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <button onClick={() => { if (window.innerWidth < 1024) setMobileSidebarOpen(true); else setSidebarOpen(!sidebarOpen); }} className="p-2 sm:p-2.5 rounded-2xl hover:bg-secondary/60 transition-all duration-200 shrink-0" aria-label="Toggle menu">
+              <button onClick={() => { if (window.innerWidth < 1024) setMobileSidebarOpen(true); else setSidebarOpen(!sidebarOpen); }} className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 sm:p-2.5 rounded-2xl hover:bg-secondary/60 active:scale-95 transition-all duration-200 shrink-0" aria-label="Toggle menu">
                 <Menu className="w-5 h-5 text-muted-foreground" />
               </button>
               {/* Page label in header */}
-              <span className="hidden sm:inline text-sm font-medium text-foreground/80 truncate">{currentPageLabel}</span>
+              <span className="text-xs sm:text-sm font-semibold text-foreground/90 truncate max-w-[150px] sm:max-w-none">{currentPageLabel}</span>
             </div>
             <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
               {/* Search */}
@@ -665,7 +666,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           </header>
 
           {/* Content */}
-          <main className="flex-1 px-2 sm:px-4 md:px-8 pb-8 pt-4 w-full max-w-[1440px] mx-auto">
+          <main className="flex-1 px-2 sm:px-4 md:px-8 pb-24 lg:pb-8 pt-3 sm:pt-4 w-full max-w-[1440px] mx-auto">
             <BackButton position="top" />
             {/* Page Header - outside card for clear separation */}
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4 sm:mb-5">
@@ -696,6 +697,9 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
             <BackButton position="bottom" />
           </main>
         </div>
+
+        {/* Floating Mobile Bottom Navigation Bar for phones & tablets */}
+        <MobileBottomNav onOpenMenu={() => setMobileSidebarOpen(true)} canAccessPath={canAccessPath} />
       </div>
     </AdminLayoutNestingContext.Provider>
   );

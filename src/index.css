@@ -1508,17 +1508,31 @@
 }
 
 
-/* Hide the "Made with Lovable" badge */
+/* Hide and eradicate the "Made with Lovable" badge / watermark / injected overlays */
 #lovable-badge,
 [id^="lovable-badge"],
-a[href*="lovable.dev"][target="_blank"],
+[id*="lovable-badge"],
+.lovable-badge,
+[class*="lovable-badge"],
+[class*="lovable_badge"],
+lovable-badge,
+a[href*="lovable.dev"],
+a[href*="lovable.app"],
 a[aria-label*="Lovable" i],
 a[aria-label*="Edit with Lovable" i],
-#lovable-badge, 
-.lovable-badge,
-[class*="lovable-badge"] {
+div:has(> a[href*="lovable.dev"]),
+div:has(> a[href*="lovable.app"]),
+div[style*="z-index: 999999"] a[href*="lovable"],
+div[style*="z-index: 2147483647"] a[href*="lovable"] {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  position: absolute !important;
+  left: -99999px !important;
+  top: -99999px !important;
+  overflow: hidden !important;
+  z-index: -9999 !important;
 }
