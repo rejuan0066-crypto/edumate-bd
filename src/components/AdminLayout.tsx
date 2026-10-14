@@ -29,7 +29,7 @@ import {
   Blocks, FlaskConical, CalendarDays, ShieldCheck, BarChart3, KeyRound, Palette,
   ListOrdered, Home, Image, Mail, Phone, MapPin, Star, Award, Clock, Folder, LayoutGrid,
   HardDrive, MessageSquare, Wallet, UserPlus, Camera, Search, Maximize2, MoreVertical,
-  CalendarClock, ClipboardList, Crown, HardHat, Briefcase, Smartphone,
+  CalendarClock, ClipboardList, Crown, HardHat, Briefcase, Smartphone, ArrowLeft,
   type LucideIcon
 } from 'lucide-react';
 
@@ -613,10 +613,19 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
         <div className={`flex min-h-screen flex-col ${mobileHeaderOffsetClass} ${desktopHeaderOffsetClass} lg:ml-[var(--admin-sidebar-width)]`}>
           {/* Top bar */}
           <header className={`admin-header-glass px-3 sm:px-4 lg:px-6 ${headerPadClass} fixed top-0 right-0 left-0 lg:left-[var(--admin-sidebar-width)] z-40 flex items-center justify-between gap-2`} style={{ ...headerStyle, boxShadow: undefined, fontSize: 'var(--header-font-size, 13px)', paddingTop: `calc(env(safe-area-inset-top) + ${headerTopPadding})` }}>
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <button onClick={() => { if (window.innerWidth < 1024) setMobileSidebarOpen(true); else setSidebarOpen(!sidebarOpen); }} className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 sm:p-2.5 rounded-2xl hover:bg-secondary/60 active:scale-95 transition-all duration-200 shrink-0" aria-label="Toggle menu">
+            <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
+              <button onClick={() => { if (window.innerWidth < 1024) setMobileSidebarOpen(true); else setSidebarOpen(!sidebarOpen); }} className="min-h-[38px] min-w-[38px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center p-1.5 sm:p-2.5 rounded-xl sm:rounded-2xl hover:bg-secondary/60 active:scale-95 transition-all duration-200 shrink-0" aria-label="Toggle menu">
                 <Menu className="w-5 h-5 text-muted-foreground" />
               </button>
+              {location.pathname !== '/admin' && (
+                <button
+                  onClick={() => navigate(-1)}
+                  className="lg:hidden p-1.5 rounded-xl hover:bg-secondary/60 active:scale-95 text-muted-foreground hover:text-foreground shrink-0 transition-transform"
+                  aria-label="Back"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
+              )}
               {/* Page label in header */}
               <span className="text-xs sm:text-sm font-semibold text-foreground/90 truncate max-w-[150px] sm:max-w-none">{currentPageLabel}</span>
             </div>
@@ -641,10 +650,10 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           </header>
 
           {/* Content */}
-          <main className="flex-1 px-2 sm:px-4 md:px-8 pb-24 lg:pb-8 pt-3 sm:pt-4 w-full max-w-[1440px] mx-auto">
+          <main className="flex-1 px-1.5 sm:px-4 md:px-8 pb-24 lg:pb-8 pt-1 sm:pt-4 w-full max-w-[1440px] mx-auto">
             <BackButton position="top" />
             {/* Modern Glass Content Container */}
-            <div className="admin-page-card rounded-[20px] sm:rounded-[36px] lg:rounded-[45px] bg-card/70 dark:bg-card/35 backdrop-blur-2xl border border-border/10 dark:border-border/8 p-2.5 sm:p-6 lg:p-10 min-h-[60vh] w-full" style={{ boxShadow: 'var(--shadow-float)' }}>
+            <div className="admin-page-card rounded-xl sm:rounded-[36px] lg:rounded-[45px] bg-card/90 sm:bg-card/70 dark:bg-card/35 backdrop-blur-2xl border-0 sm:border border-border/10 dark:border-border/8 p-2 sm:p-6 lg:p-10 min-h-[60vh] w-full shadow-none sm:shadow-float">
               <div className="w-full min-w-0">
                 <AdminPageWithTabs>{children}</AdminPageWithTabs>
               </div>

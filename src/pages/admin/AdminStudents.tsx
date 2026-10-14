@@ -379,26 +379,26 @@ const AdminStudents = () => {
   };
 
   const studentListContent = (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
         {/* Action bar */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <p className="text-sm text-muted-foreground">{bn ? `মোট ${formatDigits(filtered.length, true)} জন ছাত্র` : `Total ${filtered.length} students`}</p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs sm:text-sm text-muted-foreground font-medium">{bn ? `মোট ${formatDigits(filtered.length, true)} জন ছাত্র` : `Total ${filtered.length} students`}</p>
           {canAddItem && (
-            <Button onClick={() => setShowAdd(true)} className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 rounded-full px-6 h-11 text-sm font-semibold transition-all duration-300">
-              <Plus className="w-4 h-4" /> {bn ? 'নতুন ভর্তি' : 'New Admission'}
+            <Button onClick={() => setShowAdd(true)} className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 shadow-md shadow-emerald-500/20 rounded-full px-4 sm:px-6 h-8 sm:h-11 text-xs sm:text-sm font-semibold transition-all">
+              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" /> {bn ? 'নতুন ভর্তি' : 'New Admission'}
             </Button>
           )}
         </div>
 
         {/* Filter Bar */}
-        <div className="rounded-[24px] border border-border/40 bg-card/80 backdrop-blur-md p-5 shadow-sm">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-[220px] max-w-sm">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
-              <Input placeholder={bn ? 'নাম, আইডি বা রোল দিয়ে খুঁজুন...' : 'Search by name, ID or roll...'} className="pl-11 h-10 rounded-full border-border/40 bg-muted/30 text-sm placeholder:text-muted-foreground/50 focus:bg-background focus:border-emerald-500/40 focus:ring-emerald-500/20 transition-all" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <div className="rounded-2xl sm:rounded-[24px] border border-border/40 bg-card/80 backdrop-blur-md p-3 sm:p-5 shadow-sm">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <div className="relative flex-1 min-w-[180px] max-w-sm">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
+              <Input placeholder={bn ? 'নাম, আইডি বা রোল দিয়ে খুঁজুন...' : 'Search by name, ID or roll...'} className="pl-10 h-8 sm:h-10 rounded-full border-border/40 bg-muted/30 text-xs sm:text-sm placeholder:text-muted-foreground/50 focus:bg-background focus:border-emerald-500/40 focus:ring-emerald-500/20 transition-all" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
             <Select value={filterDivisionId} onValueChange={(v) => { setFilterDivisionId(v); setFilterClassId('all'); }}>
-              <SelectTrigger className="h-10 rounded-full border-border/40 bg-muted/30 text-sm w-auto min-w-[120px] hover:bg-muted/50 transition-colors">
+              <SelectTrigger className="h-8 sm:h-10 rounded-full border-border/40 bg-muted/30 text-xs sm:text-sm w-auto min-w-[100px] hover:bg-muted/50 transition-colors">
                 <SelectValue placeholder={bn ? 'বিভাগ' : 'Division'} />
               </SelectTrigger>
               <SelectContent>
@@ -409,7 +409,7 @@ const AdminStudents = () => {
               </SelectContent>
             </Select>
             <Select value={filterSessionId} onValueChange={setFilterSessionId}>
-              <SelectTrigger className="h-10 rounded-full border-border/40 bg-muted/30 text-sm w-auto min-w-[120px] hover:bg-muted/50 transition-colors">
+              <SelectTrigger className="h-8 sm:h-10 rounded-full border-border/40 bg-muted/30 text-xs sm:text-sm w-auto min-w-[100px] hover:bg-muted/50 transition-colors">
                 <SelectValue placeholder={bn ? 'সেশন' : 'Session'} />
               </SelectTrigger>
               <SelectContent>
@@ -420,7 +420,7 @@ const AdminStudents = () => {
               </SelectContent>
             </Select>
             <Select value={filterClassId} onValueChange={setFilterClassId}>
-              <SelectTrigger className="h-10 rounded-full border-border/40 bg-muted/30 text-sm w-auto min-w-[120px] hover:bg-muted/50 transition-colors">
+              <SelectTrigger className="h-8 sm:h-10 rounded-full border-border/40 bg-muted/30 text-xs sm:text-sm w-auto min-w-[100px] hover:bg-muted/50 transition-colors">
                 <SelectValue placeholder={bn ? 'শ্রেণী' : 'Class'} />
               </SelectTrigger>
               <SelectContent>
@@ -431,7 +431,7 @@ const AdminStudents = () => {
               </SelectContent>
             </Select>
             <Select value={filterApproval} onValueChange={setFilterApproval}>
-              <SelectTrigger className="h-10 rounded-full border-border/40 bg-muted/30 text-sm w-auto min-w-[120px] hover:bg-muted/50 transition-colors">
+              <SelectTrigger className="h-8 sm:h-10 rounded-full border-border/40 bg-muted/30 text-xs sm:text-sm w-auto min-w-[100px] hover:bg-muted/50 transition-colors">
                 <SelectValue placeholder={bn ? 'অনুমোদন' : 'Approval'} />
               </SelectTrigger>
               <SelectContent>
@@ -442,7 +442,7 @@ const AdminStudents = () => {
               </SelectContent>
             </Select>
             <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="h-10 rounded-full border-border/40 bg-muted/30 text-sm w-auto min-w-[120px] hover:bg-muted/50 transition-colors">
+              <SelectTrigger className="h-8 sm:h-10 rounded-full border-border/40 bg-muted/30 text-xs sm:text-sm w-auto min-w-[100px] hover:bg-muted/50 transition-colors">
                 <SelectValue placeholder={bn ? 'স্ট্যাটাস' : 'Status'} />
               </SelectTrigger>
               <SelectContent>
@@ -455,166 +455,305 @@ const AdminStudents = () => {
         </div>
 
         {/* Student List Card */}
-        <div className="rounded-[32px] border border-border/30 bg-card/90 backdrop-blur-md shadow-sm overflow-hidden">
+        <div className="rounded-xl sm:rounded-[32px] border border-border/30 bg-card/90 backdrop-blur-md shadow-sm overflow-hidden">
           {isLoading ? (
             <div className="flex items-center justify-center py-20"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border/30">
-                    <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'সি.' : '#'}</th>
-                    <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'নাম' : 'Name'}</th>
-                    <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'রেজি / আইডি' : 'Reg / ID'}</th>
-                    <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'রোল' : 'Roll'}</th>
-                    <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'বিভাগ' : 'Division'}</th>
-                    <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'সেশন' : 'Session'}</th>
-                    <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'শ্রেণী' : 'Class'}</th>
-                    <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'অনুমোদন' : 'Approval'}</th>
-                    <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'পেন্ডিং অবস্থা' : 'Pending Status'}</th>
-                    {canApproveItem && <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'ধরন' : 'Type'}</th>}
-                    <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'স্ট্যাটাস' : 'Status'}</th>
-                    <th className="text-right px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'অ্যাকশন' : 'Action'}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedFiltered.map((s: any, idx: number) => (
-                    <tr key={s.id} className="group border-b border-border/15 last:border-b-0 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/10 transition-all duration-200 hover:scale-[1.005] origin-center">
-                      <td className="px-5 py-4 text-sm font-mono font-bold text-primary/80">{getClassSerial(s) !== '-' ? formatDigits(getClassSerial(s), bn) : '-'}</td>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3.5">
+            <>
+              {/* Mobile Card List View (< md) */}
+              <div className="md:hidden divide-y divide-border/20">
+                {sortedFiltered.map((s: any) => {
+                  const effectiveClass = getClassName(getEffectiveClassId(s));
+                  const sessionStr = getSessionName(s.session_id, s.admission_session || s.session_year);
+                  const divName = bn ? s.divisions?.name_bn : (s.divisions?.name || '-');
+                  const isOld = s.student_type === 'old';
+                  const isApproved = s.approval_status === 'approved';
+                  const isRowPending = studentTypeMutation.isPending && studentTypeMutation.variables?.id === s.id;
+                  const pendingApproval = isRecordPending(s.id);
+                  const classSerial = getClassSerial(s);
+
+                  return (
+                    <div key={s.id} className="p-3 space-y-2 hover:bg-muted/10 transition-colors">
+                      {/* Top row: Avatar, Name, Badges */}
+                      <div className="flex items-start justify-between gap-2.5">
+                        <div className="flex items-center gap-2.5 min-w-0">
                           {s.photo_url ? (
-                            <img src={s.photo_url} className="w-10 h-10 rounded-2xl object-cover ring-2 ring-border/30 shadow-sm" alt="" />
+                            <img src={s.photo_url} className="w-10 h-10 rounded-xl object-cover shrink-0 ring-1 ring-border/40" alt="" />
                           ) : (
-                            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center text-emerald-700 dark:text-emerald-400 font-bold text-sm shadow-sm">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center text-emerald-700 dark:text-emerald-400 font-bold text-sm shrink-0">
                               {s.name_bn?.[0] || '?'}
                             </div>
                           )}
                           <div className="min-w-0">
-                            <span className="font-semibold text-foreground text-sm block truncate">
-                              {s.name_bn}
-                              {s.is_free && <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-success/15 text-success border border-success/20">{bn ? 'বিনা বেতন' : 'Free'}</span>}
-                            </span>
-                            {s.name_en && <span className="text-xs text-muted-foreground/60 block truncate">{s.name_en}</span>}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-semibold text-foreground text-sm truncate">{s.name_bn || s.name_en}</span>
+                              {s.is_free && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-success/15 text-success border border-success/20">
+                                  {bn ? 'বিনা বেতন' : 'Free'}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-[11px] text-muted-foreground/80 mt-0.5">
+                              {classSerial !== '-' && (
+                                <span className="font-semibold text-primary/90">#{formatDigits(classSerial, bn)}</span>
+                              )}
+                              <span>রোল: {s.roll_number ? formatDigits(s.roll_number, bn) : '—'}</span>
+                              <span>আইডি: {formatDigits(s.registration_no || s.student_id, bn)}</span>
+                            </div>
                           </div>
                         </div>
-                      </td>
-                      <td className="px-5 py-4 text-sm font-mono text-muted-foreground">{formatDigits(s.registration_no || s.student_id, bn)}</td>
-                      <td className="px-5 py-4 text-sm font-mono font-medium text-foreground/80">{s.roll_number ? formatDigits(s.roll_number, bn) : <span className="text-muted-foreground/30">—</span>}</td>
-                      <td className="px-5 py-4 text-sm text-muted-foreground">{bn ? s.divisions?.name_bn : s.divisions?.name || '-'}</td>
-                      <td className="px-5 py-4 text-sm text-muted-foreground">{getSessionName(s.session_id, s.admission_session || s.session_year)}</td>
-                      <td className="px-5 py-4 text-sm text-muted-foreground">{getClassName(getEffectiveClassId(s))}</td>
-                      <td className="px-5 py-4">{getApprovalBadge(s.approval_status || 'pending')}</td>
-                      <td className="px-5 py-4">
-                        {isRecordPending(s.id) && (
-                          <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse text-[10px]">
-                            <Clock className="w-3 h-3 mr-1" />
-                            {bn ? 'অ্যাডমিন অনুমোদনের অপেক্ষায়' : 'Awaiting Admin Approval'}
-                          </Badge>
+
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          {getApprovalBadge(s.approval_status || 'pending')}
+                          <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full ${(s.status || 'active') === 'active' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-destructive/10 text-destructive'}`}>
+                            <span className={`w-1 h-1 rounded-full ${(s.status || 'active') === 'active' ? 'bg-emerald-500' : 'bg-destructive'}`} />
+                            {(s.status || 'active') === 'active' ? (bn ? 'সক্রিয়' : 'Active') : (bn ? 'নিষ্ক্রিয়' : 'Inactive')}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Middle row: Class, Division, Session, Type badges */}
+                      <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground pt-0.5">
+                        {effectiveClass !== '-' && (
+                          <span className="bg-muted/50 px-2 py-0.5 rounded-md text-foreground/80 font-medium">{effectiveClass}</span>
                         )}
-                      </td>
-                      {canApproveItem && <td className="px-5 py-4">
-                        {(() => {
-                          const t = (s.student_type === 'old') ? 'old' : 'new';
-                          const isOld = t === 'old';
-                          const label = isOld ? (bn ? 'পুরাতন' : 'Old') : (bn ? 'নতুন' : 'New');
-                          const cls = isOld
-                            ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20'
-                            : 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20';
-                          const isApproved = s.approval_status === 'approved';
-                          const isRowPending = studentTypeMutation.isPending && studentTypeMutation.variables?.id === s.id;
-                          const badge = (
-                            <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${cls} ${isRowPending ? 'animate-pulse' : ''}`}>
-                              {isRowPending ? (
-                                <Loader2 className="w-2.5 h-2.5 animate-spin" />
-                              ) : (
-                                <span className={`w-1.5 h-1.5 rounded-full ${isOld ? 'bg-violet-500' : 'bg-sky-500'}`} />
-                              )}
-                              {label}
-                            </span>
-                          );
-                          return (
-                            <div className={`flex items-center gap-1.5 ${isRowPending ? 'opacity-70 pointer-events-none' : ''}`}>
-                              {isApproved ? (
+                        {divName !== '-' && (
+                          <span className="bg-muted/40 px-2 py-0.5 rounded-md">{divName}</span>
+                        )}
+                        {sessionStr !== '-' && (
+                          <span className="bg-muted/40 px-2 py-0.5 rounded-md">{sessionStr}</span>
+                        )}
+                        {canApproveItem && (
+                          <button
+                            disabled={!isApproved || isRowPending}
+                            onClick={() => { if (isApproved) { setTypeChangeFor(s); setTypeChangeReason(''); } }}
+                            className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${isOld ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20' : 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20'}`}
+                          >
+                            <span className={`w-1 h-1 rounded-full ${isOld ? 'bg-violet-500' : 'bg-sky-500'}`} />
+                            {isOld ? (bn ? 'পুরাতন' : 'Old') : (bn ? 'নতুন' : 'New')}
+                          </button>
+                        )}
+                        {pendingApproval && (
+                          <span className="text-[10px] text-amber-600 bg-amber-500/10 px-1.5 py-0.5 rounded-md border border-amber-500/20 animate-pulse">
+                            {bn ? 'অপেক্ষমাণ' : 'Pending'}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Action buttons row */}
+                      <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-border/10">
+                        <button onClick={() => setShowDetail(s)} className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-800/30 flex items-center justify-center text-blue-600 dark:text-blue-400 active:scale-95" title={bn ? 'দেখুন' : 'View'}>
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => printStudentProfile({ student: s, bn, institution: institution || {}, className: getClassName(getEffectiveClassId(s)), sessionName: getSessionName(s.session_id, s.admission_session || s.session_year) })} className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200/50 dark:border-indigo-800/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 active:scale-95" title={bn ? 'প্রিন্ট' : 'Print'}>
+                          <Printer className="w-3.5 h-3.5" />
+                        </button>
+                        {canEditItem && (
+                          <button 
+                            disabled={pendingApproval}
+                            onClick={() => { setEditStudent(s); setShowAdd(true); }} 
+                            className={`w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/50 dark:border-emerald-800/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 active:scale-95 ${pendingApproval ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            title={bn ? 'সম্পাদনা' : 'Edit'}
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {canEditItem && (s.approval_status !== 'approved') && (
+                          <button onClick={() => statusMutation.mutate({ id: s.id, status: 'approved' })} className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/50 dark:border-emerald-800/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 active:scale-95" title={bn ? 'অনুমোদন' : 'Approve'}>
+                            <CheckCircle className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {canEditItem && (s.approval_status !== 'rejected') && (
+                          <button onClick={() => statusMutation.mutate({ id: s.id, status: 'rejected' })} className="w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200/50 dark:border-rose-800/30 flex items-center justify-center text-rose-600 dark:text-rose-400 active:scale-95" title={bn ? 'প্রত্যাখ্যান' : 'Reject'}>
+                            <XCircle className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {canEditItem && (
+                          <button
+                            onClick={async () => { const cur = s.status || 'active'; const next = cur === 'active' ? 'inactive' : 'active'; const ok = await confirm({ title: bn ? (next === 'active' ? 'ছাত্র সক্রিয় করবেন?' : 'ছাত্র নিষ্ক্রিয় করবেন?') : (next === 'active' ? 'Activate student?' : 'Deactivate student?'), description: bn ? `"${s.name_bn || s.name_en}" কে ${next === 'active' ? 'সক্রিয়' : 'নিষ্ক্রিয়'} করতে চান?` : `Are you sure you want to ${next === 'active' ? 'activate' : 'deactivate'} "${s.name_en || s.name_bn}"?`, confirmText: bn ? 'হ্যাঁ' : 'Yes', cancelText: bn ? 'বাতিল' : 'Cancel', variant: next === 'active' ? 'default' : 'warning' }); if (!ok) return; toggleActiveMutation.mutate({ id: s.id, currentStatus: cur }); }}
+                            className={`w-7 h-7 rounded-lg border flex items-center justify-center active:scale-95 ${(s.status || 'active') === 'active' ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200/50 text-amber-600' : 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200/50 text-emerald-600'}`}
+                            title={(s.status || 'active') === 'active' ? (bn ? 'নিষ্ক্রিয় করুন' : 'Deactivate') : (bn ? 'সক্রিয় করুন' : 'Activate')}
+                          >
+                            {(s.status || 'active') === 'active' ? <UserX className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
+                          </button>
+                        )}
+                        {canDeleteItem && (
+                          <button 
+                            disabled={pendingApproval}
+                            onClick={() => setDeleteId(s.id)} 
+                            className={`w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200/50 dark:border-rose-800/30 flex items-center justify-center text-rose-600 dark:text-rose-400 active:scale-95 ${pendingApproval ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            title={bn ? 'মুছুন' : 'Delete'}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                {sortedFiltered.length === 0 && (
+                  <div className="text-center py-12 text-sm text-muted-foreground/60">{bn ? 'কোনো ছাত্র পাওয়া যায়নি' : 'No students found'}</div>
+                )}
+              </div>
+
+              {/* Desktop Table View (>= md) */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-border/30">
+                      <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'সি.' : '#'}</th>
+                      <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'নাম' : 'Name'}</th>
+                      <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'রেজি / আইডি' : 'Reg / ID'}</th>
+                      <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'রোল' : 'Roll'}</th>
+                      <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'বিভাগ' : 'Division'}</th>
+                      <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'সেশন' : 'Session'}</th>
+                      <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'শ্রেণী' : 'Class'}</th>
+                      <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'অনুমোদন' : 'Approval'}</th>
+                      <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'পেন্ডিং অবস্থা' : 'Pending Status'}</th>
+                      {canApproveItem && <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'ধরন' : 'Type'}</th>}
+                      <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'স্ট্যাটাস' : 'Status'}</th>
+                      <th className="text-right px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'অ্যাকশন' : 'Action'}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedFiltered.map((s: any, idx: number) => (
+                      <tr key={s.id} className="group border-b border-border/15 last:border-b-0 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/10 transition-all duration-200 hover:scale-[1.005] origin-center">
+                        <td className="px-5 py-4 text-sm font-mono font-bold text-primary/80">{getClassSerial(s) !== '-' ? formatDigits(getClassSerial(s), bn) : '-'}</td>
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-3.5">
+                            {s.photo_url ? (
+                              <img src={s.photo_url} className="w-10 h-10 rounded-2xl object-cover ring-2 ring-border/30 shadow-sm" alt="" />
+                            ) : (
+                              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center text-emerald-700 dark:text-emerald-400 font-bold text-sm shadow-sm">
+                                {s.name_bn?.[0] || '?'}
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <span className="font-semibold text-foreground text-sm block truncate">
+                                {s.name_bn}
+                                {s.is_free && <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-success/15 text-success border border-success/20">{bn ? 'বিনা বেতন' : 'Free'}</span>}
+                              </span>
+                              {s.name_en && <span className="text-xs text-muted-foreground/60 block truncate">{s.name_en}</span>}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 text-sm font-mono text-muted-foreground">{formatDigits(s.registration_no || s.student_id, bn)}</td>
+                        <td className="px-5 py-4 text-sm font-mono font-medium text-foreground/80">{s.roll_number ? formatDigits(s.roll_number, bn) : <span className="text-muted-foreground/30">—</span>}</td>
+                        <td className="px-5 py-4 text-sm text-muted-foreground">{bn ? s.divisions?.name_bn : s.divisions?.name || '-'}</td>
+                        <td className="px-5 py-4 text-sm text-muted-foreground">{getSessionName(s.session_id, s.admission_session || s.session_year)}</td>
+                        <td className="px-5 py-4 text-sm text-muted-foreground">{getClassName(getEffectiveClassId(s))}</td>
+                        <td className="px-5 py-4">{getApprovalBadge(s.approval_status || 'pending')}</td>
+                        <td className="px-5 py-4">
+                          {isRecordPending(s.id) && (
+                            <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse text-[10px]">
+                              <Clock className="w-3 h-3 mr-1" />
+                              {bn ? 'অ্যাডমিন অনুমোদনের অপেক্ষায়' : 'Awaiting Admin Approval'}
+                            </Badge>
+                          )}
+                        </td>
+                        {canApproveItem && <td className="px-5 py-4">
+                          {(() => {
+                            const t = (s.student_type === 'old') ? 'old' : 'new';
+                            const isOld = t === 'old';
+                            const label = isOld ? (bn ? 'পুরাতন' : 'Old') : (bn ? 'নতুন' : 'New');
+                            const cls = isOld
+                              ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20'
+                              : 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20';
+                            const isApproved = s.approval_status === 'approved';
+                            const isRowPending = studentTypeMutation.isPending && studentTypeMutation.variables?.id === s.id;
+                            const badge = (
+                              <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${cls} ${isRowPending ? 'animate-pulse' : ''}`}>
+                                {isRowPending ? (
+                                  <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                                ) : (
+                                  <span className={`w-1.5 h-1.5 rounded-full ${isOld ? 'bg-violet-500' : 'bg-sky-500'}`} />
+                                )}
+                                {label}
+                              </span>
+                            );
+                            return (
+                              <div className={`flex items-center gap-1.5 ${isRowPending ? 'opacity-70 pointer-events-none' : ''}`}>
+                                {isApproved ? (
+                                  <button
+                                    disabled={isRowPending}
+                                    onClick={() => { setTypeChangeFor(s); setTypeChangeReason(''); }}
+                                    title={bn ? 'ক্লিক করে পরিবর্তন করুন' : 'Click to change'}
+                                    className="hover:scale-105 transition-transform disabled:cursor-not-allowed"
+                                  >{badge}</button>
+                                ) : (
+                                  <span title={bn ? 'অনুমোদনের পরই পরিবর্তন করা যাবে' : 'Editable only after approval'} className="opacity-70">{badge}</span>
+                                )}
                                 <button
                                   disabled={isRowPending}
-                                  onClick={() => { setTypeChangeFor(s); setTypeChangeReason(''); }}
-                                  title={bn ? 'ক্লিক করে পরিবর্তন করুন' : 'Click to change'}
-                                  className="hover:scale-105 transition-transform disabled:cursor-not-allowed"
-                                >{badge}</button>
-                              ) : (
-                                <span title={bn ? 'অনুমোদনের পরই পরিবর্তন করা যাবে' : 'Editable only after approval'} className="opacity-70">{badge}</span>
-                              )}
-                              <button
-                                disabled={isRowPending}
-                                onClick={() => setTypeHistoryFor(s)}
-                                title={bn ? 'হিস্টোরি' : 'History'}
-                                className="w-6 h-6 rounded-full bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors disabled:opacity-50"
+                                  onClick={() => setTypeHistoryFor(s)}
+                                  title={bn ? 'হিস্টোরি' : 'History'}
+                                  className="w-6 h-6 rounded-full bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors disabled:opacity-50"
+                                >
+                                  <History className="w-3 h-3" strokeWidth={2} />
+                                </button>
+                              </div>
+                            );
+                          })()}
+                        </td>}
+                        <td className="px-5 py-4">
+                          <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full ${(s.status || 'active') === 'active' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-destructive/10 text-destructive'}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${(s.status || 'active') === 'active' ? 'bg-emerald-500' : 'bg-destructive'}`} />
+                            {(s.status || 'active') === 'active' ? (bn ? 'সক্রিয়' : 'Active') : (bn ? 'নিষ্ক্রিয়' : 'Inactive')}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2 flex-nowrap">
+                            <button onClick={() => setShowDetail(s)} className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/30 shadow-sm border border-blue-200/50 dark:border-blue-800/30 flex items-center justify-center text-blue-600 dark:text-blue-400 hover:shadow-md hover:scale-110 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all duration-200" title={bn ? 'দেখুন' : 'View'}><Eye className="w-4 h-4" strokeWidth={1.75} /></button>
+                            <button onClick={() => printStudentProfile({ student: s, bn, institution: institution || {}, className: getClassName(getEffectiveClassId(s)), sessionName: getSessionName(s.session_id, s.admission_session || s.session_year) })} className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/30 shadow-sm border border-indigo-200/50 dark:border-indigo-800/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 hover:shadow-md hover:scale-110 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all duration-200" title={bn ? 'প্রোফাইল প্রিন্ট' : 'Print Profile'}><Printer className="w-4 h-4" strokeWidth={1.75} /></button>
+                            {canEditItem && (
+                              <button 
+                                disabled={isRecordPending(s.id)}
+                                onClick={() => { setEditStudent(s); setShowAdd(true); }} 
+                                className={`w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/30 shadow-sm border border-emerald-200/50 dark:border-emerald-800/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 hover:shadow-md hover:scale-110 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all duration-200 ${isRecordPending(s.id) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`} 
+                                title={bn ? 'সম্পাদনা' : 'Edit'}
                               >
-                                <History className="w-3 h-3" strokeWidth={2} />
+                                <Pencil className="w-4 h-4" strokeWidth={1.75} />
                               </button>
-                            </div>
-                          );
-                        })()}
-                      </td>}
-                      <td className="px-5 py-4">
-                        <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full ${(s.status || 'active') === 'active' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-destructive/10 text-destructive'}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${(s.status || 'active') === 'active' ? 'bg-emerald-500' : 'bg-destructive'}`} />
-                          {(s.status || 'active') === 'active' ? (bn ? 'সক্রিয়' : 'Active') : (bn ? 'নিষ্ক্রিয়' : 'Inactive')}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2 flex-nowrap">
-                          <button onClick={() => setShowDetail(s)} className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/30 shadow-sm border border-blue-200/50 dark:border-blue-800/30 flex items-center justify-center text-blue-600 dark:text-blue-400 hover:shadow-md hover:scale-110 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all duration-200" title={bn ? 'দেখুন' : 'View'}><Eye className="w-4 h-4" strokeWidth={1.75} /></button>
-                          <button onClick={() => printStudentProfile({ student: s, bn, institution: institution || {}, className: getClassName(getEffectiveClassId(s)), sessionName: getSessionName(s.session_id, s.admission_session || s.session_year) })} className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/30 shadow-sm border border-indigo-200/50 dark:border-indigo-800/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 hover:shadow-md hover:scale-110 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all duration-200" title={bn ? 'প্রোফাইল প্রিন্ট' : 'Print Profile'}><Printer className="w-4 h-4" strokeWidth={1.75} /></button>
-                          {canEditItem && (
-                            <button 
-                              disabled={isRecordPending(s.id)}
-                              onClick={() => { setEditStudent(s); setShowAdd(true); }} 
-                              className={`w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/30 shadow-sm border border-emerald-200/50 dark:border-emerald-800/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 hover:shadow-md hover:scale-110 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all duration-200 ${isRecordPending(s.id) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`} 
-                              title={bn ? 'সম্পাদনা' : 'Edit'}
-                            >
-                              <Pencil className="w-4 h-4" strokeWidth={1.75} />
-                            </button>
-                          )}
-                          {canEditItem && (s.approval_status !== 'approved') && (
-                            <button onClick={() => statusMutation.mutate({ id: s.id, status: 'approved' })} className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/30 shadow-sm border border-emerald-200/50 dark:border-emerald-800/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 hover:shadow-md hover:scale-110 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all duration-200" title={bn ? 'অনুমোদন' : 'Approve'}><CheckCircle className="w-4 h-4" strokeWidth={1.75} /></button>
-                          )}
-                          {canEditItem && (s.approval_status !== 'rejected') && (
-                            <button onClick={() => statusMutation.mutate({ id: s.id, status: 'rejected' })} className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/30 shadow-sm border border-rose-200/50 dark:border-rose-800/30 flex items-center justify-center text-rose-600 dark:text-rose-400 hover:shadow-md hover:scale-110 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-all duration-200" title={bn ? 'প্রত্যাখ্যান' : 'Reject'}><XCircle className="w-4 h-4" strokeWidth={1.75} /></button>
-                          )}
-                          {canEditItem && (s.approval_status === 'rejected') && (
-                            <button onClick={() => statusMutation.mutate({ id: s.id, status: 'pending' })} className="w-8 h-8 rounded-full bg-amber-50 dark:bg-amber-950/30 shadow-sm border border-amber-200/50 dark:border-amber-800/30 flex items-center justify-center text-amber-600 dark:text-amber-400 hover:shadow-md hover:scale-110 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all duration-200" title={bn ? 'অপেক্ষমাণে ফেরত' : 'Back to Pending'}><Clock className="w-4 h-4" strokeWidth={1.75} /></button>
-                          )}
-                          {canEditItem && (
-                            <button
-                              onClick={async () => { const cur = s.status || 'active'; const next = cur === 'active' ? 'inactive' : 'active'; const ok = await confirm({ title: bn ? (next === 'active' ? 'ছাত্র সক্রিয় করবেন?' : 'ছাত্র নিষ্ক্রিয় করবেন?') : (next === 'active' ? 'Activate student?' : 'Deactivate student?'), description: bn ? `"${s.name_bn || s.name_en}" কে ${next === 'active' ? 'সক্রিয়' : 'নিষ্ক্রিয়'} করতে চান?` : `Are you sure you want to ${next === 'active' ? 'activate' : 'deactivate'} "${s.name_en || s.name_bn}"?`, confirmText: bn ? 'হ্যাঁ' : 'Yes', cancelText: bn ? 'বাতিল' : 'Cancel', variant: next === 'active' ? 'default' : 'warning' }); if (!ok) return; toggleActiveMutation.mutate({ id: s.id, currentStatus: cur }); }}
-                              className={`w-8 h-8 rounded-full shadow-sm border flex items-center justify-center transition-all duration-200 hover:shadow-md hover:scale-110 ${(s.status || 'active') === 'active' ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200/50 dark:border-amber-800/30 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40' : 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200/50 dark:border-emerald-800/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'}`}
-                              title={(s.status || 'active') === 'active' ? (bn ? 'ডিএক্টিভ করুন' : 'Deactivate') : (bn ? 'এক্টিভ করুন' : 'Activate')}
-                            >
-                              {(s.status || 'active') === 'active' ? <UserX className="w-4 h-4" strokeWidth={1.75} /> : <UserCheck className="w-4 h-4" strokeWidth={1.75} />}
-                            </button>
-                          )}
-                           {canDeleteItem && (
-                            <button 
-                              disabled={isRecordPending(s.id)}
-                              onClick={() => setDeleteId(s.id)} 
-                              className={`w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/30 shadow-sm border border-rose-200/50 dark:border-rose-800/30 flex items-center justify-center text-rose-600 dark:text-rose-400 hover:shadow-md hover:scale-110 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-all duration-200 ${isRecordPending(s.id) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`} 
-                              title={bn ? 'মুছুন' : 'Delete'}
-                            >
-                              <Trash2 className="w-4 h-4" strokeWidth={1.75} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {sortedFiltered.length === 0 && (
-                    <tr><td colSpan={canApproveItem ? 11 : 10} className="text-center py-16 text-sm text-muted-foreground/60">{bn ? 'কোনো ছাত্র পাওয়া যায়নি' : 'No students found'}</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                            )}
+                            {canEditItem && (s.approval_status !== 'approved') && (
+                              <button onClick={() => statusMutation.mutate({ id: s.id, status: 'approved' })} className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/30 shadow-sm border border-emerald-200/50 dark:border-emerald-800/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 hover:shadow-md hover:scale-110 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all duration-200" title={bn ? 'অনুমোদন' : 'Approve'}><CheckCircle className="w-4 h-4" strokeWidth={1.75} /></button>
+                            )}
+                            {canEditItem && (s.approval_status !== 'rejected') && (
+                              <button onClick={() => statusMutation.mutate({ id: s.id, status: 'rejected' })} className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/30 shadow-sm border border-rose-200/50 dark:border-rose-800/30 flex items-center justify-center text-rose-600 dark:text-rose-400 hover:shadow-md hover:scale-110 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-all duration-200" title={bn ? 'প্রত্যাখ্যান' : 'Reject'}><XCircle className="w-4 h-4" strokeWidth={1.75} /></button>
+                            )}
+                            {canEditItem && (s.approval_status === 'rejected') && (
+                              <button onClick={() => statusMutation.mutate({ id: s.id, status: 'pending' })} className="w-8 h-8 rounded-full bg-amber-50 dark:bg-amber-950/30 shadow-sm border border-amber-200/50 dark:border-amber-800/30 flex items-center justify-center text-amber-600 dark:text-amber-400 hover:shadow-md hover:scale-110 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all duration-200" title={bn ? 'অপেক্ষমাণে ফেরত' : 'Back to Pending'}><Clock className="w-4 h-4" strokeWidth={1.75} /></button>
+                            )}
+                            {canEditItem && (
+                              <button
+                                onClick={async () => { const cur = s.status || 'active'; const next = cur === 'active' ? 'inactive' : 'active'; const ok = await confirm({ title: bn ? (next === 'active' ? 'ছাত্র সক্রিয় করবেন?' : 'ছাত্র নিষ্ক্রিয় করবেন?') : (next === 'active' ? 'Activate student?' : 'Deactivate student?'), description: bn ? `"${s.name_bn || s.name_en}" কে ${next === 'active' ? 'সক্রিয়' : 'নিষ্ক্রিয়'} করতে চান?` : `Are you sure you want to ${next === 'active' ? 'activate' : 'deactivate'} "${s.name_en || s.name_bn}"?`, confirmText: bn ? 'হ্যাঁ' : 'Yes', cancelText: bn ? 'বাতিল' : 'Cancel', variant: next === 'active' ? 'default' : 'warning' }); if (!ok) return; toggleActiveMutation.mutate({ id: s.id, currentStatus: cur }); }}
+                                className={`w-8 h-8 rounded-full shadow-sm border flex items-center justify-center transition-all duration-200 hover:shadow-md hover:scale-110 ${(s.status || 'active') === 'active' ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200/50 dark:border-amber-800/30 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40' : 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200/50 dark:border-emerald-800/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'}`}
+                                title={(s.status || 'active') === 'active' ? (bn ? 'ডিএক্টিভ করুন' : 'Deactivate') : (bn ? 'এক্টিভ করুন' : 'Activate')}
+                              >
+                                {(s.status || 'active') === 'active' ? <UserX className="w-4 h-4" strokeWidth={1.75} /> : <UserCheck className="w-4 h-4" strokeWidth={1.75} />}
+                              </button>
+                            )}
+                             {canDeleteItem && (
+                              <button 
+                                disabled={isRecordPending(s.id)}
+                                onClick={() => setDeleteId(s.id)} 
+                                className={`w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/30 shadow-sm border border-rose-200/50 dark:border-rose-800/30 flex items-center justify-center text-rose-600 dark:text-rose-400 hover:shadow-md hover:scale-110 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-all duration-200 ${isRecordPending(s.id) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`} 
+                                title={bn ? 'মুছুন' : 'Delete'}
+                              >
+                                <Trash2 className="w-4 h-4" strokeWidth={1.75} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {sortedFiltered.length === 0 && (
+                      <tr><td colSpan={canApproveItem ? 11 : 10} className="text-center py-16 text-sm text-muted-foreground/60">{bn ? 'কোনো ছাত্র পাওয়া যায়নি' : 'No students found'}</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
 
