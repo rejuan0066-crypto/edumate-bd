@@ -562,10 +562,22 @@ const AdminUserManagement = () => {
         setCreating(false);
         return;
       }
-      toast.success(bn ? '✅ ইউজার সফলভাবে তৈরি হয়েছে!' : '✅ User created successfully!');
+      const createdEmail = email.trim();
       setDialogOpen(false);
       setEmail(''); setPassword(''); setFullName(''); setCreatePhone(''); setRole(''); setCreateStaffCategory(''); setCreateDesignation('');
       fetchUsers();
+
+      // Trigger verification email via Supabase Auth immediately
+      try {
+        await supabase.auth.resend({ type: 'signup', email: createdEmail });
+        toast.success(
+          bn
+            ? `✅ ইউজার তৈরি হয়েছে এবং ${createdEmail} এ ভেরিফিকেশন ইমেইল পাঠানো হয়েছে!`
+            : `✅ User created and verification email sent to ${createdEmail}!`
+        );
+      } catch {
+        toast.success(bn ? '✅ ইউজার সফলভাবে তৈরি হয়েছে!' : '✅ User created successfully!');
+      }
     } catch {
       toast.error(bn ? 'ইউজার তৈরি ব্যর্থ' : 'Failed to create user');
     }
@@ -1533,6 +1545,31 @@ const AdminUserManagement = () => {
                               title={bn ? 'প্রোফাইল দেখুন' : 'View Profile'}
                             >
                               <UserCircle className="w-4 h-4" />
+                            </Button>
+                            {/* Resend Verification Email */}
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="text-sky-600 hover:text-sky-700 hover:bg-sky-50"
+                              onClick={async () => {
+                                try {
+                                  const { error } = await supabase.auth.resend({ type: 'signup', email: u.email });
+                                  if (error) {
+                                    toast.error(error.message || (bn ? 'ইমেইল পাঠাতে ব্যর্থ' : 'Failed to send email'));
+                                  } else {
+                                    toast.success(
+                                      bn
+                                        ? `${u.email} এ ভেরিফিকেশন লিংক পাঠানো হয়েছে!`
+                                        : `Verification link sent to ${u.email}!`
+                                    );
+                                  }
+                                } catch {
+                                  toast.error(bn ? 'ইমেইল পাঠাতে ব্যর্থ' : 'Failed to send email');
+                                }
+                              }}
+                              title={bn ? 'ভেরিফিকেশন ইমেইল পাঠান' : 'Send Verification Email'}
+                            >
+                              <Mail className="w-4 h-4" />
                             </Button>
                             {/* Approve/Reject status */}
                             {u.role !== 'admin' && u.status !== 'approved' && (

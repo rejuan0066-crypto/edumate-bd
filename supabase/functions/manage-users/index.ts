@@ -586,6 +586,16 @@ Deno.serve(async (req) => {
         console.error("send-welcome-email failed (non-fatal):", mailErr);
       }
 
+      // Trigger Supabase Auth verification email (link/code)
+      try {
+        await supabaseAdmin.auth.resend({
+          type: 'signup',
+          email: trimmedEmail,
+        });
+      } catch (authResendErr) {
+        console.error("Supabase auth resend error (non-fatal):", authResendErr);
+      }
+
       // ── SUCCESS audit log ──
       await logSecurityEvent(supabaseAdmin, {
         event_type: 'user_created', severity: 'info',
