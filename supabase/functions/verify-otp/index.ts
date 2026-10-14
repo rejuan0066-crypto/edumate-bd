@@ -261,6 +261,23 @@ Deno.serve(async (req) => {
     await supabase.from("otp_codes").update({ is_used: true }).eq("id", otpRecord.id);
     await logAttempt(true);
 
+    // If this OTP was for email verification, ensure the user's email is confirmed in Supabase Auth
+    if (purpose === "email_verification") {
+      try {
+        let authUserId = resolvedUserId;
+        if (!authUserId) {
+          const { data: userList } = await (supabase as any).auth.admin.listUsers({ page: 1, perPage: 200 });
+          const match = userList?.users?.find((u: any) => (u.email || "").toLowerCase() === email.toLowerCase());
+          if (match?.id) authUserId = match.id;
+        }
+        if (authUserId) {
+          await (supabase as any).auth.admin.updateUserById(authUserId, { email_confirm: true });
+        }
+      } catch (confirmErr) {
+        console.error("Failed to auto-confirm email in Supabase Auth:", confirmErr);
+      }
+    }
+
     return new Response(
       JSON.stringify({ ok: true, valid: true, message: "OTP verified successfully" }),
       {

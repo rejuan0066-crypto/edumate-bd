@@ -9,6 +9,7 @@ import { Link, Navigate } from 'react-router-dom';
 import LanguageToggle from '@/components/LanguageToggle';
 import ForgotPasswordDialog from '@/components/ForgotPasswordDialog';
 import OtpVerificationDialog from '@/components/OtpVerificationDialog';
+import EmailVerificationDialog from '@/components/EmailVerificationDialog';
 import { toast } from 'sonner';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 import { getAuthenticatedHomePath, hasResolvedAuthRedirectState } from '@/lib/authRedirect';
@@ -60,6 +61,8 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
+  const [emailVerifyOpen, setEmailVerifyOpen] = useState(false);
+  const [emailVerifyEmail, setEmailVerifyEmail] = useState('');
   // Computed once on mount: is there a persisted session in this browser?
   const [storedSession] = useState<boolean>(() => hasStoredSession());
 
@@ -172,10 +175,12 @@ const Login = () => {
             : 'Network problem. Please check your connection and try again.'
         );
       } else if (lower.includes('email not confirmed')) {
+        setEmailVerifyEmail(cleanEmail);
+        setEmailVerifyOpen(true);
         toast.error(
           language === 'bn'
-            ? 'ইমেইল ভেরিফাই করা হয়নি। অনুগ্রহ করে Supabase ড্যাশবোর্ড থেকে ইমেইল কনফার্ম করুন।'
-            : 'Email not confirmed. Please confirm your email in Supabase.'
+            ? 'ইমেইল ভেরিফাই করা হয়নি। OTP কোড অথবা ভেরিফিকেশন লিংকের মাধ্যমে এখনই নিশ্চিত করুন।'
+            : 'Email not confirmed. Please verify using OTP code or confirmation link.'
         );
       } else if (lower.includes('rate limit') || lower.includes('too many requests')) {
         toast.error(
@@ -322,11 +327,21 @@ const Login = () => {
               </button>
             </div>
           </div>
-          <div className="text-right">
+          <div className="flex items-center justify-between text-sm">
+            <button
+              type="button"
+              onClick={() => {
+                setEmailVerifyEmail(email.trim().toLowerCase());
+                setEmailVerifyOpen(true);
+              }}
+              className="text-primary hover:underline font-medium text-xs sm:text-sm"
+            >
+              {language === 'bn' ? 'ইমেইল ভেরিফাই করুন (OTP / লিংক)' : 'Verify Email (OTP / Link)'}
+            </button>
             <button
               type="button"
               onClick={() => setForgotOpen(true)}
-              className="text-sm text-primary hover:underline"
+              className="text-xs sm:text-sm text-muted-foreground hover:text-foreground hover:underline"
             >
               {t('forgotPassword')}
             </button>
@@ -345,6 +360,22 @@ const Login = () => {
       </div>
 
       <ForgotPasswordDialog open={forgotOpen} onOpenChange={setForgotOpen} />
+
+      <EmailVerificationDialog
+        open={emailVerifyOpen}
+        onOpenChange={setEmailVerifyOpen}
+        initialEmail={emailVerifyEmail || email.trim().toLowerCase()}
+        onSuccess={async () => {
+          const cleanEmail = email.trim().toLowerCase();
+          if (cleanEmail && password) {
+            toast.info(language === 'bn' ? 'স্বয়ংক্রিয়ভাবে লগইন করা হচ্ছে...' : 'Signing in automatically...');
+            const { error } = await signIn(cleanEmail, password);
+            if (!error) {
+              toast.success(language === 'bn' ? 'লগইন সফল হয়েছে!' : 'Login successful!');
+            }
+          }
+        }}
+      />
 
       {otpEmail && (
         <OtpVerificationDialog
