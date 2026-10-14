@@ -357,29 +357,6 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     return null;
   };
 
-  // Build breadcrumb from current path
-  const getBreadcrumbs = () => {
-    const crumbs = [{ label: language === 'bn' ? 'হোম' : 'Home', path: '/admin' }];
-    const fullPath = location.pathname + location.search;
-    const currentItem = menuItems.find(i => i.path === location.pathname || i.path === fullPath);
-    if (currentItem && currentItem.path !== '/admin') {
-      crumbs.push({ label: currentItem.label, path: currentItem.path });
-    } else {
-      for (const item of menuItems) {
-        const child = item.children?.find(c => {
-          const [cPath, cSearch] = c.path.split('?');
-          return cSearch ? (location.pathname === cPath && location.search === '?' + cSearch) : location.pathname === c.path;
-        });
-        if (child) {
-          crumbs.push({ label: item.label, path: item.path });
-          crumbs.push({ label: child.label, path: child.path });
-          break;
-        }
-      }
-    }
-    return crumbs;
-  };
-
   const currentPageLabel = (() => {
     const fullPath = location.pathname + location.search;
     for (const item of menuItems) {
@@ -392,8 +369,6 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     }
     return t('dashboard');
   })();
-
-  const breadcrumbs = getBreadcrumbs();
 
   const renderSidebar = (mobile = false) => (
     <aside key={mobile ? 'mobile' : 'desktop'} className={`${mobile ? 'fixed inset-0 z-50' : 'hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:flex'} flex`}>
@@ -668,26 +643,6 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           {/* Content */}
           <main className="flex-1 px-2 sm:px-4 md:px-8 pb-24 lg:pb-8 pt-3 sm:pt-4 w-full max-w-[1440px] mx-auto">
             <BackButton position="top" />
-            {/* Page Header - outside card for clear separation */}
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4 sm:mb-5">
-              <div className="min-w-0">
-                <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight truncate text-right lg:text-3xl">{currentPageLabel}</h1>
-                {adminTheme.headerShowBreadcrumb && breadcrumbs.length > 1 && (
-                  <nav className="flex items-center gap-1 mt-1.5 text-xs text-muted-foreground flex-wrap">
-                    {breadcrumbs.map((crumb, i) => (
-                      <span key={crumb.path} className="flex items-center gap-1">
-                        {i > 0 && <ChevronRight className="w-3 h-3 opacity-40" />}
-                        {i === breadcrumbs.length - 1 ? (
-                          <span className="text-foreground/70 font-medium">{crumb.label}</span>
-                        ) : (
-                          <Link to={crumb.path} className="hover:text-primary transition-colors">{crumb.label}</Link>
-                        )}
-                      </span>
-                    ))}
-                  </nav>
-                )}
-              </div>
-            </div>
             {/* Modern Glass Content Container */}
             <div className="admin-page-card rounded-[20px] sm:rounded-[36px] lg:rounded-[45px] bg-card/70 dark:bg-card/35 backdrop-blur-2xl border border-border/10 dark:border-border/8 p-2.5 sm:p-6 lg:p-10 min-h-[60vh] w-full" style={{ boxShadow: 'var(--shadow-float)' }}>
               <div className="w-full min-w-0">
