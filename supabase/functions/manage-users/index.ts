@@ -235,6 +235,135 @@ Deno.serve(async (req) => {
 
 
 
+    // CHECK EMAIL CONFIRMED STATUS (fast polling helper)
+    if (action === "check_email_confirmed") {
+      const email = (body.email || url.searchParams.get("email") || "").toLowerCase().trim();
+      const user_id = body.user_id || url.searchParams.get("user_id");
+      let confirmed = false;
+      try {
+        if (user_id) {
+          const { data: u } = await supabaseAdmin.auth.admin.getUserById(user_id);
+          confirmed = !!u?.user?.email_confirmed_at;
+        } else if (email) {
+          const { data: list } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 100 });
+          const match = list?.users?.find((u: any) => (u.email || '').toLowerCase() === email);
+          confirmed = !!match?.email_confirmed_at;
+        }
+      } catch (checkErr) {
+        console.error("check_email_confirmed error:", checkErr);
+      }
+      return new Response(JSON.stringify({ ok: true, confirmed }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // VERIFY OTP (Admin-side verification without session takeover)
+    if (action === "verify_otp") {
+      const email = (body.email || "").toLowerCase().trim();
+      const token = String(body.token || "").trim();
+      const user_id = body.user_id;
+
+      if (!email || !token) {
+        return new Response(JSON.stringify({ success: false, error: "ইমেইল ও ওটিপি কোড প্রয়োজন" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      try {
+        const anonClient = createClient(
+          Deno.env.get("SUPABASE_URL") ?? "",
+          Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+          { auth: { persistSession: false, autoRefreshToken: false } }
+        );
+
+        let verifyRes = await anonClient.auth.verifyOtp({
+          email,
+          token,
+          type: 'signup',
+        });
+
+        if (verifyRes.error) {
+          verifyRes = await anonClient.auth.verifyOtp({
+            email,
+            token,
+            type: 'email',
+          });
+        }
+
+        if (verifyRes.error) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: verifyRes.error.message || 'ভেরিফিকেশন কোড সঠিক নয় বা মেয়াদোত্তীর্ণ',
+          }), {
+            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const targetId = user_id || verifyRes.data?.user?.id;
+        if (targetId) {
+          await supabaseAdmin.from('profiles').update({ status: 'approved' }).eq('id', targetId);
+          await supabaseAdmin.auth.admin.updateUserById(targetId, { email_confirm: true });
+        }
+
+        return new Response(JSON.stringify({ success: true, confirmed: true }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (err: any) {
+        return new Response(JSON.stringify({ success: false, error: err?.message || 'যাচাই ব্যর্থ হয়েছে' }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // RESEND VERIFICATION (OTP or Link)
+    if (action === "resend_verification") {
+      const email = (body.email || "").toLowerCase().trim();
+      if (!email) {
+        return new Response(JSON.stringify({ success: false, error: "ইমেইল প্রয়োজন" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      try {
+        const { error: resendErr } = await supabaseAdmin.auth.resend({
+          type: 'signup',
+          email,
+        });
+        if (resendErr) {
+          return new Response(JSON.stringify({ success: false, error: resendErr.message }), {
+            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify({ success: true }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (err: any) {
+        return new Response(JSON.stringify({ success: false, error: err?.message || 'পুনরায় পাঠাতে সমস্যা হয়েছে' }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // MANUAL CONFIRM EMAIL (Admin bypass if user is confirmed directly)
+    if (action === "manual_confirm_email") {
+      const user_id = body.user_id;
+      if (!user_id) {
+        return new Response(JSON.stringify({ success: false, error: "user_id is required" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      try {
+        await supabaseAdmin.auth.admin.updateUserById(user_id, { email_confirm: true });
+        await supabaseAdmin.from('profiles').update({ status: 'approved' }).eq('id', user_id);
+        return new Response(JSON.stringify({ success: true }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (err: any) {
+        return new Response(JSON.stringify({ success: false, error: err?.message || 'হালনাগাদ ব্যর্থ' }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     // LIST users
     if (req.method === "GET" && !action) {
       const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();

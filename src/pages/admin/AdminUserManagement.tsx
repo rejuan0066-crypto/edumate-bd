@@ -8,11 +8,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Plus, Loader2, Trash2, Eye, EyeOff, AlertTriangle, KeyRound, Save, Pencil, ShieldCheck, Tag, Shield, UserCircle, Mail, SendHorizonal, UserPlus, Users2, LayoutGrid, Sliders } from 'lucide-react';
+import { Users, Plus, Loader2, Trash2, Eye, EyeOff, AlertTriangle, KeyRound, Save, Pencil, ShieldCheck, Tag, Shield, UserCircle, Mail, SendHorizonal, UserPlus, Users2, LayoutGrid, Sliders, CheckCircle2, ArrowRight, ArrowLeft, RefreshCw, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AccessControlTab from '@/components/admin/AccessControlTab';
 import { toast } from 'sonner';
@@ -190,6 +191,65 @@ const AdminUserManagement = () => {
   const [conflictType, setConflictType] = useState<'email' | 'name'>('email');
   const [conflictUser, setConflictUser] = useState<{ full_name: string; email: string; role: string; phone: string; status: string } | null>(null);
   const [conflictLoading, setConflictLoading] = useState(false);
+
+  // Multi-step user creation wizard state (1: Form, 2: Method selection, 3: Verification, 4: Success)
+  const [createStep, setCreateStep] = useState<1 | 2 | 3 | 4>(1);
+  const [createMethod, setCreateMethod] = useState<'otp' | 'link'>('otp');
+  const [createdUserId, setCreatedUserId] = useState<string | null>(null);
+  const [createdUserEmail, setCreatedUserEmail] = useState<string>('');
+  const [createdUserName, setCreatedUserName] = useState<string>('');
+
+  // Step 3-A: OTP
+  const [createOtpCode, setCreateOtpCode] = useState<string>('');
+  const [createOtpSending, setCreateOtpSending] = useState<boolean>(false);
+  const [createOtpVerifying, setCreateOtpVerifying] = useState<boolean>(false);
+  const [createOtpCooldown, setCreateOtpCooldown] = useState<number>(0);
+
+  // Step 3-B: Link Pending & Polling
+  const [linkChecking, setLinkChecking] = useState<boolean>(false);
+  const [linkCooldown, setLinkCooldown] = useState<number>(0);
+
+  useEffect(() => {
+    if (createOtpCooldown <= 0) return;
+    const timer = setInterval(() => setCreateOtpCooldown(c => (c > 0 ? c - 1 : 0)), 1000);
+    return () => clearInterval(timer);
+  }, [createOtpCooldown]);
+
+  useEffect(() => {
+    if (linkCooldown <= 0) return;
+    const timer = setInterval(() => setLinkCooldown(c => (c > 0 ? c - 1 : 0)), 1000);
+    return () => clearInterval(timer);
+  }, [linkCooldown]);
+
+  // Live polling for email confirmation when Step 3 with Link method is active
+  useEffect(() => {
+    if (!dialogOpen || createStep !== 3 || createMethod !== 'link' || !createdUserId) return;
+    let isCancelled = false;
+
+    const checkStatus = async () => {
+      try {
+        const { data } = await supabase.functions.invoke('manage-users', {
+          body: { action: 'check_email_confirmed', user_id: createdUserId },
+        });
+        if (!isCancelled && data?.confirmed) {
+          try {
+            await supabase.from('profiles').update({ status: 'approved' }).eq('id', createdUserId);
+          } catch (_) {}
+          setCreateStep(4);
+          toast.success(bn ? '🎉 ইমেইল ভেরিফিকেশন সফলভাবে সম্পন্ন হয়েছে!' : '🎉 Email verification completed!');
+          fetchUsers();
+        }
+      } catch (err) {
+        console.error('Polling email confirmation status error:', err);
+      }
+    };
+
+    const interval = setInterval(checkStatus, 3500);
+    return () => {
+      isCancelled = true;
+      clearInterval(interval);
+    };
+  }, [dialogOpen, createStep, createMethod, createdUserId, bn]);
 
   const showConflict = useCallback(async (type: 'email' | 'name', value: string) => {
     setConflictType(type);
@@ -461,14 +521,35 @@ const AdminUserManagement = () => {
   const lastCreateAtRef = useRef<number>(0);
   const CREATE_COOLDOWN_MS = 3000;
 
-  const handleCreate = async () => {
-    // Submit throttle: prevent rapid repeated submissions from this admin's session
-    const sinceLast = Date.now() - lastCreateAtRef.current;
-    if (sinceLast < CREATE_COOLDOWN_MS) {
-      const wait = Math.ceil((CREATE_COOLDOWN_MS - sinceLast) / 1000);
-      toast.error(bn ? `অনুগ্রহ করে ${wait} সেকেন্ড অপেক্ষা করুন` : `Please wait ${wait}s before retrying`);
-      return;
+  const resetCreateWizard = () => {
+    setCreateStep(1);
+    setCreateMethod('otp');
+    setCreatedUserId(null);
+    setCreatedUserEmail('');
+    setCreatedUserName('');
+    setCreateOtpCode('');
+    setCreateOtpCooldown(0);
+    setLinkCooldown(0);
+    setEmail('');
+    setPassword('');
+    setFullName('');
+    setCreatePhone('');
+    setRole('');
+    setCreateStaffCategory('');
+    setCreateDesignation('');
+    setEmailDup('idle');
+    setNameDup('idle');
+    setPhoneDup('idle');
+  };
+
+  const handleDialogChange = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      resetCreateWizard();
     }
+  };
+
+  const handleStep1Next = () => {
     if (!email.trim()) { toast.error(bn ? 'ইমেইল দিন' : 'Enter email'); return; }
     if (!fullName.trim()) { toast.error(bn ? 'ইউজারের নাম দিন' : 'Enter user name'); return; }
     if (!password) { toast.error(bn ? 'পাসওয়ার্ড দিন' : 'Password required'); return; }
@@ -488,13 +569,24 @@ const AdminUserManagement = () => {
     // Client-side duplicate guard against currently loaded users
     const emailLc = email.trim().toLowerCase();
     const nameLc = fullName.trim().toLowerCase();
-    const phoneTrim = createPhone.trim();
     if (users.some(u => u.email?.toLowerCase() === emailLc)) {
       showConflict('email', email);
       return;
     }
     if (users.some(u => (u.full_name || '').toLowerCase() === nameLc)) {
       showConflict('name', fullName);
+      return;
+    }
+
+    setCreateStep(2);
+  };
+
+  const handleExecuteCreation = async (methodToUse?: 'otp' | 'link') => {
+    const selectedMethod = methodToUse || createMethod;
+    const sinceLast = Date.now() - lastCreateAtRef.current;
+    if (sinceLast < CREATE_COOLDOWN_MS) {
+      const wait = Math.ceil((CREATE_COOLDOWN_MS - sinceLast) / 1000);
+      toast.error(bn ? `অনুগ্রহ করে ${wait} সেকেন্ড অপেক্ষা করুন` : `Please wait ${wait}s before retrying`);
       return;
     }
 
@@ -511,7 +603,7 @@ const AdminUserManagement = () => {
           action: 'create',
           email: email.trim(),
           password,
-          phone: phoneTrim || undefined,
+          phone: createPhone.trim() || undefined,
           role: actualRole || undefined,
           full_name: fullName.trim(),
           name_bn: fullName.trim(),
@@ -519,12 +611,10 @@ const AdminUserManagement = () => {
           designation: createDesignation || undefined,
         },
       });
-      // Non-2xx responses leave `data` null — recover the JSON body so the
-      // specific reason (duplicate / weak password / rate limit) is shown.
+
       if (error && !data) data = await edgeErrorBody(error);
       if (error || !data?.success) {
         const code = data?.error || data?.code;
-        // Rate limited from server (per-admin or per-IP)
         if (data?.code === 'RATE_LIMITED' || (typeof error?.message === 'string' && error.message.includes('429'))) {
           const retry = data?.retry_after || 30;
           toast.error(
@@ -538,22 +628,26 @@ const AdminUserManagement = () => {
         }
         if (code === 'DUPLICATE_EMAIL' || code === 'DUPLICATE_EMAIL_AUTH' || code === 'DUPLICATE_EMAIL_AUTH_RACE' || code === 'DUPLICATE_EMAIL_STAFF' || code === 'DUPLICATE_EMAIL_ADMIN') {
           showConflict('email', email);
+          setCreateStep(1);
           setCreating(false);
           return;
         }
         if (code === 'DUPLICATE_NAME') {
           showConflict('name', fullName);
+          setCreateStep(1);
           setCreating(false);
           return;
         }
         if (code === 'DUPLICATE_PHONE' || code === 'DUPLICATE_PHONE_RACE' || code === 'DUPLICATE_PHONE_STAFF' || code === 'DUPLICATE_PHONE_ADMIN') {
           toast.error((bn ? data?.message_bn : data?.message) || (bn ? '⚠️ এই ফোন নম্বর দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন' : '⚠️ This phone number is already registered'));
           setPhoneDup('dup');
+          setCreateStep(1);
           setCreating(false);
           return;
         }
         if (code === 'WEAK_PASSWORD') {
           toast.error((bn ? data?.message_bn : data?.message) || (bn ? 'পাসওয়ার্ড সব শর্ত পূরণ করছে না' : 'Password does not meet requirements'));
+          setCreateStep(1);
           setCreating(false);
           return;
         }
@@ -562,26 +656,150 @@ const AdminUserManagement = () => {
         setCreating(false);
         return;
       }
+
+      const newUserId = data?.user_id;
       const createdEmail = email.trim();
-      setDialogOpen(false);
-      setEmail(''); setPassword(''); setFullName(''); setCreatePhone(''); setRole(''); setCreateStaffCategory(''); setCreateDesignation('');
+      const createdName = fullName.trim();
+      setCreatedUserId(newUserId);
+      setCreatedUserEmail(createdEmail);
+      setCreatedUserName(createdName);
+      setCreateMethod(selectedMethod);
+
+      // Trigger verification email via edge function
+      try {
+        await supabase.functions.invoke('manage-users', {
+          body: { action: 'resend_verification', email: createdEmail },
+        });
+      } catch (_) {}
+
       fetchUsers();
 
-      // Trigger verification email via Supabase Auth immediately
-      try {
-        await supabase.auth.resend({ type: 'signup', email: createdEmail });
-        toast.success(
-          bn
-            ? `✅ ইউজার তৈরি হয়েছে এবং ${createdEmail} এ ভেরিফিকেশন ইমেইল পাঠানো হয়েছে!`
-            : `✅ User created and verification email sent to ${createdEmail}!`
-        );
-      } catch {
-        toast.success(bn ? '✅ ইউজার সফলভাবে তৈরি হয়েছে!' : '✅ User created successfully!');
+      if (selectedMethod === 'otp') {
+        setCreateOtpCooldown(60);
+        setCreateStep(3);
+        toast.success(bn ? `📧 ${createdEmail} এ ৬-সংখ্যার OTP পাঠানো হয়েছে!` : `📧 6-digit OTP sent to ${createdEmail}!`);
+      } else {
+        setLinkCooldown(60);
+        setCreateStep(3);
+        toast.success(bn ? `📧 ${createdEmail} এ ভেরিফিকেশন লিংক পাঠানো হয়েছে!` : `📧 Verification link sent to ${createdEmail}!`);
       }
     } catch {
       toast.error(bn ? 'ইউজার তৈরি ব্যর্থ' : 'Failed to create user');
+    } finally {
+      setCreating(false);
     }
-    setCreating(false);
+  };
+
+  const handleVerifyCreateOtp = async () => {
+    const code = createOtpCode.trim();
+    if (code.length < 6) {
+      toast.error(bn ? '৬-সংখ্যার ওটিপি কোড লিখুন' : 'Enter 6-digit OTP code');
+      return;
+    }
+    setCreateOtpVerifying(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-users', {
+        body: {
+          action: 'verify_otp',
+          email: createdUserEmail,
+          token: code,
+          user_id: createdUserId,
+        },
+      });
+
+      if (error || !data?.success) {
+        toast.error(data?.error || (bn ? 'ভেরিফিকেশন কোড সঠিক নয় বা মেয়াদোত্তীর্ণ' : 'Invalid or expired verification code'));
+        setCreateOtpVerifying(false);
+        return;
+      }
+
+      toast.success(bn ? '🎉 ওটিপি যাচাই সফল হয়েছে!' : '🎉 OTP verification succeeded!');
+      setCreateStep(4);
+      fetchUsers();
+    } catch {
+      toast.error(bn ? 'যাচাই প্রক্রিয়া ব্যর্থ হয়েছে' : 'Verification failed');
+    } finally {
+      setCreateOtpVerifying(false);
+    }
+  };
+
+  const handleResendCreateOtp = async () => {
+    if (createOtpCooldown > 0 || createOtpSending) return;
+    setCreateOtpSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-users', {
+        body: { action: 'resend_verification', email: createdUserEmail },
+      });
+      if (error || !data?.success) {
+        toast.error(data?.error || (bn ? 'কোড পাঠাতে ব্যর্থ' : 'Failed to resend code'));
+      } else {
+        toast.success(bn ? 'নতুন ওটিপি কোড পাঠানো হয়েছে!' : 'New OTP code sent!');
+        setCreateOtpCooldown(60);
+      }
+    } catch {
+      toast.error(bn ? 'কোড পাঠাতে ব্যর্থ' : 'Failed to resend code');
+    } finally {
+      setCreateOtpSending(false);
+    }
+  };
+
+  const handleManualCheckLink = async () => {
+    if (linkChecking || !createdUserId) return;
+    setLinkChecking(true);
+    try {
+      const { data } = await supabase.functions.invoke('manage-users', {
+        body: { action: 'check_email_confirmed', user_id: createdUserId, email: createdUserEmail },
+      });
+      if (data?.confirmed) {
+        try {
+          await supabase.from('profiles').update({ status: 'approved' }).eq('id', createdUserId);
+        } catch (_) {}
+        setCreateStep(4);
+        toast.success(bn ? '🎉 ইমেইল ভেরিফিকেশন সফলভাবে সম্পন্ন হয়েছে!' : '🎉 Email verification completed!');
+        fetchUsers();
+      } else {
+        toast.info(bn ? '⏳ ইমেইল ভেরিফিকেশন এখনও অপেক্ষমাণ। ব্যবহারকারীকে ইনবক্স বা স্প্যাম ফোল্ডারের লিংকে ক্লিক করতে বলুন।' : '⏳ Email verification still pending. Ask user to click the link in inbox or spam folder.');
+      }
+    } catch {
+      toast.error(bn ? 'স্ট্যাটাস যাচাই ব্যর্থ' : 'Failed to check status');
+    } finally {
+      setLinkChecking(false);
+    }
+  };
+
+  const handleResendLinkInWizard = async () => {
+    if (linkCooldown > 0) return;
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-users', {
+        body: { action: 'resend_verification', email: createdUserEmail },
+      });
+      if (error || !data?.success) {
+        toast.error(data?.error || (bn ? 'লিংক পাঠাতে ব্যর্থ' : 'Failed to resend link'));
+      } else {
+        toast.success(bn ? 'ভেরিফিকেশন লিংক পুনরায় পাঠানো হয়েছে!' : 'Verification link resent!');
+        setLinkCooldown(60);
+      }
+    } catch {
+      toast.error(bn ? 'লিংক পাঠাতে ব্যর্থ' : 'Failed to resend link');
+    }
+  };
+
+  const handleManualApproveBypass = async () => {
+    if (!createdUserId) return;
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-users', {
+        body: { action: 'manual_confirm_email', user_id: createdUserId },
+      });
+      if (error || !data?.success) {
+        toast.error(data?.error || (bn ? 'অনুমোদন ব্যর্থ' : 'Approval failed'));
+        return;
+      }
+      toast.success(bn ? '✅ ইউজার সরাসরি অনুমোদিত ও সক্রিয় করা হয়েছে!' : '✅ User directly approved and activated!');
+      setCreateStep(4);
+      fetchUsers();
+    } catch {
+      toast.error(bn ? 'অনুমোদন ব্যর্থ' : 'Approval failed');
+    }
   };
 
 
@@ -1311,120 +1529,496 @@ const AdminUserManagement = () => {
           {/* ===== USERS TAB ===== */}
           <TabsContent value="users" className="space-y-4">
             <div className="flex justify-end">
-              {canAddItem && <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              {canAddItem && <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
                 <DialogTrigger asChild>
                   <Button className="btn-primary-gradient gap-2">
                     <Plus className="w-4 h-4" /> {bn ? 'নতুন ইউজার' : 'New User'}
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                      <Plus className="w-5 h-5 text-primary" />
-                      {bn ? 'নতুন ইউজার তৈরি করুন' : 'Create New User'}
+                      <UserPlus className="w-5 h-5 text-primary" />
+                      {createStep === 1 && (bn ? 'নতুন ইউজার তৈরি করুন' : 'Create New User')}
+                      {createStep === 2 && (bn ? 'ভেরিফিকেশন পদ্ধতি নির্বাচন' : 'Choose Verification Method')}
+                      {createStep === 3 && createMethod === 'otp' && (bn ? 'OTP কোড যাচাই' : 'Verify OTP Code')}
+                      {createStep === 3 && createMethod === 'link' && (bn ? 'ইমেইল ভেরিফিকেশন' : 'Email Verification')}
+                      {createStep === 4 && (bn ? 'ইউজার তৈরি সম্পন্ন' : 'User Creation Completed')}
                     </DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-4 pt-2">
-                    <p className="text-xs text-muted-foreground mt-2 px-2 py-1.5 bg-muted/30 rounded border-l-2 border-primary/30 italic">
-                      {bn ? 'নতুন অ্যাকাউন্ট তৈরি করতে ইমেইল এবং পাসওয়ার্ড দিন। পাসওয়ার্ড অবশ্যই ইংরেজি অক্ষরে হতে হবে এবং এতে কমপক্ষে ৬টি অক্ষর, বড়/ছোট হাতের অক্ষর, সংখ্যা ও চিহ্ন থাকতে হবে।' : 'Enter email and password to create a new account. Password must be in English and include at least 6 characters, uppercase/lowercase letters, numbers, and symbols.'}
-                    </p>
-                    <div>
-                      <Label>{bn ? 'নাম' : 'Full Name'}</Label>
-                      <Input
-                        className="mt-1"
-                        name="fullName"
-                        langType="auto"
-                        value={fullName}
-                        onChange={e => setFullName(e.target.value)}
-                        placeholder={bn ? 'ইউজারের নাম' : 'User name'}
-                      />
+
+                  {/* Wizard Stepper Progress Bar */}
+                  <div className="flex items-center justify-between border-b pb-3 pt-1 text-xs">
+                    <div className={`flex items-center gap-1.5 font-medium ${createStep === 1 ? 'text-primary font-bold' : createStep > 1 ? 'text-green-600' : 'text-muted-foreground'}`}>
+                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ${createStep === 1 ? 'bg-primary text-primary-foreground' : createStep > 1 ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground'}`}>
+                        {createStep > 1 ? '✓' : '১'}
+                      </span>
+                      <span>{bn ? 'তথ্য' : 'Info'}</span>
                     </div>
-                    <div>
-                      <Label>{bn ? 'ইমেইল' : 'Email'} *</Label>
-                      <Input className="mt-1" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={bn ? 'ইমেইল অ্যাড্রেস' : 'Email address'} />
+                    <div className="w-6 h-[1px] bg-border" />
+                    <div className={`flex items-center gap-1.5 font-medium ${createStep === 2 ? 'text-primary font-bold' : createStep > 2 ? 'text-green-600' : 'text-muted-foreground'}`}>
+                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ${createStep === 2 ? 'bg-primary text-primary-foreground' : createStep > 2 ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground'}`}>
+                        {createStep > 2 ? '✓' : '২'}
+                      </span>
+                      <span>{bn ? 'পদ্ধতি' : 'Method'}</span>
                     </div>
-                    <div>
-                      <Label>{bn ? 'মোবাইল নম্বর' : 'Mobile Number'}</Label>
-                      <Input
-                        className="mt-1"
-                        type="tel"
-                        value={createPhone}
-                        onChange={e => setCreatePhone(e.target.value.replace(/[^\d+]/g, ''))}
-                        placeholder={bn ? '01XXXXXXXXX' : '01XXXXXXXXX'}
-                        maxLength={15}
-                      />
+                    <div className="w-6 h-[1px] bg-border" />
+                    <div className={`flex items-center gap-1.5 font-medium ${createStep === 3 ? 'text-primary font-bold' : createStep > 3 ? 'text-green-600' : 'text-muted-foreground'}`}>
+                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ${createStep === 3 ? 'bg-primary text-primary-foreground' : createStep > 3 ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground'}`}>
+                        {createStep > 3 ? '✓' : '৩'}
+                      </span>
+                      <span>{createMethod === 'otp' ? 'OTP' : (bn ? 'পেন্ডিং' : 'Pending')}</span>
                     </div>
-                    <div>
-                      <Label>{bn ? 'শক্তিশালী পাসওয়ার্ড' : 'Strong Password'} *</Label>
-                      <div className="relative mt-1">
-                        <Input className="pr-10" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(sanitizePasswordInput(e.target.value))} placeholder={bn ? 'ইংরেজি অক্ষর, সংখ্যা ও চিহ্নের মিশ্রণ' : 'Mix of English letters, numbers & symbols'} />
-                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                      <p className="text-[10px] text-muted-foreground mt-1">
-                        {bn ? 'দ্রষ্টব্য: পাসওয়ার্ডে শুধুমাত্র ইংরেজি অক্ষর গ্রহণযোগ্য এবং ইমেইল ভেরিফিকেশন প্রয়োজন হবে।' : 'Note: Only English characters are allowed and email verification will be required.'}
+                    <div className="w-6 h-[1px] bg-border" />
+                    <div className={`flex items-center gap-1.5 font-medium ${createStep === 4 ? 'text-green-600 font-bold' : 'text-muted-foreground'}`}>
+                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ${createStep === 4 ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground'}`}>
+                        {createStep === 4 ? '✓' : '৪'}
+                      </span>
+                      <span>{bn ? 'সম্পন্ন' : 'Done'}</span>
+                    </div>
+                  </div>
+
+                  {/* STEP 1: User Information Form */}
+                  {createStep === 1 && (
+                    <div className="space-y-4 pt-2">
+                      <p className="text-xs text-muted-foreground px-2 py-1.5 bg-muted/30 rounded border-l-2 border-primary/30 italic">
+                        {bn ? 'নতুন অ্যাকাউন্ট তৈরি করতে তথ্য দিন। ফর্ম পূরণ করে পরবর্তী ধাপে ভেরিফিকেশন মাধ্যম বেছে নিন।' : 'Enter user details. Fill the form to proceed to verification method selection in the next step.'}
                       </p>
-                      <PasswordStrengthMeter password={password} bn={bn} />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <Label>{bn ? 'ডিপার্টমেন্ট' : 'Department'}</Label>
-                        <Select value={createStaffCategory} onValueChange={(value) => { setCreateStaffCategory(value); setCreateDesignation(''); }}>
+                        <Label>{bn ? 'নাম' : 'Full Name'} *</Label>
+                        <Input
+                          className="mt-1"
+                          name="fullName"
+                          langType="auto"
+                          value={fullName}
+                          onChange={e => setFullName(e.target.value)}
+                          placeholder={bn ? 'ইউজারের নাম' : 'User name'}
+                        />
+                      </div>
+                      <div>
+                        <Label>{bn ? 'ইমেইল' : 'Email'} *</Label>
+                        <Input className="mt-1" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={bn ? 'ইমেইল অ্যাড্রেস' : 'Email address'} />
+                      </div>
+                      <div>
+                        <Label>{bn ? 'মোবাইল নম্বর' : 'Mobile Number'}</Label>
+                        <Input
+                          className="mt-1"
+                          type="tel"
+                          value={createPhone}
+                          onChange={e => setCreatePhone(e.target.value.replace(/[^\d+]/g, ''))}
+                          placeholder={bn ? '01XXXXXXXXX' : '01XXXXXXXXX'}
+                          maxLength={15}
+                        />
+                      </div>
+                      <div>
+                        <Label>{bn ? 'শক্তিশালী পাসওয়ার্ড' : 'Strong Password'} *</Label>
+                        <div className="relative mt-1">
+                          <Input className="pr-10" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(sanitizePasswordInput(e.target.value))} placeholder={bn ? 'ইংরেজি অক্ষর, সংখ্যা ও চিহ্নের মিশ্রণ' : 'Mix of English letters, numbers & symbols'} />
+                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          {bn ? 'দ্রষ্টব্য: পাসওয়ার্ডে শুধুমাত্র ইংরেজি অক্ষর গ্রহণযোগ্য এবং ইমেইল ভেরিফিকেশন প্রয়োজন হবে।' : 'Note: Only English characters are allowed and email verification will be required.'}
+                        </p>
+                        <PasswordStrengthMeter password={password} bn={bn} />
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <Label>{bn ? 'ডিপার্টমেন্ট' : 'Department'}</Label>
+                          <Select value={createStaffCategory} onValueChange={(value) => { setCreateStaffCategory(value); setCreateDesignation(''); }}>
+                            <SelectTrigger className="mt-1">
+                              <SelectValue placeholder={bn ? 'ডিপার্টমেন্ট' : 'Department'} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {staffCategories.map((cat) => (
+                                <SelectItem key={cat.key} value={cat.key}>{bn ? cat.name_bn : cat.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>{bn ? 'পদবি' : 'Designation'}</Label>
+                          <Select value={createDesignation} onValueChange={setCreateDesignation} disabled={!createStaffCategory}>
+                            <SelectTrigger className="mt-1">
+                              <SelectValue placeholder={bn ? 'পদবি' : 'Designation'} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {masterDesignations
+                                .filter((d) => !createStaffCategory || d.staff_category === createStaffCategory)
+                                .map((d) => (
+                                  <SelectItem key={d.id} value={(bn ? d.name_bn : d.name) || d.name || d.name_bn || ''}>{(bn ? d.name_bn : d.name) || d.name || d.name_bn}</SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div>
+                        <Label>{bn ? 'রোল' : 'Role'} <span className="text-xs text-muted-foreground">({bn ? 'ঐচ্ছিক' : 'Optional'})</span></Label>
+                        <Select value={role} onValueChange={setRole}>
                           <SelectTrigger className="mt-1">
-                            <SelectValue placeholder={bn ? 'ডিপার্টমেন্ট' : 'Department'} />
+                            <SelectValue placeholder={bn ? 'রোল সিলেক্ট করুন (ঐচ্ছিক)' : 'Select role (optional)'} />
                           </SelectTrigger>
                           <SelectContent>
-                            {staffCategories.map((cat) => (
-                              <SelectItem key={cat.key} value={cat.key}>{bn ? cat.name_bn : cat.name}</SelectItem>
+                            <SelectItem value="none">
+                              {bn ? '🚫 রোল ছাড়া (শুধু পারমিশন)' : '🚫 No role (permission only)'}
+                            </SelectItem>
+                            {customRoles.filter(r => r.is_active).map(r => (
+                              <SelectItem key={r.name} value={r.name}>
+                                {bn ? r.name_bn : r.name} {r.is_system ? '' : `(${r.base_role})`}
+                              </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
+                        {(role === '' || role === 'none') && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {bn ? '⚠️ রোল ছাড়া ইউজার শুধু ব্যক্তিগত পারমিশন দিয়ে অ্যাক্সেস পাবে' : '⚠️ User without role will only access via individual permissions'}
+                          </p>
+                        )}
                       </div>
+                      <Button onClick={handleStep1Next} className="w-full btn-primary-gradient gap-2">
+                        <span>{bn ? 'পরবর্তী ধাপ' : 'Next Step'}</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* STEP 2: Choose Verification Method */}
+                  {createStep === 2 && (
+                    <div className="space-y-4 pt-2">
                       <div>
-                        <Label>{bn ? 'পদবি' : 'Designation'}</Label>
-                        <Select value={createDesignation} onValueChange={setCreateDesignation} disabled={!createStaffCategory}>
-                          <SelectTrigger className="mt-1">
-                            <SelectValue placeholder={bn ? 'পদবি' : 'Designation'} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {masterDesignations
-                              .filter((d) => !createStaffCategory || d.staff_category === createStaffCategory)
-                              .map((d) => (
-                                <SelectItem key={d.id} value={(bn ? d.name_bn : d.name) || d.name || d.name_bn || ''}>{(bn ? d.name_bn : d.name) || d.name || d.name_bn}</SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
+                        <h3 className="text-sm font-semibold text-foreground">
+                          {bn ? 'কোন পদ্ধতিতে ইমেইল ভেরিফাই করবেন?' : 'Choose verification method'}
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {bn ? 'ব্যবহারকারীর ইমেইল নিশ্চিত করার জন্য আপনার পছন্দের পদ্ধতি নির্বাচন করুন:' : 'Select preferred method to confirm the user email:'}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-3">
+                        {/* Option 1: OTP */}
+                        <div
+                          onClick={() => setCreateMethod('otp')}
+                          className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                            createMethod === 'otp'
+                              ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
+                              : 'border-border/60 hover:border-primary/40 bg-card'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-start gap-3">
+                              <div className={`p-2.5 rounded-lg shrink-0 ${createMethod === 'otp' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                                <KeyRound className="w-5 h-5" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-semibold text-sm text-foreground">
+                                    {bn ? '১. OTP কোড দিয়ে ভেরিফাই' : '1. Verify via OTP Code'}
+                                  </h4>
+                                  <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300">
+                                    {bn ? 'প্রস্তাবিত' : 'Recommended'}
+                                  </Badge>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                                  {bn
+                                    ? 'ব্যবহারকারীর ইমেইলে ৬-সংখ্যার একটি OTP যাবে। এডমিন প্যানেলে কোডটি বসিয়ে তাত্ক্ষণিকভাবে অ্যাকাউন্ট সক্রিয় করা যাবে।'
+                                    : 'A 6-digit OTP code is sent to user email. Admin can input the code to activate the account immediately.'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 mt-1 ${createMethod === 'otp' ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground'}`}>
+                              {createMethod === 'otp' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Option 2: Link */}
+                        <div
+                          onClick={() => setCreateMethod('link')}
+                          className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                            createMethod === 'link'
+                              ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
+                              : 'border-border/60 hover:border-primary/40 bg-card'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-start gap-3">
+                              <div className={`p-2.5 rounded-lg shrink-0 ${createMethod === 'link' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                                <Mail className="w-5 h-5" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-semibold text-sm text-foreground">
+                                    {bn ? '২. ইমেইল ভেরিফিকেশন লিংক' : '2. Verify via Email Link'}
+                                  </h4>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                                  {bn
+                                    ? 'ব্যবহারকারীর ইমেইলে একটি ভেরিফিকেশন লিংক যাবে। লিংকে ক্লিক করার আগ পর্যন্ত স্ট্যাটাস "পেন্ডিং" থাকবে এবং ক্লিক করলেই স্বয়ংক্রিয়ভাবে সক্রিয় হবে।'
+                                    : 'A verification link is sent to user email. Status stays "Pending" until clicked, then automatically activates.'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 mt-1 ${createMethod === 'link' ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground'}`}>
+                              {createMethod === 'link' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Recipient summary */}
+                      <div className="text-xs text-muted-foreground bg-muted/40 p-2.5 rounded-lg border flex items-center justify-between">
+                        <span>{bn ? 'প্রাপক ইমেইল:' : 'Recipient:'} <strong className="text-foreground">{email}</strong></span>
+                        <span>{fullName}</span>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setCreateStep(1)}
+                          disabled={creating}
+                          className="w-1/3 gap-1"
+                        >
+                          <ArrowLeft className="w-4 h-4" />
+                          {bn ? 'পেছনে যান' : 'Back'}
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={() => handleExecuteCreation(createMethod)}
+                          disabled={creating}
+                          className="w-2/3 btn-primary-gradient gap-2"
+                        >
+                          {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+                          <span>{bn ? 'এগিয়ে যান' : 'Proceed'}</span>
+                        </Button>
                       </div>
                     </div>
-                    <div>
-                      <Label>{bn ? 'রোল' : 'Role'} <span className="text-xs text-muted-foreground">({bn ? 'ঐচ্ছিক' : 'Optional'})</span></Label>
-                      <Select value={role} onValueChange={setRole}>
-                        <SelectTrigger className="mt-1">
-                          <SelectValue placeholder={bn ? 'রোল সিলেক্ট করুন (ঐচ্ছিক)' : 'Select role (optional)'} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">
-                            {bn ? '🚫 রোল ছাড়া (শুধু পারমিশন)' : '🚫 No role (permission only)'}
-                          </SelectItem>
-                          {customRoles.filter(r => r.is_active).map(r => (
-                            <SelectItem key={r.name} value={r.name}>
-                              {bn ? r.name_bn : r.name} {r.is_system ? '' : `(${r.base_role})`}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {(role === '' || role === 'none') && (
+                  )}
+
+                  {/* STEP 3-A: OTP Verification Screen */}
+                  {createStep === 3 && createMethod === 'otp' && (
+                    <div className="space-y-5 pt-2 text-center">
+                      <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                        <KeyRound className="w-6 h-6" />
+                      </div>
+
+                      <div>
+                        <h3 className="text-base font-semibold text-foreground">
+                          {bn ? 'OTP কোড যাচাই করুন' : 'Verify OTP Code'}
+                        </h3>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {bn ? '⚠️ রোল ছাড়া ইউজার শুধু ব্যক্তিগত পারমিশন দিয়ে অ্যাক্সেস পাবে' : '⚠️ User without role will only access via individual permissions'}
+                          {bn
+                            ? <><strong>{createdUserEmail}</strong> ঠিকানায় ৬-সংখ্যার OTP কোড পাঠানো হয়েছে। কোডটি নিচে লিখুন:</>
+                            : <>A 6-digit OTP code has been sent to <strong>{createdUserEmail}</strong>. Enter it below:</>}
                         </p>
-                      )}
+                      </div>
+
+                      <div className="flex justify-center py-2">
+                        <InputOTP
+                          maxLength={6}
+                          value={createOtpCode}
+                          onChange={setCreateOtpCode}
+                        >
+                          <InputOTPGroup>
+                            <InputOTPSlot index={0} />
+                            <InputOTPSlot index={1} />
+                            <InputOTPSlot index={2} />
+                            <InputOTPSlot index={3} />
+                            <InputOTPSlot index={4} />
+                            <InputOTPSlot index={5} />
+                          </InputOTPGroup>
+                        </InputOTP>
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          type="button"
+                          onClick={handleVerifyCreateOtp}
+                          disabled={createOtpVerifying || createOtpCode.trim().length < 6}
+                          className="w-full btn-primary-gradient gap-2"
+                        >
+                          {createOtpVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                          <span>{bn ? 'কোড যাচাই করুন' : 'Verify Code'}</span>
+                        </Button>
+
+                        <div className="flex items-center justify-center gap-2 pt-1 text-xs">
+                          {createOtpCooldown > 0 ? (
+                            <span className="text-muted-foreground flex items-center gap-1">
+                              <Clock className="w-3.5 h-3.5" />
+                              {bn ? `পুনরায় কোড পাঠাতে অপেক্ষা করুন: ${createOtpCooldown} সেকেন্ড` : `Resend code in: ${createOtpCooldown}s`}
+                            </span>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={handleResendCreateOtp}
+                              disabled={createOtpSending}
+                              className="text-xs text-primary hover:underline h-auto p-1"
+                            >
+                              {createOtpSending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RefreshCw className="w-3 h-3 mr-1" />}
+                              {bn ? 'কোড পাননি? আবার পাঠান' : 'Didn\'t get code? Resend'}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="border-t pt-3 flex justify-between items-center text-xs text-muted-foreground">
+                        <button
+                          type="button"
+                          onClick={() => { setDialogOpen(false); resetCreateWizard(); }}
+                          className="hover:text-foreground underline"
+                        >
+                          {bn ? 'পরে ভেরিফাই হবে / বন্ধ করুন' : 'Verify later / Close'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleManualApproveBypass}
+                          className="text-primary hover:underline font-medium"
+                        >
+                          {bn ? '⚡ সরাসরি অনুমোদন' : '⚡ Direct Approve'}
+                        </button>
+                      </div>
                     </div>
-                    <Button onClick={handleCreate} disabled={creating} className="w-full btn-primary-gradient">
-                      {creating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-                      {bn ? 'ইউজার তৈরি করুন' : 'Create User'}
-                    </Button>
-                  </div>
+                  )}
+
+                  {/* STEP 3-B: Link Pending Screen (with real-time polling) */}
+                  {createStep === 3 && createMethod === 'link' && (
+                    <div className="space-y-5 pt-2 text-center">
+                      <div className="mx-auto w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-600">
+                        <Clock className="w-6 h-6 animate-pulse" />
+                      </div>
+
+                      <div>
+                        <div className="inline-flex items-center gap-2 py-1 px-3 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 font-semibold text-xs mb-2">
+                          <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                          <span>{bn ? 'ইমেইল ভেরিফিকেশন অপেক্ষমাণ (Pending)' : 'Email Verification Pending'}</span>
+                        </div>
+                        <h3 className="text-base font-semibold text-foreground">
+                          {bn ? 'ব্যবহারকারীর ক্লিক করার অপেক্ষায়' : 'Waiting for user to click link'}
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto leading-relaxed">
+                          {bn
+                            ? <><strong>{createdUserEmail}</strong> ঠিকানায় ভেরিফিকেশন লিংক পাঠানো হয়েছে। ব্যবহারকারী লিংকে ক্লিক করলেই এই পেজটি স্বয়ংক্রিয়ভাবে সফল দেখাবে।</>
+                            : <>A verification link has been sent to <strong>{createdUserEmail}</strong>. As soon as user clicks it, this page will automatically update to success.</>}
+                        </p>
+                      </div>
+
+                      <div className="p-3 bg-muted/40 rounded-lg border text-left text-xs space-y-1.5">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">{bn ? 'নাম:' : 'Name:'}</span>
+                          <span className="font-medium text-foreground">{createdUserName || fullName}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">{bn ? 'ইমেইল:' : 'Email:'}</span>
+                          <span className="font-medium text-foreground">{createdUserEmail || email}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">{bn ? 'স্ট্যাটাস:' : 'Status:'}</span>
+                          <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-300">
+                            {bn ? 'অপেক্ষমাণ (Pending)' : 'Pending'}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          type="button"
+                          variant="default"
+                          onClick={handleManualCheckLink}
+                          disabled={linkChecking}
+                          className="w-full btn-primary-gradient gap-2"
+                        >
+                          {linkChecking ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                          <span>{bn ? 'স্ট্যাটাস পুনরায় যাচাই করুন' : 'Check Status Now'}</span>
+                        </Button>
+
+                        <div className="flex items-center justify-center gap-2 pt-1 text-xs">
+                          {linkCooldown > 0 ? (
+                            <span className="text-muted-foreground flex items-center gap-1">
+                              <Clock className="w-3.5 h-3.5" />
+                              {bn ? `পুনরায় লিংক পাঠাতে অপেক্ষা করুন: ${linkCooldown} সেকেন্ড` : `Resend link in: ${linkCooldown}s`}
+                            </span>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={handleResendLinkInWizard}
+                              className="text-xs text-primary hover:underline h-auto p-1"
+                            >
+                              <SendHorizonal className="w-3 h-3 mr-1" />
+                              {bn ? 'লিংক পাননি? আবার পাঠান' : 'Didn\'t receive link? Resend'}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="border-t pt-3 flex justify-between items-center text-xs text-muted-foreground">
+                        <button
+                          type="button"
+                          onClick={() => { setDialogOpen(false); resetCreateWizard(); }}
+                          className="hover:text-foreground underline"
+                        >
+                          {bn ? 'পরে ভেরিফাই হবে / বন্ধ করুন' : 'Verify later / Close'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleManualApproveBypass}
+                          className="text-primary hover:underline font-medium"
+                        >
+                          {bn ? '⚡ সরাসরি অনুমোদন' : '⚡ Direct Approve'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STEP 4: Success Screen */}
+                  {createStep === 4 && (
+                    <div className="space-y-5 pt-3 text-center">
+                      <div className="mx-auto w-14 h-14 rounded-full bg-green-500/10 flex items-center justify-center text-green-600">
+                        <CheckCircle2 className="w-8 h-8" />
+                      </div>
+
+                      <div>
+                        <h3 className="text-lg font-bold text-foreground">
+                          {bn ? '🎉 ভেরিফিকেশন সফল হয়েছে!' : '🎉 Verification Successful!'}
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                          {bn
+                            ? 'ইউজার অ্যাকাউন্ট সফলভাবে সক্রিয় করা হয়েছে এবং ইউজার এখন লগইন করতে পারবেন।'
+                            : 'User account has been successfully verified and activated. The user can now log in.'}
+                        </p>
+                      </div>
+
+                      <div className="p-3.5 bg-green-500/5 rounded-xl border border-green-500/20 text-left text-xs space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">{bn ? 'নাম:' : 'Name:'}</span>
+                          <span className="font-semibold text-foreground">{createdUserName || fullName}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">{bn ? 'ইমেইল:' : 'Email:'}</span>
+                          <span className="font-semibold text-foreground">{createdUserEmail || email}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">{bn ? 'স্ট্যাটাস:' : 'Status:'}</span>
+                          <Badge className="bg-green-600 text-white text-[10px]">
+                            {bn ? '✅ সক্রিয় ও অনুমোদিত' : '✅ Active & Approved'}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      <Button
+                        type="button"
+                        onClick={() => { setDialogOpen(false); resetCreateWizard(); }}
+                        className="w-full btn-primary-gradient gap-2"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>{bn ? 'সম্পন্ন / বন্ধ করুন' : 'Done / Close'}</span>
+                      </Button>
+                    </div>
+                  )}
                 </DialogContent>
               </Dialog>}
             </div>
