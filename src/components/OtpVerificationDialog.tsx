@@ -1,15 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '@/components/ui/input-otp';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useOtpService } from '@/hooks/useOtpService';
 import { fetchOtpRequirements, isOtpRequiredFor, type OtpRoleScope } from '@/hooks/useOtpRequirements';
-import { Loader2, Mail, ShieldCheck, ShieldAlert, Timer } from 'lucide-react';
+import { Loader2, Mail, ShieldCheck, ShieldAlert, Timer, KeyRound, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import OtpResendButton from '@/components/OtpResendButton';
 import { trackOtpLockout } from '@/lib/otpAnalytics';
+import { formatDigits } from '@/lib/utils';
 
 const formatCountdown = (totalSeconds: number) => {
   const m = Math.floor(totalSeconds / 60);
@@ -361,40 +362,70 @@ const OtpVerificationDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-foreground">
-            <ShieldCheck className="w-5 h-5 text-primary" />
+      <DialogContent className="sm:max-w-[420px] p-6 sm:p-7 rounded-3xl border border-border/50 bg-card/95 backdrop-blur-xl shadow-2xl overflow-hidden">
+        <DialogHeader className="space-y-2">
+          <div className="relative mx-auto mb-1 w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-500/20 via-teal-500/15 to-primary/20 border border-emerald-500/30 flex items-center justify-center shadow-lg shadow-emerald-500/10">
+            <ShieldCheck className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
+            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-background border border-emerald-500/30 flex items-center justify-center shadow-xs">
+              <KeyRound className="w-3 h-3 text-primary" />
+            </div>
+          </div>
+          <DialogTitle className="flex items-center justify-center gap-2 text-foreground text-center text-lg sm:text-xl font-bold">
             {title || (bn ? 'ইমেইল যাচাইকরণ' : 'Email Verification')}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-center text-xs sm:text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
             {description || (bn
               ? `${email} এ একটি ৬-ডিজিটের কোড পাঠানো হয়েছে। কোডটি ${expiryMinutes} মিনিটের মধ্যে মেয়াদ শেষ হবে।`
               : `A 6-digit code has been sent to ${email}. The code will expire in ${expiryMinutes} minutes.`)}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          <div className="flex items-center justify-center gap-2 p-3 rounded-lg bg-primary/10 text-sm">
-            <Mail className="w-4 h-4 text-primary" />
-            <span className="text-foreground font-medium">{email}</span>
+        <div
+          className="space-y-5 py-2"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !verifyDisabled) {
+              e.preventDefault();
+              void handleVerify();
+            }
+          }}
+        >
+          <div className="flex items-center justify-between gap-3 p-3 rounded-2xl border border-border/50 bg-muted/30 shadow-2xs">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <Mail className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 text-left">
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                  {bn ? 'কোড পাঠানো হয়েছে' : 'Code sent to'}
+                </span>
+                <span className="text-xs sm:text-sm font-semibold text-foreground truncate font-mono block">
+                  {email}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] font-medium shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span>{bn ? 'প্রেরিত' : 'Sent'}</span>
+            </div>
           </div>
 
           {otpSent && (
             <div
-              className={`flex items-center justify-center gap-2 py-2 px-4 rounded-full text-sm font-medium mx-auto w-fit ${
+              className={`flex items-center justify-center gap-2 py-1.5 px-3.5 rounded-full text-xs font-semibold mx-auto w-fit border transition-all ${
                 codeExpired
-                  ? 'bg-destructive/10 text-destructive'
-                  : 'bg-emerald-500/10 text-emerald-600'
+                  ? 'bg-destructive/10 text-destructive border-destructive/20'
+                  : codeExpirySeconds <= 60
+                    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/25 animate-pulse'
+                    : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20'
               }`}
               aria-live="polite"
               aria-atomic="true"
             >
-              <Timer className="w-4 h-4" />
+              <Timer className="w-3.5 h-3.5" />
               {codeExpired
                 ? (bn ? 'কোডের মেয়াদ শেষ — আবার পাঠান' : 'Code expired — resend to continue')
                 : (bn
-                  ? `কোডের মেয়াদ: ${formatCountdown(codeExpirySeconds)}`
+                  ? `কোডের মেয়াদ: ${formatDigits(formatCountdown(codeExpirySeconds), true)}`
                   : `Code expires in ${formatCountdown(codeExpirySeconds)}`)}
             </div>
           )}
@@ -402,20 +433,20 @@ const OtpVerificationDialog = ({
           {lockout && (
             <Alert
               variant="destructive"
-              className="border-destructive/40"
+              className="border-destructive/30 bg-destructive/10 rounded-2xl shadow-xs"
               role="alert"
               aria-live="assertive"
               aria-atomic="true"
               id="otp-lockout-alert"
             >
-              <ShieldAlert className="h-4 w-4" />
+              <ShieldAlert className="h-4 w-4 text-destructive" />
               <AlertDescription className="space-y-1">
-                <p className="font-medium" id="otp-lockout-message">
+                <p className="font-semibold text-xs sm:text-sm" id="otp-lockout-message">
                   {lockout.message}
                 </p>
                 {lockoutCountdownLabel && (
                   <p
-                    className="text-xs opacity-80"
+                    className="text-xs opacity-90 font-medium"
                     id="otp-lockout-countdown"
                     aria-live="polite"
                     aria-atomic="true"
@@ -424,7 +455,7 @@ const OtpVerificationDialog = ({
                   </p>
                 )}
                 <p
-                  className="text-[10px] uppercase tracking-wide opacity-60"
+                  className="text-[10px] uppercase tracking-wide opacity-70 font-mono"
                   id="otp-lockout-code"
                 >
                   {lockout.code}
@@ -433,26 +464,31 @@ const OtpVerificationDialog = ({
             </Alert>
           )}
 
-          <div className="flex justify-center">
+          <div className="flex justify-center py-1">
             <InputOTP
               maxLength={6}
               value={otpValue}
               onChange={setOtpValue}
               disabled={verifyLocked}
+              autoFocus
               aria-describedby={
                 verifyLocked
                   ? 'otp-lockout-message otp-lockout-countdown otp-lockout-code'
                   : undefined
               }
               aria-invalid={verifyLocked || undefined}
+              containerClassName="gap-2 sm:gap-2.5"
             >
-              <InputOTPGroup>
-                <InputOTPSlot index={0} />
-                <InputOTPSlot index={1} />
-                <InputOTPSlot index={2} />
-                <InputOTPSlot index={3} />
-                <InputOTPSlot index={4} />
-                <InputOTPSlot index={5} />
+              <InputOTPGroup className="gap-1.5 sm:gap-2">
+                <InputOTPSlot index={0} className="w-10 h-13 sm:w-12 sm:h-14 rounded-xl border border-border/70 text-lg sm:text-xl font-mono font-bold bg-muted/20 data-[active=true]:border-primary data-[active=true]:ring-4 data-[active=true]:ring-primary/15 transition-all shadow-2xs first:rounded-xl last:rounded-xl" />
+                <InputOTPSlot index={1} className="w-10 h-13 sm:w-12 sm:h-14 rounded-xl border border-border/70 text-lg sm:text-xl font-mono font-bold bg-muted/20 data-[active=true]:border-primary data-[active=true]:ring-4 data-[active=true]:ring-primary/15 transition-all shadow-2xs first:rounded-xl last:rounded-xl" />
+                <InputOTPSlot index={2} className="w-10 h-13 sm:w-12 sm:h-14 rounded-xl border border-border/70 text-lg sm:text-xl font-mono font-bold bg-muted/20 data-[active=true]:border-primary data-[active=true]:ring-4 data-[active=true]:ring-primary/15 transition-all shadow-2xs first:rounded-xl last:rounded-xl" />
+              </InputOTPGroup>
+              <InputOTPSeparator className="text-muted-foreground/30 px-0.5 sm:px-1" />
+              <InputOTPGroup className="gap-1.5 sm:gap-2">
+                <InputOTPSlot index={3} className="w-10 h-13 sm:w-12 sm:h-14 rounded-xl border border-border/70 text-lg sm:text-xl font-mono font-bold bg-muted/20 data-[active=true]:border-primary data-[active=true]:ring-4 data-[active=true]:ring-primary/15 transition-all shadow-2xs first:rounded-xl last:rounded-xl" />
+                <InputOTPSlot index={4} className="w-10 h-13 sm:w-12 sm:h-14 rounded-xl border border-border/70 text-lg sm:text-xl font-mono font-bold bg-muted/20 data-[active=true]:border-primary data-[active=true]:ring-4 data-[active=true]:ring-primary/15 transition-all shadow-2xs first:rounded-xl last:rounded-xl" />
+                <InputOTPSlot index={5} className="w-10 h-13 sm:w-12 sm:h-14 rounded-xl border border-border/70 text-lg sm:text-xl font-mono font-bold bg-muted/20 data-[active=true]:border-primary data-[active=true]:ring-4 data-[active=true]:ring-primary/15 transition-all shadow-2xs first:rounded-xl last:rounded-xl" />
               </InputOTPGroup>
             </InputOTP>
           </div>
@@ -460,7 +496,7 @@ const OtpVerificationDialog = ({
           <Button
             onClick={handleVerify}
             disabled={verifyDisabled}
-            className="btn-primary-gradient w-full"
+            className="btn-primary-gradient w-full h-11 sm:h-12 rounded-2xl font-semibold shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 active:scale-[0.99] transition-all text-sm sm:text-base flex items-center justify-center gap-2"
             aria-describedby={
               verifyLocked
                 ? 'otp-lockout-message otp-lockout-countdown'
@@ -468,22 +504,29 @@ const OtpVerificationDialog = ({
             }
           >
             {verifying && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {verifyLocked
-              ? (bn ? 'যাচাইকরণ লক করা হয়েছে' : 'Verification locked')
-              : codeExpired
-                ? (bn ? 'কোডের মেয়াদ শেষ' : 'Code expired')
-                : verifyCooldown > 0
-                  ? (bn ? `${verifyCooldown}s পর আবার চেষ্টা করুন` : `Retry in ${verifyCooldown}s`)
-                  : (bn ? 'যাচাই করুন' : 'Verify Code')}
+            <span>
+              {verifyLocked
+                ? (bn ? 'যাচাইকরণ লক করা হয়েছে' : 'Verification locked')
+                : codeExpired
+                  ? (bn ? 'কোডের মেয়াদ শেষ' : 'Code expired')
+                  : verifyCooldown > 0
+                    ? (bn ? `${verifyCooldown}s পর আবার চেষ্টা করুন` : `Retry in ${verifyCooldown}s`)
+                    : (bn ? 'যাচাই করুন' : 'Verify Code')}
+            </span>
+            {!verifyDisabled && !verifying && (
+              <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono font-medium rounded-md bg-white/20 text-white/95">
+                ↵
+              </kbd>
+            )}
           </Button>
 
-          <div className="flex items-center justify-center">
+          <div className="flex flex-col items-center gap-2.5 pt-1">
             {resendLocked ? (
               <Button
                 variant="ghost"
                 size="sm"
                 disabled
-                className="gap-2 text-muted-foreground"
+                className="gap-2 text-muted-foreground rounded-full"
                 aria-describedby="otp-lockout-message otp-lockout-countdown"
               >
                 <ShieldAlert className="w-4 h-4" />
@@ -499,6 +542,15 @@ const OtpVerificationDialog = ({
                 persistKey={`${email}:${purpose}:${scope ?? 'default'}`}
               />
             )}
+
+            <p className="text-[11px] text-muted-foreground/75 text-center flex items-center justify-center gap-1.5 pt-2 border-t border-border/30 w-full">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <span>
+                {bn
+                  ? 'ইমেইল না পেলে স্প্যাম (Spam / Junk) ফোল্ডার চেক করুন'
+                  : 'Cannot find the email? Check your Spam or Junk folder'}
+              </span>
+            </p>
           </div>
         </div>
       </DialogContent>

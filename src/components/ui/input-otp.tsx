@@ -1,6 +1,6 @@
 import * as React from "react";
 import { OTPInput, OTPInputContext } from "input-otp";
-import { Dot } from "lucide-react";
+import { Minus } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -8,7 +8,7 @@ const InputOTP = React.forwardRef<React.ElementRef<typeof OTPInput>, React.Compo
   ({ className, containerClassName, ...props }, ref) => (
     <OTPInput
       ref={ref}
-      containerClassName={cn("flex items-center gap-2 has-[:disabled]:opacity-50", containerClassName)}
+      containerClassName={cn("flex items-center gap-2 has-[:disabled]:opacity-50 select-none", containerClassName)}
       className={cn("disabled:cursor-not-allowed", className)}
       {...props}
     />
@@ -32,8 +32,9 @@ const InputOTPSlot = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "relative flex h-10 w-10 items-center justify-center border-y border-r border-input text-sm transition-all first:rounded-l-md first:border-l last:rounded-r-md",
-        isActive && "z-10 ring-2 ring-ring ring-offset-background",
+        "relative flex h-11 w-10 sm:h-12 sm:w-11 items-center justify-center border-y border-r border-input text-base sm:text-lg font-mono font-semibold transition-all first:rounded-l-xl first:border-l last:rounded-r-xl select-none",
+        isActive && "z-10 ring-2 ring-primary ring-offset-background border-primary",
+        char && "font-bold text-foreground",
         className,
       )}
       {...props}
@@ -41,7 +42,7 @@ const InputOTPSlot = React.forwardRef<
       {char}
       {hasFakeCaret && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="animate-caret-blink h-4 w-px bg-foreground duration-1000" />
+          <div className="animate-caret-blink h-5 w-0.5 rounded-full bg-primary duration-1000" />
         </div>
       )}
     </div>
@@ -50,9 +51,9 @@ const InputOTPSlot = React.forwardRef<
 InputOTPSlot.displayName = "InputOTPSlot";
 
 const InputOTPSeparator = React.forwardRef<React.ElementRef<"div">, React.ComponentPropsWithoutRef<"div">>(
-  ({ ...props }, ref) => (
-    <div ref={ref} role="separator" {...props}>
-      <Dot />
+  ({ className, ...props }, ref) => (
+    <div ref={ref} role="separator" className={cn("flex items-center justify-center text-muted-foreground/40 px-1", className)} {...props}>
+      <Minus className="w-3.5 h-3.5" />
     </div>
   ),
 );

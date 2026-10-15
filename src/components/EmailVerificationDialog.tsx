@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '@/components/ui/input-otp';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,8 +23,11 @@ import {
   ShieldCheck,
   AlertCircle,
   RefreshCw,
+  Timer,
+  Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatDigits } from '@/lib/utils';
 
 interface EmailVerificationDialogProps {
   open: boolean;
@@ -336,25 +339,64 @@ const EmailVerificationDialog = ({
                 </Button>
               </div>
             ) : (
-              <div className="space-y-4">
-                <Alert className="bg-primary/5 border-primary/20 py-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-primary" />
-                  <AlertDescription className="text-xs text-foreground">
-                    {bn
-                      ? `${cleanEmail} এ পাঠানো ৬-ডিজিটের কোডটি লিখুন:`
-                      : `Enter the 6-digit code sent to ${cleanEmail}:`}
-                  </AlertDescription>
-                </Alert>
+              <div
+                className="space-y-4"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !verifyingOtp && otpCode.length === 6) {
+                    e.preventDefault();
+                    void handleVerifyOtp();
+                  }
+                }}
+              >
+                <div className="flex items-center justify-between gap-3 p-3 rounded-2xl border border-border/50 bg-muted/30 shadow-2xs">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <Mail className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0 text-left">
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                        {bn ? 'কোড পাঠানো হয়েছে' : 'Code sent to'}
+                      </span>
+                      <span className="text-xs sm:text-sm font-semibold text-foreground truncate font-mono block">
+                        {cleanEmail}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] font-medium shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>{bn ? 'প্রেরিত' : 'Sent'}</span>
+                  </div>
+                </div>
 
-                <div className="flex justify-center py-2">
-                  <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode} autoFocus>
-                    <InputOTPGroup>
-                      <InputOTPSlot index={0} />
-                      <InputOTPSlot index={1} />
-                      <InputOTPSlot index={2} />
-                      <InputOTPSlot index={3} />
-                      <InputOTPSlot index={4} />
-                      <InputOTPSlot index={5} />
+                {otpCooldown > 0 && (
+                  <div className="flex items-center justify-center gap-1.5 py-1 px-3 rounded-full text-xs font-medium text-muted-foreground bg-muted/30 border border-border/30 w-fit mx-auto">
+                    <Timer className="w-3.5 h-3.5 text-primary" />
+                    <span>
+                      {bn
+                        ? `পুনরায় পাঠানোর সময়: ${formatDigits(otpCooldown, true)} সেকেন্ড`
+                        : `Resend available in ${otpCooldown}s`}
+                    </span>
+                  </div>
+                )}
+
+                <div className="flex justify-center py-1">
+                  <InputOTP
+                    maxLength={6}
+                    value={otpCode}
+                    onChange={setOtpCode}
+                    autoFocus
+                    containerClassName="gap-2 sm:gap-2.5"
+                  >
+                    <InputOTPGroup className="gap-1.5 sm:gap-2">
+                      <InputOTPSlot index={0} className="w-10 h-13 sm:w-12 sm:h-14 rounded-xl border border-border/70 text-lg sm:text-xl font-mono font-bold bg-muted/20 data-[active=true]:border-primary data-[active=true]:ring-4 data-[active=true]:ring-primary/15 transition-all shadow-2xs first:rounded-xl last:rounded-xl" />
+                      <InputOTPSlot index={1} className="w-10 h-13 sm:w-12 sm:h-14 rounded-xl border border-border/70 text-lg sm:text-xl font-mono font-bold bg-muted/20 data-[active=true]:border-primary data-[active=true]:ring-4 data-[active=true]:ring-primary/15 transition-all shadow-2xs first:rounded-xl last:rounded-xl" />
+                      <InputOTPSlot index={2} className="w-10 h-13 sm:w-12 sm:h-14 rounded-xl border border-border/70 text-lg sm:text-xl font-mono font-bold bg-muted/20 data-[active=true]:border-primary data-[active=true]:ring-4 data-[active=true]:ring-primary/15 transition-all shadow-2xs first:rounded-xl last:rounded-xl" />
+                    </InputOTPGroup>
+                    <InputOTPSeparator className="text-muted-foreground/30 px-0.5 sm:px-1" />
+                    <InputOTPGroup className="gap-1.5 sm:gap-2">
+                      <InputOTPSlot index={3} className="w-10 h-13 sm:w-12 sm:h-14 rounded-xl border border-border/70 text-lg sm:text-xl font-mono font-bold bg-muted/20 data-[active=true]:border-primary data-[active=true]:ring-4 data-[active=true]:ring-primary/15 transition-all shadow-2xs first:rounded-xl last:rounded-xl" />
+                      <InputOTPSlot index={4} className="w-10 h-13 sm:w-12 sm:h-14 rounded-xl border border-border/70 text-lg sm:text-xl font-mono font-bold bg-muted/20 data-[active=true]:border-primary data-[active=true]:ring-4 data-[active=true]:ring-primary/15 transition-all shadow-2xs first:rounded-xl last:rounded-xl" />
+                      <InputOTPSlot index={5} className="w-10 h-13 sm:w-12 sm:h-14 rounded-xl border border-border/70 text-lg sm:text-xl font-mono font-bold bg-muted/20 data-[active=true]:border-primary data-[active=true]:ring-4 data-[active=true]:ring-primary/15 transition-all shadow-2xs first:rounded-xl last:rounded-xl" />
                     </InputOTPGroup>
                   </InputOTP>
                 </div>
@@ -362,7 +404,7 @@ const EmailVerificationDialog = ({
                 <Button
                   onClick={handleVerifyOtp}
                   disabled={verifyingOtp || otpCode.length !== 6}
-                  className="btn-primary-gradient w-full"
+                  className="btn-primary-gradient w-full h-11 sm:h-12 rounded-2xl font-semibold shadow-md shadow-primary/20 hover:shadow-lg transition-all text-sm sm:text-base flex items-center justify-center gap-2"
                 >
                   {verifyingOtp ? (
                     <>
@@ -375,13 +417,18 @@ const EmailVerificationDialog = ({
                       {bn ? 'কোড যাচাই করুন' : 'Verify Code'}
                     </>
                   )}
+                  {!verifyingOtp && otpCode.length === 6 && (
+                    <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono font-medium rounded-md bg-white/20 text-white/95">
+                      ↵
+                    </kbd>
+                  )}
                 </Button>
 
                 <div className="flex items-center justify-between text-xs pt-1">
                   <button
                     type="button"
                     onClick={() => setOtpSent(false)}
-                    className="text-muted-foreground hover:text-foreground hover:underline"
+                    className="text-muted-foreground hover:text-foreground hover:underline text-xs"
                   >
                     {bn ? 'ইমেইল পরিবর্তন করুন' : 'Change email'}
                   </button>
@@ -401,6 +448,15 @@ const EmailVerificationDialog = ({
                       : 'Resend code'}
                   </Button>
                 </div>
+
+                <p className="text-[11px] text-muted-foreground/75 text-center flex items-center justify-center gap-1.5 pt-2 border-t border-border/30 w-full">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span>
+                    {bn
+                      ? 'ইমেইল না পেলে স্প্যাম (Spam / Junk) ফোল্ডার চেক করুন'
+                      : 'Cannot find the email? Check your Spam or Junk folder'}
+                  </span>
+                </p>
               </div>
             )}
           </div>
