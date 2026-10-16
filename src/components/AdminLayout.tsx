@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode, useRef, useState, useEffect, useTransition } from 'react';
+import { createContext, useContext, ReactNode, useRef, useState, useEffect, useTransition, useMemo, useCallback } from 'react';
 import BackButton from './BackButton';
 import AdminPageWithTabs from './AdminPageWithTabs';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -50,6 +50,47 @@ const MENU_SCROLL_STORAGE_KEYS = {
 
 import { AdminLayoutNestingContext } from '@/contexts/AdminLayoutNestingContext';
 
+type MenuItem = {
+  path: string;
+  label: string;
+  icon: any;
+  group?: string;
+  children?: { path: string; label: string; icon: any }[];
+};
+
+const dedupeMenuEntries = <T extends { path: string }>(items: T[]) => {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const normalizedPath = item.path.trim();
+    if (seen.has(normalizedPath)) return false;
+    seen.add(normalizedPath);
+    return true;
+  });
+};
+
+const dedupeTopLevelMenuItems = (items: MenuItem[]) => {
+  const byPath = new Map<string, MenuItem>();
+
+  for (const item of items) {
+    const normalizedPath = item.path.trim();
+    const existing = byPath.get(normalizedPath);
+
+    if (!existing) {
+      byPath.set(normalizedPath, item);
+      continue;
+    }
+
+    const existingChildCount = existing.children?.length ?? 0;
+    const nextChildCount = item.children?.length ?? 0;
+
+    if (nextChildCount > existingChildCount) {
+      byPath.set(normalizedPath, item);
+    }
+  }
+
+  return items.filter((item) => byPath.get(item.path.trim()) === item);
+};
+
 const getIcon = (name: string): LucideIcon => ICON_MAP[name] || FileBox;
 
 const AdminLayout = ({ children }: { children: ReactNode }) => {
@@ -58,11 +99,13 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   const { t, language } = useLanguage();
   const { signOut, role, user } = useAuth();
   const { canView, hasUserPermission } = usePermissions();
+  const isAdmin = isAdminRole(role);
   const location = useLocation();
   const navigate = useNavigate();
   const { menuConfig } = useMenuSettings();
-  // Live toast notifications for receipt status changes (admins/staff only via RLS)
-  useReceiptStatusRealtime();
+  // Live toast notifications for receipt status changes (admins and staff with receipt permissions only)
+  const canAccessReceipts = isAdmin || canView('/admin/fee-receipts') || canView('/admin/receipt-audit');
+  useReceiptStatusRealtime(canAccessReceipts);
   const { theme: adminTheme } = useThemeSettings();
   const { sections: sidebarSections } = useSidebarSections();
   const { settings: websiteSettings } = useWebsiteSettings();
@@ -146,16 +189,14 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     ...(adminTheme.headerTextColor ? { color: adminTheme.headerTextColor } : {}),
   };
 
-  const isAdmin = isAdminRole(role);
-
   // Check if user can see a menu path
-  const canAccessPath = (path: string): boolean => {
+  const canAccessPath = useCallback((path: string): boolean => {
     if (isAdmin) return true;
     const basePath = path.split('?')[0];
     // Internal messaging is available to every signed-in user
     if (basePath === '/admin' || basePath === '/admin/profile' || basePath === '/admin/messages') return true;
     return canView(basePath);
-  };
+  }, [isAdmin, canView]);
 
   const toggleGroup = (key: string) => {
     setOpenMenuId(prev => (prev === key ? null : key));
@@ -195,50 +236,23 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
       return data;
     },
+    staleTime: 10 * 60 * 1000,
   });
 
-  type MenuItem = {
-    path: string;
-    label: string;
-    icon: any;
-    group?: string;
-    children?: { path: string; label: string; icon: any }[];
-  };
-
-  const dedupeMenuEntries = <T extends { path: string }>(items: T[]) => {
-    const seen = new Set<string>();
-    return items.filter((item) => {
-      const normalizedPath = item.path.trim();
-      if (seen.has(normalizedPath)) return false;
-      seen.add(normalizedPath);
-      return true;
-    });
-  };
-
-  const dedupeTopLevelMenuItems = (items: MenuItem[]) => {
-    const byPath = new Map<string, MenuItem>();
-
-    for (const item of items) {
-      const normalizedPath = item.path.trim();
-      const existing = byPath.get(normalizedPath);
-
-      if (!existing) {
-        byPath.set(normalizedPath, item);
-        continue;
+  const canAccessParent = useCallback((item: MenuItemConfig): boolean => {
+    if (isAdmin) return true;
+    if (item.children && item.children.length > 0) {
+      const hasAccessibleChild = item.children.some(c => c.visible && !c.tab_of && canAccessPath(c.path));
+      if (hasAccessibleChild) return true;
+      if (item.path && item.path !== '#' && canAccessPath(item.path)) {
+        return true;
       }
-
-      const existingChildCount = existing.children?.length ?? 0;
-      const nextChildCount = item.children?.length ?? 0;
-
-      if (nextChildCount > existingChildCount) {
-        byPath.set(normalizedPath, item);
-      }
+      return false;
     }
+    return canAccessPath(item.path);
+  }, [isAdmin, canAccessPath]);
 
-    return items.filter((item) => byPath.get(item.path.trim()) === item);
-  };
-
-  const configToMenuItem = (cfg: MenuItemConfig): MenuItem => {
+  const configToMenuItem = useCallback((cfg: MenuItemConfig): MenuItem => {
     const children = dedupeMenuEntries(
       (cfg.children ?? [])
         .filter(c => c.visible && !c.tab_of && canAccessPath(c.path))
@@ -256,63 +270,54 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
       icon: getIcon(cfg.icon),
       children: children.length > 0 ? children : undefined,
     };
-  };
+  }, [canAccessPath, language]);
 
-  const canAccessParent = (item: MenuItemConfig): boolean => {
-    if (isAdmin) return true;
-    if (item.children && item.children.length > 0) {
-      const hasAccessibleChild = item.children.some(c => c.visible && !c.tab_of && canAccessPath(c.path));
-      if (hasAccessibleChild) return true;
-      if (item.path && item.path !== '#' && canAccessPath(item.path)) {
-        return true;
+  const menuItems: MenuItem[] = useMemo(() => {
+    const baseMenuItems: MenuItem[] = dedupeTopLevelMenuItems(
+      menuConfig.sidebar
+        .filter(item => item.visible && !item.tab_of && canAccessParent(item))
+        .sort((a, b) => a.sort_order - b.sort_order)
+        .map(configToMenuItem)
+    );
+
+    const items: MenuItem[] = baseMenuItems.map(item => {
+      const subForms = dedupeMenuEntries(
+        publishedForms
+          .filter(f => f.publish_to === 'sub_menu' && f.parent_menu === item.path && (isAdmin || canAccessPath(`/admin/custom/${f.menu_slug}`)))
+          .map(f => ({
+            path: `/admin/custom/${f.menu_slug}`,
+            label: language === 'bn' ? f.name_bn : f.name,
+            icon: FileBox,
+          }))
+      );
+
+      if (subForms.length > 0) {
+        const existingChildren = item.children || [];
+        return { ...item, children: dedupeMenuEntries([...existingChildren, ...subForms]) };
       }
-      return false;
-    }
-    return canAccessPath(item.path);
-  };
+      return item;
+    });
 
-  const baseMenuItems: MenuItem[] = dedupeTopLevelMenuItems(
-    menuConfig.sidebar
-      .filter(item => item.visible && !item.tab_of && canAccessParent(item))
-      .sort((a, b) => a.sort_order - b.sort_order)
-      .map(configToMenuItem)
-  );
-
-  const menuItems: MenuItem[] = baseMenuItems.map(item => {
-    const subForms = dedupeMenuEntries(
+    dedupeMenuEntries(
       publishedForms
-        .filter(f => f.publish_to === 'sub_menu' && f.parent_menu === item.path && (isAdmin || canAccessPath(`/admin/custom/${f.menu_slug}`)))
+        .filter(f => f.publish_to === 'main_menu' && (isAdmin || canAccessPath(`/admin/custom/${f.menu_slug}`)))
         .map(f => ({
           path: `/admin/custom/${f.menu_slug}`,
           label: language === 'bn' ? f.name_bn : f.name,
           icon: FileBox,
         }))
-    );
+    ).forEach(f => {
+      const settingsIdx = items.findIndex(m => m.path === '/admin/settings');
+      if (items.some(m => m.path === f.path)) return;
+      if (settingsIdx !== -1) {
+        items.splice(settingsIdx, 0, f);
+      } else {
+        items.push(f);
+      }
+    });
 
-    if (subForms.length > 0) {
-      const existingChildren = item.children || [];
-      return { ...item, children: dedupeMenuEntries([...existingChildren, ...subForms]) };
-    }
-    return item;
-  });
-
-  dedupeMenuEntries(
-    publishedForms
-      .filter(f => f.publish_to === 'main_menu' && (isAdmin || canAccessPath(`/admin/custom/${f.menu_slug}`)))
-      .map(f => ({
-        path: `/admin/custom/${f.menu_slug}`,
-        label: language === 'bn' ? f.name_bn : f.name,
-        icon: FileBox,
-      }))
-  ).forEach(f => {
-    const settingsIdx = menuItems.findIndex(m => m.path === '/admin/settings');
-    if (menuItems.some(m => m.path === f.path)) return;
-    if (settingsIdx !== -1) {
-      menuItems.splice(settingsIdx, 0, f);
-    } else {
-      menuItems.push(f);
-    }
-  });
+    return items;
+  }, [menuConfig.sidebar, publishedForms, language, canAccessParent, configToMenuItem, isAdmin, canAccessPath]);
 
   // Auto-open parent of active child ONLY on actual route navigation (never overrides user clicks)
   useEffect(() => {

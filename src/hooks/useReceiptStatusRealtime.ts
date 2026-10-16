@@ -52,7 +52,7 @@ const POLL_MAX = 60_000;
  * polling stops and the backoff resets. Same dedupe set is shared so a
  * single status change never fires two toasts.
  */
-export const useReceiptStatusRealtime = () => {
+export const useReceiptStatusRealtime = (enabled: boolean = true) => {
   const qc = useQueryClient();
   const { language } = useLanguage();
   const bn = language === 'bn';
@@ -64,6 +64,7 @@ export const useReceiptStatusRealtime = () => {
   const lastSeenAt = useRef<string>(new Date().toISOString());
 
   useEffect(() => {
+    if (!enabled) return;
     let cancelled = false;
     let pollTimer: ReturnType<typeof setTimeout> | null = null;
     let pollDelay = POLL_MIN;
@@ -224,7 +225,7 @@ export const useReceiptStatusRealtime = () => {
       supabase.removeChannel(channel);
     };
     // Bind once per language change to keep toast strings localized
-  }, [qc, bn, navigate]);
+  }, [enabled, qc, bn, navigate]);
 };
 
 export default useReceiptStatusRealtime;

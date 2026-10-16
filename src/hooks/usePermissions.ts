@@ -1,3 +1,4 @@
+import { useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +14,60 @@ export interface Permission {
 }
 
 export type PermAction = 'view' | 'add' | 'edit' | 'delete' | 'approve';
+
+const MENU_ALIASES: Record<string, string[]> = {
+  '/admin/student-attendance': ['/admin/attendance'],
+  '/admin/staff-attendance': ['/admin/attendance'],
+  '/admin/attendance': ['/admin/student-attendance', '/admin/staff-attendance'],
+  '/admin/teachers': ['/admin/staff'],
+  '/admin/general-staff': ['/admin/staff'],
+  '/admin/administrative-staff': ['/admin/staff'],
+  '/admin/support-staff': ['/admin/staff'],
+  '/admin/directors': ['/admin/staff'],
+  '/admin/committee-members': ['/admin/staff'],
+  '/admin/staff': ['/admin/teachers', '/admin/general-staff', '/admin/administrative-staff', '/admin/support-staff'],
+  '/admin/fee-receipts': ['/admin/students-fees', '/admin/fees'],
+  '/admin/fee-payments-fix': ['/admin/fee-receipts', '/admin/students-fees', '/admin/fees'],
+  '/admin/receipt-audit': ['/admin/fee-receipts', '/admin/students-fees', '/admin/fees'],
+  '/admin/students-fees': ['/admin/fees', '/admin/fee-receipts'],
+  '/admin/salary-pdf-columns': ['/admin/salary'],
+  '/admin/salary-memo-search': ['/admin/salary'],
+};
+
+const PATH_CANDIDATES_CACHE = new Map<string, string[]>();
+
+const getPathCandidates = (menuPath: string): string[] => {
+  const cached = PATH_CANDIDATES_CACHE.get(menuPath);
+  if (cached) return cached;
+
+  const out: string[] = [];
+  let p = menuPath;
+  while (p && p !== '/admin' && p.includes('/')) {
+    out.push(p);
+    const idx = p.lastIndexOf('/');
+    if (idx <= 0) break;
+    p = p.slice(0, idx);
+  }
+  const aliases = MENU_ALIASES[menuPath];
+  if (aliases) {
+    aliases.forEach((a) => {
+      if (!out.includes(a)) out.push(a);
+    });
+  }
+  PATH_CANDIDATES_CACHE.set(menuPath, out);
+  return out;
+};
+
+const pickAction = (perm: any, action: PermAction): boolean => {
+  switch (action) {
+    case 'view': return !!perm.can_view;
+    case 'add': return !!perm.can_add;
+    case 'edit': return !!perm.can_edit;
+    case 'delete': return !!perm.can_delete;
+    case 'approve': return !!perm.can_approve;
+    default: return false;
+  }
+};
 
 export const usePermissions = () => {
   const { role, user, loading: authLoading } = useAuth();
@@ -67,79 +122,47 @@ export const usePermissions = () => {
   const isLoading = authLoading || roleLoading || userLoading;
   const hasUserOverrides = userPermissions.length > 0;
 
-  const pickAction = (perm: any, action: PermAction): boolean => {
-    switch (action) {
-      case 'view': return !!perm.can_view;
-      case 'add': return !!perm.can_add;
-      case 'edit': return !!perm.can_edit;
-      case 'delete': return !!perm.can_delete;
-      case 'approve': return !!perm.can_approve;
-      default: return false;
+  const userPermMap = useMemo(() => {
+    const map = new Map<string, Permission & { requires_approval?: boolean }>();
+    for (const p of userPermissions) {
+      map.set(p.menu_path, p);
     }
-  };
+    return map;
+  }, [userPermissions]);
 
-  const MENU_ALIASES: Record<string, string[]> = {
-    '/admin/student-attendance': ['/admin/attendance'],
-    '/admin/staff-attendance': ['/admin/attendance'],
-    '/admin/attendance': ['/admin/student-attendance', '/admin/staff-attendance'],
-    '/admin/teachers': ['/admin/staff'],
-    '/admin/general-staff': ['/admin/staff'],
-    '/admin/administrative-staff': ['/admin/staff'],
-    '/admin/support-staff': ['/admin/staff'],
-    '/admin/directors': ['/admin/staff'],
-    '/admin/committee-members': ['/admin/staff'],
-    '/admin/staff': ['/admin/teachers', '/admin/general-staff', '/admin/administrative-staff', '/admin/support-staff'],
-    '/admin/fee-receipts': ['/admin/students-fees', '/admin/fees'],
-    '/admin/fee-payments-fix': ['/admin/fee-receipts', '/admin/students-fees', '/admin/fees'],
-    '/admin/receipt-audit': ['/admin/fee-receipts', '/admin/students-fees', '/admin/fees'],
-    '/admin/students-fees': ['/admin/fees', '/admin/fee-receipts'],
-    '/admin/salary-pdf-columns': ['/admin/salary'],
-    '/admin/salary-memo-search': ['/admin/salary'],
-  };
-
-  const pathCandidates = (menuPath: string): string[] => {
-    const out: string[] = [];
-    let p = menuPath;
-    while (p && p !== '/admin' && p.includes('/')) {
-      out.push(p);
-      const idx = p.lastIndexOf('/');
-      if (idx <= 0) break;
-      p = p.slice(0, idx);
+  const rolePermMap = useMemo(() => {
+    const map = new Map<string, Permission>();
+    for (const p of rolePermissions) {
+      map.set(p.menu_path, p);
     }
-    const aliases = MENU_ALIASES[menuPath];
-    if (aliases) {
-      aliases.forEach((a) => {
-        if (!out.includes(a)) out.push(a);
-      });
-    }
-    return out;
-  };
+    return map;
+  }, [rolePermissions]);
 
-  const hasPermission = (menuPath: string, action: PermAction): boolean => {
+  const hasPermission = useCallback((menuPath: string, action: PermAction): boolean => {
     if (isAdminRole(role)) return true;
 
-    const candidates = pathCandidates(menuPath);
+    const candidates = getPathCandidates(menuPath);
 
     if (hasUserOverrides) {
       for (const path of candidates) {
-        const userPerm = userPermissions.find((p) => p.menu_path === path);
+        const userPerm = userPermMap.get(path);
         if (userPerm) return pickAction(userPerm, action);
       }
       return false;
     }
 
     for (const path of candidates) {
-      const perm = rolePermissions.find((p) => p.menu_path === path);
+      const perm = rolePermMap.get(path);
       if (perm) return pickAction(perm, action);
     }
     return false;
-  };
+  }, [role, hasUserOverrides, userPermMap, rolePermMap]);
 
-  const canView = (menuPath: string) => hasPermission(menuPath, 'view');
-  const canAdd = (menuPath: string) => hasPermission(menuPath, 'add');
-  const canEdit = (menuPath: string) => hasPermission(menuPath, 'edit');
-  const canDelete = (menuPath: string) => hasPermission(menuPath, 'delete');
-  const canApprove = (menuPath: string) => hasPermission(menuPath, 'approve');
+  const canView = useCallback((menuPath: string) => hasPermission(menuPath, 'view'), [hasPermission]);
+  const canAdd = useCallback((menuPath: string) => hasPermission(menuPath, 'add'), [hasPermission]);
+  const canEdit = useCallback((menuPath: string) => hasPermission(menuPath, 'edit'), [hasPermission]);
+  const canDelete = useCallback((menuPath: string) => hasPermission(menuPath, 'delete'), [hasPermission]);
+  const canApprove = useCallback((menuPath: string) => hasPermission(menuPath, 'approve'), [hasPermission]);
 
   /**
    * isFeatureAllowed
@@ -148,7 +171,7 @@ export const usePermissions = () => {
    * If subAction is provided, checks `${menuPath}:${featureKey}:${subAction}`
    * If false, the tab/button MUST BE COMPLETELY HIDDEN (not rendered) from the DOM.
    */
-  const isFeatureAllowed = (menuPath: string, featureKey: string, subAction?: 'view' | 'add' | 'edit' | 'delete' | 'print'): boolean => {
+  const isFeatureAllowed = useCallback((menuPath: string, featureKey: string, subAction?: 'view' | 'add' | 'edit' | 'delete' | 'print'): boolean => {
     if (isAdminRole(role)) return true;
     if (!role) return false;
 
@@ -179,24 +202,24 @@ export const usePermissions = () => {
     }
 
     return true;
-  };
+  }, [role, canView, hiddenFeatures]);
 
   // Check ONLY individual user_permissions (ignoring role_permissions)
-  const hasUserPermission = (menuPath: string, action: PermAction): boolean => {
+  const hasUserPermission = useCallback((menuPath: string, action: PermAction): boolean => {
     if (isAdminRole(role)) return true;
-    const userPerm = userPermissions.find(p => p.menu_path === menuPath);
+    const userPerm = userPermMap.get(menuPath);
     if (!userPerm) return false;
     return pickAction(userPerm, action);
-  };
+  }, [role, userPermMap]);
 
   /**
    * requiresApproval
    * Checks if an action on a page or inside a specific tab requires maker-checker approval.
    * Signature: requiresApproval(menuPath, action?, tabKey?)
    */
-  const requiresApproval = (menuPath: string, action?: 'view' | 'add' | 'edit' | 'delete', tabKey?: string): boolean => {
+  const requiresApproval = useCallback((menuPath: string, action?: 'view' | 'add' | 'edit' | 'delete', tabKey?: string): boolean => {
     if (isAdminRole(role)) return false;
-    const userPerm = userPermissions.find(p => p.menu_path === menuPath);
+    const userPerm = userPermMap.get(menuPath);
     if (!userPerm) {
       if (!role) return false;
       const roleFeatures = hiddenFeatures[role] || {};
@@ -223,7 +246,7 @@ export const usePermissions = () => {
       return (userPerm as any)?.[`approval_${action}`] ?? false;
     }
     return (userPerm as any)?.approval_view || (userPerm as any)?.approval_add || (userPerm as any)?.approval_edit || (userPerm as any)?.approval_delete || false;
-  };
+  }, [role, userPermMap, hiddenFeatures]);
 
 
   return {
