@@ -2909,36 +2909,6 @@ const AdminExpenses = () => {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    <motion.button
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.96 }}
-                      onClick={() => {
-                        const targetInst = (selectedInstId && selectedInstId !== 'all')
-                          ? allInstitutions.find((p: any) => p.id === selectedInstId)
-                          : allInstitutions[0];
-                        const targetId = targetInst?.id || '';
-                        setReceiptFile(null);
-                        setEditingExpenseId(null);
-                        const availCats = getCategoriesForInst(targetId);
-                        setExpenseForm({
-                          ...defaultExpenseForm,
-                          institution_id: targetId,
-                          category_id: availCats[0]?.id || '',
-                        });
-                        setExpenseDialog(true);
-                      }}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-md shadow-emerald-500/25 transition-all cursor-pointer bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>
-                        {bn
-                          ? (selectedInstId && selectedInstId !== 'all'
-                              ? `+ খরচ যোগ (${getInstShortName(getInstName(allInstitutions.find((p: any) => p.id === selectedInstId), bn))})`
-                              : '+ খরচ যোগ')
-                          : '+ Add Expense'}
-                      </span>
-                    </motion.button>
-
                     <Button
                       variant="outline"
                       size="sm"
