@@ -49,8 +49,9 @@ const PageLoader = () => {
     }
   }, [isLoading, loaderLogo, loaderShape]);
 
-  const displayLogo = imgFailed ? '' : (loaderLogo || cachedLogo);
-  const displayShape = loaderLogo ? loaderShape : cachedShape;
+  const fallbackBrandLogo = '/branded-icon-192.png';
+  const displayLogo = imgFailed ? '' : (loaderLogo || cachedLogo || fallbackBrandLogo);
+  const displayShape = loaderLogo ? loaderShape : (cachedShape || 'circle');
 
   return (
     <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background">

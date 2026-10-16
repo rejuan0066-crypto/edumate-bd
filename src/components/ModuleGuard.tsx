@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ShieldOff, Loader2 } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
+import RouteShimmer from '@/components/RouteShimmer';
 
 interface ModuleGuardProps {
   menuPath: string;
@@ -65,11 +66,7 @@ const ModuleGuard = ({ menuPath, action = 'view', children }: ModuleGuardProps) 
 
   // Wait for auth + permissions
   if (authLoading || permLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <RouteShimmer />;
   }
 
   // Permission check (admin/super_admin bypass)
