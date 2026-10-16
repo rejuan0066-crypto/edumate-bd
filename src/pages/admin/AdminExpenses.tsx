@@ -287,6 +287,8 @@ const AdminExpenses = () => {
   const [isCustomUnitActive, setIsCustomUnitActive] = useState(false);
   const [customUnitText, setCustomUnitText] = useState('');
   const [isLongDescription, setIsLongDescription] = useState(false);
+  const [showDescSuggestions, setShowDescSuggestions] = useState(false);
+  const [descActiveIndex, setDescActiveIndex] = useState(-1);
   const [depositForm, setDepositForm] = useState(defaultDepositForm);
   const [isAddingNewSource, setIsAddingNewSource] = useState(false);
   const [newSourceInput, setNewSourceInput] = useState('');
@@ -499,13 +501,13 @@ const AdminExpenses = () => {
       .map(([title, meta]) => ({ title, ...meta }));
   }, [allExpenses]);
 
-  const savedExpenseDescriptionTitles = useMemo(() => {
-    return savedExpenseDescriptions.map(d => d.title);
-  }, [savedExpenseDescriptions]);
-
-  const topFrequentExpenseDescriptions = useMemo(() => {
-    return savedExpenseDescriptions.slice(0, 6);
-  }, [savedExpenseDescriptions]);
+  const filteredDescSuggestions = useMemo(() => {
+    const q = (expenseForm.description || '').trim().toLowerCase();
+    if (!q) return [];
+    return savedExpenseDescriptions
+      .filter(d => d.title.toLowerCase().includes(q))
+      .slice(0, 8);
+  }, [expenseForm.description, savedExpenseDescriptions]);
 
   const savedExpenseMethods = useMemo(() => {
     const set = new Set<string>(EXPENSE_METHODS.filter(m => m !== 'অন্যান্য'));
@@ -2438,8 +2440,29 @@ const AdminExpenses = () => {
       setIsCustomUnitActive(false);
       setCustomUnitText('');
       setIsLongDescription(false);
+      setShowDescSuggestions(false);
+      setDescActiveIndex(-1);
     }
     setExpenseDialog(open);
+  };
+
+  const handleSelectDescSuggestion = (item: { title: string; category_id?: string; institution_id?: string }) => {
+    setExpenseForm(f => {
+      const next = { ...f, description: item.title };
+      if (!next.institution_id && item.institution_id) {
+        next.institution_id = item.institution_id;
+      }
+      if (item.category_id && (!f.category_id || f.category_id === '')) {
+        const targetCat = (categories || []).find((c: any) => c.id === item.category_id);
+        if (targetCat?.institution_id && !next.institution_id) {
+          next.institution_id = targetCat.institution_id;
+        }
+        next.category_id = item.category_id;
+      }
+      return next;
+    });
+    setShowDescSuggestions(false);
+    setDescActiveIndex(-1);
   };
   const resetDepositDialog = (open: boolean) => {
     if (!open) {
@@ -4762,52 +4785,107 @@ const AdminExpenses = () => {
               </div>
 
               {!isLongDescription ? (
-                <div className="space-y-1.5">
+                <div className="relative">
                   <Input 
                     name="expense_description"
-                    suggestions={savedExpenseDescriptionTitles}
+                    history={false}
+                    autoComplete="off"
                     value={expenseForm.description} 
+                    onFocus={() => {
+                      if ((expenseForm.description || '').trim().length > 0) {
+                        setShowDescSuggestions(true);
+                      }
+                    }}
+                    onBlur={() => {
+                      setTimeout(() => setShowDescSuggestions(false), 200);
+                    }}
+                    onKeyDown={(e) => {
+                      if (!showDescSuggestions || filteredDescSuggestions.length === 0) return;
+                      if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        setDescActiveIndex(prev => (prev + 1) % filteredDescSuggestions.length);
+                      } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        setDescActiveIndex(prev => (prev - 1 + filteredDescSuggestions.length) % filteredDescSuggestions.length);
+                      } else if (e.key === 'Enter') {
+                        if (descActiveIndex >= 0 && descActiveIndex < filteredDescSuggestions.length) {
+                          e.preventDefault();
+                          handleSelectDescSuggestion(filteredDescSuggestions[descActiveIndex]);
+                        }
+                      } else if (e.key === 'Escape') {
+                        setShowDescSuggestions(false);
+                      }
+                    }}
                     onChange={e => {
                       const val = e.target.value;
                       setExpenseForm(f => {
                         const next = { ...f, description: val };
-                        // Check if typed title exactly matches a known saved description with category
                         const match = savedExpenseDescriptions.find(d => d.title.trim().toLowerCase() === val.trim().toLowerCase());
                         if (match && match.category_id && !f.category_id) {
                           next.category_id = match.category_id;
+                          if (match.institution_id && !next.institution_id) {
+                            next.institution_id = match.institution_id;
+                          }
                         }
                         return next;
                       });
+                      if (val.trim().length > 0) {
+                        setShowDescSuggestions(true);
+                        setDescActiveIndex(-1);
+                      } else {
+                        setShowDescSuggestions(false);
+                      }
                     }}
                     placeholder={bn ? "উদা: বিদ্যুৎ বিল, শিক্ষকদের নাস্তা, মুদি মালামাল..." : "e.g. Electricity Bill, Refreshments, Stationery..."}
                     className="h-10"
                   />
-                  {topFrequentExpenseDescriptions.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                      <span className="text-[11px] text-muted-foreground mr-0.5">{bn ? 'কমন খরচ:' : 'Quick:'}</span>
-                      {topFrequentExpenseDescriptions.map(item => (
-                        <button
-                          key={item.title}
-                          type="button"
-                          onClick={() => {
-                            setExpenseForm(f => {
-                              const next = { ...f, description: item.title };
-                              if (item.category_id && (!f.category_id || f.category_id === '')) {
-                                next.category_id = item.category_id;
-                              }
-                              return next;
-                            });
-                            toast.success(bn ? `"${item.title}" নির্বাচিত হয়েছে` : `"${item.title}" selected`);
-                          }}
-                          className={`text-[11px] px-2 py-0.5 rounded-md border transition-all cursor-pointer ${
-                            expenseForm.description === item.title
-                              ? 'bg-emerald-600 text-white border-emerald-600 font-semibold'
-                              : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
-                          }`}
-                        >
-                          {item.title}
-                        </button>
-                      ))}
+
+                  {showDescSuggestions && filteredDescSuggestions.length > 0 && (
+                    <div 
+                      className="absolute left-0 right-0 top-full mt-1 z-50 max-h-60 overflow-y-auto rounded-xl border border-border/80 bg-popover shadow-xl text-popover-foreground py-1 text-sm divide-y divide-border/30 backdrop-blur-sm"
+                      role="listbox"
+                    >
+                      <div className="px-3 py-1 text-[11px] font-medium text-muted-foreground bg-muted/40 flex items-center justify-between">
+                        <span>{bn ? '💡 পূর্বের খরচের মিল পাওয়া গেছে' : '💡 Matching previous expenses'}</span>
+                        <span className="text-[10px] text-muted-foreground/70">{bn ? 'ক্লিক বা Enter চাপুন' : 'Click or Enter'}</span>
+                      </div>
+                      {filteredDescSuggestions.map((item, idx) => {
+                        const cat = categories.find((c: any) => c.id === item.category_id);
+                        const inst = expenseInstitutions.find((i: any) => i.id === item.institution_id);
+                        const isSelected = idx === descActiveIndex;
+                        return (
+                          <div
+                            key={item.title}
+                            role="option"
+                            aria-selected={isSelected}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              handleSelectDescSuggestion(item);
+                            }}
+                            onMouseEnter={() => setDescActiveIndex(idx)}
+                            className={`flex items-center justify-between gap-2 px-3 py-2 cursor-pointer transition-colors ${
+                              isSelected ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted/60'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <TagIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                              <span className="truncate">{item.title}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0 text-[11px]">
+                              {cat && (
+                                <span className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border/50 text-[10px]">
+                                  {bn ? (cat.name_bn || cat.name) : (cat.name || cat.name_bn)}
+                                </span>
+                              )}
+                              {inst && (
+                                <span className="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200/50 text-[10px]">
+                                  {bn ? (inst.name_bn || inst.name) : (inst.name || inst.name_bn)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
