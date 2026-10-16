@@ -413,47 +413,90 @@
     font-weight: 600;
   }
 
-  /* ── Next-Gen Table Styles ── */
-  table:not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) {
+  /* ── Next-Gen Table Styles (Floating Card Style for general lists) ── */
+  table:not(.border-collapse):not([class*="border-collapse"]):not(.excel-table):not(.table-bordered):not([class*="table-bordered"]):not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) {
     @apply w-full text-sm;
     border-collapse: separate;
     border-spacing: 0 8px;
   }
-  table:not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) thead th {
+  table:not(.border-collapse):not([class*="border-collapse"]):not(.excel-table):not(.table-bordered):not([class*="table-bordered"]):not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) thead th {
     @apply text-left text-[11px] uppercase tracking-widest font-bold py-4 px-6;
     color: hsl(var(--aqua) / 0.85);
     background: transparent;
     border-bottom: 1px solid hsl(var(--glass-border) / 0.25);
     text-shadow: 0 1px 1px hsl(0 0% 100% / 0.4);
   }
-  .dark table:not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) thead th { text-shadow: 0 1px 2px hsl(0 0% 0% / 0.5); }
-  table:not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) tbody tr {
+  .dark table:not(.border-collapse):not([class*="border-collapse"]):not(.excel-table):not(.table-bordered):not([class*="table-bordered"]):not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) thead th { text-shadow: 0 1px 2px hsl(0 0% 0% / 0.5); }
+  table:not(.border-collapse):not([class*="border-collapse"]):not(.excel-table):not(.table-bordered):not([class*="table-bordered"]):not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) tbody tr {
     @apply transition-all duration-300;
     border-radius: 20px;
     background-color: hsl(0 0% 100% / 0.5);
     box-shadow: inset 0 0 0 1px hsl(var(--glass-border) / 0.14);
   }
-  .dark table:not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) tbody tr {
+  .dark table:not(.border-collapse):not([class*="border-collapse"]):not(.excel-table):not(.table-bordered):not([class*="table-bordered"]):not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) tbody tr {
     background-color: hsl(200 30% 12% / 0.4);
   }
-  table:not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) tbody tr:nth-child(even) {
+  table:not(.border-collapse):not([class*="border-collapse"]):not(.excel-table):not(.table-bordered):not([class*="table-bordered"]):not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) tbody tr:nth-child(even) {
     background-color: hsl(172 40% 96% / 0.45);
   }
-  .dark table:not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) tbody tr:nth-child(even) {
+  .dark table:not(.border-collapse):not([class*="border-collapse"]):not(.excel-table):not(.table-bordered):not([class*="table-bordered"]):not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) tbody tr:nth-child(even) {
     background-color: hsl(200 30% 14% / 0.35);
   }
-  table:not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) tbody tr:hover {
+  table:not(.border-collapse):not([class*="border-collapse"]):not(.excel-table):not(.table-bordered):not([class*="table-bordered"]):not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) tbody tr:hover {
     background-color: hsl(var(--muted) / 0.6);
   }
-  table:not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) tbody td {
+  table:not(.border-collapse):not([class*="border-collapse"]):not(.excel-table):not(.table-bordered):not([class*="table-bordered"]):not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) tbody td {
     @apply py-3 px-4;
     border-bottom: 1px solid hsl(var(--border) / 0.3);
   }
-  table:not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) tbody td:first-child {
+  table:not(.border-collapse):not([class*="border-collapse"]):not(.excel-table):not(.table-bordered):not([class*="table-bordered"]):not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) tbody td:first-child {
     border-radius: 8px 0 0 8px;
   }
-  table:not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) tbody td:last-child {
+  table:not(.border-collapse):not([class*="border-collapse"]):not(.excel-table):not(.table-bordered):not([class*="table-bordered"]):not(.rdp-table):not([class*="rdp"]):not(:where(.rdp *)):not(:where([data-radix-popper-content-wrapper] *)) tbody td:last-child {
     border-radius: 0 8px 8px 0;
+  }
+
+  /* ── Excel Spreadsheet & Accounting Table Styles (Grid Style) ── */
+  table.border-collapse,
+  table[class*="border-collapse"],
+  .excel-table {
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+  }
+  table.border-collapse thead th,
+  table[class*="border-collapse"] thead th,
+  .excel-table thead th {
+    border-radius: 0 !important;
+    text-shadow: none !important;
+  }
+  table.border-collapse tbody tr,
+  table[class*="border-collapse"] tbody tr,
+  .excel-table tbody tr {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+  }
+  table.border-collapse tbody td,
+  table[class*="border-collapse"] tbody td,
+  .excel-table tbody td,
+  table.border-collapse tbody td:first-child,
+  table.border-collapse tbody td:last-child,
+  table[class*="border-collapse"] tbody td:first-child,
+  table[class*="border-collapse"] tbody td:last-child,
+  .excel-table tbody td:first-child,
+  .excel-table tbody td:last-child {
+    border-radius: 0 !important;
+  }
+  table.border-collapse tfoot tr,
+  table[class*="border-collapse"] tfoot tr,
+  .excel-table tfoot tr {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  table.border-collapse tfoot td,
+  table[class*="border-collapse"] tfoot td,
+  .excel-table tfoot td {
+    border-radius: 0 !important;
   }
 
   /* ── Calendar / DatePicker DayPicker Reset ── */
@@ -1181,7 +1224,7 @@
   }
   table thead th { padding: 0.6rem 0.7rem; font-size: 10px; white-space: nowrap; }
   table tbody td { padding: 0.6rem 0.7rem; font-size: 12px; }
-  table { border-spacing: 0 6px; }
+  table:not(.border-collapse):not([class*="border-collapse"]):not(.excel-table) { border-spacing: 0 6px; }
 
   /* ===== FIXED-WIDTH CHILDREN inside common page containers: cap to viewport
      so a stray min-w-[720px] doesn't push the page horizontally. */
