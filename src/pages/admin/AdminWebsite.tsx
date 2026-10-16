@@ -272,10 +272,11 @@ const AdminWebsite = () => {
     setSaving(false);
   };
 
-  const saveSection = async (keys: (keyof WebsiteSettings)[]) => {
+  const saveSection = async (keys: (keyof WebsiteSettings)[], overrides?: Partial<WebsiteSettings>) => {
     setSaving(true);
     try {
-      const updates = keys.map(key => ({ key, value: form[key] as Json }));
+      const mergedForm = { ...form, ...overrides };
+      const updates = keys.map(key => ({ key, value: mergedForm[key] as Json }));
       await updateMultiple.mutateAsync(updates);
 
       // If institution info was updated, sync to primary 'institutions' table and invalidate all institution caches
@@ -289,19 +290,19 @@ const AdminWebsite = () => {
             .maybeSingle();
 
           const instPayload: Record<string, any> = {};
-          if (form.institution_name) instPayload.name = form.institution_name.trim();
-          if (form.institution_name_en) instPayload.name_en = form.institution_name_en.trim();
-          if (form.address) instPayload.address = form.address.trim();
-          if (form.phone) instPayload.phone = form.phone.trim();
-          if (form.email) instPayload.email = form.email.trim();
-          if (form.logo_url) instPayload.logo_url = form.logo_url.trim();
-          if (form.registration_number) instPayload.registration_number = form.registration_number.trim();
-          if (form.established_year) instPayload.established_year = form.established_year.trim();
+          if (mergedForm.institution_name) instPayload.name = mergedForm.institution_name.trim();
+          if (mergedForm.institution_name_en) instPayload.name_en = mergedForm.institution_name_en.trim();
+          if (mergedForm.address) instPayload.address = mergedForm.address.trim();
+          if (mergedForm.phone) instPayload.phone = mergedForm.phone.trim();
+          if (mergedForm.email) instPayload.email = mergedForm.email.trim();
+          if (mergedForm.logo_url) instPayload.logo_url = mergedForm.logo_url.trim();
+          if (mergedForm.registration_number) instPayload.registration_number = mergedForm.registration_number.trim();
+          if (mergedForm.established_year) instPayload.established_year = mergedForm.established_year.trim();
 
           if (instRow?.id) {
             await supabase.from('institutions').update(instPayload).eq('id', instRow.id);
           } else if (Object.keys(instPayload).length > 0) {
-            await supabase.from('institutions').insert({ name: form.institution_name?.trim() || 'Institution', ...instPayload, is_default: true } as any);
+            await supabase.from('institutions').insert({ name: mergedForm.institution_name?.trim() || 'Institution', ...instPayload, is_default: true } as any);
           }
         } catch (e) {
           console.warn('Sync to institutions table error:', e);
@@ -748,7 +749,10 @@ const AdminWebsite = () => {
                   <Label className="mb-1 text-center">{language === 'bn' ? 'মূল লোগো' : 'Main Logo'}</Label>
                   <ImageUpload
                     value={form.logo_url}
-                    onChange={(url) => updateField('logo_url', url)}
+                    onChange={(url) => {
+                      updateField('logo_url', url);
+                      saveSection(['logo_url', 'logo_shape'], { logo_url: url });
+                    }}
                     folder="logo"
                     aspectRatio="aspect-square w-24"
                     enableCrop
@@ -757,7 +761,10 @@ const AdminWebsite = () => {
                   />
                   <div className="flex gap-1 mt-2">
                     {(['square', 'rounded', 'circle'] as const).map(s => (
-                      <button key={s} type="button" onClick={() => updateField('logo_shape', s)}
+                      <button key={s} type="button" onClick={() => {
+                        updateField('logo_shape', s);
+                        saveSection(['logo_url', 'logo_shape'], { logo_shape: s });
+                      }}
                         className={`p-1 border rounded ${form.logo_shape === s ? 'border-primary bg-primary/10' : 'border-border'}`}>
                         <div className={`w-6 h-6 bg-muted border border-border ${s === 'circle' ? 'rounded-full' : s === 'rounded' ? 'rounded-lg' : 'rounded-none'}`} />
                       </button>
@@ -773,7 +780,10 @@ const AdminWebsite = () => {
                   <p className="text-[10px] text-muted-foreground text-center mb-1">{language === 'bn' ? 'ব্রাউজার ট্যাব' : 'Browser Tab'}</p>
                   <ImageUpload
                     value={form.favicon_url}
-                    onChange={(url) => updateField('favicon_url', url)}
+                    onChange={(url) => {
+                      updateField('favicon_url', url);
+                      saveSection(['favicon_url', 'favicon_shape'], { favicon_url: url });
+                    }}
                     folder="logo"
                     aspectRatio="aspect-square w-20"
                     enableCrop
@@ -782,7 +792,10 @@ const AdminWebsite = () => {
                   />
                   <div className="flex gap-1 mt-2">
                     {(['square', 'rounded', 'circle'] as const).map(s => (
-                      <button key={s} type="button" onClick={() => updateField('favicon_shape', s)}
+                      <button key={s} type="button" onClick={() => {
+                        updateField('favicon_shape', s);
+                        saveSection(['favicon_url', 'favicon_shape'], { favicon_shape: s });
+                      }}
                         className={`p-1 border rounded ${form.favicon_shape === s ? 'border-primary bg-primary/10' : 'border-border'}`}>
                         <div className={`w-6 h-6 bg-muted border border-border ${s === 'circle' ? 'rounded-full' : s === 'rounded' ? 'rounded-lg' : 'rounded-none'}`} />
                       </button>
@@ -798,7 +811,10 @@ const AdminWebsite = () => {
                   <p className="text-[10px] text-muted-foreground text-center mb-1">{language === 'bn' ? 'পেজ লোডিং' : 'Page Loading'}</p>
                   <ImageUpload
                     value={form.loader_logo_url || ''}
-                    onChange={(url) => updateField('loader_logo_url', url)}
+                    onChange={(url) => {
+                      updateField('loader_logo_url', url);
+                      saveSection(['loader_logo_url', 'loader_logo_shape'], { loader_logo_url: url });
+                    }}
                     folder="logo"
                     aspectRatio="aspect-square w-20"
                     enableCrop
@@ -807,7 +823,10 @@ const AdminWebsite = () => {
                   />
                   <div className="flex gap-1 mt-2">
                     {(['square', 'rounded', 'circle'] as const).map(s => (
-                      <button key={s} type="button" onClick={() => updateField('loader_logo_shape', s)}
+                      <button key={s} type="button" onClick={() => {
+                        updateField('loader_logo_shape', s);
+                        saveSection(['loader_logo_url', 'loader_logo_shape'], { loader_logo_shape: s });
+                      }}
                         className={`p-1 border rounded ${form.loader_logo_shape === s ? 'border-primary bg-primary/10' : 'border-border'}`}>
                         <div className={`w-6 h-6 bg-muted border border-border ${s === 'circle' ? 'rounded-full' : s === 'rounded' ? 'rounded-lg' : 'rounded-none'}`} />
                       </button>

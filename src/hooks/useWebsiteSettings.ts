@@ -483,10 +483,14 @@ const writeCache = (settings: WebsiteSettings) => {
     // Keep the page loader's lightweight cache in sync so the madrasa logo
     // renders instantly on every subsequent visit, even if the loader itself
     // unmounts before its own effect gets a chance to write.
-    const loaderLogo = settings.loader_logo_url || settings.favicon_url || settings.logo_url;
+    const loaderLogo = settings.loader_logo_url || settings.logo_url || settings.favicon_url;
     if (loaderLogo) {
       localStorage.setItem('cached_loader_logo', loaderLogo);
-      localStorage.setItem('cached_loader_logo_shape', settings.loader_logo_shape || 'square');
+      localStorage.setItem('cached_loader_logo_shape', settings.loader_logo_shape || settings.logo_shape || 'circle');
+    }
+    const favicon = settings.favicon_url || settings.logo_url;
+    if (favicon) {
+      localStorage.setItem('cached_favicon_url', favicon);
     }
   } catch {
     // ignore quota errors
@@ -529,11 +533,11 @@ export const useWebsiteSettings = () => {
         if (!instData) return withPrincipal;
         return {
           ...withPrincipal,
-          accountant_name: pick((instData as any).accountant_name, (parsed as any).accountant_name),
-          verifier_name: pick((instData as any).verifier_name, (parsed as any).verifier_name),
-          logo_url: pick((instData as any).logo_url, parsed.logo_url),
-          registration_number: pick((instData as any).registration_number, parsed.registration_number),
-          established_year: pick((instData as any).established_year, parsed.established_year),
+          accountant_name: pick(parsed.accountant_name, (instData as any)?.accountant_name),
+          verifier_name: pick(parsed.verifier_name, (instData as any)?.verifier_name),
+          logo_url: pick(parsed.logo_url, (instData as any)?.logo_url),
+          registration_number: pick(parsed.registration_number, (instData as any)?.registration_number),
+          established_year: pick(parsed.established_year, (instData as any)?.established_year),
         } as WebsiteSettings;
       };
 
