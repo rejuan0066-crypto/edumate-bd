@@ -3034,12 +3034,10 @@ const AdminExpenses = () => {
                               onClick={() => {
                                 setReceiptFile(null);
                                 setEditingExpenseId(null);
-                                const targetInstId = isAll ? (allInstitutions[0]?.id || '') : (inst?.id || '');
-                                const availCats = getCategoriesForInst(targetInstId);
                                 setExpenseForm({
                                   ...defaultExpenseForm,
-                                  institution_id: targetInstId,
-                                  category_id: availCats[0]?.id || '',
+                                  institution_id: '',
+                                  category_id: '',
                                 });
                                 setExpenseDialog(true);
                               }}
@@ -3767,12 +3765,12 @@ const AdminExpenses = () => {
                 whileTap={{ scale: 0.96 }}
                 onClick={() => {
                   setActiveTab('dashboard');
-                  const targetId = allInstitutions[0]?.id || '';
-                  const availCats = getCategoriesForInst(targetId);
+                  setReceiptFile(null);
+                  setEditingExpenseId(null);
                   setExpenseForm({
                     ...defaultExpenseForm,
-                    institution_id: targetId,
-                    category_id: availCats[0]?.id || '',
+                    institution_id: '',
+                    category_id: '',
                   });
                   setExpenseDialog(true);
                 }}
@@ -3806,12 +3804,12 @@ const AdminExpenses = () => {
                 size="sm"
                 onClick={() => {
                   setActiveTab('dashboard');
-                  const targetId = allInstitutions[0]?.id || '';
-                  const availCats = getCategoriesForInst(targetId);
+                  setReceiptFile(null);
+                  setEditingExpenseId(null);
                   setExpenseForm({
                     ...defaultExpenseForm,
-                    institution_id: targetId,
-                    category_id: availCats[0]?.id || '',
+                    institution_id: '',
+                    category_id: '',
                   });
                   setExpenseDialog(true);
                 }}
@@ -4628,8 +4626,7 @@ const AdminExpenses = () => {
                 <Select
                   value={expenseForm.institution_id || undefined}
                   onValueChange={value => {
-                    const availCats = getCategoriesForInst(value);
-                    setExpenseForm(f => ({ ...f, institution_id: value, category_id: availCats[0]?.id || '' }));
+                    setExpenseForm(f => ({ ...f, institution_id: value, category_id: '' }));
                   }}
                 >
                   <SelectTrigger className="mt-1"><SelectValue placeholder={bn ? 'প্রতিষ্ঠান নির্বাচন করুন' : 'Select institution'} /></SelectTrigger>
