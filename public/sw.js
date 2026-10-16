@@ -12,7 +12,7 @@
 // Stale caches are cleaned ONLY by version bump on activate (targeted), never by
 // blanket clears on every load. Bump CACHE_VERSION whenever you change SW logic.
 
-const CACHE_VERSION = 'v14';
+const CACHE_VERSION = 'v15';
 const OFFLINE_URL = '/offline.html';
 const SHELL_CACHE = `subhania-shell-${CACHE_VERSION}`;
 const ASSET_CACHE = `subhania-assets-${CACHE_VERSION}`;
@@ -26,6 +26,8 @@ const PRECACHE_URLS = [
   '/',
   '/offline.html',
   '/manifest.json',
+  '/loader-logo.png',
+  '/branded-icon-192.png',
   '/app-icon.png',
   '/app-icon-192.png',
   '/app-icon.svg',
