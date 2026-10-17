@@ -27,13 +27,13 @@ describe('staffOrderHelper', () => {
     expect(getStaffCategoryKey({ designation: 'বাবুর্চি' })).toBe('general');
   });
 
-  it('respects canonical department order: teacher (10) < administrative (20) < support (30) < general (40)', () => {
-    expect(getDepartmentPriority('teacher')).toBeLessThan(getDepartmentPriority('administrative'));
-    expect(getDepartmentPriority('administrative')).toBeLessThan(getDepartmentPriority('support'));
+  it('respects canonical department order: administrative (10) < teacher (20) < support (30) < general (40)', () => {
+    expect(getDepartmentPriority('administrative')).toBeLessThan(getDepartmentPriority('teacher'));
+    expect(getDepartmentPriority('teacher')).toBeLessThan(getDepartmentPriority('support'));
     expect(getDepartmentPriority('support')).toBeLessThan(getDepartmentPriority('general'));
   });
 
-  it('sorts mixed staff list into department-wise serials', () => {
+  it('sorts mixed staff list with administrative department as #1', () => {
     const list = [
       { id: '1', name_bn: 'আব্দুর রহিম', designation: 'নিরাপত্তা প্রহরী', staff_id: 'GEN-01' },
       { id: '2', name_bn: 'মাওলানা ইউসুফ', designation: 'সহকারী শিক্ষক', staff_id: 'TCH-02' },
@@ -44,11 +44,11 @@ describe('staffOrderHelper', () => {
 
     const sorted = sortStaffByDepartment(list);
 
-    // 1. Teachers first
-    expect(sorted[0].staff_id).toBe('TCH-01');
-    expect(sorted[1].staff_id).toBe('TCH-02');
-    // 2. Administrative next
-    expect(sorted[2].staff_id).toBe('ADM-01');
+    // 1. Administrative is #1
+    expect(sorted[0].staff_id).toBe('ADM-01');
+    // 2. Teachers next
+    expect(sorted[1].staff_id).toBe('TCH-01');
+    expect(sorted[2].staff_id).toBe('TCH-02');
     // 3. Support next
     expect(sorted[3].staff_id).toBe('SUP-01');
     // 4. General last
@@ -64,9 +64,10 @@ describe('staffOrderHelper', () => {
 
     const sorted = sortStaffByDepartment(list);
 
-    expect(sorted[0].name_bn).toBe('শিক্ষক ক');
-    expect(sorted[1].name_bn).toBe('শিক্ষক খ');
-    expect(sorted[2].name_bn).toBe('প্রশাসক ক');
+    // Administrative comes first (#1), then teachers sorted by salary_order
+    expect(sorted[0].name_bn).toBe('প্রশাসক ক');
+    expect(sorted[1].name_bn).toBe('শিক্ষক ক');
+    expect(sorted[2].name_bn).toBe('শিক্ষক খ');
   });
 
   it('generates proper Bengali/English department labels', () => {

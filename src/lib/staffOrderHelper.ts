@@ -20,12 +20,13 @@ export interface DesignationConfig {
 }
 
 // Canonical department ordering priorities (lower number = comes first)
+// User requirement: প্রশাসন বিভাগ ১ নাম্বার হবে (Administrative is Rank #1)
 export const CANONICAL_DEPARTMENT_ORDER: Record<string, number> = {
-  teacher: 10,
-  teaching: 10,
-  academic: 10,
-  administrative: 20,
-  admin: 20,
+  administrative: 10,
+  admin: 10,
+  teacher: 20,
+  teaching: 20,
+  academic: 20,
   support: 30,
   office: 30,
   general: 40,
@@ -36,8 +37,8 @@ export const CANONICAL_DEPARTMENT_ORDER: Record<string, number> = {
 };
 
 export const CANONICAL_DEPARTMENT_LABELS: Record<string, { bn: string; en: string }> = {
-  teacher: { bn: 'শিক্ষা বিভাগ / শিক্ষক', en: 'Teaching / Academic' },
   administrative: { bn: 'প্রশাসন বিভাগ', en: 'Administrative' },
+  teacher: { bn: 'শিক্ষা বিভাগ / শিক্ষক', en: 'Teaching / Academic' },
   support: { bn: 'অফিস / সাপোর্ট স্টাফ', en: 'Support Staff' },
   general: { bn: 'সহায়ক কর্মী / সাধারণ বিভাগ', en: 'General Staff' },
 };
@@ -120,10 +121,24 @@ export function getDepartmentPriority(
   categoryKey: string,
   categoriesList?: DepartmentConfig[]
 ): number {
+  // User requirement: প্রশাসন বিভাগ ১ নাম্বার (Administrative is Rank #1)
+  if (categoryKey === 'administrative' || categoryKey === 'admin') {
+    return 10;
+  }
+  if (categoryKey === 'teacher' || categoryKey === 'teaching' || categoryKey === 'academic') {
+    return 20;
+  }
+  if (categoryKey === 'support' || categoryKey === 'office') {
+    return 30;
+  }
+  if (categoryKey === 'general') {
+    return 40;
+  }
+
   if (categoriesList && categoriesList.length > 0) {
     const found = categoriesList.find(c => c.key === categoryKey);
-    if (found && typeof found.sort_order === 'number') {
-      return found.sort_order * 10;
+    if (found && typeof found.sort_order === 'number' && found.sort_order > 0) {
+      return 40 + (found.sort_order * 10);
     }
   }
 
