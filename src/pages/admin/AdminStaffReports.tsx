@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
+import { useResignedStaff } from '@/hooks/useResignedStaff';
 import AdminLayout from '@/components/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,6 +23,7 @@ import {
   encodeDutyRemarks,
   DUTY_PRESETS,
   DutyReportDetails,
+  isStaffResignedForReport,
 } from '@/lib/staffDutyReportHelper';
 import {
   sortStaffByDepartment,
@@ -75,9 +77,21 @@ const AdminStaffReports = () => {
   const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') === 'duty' ? 'duty' : 'attendance');
 
   // ================== ATTENDANCE FILTERS ==================
+  const [attStaffStatus, setAttStaffStatus] = useState<'active' | 'resigned' | 'all'>('active');
   const [category, setCategory] = useState<string>('all');
   const [fromDate, setFromDate] = useState<string>(firstOfMonth());
   const [toDate, setToDate] = useState<string>(todayISO());
+
+  // Resigned staff hook to accurately identify staff with issued resignation letters or inactive status
+  const { isResignedOnDate, getResignDate, resignedStaffIds } = useResignedStaff();
+
+  const isStaffResigned = useCallback((s: any, refDate?: string) => {
+    return isStaffResignedForReport(s, refDate || todayISO(), {
+      isResignedOnDate,
+      getResignDate,
+      resignedStaffIds,
+    });
+  }, [isResignedOnDate, getResignDate, resignedStaffIds]);
 
   // ================== DUTY FILTERS ==================
   const [dutyDate, setDutyDate] = useState<string>(todayISO());
@@ -114,7 +128,7 @@ const AdminStaffReports = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('staff')
-        .select('id, staff_id, name_bn, name_en, designation, department, staff_category, phone, status, joining_date, salary_order')
+        .select('id, staff_id, name_bn, name_en, designation, department, staff_category, phone, status, joining_date, salary_order, staff_data')
         .neq('status', 'deleted');
       return data || [];
     },
@@ -129,9 +143,17 @@ const AdminStaffReports = () => {
   }, [staffRaw, staffCategories, masterDesignations, bn]);
 
   const filteredStaff = useMemo(() => {
-    if (category === 'all') return staff;
-    return staff.filter((s: any) => getStaffCategoryKey(s, masterDesignations) === category || s.staff_category === category);
-  }, [staff, category, masterDesignations]);
+    let list = staff;
+
+    if (attStaffStatus === 'active') {
+      list = list.filter((s: any) => !isStaffResigned(s, toDate) && s.status !== 'inactive' && s.status !== 'resigned');
+    } else if (attStaffStatus === 'resigned') {
+      list = list.filter((s: any) => isStaffResigned(s, toDate) || s.status === 'inactive' || s.status === 'resigned');
+    }
+
+    if (category === 'all') return list;
+    return list.filter((s: any) => getStaffCategoryKey(s, masterDesignations) === category || s.staff_category === category);
+  }, [staff, category, masterDesignations, attStaffStatus, isStaffResigned, toDate]);
 
   const staffIds = useMemo(() => filteredStaff.map((s: any) => s.id), [filteredStaff]);
 
@@ -181,10 +203,11 @@ const AdminStaffReports = () => {
 
   // ================== DUTY DATA ==================
   const dutyStaff = useMemo(() => {
-    const active = staff.filter((s: any) => s.status === 'active');
+    // Strictly exclude resigned or inactive staff on dutyDate
+    const active = staff.filter((s: any) => s.status === 'active' && !isStaffResigned(s, dutyDate));
     if (dutyCategory === 'all') return active;
     return active.filter((s: any) => getStaffCategoryKey(s, masterDesignations) === dutyCategory || s.staff_category === dutyCategory);
-  }, [staff, dutyCategory, masterDesignations]);
+  }, [staff, dutyCategory, masterDesignations, isStaffResigned, dutyDate]);
 
   const dutyStaffIds = useMemo(() => dutyStaff.map((s: any) => s.id), [dutyStaff]);
 
@@ -429,17 +452,23 @@ const AdminStaffReports = () => {
         toast.error(bn ? 'রিপোর্ট তৈরির জন্য কোনো ডেটা নেই' : 'No data available to generate report');
         return;
       }
+      const stLabel = attStaffStatus === 'resigned'
+        ? (bn ? 'পদত্যাগকৃত কর্মী' : 'Resigned Staff')
+        : attStaffStatus === 'all'
+        ? (bn ? 'সকল কর্মী' : 'All Staff')
+        : (bn ? 'সক্রিয় কর্মী' : 'Active Staff');
+
       generateBilingualReport(
         {
           ...reportMeta,
-          report_title_bn: 'স্টাফ উপস্থিতি রিপোর্ট',
-          report_title_en: 'Staff Attendance Report',
-          period_label_bn: `${catLabel(category)} • ${fromDate} → ${toDate}`,
-          period_label_en: `${catLabel(category)} • ${fromDate} → ${toDate}`,
+          report_title_bn: attStaffStatus === 'resigned' ? 'পদত্যাগকৃত স্টাফ উপস্থিতি রিপোর্ট' : 'স্টাফ উপস্থিতি রিপোর্ট',
+          report_title_en: attStaffStatus === 'resigned' ? 'Resigned Staff Attendance Report' : 'Staff Attendance Report',
+          period_label_bn: `${catLabel(category)} • ${stLabel} • ${fromDate} → ${toDate}`,
+          period_label_en: `${catLabel(category)} • ${stLabel} • ${fromDate} → ${toDate}`,
         },
         [{
-          title_bn: `${catLabel(category)} — ${attendanceSummary.length} জন স্টাফ`,
-          title_en: `${catLabel(category)} — ${attendanceSummary.length} Staff`,
+          title_bn: `${catLabel(category)} (${stLabel}) — ${attendanceSummary.length} জন স্টাফ`,
+          title_en: `${catLabel(category)} (${stLabel}) — ${attendanceSummary.length} Staff`,
           headers: [
             { bn: 'ক্রম', en: 'No.' },
             { bn: 'স্টাফ আইডি', en: 'Staff ID' },
@@ -480,6 +509,12 @@ const AdminStaffReports = () => {
         toast.error(bn ? 'রিপোর্ট তৈরির জন্য কোনো ডেটা নেই' : 'No data available to generate report');
         return;
       }
+      const stLabel = attStaffStatus === 'resigned'
+        ? (bn ? 'পদত্যাগকৃত কর্মী' : 'Resigned Staff')
+        : attStaffStatus === 'all'
+        ? (bn ? 'সকল কর্মী' : 'All Staff')
+        : (bn ? 'সক্রিয় কর্মী' : 'Active Staff');
+
       const xlsxMod: any = await import('xlsx-js-style');
       const XLSX: any = xlsxMod.default || xlsxMod;
       const wb = XLSX.utils.book_new();
@@ -489,8 +524,8 @@ const AdminStaffReports = () => {
       wsData.push([ws.address || '']);
       wsData.push([`${bn ? 'ফোন' : 'Phone'}: ${ws.phone || ''} | ${bn ? 'ইমেইল' : 'Email'}: ${ws.email || ''}`]);
       wsData.push([]);
-      wsData.push([bn ? 'স্টাফ উপস্থিতি রিপোর্ট' : 'Staff Attendance Report']);
-      wsData.push([`${bn ? 'ডিপার্টমেন্ট' : 'Department'}: ${catLabel(category)} | ${bn ? 'সময়কাল' : 'Period'}: ${fromDate} → ${toDate}`]);
+      wsData.push([bn ? (attStaffStatus === 'resigned' ? 'পদত্যাগকৃত স্টাফ উপস্থিতি রিপোর্ট' : 'স্টাফ উপস্থিতি রিপোর্ট') : (attStaffStatus === 'resigned' ? 'Resigned Staff Attendance Report' : 'Staff Attendance Report')]);
+      wsData.push([`${bn ? 'ডিপার্টমেন্ট' : 'Department'}: ${catLabel(category)} | ${bn ? 'অবস্থা' : 'Status'}: ${stLabel} | ${bn ? 'সময়কাল' : 'Period'}: ${fromDate} → ${toDate}`]);
       wsData.push([`${bn ? 'মোট স্টাফ' : 'Total Staff'}: ${attendanceSummary.length} | ${bn ? 'উপস্থিতি হার' : 'Rate'}: ${attTotals.rate}`]);
       wsData.push([]);
 
@@ -741,7 +776,20 @@ const AdminStaffReports = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                      {bn ? 'কর্মীর অবস্থা (স্ট্যাটাস)' : 'Staff Status'}
+                    </label>
+                    <Select value={attStaffStatus} onValueChange={(v: any) => setAttStaffStatus(v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">{bn ? 'সক্রিয় কর্মী (ডিফল্ট)' : 'Active Staff Only'}</SelectItem>
+                        <SelectItem value="resigned">{bn ? 'পদত্যাগকৃত কর্মী' : 'Resigned Staff'}</SelectItem>
+                        <SelectItem value="all">{bn ? 'সকল কর্মী (সক্রিয় ও পদত্যাগকৃত)' : 'All Staff'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">
                       {bn ? 'ডিপার্টমেন্ট' : 'Department'}
@@ -797,7 +845,11 @@ const AdminStaffReports = () => {
                 {attendanceSummary.length === 0 ? (
                   <div className="p-12 text-center text-muted-foreground">
                     <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                    <p className="text-sm">{bn ? 'কোনো স্টাফ পাওয়া যায়নি' : 'No staff found'}</p>
+                    <p className="text-sm">
+                      {bn
+                        ? (attStaffStatus === 'resigned' ? 'কোনো পদত্যাগকৃত স্টাফের রেকর্ড পাওয়া যায়নি' : 'কোনো স্টাফ পাওয়া যায়নি')
+                        : (attStaffStatus === 'resigned' ? 'No resigned staff found' : 'No staff found')}
+                    </p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -820,7 +872,14 @@ const AdminStaffReports = () => {
                           <TableRow key={s.id} className="hover:bg-muted/30">
                             <TableCell className="text-center text-muted-foreground">{i + 1}</TableCell>
                             <TableCell className="font-mono text-xs text-muted-foreground">{s.staff_id || '-'}</TableCell>
-                            <TableCell className="font-medium">{bn ? (s.name_bn || s.name_en) : (s.name_en || s.name_bn)}</TableCell>
+                            <TableCell className="font-medium">
+                              <span>{bn ? (s.name_bn || s.name_en) : (s.name_en || s.name_bn)}</span>
+                              {isStaffResigned(s, toDate) && (
+                                <Badge variant="outline" className="ml-2 text-[10px] bg-red-500/10 text-red-600 border-red-200 dark:border-red-900">
+                                  {bn ? 'পদত্যাগকৃত' : 'Resigned'}
+                                </Badge>
+                              )}
+                            </TableCell>
                             <TableCell className="text-sm">{s.designation || '-'}</TableCell>
                             <TableCell className="text-center text-emerald-600 dark:text-emerald-400 font-semibold">{s.present}</TableCell>
                             <TableCell className="text-center text-red-600 dark:text-red-400 font-semibold">{s.absent}</TableCell>

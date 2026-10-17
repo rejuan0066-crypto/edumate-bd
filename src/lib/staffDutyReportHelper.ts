@@ -103,3 +103,47 @@ export function parseDutyRemarks(raw: string | null | undefined): DutyReportDeta
     notes: str,
   };
 }
+
+export interface StaffResignationMeta {
+  isResignedOnDate?: (staffId: string, dateStr: string) => boolean;
+  getResignDate?: (staffId: string) => string | null;
+  resignedStaffIds?: Set<string>;
+}
+
+/**
+ * Accurately determines if a staff member has resigned on or before the given reference date.
+ * Inspects:
+ * 1. Resignation letter effective date via meta.getResignDate
+ * 2. Embedded staff_data.resign_date
+ * 3. Status column ('inactive' or 'resigned')
+ * 4. Active resignation letter records (resignedStaffIds)
+ */
+export function isStaffResignedForReport(
+  staff: { id?: string; status?: string; staff_data?: any },
+  referenceDate: string,
+  meta?: StaffResignationMeta
+): boolean {
+  if (!staff) return false;
+  const staffId = staff.id || '';
+
+  if (meta?.getResignDate && staffId) {
+    const rd = meta.getResignDate(staffId);
+    if (rd) {
+      return referenceDate >= rd;
+    }
+  }
+
+  // Check embedded staff_data.resign_date if present
+  const sd = staff.staff_data as any;
+  if (sd?.resign_date) {
+    const d = String(sd.resign_date).slice(0, 10);
+    if (d && referenceDate >= d) return true;
+  }
+
+  if (staffId && meta?.resignedStaffIds?.has(staffId)) return true;
+  if (staff.status === 'resigned' || staff.status === 'inactive') return true;
+  if (staffId && meta?.isResignedOnDate && meta.isResignedOnDate(staffId, referenceDate)) return true;
+
+  return false;
+}
+
