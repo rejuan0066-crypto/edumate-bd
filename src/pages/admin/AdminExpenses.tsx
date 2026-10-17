@@ -1601,6 +1601,20 @@ const AdminExpenses = () => {
   });
 
   const deleteExpense = useMutation({
+    onMutate: async (id: string) => {
+      await qc.cancelQueries({ queryKey: ['expenses'] });
+      await qc.cancelQueries({ queryKey: ['all_expenses'] });
+
+      // Optimistic instant removal from UI
+      qc.setQueriesData({ queryKey: ['expenses'] }, (old: any) => {
+        if (!Array.isArray(old)) return old;
+        return old.filter((item: any) => item.id !== id);
+      });
+      qc.setQueriesData({ queryKey: ['all_expenses'] }, (old: any) => {
+        if (!Array.isArray(old)) return old;
+        return old.filter((item: any) => item.id !== id);
+      });
+    },
     mutationFn: async (id: string) => {
       const oldExpense = (allExpenses || expenses || []).find((e: any) => e.id === id);
       const { error } = await supabase.from('expenses').delete().eq('id', id);
@@ -1630,10 +1644,29 @@ const AdminExpenses = () => {
       qc.invalidateQueries({ queryKey: ['all_expenses'] });
       qc.invalidateQueries({ queryKey: ['accounts-audit-logs'] });
       toast.success(bn ? 'মুছে ফেলা হয়েছে' : 'Deleted');
+    },
+    onError: (err: any) => {
+      qc.invalidateQueries({ queryKey: ['expenses'] });
+      qc.invalidateQueries({ queryKey: ['all_expenses'] });
+      toast.error(err?.message || (bn ? 'মুছে ফেলতে ব্যর্থ হয়েছে' : 'Failed to delete'));
     }
   });
 
   const deleteDeposit = useMutation({
+    onMutate: async (id: string) => {
+      await qc.cancelQueries({ queryKey: ['deposits'] });
+      await qc.cancelQueries({ queryKey: ['all_deposits'] });
+
+      // Optimistic instant removal from UI
+      qc.setQueriesData({ queryKey: ['deposits'] }, (old: any) => {
+        if (!Array.isArray(old)) return old;
+        return old.filter((item: any) => item.id !== id);
+      });
+      qc.setQueriesData({ queryKey: ['all_deposits'] }, (old: any) => {
+        if (!Array.isArray(old)) return old;
+        return old.filter((item: any) => item.id !== id);
+      });
+    },
     mutationFn: async (id: string) => {
       const oldDep = (deposits || []).find((d: any) => d.id === id);
       const { error } = await supabase.from('deposits').delete().eq('id', id);
@@ -1658,6 +1691,11 @@ const AdminExpenses = () => {
       qc.invalidateQueries({ queryKey: ['all_deposits'] });
       qc.invalidateQueries({ queryKey: ['accounts-audit-logs'] });
       toast.success(bn ? 'মুছে ফেলা হয়েছে' : 'Deleted');
+    },
+    onError: (err: any) => {
+      qc.invalidateQueries({ queryKey: ['deposits'] });
+      qc.invalidateQueries({ queryKey: ['all_deposits'] });
+      toast.error(err?.message || (bn ? 'মুছে ফেলতে ব্যর্থ হয়েছে' : 'Failed to delete'));
     }
   });
 
