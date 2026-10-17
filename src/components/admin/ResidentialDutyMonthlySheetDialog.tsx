@@ -17,6 +17,7 @@ import XLSX from 'xlsx-js-style';
 import { useAppTimezone } from '@/hooks/useAppTimezone';
 import { getDatePartsInTz } from '@/lib/timezone';
 import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { sortStaffByDepartment } from '@/lib/staffOrderHelper';
 
 interface Props {
   open: boolean;
@@ -118,10 +119,9 @@ export default function ResidentialDutyMonthlySheetDialog({
     queryFn: async () => {
       const { data } = await supabase
         .from('staff')
-        .select('id, name_bn, name_en, designation, staff_category, status, residence_type')
-        .is('deleted_at', null)
-        .order('name_bn', { ascending: true });
-      return (data || []) as any[];
+        .select('id, name_bn, name_en, designation, department, staff_category, status, residence_type, salary_order')
+        .is('deleted_at', null);
+      return sortStaffByDepartment((data || []) as any[]);
     },
     enabled: open,
   });

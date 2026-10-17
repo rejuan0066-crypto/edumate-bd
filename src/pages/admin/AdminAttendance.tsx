@@ -8,6 +8,7 @@ import { usePersistentTab } from '@/hooks/usePersistentTab';
 import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
+import { sortStaffByDepartment } from '@/lib/staffOrderHelper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -324,9 +325,12 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     },
     enabled: entityType === 'staff',
   });
-  const allStaff = showCommitteeStaff
-    ? (allStaffRaw as any[])
-    : (allStaffRaw as any[]).filter((s: any) => !committeeInfo.ids.has(s.id));
+  const allStaff = useMemo(() => {
+    const base = showCommitteeStaff
+      ? (allStaffRaw as any[])
+      : (allStaffRaw as any[]).filter((s: any) => !committeeInfo.ids.has(s.id));
+    return sortStaffByDepartment(base, { categories: staffCategoriesData, bn });
+  }, [allStaffRaw, showCommitteeStaff, committeeInfo.ids, staffCategoriesData, bn]);
   const committeeHiddenCount = (allStaffRaw as any[]).filter((s: any) => committeeInfo.ids.has(s.id)).length;
 
   // Build session options: prefer academic_sessions (id-based), fallback to legacy session_year text

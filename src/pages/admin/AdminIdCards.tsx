@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
+import { sortStaffByDepartment } from '@/lib/staffOrderHelper';
 const AdminIdCards = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
@@ -233,9 +234,9 @@ const AdminIdCards = () => {
   const { data: staffList = [], isLoading: staffLoading } = useQuery({
     queryKey: ['staff-idcard'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('staff').select('*').eq('status', 'active').order('name_bn');
+      const { data, error } = await supabase.from('staff').select('*').eq('status', 'active');
       if (error) throw error;
-      return data;
+      return sortStaffByDepartment(data || []);
     },
   });
 

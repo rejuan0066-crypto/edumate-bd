@@ -23,6 +23,11 @@ import {
   DUTY_PRESETS,
   DutyReportDetails,
 } from '@/lib/staffDutyReportHelper';
+import {
+  sortStaffByDepartment,
+  getDepartmentLabel,
+  getStaffCategoryKey,
+} from '@/lib/staffOrderHelper';
 import { generateBilingualReport } from '@/lib/reportPdfGenerator';
 import { toast } from 'sonner';
 
@@ -80,23 +85,53 @@ const AdminStaffReports = () => {
   const [dutySearch, setDutySearch] = useState<string>('');
   const [dutyStatusFilter, setDutyStatusFilter] = useState<string>('all');
 
-  // Fetch all active staff
-  const { data: staff = [] } = useQuery({
-    queryKey: ['staff-reports-staff'],
+  // Master designations and categories for department hierarchy
+  const { data: masterDesignations = [] } = useQuery({
+    queryKey: ['designations'],
     queryFn: async () => {
       const { data } = await supabase
-        .from('staff')
-        .select('id, staff_id, name_bn, name_en, designation, department, staff_category, phone, status, joining_date')
-        .neq('status', 'deleted')
-        .order('name_bn', { ascending: true });
+        .from('designations')
+        .select('id, name, name_bn, staff_category, sort_order')
+        .order('sort_order', { ascending: true });
       return data || [];
     },
   });
 
+  const { data: staffCategories = [] } = useQuery({
+    queryKey: ['staff_categories'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('staff_categories')
+        .select('key, name, name_bn, sort_order')
+        .order('sort_order', { ascending: true });
+      return data || [];
+    },
+  });
+
+  // Fetch all active staff and sort strictly by department serial
+  const { data: staffRaw = [] } = useQuery({
+    queryKey: ['staff-reports-staff'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('staff')
+        .select('id, staff_id, name_bn, name_en, designation, department, staff_category, phone, status, joining_date, salary_order')
+        .neq('status', 'deleted');
+      return data || [];
+    },
+  });
+
+  const staff = useMemo(() => {
+    return sortStaffByDepartment(staffRaw, {
+      categories: staffCategories,
+      designations: masterDesignations,
+      bn,
+    });
+  }, [staffRaw, staffCategories, masterDesignations, bn]);
+
   const filteredStaff = useMemo(() => {
     if (category === 'all') return staff;
-    return staff.filter((s: any) => s.staff_category === category);
-  }, [staff, category]);
+    return staff.filter((s: any) => getStaffCategoryKey(s, masterDesignations) === category || s.staff_category === category);
+  }, [staff, category, masterDesignations]);
 
   const staffIds = useMemo(() => filteredStaff.map((s: any) => s.id), [filteredStaff]);
 
@@ -146,9 +181,10 @@ const AdminStaffReports = () => {
 
   // ================== DUTY DATA ==================
   const dutyStaff = useMemo(() => {
-    if (dutyCategory === 'all') return staff.filter((s: any) => s.status === 'active');
-    return staff.filter((s: any) => s.status === 'active' && s.staff_category === dutyCategory);
-  }, [staff, dutyCategory]);
+    const active = staff.filter((s: any) => s.status === 'active');
+    if (dutyCategory === 'all') return active;
+    return active.filter((s: any) => getStaffCategoryKey(s, masterDesignations) === dutyCategory || s.staff_category === dutyCategory);
+  }, [staff, dutyCategory, masterDesignations]);
 
   const dutyStaffIds = useMemo(() => dutyStaff.map((s: any) => s.id), [dutyStaff]);
 
@@ -943,8 +979,11 @@ const AdminStaffReports = () => {
                               <div className="font-medium text-sm text-foreground">
                                 {bn ? (d.name_bn || d.name_en) : (d.name_en || d.name_bn)}
                               </div>
-                              <div className="text-xs text-muted-foreground">
-                                {d.designation || '-'} {d.department ? `• ${d.department}` : ''}
+                              <div className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap mt-0.5">
+                                <span>{d.designation || '-'}</span>
+                                <Badge variant="outline" className="text-[10px] py-0 px-1.5 font-normal bg-muted/60 text-muted-foreground">
+                                  {getDepartmentLabel(getStaffCategoryKey(d, masterDesignations), bn, staffCategories)}
+                                </Badge>
                               </div>
                             </TableCell>
                             <TableCell className="text-center">

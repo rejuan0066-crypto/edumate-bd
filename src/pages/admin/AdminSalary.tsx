@@ -40,6 +40,7 @@ import BulkSalaryWorkflowDialog from '@/components/admin/BulkSalaryWorkflowDialo
 import { recomputeNetSalary, computeManualOverrideNet } from '@/lib/salaryNet';
 import { dedupeAttendanceRecords } from '@/lib/attendanceDedup';
 import { useAttendanceDuplicateRule } from '@/hooks/useAttendanceDuplicateRule';
+import { sortStaffByDepartment } from '@/lib/staffOrderHelper';
 import {
   calcDutyDeduction,
   type DeductionResult,
@@ -355,6 +356,20 @@ const AdminSalary = () => {
 
   const committeeInfo = useCommitteeStaffIds();
   const [showCommitteeStaff, setShowCommitteeStaff] = useState(false);
+
+  // Dynamic staff categories (for department label translation & ordering)
+  const { data: staffCategoriesList = [] } = useQuery({
+    queryKey: ['staff-categories-salary'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('staff_categories')
+        .select('key, name, name_bn, sort_order')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      return data || [];
+    },
+  });
+
   const { data: staffRaw = [] } = useQuery({
     queryKey: ['salary-staff'],
     queryFn: async () => {
@@ -369,12 +384,17 @@ const AdminSalary = () => {
       return data;
     },
   });
-  const staff = showCommitteeStaff
-    ? (staffRaw as any[])
-    : (staffRaw as any[]).filter((s: any) => !committeeInfo.ids.has(s.id));
+
+  const staff = useMemo(() => {
+    const base = showCommitteeStaff
+      ? (staffRaw as any[])
+      : (staffRaw as any[]).filter((s: any) => !committeeInfo.ids.has(s.id));
+    return sortStaffByDepartment(base, { categories: staffCategoriesList as any[], bn });
+  }, [staffRaw, showCommitteeStaff, committeeInfo.ids, staffCategoriesList, bn]);
+
   const committeeHiddenCount = (staffRaw as any[]).filter((s: any) => committeeInfo.ids.has(s.id)).length;
   // Only currently-active staff (used by bonus sheet & serial ordering).
-  const activeStaff = (staff as any[]).filter((s: any) => s.status === 'active');
+  const activeStaff = useMemo(() => (staff as any[]).filter((s: any) => s.status === 'active'), [staff]);
 
   // Reorder staff in salary list — supports neighbor-swap OR jump-to-position
   const reorderStaffMutation = useMutation({
@@ -485,17 +505,7 @@ const AdminSalary = () => {
     },
   });
 
-  // Dynamic staff categories (for department label translation)
-  const { data: staffCategoriesList = [] } = useQuery({
-    queryKey: ['staff-categories-salary'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('staff_categories')
-        .select('key, name, name_bn')
-        .eq('is_active', true);
-      return data || [];
-    },
-  });
+
   const getDepartmentLabel = (dept: any): string => {
     const d = (dept || '').toString().trim();
     if (!d) return '-';

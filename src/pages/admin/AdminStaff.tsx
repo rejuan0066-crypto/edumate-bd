@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, Plus, Trash2, Loader2, Pencil, UserPlus, Eye, EyeOff, User, FileText, Check, X, Award, Power, PowerOff, Clock, BarChart3, ClipboardList } from 'lucide-react';
+import { Search, Plus, Trash2, Loader2, Pencil, UserPlus, Eye, EyeOff, User, FileText, Check, X, Award, Power, PowerOff, Clock, BarChart3, ClipboardList, Layers } from 'lucide-react';
 import StaffProfileModal from '@/components/profile/StaffProfileModal';
 import StaffLetterDialog from '@/components/admin/StaffLetterDialog';
 import StaffDutyTimeDialog from '@/components/admin/StaffDutyTimeDialog';
@@ -29,6 +29,7 @@ import PasswordStrengthMeter, { isPasswordStrongAgainst, firstFailedRuleMessage,
 import { sanitizePasswordInput } from '@/lib/passwordInput';
 import { parseEdgeError } from '@/lib/edgeError';
 import { invalidateAllStaffQueries } from '@/lib/staffQueryInvalidator';
+import { sortStaffByDepartment } from '@/lib/staffOrderHelper';
 
 
 export type StaffPageType = 'all' | 'staff' | 'teacher' | 'administrative' | 'support' | 'director' | 'committee_member';
@@ -78,7 +79,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('active');
   const [departmentFilter, setDepartmentFilter] = useState<string>('all');
-  const [sortKey, setSortKey] = useState<'name' | 'staff_id' | 'designation' | 'department' | 'status'>('staff_id');
+  const [sortKey, setSortKey] = useState<'name' | 'staff_id' | 'designation' | 'department' | 'status'>('department');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewStaff, setViewStaff] = useState<any>(null);
@@ -97,6 +98,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
   const [accCreating, setAccCreating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [generatingIds, setGeneratingIds] = useState(false);
+  const [sortingByDept, setSortingByDept] = useState(false);
   const [showCommitteeStaff, setShowCommitteeStaff] = useState(false);
 
   const committeeInfo = useCommitteeStaffIds();
@@ -268,6 +270,41 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
     onError: () => toast.error(bn ? 'সমস্যা হয়েছে' : 'Error'),
   });
 
+  const handleAutoSortByDepartment = async () => {
+    if (!staffList.length) return;
+    const ok = await confirm({
+      title: bn ? 'বিভাগ অনুযায়ী সিরিয়াল নির্ধারণ' : 'Auto-Assign Department Serials',
+      description: bn
+        ? 'আপনি কি নিশ্চিত যে সকল স্টাফ ও শিক্ষকের ক্রমিক নম্বর (সিরিয়াল) বিভাগ অনুসারে (শিক্ষা বিভাগ → প্রশাসন → অফিস → সাধারণ) সাজিয়ে ডাটাবেজে সেভ করতে চান?'
+        : 'Are you sure you want to assign sequential serial numbers to all staff ordered by department in the database?',
+      confirmText: bn ? 'হ্যাঁ, সাজান' : 'Yes, Reassign',
+    });
+    if (!ok) return;
+
+    setSortingByDept(true);
+    try {
+      const sorted = sortStaffByDepartment(staffList, {
+        categories: staffCategories as any[],
+        designations: designationsList as any[],
+        bn,
+        knownCategoryKeys: activeCategoryKeys,
+      });
+
+      for (let i = 0; i < sorted.length; i++) {
+        const item = sorted[i];
+        await supabase.from('staff').update({ salary_order: i + 1 }).eq('id', item.id);
+      }
+
+      invalidateAllStaffQueries(queryClient);
+      toast.success(bn ? '✅ বিভাগ অনুযায়ী সকল স্টাফের সিরিয়াল সফলভাবে সাজানো হয়েছে' : '✅ Department serials successfully assigned');
+    } catch (err: any) {
+      console.error('Auto sort error:', err);
+      toast.error(bn ? 'সিরিয়াল নির্ধারণে ত্রুটি হয়েছে' : 'Failed to assign serials');
+    } finally {
+      setSortingByDept(false);
+    }
+  };
+
   const typeFiltered = useMemo(() => staffType === 'all' ? staffList : staffList.filter((s: any) => {
     // Director / committee member: rely strictly on the stored staff_category column
     if (staffType === 'director') return s.staff_category === 'director';
@@ -339,21 +376,33 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
       || (s.department || '').toLowerCase().includes(q);
   }), [typeFiltered, isStaffResigned, statusFilter, departmentFilter, designationsMap, activeCategoryKeys, search, labelForCategory]);
 
-  const filtered = useMemo(() => [...preFiltered].sort((a, b) => {
-    const getSortVal = (s: any): string => {
-      switch (sortKey) {
-        case 'name': return (bn ? (s.name_bn || s.name_en) : (s.name_en || s.name_bn)) || '';
-        case 'staff_id': return s.staff_id || '\uffff'; // empty IDs sort last on asc
-        case 'designation': return s.designation || '';
-        case 'department': return labelForCategory(getStaffCategory(s, designationsMap, activeCategoryKeys));
-        case 'status': return s.status || '';
-      }
-    };
-    const av = getSortVal(a);
-    const bv = getSortVal(b);
-    const cmp = String(av).localeCompare(String(bv), bn ? 'bn' : 'en', { numeric: true, sensitivity: 'base' });
-    return sortDir === 'asc' ? cmp : -cmp;
-  }), [preFiltered, sortKey, sortDir, bn, designationsMap, activeCategoryKeys, labelForCategory]);
+  const filtered = useMemo(() => {
+    if (sortKey === 'department') {
+      const sorted = sortStaffByDepartment(preFiltered, {
+        categories: staffCategories as any[],
+        designations: designationsList as any[],
+        bn,
+        knownCategoryKeys: activeCategoryKeys,
+      });
+      return sortDir === 'asc' ? sorted : [...sorted].reverse();
+    }
+
+    return [...preFiltered].sort((a, b) => {
+      const getSortVal = (s: any): string => {
+        switch (sortKey) {
+          case 'name': return (bn ? (s.name_bn || s.name_en) : (s.name_en || s.name_bn)) || '';
+          case 'staff_id': return s.staff_id || '\uffff'; // empty IDs sort last on asc
+          case 'designation': return s.designation || '';
+          case 'status': return s.status || '';
+          default: return '';
+        }
+      };
+      const av = getSortVal(a);
+      const bv = getSortVal(b);
+      const cmp = String(av).localeCompare(String(bv), bn ? 'bn' : 'en', { numeric: true, sensitivity: 'base' });
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+  }, [preFiltered, sortKey, sortDir, bn, staffCategories, designationsList, activeCategoryKeys]);
 
   const toggleSort = (key: typeof sortKey) => {
     if (sortKey === key) setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
@@ -460,6 +509,19 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
               <BarChart3 className="w-3.5 h-3.5 text-primary" />
               {bn ? 'স্টাফ রিপোর্ট' : 'Staff Reports'}
             </Button>
+            {isAdminRole(role) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleAutoSortByDepartment}
+                disabled={sortingByDept}
+                className="h-8 text-xs flex items-center gap-1.5"
+                title={bn ? 'বিভাগ অনুযায়ী সকল স্টাফের ক্রমিক নম্বর (১, ২, ৩...) ডাটাবেজে সংরক্ষণ করুন' : 'Assign sequential serial numbers department-wise in database'}
+              >
+                {sortingByDept ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Layers className="w-3.5 h-3.5 text-primary" />}
+                {bn ? 'বিভাগ অনুযায়ী সিরিয়াল সাজান' : 'Auto-Serial by Department'}
+              </Button>
+            )}
             {missingIdCount > 0 && isAdminRole(role) && (
               <Button variant="outline" size="sm" onClick={handleBulkGenerateIds} disabled={generatingIds} className="h-8 text-xs flex items-center gap-1.5">
                 {generatingIds ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
@@ -699,8 +761,9 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
               {/* Desktop Table View (>= md) */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-secondary/50">
+                   <thead className="bg-secondary/50">
                      <tr>
+                       <th className="text-center w-12 px-3 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'ক্রম' : '#'}</th>
                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('name')}>
                          {bn ? 'নাম' : 'Name'} <span className="ml-1 opacity-60">{sortIcon('name')}</span>
                        </th>
@@ -723,8 +786,9 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                      </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {filtered.map((s: any) => (
+                    {filtered.map((s: any, i: number) => (
                       <tr key={s.id} className="hover:bg-secondary/30 transition-colors">
+                        <td className="text-center px-3 py-3 text-xs text-muted-foreground font-mono">{i + 1}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
                             {s.photo_url ? (

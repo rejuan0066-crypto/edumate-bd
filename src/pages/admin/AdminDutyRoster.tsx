@@ -29,6 +29,7 @@ import {
   earlyExitMinutesFor,
 } from '@/lib/dutyMachineWindow';
 import { shiftMinutes, perMinuteRate } from '@/lib/dutyShiftDeduction';
+import { sortStaffByDepartment } from '@/lib/staffOrderHelper';
 
 interface DutyShift {
   id: string;
@@ -60,6 +61,8 @@ interface StaffRow {
   staff_id: string | null;
   staff_category: string;
   salary_order: number | null;
+  designation?: string | null;
+  department?: string | null;
 }
 
 interface RosterRow {
@@ -156,12 +159,11 @@ export default function AdminDutyRoster() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('staff')
-        .select('id, name_bn, staff_id, staff_category, salary_order')
+        .select('id, name_bn, staff_id, staff_category, salary_order, designation, department')
         .is('deleted_at', null)
-        .eq('status', 'active')
-        .order('salary_order', { ascending: true, nullsFirst: false });
+        .eq('status', 'active');
       if (error) throw error;
-      return (data || []) as StaffRow[];
+      return sortStaffByDepartment((data || []) as StaffRow[]);
     },
   });
 
