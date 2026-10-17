@@ -43,35 +43,7 @@ const compose24h = (h12: number, m: number, period: 'AM' | 'PM') => {
   return `${pad2(h24)}:${pad2(m)}`;
 };
 
-function Time12Picker({ value, onChange, bn }: { value: string; onChange: (v: string) => void; bn: boolean }) {
-  const { h12, m, period } = parse12h(value);
-  const toBn = (s: string) => bn ? s.replace(/[0-9]/g, (c) => '০১২৩৪৫৬৭৮৯'[+c]) : s;
-  const hours = Array.from({ length: 12 }, (_, i) => i + 1);
-  const minutes = Array.from({ length: 60 }, (_, i) => i);
-  return (
-    <div className="grid grid-cols-[1fr_1fr_1fr] gap-1.5">
-      <Select value={String(h12)} onValueChange={(v) => onChange(compose24h(parseInt(v, 10), m, period))}>
-        <SelectTrigger className="h-10 px-2 text-sm"><SelectValue /></SelectTrigger>
-        <SelectContent className="max-h-60">
-          {hours.map(h => <SelectItem key={h} value={String(h)}>{toBn(pad2(h))}</SelectItem>)}
-        </SelectContent>
-      </Select>
-      <Select value={String(m)} onValueChange={(v) => onChange(compose24h(h12, parseInt(v, 10), period))}>
-        <SelectTrigger className="h-10 px-2 text-sm"><SelectValue /></SelectTrigger>
-        <SelectContent className="max-h-60">
-          {minutes.map(mm => <SelectItem key={mm} value={String(mm)}>{toBn(pad2(mm))}</SelectItem>)}
-        </SelectContent>
-      </Select>
-      <Select value={period} onValueChange={(v) => onChange(compose24h(h12, m, v as 'AM' | 'PM'))}>
-        <SelectTrigger className="h-10 px-2 text-sm"><SelectValue /></SelectTrigger>
-        <SelectContent>
-          <SelectItem value="AM">{bn ? 'পূর্বাহ্ন' : 'AM'}</SelectItem>
-          <SelectItem value="PM">{bn ? 'অপরাহ্ন' : 'PM'}</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
-  );
-}
+
 
 export default function StaffDutyTimeDialog({ open, onOpenChange, staff, bn = true }: Props) {
   const [start, setStart] = useState('09:00');

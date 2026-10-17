@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { TimePicker } from '@/components/ui/time-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import LanguageToggle from '@/components/LanguageToggle';
@@ -649,11 +650,11 @@ const StaffDashboard = () => {
                         <Clock className="w-3 h-3" /> {bn ? 'বর্তমান সময়' : 'Now'}
                       </button>
                     </div>
-                    <Input
-                      type="time"
+                    <TimePicker
                       value={dutyCheckIn}
-                      onChange={e => setDutyCheckIn(e.target.value)}
+                      onChange={setDutyCheckIn}
                       className="h-9 text-xs"
+                      clearable
                     />
                   </div>
                   <div>
@@ -669,11 +670,11 @@ const StaffDashboard = () => {
                         <Clock className="w-3 h-3" /> {bn ? 'বর্তমান সময়' : 'Now'}
                       </button>
                     </div>
-                    <Input
-                      type="time"
+                    <TimePicker
                       value={dutyCheckOut}
-                      onChange={e => setDutyCheckOut(e.target.value)}
+                      onChange={setDutyCheckOut}
                       className="h-9 text-xs"
+                      clearable
                     />
                   </div>
                 </div>

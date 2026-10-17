@@ -1,48 +1,48 @@
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { vi } from "vitest";
-import { TimePicker } from "./time-picker";
+import { TimePicker, normalizeTo24h } from "./time-picker";
 
-describe("TimePicker — floating scroll containment", () => {
-  it("renders the formatted 12h value on the trigger", () => {
+describe("TimePicker — native HTML5 time picker with standard 3-column Chromium support", () => {
+  it("renders a native input with type='time'", () => {
     render(<TimePicker value="14:30" onChange={() => {}} />);
-    expect(screen.getByText("2:30 PM")).toBeInTheDocument();
+    const input = screen.getByDisplayValue("14:30");
+    expect(input).toBeInTheDocument();
+    expect(input).toHaveAttribute("type", "time");
   });
 
-  it("renders 24h format when requested", () => {
-    render(<TimePicker value="14:30" onChange={() => {}} displayFormat="24h" />);
-    expect(screen.getByText("14:30")).toBeInTheDocument();
+  it("normalizes 12h format e.g. 02:30 PM to 24h 14:30", () => {
+    expect(normalizeTo24h("2:30 PM")).toBe("14:30");
+    expect(normalizeTo24h("12:15 AM")).toBe("00:15");
+    expect(normalizeTo24h("12:15 PM")).toBe("12:15");
+    expect(normalizeTo24h("08:05 AM")).toBe("08:05");
+    expect(normalizeTo24h("2026-10-17T09:45:00")).toBe("09:45");
   });
 
-  it("lets the user switch AM to PM directly and saves the correct 24h value", async () => {
-    const user = userEvent.setup();
+  it("emits 24h time on change", () => {
     const onChange = vi.fn();
     render(<TimePicker value="08:15" onChange={onChange} />);
 
-    await user.click(screen.getByRole("button", { name: /8:15 PM|8:15 AM/ }));
-    await user.click(screen.getByRole("button", { name: "PM" }));
-    expect(screen.getByText("8:15 PM")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "সম্পন্ন" }));
+    const input = screen.getByDisplayValue("08:15");
+    fireEvent.change(input, { target: { value: "20:15" } });
 
     expect(onChange).toHaveBeenCalledWith("20:15");
   });
 
-  it("wheel columns contain scroll so it never leaks to the page (mobile-safe)", async () => {
+  it("clears the value when clearable button is clicked", async () => {
     const user = userEvent.setup();
-    render(<TimePicker value="08:00" onChange={() => {}} />);
+    const onChange = vi.fn();
+    render(<TimePicker value="08:00" onChange={onChange} clearable />);
 
-    await user.click(screen.getByRole("button"));
+    const clearButton = screen.getByRole("button", { name: "Clear time" });
+    await user.click(clearButton);
 
-    // Radix Popover renders into a portal on document.body
-    const wheels = document.querySelectorAll(".id-preview-scroll");
-    expect(wheels.length).toBeGreaterThan(0);
+    expect(onChange).toHaveBeenCalledWith("");
+  });
 
-    // Every scrollable wheel must contain its own overscroll and hide the scrollbar
-    wheels.forEach((el) => {
-      expect(el.className).toContain("overscroll-contain");
-      expect(el.className).toContain("overflow-y-auto");
-      expect(el.className).toContain("id-preview-scroll");
-    });
+  it("respects the disabled prop", () => {
+    render(<TimePicker value="09:00" onChange={() => {}} disabled />);
+    const input = screen.getByDisplayValue("09:00");
+    expect(input).toBeDisabled();
   });
 });

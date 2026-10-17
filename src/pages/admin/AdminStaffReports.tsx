@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { DatePicker } from '@/components/ui/date-picker';
+import { TimePicker } from '@/components/ui/time-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -879,22 +880,22 @@ const AdminStaffReports = () => {
                   <label className="text-xs font-medium text-muted-foreground mb-1 block">
                     {bn ? 'ইন টাইম' : 'In Time'}
                   </label>
-                  <Input
-                    type="time"
+                  <TimePicker
                     value={dutyFormCheckIn}
-                    onChange={(e) => setDutyFormCheckIn(e.target.value)}
+                    onChange={(v) => setDutyFormCheckIn(v)}
                     className="h-9 text-xs"
+                    clearable
                   />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground mb-1 block">
                     {bn ? 'আউট টাইম' : 'Out Time'}
                   </label>
-                  <Input
-                    type="time"
+                  <TimePicker
                     value={dutyFormCheckOut}
-                    onChange={(e) => setDutyFormCheckOut(e.target.value)}
+                    onChange={(v) => setDutyFormCheckOut(v)}
                     className="h-9 text-xs"
+                    clearable
                   />
                 </div>
               </div>

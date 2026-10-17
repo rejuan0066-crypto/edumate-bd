@@ -1,15 +1,11 @@
 import * as React from "react";
-import { Clock, X, ChevronUp, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { X } from "lucide-react";
 
-interface TimePickerProps {
+export interface TimePickerProps {
   id?: string;
   name?: string;
-  value: string; // "HH:MM" 24h format
+  value?: string; // "HH:MM" 24h format, or 12h format e.g. "02:30 PM"
   onChange: (value: string) => void;
   className?: string;
   placeholder?: string;
@@ -18,409 +14,117 @@ interface TimePickerProps {
   clearable?: boolean;
 }
 
-const PERIODS = ['AM', 'PM'] as const;
+export const normalizeTo24h = (val: string | null | undefined): string => {
+  if (!val) return "";
+  const str = String(val).trim();
+  if (!str) return "";
 
-const TimePicker = ({
+  const ampmMatch = str.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM|am|pm)?$/i);
+  if (ampmMatch) {
+    let h = parseInt(ampmMatch[1], 10);
+    const m = parseInt(ampmMatch[2], 10);
+    const ampm = ampmMatch[3]?.toUpperCase();
+
+    if (ampm === "PM" && h < 12) h += 12;
+    if (ampm === "AM" && h === 12) h = 0;
+
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  }
+
+  if (str.includes("T")) {
+    const timePart = str.split("T")[1];
+    if (timePart) return timePart.slice(0, 5);
+  }
+
+  if (/^\d{2}:\d{2}/.test(str)) {
+    return str.slice(0, 5);
+  }
+
+  return str;
+};
+
+const TimePicker = React.forwardRef<HTMLInputElement, TimePickerProps>(({
   id,
   name,
   value,
   onChange,
   className,
-  placeholder = "সময়",
+  placeholder,
   displayFormat = '12h',
   disabled = false,
   clearable = false,
-}: TimePickerProps) => {
-  const [open, setOpen] = React.useState(false);
-  const [h24, setH24] = React.useState<number>(9);
-  const [minute, setMinute] = React.useState<number>(30);
-  const [activeUnit, setActiveUnit] = React.useState<'hour' | 'minute'>('minute');
-  const isMobile = useIsMobile();
+}, ref) => {
+  const internalRef = React.useRef<HTMLInputElement | null>(null);
 
-  const touchStartY = React.useRef<number | null>(null);
-  const lastTouchTime = React.useRef(0);
-  const lastHourWheel = React.useRef(0);
-  const lastMinuteWheel = React.useRef(0);
+  const normalizedValue = React.useMemo(() => normalizeTo24h(value), [value]);
 
-  const [hourEl, setHourEl] = React.useState<HTMLDivElement | null>(null);
-  const [minuteEl, setMinuteEl] = React.useState<HTMLDivElement | null>(null);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange(e.target.value);
+  };
 
-  React.useEffect(() => {
-    if (value) {
-      const [h, m] = value.split(':').map(Number);
-      if (!Number.isNaN(h)) setH24(Math.min(23, Math.max(0, h)));
-      if (!Number.isNaN(m)) setMinute(Math.min(59, Math.max(0, m)));
-    }
-  }, [value, open]);
-
-  const is24 = displayFormat === '24h';
-  const period: typeof PERIODS[number] = h24 >= 12 ? 'PM' : 'AM';
-  const hour12 = h24 % 12 || 12;
-
-  const setHour = (val: number) => {
-    if (is24) {
-      setH24(val);
-    } else {
-      const newH = period === 'AM' ? (val % 12) : (val % 12) + 12;
-      setH24(newH);
+  const handleClear = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onChange("");
+    if (internalRef.current) {
+      internalRef.current.value = "";
     }
   };
 
-  const stepHour = React.useCallback((delta: number) => {
-    if (is24) {
-      setH24((prev) => (prev + delta + 24) % 24);
-    } else {
-      setH24((prev) => {
-        const cur12 = prev % 12 || 12;
-        let next12 = cur12 + delta;
-        if (next12 > 12) next12 = 1;
-        if (next12 < 1) next12 = 12;
-        const curPeriod = prev >= 12 ? 'PM' : 'AM';
-        return curPeriod === 'AM' ? (next12 % 12) : (next12 % 12) + 12;
-      });
-    }
-  }, [is24]);
-
-  const stepMinute = React.useCallback((delta: number) => {
-    setMinute((prev) => (prev + delta + 60) % 60);
-  }, []);
-
-  const setPeriod = (p: typeof PERIODS[number]) => {
-    if (p === 'AM' && h24 >= 12) setH24(h24 - 12);
-    if (p === 'PM' && h24 < 12) setH24(h24 + 12);
+  const handleClick = (e: React.MouseEvent<HTMLInputElement>) => {
+    if (disabled) return;
+    try {
+      if (typeof (e.currentTarget as any).showPicker === "function") {
+        (e.currentTarget as any).showPicker();
+      }
+    } catch {}
   };
-
-  // Dedicated throttled non-passive wheel listener on Hour box
-  React.useEffect(() => {
-    if (!hourEl) return;
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const now = Date.now();
-      if (now - lastHourWheel.current < 75) return;
-      lastHourWheel.current = now;
-      stepHour(e.deltaY < 0 ? 1 : -1);
-    };
-    hourEl.addEventListener('wheel', onWheel, { passive: false });
-    return () => hourEl.removeEventListener('wheel', onWheel);
-  }, [hourEl, stepHour]);
-
-  // Dedicated throttled non-passive wheel listener on Minute box
-  React.useEffect(() => {
-    if (!minuteEl) return;
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const now = Date.now();
-      if (now - lastMinuteWheel.current < 75) return;
-      lastMinuteWheel.current = now;
-      stepMinute(e.deltaY < 0 ? 1 : -1);
-    };
-    minuteEl.addEventListener('wheel', onWheel, { passive: false });
-    return () => minuteEl.removeEventListener('wheel', onWheel);
-  }, [minuteEl, stepMinute]);
-
-  // Clean touch swipe handlers for mobile
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartY.current = e.touches[0].clientY;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent, type: 'hour' | 'minute') => {
-    if (touchStartY.current === null) return;
-    const currentY = e.touches[0].clientY;
-    const diff = touchStartY.current - currentY;
-    const now = Date.now();
-    if (Math.abs(diff) >= 14 && now - lastTouchTime.current > 70) {
-      lastTouchTime.current = now;
-      const dir = diff > 0 ? 1 : -1;
-      if (type === 'hour') stepHour(dir);
-      else stepMinute(dir);
-      touchStartY.current = currentY;
-    }
-  };
-
-  const handleTouchEnd = () => {
-    touchStartY.current = null;
-  };
-
-  // Keyboard navigation
-  const handleKeyDown = (e: React.KeyboardEvent, type: 'hour' | 'minute') => {
-    if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      if (type === 'hour') stepHour(1);
-      else stepMinute(1);
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      if (type === 'hour') stepHour(-1);
-      else stepMinute(-1);
-    }
-  };
-
-  const fmt = (h: number, m: number) => {
-    if (is24) return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-    const p = h >= 12 ? 'PM' : 'AM';
-    const h12 = h % 12 || 12;
-    return `${h12}:${String(m).padStart(2, '0')} ${p}`;
-  };
-
-  const formatDisplay = (val: string) => {
-    if (!val) return '';
-    const [h, m] = val.split(':').map(Number);
-    if (Number.isNaN(h) || Number.isNaN(m)) return '';
-    return fmt(h, m);
-  };
-
-  const handleDone = () => {
-    onChange(`${String(h24).padStart(2, '0')}:${String(minute).padStart(2, '0')}`);
-    setOpen(false);
-  };
-
-  const handleNow = () => {
-    const now = new Date();
-    setH24(now.getHours());
-    setMinute(now.getMinutes());
-  };
-
-  const trigger = (
-    <button
-      id={id}
-      name={name}
-      type="button"
-      disabled={disabled}
-      className={cn(
-        "group flex items-center gap-2 h-10 w-full rounded-2xl border border-input bg-background px-3 py-1 text-sm shadow-sm transition-all duration-300",
-        "hover:border-primary/40 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50",
-        "disabled:cursor-not-allowed disabled:opacity-50",
-        !value && "text-muted-foreground",
-        className
-      )}
-    >
-      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
-        <Clock className="h-3.5 w-3.5" />
-      </span>
-      <span className={cn("flex-1 text-left truncate tabular-nums", value && "font-medium")}>
-        {value ? formatDisplay(value) : placeholder}
-      </span>
-      {clearable && value && !disabled && (
-        <span
-          role="button"
-          tabIndex={0}
-          aria-label="সময় মুছুন"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onChange('');
-          }}
-          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-        >
-          <X className="h-3 w-3" />
-        </span>
-      )}
-    </button>
-  );
-
-  const panel = (
-    <div className="w-[280px] select-none p-4 space-y-3.5">
-      {/* Top Header & Digital Display Card */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground">
-            সময় নির্ধারণ
-          </span>
-          <span className="text-xs font-bold text-primary tabular-nums">
-            {fmt(h24, minute)}
-          </span>
-        </div>
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          onClick={handleNow}
-          className="h-7 rounded-full px-3 text-[11px] font-semibold"
-        >
-          এখন
-        </Button>
-      </div>
-
-      {/* Main Interactive Digits Card with Scroll */}
-      <div className="flex items-center justify-center gap-2.5 py-1">
-        <div className="flex items-center gap-1.5 rounded-2xl bg-muted/40 p-2 border border-border/50 shadow-sm">
-          {/* Hour Unit Column */}
-          <div className="flex flex-col items-center">
-            <button
-              type="button"
-              onClick={() => stepHour(1)}
-              className="h-7 w-14 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted/80 transition-all active:scale-95"
-              aria-label="ঘণ্টা বাড়ান"
-            >
-              <ChevronUp className="h-4 w-4" />
-            </button>
-            <div
-              ref={setHourEl}
-              onClick={() => setActiveUnit('hour')}
-              onWheel={(e) => {
-                e.preventDefault();
-                const now = Date.now();
-                if (now - lastHourWheel.current < 75) return;
-                lastHourWheel.current = now;
-                stepHour(e.deltaY < 0 ? 1 : -1);
-              }}
-              onTouchStart={handleTouchStart}
-              onTouchMove={(e) => handleTouchMove(e, 'hour')}
-              onTouchEnd={handleTouchEnd}
-              onKeyDown={(e) => handleKeyDown(e, 'hour')}
-              role="listbox"
-              aria-label="ঘণ্টা"
-              tabIndex={0}
-              className={cn(
-                "h-14 w-14 rounded-xl text-2xl font-bold tabular-nums transition-all flex items-center justify-center select-none touch-none cursor-ns-resize outline-none",
-                "overscroll-contain overflow-y-auto id-preview-scroll",
-                activeUnit === 'hour'
-                  ? "bg-primary text-primary-foreground shadow-md scale-105"
-                  : "bg-background/80 text-foreground hover:bg-muted border border-border/40"
-              )}
-            >
-              {is24 ? String(h24).padStart(2, '0') : hour12}
-            </div>
-            <button
-              type="button"
-              onClick={() => stepHour(-1)}
-              className="h-7 w-14 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted/80 transition-all active:scale-95"
-              aria-label="ঘণ্টা কমান"
-            >
-              <ChevronDown className="h-4 w-4" />
-            </button>
-          </div>
-
-          {/* Colon Separator */}
-          <span className="text-2xl font-bold text-muted-foreground/60 pb-1">:</span>
-
-          {/* Minute Unit Column */}
-          <div className="flex flex-col items-center">
-            <button
-              type="button"
-              onClick={() => stepMinute(1)}
-              className="h-7 w-14 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted/80 transition-all active:scale-95"
-              aria-label="মিনিট বাড়ান"
-            >
-              <ChevronUp className="h-4 w-4" />
-            </button>
-            <div
-              ref={setMinuteEl}
-              onClick={() => setActiveUnit('minute')}
-              onWheel={(e) => {
-                e.preventDefault();
-                const now = Date.now();
-                if (now - lastMinuteWheel.current < 75) return;
-                lastMinuteWheel.current = now;
-                stepMinute(e.deltaY < 0 ? 1 : -1);
-              }}
-              onTouchStart={handleTouchStart}
-              onTouchMove={(e) => handleTouchMove(e, 'minute')}
-              onTouchEnd={handleTouchEnd}
-              onKeyDown={(e) => handleKeyDown(e, 'minute')}
-              role="listbox"
-              aria-label="মিনিট"
-              tabIndex={0}
-              className={cn(
-                "h-14 w-14 rounded-xl text-2xl font-bold tabular-nums transition-all flex items-center justify-center select-none touch-none cursor-ns-resize outline-none",
-                "overscroll-contain overflow-y-auto id-preview-scroll",
-                activeUnit === 'minute'
-                  ? "bg-primary text-primary-foreground shadow-md scale-105"
-                  : "bg-background/80 text-foreground hover:bg-muted border border-border/40"
-              )}
-            >
-              {String(minute).padStart(2, '0')}
-            </div>
-            <button
-              type="button"
-              onClick={() => stepMinute(-1)}
-              className="h-7 w-14 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted/80 transition-all active:scale-95"
-              aria-label="মিনিট কমান"
-            >
-              <ChevronDown className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* AM / PM Segmented Control */}
-        {!is24 && (
-          <div className="flex flex-col gap-1 rounded-2xl bg-muted/40 p-1.5 border border-border/50 shadow-sm" role="group" aria-label="AM বা PM নির্বাচন">
-            {PERIODS.map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => setPeriod(item)}
-                aria-pressed={period === item}
-                className={cn(
-                  "h-8 px-3 rounded-xl text-xs font-bold transition-all",
-                  period === item
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Helpful scroll hint */}
-      <p className="text-[10px] text-center text-muted-foreground/70">
-        মাউস স্ক্রল বা বোতাম চেপে সময় পরিবর্তন করুন
-      </p>
-
-      {/* Action Buttons */}
-      <div className="flex items-center gap-2 pt-1 border-t border-border/50">
-        {clearable && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => { onChange(''); setOpen(false); }}
-            className="h-9 rounded-xl px-3 text-xs font-medium text-muted-foreground hover:text-destructive"
-          >
-            <X className="mr-1 h-3.5 w-3.5" /> মুছুন
-          </Button>
-        )}
-        <Button
-          type="button"
-          size="sm"
-          onClick={handleDone}
-          className="h-9 flex-1 rounded-xl text-xs font-bold shadow-md transition-all duration-200 hover:shadow-lg active:scale-[0.98] bg-primary hover:bg-primary/90 text-primary-foreground"
-        >
-          সম্পন্ন
-        </Button>
-      </div>
-    </div>
-  );
-
-  if (isMobile) {
-    return (
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>{trigger}</DialogTrigger>
-        <DialogContent className="w-[calc(100vw-24px)] max-w-[320px] gap-0 overflow-hidden rounded-[28px] border-0 p-0 shadow-2xl [&>button]:hidden">
-          <DialogTitle className="sr-only">সময় নির্বাচন</DialogTitle>
-          {panel}
-        </DialogContent>
-      </Dialog>
-    );
-  }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-      <PopoverContent
-        className="w-auto overflow-hidden rounded-[28px] border-0 bg-popover p-0 shadow-2xl"
-        align="start"
-        sideOffset={6}
-        collisionPadding={12}
-      >
-        {panel}
-      </PopoverContent>
-    </Popover>
+    <div
+      className={cn(
+        "relative flex items-center w-full group",
+        disabled && "cursor-not-allowed opacity-50"
+      )}
+    >
+      <input
+        ref={(el) => {
+          internalRef.current = el;
+          if (typeof ref === "function") ref(el);
+          else if (ref) (ref as any).current = el;
+        }}
+        type="time"
+        step="60"
+        id={id}
+        name={name}
+        value={normalizedValue}
+        onChange={handleChange}
+        onClick={handleClick}
+        disabled={disabled}
+        placeholder={placeholder}
+        className={cn(
+          "flex h-9 sm:h-10 w-full rounded-xl border border-input bg-background px-3 py-1.5 text-xs sm:text-sm shadow-sm transition-all duration-200",
+          "hover:border-primary/40 focus:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20",
+          "disabled:cursor-not-allowed disabled:opacity-50",
+          "cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-75 hover:[&::-webkit-calendar-picker-indicator]:opacity-100",
+          clearable && normalizedValue && "pr-8",
+          className
+        )}
+      />
+      {clearable && normalizedValue && !disabled && (
+        <button
+          type="button"
+          onClick={handleClear}
+          aria-label="Clear time"
+          className="absolute right-8 top-1/2 -translate-y-1/2 p-0.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      )}
+    </div>
   );
-};
+});
+
+TimePicker.displayName = "TimePicker";
 
 export { TimePicker };
