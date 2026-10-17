@@ -530,8 +530,8 @@ const AdminStaffReports = () => {
             { bn: 'নাম ও পদবি', en: 'Name & Designation' },
             { bn: 'উপস্থিতি (হাজিরা পেজ)', en: 'Attendance' },
             { bn: 'ইন - আউট সময়', en: 'In - Out Time' },
-            { bn: 'আজকের পাঠদান (কে কি পড়িয়েছে)', en: 'Teaching Log' },
-            { bn: 'সম্পন্ন ডিউটি (কি কি আদায় করেছে)', en: 'Duties Performed' },
+            { bn: 'পাঠদান বিবরণ', en: 'Teaching Log' },
+            { bn: 'দায়িত্ব পালন বিবরণ', en: 'Duties Performed' },
             { bn: 'মন্তব্য', en: 'Remarks' },
           ],
           rows: filteredDutyData.map((d, i) => [
@@ -600,8 +600,8 @@ const AdminStaffReports = () => {
         bn ? 'উপস্থিতি (হাজিরা পেজ)' : 'Attendance (Page)',
         bn ? 'ইন সময়' : 'Check-in',
         bn ? 'আউট সময়' : 'Check-out',
-        bn ? 'আজকের পাঠদান (কে কি পড়িয়েছে)' : 'Classes/Topics Taught',
-        bn ? 'সম্পন্ন ডিউটি (কি কি আদায় করেছে)' : 'Duties Performed',
+        bn ? 'পাঠদান বিবরণ' : 'Classes/Topics Taught',
+        bn ? 'দায়িত্ব পালন বিবরণ' : 'Duties Performed',
         bn ? 'মন্তব্য' : 'Remarks',
       ];
       wsData.push(headers);
@@ -928,8 +928,8 @@ const AdminStaffReports = () => {
                           <TableHead className="w-24">{bn ? 'স্টাফ আইডি' : 'Staff ID'}</TableHead>
                           <TableHead className="min-w-[180px]">{bn ? 'শিক্ষক / স্টাফ' : 'Teacher / Staff'}</TableHead>
                           <TableHead className="min-w-[160px] text-center">{bn ? 'উপস্থিতি (হাজিরা পেজ)' : 'Attendance (Page)'}</TableHead>
-                          <TableHead className="min-w-[220px]">{bn ? 'আজকে কে কি পড়িয়েছে' : 'Teaching Log (Classes & Topics)'}</TableHead>
-                          <TableHead className="min-w-[200px]">{bn ? 'কি কি ডিউটি আদায় করেছে' : 'Duties Performed'}</TableHead>
+                          <TableHead className="min-w-[220px]">{bn ? 'পাঠদান বিবরণ' : 'Teaching Log (Classes & Topics)'}</TableHead>
+                          <TableHead className="min-w-[200px]">{bn ? 'দায়িত্ব পালন বিবরণ' : 'Duties & Responsibilities'}</TableHead>
                           <TableHead className="min-w-[140px]">{bn ? 'মন্তব্য' : 'Remarks'}</TableHead>
                           <TableHead className="text-center w-16">{bn ? 'সম্পাদনা' : 'Edit'}</TableHead>
                         </TableRow>
@@ -1162,34 +1162,34 @@ const AdminStaffReports = () => {
                 </div>
               </div>
 
-              {/* Teaching section (আজকে কে কি পড়িয়েছে) */}
+              {/* Teaching section */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                     <BookOpen className="w-4 h-4 text-primary" />
-                    {bn ? 'আজকে কি কি পড়িয়েছেন (শ্রেণি, বিষয় ও পাঠদান বিবরণ)' : 'Classes & Subjects Taught Today'}
+                    {bn ? 'শ্রেণি ও পাঠদান বিবরণ (বিষয় ও আলোচিত পাঠ)' : 'Classes & Subjects Taught Today'}
                   </label>
                   <span className="text-[11px] text-muted-foreground">
-                    {bn ? 'কে কি পড়িয়েছে' : 'Teaching Log'}
+                    {bn ? 'পাঠদান বিবরণ' : 'Teaching Log'}
                   </span>
                 </div>
                 <Textarea
                   value={dutyFormTeaching}
                   onChange={(e) => setDutyFormTeaching(e.target.value)}
                   placeholder={bn
-                    ? 'আজকে যে যে ক্লাস নিয়েছেন এবং যা পড়িয়েছেন বিস্তারিত লিখুন...\nউদাহরণ:\n• ৫ম শ্রেণি - কুরআন মাজিদ (সূরা ফাতিহা ও ইখলাস হিফয)\n• ৮ম শ্রেণি - গণিত (অধ্যায় ৩: বীজগণিতীয় সূত্রাবলি অনুশীলন)\n• ৯ম শ্রেণি - বাংলা ১ম পত্র (কবিতা: বঙ্গবাণী)'
+                    ? 'আজকে গৃহীত ক্লাস এবং পাঠদানের বিস্তারিত বিবরণ লিখুন...\nউদাহরণ:\n• ৫ম শ্রেণি - কুরআন মাজিদ (সূরা ফাতিহা ও ইখলাস হিফয)\n• ৮ম শ্রেণি - গণিত (অধ্যায় ৩: বীজগণিতীয় সূত্রাবলি অনুশীলন)\n• ৯ম শ্রেণি - বাংলা ১ম পত্র (কবিতা: বঙ্গবাণী)'
                     : 'Enter classes taken, subjects, chapters, and topics taught...'}
                   rows={3}
                   className="text-xs"
                 />
               </div>
 
-              {/* Duty section (কি কি ডিউটি আদায় করেছে) */}
+              {/* Duty section */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                     <Briefcase className="w-4 h-4 text-primary" />
-                    {bn ? 'কি কি ডিউটি আদায় করেছেন (প্রযোজ্য সবগুলো নির্বাচন করুন)' : 'Duties Performed (Select all that apply)'}
+                    {bn ? 'সম্পাদিত দায়িত্ব ও ডিউটি (প্রযোজ্য দায়িত্বসমূহ নির্বাচন করুন)' : 'Duties Performed (Select all that apply)'}
                   </label>
                   {dutyFormDuties.length > 0 && (
                     <button

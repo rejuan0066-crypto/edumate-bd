@@ -703,34 +703,34 @@ const StaffDashboard = () => {
                   </div>
                 </div>
 
-                {/* Teaching Log (আজকে কে কি পড়িয়েছে) */}
+                {/* Teaching Log */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                       <BookOpen className="w-4 h-4 text-primary" />
-                      {bn ? 'আজকে কি কি পড়িয়েছেন (শ্রেণি, বিষয় ও পাঠদান বিবরণ)' : 'Classes & Topics Taught Today'}
+                      {bn ? 'শ্রেণি ও পাঠদান বিবরণ (বিষয় ও আলোচিত পাঠ)' : 'Classes & Topics Taught Today'}
                     </label>
                     <span className="text-[11px] text-muted-foreground">
-                      {bn ? 'পাঠদান রিপোর্ট' : 'Teaching Log'}
+                      {bn ? 'পাঠদান বিবরণ' : 'Teaching Log'}
                     </span>
                   </div>
                   <Textarea
                     value={dutyTeaching}
                     onChange={e => setDutyTeaching(e.target.value)}
                     placeholder={bn
-                      ? 'আজকে যে যে ক্লাস নিয়েছেন এবং যা পড়িয়েছেন বিস্তারিত লিখুন...\nউদাহরণ:\n• ৫ম শ্রেণি - কুরআন মাজিদ (সূরা ফাতিহা ও ইখলাস হিফয)\n• ৮ম শ্রেণি - গণিত (অধ্যায় ৩: বীজগণিত অনুশীলন)\n• ৯ম শ্রেণি - বাংলা ১ম পত্র'
+                      ? 'গৃহীত ক্লাস, বিষয় এবং পঠিত অধ্যায়/পাঠের বিবরণ লিখুন...\nউদাহরণ:\n• ৫ম শ্রেণি - কুরআন মাজিদ (সূরা ফাতিহা ও ইখলাস হিফয)\n• ৮ম শ্রেণি - গণিত (অধ্যায় ৩: বীজগণিত অনুশীলন)\n• ৯ম শ্রেণি - বাংলা ১ম পত্র'
                       : 'Enter classes taken, subjects, chapters, and topics covered...'}
                     rows={3}
                     className="text-xs"
                   />
                 </div>
 
-                {/* Duties Done (কি কি ডিউটি আদায় করেছে) */}
+                {/* Duties Done */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                       <Briefcase className="w-4 h-4 text-primary" />
-                      {bn ? 'কি কি ডিউটি আদায় করেছেন (প্রযোজ্য সবগুলো নির্বাচন করুন)' : 'Duties Performed (Select all that apply)'}
+                      {bn ? 'সম্পাদিত দায়িত্ব ও ডিউটি (প্রযোজ্য দায়িত্বসমূহ নির্বাচন করুন)' : 'Duties Performed (Select all that apply)'}
                     </label>
                     {dutyDuties.length > 0 && (
                       <button
@@ -821,8 +821,8 @@ const StaffDashboard = () => {
                         <TableRow className="bg-muted/40">
                           <TableHead>{bn ? 'তারিখ' : 'Date'}</TableHead>
                           <TableHead className="text-center">{bn ? 'হাজিরা ও সময়' : 'Attendance & Time'}</TableHead>
-                          <TableHead className="min-w-[200px]">{bn ? 'আজকে যা পড়িয়েছেন' : 'Teaching Log'}</TableHead>
-                          <TableHead className="min-w-[180px]">{bn ? 'সম্পন্ন ডিউটি' : 'Duties Done'}</TableHead>
+                          <TableHead className="min-w-[200px]">{bn ? 'পাঠদান বিবরণ' : 'Teaching Log'}</TableHead>
+                          <TableHead className="min-w-[180px]">{bn ? 'দায়িত্ব পালন বিবরণ' : 'Duties Done'}</TableHead>
                           <TableHead>{bn ? 'মন্তব্য' : 'Remarks'}</TableHead>
                         </TableRow>
                       </TableHeader>
