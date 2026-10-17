@@ -2281,7 +2281,7 @@ const AdminSalary = () => {
       const categoryId = expenseConfig?.category_id;
 
       if (!projectId || !categoryId) {
-        throw new Error(bn ? 'অনুগ্রহ করে বেতন সেটিংস ➔ হিসাব লিঙ্ক থেকে প্রতিষ্ঠান ও ক্যাটাগরি নির্বাচন করুন' : 'Please select expense institution & category in salary settings');
+        throw new Error(bn ? 'অনুগ্রহ করে বেতন সেটিংস ➔ হিসাব লিঙ্ক থেকে প্রতিষ্ঠান ও ব্যয় খাত নির্বাচন করুন' : 'Please select expense institution & expense head in salary settings');
       }
 
       const monthName = MONTHS.find(m => m.value === selectedMonth);
@@ -2347,7 +2347,7 @@ const AdminSalary = () => {
       const categoryId = expenseConfig?.category_id;
 
       if (mode !== 'remove_all' && (!projectId || !categoryId)) {
-        throw new Error(bn ? 'অনুগ্রহ করে বেতন সেটিংস ➔ হিসাব লিঙ্ক থেকে প্রতিষ্ঠান ও ক্যাটাগরি নির্বাচন করুন' : 'Please select expense institution & category in salary settings');
+        throw new Error(bn ? 'অনুগ্রহ করে বেতন সেটিংস ➔ হিসাব লিঙ্ক থেকে প্রতিষ্ঠান ও ব্যয় খাত নির্বাচন করুন' : 'Please select expense institution & expense head in salary settings');
       }
 
       // First clean up all existing salary expenses for this month to guarantee clean sync
@@ -5075,7 +5075,7 @@ const AdminSalary = () => {
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-xs">{bn ? 'হিসাব ক্যাটাগরি' : 'Expense Category'}</Label>
+                  <Label className="text-xs">{bn ? 'হিসাব ব্যয় খাত' : 'Expense Head'}</Label>
                   <Select
                     value={disburseDialog.categoryId || ''}
                     onValueChange={v => setDisburseDialog({ ...disburseDialog, categoryId: v })}
@@ -5395,8 +5395,8 @@ const AdminSalary = () => {
                   <FolderOpen className="h-4 w-4 inline mr-1 text-primary" />
                   <span className="font-semibold">{bn ? 'হিসাবে অটো-সেভ সেটিংস' : 'Auto-Save to Expenses Settings'}</span>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {bn ? 'বেতন পরিশোধ করলে স্বয়ংক্রিয়ভাবে হিসাব ব্যবস্থাপনায় সেভ হবে। প্রতিষ্ঠান ও ক্যাটাগরি নির্বাচন করুন।' 
-                         : 'When salary is paid, it will auto-save to expense management. Select institution & category.'}
+                    {bn ? 'বেতন পরিশোধ করলে স্বয়ংক্রিয়ভাবে হিসাব ব্যবস্থাপনায় সেভ হবে। প্রতিষ্ঠান ও ব্যয় খাত নির্বাচন করুন।' 
+                         : 'When salary is paid, it will auto-save to expense management. Select institution & expense head.'}
                   </p>
                 </div>
 
@@ -5419,7 +5419,7 @@ const AdminSalary = () => {
                 </div>
 
                 <div>
-                  <Label>{bn ? 'ক্যাটাগরি (Category)' : 'Expense Category'}</Label>
+                  <Label>{bn ? 'ব্যয় খাত (Expense Head)' : 'Expense Head'}</Label>
                   <Select
                     value={getSetting('expense_location')?.category_id || ''}
                     onValueChange={v => {
@@ -5427,7 +5427,7 @@ const AdminSalary = () => {
                       saveSettingMutation.mutate({ key: 'expense_location', value: { ...current, category_id: v } });
                     }}
                   >
-                    <SelectTrigger className="mt-1"><SelectValue placeholder={bn ? 'ক্যাটাগরি নির্বাচন করুন' : 'Select category'} /></SelectTrigger>
+                    <SelectTrigger className="mt-1"><SelectValue placeholder={bn ? 'ব্যয় খাত নির্বাচন করুন' : 'Select expense head'} /></SelectTrigger>
                     <SelectContent>
                       {expenseCategories
                         .filter((c: any) => {
@@ -5459,14 +5459,14 @@ const AdminSalary = () => {
                   <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg text-sm">
                     <CheckCircle2 className="h-4 w-4 inline mr-1 text-emerald-600" />
                     <span className="text-emerald-700 dark:text-emerald-400 font-medium">
-                      {bn ? 'সক্রিয়: প্রতিষ্ঠান ও ক্যাটাগরি সংযুক্ত আছে' : 'Active: Institution & category connected'}
+                      {bn ? 'সক্রিয়: প্রতিষ্ঠান ও ব্যয় খাত সংযুক্ত আছে' : 'Active: Institution & expense head connected'}
                     </span>
                   </div>
                 ) : (
                   <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-sm">
                     <AlertCircle className="h-4 w-4 inline mr-1 text-yellow-600" />
                     <span className="text-yellow-700 dark:text-yellow-400">
-                      {bn ? 'প্রতিষ্ঠান ও ক্যাটাগরি নির্বাচন করুন অটো-সেভ চালু করতে' : 'Select institution & category to enable auto-save'}
+                      {bn ? 'প্রতিষ্ঠান ও ব্যয় খাত নির্বাচন করুন অটো-সেভ চালু করতে' : 'Select institution & expense head to enable auto-save'}
                     </span>
                   </div>
                 )}
@@ -5846,12 +5846,12 @@ const AdminSalary = () => {
                           </Badge>
                           <span>➔</span>
                           <Badge variant="secondary" className="font-normal">
-                            {bn ? (currentCat?.name_bn || currentCat?.name || 'ক্যাটাগরি') : (currentCat?.name || 'Category')}
+                            {bn ? (currentCat?.name_bn || currentCat?.name || 'ব্যয় খাত') : (currentCat?.name || 'Expense Head')}
                           </Badge>
                         </>
                       ) : (
                         <span className="text-amber-600 font-medium">
-                          {bn ? '⚠️ হিসাব প্রতিষ্ঠান বা ক্যাটাগরি সেট করা নেই!' : '⚠️ Expense institution or category not set!'}
+                          {bn ? '⚠️ হিসাব প্রতিষ্ঠান বা ব্যয় খাত সেট করা নেই!' : '⚠️ Expense institution or expense head not set!'}
                         </span>
                       )}
                     </div>

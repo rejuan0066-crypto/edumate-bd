@@ -1015,7 +1015,7 @@ const AdminExpenses = () => {
       const nameBn = (categoryForm.name_bn || '').trim();
       const nameEn = (categoryForm.name || '').trim() || nameBn;
       if (!categoryForm.institution_id || !nameBn) {
-        toast.error(bn ? 'প্রতিষ্ঠান এবং ক্যাটাগরির নাম দিন' : 'Institution and Category name are required');
+        toast.error(bn ? 'প্রতিষ্ঠান এবং ব্যয় খাতের নাম দিন' : 'Institution and Expense Head name are required');
         return;
       }
       const payload = {
@@ -1094,7 +1094,7 @@ const AdminExpenses = () => {
       qc.invalidateQueries({ queryKey: ['expense_categories'] });
       qc.invalidateQueries({ queryKey: ['expenses'] });
       qc.invalidateQueries({ queryKey: ['all_expenses'] });
-      toast.success(bn ? 'ক্যাটেগরি মুছে ফেলা হয়েছে' : 'Category deleted');
+      toast.success(bn ? 'ব্যয় খাত মুছে ফেলা হয়েছে' : 'Expense head deleted');
     },
     onError: (err: any) => {
       console.error('Delete category error:', err);
@@ -1105,8 +1105,8 @@ const AdminExpenses = () => {
   const addExpense = useMutation({
     mutationFn: async () => {
       if (!expenseForm.institution_id || !expenseForm.category_id || !expenseForm.amount) {
-        toast.error(bn ? 'প্রতিষ্ঠান, ক্যাটাগরি ও টাকা প্রদান করুন' : 'Institution, Category & Amount are required');
-        throw new Error(bn ? 'প্রতিষ্ঠান, ক্যাটাগরি ও টাকা প্রদান করুন' : 'Institution, Category & Amount are required');
+        toast.error(bn ? 'প্রতিষ্ঠান, ব্যয় খাত ও টাকা প্রদান করুন' : 'Institution, Expense Head & Amount are required');
+        throw new Error(bn ? 'প্রতিষ্ঠান, ব্যয় খাত ও টাকা প্রদান করুন' : 'Institution, Expense Head & Amount are required');
       }
       const parsedAmount = Number(bnToEnDigit(expenseForm.amount));
       const hasQtyInput = expenseForm.quantity && expenseForm.quantity.trim() !== '';
@@ -2889,7 +2889,7 @@ const AdminExpenses = () => {
             { value: 'hierarchy', feature: 'tab_hierarchy', label: bn ? 'প্রতিষ্ঠান ভিত্তিক রিপোর্ট' : 'Institution Report' },
             { value: 'summary', feature: 'tab_summary', label: bn ? 'সারাংশ' : 'Summary' },
             { value: 'ledger', feature: 'tab_ledger', label: bn ? 'লেজার' : 'Ledger' },
-            { value: 'settings', feature: 'tab_settings', label: bn ? 'প্রতিষ্ঠান ও ক্যাটাগরি সেটিংস' : 'Institution Setup' },
+            { value: 'settings', feature: 'tab_settings', label: bn ? 'প্রতিষ্ঠান ও ব্যয় খাত সেটিংস' : 'Institution & Expense Head Setup' },
             { value: 'audit', feature: 'tab_audit', label: bn ? 'অডিট লগ' : 'Audit Log' },
           ].filter(tab => isFeatureAllowed(tab.feature));
 
@@ -2978,7 +2978,7 @@ const AdminExpenses = () => {
                       className="border-emerald-300 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 gap-1.5"
                     >
                       <Download className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>{bn ? 'সকল প্রতিষ্ঠান এক্সেল (ক্যাটাগরি ট্যাব)' : 'Export Multi-Tab Excel'}</span>
+                      <span>{bn ? 'সকল প্রতিষ্ঠান এক্সেল (ব্যয় খাত ট্যাব)' : 'Export Multi-Tab Excel'}</span>
                     </Button>
                     <span className="text-sm font-semibold text-destructive px-2 py-1 rounded bg-destructive/10">
                       {bn ? 'মাসিক মোট:' : 'Monthly Total:'} ৳{formatNum(monthlyTotalExpense)}
@@ -3117,7 +3117,7 @@ const AdminExpenses = () => {
                               size="sm"
                               onClick={() => isAll ? handleExcelDownload() : handleInstExcelDownload(inst?.id)}
                               className="text-xs h-9 gap-1.5 border-emerald-300 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-                              title={isAll ? (bn ? 'সকল প্রতিষ্ঠান এক্সেল ডাউনলোড' : 'Export Multi-Tab Excel') : (bn ? 'এই প্রতিষ্ঠানের ক্যাটাগরিভিত্তিক এক্সেল' : 'Export institution excel')}
+                              title={isAll ? (bn ? 'সকল প্রতিষ্ঠান এক্সেল ডাউনলোড' : 'Export Multi-Tab Excel') : (bn ? 'এই প্রতিষ্ঠানের ব্যয় খাতভিত্তিক এক্সেল' : 'Export institution excel')}
                             >
                               <Download className="w-3.5 h-3.5" />
                               <span>{bn ? 'এক্সেল ডাউনলোড' : 'Excel'}</span>
@@ -3220,10 +3220,10 @@ const AdminExpenses = () => {
                         <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[260px]">
                           <Select value={tableCategoryId} onValueChange={setTableCategoryId}>
                             <SelectTrigger className="w-[180px] h-8 text-xs">
-                              <SelectValue placeholder={bn ? 'সকল ক্যাটাগরি' : 'All Categories'} />
+                              <SelectValue placeholder={bn ? 'সকল ব্যয় খাত' : 'All Expense Heads'} />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="all">{bn ? 'সকল ক্যাটাগরি' : 'All Categories'}</SelectItem>
+                              <SelectItem value="all">{bn ? 'সকল ব্যয় খাত' : 'All Expense Heads'}</SelectItem>
                               {instCats.map((c: any) => (
                                 <SelectItem key={c.id} value={c.id}>{getCatName(c, bn)}</SelectItem>
                               ))}
@@ -3267,7 +3267,7 @@ const AdminExpenses = () => {
                                 {isAll && (
                                   <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-left font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 w-36" style={{ borderRadius: 0 }}>{bn ? 'প্রতিষ্ঠান' : 'Institution'}</th>
                                 )}
-                                <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-left font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 w-36" style={{ borderRadius: 0 }}>{bn ? 'ক্যাটাগরি' : 'Category'}</th>
+                                <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-left font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 w-36" style={{ borderRadius: 0 }}>{bn ? 'ব্যয় খাত' : 'Expense Head'}</th>
                                 <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-left font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800" style={{ borderRadius: 0 }}>{bn ? 'ব্যয়ের বিবরণ' : 'Description'}</th>
                                 <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-center font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 w-24" style={{ borderRadius: 0 }}>{bn ? 'পরিমাণ' : 'Quantity'}</th>
                                 <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-center font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 min-w-[110px]" style={{ borderRadius: 0 }}>{bn ? 'ব্যয়ের মাধ্যম' : 'Method'}</th>
@@ -3435,7 +3435,7 @@ const AdminExpenses = () => {
                                   {isAll && (
                                     <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-left font-bold text-amber-950 dark:text-amber-100 bg-amber-100/70 dark:bg-amber-950/50 w-36" style={{ borderRadius: 0 }}>{bn ? 'প্রতিষ্ঠান' : 'Institution'}</th>
                                   )}
-                                  <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-left font-bold text-amber-950 dark:text-amber-100 bg-amber-100/70 dark:bg-amber-950/50 w-36" style={{ borderRadius: 0 }}>{bn ? 'ক্যাটাগরি' : 'Category'}</th>
+                                  <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-left font-bold text-amber-950 dark:text-amber-100 bg-amber-100/70 dark:bg-amber-950/50 w-36" style={{ borderRadius: 0 }}>{bn ? 'ব্যয় খাত' : 'Expense Head'}</th>
                                   <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-left font-bold text-amber-950 dark:text-amber-100 bg-amber-100/70 dark:bg-amber-950/50" style={{ borderRadius: 0 }}>{bn ? 'ব্যয়ের বিবরণ ও পাওনাদার' : 'Description & Vendor'}</th>
                                   <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-100 bg-amber-100/70 dark:bg-amber-950/50 w-24" style={{ borderRadius: 0 }}>{bn ? 'পরিমাণ' : 'Quantity'}</th>
                                   <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-100 bg-amber-100/70 dark:bg-amber-950/50 w-28" style={{ borderRadius: 0 }}>{bn ? 'মেমো / চালান' : 'Memo/Invoice'}</th>
@@ -3821,8 +3821,8 @@ const AdminExpenses = () => {
           <TabsContent value="hierarchy" className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-white/60 dark:bg-card/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 shadow-sm">
               <div>
-                <h3 className="font-bold text-base text-foreground">{bn ? 'প্রতিষ্ঠান ও ক্যাটাগরিভিত্তিক ব্যয় রিপোর্ট' : 'Hierarchy Report'}</h3>
-                <p className="text-xs text-muted-foreground">{bn ? 'প্রতিষ্ঠান ও ক্যাটাগরি অনুযায়ী ব্যয়ের শ্রেণীবদ্ধ বিবরণ' : 'Hierarchical breakdown by institution and category'}</p>
+                <h3 className="font-bold text-base text-foreground">{bn ? 'প্রতিষ্ঠান ও ব্যয় খাতভিত্তিক ব্যয় রিপোর্ট' : 'Hierarchy Report'}</h3>
+                <p className="text-xs text-muted-foreground">{bn ? 'প্রতিষ্ঠান ও ব্যয় খাত অনুযায়ী ব্যয়ের শ্রেণীবদ্ধ বিবরণ' : 'Hierarchical breakdown by institution and expense head'}</p>
               </div>
               <motion.button
                 whileHover={{ scale: 1.03 }}
@@ -3860,8 +3860,8 @@ const AdminExpenses = () => {
               <div className="flex items-center gap-2 text-sm text-foreground">
                 <Building2 className="w-5 h-5 text-emerald-600" />
                 <div>
-                  <div className="font-semibold">{bn ? 'প্রতিষ্ঠান ও ক্যাটাগরি কনফিগারেশন' : 'Institution & Category Setup'}</div>
-                  <div className="text-xs text-muted-foreground">{bn ? 'নতুন প্রতিষ্ঠান বা ব্যয়ের ক্যাটাগরি সেটআপ করুন। খরচের হিসাব এন্ট্রি করতে "হিসাব ও ব্যয় এন্ট্রি" ট্যাবে যান।' : 'Configure institutions or categories. Go to "Expenses" tab to enter expenses.'}</div>
+                  <div className="font-semibold">{bn ? 'প্রতিষ্ঠান ও ব্যয় খাত কনফিগারেশন' : 'Institution & Expense Head Setup'}</div>
+                  <div className="text-xs text-muted-foreground">{bn ? 'নতুন প্রতিষ্ঠান বা ব্যয় খাত সেটআপ করুন। খরচের হিসাব এন্ট্রি করতে "হিসাব ও ব্যয় এন্ট্রি" ট্যাবে যান।' : 'Configure institutions or expense heads. Go to "Expenses" tab to enter expenses.'}</div>
                 </div>
               </div>
               <Button
@@ -4056,7 +4056,7 @@ const AdminExpenses = () => {
                                 let desc = bn ? `"${getInstName(p, bn)}" প্রতিষ্ঠানটি মুছে ফেলতে চান?` : `Delete institution "${getInstName(p, bn)}"?`;
                                 if (expCount > 0 || catCount > 0) {
                                   desc += bn
-                                    ? `\n\nসতর্কতা: এতে ${expCount}টি খরচের হিসাব এবং ${catCount}টি ক্যাটাগরি রয়েছে। প্রতিষ্ঠানটি মুছে ফেললে এগুলোও মুছে যাবে।`
+                                    ? `\n\nসতর্কতা: এতে ${expCount}টি খরচের হিসাব এবং ${catCount}টি ব্যয় খাত রয়েছে। প্রতিষ্ঠানটি মুছে ফেললে এগুলোও মুছে যাবে।`
                                     : `\n\nWarning: Contains ${expCount} expenses and ${catCount} categories that will also be removed.`;
                                 }
                                 if (await confirm({ title: bn ? 'প্রতিষ্ঠান মুছে ফেলুন' : 'Delete Institution', description: desc, variant: 'destructive' })) {
@@ -4079,18 +4079,18 @@ const AdminExpenses = () => {
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
                     <TagIcon className="w-4 h-4 text-emerald-600" />
-                    <span>{bn ? 'ব্যয়ের ক্যাটাগরি' : 'Expense Categories'}</span>
+                    <span>{bn ? 'ব্যয় খাতসমূহ' : 'Expense Heads'}</span>
                   </CardTitle>
                   {canManageCategories && (
                     <Dialog open={categoryDialog} onOpenChange={resetCategoryDialog}>
                       <DialogTrigger asChild>
                         <Button size="sm" variant="outline" className="gap-1.5 cursor-pointer">
                           <TagIcon className="w-4 h-4 text-emerald-600" />
-                          {bn ? 'নতুন ক্যাটাগরি' : 'Add Category'}
+                          {bn ? 'নতুন ব্যয় খাত' : 'Add Expense Head'}
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
-                        <DialogHeader><DialogTitle>{editingCategoryId ? (bn ? 'ক্যাটেগরি সম্পাদনা' : 'Edit Category') : (bn ? 'নতুন ক্যাটেগরি' : 'New Category')}</DialogTitle></DialogHeader>
+                        <DialogHeader><DialogTitle>{editingCategoryId ? (bn ? 'ব্যয় খাত সম্পাদনা' : 'Edit Expense Head') : (bn ? 'নতুন ব্যয় খাত' : 'New Expense Head')}</DialogTitle></DialogHeader>
                       <div className="space-y-3">
                         <div>
                           <Label>{bn ? 'প্রতিষ্ঠান' : 'Institution'} *</Label>
@@ -4100,11 +4100,11 @@ const AdminExpenses = () => {
                           </Select>
                         </div>
                         <div>
-                          <Label>{bn ? 'ক্যাটাগরি নাম (বাংলা)' : 'Category Name (Bangla)'} *</Label>
+                          <Label>{bn ? 'ব্যয় খাতের নাম (বাংলা)' : 'Expense Head Name (Bangla)'} *</Label>
                           <Input value={categoryForm.name_bn} onChange={e => setCategoryForm(f => ({ ...f, name_bn: e.target.value }))} placeholder="যেমন: খাবার" />
                         </div>
                         <div>
-                          <Label>{bn ? 'ক্যাটাগরি নাম (ইংরেজি - ঐচ্ছিক)' : 'Category Name (English - Optional)'}</Label>
+                          <Label>{bn ? 'ব্যয় খাতের নাম (ইংরেজি - ঐচ্ছিক)' : 'Expense Head Name (English - Optional)'}</Label>
                           <Input value={categoryForm.name} onChange={e => setCategoryForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Food" />
                         </div>
                         <Button className="w-full" onClick={() => addCategory.mutate()} disabled={addCategory.isPending}>{bn ? 'সংরক্ষণ' : 'Save'}</Button>
@@ -4114,7 +4114,7 @@ const AdminExpenses = () => {
                   )}
                 </CardHeader>
                 <CardContent>
-                  {categories.length === 0 ? <p className="text-sm text-muted-foreground">{bn ? 'কোনো ক্যাটেগরি নেই' : 'No categories'}</p> : (
+                  {categories.length === 0 ? <p className="text-sm text-muted-foreground">{bn ? 'কোনো ব্যয় খাত নেই' : 'No expense heads'}</p> : (
                     <ul className="space-y-2 max-h-[480px] overflow-y-auto pr-1">
                       {categories.map((c: any) => {
                         const catInst = allInstitutions.find((i: any) => i.id === (c as any).institution_id);
@@ -4131,13 +4131,13 @@ const AdminExpenses = () => {
                                 </Button>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-rose-600 hover:bg-rose-50" onClick={async () => {
                                   const expCount = allExpenses.filter((e: any) => e.category_id === c.id).length;
-                                  let desc = bn ? `"${getCatName(c, bn)}" ক্যাটাগরিটি মুছে ফেলতে চান?` : `Delete category "${getCatName(c, bn)}"?`;
+                                  let desc = bn ? `"${getCatName(c, bn)}" ব্যয় খাতটি মুছে ফেলতে চান?` : `Delete expense head "${getCatName(c, bn)}"?`;
                                   if (expCount > 0) {
                                     desc += bn
-                                      ? `\n\nসতর্কতা: এই ক্যাটাগরিতে ${expCount}টি খরচের এন্ট্রি রয়েছে। ক্যাটাগরি মুছে ফেললে সংশ্লিষ্ট খরচও মুছে যাবে।`
+                                      ? `\n\nসতর্কতা: এই ব্যয় খাতে ${expCount}টি খরচের এন্ট্রি রয়েছে। ব্যয় খাত মুছে ফেললে সংশ্লিষ্ট খরচও মুছে যাবে।`
                                       : `\n\nWarning: Contains ${expCount} expenses that will also be removed.`;
                                   }
-                                  if (await confirm({ title: bn ? 'ক্যাটাগরি মুছে ফেলুন' : 'Delete Category', description: desc, variant: 'destructive' })) {
+                                  if (await confirm({ title: bn ? 'ব্যয় খাত মুছে ফেলুন' : 'Delete Expense Head', description: desc, variant: 'destructive' })) {
                                     deleteCategory.mutate(c.id);
                                   }
                                 }} title={bn ? 'মুছে ফেলুন' : 'Delete'}>
@@ -4552,7 +4552,7 @@ const AdminExpenses = () => {
                 return (
                   <div key={cat.id} className="mb-3 ml-2">
                     <h3 className="text-sm font-semibold mb-1">
-                      {bn ? 'ক্যাটেগরি' : 'Category'}: {getCatName(cat, bn)}
+                      {bn ? 'ব্যয় খাত' : 'Expense Head'}: {getCatName(cat, bn)}
                       <span className="float-right">৳{formatNum(catTotal)}</span>
                     </h3>
                     <table className="w-full border-collapse border text-sm">
@@ -4704,7 +4704,7 @@ const AdminExpenses = () => {
                 </Select>
               </div>
               <div>
-                <Label>{bn ? 'ক্যাটেগরি' : 'Category'} *</Label>
+                <Label>{bn ? 'ব্যয় খাত' : 'Expense Head'} *</Label>
                 <Select
                   value={expenseForm.category_id || undefined}
                   onValueChange={value => {
@@ -4721,7 +4721,7 @@ const AdminExpenses = () => {
                     }));
                   }}
                 >
-                  <SelectTrigger className="mt-1"><SelectValue placeholder={bn ? 'ক্যাটেগরি নির্বাচন করুন' : 'Select category'} /></SelectTrigger>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder={bn ? 'ব্যয় খাত নির্বাচন করুন' : 'Select expense head'} /></SelectTrigger>
                   <SelectContent>
                     {filteredCategories.map((category: any) => (
                       <SelectItem key={category.id} value={category.id}>
@@ -4731,7 +4731,7 @@ const AdminExpenses = () => {
                   </SelectContent>
                 </Select>
                 {selectedExpenseProject && !selectedExpenseCategory && (
-                  <p className="mt-1 text-xs text-muted-foreground">{bn ? 'এই প্রতিষ্ঠানের জন্য একটি ক্যাটেগরি নির্বাচন করুন' : 'Select a category for this institution'}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{bn ? 'এই প্রতিষ্ঠানের জন্য একটি ব্যয় খাত নির্বাচন করুন' : 'Select an expense head for this institution'}</p>
                 )}
               </div>
             </div>
@@ -5458,10 +5458,10 @@ const AdminExpenses = () => {
           <div className="flex flex-wrap gap-2 items-center">
             <Select value={entriesFilterCategoryId} onValueChange={setEntriesFilterCategoryId}>
               <SelectTrigger className="w-[200px] h-8 text-xs">
-                <SelectValue placeholder={bn ? 'ক্যাটেগরি ফিল্টার' : 'Filter Category'} />
+                <SelectValue placeholder={bn ? 'ব্যয় খাত ফিল্টার' : 'Filter Expense Head'} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{bn ? 'সব ক্যাটেগরি' : 'All Categories'}</SelectItem>
+                <SelectItem value="all">{bn ? 'সকল ব্যয় খাত' : 'All Expense Heads'}</SelectItem>
                 {getCategoriesForInst(editInstitutionEntriesId).map((c: any) => (
                   <SelectItem key={c.id} value={c.id}>{getCatName(c, bn)}</SelectItem>
                 ))}
@@ -6122,7 +6122,7 @@ const AdminExpenses = () => {
                                 {page.items.length === 0 ? (
                                   <tr>
                                     <td colSpan={8} className="border p-4 text-center text-muted-foreground italic">
-                                      {bn ? 'এই মাসে এই ক্যাটাগরিতে কোনো ব্যয়ের রেকর্ড নেই।' : 'No expenses recorded in this category for this month.'}
+                                      {bn ? 'এই মাসে এই ব্যয় খাতে কোনো ব্যয়ের রেকর্ড নেই।' : 'No expenses recorded in this head for this month.'}
                                     </td>
                                   </tr>
                                 ) : (
@@ -6456,7 +6456,7 @@ const AdminExpenses = () => {
                                   <tr className="bg-teal-100/70 dark:bg-teal-950/60 font-bold text-teal-950 dark:text-teal-200">
                                     <td className="border p-1 text-center"></td>
                                     <td colSpan={3} className="border p-1 text-center tracking-wide font-black">
-                                      {bn ? 'ক্যাটাগরি' : 'Category'}
+                                      {bn ? 'ব্যয় খাত' : 'Expense Head'}
                                     </td>
                                     <td className="border p-1 text-center"></td>
                                     <td className="border p-1 text-center"></td>
@@ -6881,7 +6881,7 @@ const AdminExpenses = () => {
                       )}
                       <tr className="bg-teal-100/70 dark:bg-teal-950/60 font-bold text-teal-950 dark:text-teal-200">
                         <td className="border p-1 text-center"></td>
-                        <td colSpan={3} className="border p-1 text-center tracking-wide font-black">{bn ? 'ক্যাটাগরি' : 'Category'}</td>
+                        <td colSpan={3} className="border p-1 text-center tracking-wide font-black">{bn ? 'ব্যয় খাত' : 'Expense Head'}</td>
                         <td className="border p-1 text-center"></td>
                         <td className="border p-1 text-center"></td>
                       </tr>
