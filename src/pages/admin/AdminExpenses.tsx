@@ -3220,28 +3220,28 @@ const AdminExpenses = () => {
                       {/* ─── Tab 1: Paid Expenses Table ─── */}
                       {expenseListTab === 'paid' && (
                         <div className="border border-slate-300 dark:border-slate-700 overflow-x-auto bg-card shadow-sm">
-                          <table className="w-full border-collapse excel-table text-sm text-foreground">
+                          <table className="w-full border-collapse excel-table text-sm text-foreground" style={{ borderCollapse: 'collapse', borderSpacing: 0, width: '100%' }}>
                             <thead>
-                              <tr className="bg-slate-100 dark:bg-slate-900 border-b-2 border-slate-300 dark:border-slate-700 text-xs">
-                                <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 w-10">#</th>
-                                <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 w-28">{bn ? 'তারিখ' : 'Date'}</th>
+                              <tr className="bg-slate-100 dark:bg-slate-900 border-b-2 border-slate-300 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200" style={{ borderRadius: 0, boxShadow: 'none' }}>
+                                <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-center font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 w-10" style={{ borderRadius: 0 }}>#</th>
+                                <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-center font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 w-28" style={{ borderRadius: 0 }}>{bn ? 'তারিখ' : 'Date'}</th>
                                 {isAll && (
-                                  <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-left font-bold text-slate-700 dark:text-slate-300 w-36">{bn ? 'প্রতিষ্ঠান' : 'Institution'}</th>
+                                  <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-left font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 w-36" style={{ borderRadius: 0 }}>{bn ? 'প্রতিষ্ঠান' : 'Institution'}</th>
                                 )}
-                                <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-left font-bold text-slate-700 dark:text-slate-300 w-36">{bn ? 'ক্যাটাগরি' : 'Category'}</th>
-                                <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-left font-bold text-slate-700 dark:text-slate-300">{bn ? 'ব্যয়ের বিবরণ' : 'Description'}</th>
-                                <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 w-24">{bn ? 'পরিমাণ' : 'Quantity'}</th>
-                                <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 min-w-[110px]">{bn ? 'ব্যয়ের মাধ্যম' : 'Method'}</th>
-                                <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 w-28">{bn ? 'মেমো / রশিদ' : 'Memo/Receipt'}</th>
-                                <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-right font-bold text-slate-700 dark:text-slate-300 w-32">{bn ? 'ব্যয় টাকা (৳)' : 'Amount (৳)'}</th>
-                                <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-left font-bold text-slate-700 dark:text-slate-300 w-36">{bn ? 'মন্তব্য' : 'Remarks'}</th>
-                                <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-center font-bold text-slate-700 dark:text-slate-300 w-28">{bn ? 'অ্যাকশন' : 'Action'}</th>
+                                <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-left font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 w-36" style={{ borderRadius: 0 }}>{bn ? 'ক্যাটাগরি' : 'Category'}</th>
+                                <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-left font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800" style={{ borderRadius: 0 }}>{bn ? 'ব্যয়ের বিবরণ' : 'Description'}</th>
+                                <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-center font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 w-24" style={{ borderRadius: 0 }}>{bn ? 'পরিমাণ' : 'Quantity'}</th>
+                                <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-center font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 min-w-[110px]" style={{ borderRadius: 0 }}>{bn ? 'ব্যয়ের মাধ্যম' : 'Method'}</th>
+                                <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-center font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 w-28" style={{ borderRadius: 0 }}>{bn ? 'মেমো / রশিদ' : 'Memo/Receipt'}</th>
+                                <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-right font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 w-32" style={{ borderRadius: 0 }}>{bn ? 'ব্যয় টাকা (৳)' : 'Amount (৳)'}</th>
+                                <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-left font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 w-36" style={{ borderRadius: 0 }}>{bn ? 'মন্তব্য' : 'Remarks'}</th>
+                                <th className="border border-slate-300 dark:border-slate-700 px-3 py-2 text-center font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 w-28" style={{ borderRadius: 0 }}>{bn ? 'অ্যাকশন' : 'Action'}</th>
                               </tr>
                             </thead>
                             <tbody>
                               {displayExpenses.length === 0 ? (
-                                <tr>
-                                  <td colSpan={isAll ? 11 : 10} className="border border-slate-300 dark:border-slate-700 px-3 py-10 text-center text-muted-foreground">
+                                <tr style={{ borderRadius: 0, boxShadow: 'none' }}>
+                                  <td colSpan={isAll ? 11 : 10} className="border border-slate-300 dark:border-slate-700 px-3 py-10 text-center text-muted-foreground" style={{ borderRadius: 0 }}>
                                     {bn ? 'এই ফিল্টারে কোনো ব্যয়ের হিসাব পাওয়া যায়নি।' : 'No expenses found for this filter.'}
                                   </td>
                                 </tr>
@@ -3258,33 +3258,33 @@ const AdminExpenses = () => {
                                   const rowInst = (allInstitutions || []).find((i: any) => i.id === e.institution_id);
 
                                   return (
-                                    <tr key={e.id} className={`hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors ${idx % 2 === 0 ? 'bg-white dark:bg-card' : 'bg-slate-50/60 dark:bg-slate-900/20'}`}>
-                                      <td className="border border-slate-200 dark:border-slate-800 px-3 py-2 text-center tabular-nums text-xs text-muted-foreground">{bn ? toBnDigits(idx + 1) : idx + 1}</td>
-                                      <td className="border border-slate-200 dark:border-slate-800 px-3 py-2 text-center tabular-nums text-xs whitespace-nowrap">{formatDateBn(e.expense_date, bn)}</td>
+                                    <tr key={e.id} className={`hover:bg-slate-100/60 dark:hover:bg-slate-900/50 transition-colors ${idx % 2 === 0 ? 'bg-white dark:bg-card' : 'bg-slate-50/70 dark:bg-slate-900/20'}`} style={{ borderRadius: 0, boxShadow: 'none' }}>
+                                      <td className="border border-slate-200 dark:border-slate-800 px-3 py-2 text-center tabular-nums text-xs text-muted-foreground" style={{ borderRadius: 0 }}>{bn ? toBnDigits(idx + 1) : idx + 1}</td>
+                                      <td className="border border-slate-200 dark:border-slate-800 px-3 py-2 text-center tabular-nums text-xs whitespace-nowrap" style={{ borderRadius: 0 }}>{formatDateBn(e.expense_date, bn)}</td>
                                       {isAll && (
-                                        <td className="border border-slate-200 dark:border-slate-800 px-3 py-2 text-left">
+                                        <td className="border border-slate-200 dark:border-slate-800 px-3 py-2 text-left" style={{ borderRadius: 0 }}>
                                           <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 truncate max-w-[140px]">
                                             {rowInst ? getInstShortName(getInstName(rowInst, bn)) : '-'}
                                           </span>
                                         </td>
                                       )}
-                                      <td className="border border-slate-200 dark:border-slate-800 px-3 py-2 text-left">
+                                      <td className="border border-slate-200 dark:border-slate-800 px-3 py-2 text-left" style={{ borderRadius: 0 }}>
                                         <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 truncate max-w-[140px]">
                                           {catLabel}
                                         </span>
                                       </td>
-                                      <td className="border border-slate-200 dark:border-slate-800 px-3 py-2 text-left">
+                                      <td className="border border-slate-200 dark:border-slate-800 px-3 py-2 text-left" style={{ borderRadius: 0 }}>
                                         <span className="font-medium text-foreground">{cleanDesc(e.description)}</span>
                                       </td>
-                                      <td className="border border-slate-200 dark:border-slate-800 px-3 py-2 text-center text-xs tabular-nums text-slate-700 dark:text-slate-300">
+                                      <td className="border border-slate-200 dark:border-slate-800 px-3 py-2 text-center text-xs tabular-nums text-slate-700 dark:text-slate-300" style={{ borderRadius: 0 }}>
                                         {displayQty}
                                       </td>
-                                      <td className="border border-slate-200 dark:border-slate-800 px-3 py-2 text-center">
+                                      <td className="border border-slate-200 dark:border-slate-800 px-3 py-2 text-center" style={{ borderRadius: 0 }}>
                                         <span className="inline-block px-2 py-0.5 rounded text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 max-w-[150px] truncate" title={getMethod(e.description, bn)}>
                                           {getMethod(e.description, bn)}
                                         </span>
                                       </td>
-                                      <td className="border border-slate-200 dark:border-slate-800 px-3 py-2 text-center text-xs">
+                                      <td className="border border-slate-200 dark:border-slate-800 px-3 py-2 text-center text-xs" style={{ borderRadius: 0 }}>
                                         <div className="flex items-center justify-center gap-1.5">
                                           <span className="text-slate-600 dark:text-slate-400 font-mono text-[11px]">
                                             {memoStr !== '-' ? memoStr : '-'}
@@ -3302,13 +3302,13 @@ const AdminExpenses = () => {
                                           )}
                                         </div>
                                       </td>
-                                      <td className="border border-slate-200 dark:border-slate-800 px-3 py-2 text-right tabular-nums font-bold text-foreground">
+                                      <td className="border border-slate-200 dark:border-slate-800 px-3 py-2 text-right tabular-nums font-bold text-foreground" style={{ borderRadius: 0 }}>
                                         ৳{formatNum(Number(e.amount))}
                                       </td>
-                                      <td className="border border-slate-200 dark:border-slate-800 px-3 py-2 text-left text-xs text-muted-foreground truncate max-w-[150px]" title={remarksStr !== '-' ? remarksStr : ''}>
+                                      <td className="border border-slate-200 dark:border-slate-800 px-3 py-2 text-left text-xs text-muted-foreground truncate max-w-[150px]" title={remarksStr !== '-' ? remarksStr : ''} style={{ borderRadius: 0 }}>
                                         {remarksStr !== '-' ? remarksStr : '-'}
                                       </td>
-                                      <td className="border border-slate-200 dark:border-slate-800 px-2 py-2 text-center">
+                                      <td className="border border-slate-200 dark:border-slate-800 px-2 py-2 text-center" style={{ borderRadius: 0 }}>
                                         <div className="flex gap-1 justify-center items-center">
                                           <Button
                                             variant="ghost"
@@ -3349,14 +3349,14 @@ const AdminExpenses = () => {
                               )}
                             </tbody>
                             <tfoot>
-                              <tr className="bg-slate-800 text-white font-bold text-xs">
-                                <td colSpan={isAll ? 8 : 7} className="border border-slate-700 px-4 py-2.5 text-right">
+                              <tr className="bg-slate-800 text-white font-bold text-xs" style={{ borderRadius: 0, boxShadow: 'none' }}>
+                                <td colSpan={isAll ? 8 : 7} className="border border-slate-700 px-4 py-2.5 text-right" style={{ borderRadius: 0 }}>
                                   {bn ? 'মোট পরিশোধিত ব্যয়:' : 'Total Paid Expense:'}
                                 </td>
-                                <td className="border border-slate-700 px-3 py-2.5 text-right tabular-nums text-sm text-emerald-300">
+                                <td className="border border-slate-700 px-3 py-2.5 text-right tabular-nums text-sm text-emerald-300" style={{ borderRadius: 0 }}>
                                   ৳{formatNum(displayTotal)}
                                 </td>
-                                <td colSpan={2} className="border border-slate-700 px-3 py-2.5 text-slate-200 text-right">
+                                <td colSpan={2} className="border border-slate-700 px-3 py-2.5 text-slate-200 text-right" style={{ borderRadius: 0 }}>
                                   ({displayExpenses.length} {bn ? 'টি এন্ট্রি' : 'items'})
                                 </td>
                               </tr>
@@ -3388,27 +3388,27 @@ const AdminExpenses = () => {
                           </div>
 
                           <div className="border border-amber-300 dark:border-amber-800/40 overflow-x-auto bg-card shadow-sm">
-                            <table className="w-full border-collapse excel-table text-xs text-foreground">
+                            <table className="w-full border-collapse excel-table text-xs text-foreground" style={{ borderCollapse: 'collapse', borderSpacing: 0, width: '100%' }}>
                               <thead>
-                                <tr className="bg-amber-100/60 dark:bg-amber-950/40 border-b-2 border-amber-300 dark:border-amber-800/40">
-                                  <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-200 w-10">#</th>
-                                  <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-200 w-28">{bn ? 'বকেয়ার তারিখ' : 'Due Date'}</th>
+                                <tr className="bg-amber-100/70 dark:bg-amber-950/50 border-b-2 border-amber-300 dark:border-amber-800/40 text-amber-950 dark:text-amber-100" style={{ borderRadius: 0, boxShadow: 'none' }}>
+                                  <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-100 bg-amber-100/70 dark:bg-amber-950/50 w-10" style={{ borderRadius: 0 }}>#</th>
+                                  <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-100 bg-amber-100/70 dark:bg-amber-950/50 w-28" style={{ borderRadius: 0 }}>{bn ? 'বকেয়ার তারিখ' : 'Due Date'}</th>
                                   {isAll && (
-                                    <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-left font-bold text-amber-950 dark:text-amber-200 w-36">{bn ? 'প্রতিষ্ঠান' : 'Institution'}</th>
+                                    <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-left font-bold text-amber-950 dark:text-amber-100 bg-amber-100/70 dark:bg-amber-950/50 w-36" style={{ borderRadius: 0 }}>{bn ? 'প্রতিষ্ঠান' : 'Institution'}</th>
                                   )}
-                                  <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-left font-bold text-amber-950 dark:text-amber-200 w-36">{bn ? 'ক্যাটাগরি' : 'Category'}</th>
-                                  <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-left font-bold text-amber-950 dark:text-amber-200">{bn ? 'ব্যয়ের বিবরণ ও পাওনাদার' : 'Description & Vendor'}</th>
-                                  <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-200 w-24">{bn ? 'পরিমাণ' : 'Quantity'}</th>
-                                  <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-200 w-28">{bn ? 'মেমো / চালান' : 'Memo/Invoice'}</th>
-                                  <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-right font-bold text-amber-950 dark:text-amber-200 w-32">{bn ? 'বকেয়া টাকা (৳)' : 'Due Amount (৳)'}</th>
-                                  <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-left font-bold text-amber-950 dark:text-amber-200 w-36">{bn ? 'মন্তব্য' : 'Remarks'}</th>
-                                  <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-200 w-36">{bn ? 'অ্যাকশন' : 'Action'}</th>
+                                  <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-left font-bold text-amber-950 dark:text-amber-100 bg-amber-100/70 dark:bg-amber-950/50 w-36" style={{ borderRadius: 0 }}>{bn ? 'ক্যাটাগরি' : 'Category'}</th>
+                                  <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-left font-bold text-amber-950 dark:text-amber-100 bg-amber-100/70 dark:bg-amber-950/50" style={{ borderRadius: 0 }}>{bn ? 'ব্যয়ের বিবরণ ও পাওনাদার' : 'Description & Vendor'}</th>
+                                  <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-100 bg-amber-100/70 dark:bg-amber-950/50 w-24" style={{ borderRadius: 0 }}>{bn ? 'পরিমাণ' : 'Quantity'}</th>
+                                  <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-100 bg-amber-100/70 dark:bg-amber-950/50 w-28" style={{ borderRadius: 0 }}>{bn ? 'মেমো / চালান' : 'Memo/Invoice'}</th>
+                                  <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-right font-bold text-amber-950 dark:text-amber-100 bg-amber-100/70 dark:bg-amber-950/50 w-32" style={{ borderRadius: 0 }}>{bn ? 'বকেয়া টাকা (৳)' : 'Due Amount (৳)'}</th>
+                                  <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-left font-bold text-amber-950 dark:text-amber-100 bg-amber-100/70 dark:bg-amber-950/50 w-36" style={{ borderRadius: 0 }}>{bn ? 'মন্তব্য' : 'Remarks'}</th>
+                                  <th className="border border-amber-300 dark:border-amber-800/40 px-3 py-2 text-center font-bold text-amber-950 dark:text-amber-100 bg-amber-100/70 dark:bg-amber-950/50 w-36" style={{ borderRadius: 0 }}>{bn ? 'অ্যাকশন' : 'Action'}</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {displayDues.length === 0 ? (
-                                  <tr>
-                                    <td colSpan={isAll ? 10 : 9} className="border border-amber-300 dark:border-amber-800/40 px-3 py-6 text-center text-muted-foreground">
+                                  <tr style={{ borderRadius: 0, boxShadow: 'none' }}>
+                                    <td colSpan={isAll ? 10 : 9} className="border border-amber-300 dark:border-amber-800/40 px-3 py-6 text-center text-muted-foreground" style={{ borderRadius: 0 }}>
                                       ✓ {bn ? 'কোনো বকেয়া খরচ নেই। সব পরিশোধিত।' : 'No outstanding dues.'}
                                     </td>
                                   </tr>
@@ -3425,37 +3425,37 @@ const AdminExpenses = () => {
                                     const rowInst = (allInstitutions || []).find((i: any) => i.id === due.institution_id);
 
                                     return (
-                                      <tr key={due.id} className="hover:bg-amber-50/40 dark:hover:bg-amber-950/20">
-                                        <td className="border border-amber-200/80 dark:border-amber-800/30 px-3 py-2 text-center tabular-nums text-muted-foreground">{bn ? toBnDigits(dIdx + 1) : dIdx + 1}</td>
-                                        <td className="border border-amber-200/80 dark:border-amber-800/30 px-3 py-2 text-center tabular-nums whitespace-nowrap">{formatDateBn(due.expense_date, bn)}</td>
+                                      <tr key={due.id} className="hover:bg-amber-50/50 dark:hover:bg-amber-950/30 transition-colors" style={{ borderRadius: 0, boxShadow: 'none' }}>
+                                        <td className="border border-amber-200/80 dark:border-amber-800/30 px-3 py-2 text-center tabular-nums text-muted-foreground" style={{ borderRadius: 0 }}>{bn ? toBnDigits(dIdx + 1) : dIdx + 1}</td>
+                                        <td className="border border-amber-200/80 dark:border-amber-800/30 px-3 py-2 text-center tabular-nums whitespace-nowrap" style={{ borderRadius: 0 }}>{formatDateBn(due.expense_date, bn)}</td>
                                         {isAll && (
-                                          <td className="border border-amber-200/80 dark:border-amber-800/30 px-3 py-2 text-left">
+                                          <td className="border border-amber-200/80 dark:border-amber-800/30 px-3 py-2 text-left" style={{ borderRadius: 0 }}>
                                             <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-200/80 text-amber-950 dark:bg-amber-900 dark:text-amber-100 truncate max-w-[140px]">
                                               {rowInst ? getInstShortName(getInstName(rowInst, bn)) : '-'}
                                             </span>
                                           </td>
                                         )}
-                                        <td className="border border-amber-200/80 dark:border-amber-800/30 px-3 py-2 text-left">
+                                        <td className="border border-amber-200/80 dark:border-amber-800/30 px-3 py-2 text-left" style={{ borderRadius: 0 }}>
                                           <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-amber-100/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200">
                                             {catLabel}
                                           </span>
                                         </td>
-                                        <td className="border border-amber-200/80 dark:border-amber-800/30 px-3 py-2 text-left">
+                                        <td className="border border-amber-200/80 dark:border-amber-800/30 px-3 py-2 text-left" style={{ borderRadius: 0 }}>
                                           <span className="font-medium text-foreground">{cleanDesc(due.description)}</span>
                                         </td>
-                                        <td className="border border-amber-200/80 dark:border-amber-800/30 px-3 py-2 text-center tabular-nums text-slate-700 dark:text-slate-300">
+                                        <td className="border border-amber-200/80 dark:border-amber-800/30 px-3 py-2 text-center tabular-nums text-slate-700 dark:text-slate-300" style={{ borderRadius: 0 }}>
                                           {displayQty}
                                         </td>
-                                        <td className="border border-amber-200/80 dark:border-amber-800/30 px-3 py-2 text-center font-mono text-[11px] text-slate-600 dark:text-slate-400">
+                                        <td className="border border-amber-200/80 dark:border-amber-800/30 px-3 py-2 text-center font-mono text-[11px] text-slate-600 dark:text-slate-400" style={{ borderRadius: 0 }}>
                                           {memoStr !== '-' ? memoStr : '-'}
                                         </td>
-                                        <td className="border border-amber-200/80 dark:border-amber-800/30 px-3 py-2 text-right tabular-nums font-bold text-amber-700 dark:text-amber-300">
+                                        <td className="border border-amber-200/80 dark:border-amber-800/30 px-3 py-2 text-right tabular-nums font-bold text-amber-700 dark:text-amber-300" style={{ borderRadius: 0 }}>
                                           ৳{formatNum(Number(due.amount))}
                                         </td>
-                                        <td className="border border-amber-200/80 dark:border-amber-800/30 px-3 py-2 text-left text-muted-foreground truncate max-w-[140px]" title={remarksStr !== '-' ? remarksStr : ''}>
+                                        <td className="border border-amber-200/80 dark:border-amber-800/30 px-3 py-2 text-left text-muted-foreground truncate max-w-[140px]" title={remarksStr !== '-' ? remarksStr : ''} style={{ borderRadius: 0 }}>
                                           {remarksStr !== '-' ? remarksStr : '-'}
                                         </td>
-                                        <td className="border border-amber-200/80 dark:border-amber-800/30 px-2 py-2 text-center">
+                                        <td className="border border-amber-200/80 dark:border-amber-800/30 px-2 py-2 text-center" style={{ borderRadius: 0 }}>
                                           <div className="flex gap-1 justify-center items-center">
                                             <Button
                                               size="sm"
@@ -3507,14 +3507,14 @@ const AdminExpenses = () => {
                               </tbody>
                               {displayDues.length > 0 && (
                                 <tfoot>
-                                  <tr className="bg-amber-900 text-white font-bold text-xs">
-                                    <td colSpan={isAll ? 7 : 6} className="px-4 py-2 text-right">
+                                  <tr className="bg-amber-900 text-white font-bold text-xs" style={{ borderRadius: 0, boxShadow: 'none' }}>
+                                    <td colSpan={isAll ? 7 : 6} className="border border-amber-800 px-4 py-2 text-right" style={{ borderRadius: 0 }}>
                                       {bn ? 'সর্বমোট বকেয়া দায়:' : 'Total Outstanding:'}
                                     </td>
-                                    <td className="px-3 py-2 text-right tabular-nums text-amber-200">
+                                    <td className="border border-amber-800 px-3 py-2 text-right tabular-nums text-amber-200" style={{ borderRadius: 0 }}>
                                       ৳{formatNum(displayDuesTotal)}
                                     </td>
-                                    <td colSpan={2} className="px-3 py-2 text-amber-300 text-right">
+                                    <td colSpan={2} className="border border-amber-800 px-3 py-2 text-amber-300 text-right" style={{ borderRadius: 0 }}>
                                       ({displayDues.length} {bn ? 'টি বকেয়া' : 'dues'})
                                     </td>
                                   </tr>
@@ -3724,42 +3724,42 @@ const AdminExpenses = () => {
           </div>
 
             <div className="border border-slate-300 dark:border-slate-700 overflow-auto bg-white dark:bg-card shadow-sm">
-              <table className="w-full border-collapse excel-table text-sm text-slate-700 dark:text-slate-200">
+              <table className="w-full border-collapse excel-table text-sm text-slate-700 dark:text-slate-200" style={{ borderCollapse: 'collapse', borderSpacing: 0, width: '100%' }}>
                 <thead>
-                  <tr className="bg-slate-100 dark:bg-slate-800 border-b-2 border-slate-300 dark:border-slate-700">
-                    <th className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-center font-semibold text-slate-800 dark:text-slate-100 w-12">#</th>
-                    <th className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-center font-semibold text-slate-800 dark:text-slate-100 w-32">{bn ? 'তারিখ' : 'Date'}</th>
-                    <th className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-left font-semibold text-slate-800 dark:text-slate-100">{bn ? 'ব্যাংক/অন্যান্য' : 'Bank/Other'}</th>
-                    <th className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-left font-semibold text-slate-800 dark:text-slate-100">{bn ? 'বিবরণ' : 'Details'}</th>
-                    <th className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-left font-semibold text-slate-800 dark:text-slate-100 w-36">{bn ? 'উৎস' : 'Source'}</th>
-                    <th className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-right font-semibold text-slate-800 dark:text-slate-100 w-40">{bn ? 'টাকা' : 'Amount'}</th>
-                    <th className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-center font-semibold text-slate-800 dark:text-slate-100 w-24"></th>
+                  <tr className="bg-slate-100 dark:bg-slate-800 border-b-2 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100" style={{ borderRadius: 0, boxShadow: 'none' }}>
+                    <th className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 w-12" style={{ borderRadius: 0 }}>#</th>
+                    <th className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 w-32" style={{ borderRadius: 0 }}>{bn ? 'তারিখ' : 'Date'}</th>
+                    <th className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-left font-bold text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-800" style={{ borderRadius: 0 }}>{bn ? 'ব্যাংক/অন্যান্য' : 'Bank/Other'}</th>
+                    <th className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-left font-bold text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-800" style={{ borderRadius: 0 }}>{bn ? 'বিবরণ' : 'Details'}</th>
+                    <th className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-left font-bold text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 w-36" style={{ borderRadius: 0 }}>{bn ? 'উৎস' : 'Source'}</th>
+                    <th className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-right font-bold text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 w-40" style={{ borderRadius: 0 }}>{bn ? 'টাকা' : 'Amount'}</th>
+                    <th className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 w-24" style={{ borderRadius: 0 }}></th>
                   </tr>
                 </thead>
                 <tbody>
                   {deposits.length === 0 && (
-                    <tr>
-                      <td colSpan={7} className="border border-slate-300 dark:border-slate-700 px-3 py-8 text-center text-slate-500">
+                    <tr style={{ borderRadius: 0, boxShadow: 'none' }}>
+                      <td colSpan={7} className="border border-slate-300 dark:border-slate-700 px-3 py-8 text-center text-slate-500" style={{ borderRadius: 0 }}>
                         {bn ? 'কোনো টাকা আয়/উত্তোলন নেই' : 'No deposits'}
                       </td>
                     </tr>
                   )}
                   {deposits.map((d: any, i: number) => (
-                    <tr key={d.id} className={i % 2 === 0 ? 'bg-white dark:bg-card' : 'bg-slate-50 dark:bg-slate-900/20'}>
-                      <td className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-center tabular-nums">{bn ? toBnDigits(i + 1) : i + 1}</td>
-                      <td className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-center tabular-nums">{formatDateBn(d.deposit_date, bn)}</td>
-                      <td className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-left">{d.bank_details || '-'}</td>
-                      <td className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-left">{d.other_details || '-'}</td>
-                      <td className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-left">
+                    <tr key={d.id} className={i % 2 === 0 ? 'bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-slate-900/40' : 'bg-slate-50/70 dark:bg-slate-900/20 hover:bg-slate-50 dark:hover:bg-slate-900/40'} style={{ borderRadius: 0, boxShadow: 'none' }}>
+                      <td className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-center tabular-nums" style={{ borderRadius: 0 }}>{bn ? toBnDigits(i + 1) : i + 1}</td>
+                      <td className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-center tabular-nums" style={{ borderRadius: 0 }}>{formatDateBn(d.deposit_date, bn)}</td>
+                      <td className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-left" style={{ borderRadius: 0 }}>{d.bank_details || '-'}</td>
+                      <td className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-left" style={{ borderRadius: 0 }}>{d.other_details || '-'}</td>
+                      <td className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-left" style={{ borderRadius: 0 }}>
                         <span className="inline-block px-2 py-0.5 rounded text-xs bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium">
                           {getSourceLabel(d.source, bn, customDepositSources)}
                         </span>
                       </td>
-                      <td className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-right tabular-nums font-medium">৳{formatNum(Number(d.amount))}</td>
-                      <td className="border border-slate-300 dark:border-slate-700 px-2 py-1 text-center">
+                      <td className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-right tabular-nums font-bold text-foreground" style={{ borderRadius: 0 }}>৳{formatNum(Number(d.amount))}</td>
+                      <td className="border border-slate-300 dark:border-slate-700 px-2 py-1 text-center" style={{ borderRadius: 0 }}>
                         <div className="flex gap-0.5 justify-center">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditDeposit(d)}><Edit2 className="w-3.5 h-3.5 text-slate-500" /></Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setDeleteConfirmId(d.id); setDeleteConfirmType('deposit'); }}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-emerald-600 hover:bg-emerald-50" onClick={() => openEditDeposit(d)} title={bn ? 'সম্পাদনা' : 'Edit'}><Edit2 className="w-3.5 h-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-600 hover:bg-rose-50" onClick={() => { setDeleteConfirmId(d.id); setDeleteConfirmType('deposit'); }} title={bn ? 'মুছে ফেলুন' : 'Delete'}><Trash2 className="w-3.5 h-3.5" /></Button>
                         </div>
                       </td>
                     </tr>
@@ -3767,10 +3767,10 @@ const AdminExpenses = () => {
                 </tbody>
                 {deposits.length > 0 && (
                   <tfoot>
-                    <tr className="bg-slate-800 text-white font-bold">
-                      <td colSpan={5} className="border border-slate-700 px-3 py-2 text-right">{bn ? 'মোট টাকা আয়/উত্তোলন:' : 'Total:'}</td>
-                      <td className="border border-slate-700 px-3 py-2 text-right tabular-nums text-emerald-300">৳{formatNum(monthlyTotalDeposit)}</td>
-                      <td className="border border-slate-700 px-3 py-2"></td>
+                    <tr className="bg-slate-800 text-white font-bold" style={{ borderRadius: 0, boxShadow: 'none' }}>
+                      <td colSpan={5} className="border border-slate-700 px-3 py-2 text-right" style={{ borderRadius: 0 }}>{bn ? 'মোট টাকা আয়/উত্তোলন:' : 'Total:'}</td>
+                      <td className="border border-slate-700 px-3 py-2 text-right tabular-nums text-emerald-300" style={{ borderRadius: 0 }}>৳{formatNum(monthlyTotalDeposit)}</td>
+                      <td className="border border-slate-700 px-3 py-2" style={{ borderRadius: 0 }}></td>
                     </tr>
                   </tfoot>
                 )}
