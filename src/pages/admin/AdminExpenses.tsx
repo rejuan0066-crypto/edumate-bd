@@ -190,6 +190,7 @@ const getCatName = (cat: any, isBn: boolean = true): string => {
 };
 
 const AdminExpenses = () => {
+  const qc = useQueryClient();
   const confirm = useConfirm();
   const { language } = useLanguage();
   const { canAddItem: permCanAdd, canEditItem: permCanEdit, canDeleteItem: permCanDelete, isFeatureAllowed } = usePagePermissions('/admin/expenses');

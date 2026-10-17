@@ -72,7 +72,7 @@ export const generateBilingualReport = (
 ) => {
   const win = window.open('', '_blank', 'width=1200,height=900');
   if (!win) {
-    toast.error('Popup blocked. Please allow popups to download the report.');
+    toast.error(meta.bengali_digits ? 'পপ-আপ উইন্ডো ব্লক করা আছে। রিপোর্ট দেখতে ব্রাউজারের পপ-আপ (Pop-up) এলাউ করুন।' : 'Popup blocked. Please allow popups to download the report.');
     return;
   }
 

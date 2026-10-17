@@ -227,206 +227,240 @@ const AdminStaffReports = () => {
 
   // -------- Attendance PDF --------
   const handleAttendancePDF = () => {
-    if (!attendanceSummary.length) return;
-    generateBilingualReport(
-      {
-        ...reportMeta,
-        report_title_bn: 'স্টাফ উপস্থিতি রিপোর্ট',
-        report_title_en: 'Staff Attendance Report',
-        period_label_bn: `${catLabel(category)} • ${fromDate} → ${toDate}`,
-        period_label_en: `${catLabel(category)} • ${fromDate} → ${toDate}`,
-      },
-      [{
-        title_bn: `${catLabel(category)} — ${attendanceSummary.length} জন স্টাফ`,
-        title_en: `${catLabel(category)} — ${attendanceSummary.length} Staff`,
-        headers: [
-          { bn: 'ক্রম', en: 'No.' },
-          { bn: 'স্টাফ আইডি', en: 'Staff ID' },
-          { bn: 'নাম', en: 'Name' },
-          { bn: 'পদবি', en: 'Designation' },
-          { bn: 'উপস্থিত', en: 'Present' },
-          { bn: 'অনুপস্থিত', en: 'Absent' },
-          { bn: 'দেরি', en: 'Late' },
-          { bn: 'মোট', en: 'Total' },
-          { bn: 'হার', en: 'Rate' },
+    try {
+      if (!attendanceSummary.length) {
+        toast.error(bn ? 'রিপোর্ট তৈরির জন্য কোনো ডেটা নেই' : 'No data available to generate report');
+        return;
+      }
+      generateBilingualReport(
+        {
+          ...reportMeta,
+          report_title_bn: 'স্টাফ উপস্থিতি রিপোর্ট',
+          report_title_en: 'Staff Attendance Report',
+          period_label_bn: `${catLabel(category)} • ${fromDate} → ${toDate}`,
+          period_label_en: `${catLabel(category)} • ${fromDate} → ${toDate}`,
+        },
+        [{
+          title_bn: `${catLabel(category)} — ${attendanceSummary.length} জন স্টাফ`,
+          title_en: `${catLabel(category)} — ${attendanceSummary.length} Staff`,
+          headers: [
+            { bn: 'ক্রম', en: 'No.' },
+            { bn: 'স্টাফ আইডি', en: 'Staff ID' },
+            { bn: 'নাম', en: 'Name' },
+            { bn: 'পদবি', en: 'Designation' },
+            { bn: 'উপস্থিত', en: 'Present' },
+            { bn: 'অনুপস্থিত', en: 'Absent' },
+            { bn: 'দেরি', en: 'Late' },
+            { bn: 'মোট', en: 'Total' },
+            { bn: 'হার', en: 'Rate' },
+          ],
+          rows: attendanceSummary.map((s, i) => [
+            i + 1,
+            s.staff_id || '-',
+            bn ? (s.name_bn || s.name_en || '-') : (s.name_en || s.name_bn || '-'),
+            s.designation || '-',
+            s.present, s.absent, s.late, s.total, s.rate,
+          ]),
+        }],
+        [
+          { label_bn: 'মোট স্টাফ', label_en: 'Total Staff', value: attendanceSummary.length, tone: 'accent' },
+          { label_bn: 'উপস্থিত', label_en: 'Present', value: attTotals.present, tone: 'positive' },
+          { label_bn: 'অনুপস্থিত', label_en: 'Absent', value: attTotals.absent, tone: 'negative' },
+          { label_bn: 'দেরি', label_en: 'Late', value: attTotals.late },
+          { label_bn: 'উপস্থিতি হার', label_en: 'Attendance Rate', value: attTotals.rate, tone: 'accent' },
         ],
-        rows: attendanceSummary.map((s, i) => [
-          i + 1,
-          s.staff_id || '-',
-          bn ? (s.name_bn || s.name_en || '-') : (s.name_en || s.name_bn || '-'),
-          s.designation || '-',
-          s.present, s.absent, s.late, s.total, s.rate,
-        ]),
-      }],
-      [
-        { label_bn: 'মোট স্টাফ', label_en: 'Total Staff', value: attendanceSummary.length, tone: 'accent' },
-        { label_bn: 'উপস্থিত', label_en: 'Present', value: attTotals.present, tone: 'positive' },
-        { label_bn: 'অনুপস্থিত', label_en: 'Absent', value: attTotals.absent, tone: 'negative' },
-        { label_bn: 'দেরি', label_en: 'Late', value: attTotals.late },
-        { label_bn: 'উপস্থিতি হার', label_en: 'Attendance Rate', value: attTotals.rate, tone: 'accent' },
-      ],
-    );
+      );
+    } catch (err: any) {
+      console.error('Attendance PDF generation error:', err);
+      toast.error(bn ? 'PDF তৈরিতে সমস্যা হয়েছে' : 'Failed to generate PDF report');
+    }
   };
 
   // -------- Attendance Excel --------
   const handleAttendanceExcel = async () => {
-    if (!attendanceSummary.length) return;
-    const XLSX: any = await import('xlsx-js-style');
-    const wb = XLSX.utils.book_new();
-    const wsData: any[][] = [];
-
-    wsData.push([ws.institution_name || '']);
-    wsData.push([ws.address || '']);
-    wsData.push([`${bn ? 'ফোন' : 'Phone'}: ${ws.phone || ''} | ${bn ? 'ইমেইল' : 'Email'}: ${ws.email || ''}`]);
-    wsData.push([]);
-    wsData.push([bn ? 'স্টাফ উপস্থিতি রিপোর্ট' : 'Staff Attendance Report']);
-    wsData.push([`${bn ? 'ডিপার্টমেন্ট' : 'Department'}: ${catLabel(category)} | ${bn ? 'সময়কাল' : 'Period'}: ${fromDate} → ${toDate}`]);
-    wsData.push([`${bn ? 'মোট স্টাফ' : 'Total Staff'}: ${attendanceSummary.length} | ${bn ? 'উপস্থিতি হার' : 'Rate'}: ${attTotals.rate}`]);
-    wsData.push([]);
-
-    const headers = [
-      bn ? 'ক্রম' : 'No.', bn ? 'স্টাফ আইডি' : 'Staff ID', bn ? 'নাম' : 'Name',
-      bn ? 'পদবি' : 'Designation', bn ? 'উপস্থিত' : 'Present', bn ? 'অনুপস্থিত' : 'Absent',
-      bn ? 'দেরি' : 'Late', bn ? 'মোট' : 'Total', bn ? 'হার' : 'Rate',
-    ];
-    wsData.push(headers);
-    attendanceSummary.forEach((s, i) => wsData.push([
-      i + 1, s.staff_id || '-',
-      bn ? (s.name_bn || s.name_en || '-') : (s.name_en || s.name_bn || '-'),
-      s.designation || '-', s.present, s.absent, s.late, s.total, s.rate,
-    ]));
-
-    const sheet = XLSX.utils.aoa_to_sheet(wsData);
-    sheet['!cols'] = [{ wch: 6 }, { wch: 18 }, { wch: 28 }, { wch: 22 }, { wch: 10 }, { wch: 12 }, { wch: 8 }, { wch: 8 }, { wch: 10 }];
-
-    const headerRowIdx = 8;
-    headers.forEach((_, c) => {
-      const ref = XLSX.utils.encode_cell({ r: headerRowIdx, c });
-      if (sheet[ref]) {
-        sheet[ref].s = {
-          font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
-          fill: { fgColor: { rgb: '0F766E' } },
-          alignment: { horizontal: 'center', vertical: 'center' },
-          border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } },
-        };
+    try {
+      if (!attendanceSummary.length) {
+        toast.error(bn ? 'রিপোর্ট তৈরির জন্য কোনো ডেটা নেই' : 'No data available to generate report');
+        return;
       }
-    });
-    [0, 4].forEach(r => {
-      const ref = XLSX.utils.encode_cell({ r, c: 0 });
-      if (sheet[ref]) sheet[ref].s = { font: { bold: true, sz: r === 0 ? 14 : 12, color: { rgb: '0F766E' } } };
-    });
+      const xlsxMod: any = await import('xlsx-js-style');
+      const XLSX: any = xlsxMod.default || xlsxMod;
+      const wb = XLSX.utils.book_new();
+      const wsData: any[][] = [];
 
-    XLSX.utils.book_append_sheet(wb, sheet, bn ? 'উপস্থিতি' : 'Attendance');
-    XLSX.writeFile(wb, `staff_attendance_${category}_${fromDate}_${toDate}.xlsx`);
+      wsData.push([ws.institution_name || '']);
+      wsData.push([ws.address || '']);
+      wsData.push([`${bn ? 'ফোন' : 'Phone'}: ${ws.phone || ''} | ${bn ? 'ইমেইল' : 'Email'}: ${ws.email || ''}`]);
+      wsData.push([]);
+      wsData.push([bn ? 'স্টাফ উপস্থিতি রিপোর্ট' : 'Staff Attendance Report']);
+      wsData.push([`${bn ? 'ডিপার্টমেন্ট' : 'Department'}: ${catLabel(category)} | ${bn ? 'সময়কাল' : 'Period'}: ${fromDate} → ${toDate}`]);
+      wsData.push([`${bn ? 'মোট স্টাফ' : 'Total Staff'}: ${attendanceSummary.length} | ${bn ? 'উপস্থিতি হার' : 'Rate'}: ${attTotals.rate}`]);
+      wsData.push([]);
+
+      const headers = [
+        bn ? 'ক্রম' : 'No.', bn ? 'স্টাফ আইডি' : 'Staff ID', bn ? 'নাম' : 'Name',
+        bn ? 'পদবি' : 'Designation', bn ? 'উপস্থিত' : 'Present', bn ? 'অনুপস্থিত' : 'Absent',
+        bn ? 'দেরি' : 'Late', bn ? 'মোট' : 'Total', bn ? 'হার' : 'Rate',
+      ];
+      wsData.push(headers);
+      attendanceSummary.forEach((s, i) => wsData.push([
+        i + 1, s.staff_id || '-',
+        bn ? (s.name_bn || s.name_en || '-') : (s.name_en || s.name_bn || '-'),
+        s.designation || '-', s.present, s.absent, s.late, s.total, s.rate,
+      ]));
+
+      const sheet = XLSX.utils.aoa_to_sheet(wsData);
+      sheet['!cols'] = [{ wch: 6 }, { wch: 18 }, { wch: 28 }, { wch: 22 }, { wch: 10 }, { wch: 12 }, { wch: 8 }, { wch: 8 }, { wch: 10 }];
+
+      const headerRowIdx = 8;
+      headers.forEach((_, c) => {
+        const ref = XLSX.utils.encode_cell({ r: headerRowIdx, c });
+        if (sheet[ref]) {
+          sheet[ref].s = {
+            font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+            fill: { fgColor: { rgb: '0F766E' } },
+            alignment: { horizontal: 'center', vertical: 'center' },
+            border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } },
+          };
+        }
+      });
+      [0, 4].forEach(r => {
+        const ref = XLSX.utils.encode_cell({ r, c: 0 });
+        if (sheet[ref]) sheet[ref].s = { font: { bold: true, sz: r === 0 ? 14 : 12, color: { rgb: '0F766E' } } };
+      });
+
+      XLSX.utils.book_append_sheet(wb, sheet, bn ? 'উপস্থিতি' : 'Attendance');
+      XLSX.writeFile(wb, `staff_attendance_${category}_${fromDate}_${toDate}.xlsx`);
+    } catch (err: any) {
+      console.error('Attendance Excel generation error:', err);
+      toast.error(bn ? 'এক্সেল ফাইল তৈরিতে সমস্যা হয়েছে' : 'Failed to generate Excel file');
+    }
   };
 
   // -------- Duty PDF --------
   const handleDutyPDF = () => {
-    if (!dutyData.length) return;
-    const statusLabel = (s: string) => {
-      if (s === 'present') return bn ? 'উপস্থিত' : 'Present';
-      if (s === 'absent') return bn ? 'অনুপস্থিত' : 'Absent';
-      if (s === 'late') return bn ? 'দেরি' : 'Late';
-      return bn ? 'রেকর্ড নেই' : 'No Record';
-    };
-    generateBilingualReport(
-      {
-        ...reportMeta,
-        report_title_bn: 'প্রতিদিনের ডিউটি রিপোর্ট',
-        report_title_en: 'Daily Duty Report',
-        period_label_bn: `${catLabel(dutyCategory)} • ${dutyDate}`,
-        period_label_en: `${catLabel(dutyCategory)} • ${dutyDate}`,
-      },
-      [{
-        title_bn: `${catLabel(dutyCategory)} — ${dutyData.length} জন স্টাফ`,
-        title_en: `${catLabel(dutyCategory)} — ${dutyData.length} Staff`,
-        headers: [
-          { bn: 'ক্রম', en: 'No.' },
-          { bn: 'স্টাফ আইডি', en: 'Staff ID' },
-          { bn: 'নাম', en: 'Name' },
-          { bn: 'পদবি', en: 'Designation' },
-          { bn: 'অবস্থা', en: 'Status' },
-          { bn: 'ইন', en: 'Check-in' },
-          { bn: 'আউট', en: 'Check-out' },
-          { bn: 'শিফট', en: 'Shift' },
-          { bn: 'মন্তব্য', en: 'Remarks' },
+    try {
+      if (!dutyData.length) {
+        toast.error(bn ? 'রিপোর্ট তৈরির জন্য কোনো ডেটা নেই' : 'No data available to generate report');
+        return;
+      }
+      const statusLabel = (s: string) => {
+        if (s === 'present') return bn ? 'উপস্থিত' : 'Present';
+        if (s === 'absent') return bn ? 'অনুপস্থিত' : 'Absent';
+        if (s === 'late') return bn ? 'দেরি' : 'Late';
+        return bn ? 'রেকর্ড নেই' : 'No Record';
+      };
+      generateBilingualReport(
+        {
+          ...reportMeta,
+          report_title_bn: 'প্রতিদিনের ডিউটি রিপোর্ট',
+          report_title_en: 'Daily Duty Report',
+          period_label_bn: `${catLabel(dutyCategory)} • ${dutyDate}`,
+          period_label_en: `${catLabel(dutyCategory)} • ${dutyDate}`,
+        },
+        [{
+          title_bn: `${catLabel(dutyCategory)} — ${dutyData.length} জন স্টাফ`,
+          title_en: `${catLabel(dutyCategory)} — ${dutyData.length} Staff`,
+          headers: [
+            { bn: 'ক্রম', en: 'No.' },
+            { bn: 'স্টাফ আইডি', en: 'Staff ID' },
+            { bn: 'নাম', en: 'Name' },
+            { bn: 'পদবি', en: 'Designation' },
+            { bn: 'অবস্থা', en: 'Status' },
+            { bn: 'ইন', en: 'Check-in' },
+            { bn: 'আউট', en: 'Check-out' },
+            { bn: 'শিফট', en: 'Shift' },
+            { bn: 'মন্তব্য', en: 'Remarks' },
+          ],
+          rows: dutyData.map((d, i) => [
+            i + 1, d.staff_id || '-',
+            bn ? (d.name_bn || d.name_en || '-') : (d.name_en || d.name_bn || '-'),
+            d.designation || '-', statusLabel(d.att_status),
+            d.check_in, d.check_out, d.shift, d.remarks,
+          ]),
+        }],
+        [
+          { label_bn: 'মোট স্টাফ', label_en: 'Total Staff', value: dutyStats.total, tone: 'accent' },
+          { label_bn: 'উপস্থিত', label_en: 'Present', value: dutyStats.present, tone: 'positive' },
+          { label_bn: 'অনুপস্থিত', label_en: 'Absent', value: dutyStats.absent, tone: 'negative' },
+          { label_bn: 'দেরি', label_en: 'Late', value: dutyStats.late },
+          { label_bn: 'রেকর্ড নেই', label_en: 'No Record', value: dutyStats.noRec },
         ],
-        rows: dutyData.map((d, i) => [
-          i + 1, d.staff_id || '-',
-          bn ? (d.name_bn || d.name_en || '-') : (d.name_en || d.name_bn || '-'),
-          d.designation || '-', statusLabel(d.att_status),
-          d.check_in, d.check_out, d.shift, d.remarks,
-        ]),
-      }],
-      [
-        { label_bn: 'মোট স্টাফ', label_en: 'Total Staff', value: dutyStats.total, tone: 'accent' },
-        { label_bn: 'উপস্থিত', label_en: 'Present', value: dutyStats.present, tone: 'positive' },
-        { label_bn: 'অনুপস্থিত', label_en: 'Absent', value: dutyStats.absent, tone: 'negative' },
-        { label_bn: 'দেরি', label_en: 'Late', value: dutyStats.late },
-        { label_bn: 'রেকর্ড নেই', label_en: 'No Record', value: dutyStats.noRec },
-      ],
-    );
+      );
+    } catch (err: any) {
+      console.error('Duty PDF generation error:', err);
+      toast.error(bn ? 'PDF তৈরিতে সমস্যা হয়েছে' : 'Failed to generate PDF report');
+    }
   };
 
   // -------- Duty Excel --------
   const handleDutyExcel = async () => {
-    if (!dutyData.length) return;
-    const XLSX: any = await import('xlsx-js-style');
-    const wb = XLSX.utils.book_new();
-    const wsData: any[][] = [];
-
-    const statusLabel = (s: string) => {
-      if (s === 'present') return bn ? 'উপস্থিত' : 'Present';
-      if (s === 'absent') return bn ? 'অনুপস্থিত' : 'Absent';
-      if (s === 'late') return bn ? 'দেরি' : 'Late';
-      return bn ? 'রেকর্ড নেই' : 'No Record';
-    };
-
-    wsData.push([ws.institution_name || '']);
-    wsData.push([ws.address || '']);
-    wsData.push([`${bn ? 'ফোন' : 'Phone'}: ${ws.phone || ''} | ${bn ? 'ইমেইল' : 'Email'}: ${ws.email || ''}`]);
-    wsData.push([]);
-    wsData.push([bn ? 'প্রতিদিনের ডিউটি রিপোর্ট' : 'Daily Duty Report']);
-    wsData.push([`${bn ? 'তারিখ' : 'Date'}: ${dutyDate} | ${bn ? 'ডিপার্টমেন্ট' : 'Department'}: ${catLabel(dutyCategory)}`]);
-    wsData.push([`${bn ? 'উপস্থিত' : 'Present'}: ${dutyStats.present} | ${bn ? 'অনুপস্থিত' : 'Absent'}: ${dutyStats.absent} | ${bn ? 'দেরি' : 'Late'}: ${dutyStats.late}`]);
-    wsData.push([]);
-
-    const headers = [
-      bn ? 'ক্রম' : 'No.', bn ? 'স্টাফ আইডি' : 'Staff ID', bn ? 'নাম' : 'Name',
-      bn ? 'পদবি' : 'Designation', bn ? 'অবস্থা' : 'Status',
-      bn ? 'ইন' : 'Check-in', bn ? 'আউট' : 'Check-out',
-      bn ? 'শিফট' : 'Shift', bn ? 'মন্তব্য' : 'Remarks',
-    ];
-    wsData.push(headers);
-    dutyData.forEach((d, i) => wsData.push([
-      i + 1, d.staff_id || '-',
-      bn ? (d.name_bn || d.name_en || '-') : (d.name_en || d.name_bn || '-'),
-      d.designation || '-', statusLabel(d.att_status),
-      d.check_in, d.check_out, d.shift, d.remarks,
-    ]));
-
-    const sheet = XLSX.utils.aoa_to_sheet(wsData);
-    sheet['!cols'] = [{ wch: 6 }, { wch: 18 }, { wch: 26 }, { wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 22 }];
-
-    const headerRowIdx = 8;
-    headers.forEach((_, c) => {
-      const ref = XLSX.utils.encode_cell({ r: headerRowIdx, c });
-      if (sheet[ref]) {
-        sheet[ref].s = {
-          font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
-          fill: { fgColor: { rgb: '0F766E' } },
-          alignment: { horizontal: 'center', vertical: 'center' },
-          border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } },
-        };
+    try {
+      if (!dutyData.length) {
+        toast.error(bn ? 'রিপোর্ট তৈরির জন্য কোনো ডেটা নেই' : 'No data available to generate report');
+        return;
       }
-    });
-    [0, 4].forEach(r => {
-      const ref = XLSX.utils.encode_cell({ r, c: 0 });
-      if (sheet[ref]) sheet[ref].s = { font: { bold: true, sz: r === 0 ? 14 : 12, color: { rgb: '0F766E' } } };
-    });
+      const xlsxMod: any = await import('xlsx-js-style');
+      const XLSX: any = xlsxMod.default || xlsxMod;
+      const wb = XLSX.utils.book_new();
+      const wsData: any[][] = [];
 
-    XLSX.utils.book_append_sheet(wb, sheet, bn ? 'ডিউটি' : 'Duty');
-    XLSX.writeFile(wb, `staff_duty_${dutyDate}_${dutyCategory}.xlsx`);
+      const statusLabel = (s: string) => {
+        if (s === 'present') return bn ? 'উপস্থিত' : 'Present';
+        if (s === 'absent') return bn ? 'অনুপস্থিত' : 'Absent';
+        if (s === 'late') return bn ? 'দেরি' : 'Late';
+        return bn ? 'রেকর্ড নেই' : 'No Record';
+      };
+
+      wsData.push([ws.institution_name || '']);
+      wsData.push([ws.address || '']);
+      wsData.push([`${bn ? 'ফোন' : 'Phone'}: ${ws.phone || ''} | ${bn ? 'ইমেইল' : 'Email'}: ${ws.email || ''}`]);
+      wsData.push([]);
+      wsData.push([bn ? 'প্রতিদিনের ডিউটি রিপোর্ট' : 'Daily Duty Report']);
+      wsData.push([`${bn ? 'তারিখ' : 'Date'}: ${dutyDate} | ${bn ? 'ডিপার্টমেন্ট' : 'Department'}: ${catLabel(dutyCategory)}`]);
+      wsData.push([`${bn ? 'উপস্থিত' : 'Present'}: ${dutyStats.present} | ${bn ? 'অনুপস্থিত' : 'Absent'}: ${dutyStats.absent} | ${bn ? 'দেরি' : 'Late'}: ${dutyStats.late}`]);
+      wsData.push([]);
+
+      const headers = [
+        bn ? 'ক্রম' : 'No.', bn ? 'স্টাফ আইডি' : 'Staff ID', bn ? 'নাম' : 'Name',
+        bn ? 'পদবি' : 'Designation', bn ? 'অবস্থা' : 'Status',
+        bn ? 'ইন' : 'Check-in', bn ? 'আউট' : 'Check-out',
+        bn ? 'শিফট' : 'Shift', bn ? 'মন্তব্য' : 'Remarks',
+      ];
+      wsData.push(headers);
+      dutyData.forEach((d, i) => wsData.push([
+        i + 1, d.staff_id || '-',
+        bn ? (d.name_bn || d.name_en || '-') : (d.name_en || d.name_bn || '-'),
+        d.designation || '-', statusLabel(d.att_status),
+        d.check_in, d.check_out, d.shift, d.remarks,
+      ]));
+
+      const sheet = XLSX.utils.aoa_to_sheet(wsData);
+      sheet['!cols'] = [{ wch: 6 }, { wch: 18 }, { wch: 26 }, { wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 22 }];
+
+      const headerRowIdx = 8;
+      headers.forEach((_, c) => {
+        const ref = XLSX.utils.encode_cell({ r: headerRowIdx, c });
+        if (sheet[ref]) {
+          sheet[ref].s = {
+            font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+            fill: { fgColor: { rgb: '0F766E' } },
+            alignment: { horizontal: 'center', vertical: 'center' },
+            border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } },
+          };
+        }
+      });
+      [0, 4].forEach(r => {
+        const ref = XLSX.utils.encode_cell({ r, c: 0 });
+        if (sheet[ref]) sheet[ref].s = { font: { bold: true, sz: r === 0 ? 14 : 12, color: { rgb: '0F766E' } } };
+      });
+
+      XLSX.utils.book_append_sheet(wb, sheet, bn ? 'ডিউটি' : 'Duty');
+      XLSX.writeFile(wb, `staff_duty_${dutyDate}_${dutyCategory}.xlsx`);
+    } catch (err: any) {
+      console.error('Duty Excel generation error:', err);
+      toast.error(bn ? 'এক্সেল ফাইল তৈরিতে সমস্যা হয়েছে' : 'Failed to generate Excel file');
+    }
   };
 
   const statusBadge = (s: string) => {
