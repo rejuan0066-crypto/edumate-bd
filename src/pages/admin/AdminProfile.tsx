@@ -106,9 +106,15 @@ const AdminProfile = () => {
   useEffect(() => {
     if (staffData) {
       setEditDesignation(staffData.designation || '');
-      setEditCategory(staffData.staff_category || '');
+      const rawCat = staffData.staff_category || (staffData as any).department || '';
+      // If legacy 'হিসাব শাখা' or administrative officer without category, default to 'administrative'
+      if (rawCat === 'হিসাব শাখা' || rawCat === 'Accounts' || ((staffData as any).__source === 'administrative' && (!rawCat || rawCat === 'হিসাব শাখা'))) {
+        setEditCategory('administrative');
+      } else {
+        setEditCategory(rawCat);
+      }
     }
-  }, [staffData?.id, staffData?.designation, staffData?.staff_category]);
+  }, [staffData?.id, staffData?.designation, staffData?.staff_category, (staffData as any)?.department, (staffData as any)?.__source]);
 
   const { data: designationsList = [] } = useQuery({
     queryKey: ['designations', 'active'],
@@ -117,7 +123,8 @@ const AdminProfile = () => {
       return data || [];
     },
   });
-  const { data: categoriesList = [] } = useQuery({
+
+  const { data: dbCategoriesList = [] } = useQuery({
     queryKey: ['staff_categories', 'active'],
     queryFn: async () => {
       const { data } = await supabase.from('staff_categories').select('*').eq('is_active', true).order('sort_order', { ascending: true });
@@ -125,9 +132,59 @@ const AdminProfile = () => {
     },
   });
 
-  const filteredDesignations = editCategory
-    ? designationsList.filter((d: any) => d.staff_category === editCategory)
-    : designationsList;
+  // Canonical department list ensuring প্রশাসন বিভাগ is Rank #1 and always present
+  const categoriesList = useMemo(() => {
+    const canonical = [
+      { key: 'administrative', name: 'Administrative', name_bn: 'প্রশাসন বিভাগ' },
+      { key: 'teacher', name: 'Teaching / Academic', name_bn: 'শিক্ষা বিভাগ' },
+      { key: 'support', name: 'Support Staff', name_bn: 'অফিস বিভাগ' },
+      { key: 'general', name: 'General Staff', name_bn: 'সহায়ক কর্মী' },
+    ];
+
+    const list = [...canonical];
+    (dbCategoriesList || []).forEach((c: any) => {
+      const idx = list.findIndex(x => x.key === c.key);
+      if (idx >= 0) {
+        list[idx] = { ...list[idx], ...c };
+      } else {
+        list.push(c);
+      }
+    });
+
+    return list;
+  }, [dbCategoriesList]);
+
+  const filteredDesignations = useMemo(() => {
+    if (!editCategory) return designationsList;
+
+    let matching = designationsList.filter((d: any) => {
+      if (editCategory === 'administrative') {
+        return d.staff_category === 'administrative' ||
+          ['কোষাধ্যক্ষ', 'প্রিন্সিপাল', 'অধ্যক্ষ', 'পরিচালক', 'অফিসার', 'এডমিন', 'সুপার এডমিন'].some(k => (d.name_bn || '').includes(k));
+      }
+      return d.staff_category === editCategory;
+    });
+
+    if (matching.length === 0) {
+      matching = designationsList;
+    }
+
+    if (editDesignation && !matching.some((d: any) => (d.name_bn === editDesignation || d.name === editDesignation))) {
+      matching = [{ id: 'current', name: editDesignation, name_bn: editDesignation, staff_category: editCategory }, ...matching];
+    }
+
+    const seenNames = new Set<string>();
+    const uniqueList: any[] = [];
+    matching.forEach((d: any) => {
+      const name = bn ? (d.name_bn || d.name) : (d.name || d.name_bn);
+      if (name && !seenNames.has(name)) {
+        seenNames.add(name);
+        uniqueList.push(d);
+      }
+    });
+
+    return uniqueList;
+  }, [editCategory, designationsList, editDesignation, bn]);
 
   const saveRoleMutation = useMutation({
     mutationFn: async () => {
@@ -508,7 +565,15 @@ const AdminProfile = () => {
                   }
                   return bn ? 'স্টাফ আইডি' : 'Staff ID';
                 })(), value: staffData?.staff_id },
-              { icon: Building2, label: bn ? 'ডিপার্টমেন্ট' : 'Department', value: (categoriesList.find((c: any) => c.key === (staffData?.department || staffData?.staff_category)) as any)?.[bn ? 'name_bn' : 'name'] || staffData?.department || staffData?.staff_category },
+              { icon: Building2, label: bn ? 'ডিপার্টমেন্ট' : 'Department', value: (() => {
+                  const raw = staffData?.department || staffData?.staff_category;
+                  if (raw === 'administrative' || raw === 'admin') return bn ? 'প্রশাসন বিভাগ' : 'Administrative';
+                  if (raw === 'হিসাব শাখা' && (staffData as any)?.__source === 'administrative') {
+                    return bn ? 'প্রশাসন বিভাগ (হিসাব শাখা)' : 'Administrative (Accounts)';
+                  }
+                  const found: any = categoriesList.find((c: any) => c.key === raw);
+                  return found ? (bn ? found.name_bn : found.name) : raw;
+                })() },
               { icon: Calendar, label: bn ? 'যোগদান' : 'Joining Date', value: fmtDate(staffData?.joining_date) },
               { icon: Calendar, label: bn ? 'জন্ম তারিখ' : 'Date of Birth', value: fmtDate(staffData?.date_of_birth) },
               { icon: ShieldCheck, label: 'NID', value: staffData?.nid },
@@ -584,7 +649,15 @@ const AdminProfile = () => {
                   <div className="min-w-0">
                     <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{bn ? 'ডিপার্টমেন্ট' : 'Department'}</p>
                     <p className="text-sm font-semibold text-foreground truncate">
-                      {(categoriesList.find((c: any) => c.key === staffData.staff_category) as any)?.[bn ? 'name_bn' : 'name'] || staffData.staff_category || '-'}
+                      {(() => {
+                        const raw = staffData.department || staffData.staff_category;
+                        if (raw === 'administrative' || raw === 'admin') return bn ? 'প্রশাসন বিভাগ' : 'Administrative';
+                        if (raw === 'হিসাব শাখা' && (staffData as any)?.__source === 'administrative') {
+                          return bn ? 'প্রশাসন বিভাগ (হিসাব শাখা)' : 'Administrative (Accounts)';
+                        }
+                        const found: any = categoriesList.find((c: any) => c.key === raw);
+                        return found ? (bn ? found.name_bn : found.name) : (raw || '-');
+                      })()}
                     </p>
                   </div>
                 </div>
