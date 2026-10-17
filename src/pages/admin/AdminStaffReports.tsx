@@ -16,7 +16,13 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { CalendarDays, Download, FileText, Users, ClipboardList, UserCheck, Pencil, Loader2, Plus } from 'lucide-react';
+import { CalendarDays, Download, FileText, Users, ClipboardList, UserCheck, Pencil, Loader2, Plus, BookOpen, Briefcase, Check, Search, Sparkles, Clock, CheckCircle2 } from 'lucide-react';
+import {
+  parseDutyRemarks,
+  encodeDutyRemarks,
+  DUTY_PRESETS,
+  DutyReportDetails,
+} from '@/lib/staffDutyReportHelper';
 import { generateBilingualReport } from '@/lib/reportPdfGenerator';
 import { toast } from 'sonner';
 
@@ -71,6 +77,8 @@ const AdminStaffReports = () => {
   // ================== DUTY FILTERS ==================
   const [dutyDate, setDutyDate] = useState<string>(todayISO());
   const [dutyCategory, setDutyCategory] = useState<string>('all');
+  const [dutySearch, setDutySearch] = useState<string>('');
+  const [dutyStatusFilter, setDutyStatusFilter] = useState<string>('all');
 
   // Fetch all active staff
   const { data: staff = [] } = useQuery({
@@ -159,29 +167,85 @@ const AdminStaffReports = () => {
   });
 
   const dutyData = useMemo(() => {
-    const recMap: Record<string, any> = {};
-    dutyRecords.forEach((r: any) => { recMap[r.entity_id] = r; });
+    const recMap: Record<string, any[]> = {};
+    dutyRecords.forEach((r: any) => {
+      if (!recMap[r.entity_id]) recMap[r.entity_id] = [];
+      recMap[r.entity_id].push(r);
+    });
+
     return dutyStaff.map((s: any) => {
-      const r = recMap[s.id];
+      const records: any[] = recMap[s.id] || [];
+      // Pick attendance record from Attendance Page:
+      // Prefer full_day or record with status !== 'no_record', or the one with check_in_time
+      const attRecord =
+        records.find(r => r.shift === 'full_day' && r.status) ||
+        records.find(r => r.status && r.status !== 'no_record') ||
+        records.find(r => r.check_in_time) ||
+        records[0];
+
+      // Find any record that has remarks (teaching/duty log)
+      const reportRecord = records.find(r => r.remarks && r.remarks.trim()) || attRecord;
+      const parsed = parseDutyRemarks(reportRecord?.remarks);
+
       return {
         ...s,
-        att_status: r?.status || 'no_record',
-        raw_check_in: r?.check_in_time || '',
-        raw_check_out: r?.check_out_time || '',
-        check_in: formatTimeDisplay(r?.check_in_time, bn),
-        check_out: formatTimeDisplay(r?.check_out_time, bn),
-        shift: r?.shift || '-',
-        remarks: r?.remarks || '-',
+        record_id: attRecord?.id || reportRecord?.id,
+        att_status: attRecord?.status || 'no_record',
+        raw_check_in: attRecord?.check_in_time || '',
+        raw_check_out: attRecord?.check_out_time || '',
+        check_in: formatTimeDisplay(attRecord?.check_in_time, bn),
+        check_out: formatTimeDisplay(attRecord?.check_out_time, bn),
+        shift: attRecord?.shift || reportRecord?.shift || 'full_day',
+        raw_remarks: reportRecord?.remarks || '',
+        teaching: parsed.teaching,
+        duties: parsed.duties || [],
+        duty_notes: parsed.duty_notes || '',
+        notes: parsed.notes || '',
+        has_teaching: !!parsed.teaching?.trim(),
+        has_duties: Array.isArray(parsed.duties) && parsed.duties.length > 0,
+        has_report: !!(parsed.teaching?.trim() || (parsed.duties && parsed.duties.length > 0) || parsed.duty_notes?.trim() || parsed.notes?.trim()),
       };
     });
   }, [dutyStaff, dutyRecords, bn]);
+
+  const filteredDutyData = useMemo(() => {
+    return dutyData.filter((d: any) => {
+      if (dutySearch.trim()) {
+        const q = dutySearch.toLowerCase().trim();
+        const matchName = (d.name_bn && d.name_bn.toLowerCase().includes(q)) || (d.name_en && d.name_en.toLowerCase().includes(q));
+        const matchId = d.staff_id && d.staff_id.toLowerCase().includes(q);
+        const matchDesig = d.designation && d.designation.toLowerCase().includes(q);
+        if (!matchName && !matchId && !matchDesig) return false;
+      }
+      if (dutyStatusFilter === 'present') return d.att_status === 'present';
+      if (dutyStatusFilter === 'absent') return d.att_status === 'absent';
+      if (dutyStatusFilter === 'late') return d.att_status === 'late';
+      if (dutyStatusFilter === 'with_teaching') return d.has_teaching;
+      if (dutyStatusFilter === 'with_duty') return d.has_duties;
+      if (dutyStatusFilter === 'with_report') return d.has_report;
+      if (dutyStatusFilter === 'without_report') return !d.has_report;
+      return true;
+    });
+  }, [dutyData, dutySearch, dutyStatusFilter]);
 
   const dutyStats = useMemo(() => {
     const present = dutyData.filter(d => d.att_status === 'present').length;
     const absent = dutyData.filter(d => d.att_status === 'absent').length;
     const late = dutyData.filter(d => d.att_status === 'late').length;
     const noRec = dutyData.filter(d => d.att_status === 'no_record').length;
-    return { total: dutyData.length, present, absent, late, noRec };
+    const withTeaching = dutyData.filter(d => d.has_teaching).length;
+    const withDuties = dutyData.filter(d => d.has_duties).length;
+    const withReport = dutyData.filter(d => d.has_report).length;
+    return {
+      total: dutyData.length,
+      present,
+      absent,
+      late,
+      noRec,
+      withTeaching,
+      withDuties,
+      withReport,
+    };
   }, [dutyData]);
 
   // ================== DUTY REPORT MODAL ==================
@@ -190,10 +254,13 @@ const AdminStaffReports = () => {
   const [dutyTargetStaffId, setDutyTargetStaffId] = useState<string>('');
   const [dutyFormDate, setDutyFormDate] = useState<string>(todayISO());
   const [dutyFormStatus, setDutyFormStatus] = useState<string>('present');
-  const [dutyFormShift, setDutyFormShift] = useState<string>('morning');
+  const [dutyFormShift, setDutyFormShift] = useState<string>('full_day');
   const [dutyFormCheckIn, setDutyFormCheckIn] = useState<string>('');
   const [dutyFormCheckOut, setDutyFormCheckOut] = useState<string>('');
-  const [dutyFormRemarks, setDutyFormRemarks] = useState<string>('');
+  const [dutyFormTeaching, setDutyFormTeaching] = useState<string>('');
+  const [dutyFormDuties, setDutyFormDuties] = useState<string[]>([]);
+  const [dutyFormDutyNotes, setDutyFormDutyNotes] = useState<string>('');
+  const [dutyFormNotes, setDutyFormNotes] = useState<string>('');
   const [savingDuty, setSavingDuty] = useState(false);
 
   const openDutyModal = (d?: any) => {
@@ -202,21 +269,44 @@ const AdminStaffReports = () => {
       setDutyTargetStaffId(d.id);
       setDutyFormDate(dutyDate);
       setDutyFormStatus(d.att_status && d.att_status !== 'no_record' ? d.att_status : 'present');
-      setDutyFormShift(d.shift && d.shift !== '-' ? d.shift : 'morning');
-      setDutyFormCheckIn(d.raw_check_in || (d.check_in && d.check_in !== '-' ? d.check_in : ''));
-      setDutyFormCheckOut(d.raw_check_out || (d.check_out && d.check_out !== '-' ? d.check_out : ''));
-      setDutyFormRemarks(d.remarks && d.remarks !== '-' ? d.remarks : '');
+      setDutyFormShift(d.shift && d.shift !== '-' ? d.shift : 'full_day');
+      setDutyFormCheckIn(d.raw_check_in || '');
+      setDutyFormCheckOut(d.raw_check_out || '');
+      setDutyFormTeaching(d.teaching || '');
+      setDutyFormDuties(Array.isArray(d.duties) ? d.duties : []);
+      setDutyFormDutyNotes(d.duty_notes || '');
+      setDutyFormNotes(d.notes || '');
     } else {
+      const firstStaff = dutyStaff[0];
       setDutyTargetStaff(null);
-      setDutyTargetStaffId(dutyStaff[0]?.id || '');
+      setDutyTargetStaffId(firstStaff?.id || '');
       setDutyFormDate(dutyDate);
-      setDutyFormStatus('present');
-      setDutyFormShift('morning');
-      setDutyFormCheckIn('');
-      setDutyFormCheckOut('');
-      setDutyFormRemarks('');
+      const found = firstStaff ? dutyData.find(x => x.id === firstStaff.id) : null;
+      setDutyFormStatus(found?.att_status && found.att_status !== 'no_record' ? found.att_status : 'present');
+      setDutyFormShift(found?.shift && found.shift !== '-' ? found.shift : 'full_day');
+      setDutyFormCheckIn(found?.raw_check_in || '');
+      setDutyFormCheckOut(found?.raw_check_out || '');
+      setDutyFormTeaching(found?.teaching || '');
+      setDutyFormDuties(Array.isArray(found?.duties) ? found.duties : []);
+      setDutyFormDutyNotes(found?.duty_notes || '');
+      setDutyFormNotes(found?.notes || '');
     }
     setDutyModalOpen(true);
+  };
+
+  const handleSelectStaffInModal = (staffId: string) => {
+    setDutyTargetStaffId(staffId);
+    const found = dutyData.find(d => d.id === staffId);
+    if (found) {
+      setDutyFormStatus(found.att_status && found.att_status !== 'no_record' ? found.att_status : 'present');
+      setDutyFormShift(found.shift && found.shift !== '-' ? found.shift : 'full_day');
+      setDutyFormCheckIn(found.raw_check_in || '');
+      setDutyFormCheckOut(found.raw_check_out || '');
+      setDutyFormTeaching(found.teaching || '');
+      setDutyFormDuties(Array.isArray(found.duties) ? found.duties : []);
+      setDutyFormDutyNotes(found.duty_notes || '');
+      setDutyFormNotes(found.notes || '');
+    }
   };
 
   const saveDutyReport = async () => {
@@ -228,21 +318,30 @@ const AdminStaffReports = () => {
     try {
       const { data: existing } = await supabase
         .from('attendance_records')
-        .select('id')
+        .select('id, shift')
         .eq('entity_type', 'staff')
         .eq('entity_id', dutyTargetStaffId)
         .eq('attendance_date', dutyFormDate)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
+
+      const encodedRemarks = encodeDutyRemarks({
+        teaching: dutyFormTeaching,
+        duties: dutyFormDuties,
+        duty_notes: dutyFormDutyNotes,
+        notes: dutyFormNotes,
+      });
 
       const payload = {
         entity_type: 'staff',
         entity_id: dutyTargetStaffId,
         attendance_date: dutyFormDate,
         status: dutyFormStatus,
-        shift: dutyFormShift,
+        shift: dutyFormShift || existing?.shift || 'full_day',
         check_in_time: dutyFormCheckIn || null,
         check_out_time: dutyFormCheckOut || null,
-        remarks: dutyFormRemarks || null,
+        remarks: encodedRemarks || null,
       };
 
       if (existing?.id) {
@@ -258,12 +357,13 @@ const AdminStaffReports = () => {
         if (error) throw error;
       }
 
-      toast.success(bn ? 'ডিউটি রিপোর্ট সংরক্ষিত হয়েছে' : 'Duty report saved successfully');
+      toast.success(bn ? 'ডিউটি ও পাঠদান রিপোর্ট সংরক্ষিত হয়েছে' : 'Duty and teaching report saved successfully');
       setDutyModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ['staff-duty-records'] });
       queryClient.invalidateQueries({ queryKey: ['staff-att-records'] });
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
       queryClient.invalidateQueries({ queryKey: ['my-attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['my-duty-records'] });
     } catch (e: any) {
       toast.error(e?.message || (bn ? 'সংরক্ষণে ত্রুটি' : 'Failed to save duty report'));
     } finally {
@@ -401,7 +501,7 @@ const AdminStaffReports = () => {
   // -------- Duty PDF --------
   const handleDutyPDF = () => {
     try {
-      if (!dutyData.length) {
+      if (!filteredDutyData.length) {
         toast.error(bn ? 'রিপোর্ট তৈরির জন্য কোনো ডেটা নেই' : 'No data available to generate report');
         return;
       }
@@ -409,35 +509,42 @@ const AdminStaffReports = () => {
         if (s === 'present') return bn ? 'উপস্থিত' : 'Present';
         if (s === 'absent') return bn ? 'অনুপস্থিত' : 'Absent';
         if (s === 'late') return bn ? 'দেরি' : 'Late';
+        if (s === 'leave') return bn ? 'ছুটি' : 'Leave';
+        if (s === 'half_day') return bn ? 'অর্ধদিন' : 'Half Day';
         return bn ? 'রেকর্ড নেই' : 'No Record';
       };
       generateBilingualReport(
         {
           ...reportMeta,
-          report_title_bn: 'প্রতিদিনের ডিউটি রিপোর্ট',
-          report_title_en: 'Daily Duty Report',
+          report_title_bn: 'দৈনিক পাঠদান ও ডিউটি রিপোর্ট',
+          report_title_en: 'Daily Teaching & Duty Report',
           period_label_bn: `${catLabel(dutyCategory)} • ${dutyDate}`,
           period_label_en: `${catLabel(dutyCategory)} • ${dutyDate}`,
         },
         [{
-          title_bn: `${catLabel(dutyCategory)} — ${dutyData.length} জন স্টাফ`,
-          title_en: `${catLabel(dutyCategory)} — ${dutyData.length} Staff`,
+          title_bn: `${catLabel(dutyCategory)} — ${filteredDutyData.length} জন স্টাফ`,
+          title_en: `${catLabel(dutyCategory)} — ${filteredDutyData.length} Staff`,
           headers: [
             { bn: 'ক্রম', en: 'No.' },
             { bn: 'স্টাফ আইডি', en: 'Staff ID' },
-            { bn: 'নাম', en: 'Name' },
-            { bn: 'পদবি', en: 'Designation' },
-            { bn: 'অবস্থা', en: 'Status' },
-            { bn: 'ইন', en: 'Check-in' },
-            { bn: 'আউট', en: 'Check-out' },
-            { bn: 'শিফট', en: 'Shift' },
+            { bn: 'নাম ও পদবি', en: 'Name & Designation' },
+            { bn: 'উপস্থিতি (হাজিরা পেজ)', en: 'Attendance' },
+            { bn: 'ইন - আউট সময়', en: 'In - Out Time' },
+            { bn: 'আজকের পাঠদান (কে কি পড়িয়েছে)', en: 'Teaching Log' },
+            { bn: 'সম্পন্ন ডিউটি (কি কি আদায় করেছে)', en: 'Duties Performed' },
             { bn: 'মন্তব্য', en: 'Remarks' },
           ],
-          rows: dutyData.map((d, i) => [
-            i + 1, d.staff_id || '-',
-            bn ? (d.name_bn || d.name_en || '-') : (d.name_en || d.name_bn || '-'),
-            d.designation || '-', statusLabel(d.att_status),
-            d.check_in, d.check_out, d.shift, d.remarks,
+          rows: filteredDutyData.map((d, i) => [
+            i + 1,
+            d.staff_id || '-',
+            `${bn ? (d.name_bn || d.name_en || '-') : (d.name_en || d.name_bn || '-')}\n(${d.designation || '-'})`,
+            statusLabel(d.att_status),
+            (d.check_in !== '-' || d.check_out !== '-') ? `${d.check_in} - ${d.check_out}` : '-',
+            d.teaching || '-',
+            (d.duties && d.duties.length > 0)
+              ? (d.duties.join(', ') + (d.duty_notes ? `\n(${d.duty_notes})` : ''))
+              : (d.duty_notes || '-'),
+            d.notes || '-',
           ]),
         }],
         [
@@ -445,7 +552,8 @@ const AdminStaffReports = () => {
           { label_bn: 'উপস্থিত', label_en: 'Present', value: dutyStats.present, tone: 'positive' },
           { label_bn: 'অনুপস্থিত', label_en: 'Absent', value: dutyStats.absent, tone: 'negative' },
           { label_bn: 'দেরি', label_en: 'Late', value: dutyStats.late },
-          { label_bn: 'রেকর্ড নেই', label_en: 'No Record', value: dutyStats.noRec },
+          { label_bn: 'পাঠদান সম্পন্ন', label_en: 'Teaching Log', value: dutyStats.withTeaching },
+          { label_bn: 'ডিউটি সম্পন্ন', label_en: 'Duties Done', value: dutyStats.withDuties },
         ],
       );
     } catch (err: any) {
@@ -457,7 +565,7 @@ const AdminStaffReports = () => {
   // -------- Duty Excel --------
   const handleDutyExcel = async () => {
     try {
-      if (!dutyData.length) {
+      if (!filteredDutyData.length) {
         toast.error(bn ? 'রিপোর্ট তৈরির জন্য কোনো ডেটা নেই' : 'No data available to generate report');
         return;
       }
@@ -470,6 +578,8 @@ const AdminStaffReports = () => {
         if (s === 'present') return bn ? 'উপস্থিত' : 'Present';
         if (s === 'absent') return bn ? 'অনুপস্থিত' : 'Absent';
         if (s === 'late') return bn ? 'দেরি' : 'Late';
+        if (s === 'leave') return bn ? 'ছুটি' : 'Leave';
+        if (s === 'half_day') return bn ? 'অর্ধদিন' : 'Half Day';
         return bn ? 'রেকর্ড নেই' : 'No Record';
       };
 
@@ -477,27 +587,52 @@ const AdminStaffReports = () => {
       wsData.push([ws.address || '']);
       wsData.push([`${bn ? 'ফোন' : 'Phone'}: ${ws.phone || ''} | ${bn ? 'ইমেইল' : 'Email'}: ${ws.email || ''}`]);
       wsData.push([]);
-      wsData.push([bn ? 'প্রতিদিনের ডিউটি রিপোর্ট' : 'Daily Duty Report']);
+      wsData.push([bn ? 'দৈনিক পাঠদান ও ডিউটি রিপোর্ট' : 'Daily Teaching & Duty Report']);
       wsData.push([`${bn ? 'তারিখ' : 'Date'}: ${dutyDate} | ${bn ? 'ডিপার্টমেন্ট' : 'Department'}: ${catLabel(dutyCategory)}`]);
-      wsData.push([`${bn ? 'উপস্থিত' : 'Present'}: ${dutyStats.present} | ${bn ? 'অনুপস্থিত' : 'Absent'}: ${dutyStats.absent} | ${bn ? 'দেরি' : 'Late'}: ${dutyStats.late}`]);
+      wsData.push([`${bn ? 'মোট' : 'Total'}: ${dutyStats.total} | ${bn ? 'উপস্থিত' : 'Present'}: ${dutyStats.present} | ${bn ? 'অনুপস্থিত' : 'Absent'}: ${dutyStats.absent} | ${bn ? 'দেরি' : 'Late'}: ${dutyStats.late} | ${bn ? 'পাঠদান এন্ট্রি' : 'Teaching'}: ${dutyStats.withTeaching} | ${bn ? 'ডিউটি এন্ট্রি' : 'Duties'}: ${dutyStats.withDuties}`]);
       wsData.push([]);
 
       const headers = [
-        bn ? 'ক্রম' : 'No.', bn ? 'স্টাফ আইডি' : 'Staff ID', bn ? 'নাম' : 'Name',
-        bn ? 'পদবি' : 'Designation', bn ? 'অবস্থা' : 'Status',
-        bn ? 'ইন' : 'Check-in', bn ? 'আউট' : 'Check-out',
-        bn ? 'শিফট' : 'Shift', bn ? 'মন্তব্য' : 'Remarks',
+        bn ? 'ক্রম' : 'No.',
+        bn ? 'স্টাফ আইডি' : 'Staff ID',
+        bn ? 'নাম' : 'Name',
+        bn ? 'পদবি' : 'Designation',
+        bn ? 'উপস্থিতি (হাজিরা পেজ)' : 'Attendance (Page)',
+        bn ? 'ইন সময়' : 'Check-in',
+        bn ? 'আউট সময়' : 'Check-out',
+        bn ? 'আজকের পাঠদান (কে কি পড়িয়েছে)' : 'Classes/Topics Taught',
+        bn ? 'সম্পন্ন ডিউটি (কি কি আদায় করেছে)' : 'Duties Performed',
+        bn ? 'মন্তব্য' : 'Remarks',
       ];
       wsData.push(headers);
-      dutyData.forEach((d, i) => wsData.push([
-        i + 1, d.staff_id || '-',
+      filteredDutyData.forEach((d, i) => wsData.push([
+        i + 1,
+        d.staff_id || '-',
         bn ? (d.name_bn || d.name_en || '-') : (d.name_en || d.name_bn || '-'),
-        d.designation || '-', statusLabel(d.att_status),
-        d.check_in, d.check_out, d.shift, d.remarks,
+        d.designation || '-',
+        statusLabel(d.att_status),
+        d.check_in,
+        d.check_out,
+        d.teaching || '-',
+        (d.duties && d.duties.length > 0)
+          ? (d.duties.join(', ') + (d.duty_notes ? ` (${d.duty_notes})` : ''))
+          : (d.duty_notes || '-'),
+        d.notes || '-',
       ]));
 
       const sheet = XLSX.utils.aoa_to_sheet(wsData);
-      sheet['!cols'] = [{ wch: 6 }, { wch: 18 }, { wch: 26 }, { wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 22 }];
+      sheet['!cols'] = [
+        { wch: 6 },
+        { wch: 14 },
+        { wch: 24 },
+        { wch: 20 },
+        { wch: 18 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 35 },
+        { wch: 30 },
+        { wch: 22 },
+      ];
 
       const headerRowIdx = 8;
       headers.forEach((_, c) => {
@@ -516,7 +651,7 @@ const AdminStaffReports = () => {
         if (sheet[ref]) sheet[ref].s = { font: { bold: true, sz: r === 0 ? 14 : 12, color: { rgb: '0F766E' } } };
       });
 
-      XLSX.utils.book_append_sheet(wb, sheet, bn ? 'ডিউটি' : 'Duty');
+      XLSX.utils.book_append_sheet(wb, sheet, bn ? 'ডিউটি ও পাঠদান' : 'Duty & Teaching');
       XLSX.writeFile(wb, `staff_duty_${dutyDate}_${dutyCategory}.xlsx`);
     } catch (err: any) {
       console.error('Duty Excel generation error:', err);
@@ -528,6 +663,8 @@ const AdminStaffReports = () => {
     if (s === 'present') return <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20">{bn ? 'উপস্থিত' : 'Present'}</Badge>;
     if (s === 'absent') return <Badge className="bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20">{bn ? 'অনুপস্থিত' : 'Absent'}</Badge>;
     if (s === 'late') return <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20">{bn ? 'দেরি' : 'Late'}</Badge>;
+    if (s === 'leave') return <Badge className="bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20">{bn ? 'ছুটি' : 'Leave'}</Badge>;
+    if (s === 'half_day') return <Badge className="bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20">{bn ? 'অর্ধদিন' : 'Half Day'}</Badge>;
     return <Badge variant="outline" className="text-muted-foreground">{bn ? 'রেকর্ড নেই' : 'No Record'}</Badge>;
   };
 
@@ -672,11 +809,11 @@ const AdminStaffReports = () => {
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <ClipboardList className="h-5 w-5 text-primary" />
-                  {bn ? 'দৈনিক ডিউটি ফিল্টার' : 'Daily Duty Filter'}
+                  {bn ? 'দৈনিক পাঠদান ও ডিউটি ফিল্টার' : 'Daily Teaching & Duty Filter'}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">
                       {bn ? 'তারিখ' : 'Date'}
@@ -696,40 +833,76 @@ const AdminStaffReports = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                      {bn ? 'অনুসন্ধান' : 'Search Staff'}
+                    </label>
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                      <Input
+                        value={dutySearch}
+                        onChange={e => setDutySearch(e.target.value)}
+                        placeholder={bn ? 'নাম বা আইডি দিয়ে খুঁজুন...' : 'Search by name or ID...'}
+                        className="pl-8 h-9 text-xs"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                      {bn ? 'অবস্থা ফিল্টার' : 'Filter by Status'}
+                    </label>
+                    <Select value={dutyStatusFilter} onValueChange={setDutyStatusFilter}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">{bn ? 'সকল অবস্থা' : 'All Status'}</SelectItem>
+                        <SelectItem value="present">{bn ? 'উপস্থিত' : 'Present'}</SelectItem>
+                        <SelectItem value="absent">{bn ? 'অনুপস্থিত' : 'Absent'}</SelectItem>
+                        <SelectItem value="late">{bn ? 'দেরি' : 'Late'}</SelectItem>
+                        <SelectItem value="with_teaching">{bn ? 'পাঠদান সম্পন্ন' : 'With Teaching'}</SelectItem>
+                        <SelectItem value="with_duty">{bn ? 'ডিউটি সম্পন্ন' : 'With Duties'}</SelectItem>
+                        <SelectItem value="with_report">{bn ? 'রিপোর্ট জমা হয়েছে' : 'Report Submitted'}</SelectItem>
+                        <SelectItem value="without_report">{bn ? 'রিপোর্ট বাকি' : 'No Report Yet'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 pt-2">
                   <div className="rounded-lg bg-muted/40 p-2 text-center">
-                    <div className="text-xs text-muted-foreground">{bn ? 'মোট' : 'Total'}</div>
-                    <div className="text-lg font-bold">{dutyStats.total}</div>
+                    <div className="text-[11px] text-muted-foreground">{bn ? 'মোট স্টাফ' : 'Total'}</div>
+                    <div className="text-base font-bold">{dutyStats.total}</div>
                   </div>
                   <div className="rounded-lg bg-emerald-500/10 p-2 text-center">
-                    <div className="text-xs text-emerald-700 dark:text-emerald-400">{bn ? 'উপস্থিত' : 'Present'}</div>
-                    <div className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{dutyStats.present}</div>
+                    <div className="text-[11px] text-emerald-700 dark:text-emerald-400">{bn ? 'উপস্থিত' : 'Present'}</div>
+                    <div className="text-base font-bold text-emerald-700 dark:text-emerald-400">{dutyStats.present}</div>
                   </div>
                   <div className="rounded-lg bg-red-500/10 p-2 text-center">
-                    <div className="text-xs text-red-700 dark:text-red-400">{bn ? 'অনুপস্থিত' : 'Absent'}</div>
-                    <div className="text-lg font-bold text-red-700 dark:text-red-400">{dutyStats.absent}</div>
+                    <div className="text-[11px] text-red-700 dark:text-red-400">{bn ? 'অনুপস্থিত' : 'Absent'}</div>
+                    <div className="text-base font-bold text-red-700 dark:text-red-400">{dutyStats.absent}</div>
                   </div>
                   <div className="rounded-lg bg-amber-500/10 p-2 text-center">
-                    <div className="text-xs text-amber-700 dark:text-amber-400">{bn ? 'দেরি' : 'Late'}</div>
-                    <div className="text-lg font-bold text-amber-700 dark:text-amber-400">{dutyStats.late}</div>
+                    <div className="text-[11px] text-amber-700 dark:text-amber-400">{bn ? 'দেরি' : 'Late'}</div>
+                    <div className="text-base font-bold text-amber-700 dark:text-amber-400">{dutyStats.late}</div>
                   </div>
-                  <div className="rounded-lg bg-muted/40 p-2 text-center">
-                    <div className="text-xs text-muted-foreground">{bn ? 'রেকর্ড নেই' : 'No Record'}</div>
-                    <div className="text-lg font-bold">{dutyStats.noRec}</div>
+                  <div className="rounded-lg bg-blue-500/10 p-2 text-center">
+                    <div className="text-[11px] text-blue-700 dark:text-blue-400">{bn ? 'পাঠদান এন্ট্রি' : 'Teaching'}</div>
+                    <div className="text-base font-bold text-blue-700 dark:text-blue-400">{dutyStats.withTeaching}</div>
+                  </div>
+                  <div className="rounded-lg bg-purple-500/10 p-2 text-center">
+                    <div className="text-[11px] text-purple-700 dark:text-purple-400">{bn ? 'ডিউটি এন্ট্রি' : 'Duties'}</div>
+                    <div className="text-base font-bold text-purple-700 dark:text-purple-400">{dutyStats.withDuties}</div>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t">
                   <Button size="sm" onClick={() => openDutyModal(null)} className="btn-primary-gradient h-8 text-xs flex items-center gap-1.5 shadow-sm">
-                    <Plus className="h-3.5 w-3.5" /> {bn ? 'নতুন ডিউটি রিপোর্ট তৈরি' : 'Create Duty Report'}
+                    <Plus className="h-3.5 w-3.5" /> {bn ? 'নতুন ডিউটি ও পাঠদান এন্ট্রি' : 'New Teaching & Duty Entry'}
                   </Button>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={handleDutyPDF} disabled={!dutyData.length}>
+                    <Button size="sm" variant="outline" onClick={handleDutyPDF} disabled={!filteredDutyData.length}>
                       <FileText className="h-4 w-4 mr-1" />PDF
                     </Button>
-                    <Button size="sm" variant="outline" onClick={handleDutyExcel} disabled={!dutyData.length}>
+                    <Button size="sm" variant="outline" onClick={handleDutyExcel} disabled={!filteredDutyData.length}>
                       <Download className="h-4 w-4 mr-1" />{bn ? 'এক্সেল' : 'Excel'}
                     </Button>
                   </div>
@@ -741,10 +914,10 @@ const AdminStaffReports = () => {
               <CardContent className="p-0">
                 {dutyLoading ? (
                   <div className="p-12 text-center text-muted-foreground text-sm">{bn ? 'লোড হচ্ছে...' : 'Loading...'}</div>
-                ) : dutyData.length === 0 ? (
+                ) : filteredDutyData.length === 0 ? (
                   <div className="p-12 text-center text-muted-foreground">
                     <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                    <p className="text-sm">{bn ? 'কোনো স্টাফ পাওয়া যায়নি' : 'No staff found'}</p>
+                    <p className="text-sm">{bn ? 'কোনো স্টাফের রেকর্ড পাওয়া যায়নি' : 'No staff record found'}</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -752,30 +925,97 @@ const AdminStaffReports = () => {
                       <TableHeader>
                         <TableRow className="bg-muted/40">
                           <TableHead className="w-12 text-center">{bn ? 'ক্রম' : 'No.'}</TableHead>
-                          <TableHead>{bn ? 'স্টাফ আইডি' : 'Staff ID'}</TableHead>
-                          <TableHead>{bn ? 'নাম' : 'Name'}</TableHead>
-                          <TableHead>{bn ? 'পদবি' : 'Designation'}</TableHead>
-                          <TableHead className="text-center">{bn ? 'অবস্থা' : 'Status'}</TableHead>
-                          <TableHead className="text-center">{bn ? 'ইন' : 'Check-in'}</TableHead>
-                          <TableHead className="text-center">{bn ? 'আউট' : 'Check-out'}</TableHead>
-                          <TableHead className="text-center">{bn ? 'শিফট' : 'Shift'}</TableHead>
-                          <TableHead>{bn ? 'মন্তব্য' : 'Remarks'}</TableHead>
+                          <TableHead className="w-24">{bn ? 'স্টাফ আইডি' : 'Staff ID'}</TableHead>
+                          <TableHead className="min-w-[180px]">{bn ? 'শিক্ষক / স্টাফ' : 'Teacher / Staff'}</TableHead>
+                          <TableHead className="min-w-[160px] text-center">{bn ? 'উপস্থিতি (হাজিরা পেজ)' : 'Attendance (Page)'}</TableHead>
+                          <TableHead className="min-w-[220px]">{bn ? 'আজকে কে কি পড়িয়েছে' : 'Teaching Log (Classes & Topics)'}</TableHead>
+                          <TableHead className="min-w-[200px]">{bn ? 'কি কি ডিউটি আদায় করেছে' : 'Duties Performed'}</TableHead>
+                          <TableHead className="min-w-[140px]">{bn ? 'মন্তব্য' : 'Remarks'}</TableHead>
                           <TableHead className="text-center w-16">{bn ? 'সম্পাদনা' : 'Edit'}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {dutyData.map((d: any, i: number) => (
+                        {filteredDutyData.map((d: any, i: number) => (
                           <TableRow key={d.id} className="hover:bg-muted/30">
                             <TableCell className="text-center text-muted-foreground">{i + 1}</TableCell>
                             <TableCell className="font-mono text-xs text-muted-foreground">{d.staff_id || '-'}</TableCell>
-                            <TableCell className="font-medium">{bn ? (d.name_bn || d.name_en) : (d.name_en || d.name_bn)}</TableCell>
-                            <TableCell className="text-sm">{d.designation || '-'}</TableCell>
-                            <TableCell className="text-center">{statusBadge(d.att_status)}</TableCell>
-                            <TableCell className="text-center text-sm font-mono">{d.check_in}</TableCell>
-                            <TableCell className="text-center text-sm font-mono">{d.check_out}</TableCell>
-                            <TableCell className="text-center text-sm">{d.shift}</TableCell>
-                            <TableCell className="text-sm text-muted-foreground max-w-xs">
-                              <div className="line-clamp-2 whitespace-pre-wrap">{d.remarks}</div>
+                            <TableCell>
+                              <div className="font-medium text-sm text-foreground">
+                                {bn ? (d.name_bn || d.name_en) : (d.name_en || d.name_bn)}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {d.designation || '-'} {d.department ? `• ${d.department}` : ''}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <div className="flex flex-col items-center gap-1">
+                                {statusBadge(d.att_status)}
+                                {(d.check_in !== '-' || d.check_out !== '-') ? (
+                                  <div className="text-[11px] font-mono text-muted-foreground flex items-center gap-1">
+                                    <Clock className="w-3 h-3 opacity-60" />
+                                    <span>{d.check_in}</span>
+                                    <span>-</span>
+                                    <span>{d.check_out}</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-[10px] text-muted-foreground/60 italic">
+                                    {bn ? 'সময় এন্ট্রি নেই' : 'No time'}
+                                  </span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {d.teaching ? (
+                                <div className="space-y-1">
+                                  <div className="flex items-start gap-1.5 text-xs text-foreground font-medium">
+                                    <BookOpen className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+                                    <div className="whitespace-pre-wrap line-clamp-3 text-xs leading-relaxed">
+                                      {d.teaching}
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground/50 italic">
+                                  {bn ? '— পাঠদান এন্ট্রি নেই —' : '— No teaching entry —'}
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {d.duties && d.duties.length > 0 ? (
+                                <div className="space-y-1">
+                                  <div className="flex flex-wrap gap-1">
+                                    {d.duties.map((dt: string) => (
+                                      <Badge
+                                        key={dt}
+                                        variant="secondary"
+                                        className="text-[10px] bg-primary/10 text-primary border-primary/20 py-0.5 px-1.5 font-medium"
+                                      >
+                                        {dt}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                  {d.duty_notes && (
+                                    <p className="text-[11px] text-muted-foreground line-clamp-2">
+                                      {d.duty_notes}
+                                    </p>
+                                  )}
+                                </div>
+                              ) : d.duty_notes ? (
+                                <p className="text-[11px] text-muted-foreground line-clamp-2">
+                                  {d.duty_notes}
+                                </p>
+                              ) : (
+                                <span className="text-xs text-muted-foreground/50 italic">
+                                  {bn ? '— কোনো ডিউটি নেই —' : '— No duty entry —'}
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {d.notes ? (
+                                <div className="line-clamp-2 whitespace-pre-wrap">{d.notes}</div>
+                              ) : (
+                                <span className="text-muted-foreground/40">—</span>
+                              )}
                             </TableCell>
                             <TableCell className="text-center">
                               <Button
@@ -783,7 +1023,7 @@ const AdminStaffReports = () => {
                                 variant="ghost"
                                 className="h-8 w-8 rounded-full hover:bg-primary/10 hover:text-primary"
                                 onClick={() => openDutyModal(d)}
-                                title={bn ? 'ডিউটি রিপোর্ট সম্পাদন' : 'Edit Duty Report'}
+                                title={bn ? 'ডিউটি ও পাঠদান সম্পাদন' : 'Edit Duty & Teaching'}
                               >
                                 <Pencil className="h-3.5 w-3.5" />
                               </Button>
@@ -799,37 +1039,46 @@ const AdminStaffReports = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Full Duty Report Dialog */}
+        {/* Full Duty & Teaching Report Dialog */}
         <Dialog open={dutyModalOpen} onOpenChange={setDutyModalOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <ClipboardList className="h-5 w-5 text-primary" />
-                {dutyTargetStaff ? (bn ? 'ডিউটি রিপোর্ট সম্পাদন' : 'Edit Duty Report') : (bn ? 'নতুন ডিউটি রিপোর্ট তৈরি' : 'Create Duty Report')}
+                {dutyTargetStaff
+                  ? (bn ? 'ডিউটি ও পাঠদান রিপোর্ট সম্পাদনা' : 'Edit Duty & Teaching Report')
+                  : (bn ? 'নতুন দৈনিক ডিউটি ও পাঠদান এন্ট্রি' : 'Create Teaching & Duty Entry')}
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-3.5 py-1">
-              {/* Select Staff if creating new, or show badge if editing */}
+            <div className="space-y-4 py-1">
+              {/* Staff header / selector */}
               {dutyTargetStaff ? (
-                <div className="rounded-xl bg-muted/40 p-3 space-y-1">
-                  <div className="text-sm font-semibold">
-                    {bn ? (dutyTargetStaff.name_bn || dutyTargetStaff.name_en) : (dutyTargetStaff.name_en || dutyTargetStaff.name_bn)}
+                <div className="rounded-xl border bg-muted/30 p-3 flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-semibold text-foreground">
+                      {bn ? (dutyTargetStaff.name_bn || dutyTargetStaff.name_en) : (dutyTargetStaff.name_en || dutyTargetStaff.name_bn)}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {dutyTargetStaff.staff_id ? `আইডি: ${dutyTargetStaff.staff_id} • ` : ''}
+                      {dutyTargetStaff.designation || '-'}
+                      {dutyTargetStaff.department ? ` (${dutyTargetStaff.department})` : ''}
+                    </div>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {dutyTargetStaff.staff_id || '-'} • {dutyTargetStaff.designation || '-'}
-                  </div>
+                  <Badge variant="outline" className="text-xs">
+                    {dutyTargetStaff.staff_category || 'staff'}
+                  </Badge>
                 </div>
               ) : (
                 <div>
                   <label className="text-xs font-medium text-muted-foreground mb-1 block">
                     {bn ? 'স্টাফ / শিক্ষক নির্বাচন করুন' : 'Select Staff / Teacher'}
                   </label>
-                  <Select value={dutyTargetStaffId} onValueChange={setDutyTargetStaffId}>
-                    <SelectTrigger><SelectValue placeholder={bn ? 'স্টাফ সিলেক্ট করুন' : 'Select Staff'} /></SelectTrigger>
+                  <Select value={dutyTargetStaffId} onValueChange={handleSelectStaffInModal}>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={bn ? 'স্টাফ সিলেক্ট করুন' : 'Select Staff'} /></SelectTrigger>
                     <SelectContent className="max-h-56">
                       {dutyStaff.map((s: any) => (
                         <SelectItem key={s.id} value={s.id}>
-                          {bn ? (s.name_bn || s.name_en) : (s.name_en || s.name_bn)} {s.staff_id ? `(${s.staff_id})` : ''}
+                          {bn ? (s.name_bn || s.name_en) : (s.name_en || s.name_bn)} {s.staff_id ? `(${s.staff_id})` : ''} - {s.designation || ''}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -837,6 +1086,7 @@ const AdminStaffReports = () => {
                 </div>
               )}
 
+              {/* Date & Shift */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-medium text-muted-foreground mb-1 block">
@@ -849,71 +1099,157 @@ const AdminStaffReports = () => {
                     {bn ? 'শিফট' : 'Shift'}
                   </label>
                   <Select value={dutyFormShift} onValueChange={setDutyFormShift}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="full_day">{bn ? 'পূর্ণকালীন (সারাদিন)' : 'Full Day'}</SelectItem>
                       <SelectItem value="morning">{bn ? 'সকাল' : 'Morning'}</SelectItem>
                       <SelectItem value="evening">{bn ? 'বিকাল' : 'Evening'}</SelectItem>
-                      <SelectItem value="full_day">{bn ? 'সারাদিন' : 'Full Day'}</SelectItem>
                       <SelectItem value="night">{bn ? 'নৈশকালীন' : 'Night'}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                    {bn ? 'অবস্থা' : 'Status'}
-                  </label>
-                  <Select value={dutyFormStatus} onValueChange={setDutyFormStatus}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="present">{bn ? 'উপস্থিত' : 'Present'}</SelectItem>
-                      <SelectItem value="late">{bn ? 'দেরি' : 'Late'}</SelectItem>
-                      <SelectItem value="absent">{bn ? 'অনুপস্থিত' : 'Absent'}</SelectItem>
-                      <SelectItem value="leave">{bn ? 'ছুটি' : 'Leave'}</SelectItem>
-                      <SelectItem value="half_day">{bn ? 'অর্ধদিন' : 'Half Day'}</SelectItem>
-                    </SelectContent>
-                  </Select>
+              {/* Attendance section (Synced with Attendance Page) */}
+              <div className="rounded-xl border border-blue-200/60 dark:border-blue-900/40 bg-gradient-to-r from-blue-50/60 via-indigo-50/40 to-blue-50/60 dark:from-blue-950/20 dark:via-indigo-950/20 dark:to-blue-950/20 p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-900 dark:text-blue-300">
+                    <UserCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    {bn ? 'উপস্থিতি তথ্য (উপস্থিতি পেজ থেকে প্রাপ্ত)' : 'Attendance Record (Synced from Attendance Page)'}
+                  </div>
+                  <span className="text-[10px] text-blue-700 dark:text-blue-400 font-medium bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded-full">
+                    {bn ? 'উপস্থিতি পেজের সাথে সংযুক্ত' : 'Live Sync'}
+                  </span>
                 </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                    {bn ? 'ইন টাইম' : 'In Time'}
-                  </label>
-                  <TimePicker
-                    value={dutyFormCheckIn}
-                    onChange={(v) => setDutyFormCheckIn(v)}
-                    className="h-9 text-xs"
-                    clearable
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                    {bn ? 'আউট টাইম' : 'Out Time'}
-                  </label>
-                  <TimePicker
-                    value={dutyFormCheckOut}
-                    onChange={(v) => setDutyFormCheckOut(v)}
-                    className="h-9 text-xs"
-                    clearable
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div>
+                    <label className="text-[11px] font-medium text-muted-foreground mb-1 block">
+                      {bn ? 'হাজিরার অবস্থা' : 'Status'}
+                    </label>
+                    <Select value={dutyFormStatus} onValueChange={setDutyFormStatus}>
+                      <SelectTrigger className="h-8 text-xs bg-background"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="present">{bn ? 'উপস্থিত' : 'Present'}</SelectItem>
+                        <SelectItem value="late">{bn ? 'দেরি' : 'Late'}</SelectItem>
+                        <SelectItem value="absent">{bn ? 'অনুপস্থিত' : 'Absent'}</SelectItem>
+                        <SelectItem value="leave">{bn ? 'ছুটি' : 'Leave'}</SelectItem>
+                        <SelectItem value="half_day">{bn ? 'অর্ধদিন' : 'Half Day'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-medium text-muted-foreground mb-1 block">
+                      {bn ? 'ইন টাইম (প্রবেশ)' : 'Check-In Time'}
+                    </label>
+                    <TimePicker
+                      value={dutyFormCheckIn}
+                      onChange={(v) => setDutyFormCheckIn(v)}
+                      className="h-8 text-xs bg-background"
+                      clearable
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-medium text-muted-foreground mb-1 block">
+                      {bn ? 'আউট টাইম (প্রস্থান)' : 'Check-Out Time'}
+                    </label>
+                    <TimePicker
+                      value={dutyFormCheckOut}
+                      onChange={(v) => setDutyFormCheckOut(v)}
+                      className="h-8 text-xs bg-background"
+                      clearable
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                  {bn ? 'ডিউটি বিবরণ ও সম্পন্ন কাজের রিপোর্ট' : 'Duty activities & remarks'}
-                </label>
+              {/* Teaching section (আজকে কে কি পড়িয়েছে) */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                    <BookOpen className="w-4 h-4 text-primary" />
+                    {bn ? 'আজকে কি কি পড়িয়েছেন (শ্রেণি, বিষয় ও পাঠদান বিবরণ)' : 'Classes & Subjects Taught Today'}
+                  </label>
+                  <span className="text-[11px] text-muted-foreground">
+                    {bn ? 'কে কি পড়িয়েছে' : 'Teaching Log'}
+                  </span>
+                </div>
                 <Textarea
-                  value={dutyFormRemarks}
-                  onChange={(e) => setDutyFormRemarks(e.target.value)}
-                  placeholder={bn ? 'আজকের ক্লাসের বিবরণ, গার্ড ডিউটি বা সম্পন্ন কাজের রিপোর্ট লিখুন...' : 'Enter classes taken, duty activities, or remarks...'}
-                  rows={4}
+                  value={dutyFormTeaching}
+                  onChange={(e) => setDutyFormTeaching(e.target.value)}
+                  placeholder={bn
+                    ? 'আজকে যে যে ক্লাস নিয়েছেন এবং যা পড়িয়েছেন বিস্তারিত লিখুন...\nউদাহরণ:\n• ৫ম শ্রেণি - কুরআন মাজিদ (সূরা ফাতিহা ও ইখলাস হিফয)\n• ৮ম শ্রেণি - গণিত (অধ্যায় ৩: বীজগণিতীয় সূত্রাবলি অনুশীলন)\n• ৯ম শ্রেণি - বাংলা ১ম পত্র (কবিতা: বঙ্গবাণী)'
+                    : 'Enter classes taken, subjects, chapters, and topics taught...'}
+                  rows={3}
                   className="text-xs"
                 />
               </div>
+
+              {/* Duty section (কি কি ডিউটি আদায় করেছে) */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                    <Briefcase className="w-4 h-4 text-primary" />
+                    {bn ? 'কি কি ডিউটি আদায় করেছেন (প্রযোজ্য সবগুলো নির্বাচন করুন)' : 'Duties Performed (Select all that apply)'}
+                  </label>
+                  {dutyFormDuties.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setDutyFormDuties([])}
+                      className="text-[11px] text-muted-foreground hover:text-destructive underline"
+                    >
+                      {bn ? 'সব মুছুন' : 'Clear all'}
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-2.5 rounded-xl border bg-muted/20">
+                  {DUTY_PRESETS.map((dp) => {
+                    const isSelected = dutyFormDuties.includes(dp.label_bn);
+                    return (
+                      <button
+                        key={dp.id}
+                        type="button"
+                        onClick={() => {
+                          setDutyFormDuties(prev =>
+                            isSelected ? prev.filter(x => x !== dp.label_bn) : [...prev, dp.label_bn]
+                          );
+                        }}
+                        className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium border text-left transition-all ${
+                          isSelected
+                            ? 'bg-primary text-primary-foreground border-primary shadow-xs font-semibold'
+                            : 'bg-background hover:bg-muted/60 border-muted text-muted-foreground'
+                        }`}
+                      >
+                        <span className="text-sm">{dp.icon}</span>
+                        <span className="truncate flex-1">{bn ? dp.label_bn : dp.label_en}</span>
+                        {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <Input
+                  value={dutyFormDutyNotes}
+                  onChange={(e) => setDutyFormDutyNotes(e.target.value)}
+                  placeholder={bn ? 'ডিউটির অতিরিক্ত বিবরণ বা স্থান (যেমন: ২য় তলার হোস্টেল, হল রুম ৩...)' : 'Additional duty details (e.g. 2nd floor hostel, Hall 3...)'}
+                  className="h-8 text-xs"
+                />
+              </div>
+
+              {/* Remarks section */}
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                  {bn ? 'সাধারণ মন্তব্য (যদি থাকে)' : 'General Remarks (Optional)'}
+                </label>
+                <Input
+                  value={dutyFormNotes}
+                  onChange={(e) => setDutyFormNotes(e.target.value)}
+                  placeholder={bn ? 'অতিরিক্ত মন্তব্য বা পর্যবেক্ষণ...' : 'Any remarks or observations...'}
+                  className="h-8 text-xs"
+                />
+              </div>
             </div>
-            <DialogFooter className="gap-2 sm:gap-0">
+            <DialogFooter className="gap-2 sm:gap-0 pt-2 border-t">
               <Button variant="ghost" onClick={() => setDutyModalOpen(false)} disabled={savingDuty}>
                 {bn ? 'বাতিল' : 'Cancel'}
               </Button>
