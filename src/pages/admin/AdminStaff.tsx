@@ -5,10 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, Plus, Trash2, Loader2, Pencil, UserPlus, Eye, EyeOff, User, FileText, Check, X, Award, Power, PowerOff, Clock } from 'lucide-react';
+import { Search, Plus, Trash2, Loader2, Pencil, UserPlus, Eye, EyeOff, User, FileText, Check, X, Award, Power, PowerOff, Clock, BarChart3, ClipboardList } from 'lucide-react';
 import StaffProfileModal from '@/components/profile/StaffProfileModal';
 import StaffLetterDialog from '@/components/admin/StaffLetterDialog';
 import StaffDutyTimeDialog from '@/components/admin/StaffDutyTimeDialog';
+import StaffMonthlyAttendanceDialog from '@/components/admin/StaffMonthlyAttendanceDialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -83,6 +84,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
   const [viewStaff, setViewStaff] = useState<any>(null);
   const [letterStaff, setLetterStaff] = useState<any>(null);
   const [dutyStaff, setDutyStaff] = useState<any>(null);
+  const [monthlyAttendanceStaff, setMonthlyAttendanceStaff] = useState<any>(null);
 
   // Account creation dialog state
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
@@ -449,6 +451,15 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
             </p>
           </div>
           <div className="flex gap-2 items-center flex-wrap w-full sm:w-auto justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/admin/staff-reports')}
+              className="h-8 text-xs flex items-center gap-1.5"
+            >
+              <BarChart3 className="w-3.5 h-3.5 text-primary" />
+              {bn ? 'স্টাফ রিপোর্ট' : 'Staff Reports'}
+            </Button>
             {missingIdCount > 0 && isAdminRole(role) && (
               <Button variant="outline" size="sm" onClick={handleBulkGenerateIds} disabled={generatingIds} className="h-8 text-xs flex items-center gap-1.5">
                 {generatingIds ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
@@ -613,6 +624,14 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                         <div className="flex items-center gap-0.5">
                           <button onClick={() => setViewStaff(s)} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary active:scale-95" title={bn ? 'প্রোফাইল দেখুন' : 'View Profile'}>
                             <Eye className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => setMonthlyAttendanceStaff(s)} 
+                            className={`p-1 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary active:scale-95 ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`} 
+                            disabled={isPending}
+                            title={bn ? 'হাজিরা ও ডিউটি রিপোর্ট' : 'Attendance & Duty Report'}
+                          >
+                            <ClipboardList className="w-4 h-4 text-primary" />
                           </button>
                           {canEditItem && (
                             <button 
@@ -830,6 +849,14 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                             </>
                           )}
                           <button onClick={() => setViewStaff(s)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary" title={bn ? 'প্রোফাইল দেখুন' : 'View Profile'}><Eye className="w-4 h-4" /></button>
+                          <button 
+                            onClick={() => setMonthlyAttendanceStaff(s)} 
+                            className={`p-2 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary ${isRecordPending(s.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
+                            disabled={isRecordPending(s.id)}
+                            title={bn ? 'হাজিরা ও ডিউটি রিপোর্ট' : 'Attendance & Duty Report'}
+                          >
+                            <ClipboardList className="w-4 h-4 text-primary" />
+                          </button>
                           {canEditItem && s.status === 'active' && (
                             <button 
                               onClick={() => setLetterStaff(s)} 
@@ -991,6 +1018,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
         {/* Promotion / Salary Letter Dialog */}
         <StaffLetterDialog open={!!letterStaff} onOpenChange={(o) => { if (!o) setLetterStaff(null); }} staff={letterStaff} bn={bn} />
         <StaffDutyTimeDialog open={!!dutyStaff} onOpenChange={(o) => { if (!o) setDutyStaff(null); }} staff={dutyStaff} bn={bn} />
+        <StaffMonthlyAttendanceDialog open={!!monthlyAttendanceStaff} onOpenChange={(o) => { if (!o) setMonthlyAttendanceStaff(null); }} staff={monthlyAttendanceStaff} />
       </div>
     </AdminLayout>
   );

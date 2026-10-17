@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -14,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { CalendarDays, Download, FileText, Users, ClipboardList, UserCheck, Pencil, Loader2 } from 'lucide-react';
+import { CalendarDays, Download, FileText, Users, ClipboardList, UserCheck, Pencil, Loader2, Plus } from 'lucide-react';
 import { generateBilingualReport } from '@/lib/reportPdfGenerator';
 import { toast } from 'sonner';
 
@@ -22,6 +23,26 @@ const todayISO = () => new Date().toISOString().slice(0, 10);
 const firstOfMonth = () => {
   const d = new Date();
   return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+};
+
+const formatTimeDisplay = (timeStr: string | null | undefined, bn: boolean) => {
+  if (!timeStr) return '-';
+  if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(timeStr)) {
+    const parts = timeStr.split(':').map(Number);
+    const h = parts[0];
+    const m = parts[1];
+    const period = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    const res = `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${period}`;
+    return bn ? res.replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[+d]) : res;
+  }
+  try {
+    const d = new Date(timeStr);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleTimeString(bn ? 'bn-BD' : 'en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    }
+  } catch {}
+  return timeStr;
 };
 
 const STAFF_CATEGORIES = [
@@ -38,58 +59,8 @@ const AdminStaffReports = () => {
   const { settings: ws } = useWebsiteSettings();
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState('attendance');
-
-  // ================== REMARKS EDIT DIALOG ==================
-  const [editTarget, setEditTarget] = useState<any | null>(null);
-  const [editRemarks, setEditRemarks] = useState('');
-  const [savingRemarks, setSavingRemarks] = useState(false);
-
-  const openEditRemarks = (d: any) => {
-    setEditTarget(d);
-    setEditRemarks(d.remarks && d.remarks !== '-' ? d.remarks : '');
-  };
-
-  const saveRemarks = async () => {
-    if (!editTarget) return;
-    setSavingRemarks(true);
-    try {
-      const { data: existing } = await supabase
-        .from('attendance_records')
-        .select('id')
-        .eq('entity_type', 'staff')
-        .eq('entity_id', editTarget.id)
-        .eq('attendance_date', dutyDate)
-        .maybeSingle();
-
-      if (existing?.id) {
-        const { error } = await supabase
-          .from('attendance_records')
-          .update({ remarks: editRemarks || null })
-          .eq('id', existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('attendance_records')
-          .insert({
-            entity_type: 'staff',
-            entity_id: editTarget.id,
-            attendance_date: dutyDate,
-            status: 'absent',
-            shift: 'morning',
-            remarks: editRemarks || null,
-          });
-        if (error) throw error;
-      }
-      toast.success(bn ? 'মন্তব্য সংরক্ষিত হয়েছে' : 'Remarks saved');
-      setEditTarget(null);
-      queryClient.invalidateQueries({ queryKey: ['staff-duty-records'] });
-    } catch (e: any) {
-      toast.error(e?.message || (bn ? 'সংরক্ষণে ত্রুটি' : 'Failed to save'));
-    } finally {
-      setSavingRemarks(false);
-    }
-  };
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') === 'duty' ? 'duty' : 'attendance');
 
   // ================== ATTENDANCE FILTERS ==================
   const [category, setCategory] = useState<string>('all');
@@ -194,8 +165,10 @@ const AdminStaffReports = () => {
       return {
         ...s,
         att_status: r?.status || 'no_record',
-        check_in: r?.check_in_time ? new Date(r.check_in_time).toLocaleTimeString(bn ? 'bn-BD' : 'en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) : '-',
-        check_out: r?.check_out_time ? new Date(r.check_out_time).toLocaleTimeString(bn ? 'bn-BD' : 'en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) : '-',
+        raw_check_in: r?.check_in_time || '',
+        raw_check_out: r?.check_out_time || '',
+        check_in: formatTimeDisplay(r?.check_in_time, bn),
+        check_out: formatTimeDisplay(r?.check_out_time, bn),
         shift: r?.shift || '-',
         remarks: r?.remarks || '-',
       };
@@ -209,6 +182,93 @@ const AdminStaffReports = () => {
     const noRec = dutyData.filter(d => d.att_status === 'no_record').length;
     return { total: dutyData.length, present, absent, late, noRec };
   }, [dutyData]);
+
+  // ================== DUTY REPORT MODAL ==================
+  const [dutyModalOpen, setDutyModalOpen] = useState(false);
+  const [dutyTargetStaff, setDutyTargetStaff] = useState<any | null>(null);
+  const [dutyTargetStaffId, setDutyTargetStaffId] = useState<string>('');
+  const [dutyFormDate, setDutyFormDate] = useState<string>(todayISO());
+  const [dutyFormStatus, setDutyFormStatus] = useState<string>('present');
+  const [dutyFormShift, setDutyFormShift] = useState<string>('morning');
+  const [dutyFormCheckIn, setDutyFormCheckIn] = useState<string>('');
+  const [dutyFormCheckOut, setDutyFormCheckOut] = useState<string>('');
+  const [dutyFormRemarks, setDutyFormRemarks] = useState<string>('');
+  const [savingDuty, setSavingDuty] = useState(false);
+
+  const openDutyModal = (d?: any) => {
+    if (d) {
+      setDutyTargetStaff(d);
+      setDutyTargetStaffId(d.id);
+      setDutyFormDate(dutyDate);
+      setDutyFormStatus(d.att_status && d.att_status !== 'no_record' ? d.att_status : 'present');
+      setDutyFormShift(d.shift && d.shift !== '-' ? d.shift : 'morning');
+      setDutyFormCheckIn(d.raw_check_in || (d.check_in && d.check_in !== '-' ? d.check_in : ''));
+      setDutyFormCheckOut(d.raw_check_out || (d.check_out && d.check_out !== '-' ? d.check_out : ''));
+      setDutyFormRemarks(d.remarks && d.remarks !== '-' ? d.remarks : '');
+    } else {
+      setDutyTargetStaff(null);
+      setDutyTargetStaffId(dutyStaff[0]?.id || '');
+      setDutyFormDate(dutyDate);
+      setDutyFormStatus('present');
+      setDutyFormShift('morning');
+      setDutyFormCheckIn('');
+      setDutyFormCheckOut('');
+      setDutyFormRemarks('');
+    }
+    setDutyModalOpen(true);
+  };
+
+  const saveDutyReport = async () => {
+    if (!dutyTargetStaffId) {
+      toast.error(bn ? 'স্টাফ নির্বাচন করুন' : 'Please select staff');
+      return;
+    }
+    setSavingDuty(true);
+    try {
+      const { data: existing } = await supabase
+        .from('attendance_records')
+        .select('id')
+        .eq('entity_type', 'staff')
+        .eq('entity_id', dutyTargetStaffId)
+        .eq('attendance_date', dutyFormDate)
+        .maybeSingle();
+
+      const payload = {
+        entity_type: 'staff',
+        entity_id: dutyTargetStaffId,
+        attendance_date: dutyFormDate,
+        status: dutyFormStatus,
+        shift: dutyFormShift,
+        check_in_time: dutyFormCheckIn || null,
+        check_out_time: dutyFormCheckOut || null,
+        remarks: dutyFormRemarks || null,
+      };
+
+      if (existing?.id) {
+        const { error } = await supabase
+          .from('attendance_records')
+          .update(payload)
+          .eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('attendance_records')
+          .insert(payload);
+        if (error) throw error;
+      }
+
+      toast.success(bn ? 'ডিউটি রিপোর্ট সংরক্ষিত হয়েছে' : 'Duty report saved successfully');
+      setDutyModalOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['staff-duty-records'] });
+      queryClient.invalidateQueries({ queryKey: ['staff-att-records'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['my-attendance'] });
+    } catch (e: any) {
+      toast.error(e?.message || (bn ? 'সংরক্ষণে ত্রুটি' : 'Failed to save duty report'));
+    } finally {
+      setSavingDuty(false);
+    }
+  };
 
   // ================== EXPORT HELPERS ==================
   const reportMeta = {
@@ -660,13 +720,18 @@ const AdminStaffReports = () => {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t">
-                  <Button size="sm" variant="outline" onClick={handleDutyPDF} disabled={!dutyData.length}>
-                    <FileText className="h-4 w-4 mr-1" />PDF
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t">
+                  <Button size="sm" onClick={() => openDutyModal(null)} className="btn-primary-gradient h-8 text-xs flex items-center gap-1.5 shadow-sm">
+                    <Plus className="h-3.5 w-3.5" /> {bn ? 'নতুন ডিউটি রিপোর্ট তৈরি' : 'Create Duty Report'}
                   </Button>
-                  <Button size="sm" variant="outline" onClick={handleDutyExcel} disabled={!dutyData.length}>
-                    <Download className="h-4 w-4 mr-1" />{bn ? 'এক্সেল' : 'Excel'}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={handleDutyPDF} disabled={!dutyData.length}>
+                      <FileText className="h-4 w-4 mr-1" />PDF
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={handleDutyExcel} disabled={!dutyData.length}>
+                      <Download className="h-4 w-4 mr-1" />{bn ? 'এক্সেল' : 'Excel'}
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -716,8 +781,8 @@ const AdminStaffReports = () => {
                                 size="icon"
                                 variant="ghost"
                                 className="h-8 w-8 rounded-full hover:bg-primary/10 hover:text-primary"
-                                onClick={() => openEditRemarks(d)}
-                                title={bn ? 'মন্তব্য সম্পাদনা' : 'Edit Remarks'}
+                                onClick={() => openDutyModal(d)}
+                                title={bn ? 'ডিউটি রিপোর্ট সম্পাদন' : 'Edit Duty Report'}
                               >
                                 <Pencil className="h-3.5 w-3.5" />
                               </Button>
@@ -733,49 +798,127 @@ const AdminStaffReports = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Remarks Edit Dialog */}
-        <Dialog open={!!editTarget} onOpenChange={(open) => !open && setEditTarget(null)}>
+        {/* Full Duty Report Dialog */}
+        <Dialog open={dutyModalOpen} onOpenChange={setDutyModalOpen}>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Pencil className="h-5 w-5 text-primary" />
-                {bn ? 'বিস্তারিত / মন্তব্য' : 'Details / Remarks'}
+                <ClipboardList className="h-5 w-5 text-primary" />
+                {dutyTargetStaff ? (bn ? 'ডিউটি রিপোর্ট সম্পাদন' : 'Edit Duty Report') : (bn ? 'নতুন ডিউটি রিপোর্ট তৈরি' : 'Create Duty Report')}
               </DialogTitle>
             </DialogHeader>
-            {editTarget && (
-              <div className="space-y-3">
-                <div className="rounded-2xl bg-muted/40 p-3 space-y-1">
+            <div className="space-y-3.5 py-1">
+              {/* Select Staff if creating new, or show badge if editing */}
+              {dutyTargetStaff ? (
+                <div className="rounded-xl bg-muted/40 p-3 space-y-1">
                   <div className="text-sm font-semibold">
-                    {bn ? (editTarget.name_bn || editTarget.name_en) : (editTarget.name_en || editTarget.name_bn)}
+                    {bn ? (dutyTargetStaff.name_bn || dutyTargetStaff.name_en) : (dutyTargetStaff.name_en || dutyTargetStaff.name_bn)}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {editTarget.staff_id || '-'} • {editTarget.designation || '-'}
+                    {dutyTargetStaff.staff_id || '-'} • {dutyTargetStaff.designation || '-'}
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {bn ? 'তারিখ' : 'Date'}: {dutyDate}
-                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    {bn ? 'স্টাফ / শিক্ষক নির্বাচন করুন' : 'Select Staff / Teacher'}
+                  </label>
+                  <Select value={dutyTargetStaffId} onValueChange={setDutyTargetStaffId}>
+                    <SelectTrigger><SelectValue placeholder={bn ? 'স্টাফ সিলেক্ট করুন' : 'Select Staff'} /></SelectTrigger>
+                    <SelectContent className="max-h-56">
+                      {dutyStaff.map((s: any) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {bn ? (s.name_bn || s.name_en) : (s.name_en || s.name_bn)} {s.staff_id ? `(${s.staff_id})` : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    {bn ? 'তারিখ' : 'Date'}
+                  </label>
+                  <DatePicker value={dutyFormDate} onChange={setDutyFormDate} bengali={bn} />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                    {bn ? 'বিস্তারিত / মন্তব্য লিখুন' : 'Enter details / remarks'}
+                    {bn ? 'শিফট' : 'Shift'}
                   </label>
-                  <Textarea
-                    value={editRemarks}
-                    onChange={(e) => setEditRemarks(e.target.value)}
-                    rows={5}
-                    placeholder={bn ? 'যেমন: ছুটিতে আছেন, ভিজিটে গেছেন, বিশেষ দায়িত্ব...' : 'e.g. On leave, Field visit, Special duty...'}
-                    className="resize-none"
+                  <Select value={dutyFormShift} onValueChange={setDutyFormShift}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="morning">{bn ? 'সকাল' : 'Morning'}</SelectItem>
+                      <SelectItem value="evening">{bn ? 'বিকাল' : 'Evening'}</SelectItem>
+                      <SelectItem value="full_day">{bn ? 'সারাদিন' : 'Full Day'}</SelectItem>
+                      <SelectItem value="night">{bn ? 'নৈশকালীন' : 'Night'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    {bn ? 'অবস্থা' : 'Status'}
+                  </label>
+                  <Select value={dutyFormStatus} onValueChange={setDutyFormStatus}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="present">{bn ? 'উপস্থিত' : 'Present'}</SelectItem>
+                      <SelectItem value="late">{bn ? 'দেরি' : 'Late'}</SelectItem>
+                      <SelectItem value="absent">{bn ? 'অনুপস্থিত' : 'Absent'}</SelectItem>
+                      <SelectItem value="leave">{bn ? 'ছুটি' : 'Leave'}</SelectItem>
+                      <SelectItem value="half_day">{bn ? 'অর্ধদিন' : 'Half Day'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    {bn ? 'ইন টাইম' : 'In Time'}
+                  </label>
+                  <Input
+                    type="time"
+                    value={dutyFormCheckIn}
+                    onChange={(e) => setDutyFormCheckIn(e.target.value)}
+                    className="h-9 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    {bn ? 'আউট টাইম' : 'Out Time'}
+                  </label>
+                  <Input
+                    type="time"
+                    value={dutyFormCheckOut}
+                    onChange={(e) => setDutyFormCheckOut(e.target.value)}
+                    className="h-9 text-xs"
                   />
                 </div>
               </div>
-            )}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEditTarget(null)} disabled={savingRemarks}>
+
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                  {bn ? 'ডিউটি বিবরণ ও সম্পন্ন কাজের রিপোর্ট' : 'Duty activities & remarks'}
+                </label>
+                <Textarea
+                  value={dutyFormRemarks}
+                  onChange={(e) => setDutyFormRemarks(e.target.value)}
+                  placeholder={bn ? 'আজকের ক্লাসের বিবরণ, গার্ড ডিউটি বা সম্পন্ন কাজের রিপোর্ট লিখুন...' : 'Enter classes taken, duty activities, or remarks...'}
+                  rows={4}
+                  className="text-xs"
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="ghost" onClick={() => setDutyModalOpen(false)} disabled={savingDuty}>
                 {bn ? 'বাতিল' : 'Cancel'}
               </Button>
-              <Button onClick={saveRemarks} disabled={savingRemarks}>
-                {savingRemarks && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                {bn ? 'সংরক্ষণ' : 'Save'}
+              <Button onClick={saveDutyReport} disabled={savingDuty} className="btn-primary-gradient">
+                {savingDuty && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
+                {bn ? 'সংরক্ষণ করুন' : 'Save Report'}
               </Button>
             </DialogFooter>
           </DialogContent>

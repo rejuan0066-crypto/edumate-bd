@@ -1,21 +1,26 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import { EmbeddedProvider } from '@/contexts/EmbeddedContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import LanguageToggle from '@/components/LanguageToggle';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { toast } from 'sonner';
 import {
   User, Wallet, CalendarDays, Bell, LogOut, GraduationCap,
   Phone, MapPin, Briefcase, Calendar, Clock, Loader2,
-  Users, BookOpen, CreditCard, FileText, BarChart3,
+  Users, BookOpen, CreditCard, FileText, BarChart3, ClipboardList,
+  CheckCircle2, Send, Save, RotateCcw,
   type LucideIcon
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -33,6 +38,7 @@ const AdminAttendance = lazy(() => import('@/pages/admin/AdminAttendance'));
 const AdminExpenses = lazy(() => import('@/pages/admin/AdminExpenses'));
 const AdminDonors = lazy(() => import('@/pages/admin/AdminDonors'));
 const AdminReports = lazy(() => import('@/pages/admin/AdminReports'));
+const AdminStaffReports = lazy(() => import('@/pages/admin/AdminStaffReports'));
 
 // Staff-accessible module definitions
 interface StaffModule {
@@ -56,6 +62,7 @@ const STAFF_MODULES: StaffModule[] = [
   { key: 'expenses', menuPath: '/admin/expenses', labelBn: 'হিসাব', labelEn: 'Expenses', icon: Wallet, component: AdminExpenses },
   { key: 'donors', menuPath: '/admin/donors', labelBn: 'দাতা', labelEn: 'Donors', icon: Users, component: AdminDonors },
   { key: 'reports', menuPath: '/admin/reports', labelBn: 'রিপোর্ট', labelEn: 'Reports', icon: BarChart3, component: AdminReports },
+  { key: 'staff-reports', menuPath: '/admin/staff-reports', labelBn: 'স্টাফ রিপোর্ট', labelEn: 'Staff Reports', icon: BarChart3, component: AdminStaffReports },
 ];
 
 const StaffDashboard = () => {
@@ -181,6 +188,108 @@ const StaffDashboard = () => {
     },
   });
 
+  const queryClient = useQueryClient();
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  const [dutyDate, setDutyDate] = useState(todayStr);
+  const [dutyShift, setDutyShift] = useState('full_day');
+  const [dutyStatus, setDutyStatus] = useState('present');
+  const [dutyCheckIn, setDutyCheckIn] = useState('');
+  const [dutyCheckOut, setDutyCheckOut] = useState('');
+  const [dutyRemarks, setDutyRemarks] = useState('');
+  const [dutySubmitting, setDutySubmitting] = useState(false);
+
+  // Duty records for this staff member
+  const { data: myDutyRecords = [], refetch: refetchDuty } = useQuery({
+    queryKey: ['my-duty-records', staffRecord?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('attendance_records')
+        .select('*')
+        .eq('entity_id', staffRecord!.id)
+        .eq('entity_type', 'staff')
+        .order('attendance_date', { ascending: false })
+        .limit(30);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!staffRecord?.id,
+  });
+
+  useEffect(() => {
+    const existing = myDutyRecords.find(r => r.attendance_date === dutyDate);
+    if (existing) {
+      setDutyShift(existing.shift || 'full_day');
+      setDutyStatus(existing.status || 'present');
+      setDutyCheckIn(existing.check_in_time || '');
+      setDutyCheckOut(existing.check_out_time || '');
+      setDutyRemarks(existing.remarks || '');
+    } else {
+      setDutyShift('full_day');
+      setDutyStatus('present');
+      setDutyCheckIn('');
+      setDutyCheckOut('');
+      setDutyRemarks('');
+    }
+  }, [dutyDate, myDutyRecords]);
+
+  const setNowTime = (target: 'in' | 'out') => {
+    const now = new Date();
+    const str = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    if (target === 'in') setDutyCheckIn(str);
+    else setDutyCheckOut(str);
+  };
+
+  const handleDutySubmit = async () => {
+    if (!staffRecord?.id) {
+      toast.error(bn ? 'স্টাফ রেকর্ড পাওয়া যায়নি' : 'Staff record not found');
+      return;
+    }
+    setDutySubmitting(true);
+    try {
+      const { data: existing } = await supabase
+        .from('attendance_records')
+        .select('id')
+        .eq('entity_id', staffRecord.id)
+        .eq('entity_type', 'staff')
+        .eq('attendance_date', dutyDate)
+        .maybeSingle();
+
+      const payload = {
+        entity_id: staffRecord.id,
+        entity_type: 'staff',
+        attendance_date: dutyDate,
+        shift: dutyShift,
+        status: dutyStatus,
+        check_in_time: dutyCheckIn || null,
+        check_out_time: dutyCheckOut || null,
+        remarks: dutyRemarks || null,
+      };
+
+      if (existing?.id) {
+        const { error } = await supabase
+          .from('attendance_records')
+          .update(payload)
+          .eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('attendance_records')
+          .insert(payload);
+        if (error) throw error;
+      }
+
+      toast.success(bn ? 'দৈনিক ডিউটি রিপোর্ট সফলভাবে সংরক্ষিত হয়েছে' : 'Daily duty report saved successfully');
+      refetchDuty();
+      queryClient.invalidateQueries({ queryKey: ['my-attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['staff-duty-records'] });
+      queryClient.invalidateQueries({ queryKey: ['staff-att-records'] });
+    } catch (e: any) {
+      toast.error(e?.message || (bn ? 'রিপোর্ট সংরক্ষণ ব্যর্থ হয়েছে' : 'Failed to save report'));
+    } finally {
+      setDutySubmitting(false);
+    }
+  };
+
   const presentDays = attendanceRecords.filter(r => r.status === 'present').length;
   const absentDays = attendanceRecords.filter(r => r.status === 'absent').length;
   const lateDays = attendanceRecords.filter(r => r.status === 'late').length;
@@ -276,6 +385,10 @@ const StaffDashboard = () => {
               <TabsTrigger value="my-attendance" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm px-3" disabled={!staffRecord}>
                 <CalendarDays className="h-4 w-4" />
                 <span className="hidden sm:inline">{bn ? 'হাজিরা' : 'Attendance'}</span>
+              </TabsTrigger>
+              <TabsTrigger value="duty-report" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm px-3" disabled={!staffRecord}>
+                <ClipboardList className="h-4 w-4" />
+                <span className="hidden sm:inline">{bn ? 'দৈনিক ডিউটি রিপোর্ট' : 'Duty Report'}</span>
               </TabsTrigger>
               <TabsTrigger value="notices" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm px-3">
                 <Bell className="h-4 w-4" />
@@ -460,6 +573,179 @@ const StaffDashboard = () => {
                       ))}
                     </TableBody>
                   </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Duty Report Tab */}
+          <TabsContent value="duty-report" className="space-y-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <CardTitle className="flex items-center gap-2">
+                    <ClipboardList className="h-5 w-5 text-primary" />
+                    {bn ? 'দৈনিক ডিউটি রিপোর্ট সাবমিট' : 'Submit Daily Duty Report'}
+                  </CardTitle>
+                  <Badge variant="outline" className="w-fit text-xs">
+                    {bn ? (staffRecord?.designation || 'স্টাফ/শিক্ষক') : (staffRecord?.designation || 'Staff')}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                      {bn ? 'ডিউটির তারিখ' : 'Duty Date'}
+                    </label>
+                    <input
+                      type="date"
+                      value={dutyDate}
+                      onChange={e => setDutyDate(e.target.value)}
+                      className="w-full h-9 border rounded-md px-3 text-xs bg-background"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                      {bn ? 'শিফট' : 'Shift'}
+                    </label>
+                    <Select value={dutyShift} onValueChange={setDutyShift}>
+                      <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="morning">{bn ? 'সকাল শিফট' : 'Morning Shift'}</SelectItem>
+                        <SelectItem value="evening">{bn ? 'বিকাল শিফট' : 'Evening Shift'}</SelectItem>
+                        <SelectItem value="full_day">{bn ? 'সারাদিন' : 'Full Day'}</SelectItem>
+                        <SelectItem value="night">{bn ? 'নৈশকালীন শিফট' : 'Night Shift'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                      {bn ? 'উপস্থিতির অবস্থা' : 'Duty Status'}
+                    </label>
+                    <Select value={dutyStatus} onValueChange={setDutyStatus}>
+                      <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="present">{bn ? 'উপস্থিত' : 'Present'}</SelectItem>
+                        <SelectItem value="late">{bn ? 'বিলম্ব' : 'Late'}</SelectItem>
+                        <SelectItem value="leave">{bn ? 'ছুটি' : 'Leave'}</SelectItem>
+                        <SelectItem value="half_day">{bn ? 'অর্ধদিন' : 'Half Day'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-medium text-muted-foreground">
+                        {bn ? 'চেক-ইন সময়' : 'Check-In Time'}
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setNowTime('in')}
+                        className="text-[11px] text-primary hover:underline flex items-center gap-1"
+                      >
+                        <Clock className="w-3 h-3" /> {bn ? 'বর্তমান সময়' : 'Now'}
+                      </button>
+                    </div>
+                    <Input
+                      type="time"
+                      value={dutyCheckIn}
+                      onChange={e => setDutyCheckIn(e.target.value)}
+                      className="h-9 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-medium text-muted-foreground">
+                        {bn ? 'চেক-আউট সময়' : 'Check-Out Time'}
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setNowTime('out')}
+                        className="text-[11px] text-primary hover:underline flex items-center gap-1"
+                      >
+                        <Clock className="w-3 h-3" /> {bn ? 'বর্তমান সময়' : 'Now'}
+                      </button>
+                    </div>
+                    <Input
+                      type="time"
+                      value={dutyCheckOut}
+                      onChange={e => setDutyCheckOut(e.target.value)}
+                      className="h-9 text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    {bn ? 'আজকের সম্পন্ন কাজের বিবরণ ও ডিউটি রিপোর্ট' : 'Activities Done & Duty Report'}
+                  </label>
+                  <Textarea
+                    value={dutyRemarks}
+                    onChange={e => setDutyRemarks(e.target.value)}
+                    placeholder={bn ? 'আজকে যে যে ক্লাস নিয়েছেন, পাঠদান করেছেন, গার্ড ডিউটি বা প্রাতিষ্ঠানিক দায়িত্ব সম্পন্ন করেছেন তা বিস্তারিত লিখুন...' : 'Enter classes taken, subjects taught, duty supervision or tasks completed...'}
+                    rows={4}
+                    className="text-xs"
+                  />
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <Button
+                    onClick={handleDutySubmit}
+                    disabled={dutySubmitting}
+                    className="btn-primary-gradient h-9 text-xs flex items-center gap-1.5 shadow-sm"
+                  >
+                    {dutySubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                    {bn ? 'ডিউটি রিপোর্ট জমা দিন' : 'Submit Duty Report'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* My Past Submitted Duty Reports */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  {bn ? 'আমার সাম্প্রতিক ডিউটি রিপোর্টসমূহ' : 'My Recent Duty Reports'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {myDutyRecords.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8 text-sm">
+                    {bn ? 'কোনো ডিউটি রিপোর্ট পাওয়া যায়নি' : 'No duty reports found'}
+                  </p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/40">
+                          <TableHead>{bn ? 'তারিখ' : 'Date'}</TableHead>
+                          <TableHead className="text-center">{bn ? 'শিফট' : 'Shift'}</TableHead>
+                          <TableHead className="text-center">{bn ? 'অবস্থা' : 'Status'}</TableHead>
+                          <TableHead className="text-center">{bn ? 'ইন' : 'In'}</TableHead>
+                          <TableHead className="text-center">{bn ? 'আউট' : 'Out'}</TableHead>
+                          <TableHead>{bn ? 'কাজের বিবরণ ও রিপোর্ট' : 'Duty Activities & Remarks'}</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {myDutyRecords.map((r: any) => (
+                          <TableRow key={r.id}>
+                            <TableCell className="font-medium whitespace-nowrap text-xs">{r.attendance_date}</TableCell>
+                            <TableCell className="text-center text-xs capitalize">{r.shift || '-'}</TableCell>
+                            <TableCell className="text-center text-xs">{statusBadge(r.status)}</TableCell>
+                            <TableCell className="text-center font-mono text-xs">{r.check_in_time || '—'}</TableCell>
+                            <TableCell className="text-center font-mono text-xs">{r.check_out_time || '—'}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground max-w-sm">
+                              <div className="line-clamp-2 whitespace-pre-wrap">{r.remarks || '—'}</div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>
