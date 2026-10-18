@@ -2,6 +2,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { useApprovalSettings } from '@/hooks/useApprovalSettings';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface SubmitForApprovalParams {
   actionType: 'add' | 'edit' | 'delete' | 'reject';
@@ -15,6 +16,7 @@ interface SubmitForApprovalParams {
 export const useApprovalWorkflow = () => {
   const { user, role } = useAuth();
   const { settings: globalApproval } = useApprovalSettings();
+  const { requiresApproval } = usePermissions();
 
   // Fetch user permissions with requires_approval flag
   const { data: userPermissions = [] } = useQuery({
@@ -45,6 +47,14 @@ export const useApprovalWorkflow = () => {
   const needsApproval = (menuPath: string, action?: 'view' | 'add' | 'edit' | 'delete' | 'reject'): boolean => {
     if (role === 'admin' || role === 'super_admin') return false;
     if (globalNeedsApproval(action)) return true;
+
+    // Check central permissions hook (respects both individual user overrides and role-level approval policies)
+    if (action && action !== 'reject') {
+      if (requiresApproval(menuPath, action as any)) return true;
+    } else if (!action) {
+      if (requiresApproval(menuPath)) return true;
+    }
+
     const perm = userPermissions.find((p: any) => p.menu_path === menuPath);
     if (!perm) return false;
     if (action) {

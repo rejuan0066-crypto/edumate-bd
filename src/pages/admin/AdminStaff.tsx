@@ -71,7 +71,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const menuPath = staffType === 'teacher' ? '/admin/teachers' : staffType === 'administrative' ? '/admin/administrative-staff' : staffType === 'support' ? '/admin/support-staff' : staffType === 'staff' ? '/admin/general-staff' : staffType === 'director' ? '/admin/directors' : staffType === 'committee_member' ? '/admin/committee-members' : '/admin/staff';
-  const { checkApproval, isRecordPending } = useApprovalCheck(menuPath, 'staff');
+  const { checkApproval, isRecordPending, needsApproval } = useApprovalCheck(menuPath, 'staff');
   const { role } = useAuth();
   const { canAddItem, canEditItem, canDeleteItem, isFeatureAllowed } = usePagePermissions(menuPath);
   const confirm = useConfirm();
@@ -248,26 +248,61 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
       // regenerate it using the new category's prefix (TCH/SUP/GEN/DIR/ADM …).
       const updateData: any = { staff_category: category, staff_id: null };
       if (newDesignation) updateData.designation = newDesignation;
-      const { error } = await supabase.from('staff').update(updateData).eq('id', id);
+
+      const staff = staffList.find((s: any) => s.id === id);
+      const staffName = staff?.name_bn || staff?.name_en || id;
+      if (await checkApproval('edit', { id, ...updateData }, id, `ডিপার্টমেন্ট পরিবর্তন: ${staffName} (${category})`)) {
+        return { intercepted: true };
+      }
+
+      const { data, error } = await supabase.from('staff').update(updateData).eq('id', id).select('id');
       if (error) throw error;
+      if (!data || data.length === 0) throw new Error('PERMISSION_DENIED');
+      return { intercepted: false };
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
       invalidateAllStaffQueries(queryClient);
-      toast.success(bn ? 'ডিপার্টমেন্ট, পদবী ও আইডি পরিবর্তন হয়েছে' : 'Department, designation & ID updated');
+      queryClient.invalidateQueries({ queryKey: ['all-pending-actions'] });
+      if (!res?.intercepted) {
+        toast.success(bn ? 'ডিপার্টমেন্ট, পদবী ও আইডি পরিবর্তন হয়েছে' : 'Department, designation & ID updated');
+      }
     },
-    onError: () => toast.error(bn ? 'সমস্যা হয়েছে' : 'Error'),
+    onError: (err: any) => {
+      if (err?.message === 'PERMISSION_DENIED') {
+        toast.error(bn ? 'অনুমতি নেই: আপনি পরিবর্তন করতে পারবেন না' : 'Permission denied');
+      } else {
+        toast.error(bn ? 'সমস্যা হয়েছে' : 'Error');
+      }
+    },
   });
 
   const designationMutation = useMutation({
     mutationFn: async ({ id, designation }: { id: string; designation: string }) => {
-      const { error } = await supabase.from('staff').update({ designation } as any).eq('id', id);
+      const staff = staffList.find((s: any) => s.id === id);
+      const staffName = staff?.name_bn || staff?.name_en || id;
+      if (await checkApproval('edit', { id, designation }, id, `পদবী পরিবর্তন: ${staffName} → ${designation}`)) {
+        return { intercepted: true };
+      }
+
+      const { data, error } = await supabase.from('staff').update({ designation } as any).eq('id', id).select('id');
       if (error) throw error;
+      if (!data || data.length === 0) throw new Error('PERMISSION_DENIED');
+      return { intercepted: false };
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
       invalidateAllStaffQueries(queryClient);
-      toast.success(bn ? 'পদবী পরিবর্তন হয়েছে' : 'Designation updated');
+      queryClient.invalidateQueries({ queryKey: ['all-pending-actions'] });
+      if (!res?.intercepted) {
+        toast.success(bn ? 'পদবী পরিবর্তন হয়েছে' : 'Designation updated');
+      }
     },
-    onError: () => toast.error(bn ? 'সমস্যা হয়েছে' : 'Error'),
+    onError: (err: any) => {
+      if (err?.message === 'PERMISSION_DENIED') {
+        toast.error(bn ? 'অনুমতি নেই: আপনি পদবী পরিবর্তন করতে পারবেন না' : 'Permission denied');
+      } else {
+        toast.error(bn ? 'সমস্যা হয়েছে' : 'Error');
+      }
+    },
   });
 
   const handleAutoSortByDepartment = async () => {
@@ -813,12 +848,16 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                           {(() => {
                             const cat = getStaffCategory(s, designationsMap, activeCategoryKeys);
                             const catDesignations = designationsList.filter((d: any) => d.staff_category === cat);
+                            const isPending = isRecordPending(s.id);
+                            const canChangeDesignation = canEditItem || needsApproval('edit');
+
                             return (
                               <Select
                                 value={s.designation || ''}
+                                disabled={!canChangeDesignation || isPending}
                                 onValueChange={(val) => designationMutation.mutate({ id: s.id, designation: val })}
                               >
-                                <SelectTrigger className="h-7 text-xs w-[150px]">
+                                <SelectTrigger className={`h-7 text-xs w-[150px] ${(!canChangeDesignation || isPending) ? 'opacity-60 cursor-not-allowed' : ''}`}>
                                   <SelectValue placeholder={bn ? 'পদবী নির্বাচন' : 'Select'} />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -833,19 +872,27 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                           })()}
                         </td>
                         <td className="px-4 py-3">
-                          <Select
-                            value={getStaffCategory(s, designationsMap, activeCategoryKeys)}
-                            onValueChange={(val) => categoryMutation.mutate({ id: s.id, category: val })}
-                          >
-                            <SelectTrigger className="h-7 text-xs w-[130px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {(staffCategories as any[]).map((category: any) => (
-                                <SelectItem key={category.key} value={category.key}>{labelForCategory(category.key)}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          {(() => {
+                            const isPending = isRecordPending(s.id);
+                            const canChangeCategory = canEditItem || needsApproval('edit');
+
+                            return (
+                              <Select
+                                value={getStaffCategory(s, designationsMap, activeCategoryKeys)}
+                                disabled={!canChangeCategory || isPending}
+                                onValueChange={(val) => categoryMutation.mutate({ id: s.id, category: val })}
+                              >
+                                <SelectTrigger className={`h-7 text-xs w-[130px] ${(!canChangeCategory || isPending) ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {(staffCategories as any[]).map((category: any) => (
+                                    <SelectItem key={category.key} value={category.key}>{labelForCategory(category.key)}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            );
+                          })()}
                         </td>
                         <td className="px-4 py-3 text-sm text-muted-foreground">{s.phone || '-'}</td>
                         {isAdminRole(role) && (
