@@ -266,7 +266,7 @@ const AdminStudentsFees = () => {
           .eq('fee_type_id', feeType)
           .eq('month', paymentMonth)
           .eq('year', paymentYear)
-          .in('status', ['paid'])
+          .in('status', ['paid', 'pending', 'failed'])
           .limit(1)
           .maybeSingle();
         if (error) throw error;
@@ -279,7 +279,7 @@ const AdminStudentsFees = () => {
         .select('id, status, transaction_id, amount, created_at, notes')
         .eq('student_id', foundStudent.id)
         .eq('fee_type', feeTypeName)
-        .in('status', ['pending', 'success'])
+        .in('status', ['pending', 'success', 'failed'])
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();

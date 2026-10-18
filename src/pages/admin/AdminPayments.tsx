@@ -158,9 +158,21 @@ const AdminPayments = () => {
         rejectionReason: reason,
         notes: rejectionTarget.notes,
       });
+
+      // Also mark matching fee_payments draft as failed
+      try {
+        await supabase
+          .from('fee_payments')
+          .update({ status: 'failed' })
+          .eq('student_id', rejectionTarget.student_id)
+          .eq('status', 'pending');
+      } catch (err) {
+        console.warn('Fee payments reject notice:', err);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['fee_payments'] });
       queryClient.invalidateQueries({ queryKey: ['existing_payment_check'] });
       toast.success(bn ? 'পেমেন্ট প্রত্যাখ্যান করা হয়েছে' : 'Payment rejected');
       setRejectionTarget(null);
@@ -183,7 +195,7 @@ const AdminPayments = () => {
           .from('fee_payments')
           .delete()
           .eq('student_id', deletingTarget.student_id)
-          .eq('status', 'pending');
+          .in('status', ['pending', 'failed']);
       } catch (e) {
         console.warn('Fee payments delete cleanup:', e);
       }
