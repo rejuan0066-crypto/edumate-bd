@@ -310,27 +310,39 @@ const AdminSalary = () => {
 
   // Auto-refresh salary records when the auto-attendance trigger inserts new rows for this month
   useEffect(() => {
-    const channel = supabase
-      .channel(`salary-records-${monthYear}`)
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'salary_records', filter: `month_year=eq.${monthYear}` },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] });
-          queryClient.invalidateQueries({ queryKey: ['salary-generation-log', monthYear] });
-        })
-      .on('postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'staff' },
-        () => {
-          // Refresh staff list when duty times / salary / category etc. change
-          queryClient.invalidateQueries({ queryKey: ['salary-staff'] });
-        })
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'website_settings' },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['category-shift-times-salary'] });
-        })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    const channelName = `salary-records-${monthYear}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    let channel: any = null;
+    try {
+      channel = supabase
+        .channel(channelName)
+        .on('postgres_changes',
+          { event: '*', schema: 'public', table: 'salary_records', filter: `month_year=eq.${monthYear}` },
+          () => {
+            queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] });
+            queryClient.invalidateQueries({ queryKey: ['salary-generation-log', monthYear] });
+          })
+        .on('postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'staff' },
+          () => {
+            // Refresh staff list when duty times / salary / category etc. change
+            queryClient.invalidateQueries({ queryKey: ['salary-staff'] });
+          })
+        .on('postgres_changes',
+          { event: '*', schema: 'public', table: 'website_settings' },
+          () => {
+            queryClient.invalidateQueries({ queryKey: ['category-shift-times-salary'] });
+          })
+        .subscribe();
+    } catch (e) {
+      console.warn('Realtime subscription error in AdminSalary:', e);
+    }
+    return () => {
+      if (channel) {
+        try {
+          supabase.removeChannel(channel);
+        } catch {}
+      }
+    };
   }, [monthYear, queryClient]);
 
   // Fetch designations for Bengali name lookup

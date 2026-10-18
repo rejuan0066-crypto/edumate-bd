@@ -16,6 +16,48 @@ export interface Notification {
   created_at: string;
 }
 
+let globalNotifChannel: ReturnType<typeof supabase.channel> | null = null;
+let activeNotifSubscribers = 0;
+let notifTeardownTimer: any = null;
+const notifInvalidators = new Set<() => void>();
+
+const ensureNotifChannel = () => {
+  if (notifTeardownTimer) {
+    clearTimeout(notifTeardownTimer);
+    notifTeardownTimer = null;
+  }
+  if (globalNotifChannel) return;
+
+  const channelName = `notifications-realtime-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  try {
+    globalNotifChannel = supabase
+      .channel(channelName)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => {
+        notifInvalidators.forEach((cb) => {
+          try { cb(); } catch {}
+        });
+      })
+      .subscribe();
+  } catch (err) {
+    console.warn('[useNotifications] Realtime subscribe error:', err);
+  }
+};
+
+const releaseNotifChannel = () => {
+  if (activeNotifSubscribers <= 0) {
+    activeNotifSubscribers = 0;
+    if (notifTeardownTimer) clearTimeout(notifTeardownTimer);
+    notifTeardownTimer = setTimeout(() => {
+      if (activeNotifSubscribers === 0 && globalNotifChannel) {
+        try {
+          supabase.removeChannel(globalNotifChannel);
+        } catch {}
+        globalNotifChannel = null;
+      }
+    }, 5000);
+  }
+};
+
 export const useNotifications = () => {
   const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
@@ -34,18 +76,23 @@ export const useNotifications = () => {
     enabled: !authLoading && !!user,
   });
 
-  // Realtime subscription
+  // Realtime subscription (managed via singleton)
   useEffect(() => {
     if (authLoading || !user) return;
 
-    const channelName = `notifications-realtime-${Date.now()}`;
-    const channel = supabase
-      .channel(channelName)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    const invalidator = () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    };
+
+    notifInvalidators.add(invalidator);
+    activeNotifSubscribers++;
+    ensureNotifChannel();
+
+    return () => {
+      notifInvalidators.delete(invalidator);
+      activeNotifSubscribers = Math.max(0, activeNotifSubscribers - 1);
+      releaseNotifChannel();
+    };
   }, [authLoading, queryClient, user]);
 
   const unreadCount = notifications.filter(n => !n.is_read).length;

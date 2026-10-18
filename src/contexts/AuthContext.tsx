@@ -308,26 +308,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (!authReady || !user?.id) return;
 
-    const channelName = `auth-user-role-sync-${user.id}-${Date.now()}`;
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'user_roles',
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          fetchedForSession.current = null;
-          setResolveNonce((n) => n + 1);
-        }
-      )
-      .subscribe();
+    const channelName = `auth-user-role-sync-${user.id}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    let channel: any = null;
+    try {
+      channel = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'user_roles',
+            filter: `user_id=eq.${user.id}`,
+          },
+          () => {
+            fetchedForSession.current = null;
+            setResolveNonce((n) => n + 1);
+          }
+        )
+        .subscribe();
+    } catch (e) {
+      console.warn('Realtime subscription error in AuthContext:', e);
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        try {
+          supabase.removeChannel(channel);
+        } catch {}
+      }
     };
   }, [authReady, user?.id]);
 

@@ -66,6 +66,9 @@ const CACHE_KEYS = {
 
 export const PERMISSION_BROADCAST_CHANNEL = 'edumate_perms_realtime_sync';
 
+type PermInvalidator = (target?: 'all' | 'user' | 'role' | 'settings') => void;
+const permInvalidators = new Set<PermInvalidator>();
+
 export const clearAllPermissionCache = () => {
   try {
     const keysToRemove: string[] = [];
@@ -79,8 +82,130 @@ export const clearAllPermissionCache = () => {
   } catch {}
 };
 
-export const broadcastPermissionChange = () => {
+const notifyPermissionChange = (target: 'all' | 'user' | 'role' | 'settings' = 'all') => {
   clearAllPermissionCache();
+  permInvalidators.forEach((cb) => {
+    try {
+      cb(target);
+    } catch (e) {
+      console.warn('[usePermissions] Invalidator callback error:', e);
+    }
+  });
+};
+
+let globalBroadcastChannel: BroadcastChannel | null = null;
+const initGlobalBroadcastChannel = () => {
+  if (typeof window === 'undefined' || !('BroadcastChannel' in window) || globalBroadcastChannel) return;
+  try {
+    globalBroadcastChannel = new BroadcastChannel(PERMISSION_BROADCAST_CHANNEL);
+    globalBroadcastChannel.onmessage = () => {
+      notifyPermissionChange('all');
+    };
+  } catch {}
+};
+
+let globalPermsChannel: ReturnType<typeof supabase.channel> | null = null;
+let globalPermsUserId: string | null = null;
+let globalPermsRole: string | null = null;
+let activeHookCount = 0;
+let permsChannelTeardownTimer: any = null;
+
+const ensurePermsRealtimeChannel = (userId: string, currentRole?: string) => {
+  if (permsChannelTeardownTimer) {
+    clearTimeout(permsChannelTeardownTimer);
+    permsChannelTeardownTimer = null;
+  }
+
+  globalPermsRole = currentRole || null;
+
+  // Already subscribed for this user, do not recreate or re-subscribe
+  if (globalPermsChannel && globalPermsUserId === userId) {
+    return;
+  }
+
+  // User changed or previous channel exists: cleanly remove
+  if (globalPermsChannel) {
+    try {
+      supabase.removeChannel(globalPermsChannel);
+    } catch {}
+    globalPermsChannel = null;
+  }
+
+  globalPermsUserId = userId;
+  const channelName = `perms-rt-${userId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+  try {
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_permissions',
+        },
+        (payload) => {
+          const rowUserId = (payload.new as any)?.user_id || (payload.old as any)?.user_id;
+          if (!rowUserId || rowUserId === globalPermsUserId) {
+            notifyPermissionChange('user');
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'role_permissions',
+        },
+        (payload) => {
+          const rowRole = (payload.new as any)?.role || (payload.old as any)?.role;
+          if (!rowRole || rowRole === globalPermsRole) {
+            notifyPermissionChange('role');
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'website_settings',
+        },
+        (payload) => {
+          const key = (payload.new as any)?.key || (payload.old as any)?.key;
+          if (!key || key === 'role_feature_permissions') {
+            notifyPermissionChange('settings');
+          }
+        }
+      );
+
+    channel.subscribe();
+    globalPermsChannel = channel;
+  } catch (err) {
+    console.warn('[usePermissions] Realtime subscribe error:', err);
+  }
+};
+
+const releasePermsRealtimeChannel = () => {
+  if (activeHookCount <= 0) {
+    activeHookCount = 0;
+    if (permsChannelTeardownTimer) clearTimeout(permsChannelTeardownTimer);
+    permsChannelTeardownTimer = setTimeout(() => {
+      if (activeHookCount === 0 && globalPermsChannel) {
+        try {
+          supabase.removeChannel(globalPermsChannel);
+        } catch {}
+        globalPermsChannel = null;
+        globalPermsUserId = null;
+        globalPermsRole = null;
+      }
+    }, 5000);
+  }
+};
+
+export const broadcastPermissionChange = () => {
+  notifyPermissionChange('all');
   try {
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
       const bc = new BroadcastChannel(PERMISSION_BROADCAST_CHANNEL);
@@ -165,81 +290,36 @@ export const usePermissions = () => {
     refetchOnWindowFocus: true,
   });
 
-  // Cross-tab broadcast synchronization
+  // Cross-tab broadcast & Realtime push synchronization (managed via singleton)
   useEffect(() => {
-    if (typeof window === 'undefined' || !('BroadcastChannel' in window)) return;
-    const bc = new BroadcastChannel(PERMISSION_BROADCAST_CHANNEL);
-    bc.onmessage = () => {
-      clearAllPermissionCache();
-      queryClient.invalidateQueries({ queryKey: ['role-permissions'] });
-      queryClient.invalidateQueries({ queryKey: ['user-permissions'] });
-      queryClient.invalidateQueries({ queryKey: ['role-hidden-features-settings'] });
-      queryClient.invalidateQueries({ queryKey: ['user-permissions-approval'] });
-    };
-    return () => {
-      bc.close();
-    };
-  }, [queryClient]);
+    initGlobalBroadcastChannel();
 
-  // Realtime push channel subscription: instantly updates permissions when admin grants or revokes
-  useEffect(() => {
-    if (authLoading || !user?.id) return;
+    const invalidator: PermInvalidator = (target) => {
+      if (!target || target === 'all' || target === 'user') {
+        queryClient.invalidateQueries({ queryKey: ['user-permissions'] });
+        queryClient.invalidateQueries({ queryKey: ['user-permissions-approval'] });
+      }
+      if (!target || target === 'all' || target === 'role') {
+        queryClient.invalidateQueries({ queryKey: ['role-permissions'] });
+      }
+      if (!target || target === 'all' || target === 'settings') {
+        queryClient.invalidateQueries({ queryKey: ['role-hidden-features-settings'] });
+        queryClient.invalidateQueries({ queryKey: ['role-permissions'] });
+        queryClient.invalidateQueries({ queryKey: ['user-permissions'] });
+      }
+    };
 
-    const channelName = `perms-realtime-${user.id}-${Date.now()}`;
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'user_permissions',
-        },
-        (payload) => {
-          const rowUserId = (payload.new as any)?.user_id || (payload.old as any)?.user_id;
-          if (!rowUserId || rowUserId === user.id) {
-            clearAllPermissionCache();
-            queryClient.invalidateQueries({ queryKey: ['user-permissions'] });
-            queryClient.invalidateQueries({ queryKey: ['user-permissions-approval'] });
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'role_permissions',
-        },
-        (payload) => {
-          const rowRole = (payload.new as any)?.role || (payload.old as any)?.role;
-          if (!rowRole || rowRole === role) {
-            clearAllPermissionCache();
-            queryClient.invalidateQueries({ queryKey: ['role-permissions'] });
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'website_settings',
-        },
-        (payload) => {
-          const key = (payload.new as any)?.key || (payload.old as any)?.key;
-          if (!key || key === 'role_feature_permissions') {
-            clearAllPermissionCache();
-            queryClient.invalidateQueries({ queryKey: ['role-hidden-features-settings'] });
-            queryClient.invalidateQueries({ queryKey: ['role-permissions'] });
-            queryClient.invalidateQueries({ queryKey: ['user-permissions'] });
-          }
-        }
-      )
-      .subscribe();
+    permInvalidators.add(invalidator);
+    activeHookCount++;
+
+    if (!authLoading && user?.id) {
+      ensurePermsRealtimeChannel(user.id, role);
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      permInvalidators.delete(invalidator);
+      activeHookCount = Math.max(0, activeHookCount - 1);
+      releasePermsRealtimeChannel();
     };
   }, [authLoading, user?.id, role, queryClient]);
 

@@ -62,13 +62,25 @@ const AdminParentMessages = () => {
 
   // Realtime
   useEffect(() => {
-    const ch = supabase
-      .channel('admin-parent-messages')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'parent_messages' }, () => {
-        qc.invalidateQueries({ queryKey: ['parent-messages-admin'] });
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    const chName = `admin-parent-messages-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    let ch: any = null;
+    try {
+      ch = supabase
+        .channel(chName)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'parent_messages' }, () => {
+          qc.invalidateQueries({ queryKey: ['parent-messages-admin'] });
+        })
+        .subscribe();
+    } catch (e) {
+      console.warn('Realtime subscription error in AdminParentMessages:', e);
+    }
+    return () => {
+      if (ch) {
+        try {
+          supabase.removeChannel(ch);
+        } catch {}
+      }
+    };
   }, [qc]);
 
   // Group by student

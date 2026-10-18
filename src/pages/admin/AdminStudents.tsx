@@ -46,13 +46,25 @@ const AdminStudents = () => {
   const [typeHistoryFor, setTypeHistoryFor] = useState<any>(null);
   // Realtime subscription for auto-refresh
   useEffect(() => {
-    const channel = supabase
-      .channel('students-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () => {
-        invalidateAllStudentQueries(queryClient);
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    const channelName = `students-realtime-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    let channel: any = null;
+    try {
+      channel = supabase
+        .channel(channelName)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () => {
+          invalidateAllStudentQueries(queryClient);
+        })
+        .subscribe();
+    } catch (e) {
+      console.warn('Realtime subscription error in AdminStudents:', e);
+    }
+    return () => {
+      if (channel) {
+        try {
+          supabase.removeChannel(channel);
+        } catch {}
+      }
+    };
   }, [queryClient]);
 
   const { data: academicSessions = [] } = useQuery({

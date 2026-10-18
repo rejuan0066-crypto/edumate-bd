@@ -206,17 +206,27 @@ export default function AdminDutyRoster() {
   });
 
   useEffect(() => {
-    const channel = supabase
-      .channel(`duty-live-${date}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'duty_shift_attendance' }, () => {
-        qc.invalidateQueries({ queryKey: ['duty-shift-attendance', date] });
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'duty_roster' }, () => {
-        qc.invalidateQueries({ queryKey: ['duty-roster', date] });
-      })
-      .subscribe();
+    const chName = `duty-live-${date}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    let channel: any = null;
+    try {
+      channel = supabase
+        .channel(chName)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'duty_shift_attendance' }, () => {
+          qc.invalidateQueries({ queryKey: ['duty-shift-attendance', date] });
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'duty_roster' }, () => {
+          qc.invalidateQueries({ queryKey: ['duty-roster', date] });
+        })
+        .subscribe();
+    } catch (e) {
+      console.warn('Realtime subscription error in AdminDutyRoster:', e);
+    }
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        try {
+          supabase.removeChannel(channel);
+        } catch {}
+      }
     };
   }, [date, qc]);
 

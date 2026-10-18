@@ -145,17 +145,27 @@ export function useConversations() {
   // Realtime: refresh list on any new message / conversation change
   useEffect(() => {
     if (!user?.id) return;
-    const channel = supabase
-      .channel("messaging-conversations")
-      .on("postgres_changes", { event: "*", schema: "public", table: "chat_messages" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["conversations", user.id] });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "conversations" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["conversations", user.id] });
-      })
-      .subscribe();
+    const channelName = `messaging-conversations-${user.id}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    let channel: any = null;
+    try {
+      channel = supabase
+        .channel(channelName)
+        .on("postgres_changes", { event: "*", schema: "public", table: "chat_messages" }, () => {
+          queryClient.invalidateQueries({ queryKey: ["conversations", user.id] });
+        })
+        .on("postgres_changes", { event: "*", schema: "public", table: "conversations" }, () => {
+          queryClient.invalidateQueries({ queryKey: ["conversations", user.id] });
+        })
+        .subscribe();
+    } catch (e) {
+      console.warn('Realtime subscription error in useConversations:', e);
+    }
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        try {
+          supabase.removeChannel(channel);
+        } catch {}
+      }
     };
   }, [user?.id, queryClient]);
 
@@ -186,16 +196,26 @@ export function useMessages(conversationId: string | null) {
 
   useEffect(() => {
     if (!conversationId) return;
-    const channel = supabase
-      .channel(`messaging-thread-${conversationId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "chat_messages", filter: `conversation_id=eq.${conversationId}` },
-        () => queryClient.invalidateQueries({ queryKey: ["chat-messages", conversationId] }),
-      )
-      .subscribe();
+    const channelName = `messaging-thread-${conversationId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    let channel: any = null;
+    try {
+      channel = supabase
+        .channel(channelName)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "chat_messages", filter: `conversation_id=eq.${conversationId}` },
+          () => queryClient.invalidateQueries({ queryKey: ["chat-messages", conversationId] }),
+        )
+        .subscribe();
+    } catch (e) {
+      console.warn('Realtime subscription error in useMessages:', e);
+    }
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        try {
+          supabase.removeChannel(channel);
+        } catch {}
+      }
     };
   }, [conversationId, queryClient]);
 

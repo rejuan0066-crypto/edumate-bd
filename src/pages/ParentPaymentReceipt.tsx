@@ -168,19 +168,25 @@ const ParentPaymentReceipt = () => {
 
   useEffect(() => {
     if (!requestId) return;
-    const channel = supabase
-      .channel(`parent-receipt-${requestId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'parent_payment_requests',
-          filter: `id=eq.${requestId}`,
-        },
-        () => { loadReceipt({ silent: true }); },
-      )
-      .subscribe();
+    const chName = `parent-receipt-${requestId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    let channel: any = null;
+    try {
+      channel = supabase
+        .channel(chName)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'parent_payment_requests',
+            filter: `id=eq.${requestId}`,
+          },
+          () => { loadReceipt({ silent: true }); },
+        )
+        .subscribe();
+    } catch (e) {
+      console.warn('Realtime subscription error in ParentPaymentReceipt:', e);
+    }
 
     // Polling fallback (every 15s) in case realtime is blocked or RLS filters out the row
     const poll = setInterval(() => {

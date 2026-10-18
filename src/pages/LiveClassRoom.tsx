@@ -132,18 +132,30 @@ const LiveClassRoom = () => {
   // Realtime: messages + participants
   useEffect(() => {
     if (!id) return;
-    const channel = supabase
-      .channel(`live-class-${id}`)
-      .on('postgres_changes', {
-        event: 'INSERT', schema: 'public', table: 'live_class_messages',
-        filter: `live_class_id=eq.${id}`,
-      }, () => queryClient.invalidateQueries({ queryKey: ['lc-messages', id] }))
-      .on('postgres_changes', {
-        event: '*', schema: 'public', table: 'live_class_participants',
-        filter: `live_class_id=eq.${id}`,
-      }, () => queryClient.invalidateQueries({ queryKey: ['lc-room-participants', id] }))
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    const chName = `live-class-${id}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    let channel: any = null;
+    try {
+      channel = supabase
+        .channel(chName)
+        .on('postgres_changes', {
+          event: 'INSERT', schema: 'public', table: 'live_class_messages',
+          filter: `live_class_id=eq.${id}`,
+        }, () => queryClient.invalidateQueries({ queryKey: ['lc-messages', id] }))
+        .on('postgres_changes', {
+          event: '*', schema: 'public', table: 'live_class_participants',
+          filter: `live_class_id=eq.${id}`,
+        }, () => queryClient.invalidateQueries({ queryKey: ['lc-room-participants', id] }))
+        .subscribe();
+    } catch (e) {
+      console.warn('Realtime subscription error in LiveClassRoom:', e);
+    }
+    return () => {
+      if (channel) {
+        try {
+          supabase.removeChannel(channel);
+        } catch {}
+      }
+    };
   }, [id, queryClient]);
 
   // Auto-scroll chat
