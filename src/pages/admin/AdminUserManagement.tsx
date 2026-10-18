@@ -145,8 +145,36 @@ const AdminUserManagement = () => {
     storageKey: 'edumate_user_management_tab',
   });
 
-  const [users, setUsers] = useState<UserItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const USERS_CACHE_KEY = 'edumate_admin_users_cache_v2';
+  const STAFF_BY_USER_CACHE_KEY = 'edumate_staff_by_user_cache_v2';
+  const OFFICERS_BY_USER_CACHE_KEY = 'edumate_officers_by_user_cache_v2';
+
+  const readCachedUsers = (): UserItem[] => {
+    try {
+      const raw = localStorage.getItem(USERS_CACHE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return [];
+  };
+
+  const readCachedStaffByUser = (): Record<string, LinkedStaff> => {
+    try {
+      const raw = localStorage.getItem(STAFF_BY_USER_CACHE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return {};
+  };
+
+  const readCachedOfficersByUser = (): Record<string, { id: string; name_bn: string; designation: string | null }> => {
+    try {
+      const raw = localStorage.getItem(OFFICERS_BY_USER_CACHE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return {};
+  };
+
+  const [users, setUsers] = useState<UserItem[]>(readCachedUsers);
+  const [loading, setLoading] = useState(() => readCachedUsers().length === 0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -374,9 +402,9 @@ const AdminUserManagement = () => {
   };
 
   // Map of user_id -> linked staff (for showing designation/category in the user list)
-  const [staffByUser, setStaffByUser] = useState<Record<string, LinkedStaff>>({});
+  const [staffByUser, setStaffByUser] = useState<Record<string, LinkedStaff>>(readCachedStaffByUser);
   // Map of user_id -> linked administrative officer
-  const [adminOfficerByUser, setAdminOfficerByUser] = useState<Record<string, { id: string; name_bn: string; designation: string | null }>>({});
+  const [adminOfficerByUser, setAdminOfficerByUser] = useState<Record<string, { id: string; name_bn: string; designation: string | null }>>(readCachedOfficersByUser);
   const [linkSaving, setLinkSaving] = useState<'staff' | 'officer' | null>(null);
 
   const getUserDisplayName = (user?: UserItem | null) => {
@@ -394,8 +422,10 @@ const AdminUserManagement = () => {
     return officer?.designation || null;
   };
 
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
+  const fetchUsers = useCallback(async (isSilent = false) => {
+    if (!isSilent) {
+      setLoading(true);
+    }
     try {
       const { data, error } = await supabase.functions.invoke('manage-users', {
         method: 'GET',
@@ -403,6 +433,7 @@ const AdminUserManagement = () => {
       if (error) throw error;
       const list: UserItem[] = data?.users || [];
       setUsers(list);
+      try { localStorage.setItem(USERS_CACHE_KEY, JSON.stringify(list)); } catch {}
 
       const includedStaffMap: Record<string, LinkedStaff> = {};
       list.forEach((u) => {
@@ -413,6 +444,7 @@ const AdminUserManagement = () => {
       const ids = list.map(u => u.id).filter(Boolean);
       if (Object.keys(includedStaffMap).length > 0) {
         setStaffByUser(includedStaffMap);
+        try { localStorage.setItem(STAFF_BY_USER_CACHE_KEY, JSON.stringify(includedStaffMap)); } catch {}
       } else if (ids.length > 0) {
         const { data: staffRows } = await supabase
           .from('staff')
@@ -424,6 +456,7 @@ const AdminUserManagement = () => {
           if (r.user_id) map[r.user_id] = { id: r.id, name_bn: r.name_bn, name_en: r.name_en, designation: r.designation, staff_category: r.staff_category, photo_url: r.photo_url };
         });
         setStaffByUser(map);
+        try { localStorage.setItem(STAFF_BY_USER_CACHE_KEY, JSON.stringify(map)); } catch {}
       } else {
         setStaffByUser({});
       }
@@ -440,16 +473,22 @@ const AdminUserManagement = () => {
           if (r.user_id) omap[r.user_id] = { id: r.id, name_bn: r.name_bn, designation: r.designation };
         });
         setAdminOfficerByUser(omap);
+        try { localStorage.setItem(OFFICERS_BY_USER_CACHE_KEY, JSON.stringify(omap)); } catch {}
       } else {
         setAdminOfficerByUser({});
       }
     } catch {
       toast.error(bn ? 'ইউজার তালিকা লোড ব্যর্থ' : 'Failed to load users');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [bn]);
 
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  useEffect(() => {
+    // If cache was loaded, perform initial fetch silently without flashing a loader
+    const hadCache = readCachedUsers().length > 0;
+    fetchUsers(hadCache);
+  }, [fetchUsers]);
 
   // Real-time email duplicate check (debounced + DB lookup)
   useEffect(() => {

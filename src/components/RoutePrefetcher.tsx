@@ -41,17 +41,17 @@ const networkBudget = (): { concurrency: number; max: number; gapMs: number } | 
   if (c?.saveData) return null;
   const t = (c?.effectiveType || '4g') as string;
   if (t === 'slow-2g' || t === '2g') return null;
-  if (t === '3g') return { concurrency: 1, max: 2, gapMs: 1200 };
-  // Gentle prefetching so it never contends with active page requests/images
-  return { concurrency: 1, max: 3, gapMs: 800 };
+  if (t === '3g') return { concurrency: 1, max: 4, gapMs: 600 };
+  // Preload key admin route chunks in background so clicking navigation is instant
+  return { concurrency: 2, max: 12, gapMs: 250 };
 };
 
-const idle = (cb: () => void, timeout = 4000) => {
+const idle = (cb: () => void, timeout = 2500) => {
   const ric = (window as any).requestIdleCallback as
     | ((cb: IdleRequestCallback, opts?: { timeout: number }) => number)
     | undefined;
   if (ric) ric(() => cb(), { timeout });
-  else setTimeout(cb, 3000);
+  else setTimeout(cb, 1500);
 };
 
 // ───────── Loader registry (label → loader) ─────────
@@ -84,6 +84,8 @@ const L: Record<string, Loader> = {
   AdminAttendance: () => import('@/pages/admin/AdminStudentAttendance'),
   AdminSalary: () => import('@/pages/admin/AdminSalary'),
   AdminExpenses: () => import('@/pages/admin/AdminExpenses'),
+  AdminUserManagement: () => import('@/pages/admin/AdminUserManagement'),
+  AdminPermissions: () => import('@/pages/admin/AdminPermissions'),
 };
 
 // ───────── Predictor ─────────
@@ -99,20 +101,23 @@ const predict = (pathname: string): Task[] => {
     { label: 'AdminLayout',    priority: 1, load: L.AdminLayout },
     { label: 'Dashboard',      priority: 1, load: L.Dashboard },
     { label: 'AdminStudents',  priority: 2, load: L.AdminStudents },
-    { label: 'AdminStaff',     priority: 3, load: L.AdminStaff },
-    { label: 'AdminFees',      priority: 3, load: L.AdminFees },
-    { label: 'ParentPortal',   priority: 4, load: L.ParentPortal },
-    { label: 'StudentPortal',  priority: 4, load: L.StudentPortal },
+    { label: 'AdminStaff',     priority: 2, load: L.AdminStaff },
+    { label: 'AdminExpenses',  priority: 3, load: L.AdminExpenses },
+    { label: 'AdminUserManagement', priority: 3, load: L.AdminUserManagement },
+    { label: 'AdminFees',      priority: 4, load: L.AdminFees },
   ];
 
   const onAdminBase: Task[] = [
     { label: 'AdminStudents',  priority: 1, load: L.AdminStudents },
     { label: 'AdminStaff',     priority: 1, load: L.AdminStaff },
     { label: 'AdminExpenses',  priority: 2, load: L.AdminExpenses },
-    { label: 'AdminFees',      priority: 2, load: L.AdminFees },
-    { label: 'AdminNotices',   priority: 3, load: L.AdminNotices },
-    { label: 'AdminFeeReceipts', priority: 3, load: L.AdminFeeReceipts },
-    { label: 'AdminSettings',  priority: 4, load: L.AdminSettings },
+    { label: 'AdminUserManagement', priority: 2, load: L.AdminUserManagement },
+    { label: 'AdminSalary',    priority: 3, load: L.AdminSalary },
+    { label: 'AdminFees',      priority: 3, load: L.AdminFees },
+    { label: 'AdminPermissions', priority: 4, load: L.AdminPermissions },
+    { label: 'AdminFeeReceipts', priority: 4, load: L.AdminFeeReceipts },
+    { label: 'AdminNotices',   priority: 5, load: L.AdminNotices },
+    { label: 'AdminSettings',  priority: 5, load: L.AdminSettings },
   ];
 
   const onParent: Task[] = [

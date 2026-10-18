@@ -316,7 +316,9 @@ const AdminExpenses = () => {
       const { data, error } = await supabase.from('academic_sessions').select('*').order('name', { ascending: false });
       if (error) throw error;
       return data as any[];
-    }
+    },
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
   });
 
   // expense_institutions is now the top-level entity
@@ -334,7 +336,9 @@ const AdminExpenses = () => {
         console.error('expenseInstitutions exception:', err);
         return [];
       }
-    }
+    },
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   const { data: categories = [] } = useQuery({
@@ -352,7 +356,9 @@ const AdminExpenses = () => {
         console.error('Categories exception:', err);
         return [];
       }
-    }
+    },
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   const { data: expenses = [] } = useQuery({
@@ -396,7 +402,9 @@ const AdminExpenses = () => {
         console.error('Expenses fallback query exception:', err);
         return [];
       }
-    }
+    },
+    staleTime: 60 * 1000,
+    gcTime: 15 * 60 * 1000,
   });
 
   const { data: deposits = [] } = useQuery({
@@ -417,7 +425,9 @@ const AdminExpenses = () => {
         console.error('deposits exception:', err);
         return [];
       }
-    }
+    },
+    staleTime: 60 * 1000,
+    gcTime: 15 * 60 * 1000,
   });
 
   const { data: allExpenses = [] } = useQuery({
@@ -441,7 +451,9 @@ const AdminExpenses = () => {
         console.error('allExpenses exception:', err);
         return [];
       }
-    }
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   const { data: allDeposits = [] } = useQuery({
@@ -458,7 +470,9 @@ const AdminExpenses = () => {
         console.error('allDeposits exception:', err);
         return [];
       }
-    }
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   const allCategories = categories || [];
@@ -559,7 +573,9 @@ const AdminExpenses = () => {
       const { data } = await supabase.from('expense_monthly_summary')
         .select('*').eq('month_year', selectedMonthYear).maybeSingle();
       return data;
-    }
+    },
+    staleTime: 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   const { data: websiteSettings = [] } = useQuery({
@@ -568,7 +584,9 @@ const AdminExpenses = () => {
       const { data, error } = await supabase.from('website_settings').select('*');
       if (error) throw error;
       return data;
-    }
+    },
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   const customDepositSources = useMemo<Array<{ id: string; name_bn: string; name_en?: string }>>(() => {
