@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
+import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import { isAdminRole } from '@/lib/roles';
 import { useOtpService } from '@/hooks/useOtpService';
 import { useAuth } from '@/hooks/useAuth';
@@ -136,6 +137,7 @@ const AdminUserManagement = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/user-management');
+  const { checkApproval, needsApproval } = useApprovalCheck('/admin/user-management', 'staff');
   const { role: currentUserRole } = useAuth();
   const { authorities = [] } = useSignatoryAuthorities();
 
@@ -953,10 +955,29 @@ const AdminUserManagement = () => {
       toast.error(bn ? 'বাংলা নাম দিন' : 'Enter Bangla name');
       return;
     }
-    const isAdminRole = ['admin', 'super_admin', 'moderator'].includes(profileUser.role);
-    if (!isAdminRole && !profileEditStaffCategory) {
-      toast.error(bn ? 'ডিপার্টমেন্ট নির্বাচন করুন' : 'Select department');
+    const isSpecialRole = ['parent', 'student'].includes(profileUser.role);
+    if (!isSpecialRole && !profileEditStaffCategory && !profileEditDesignation) {
+      toast.error(bn ? 'ডিপার্টমেন্ট বা পদবি নির্বাচন করুন' : 'Select department or designation');
       return;
+    }
+
+    if (needsApproval('edit')) {
+      const intercepted = await checkApproval(
+        'edit',
+        {
+          action: 'upsert_staff_identity',
+          user_id: profileUser.id,
+          name_bn: profileEditStaffNameBn.trim(),
+          name_en: (profileEditStaffNameEn.trim() || profileEditStaffNameBn.trim()),
+          designation: profileEditDesignation || null,
+          staff_category: profileEditStaffCategory || null,
+        },
+        profileUser.id,
+        `ইউজার পদবি/নাম পরিবর্তন: ${profileEditStaffNameBn.trim()} (${profileEditDesignation || 'কোন পদবি নেই'})`
+      );
+      if (intercepted) {
+        return;
+      }
     }
 
     setProfileSaving('staff');
@@ -967,8 +988,8 @@ const AdminUserManagement = () => {
           user_id: profileUser.id,
           name_bn: profileEditStaffNameBn.trim(),
           name_en: (profileEditStaffNameEn.trim() || profileEditStaffNameBn.trim()),
-          designation: isAdminRole ? null : (profileEditDesignation || null),
-          staff_category: isAdminRole ? null : profileEditStaffCategory,
+          designation: profileEditDesignation || null,
+          staff_category: profileEditStaffCategory || null,
         },
       });
       if (error || !data?.success) throw new Error(data?.error || error?.message);
@@ -2626,8 +2647,8 @@ const AdminUserManagement = () => {
                       <Input value={profileEditStaffNameEn} onChange={e => setProfileEditStaffNameEn(e.target.value)} placeholder={bn ? 'ইংরেজি নাম লিখুন' : 'Enter English name'} />
                     </div>
                   </div>
-                  {/* Staff-specific fields (designation, department) only for staff roles */}
-                  {!['parent', 'student', 'admin', 'super_admin', 'moderator'].includes(profileUser.role) && (
+                  {/* Staff and institutional user fields (designation, department) */}
+                  {!['parent', 'student'].includes(profileUser.role) && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs text-muted-foreground">{bn ? 'ডিপার্টমেন্ট' : 'Department'}</Label>

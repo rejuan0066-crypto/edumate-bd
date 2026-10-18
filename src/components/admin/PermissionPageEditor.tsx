@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -72,6 +73,7 @@ export const PermissionPageEditor = ({
   onSaved,
 }: Props) => {
   const { language } = useLanguage();
+  const queryClient = useQueryClient();
   const bn = language === 'bn';
 
   const [search, setSearch] = useState('');
@@ -397,19 +399,18 @@ export const PermissionPageEditor = ({
         toast.success(bn ? '✅ রোলের সকল পারমিশন ও অপশন সফলভাবে সেভ হয়েছে!' : '✅ Role permissions saved successfully!');
       } else {
         // --- USER MODE SAVE ---
-        // 1. Delete and re-insert user_permissions
+        // 1. Delete and re-insert user_permissions (save explicit permissions for all configured pages)
         await supabase.from('user_permissions').delete().eq('user_id', target.id);
 
         const toInsert = Object.values(permsMap)
-          .filter((p) => p.can_view || p.can_add || p.can_edit || p.can_delete || p.can_approve)
           .map((p) => ({
             user_id: target.id,
             menu_path: p.menu_path,
-            can_view: p.can_view,
-            can_add: p.can_add,
-            can_edit: p.can_edit,
-            can_delete: p.can_delete,
-            can_approve: p.can_approve,
+            can_view: !!p.can_view,
+            can_add: !!p.can_add,
+            can_edit: !!p.can_edit,
+            can_delete: !!p.can_delete,
+            can_approve: !!p.can_approve,
             approval_view: false,
             approval_add: !!p.approval_add,
             approval_edit: !!p.approval_edit,
@@ -448,6 +449,18 @@ export const PermissionPageEditor = ({
 
         toast.success(bn ? '✅ ইউজারের ব্যক্তিগত পারমিশন সফলভাবে সেভ হয়েছে!' : '✅ User individual permissions saved!');
       }
+
+      // Invalidate queries & clear sessionStorage permission caches
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['role-permissions'] }),
+        queryClient.invalidateQueries({ queryKey: ['user-permissions'] }),
+        queryClient.invalidateQueries({ queryKey: ['role-hidden-features-settings'] }),
+      ]);
+      try {
+        sessionStorage.removeItem('edumate_cached_role_features');
+        if (target.id) sessionStorage.removeItem(`edumate_cached_user_perms_${target.id}`);
+        if (target.name) sessionStorage.removeItem(`edumate_cached_role_perms_${target.name}`);
+      } catch {}
 
       onSaved();
       onBack();

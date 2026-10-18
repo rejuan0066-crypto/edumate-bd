@@ -73,7 +73,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
   const menuPath = staffType === 'teacher' ? '/admin/teachers' : staffType === 'administrative' ? '/admin/administrative-staff' : staffType === 'support' ? '/admin/support-staff' : staffType === 'staff' ? '/admin/general-staff' : staffType === 'director' ? '/admin/directors' : staffType === 'committee_member' ? '/admin/committee-members' : '/admin/staff';
   const { checkApproval, isRecordPending, needsApproval } = useApprovalCheck(menuPath, 'staff');
   const { role } = useAuth();
-  const { canAddItem, canEditItem, canDeleteItem, isFeatureAllowed } = usePagePermissions(menuPath);
+  const { canViewPage, canAddItem, canEditItem, canDeleteItem, isFeatureAllowed } = usePagePermissions(menuPath);
   const confirm = useConfirm();
   const bn = language === 'bn';
   const [search, setSearch] = useState('');
@@ -636,7 +636,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
           </div>
         </div>
 
-        {isFeatureAllowed('tab_staff_list') === false ? (
+        {(!canViewPage || isFeatureAllowed('tab_staff_list') === false) ? (
           <div className="card-elevated p-8 sm:p-12 text-center space-y-4">
             <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto">
               <ShieldAlert className="w-7 h-7" />
@@ -647,8 +647,8 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
               </h3>
               <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                 {bn
-                  ? 'আপনার রোলে স্টাফ ও শিক্ষক তালিকা দেখার অনুমতি বন্ধ (১০০% হাইড) করা রয়েছে। নতুন কর্মী নিয়োগ ফরমের অনুমতি থাকলে উপরের বোতাম ব্যবহার করে নিয়োগ দিতে পারেন।'
-                  : 'Staff and teacher list visibility is restricted for your role. You can still use the add button above if authorized.'}
+                  ? 'আপনার অ্যাকাউন্টে স্টাফ ও শিক্ষক তালিকা দেখার অনুমতি বন্ধ (১০০% হাইড) করা রয়েছে। প্রয়োজনে অ্যাডমিনের সাথে যোগাযোগ করুন।'
+                  : 'Staff and teacher list visibility is restricted for your account. Please contact an administrator.'}
               </p>
             </div>
             {canAddItem && isFeatureAllowed('tab_add_staff') !== false && (

@@ -58,12 +58,33 @@ const pickAction = (perm: any, action: PermAction): boolean => {
   }
 };
 
+const CACHE_KEYS = {
+  rolePerms: (r: string) => `edumate_cached_role_perms_${r}`,
+  userPerms: (uid: string) => `edumate_cached_user_perms_${uid}`,
+  features: 'edumate_cached_role_features',
+};
+
+const getCachedJson = <T>(key: string, fallback: T): T => {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return fallback;
+};
+
+const setCachedJson = (key: string, data: any) => {
+  try {
+    sessionStorage.setItem(key, JSON.stringify(data));
+  } catch {}
+};
+
 export const usePermissions = () => {
   const { role, user, loading: authLoading } = useAuth();
 
-  // Role-based permissions
+  // Role-based permissions (cached for 0ms instant initial rendering)
   const { data: rolePermissions = [], isLoading: roleLoading } = useQuery({
     queryKey: ['role-permissions', role],
+    initialData: () => (role ? getCachedJson(CACHE_KEYS.rolePerms(role), []) : []),
     queryFn: async () => {
       if (!role) return [];
       const { data, error } = await supabase
@@ -71,15 +92,17 @@ export const usePermissions = () => {
         .select('*')
         .eq('role', role);
       if (error) throw error;
-      return data as Permission[];
+      setCachedJson(CACHE_KEYS.rolePerms(role), data || []);
+      return (data || []) as Permission[];
     },
     enabled: !authLoading && !!role,
     staleTime: 5 * 60 * 1000,
   });
 
-  // User-specific permissions (override role permissions)
+  // User-specific permissions (override role permissions, cached for 0ms instant initial rendering)
   const { data: userPermissions = [], isLoading: userLoading } = useQuery({
     queryKey: ['user-permissions', user?.id],
+    initialData: () => (user?.id ? getCachedJson(CACHE_KEYS.userPerms(user.id), []) : []),
     queryFn: async () => {
       if (!user?.id) return [];
       const { data, error } = await supabase
@@ -87,15 +110,17 @@ export const usePermissions = () => {
         .select('*')
         .eq('user_id', user.id);
       if (error) throw error;
+      setCachedJson(CACHE_KEYS.userPerms(user.id), data || []);
       return (data || []) as (Permission & { requires_approval?: boolean })[];
     },
     enabled: !authLoading && !!user?.id,
     staleTime: 5 * 60 * 1000,
   });
 
-  // Hidden tabs & sub-feature config from website_settings
+  // Hidden tabs & sub-feature config from website_settings (cached for 0ms instant initial rendering)
   const { data: hiddenFeatures = {} } = useQuery({
     queryKey: ['role-hidden-features-settings'],
+    initialData: () => getCachedJson(CACHE_KEYS.features, {}),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('website_settings')
@@ -103,12 +128,14 @@ export const usePermissions = () => {
         .eq('key', 'role_feature_permissions')
         .maybeSingle();
       if (error) return {};
-      return (data?.value as Record<string, Record<string, boolean>>) || {};
+      const val = (data?.value as Record<string, Record<string, boolean>>) || {};
+      setCachedJson(CACHE_KEYS.features, val);
+      return val;
     },
     staleTime: 5 * 60 * 1000,
   });
 
-  const isLoading = authLoading || roleLoading || userLoading;
+  const isLoading = authLoading || (roleLoading && rolePermissions.length === 0) || (userLoading && userPermissions.length === 0);
   const hasUserOverrides = userPermissions.length > 0;
 
   const userPermMap = useMemo(() => {
@@ -132,6 +159,16 @@ export const usePermissions = () => {
 
     const candidates = getPathCandidates(menuPath);
 
+    // If an individual user has custom feature settings, check if main view is blocked
+    if (action === 'view' && user?.id) {
+      const userFeatures = hiddenFeatures[`user_${user.id}`];
+      if (userFeatures) {
+        for (const path of candidates) {
+          if (userFeatures[`${path}:tab_main_view`] === false) return false;
+        }
+      }
+    }
+
     if (hasUserOverrides) {
       for (const path of candidates) {
         const userPerm = userPermMap.get(path);
@@ -145,7 +182,7 @@ export const usePermissions = () => {
       if (perm) return pickAction(perm, action);
     }
     return false;
-  }, [role, hasUserOverrides, userPermMap, rolePermMap]);
+  }, [role, user, hasUserOverrides, userPermMap, rolePermMap, hiddenFeatures]);
 
   const canView = useCallback((menuPath: string) => hasPermission(menuPath, 'view'), [hasPermission]);
   const canAdd = useCallback((menuPath: string) => hasPermission(menuPath, 'add'), [hasPermission]);
@@ -158,40 +195,51 @@ export const usePermissions = () => {
    * Checks whether a specific internal tab, sub-feature, or action is allowed.
    * Signature: isFeatureAllowed(menuPath, featureKey, subAction?)
    * If subAction is provided, checks `${menuPath}:${featureKey}:${subAction}`
+   * Checks USER-SPECIFIC override (user_${user.id}) first, then ROLE-LEVEL (role).
    * If false, the tab/button MUST BE COMPLETELY HIDDEN (not rendered) from the DOM.
    */
   const isFeatureAllowed = useCallback((menuPath: string, featureKey: string, subAction?: 'view' | 'add' | 'edit' | 'delete' | 'print'): boolean => {
     if (isAdminRole(role)) return true;
-    if (!role) return false;
+    if (!role && !user) return false;
 
     // Check if whole page is accessible first
     if (!canView(menuPath)) return false;
 
-    // Check specific sub-feature permission for this role
-    // Format in hiddenFeatures: { [role]: { [`${menuPath}:${featureKey}`]: boolean, [`${menuPath}:${featureKey}:${subAction}`]: boolean } }
-    const roleMap = hiddenFeatures[role];
-    if (!roleMap) return true; // Default allowed unless restricted
+    // User-specific features take highest priority
+    const userMap = user?.id ? hiddenFeatures[`user_${user.id}`] : undefined;
+    const roleMap = role ? hiddenFeatures[role] : undefined;
 
-    // 1. Check parent feature/tab visibility first
+    if (!userMap && !roleMap) return true; // Default allowed unless restricted
+
     const fullKey = `${menuPath}:${featureKey}`;
-    if (roleMap[fullKey] === false) {
-      return false; // Whole tab/feature is hidden
+
+    // 1. Check parent feature/tab visibility (User override takes precedence over role)
+    if (userMap && userMap[fullKey] !== undefined) {
+      if (userMap[fullKey] === false) return false;
+    } else if (roleMap && roleMap[fullKey] !== undefined) {
+      if (roleMap[fullKey] === false) return false;
     }
 
     // 2. If sub-action is specified, check sub-action permission
     if (subAction) {
       const subActionKey = `${menuPath}:${featureKey}:${subAction}`;
-      if (roleMap[subActionKey] !== undefined) {
+      if (userMap && userMap[subActionKey] !== undefined) {
+        return !!userMap[subActionKey];
+      }
+      if (roleMap && roleMap[subActionKey] !== undefined) {
         return !!roleMap[subActionKey];
       }
     }
 
-    if (roleMap[fullKey] !== undefined) {
+    if (userMap && userMap[fullKey] !== undefined) {
+      return !!userMap[fullKey];
+    }
+    if (roleMap && roleMap[fullKey] !== undefined) {
       return !!roleMap[fullKey];
     }
 
     return true;
-  }, [role, canView, hiddenFeatures]);
+  }, [role, user, canView, hiddenFeatures]);
 
   // Check ONLY individual user_permissions (ignoring role_permissions)
   const hasUserPermission = useCallback((menuPath: string, action: PermAction): boolean => {
@@ -204,38 +252,54 @@ export const usePermissions = () => {
   /**
    * requiresApproval
    * Checks if an action on a page or inside a specific tab requires maker-checker approval.
-   * Signature: requiresApproval(menuPath, action?, tabKey?)
+   * Respects BOTH user-level overrides (user_${user.id}) and role-level approval policies.
    */
   const requiresApproval = useCallback((menuPath: string, action?: 'view' | 'add' | 'edit' | 'delete', tabKey?: string): boolean => {
     if (isAdminRole(role)) return false;
     const userPerm = userPermMap.get(menuPath);
-    if (!userPerm) {
-      if (!role) return false;
-      const roleFeatures = hiddenFeatures[role] || {};
+    const userFeatures = user?.id ? (hiddenFeatures[`user_${user.id}`] || {}) : {};
+    const roleFeatures = role ? (hiddenFeatures[role] || {}) : {};
 
-      // If checking for a specific tab's action approval
-      if (tabKey && action) {
-        const tabApprovalKey = `${menuPath}:${tabKey}:approval_${action}`;
-        if (roleFeatures[tabApprovalKey] !== undefined) {
-          return !!roleFeatures[tabApprovalKey];
-        }
+    // 1. If checking for a specific tab's action approval
+    if (tabKey && action) {
+      const tabApprovalKey = `${menuPath}:${tabKey}:approval_${action}`;
+      if (userFeatures[tabApprovalKey] !== undefined) {
+        return !!userFeatures[tabApprovalKey];
       }
-
-      // Check general page action approval
-      if (action) {
-        return !!roleFeatures[`${menuPath}:approval_${action}`];
+      if (roleFeatures[tabApprovalKey] !== undefined) {
+        return !!roleFeatures[tabApprovalKey];
       }
-      return !!(
-        roleFeatures[`${menuPath}:approval_add`] ||
-        roleFeatures[`${menuPath}:approval_edit`] ||
-        roleFeatures[`${menuPath}:approval_delete`]
-      );
     }
+
+    // 2. Check general page action approval
     if (action) {
-      return (userPerm as any)?.[`approval_${action}`] ?? false;
+      const actionKey = `${menuPath}:approval_${action}`;
+      if (userFeatures[actionKey] !== undefined) {
+        return !!userFeatures[actionKey];
+      }
+      if (userPerm && (userPerm as any)[`approval_${action}`] !== undefined) {
+        return !!(userPerm as any)[`approval_${action}`];
+      }
+      if (roleFeatures[actionKey] !== undefined) {
+        return !!roleFeatures[actionKey];
+      }
+      return false;
     }
-    return (userPerm as any)?.approval_view || (userPerm as any)?.approval_add || (userPerm as any)?.approval_edit || (userPerm as any)?.approval_delete || false;
-  }, [role, userPermMap, hiddenFeatures]);
+
+    // Any action approval check
+    return !!(
+      userFeatures[`${menuPath}:approval_add`] ||
+      userFeatures[`${menuPath}:approval_edit`] ||
+      userFeatures[`${menuPath}:approval_delete`] ||
+      (userPerm as any)?.approval_view ||
+      (userPerm as any)?.approval_add ||
+      (userPerm as any)?.approval_edit ||
+      (userPerm as any)?.approval_delete ||
+      roleFeatures[`${menuPath}:approval_add`] ||
+      roleFeatures[`${menuPath}:approval_edit`] ||
+      roleFeatures[`${menuPath}:approval_delete`]
+    );
+  }, [role, user, userPermMap, hiddenFeatures]);
 
 
   return {
