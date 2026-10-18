@@ -231,67 +231,11 @@ const AdminStudents = () => {
     onError: () => toast.error('Error'),
   });
 
-  const filtered = students.filter((s: any) => {
-    // Division filter
-    if (filterDivisionId !== 'all') {
-      if (s.division_id !== filterDivisionId) return false;
-    }
-    // Session filter
-    if (filterSessionId !== 'all') {
-      const selectedSession = academicSessions.find((as: any) => as.id === filterSessionId);
-      const matchesId = s.session_id === filterSessionId;
-      let matchesName = selectedSession && (s.admission_session === selectedSession.name || s.session_year === selectedSession.name || s.admission_session === selectedSession.name_bn || s.session_year === selectedSession.name_bn);
-      if (!matchesId && !matchesName && selectedSession) {
-        const sessYearDigits = selectedSession.name?.match(/\d{4}/)?.[0];
-        const studentYearDigits = (String(s.session_year || s.admission_session || '')).replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d))).match(/\d{4}/)?.[0];
-        if (sessYearDigits && studentYearDigits && sessYearDigits === studentYearDigits) {
-          matchesName = true;
-        }
-      }
-      if (!matchesId && !matchesName) return false;
-    }
-    // Class filter
-    if (filterClassId !== 'all') {
-      const effectiveCId = getEffectiveClassId(s);
-      if (effectiveCId !== filterClassId) return false;
-    }
-    // Approval status filter
-    if (filterApproval !== 'all') {
-      const status = s.approval_status || 'pending';
-      if (status !== filterApproval) return false;
-    }
-    // Active/Inactive status filter
-    if (filterStatus !== 'all') {
-      const st = s.status || 'active';
-      if (st !== filterStatus) return false;
-    }
-    // Text search
-    if (search) {
-      const q = search.toLowerCase();
-      const qEn = bnToEn(q);
-      const qBn = enToBn(q);
-      return (
-        String(s.name_bn || '').toLowerCase().includes(q) ||
-        String(s.student_id || '').toLowerCase().includes(q) ||
-        String(s.student_id || '').toLowerCase().includes(qEn) ||
-        String(s.student_id || '').toLowerCase().includes(qBn) ||
-        String(s.registration_no || '').toLowerCase().includes(q) ||
-        String(s.registration_no || '').toLowerCase().includes(qEn) ||
-        String(s.registration_no || '').toLowerCase().includes(qBn) ||
-        String(s.roll_number || '').toLowerCase().includes(q) ||
-        String(s.roll_number || '').toLowerCase().includes(qEn) ||
-        String(s.roll_number || '').toLowerCase().includes(qBn) ||
-        String(s.name_en || '').toLowerCase().includes(q)
-      );
-    }
-    return true;
-  });
-
-  const parseRollNumber = (roll: string | null | undefined) => {
+  const parseRollNumber = useCallback((roll: string | null | undefined) => {
     const clean = String(roll || '').replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
     const parsed = Number.parseInt(clean, 10);
     return Number.isNaN(parsed) ? Number.MAX_SAFE_INTEGER : parsed;
-  };
+  }, []);
 
   const getEffectiveClassId = useCallback((student: any) => {
     if (!student) return null;
@@ -316,11 +260,71 @@ const AdminStudents = () => {
     return null;
   }, [classes]);
 
-  const sortedFiltered = [...filtered].sort((a: any, b: any) => {
-    const rollDiff = parseRollNumber(a.roll_number) - parseRollNumber(b.roll_number);
-    if (rollDiff !== 0) return rollDiff;
-    return String(a.created_at || '').localeCompare(String(b.created_at || ''));
-  });
+  const filtered = useMemo(() => {
+    return students.filter((s: any) => {
+      // Division filter
+      if (filterDivisionId !== 'all') {
+        if (s.division_id !== filterDivisionId) return false;
+      }
+      // Session filter
+      if (filterSessionId !== 'all') {
+        const selectedSession = academicSessions.find((as: any) => as.id === filterSessionId);
+        const matchesId = s.session_id === filterSessionId;
+        let matchesName = selectedSession && (s.admission_session === selectedSession.name || s.session_year === selectedSession.name || s.admission_session === selectedSession.name_bn || s.session_year === selectedSession.name_bn);
+        if (!matchesId && !matchesName && selectedSession) {
+          const sessYearDigits = selectedSession.name?.match(/\d{4}/)?.[0];
+          const studentYearDigits = (String(s.session_year || s.admission_session || '')).replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d))).match(/\d{4}/)?.[0];
+          if (sessYearDigits && studentYearDigits && sessYearDigits === studentYearDigits) {
+            matchesName = true;
+          }
+        }
+        if (!matchesId && !matchesName) return false;
+      }
+      // Class filter
+      if (filterClassId !== 'all') {
+        const effectiveCId = getEffectiveClassId(s);
+        if (effectiveCId !== filterClassId) return false;
+      }
+      // Approval status filter
+      if (filterApproval !== 'all') {
+        const status = s.approval_status || 'pending';
+        if (status !== filterApproval) return false;
+      }
+      // Active/Inactive status filter
+      if (filterStatus !== 'all') {
+        const st = s.status || 'active';
+        if (st !== filterStatus) return false;
+      }
+      // Text search
+      if (search) {
+        const q = search.toLowerCase();
+        const qEn = bnToEn(q);
+        const qBn = enToBn(q);
+        return (
+          String(s.name_bn || '').toLowerCase().includes(q) ||
+          String(s.student_id || '').toLowerCase().includes(q) ||
+          String(s.student_id || '').toLowerCase().includes(qEn) ||
+          String(s.student_id || '').toLowerCase().includes(qBn) ||
+          String(s.registration_no || '').toLowerCase().includes(q) ||
+          String(s.registration_no || '').toLowerCase().includes(qEn) ||
+          String(s.registration_no || '').toLowerCase().includes(qBn) ||
+          String(s.roll_number || '').toLowerCase().includes(q) ||
+          String(s.roll_number || '').toLowerCase().includes(qEn) ||
+          String(s.roll_number || '').toLowerCase().includes(qBn) ||
+          String(s.name_en || '').toLowerCase().includes(q)
+        );
+      }
+      return true;
+    });
+  }, [students, filterDivisionId, filterSessionId, academicSessions, filterClassId, getEffectiveClassId, filterApproval, filterStatus, search]);
+
+  const sortedFiltered = useMemo(() => {
+    return [...filtered].sort((a: any, b: any) => {
+      const rollDiff = parseRollNumber(a.roll_number) - parseRollNumber(b.roll_number);
+      if (rollDiff !== 0) return rollDiff;
+      return String(a.created_at || '').localeCompare(String(b.created_at || ''));
+    });
+  }, [filtered, parseRollNumber]);
 
   const getApprovalBadge = (status: string) => {
     switch (status) {
