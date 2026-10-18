@@ -39,6 +39,7 @@ import {
   Table as TableIcon,
 } from 'lucide-react';
 import { PermissionPageEditor, PagePermItem } from '@/components/admin/PermissionPageEditor';
+import { broadcastPermissionChange } from '@/hooks/usePermissions';
 
 interface CustomRole {
   id: string;
@@ -380,6 +381,7 @@ const AdminPermissions = () => {
             onSaved={() => {
               queryClient.invalidateQueries({ queryKey: ['role-permissions-all'] });
               queryClient.invalidateQueries({ queryKey: ['role_feature_permissions'] });
+              broadcastPermissionChange();
             }}
           />
         )}

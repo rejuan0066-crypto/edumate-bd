@@ -1,5 +1,5 @@
-import { useMemo, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMemo, useCallback, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { isAdminRole } from '@/lib/roles';
@@ -64,6 +64,32 @@ const CACHE_KEYS = {
   features: 'edumate_cached_role_features',
 };
 
+export const PERMISSION_BROADCAST_CHANNEL = 'edumate_perms_realtime_sync';
+
+export const clearAllPermissionCache = () => {
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (key && (key.startsWith('edumate_cached_') || key.startsWith('edumate_perms_'))) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((k) => sessionStorage.removeItem(k));
+  } catch {}
+};
+
+export const broadcastPermissionChange = () => {
+  clearAllPermissionCache();
+  try {
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      const bc = new BroadcastChannel(PERMISSION_BROADCAST_CHANNEL);
+      bc.postMessage({ type: 'PERMISSIONS_CHANGED', timestamp: Date.now() });
+      bc.close();
+    }
+  } catch {}
+};
+
 const getCachedJson = <T>(key: string, fallback: T): T => {
   try {
     const raw = sessionStorage.getItem(key);
@@ -79,12 +105,13 @@ const setCachedJson = (key: string, data: any) => {
 };
 
 export const usePermissions = () => {
+  const queryClient = useQueryClient();
   const { role, user, loading: authLoading } = useAuth();
 
-  // Role-based permissions (cached for 0ms instant initial rendering)
+  // Role-based permissions (cached with placeholderData for 0ms initial rendering + rapid re-validation)
   const { data: rolePermissions = [], isLoading: roleLoading } = useQuery({
     queryKey: ['role-permissions', role],
-    initialData: () => (role ? getCachedJson(CACHE_KEYS.rolePerms(role), []) : []),
+    placeholderData: () => (role ? getCachedJson(CACHE_KEYS.rolePerms(role), []) : []),
     queryFn: async () => {
       if (!role) return [];
       const { data, error } = await supabase
@@ -96,13 +123,14 @@ export const usePermissions = () => {
       return (data || []) as Permission[];
     },
     enabled: !authLoading && !!role,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 15 * 1000,
+    refetchOnWindowFocus: true,
   });
 
-  // User-specific permissions (override role permissions, cached for 0ms instant initial rendering)
+  // User-specific permissions (override role permissions, cached with placeholderData for 0ms initial rendering)
   const { data: userPermissions = [], isLoading: userLoading } = useQuery({
     queryKey: ['user-permissions', user?.id],
-    initialData: () => (user?.id ? getCachedJson(CACHE_KEYS.userPerms(user.id), []) : []),
+    placeholderData: () => (user?.id ? getCachedJson(CACHE_KEYS.userPerms(user.id), []) : []),
     queryFn: async () => {
       if (!user?.id) return [];
       const { data, error } = await supabase
@@ -114,13 +142,14 @@ export const usePermissions = () => {
       return (data || []) as (Permission & { requires_approval?: boolean })[];
     },
     enabled: !authLoading && !!user?.id,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 15 * 1000,
+    refetchOnWindowFocus: true,
   });
 
-  // Hidden tabs & sub-feature config from website_settings (cached for 0ms instant initial rendering)
+  // Hidden tabs & sub-feature config from website_settings (cached with placeholderData for 0ms instant initial rendering)
   const { data: hiddenFeatures = {} } = useQuery({
     queryKey: ['role-hidden-features-settings'],
-    initialData: () => getCachedJson(CACHE_KEYS.features, {}),
+    placeholderData: () => getCachedJson(CACHE_KEYS.features, {}),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('website_settings')
@@ -132,8 +161,87 @@ export const usePermissions = () => {
       setCachedJson(CACHE_KEYS.features, val);
       return val;
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 15 * 1000,
+    refetchOnWindowFocus: true,
   });
+
+  // Cross-tab broadcast synchronization
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('BroadcastChannel' in window)) return;
+    const bc = new BroadcastChannel(PERMISSION_BROADCAST_CHANNEL);
+    bc.onmessage = () => {
+      clearAllPermissionCache();
+      queryClient.invalidateQueries({ queryKey: ['role-permissions'] });
+      queryClient.invalidateQueries({ queryKey: ['user-permissions'] });
+      queryClient.invalidateQueries({ queryKey: ['role-hidden-features-settings'] });
+      queryClient.invalidateQueries({ queryKey: ['user-permissions-approval'] });
+    };
+    return () => {
+      bc.close();
+    };
+  }, [queryClient]);
+
+  // Realtime push channel subscription: instantly updates permissions when admin grants or revokes
+  useEffect(() => {
+    if (authLoading || !user?.id) return;
+
+    const channelName = `perms-realtime-${user.id}-${Date.now()}`;
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_permissions',
+        },
+        (payload) => {
+          const rowUserId = (payload.new as any)?.user_id || (payload.old as any)?.user_id;
+          if (!rowUserId || rowUserId === user.id) {
+            clearAllPermissionCache();
+            queryClient.invalidateQueries({ queryKey: ['user-permissions'] });
+            queryClient.invalidateQueries({ queryKey: ['user-permissions-approval'] });
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'role_permissions',
+        },
+        (payload) => {
+          const rowRole = (payload.new as any)?.role || (payload.old as any)?.role;
+          if (!rowRole || rowRole === role) {
+            clearAllPermissionCache();
+            queryClient.invalidateQueries({ queryKey: ['role-permissions'] });
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'website_settings',
+        },
+        (payload) => {
+          const key = (payload.new as any)?.key || (payload.old as any)?.key;
+          if (!key || key === 'role_feature_permissions') {
+            clearAllPermissionCache();
+            queryClient.invalidateQueries({ queryKey: ['role-hidden-features-settings'] });
+            queryClient.invalidateQueries({ queryKey: ['role-permissions'] });
+            queryClient.invalidateQueries({ queryKey: ['user-permissions'] });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [authLoading, user?.id, role, queryClient]);
 
   const isLoading = authLoading || (roleLoading && rolePermissions.length === 0) || (userLoading && userPermissions.length === 0);
   const hasUserOverrides = userPermissions.length > 0;

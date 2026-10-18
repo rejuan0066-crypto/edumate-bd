@@ -33,6 +33,7 @@ import { flattenMenuPaths, mergeMenuPaths, DEFAULT_MENU_PATHS } from '@/lib/menu
 import { Search } from 'lucide-react';
 import { useSignatoryAuthorities, CORE_SIGNATORY_ROLES } from '@/hooks/useSignatoryAuthorities';
 import { PermissionPageEditor, PagePermItem } from '@/components/admin/PermissionPageEditor';
+import { broadcastPermissionChange } from '@/hooks/usePermissions';
 
 interface UserItem {
   id: string;
@@ -1354,7 +1355,10 @@ const AdminUserManagement = () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['role-permissions'] }),
         queryClient.invalidateQueries({ queryKey: ['user-permissions'] }),
+        queryClient.invalidateQueries({ queryKey: ['role-hidden-features-settings'] }),
+        queryClient.invalidateQueries({ queryKey: ['user-permissions-approval'] }),
       ]);
+      broadcastPermissionChange();
       toast.success(bn ? '✅ রোল পারমিশন সেভ হয়েছে!' : '✅ Role permissions saved!');
       setRolePermDialogOpen(false);
     } catch (err: any) {
@@ -1496,7 +1500,10 @@ const AdminUserManagement = () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['user-permissions'] }),
         queryClient.invalidateQueries({ queryKey: ['role-permissions'] }),
+        queryClient.invalidateQueries({ queryKey: ['role-hidden-features-settings'] }),
+        queryClient.invalidateQueries({ queryKey: ['user-permissions-approval'] }),
       ]);
+      broadcastPermissionChange();
       toast.success(bn ? '✅ পারমিশন সেভ হয়েছে!' : '✅ Permissions saved!');
       setPermDialogOpen(false);
     } catch (err: any) {
@@ -1513,7 +1520,10 @@ const AdminUserManagement = () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['user-permissions'] }),
         queryClient.invalidateQueries({ queryKey: ['role-permissions'] }),
+        queryClient.invalidateQueries({ queryKey: ['role-hidden-features-settings'] }),
+        queryClient.invalidateQueries({ queryKey: ['user-permissions-approval'] }),
       ]);
+      broadcastPermissionChange();
       const { data: rolePerms } = await supabase.from('role_permissions').select('*').eq('role', permUser.role);
       const merged = allMenuPaths.map(mp => {
         const existing = (rolePerms || []).find((d: any) => d.menu_path === mp.path);
@@ -1572,6 +1582,7 @@ const AdminUserManagement = () => {
               queryClient.invalidateQueries({ queryKey: ['user-permissions'] });
               queryClient.invalidateQueries({ queryKey: ['role-permissions'] });
               queryClient.invalidateQueries({ queryKey: ['role_feature_permissions'] });
+              broadcastPermissionChange();
               fetchUsers();
             }}
           />

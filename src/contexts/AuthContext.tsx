@@ -304,6 +304,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [authReady, user?.id, session?.access_token, resolveNonce]);
 
+  // Realtime subscription for instant role/user-status updates when admin changes user role
+  useEffect(() => {
+    if (!authReady || !user?.id) return;
+
+    const channelName = `auth-user-role-sync-${user.id}-${Date.now()}`;
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_roles',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          fetchedForSession.current = null;
+          setResolveNonce((n) => n + 1);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [authReady, user?.id]);
+
   const loading = !authReady || profileLoading;
 
   const value = useMemo<AuthContextType>(

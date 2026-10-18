@@ -32,6 +32,7 @@ import {
 import { toast } from 'sonner';
 import { KNOWN_PAGE_FEATURES, SubFeatureItem } from '@/lib/pageFeatures';
 import { getPagePermissionProfile, PagePermissionProfile } from '@/lib/permissionProfiles';
+import { broadcastPermissionChange } from '@/hooks/usePermissions';
 import type { MenuPathItem } from '@/lib/menuPathList';
 
 export interface PagePermItem {
@@ -455,12 +456,15 @@ export const PermissionPageEditor = ({
         queryClient.invalidateQueries({ queryKey: ['role-permissions'] }),
         queryClient.invalidateQueries({ queryKey: ['user-permissions'] }),
         queryClient.invalidateQueries({ queryKey: ['role-hidden-features-settings'] }),
+        queryClient.invalidateQueries({ queryKey: ['user-permissions-approval'] }),
       ]);
       try {
         sessionStorage.removeItem('edumate_cached_role_features');
         if (target.id) sessionStorage.removeItem(`edumate_cached_user_perms_${target.id}`);
         if (target.name) sessionStorage.removeItem(`edumate_cached_role_perms_${target.name}`);
       } catch {}
+
+      broadcastPermissionChange();
 
       onSaved();
       onBack();

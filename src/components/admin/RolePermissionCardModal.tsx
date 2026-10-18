@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
+import { broadcastPermissionChange } from '@/hooks/usePermissions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,6 +63,7 @@ export const RolePermissionCardModal = ({
   initialHiddenFeatures = {},
   onSaved,
 }: Props) => {
+  const queryClient = useQueryClient();
   const { language } = useLanguage();
   const bn = language === 'bn';
 
@@ -407,6 +410,14 @@ export const RolePermissionCardModal = ({
           .from('website_settings')
           .insert({ key: 'role_feature_permissions', value: updatedVal as any });
       }
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['role-permissions'] }),
+        queryClient.invalidateQueries({ queryKey: ['user-permissions'] }),
+        queryClient.invalidateQueries({ queryKey: ['role-hidden-features-settings'] }),
+        queryClient.invalidateQueries({ queryKey: ['user-permissions-approval'] }),
+      ]);
+      broadcastPermissionChange();
 
       toast.success(bn ? '✅ রোলের সকল পারমিশন, অনুমোদন ও অপশন সেভ সম্পন্ন!' : '✅ Role permissions, approvals & options saved!');
       onSaved();
