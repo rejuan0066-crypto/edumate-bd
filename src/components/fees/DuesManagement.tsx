@@ -49,7 +49,7 @@ const DuesManagement = () => {
     queryFn: async () => {
       let q = supabase
         .from('students')
-        .select('id, name_bn, name_en, student_id, roll_number, class_id, session_id, phone, guardian_phone, status, admission_date, deleted_at, classes(name, name_bn)')
+        .select('id, name_bn, name_en, student_id, roll_number, class_id, division_id, session_id, phone, guardian_phone, status, admission_date, deleted_at, classes(name, name_bn), divisions(name, name_bn)')
         .eq('status', 'active')
         .is('deleted_at', null);
       if (selectedSessionId) {
@@ -108,16 +108,16 @@ const DuesManagement = () => {
     },
   });
 
-  // Filter fee types applicable to the selected month
-  // - monthly: respect applicable_months (empty = all months)
-  // - one-time / yearly / others: show in every month so they remain visible until paid
+  // Filter fee types applicable to the selected month:
+  // - If applicable_months is set (for monthly or one-time), only apply in those months
+  // - If applicable_months is empty / null, apply to all months as before
   const applicableFeeTypesForMonth = useMemo(() => {
-    const selectedMonthName = selectedMonth.split('-')[0];
+    const [selectedMonthName, selectedYearStr] = selectedMonth.split('-');
+    const selectedMonthKey = `${selectedMonthName}-${selectedYearStr}`;
     return feeTypes.filter(ft => {
-      if (ft.payment_frequency !== 'monthly') return true;
       const months = Array.isArray(ft.applicable_months) ? ft.applicable_months : [];
       if (months.length === 0) return true;
-      return months.includes(selectedMonthName);
+      return months.includes(selectedMonthName) || months.includes(selectedMonthKey) || months.includes(selectedMonth);
     });
   }, [feeTypes, selectedMonth]);
 
@@ -130,7 +130,12 @@ const DuesManagement = () => {
     const admDate = s.admission_date ? new Date(s.admission_date) : null;
     const admMonthStart = admDate ? new Date(admDate.getFullYear(), admDate.getMonth(), 1) : null;
 
-    const applicable = applicableFeeTypesForMonth.filter(ft => !ft.class_id || ft.class_id === s.class_id);
+    const applicable = applicableFeeTypesForMonth.filter(ft => {
+      if (ft.session_id && s.session_id && ft.session_id !== s.session_id) return false;
+      if (ft.division_id && s.division_id && ft.division_id !== s.division_id) return false;
+      if (ft.class_id && s.class_id && ft.class_id !== s.class_id) return false;
+      return true;
+    });
     const monthlyPaidIds = new Set(feePayments.filter(fp => fp.student_id === s.id).map(fp => fp.fee_type_id));
     const oneTimePaidIds = new Set(oneTimePayments.filter(fp => fp.student_id === s.id).map(fp => fp.fee_type_id));
     const studentWaivers = waivers.filter(w => w.student_id === s.id);

@@ -776,7 +776,19 @@ const AdminStudentsFees = () => {
                           <div key={ft.id} className="flex items-center justify-between px-4 py-3 hover:bg-accent/30 transition-colors">
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-foreground truncate">{bn ? ft.name_bn : ft.name}</p>
-                              <p className="text-xs text-muted-foreground">{ft.divisions?.name_bn || (bn ? 'সব বিভাগ' : 'All')} {ft.classes?.name_bn ? `• ${ft.classes.name_bn}` : ''}</p>
+                              <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-1.5 mt-0.5">
+                                <span>{ft.divisions?.name_bn || (bn ? 'সব বিভাগ' : 'All')}</span>
+                                {ft.classes?.name_bn && <span>• {ft.classes.name_bn}</span>}
+                                {Array.isArray(ft.applicable_months) && ft.applicable_months.length > 0 && (
+                                  <span className="text-primary font-medium">
+                                    • {bn ? 'মাস' : 'Month'}: {ft.applicable_months.map((m: string) => {
+                                      const base = m.split('-')[0];
+                                      const idx = MONTHS_EN.indexOf(base);
+                                      return bn && idx >= 0 ? MONTHS_BN[idx] : base;
+                                    }).join(', ')}
+                                  </span>
+                                )}
+                              </p>
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="font-bold text-foreground text-sm">৳{ft.amount}</span>
@@ -789,7 +801,12 @@ const AdminStudentsFees = () => {
                                   setFeeType(ft.id);
                                   setSelectedFeeTypeObj(ft);
                                   setAmount(String(ft.amount));
-                                  setPaymentMonth('');
+                                  if (Array.isArray(ft.applicable_months) && ft.applicable_months.length > 0) {
+                                    const firstMonth = ft.applicable_months[0].split('-')[0];
+                                    setPaymentMonth(firstMonth);
+                                  } else {
+                                    setPaymentMonth('');
+                                  }
                                 }}>
                                   {bn ? 'পরিশোধ' : 'Pay'}
                                 </Button>
@@ -908,8 +925,8 @@ const AdminStudentsFees = () => {
                   </SelectContent>
                 </Select>
 
-                {/* Month selector for monthly fee types */}
-                {selectedFeeTypeObj?.payment_frequency === 'monthly' && foundStudent && (
+                {/* Month selector for monthly fee types or one-time fees with applicable months */}
+                {((selectedFeeTypeObj?.payment_frequency === 'monthly') || (Array.isArray(selectedFeeTypeObj?.applicable_months) && selectedFeeTypeObj.applicable_months.length > 0)) && foundStudent && (
                   <div className="mt-3">
                     <label className="text-sm font-medium text-foreground mb-1 block">
                       {bn ? 'মাস নির্বাচন করুন' : 'Select Month'} <span className="text-destructive">*</span>

@@ -224,6 +224,10 @@ const FeePaymentPage = () => {
     if (ft && ft.amount != null) {
       setCustomAmount(String(ft.amount));
     }
+    if (ft && Array.isArray(ft.applicable_months) && ft.applicable_months.length > 0) {
+      const firstMonth = ft.applicable_months[0].split('-')[0];
+      setSelectedMonth(firstMonth);
+    }
   };
 
   // Student Search (by Session Year, Class, and Roll / Registration No)
@@ -432,7 +436,7 @@ const FeePaymentPage = () => {
         status: isAutoApproved ? 'paid' : 'pending',
         receipt_number: serialNumber || undefined,
         paid_at: isAutoApproved ? new Date().toISOString() : null,
-        month: selectedFeeTypeObj?.payment_frequency === 'monthly' ? selectedMonth : null,
+        month: (selectedFeeTypeObj?.payment_frequency === 'monthly' || (Array.isArray(selectedFeeTypeObj?.applicable_months) && selectedFeeTypeObj.applicable_months.length > 0)) ? selectedMonth : null,
         year: parseInt(selectedYear),
         collected_by: finalCollector || (isCash ? 'Office' : 'Online'),
         approved_by: isAutoApproved ? finalCollector : null,
@@ -1106,8 +1110,8 @@ const FeePaymentPage = () => {
                           </Select>
                         </div>
 
-                        {/* If Monthly: Month Select */}
-                        {selectedFeeTypeObj?.payment_frequency === 'monthly' && (
+                        {/* Month Select for Monthly or fees with applicable months */}
+                        {((selectedFeeTypeObj?.payment_frequency === 'monthly') || (Array.isArray(selectedFeeTypeObj?.applicable_months) && selectedFeeTypeObj.applicable_months.length > 0)) && (
                           <div className="space-y-1.5">
                             <Label className="text-xs font-semibold">{bn ? 'মাস' : 'Month'} *</Label>
                             <Select value={selectedMonth} onValueChange={setSelectedMonth}>
@@ -1115,7 +1119,10 @@ const FeePaymentPage = () => {
                                 <SelectValue placeholder={bn ? 'মাস' : 'Month'} />
                               </SelectTrigger>
                               <SelectContent>
-                                {MONTHS.map((m) => (
+                                {MONTHS.filter((m) => {
+                                  if (!selectedFeeTypeObj?.applicable_months || selectedFeeTypeObj.applicable_months.length === 0) return true;
+                                  return selectedFeeTypeObj.applicable_months.some((am: string) => am.split('-')[0] === m.value);
+                                }).map((m) => (
                                   <SelectItem key={m.value} value={m.value}>{bn ? m.bn : m.en}</SelectItem>
                                 ))}
                               </SelectContent>

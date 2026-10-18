@@ -138,7 +138,19 @@ const FeeTypeSummary = () => {
           }
           totalExpected += (feeAmount - discount) * runningMonthsCount;
         } else {
-          totalExpected += feeAmount - discount;
+          const applicableMonths: string[] | null = ft.applicable_months && Array.isArray(ft.applicable_months) ? (ft.applicable_months as any[]).map(String) : null;
+          if (!applicableMonths || applicableMonths.length === 0) {
+            totalExpected += feeAmount - discount;
+          } else {
+            const hasReached = applicableMonths.some((m: string) => {
+              const mName = m.split('-')[0];
+              const idx = MONTHS_EN_LIST.indexOf(mName);
+              return idx >= 0 && idx <= currentMonthIndex;
+            });
+            if (hasReached) {
+              totalExpected += feeAmount - discount;
+            }
+          }
         }
       });
 

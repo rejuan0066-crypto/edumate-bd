@@ -286,6 +286,15 @@ const DashboardFeeSection = ({ category, titleBn, titleEn, icon }: FeeSectionPro
 
       feeTypes.forEach((ft: any) => {
         if (ft.payment_frequency === 'monthly') return;
+        // If applicable_months is set, only show as due/unpaid if the month has arrived
+        if (Array.isArray(ft.applicable_months) && ft.applicable_months.length > 0) {
+          const hasReached = ft.applicable_months.some((m: string) => {
+            const mName = m.split('-')[0];
+            const idx = MONTHS_EN.indexOf(mName);
+            return idx >= 0 && idx <= currentMonthIdx;
+          });
+          if (!hasReached) return;
+        }
         const applicableStudents = students.filter((s: any) => {
           if (s.is_free) return false;
           if (ft.division_id && ft.division_id !== s.division_id) return false;

@@ -136,7 +136,7 @@ const FeeTypeManager = () => {
         class_id: form.class_id || null,
         session_id: form.session_id || null,
         payment_frequency: form.payment_frequency || 'one-time',
-        applicable_months: form.payment_frequency === 'monthly' && form.applicable_months.length > 0 ? form.applicable_months : null,
+        applicable_months: form.applicable_months.length > 0 ? form.applicable_months : null,
       };
       if (editId) {
         const { error } = await supabase.from('fee_types').update(payload).eq('id', editId);
@@ -257,10 +257,24 @@ const FeeTypeManager = () => {
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${f.payment_frequency === 'monthly' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'}`}>
                     {f.payment_frequency === 'monthly' ? (bn ? '🔄 মাসিক' : '🔄 Monthly') : (bn ? '1️⃣ একবার' : '1️⃣ One-time')}
                   </span>
+                  {Array.isArray(f.applicable_months) && f.applicable_months.length > 0 && (
+                    <div className="text-[11px] text-primary mt-1 font-medium flex items-center gap-1">
+                      <span>📅</span>
+                      <span>
+                        {f.applicable_months.length === 12
+                          ? (bn ? 'সব মাস' : 'All Months')
+                          : f.applicable_months.map((m: string) => {
+                              const base = m.split('-')[0];
+                              const idx = MONTHS_EN.indexOf(base);
+                              return bn && idx >= 0 ? MONTHS_BN[idx] : base;
+                            }).join(', ')}
+                      </span>
+                    </div>
+                  )}
                 </td>
                 <td className="px-4 py-3 font-bold text-foreground">৳{f.amount}</td>
-                <td className="px-4 py-3 text-muted-foreground">{f.divisions?.name_bn || (bn ? 'সব' : 'All')}</td>
-                <td className="px-4 py-3 text-muted-foreground">{f.classes?.name_bn || (bn ? 'সব' : 'All')}</td>
+                <td className="px-4 py-3 text-muted-foreground">{f.divisions?.name_bn || (bn ? 'সব বিভাগ' : 'All')}</td>
+                <td className="px-4 py-3 text-muted-foreground">{f.classes?.name_bn || (bn ? 'সব শ্রেণী' : 'All')}</td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex gap-1 justify-end">
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(f)}><Pencil className="w-3.5 h-3.5" /></Button>
@@ -333,74 +347,79 @@ const FeeTypeManager = () => {
             </div>
             <div>
               <label className="text-sm font-medium">{bn ? 'পেমেন্ট ফ্রিকোয়েন্সি' : 'Payment Frequency'}</label>
-              <Select value={form.payment_frequency} onValueChange={v => setForm(p => ({ ...p, payment_frequency: v, applicable_months: v === 'one-time' ? [] : p.applicable_months }))}>
+              <Select value={form.payment_frequency} onValueChange={v => setForm(p => ({ ...p, payment_frequency: v }))}>
                 <SelectTrigger className="mt-1"><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="one-time">{bn ? 'একবার (One-time)' : 'One-time'}</SelectItem>
                   <SelectItem value="monthly">{bn ? 'মাসিক (Monthly)' : 'Monthly'}</SelectItem>
                 </SelectContent>
               </Select>
-              {form.payment_frequency === 'monthly' && (
-                <div className="mt-3 space-y-2">
+              
+              <div className="mt-3 space-y-2">
                 <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-foreground">
-                      {bn ? 'প্রযোজ্য মাস নির্বাচন করুন:' : 'Select applicable months:'}
-                      {form.session_id && (
-                        <span className="ml-1 text-muted-foreground font-normal">
-                          ({sessionMonths.length} {bn ? 'টি মাস' : 'months'})
-                        </span>
-                      )}
-                    </label>
-                    <button type="button" className="text-xs text-primary hover:underline" onClick={() => {
-                      const allKeys = sessionMonths.map(m => m.key);
-                      setForm(p => ({
-                        ...p,
-                        applicable_months: p.applicable_months.length === sessionMonths.length ? [] : allKeys
-                      }));
-                    }}>
-                      {form.applicable_months.length === sessionMonths.length ? (bn ? 'সব বাদ দিন' : 'Deselect All') : (bn ? 'সব নির্বাচন' : 'Select All')}
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-4 gap-2">
-                    {sessionMonths.map((month) => {
-                      const isSelected = form.applicable_months.includes(month.key);
-                      const showYear = sessionMonths.some(m => m.en === month.en && m.year !== month.year);
-                      return (
-                        <button
-                          key={month.key}
-                          type="button"
-                          onClick={() => {
-                            setForm(p => ({
-                              ...p,
-                              applicable_months: isSelected
-                                ? p.applicable_months.filter(m => m !== month.key)
-                                : [...p.applicable_months, month.key]
-                            }));
-                          }}
-                          className={`text-center rounded-lg px-2 py-2 text-xs font-medium border transition-all cursor-pointer ${
-                            isSelected
-                              ? 'bg-primary/10 border-primary text-primary ring-1 ring-primary'
-                              : 'bg-muted/30 border-border text-muted-foreground hover:border-primary/40'
-                          }`}
-                        >
-                          {bn ? month.bn : month.en.slice(0, 3)}
-                          {showYear && <span className="block text-[10px] opacity-70">{month.year}</span>}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {form.applicable_months.length === 0 && (
-                    <p className="text-xs text-amber-600 dark:text-amber-400">
-                      {bn ? '⚠ কোনো মাস নির্বাচিত নয় — সব মাসে প্রযোজ্য হবে' : '⚠ No months selected — will apply to all months'}
-                    </p>
-                  )}
-                  {form.applicable_months.length > 0 && (
-                    <p className="text-xs text-primary bg-primary/5 rounded-lg px-3 py-1.5">
-                      ✓ {form.applicable_months.length} {bn ? 'টি মাসে প্রযোজ্য' : 'months selected'}
-                    </p>
-                  )}
+                  <label className="text-xs font-semibold text-foreground">
+                    {form.payment_frequency === 'one-time'
+                      ? (bn ? 'কোন মাসের জন্য প্রযোজ্য (ঐচ্ছিক):' : 'Applicable Month (Optional):')
+                      : (bn ? 'প্রযোজ্য মাস নির্বাচন করুন:' : 'Select applicable months:')}
+                    {form.session_id && (
+                      <span className="ml-1 text-muted-foreground font-normal">
+                        ({sessionMonths.length} {bn ? 'টি মাস' : 'months'})
+                      </span>
+                    )}
+                  </label>
+                  <button type="button" className="text-xs text-primary hover:underline" onClick={() => {
+                    const allKeys = sessionMonths.map(m => m.key);
+                    setForm(p => ({
+                      ...p,
+                      applicable_months: p.applicable_months.length === sessionMonths.length ? [] : (p.payment_frequency === 'one-time' && p.applicable_months.length > 0 ? [] : allKeys)
+                    }));
+                  }}>
+                    {form.applicable_months.length === sessionMonths.length || (form.payment_frequency === 'one-time' && form.applicable_months.length > 0)
+                      ? (bn ? 'সব বাদ দিন' : 'Deselect All')
+                      : (bn ? 'সব নির্বাচন' : 'Select All')}
+                  </button>
                 </div>
-              )}
+                <div className="grid grid-cols-4 gap-2">
+                  {sessionMonths.map((month) => {
+                    const isSelected = form.applicable_months.includes(month.key);
+                    const showYear = sessionMonths.some(m => m.en === month.en && m.year !== month.year);
+                    return (
+                      <button
+                        key={month.key}
+                        type="button"
+                        onClick={() => {
+                          setForm(p => ({
+                            ...p,
+                            applicable_months: isSelected
+                              ? p.applicable_months.filter(m => m !== month.key)
+                              : [...p.applicable_months, month.key]
+                          }));
+                        }}
+                        className={`text-center rounded-lg px-2 py-2 text-xs font-medium border transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-primary/10 border-primary text-primary ring-1 ring-primary'
+                            : 'bg-muted/30 border-border text-muted-foreground hover:border-primary/40'
+                        }`}
+                      >
+                        {bn ? month.bn : month.en.slice(0, 3)}
+                        {showYear && <span className="block text-[10px] opacity-70">{month.year}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+                {form.applicable_months.length === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {form.payment_frequency === 'one-time'
+                      ? (bn ? '✦ কোনো নির্দিষ্ট মাস নির্বাচিত নয় — যেকোনো মাসে প্রযোজ্য হবে (আগের মতো)' : '✦ No specific month selected — will apply to any month')
+                      : (bn ? '⚠ কোনো মাস নির্বাচিত নয় — সব মাসে প্রযোজ্য হবে' : '⚠ No months selected — will apply to all months')}
+                  </p>
+                )}
+                {form.applicable_months.length > 0 && (
+                  <p className="text-xs text-primary bg-primary/5 rounded-lg px-3 py-1.5 font-medium">
+                    ✓ {form.applicable_months.length} {bn ? 'টি মাস নির্বাচিত' : 'month(s) selected'}
+                  </p>
+                )}
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -428,11 +447,20 @@ const FeeTypeManager = () => {
                 </Select>
               </div>
             </div>
-            {!form.division_id && !form.class_id && (
-              <p className="text-xs text-primary/80 bg-primary/5 rounded-lg px-3 py-2">
-                {bn ? '✦ "সব বিভাগ" ও "সব শ্রেণী" নির্বাচিত — এই ফি সব বিভাগ ও শ্রেণীতে সমানভাবে প্রযোজ্য হবে।' : '✦ "All Divisions" & "All Classes" selected — this fee will apply equally to all divisions and classes.'}
-              </p>
-            )}
+            <div className="text-xs rounded-lg px-3 py-2 bg-primary/5 text-primary border border-primary/20 space-y-1">
+              {!form.division_id && !form.class_id && (
+                <p>{bn ? '✦ "সব বিভাগ" ও "সব শ্রেণী" নির্বাচিত — এই ফি সকল বিভাগ ও শ্রেণীর শিক্ষার্থীদের জন্য প্রযোজ্য হবে।' : '✦ "All Divisions" & "All Classes" selected — this fee will apply equally to all divisions and classes.'}</p>
+              )}
+              {form.division_id && !form.class_id && (
+                <p>{bn ? `✦ নির্বাচিত বিভাগ: "${divisions.find((d: any) => d.id === form.division_id)?.name_bn || ''}"-এর সকল শ্রেণীর শিক্ষার্থীদের জন্য প্রযোজ্য হবে।` : `✦ Selected division: All classes under this division.`}</p>
+              )}
+              {form.division_id && form.class_id && (
+                <p>{bn ? `✦ "${divisions.find((d: any) => d.id === form.division_id)?.name_bn || ''}" বিভাগের "${allClasses.find((c: any) => c.id === form.class_id)?.name_bn || ''}" শ্রেণীর শিক্ষার্থীদের জন্য প্রযোজ্য হবে।` : `✦ Specific division and class selected.`}</p>
+              )}
+              {!form.division_id && form.class_id && (
+                <p>{bn ? `✦ শুধুমাত্র "${allClasses.find((c: any) => c.id === form.class_id)?.name_bn || ''}" শ্রেণীর শিক্ষার্থীদের জন্য প্রযোজ্য হবে (সকল বিভাগ)।` : `✦ Specific class selected across all divisions.`}</p>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>{bn ? 'বাতিল' : 'Cancel'}</Button>
