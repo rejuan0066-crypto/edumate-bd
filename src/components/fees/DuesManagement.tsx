@@ -45,9 +45,17 @@ const DuesManagement = () => {
   }, [sessions, selectedSessionId]);
 
   const { data: students = [] } = useQuery({
-    queryKey: ['dues-students'],
+    queryKey: ['dues-students', selectedSessionId],
     queryFn: async () => {
-      const { data } = await supabase.from('students').select('id, name_bn, name_en, student_id, roll_number, class_id, phone, guardian_phone, status, admission_date, classes(name, name_bn)').eq('status', 'active');
+      let q = supabase
+        .from('students')
+        .select('id, name_bn, name_en, student_id, roll_number, class_id, session_id, phone, guardian_phone, status, admission_date, deleted_at, classes(name, name_bn)')
+        .eq('status', 'active')
+        .is('deleted_at', null);
+      if (selectedSessionId) {
+        q = q.eq('session_id', selectedSessionId);
+      }
+      const { data } = await q;
       return data || [];
     },
   });
@@ -140,8 +148,25 @@ const DuesManagement = () => {
     });
   };
 
+  // Students admitted on or before the selected month who are active and not deleted
+  const enrolledStudentsInMonth = useMemo(() => {
+    const [selMonthName, selYearStr] = selectedMonth.split('-');
+    const selMonthIdx = MONTHS.indexOf(selMonthName);
+    const selYear = parseInt(selYearStr);
+    const selDate = new Date(selYear, selMonthIdx, 1);
+
+    return students.filter((s: any) => {
+      if (s.deleted_at) return false;
+      if (s.status !== 'active') return false;
+      if (!s.admission_date) return true;
+      const admDate = new Date(s.admission_date);
+      const admMonthStart = new Date(admDate.getFullYear(), admDate.getMonth(), 1);
+      return selDate >= admMonthStart;
+    });
+  }, [students, selectedMonth]);
+
   const dueStudents = useMemo(() => {
-    return students
+    return enrolledStudentsInMonth
       .filter(s => {
         const breakdown = computeBreakdown(s);
         if (breakdown.length === 0) return false;
@@ -156,7 +181,18 @@ const DuesManagement = () => {
         return true;
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [students, feePayments, applicableFeeTypesForMonth, waivers, classFilter, searchText]);
+  }, [enrolledStudentsInMonth, feePayments, oneTimePayments, applicableFeeTypesForMonth, waivers, classFilter, searchText]);
+
+  const filteredEnrolled = useMemo(() => {
+    return classFilter === 'all'
+      ? enrolledStudentsInMonth
+      : enrolledStudentsInMonth.filter((s: any) => s.class_id === classFilter);
+  }, [enrolledStudentsInMonth, classFilter]);
+
+  const paidCount = useMemo(() => {
+    if (filteredEnrolled.length === 0) return 0;
+    return Math.max(0, filteredEnrolled.length - dueStudents.length);
+  }, [filteredEnrolled, dueStudents]);
 
   const computeStudentDue = (s: any) => computeBreakdown(s).reduce((sum, b) => sum + b.due, 0);
 
@@ -302,7 +338,12 @@ const DuesManagement = () => {
             </div>
             <div>
               <p className="text-xs text-muted-foreground">{bn ? 'পরিশোধিত ছাত্র' : 'Students Paid'}</p>
-              <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{students.length - dueStudents.length}</p>
+              <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">
+                {paidCount}
+                <span className="text-xs font-normal text-muted-foreground ml-1.5">
+                  / {filteredEnrolled.length} {bn ? 'জন' : ''}
+                </span>
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -366,6 +407,8 @@ const DuesManagement = () => {
               <TableBody>
                 {applicableFeeTypesForMonth.length === 0 ? (
                   <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{bn ? 'এই মাসের জন্য কোনো প্রযোজ্য মাসিক ফি নেই' : 'No monthly fee types applicable for this month'}</TableCell></TableRow>
+                ) : filteredEnrolled.length === 0 ? (
+                  <TableRow><TableCell colSpan={6 + applicableFeeTypesForMonth.length} className="text-center py-8 text-muted-foreground">{bn ? 'এই মাসে কোনো শিক্ষার্থী ভর্তি ছিল না' : 'No students were enrolled in this month'}</TableCell></TableRow>
                 ) : dueStudents.length === 0 ? (
                   <TableRow><TableCell colSpan={6 + applicableFeeTypesForMonth.length} className="text-center py-8 text-muted-foreground">{bn ? 'এই মাসে কোনো বকেয়া নেই' : 'No dues for this month'}</TableCell></TableRow>
                 ) : dueStudents.map((s, i) => {

@@ -43,6 +43,9 @@ const DashboardStatsList = ({ open, onClose, title, table, filters = {} }: Stats
     queryKey: ['stats-list', table, filters],
     queryFn: async () => {
       let q: any = supabase.from(table).select(config.selectQuery) as any;
+      if (table === 'students') {
+        q = q.is('deleted_at', null);
+      }
       Object.entries(filters).forEach(([k, v]) => { q = q.eq(k, v); });
       const { data, error } = await q.order('created_at', { ascending: false }).limit(500);
       if (error) throw error;
@@ -53,6 +56,11 @@ const DashboardStatsList = ({ open, onClose, title, table, filters = {} }: Stats
 
   const deleteMut = useMutation({
     mutationFn: async ({ id, field }: { id: string; field: string }) => {
+      if (table === 'students') {
+        const { error } = await supabase.from('students').update({ status: 'inactive', deleted_at: new Date().toISOString() } as any).eq('id', id);
+        if (error) throw error;
+        return;
+      }
       const value = field === 'is_active' ? false : 'inactive';
       const { error } = await supabase.from(table).update({ [field]: value } as any).eq('id', id);
       if (error) throw error;

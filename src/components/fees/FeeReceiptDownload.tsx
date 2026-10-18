@@ -110,7 +110,8 @@ const FeeReceiptDownload = ({ collectorName }: Props) => {
       let studentQuery = supabase
         .from('students')
         .select('*, divisions(name_bn, name), classes(name_bn, name)')
-        .eq('status', 'active');
+        .eq('status', 'active')
+        .is('deleted_at', null);
 
       if (sessionName) {
         studentQuery = studentQuery.or(`admission_session.eq.${sessionName},admission_session.is.null`);

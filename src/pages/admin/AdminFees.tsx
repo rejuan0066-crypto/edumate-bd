@@ -75,7 +75,7 @@ const AdminFees = () => {
   const { data: students = [] } = useQuery({
     queryKey: ['students-for-fees', selectedDivision],
     queryFn: async () => {
-      let q = supabase.from('students').select('*, divisions(name_bn)').eq('status', 'active');
+      let q = supabase.from('students').select('*, divisions(name_bn)').eq('status', 'active').is('deleted_at', null);
       if (selectedDivision) q = q.eq('division_id', selectedDivision);
       const { data, error } = await q.order('roll_number');
       if (error) throw error;

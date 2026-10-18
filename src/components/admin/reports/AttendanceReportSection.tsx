@@ -61,6 +61,7 @@ const AttendanceReportSection = () => {
         .select('id, student_id, name_bn, name_en, roll_number')
         .eq('session_id', sessionId)
         .eq('class_id', classId)
+        .is('deleted_at', null)
         .order('roll_number', { ascending: true });
       return data || [];
     },

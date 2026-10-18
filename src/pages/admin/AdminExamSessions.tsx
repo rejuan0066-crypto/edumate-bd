@@ -201,7 +201,7 @@ const AdminExamSessions = () => {
     queryKey: ['student_counts_by_class', academicSessionId],
     queryFn: async () => {
       if (!academicSessionId) return {};
-      const { data, error } = await supabase.from('students').select('id, class_id').eq('status', 'active').eq('session_id', academicSessionId);
+      const { data, error } = await supabase.from('students').select('id, class_id').eq('status', 'active').is('deleted_at', null).eq('session_id', academicSessionId);
       if (error) throw error;
       const counts: Record<string, number> = {};
       data?.forEach((s: any) => { if (s.class_id) counts[s.class_id] = (counts[s.class_id] || 0) + 1; });
@@ -218,6 +218,7 @@ const AdminExamSessions = () => {
       const { data, error } = await supabase.from('students')
         .select('id, name_bn, name_en, roll_number, student_id, class_id')
         .eq('status', 'active')
+        .is('deleted_at', null)
         .eq('session_id', academicSessionId)
         .in('class_id', selectedClassIds)
         .order('roll_number');
@@ -316,7 +317,7 @@ const AdminExamSessions = () => {
       if (classError) throw classError;
 
       const { data: students, error: studError } = await supabase.from('students')
-        .select('id, class_id').eq('status', 'active').eq('session_id', academicSessionId).in('class_id', selectedClassIds);
+        .select('id, class_id').eq('status', 'active').is('deleted_at', null).eq('session_id', academicSessionId).in('class_id', selectedClassIds);
       if (studError) throw studError;
 
       // Filter out excluded students

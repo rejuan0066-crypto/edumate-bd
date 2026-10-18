@@ -220,7 +220,7 @@ const AdminIdCards = () => {
   const { data: students = [], isLoading } = useQuery({
     queryKey: ['students-idcard', filterSessionId],
     queryFn: async () => {
-      let query = supabase.from('students').select('*, divisions(name, name_bn)');
+      let query = supabase.from('students').select('*, divisions(name, name_bn)').is('deleted_at', null);
       if (filterSessionId && filterSessionId !== 'all') {
         query = query.eq('session_id', filterSessionId);
       }

@@ -23,6 +23,7 @@ const DashboardSearch = () => {
     setSearching(true);
     try {
       const { data: studentData } = await supabase.from('students').select('*, divisions(name_bn)')
+        .is('deleted_at', null)
         .or(`name_bn.ilike.%${query}%,name_en.ilike.%${query}%,student_id.ilike.%${query}%,roll_number.ilike.%${query}%,phone.ilike.%${query}%`);
       const { data: staffData } = await supabase.from('staff').select('*')
         .or(`name_bn.ilike.%${query}%,name_en.ilike.%${query}%,phone.ilike.%${query}%,designation.ilike.%${query}%`);

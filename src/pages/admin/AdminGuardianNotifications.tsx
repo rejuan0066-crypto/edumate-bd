@@ -59,7 +59,7 @@ const AdminGuardianNotifications = () => {
   const { data: students = [] } = useQuery({
     queryKey: ['students-for-notify', divisionFilter],
     queryFn: async () => {
-      let query = supabase.from('students').select('*, divisions(name, name_bn)').eq('status', 'active');
+      let query = supabase.from('students').select('*, divisions(name, name_bn)').eq('status', 'active').is('deleted_at', null);
       if (divisionFilter !== 'all') query = query.eq('division_id', divisionFilter);
       const { data, error } = await query.order('name_bn');
       if (error) throw error;

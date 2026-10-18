@@ -405,6 +405,7 @@ const AdminStudentsFees = () => {
         .from('students')
         .select('*, classes:class_id(id, name, name_bn), divisions:division_id(id, name, name_bn), academic_sessions:session_id(id, name, name_bn)')
         .eq('id', sid)
+        .is('deleted_at', null)
         .maybeSingle();
       if (cancelled || !data) return;
       setFoundStudent(data);

@@ -61,7 +61,7 @@ const DashboardInner = () => {
   const { data: students = [] } = useQuery({
     queryKey: ['dashboard-students', selectedSessionId],
     queryFn: async () => {
-      let q = supabase.from('students').select('id, status, gender, admission_date, student_category, residence_type, division_id, is_free, session_id');
+      let q = supabase.from('students').select('id, status, gender, admission_date, student_category, residence_type, division_id, is_free, session_id').is('deleted_at', null);
       if (selectedSessionId) q = q.eq('session_id', selectedSessionId);
       const { data, error } = await q;
       if (error) throw error;

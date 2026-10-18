@@ -30,7 +30,8 @@ const FeeTypeSummary = () => {
       const { data } = await supabase
         .from('students')
         .select('id, division_id, class_id, session_id, admission_session, is_free, status')
-        .eq('status', 'active');
+        .eq('status', 'active')
+        .is('deleted_at', null);
       return data || [];
     },
   });

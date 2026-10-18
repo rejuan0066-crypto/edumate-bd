@@ -179,7 +179,7 @@ const AdminReports = () => {
   const { data: students = [] } = useQuery({
     queryKey: ['report-students'],
     queryFn: async () => {
-      const { data } = await supabase.from('students').select('id, status, student_category, residence_type, admission_date, gender, division_id, class_id');
+      const { data } = await supabase.from('students').select('id, status, student_category, residence_type, admission_date, gender, division_id, class_id').is('deleted_at', null);
       return data || [];
     },
   });

@@ -128,8 +128,9 @@ const DashboardFeeSection = ({ category, titleBn, titleEn, icon }: FeeSectionPro
     queryFn: async () => {
       let q = supabase
         .from('students')
-        .select('id, name_bn, roll_number, division_id, class_id, session_id, is_free, divisions(name_bn), classes(name_bn, sort_order)')
-        .eq('status', 'active');
+        .select('id, name_bn, roll_number, division_id, class_id, session_id, is_free, admission_date, deleted_at, divisions(name_bn), classes(name_bn, sort_order)')
+        .eq('status', 'active')
+        .is('deleted_at', null);
       if (selectedSessionId) q = q.eq('session_id', selectedSessionId);
       const { data } = await q;
       return data || [];
@@ -250,6 +251,16 @@ const DashboardFeeSection = ({ category, titleBn, titleEn, icon }: FeeSectionPro
             payments.filter((p: any) => p.fee_type_id === ft.id && p.month === monthName && (p.status === 'paid' || p.status === 'pending')).map((p: any) => p.student_id)
           );
           applicableStudents.forEach((s: any) => {
+            if (s.deleted_at) return;
+            // Respect student's admission date: if this running month is before their admission date, skip!
+            if (s.admission_date) {
+              const admDate = new Date(s.admission_date);
+              const admMonthStart = new Date(admDate.getFullYear(), admDate.getMonth(), 1);
+              const runningYear = ft.academic_sessions?.start_date ? new Date(ft.academic_sessions.start_date).getFullYear() : now0.getFullYear();
+              const runningMonthStart = new Date(runningYear, mi, 1);
+              if (runningMonthStart < admMonthStart) return;
+            }
+
             if (!paidForMonth.has(s.id)) {
               const alreadyAdded = groups[monthName].unpaid.some((u: any) => u._studentId === s.id && u._feeTypeId === ft.id);
               if (!alreadyAdded) {

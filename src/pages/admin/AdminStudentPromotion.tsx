@@ -88,6 +88,7 @@ const AdminStudentPromotion = () => {
         .eq('class_id', fromClassId)
         .eq('division_id', fromDivisionId)
         .eq('status', 'active')
+        .is('deleted_at', null)
         .order('roll_number');
       return data || [];
     },
@@ -173,6 +174,7 @@ const AdminStudentPromotion = () => {
         .eq('session_id', toSessionId)
         .eq('class_id', toClassId)
         .eq('division_id', toDivisionId)
+        .is('deleted_at', null)
         .order('roll_number', { ascending: false })
         .limit(1);
 

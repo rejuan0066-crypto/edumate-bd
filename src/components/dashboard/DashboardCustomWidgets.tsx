@@ -27,7 +27,7 @@ const DashboardCustomWidgets = () => {
   const { data: students = [] } = useQuery({
     queryKey: ['widget-students'],
     queryFn: async () => {
-      const { data } = await supabase.from('students').select('id, status, student_category, residence_type, gender');
+      const { data } = await supabase.from('students').select('id, status, student_category, residence_type, gender').is('deleted_at', null);
       return data || [];
     },
     enabled: widgets.some(w => w.visible && w.data_source === 'students'),

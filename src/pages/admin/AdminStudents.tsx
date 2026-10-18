@@ -97,7 +97,11 @@ const AdminStudents = () => {
   const { data: students = [], isLoading } = useQuery({
     queryKey: ['students'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('students').select('*, divisions(name, name_bn)').order('roll_number', { ascending: true });
+      const { data, error } = await supabase
+        .from('students')
+        .select('*, divisions(name, name_bn)')
+        .is('deleted_at', null)
+        .order('roll_number', { ascending: true });
       if (error) throw error;
       return data;
     },
@@ -209,8 +213,16 @@ const AdminStudents = () => {
     mutationFn: async (id: string) => {
       const student = students.find((s: any) => s.id === id);
       if (await checkApproval('delete', { id, name_bn: student?.name_bn, student_id: student?.student_id }, id, `ছাত্র মুছুন: ${student?.name_bn}`)) return;
-      const { error } = await supabase.from('students').delete().eq('id', id);
-      if (error) throw error;
+      
+      const { error: hardErr } = await supabase.from('students').delete().eq('id', id);
+      if (hardErr) {
+        // Fallback to soft-delete if foreign key constraint blocks hard delete
+        const { error: softErr } = await supabase
+          .from('students')
+          .update({ deleted_at: new Date().toISOString(), status: 'inactive' } as any)
+          .eq('id', id);
+        if (softErr) throw softErr;
+      }
     },
     onSuccess: () => {
       invalidateAllStudentQueries(queryClient);

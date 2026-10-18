@@ -319,7 +319,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   const { data: allStudents = [] } = useQuery({
     queryKey: ['students-attendance'],
     queryFn: async () => {
-      const { data } = await supabase.from('students').select('*').eq('status', 'active');
+      const { data } = await supabase.from('students').select('*').eq('status', 'active').is('deleted_at', null);
       return data || [];
     },
     enabled: entityType === 'student',
