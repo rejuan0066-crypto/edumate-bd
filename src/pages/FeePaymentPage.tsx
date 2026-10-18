@@ -3,10 +3,12 @@ import { Link } from 'react-router-dom';
 import PublicLayout from '@/components/PublicLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
+import { isAdminRole } from '@/lib/roles';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import ManualPaymentMethods from '@/components/ManualPaymentMethods';
+import CollectorSelector from '@/components/fees/CollectorSelector';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -69,8 +71,9 @@ const generateTransactionId = () => {
 const FeePaymentPage = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const queryClient = useQueryClient();
+  const [customCollector, setCustomCollector] = useState<string>('');
 
   const [activeTab, setActiveTab] = useState<'pay' | 'receipts'>('pay');
 
@@ -356,17 +359,64 @@ const FeePaymentPage = () => {
 
       const feeTypeName = selectedFeeTypeObj ? (bn ? selectedFeeTypeObj.name_bn : selectedFeeTypeObj.name) : 'Student Fee';
       const isCash = isStaffOrAdmin && paymentMethod === 'cash';
+      const finalCollector = customCollector || collectorName;
+      const isUserAdmin = isAdminRole(role);
+      const isAutoApproved = isCash && isUserAdmin;
+
+      // Duplicate Payment Checking:
+      // 1) For monthly fee, check fee_payments
+      if (selectedFeeTypeObj?.payment_frequency === 'monthly' && selectedMonth) {
+        const { data: existingMonthly } = await supabase
+          .from('fee_payments')
+          .select('id, status')
+          .eq('student_id', foundStudent.id)
+          .eq('fee_type_id', selectedFeeTypeId)
+          .eq('month', selectedMonth)
+          .eq('year', parseInt(selectedYear))
+          .maybeSingle();
+
+        if (existingMonthly) {
+          if (existingMonthly.status === 'paid') {
+            throw new Error(bn ? `${selectedMonth} ${selectedYear} মাসের এই ফি ইতিমধ্যে পরিশোধিত (Paid)` : `Fee for ${selectedMonth} ${selectedYear} is already paid`);
+          } else if (existingMonthly.status === 'pending') {
+            throw new Error(bn ? `${selectedMonth} মাসের ফি-র একটি পেমেন্ট ইতিমধ্যে এডমিন অনুমোদনের অপেক্ষায় রয়েছে` : `A payment for ${selectedMonth} is already awaiting admin approval`);
+          }
+        }
+      }
+
+      // 2) For any fee, check payments table (exclude deleted)
+      const { data: existingPayment } = await supabase
+        .from('payments')
+        .select('id, status')
+        .eq('student_id', foundStudent.id)
+        .eq('fee_type', feeTypeName)
+        .in('status', ['pending', 'success', 'failed'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingPayment) {
+        if (existingPayment.status === 'success') {
+          throw new Error(bn ? 'এই শিক্ষার্থীর জন্য উক্ত ফি ইতিমধ্যে পরিশোধিত (Paid)' : 'This fee is already paid for this student');
+        } else if (existingPayment.status === 'pending') {
+          throw new Error(bn ? 'এই ফি-র একটি পেমেন্ট ইতিমধ্যে অপেক্ষমাণ (Pending) রয়েছে। এডমিন অনুমোদন বা বাতিল না করা পর্যন্ত নতুন এন্ট্রি করা যাবে না।' : 'A payment for this fee is already pending admin approval.');
+        } else if (existingPayment.status === 'failed') {
+          throw new Error(bn ? 'এই ফি-র পূর্বের একটি এন্ট্রি প্রত্যাখ্যাত হয়েছে। অনুগ্রহ করে পেমেন্ট তালিকা থেকে উক্ত এন্ট্রিটি সংশোধন করুন অথবা এডমিন কর্তৃক ডিলিট করান।' : 'A previous entry for this fee was rejected. Please correct that entry or have an admin delete it.');
+        }
+      }
 
       // 1. Record in payments table
-      const paymentPayload = {
+      const paymentPayload: Record<string, any> = {
         fee_type: feeTypeName,
         amount: amtNum,
         transaction_id: txnId,
-        status: isCash ? 'success' : 'pending',
+        status: isAutoApproved ? 'success' : 'pending',
         student_id: foundStudent.id,
         payer_name: foundStudent.name_bn || foundStudent.name_en,
         payment_method: isCash ? 'cash' : (manualMethod || 'online'),
-        notes: `${bn ? 'আদায়' : 'Collection'}: ${isCash ? 'Cash' : manualMethod} | TrxID: ${manualTrxId || txnId} | Sender: ${senderPhone} | Reg: ${foundStudent.registration_no || ''}${serialNumber ? ` | Serial: ${serialNumber}` : ''}`,
+        notes: `${bn ? 'আদায়কারী' : 'Collector'}: ${finalCollector} | ${isCash ? 'Cash Payment' : manualMethod} | TrxID: ${manualTrxId || txnId} | Sender: ${senderPhone} | Reg: ${foundStudent.registration_no || ''}${serialNumber ? ` | Serial: ${serialNumber}` : ''}`,
+        collected_by: finalCollector,
+        created_by: user?.id || null,
       };
       await supabase.from('payments').insert(paymentPayload);
 
@@ -375,14 +425,14 @@ const FeePaymentPage = () => {
         fee_type_id: selectedFeeTypeId,
         student_id: foundStudent.id,
         amount: amtNum,
-        paid_amount: isCash ? amtNum : 0,
-        status: isCash ? 'paid' : 'pending',
+        paid_amount: isAutoApproved ? amtNum : 0,
+        status: isAutoApproved ? 'paid' : 'pending',
         receipt_number: serialNumber || undefined,
-        paid_at: isCash ? new Date().toISOString() : null,
+        paid_at: isAutoApproved ? new Date().toISOString() : null,
         month: selectedFeeTypeObj?.payment_frequency === 'monthly' ? selectedMonth : null,
         year: parseInt(selectedYear),
-        collected_by: collectorName || (isCash ? 'Office' : 'Online'),
-        approved_by: isCash ? (collectorName || 'Office') : null,
+        collected_by: finalCollector || (isCash ? 'Office' : 'Online'),
+        approved_by: isAutoApproved ? finalCollector : null,
       };
 
       const { data: insertedRecord, error: feeErr } = await supabase
@@ -402,17 +452,23 @@ const FeePaymentPage = () => {
         feeTypeName,
         amount: amtNum,
         isCash,
+        isAutoApproved,
       };
     },
     onSuccess: (data) => {
       setPaymentSuccess(data);
       refetchStudentPayments();
       queryClient.invalidateQueries({ queryKey: ['fee-payments-public'] });
-      toast.success(
-        data.isCash
-          ? (bn ? 'ক্যাশ পেমেন্ট সফলভাবে সংরক্ষিত হয়েছে!' : 'Cash payment recorded successfully!')
-          : (bn ? 'পেমেন্ট রিকোয়েস্ট সফলভাবে জমা হয়েছে!' : 'Payment request submitted successfully!')
-      );
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      if (data.isCash) {
+        if (data.isAutoApproved) {
+          toast.success(bn ? 'ক্যাশ পেমেন্ট সফলভাবে সংরক্ষিত ও অনুমোদিত হয়েছে!' : 'Cash payment recorded and approved!');
+        } else {
+          toast.success(bn ? 'ক্যাশ পেমেন্ট এন্ট্রি জমা হয়েছে! এডমিনের অনুমোদনের পর রশিদ চূড়ান্ত হবে।' : 'Cash payment submitted! Awaiting admin approval.');
+        }
+      } else {
+        toast.success(bn ? 'পেমেন্ট রিকোয়েস্ট সফলভাবে জমা হয়েছে!' : 'Payment request submitted successfully!');
+      }
     },
     onError: (err: any) => {
       toast.error(err.message || (bn ? 'পেমেন্ট প্রক্রিয়ায় ত্রুটি' : 'Payment process error'));
@@ -1155,6 +1211,17 @@ const FeePaymentPage = () => {
                               />
                             </div>
                           </div>
+                        </div>
+                      )}
+
+                      {/* Cash Collector Selection (Staff/Teacher or Custom) */}
+                      {paymentMethod === 'cash' && (
+                        <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 dark:bg-emerald-950/20 p-4 space-y-3">
+                          <CollectorSelector
+                            value={customCollector}
+                            onChange={setCustomCollector}
+                            defaultCollectorName={collectorName}
+                          />
                         </div>
                       )}
 

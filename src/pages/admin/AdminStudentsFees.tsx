@@ -13,9 +13,11 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
+import { isAdminRole } from '@/lib/roles';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import FeeReceiptDownload from '@/components/fees/FeeReceiptDownload';
+import CollectorSelector from '@/components/fees/CollectorSelector';
 import { EmbeddedProvider } from '@/contexts/EmbeddedContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
@@ -52,6 +54,7 @@ const AdminStudentsFees = () => {
   const [paymentMonth, setPaymentMonth] = useState('');
   const [paymentYear, setPaymentYear] = useState<number>(new Date().getFullYear());
   const [transactionId, setTransactionId] = useState('');
+  const [customCollector, setCustomCollector] = useState<string>('');
 
   // Student search (Session Year, Class, Roll / Reg)
   const [searchSessionId, setSearchSessionId] = useState('');
@@ -434,16 +437,21 @@ const AdminStudentsFees = () => {
       }
 
       const feeTypeName = selectedFeeTypeObj ? (bn ? selectedFeeTypeObj.name_bn : selectedFeeTypeObj.name) : feeType;
+      const finalCollector = customCollector || collectorName;
+      const isUserAdmin = isAdminRole(role);
+      const isAutoApproved = isCash && isUserAdmin;
 
-      const payload = {
+      const payload: Record<string, any> = {
         fee_type: feeTypeName,
         amount: parseFloat(amount),
         transaction_id: txnId,
-        status: isCash ? 'success' : 'pending',
+        status: isAutoApproved ? 'success' : 'pending',
         student_id: foundStudent.id,
         payer_name: foundStudent.name_bn,
         payment_method: isCash ? 'cash' : 'online',
-        notes: `${bn ? 'আদায়কারী' : 'Collector'}: ${collectorName} | Reg: ${foundStudent.registration_no || ''}, Roll: ${foundStudent.roll_number || ''}${isCash ? ' | Cash Payment' : ''}${serialNumber ? ` | Serial: ${serialNumber}` : ''}`,
+        notes: `${bn ? 'আদায়কারী' : 'Collector'}: ${finalCollector} | Reg: ${foundStudent.registration_no || ''}, Roll: ${foundStudent.roll_number || ''}${isCash ? ' | Cash Payment' : ''}${serialNumber ? ` | Serial: ${serialNumber}` : ''}`,
+        collected_by: finalCollector,
+        created_by: user?.id || null,
       };
 
       // Check if approval is needed
@@ -459,15 +467,14 @@ const AdminStudentsFees = () => {
         fee_type_id: feeType,
         student_id: foundStudent.id,
         amount: parseFloat(amount),
-        paid_amount: isCash ? parseFloat(amount) : 0,
-        status: isCash ? 'paid' : 'pending',
+        paid_amount: isAutoApproved ? parseFloat(amount) : 0,
+        status: isAutoApproved ? 'paid' : 'pending',
         receipt_number: serialNumber || undefined,
-        paid_at: isCash ? new Date().toISOString() : null,
+        paid_at: isAutoApproved ? new Date().toISOString() : null,
         month: paymentMonth || new Date().toLocaleString('default', { month: 'long' }),
         year: paymentYear,
-        collected_by: collectorName || '',
-        // Cash পেমেন্ট হলে আদায়কারী নিজেই গ্রহণকারী; অনলাইনে approval এ আসবে
-        approved_by: isCash ? (collectorName || '') : '',
+        collected_by: finalCollector || '',
+        approved_by: isAutoApproved ? (finalCollector || '') : null,
       };
       await supabase.from('fee_payments').insert(feePaymentPayload);
 
@@ -479,8 +486,13 @@ const AdminStudentsFees = () => {
       queryClient.invalidateQueries({ queryKey: ['student_fee_payments_status'] });
       queryClient.invalidateQueries({ queryKey: ['existing_payment_check'] });
       queryClient.invalidateQueries({ queryKey: ['dues-fee-payments'] });
+      const isUserAdmin = isAdminRole(role);
       if (paymentMethod === 'cash') {
-        toast.success(bn ? 'ক্যাশ পেমেন্ট সফলভাবে সংরক্ষিত হয়েছে' : 'Cash payment saved successfully');
+        if (isUserAdmin) {
+          toast.success(bn ? 'ক্যাশ পেমেন্ট সফলভাবে সংরক্ষিত ও অনুমোদিত হয়েছে' : 'Cash payment saved and approved');
+        } else {
+          toast.success(bn ? 'ফি আদায় এন্ট্রি জমা হয়েছে! এডমিনের অনুমোদনের পর রশিদ চূড়ান্ত হবে।' : 'Fee collection entry submitted! Awaiting admin approval.');
+        }
       } else {
         // Call process-payment edge function
         try {
@@ -952,15 +964,31 @@ const AdminStudentsFees = () => {
                 )}
                 {/* Existing payment block warning */}
                 {isPaymentBlocked && existingPayment && (
-                  <div className={`mt-2 border rounded-xl p-4 space-y-2 ${blockedStatus === 'pending' ? 'bg-amber-50 border-amber-300 dark:bg-amber-950/30 dark:border-amber-700' : 'bg-emerald-50 border-emerald-300 dark:bg-emerald-950/30 dark:border-emerald-700'}`}>
+                  <div className={`mt-2 border rounded-xl p-4 space-y-2 ${
+                    blockedStatus === 'failed'
+                      ? 'bg-destructive/10 border-destructive/30'
+                      : blockedStatus === 'pending'
+                      ? 'bg-amber-50 border-amber-300 dark:bg-amber-950/30 dark:border-amber-700'
+                      : 'bg-emerald-50 border-emerald-300 dark:bg-emerald-950/30 dark:border-emerald-700'
+                  }`}>
                     <div className="flex items-center gap-2">
-                      {blockedStatus === 'pending' ? (
+                      {blockedStatus === 'failed' ? (
+                        <AlertCircle className="w-4 h-4 text-destructive shrink-0" />
+                      ) : blockedStatus === 'pending' ? (
                         <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
                       ) : (
                         <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                       )}
-                      <span className={`text-sm font-semibold ${blockedStatus === 'pending' ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300'}`}>
-                        {blockedStatus === 'pending'
+                      <span className={`text-sm font-semibold ${
+                        blockedStatus === 'failed'
+                          ? 'text-destructive'
+                          : blockedStatus === 'pending'
+                          ? 'text-amber-700 dark:text-amber-300'
+                          : 'text-emerald-700 dark:text-emerald-300'
+                      }`}>
+                        {blockedStatus === 'failed'
+                          ? (bn ? '❌ পূর্ববর্তী এন্ট্রি প্রত্যাখ্যাত — সংশোধন বা ডিলিট প্রয়োজন' : '❌ Previous Entry Rejected')
+                          : blockedStatus === 'pending'
                           ? (bn ? '⏳ পেন্ডিং রিসিট — অনুমোদনের অপেক্ষায়' : '⏳ Pending Receipt — Awaiting Approval')
                           : (bn ? '✅ অনুমোদিত রিসিট — পরিশোধিত' : '✅ Approved Receipt — Paid')}
                       </span>
@@ -970,8 +998,18 @@ const AdminStudentsFees = () => {
                       <p><strong>{bn ? 'পরিমাণ' : 'Amount'}:</strong> ৳{(existingPayment as any).amount || (existingPayment as any).paid_amount}</p>
                       {'created_at' in existingPayment && <p><strong>{bn ? 'তারিখ' : 'Date'}:</strong> {new Date((existingPayment as any).created_at).toLocaleDateString('bn-BD')}</p>}
                     </div>
-                    <p className={`text-xs font-medium ${blockedStatus === 'pending' ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                      {bn ? '🚫 বাতিল না হওয়া পর্যন্ত এই ফি ধরনে আবার পরিশোধ করা যাবে না।' : '🚫 Cannot pay again until this payment is cancelled.'}
+                    <p className={`text-xs font-medium ${
+                      blockedStatus === 'failed'
+                        ? 'text-destructive'
+                        : blockedStatus === 'pending'
+                        ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-emerald-600 dark:text-emerald-400'
+                    }`}>
+                      {blockedStatus === 'failed'
+                        ? (bn ? '🚫 পেমেন্ট ড্যাশবোর্ড থেকে এন্ট্রিটি সংশোধন করুন অথবা এডমিন ডিলিট করলে তবেই নতুন করে এন্ট্রি করা যাবে।' : '🚫 Please edit this entry from Payment Dashboard or have an admin delete it to re-enter.')
+                        : blockedStatus === 'pending'
+                        ? (bn ? '🚫 এডমিন অনুমোদন বা বাতিল না করা পর্যন্ত এই ফি ধরনে আবার পরিশোধ করা যাবে না।' : '🚫 Cannot pay again until this pending payment is processed.')
+                        : (bn ? '🚫 এই ফি ইতিমধ্যে পরিশোধিত।' : '🚫 This fee is already paid.')}
                     </p>
                   </div>
                 )}
@@ -1032,13 +1070,14 @@ const AdminStudentsFees = () => {
                 )}
               </div>
 
-              {/* Collector name display for cash */}
-              {paymentMethod === 'cash' && collectorName && (
-                <div className="bg-accent/50 border border-accent rounded-lg p-3 flex items-center gap-2">
-                  <User className="w-4 h-4 text-primary" />
-                  <span className="text-sm text-foreground">
-                    <strong>{bn ? 'আদায়কারী' : 'Collector'}:</strong> {collectorName}
-                  </span>
+              {/* Collector name display & selector for cash */}
+              {paymentMethod === 'cash' && (
+                <div className="bg-accent/20 border border-accent/40 rounded-xl p-3">
+                  <CollectorSelector
+                    value={customCollector}
+                    onChange={setCustomCollector}
+                    defaultCollectorName={collectorName}
+                  />
                 </div>
               )}
 
@@ -1102,10 +1141,10 @@ const AdminStudentsFees = () => {
                   {paymentMethod === 'cash' ? <><Banknote className="w-4 h-4" /> {bn ? 'ক্যাশ' : 'Cash'}</> : <><Globe className="w-4 h-4" /> {bn ? 'অনলাইন' : 'Online'}</>}
                 </span>
               </div>
-              {paymentMethod === 'cash' && collectorName && (
+              {paymentMethod === 'cash' && (customCollector || collectorName) && (
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">{bn ? 'আদায়কারী' : 'Collector'}</span>
-                  <span className="font-semibold text-foreground">{collectorName}</span>
+                  <span className="font-semibold text-foreground">{customCollector || collectorName}</span>
                 </div>
               )}
               <div className="border-t border-border my-2" />
