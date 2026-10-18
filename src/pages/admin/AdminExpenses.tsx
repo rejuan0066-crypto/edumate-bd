@@ -195,10 +195,10 @@ const AdminExpenses = () => {
   const { language } = useLanguage();
   const { canAddItem: permCanAdd, canEditItem: permCanEdit, canDeleteItem: permCanDelete, isFeatureAllowed } = usePagePermissions('/admin/expenses');
   const checkFeature = (f: string) => typeof isFeatureAllowed === 'function' ? isFeatureAllowed(f) : true;
-  const canAddItem = (permCanAdd ?? true) && checkFeature('action_add_expense');
-  const canAddDeposit = (permCanAdd ?? true) && checkFeature('action_add_deposit');
-  const canEditItem = (permCanEdit ?? true) && checkFeature('action_edit_transaction');
-  const canDeleteItem = (permCanDelete ?? true) && checkFeature('action_delete_transaction');
+  const canAddItem = Boolean(permCanAdd) && checkFeature('action_add_expense');
+  const canAddDeposit = Boolean(permCanAdd) && checkFeature('action_add_deposit');
+  const canEditItem = Boolean(permCanEdit) && checkFeature('action_edit_transaction');
+  const canDeleteItem = Boolean(permCanDelete) && checkFeature('action_delete_transaction');
   const canExportExcel = checkFeature('action_export_excel');
   const canExportPdf = checkFeature('action_export_pdf');
   const canPrintVoucher = checkFeature('action_print_voucher');
@@ -3390,7 +3390,7 @@ const AdminExpenses = () => {
                                           >
                                             <FileText className="w-3.5 h-3.5" />
                                           </Button>
-                                          {(canEditItem ?? true) && (
+                                          {canEditItem && (
                                             <Button
                                               variant="ghost"
                                               size="icon"
@@ -3401,7 +3401,7 @@ const AdminExpenses = () => {
                                               <Edit2 className="w-3.5 h-3.5" />
                                             </Button>
                                           )}
-                                          {(canDeleteItem ?? true) && (
+                                          {canDeleteItem && (
                                             <Button
                                               variant="ghost"
                                               size="icon"
@@ -3546,7 +3546,7 @@ const AdminExpenses = () => {
                                               <span>{bn ? 'পরিশোধ' : 'Pay'}</span>
                                             </Button>
 
-                                            {(canEditItem ?? true) && (
+                                            {canEditItem && (
                                               <Button
                                                 variant="ghost"
                                                 size="icon"
@@ -3558,7 +3558,7 @@ const AdminExpenses = () => {
                                               </Button>
                                             )}
 
-                                            {(canDeleteItem ?? true) && (
+                                            {canDeleteItem && (
                                               <Button
                                                 variant="ghost"
                                                 size="icon"
@@ -3829,8 +3829,12 @@ const AdminExpenses = () => {
                       <td className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-right tabular-nums font-bold text-foreground" style={{ borderRadius: 0 }}>৳{formatNum(Number(d.amount))}</td>
                       <td className="border border-slate-300 dark:border-slate-700 px-2 py-1 text-center" style={{ borderRadius: 0 }}>
                         <div className="flex gap-0.5 justify-center">
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-emerald-600 hover:bg-emerald-50" onClick={() => openEditDeposit(d)} title={bn ? 'সম্পাদনা' : 'Edit'}><Edit2 className="w-3.5 h-3.5" /></Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-600 hover:bg-rose-50" onClick={() => { setDeleteConfirmId(d.id); setDeleteConfirmType('deposit'); }} title={bn ? 'মুছে ফেলুন' : 'Delete'}><Trash2 className="w-3.5 h-3.5" /></Button>
+                          {canEditItem && (
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-emerald-600 hover:bg-emerald-50" onClick={() => openEditDeposit(d)} title={bn ? 'সম্পাদনা' : 'Edit'}><Edit2 className="w-3.5 h-3.5" /></Button>
+                          )}
+                          {canDeleteItem && (
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-600 hover:bg-rose-50" onClick={() => { setDeleteConfirmId(d.id); setDeleteConfirmType('deposit'); }} title={bn ? 'মুছে ফেলুন' : 'Delete'}><Trash2 className="w-3.5 h-3.5" /></Button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -4379,12 +4383,16 @@ const AdminExpenses = () => {
                             </div>
                           </div>
                           <div className="flex gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => { setEditingInstitutionId(inst.id); setInstitutionForm({ name: inst.name, name_en: inst.name_en || '', address: inst.address || '', phone: inst.phone || '', email: inst.email || '', other_info: inst.other_info || '', logo_url: inst.logo_url || '' }); setInstitutionDialog(true); }}>
-                              <Edit2 className="w-4 h-4 text-muted-foreground" />
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={async () => { if ((await confirm({ description: bn ? 'এই প্রতিষ্ঠান মুছে ফেলতে চান?' : 'Delete this institution?', variant: 'destructive' }))) { deleteInstitution.mutate(inst.id); if (selectedInstitutionId === inst.id) setSelectedInstitutionId(''); } }}>
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                            </Button>
+                            {canManageCategories && canEditItem && (
+                              <Button variant="ghost" size="icon" onClick={() => { setEditingInstitutionId(inst.id); setInstitutionForm({ name: inst.name, name_en: inst.name_en || '', address: inst.address || '', phone: inst.phone || '', email: inst.email || '', other_info: inst.other_info || '', logo_url: inst.logo_url || '' }); setInstitutionDialog(true); }}>
+                                <Edit2 className="w-4 h-4 text-muted-foreground" />
+                              </Button>
+                            )}
+                            {canManageCategories && canDeleteItem && (
+                              <Button variant="ghost" size="icon" onClick={async () => { if ((await confirm({ description: bn ? 'এই প্রতিষ্ঠান মুছে ফেলতে চান?' : 'Delete this institution?', variant: 'destructive' }))) { deleteInstitution.mutate(inst.id); if (selectedInstitutionId === inst.id) setSelectedInstitutionId(''); } }}>
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              </Button>
+                            )}
                           </div>
                         </div>
                       ))}

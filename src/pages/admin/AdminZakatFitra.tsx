@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { Loader2, Plus, Save, Trash2, Calculator, Star } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useConfirm } from '@/contexts/ConfirmContext';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 
 interface FitraOption {
   name_bn: string;
@@ -50,6 +51,7 @@ const AdminZakatFitra = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const confirm = useConfirm();
+  const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/zakat-fitra');
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -187,10 +189,12 @@ const AdminZakatFitra = () => {
               </p>
             </div>
           </div>
-          <Button onClick={addYear} className="rounded-2xl">
-            <Plus className="w-4 h-4 mr-2" />
-            {bn ? 'নতুন বছর যোগ' : 'Add new year'}
-          </Button>
+          {canAddItem && (
+            <Button onClick={addYear} className="rounded-2xl">
+              <Plus className="w-4 h-4 mr-2" />
+              {bn ? 'নতুন বছর যোগ' : 'Add new year'}
+            </Button>
+          )}
         </div>
 
         {loading ? (
@@ -218,24 +222,28 @@ const AdminZakatFitra = () => {
                       </span>
                     )}
                     <div className="flex items-center gap-2">
-                      <Switch checked={r.is_active} onCheckedChange={() => toggleActive(r)} />
+                      <Switch checked={r.is_active} onCheckedChange={() => toggleActive(r)} disabled={!canEditItem} />
                       <Label className="text-xs">{r.is_active ? (bn ? 'সক্রিয়' : 'Active') : (bn ? 'নিষ্ক্রিয়' : 'Inactive')}</Label>
                     </div>
                   </div>
                   <div className="flex gap-2 flex-wrap">
-                    {!isActiveYear && (
+                    {!isActiveYear && canEditItem && (
                       <Button variant="outline" size="sm" onClick={() => setAsActiveYear(r)} className="rounded-xl">
                         <Star className="w-4 h-4 mr-1" />
                         {bn ? 'অ্যাক্টিভ ইয়ার করুন' : 'Set as active year'}
                       </Button>
                     )}
-                    <Button variant="outline" size="sm" onClick={() => remove(r)} className="rounded-xl text-destructive">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                    <Button onClick={() => save(r)} disabled={saving === r.id} className="rounded-2xl">
-                      {saving === r.id ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                      {bn ? 'সংরক্ষণ' : 'Save'}
-                    </Button>
+                    {canDeleteItem && (
+                      <Button variant="outline" size="sm" onClick={() => remove(r)} className="rounded-xl text-destructive">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {canEditItem && (
+                      <Button onClick={() => save(r)} disabled={saving === r.id} className="rounded-2xl">
+                        {saving === r.id ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                        {bn ? 'সংরক্ষণ' : 'Save'}
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -255,34 +263,38 @@ const AdminZakatFitra = () => {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label className="font-semibold">{bn ? 'ফিতরা অপশন' : 'Fitra options'}</Label>
-                    <Button variant="outline" size="sm" onClick={() => addFitra(r.id)} className="rounded-xl">
-                      <Plus className="w-3 h-3 mr-1" /> {bn ? 'যোগ' : 'Add'}
-                    </Button>
+                    {canEditItem && (
+                      <Button variant="outline" size="sm" onClick={() => addFitra(r.id)} className="rounded-xl">
+                        <Plus className="w-3 h-3 mr-1" /> {bn ? 'যোগ' : 'Add'}
+                      </Button>
+                    )}
                   </div>
                   {r.fitra_options.map((o, i) => (
                     <div key={i} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end p-3 rounded-2xl bg-muted/30">
                       <div className="sm:col-span-3">
                         <Label className="text-xs">{bn ? 'নাম (বাংলা)' : 'Name (BN)'}</Label>
-                        <Input value={o.name_bn} onChange={(e) => updateFitra(r.id, i, { name_bn: e.target.value })} className="rounded-xl" />
+                        <Input value={o.name_bn} onChange={(e) => updateFitra(r.id, i, { name_bn: e.target.value })} className="rounded-xl" disabled={!canEditItem} />
                       </div>
                       <div className="sm:col-span-3">
                         <Label className="text-xs">{bn ? 'নাম (ইংরেজি)' : 'Name (EN)'}</Label>
-                        <Input value={o.name_en} onChange={(e) => updateFitra(r.id, i, { name_en: e.target.value })} className="rounded-xl" />
+                        <Input value={o.name_en} onChange={(e) => updateFitra(r.id, i, { name_en: e.target.value })} className="rounded-xl" disabled={!canEditItem} />
                       </div>
                       <div className="sm:col-span-2">
                         <Label className="text-xs">{bn ? 'পরিমাণ (কেজি)' : 'Amount (kg)'}</Label>
                         <Input type="number" step="0.01" value={o.amount_kg || ''}
-                          onChange={(e) => updateFitra(r.id, i, { amount_kg: parseFloat(e.target.value) || 0 })} className="rounded-xl" />
+                          onChange={(e) => updateFitra(r.id, i, { amount_kg: parseFloat(e.target.value) || 0 })} className="rounded-xl" disabled={!canEditItem} />
                       </div>
                       <div className="sm:col-span-3">
                         <Label className="text-xs">{bn ? 'মূল্য/কেজি (৳)' : 'Price/kg (৳)'}</Label>
                         <Input type="number" step="0.01" value={o.price_per_kg || ''}
-                          onChange={(e) => updateFitra(r.id, i, { price_per_kg: parseFloat(e.target.value) || 0 })} className="rounded-xl" />
+                          onChange={(e) => updateFitra(r.id, i, { price_per_kg: parseFloat(e.target.value) || 0 })} className="rounded-xl" disabled={!canEditItem} />
                       </div>
                       <div className="sm:col-span-1">
-                        <Button variant="ghost" size="sm" onClick={() => removeFitra(r.id, i)} className="text-destructive">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        {canDeleteItem && (
+                          <Button variant="ghost" size="sm" onClick={() => removeFitra(r.id, i)} className="text-destructive">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}

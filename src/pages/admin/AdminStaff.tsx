@@ -931,7 +931,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                             const cat = getStaffCategory(s, designationsMap, activeCategoryKeys);
                             const catDesignations = designationsList.filter((d: any) => d.staff_category === cat);
                             const isPending = isRecordPending(s.id);
-                            const canChangeDesignation = (canEditItem || needsApproval('edit')) && isFeatureAllowed('tab_designations') !== false;
+                            const canChangeDesignation = canEditItem && isFeatureAllowed('tab_designations') !== false;
 
                             if (!canChangeDesignation) {
                               return <span className="text-xs font-medium text-foreground">{s.designation || '-'}</span>;
@@ -960,7 +960,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                         <td className="px-4 py-3">
                           {(() => {
                             const isPending = isRecordPending(s.id);
-                            const canChangeCategory = (canEditItem || needsApproval('edit')) && isFeatureAllowed('tab_designations') !== false;
+                            const canChangeCategory = canEditItem && isFeatureAllowed('tab_designations') !== false;
                             const cat = getStaffCategory(s, designationsMap, activeCategoryKeys);
 
                             if (!canChangeCategory) {

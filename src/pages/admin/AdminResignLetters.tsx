@@ -19,6 +19,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import QRCode from 'qrcode';
 import { downloadLetterAsPdf } from '@/lib/letterPdfDownload';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 
 /* ── Editable span helper ─────────────────────────── */
 interface EditableProps {
@@ -51,6 +52,7 @@ const AdminResignLetters = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const queryClient = useQueryClient();
+  const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/resign-letters');
   const [viewLetter, setViewLetter] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
@@ -590,10 +592,12 @@ const AdminResignLetters = () => {
             {bn ? 'পদত্যাগ পত্র' : 'Resign Letters'}
             <Badge variant="outline" className="ml-2">{letters.length}</Badge>
           </h1>
-          <Button onClick={() => setShowCreate(true)} className="gap-1.5">
-            <Plus className="w-4 h-4" />
-            {bn ? 'নতুন পদত্যাগ পত্র' : 'New Resign Letter'}
-          </Button>
+          {canAddItem && (
+            <Button onClick={() => setShowCreate(true)} className="gap-1.5">
+              <Plus className="w-4 h-4" />
+              {bn ? 'নতুন পদত্যাগ পত্র' : 'New Resign Letter'}
+            </Button>
+          )}
         </div>
 
         <div className="card-elevated overflow-hidden">
@@ -643,14 +647,16 @@ const AdminResignLetters = () => {
                         <Button size="icon" variant="ghost" className="text-blue-600 hover:bg-blue-500/10" onClick={() => handleDownloadPdf(l)} title={bn ? 'PDF ডাউনলোড' : 'Download PDF'}>
                           <Download className="w-4 h-4" />
                         </Button>
-                        {l.status !== 'rejoined' && l.staff_id && (
+                        {canEditItem && l.status !== 'rejoined' && l.staff_id && (
                           <Button size="icon" variant="ghost" className="text-blue-600 hover:bg-blue-500/10" onClick={() => setRejoinId(l.id)} title={bn ? 'পুনর্বহাল' : 'Rejoin'}>
                             <UserCheck className="w-4 h-4" />
                           </Button>
                         )}
-                        <Button size="icon" variant="ghost" className="text-destructive hover:bg-destructive/10" onClick={() => setDeleteId(l.id)} title={bn ? 'মুছুন' : 'Delete'}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        {canDeleteItem && (
+                          <Button size="icon" variant="ghost" className="text-destructive hover:bg-destructive/10" onClick={() => setDeleteId(l.id)} title={bn ? 'মুছুন' : 'Delete'}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -755,22 +761,24 @@ const AdminResignLetters = () => {
               return (
                 <div className="flex flex-col">
                   {/* Edit mode toggle */}
-                  <div className="flex items-center justify-end gap-2 px-4 pt-3">
-                    <Button size="sm" variant={editMode ? 'default' : 'outline'} onClick={() => setEditMode(!editMode)} className="gap-1.5">
-                      {editMode ? <PencilOff className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
-                      {editMode ? (bn ? 'এডিট বন্ধ' : 'Exit Edit') : (bn ? 'এডিট মোড' : 'Edit Mode')}
-                    </Button>
-                    {editMode && (
-                      <Button
-                        size="sm"
-                        onClick={() => saveSettlementMutation.mutate(viewLetter)}
-                        disabled={saveSettlementMutation.isPending}
-                        className="gap-1.5"
-                      >
-                        {bn ? 'আর্থিক তথ্য সংরক্ষণ' : 'Save Settlement'}
+                  {canEditItem && (
+                    <div className="flex items-center justify-end gap-2 px-4 pt-3">
+                      <Button size="sm" variant={editMode ? 'default' : 'outline'} onClick={() => setEditMode(!editMode)} className="gap-1.5">
+                        {editMode ? <PencilOff className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
+                        {editMode ? (bn ? 'এডিট বন্ধ' : 'Exit Edit') : (bn ? 'এডিট মোড' : 'Edit Mode')}
                       </Button>
-                    )}
-                  </div>
+                      {editMode && (
+                        <Button
+                          size="sm"
+                          onClick={() => saveSettlementMutation.mutate(viewLetter)}
+                          disabled={saveSettlementMutation.isPending}
+                          className="gap-1.5"
+                        >
+                          {bn ? 'আর্থিক তথ্য সংরক্ষণ' : 'Save Settlement'}
+                        </Button>
+                      )}
+                    </div>
+                  )}
 
                   {/* Hidden file inputs */}
                   <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleImagePick(e, setLocalLogo)} />

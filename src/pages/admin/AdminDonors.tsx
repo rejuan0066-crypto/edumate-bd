@@ -20,7 +20,7 @@ const AdminDonors = () => {
   const bn = language === 'bn';
   const queryClient = useQueryClient();
   const { checkApproval } = useApprovalCheck('/admin/donors', 'donors');
-  const { canAddItem, canEditItem } = usePagePermissions('/admin/donors');
+  const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/donors');
 
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'online'>('cash');
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -227,9 +227,11 @@ const AdminDonors = () => {
                       <td className="px-4 py-3 font-bold text-foreground">৳ {d.donation_amount || 0}</td>
                       <td className="px-4 py-3 text-muted-foreground">{d.donation_date || '-'}</td>
                       <td className="px-4 py-3">
-                        <Button variant="ghost" size="sm" onClick={() => setDeleteId(d.id)}>
-                          <Trash2 className="w-3 h-3 text-destructive" />
-                        </Button>
+                        {canDeleteItem && (
+                          <Button variant="ghost" size="sm" onClick={() => setDeleteId(d.id)}>
+                            <Trash2 className="w-3 h-3 text-destructive" />
+                          </Button>
+                        )}
                       </td>
                     </tr>
                   ))}

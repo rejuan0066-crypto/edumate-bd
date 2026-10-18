@@ -18,6 +18,7 @@ import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
 import OtpVerificationDialog from "@/components/OtpVerificationDialog";
 import { useAdminOtpGate } from "@/hooks/useAdminOtpGate";
 import CommitteeAttachments from "@/components/CommitteeAttachments";
+import { usePagePermissions } from "@/hooks/usePagePermissions";
 
 type Committee = {
   id: string;
@@ -70,6 +71,7 @@ export default function AdminCommittees() {
   const { language } = useLanguage();
   const bn = language === "bn";
   const qc = useQueryClient();
+  const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/committees');
 
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [committeeDialog, setCommitteeDialog] = useState(false);
@@ -290,10 +292,12 @@ export default function AdminCommittees() {
               </p>
             </div>
           </div>
-          <Button onClick={() => { setEditingCommittee({ ...emptyCommittee }); setCommitteeDialog(true); }}
-            className="bg-amber-400 hover:bg-amber-500 text-emerald-950 font-semibold rounded-2xl">
-            <Plus className="w-4 h-4 mr-1" /> {bn ? "নতুন কমিটি" : "New Committee"}
-          </Button>
+          {canAddItem && (
+            <Button onClick={() => { setEditingCommittee({ ...emptyCommittee }); setCommitteeDialog(true); }}
+              className="bg-amber-400 hover:bg-amber-500 text-emerald-950 font-semibold rounded-2xl">
+              <Plus className="w-4 h-4 mr-1" /> {bn ? "নতুন কমিটি" : "New Committee"}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -350,15 +354,21 @@ export default function AdminCommittees() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button size="sm" variant="outline" onClick={() => { setActiveCommitteeId(c.id); setEditingMember({ ...emptyMember, committee_id: c.id }); setMemberDialog(true); }}>
-                      <Plus className="w-4 h-4 mr-1" /> {bn ? "সদস্য" : "Member"}
-                    </Button>
-                    <Button size="icon" variant="ghost" onClick={() => { setEditingCommittee(c); setCommitteeDialog(true); }}>
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button size="icon" variant="ghost" className="text-destructive" onClick={() => setDeleteCommittee(c)}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    {canEditItem && (
+                      <Button size="sm" variant="outline" onClick={() => { setActiveCommitteeId(c.id); setEditingMember({ ...emptyMember, committee_id: c.id }); setMemberDialog(true); }}>
+                        <Plus className="w-4 h-4 mr-1" /> {bn ? "সদস্য" : "Member"}
+                      </Button>
+                    )}
+                    {canEditItem && (
+                      <Button size="icon" variant="ghost" onClick={() => { setEditingCommittee(c); setCommitteeDialog(true); }}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {canDeleteItem && (
+                      <Button size="icon" variant="ghost" className="text-destructive" onClick={() => setDeleteCommittee(c)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -389,12 +399,16 @@ export default function AdminCommittees() {
                                 {m.address && <div className="text-xs text-muted-foreground flex items-center gap-1 truncate"><MapPin className="w-3 h-3" />{m.address}</div>}
                               </div>
                               <div className="flex flex-col gap-1">
-                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setActiveCommitteeId(c.id); setEditingMember(m); setMemberDialog(true); }}>
-                                  <Pencil className="w-3.5 h-3.5" />
-                                </Button>
-                                <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setDeleteMember(m)}>
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </Button>
+                                {canEditItem && (
+                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setActiveCommitteeId(c.id); setEditingMember(m); setMemberDialog(true); }}>
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </Button>
+                                )}
+                                {canDeleteItem && (
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setDeleteMember(m)}>
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
+                                )}
                               </div>
                             </div>
                           </Card>

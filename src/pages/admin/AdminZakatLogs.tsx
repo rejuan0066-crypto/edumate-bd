@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { Loader2, Trash2, FileSearch, RefreshCw, Download } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useConfirm } from '@/contexts/ConfirmContext';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -30,6 +31,7 @@ const AdminZakatLogs = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const confirm = useConfirm();
+  const { canDeleteItem } = usePagePermissions('/admin/zakat-logs');
   const [rows, setRows] = useState<LogRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState<'all' | 'zakat' | 'fitra'>('all');
@@ -194,9 +196,11 @@ const AdminZakatLogs = () => {
                             <Button size="sm" variant="outline" onClick={() => setViewing(r)} className="rounded-xl">
                               {bn ? 'বিস্তারিত' : 'Details'}
                             </Button>
-                            <Button size="sm" variant="ghost" onClick={() => remove(r)} className="text-destructive">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            {canDeleteItem && (
+                              <Button size="sm" variant="ghost" onClick={() => remove(r)} className="text-destructive">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>

@@ -27,6 +27,7 @@ import { isAdminRole } from '@/lib/roles';
 import { useAppTimezone } from '@/hooks/useAppTimezone';
 import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { useConfirm } from '@/contexts/ConfirmContext';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 
 type Hostel = { id: string; name: string; name_bn: string; hostel_type: string; address?: string | null; warden_name?: string | null; warden_phone?: string | null; total_capacity: number; is_active: boolean; notes?: string | null };
 type Room = { id: string; hostel_id: string; room_number: string; floor?: string | null; bed_count: number; monthly_rent: number; room_type?: string | null; is_active: boolean; notes?: string | null };
@@ -77,6 +78,7 @@ const AdminHostel = () => {
   const { tz } = useAppTimezone();
   const { data: institutionInfo } = useInstitutionInfo();
   const confirm = useConfirm();
+  const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/hostel');
 
   const confirmClearAttendance = async (personId: string, personName: string) => {
     const ok = await confirm({
@@ -956,9 +958,11 @@ const AdminHostel = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>{bn ? 'হোস্টেল তালিকা' : 'Hostels'}</CardTitle>
-              <Button onClick={() => { setEditHostel(null); setHostelForm({ hostel_type: 'boys', total_capacity: 0, is_active: true }); setHostelDlg(true); }}>
-                <Plus className="w-4 h-4 mr-2" />{bn ? 'নতুন' : 'New'}
-              </Button>
+              {canAddItem && (
+                <Button onClick={() => { setEditHostel(null); setHostelForm({ hostel_type: 'boys', total_capacity: 0, is_active: true }); setHostelDlg(true); }}>
+                  <Plus className="w-4 h-4 mr-2" />{bn ? 'নতুন' : 'New'}
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <Table>
@@ -981,8 +985,12 @@ const AdminHostel = () => {
                       <TableCell>{h.total_capacity}</TableCell>
                       <TableCell><Badge variant={h.is_active ? 'default' : 'secondary'}>{h.is_active ? (bn ? 'সক্রিয়' : 'Active') : (bn ? 'নিষ্ক্রিয়' : 'Inactive')}</Badge></TableCell>
                       <TableCell className="text-right space-x-1">
-                        <Button size="icon" variant="ghost" onClick={() => { setEditHostel(h); setHostelForm(h); setHostelDlg(true); }}><Pencil className="w-4 h-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => setDelHostelId(h.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                        {canEditItem && (
+                          <Button size="icon" variant="ghost" onClick={() => { setEditHostel(h); setHostelForm(h); setHostelDlg(true); }}><Pencil className="w-4 h-4" /></Button>
+                        )}
+                        {canDeleteItem && (
+                          <Button size="icon" variant="ghost" onClick={() => setDelHostelId(h.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -998,9 +1006,11 @@ const AdminHostel = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>{bn ? 'রুম তালিকা' : 'Rooms'}</CardTitle>
-              <Button onClick={() => { setEditRoom(null); setRoomForm({ bed_count: 1, monthly_rent: 0, is_active: true }); setRoomDlg(true); }}>
-                <Plus className="w-4 h-4 mr-2" />{bn ? 'নতুন রুম' : 'New Room'}
-              </Button>
+              {canAddItem && (
+                <Button onClick={() => { setEditRoom(null); setRoomForm({ bed_count: 1, monthly_rent: 0, is_active: true }); setRoomDlg(true); }}>
+                  <Plus className="w-4 h-4 mr-2" />{bn ? 'নতুন রুম' : 'New Room'}
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <Table>
@@ -1021,8 +1031,12 @@ const AdminHostel = () => {
                       <TableCell>{r.bed_count}</TableCell>
                       <TableCell>৳{Number(r.monthly_rent).toLocaleString()}</TableCell>
                       <TableCell className="text-right space-x-1">
-                        <Button size="icon" variant="ghost" onClick={() => { setEditRoom(r); setRoomForm(r); setRoomDlg(true); }}><Pencil className="w-4 h-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => setDelRoomId(r.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                        {canEditItem && (
+                          <Button size="icon" variant="ghost" onClick={() => { setEditRoom(r); setRoomForm(r); setRoomDlg(true); }}><Pencil className="w-4 h-4" /></Button>
+                        )}
+                        {canDeleteItem && (
+                          <Button size="icon" variant="ghost" onClick={() => setDelRoomId(r.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -1038,9 +1052,11 @@ const AdminHostel = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>{bn ? 'রুম বরাদ্দ' : 'Allocations'}</CardTitle>
-              <Button onClick={() => { setEditAlloc(null); setAllocForm({ status: 'active', occupant_type: 'student', fee_mode: 'full', discount_percent: 0, discount_amount: 0, monthly_charge: 0, check_in_date: new Date().toISOString().split('T')[0] }); setAllocDlg(true); }}>
-                <Plus className="w-4 h-4 mr-2" />{bn ? 'নতুন বরাদ্দ' : 'New Allocation'}
-              </Button>
+              {canAddItem && (
+                <Button onClick={() => { setEditAlloc(null); setAllocForm({ status: 'active', occupant_type: 'student', fee_mode: 'full', discount_percent: 0, discount_amount: 0, monthly_charge: 0, check_in_date: new Date().toISOString().split('T')[0] }); setAllocDlg(true); }}>
+                  <Plus className="w-4 h-4 mr-2" />{bn ? 'নতুন বরাদ্দ' : 'New Allocation'}
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <Table>
@@ -1084,8 +1100,12 @@ const AdminHostel = () => {
                       <TableCell className="font-semibold">৳{Number(a.monthly_charge).toLocaleString()}</TableCell>
                       <TableCell><Badge variant={a.status === 'active' ? 'default' : 'secondary'}>{a.status}</Badge></TableCell>
                       <TableCell className="text-right space-x-1">
-                        <Button size="icon" variant="ghost" onClick={() => { setEditAlloc(a); setAllocForm(a); setAllocDlg(true); }}><Pencil className="w-4 h-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => setDelAllocId(a.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                        {canEditItem && (
+                          <Button size="icon" variant="ghost" onClick={() => { setEditAlloc(a); setAllocForm(a); setAllocDlg(true); }}><Pencil className="w-4 h-4" /></Button>
+                        )}
+                        {canDeleteItem && (
+                          <Button size="icon" variant="ghost" onClick={() => setDelAllocId(a.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -1101,9 +1121,11 @@ const AdminHostel = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>{bn ? 'সাপ্তাহিক খাবার মেনু' : 'Weekly Meal Menu'}</CardTitle>
-              <Button onClick={() => { setEditMeal(null); setMealForm({ day_of_week: 'Saturday', meal_type: 'breakfast' }); setMealDlg(true); }}>
-                <Plus className="w-4 h-4 mr-2" />{bn ? 'নতুন' : 'New'}
-              </Button>
+              {canAddItem && (
+                <Button onClick={() => { setEditMeal(null); setMealForm({ day_of_week: 'Saturday', meal_type: 'breakfast' }); setMealDlg(true); }}>
+                  <Plus className="w-4 h-4 mr-2" />{bn ? 'নতুন' : 'New'}
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <Table>
@@ -1125,8 +1147,12 @@ const AdminHostel = () => {
                         <TableCell>{mt ? (bn ? mt.bn : mt.en) : m.meal_type}</TableCell>
                         <TableCell className="max-w-md truncate">{bn ? (m.items_bn || m.items) : m.items}</TableCell>
                         <TableCell className="text-right space-x-1">
-                          <Button size="icon" variant="ghost" onClick={() => { setEditMeal(m); setMealForm(m); setMealDlg(true); }}><Pencil className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="ghost" onClick={() => setDelMealId(m.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                          {canEditItem && (
+                            <Button size="icon" variant="ghost" onClick={() => { setEditMeal(m); setMealForm(m); setMealDlg(true); }}><Pencil className="w-4 h-4" /></Button>
+                          )}
+                          {canDeleteItem && (
+                            <Button size="icon" variant="ghost" onClick={() => setDelMealId(m.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     );

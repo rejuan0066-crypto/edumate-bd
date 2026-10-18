@@ -18,6 +18,7 @@ import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import OnlineExamBuilderDialog from '@/components/admin/online-exams/OnlineExamBuilderDialog';
 import OnlineExamReviewDialog from '@/components/admin/online-exams/OnlineExamReviewDialog';
 import { useNavigate } from 'react-router-dom';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 
 type ExamStatus = 'all' | 'draft' | 'published' | 'closed' | 'archived';
 
@@ -39,6 +40,7 @@ const AdminOnlineExams = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/online-exams');
 
   const [statusFilter, setStatusFilter] = useState<ExamStatus>('all');
   const [search, setSearch] = useState('');
@@ -177,10 +179,12 @@ const AdminOnlineExams = () => {
                 : 'Create exams, question builder, review and publish results'}
             </p>
           </div>
-          <Button onClick={handleNew} className="rounded-2xl px-6">
-            <Plus className="w-4 h-4 mr-2" />
-            {language === 'bn' ? 'নতুন পরীক্ষা' : 'New Exam'}
-          </Button>
+          {canAddItem && (
+            <Button onClick={handleNew} className="rounded-2xl px-6">
+              <Plus className="w-4 h-4 mr-2" />
+              {language === 'bn' ? 'নতুন পরীক্ষা' : 'New Exam'}
+            </Button>
+          )}
         </div>
 
         {/* Stats */}
@@ -257,10 +261,12 @@ const AdminOnlineExams = () => {
             <p className="text-muted-foreground">
               {language === 'bn' ? 'কোনো পরীক্ষা পাওয়া যায়নি' : 'No exams found'}
             </p>
-            <Button onClick={handleNew} className="mt-4 rounded-2xl">
-              <Plus className="w-4 h-4 mr-2" />
-              {language === 'bn' ? 'প্রথম পরীক্ষা তৈরি করুন' : 'Create first exam'}
-            </Button>
+            {canAddItem && (
+              <Button onClick={handleNew} className="mt-4 rounded-2xl">
+                <Plus className="w-4 h-4 mr-2" />
+                {language === 'bn' ? 'প্রথম পরীক্ষা তৈরি করুন' : 'Create first exam'}
+              </Button>
+            )}
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -329,15 +335,17 @@ const AdminOnlineExams = () => {
                   )}
 
                   <div className="flex gap-2 flex-wrap">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="rounded-xl flex-1"
-                      onClick={() => handleEdit(exam.id)}
-                    >
-                      <Pencil className="w-3.5 h-3.5 mr-1" />
-                      {language === 'bn' ? 'এডিট' : 'Edit'}
-                    </Button>
+                    {canEditItem && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="rounded-xl flex-1"
+                        onClick={() => handleEdit(exam.id)}
+                      >
+                        <Pencil className="w-3.5 h-3.5 mr-1" />
+                        {language === 'bn' ? 'এডিট' : 'Edit'}
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="outline"
@@ -347,25 +355,29 @@ const AdminOnlineExams = () => {
                       <Eye className="w-3.5 h-3.5 mr-1" />
                       {language === 'bn' ? 'রিভিউ' : 'Review'}
                     </Button>
-                    <Button
-                      size="sm"
-                      variant={exam.status === 'published' ? 'secondary' : 'default'}
-                      className="rounded-xl"
-                      onClick={() => togglePublish.mutate({ id: exam.id, status: exam.status })}
-                      disabled={togglePublish.isPending || qCount === 0}
-                    >
-                      {exam.status === 'published'
-                        ? (language === 'bn' ? 'খসড়া' : 'Unpublish')
-                        : (language === 'bn' ? 'প্রকাশ' : 'Publish')}
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="rounded-xl text-destructive"
-                      onClick={() => setDeleteId(exam.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    {canEditItem && (
+                      <Button
+                        size="sm"
+                        variant={exam.status === 'published' ? 'secondary' : 'default'}
+                        className="rounded-xl"
+                        onClick={() => togglePublish.mutate({ id: exam.id, status: exam.status })}
+                        disabled={togglePublish.isPending || qCount === 0}
+                      >
+                        {exam.status === 'published'
+                          ? (language === 'bn' ? 'খসড়া' : 'Unpublish')
+                          : (language === 'bn' ? 'প্রকাশ' : 'Publish')}
+                      </Button>
+                    )}
+                    {canDeleteItem && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="rounded-xl text-destructive"
+                        onClick={() => setDeleteId(exam.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </Card>
               );

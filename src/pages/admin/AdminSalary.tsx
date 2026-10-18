@@ -4820,6 +4820,7 @@ const AdminSalary = () => {
                                 )}
                                 {item.primaryConfig ? (
                                   <>
+                                    {canEditItem && (
                                     <Button 
                                       size="icon" 
                                       variant="ghost" 
@@ -4839,17 +4840,20 @@ const AdminSalary = () => {
                                     >
                                       <Edit2 className="h-3 w-3" />
                                     </Button>
-                                    <Button 
-                                      size="icon" 
-                                      variant="ghost" 
-                                      className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50" 
-                                      title={bn ? 'মুছে ফেলুন' : 'Delete'}
-                                      onClick={() => setDeleteSavingsId(item.primaryConfig?.id)}
-                                    >
-                                      <Trash2 className="h-3 w-3" />
-                                    </Button>
+                                    )}
+                                    {canDeleteItem && (
+                                      <Button 
+                                        size="icon" 
+                                        variant="ghost" 
+                                        className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50" 
+                                        title={bn ? 'মুছে ফেলুন' : 'Delete'}
+                                        onClick={() => setDeleteSavingsId(item.primaryConfig?.id)}
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    )}
                                   </>
-                                ) : (
+                                ) : canEditItem ? (
                                   <Button
                                     size="sm"
                                     className="h-7 px-2 text-[10px] bg-blue-600 hover:bg-blue-700 text-white font-medium gap-1"
@@ -4870,7 +4874,7 @@ const AdminSalary = () => {
                                   >
                                     <Plus className="h-3 w-3" /> {bn ? 'সেটআপ' : 'Setup'}
                                   </Button>
-                                )}
+                                ) : null}
                               </div>
                             </td>
                           </tr>
@@ -5972,20 +5976,22 @@ const AdminSalary = () => {
                               : 'Removes all salary expense vouchers for this month from Expense Management to clear deficits/arrears. Salary records are preserved.'}
                           </p>
                         </div>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          className="whitespace-nowrap self-start sm:self-auto"
-                          disabled={syncMonthExpensesMutation.isPending || totalSalaryInExpenses === 0}
-                          onClick={() => syncMonthExpensesMutation.mutate('remove_all')}
-                        >
-                          {syncMonthExpensesMutation.isPending ? (
-                            <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                          )}
-                          {bn ? 'হিসাব থেকে বাদ দিন' : 'Remove from Expenses'}
-                        </Button>
+                        {canDeleteItem && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="whitespace-nowrap self-start sm:self-auto"
+                            disabled={syncMonthExpensesMutation.isPending || totalSalaryInExpenses === 0}
+                            onClick={() => syncMonthExpensesMutation.mutate('remove_all')}
+                          >
+                            {syncMonthExpensesMutation.isPending ? (
+                              <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                            )}
+                            {bn ? 'হিসাব থেকে বাদ দিন' : 'Remove from Expenses'}
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>

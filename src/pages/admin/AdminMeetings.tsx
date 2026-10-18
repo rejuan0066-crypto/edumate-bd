@@ -27,6 +27,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import { useMeetingProviderSettings } from '@/hooks/useMeetingProviderSettings';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 
 type Provider = 'jitsi' | 'jaas' | 'daily' | 'zoom' | 'google_meet' | 'youtube';
 type AccessMode = 'public' | 'logged_in' | 'access_code';
@@ -140,6 +141,7 @@ const AdminMeetings = () => {
   const navigate = useNavigate();
   const bn = language === 'bn';
   const { getDefaultUrl } = useMeetingProviderSettings();
+  const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/meetings');
 
   const [tab, setTab] = useState<'all' | 'scheduled' | 'live' | 'ended'>('all');
   const [search, setSearch] = useState('');
@@ -422,19 +424,21 @@ const AdminMeetings = () => {
               {bn ? 'স্টাফ, অভিভাবক ও প্রশাসনিক মিটিং শিডিউল ও পরিচালনা করুন' : 'Schedule and manage staff, parent and administrative meetings'}
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button
-              onClick={() => startNowMutation.mutate()}
-              disabled={startNowMutation.isPending}
-              variant="default"
-              className="gap-2 rounded-2xl bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white"
-            >
-              <Zap className="w-4 h-4" /> {bn ? 'এখনই শুরু করুন' : 'Start Now'}
-            </Button>
-            <Button onClick={openCreate} variant="outline" className="gap-2 rounded-2xl">
-              <Plus className="w-4 h-4" /> {bn ? 'নতুন মিটিং' : 'Schedule'}
-            </Button>
-          </div>
+          {canAddItem && (
+            <div className="flex gap-2">
+              <Button
+                onClick={() => startNowMutation.mutate()}
+                disabled={startNowMutation.isPending}
+                variant="default"
+                className="gap-2 rounded-2xl bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white"
+              >
+                <Zap className="w-4 h-4" /> {bn ? 'এখনই শুরু করুন' : 'Start Now'}
+              </Button>
+              <Button onClick={openCreate} variant="outline" className="gap-2 rounded-2xl">
+                <Plus className="w-4 h-4" /> {bn ? 'নতুন মিটিং' : 'Schedule'}
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col gap-4 sm:flex-row">
@@ -529,27 +533,35 @@ const AdminMeetings = () => {
                         <Button size="sm" variant="outline" onClick={() => setParticipantsOf(m.id)} className="rounded-xl gap-1">
                           <Users className="w-3.5 h-3.5" /> {bn ? 'অংশগ্রহণ' : 'Attendees'}
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => openEdit(m)} className="rounded-xl">
-                          <Pencil className="w-3.5 h-3.5" />
-                        </Button>
+                        {canEditItem && (
+                          <Button size="sm" variant="ghost" onClick={() => openEdit(m)} className="rounded-xl">
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
                         {m._status === 'scheduled' && (
                           <>
-                            <Button
-                              size="sm"
-                              onClick={() => startScheduledMutation.mutate(m)}
-                              disabled={startScheduledMutation.isPending}
-                              className="rounded-xl gap-1 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white"
-                            >
-                              <Zap className="w-3.5 h-3.5" /> {bn ? 'এখনই শুরু' : 'Start Now'}
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => cancelMutation.mutate(m.id)} className="rounded-xl text-orange-600">
-                              {bn ? 'বাতিল' : 'Cancel'}
-                            </Button>
+                            {canEditItem && (
+                              <Button
+                                size="sm"
+                                onClick={() => startScheduledMutation.mutate(m)}
+                                disabled={startScheduledMutation.isPending}
+                                className="rounded-xl gap-1 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white"
+                              >
+                                <Zap className="w-3.5 h-3.5" /> {bn ? 'এখনই শুরু' : 'Start Now'}
+                              </Button>
+                            )}
+                            {canEditItem && (
+                              <Button size="sm" variant="ghost" onClick={() => cancelMutation.mutate(m.id)} className="rounded-xl text-orange-600">
+                                {bn ? 'বাতিল' : 'Cancel'}
+                              </Button>
+                            )}
                           </>
                         )}
-                        <Button size="sm" variant="ghost" onClick={() => setDeleteId(m.id)} className="rounded-xl text-destructive">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
+                        {canDeleteItem && (
+                          <Button size="sm" variant="ghost" onClick={() => setDeleteId(m.id)} className="rounded-xl text-destructive">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </Card>

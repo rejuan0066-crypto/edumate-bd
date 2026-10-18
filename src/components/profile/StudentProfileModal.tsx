@@ -32,11 +32,12 @@ interface StudentProfileModalProps {
   setShowAdd: (v: boolean) => void;
   statusMutation: any;
   canEditItem: boolean;
+  canDeleteItem?: boolean;
 }
 
 const StudentProfileModal = ({
   student, bn, getApprovalBadge, getSessionName, getClassName,
-  setEditStudent, setShowDetail, setShowAdd, statusMutation, canEditItem
+  setEditStudent, setShowDetail, setShowAdd, statusMutation, canEditItem, canDeleteItem
 }: StudentProfileModalProps) => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'profile' | 'finance' | 'academic' | 'others'>('profile');
@@ -623,11 +624,13 @@ const StudentProfileModal = ({
           {/* Discounts */}
           <ProfileSectionCard title={bn ? 'ফি ছাড় / ডিসকাউন্ট' : 'Discounts'} icon={BadgePercent}>
             <div className="col-span-full">
-              <div className="flex justify-end mb-3">
-                <Button size="sm" variant="outline" className="h-8 text-xs rounded-full border-emerald-500/20 text-emerald-600 hover:bg-emerald-500/10" onClick={() => setShowWaiverDialog(true)} disabled={availableFeeTypesForWaiver.length === 0}>
-                  <Plus className="w-3 h-3 mr-1" /> {bn ? 'ছাড় দিন' : 'Add Discount'}
-                </Button>
-              </div>
+              {canEditItem && (
+                <div className="flex justify-end mb-3">
+                  <Button size="sm" variant="outline" className="h-8 text-xs rounded-full border-emerald-500/20 text-emerald-600 hover:bg-emerald-500/10" onClick={() => setShowWaiverDialog(true)} disabled={availableFeeTypesForWaiver.length === 0}>
+                    <Plus className="w-3 h-3 mr-1" /> {bn ? 'ছাড় দিন' : 'Add Discount'}
+                  </Button>
+                </div>
+              )}
               {waiverLoading ? (
                 <div className="flex justify-center py-3"><Loader2 className="w-5 h-5 animate-spin text-emerald-600" /></div>
               ) : feeWaivers.length === 0 ? (
@@ -642,9 +645,11 @@ const StudentProfileModal = ({
                       </div>
                       <div className="flex items-center gap-1 ml-2 shrink-0">
                         <Badge className="bg-amber-500/10 text-amber-600 rounded-full text-[9px] px-2.5">৳{Math.round((w.fee_types?.amount || 0) * w.waiver_percent / 100)}</Badge>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive rounded-full hover:bg-destructive/10" onClick={() => deleteWaiverMutation.mutate(w.id)}>
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
+                        {canDeleteItem && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive rounded-full hover:bg-destructive/10" onClick={() => deleteWaiverMutation.mutate(w.id)}>
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -881,13 +886,15 @@ const StudentProfileModal = ({
         >
           <Printer className="w-4 h-4 mr-2" /> {bn ? 'প্রোফাইল প্রিন্ট' : 'Print Profile'}
         </Button>
-        <Button
-          variant="outline"
-          onClick={() => { setEditStudent(student); setShowDetail(null); setShowAdd(true); }}
-          className="flex-1 min-w-[140px] rounded-full h-11 border-emerald-500/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all duration-300"
-        >
-          <Pencil className="w-4 h-4 mr-2" /> {bn ? 'সম্পাদনা' : 'Edit'}
-        </Button>
+        {canEditItem && (
+          <Button
+            variant="outline"
+            onClick={() => { setEditStudent(student); setShowDetail(null); setShowAdd(true); }}
+            className="flex-1 min-w-[140px] rounded-full h-11 border-emerald-500/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all duration-300"
+          >
+            <Pencil className="w-4 h-4 mr-2" /> {bn ? 'সম্পাদনা' : 'Edit'}
+          </Button>
+        )}
         {student.approval_status !== 'approved' && (
           <Button
             variant="outline"

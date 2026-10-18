@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FileText, Printer, Trash2, Loader2, Eye, Pencil, PencilOff, Upload, AlignLeft, AlignCenter, AlignRight, AlignJustify, Move, RotateCcw } from 'lucide-react';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { toast } from 'sonner';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -105,6 +106,7 @@ const AdminJoiningLetters = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const queryClient = useQueryClient();
+  const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/joining-letters');
   const [viewLetter, setViewLetter] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
@@ -488,9 +490,11 @@ const AdminJoiningLetters = () => {
                         <Button size="icon" variant="ghost" className="text-green-600 hover:bg-green-500/10" onClick={() => handlePrint(l)} title={bn ? 'প্রিন্ট' : 'Print'}>
                           <Printer className="w-4 h-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="text-destructive hover:bg-destructive/10" onClick={() => setDeleteId(l.id)} title={bn ? 'মুছুন' : 'Delete'}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        {canDeleteItem && (
+                          <Button size="icon" variant="ghost" className="text-destructive hover:bg-destructive/10" onClick={() => setDeleteId(l.id)} title={bn ? 'মুছুন' : 'Delete'}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -518,15 +522,17 @@ const AdminJoiningLetters = () => {
                         {bn ? 'পজিশন রিসেট' : 'Reset Positions'}
                       </Button>
                     )}
-                    <Button
-                      size="sm"
-                      variant={editMode ? 'default' : 'outline'}
-                      onClick={() => setEditMode(!editMode)}
-                      className="gap-1.5"
-                    >
-                      {editMode ? <PencilOff className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
-                      {editMode ? (bn ? 'এডিট বন্ধ' : 'Exit Edit') : (bn ? 'এডিট মোড' : 'Edit Mode')}
-                    </Button>
+                    {canEditItem && (
+                      <Button
+                        size="sm"
+                        variant={editMode ? 'default' : 'outline'}
+                        onClick={() => setEditMode(!editMode)}
+                        className="gap-1.5"
+                      >
+                        {editMode ? <PencilOff className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
+                        {editMode ? (bn ? 'এডিট বন্ধ' : 'Exit Edit') : (bn ? 'এডিট মোড' : 'Edit Mode')}
+                      </Button>
+                    )}
                   </div>
 
                   {/* Hidden file inputs */}

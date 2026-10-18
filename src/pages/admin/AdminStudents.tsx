@@ -767,7 +767,7 @@ const AdminStudents = () => {
       <Dialog open={!!showDetail} onOpenChange={o => { if (!o) setShowDetail(null); }}>
         <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto rounded-[40px]">
           <DialogHeader><DialogTitle className="text-center">{bn ? 'ছাত্রের বিস্তারিত' : 'Student Details'}</DialogTitle></DialogHeader>
-          {showDetail && <StudentProfileModal student={showDetail} bn={bn} getApprovalBadge={getApprovalBadge} getSessionName={getSessionName} getClassName={(cId: string) => getClassName(cId || getEffectiveClassId(showDetail))} setEditStudent={setEditStudent} setShowDetail={setShowDetail} setShowAdd={setShowAdd} statusMutation={statusMutation} canEditItem={canEditItem} />}
+          {showDetail && <StudentProfileModal student={showDetail} bn={bn} getApprovalBadge={getApprovalBadge} getSessionName={getSessionName} getClassName={(cId: string) => getClassName(cId || getEffectiveClassId(showDetail))} setEditStudent={setEditStudent} setShowDetail={setShowDetail} setShowAdd={setShowAdd} statusMutation={statusMutation} canEditItem={canEditItem} canDeleteItem={canDeleteItem} />}
         </DialogContent>
       </Dialog>
     </div>

@@ -26,6 +26,7 @@ import {
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 
 type Provider = 'jitsi' | 'jaas' | 'daily' | 'zoom' | 'google_meet' | 'youtube';
 type AccessMode = 'public' | 'logged_in' | 'class_based' | 'access_code';
@@ -136,6 +137,7 @@ const AdminLiveClasses = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const bn = language === 'bn';
+  const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/live-classes');
 
   const [tab, setTab] = useState<'all' | 'scheduled' | 'live' | 'ended'>('all');
   const [search, setSearch] = useState('');
@@ -380,9 +382,11 @@ const AdminLiveClasses = () => {
               {bn ? 'অনলাইন ক্লাস শিডিউল, মনিটর ও পরিচালনা করুন' : 'Schedule, monitor and manage online classes'}
             </p>
           </div>
-          <Button onClick={openCreate} className="gap-2 rounded-2xl">
-            <Plus className="w-4 h-4" /> {bn ? 'নতুন লাইভ ক্লাস' : 'New Live Class'}
-          </Button>
+          {canAddItem && (
+            <Button onClick={openCreate} className="gap-2 rounded-2xl">
+              <Plus className="w-4 h-4" /> {bn ? 'নতুন লাইভ ক্লাস' : 'New Live Class'}
+            </Button>
+          )}
         </div>
 
         <div className="flex flex-col gap-4 sm:flex-row">
@@ -472,17 +476,21 @@ const AdminLiveClasses = () => {
                         <Button size="sm" variant="outline" onClick={() => setParticipantsOf(lc.id)} className="rounded-xl gap-1">
                           <Users className="w-3.5 h-3.5" /> {bn ? 'অংশগ্রহণ' : 'Attendees'}
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => openEdit(lc)} className="rounded-xl">
-                          <Pencil className="w-3.5 h-3.5" />
-                        </Button>
-                        {lc._status === 'scheduled' && (
+                        {canEditItem && (
+                          <Button size="sm" variant="ghost" onClick={() => openEdit(lc)} className="rounded-xl">
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
+                        {canEditItem && lc._status === 'scheduled' && (
                           <Button size="sm" variant="ghost" onClick={() => cancelMutation.mutate(lc.id)} className="rounded-xl text-orange-600">
                             {bn ? 'বাতিল' : 'Cancel'}
                           </Button>
                         )}
-                        <Button size="sm" variant="ghost" onClick={() => setDeleteId(lc.id)} className="rounded-xl text-destructive">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
+                        {canDeleteItem && (
+                          <Button size="sm" variant="ghost" onClick={() => setDeleteId(lc.id)} className="rounded-xl text-destructive">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </Card>
