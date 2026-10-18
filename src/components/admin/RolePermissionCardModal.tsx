@@ -847,30 +847,39 @@ export const RolePermissionCardModal = ({
                           const featKey = `${mp.path}:${feat.key}`;
                           const isAllowed = subFeaturesMap[featKey] !== false; // default true unless explicitly toggled off
 
+                          const isTab = feat.type === 'tab';
+
                           return (
                             <div
                               key={feat.key}
-                              className={`flex items-center justify-between p-2.5 rounded-xl border text-xs transition-colors ${
+                              onClick={() => toggleSubFeature(mp.path, feat.key)}
+                              className={`flex items-center justify-between p-2.5 rounded-xl border text-xs transition-all cursor-pointer select-none ${
                                 isAllowed
-                                  ? 'bg-card border-emerald-500/30 text-foreground shadow-sm'
-                                  : 'bg-rose-500/5 border-rose-500/30 text-muted-foreground'
+                                  ? 'bg-card border-emerald-500/30 text-foreground shadow-sm hover:border-emerald-500/60 hover:bg-emerald-500/5'
+                                  : 'bg-rose-500/5 border-rose-500/30 text-muted-foreground hover:border-rose-500/50'
                               }`}
                             >
                               <div className="flex items-center gap-2 min-w-0 pr-2">
                                 <Checkbox
                                   checked={isAllowed}
                                   onCheckedChange={() => toggleSubFeature(mp.path, feat.key)}
-                                  className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 h-4 w-4 shrink-0"
                                 />
                                 <div className="truncate">
-                                  <p className="font-medium truncate">{bn ? feat.label_bn : feat.label_en}</p>
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <p className="font-semibold truncate text-sm">{bn ? feat.label_bn : feat.label_en}</p>
+                                    <Badge variant="outline" className="text-[9px] py-0 px-1 font-mono">
+                                      {isTab ? (bn ? 'ট্যাব' : 'Tab') : (bn ? 'অ্যাকশন' : 'Action')}
+                                    </Badge>
+                                  </div>
                                   <p className="text-[10px] text-muted-foreground font-mono truncate">{feat.key}</p>
                                 </div>
                               </div>
 
                               <Badge
                                 variant={isAllowed ? 'outline' : 'secondary'}
-                                className={`text-[10px] shrink-0 ${
+                                className={`text-[10px] shrink-0 font-medium ${
                                   isAllowed
                                     ? 'text-emerald-600 border-emerald-500/40 bg-emerald-500/10'
                                     : 'text-rose-600 bg-rose-500/10 border-rose-500/30'
