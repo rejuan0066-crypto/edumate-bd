@@ -86,9 +86,9 @@ const AdminStudents = () => {
   });
 
   const { data: classes = [] } = useQuery({
-    queryKey: ['classes'],
+    queryKey: ['classes-admin-all'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('classes').select('*, divisions(name, name_bn, sort_order)').eq('is_active', true).order('sort_order');
+      const { data, error } = await supabase.from('classes').select('*, divisions(name, name_bn, sort_order)').order('sort_order');
       if (error) throw error;
       // Sort by division serial first, then class serial
       return [...(data || [])].sort((a: any, b: any) => {
@@ -100,11 +100,11 @@ const AdminStudents = () => {
     },
   });
 
-
-  // Filter classes by selected division
-  const filteredClasses = filterDivisionId !== 'all'
+  // Filter classes by selected division (only active classes in selection dropdown)
+  const filteredClasses = (filterDivisionId !== 'all'
     ? classes.filter((c: any) => c.division_id === filterDivisionId)
-    : classes;
+    : classes
+  ).filter((c: any) => c.is_active);
 
   const { data: students = [], isLoading } = useQuery({
     queryKey: ['students'],
@@ -147,6 +147,29 @@ const AdminStudents = () => {
       }
     }
   }, [students, queryClient]);
+
+  // Self-healing migration: sync students of inactive classes to 'inactive' status
+  useEffect(() => {
+    if (classes && classes.length > 0 && students && students.length > 0) {
+      const inactiveClassIds = new Set(classes.filter((c: any) => c.is_active === false).map((c: any) => c.id));
+      if (inactiveClassIds.size > 0) {
+        const activeStudentsInInactiveClass = students.filter((s: any) => 
+          s.class_id && inactiveClassIds.has(s.class_id) && (s.status === 'active' || !s.status)
+        );
+        if (activeStudentsInInactiveClass.length > 0) {
+          Promise.all(
+            activeStudentsInInactiveClass.map((s: any) =>
+              supabase.from('students').update({ status: 'inactive' } as any).eq('id', s.id)
+            )
+          ).then(() => {
+            invalidateAllStudentQueries(queryClient);
+          }).catch(err => {
+            console.error('Self-healing inactive class students status sync error:', err);
+          });
+        }
+      }
+    }
+  }, [classes, students, queryClient]);
 
   const statusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
@@ -272,6 +295,13 @@ const AdminStudents = () => {
     return null;
   }, [classes]);
 
+  const isStudentEffectivelyInactive = useCallback((s: any) => {
+    if (s.status === 'inactive') return true;
+    const cId = getEffectiveClassId(s);
+    const cls = classes.find((c: any) => c.id === cId);
+    return cls && cls.is_active === false;
+  }, [classes, getEffectiveClassId]);
+
   const filtered = useMemo(() => {
     return students.filter((s: any) => {
       // Division filter
@@ -302,9 +332,10 @@ const AdminStudents = () => {
         const status = s.approval_status || 'pending';
         if (status !== filterApproval) return false;
       }
-      // Active/Inactive status filter
+      // Active/Inactive status filter (sync with class is_active)
       if (filterStatus !== 'all') {
-        const st = s.status || 'active';
+        const isInactive = isStudentEffectivelyInactive(s);
+        const st = isInactive ? 'inactive' : 'active';
         if (st !== filterStatus) return false;
       }
       // Text search
@@ -328,7 +359,7 @@ const AdminStudents = () => {
       }
       return true;
     });
-  }, [students, filterDivisionId, filterSessionId, academicSessions, filterClassId, getEffectiveClassId, filterApproval, filterStatus, search]);
+  }, [students, filterDivisionId, filterSessionId, academicSessions, filterClassId, getEffectiveClassId, filterApproval, filterStatus, search, isStudentEffectivelyInactive]);
 
   const sortedFiltered = useMemo(() => {
     return [...filtered].sort((a: any, b: any) => {
@@ -349,7 +380,9 @@ const AdminStudents = () => {
   const getClassName = (classId: string | null) => {
     if (!classId) return '-';
     const cls = classes.find((c: any) => c.id === classId);
-    return cls ? (bn ? cls.name_bn : cls.name) : '-';
+    if (!cls) return '-';
+    const name = bn ? cls.name_bn : cls.name;
+    return cls.is_active ? name : `${name} (${bn ? 'নিষ্ক্রিয়' : 'Inactive'})`;
   };
 
   // Pre-calculate class-wise serials for all students
@@ -533,10 +566,16 @@ const AdminStudents = () => {
 
                         <div className="flex flex-col items-end gap-1 shrink-0">
                           {getApprovalBadge(s.approval_status || 'pending')}
-                          <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full ${(s.status || 'active') === 'active' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-destructive/10 text-destructive'}`}>
-                            <span className={`w-1 h-1 rounded-full ${(s.status || 'active') === 'active' ? 'bg-emerald-500' : 'bg-destructive'}`} />
-                            {(s.status || 'active') === 'active' ? (bn ? 'সক্রিয়' : 'Active') : (bn ? 'নিষ্ক্রিয়' : 'Inactive')}
-                          </span>
+                          {(() => {
+                            const isInactive = isStudentEffectivelyInactive(s);
+                            const isClassInactive = s.status !== 'inactive' && isInactive;
+                            return (
+                              <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full ${!isInactive ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-destructive/10 text-destructive'}`}>
+                                <span className={`w-1 h-1 rounded-full ${!isInactive ? 'bg-emerald-500' : 'bg-destructive'}`} />
+                                {!isInactive ? (bn ? 'সক্রিয়' : 'Active') : (isClassInactive ? (bn ? 'নিষ্ক্রিয় (শ্রেণী)' : 'Inactive (Class)') : (bn ? 'নিষ্ক্রিয়' : 'Inactive'))}
+                              </span>
+                            );
+                          })()}
                         </div>
                       </div>
 
@@ -726,10 +765,20 @@ const AdminStudents = () => {
                           })()}
                         </td>}
                         <td className="px-5 py-4">
-                          <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full ${(s.status || 'active') === 'active' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-destructive/10 text-destructive'}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${(s.status || 'active') === 'active' ? 'bg-emerald-500' : 'bg-destructive'}`} />
-                            {(s.status || 'active') === 'active' ? (bn ? 'সক্রিয়' : 'Active') : (bn ? 'নিষ্ক্রিয়' : 'Inactive')}
-                          </span>
+                          {(() => {
+                            const isInactive = isStudentEffectivelyInactive(s);
+                            const isClassInactive = s.status !== 'inactive' && isInactive;
+                            return (
+                              <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full ${!isInactive ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-destructive/10 text-destructive'}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${!isInactive ? 'bg-emerald-500' : 'bg-destructive'}`} />
+                                {!isInactive
+                                  ? (bn ? 'সক্রিয়' : 'Active')
+                                  : (isClassInactive
+                                      ? (bn ? 'নিষ্ক্রিয় (শ্রেণী নিষ্ক্রিয়)' : 'Inactive (Class Inactive)')
+                                      : (bn ? 'নিষ্ক্রিয়' : 'Inactive'))}
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="px-5 py-4 text-right">
                           <div className="flex items-center justify-end gap-2 flex-nowrap">

@@ -43,6 +43,7 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { invalidateAllStudentQueries } from '@/lib/studentQueryInvalidator';
 
 // Status badge helper
 const STATUS_COLORS: Record<string, string> = {
@@ -463,7 +464,30 @@ const AdminApprovals = () => {
       delete (cleanPayload as any).id;
       const { error } = await supabase.from(target_table).update(cleanPayload as any).eq('id', target_id);
       if (error) throw error;
+
+      // If approving a class status change, sync to students
+      if (target_table === 'classes' && typeof cleanPayload.is_active === 'boolean') {
+        const studentStatus = cleanPayload.is_active ? 'active' : 'inactive';
+        await supabase
+          .from('students')
+          .update({ status: studentStatus } as any)
+          .eq('class_id', target_id)
+          .is('deleted_at', null);
+      }
+      // If approving a division status change, sync to classes and students
+      if (target_table === 'divisions' && typeof cleanPayload.is_active === 'boolean') {
+        const studentStatus = cleanPayload.is_active ? 'active' : 'inactive';
+        await supabase.from('classes').update({ is_active: cleanPayload.is_active } as any).eq('division_id', target_id);
+        await supabase
+          .from('students')
+          .update({ status: studentStatus } as any)
+          .eq('division_id', target_id)
+          .is('deleted_at', null);
+      }
     } else if (action_type === 'delete' && target_id) {
+      if (target_table === 'classes') {
+        await supabase.from('students').update({ status: 'inactive' } as any).eq('class_id', target_id).is('deleted_at', null);
+      }
       const { error } = await supabase.from(target_table).delete().eq('id', target_id);
       if (error) throw error;
     } else if (action_type === 'reject' && target_id) {
@@ -506,6 +530,9 @@ const AdminApprovals = () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['salary'] });
+      queryClient.invalidateQueries({ queryKey: ['all-classes'] });
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      invalidateAllStudentQueries(queryClient);
       toast.success(status === 'approved' ? (bn ? '✅ ডেটা পরিবর্তন অনুমোদিত ও কার্যকর হয়েছে!' : '✅ Action executed & approved!') : (bn ? '❌ পরিবর্তন বাতিল করা হয়েছে' : '❌ Action rejected'));
       setDetailModal(null);
       setAdminNote('');

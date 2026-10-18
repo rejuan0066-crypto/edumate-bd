@@ -2,7 +2,7 @@ import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Trash2, ChevronRight, Layers, Loader2, BookOpen, GraduationCap, Edit2, Check, X, ArrowUp, ArrowDown, Power } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +10,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { useConfirm } from '@/contexts/ConfirmContext';
+import { invalidateAllStudentQueries } from '@/lib/studentQueryInvalidator';
 
 const AdminDivisions = () => {
   const { language } = useLanguage();
@@ -73,6 +74,37 @@ const AdminDivisions = () => {
       return sum + allClasses.filter((c: any) => c.division_id === div.id).length;
     }, 0);
   })();
+
+  // Self-healing synchronization: if any classes are inactive, ensure their students are marked inactive
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data: inactiveCls } = await supabase.from('classes').select('id').eq('is_active', false);
+        if (inactiveCls && inactiveCls.length > 0) {
+          const inactiveIds = inactiveCls.map(c => c.id);
+          const { data: activeStudentsToFix } = await supabase
+            .from('students')
+            .select('id')
+            .in('class_id', inactiveIds)
+            .eq('status', 'active')
+            .is('deleted_at', null)
+            .limit(500);
+
+          if (activeStudentsToFix && activeStudentsToFix.length > 0) {
+            const { error } = await supabase
+              .from('students')
+              .update({ status: 'inactive' } as any)
+              .in('id', activeStudentsToFix.map(s => s.id));
+            if (!error) {
+              invalidateAllStudentQueries(queryClient);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Sync inactive classes to students error:', err);
+      }
+    })();
+  }, [queryClient]);
 
   const addDivMutation = useMutation({
     mutationFn: async () => {
@@ -158,12 +190,22 @@ const AdminDivisions = () => {
     mutationFn: async (id: string) => {
       const cls = classes.find((c: any) => c.id === id);
       if (await checkClassApproval('delete', { id, name_bn: cls?.name_bn }, id, `শ্রেণী মুছুন: ${cls?.name_bn}`)) return;
+
+      // Update students of this class to inactive
+      await supabase
+        .from('students')
+        .update({ status: 'inactive' } as any)
+        .eq('class_id', id)
+        .is('deleted_at', null);
+
       const { error } = await supabase.from('classes').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-classes'] });
-      toast.success(language === 'bn' ? 'ক্লাস মুছে ফেলা হয়েছে' : 'Class deleted');
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      invalidateAllStudentQueries(queryClient);
+      toast.success(language === 'bn' ? 'ক্লাস মুছে ফেলা হয়েছে ও সংশ্লিষ্ট ছাত্র নিষ্ক্রিয় করা হয়েছে' : 'Class deleted and students deactivated');
     },
     onError: () => toast.error(language === 'bn' ? 'সমস্যা হয়েছে' : 'Error occurred'),
   });
@@ -204,10 +246,28 @@ const AdminDivisions = () => {
       if (await checkDivApproval('edit', { id, is_active }, id, `বিভাগ ${is_active ? 'সক্রিয়' : 'নিষ্ক্রিয়'}: ${div?.name_bn}`)) return;
       const { error } = await supabase.from('divisions').update({ is_active } as any).eq('id', id);
       if (error) throw error;
+
+      // Update all classes under this division
+      await supabase.from('classes').update({ is_active } as any).eq('division_id', id);
+
+      // Update all students in this division
+      const targetStatus = is_active ? 'active' : 'inactive';
+      await supabase
+        .from('students')
+        .update({ status: targetStatus } as any)
+        .eq('division_id', id)
+        .is('deleted_at', null);
     },
     onSuccess: (_, { is_active }) => {
       queryClient.invalidateQueries({ queryKey: ['divisions'] });
-      toast.success(language === 'bn' ? (is_active ? 'বিভাগ সক্রিয় করা হয়েছে' : 'বিভাগ নিষ্ক্রিয় করা হয়েছে') : (is_active ? 'Division activated' : 'Division deactivated'));
+      queryClient.invalidateQueries({ queryKey: ['all-classes'] });
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      invalidateAllStudentQueries(queryClient);
+      toast.success(
+        language === 'bn'
+          ? (is_active ? 'বিভাগ, শ্রেণী ও সকল ছাত্র সক্রিয় করা হয়েছে' : 'বিভাগ, এর শ্রেণী ও সংশ্লিষ্ট সকল ছাত্র নিষ্ক্রিয় করা হয়েছে')
+          : (is_active ? 'Division and related students activated' : 'Division and related students deactivated')
+      );
     },
     onError: (err: any) => toast.error(language === 'bn' ? 'বিভাগ টগল ব্যর্থ হয়েছে' : 'Failed to toggle division', { description: err?.message || (language === 'bn' ? 'অজানা সমস্যা' : 'Unknown error') }),
   });
@@ -218,10 +278,27 @@ const AdminDivisions = () => {
       if (await checkClassApproval('edit', { id, is_active }, id, `শ্রেণী ${is_active ? 'সক্রিয়' : 'নিষ্ক্রিয়'}: ${cls?.name_bn}`)) return;
       const { error } = await supabase.from('classes').update({ is_active } as any).eq('id', id);
       if (error) throw error;
+
+      // Synchronize all students belonging to this class
+      const targetStatus = is_active ? 'active' : 'inactive';
+      const { error: studentErr } = await supabase
+        .from('students')
+        .update({ status: targetStatus } as any)
+        .eq('class_id', id)
+        .is('deleted_at', null);
+      if (studentErr) {
+        console.error('Failed to sync student status for class:', studentErr);
+      }
     },
     onSuccess: (_, { is_active }) => {
       queryClient.invalidateQueries({ queryKey: ['all-classes'] });
-      toast.success(language === 'bn' ? (is_active ? 'শ্রেণী সক্রিয় করা হয়েছে' : 'শ্রেণী নিষ্ক্রিয় করা হয়েছে') : (is_active ? 'Class activated' : 'Class deactivated'));
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      invalidateAllStudentQueries(queryClient);
+      toast.success(
+        language === 'bn'
+          ? (is_active ? 'শ্রেণী ও সকল ছাত্র সক্রিয় করা হয়েছে' : 'শ্রেণী ও এই শ্রেণীর সকল ছাত্র নিষ্ক্রিয় করা হয়েছে')
+          : (is_active ? 'Class and students activated' : 'Class and its students deactivated')
+      );
     },
     onError: (err: any) => toast.error(language === 'bn' ? 'শ্রেণী টগল ব্যর্থ হয়েছে' : 'Failed to toggle class', { description: err?.message || (language === 'bn' ? 'অজানা সমস্যা' : 'Unknown error') }),
   });
