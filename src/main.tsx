@@ -36,6 +36,9 @@ createRoot(document.getElementById("root")!).render(<App />);
     navigator.serviceWorker
       .register('/sw.js')
       .then(async (reg) => {
+        // Trigger immediate check for new worker version
+        try { reg.update(); } catch {}
+
         // Register one-shot Background Sync for next online opportunity
         try {
           // @ts-ignore — sync is not in lib.dom.d.ts
