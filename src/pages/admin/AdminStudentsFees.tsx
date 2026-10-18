@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 import FeeReceiptDownload from '@/components/fees/FeeReceiptDownload';
 import { EmbeddedProvider } from '@/contexts/EmbeddedContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -41,6 +42,7 @@ const AdminStudentsFees = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { checkApproval } = useApprovalCheck('/admin/students-fees', 'payments');
+  const { isFeatureAllowed } = usePagePermissions('/admin/students-fees');
   const [feeType, setFeeType] = useState('');
   const [selectedFeeTypeObj, setSelectedFeeTypeObj] = useState<any>(null);
   const [amount, setAmount] = useState('');
@@ -1165,13 +1167,13 @@ const AdminStudentsFees = () => {
     <AdminLayout>
       <TabContainer
         tabs={[
-          {
+          ...(isFeatureAllowed('tab_fees_collect') !== false ? [{
             id: 'collection',
             label: bn ? 'ফি আদায়' : 'Fee Collection',
             icon: CreditCard,
             content: feeCollectionContent,
-          },
-          {
+          }] : []),
+          ...(isFeatureAllowed('tab_fees_reports') !== false ? [{
             id: 'dashboard',
             label: bn ? 'পেমেন্ট ড্যাশবোর্ড' : 'Payment Dashboard',
             icon: BarChart3,
@@ -1184,19 +1186,19 @@ const AdminStudentsFees = () => {
                 </Suspense>
               </ErrorBoundary>
             ),
-          },
-          {
+          }] : []),
+          ...(isFeatureAllowed('tab_fees_dues') !== false ? [{
             id: 'dues',
             label: bn ? 'বকেয়া তালিকা' : 'Dues List',
             icon: AlertTriangle,
             content: <DuesManagement />,
-          },
-          {
+          }] : []),
+          ...(isFeatureAllowed('tab_online_payments') !== false ? [{
             id: 'receipts',
             label: bn ? 'রিসিট ডাউনলোড' : 'Receipt Download',
             icon: Receipt,
             content: <FeeReceiptDownload />,
-          },
+          }] : []),
         ]}
         paramKey="tab"
       />

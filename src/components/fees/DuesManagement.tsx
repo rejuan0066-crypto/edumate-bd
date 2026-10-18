@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, Table
 import { Badge } from '@/components/ui/badge';
 import { Search, Bell, AlertTriangle, Download, CalendarRange, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MONTHS_BN = ['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
@@ -18,6 +19,7 @@ const MONTHS_BN = ['জানুয়ারি','ফেব্রুয়ার
 const DuesManagement = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
+  const { isFeatureAllowed } = usePagePermissions('/admin/students-fees');
   const navigate = useNavigate();
   const now = new Date();
   const currentMonthKey = `${MONTHS[now.getMonth()]}-${now.getFullYear()}`;
@@ -333,9 +335,11 @@ const DuesManagement = () => {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input placeholder={bn ? 'নাম, আইডি বা রোল দিয়ে খুঁজুন...' : 'Search by name, ID or roll...'} value={searchText} onChange={e => setSearchText(e.target.value)} className="pl-9 w-full" />
         </div>
-        <Button variant="outline" size="sm" onClick={handleExportCSV} className="gap-2 w-full lg:w-auto sm:col-span-2 lg:col-span-1">
-          <Download className="w-4 h-4" />{bn ? 'এক্সপোর্ট' : 'Export CSV'}
-        </Button>
+        {isFeatureAllowed('action_export_dues') !== false && (
+          <Button variant="outline" size="sm" onClick={handleExportCSV} className="gap-2 w-full lg:w-auto sm:col-span-2 lg:col-span-1">
+            <Download className="w-4 h-4" />{bn ? 'এক্সপোর্ট' : 'Export CSV'}
+          </Button>
+        )}
       </div>
 
       {/* Table - matrix view (horizontal scroll on mobile) */}

@@ -73,7 +73,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
   const menuPath = staffType === 'teacher' ? '/admin/teachers' : staffType === 'administrative' ? '/admin/administrative-staff' : staffType === 'support' ? '/admin/support-staff' : staffType === 'staff' ? '/admin/general-staff' : staffType === 'director' ? '/admin/directors' : staffType === 'committee_member' ? '/admin/committee-members' : '/admin/staff';
   const { checkApproval, isRecordPending } = useApprovalCheck(menuPath, 'staff');
   const { role } = useAuth();
-  const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions(menuPath);
+  const { canAddItem, canEditItem, canDeleteItem, isFeatureAllowed } = usePagePermissions(menuPath);
   const confirm = useConfirm();
   const bn = language === 'bn';
   const [search, setSearch] = useState('');
@@ -528,7 +528,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                 {bn ? `আইডি জেনারেট (${missingIdCount})` : `Generate IDs (${missingIdCount})`}
               </Button>
             )}
-            {canAddItem && (
+            {canAddItem && isFeatureAllowed('tab_add_staff') !== false && (
               <Button size="sm" onClick={() => navigate(staffType === 'teacher' ? '/admin/teachers/add' : staffType === 'administrative' ? '/admin/administrative-staff/add' : staffType === 'staff' ? '/admin/general-staff/add' : staffType === 'director' ? '/admin/directors/add' : staffType === 'committee_member' ? '/admin/committee-members/add' : '/admin/staff/add')} className="btn-primary-gradient h-8 text-xs flex items-center gap-1.5 shadow-sm">
                 <Plus className="w-3.5 h-3.5" /> {t('addNew')}
               </Button>
@@ -708,7 +708,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                               <Pencil className="w-4 h-4" />
                             </button>
                           )}
-                          {canEditItem && s.status === 'active' && (
+                          {canEditItem && s.status === 'active' && isFeatureAllowed('action_salary_view') !== false && (
                             <button 
                               onClick={() => setLetterStaff(s)} 
                               className={`p-1 rounded-lg hover:bg-accent/10 text-muted-foreground hover:text-accent active:scale-95 ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`} 
@@ -738,7 +738,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                               {s.status === 'active' ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
                             </button>
                           )}
-                          {canDeleteItem && (
+                          {canDeleteItem && isFeatureAllowed('action_delete_staff') !== false && (
                             <button 
                               disabled={isPending}
                               onClick={() => setDeleteId(s.id)} 
@@ -965,7 +965,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                               <Pencil className="w-4 h-4" />
                             </button>
                           )}
-                          {canDeleteItem && (
+                          {canDeleteItem && isFeatureAllowed('action_delete_staff') !== false && (
                             <button 
                               disabled={isRecordPending(s.id)}
                               onClick={() => setDeleteId(s.id)} 

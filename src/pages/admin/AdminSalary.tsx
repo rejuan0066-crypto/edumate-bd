@@ -140,7 +140,7 @@ const AdminSalary = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const queryClient = useQueryClient();
-  const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/salary');
+  const { canAddItem, canEditItem, canDeleteItem, isFeatureAllowed } = usePagePermissions('/admin/salary');
   const { checkApproval, isRecordPending } = useApprovalCheck('/admin/salary', 'salary_records');
   const { timeFormat } = useTimeFormat();
   const fmt = (t: string) => formatTimeDisplay(t, timeFormat);
@@ -3756,8 +3756,8 @@ const AdminSalary = () => {
         <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as MainSalaryTabType)}>
           <SegmentedTabs
             tabs={[
-              { key: 'salary', label: bn ? 'বেতন তালিকা' : 'Salary Sheet', icon: Wallet },
-              {
+              ...(isFeatureAllowed('tab_salary_disburse') !== false ? [{ key: 'salary', label: bn ? 'বেতন তালিকা' : 'Salary Sheet', icon: Wallet }] : []),
+              ...(isFeatureAllowed('tab_bonus') !== false ? [{
                 key: 'bonus',
                 label: bn ? 'বাৎসরিক বোনাস শিট' : 'Annual Bonus Sheet',
                 icon: ((props: any) => (
@@ -3765,8 +3765,8 @@ const AdminSalary = () => {
                     <span>৳</span><Plus className="h-3 w-3 -ml-0.5" strokeWidth={3} />
                   </span>
                 )) as any,
-              },
-              {
+              }] : []),
+              ...(isFeatureAllowed('tab_savings_fund') !== false ? [{
                 key: 'savings',
                 label: bn ? 'জমার তালিকা' : 'Savings Ledger',
                 icon: ((props: any) => (
@@ -3774,7 +3774,7 @@ const AdminSalary = () => {
                     <span>৳</span><Plus className="h-3 w-3 -ml-0.5" strokeWidth={3} />
                   </span>
                 )) as any,
-              },
+              }] : []),
             ]}
             value={mainTab}
             onChange={(v) => setMainTab(v as MainSalaryTabType)}
@@ -4276,15 +4276,17 @@ const AdminSalary = () => {
                                         <RefreshCw className={`h-3 w-3 ${recalculateSingleMutation.isPending ? 'animate-spin' : ''}`} />
                                       </Button>
                                     )}
-                                    <Button
-                                      size="icon"
-                                      variant="ghost"
-                                      className="h-6 w-6 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-100/60 dark:text-emerald-400 dark:hover:bg-emerald-900/30"
-                                      title={bn ? 'বেতন স্লিপ দেখুন, প্রিন্ট ও ডাউনলোড করুন' : 'View, Print & Download Salary Slip'}
-                                      onClick={() => printSlip(s, rec)}
-                                    >
-                                      <Printer className="h-3 w-3" />
-                                    </Button>
+                                    {isFeatureAllowed('action_payslip_print') !== false && (
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-6 w-6 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-100/60 dark:text-emerald-400 dark:hover:bg-emerald-900/30"
+                                        title={bn ? 'বেতন স্লিপ দেখুন, প্রিন্ট ও ডাউনলোড করুন' : 'View, Print & Download Salary Slip'}
+                                        onClick={() => printSlip(s, rec)}
+                                      >
+                                        <Printer className="h-3 w-3" />
+                                      </Button>
+                                    )}
                                     {rec.status !== 'paid' ? (
                                       <Button 
                                         size="icon" 
@@ -4350,7 +4352,7 @@ const AdminSalary = () => {
                                         </Button>
                                       );
                                     })()}
-                                    {canDeleteItem && (
+                                    {canDeleteItem && isFeatureAllowed('action_delete_salary') !== false && (
                                       <Button 
                                         size="icon" 
                                         variant="ghost" 

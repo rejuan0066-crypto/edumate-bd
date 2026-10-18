@@ -90,15 +90,25 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   const bn = language === 'bn';
   const queryClient = useQueryClient();
   // Full-time attendance lives on /admin/attendance, /admin/staff-attendance and /admin/student-attendance;
-  // accept permissions granted on any path.
   const permsA = usePagePermissions('/admin/attendance');
   const permsB = usePagePermissions('/admin/staff-attendance');
   const permsC = usePagePermissions('/admin/student-attendance');
-  const canViewPage = permsA.canViewPage || permsB.canViewPage || permsC.canViewPage;
-  const canAddItem = permsA.canAddItem || permsB.canAddItem || permsC.canAddItem;
-  const canEditItem = permsA.canEditItem || permsB.canEditItem || permsC.canEditItem;
-  const canDeleteItem = permsA.canDeleteItem || permsB.canDeleteItem || permsC.canDeleteItem;
-  const canApproveItem = permsA.canApproveItem || permsB.canApproveItem || permsC.canApproveItem;
+
+  const canShowStudentTab = !forcedTab ? (permsA.isFeatureAllowed('tab_student_att') !== false && permsC.canViewPage) : forcedTab === 'student' ? permsC.canViewPage : false;
+  const canShowStaffTab = !forcedTab ? (permsA.isFeatureAllowed('tab_staff_att') !== false && permsB.canViewPage) : forcedTab === 'staff' ? permsB.canViewPage : false;
+
+  const canViewPage = forcedTab === 'staff'
+    ? permsB.canViewPage
+    : forcedTab === 'student'
+    ? permsC.canViewPage
+    : (permsA.canViewPage || permsB.canViewPage || permsC.canViewPage);
+
+  const activePerms = forcedTab === 'staff' ? permsB : forcedTab === 'student' ? permsC : (permsA.canViewPage ? permsA : permsC);
+  const canAddItem = forcedTab ? activePerms.canAddItem : (permsA.canAddItem || activePerms.canAddItem);
+  const canEditItem = forcedTab ? activePerms.canEditItem : (permsA.canEditItem || activePerms.canEditItem);
+  const canDeleteItem = forcedTab ? activePerms.canDeleteItem : (permsA.canDeleteItem || activePerms.canDeleteItem);
+  const canApproveItem = forcedTab ? activePerms.canApproveItem : (permsA.canApproveItem || activePerms.canApproveItem);
+
   // Anyone with add or edit permissions can mark attendance
   const canMarkAttendance = canAddItem || canEditItem;
   const canBulkMark = canViewPage && canMarkAttendance;
@@ -107,7 +117,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   // Non-admins can only mark attendance. Settings, rosters, devices, summaries
   // and exports stay hidden unless the matching permission is granted.
   const canManageAttendance = isAdmin || canApproveItem;
-  const canExportAttendance = isAdmin || canApproveItem || canDeleteItem;
+  const canExportAttendance = isAdmin || ((canApproveItem || canDeleteItem) && permsA.isFeatureAllowed('action_export_att') !== false);
 
   const { timeFormat, setTimeFormat } = useTimeFormat();
   const { tz: appTz } = useAppTimezone();
@@ -120,10 +130,18 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
 
   const [entityType, setEntityType] = useState<'student' | 'staff'>(resolvedTab);
 
-  // Sync entityType when forcedTab or URL tab param changes
+  // Sync entityType when forcedTab, URL tab param, or permission changes
   useEffect(() => {
-    setEntityType(forcedTab || (tabParam === 'staff' ? 'staff' : 'student'));
-  }, [forcedTab, tabParam]);
+    if (forcedTab) {
+      setEntityType(forcedTab);
+    } else if (!canShowStudentTab && canShowStaffTab) {
+      setEntityType('staff');
+    } else if (!canShowStaffTab && canShowStudentTab) {
+      setEntityType('student');
+    } else {
+      setEntityType(tabParam === 'staff' ? 'staff' : 'student');
+    }
+  }, [forcedTab, tabParam, canShowStudentTab, canShowStaffTab]);
 const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal'>('all');
   const stafftabParam = searchParams.get('stafftab');
   const [staffSubTab, setStaffSubTab] = useState<'fulltime' | 'duty' | 'meal'>(
@@ -2469,8 +2487,8 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
         <Card>
           <CardContent className="p-4 space-y-3">
             <div className="flex flex-col sm:flex-row gap-3 items-center">
-              {/* Entity Type - only show switcher when not forced */}
-              {!forcedTab && (
+              {/* Entity Type - only show switcher when not forced and both tabs allowed */}
+              {!forcedTab && canShowStudentTab && canShowStaffTab && (
                 <Tabs value={entityType} onValueChange={(v) => { setEntityType(v as any); setSearchQuery(''); }} className="shrink-0">
                   <TabsList>
                     <TabsTrigger value="student"><Users className="h-4 w-4 mr-1" /> {bn ? 'ছাত্র' : 'Students'}</TabsTrigger>

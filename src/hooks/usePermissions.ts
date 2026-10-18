@@ -16,20 +16,9 @@ export interface Permission {
 export type PermAction = 'view' | 'add' | 'edit' | 'delete' | 'approve';
 
 const MENU_ALIASES: Record<string, string[]> = {
-  '/admin/student-attendance': ['/admin/attendance'],
-  '/admin/staff-attendance': ['/admin/attendance'],
-  '/admin/attendance': ['/admin/student-attendance', '/admin/staff-attendance'],
-  '/admin/teachers': ['/admin/staff'],
-  '/admin/general-staff': ['/admin/staff'],
-  '/admin/administrative-staff': ['/admin/staff'],
-  '/admin/support-staff': ['/admin/staff'],
-  '/admin/directors': ['/admin/staff'],
-  '/admin/committee-members': ['/admin/staff'],
-  '/admin/staff': ['/admin/teachers', '/admin/general-staff', '/admin/administrative-staff', '/admin/support-staff'],
-  '/admin/fee-receipts': ['/admin/students-fees', '/admin/fees'],
-  '/admin/fee-payments-fix': ['/admin/fee-receipts', '/admin/students-fees', '/admin/fees'],
-  '/admin/receipt-audit': ['/admin/fee-receipts', '/admin/students-fees', '/admin/fees'],
-  '/admin/students-fees': ['/admin/fees', '/admin/fee-receipts'],
+  // Legacy or unlisted sub-route aliases that map to their primary registered page
+  '/admin/fees': ['/admin/students-fees'],
+  '/admin/fee-payments-fix': ['/admin/fee-receipts'],
   '/admin/salary-pdf-columns': ['/admin/salary'],
   '/admin/salary-memo-search': ['/admin/salary'],
 };

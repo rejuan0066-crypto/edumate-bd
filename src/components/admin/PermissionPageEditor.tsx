@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { KNOWN_PAGE_FEATURES, SubFeatureItem } from '@/lib/pageFeatures';
+import { getPagePermissionProfile, PagePermissionProfile } from '@/lib/permissionProfiles';
 import type { MenuPathItem } from '@/lib/menuPathList';
 
 export interface PagePermItem {
@@ -75,6 +76,7 @@ export const PermissionPageEditor = ({
 
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [activeTypeFilter, setActiveTypeFilter] = useState<'all' | 'data' | 'audit_log' | 'settings'>('all');
   const [expandedPages, setExpandedPages] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
 
@@ -118,6 +120,15 @@ export const PermissionPageEditor = ({
     if (activeCategory !== 'all') {
       list = list.filter((mp) => mp.group_bn === activeCategory);
     }
+    if (activeTypeFilter !== 'all') {
+      list = list.filter((mp) => {
+        const prof = getPagePermissionProfile(mp.path);
+        if (activeTypeFilter === 'audit_log') return prof.type === 'audit_log' || prof.type === 'report';
+        if (activeTypeFilter === 'settings') return prof.type === 'settings';
+        if (activeTypeFilter === 'data') return prof.type === 'standard_crud' || prof.type === 'approval_workflow';
+        return true;
+      });
+    }
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(
@@ -129,7 +140,7 @@ export const PermissionPageEditor = ({
       );
     }
     return list;
-  }, [allMenuPaths, activeCategory, search]);
+  }, [allMenuPaths, activeCategory, activeTypeFilter, search]);
 
 
   // Summary counts
@@ -602,6 +613,43 @@ export const PermissionPageEditor = ({
           </div>
         </div>
 
+        {/* Page Type Filter Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none pt-1 border-b border-border/40 pb-2">
+          <span className="text-xs font-semibold text-muted-foreground mr-1 hidden sm:inline">{bn ? 'পেইজের ধরন:' : 'Page Type:'}</span>
+          <Button
+            size="sm"
+            variant={activeTypeFilter === 'all' ? 'default' : 'outline'}
+            onClick={() => setActiveTypeFilter('all')}
+            className={`h-7 px-2.5 text-xs rounded-lg ${activeTypeFilter === 'all' ? 'bg-primary text-primary-foreground font-semibold shadow-sm' : 'border-border/60 text-muted-foreground'}`}
+          >
+            {bn ? 'সকল পেইজ' : 'All Pages'}
+          </Button>
+          <Button
+            size="sm"
+            variant={activeTypeFilter === 'data' ? 'default' : 'outline'}
+            onClick={() => setActiveTypeFilter('data')}
+            className={`h-7 px-2.5 text-xs rounded-lg ${activeTypeFilter === 'data' ? 'bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm' : 'border-border/60 text-muted-foreground'}`}
+          >
+            {bn ? 'ম্যানেজমেন্ট ও ডাটা এন্ট্রি' : 'Management & Data'}
+          </Button>
+          <Button
+            size="sm"
+            variant={activeTypeFilter === 'audit_log' ? 'default' : 'outline'}
+            onClick={() => setActiveTypeFilter('audit_log')}
+            className={`h-7 px-2.5 text-xs rounded-lg ${activeTypeFilter === 'audit_log' ? 'bg-purple-600 hover:bg-purple-700 text-white font-semibold shadow-sm' : 'border-border/60 text-muted-foreground'}`}
+          >
+            {bn ? 'অডিট রেকর্ড ও রিপোর্ট (শুধু দেখা)' : 'Audit Logs & Reports'}
+          </Button>
+          <Button
+            size="sm"
+            variant={activeTypeFilter === 'settings' ? 'default' : 'outline'}
+            onClick={() => setActiveTypeFilter('settings')}
+            className={`h-7 px-2.5 text-xs rounded-lg ${activeTypeFilter === 'settings' ? 'bg-slate-700 text-white font-semibold shadow-sm' : 'border-border/60 text-muted-foreground'}`}
+          >
+            {bn ? 'সেটিংস ও কনফিগারেশন' : 'Settings & Config'}
+          </Button>
+        </div>
+
         {/* Categories Horizontal Tabs */}
         {categories.length > 0 && (
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none pt-1">
@@ -677,11 +725,8 @@ export const PermissionPageEditor = ({
               approval_edit: false,
               approval_delete: false,
             };
-            const subFeatures = KNOWN_PAGE_FEATURES[mp.path] || [
-              { key: 'tab_main_view', label_bn: 'প্রধান তালিকা ও কন্টেন্ট ভিউ', label_en: 'Main View & Records', type: 'tab' as const },
-              { key: 'action_export_print', label_bn: 'এক্সপোর্ট ও প্রিন্ট বোতাম', label_en: 'Export & Print Action', type: 'action' as const },
-              { key: 'action_sensitive_edit', label_bn: 'গুরুত্বপূর্ণ সেটিংস পরিবর্তন', label_en: 'Edit Settings Action', type: 'action' as const },
-            ];
+            const profile = getPagePermissionProfile(mp.path);
+            const subFeatures = KNOWN_PAGE_FEATURES[mp.path] || [];
             const isExpanded = expandedPages.has(mp.path);
 
             const hiddenSubCount = subFeatures.filter(
@@ -716,6 +761,15 @@ export const PermissionPageEditor = ({
                             {mp.group_bn}
                           </Badge>
                         )}
+                        <Badge variant="outline" className={`text-[10px] h-4 font-normal ${
+                          profile.type === 'audit_log' ? 'text-purple-700 border-purple-300 bg-purple-50 dark:bg-purple-950/30 dark:text-purple-300' :
+                          profile.type === 'report' ? 'text-blue-700 border-blue-300 bg-blue-50 dark:bg-blue-950/30 dark:text-blue-300' :
+                          profile.type === 'settings' ? 'text-slate-700 border-slate-300 bg-slate-50 dark:bg-slate-900/40 dark:text-slate-300' :
+                          profile.type === 'approval_workflow' ? 'text-amber-700 border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-300' :
+                          'text-emerald-700 border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 dark:text-emerald-300'
+                        }`}>
+                          {bn ? profile.typeBadge_bn : profile.typeBadge_en}
+                        </Badge>
                         {hiddenSubCount > 0 && (
                           <Badge variant="outline" className="text-[10px] h-4 text-amber-600 border-amber-400 bg-amber-500/5 font-semibold">
                             {hiddenSubCount} {bn ? 'টি অপশন সম্পূর্ণ হাইড' : 'hidden'}
@@ -740,88 +794,104 @@ export const PermissionPageEditor = ({
                       </label>
 
                       {/* Add */}
-                      <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
-                        <Checkbox
-                          checked={perm.can_add}
-                          onCheckedChange={() => togglePerm(mp.path, 'can_add')}
-                          disabled={!perm.can_view}
-                        />
-                        <span className="text-muted-foreground">{bn ? 'যোগ' : 'Add'}</span>
-                      </label>
+                      {profile.allowAdd && (
+                        <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+                          <Checkbox
+                            checked={perm.can_add}
+                            onCheckedChange={() => togglePerm(mp.path, 'can_add')}
+                            disabled={!perm.can_view}
+                          />
+                          <span className="text-muted-foreground">{bn ? 'যোগ' : 'Add'}</span>
+                        </label>
+                      )}
 
                       {/* Edit */}
-                      <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
-                        <Checkbox
-                          checked={perm.can_edit}
-                          onCheckedChange={() => togglePerm(mp.path, 'can_edit')}
-                          disabled={!perm.can_view}
-                        />
-                        <span className="text-muted-foreground">{bn ? 'এডিট' : 'Edit'}</span>
-                      </label>
+                      {profile.allowEdit && (
+                        <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+                          <Checkbox
+                            checked={perm.can_edit}
+                            onCheckedChange={() => togglePerm(mp.path, 'can_edit')}
+                            disabled={!perm.can_view}
+                          />
+                          <span className="text-muted-foreground">{bn ? 'এডিট' : 'Edit'}</span>
+                        </label>
+                      )}
 
                       {/* Delete */}
-                      <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
-                        <Checkbox
-                          checked={perm.can_delete}
-                          onCheckedChange={() => togglePerm(mp.path, 'can_delete')}
-                          disabled={!perm.can_view}
-                          className="border-rose-400 data-[state=checked]:bg-rose-600 data-[state=checked]:border-rose-600"
-                        />
-                        <span className="text-rose-600 dark:text-rose-400 font-semibold">{bn ? 'ডিলিট' : 'Delete'}</span>
-                      </label>
+                      {profile.allowDelete && (
+                        <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+                          <Checkbox
+                            checked={perm.can_delete}
+                            onCheckedChange={() => togglePerm(mp.path, 'can_delete')}
+                            disabled={!perm.can_view}
+                            className="border-rose-400 data-[state=checked]:bg-rose-600 data-[state=checked]:border-rose-600"
+                          />
+                          <span className="text-rose-600 dark:text-rose-400 font-semibold">{bn ? 'ডিলিট' : 'Delete'}</span>
+                        </label>
+                      )}
 
                       {/* Approve */}
-                      <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
-                        <Checkbox
-                          checked={perm.can_approve}
-                          onCheckedChange={() => togglePerm(mp.path, 'can_approve')}
-                          disabled={!perm.can_view}
-                          className="border-emerald-500 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
-                        />
-                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{bn ? 'অনুমোদন' : 'Approve'}</span>
-                      </label>
+                      {profile.allowApprove && (
+                        <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+                          <Checkbox
+                            checked={perm.can_approve}
+                            onCheckedChange={() => togglePerm(mp.path, 'can_approve')}
+                            disabled={!perm.can_view}
+                            className="border-emerald-500 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                          />
+                          <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{bn ? 'অনুমোদন' : 'Approve'}</span>
+                        </label>
+                      )}
                     </div>
 
                     {/* Maker-Checker: Needs Approval Group */}
-                    <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30">
-                      <span className="text-xs font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1">
-                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                        {bn ? 'অনুমোদন লাগবে:' : 'Needs Approval:'}
-                      </span>
+                    {profile.supportsApprovalWorkflow && (
+                      <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30">
+                        <span className="text-xs font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1">
+                          <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                          {bn ? 'অনুমোদন লাগবে:' : 'Needs Approval:'}
+                        </span>
 
-                      {/* Approval Add */}
-                      <label className="flex items-center gap-1 text-xs cursor-pointer select-none" title={bn ? 'যোগ করার পর অ্যাডমিন অনুমোদন লাগবে' : 'Needs admin approval on add'}>
-                        <Checkbox
-                          checked={perm.approval_add}
-                          onCheckedChange={() => toggleApproval(mp.path, 'approval_add')}
-                          disabled={!perm.can_add}
-                          className="border-amber-500 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500 h-4 w-4"
-                        />
-                        <span className="text-amber-800 dark:text-amber-300 font-medium">{bn ? 'যোগ' : 'Add'}</span>
-                      </label>
+                        {/* Approval Add */}
+                        {profile.allowAdd && (
+                          <label className="flex items-center gap-1 text-xs cursor-pointer select-none" title={bn ? 'যোগ করার পর অ্যাডমিন অনুমোদন লাগবে' : 'Needs admin approval on add'}>
+                            <Checkbox
+                              checked={perm.approval_add}
+                              onCheckedChange={() => toggleApproval(mp.path, 'approval_add')}
+                              disabled={!perm.can_add}
+                              className="border-amber-500 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500 h-4 w-4"
+                            />
+                            <span className="text-amber-800 dark:text-amber-300 font-medium">{bn ? 'যোগ' : 'Add'}</span>
+                          </label>
+                        )}
 
-                      {/* Approval Edit */}
-                      <label className="flex items-center gap-1 text-xs cursor-pointer select-none" title={bn ? 'এডিট করার পর অ্যাডমিন অনুমোদন লাগবে' : 'Needs admin approval on edit'}>
-                        <Checkbox
-                          checked={perm.approval_edit}
-                          onCheckedChange={() => toggleApproval(mp.path, 'approval_edit')}
-                          disabled={!perm.can_edit}
-                          className="border-amber-500 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500 h-4 w-4"
-                        />
-                        <span className="text-amber-800 dark:text-amber-300 font-medium">{bn ? 'এডিট' : 'Edit'}</span>
-                      </label>
+                        {/* Approval Edit */}
+                        {profile.allowEdit && (
+                          <label className="flex items-center gap-1 text-xs cursor-pointer select-none" title={bn ? 'এডিট করার পর অ্যাডমিন অনুমোদন লাগবে' : 'Needs admin approval on edit'}>
+                            <Checkbox
+                              checked={perm.approval_edit}
+                              onCheckedChange={() => toggleApproval(mp.path, 'approval_edit')}
+                              disabled={!perm.can_edit}
+                              className="border-amber-500 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500 h-4 w-4"
+                            />
+                            <span className="text-amber-800 dark:text-amber-300 font-medium">{bn ? 'এডিট' : 'Edit'}</span>
+                          </label>
+                        )}
 
-                      {/* Approval Delete */}
-                      <label className="flex items-center gap-1 text-xs cursor-pointer select-none" title={bn ? 'ডিলিট করার পর অ্যাডমিন অনুমোদন লাগবে' : 'Needs admin approval on delete'}>
-                        <Checkbox
-                          checked={perm.approval_delete}
-                          onCheckedChange={() => toggleApproval(mp.path, 'approval_delete')}
-                          disabled={!perm.can_delete}
-                          className="border-amber-500 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500 h-4 w-4"
-                        />
-                        <span className="text-amber-800 dark:text-amber-300 font-medium">{bn ? 'ডিলিট' : 'Del'}</span>
-                      </label>
-                    </div>
+                        {/* Approval Delete */}
+                        {profile.allowDelete && (
+                          <label className="flex items-center gap-1 text-xs cursor-pointer select-none" title={bn ? 'ডিলিট করার পর অ্যাডমিন অনুমোদন লাগবে' : 'Needs admin approval on delete'}>
+                            <Checkbox
+                              checked={perm.approval_delete}
+                              onCheckedChange={() => toggleApproval(mp.path, 'approval_delete')}
+                              disabled={!perm.can_delete}
+                              className="border-amber-500 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500 h-4 w-4"
+                            />
+                            <span className="text-amber-800 dark:text-amber-300 font-medium">{bn ? 'ডিলিট' : 'Del'}</span>
+                          </label>
+                        )}
+                      </div>
+                    )}
 
                     {/* Expand sub-features button */}
                     {subFeatures.length > 0 && (

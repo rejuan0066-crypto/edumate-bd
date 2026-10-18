@@ -27,7 +27,7 @@ const AdminStudents = () => {
   const { t, language } = useLanguage();
   const queryClient = useQueryClient();
   const { checkApproval, isRecordPending } = useApprovalCheck('/admin/students', 'students');
-  const { canAddItem, canEditItem, canDeleteItem, canApproveItem } = usePagePermissions('/admin/students');
+  const { canAddItem, canEditItem, canDeleteItem, canApproveItem, isFeatureAllowed } = usePagePermissions('/admin/students');
   const confirm = useConfirm();
   const bn = language === 'bn';
   const { data: institution } = useInstitutionInfo();
@@ -383,7 +383,7 @@ const AdminStudents = () => {
         {/* Action bar */}
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs sm:text-sm text-muted-foreground font-medium">{bn ? `মোট ${formatDigits(filtered.length, true)} জন ছাত্র` : `Total ${filtered.length} students`}</p>
-          {canAddItem && (
+          {canAddItem && isFeatureAllowed('tab_admission') !== false && (
             <Button onClick={() => setShowAdd(true)} className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 shadow-md shadow-emerald-500/20 rounded-full px-4 sm:px-6 h-8 sm:h-11 text-xs sm:text-sm font-semibold transition-all">
               <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" /> {bn ? 'নতুন ভর্তি' : 'New Admission'}
             </Button>
@@ -545,9 +545,11 @@ const AdminStudents = () => {
                         <button onClick={() => setShowDetail(s)} className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-800/30 flex items-center justify-center text-blue-600 dark:text-blue-400 active:scale-95" title={bn ? 'দেখুন' : 'View'}>
                           <Eye className="w-3.5 h-3.5" />
                         </button>
-                        <button onClick={() => printStudentProfile({ student: s, bn, institution: institution || {}, className: getClassName(getEffectiveClassId(s)), sessionName: getSessionName(s.session_id, s.admission_session || s.session_year) })} className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200/50 dark:border-indigo-800/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 active:scale-95" title={bn ? 'প্রিন্ট' : 'Print'}>
-                          <Printer className="w-3.5 h-3.5" />
-                        </button>
+                        {isFeatureAllowed('action_print_profile') !== false && (
+                          <button onClick={() => printStudentProfile({ student: s, bn, institution: institution || {}, className: getClassName(getEffectiveClassId(s)), sessionName: getSessionName(s.session_id, s.admission_session || s.session_year) })} className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200/50 dark:border-indigo-800/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 active:scale-95" title={bn ? 'প্রিন্ট' : 'Print'}>
+                            <Printer className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                         {canEditItem && (
                           <button 
                             disabled={pendingApproval}
@@ -568,7 +570,7 @@ const AdminStudents = () => {
                             <XCircle className="w-3.5 h-3.5" />
                           </button>
                         )}
-                        {canEditItem && (
+                        {canEditItem && isFeatureAllowed('action_status_change') !== false && (
                           <button
                             onClick={async () => { const cur = s.status || 'active'; const next = cur === 'active' ? 'inactive' : 'active'; const ok = await confirm({ title: bn ? (next === 'active' ? 'ছাত্র সক্রিয় করবেন?' : 'ছাত্র নিষ্ক্রিয় করবেন?') : (next === 'active' ? 'Activate student?' : 'Deactivate student?'), description: bn ? `"${s.name_bn || s.name_en}" কে ${next === 'active' ? 'সক্রিয়' : 'নিষ্ক্রিয়'} করতে চান?` : `Are you sure you want to ${next === 'active' ? 'activate' : 'deactivate'} "${s.name_en || s.name_bn}"?`, confirmText: bn ? 'হ্যাঁ' : 'Yes', cancelText: bn ? 'বাতিল' : 'Cancel', variant: next === 'active' ? 'default' : 'warning' }); if (!ok) return; toggleActiveMutation.mutate({ id: s.id, currentStatus: cur }); }}
                             className={`w-7 h-7 rounded-lg border flex items-center justify-center active:scale-95 ${(s.status || 'active') === 'active' ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200/50 text-amber-600' : 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200/50 text-emerald-600'}`}
@@ -577,7 +579,7 @@ const AdminStudents = () => {
                             {(s.status || 'active') === 'active' ? <UserX className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
                           </button>
                         )}
-                        {canDeleteItem && (
+                        {canDeleteItem && isFeatureAllowed('action_delete_student') !== false && (
                           <button 
                             disabled={pendingApproval}
                             onClick={() => setDeleteId(s.id)} 
@@ -704,7 +706,9 @@ const AdminStudents = () => {
                         <td className="px-5 py-4 text-right">
                           <div className="flex items-center justify-end gap-2 flex-nowrap">
                             <button onClick={() => setShowDetail(s)} className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/30 shadow-sm border border-blue-200/50 dark:border-blue-800/30 flex items-center justify-center text-blue-600 dark:text-blue-400 hover:shadow-md hover:scale-110 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all duration-200" title={bn ? 'দেখুন' : 'View'}><Eye className="w-4 h-4" strokeWidth={1.75} /></button>
-                            <button onClick={() => printStudentProfile({ student: s, bn, institution: institution || {}, className: getClassName(getEffectiveClassId(s)), sessionName: getSessionName(s.session_id, s.admission_session || s.session_year) })} className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/30 shadow-sm border border-indigo-200/50 dark:border-indigo-800/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 hover:shadow-md hover:scale-110 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all duration-200" title={bn ? 'প্রোফাইল প্রিন্ট' : 'Print Profile'}><Printer className="w-4 h-4" strokeWidth={1.75} /></button>
+                            {isFeatureAllowed('action_print_profile') !== false && (
+                              <button onClick={() => printStudentProfile({ student: s, bn, institution: institution || {}, className: getClassName(getEffectiveClassId(s)), sessionName: getSessionName(s.session_id, s.admission_session || s.session_year) })} className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/30 shadow-sm border border-indigo-200/50 dark:border-indigo-800/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 hover:shadow-md hover:scale-110 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all duration-200" title={bn ? 'প্রোফাইল প্রিন্ট' : 'Print Profile'}><Printer className="w-4 h-4" strokeWidth={1.75} /></button>
+                            )}
                             {canEditItem && (
                               <button 
                                 disabled={isRecordPending(s.id)}
@@ -724,7 +728,7 @@ const AdminStudents = () => {
                             {canEditItem && (s.approval_status === 'rejected') && (
                               <button onClick={() => statusMutation.mutate({ id: s.id, status: 'pending' })} className="w-8 h-8 rounded-full bg-amber-50 dark:bg-amber-950/30 shadow-sm border border-amber-200/50 dark:border-amber-800/30 flex items-center justify-center text-amber-600 dark:text-amber-400 hover:shadow-md hover:scale-110 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all duration-200" title={bn ? 'অপেক্ষমাণে ফেরত' : 'Back to Pending'}><Clock className="w-4 h-4" strokeWidth={1.75} /></button>
                             )}
-                            {canEditItem && (
+                            {canEditItem && isFeatureAllowed('action_status_change') !== false && (
                               <button
                                 onClick={async () => { const cur = s.status || 'active'; const next = cur === 'active' ? 'inactive' : 'active'; const ok = await confirm({ title: bn ? (next === 'active' ? 'ছাত্র সক্রিয় করবেন?' : 'ছাত্র নিষ্ক্রিয় করবেন?') : (next === 'active' ? 'Activate student?' : 'Deactivate student?'), description: bn ? `"${s.name_bn || s.name_en}" কে ${next === 'active' ? 'সক্রিয়' : 'নিষ্ক্রিয়'} করতে চান?` : `Are you sure you want to ${next === 'active' ? 'activate' : 'deactivate'} "${s.name_en || s.name_bn}"?`, confirmText: bn ? 'হ্যাঁ' : 'Yes', cancelText: bn ? 'বাতিল' : 'Cancel', variant: next === 'active' ? 'default' : 'warning' }); if (!ok) return; toggleActiveMutation.mutate({ id: s.id, currentStatus: cur }); }}
                                 className={`w-8 h-8 rounded-full shadow-sm border flex items-center justify-center transition-all duration-200 hover:shadow-md hover:scale-110 ${(s.status || 'active') === 'active' ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200/50 dark:border-amber-800/30 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40' : 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200/50 dark:border-emerald-800/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'}`}
@@ -733,7 +737,7 @@ const AdminStudents = () => {
                                 {(s.status || 'active') === 'active' ? <UserX className="w-4 h-4" strokeWidth={1.75} /> : <UserCheck className="w-4 h-4" strokeWidth={1.75} />}
                               </button>
                             )}
-                             {canDeleteItem && (
+                             {canDeleteItem && isFeatureAllowed('action_delete_student') !== false && (
                               <button 
                                 disabled={isRecordPending(s.id)}
                                 onClick={() => setDeleteId(s.id)} 
@@ -756,7 +760,6 @@ const AdminStudents = () => {
             </>
           )}
         </div>
-
       {/* Dynamic Admission Form */}
       <AdmissionForm open={showAdd} onOpenChange={(o) => { setShowAdd(o); if (!o) setEditStudent(null); }} editStudent={editStudent} />
 
@@ -775,13 +778,13 @@ const AdminStudents = () => {
     <AdminLayout>
       <TabContainer
         tabs={[
-          {
+          ...(isFeatureAllowed('tab_list') !== false ? [{
             id: 'list',
             label: bn ? 'ছাত্র তালিকা' : 'Student List',
             icon: Eye,
             content: studentListContent,
-          },
-          ...(canAddItem ? [{
+          }] : []),
+          ...(canAddItem && isFeatureAllowed('tab_admission') !== false ? [{
             id: 'admission',
             label: bn ? 'নতুন ভর্তি' : 'New Admission',
             icon: Plus,
