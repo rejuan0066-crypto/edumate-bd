@@ -189,10 +189,11 @@ const DashboardFeeSection = ({ category, titleBn, titleEn, icon }: FeeSectionPro
   // Build groups
   const enrichedGroups = useMemo(() => {
     const groups: Record<string, GroupItem> = {};
+    const now0 = new Date();
+    const currentMonthIdx = now0.getMonth();
 
     if (category === 'monthly') {
-      const now0 = new Date();
-      const curMIdx = now0.getMonth();
+      const curMIdx = currentMonthIdx;
       const validSessionMonths = new Set<string>();
       feeTypes.forEach((ft: any) => {
         if (ft.payment_frequency !== 'monthly') return;
@@ -220,7 +221,6 @@ const DashboardFeeSection = ({ category, titleBn, titleEn, icon }: FeeSectionPro
         }
       });
 
-      const currentMonthIdx = now0.getMonth();
       feeTypes.forEach((ft: any) => {
         if (ft.payment_frequency !== 'monthly') return;
         let sessionStartMonth = 0, sessionEndMonth = 11;
