@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 interface StaffProfileModalProps {
   staff: any;
   bn: boolean;
+  showSalary?: boolean;
 }
 
 const translateReligion = (val: string | undefined, bn: boolean): string => {
@@ -44,7 +45,7 @@ const translateResidence = (val: string | undefined, bn: boolean): string => {
   return map[val.toLowerCase()]?.[bn ? 0 : 1] || val;
 };
 
-const StaffProfileModal = ({ staff, bn }: StaffProfileModalProps) => {
+const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalProps) => {
   const sd = staff.staff_data || {};
   const parents = sd.parents || {};
   const father = parents.father || {};
@@ -186,7 +187,7 @@ const StaffProfileModal = ({ staff, bn }: StaffProfileModalProps) => {
             <ProfileInfoItem icon={Calendar} label={bn ? 'যোগদানের তারিখ' : 'Joining Date'} value={staff.joining_date} />
             <ProfileInfoItem icon={GraduationCap} label={bn ? 'শিক্ষাগত যোগ্যতা' : 'Education'} value={staff.education || sd.education} />
             <ProfileInfoItem icon={ClipboardList} label={bn ? 'অভিজ্ঞতা' : 'Experience'} value={staff.experience || sd.experience} />
-            <ProfileInfoItem icon={DollarSign} label={bn ? 'বেতন' : 'Salary'} value={staff.salary ? `৳${staff.salary}` : undefined} />
+            {showSalary && <ProfileInfoItem icon={DollarSign} label={bn ? 'বেতন' : 'Salary'} value={staff.salary ? `৳${staff.salary}` : undefined} />}
             <ProfileInfoItem icon={Building2} label={bn ? 'পূর্বের প্রতিষ্ঠান' : 'Previous Institute'} value={staff.previous_institute || sd.previous_institute} />
             <ProfileInfoItem icon={Clock} label={bn ? 'ডিউটি শুরু' : 'Duty Start'} value={formatDutyTime(staff.duty_start_time, bn)} />
             <ProfileInfoItem icon={Clock} label={bn ? 'ডিউটি শেষ' : 'Duty End'} value={formatDutyTime(staff.duty_end_time, bn)} />

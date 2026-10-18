@@ -12,7 +12,7 @@ import PhotoUpload from '@/components/PhotoUpload';
 import CardVerifySection from '@/components/CardVerifySection';
 import { useApiVerificationEnabled } from '@/hooks/useApiVerification';
 import { useState, useRef, useEffect } from 'react';
-import { Plus, AlertCircle, CheckCircle, Loader2, Upload, Trash2, Eye, Printer, Download, FileText, X, CalendarIcon, Mail, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Plus, AlertCircle, CheckCircle, Loader2, Upload, Trash2, Eye, Printer, Download, FileText, X, CalendarIcon, Mail, ArrowLeft, ArrowRight, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
@@ -21,6 +21,7 @@ import { useValidationRules } from '@/hooks/useValidationRules';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import OtpVerificationDialog from '@/components/OtpVerificationDialog';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
+import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import { useStaffFormConfig } from '@/hooks/useStaffFormConfig';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { invalidateAllStaffQueries } from '@/lib/staffQueryInvalidator';
@@ -97,6 +98,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
   const queryClient = useQueryClient();
   const backPath = CATEGORY_BACK_PATH[staffCategory];
   const { canAddItem, canEditItem } = usePagePermissions(backPath);
+  const { checkApproval, isRecordPending, needsApproval } = useApprovalCheck(backPath, 'staff');
   const { role } = useAuth();
   const isAdmin = isAdminRole(role);
   const navigate = useNavigate();
@@ -623,27 +625,43 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
         if (prevCategory && nextCategory && prevCategory !== nextCategory) {
           updatePayload.staff_id = null;
         }
+
+        if (await checkApproval('edit', updatePayload, editId, `কর্মী তথ্য সম্পাদনা: ${fullName} (${desigLabel || ''})`)) {
+          return { intercepted: true };
+        }
+
         const { error } = await supabase.from('staff').update(updatePayload).eq('id', editId);
         if (error) throw error;
+        return { intercepted: false };
       } else {
-        const { error } = await supabase.from('staff').insert({
+        const insertPayload = {
           ...record,
           // Do NOT auto-fill today's date when left blank — that caused the
           // joining month to be wrongly prorated. Keep it null so admins must
           // enter the real joining date explicitly.
           joining_date: joiningDate || null,
-        });
+        };
+
+        if (await checkApproval('add', insertPayload as any, undefined, `নতুন কর্মী যোগ: ${fullName} (${desigLabel || ''})`)) {
+          return { intercepted: true };
+        }
+
+        const { error } = await supabase.from('staff').insert(insertPayload);
         if (error) throw error;
+        return { intercepted: false };
       }
     },
-    onSuccess: async () => {
+    onSuccess: async (res) => {
       // Invalidate every cache that may show this staff record so the UI
       // (sidebar, dashboard, profile, user list, id-cards, attendance, salary, etc.) reflects the change immediately.
       await invalidateAllStaffQueries(queryClient);
       queryClient.invalidateQueries({ queryKey: ['my-profile'] });
       queryClient.invalidateQueries({ queryKey: ['sidebar-profile'] });
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success(bn ? (isEditMode ? `${titleConfig.bn} সফলভাবে আপডেট হয়েছে` : `${titleConfig.bn} সফলভাবে যোগ হয়েছে`) : (isEditMode ? `${titleConfig.en} updated successfully` : `${titleConfig.en} added successfully`));
+      queryClient.invalidateQueries({ queryKey: ['all-pending-actions'] });
+      if (!res?.intercepted) {
+        toast.success(bn ? (isEditMode ? `${titleConfig.bn} সফলভাবে আপডেট হয়েছে` : `${titleConfig.bn} সফলভাবে যোগ হয়েছে`) : (isEditMode ? `${titleConfig.en} updated successfully` : `${titleConfig.en} added successfully`));
+      }
       navigate(backPath);
     },
     onError: (e: any) => {
@@ -703,6 +721,11 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const errors: Record<string, string> = {};
+
+    if (isEditMode && editId && isRecordPending(editId)) {
+      toast.warning(bn ? '⏳ এই কর্মীর পূর্ববর্তী পরিবর্তন ইতিমধ্যে অ্যাডমিন অনুমোদনের অপেক্ষায় রয়েছে।' : '⏳ Previous changes for this staff are already awaiting admin approval.');
+      return;
+    }
 
     // Joining date is mandatory for new staff/teacher (prevents wrong salary proration)
     if (!isEditMode && !joiningDate) {
@@ -1169,6 +1192,20 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
             <Button variant="outline" size="sm" onClick={() => navigate(backPath)}>{bn ? 'ফিরে যান' : 'Back'}</Button>
           </div>
         </div>
+
+        {isEditMode && editId && isRecordPending(editId) && (
+          <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 flex items-center gap-3 text-xs sm:text-sm shadow-sm">
+            <Clock className="w-5 h-5 shrink-0 animate-pulse text-amber-600" />
+            <div className="flex-1">
+              <p className="font-semibold">
+                {bn ? '⏳ এই কর্মীর তথ্য ইতিমধ্যে অ্যাডমিন অনুমোদনের অপেক্ষায় রয়েছে।' : '⏳ This staff record is already awaiting admin approval.'}
+              </p>
+              <p className="text-[11px] opacity-90 mt-0.5">
+                {bn ? 'পূর্ববর্তী পরিবর্তনের অনুরোধ প্রধান অ্যাডমিন কর্তৃক অনুমোদিত বা প্রত্যাখ্যাত না হওয়া পর্যন্ত পুনরায় সাবমিট করা যাবে না।' : 'New modifications cannot be submitted until the pending request is approved or rejected.'}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Step Wizard Progress Bar */}
         <div className="w-full bg-card border border-border rounded-xl p-3 sm:p-5 shadow-sm">
@@ -1821,7 +1858,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
                 <Button
                   type="submit"
                   className="btn-primary-gradient px-8 py-5 gap-2"
-                  disabled={saveMutation.isPending}
+                  disabled={saveMutation.isPending || (isEditMode && !!editId && isRecordPending(editId))}
                 >
                   {saveMutation.isPending ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Plus className="w-5 h-5 mr-2" />}
                   {bn ? (isEditMode ? 'আপডেট করুন' : `${titleConfig.bn} যোগ করুন`) : (isEditMode ? 'Update' : `Add ${titleConfig.en}`)}

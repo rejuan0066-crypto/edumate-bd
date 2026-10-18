@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, Plus, Trash2, Loader2, Pencil, UserPlus, Eye, EyeOff, User, FileText, Check, X, Award, Power, PowerOff, Clock, BarChart3, ClipboardList, Layers } from 'lucide-react';
+import { Search, Plus, Trash2, Loader2, Pencil, UserPlus, Eye, EyeOff, User, FileText, Check, X, Award, Power, PowerOff, Clock, BarChart3, ClipboardList, Layers, ShieldAlert, Download } from 'lucide-react';
 import StaffProfileModal from '@/components/profile/StaffProfileModal';
 import StaffLetterDialog from '@/components/admin/StaffLetterDialog';
 import StaffDutyTimeDialog from '@/components/admin/StaffDutyTimeDialog';
@@ -522,6 +522,49 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
     setGeneratingIds(false);
   };
 
+  const handleExportStaff = () => {
+    if (!filtered || filtered.length === 0) {
+      toast.info(bn ? 'এক্সপোর্ট করার মতো কোনো কর্মী নেই' : 'No staff to export');
+      return;
+    }
+    const headers = [
+      bn ? 'ক্রম' : 'Serial',
+      bn ? 'আইডি' : 'Staff ID',
+      bn ? 'নাম (বাংলা)' : 'Name (Bangla)',
+      bn ? 'নাম (ইংরেজি)' : 'Name (English)',
+      bn ? 'পদবী' : 'Designation',
+      bn ? 'ক্যাটাগরি' : 'Category',
+      bn ? 'মোবাইল' : 'Mobile',
+      bn ? 'যোগদানের তারিখ' : 'Joining Date',
+      bn ? 'স্ট্যাটাস' : 'Status'
+    ];
+    const rows = filtered.map((s: any, idx: number) => {
+      const cat = getStaffCategory(s, designationsMap, activeCategoryKeys);
+      return [
+        idx + 1,
+        s.staff_id || '',
+        s.name_bn || '',
+        s.name_en || '',
+        s.designation || '',
+        labelForCategory(cat),
+        s.phone || '',
+        s.joining_date || '',
+        s.status || ''
+      ].map(val => `"${String(val).replace(/"/g, '""')}"`).join(',');
+    });
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `staff_list_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(bn ? 'স্টাফ তালিকা CSV এক্সপোর্ট সম্পন্ন হয়েছে' : 'Staff list exported successfully');
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -544,6 +587,28 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
               <BarChart3 className="w-3.5 h-3.5 text-primary" />
               {bn ? 'স্টাফ রিপোর্ট' : 'Staff Reports'}
             </Button>
+            {isFeatureAllowed('tab_designations') !== false && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/admin/designations')}
+                className="h-8 text-xs flex items-center gap-1.5"
+              >
+                <Layers className="w-3.5 h-3.5 text-primary" />
+                {bn ? 'পদবি ও ক্যাটাগরি' : 'Designations'}
+              </Button>
+            )}
+            {isFeatureAllowed('action_export_staff') !== false && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportStaff}
+                className="h-8 text-xs flex items-center gap-1.5"
+              >
+                <Download className="w-3.5 h-3.5 text-primary" />
+                {bn ? 'এক্সপোর্ট' : 'Export'}
+              </Button>
+            )}
             {isAdminRole(role) && (
               <Button
                 variant="outline"
@@ -571,7 +636,33 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
           </div>
         </div>
 
-        <div className="card-elevated p-2.5 sm:p-4 space-y-2 lg:space-y-0 flex flex-col lg:flex-row gap-2 lg:gap-3 items-stretch lg:items-center">
+        {isFeatureAllowed('tab_staff_list') === false ? (
+          <div className="card-elevated p-8 sm:p-12 text-center space-y-4">
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto">
+              <ShieldAlert className="w-7 h-7" />
+            </div>
+            <div className="max-w-md mx-auto space-y-1.5">
+              <h3 className="font-semibold text-foreground text-base sm:text-lg">
+                {bn ? 'স্টাফ ও শিক্ষক তালিকা দেখার অনুমতি নেই' : 'Staff List Access Restricted'}
+              </h3>
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                {bn
+                  ? 'আপনার রোলে স্টাফ ও শিক্ষক তালিকা দেখার অনুমতি বন্ধ (১০০% হাইড) করা রয়েছে। নতুন কর্মী নিয়োগ ফরমের অনুমতি থাকলে উপরের বোতাম ব্যবহার করে নিয়োগ দিতে পারেন।'
+                  : 'Staff and teacher list visibility is restricted for your role. You can still use the add button above if authorized.'}
+              </p>
+            </div>
+            {canAddItem && isFeatureAllowed('tab_add_staff') !== false && (
+              <Button
+                onClick={() => navigate(staffType === 'teacher' ? '/admin/teachers/add' : staffType === 'administrative' ? '/admin/administrative-staff/add' : staffType === 'staff' ? '/admin/general-staff/add' : staffType === 'director' ? '/admin/directors/add' : staffType === 'committee_member' ? '/admin/committee-members/add' : '/admin/staff/add')}
+                className="btn-primary-gradient text-xs h-9 px-4 gap-2"
+              >
+                <Plus className="w-4 h-4" /> {t('addNew')}
+              </Button>
+            )}
+          </div>
+        ) : (
+          <>
+            <div className="card-elevated p-2.5 sm:p-4 space-y-2 lg:space-y-0 flex flex-col lg:flex-row gap-2 lg:gap-3 items-stretch lg:items-center">
           <div className="flex flex-col sm:flex-row gap-2 flex-1">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -684,6 +775,12 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                         </div>
 
                         <div className="shrink-0 flex flex-col items-end gap-1">
+                          {isPending && (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20 inline-flex items-center gap-1 animate-pulse">
+                              <Clock className="w-3 h-3" />
+                              {bn ? 'অনুমোদনের অপেক্ষায়' : 'Pending Approval'}
+                            </span>
+                          )}
                           {isResigned ? (
                             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20">
                               {bn ? 'পদত্যাগী' : 'Resigned'}
@@ -849,15 +946,19 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                             const cat = getStaffCategory(s, designationsMap, activeCategoryKeys);
                             const catDesignations = designationsList.filter((d: any) => d.staff_category === cat);
                             const isPending = isRecordPending(s.id);
-                            const canChangeDesignation = canEditItem || needsApproval('edit');
+                            const canChangeDesignation = (canEditItem || needsApproval('edit')) && isFeatureAllowed('tab_designations') !== false;
+
+                            if (!canChangeDesignation) {
+                              return <span className="text-xs font-medium text-foreground">{s.designation || '-'}</span>;
+                            }
 
                             return (
                               <Select
                                 value={s.designation || ''}
-                                disabled={!canChangeDesignation || isPending}
+                                disabled={isPending}
                                 onValueChange={(val) => designationMutation.mutate({ id: s.id, designation: val })}
                               >
-                                <SelectTrigger className={`h-7 text-xs w-[150px] ${(!canChangeDesignation || isPending) ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                <SelectTrigger className={`h-7 text-xs w-[150px] ${isPending ? 'opacity-60 cursor-not-allowed' : ''}`}>
                                   <SelectValue placeholder={bn ? 'পদবী নির্বাচন' : 'Select'} />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -874,15 +975,20 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                         <td className="px-4 py-3">
                           {(() => {
                             const isPending = isRecordPending(s.id);
-                            const canChangeCategory = canEditItem || needsApproval('edit');
+                            const canChangeCategory = (canEditItem || needsApproval('edit')) && isFeatureAllowed('tab_designations') !== false;
+                            const cat = getStaffCategory(s, designationsMap, activeCategoryKeys);
+
+                            if (!canChangeCategory) {
+                              return <Badge variant="secondary" className="text-xs font-normal">{labelForCategory(cat)}</Badge>;
+                            }
 
                             return (
                               <Select
-                                value={getStaffCategory(s, designationsMap, activeCategoryKeys)}
-                                disabled={!canChangeCategory || isPending}
+                                value={cat}
+                                disabled={isPending}
                                 onValueChange={(val) => categoryMutation.mutate({ id: s.id, category: val })}
                               >
-                                <SelectTrigger className={`h-7 text-xs w-[130px] ${(!canChangeCategory || isPending) ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                <SelectTrigger className={`h-7 text-xs w-[130px] ${isPending ? 'opacity-60 cursor-not-allowed' : ''}`}>
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -968,7 +1074,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                           >
                             <ClipboardList className="w-4 h-4 text-primary" />
                           </button>
-                          {canEditItem && s.status === 'active' && (
+                          {canEditItem && s.status === 'active' && isFeatureAllowed('action_salary_view') !== false && (
                             <button 
                               onClick={() => setLetterStaff(s)} 
                               className={`p-2 rounded-lg hover:bg-accent/10 text-muted-foreground hover:text-accent ${isRecordPending(s.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
@@ -1034,6 +1140,8 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
             </>
           )}
         </div>
+      </>
+    )}
 
         {/* Delete confirmation */}
         <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
@@ -1122,7 +1230,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
         <Dialog open={!!viewStaff} onOpenChange={o => { if (!o) setViewStaff(null); }}>
           <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto rounded-[40px]">
             <DialogHeader><DialogTitle className="text-center">{staffType === 'teacher' ? (bn ? 'শিক্ষক প্রোফাইল' : 'Teacher Profile') : (bn ? 'স্টাফ প্রোফাইল' : 'Staff Profile')}</DialogTitle></DialogHeader>
-            {viewStaff && <StaffProfileModal staff={viewStaff} bn={bn} />}
+            {viewStaff && <StaffProfileModal staff={viewStaff} bn={bn} showSalary={isFeatureAllowed('action_salary_view') !== false} />}
           </DialogContent>
         </Dialog>
 

@@ -456,15 +456,18 @@ const AdminApprovals = () => {
     }
 
     if (action_type === 'add') {
+      delete (cleanPayload as any).id;
       const { error } = await supabase.from(target_table).insert(cleanPayload as any);
       if (error) throw error;
     } else if (action_type === 'edit' && target_id) {
+      delete (cleanPayload as any).id;
       const { error } = await supabase.from(target_table).update(cleanPayload as any).eq('id', target_id);
       if (error) throw error;
     } else if (action_type === 'delete' && target_id) {
       const { error } = await supabase.from(target_table).delete().eq('id', target_id);
       if (error) throw error;
     } else if (action_type === 'reject' && target_id) {
+      delete (cleanPayload as any).id;
       const { error } = await supabase.from(target_table).update(cleanPayload as any).eq('id', target_id);
       if (error) throw error;
     }
@@ -498,6 +501,11 @@ const AdminApprovals = () => {
     onSuccess: (_, { status }) => {
       queryClient.invalidateQueries({ queryKey: ['approvals-pending-actions'] });
       queryClient.invalidateQueries({ queryKey: ['pending-actions'] });
+      queryClient.invalidateQueries({ queryKey: ['all-pending-actions'] });
+      queryClient.invalidateQueries({ queryKey: ['staff'] });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['salary'] });
       toast.success(status === 'approved' ? (bn ? '✅ ডেটা পরিবর্তন অনুমোদিত ও কার্যকর হয়েছে!' : '✅ Action executed & approved!') : (bn ? '❌ পরিবর্তন বাতিল করা হয়েছে' : '❌ Action rejected'));
       setDetailModal(null);
       setAdminNote('');
