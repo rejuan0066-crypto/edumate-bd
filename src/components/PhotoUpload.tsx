@@ -86,8 +86,11 @@ const PhotoUpload = ({ value, onChange, folder = 'general', className, size = 'm
         setPreview(null);
         toast.success(bn ? 'ফটো আপলোড সফল' : 'Photo uploaded');
       } catch (err: any) {
+        const errorMsg = err?.message?.includes('row-level security')
+          ? (bn ? 'ফটো আপলোড করার অনুমতি নেই' : 'Permission denied to upload photo')
+          : (err?.message || (bn ? 'আপলোড ব্যর্থ' : 'Upload failed'));
         setError(bn ? 'আপলোড ব্যর্থ' : 'Upload failed');
-        toast.error(err.message || 'Upload failed');
+        toast.error(errorMsg);
         setPreview(null);
       }
     } finally {
