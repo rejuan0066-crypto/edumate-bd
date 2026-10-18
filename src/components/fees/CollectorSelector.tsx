@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { UserCheck, User } from 'lucide-react';
+import { cleanRoleSuffix } from '@/lib/paymentUtils';
 
 interface CollectorSelectorProps {
   value: string;
@@ -28,6 +29,8 @@ export default function CollectorSelector({
   const [selectedOption, setSelectedOption] = useState<string>('default');
   const [customName, setCustomName] = useState<string>('');
 
+  const cleanDefault = cleanRoleSuffix(defaultCollectorName);
+
   // Fetch active staff/teachers
   const { data: staffList = [] } = useQuery({
     queryKey: ['active_staff_collectors'],
@@ -45,11 +48,11 @@ export default function CollectorSelector({
 
   // Sync initial state
   useEffect(() => {
-    if (!value && defaultCollectorName) {
-      onChange(defaultCollectorName);
+    if (!value && cleanDefault) {
+      onChange(cleanDefault);
       setSelectedOption('default');
     } else if (value) {
-      if (value === defaultCollectorName) {
+      if (cleanRoleSuffix(value) === cleanDefault) {
         setSelectedOption('default');
       } else {
         const found = staffList.find(
@@ -63,18 +66,18 @@ export default function CollectorSelector({
         }
       }
     }
-  }, [value, defaultCollectorName, staffList]);
+  }, [value, cleanDefault, staffList]);
 
   const handleSelect = (val: string) => {
     setSelectedOption(val);
     if (val === 'default') {
-      onChange(defaultCollectorName);
+      onChange(cleanDefault);
     } else if (val === 'custom') {
       onChange(customName.trim());
     } else {
       const staff = staffList.find((s: any) => s.id === val);
       const name = staff ? (staff.name_bn || staff.name_en || '') : '';
-      onChange(name);
+      onChange(cleanRoleSuffix(name));
     }
   };
 
@@ -94,9 +97,9 @@ export default function CollectorSelector({
           <SelectValue placeholder={bn ? 'আদায়কারী নির্বাচন করুন...' : 'Select collector...'} />
         </SelectTrigger>
         <SelectContent className="max-h-60">
-          {defaultCollectorName && (
+          {cleanDefault && (
             <SelectItem value="default" className="text-xs font-semibold text-primary">
-              {defaultCollectorName} ({bn ? 'বর্তমান ইউজার / আপনি' : 'Current User / You'})
+              {cleanDefault} ({bn ? 'বর্তমান ইউজার / আপনি' : 'Current User / You'})
             </SelectItem>
           )}
           {staffList.map((st: any) => {

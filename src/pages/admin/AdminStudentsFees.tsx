@@ -20,6 +20,7 @@ import FeeReceiptDownload from '@/components/fees/FeeReceiptDownload';
 import CollectorSelector from '@/components/fees/CollectorSelector';
 import { EmbeddedProvider } from '@/contexts/EmbeddedContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { cleanRoleSuffix } from '@/lib/paymentUtils';
 
 const LazyPaymentDashboard = lazy(() => import('@/pages/admin/AdminPayments'));
 
@@ -40,12 +41,12 @@ type SearchMode = 'registration' | 'session_roll';
 const AdminStudentsFees = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { checkApproval } = useApprovalCheck('/admin/students-fees', 'payments');
-  const { isFeatureAllowed } = usePagePermissions('/admin/students-fees');
+  const { isFeatureAllowed, canApproveItem } = usePagePermissions('/admin/students-fees');
   const [feeType, setFeeType] = useState('');
   const [selectedFeeTypeObj, setSelectedFeeTypeObj] = useState<any>(null);
   const [amount, setAmount] = useState('');
@@ -317,14 +318,14 @@ const AdminStudentsFees = () => {
         .select('name_bn, name_en')
         .eq('user_id', user.id)
         .maybeSingle();
-      if (staffData) return staffData.name_bn || staffData.name_en || '';
+      if (staffData) return cleanRoleSuffix(staffData.name_bn || staffData.name_en || '');
       // Fallback to profile
       const { data: profile } = await supabase
         .from('profiles')
         .select('full_name')
         .eq('id', user.id)
         .maybeSingle();
-      return profile?.full_name || user.email || '';
+      return cleanRoleSuffix(profile?.full_name || user.email || '');
     },
     enabled: !!user?.id,
   });
@@ -437,8 +438,8 @@ const AdminStudentsFees = () => {
       }
 
       const feeTypeName = selectedFeeTypeObj ? (bn ? selectedFeeTypeObj.name_bn : selectedFeeTypeObj.name) : feeType;
-      const finalCollector = customCollector || collectorName;
-      const isUserAdmin = isAdminRole(role);
+      const finalCollector = cleanRoleSuffix(customCollector || collectorName);
+      const isUserAdmin = isAdminRole(role) || canApproveItem;
       const isAutoApproved = isCash && isUserAdmin;
 
       const payload: Record<string, any> = {
@@ -454,8 +455,8 @@ const AdminStudentsFees = () => {
         created_by: user?.id || null,
       };
 
-      // Check if approval is needed
-      if (await checkApproval('add', payload, undefined, `${bn ? 'ফি আদায়' : 'Fee Collection'}: ৳${amount} - ${foundStudent.name_bn}`)) {
+      // Check if approval is needed (only for non-admins)
+      if (!isUserAdmin && await checkApproval('add', payload, undefined, `${bn ? 'ফি আদায়' : 'Fee Collection'}: ৳${amount} - ${foundStudent.name_bn}`)) {
         return txnId;
       }
 
@@ -486,7 +487,7 @@ const AdminStudentsFees = () => {
       queryClient.invalidateQueries({ queryKey: ['student_fee_payments_status'] });
       queryClient.invalidateQueries({ queryKey: ['existing_payment_check'] });
       queryClient.invalidateQueries({ queryKey: ['dues-fee-payments'] });
-      const isUserAdmin = isAdminRole(role);
+      const isUserAdmin = isAdminRole(role) || canApproveItem;
       if (paymentMethod === 'cash') {
         if (isUserAdmin) {
           toast.success(bn ? 'ক্যাশ পেমেন্ট সফলভাবে সংরক্ষিত ও অনুমোদিত হয়েছে' : 'Cash payment saved and approved');

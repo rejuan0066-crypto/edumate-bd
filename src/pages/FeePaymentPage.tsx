@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import ManualPaymentMethods from '@/components/ManualPaymentMethods';
 import CollectorSelector from '@/components/fees/CollectorSelector';
+import { cleanRoleSuffix } from '@/lib/paymentUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -135,7 +136,7 @@ const FeePaymentPage = () => {
     enabled: !!user?.id,
   });
   const isStaffOrAdmin = !!user;
-  const collectorName = collectorStaff?.name_bn || collectorStaff?.name_en || user?.email || 'Office';
+  const collectorName = cleanRoleSuffix(collectorStaff?.name_bn || collectorStaff?.name_en || user?.email || 'Office');
 
   // Academic sessions
   const { data: sessions = [] } = useQuery({
@@ -361,7 +362,7 @@ const FeePaymentPage = () => {
 
       const feeTypeName = selectedFeeTypeObj ? (bn ? selectedFeeTypeObj.name_bn : selectedFeeTypeObj.name) : 'Student Fee';
       const isCash = isStaffOrAdmin && paymentMethod === 'cash';
-      const finalCollector = customCollector || collectorName;
+      const finalCollector = cleanRoleSuffix(customCollector || collectorName);
       const isUserAdmin = isAdminRole(role);
       const isAutoApproved = isCash && isUserAdmin;
 

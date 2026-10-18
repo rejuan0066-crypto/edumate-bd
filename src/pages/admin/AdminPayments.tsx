@@ -18,7 +18,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { useAuth } from '@/hooks/useAuth';
 import { isAdminRole } from '@/lib/roles';
-import { getCollectorFromPayment, getRejectionReasonFromPayment, updatePaymentSafely } from '@/lib/paymentUtils';
+import { getCollectorFromPayment, getRejectionReasonFromPayment, updatePaymentSafely, cleanRoleSuffix } from '@/lib/paymentUtils';
 
 const statusConfig: Record<string, { bn: string; en: string; variant: 'default' | 'secondary' | 'destructive' }> = {
   pending: { bn: 'অপেক্ষমাণ', en: 'Pending', variant: 'secondary' },
@@ -215,27 +215,35 @@ const AdminPayments = () => {
         throw new Error(bn ? 'সঠিক টাকার পরিমাণ লিখুন' : 'Enter valid amount');
       }
 
+      const isApprover = canApprove;
+      const targetStatus = isApprover ? 'success' : 'pending';
+      const cleanColl = cleanRoleSuffix(editCollector);
+      const approverName = isApprover ? cleanRoleSuffix(userProfile?.full_name || 'Admin') : null;
+
       await updatePaymentSafely({
         id: editingTarget.id,
-        status: 'pending',
+        status: targetStatus,
         amount: amtNum,
         paymentMethod: editMethod,
-        collectorName: editCollector,
+        collectorName: cleanColl,
         notes: editNotes,
         rejectionReason: null, // clear old rejection reason
       });
 
-      // Update matching pending fee_payments if any
+      // Update matching fee_payments if any
       try {
         await supabase
           .from('fee_payments')
           .update({
             amount: amtNum,
-            collected_by: editCollector,
-            status: 'pending',
+            paid_amount: isApprover ? amtNum : 0,
+            collected_by: cleanColl,
+            status: isApprover ? 'paid' : 'pending',
+            paid_at: isApprover ? new Date().toISOString() : null,
+            approved_by: approverName,
           })
           .eq('student_id', editingTarget.student_id)
-          .eq('status', 'pending');
+          .in('status', ['pending', 'failed']);
       } catch (e) {
         console.warn('Fee payments update notice:', e);
       }
@@ -244,9 +252,9 @@ const AdminPayments = () => {
       queryClient.invalidateQueries({ queryKey: ['payments'] });
       queryClient.invalidateQueries({ queryKey: ['existing_payment_check'] });
       toast.success(
-        bn
-          ? 'পেমেন্ট সংশোধন করা হয়েছে এবং পুনরায় এডমিনের অনুমোদনের জন্য পাঠানো হয়েছে'
-          : 'Payment corrected and resubmitted for admin approval'
+        canApprove
+          ? (bn ? 'পেমেন্ট সফলভাবে সংশোধন ও অনুমোদন করা হয়েছে' : 'Payment updated and approved successfully')
+          : (bn ? 'পেমেন্ট সংশোধন করা হয়েছে এবং পুনরায় এডমিনের অনুমোদনের জন্য পাঠানো হয়েছে' : 'Payment corrected and resubmitted for admin approval')
       );
       setEditingTarget(null);
     },
@@ -258,7 +266,7 @@ const AdminPayments = () => {
     setEditingTarget(p);
     setEditAmount(String(p.amount || ''));
     setEditMethod(p.payment_method || 'cash');
-    setEditCollector(getCollectorFromPayment(p));
+    setEditCollector(cleanRoleSuffix(getCollectorFromPayment(p)));
     setEditNotes(p.notes || '');
   };
 
@@ -611,10 +619,14 @@ const AdminPayments = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-primary">
               <Edit3 className="w-5 h-5" />
-              {bn ? 'প্রত্যাখ্যাত পেমেন্ট সংশোধন করুন' : 'Edit Rejected Payment'}
+              {canApprove
+                ? (bn ? 'পেমেন্ট সংশোধন ও অনুমোদন' : 'Edit & Approve Payment')
+                : (bn ? 'প্রত্যাখ্যাত পেমেন্ট সংশোধন করুন' : 'Edit Rejected Payment')}
             </DialogTitle>
             <DialogDescription>
-              {bn ? 'সঠিক তথ্য প্রদান করে পুনরায় এডমিনের অনুমোদনের জন্য পাঠান' : 'Provide correct info and resubmit for admin approval'}
+              {canApprove
+                ? (bn ? 'সঠিক তথ্য প্রদান করে সরাসরি অনুমোদন করুন' : 'Provide correct details and approve directly')
+                : (bn ? 'সঠিক তথ্য প্রদান করে পুনরায় এডমিনের অনুমোদনের জন্য পাঠান' : 'Provide correct info and resubmit for admin approval')}
             </DialogDescription>
           </DialogHeader>
 
@@ -665,7 +677,7 @@ const AdminPayments = () => {
               <CollectorSelector
                 value={editCollector}
                 onChange={setEditCollector}
-                defaultCollectorName={getCollectorFromPayment(editingTarget) || userProfile?.full_name || ''}
+                defaultCollectorName={cleanRoleSuffix(getCollectorFromPayment(editingTarget) || userProfile?.full_name || '')}
               />
 
               <div className="space-y-1">
@@ -689,9 +701,12 @@ const AdminPayments = () => {
               size="sm"
               disabled={editMutation.isPending || !editAmount}
               onClick={() => editMutation.mutate()}
+              className={canApprove ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}
             >
               <CheckCircle className="w-4 h-4 mr-1.5" />
-              {bn ? 'পুনরায় অনুমোদনের জন্য পাঠান' : 'Resubmit for Approval'}
+              {canApprove
+                ? (bn ? 'সংশোধন ও অনুমোদন করুন' : 'Update & Approve')
+                : (bn ? 'পুনরায় অনুমোদনের জন্য পাঠান' : 'Resubmit for Approval')}
             </Button>
           </DialogFooter>
         </DialogContent>

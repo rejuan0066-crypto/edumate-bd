@@ -25,16 +25,26 @@ export interface PaymentRecord {
 }
 
 /**
+ * Strips role tags like (Admin), (Staff), (Teacher), etc. from person names
+ */
+export function cleanRoleSuffix(name: string | null | undefined): string {
+  if (!name) return '';
+  return name
+    .replace(/\s*\((?:Admin|Staff|Teacher|Super Admin|admin|staff|teacher|super_admin|অ্যাডমিন|স্টাফ|শিক্ষক)\)\s*/gi, '')
+    .trim();
+}
+
+/**
  * Extracts collector name from payment record or notes fallback
  */
 export function getCollectorFromPayment(p: any): string {
-  if (p?.collected_by) return p.collected_by;
+  if (p?.collected_by) return cleanRoleSuffix(p.collected_by);
   if (!p?.notes) return '';
   const match = p.notes.match(/(?:আদায়ক়ারী|আদায়কারী|আদায়|Collector):\s*([^|\n]+)/i);
   if (match && match[1]) {
     const val = match[1].trim();
     if (val.toLowerCase() !== 'cash' && val.toLowerCase() !== 'online' && val.toLowerCase() !== 'office') {
-      return val;
+      return cleanRoleSuffix(val);
     }
   }
   return '';
