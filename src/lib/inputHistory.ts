@@ -11,11 +11,29 @@ const EXCLUDED_TYPES = new Set([
   'submit', 'reset', 'button', 'image', 'color', 'range',
 ]);
 
+let cachedUserId: string | null = null;
+let lastCheckTime = 0;
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key && (e.key.includes('auth-token') || e.key.includes('supabase'))) {
+      cachedUserId = null;
+    }
+  });
+}
+
 /**
  * Extracts current logged-in user id from Supabase localStorage session (if available)
  * so that site-wide input history is personal and isolated per user account (নিজ নিজ).
+ * Cached in-memory to prevent synchronous localStorage iteration & JSON parsing on every keystroke/render.
  */
 export const getCurrentUserId = (): string => {
+  const now = Date.now();
+  if (cachedUserId && now - lastCheckTime < 5000) {
+    return cachedUserId;
+  }
+  lastCheckTime = now;
+
   try {
     if (typeof window === 'undefined' || !window.localStorage) return 'global';
     for (let i = 0; i < localStorage.length; i++) {
@@ -25,13 +43,17 @@ export const getCurrentUserId = (): string => {
         if (val) {
           const parsed = JSON.parse(val);
           const uid = parsed?.user?.id || parsed?.currentSession?.user?.id;
-          if (uid) return uid;
+          if (uid) {
+            cachedUserId = uid;
+            return uid;
+          }
         }
       }
     }
   } catch {
     // ignore parsing errors
   }
+  cachedUserId = 'global';
   return 'global';
 };
 
