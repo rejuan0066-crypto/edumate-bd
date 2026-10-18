@@ -66,15 +66,18 @@ const PhotoUpload = ({ value, onChange, folder = 'general', className, size = 'm
       onChange(res.secure_url);
       setPreview(null);
       toast.success(bn ? 'ফটো আপলোড সফল' : 'Photo uploaded');
-    } catch (cErr) {
-      console.warn('Cloudinary photo upload failed, falling back to Supabase:', cErr);
+    } catch (cErr: any) {
+      console.warn('Cloudinary photo upload failed, falling back to Supabase:', cErr?.message || cErr);
       try {
+        const { data: authData } = await supabase.auth.getUser();
+        const user = authData?.user;
+        const userPrefix = user?.id || 'public-uploads';
         const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-        const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const fileName = `${userPrefix}/${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
         const { error: uploadError } = await supabase.storage
           .from('photos')
-          .upload(fileName, file, { upsert: true });
+          .upload(fileName, file, { upsert: false });
 
         if (uploadError) throw uploadError;
 
@@ -86,8 +89,9 @@ const PhotoUpload = ({ value, onChange, folder = 'general', className, size = 'm
         setPreview(null);
         toast.success(bn ? 'ফটো আপলোড সফল' : 'Photo uploaded');
       } catch (err: any) {
+        console.error('Supabase storage upload error:', err);
         const errorMsg = err?.message?.includes('row-level security')
-          ? (bn ? 'ফটো আপলোড করার অনুমতি নেই' : 'Permission denied to upload photo')
+          ? (bn ? 'ফটো আপলোড করার অনুমতি নেই (Supabase Storage RLS Policy)' : 'Permission denied to upload photo')
           : (err?.message || (bn ? 'আপলোড ব্যর্থ' : 'Upload failed'));
         setError(bn ? 'আপলোড ব্যর্থ' : 'Upload failed');
         toast.error(errorMsg);

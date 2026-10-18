@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import AddressFields, { type AddressData } from '@/components/AddressFields';
 import PhoneInput from '@/components/PhoneInput';
 import PhotoUpload from '@/components/PhotoUpload';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 import CardVerifySection from '@/components/CardVerifySection';
 import { useApiVerificationEnabled } from '@/hooks/useApiVerification';
 import { useState, useRef, useEffect } from 'react';
@@ -503,23 +504,40 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
       return;
     }
 
-    const ext = file.name.split('.').pop();
-    const path = `staff-docs/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-    const { error } = await supabase.storage.from('photos').upload(path, file);
-    if (error) { toast.error(error.message); return; }
-    // Store storage ref ("<bucket>/<path>") instead of broken public URL.
-    const storageRef = `photos/${path}`;
+    try {
+      const res = await uploadToCloudinary(file, { folder: 'staff-docs' });
+      setDocuments(prev => [...prev, {
+        id: crypto.randomUUID(),
+        type: selectedType,
+        name: file.name,
+        url: res.secure_url,
+      }]);
+      setDocType('');
+      setCustomDocType('');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      toast.success(bn ? 'ডকুমেন্ট আপলোড হয়েছে' : 'Document uploaded');
+    } catch (cErr: any) {
+      console.warn('Cloudinary upload failed, falling back to Supabase:', cErr?.message || cErr);
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData?.user;
+      const userPrefix = user?.id || 'public-uploads';
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'pdf';
+      const path = `${userPrefix}/staff-docs/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase.storage.from('photos').upload(path, file, { upsert: false });
+      if (error) { toast.error(error.message); return; }
+      const storageRef = `photos/${path}`;
 
-    setDocuments(prev => [...prev, {
-      id: crypto.randomUUID(),
-      type: selectedType,
-      name: file.name,
-      url: storageRef,
-    }]);
-    setDocType('');
-    setCustomDocType('');
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    toast.success(bn ? 'ডকুমেন্ট আপলোড হয়েছে' : 'Document uploaded');
+      setDocuments(prev => [...prev, {
+        id: crypto.randomUUID(),
+        type: selectedType,
+        name: file.name,
+        url: storageRef,
+      }]);
+      setDocType('');
+      setCustomDocType('');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      toast.success(bn ? 'ডকুমেন্ট আপলোড হয়েছে' : 'Document uploaded');
+    }
   };
 
   const removeDoc = (id: string) => {
@@ -918,13 +936,22 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 300 * 1024) { toast.error(bn ? 'ফাইল সাইজ ৩০০KB এর বেশি' : 'File size exceeds 300KB'); return; }
-    const ext = file.name.split('.').pop();
-    const path = `approver-signatures/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from('photos').upload(path, file);
-    if (error) { toast.error(bn ? 'আপলোড ব্যর্থ' : 'Upload failed'); return; }
-    // Store storage ref so SecureImage / useSecureUrl can resolve a signed URL on demand.
-    setApproverSignatureUrl(`photos/${path}`);
-    toast.success(bn ? 'স্বাক্ষর আপলোড হয়েছে' : 'Signature uploaded');
+    try {
+      const res = await uploadToCloudinary(file, { folder: 'approver-signatures' });
+      setApproverSignatureUrl(res.secure_url);
+      toast.success(bn ? 'স্বাক্ষর আপলোড হয়েছে' : 'Signature uploaded');
+    } catch (cErr: any) {
+      console.warn('Cloudinary signature upload failed, falling back to Supabase:', cErr?.message || cErr);
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData?.user;
+      const userPrefix = user?.id || 'public-uploads';
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
+      const path = `${userPrefix}/approver-signatures/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from('photos').upload(path, file, { upsert: false });
+      if (error) { toast.error(bn ? 'আপলোড ব্যর্থ' : 'Upload failed'); return; }
+      setApproverSignatureUrl(`photos/${path}`);
+      toast.success(bn ? 'স্বাক্ষর আপলোড হয়েছে' : 'Signature uploaded');
+    }
   };
 
   const handlePrint = () => {

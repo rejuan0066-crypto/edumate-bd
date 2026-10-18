@@ -310,10 +310,12 @@ const AdmissionPage = () => {
       const res = await uploadToCloudinary(photoFile, { folder: 'students' });
       return res.secure_url;
     } catch (cErr) {
-      console.warn('Cloudinary photo upload failed, falling back to Supabase:', cErr);
-      const ext = photoFile.name.split('.').pop();
-      const path = `public-uploads/students/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
-      const { error } = await supabase.storage.from('photos').upload(path, photoFile);
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData?.user;
+      const userPrefix = user?.id || 'public-uploads';
+      const ext = photoFile.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const path = `${userPrefix}/students/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
+      const { error } = await supabase.storage.from('photos').upload(path, photoFile, { upsert: false });
       if (error) { toast.error('Photo upload failed'); return null; }
       return `photos/${path}`;
     }

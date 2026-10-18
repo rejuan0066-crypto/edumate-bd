@@ -163,9 +163,12 @@ const StaffApplicationPage = () => {
       toast.success(bn ? 'ডকুমেন্ট আপলোড হয়েছে' : 'Document uploaded');
     } catch (cErr) {
       console.warn('Cloudinary upload failed, falling back to Supabase:', cErr);
-      const ext = file.name.split('.').pop();
-      const path = `public-uploads/staff-docs/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error } = await supabase.storage.from('photos').upload(path, file);
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData?.user;
+      const userPrefix = user?.id || 'public-uploads';
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'pdf';
+      const path = `${userPrefix}/staff-docs/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase.storage.from('photos').upload(path, file, { upsert: false });
       if (error) { toast.error(error.message); return; }
       setDocuments(prev => [...prev, { id: crypto.randomUUID(), type: selectedType, name: file.name, url: `photos/${path}` }]);
       setDocType('');
