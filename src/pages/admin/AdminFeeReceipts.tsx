@@ -1,18 +1,22 @@
 import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useState } from 'react';
-import { CheckCircle2, Download, Printer, Receipt, Search, Calendar, Building2 } from 'lucide-react';
+import { CheckCircle2, Download, Printer, Receipt, Search, Calendar, Building2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { numberToBanglaWords, toBanglaDigits, toBanglaMonth } from '@/lib/amountInWords';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { generateReceiptQrDataUrl } from '@/lib/receiptQr';
 import { bnToEn, enToBn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
+import { isAdminRole } from '@/lib/roles';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface ReceiptData {
   id: string;
@@ -20,6 +24,8 @@ interface ReceiptData {
   student_name: string;
   father_name?: string;
   student_id: string;
+  student_uuid: string;
+  fee_type_id: string;
   class_name: string;
   roll: string;
   fee_type: string;
@@ -35,10 +41,15 @@ interface ReceiptData {
 
 const AdminFeeReceipts = () => {
   const { language } = useLanguage();
+  const queryClient = useQueryClient();
+  const { user, role } = useAuth();
+  const { canDeleteItem } = usePagePermissions('/admin/fee-receipts');
+  const canDelete = isAdminRole(role) || canDeleteItem;
   const [searchRoll, setSearchRoll] = useState('');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedReceipt, setSelectedReceipt] = useState<ReceiptData | null>(null);
+  const [deletingReceipt, setDeletingReceipt] = useState<ReceiptData | null>(null);
 
   const { data: institution } = useQuery({
     queryKey: ['institution-receipt'],
@@ -82,6 +93,8 @@ const AdminFeeReceipts = () => {
         student_name: p.students?.name_bn || p.students?.name_en || '',
         father_name: p.students?.father_name || p.students?.father_name_en || '',
         student_id: p.students?.student_id || '',
+        student_uuid: p.student_id,
+        fee_type_id: p.fee_type_id,
         class_name: p.students?.classes?.name_bn || p.students?.classes?.name || p.students?.divisions?.name_bn || '',
         roll: p.students?.roll_number || '',
         fee_type: language === 'bn' ? p.fee_types?.name_bn : p.fee_types?.name,
@@ -95,6 +108,79 @@ const AdminFeeReceipts = () => {
         approved_by: p.approved_by || '',
       })) as ReceiptData[];
     }
+  });
+
+  const deleteReceiptMutation = useMutation({
+    mutationFn: async () => {
+      if (!canDelete) {
+        throw new Error(language === 'bn' ? 'রসিদ মুছে ফেলার অনুমতি নেই' : 'No permission to delete receipt');
+      }
+      if (!deletingReceipt) return;
+
+      // 1. Delete from fee_payments
+      const { error: feeErr } = await supabase
+        .from('fee_payments')
+        .delete()
+        .eq('id', deletingReceipt.id);
+      if (feeErr) throw feeErr;
+
+      // 2. Delete matching payment from payments table
+      try {
+        if (deletingReceipt.receipt_number && deletingReceipt.student_uuid) {
+          const { data: matchedPayments } = await supabase
+            .from('payments')
+            .select('id')
+            .eq('student_id', deletingReceipt.student_uuid)
+            .or(`transaction_id.eq."${deletingReceipt.receipt_number}",notes.ilike."%${deletingReceipt.receipt_number}%"`);
+
+          if (matchedPayments && matchedPayments.length > 0) {
+            const pIds = matchedPayments.map((p: any) => p.id);
+            await supabase.from('payments').delete().in('id', pIds);
+          } else {
+            // Fallback match by student_id and amount
+            const { data: fallbackPayments } = await supabase
+              .from('payments')
+              .select('id')
+              .eq('student_id', deletingReceipt.student_uuid)
+              .eq('amount', deletingReceipt.paid_amount)
+              .order('created_at', { ascending: false })
+              .limit(1);
+
+            if (fallbackPayments && fallbackPayments.length > 0) {
+              await supabase.from('payments').delete().eq('id', fallbackPayments[0].id);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Payments sync delete error:', err);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fee-payments-receipts'] });
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['fee_payments'] });
+      queryClient.invalidateQueries({ queryKey: ['existing_payment_check'] });
+      queryClient.invalidateQueries({ queryKey: ['student_fee_payments_status'] });
+      queryClient.invalidateQueries({ queryKey: ['student-fee-payments'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-fee-payments'] });
+      queryClient.invalidateQueries({ queryKey: ['dues-fee-payments'] });
+      queryClient.invalidateQueries({ queryKey: ['dues_students'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-fees'] });
+      queryClient.invalidateQueries({ queryKey: ['ledger_fees'] });
+      queryClient.invalidateQueries({ queryKey: ['fee-payments-public'] });
+      queryClient.invalidateQueries({ queryKey: ['fee-types-summary'] });
+
+      toast.success(
+        language === 'bn'
+          ? 'রসিদ ও পেমেন্ট রেকর্ড সফলভাবে মুছে ফেলা হয়েছে এবং স্ট্যাটাস আনপেইড (বকেয়া) করা হয়েছে।'
+          : 'Receipt & payment deleted successfully and reverted to unpaid.'
+      );
+      setDeletingReceipt(null);
+      if (selectedReceipt?.id === deletingReceipt?.id) {
+        setSelectedReceipt(null);
+      }
+    },
+    onError: (e: any) => toast.error(e.message),
   });
 
   const cleanSearch = searchRoll.trim();
@@ -700,6 +786,16 @@ const AdminFeeReceipts = () => {
                     <Printer className="w-4 h-4 mr-2" />
                     {language === 'bn' ? 'প্রিন্ট' : 'Print'}
                   </Button>
+                  {canDelete && (
+                    <Button
+                      variant="destructive"
+                      className="rounded-xl font-semibold"
+                      onClick={() => setDeletingReceipt(selectedReceipt)}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      {language === 'bn' ? 'ডিলিট' : 'Delete'}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
@@ -762,6 +858,17 @@ const AdminFeeReceipts = () => {
                           <Button size="sm" variant="ghost" className="text-success hover:text-success" onClick={() => handlePrint(p)} title={language === 'bn' ? 'প্রিন্ট' : 'Print'}>
                             <Printer className="w-4 h-4" />
                           </Button>
+                          {canDelete && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => setDeletingReceipt(p)}
+                              title={language === 'bn' ? 'ডিলিট করুন' : 'Delete'}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -771,6 +878,38 @@ const AdminFeeReceipts = () => {
             </div>
           </div>
         )}
+
+        {/* Delete Confirmation Modal */}
+        <Dialog open={!!deletingReceipt} onOpenChange={(open) => !open && setDeletingReceipt(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <Trash2 className="w-5 h-5" />
+                {language === 'bn' ? 'রসিদ ও পেমেন্ট ডিলিট নিশ্চিতকরণ' : 'Confirm Receipt Deletion'}
+              </DialogTitle>
+              <DialogDescription>
+                {language === 'bn'
+                  ? `আপনি কি নিশ্চিত যে রসিদ #${deletingReceipt?.receipt_number} মুছে ফেলতে চান? এটি মুছে ফেললে সকল রিপোর্ট ও ড্যাশবোর্ড থেকে পেমেন্টটি বাদ যাবে এবং ফি-টি পুনরায় বকেয়া (আনপেইড) হিসেবে দেখাবে।`
+                  : `Are you sure you want to delete receipt #${deletingReceipt?.receipt_number}? This will remove it from all reports and revert the fee to unpaid.`}
+              </DialogDescription>
+            </DialogHeader>
+
+            <DialogFooter className="gap-2">
+              <Button variant="outline" size="sm" onClick={() => setDeletingReceipt(null)}>
+                {language === 'bn' ? 'বাতিল' : 'Cancel'}
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={deleteReceiptMutation.isPending}
+                onClick={() => deleteReceiptMutation.mutate()}
+              >
+                <Trash2 className="w-4 h-4 mr-1.5" />
+                {language === 'bn' ? 'হ্যাঁ, ডিলিট করুন' : 'Yes, Delete'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );

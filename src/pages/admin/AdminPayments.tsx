@@ -181,7 +181,7 @@ const AdminPayments = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // Delete Mutation (with duplicate prevention reset)
+  // Delete Mutation (with duplicate prevention reset and complete unpaid revert)
   const deleteMutation = useMutation({
     mutationFn: async () => {
       if (!canDelete) {
@@ -189,28 +189,105 @@ const AdminPayments = () => {
       }
       if (!deletingTarget) return;
 
-      // Also clean up any unapproved fee_payment draft for this transaction
-      try {
-        await supabase
-          .from('fee_payments')
-          .delete()
-          .eq('student_id', deletingTarget.student_id)
-          .in('status', ['pending', 'failed']);
-      } catch (e) {
-        console.warn('Fee payments delete cleanup:', e);
+      const sid = deletingTarget.student_id;
+      const amt = Number(deletingTarget.amount);
+      const isApproved = deletingTarget.status === 'success';
+
+      // 1. Clean up corresponding fee_payments records
+      if (sid) {
+        try {
+          const candidateReceipts: string[] = [];
+          if (deletingTarget.transaction_id) candidateReceipts.push(deletingTarget.transaction_id);
+          const serialMatch = deletingTarget.notes?.match(/Serial:\s*([^\s|]+)/i);
+          if (serialMatch && serialMatch[1]) candidateReceipts.push(serialMatch[1].trim());
+
+          let deletedFeePayment = false;
+
+          // A. If we have candidate receipt numbers (Serial or TrxID), delete by receipt_number
+          if (candidateReceipts.length > 0) {
+            const { data: matchedReceipts } = await supabase
+              .from('fee_payments')
+              .select('id')
+              .eq('student_id', sid)
+              .in('receipt_number', candidateReceipts);
+
+            if (matchedReceipts && matchedReceipts.length > 0) {
+              const ids = matchedReceipts.map((r: any) => r.id);
+              await supabase.from('fee_payments').delete().in('id', ids);
+              deletedFeePayment = true;
+            }
+          }
+
+          // B. If not matched by receipt_number, match by fee_type name and student_id
+          if (!deletedFeePayment && deletingTarget.fee_type) {
+            const { data: matchedFeeTypes } = await supabase
+              .from('fee_types')
+              .select('id')
+              .or(`name.eq."${deletingTarget.fee_type}",name_bn.eq."${deletingTarget.fee_type}"`);
+
+            if (matchedFeeTypes && matchedFeeTypes.length > 0) {
+              const ftIds = matchedFeeTypes.map((f: any) => f.id);
+              let q = supabase
+                .from('fee_payments')
+                .select('id, amount, paid_amount, status, created_at')
+                .eq('student_id', sid)
+                .in('fee_type_id', ftIds);
+
+              if (isApproved) {
+                q = q.eq('status', 'paid');
+              } else {
+                q = q.in('status', ['pending', 'failed']);
+              }
+
+              const { data: candidateFp } = await q.order('created_at', { ascending: false });
+              if (candidateFp && candidateFp.length > 0) {
+                const exactMatch = candidateFp.find(
+                  (f: any) => Number(f.paid_amount || f.amount) === amt
+                ) || candidateFp[0];
+
+                await supabase.from('fee_payments').delete().eq('id', exactMatch.id);
+                deletedFeePayment = true;
+              }
+            }
+          }
+
+          // C. If unapproved, also clean up any remaining pending/failed drafts for this student
+          if (!isApproved) {
+            await supabase
+              .from('fee_payments')
+              .delete()
+              .eq('student_id', sid)
+              .in('status', ['pending', 'failed']);
+          }
+        } catch (e) {
+          console.warn('Fee payments delete cleanup error:', e);
+        }
       }
 
+      // 2. Delete from payments table
       const { error } = await supabase.from('payments').delete().eq('id', deletingTarget.id);
       if (error) throw error;
     },
     onSuccess: () => {
+      // Invalidate all related caches across the system so it immediately updates to unpaid everywhere
       queryClient.invalidateQueries({ queryKey: ['payments'] });
       queryClient.invalidateQueries({ queryKey: ['fee_payments'] });
       queryClient.invalidateQueries({ queryKey: ['existing_payment_check'] });
+      queryClient.invalidateQueries({ queryKey: ['student_fee_payments_status'] });
+      queryClient.invalidateQueries({ queryKey: ['student-fee-payments'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-fee-payments'] });
+      queryClient.invalidateQueries({ queryKey: ['fee-payments-receipts'] });
+      queryClient.invalidateQueries({ queryKey: ['dues-fee-payments'] });
+      queryClient.invalidateQueries({ queryKey: ['dues_students'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-fees'] });
+      queryClient.invalidateQueries({ queryKey: ['ledger_fees'] });
+      queryClient.invalidateQueries({ queryKey: ['fee-payments-public'] });
+      queryClient.invalidateQueries({ queryKey: ['fee-types-summary'] });
+
       toast.success(
         bn
-          ? 'পেমেন্ট এন্ট্রি মুছে ফেলা হয়েছে। এখন উক্ত ফি-র জন্য নতুন এন্ট্রি করা যাবে।'
-          : 'Payment deleted. You can now re-enter for this fee.'
+          ? 'পেমেন্ট ও রসিদ সফলভাবে মুছে ফেলা হয়েছে এবং স্ট্যাটাস আনপেইড (বকেয়া) করা হয়েছে।'
+          : 'Payment & receipt deleted successfully and reverted to unpaid.'
       );
       setDeletingTarget(null);
       setDeletionReason('');
