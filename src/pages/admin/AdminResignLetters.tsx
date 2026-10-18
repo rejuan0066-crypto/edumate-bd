@@ -131,8 +131,12 @@ const AdminResignLetters = () => {
     },
   });
 
-  /* ── Generate letter number ─── */
-  const generateLetterNumber = () => {
+  /* ── Generate letter number (Atomic DB RPC) ─── */
+  const generateLetterNumber = async () => {
+    try {
+      const { data, error } = await (supabase as any).rpc('generate_resignation_letter_number');
+      if (!error && data) return data;
+    } catch {}
     const year = new Date().getFullYear();
     const serial = String(letters.length + 1).padStart(3, '0');
     return `RL-${year}-${serial}`;
@@ -143,7 +147,7 @@ const AdminResignLetters = () => {
     mutationFn: async () => {
       const staff = staffList.find((s: any) => s.id === selectedStaffId);
       if (!staff) throw new Error('Staff not found');
-      const letterNumber = generateLetterNumber();
+      const letterNumber = await generateLetterNumber();
       const today = new Date().toISOString().split('T')[0];
 
       const { error } = await supabase.from('resign_letters').insert({
@@ -277,14 +281,15 @@ const AdminResignLetters = () => {
         .eq('id', letter.staff_id);
       if (staffErr) throw staffErr;
 
-      // 2. Generate joining letter number
-      const { data: existingJL } = await supabase
-        .from('joining_letters')
-        .select('id')
-        .order('created_at', { ascending: false })
-        .limit(1);
-      const jlSerial = String((existingJL?.length || 0) + 1).padStart(3, '0');
-      const jlNumber = `JL-${new Date().getFullYear()}-${jlSerial}`;
+      // 2. Generate joining letter number atomically
+      let jlNumber = '';
+      try {
+        const { data, error } = await (supabase as any).rpc('generate_joining_letter_number');
+        if (!error && data) jlNumber = data;
+      } catch {}
+      if (!jlNumber) {
+        jlNumber = `JL-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`;
+      }
       const today = new Date().toISOString().split('T')[0];
 
       // 3. Create reinstatement letter (পুনর্বহাল পত্র)

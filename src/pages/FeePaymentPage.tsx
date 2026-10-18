@@ -61,8 +61,9 @@ const generateTransactionId = () => {
   const y = now.getFullYear();
   const m = String(now.getMonth() + 1).padStart(2, '0');
   const d = String(now.getDate()).padStart(2, '0');
+  const timeSuffix = Date.now().toString().slice(-4);
   const rand = String(Math.floor(1000 + Math.random() * 9000));
-  return `STU-${y}${m}${d}-${rand}`;
+  return `STU-${y}${m}${d}-${timeSuffix}${rand}`;
 };
 
 const FeePaymentPage = () => {
@@ -345,12 +346,12 @@ const FeePaymentPage = () => {
       }
 
       const txnId = generateTransactionId();
-      let serialNumber = txnId;
+      let serialNumber: string | null = null;
       try {
         const { data: sn, error: serialErr } = await supabase.rpc('get_next_receipt_serial');
         if (!serialErr && sn) serialNumber = sn;
       } catch {
-        // fallback to txnId
+        // DB trigger auto_assign_fee_payment_receipt_number will assign next serial on insert
       }
 
       const feeTypeName = selectedFeeTypeObj ? (bn ? selectedFeeTypeObj.name_bn : selectedFeeTypeObj.name) : 'Student Fee';
@@ -365,7 +366,7 @@ const FeePaymentPage = () => {
         student_id: foundStudent.id,
         payer_name: foundStudent.name_bn || foundStudent.name_en,
         payment_method: isCash ? 'cash' : (manualMethod || 'online'),
-        notes: `${bn ? 'আদায়' : 'Collection'}: ${isCash ? 'Cash' : manualMethod} | TrxID: ${manualTrxId || txnId} | Sender: ${senderPhone} | Reg: ${foundStudent.registration_no || ''} | Serial: ${serialNumber}`,
+        notes: `${bn ? 'আদায়' : 'Collection'}: ${isCash ? 'Cash' : manualMethod} | TrxID: ${manualTrxId || txnId} | Sender: ${senderPhone} | Reg: ${foundStudent.registration_no || ''}${serialNumber ? ` | Serial: ${serialNumber}` : ''}`,
       };
       await supabase.from('payments').insert(paymentPayload);
 
@@ -376,7 +377,7 @@ const FeePaymentPage = () => {
         amount: amtNum,
         paid_amount: isCash ? amtNum : 0,
         status: isCash ? 'paid' : 'pending',
-        receipt_number: serialNumber || txnId,
+        receipt_number: serialNumber || undefined,
         paid_at: isCash ? new Date().toISOString() : null,
         month: selectedFeeTypeObj?.payment_frequency === 'monthly' ? selectedMonth : null,
         year: parseInt(selectedYear),
@@ -392,9 +393,11 @@ const FeePaymentPage = () => {
 
       if (feeErr) throw feeErr;
 
+      const finalSerialNumber = (insertedRecord as any)?.receipt_number || serialNumber || txnId;
+
       return {
         txnId,
-        serialNumber: serialNumber || txnId,
+        serialNumber: finalSerialNumber,
         feePayment: insertedRecord,
         feeTypeName,
         amount: amtNum,

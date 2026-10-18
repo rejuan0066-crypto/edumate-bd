@@ -1183,7 +1183,26 @@ const AdminExpenses = () => {
       const rawMethod = (expenseForm.expense_method || '').trim() || 'ক্যাশ';
       const finalMethod = rawMethod.replace(/[\[\]]/g, '');
       if (finalMethod) descWithTags += `[method:${finalMethod}]`;
-      if (expenseForm.memo_no && expenseForm.memo_no.trim()) descWithTags += `[memo:${expenseForm.memo_no.trim()}]`;
+      if (expenseForm.memo_no && expenseForm.memo_no.trim()) {
+        const cleanMemo = expenseForm.memo_no.trim();
+        const existingDup = (allExpenses || expenses || []).find((e: any) => {
+          if (editingExpenseId && e.id === editingExpenseId) return false;
+          const memoMatch = (e.description || '').match(/\[memo:(.*?)\]/);
+          return memoMatch && memoMatch[1]?.trim().toLowerCase() === cleanMemo.toLowerCase();
+        });
+        if (existingDup) {
+          const proceed = window.confirm(
+            language === 'bn'
+              ? `সতর্কতা: মেমো নম্বর "${cleanMemo}" ইতিমধ্যে অন্য একটি খরচে ব্যবহার করা হয়েছে। আপনি কি একই মেমো নম্বরে এটি সংরক্ষণ করতে চান?`
+              : `Warning: Memo number "${cleanMemo}" is already used in another expense. Do you wish to continue?`
+          );
+          if (!proceed) {
+            setIsSaving(false);
+            return;
+          }
+        }
+        descWithTags += `[memo:${cleanMemo}]`;
+      }
       if (expenseForm.remarks && expenseForm.remarks.trim()) descWithTags += `[remarks:${expenseForm.remarks.trim()}]`;
       if (expenseForm.is_due) descWithTags += `[due:unpaid]`;
 
@@ -2917,12 +2936,7 @@ const AdminExpenses = () => {
             : (availableTabs[0]?.value || 'dashboard');
 
           if (availableTabs.length === 0) {
-            return (
-              <div className="text-center py-12 text-muted-foreground">
-                <AlertTriangle className="w-8 h-8 mx-auto text-amber-500 mb-2" />
-                <p>{bn ? 'আপনার এই পেইজের কোনো ট্যাব দেখার অনুমতি নেই।' : 'You do not have permission to view any tabs on this page.'}</p>
-              </div>
-            );
+            return <div className="min-h-[40vh]" />;
           }
 
           return (

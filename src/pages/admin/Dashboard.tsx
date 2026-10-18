@@ -433,11 +433,7 @@ const DashboardInner = () => {
 
       {visibleSections.map(s => renderSection(s.id))}
 
-      {!canViewStats && (
-        <div className="card-elevated p-8 text-center text-muted-foreground">
-          {bn ? 'আপনার পরিসংখ্যান দেখার অনুমতি নেই।' : 'You do not have permission to view statistics.'}
-        </div>
-      )}
+
 
       <DashboardStatsList open={listDialog.open} onClose={() => setListDialog(d => ({ ...d, open: false }))} title={listDialog.title} table={listDialog.table} filters={listDialog.filters} />
       <DashboardLayoutDialog open={builderOpen} onClose={() => setBuilderOpen(false)} />

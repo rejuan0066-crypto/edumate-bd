@@ -28,8 +28,9 @@ const generateTransactionId = () => {
   const y = now.getFullYear();
   const m = String(now.getMonth() + 1).padStart(2, '0');
   const d = String(now.getDate()).padStart(2, '0');
+  const timeSuffix = Date.now().toString().slice(-4);
   const rand = String(Math.floor(1000 + Math.random() * 9000));
-  return `STU-${y}${m}${d}-${rand}`;
+  return `STU-${y}${m}${d}-${timeSuffix}${rand}`;
 };
 
 type SearchMode = 'registration' | 'session_roll';
@@ -424,12 +425,12 @@ const AdminStudentsFees = () => {
       const isCash = paymentMethod === 'cash';
 
       // Get atomic serial number
-      let serialNumber = txnId; // fallback
+      let serialNumber: string | null = null;
       try {
         const { data: sn, error: serialErr } = await supabase.rpc('get_next_receipt_serial');
         if (!serialErr && sn) serialNumber = sn;
       } catch (e) {
-        console.warn('Serial generation fallback to txnId');
+        console.warn('Serial generation fallback to DB trigger');
       }
 
       const feeTypeName = selectedFeeTypeObj ? (bn ? selectedFeeTypeObj.name_bn : selectedFeeTypeObj.name) : feeType;
@@ -442,7 +443,7 @@ const AdminStudentsFees = () => {
         student_id: foundStudent.id,
         payer_name: foundStudent.name_bn,
         payment_method: isCash ? 'cash' : 'online',
-        notes: `${bn ? 'আদায়কারী' : 'Collector'}: ${collectorName} | Reg: ${foundStudent.registration_no || ''}, Roll: ${foundStudent.roll_number || ''}${isCash ? ' | Cash Payment' : ''} | Serial: ${serialNumber}`,
+        notes: `${bn ? 'আদায়কারী' : 'Collector'}: ${collectorName} | Reg: ${foundStudent.registration_no || ''}, Roll: ${foundStudent.roll_number || ''}${isCash ? ' | Cash Payment' : ''}${serialNumber ? ` | Serial: ${serialNumber}` : ''}`,
       };
 
       // Check if approval is needed
@@ -460,7 +461,7 @@ const AdminStudentsFees = () => {
         amount: parseFloat(amount),
         paid_amount: isCash ? parseFloat(amount) : 0,
         status: isCash ? 'paid' : 'pending',
-        receipt_number: serialNumber || txnId,
+        receipt_number: serialNumber || undefined,
         paid_at: isCash ? new Date().toISOString() : null,
         month: paymentMonth || new Date().toLocaleString('default', { month: 'long' }),
         year: paymentYear,

@@ -551,10 +551,7 @@ const AdminAdministrative = () => {
   if (!canViewPage) {
     return (
       <AdminLayout>
-        <div className="max-w-[1440px] mx-auto p-12 text-center text-muted-foreground">
-          <ShieldCheck className="w-10 h-10 mx-auto mb-2 opacity-40" />
-          {bn ? 'এই পেজ দেখার অনুমতি নেই' : 'You do not have permission to view this page'}
-        </div>
+        <div className="min-h-[60vh]" />
       </AdminLayout>
     );
   }

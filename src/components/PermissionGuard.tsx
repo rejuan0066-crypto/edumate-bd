@@ -45,34 +45,7 @@ const PermissionGuard = ({ menuPath, action = 'view', children }: PermissionGuar
 
   return (
     <AdminLayout>
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Card className="max-w-md w-full">
-          <CardContent className="p-8 text-center space-y-4">
-            <div className="h-16 w-16 mx-auto rounded-full bg-destructive/10 flex items-center justify-center">
-              <ShieldOff className="h-8 w-8 text-destructive" />
-            </div>
-            <h2 className="text-xl font-bold text-foreground">
-              {bn ? 'অনুমতি নেই' : 'Permission Denied'}
-            </h2>
-            <p className="text-muted-foreground text-sm">
-              {bn
-                ? `এই পেজটি দেখার অনুমতি আপনার নেই। প্রয়োজনে অ্যাডমিনের সাথে যোগাযোগ করুন।`
-                : `You don't have permission to view this page. Please contact an administrator.`}
-            </p>
-            <div className="text-xs text-muted-foreground/70">
-              <code>{menuPath}</code> · {action}
-            </div>
-            <div className="flex gap-2 justify-center">
-              <Button variant="outline" onClick={() => navigate(-1)}>
-                {bn ? 'ফিরে যান' : 'Go Back'}
-              </Button>
-              <Button onClick={() => navigate('/admin')}>
-                {bn ? 'ড্যাশবোর্ড' : 'Dashboard'}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <div className="min-h-[60vh]" />
     </AdminLayout>
   );
 };

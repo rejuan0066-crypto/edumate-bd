@@ -189,14 +189,21 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
         if (staff) {
           const sd = (staff as any).staff_data || {};
           const year = new Date().getFullYear();
-          const serial = String(Math.floor(Math.random() * 9000) + 1000);
+          let letterNumber = '';
+          try {
+            const { data: jlData, error: jlErr } = await (supabase as any).rpc('generate_joining_letter_number');
+            if (!jlErr && jlData) letterNumber = jlData;
+          } catch {}
+          if (!letterNumber) {
+            letterNumber = `JL-${year}-${String(Date.now()).slice(-3)}`;
+          }
           await supabase.from('joining_letters').insert({
             staff_id: id,
             staff_name: staff.name_en || '',
             staff_name_bn: staff.name_bn || '',
             designation: staff.designation || '',
             joining_date: sd.joining_date || new Date().toISOString().split('T')[0],
-            letter_number: `JL-${year}-${serial}`,
+            letter_number: letterNumber,
             letter_date: new Date().toISOString().split('T')[0],
             letter_data: { phone: staff.phone, department: staff.department, nid: sd.nid, photo_url: staff.photo_url || '' },
           } as any);
@@ -637,29 +644,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
         </div>
 
         {(!canViewPage || isFeatureAllowed('tab_staff_list') === false) ? (
-          <div className="card-elevated p-8 sm:p-12 text-center space-y-4">
-            <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto">
-              <ShieldAlert className="w-7 h-7" />
-            </div>
-            <div className="max-w-md mx-auto space-y-1.5">
-              <h3 className="font-semibold text-foreground text-base sm:text-lg">
-                {bn ? 'স্টাফ ও শিক্ষক তালিকা দেখার অনুমতি নেই' : 'Staff List Access Restricted'}
-              </h3>
-              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                {bn
-                  ? 'আপনার অ্যাকাউন্টে স্টাফ ও শিক্ষক তালিকা দেখার অনুমতি বন্ধ (১০০% হাইড) করা রয়েছে। প্রয়োজনে অ্যাডমিনের সাথে যোগাযোগ করুন।'
-                  : 'Staff and teacher list visibility is restricted for your account. Please contact an administrator.'}
-              </p>
-            </div>
-            {canAddItem && isFeatureAllowed('tab_add_staff') !== false && (
-              <Button
-                onClick={() => navigate(staffType === 'teacher' ? '/admin/teachers/add' : staffType === 'administrative' ? '/admin/administrative-staff/add' : staffType === 'staff' ? '/admin/general-staff/add' : staffType === 'director' ? '/admin/directors/add' : staffType === 'committee_member' ? '/admin/committee-members/add' : '/admin/staff/add')}
-                className="btn-primary-gradient text-xs h-9 px-4 gap-2"
-              >
-                <Plus className="w-4 h-4" /> {t('addNew')}
-              </Button>
-            )}
-          </div>
+          <div className="min-h-[40vh]" />
         ) : (
           <>
             <div className="card-elevated p-2.5 sm:p-4 space-y-2 lg:space-y-0 flex flex-col lg:flex-row gap-2 lg:gap-3 items-stretch lg:items-center">

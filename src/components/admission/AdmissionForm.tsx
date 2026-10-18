@@ -368,28 +368,40 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     return order * 1000 + 1;
   }, [classes, divisions]);
 
-  // Auto-generate roll number based on class + session
+  // Auto-generate roll number based on class + session (Atomic DB RPC with local fallback)
   const generateRollNumber = useCallback(async (classId: string, sessionId?: string) => {
     if (!classId || isEditMode) return;
     const rollStart = getRollStartForClass(classId);
     const rollPrefix = Math.floor(rollStart / 1000);
 
+    const matchS = academicSessions.find((as: any) => as.id === sessionId || as.name === sessionId || as.name_bn === sessionId);
+    const sId = matchS?.id || (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sessionId || '') ? sessionId : null);
+
+    try {
+      const { data: rpcRoll, error: rpcErr } = await (supabase as any).rpc('get_next_student_roll', {
+        p_class_id: classId,
+        p_session_id: sId,
+        p_session_year: matchS?.name || sessionId || null,
+        p_roll_start: rollStart,
+      });
+      if (!rpcErr && rpcRoll) {
+        setForm(prev => ({ ...prev, roll_number: String(rpcRoll) }));
+        return;
+      }
+    } catch {
+      // fallback to client-side calculation
+    }
+
     let query = supabase
       .from('students')
       .select('roll_number, class_id')
       .not('roll_number', 'is', null)
-      .order('roll_number', { ascending: false })
-      .limit(50);
+      .limit(100);
 
-    // Match this class or any student whose roll is already in this class's numeric range
     query = query.or(`class_id.eq.${classId},roll_number.gte.${rollStart}`);
 
-    if (sessionId) {
-      const matchS = academicSessions.find((as: any) => as.id === sessionId || as.name === sessionId || as.name_bn === sessionId);
-      const sId = matchS?.id || (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sessionId) ? sessionId : null);
-      if (sId) {
-        query = query.eq('session_id', sId);
-      }
+    if (sId) {
+      query = query.eq('session_id', sId);
     }
 
     const { data } = await query;
