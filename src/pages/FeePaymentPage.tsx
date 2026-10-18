@@ -17,6 +17,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { toBanglaDigits, toBanglaMonth } from '@/lib/amountInWords';
 import {
   CreditCard, Receipt, Search, Calendar, Building2, CheckCircle2,
   Download, Printer, User, Banknote, Shield, ArrowRight, Clock,
@@ -28,6 +29,7 @@ interface ReceiptData {
   id: string;
   receipt_number: string;
   student_name: string;
+  father_name?: string;
   student_id: string;
   class_name: string;
   roll: string;
@@ -659,7 +661,7 @@ const FeePaymentPage = () => {
         .from('fee_payments')
         .select(`
           *,
-          students!inner(name_bn, name_en, student_id, roll_number, registration_no, division_id, class_id, classes:class_id(name, name_bn), divisions:division_id(name, name_bn)),
+          students!inner(name_bn, name_en, father_name, father_name_en, student_id, roll_number, registration_no, division_id, class_id, classes:class_id(name, name_bn), divisions:division_id(name, name_bn)),
           fee_types!inner(name, name_bn, fee_category)
         `)
         .eq('student_id', matchedStudent.id)
@@ -677,6 +679,7 @@ const FeePaymentPage = () => {
         id: p.id,
         receipt_number: p.receipt_number || `RCP-${p.id.slice(0, 8).toUpperCase()}`,
         student_name: matchedStudent.name_bn || matchedStudent.name_en || '',
+        father_name: matchedStudent.father_name || matchedStudent.father_name_en || '',
         student_id: matchedStudent.student_id || matchedStudent.registration_no || '',
         class_name: matchedStudent.divisions?.name_bn || matchedStudent.divisions?.name || '',
         roll: matchedStudent.roll_number || '',
@@ -748,7 +751,7 @@ const FeePaymentPage = () => {
           ${institution?.name_en ? `<div style="font-size:13px;font-weight:600;color:#334155;margin-bottom:2px">${institution.name_en}</div>` : ''}
           <div class="inst-addr">${institution?.address || ''}</div>
           ${institution?.phone ? `<div class="inst-addr">${bn ? 'ফোন' : 'Phone'}: ${institution.phone}</div>` : ''}
-          <div class="receipt-label">Money Receipt</div>
+          <div class="receipt-label">${bn ? 'মানি রিসিট' : 'Money Receipt'}</div>
         </div>
         <div class="section">
           <div class="row"><span class="label">${bn ? 'রসিদ নং' : 'Receipt No'}</span><span class="value">${receipt.receipt_number}</span></div>
@@ -757,14 +760,15 @@ const FeePaymentPage = () => {
         </div>
         <div class="section">
           <div class="row"><span class="label">${bn ? 'ছাত্রের নাম' : 'Student'}</span><span class="value">${receipt.student_name}</span></div>
-          <div class="row"><span class="label">${bn ? 'আইডি' : 'ID'}</span><span class="value">${receipt.student_id}</span></div>
+          ${receipt.father_name ? `<div class="row"><span class="label">${bn ? 'পিতার নাম' : "Father's Name"}</span><span class="value">${receipt.father_name}</span></div>` : ''}
+          <div class="row"><span class="label">${bn ? 'আইডি' : 'ID'}</span><span class="value">${bn && receipt.student_id ? toBanglaDigits(receipt.student_id) : receipt.student_id}</span></div>
           <div class="row"><span class="label">${bn ? 'শ্রেণী' : 'Class'}</span><span class="value">${receipt.class_name}</span></div>
-          <div class="row"><span class="label">${bn ? 'রোল' : 'Roll'}</span><span class="value">${receipt.roll}</span></div>
+          <div class="row"><span class="label">${bn ? 'রোল' : 'Roll'}</span><span class="value">${bn && receipt.roll ? toBanglaDigits(receipt.roll) : receipt.roll}</span></div>
         </div>
         <div class="section">
           <div class="row"><span class="label">${bn ? 'ফি এর ধরন' : 'Fee Type'}</span><span class="value">${receipt.fee_type}</span></div>
-          <div class="row"><span class="label">${bn ? 'মাস' : 'Month'}</span><span class="value">${receipt.month || '-'}</span></div>
-          <div class="row"><span class="label">${bn ? 'বছর' : 'Year'}</span><span class="value">${receipt.year || '-'}</span></div>
+          <div class="row"><span class="label">${bn ? 'মাস' : 'Month'}</span><span class="value">${bn ? toBanglaMonth(receipt.month) : (receipt.month || '-')}</span></div>
+          <div class="row"><span class="label">${bn ? 'বছর' : 'Year'}</span><span class="value">${bn && receipt.year ? toBanglaDigits(receipt.year) : (receipt.year || '-')}</span></div>
         </div>
         <div class="dashed"></div>
         <div class="total-row">
@@ -1276,6 +1280,7 @@ const FeePaymentPage = () => {
                               id: paymentSuccess.feePayment?.id || paymentSuccess.txnId,
                               receipt_number: paymentSuccess.serialNumber,
                               student_name: foundStudent.name_bn || foundStudent.name_en || '',
+                              father_name: foundStudent.father_name || foundStudent.father_name_en || '',
                               student_id: foundStudent.student_id || foundStudent.registration_no || '',
                               class_name: foundStudent.divisions?.name_bn || foundStudent.classes?.name_bn || '',
                               roll: foundStudent.roll_number || '',

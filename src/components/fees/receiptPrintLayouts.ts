@@ -7,6 +7,7 @@
 
 export interface ReceiptData {
   studentName: string;
+  fatherName?: string;
   studentId: string;
   rollNumber: string;
   className: string;
@@ -134,6 +135,7 @@ function buildReceipt(data: ReceiptData, copyLabel: string, style: ReceiptStyleC
         <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin:1.5mm 0 1mm;">
           ${[
             { label: 'নাম:', value: data.studentName },
+            ...(data.fatherName ? [{ label: 'পিতার নাম:', value: data.fatherName }] : []),
             { label: 'আইডি / রোল:', value: data.studentId || data.rollNumber ? [data.studentId, data.rollNumber ? 'রোল: ' + data.rollNumber : ''].filter(Boolean).join(' | ') : '' },
             { label: 'ক্লাস / সেশন:', value: data.className || data.sessionName ? [data.className, data.sessionName].filter(Boolean).join(' | ') : '' },
             { label: 'বাবদ:', value: data.feeType },

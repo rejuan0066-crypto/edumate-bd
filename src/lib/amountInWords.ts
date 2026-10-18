@@ -60,3 +60,47 @@ export function toBanglaDigits(str: string | number): string {
   const digits = '০১২৩৪৫৬৭৮৯';
   return String(str).replace(/\d/g, d => digits[parseInt(d)]);
 }
+
+const MONTH_MAP_BN: Record<string, string> = {
+  january: 'জানুয়ারি',
+  february: 'ফেব্রুয়ারি',
+  march: 'মার্চ',
+  april: 'এপ্রিল',
+  may: 'মে',
+  june: 'জুন',
+  july: 'জুলাই',
+  august: 'আগস্ট',
+  september: 'সেপ্টেম্বর',
+  october: 'অক্টোবর',
+  november: 'নভেম্বর',
+  december: 'ডিসেম্বর',
+  '1': 'জানুয়ারি',
+  '2': 'ফেব্রুয়ারি',
+  '3': 'মার্চ',
+  '4': 'এপ্রিল',
+  '5': 'মে',
+  '6': 'জুন',
+  '7': 'জুলাই',
+  '8': 'আগস্ট',
+  '9': 'সেপ্টেম্বর',
+  '10': 'অক্টোবর',
+  '11': 'নভেম্বর',
+  '12': 'ডিসেম্বর',
+  '01': 'জানুয়ারি',
+  '02': 'ফেব্রুয়ারি',
+  '03': 'মার্চ',
+  '04': 'এপ্রিল',
+  '05': 'মে',
+  '06': 'জুন',
+  '07': 'জুলাই',
+  '08': 'আগস্ট',
+  '09': 'সেপ্টেম্বর',
+};
+
+/** Convert English/numeric month name to Bengali month name */
+export function toBanglaMonth(month: string | number | undefined | null): string {
+  if (!month) return '-';
+  const clean = String(month).trim().toLowerCase();
+  return MONTH_MAP_BN[clean] || String(month);
+}
+

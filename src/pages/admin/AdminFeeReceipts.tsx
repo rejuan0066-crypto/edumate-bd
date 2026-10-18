@@ -3,7 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useState } from 'react';
 import { CheckCircle2, Download, Printer, Receipt, Search, Calendar, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { numberToBanglaWords, toBanglaDigits } from '@/lib/amountInWords';
+import { numberToBanglaWords, toBanglaDigits, toBanglaMonth } from '@/lib/amountInWords';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
@@ -18,6 +18,7 @@ interface ReceiptData {
   id: string;
   receipt_number: string;
   student_name: string;
+  father_name?: string;
   student_id: string;
   class_name: string;
   roll: string;
@@ -63,7 +64,7 @@ const AdminFeeReceipts = () => {
         .from('fee_payments')
         .select(`
           *,
-          students!inner(name_bn, name_en, student_id, roll_number, class_id, division_id, classes:class_id(name, name_bn), divisions:division_id(name, name_bn)),
+          students!inner(name_bn, name_en, father_name, father_name_en, student_id, roll_number, class_id, division_id, classes:class_id(name, name_bn), divisions:division_id(name, name_bn)),
           fee_types!inner(name, name_bn, fee_category)
         `)
         .eq('status', 'paid')
@@ -79,6 +80,7 @@ const AdminFeeReceipts = () => {
         id: p.id,
         receipt_number: p.receipt_number || `RCP-${p.id.slice(0, 8).toUpperCase()}`,
         student_name: p.students?.name_bn || p.students?.name_en || '',
+        father_name: p.students?.father_name || p.students?.father_name_en || '',
         student_id: p.students?.student_id || '',
         class_name: p.students?.classes?.name_bn || p.students?.classes?.name || p.students?.divisions?.name_bn || '',
         roll: p.students?.roll_number || '',
@@ -129,12 +131,15 @@ const AdminFeeReceipts = () => {
   ];
 
   const buildReceiptBlock = (receipt: ReceiptData, copyLabel: string, isStudentCopy: boolean = false, qrDataUrl: string | null = null) => {
+    const isBn = language === 'bn';
     const amountWords = numberToBanglaWords(receipt.paid_amount);
     const amountBn = toBanglaDigits(receipt.paid_amount.toLocaleString());
     const dateBn = receipt.paid_at ? new Date(receipt.paid_at).toLocaleDateString('bn-BD') : '-';
-    const monthLabel = receipt.month || '-';
-    const yearLabel = receipt.year ? toBanglaDigits(String(receipt.year)) : '-';
-    const logoTag = institution?.logo_url ? `<img src="${institution.logo_url}" style="height:38px; width:38px; object-fit:contain;" />` : '';
+    const monthLabel = isBn ? toBanglaMonth(receipt.month) : (receipt.month || '-');
+    const yearLabel = receipt.year ? (isBn ? toBanglaDigits(String(receipt.year)) : String(receipt.year)) : '-';
+    const rollLabel = isBn && receipt.roll ? toBanglaDigits(String(receipt.roll)) : (receipt.roll || '-');
+    const studentIdLabel = isBn && receipt.student_id ? toBanglaDigits(String(receipt.student_id)) : (receipt.student_id || '-');
+    const logoTag = institution?.logo_url ? `<img src="${institution.logo_url}" style="height:36px; width:36px; object-fit:contain;" />` : '';
 
     return `
       <td class="receipt-cell">
@@ -145,101 +150,105 @@ const AdminFeeReceipts = () => {
             <div class="brand-row">
               <div class="logo-wrap">${logoTag}</div>
               <div class="brand-text">
-                <div class="inst-name">${institution?.name || 'প্রতিষ্ঠানের নাম'}</div>
-                ${institution?.name_en ? `<div class="inst-name-en">${institution.name_en}</div>` : ''}
+                <div class="inst-name">${institution?.name || (isBn ? 'প্রতিষ্ঠানের নাম' : 'Institution Name')}</div>
+                ${!isBn && institution?.name_en ? `<div class="inst-name-en">${institution.name_en}</div>` : (institution?.name_en ? `<div class="inst-name-en">${institution.name_en}</div>` : '')}
                 <div class="inst-meta">
                   ${institution?.address || ''}
-                  ${institution?.phone ? ` | ফোন: ${institution.phone}` : ''}
-                  ${institution?.email ? ` | ইমেইল: ${institution.email}` : ''}
+                  ${institution?.phone ? ` | ${isBn ? 'ফোন:' : 'Phone:'} ${isBn ? toBanglaDigits(institution.phone) : institution.phone}` : ''}
+                  ${institution?.email ? ` | ${isBn ? 'ইমেইল:' : 'Email:'} ${institution.email}` : ''}
                 </div>
               </div>
             </div>
           </div>
 
           <div class="receipt-title">
-            <div class="receipt-title-bn">মানি রিসিট</div>
-            <div class="receipt-title-en">MONEY RECEIPT</div>
+            <div class="receipt-title-bn">${isBn ? 'মানি রিসিট' : 'Money Receipt'}</div>
+            ${!isBn ? `<div class="receipt-title-en">MONEY RECEIPT</div>` : ''}
           </div>
 
           <div class="receipt-body">
             <div class="info-grid">
-              <span class="lbl">রসিদ নং:</span>
-              <span class="val">${receipt.receipt_number}</span>
-              <span class="lbl">তারিখ:</span>
+              <span class="lbl">${isBn ? 'রসিদ নং:' : 'Receipt No:'}</span>
+              <span class="val font-mono">${receipt.receipt_number}</span>
+              <span class="lbl">${isBn ? 'তারিখ:' : 'Date:'}</span>
               <span class="val">${dateBn}</span>
-              <span class="lbl">স্ট্যাটাস:</span>
-              <span class="val"><span class="badge">✓ পরিশোধিত</span></span>
+              <span class="lbl">${isBn ? 'স্ট্যাটাস:' : 'Status:'}</span>
+              <span class="val"><span class="badge">✓ ${isBn ? 'পরিশোধিত' : 'Paid'}</span></span>
             </div>
 
             <div class="divider"></div>
 
             <div class="info-grid">
-              <span class="lbl">ছাত্রের নাম:</span>
-              <span class="val">${receipt.student_name}</span>
-              <span class="lbl">ছাত্র আইডি:</span>
-              <span class="val">${receipt.student_id}</span>
-              <span class="lbl">শ্রেণী:</span>
-              <span class="val">${receipt.class_name}</span>
-              <span class="lbl">রোল নম্বর:</span>
-              <span class="val">${receipt.roll}</span>
+              <span class="lbl">${isBn ? 'ছাত্রের নাম:' : 'Student Name:'}</span>
+              <span class="val">${receipt.student_name || '-'}</span>
+              <span class="lbl">${isBn ? 'পিতার নাম:' : "Father's Name:"}</span>
+              <span class="val">${receipt.father_name || '-'}</span>
+              <span class="lbl">${isBn ? 'ছাত্র আইডি:' : 'Student ID:'}</span>
+              <span class="val font-mono">${studentIdLabel}</span>
+              <span class="lbl">${isBn ? 'শ্রেণী:' : 'Class:'}</span>
+              <span class="val">${receipt.class_name || '-'}</span>
+              <span class="lbl">${isBn ? 'রোল নম্বর:' : 'Roll No:'}</span>
+              <span class="val">${rollLabel}</span>
             </div>
 
             <div class="divider"></div>
 
             <div class="info-grid">
-              <span class="lbl">ফি এর ধরন:</span>
+              <span class="lbl">${isBn ? 'ফি এর ধরন:' : 'Fee Type:'}</span>
               <span class="val">${receipt.fee_type}</span>
-              <span class="lbl">মাস:</span>
+              <span class="lbl">${isBn ? 'মাস:' : 'Month:'}</span>
               <span class="val">${monthLabel}</span>
-              <span class="lbl">বছর:</span>
+              <span class="lbl">${isBn ? 'বছর:' : 'Year:'}</span>
               <span class="val">${yearLabel}</span>
             </div>
 
             <div class="amount-box">
               <div class="figure"><span class="taka">৳</span> ${amountBn}</div>
-              <div class="words">কথায়: ${amountWords}</div>
+              <div class="words">${isBn ? `কথায়: ${amountWords}` : `In Words: ${amountWords}`}</div>
             </div>
 
             <div class="signature-section">
               <div class="signature-block">
                 <div class="collector-name">${receipt.collected_by || (institution as any)?.collector_name || (institution as any)?.principal_name || '-'}</div>
                 <div class="signature-line"></div>
-                <div class="signature-title">আদায়কারী</div>
-                <div class="signature-sub">Collector</div>
+                <div class="signature-title">${isBn ? 'আদায়কারী' : 'Collector'}</div>
+                ${!isBn ? `<div class="signature-sub">Collector</div>` : ''}
               </div>
               ${!isStudentCopy ? `<div class="signature-block">
                 <div class="collector-name">${receipt.approved_by || (institution as any)?.principal_name || receipt.collected_by || '-'}</div>
                 <div class="signature-line"></div>
-                <div class="signature-title">গ্রহণকারী</div>
-                <div class="signature-sub">Receiver</div>
+                <div class="signature-title">${isBn ? 'গ্রহণকারী' : 'Receiver'}</div>
+                ${!isBn ? `<div class="signature-sub">Receiver</div>` : ''}
               </div>` : ''}
             </div>
           </div>
 
           <div class="receipt-footer">
-            ${qrDataUrl ? `<img src="${qrDataUrl}" alt="QR" style="height:60px;width:60px;float:right;margin-left:6px;border:1px solid #d1fae5;border-radius:4px;padding:2px;background:#fff;" />` : ''}
-            <p>কম্পিউটার জেনারেটেড মানি রিসিট | Computer Generated Money Receipt</p>
-            ${qrDataUrl ? `<p style="font-size:9px;color:#059669;margin-top:2px;">🔒 যাচাই করতে QR স্ক্যান করুন | Scan QR to verify</p>` : ''}
+            ${qrDataUrl ? `<img src="${qrDataUrl}" alt="QR" style="height:50px;width:50px;float:right;margin-left:6px;border:1px solid #d1fae5;border-radius:4px;padding:2px;background:#fff;" />` : ''}
+            <p>${isBn ? 'কম্পিউটার জেনারেটেড মানি রিসিট' : 'Computer Generated Money Receipt'}</p>
+            ${qrDataUrl ? `<p style="font-size:8.5px;color:#059669;margin-top:2px;">${isBn ? '🔒 যাচাই করতে QR স্ক্যান করুন' : '🔒 Scan QR to verify'}</p>` : ''}
           </div>
         </div>
       </td>`;
   };
 
   const getReceiptHtml = (receipt: ReceiptData, qrDataUrl: string | null = null) => {
-    const officeCopy = buildReceiptBlock(receipt, '📋 অফিস কপি | Office Copy', false, qrDataUrl);
-    const studentCopy = buildReceiptBlock(receipt, '🎓 ছাত্র কপি | Student Copy', true, qrDataUrl);
+    const isBn = language === 'bn';
+    const officeLabel = isBn ? '📋 অফিস কপি' : '📋 Office Copy';
+    const studentLabel = isBn ? '🎓 ছাত্র কপি' : '🎓 Student Copy';
+    const officeCopy = buildReceiptBlock(receipt, officeLabel, false, qrDataUrl);
+    const studentCopy = buildReceiptBlock(receipt, studentLabel, true, qrDataUrl);
 
     return `<!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>মানি রিসিট - ${receipt.receipt_number}</title>
-    <style>@font-face{font-family:"SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}</style>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>${isBn ? 'মানি রিসিট' : 'Money Receipt'} - ${receipt.receipt_number}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       html, body {
-        font-family: 'SutonnyOMJ', 'Noto Sans Bengali', sans-serif;
+        font-family: 'Noto Sans Bengali', 'SolaimanLipi', 'Kalpurush', sans-serif;
         background: #eef7f4;
         color: #0f172a;
         -webkit-print-color-adjust: exact !important;
@@ -248,9 +257,12 @@ const AdminFeeReceipts = () => {
       }
       .page {
         width: 297mm;
-        min-height: 210mm;
-        padding: 4mm;
+        min-height: 200mm;
+        max-height: 208mm;
+        padding: 4mm 5mm;
         background: #ffffff;
+        margin: 0 auto;
+        box-sizing: border-box;
       }
       .receipt-table {
         width: 100%;
@@ -274,57 +286,61 @@ const AdminFeeReceipts = () => {
         left: -8px;
         background: #fff;
         color: #64748b;
-        font-size: 10px;
+        font-size: 11px;
         padding: 0 2px;
       }
       .receipt-shell {
         border: 2px solid #059669;
+        border-radius: 6px;
         background: #ffffff;
+        overflow: hidden;
       }
       .copy-label {
         background: #065f46;
         color: #ffffff;
         text-align: center;
-        padding: 4px 10px;
+        padding: 3.5px 8px;
         font-size: 11px;
         font-weight: 700;
-        letter-spacing: 1.8px;
+        letter-spacing: 1px;
       }
       .header {
         background: linear-gradient(180deg, #065f46 0%, #059669 100%);
-        padding: 16px 18px 12px;
+        padding: 12px 14px 10px;
         color: #ffffff;
       }
       .brand-row {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 12px;
+        gap: 10px;
       }
       .logo-wrap {
-        width: 44px;
-        height: 44px;
+        width: 38px;
+        height: 38px;
         display: flex;
         align-items: center;
         justify-content: center;
         background: rgba(255,255,255,0.12);
         border: 1px solid rgba(255,255,255,0.28);
+        border-radius: 4px;
       }
       .brand-text { text-align: center; }
       .inst-name {
-        font-size: 18px;
+        font-size: 16px;
         font-weight: 800;
-        line-height: 1.15;
+        line-height: 1.2;
       }
       .inst-name-en {
-        margin-top: 3px;
-        font-size: 12px;
-        font-weight: 700;
+        margin-top: 2px;
+        font-size: 11px;
+        font-weight: 600;
+        opacity: 0.95;
       }
       .inst-meta {
-        margin-top: 6px;
-        font-size: 9px;
-        line-height: 1.4;
+        margin-top: 4px;
+        font-size: 8.5px;
+        line-height: 1.35;
         opacity: 0.95;
       }
       .receipt-title {
@@ -332,123 +348,144 @@ const AdminFeeReceipts = () => {
         background: #eefaf5;
         border-top: 1px solid #a7f3d0;
         border-bottom: 1px solid #a7f3d0;
-        padding: 8px 0 7px;
+        padding: 5px 0;
       }
       .receipt-title-bn {
-        font-size: 18px;
+        font-size: 16px;
         font-weight: 800;
         color: #064e3b;
-        line-height: 1;
+        line-height: 1.1;
       }
       .receipt-title-en {
-        margin-top: 3px;
-        font-size: 10px;
-        letter-spacing: 2.5px;
+        margin-top: 2px;
+        font-size: 9.5px;
+        letter-spacing: 2px;
         color: #6b7280;
       }
       .receipt-body {
-        padding: 16px 18px 14px;
+        padding: 10px 14px 8px;
       }
       .info-grid {
         display: grid;
-        grid-template-columns: 106px 1fr;
-        gap: 7px 10px;
+        grid-template-columns: 88px 1fr;
+        gap: 4px 6px;
       }
       .lbl {
-        font-size: 11px;
+        font-size: 10.5px;
         font-weight: 700;
         color: #1f2937;
       }
       .val {
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 700;
         color: #0f172a;
         border-bottom: 1px dotted #cbd5e1;
-        padding-bottom: 2px;
+        padding-bottom: 1px;
       }
       .divider {
         border-top: 1px dashed #86efac;
-        margin: 14px 0;
+        margin: 7px 0;
       }
       .badge {
         display: inline-block;
         background: #dcfce7;
         color: #047857;
-        padding: 3px 10px;
+        padding: 2px 8px;
         border-radius: 999px;
-        font-size: 10px;
+        font-size: 9.5px;
         font-weight: 700;
       }
       .amount-box {
-        margin-top: 14px;
-        border: 2px solid #10b981;
+        margin-top: 8px;
+        border: 1.5px solid #10b981;
         background: linear-gradient(90deg, #effcf6 0%, #d9fbe8 100%);
-        border-radius: 8px;
+        border-radius: 6px;
         text-align: center;
-        padding: 14px 12px 12px;
+        padding: 7px 6px;
       }
       .figure {
-        font-size: 30px;
+        font-size: 24px;
         font-weight: 800;
         color: #065f46;
         line-height: 1;
       }
       .taka {
-        font-size: 18px;
+        font-size: 16px;
       }
       .words {
-        margin-top: 7px;
-        font-size: 11px;
+        margin-top: 4px;
+        font-size: 10px;
         font-weight: 700;
         color: #166534;
       }
       .signature-section {
         display: flex;
         justify-content: space-between;
-        gap: 22px;
-        margin-top: 30px;
+        gap: 16px;
+        margin-top: 18px;
       }
       .signature-block {
         flex: 1;
         text-align: center;
       }
       .collector-name {
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 700;
         color: #065f46;
-        margin-bottom: 4px;
+        margin-bottom: 3px;
+        min-height: 14px;
       }
       .signature-line {
         border-top: 1.5px solid #1f2937;
-        margin-bottom: 6px;
+        margin-bottom: 4px;
       }
       .signature-title {
-        font-size: 10px;
+        font-size: 9.5px;
         font-weight: 700;
         color: #1f2937;
       }
       .signature-sub {
-        margin-top: 2px;
-        font-size: 9px;
+        margin-top: 1px;
+        font-size: 8.5px;
         color: #6b7280;
       }
       .receipt-footer {
         text-align: center;
         background: #eefaf5;
         border-top: 1px solid #d1fae5;
-        padding: 8px 10px;
+        padding: 5px 8px;
       }
       .receipt-footer p {
-        font-size: 9px;
+        font-size: 8.5px;
         color: #6b7280;
       }
       @media print {
-        @page { size: A4 landscape; margin: 0; }
-        html, body { width: 297mm; background: #fff !important; }
-        body { padding: 0; }
+        @page {
+          size: A4 landscape;
+          margin: 0;
+        }
+        html, body {
+          width: 297mm;
+          height: 210mm;
+          margin: 0 !important;
+          padding: 0 !important;
+          background: #ffffff !important;
+          overflow: hidden !important;
+        }
+        .page {
+          width: 297mm !important;
+          max-width: 297mm !important;
+          height: 210mm !important;
+          max-height: 210mm !important;
+          margin: 0 !important;
+          padding: 3mm 4mm !important;
+          box-shadow: none !important;
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
       }
       @media screen {
-        body { padding: 18px; }
+        body { padding: 12px; }
         .page {
           margin: 0 auto;
           box-shadow: 0 10px 30px rgba(6, 95, 70, 0.12);

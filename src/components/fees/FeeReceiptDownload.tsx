@@ -205,6 +205,7 @@ const FeeReceiptDownload = ({ collectorName }: Props) => {
           const paymentApprover = approverMap.get(p.id) || '';
           receiptList.push({
             studentName: student?.name_bn || '-',
+            fatherName: student?.father_name || student?.father_name_en || '',
             studentId: student?.student_id || '-',
             rollNumber: student?.roll_number || '-',
             className: student?.classes?.name_bn || className || '-',
