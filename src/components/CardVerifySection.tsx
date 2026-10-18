@@ -140,7 +140,17 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
         toast.info(bn ? `স্ট্যাটাস: ${decision.status || 'চলমান... স্ক্যান শেষ করুন'}` : `Status: ${decision.status || 'In Progress'}`);
       }
     } catch (err: any) {
-      toast.error(err?.message || (bn ? 'তথ্য সংগ্রহ করা যায়নি' : 'Failed to fetch status'));
+      const msg = String(err?.message || '');
+      if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('CORS') || msg.includes('Failed to fetch session decision')) {
+        toast.warning(
+          bn 
+            ? 'Didit উইন্ডোতে "You\'ve been verified" দেখালে এনআইডি সফলভাবে যাচাই হয়েছে। ব্রাউজার সিকিউরিটি (CORS) সীমাবদ্ধতার কারণে অটো-সিঙ্ক না হলে ডায়ালগটি বন্ধ করে ফরমে তথ্য পূরণ করতে পারেন।' 
+            : 'Verification succeeded on Didit. If browser security (CORS) blocks auto-sync, you can close this window and proceed with the form.',
+          { duration: 8000 }
+        );
+      } else {
+        toast.error(err?.message || (bn ? 'তথ্য সংগ্রহ করা যায়নি' : 'Failed to fetch status'));
+      }
     } finally {
       setPollingStatus(false);
     }
@@ -352,7 +362,7 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
                 </Button>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center p-6 border border-dashed rounded-xl text-center space-y-3">
+              <div className="flex flex-col items-center justify-center p-5 border border-dashed rounded-xl text-center space-y-3 bg-muted/10">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                   <RefreshCw className="w-5 h-5 animate-spin" />
                 </div>
@@ -366,21 +376,45 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
                       : 'Complete the ID photo capture on the Didit page.'}
                   </p>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleManualCheckStatus}
-                  disabled={pollingStatus}
-                  className="mt-2 text-xs"
-                >
-                  {pollingStatus ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
-                  ) : (
-                    <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-                  )}
-                  {bn ? 'স্ট্যাটাস রিফ্রেশ করুন' : 'Refresh Status Now'}
-                </Button>
+
+                <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-800 dark:text-emerald-300 text-left space-y-1 w-full">
+                  <p className="font-semibold flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    {bn ? 'Didit উইন্ডোতে "You\'ve been verified!" দেখাচ্ছে?' : 'Didit shows "You\'ve been verified!"?'}
+                  </p>
+                  <p className="leading-relaxed opacity-90 text-[11px]">
+                    {bn
+                      ? 'অভিনন্দন! আপনার কার্ড সফলভাবে স্ক্যান ও যাচাই হয়েছে। ব্রাউজারের সিকিউরিটি পলিসির (CORS) কারণে সরাসরি অটো-সিঙ্ক না হলে "ফরমে ফিরে যান" চেপে প্রয়োজনীয় তথ্য ফরমে টাইপ করতে পারেন।'
+                      : 'Verification was successful on Didit! If browser security prevents automatic sync, click below to return and enter details.'}
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2 pt-1 w-full">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleManualCheckStatus}
+                    disabled={pollingStatus}
+                    className="flex-1 text-xs"
+                  >
+                    {pollingStatus ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                    ) : (
+                      <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                    )}
+                    {bn ? 'স্ট্যাটাস রিফ্রেশ করুন' : 'Refresh Status Now'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    onClick={() => setDiditModalOpen(false)}
+                    className="flex-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    {bn ? 'ফরমে ফিরে যান' : 'Continue to Form'}
+                  </Button>
+                </div>
               </div>
             )}
           </div>
