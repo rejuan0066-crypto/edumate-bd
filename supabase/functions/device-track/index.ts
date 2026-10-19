@@ -71,7 +71,8 @@ Deno.serve(async (req) => {
 
   try {
     const auth = req.headers.get("Authorization") ?? "";
-    if (!auth.startsWith("Bearer ")) return json(401, { error: "unauthorized" });
+    // Tracking is best-effort: never return 401 (it surfaces as a runtime error in the app).
+    if (!auth.startsWith("Bearer ")) return json(200, { ok: false, skipped: "no_session" });
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -80,9 +81,16 @@ Deno.serve(async (req) => {
     );
 
     const token = auth.replace("Bearer ", "");
-    const { data: claims } = await supabase.auth.getClaims(token);
-    const userId = claims?.claims?.sub;
-    if (!userId) return json(401, { error: "invalid_session" });
+    let userId: string | undefined;
+    try {
+      const { data: claims } = await supabase.auth.getClaims(token);
+      userId = claims?.claims?.sub as string | undefined;
+    } catch { /* fall through */ }
+    if (!userId) {
+      const { data: u } = await supabase.auth.getUser(token);
+      userId = u?.user?.id;
+    }
+    if (!userId) return json(200, { ok: false, skipped: "invalid_session" });
 
     const deviceId = req.headers.get("x-device-id") ?? "";
     if (!deviceId) return json(400, { error: "missing_device_id" });

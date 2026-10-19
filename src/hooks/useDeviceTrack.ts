@@ -20,8 +20,12 @@ export function useDeviceTrack() {
     let mounted = true;
     (async () => {
       try {
-        await supabase.functions.invoke("device-track", { headers: deviceHeaders() });
-        if (mounted) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) { fired.current = false; return; }
+        const { data, error } = await supabase.functions.invoke("device-track", {
+          headers: { ...deviceHeaders(), Authorization: `Bearer ${session.access_token}` },
+        });
+        if (mounted && !error && data?.ok) {
           localStorage.setItem(STORAGE_KEY, String(Date.now()));
         }
       } catch {
