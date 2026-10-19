@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,21 +15,18 @@ import {
   ShieldCheck, 
   CreditCard, 
   Scan, 
-  ExternalLink, 
-  AlertCircle,
-  RefreshCw,
+  Upload, 
+  Camera,
   CheckCircle2,
-  FileCheck
+  FileCheck,
+  AlertCircle,
+  X,
+  RefreshCw,
+  Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { verifyCard } from '@/hooks/useApiVerification';
-import { 
-  createDiditSession, 
-  getDiditSessionDecision, 
-  parseDiditDecision,
-  DiditExtractedData,
-  DIDIT_DEFAULT_API_KEY
-} from '@/lib/diditService';
+import { scanImageWithOcr, OcrCardResult } from '@/lib/ocrCardParser';
 
 interface CardVerifySectionProps {
   formType: 'student' | 'staff';
@@ -41,46 +38,53 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
   const { language } = useLanguage();
   const bn = language === 'bn';
 
-  // Manual Card ID state
+  // Manual Card ID search state
   const [cardNumber, setCardNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [verified, setVerified] = useState(false);
 
-  // Didit Verification Session state
-  const [diditModalOpen, setDiditModalOpen] = useState(false);
-  const [creatingSession, setCreatingSession] = useState(false);
-  const [pollingStatus, setPollingStatus] = useState(false);
-  const [sessionUrl, setSessionUrl] = useState('');
-  const [sessionId, setSessionId] = useState('');
-  const [extractedData, setExtractedData] = useState<DiditExtractedData | null>(null);
+  // In-app OCR Modal State
+  const [ocrModalOpen, setOcrModalOpen] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [progressText, setProgressText] = useState('');
+  const [progressPct, setProgressPct] = useState(0);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  // Poll Didit session when modal is open and sessionId is set
+  // Editable extracted data
+  const [extractedData, setExtractedData] = useState<{
+    documentNumber: string;
+    fullName: string;
+    dateOfBirth: string;
+    fatherName: string;
+    motherName: string;
+    gender: string;
+    rawText: string;
+  }>({
+    documentNumber: '',
+    fullName: '',
+    dateOfBirth: '',
+    fatherName: '',
+    motherName: '',
+    gender: '',
+    rawText: '',
+  });
+
+  // Webcam state
+  const [webcamActive, setWebcamActive] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Cleanup webcam stream when modal closes
   useEffect(() => {
-    let intervalId: any = null;
-
-    if (diditModalOpen && sessionId && !extractedData?.fullName && !extractedData?.documentNumber) {
-      intervalId = setInterval(async () => {
-        try {
-          const decision = await getDiditSessionDecision(sessionId, DIDIT_DEFAULT_API_KEY);
-          if (decision?.status && decision.status !== 'Not Started') {
-            const parsed = parseDiditDecision(decision);
-            if (parsed.documentNumber || parsed.fullName || parsed.firstName) {
-              setExtractedData(parsed);
-              clearInterval(intervalId);
-            }
-          }
-        } catch (e) {
-          // Keep polling until user completes or closes
-        }
-      }, 3500);
+    if (!ocrModalOpen && mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current = null;
+      setWebcamActive(false);
     }
+  }, [ocrModalOpen]);
 
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [diditModalOpen, sessionId, extractedData]);
-
-  // Traditional ID auto-fill handler
+  // Traditional ID auto-fill handler (searches database)
   const handleVerify = async () => {
     if (!cardNumber.trim()) {
       toast.error(bn ? 'কার্ড নম্বর দিন' : 'Enter card number');
@@ -96,7 +100,7 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
         setVerified(true);
         toast.success(bn ? 'তথ্য সফলভাবে লোড হয়েছে' : 'Data loaded successfully');
       } else {
-        toast.warning(bn ? 'কোনো তথ্য পাওয়া যায়নি' : 'No data found');
+        toast.warning(bn ? 'ডাটাবেসে কোনো রেকর্ড পাওয়া যায়নি' : 'No record found in database');
       }
     } catch (err: any) {
       toast.error(err?.message || (bn ? 'ভেরিফিকেশন ব্যর্থ' : 'Verification failed'));
@@ -105,162 +109,231 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
     }
   };
 
-  // Launch Didit KYC Session
-  const handleStartDiditVerification = async () => {
-    // Open a blank window synchronously during the click gesture to avoid browser popup blockers
-    const popup = window.open('about:blank', '_blank', 'width=550,height=750');
-    setCreatingSession(true);
-    setExtractedData(null);
+  // Run OCR on an image file or data URL
+  const processImageForOcr = async (imageSource: File | Blob | string) => {
+    setScanning(true);
+    setProgressPct(10);
+    setProgressText(bn ? 'ছবি প্রস্তুত হচ্ছে...' : 'Preparing image...');
+
     try {
-      const session = await createDiditSession();
-      setSessionId(session.session_id);
-      setSessionUrl(session.url);
-      setDiditModalOpen(true);
-      
-      if (popup && !popup.closed) {
-        popup.location.href = session.url;
+      const parsed: OcrCardResult = await scanImageWithOcr(imageSource, (pct, status) => {
+        setProgressPct(pct);
+        setProgressText(status);
+      });
+
+      setExtractedData({
+        documentNumber: parsed.documentNumber || '',
+        fullName: parsed.fullName || '',
+        dateOfBirth: parsed.dateOfBirth || '',
+        fatherName: parsed.fatherName || '',
+        motherName: parsed.motherName || '',
+        gender: parsed.gender || '',
+        rawText: parsed.rawText || '',
+      });
+
+      if (parsed.documentNumber || parsed.fullName || parsed.dateOfBirth) {
+        toast.success(bn ? 'কার্ড থেকে তথ্য সফলভাবে শনাক্ত হয়েছে!' : 'Card data extracted successfully!');
       } else {
-        window.open(session.url, '_blank', 'width=550,height=750');
+        toast.info(bn ? 'ছবি থেকে স্পষ্ট লেখা পাওয়া যায়নি। আপনি নিচের ঘরে তথ্য লিখে নিতে পারেন।' : 'No clear text detected. You can fill in the fields below.');
       }
-      toast.success(bn ? 'Didit ভেরিফিকেশন উইন্ডো চালু হয়েছে' : 'Didit verification window opened');
     } catch (err: any) {
-      if (popup && !popup.closed) popup.close();
-      toast.error(err?.message || (bn ? 'Didit সেশন তৈরি করা যায়নি' : 'Failed to launch Didit session'));
+      console.error('OCR processing error:', err);
+      toast.error(bn ? 'ছবি বিশ্লেষণ করা যায়নি। অনুগ্রহ করে স্পষ্ট ছবি দিন।' : 'Failed to parse image. Please use a clearer photo.');
     } finally {
-      setCreatingSession(false);
+      setScanning(false);
     }
   };
 
-  // Manually check status
-  const handleManualCheckStatus = async () => {
-    if (!sessionId) return;
-    setPollingStatus(true);
-    try {
-      const decision = await getDiditSessionDecision(sessionId);
-      const parsed = parseDiditDecision(decision);
-      setExtractedData(parsed);
+  // File input change handler (PC file picker)
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-      if (parsed.documentNumber || parsed.fullName || parsed.firstName) {
-        toast.success(bn ? 'কার্ডের তথ্য সফলভাবে পাওয়া গেছে!' : 'Card data retrieved successfully!');
-      } else {
-        toast.info(bn ? `স্ট্যাটাস: ${decision.status || 'চলমান... স্ক্যান শেষ করুন'}` : `Status: ${decision.status || 'In Progress'}`);
-      }
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      setImagePreview(dataUrl);
+      setOcrModalOpen(true);
+      setWebcamActive(false);
+      processImageForOcr(file);
+    };
+    reader.readAsDataURL(file);
+
+    // Reset input
+    e.target.value = '';
+  };
+
+  // Start PC Webcam
+  const handleStartWebcam = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      toast.error(bn ? 'আপনার ব্রাউজারে ওয়েবক্যাম সমর্থিত নয়' : 'Webcam not supported in this browser');
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
+      mediaStreamRef.current = stream;
+      setWebcamActive(true);
+      setOcrModalOpen(true);
+      setImagePreview(null);
+
+      // Attach stream to video element
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      }, 100);
     } catch (err: any) {
-      const msg = String(err?.message || '');
-      if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('CORS') || msg.includes('Failed to fetch session decision')) {
-        toast.warning(
-          bn 
-            ? 'Didit উইন্ডোতে "You\'ve been verified" দেখালে এনআইডি সফলভাবে যাচাই হয়েছে। ব্রাউজার সিকিউরিটি (CORS) সীমাবদ্ধতার কারণে অটো-সিঙ্ক না হলে ডায়ালগটি বন্ধ করে ফরমে তথ্য পূরণ করতে পারেন।' 
-            : 'Verification succeeded on Didit. If browser security (CORS) blocks auto-sync, you can close this window and proceed with the form.',
-          { duration: 8000 }
-        );
-      } else {
-        toast.error(err?.message || (bn ? 'তথ্য সংগ্রহ করা যায়নি' : 'Failed to fetch status'));
-      }
-    } finally {
-      setPollingStatus(false);
+      console.error('Webcam access error:', err);
+      toast.error(bn ? 'ওয়েবক্যাম চালু করা যায়নি। ক্যামেরার পারমিশন দিন অথবা সরাসরি ছবি আপলোড করুন।' : 'Unable to access webcam. Please check camera permissions or upload photo.');
     }
   };
 
-  // Apply Didit Extracted Data to the Form
-  const handleApplyDiditData = () => {
-    if (!extractedData) return;
+  // Capture photo from live webcam
+  const handleCaptureWebcam = () => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+
+    // Stop webcam
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(t => t.stop());
+      mediaStreamRef.current = null;
+    }
+    setWebcamActive(false);
+    setImagePreview(dataUrl);
+
+    // Process captured image
+    processImageForOcr(dataUrl);
+  };
+
+  // Apply OCR data to the main form
+  const handleApplyExtractedData = () => {
     const mapped: Record<string, string> = {};
+
     if (formType === 'student') {
-      if (extractedData.firstName) mapped.first_name = extractedData.firstName;
-      if (extractedData.lastName) mapped.last_name = extractedData.lastName;
-      if (!extractedData.firstName && extractedData.fullName) mapped.first_name = extractedData.fullName;
-      if (extractedData.dateOfBirth) mapped.date_of_birth = extractedData.dateOfBirth;
-      if (extractedData.gender) mapped.gender = extractedData.gender;
-      if (extractedData.address) mapped.address = extractedData.address;
+      if (extractedData.fullName) {
+        const parts = extractedData.fullName.trim().split(/\s+/);
+        mapped.first_name = parts[0] || extractedData.fullName;
+        mapped.last_name = parts.slice(1).join(' ') || '';
+      }
       if (extractedData.documentNumber) mapped.birth_reg_no = extractedData.documentNumber;
+      if (extractedData.dateOfBirth) mapped.date_of_birth = extractedData.dateOfBirth;
+      if (extractedData.fatherName) mapped.father_name = extractedData.fatherName;
+      if (extractedData.motherName) mapped.mother_name = extractedData.motherName;
+      if (extractedData.gender) mapped.gender = extractedData.gender;
     } else {
       // staff form
-      if (extractedData.fullName) mapped.name_bn = extractedData.fullName;
-      if (extractedData.firstName && extractedData.lastName) {
-        mapped.name_en = `${extractedData.firstName} ${extractedData.lastName}`;
-      } else if (extractedData.fullName) {
+      if (extractedData.fullName) {
+        mapped.name_bn = extractedData.fullName;
         mapped.name_en = extractedData.fullName;
       }
-      if (extractedData.dateOfBirth) mapped.date_of_birth = extractedData.dateOfBirth;
       if (extractedData.documentNumber) mapped.nid = extractedData.documentNumber;
-      if (extractedData.address) mapped.address = extractedData.address;
+      if (extractedData.dateOfBirth) mapped.date_of_birth = extractedData.dateOfBirth;
+      if (extractedData.fatherName) mapped.father_name = extractedData.fatherName;
+      if (extractedData.motherName) mapped.mother_name = extractedData.motherName;
     }
 
     onDataReceived(mapped);
     setVerified(true);
-    setDiditModalOpen(false);
-    toast.success(bn ? 'Didit থেকে ফর্মের সব তথ্য অটো-ফিল সম্পন্ন হয়েছে!' : 'Form fields auto-filled from Didit!');
+    setOcrModalOpen(false);
+    toast.success(bn ? 'ফর্মের তথ্য সফলভাবে অটো-ফিল সম্পন্ন হয়েছে!' : 'Form fields successfully auto-filled!');
   };
 
   return (
-    <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border border-primary/20 rounded-xl p-4 sm:p-5 mb-6 shadow-sm">
+    <div className="bg-gradient-to-r from-emerald-500/10 via-primary/5 to-emerald-500/10 border-2 border-emerald-500/30 rounded-xl p-4 sm:p-5 mb-6 shadow-sm">
+      {/* Hidden file input for PC document selection */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/jpg"
+        className="hidden"
+        onChange={handleFileSelect}
+      />
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold shadow-inner">
-            <CreditCard className="w-5 h-5" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-600 flex items-center justify-center font-bold shadow-inner">
+            <Scan className="w-6 h-6" />
           </div>
           <div>
             <h3 className="text-sm sm:text-base font-semibold text-foreground flex items-center gap-2">
               {formType === 'student'
-                ? (bn ? 'জন্ম নিবন্ধন ও স্মার্ট কার্ড ভেরিফিকেশন' : 'Birth Certificate & ID Verification')
-                : (bn ? 'এনআইডি ও কার্ড ভেরিফিকেশন' : 'NID & Card Verification')}
-              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                Didit AI Powered
+                ? (bn ? 'জন্ম নিবন্ধন ও স্মার্ট কার্ড স্ক্যানার' : 'Birth Certificate & ID Scanner')
+                : (bn ? 'এনআইডি ও স্মার্ট কার্ড স্ক্যানার' : 'NID & Smart Card Scanner')}
+              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-600 text-white flex items-center gap-1 shadow-xs">
+                <Sparkles className="w-3 h-3" />
+                {bn ? 'ইন-অ্যাপ OCR' : 'In-App OCR'}
               </span>
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
               {formType === 'student'
-                ? (bn ? 'জন্ম নিবন্ধন সনদ বা স্মার্ট কার্ডের ছবি স্ক্যান করে নির্ভুলভাবে ছাত্রের তথ্য পূরণ করুন' : 'Scan Birth Certificate / ID to auto-fill student details')
-                : (bn ? 'এনআইডি কার্ড বা স্মার্ট কার্ড স্ক্যান করে নির্ভুলভাবে তথ্য পূরণ করুন' : 'Scan NID/ID to verify authenticity and auto-fill details')}
+                ? (bn ? 'কম্পিউটার থেকে ছবি আপলোড করে মুহূর্তেই শিক্ষার্থীর নাম, ১৭ ডিজিট নম্বর ও জন্ম তারিখ পূরণ করুন' : 'Upload photo from computer to auto-extract student details')
+                : (bn ? 'কম্পিউটার থেকে এনআইডি কার্ডের ছবি আপলোড করে স্বয়ংক্রিয়ভাবে তথ্য পূরণ করুন' : 'Upload NID photo from PC to auto-fill details')}
             </p>
           </div>
         </div>
 
-        {/* Live Didit Scan Trigger Button */}
-        <Button
-          type="button"
-          onClick={handleStartDiditVerification}
-          disabled={creatingSession}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-2 shrink-0"
-        >
-          {creatingSession ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Scan className="w-4 h-4" />
-          )}
-          <span>
-            {formType === 'student'
-              ? (bn ? 'জন্ম নিবন্ধন / NID স্ক্যান করুন' : 'Scan Birth Certificate / NID')
-              : (bn ? 'NID / স্মার্ট কার্ড স্ক্যান করুন' : 'Scan NID / Smart Card')}
-          </span>
-        </Button>
+        {/* Action Buttons for Computer / Desktop Users */}
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-2 font-medium"
+          >
+            <Upload className="w-4 h-4" />
+            <span>
+              {formType === 'student'
+                ? (bn ? 'ছবি আপলোড ও স্ক্যান' : 'Upload & Scan')
+                : (bn ? 'NID ছবি আপলোড ও স্ক্যান' : 'Upload NID & Scan')}
+            </span>
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleStartWebcam}
+            className="border-emerald-600/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5"
+            title={bn ? 'কম্পিউটারের ওয়েবক্যাম দিয়ে ছবি তুলুন' : 'Use PC Webcam'}
+          >
+            <Camera className="w-4 h-4" />
+            <span className="hidden md:inline">{bn ? 'ওয়েবক্যাম' : 'Webcam'}</span>
+          </Button>
+        </div>
       </div>
 
-      {/* Manual ID Input option */}
-      <div className="pt-3 border-t border-primary/10">
+      {/* Manual ID Input Option */}
+      <div className="pt-3 border-t border-emerald-500/20">
         <Label className="text-xs text-muted-foreground mb-1 block">
           {formType === 'student'
-            ? (bn ? 'অথবা জন্ম নিবন্ধন / শিক্ষার্থী আইডি নম্বর দিয়ে খুঁজুন' : 'Or search by 17-digit Birth Reg No / Student ID')
-            : (bn ? 'অথবা এনআইডি / স্টাফ আইডি নম্বর দিয়ে খুঁজুন' : 'Or search by existing NID / Staff ID')}
+            ? (bn ? 'অথবা সরাসরি ১৭ ডিজিটের জন্ম নিবন্ধন বা আইডি নম্বর দিয়ে ডাটাবেসে খুঁজুন:' : 'Or search directly by 17-digit Birth Reg No or Student ID:')
+            : (bn ? 'অথবা সরাসরি এনআইডি / স্টাফ আইডি নম্বর দিয়ে ডাটাবেসে খুঁজুন:' : 'Or search directly by NID or Staff ID:')}
         </Label>
-        <div className="flex flex-col sm:flex-row gap-3 items-end">
+        <div className="flex flex-col sm:flex-row gap-2.5 items-end">
           <div className="flex-1 w-full">
             <Input
-              className="bg-background shadow-xs font-mono"
+              className="bg-background shadow-xs font-mono tracking-wider"
               value={cardNumber}
               onChange={(e) => {
-                // Convert Bengali numbers to English digits and allow digits only
                 const converted = e.target.value
                   .replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)))
-                  .replace(/\D/g, ''); // english digits only
+                  .replace(/\D/g, '');
                 setCardNumber(converted);
                 setVerified(false);
               }}
               placeholder={formType === 'student'
-                ? (bn ? '১৭ ডিজিটের জন্ম নিবন্ধন নম্বর বা আইডি লিখুন...' : 'Enter 17-digit Birth Reg No or Student ID...')
-                : (bn ? 'এনআইডি নম্বর বা আইডি লিখুন (ইংরেজি সংখ্যা)...' : 'Enter NID or ID number (digits only)...')}
+                ? (bn ? '১৭ ডিজিটের জন্ম নিবন্ধন নম্বর লিখুন (যেমন: 20121234567890123)...' : 'Enter 17-digit Birth Reg No (e.g. 2012...)...')
+                : (bn ? '১০ বা ১৭ ডিজিটের এনআইডি নম্বর লিখুন...' : 'Enter 10 or 17-digit NID Number...')}
               disabled={loading}
               inputMode="numeric"
             />
@@ -273,7 +346,7 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
             size="default"
           >
             {loading ? (
-              <><Loader2 className="w-4 h-4 animate-spin mr-2" />{bn ? 'যাচাই হচ্ছে...' : 'Verifying...'}</>
+              <><Loader2 className="w-4 h-4 animate-spin mr-2" />{bn ? 'খোঁজা হচ্ছে...' : 'Searching...'}</>
             ) : verified ? (
               <><ShieldCheck className="w-4 h-4 mr-2" />{bn ? 'ভেরিফাইড' : 'Verified'}</>
             ) : (
@@ -290,178 +363,181 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
         </p>
       )}
 
-      {/* Didit Scan Dialog */}
-      <Dialog open={diditModalOpen} onOpenChange={setDiditModalOpen}>
-        <DialogContent className="max-w-md p-6">
+      {/* In-App Document Scan & OCR Modal */}
+      <Dialog open={ocrModalOpen} onOpenChange={setOcrModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-5 sm:p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-lg">
               <Scan className="w-5 h-5 text-emerald-600" />
-              {bn ? 'Didit আইডি ভেরিফিকেশন' : 'Didit ID Verification'}
+              {formType === 'student'
+                ? (bn ? 'জন্ম নিবন্ধন সনদ স্ক্যান ও অটো-ফিল' : 'Birth Certificate Scan & Auto-fill')
+                : (bn ? 'এনআইডি কার্ড স্ক্যান ও অটো-ফিল' : 'NID Card Scan & Auto-fill')}
             </DialogTitle>
             <DialogDescription>
-              {bn 
-                ? 'আইডি কার্ড স্ক্যান বা ছবি আপলোড করুন। স্ক্যান শেষ হলে তথ্য স্বয়ংক্রিয়ভাবে ফর্মে যুক্ত হবে।' 
-                : 'Upload or capture the ID card. The details will be loaded automatically.'}
+              {bn
+                ? 'ছবি থেকে স্বয়ংক্রিয়ভাবে তথ্য সংগ্রহ করা হয়েছে। তথ্যগুলো যাচাই করে "ফর্মে যুক্ত করুন" চাপুন।'
+                : 'Data extracted from document. Review details and click "Apply to Form".'}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 my-2">
-            {/* Step 1: Verification Window */}
-            <div className="p-4 rounded-xl border border-muted bg-muted/30 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {bn ? 'ভেরিফিকেশন লিঙ্ক' : 'Verification Session'}
-                </span>
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                  {bn ? 'লাইভ সেশন' : 'Live Session'}
-                </span>
-              </div>
-              <div className="bg-primary/5 border border-primary/15 rounded-lg p-3 text-xs space-y-2">
-                <p className="font-semibold text-foreground flex items-center gap-1.5">
-                  <span>💻</span>
-                  {bn ? 'কম্পিউটার থেকে ব্যবহারের নিয়ম:' : 'How to use on a computer:'}
-                </p>
-                <ul className="list-disc list-inside space-y-1 text-muted-foreground text-[11px] leading-relaxed">
-                  <li>
-                    {bn 
-                      ? 'কম্পিউটারে ওয়েবক্যাম থাকলে: স্ক্যান পেজে সরাসরি ওয়েবক্যাম দিয়ে ছবি তুলুন।' 
-                      : 'If PC has a webcam: Capture photo directly using your webcam.'}
-                  </li>
-                  <li>
-                    {bn 
-                      ? 'কম্পিউটারে ওয়েবক্যাম না থাকলে: স্ক্যান উইন্ডোতে একটি QR Code আসবে, যা আপনার মোবাইল ক্যামেরা দিয়ে স্ক্যান করলেই ফোনের ব্যাক ক্যামেরা দিয়ে কার্ডের ছবি তোলা যাবে এবং সাথে সাথে তথ্য কম্পিউটারে চলে আসবে!' 
-                      : 'No webcam on PC? A QR code will appear—scan it with your phone camera to take the photo and sync data back to this PC instantly!'}
-                  </li>
-                </ul>
-              </div>
-
-              {sessionUrl && (
-                <div className="flex gap-2">
+          {/* Live Webcam Stream (if active) */}
+          {webcamActive && (
+            <div className="space-y-3 my-2">
+              <div className="relative rounded-xl overflow-hidden bg-black aspect-video flex items-center justify-center">
+                <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
+                <div className="absolute inset-x-0 bottom-4 flex justify-center">
                   <Button
                     type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(sessionUrl, '_blank', 'width=550,height=750')}
-                    className="flex-1 flex items-center justify-center gap-1.5 border-emerald-600 text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400"
+                    onClick={handleCaptureWebcam}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg px-6"
                   >
-                    <ExternalLink className="w-4 h-4" />
-                    {bn ? 'পপআপ খুলুন' : 'Open Popup'}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="default"
-                    size="sm"
-                    onClick={() => window.open(sessionUrl, '_blank')}
-                    className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    {bn ? 'নতুন ট্যাবে খুলুন' : 'Open in New Tab'}
+                    <Camera className="w-4 h-4 mr-2" />
+                    {bn ? 'ছবি তুলুন (Capture)' : 'Capture Photo'}
                   </Button>
                 </div>
-              )}
+              </div>
             </div>
+          )}
 
-            {/* Step 2: Extracted Data Preview */}
-            {extractedData?.fullName || extractedData?.documentNumber ? (
-              <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 space-y-2.5">
-                <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-semibold text-sm">
-                  <FileCheck className="w-4 h-4" />
-                  {bn ? 'কার্ড থেকে তথ্য সংগ্রহ সফল!' : 'Card Data Extracted Successfully!'}
+          {/* Image Preview & OCR Scanning Progress */}
+          {imagePreview && (
+            <div className="space-y-4 my-2">
+              <div className="flex flex-col sm:flex-row gap-4 items-start">
+                <div className="w-full sm:w-1/3 rounded-lg overflow-hidden border bg-muted/40 aspect-[4/3] flex items-center justify-center relative">
+                  <img src={imagePreview} alt="Document Preview" className="w-full h-full object-contain" />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="absolute bottom-1 right-1 text-[10px] h-6 px-2 opacity-90 shadow-xs"
+                  >
+                    {bn ? 'ছবি পরিবর্তন' : 'Change'}
+                  </Button>
                 </div>
 
-                <div className="text-xs space-y-1.5 text-foreground/90 bg-background/80 p-3 rounded-lg border">
-                  {extractedData.fullName && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{bn ? 'নাম:' : 'Name:'}</span>
-                      <span className="font-semibold">{extractedData.fullName}</span>
+                <div className="w-full sm:w-2/3 space-y-2">
+                  {scanning ? (
+                    <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 space-y-2 text-center">
+                      <Loader2 className="w-6 h-6 animate-spin text-emerald-600 mx-auto" />
+                      <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                        {progressText || (bn ? 'ছবি স্ক্যান হচ্ছে...' : 'Scanning document...')}
+                      </p>
+                      <div className="w-full bg-emerald-200 dark:bg-emerald-950 rounded-full h-2 overflow-hidden">
+                        <div
+                          className="bg-emerald-600 h-2 transition-all duration-300"
+                          style={{ width: `${progressPct}%` }}
+                        />
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        {bn ? 'কম্পিউটারেই প্রসেস হচ্ছে, কোনো থার্ড-পার্টি বা মোবাইল প্রয়োজন নেই' : 'Processing locally on your PC'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs font-medium">
+                      <span className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        {bn ? 'তথ্য বিশ্লেষণ সম্পন্ন হয়েছে' : 'OCR Parsing Completed'}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => imagePreview && processImageForOcr(imagePreview)}
+                        className="h-6 text-[11px] text-emerald-700 hover:text-emerald-900"
+                      >
+                        <RefreshCw className="w-3 h-3 mr-1" />
+                        {bn ? 'পুনরায় স্ক্যান' : 'Re-scan'}
+                      </Button>
                     </div>
                   )}
-                  {extractedData.documentNumber && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{bn ? 'আইডি নম্বর:' : 'ID Number:'}</span>
-                      <span className="font-mono font-semibold">{extractedData.documentNumber}</span>
+
+                  {/* Editable Fields Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <Label className="text-[11px] text-muted-foreground">
+                        {formType === 'student' ? (bn ? '১৭ ডিজিট জন্ম নিবন্ধন নং' : 'Birth Reg No (17 digits)') : (bn ? 'এনআইডি নং' : 'NID No')}
+                      </Label>
+                      <Input
+                        value={extractedData.documentNumber}
+                        onChange={e => setExtractedData(p => ({ ...p, documentNumber: e.target.value }))}
+                        className="h-8 font-mono font-medium text-xs mt-0.5"
+                        placeholder={formType === 'student' ? '17 digits' : 'NID'}
+                      />
                     </div>
-                  )}
-                  {extractedData.dateOfBirth && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{bn ? 'জন্ম তারিখ:' : 'DOB:'}</span>
-                      <span>{extractedData.dateOfBirth}</span>
+
+                    <div>
+                      <Label className="text-[11px] text-muted-foreground">{bn ? 'নাম' : 'Full Name'}</Label>
+                      <Input
+                        value={extractedData.fullName}
+                        onChange={e => setExtractedData(p => ({ ...p, fullName: e.target.value }))}
+                        className="h-8 text-xs mt-0.5 font-medium"
+                      />
                     </div>
-                  )}
-                  {extractedData.address && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{bn ? 'ঠিকানা:' : 'Address:'}</span>
-                      <span className="text-right truncate max-w-[200px]">{extractedData.address}</span>
+
+                    <div>
+                      <Label className="text-[11px] text-muted-foreground">{bn ? 'জন্ম তারিখ (YYYY-MM-DD)' : 'Date of Birth'}</Label>
+                      <Input
+                        value={extractedData.dateOfBirth}
+                        onChange={e => setExtractedData(p => ({ ...p, dateOfBirth: e.target.value }))}
+                        className="h-8 text-xs mt-0.5 font-mono"
+                        placeholder="YYYY-MM-DD"
+                      />
                     </div>
-                  )}
+
+                    <div>
+                      <Label className="text-[11px] text-muted-foreground">{bn ? 'পিতার নাম' : "Father's Name"}</Label>
+                      <Input
+                        value={extractedData.fatherName}
+                        onChange={e => setExtractedData(p => ({ ...p, fatherName: e.target.value }))}
+                        className="h-8 text-xs mt-0.5"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-[11px] text-muted-foreground">{bn ? 'মাতার নাম' : "Mother's Name"}</Label>
+                      <Input
+                        value={extractedData.motherName}
+                        onChange={e => setExtractedData(p => ({ ...p, motherName: e.target.value }))}
+                        className="h-8 text-xs mt-0.5"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-[11px] text-muted-foreground">{bn ? 'জেন্ডার' : 'Gender'}</Label>
+                      <Input
+                        value={extractedData.gender}
+                        onChange={e => setExtractedData(p => ({ ...p, gender: e.target.value }))}
+                        className="h-8 text-xs mt-0.5"
+                        placeholder="male / female"
+                      />
+                    </div>
+                  </div>
                 </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-3 border-t flex flex-col sm:flex-row gap-2.5 justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setOcrModalOpen(false)}
+                >
+                  {bn ? 'বাতিল' : 'Cancel'}
+                </Button>
 
                 <Button
                   type="button"
-                  onClick={handleApplyDiditData}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-sm mt-2"
+                  onClick={handleApplyExtractedData}
+                  disabled={scanning}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-md flex items-center gap-2"
                 >
-                  <CheckCircle2 className="w-4 h-4 mr-2" />
-                  {bn ? 'ফর্মে তথ্যগুলো বসিয়ে দিন' : 'Apply to Form'}
+                  <FileCheck className="w-4 h-4" />
+                  <span>{bn ? 'ফর্মে তথ্য যুক্ত করুন' : 'Apply to Form'}</span>
                 </Button>
               </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center p-5 border border-dashed rounded-xl text-center space-y-3 bg-muted/10">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                  <RefreshCw className="w-5 h-5 animate-spin" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-foreground">
-                    {bn ? 'স্ক্যান সম্পন্ন হওয়ার অপেক্ষা...' : 'Waiting for scan completion...'}
-                  </h4>
-                  <p className="text-xs text-muted-foreground mt-1 max-w-xs">
-                    {bn 
-                      ? 'Didit উইন্ডোতে আইডি কার্ডের ছবি আপলোড বা ক্যামেরা দিয়ে স্ক্যান সম্পন্ন করুন।' 
-                      : 'Complete the ID photo capture on the Didit page.'}
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-800 dark:text-emerald-300 text-left space-y-1 w-full">
-                  <p className="font-semibold flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    {bn ? 'Didit উইন্ডোতে "You\'ve been verified!" দেখাচ্ছে?' : 'Didit shows "You\'ve been verified!"?'}
-                  </p>
-                  <p className="leading-relaxed opacity-90 text-[11px]">
-                    {bn
-                      ? 'অভিনন্দন! আপনার কার্ড সফলভাবে স্ক্যান ও যাচাই হয়েছে। ব্রাউজারের সিকিউরিটি পলিসির (CORS) কারণে সরাসরি অটো-সিঙ্ক না হলে "ফরমে ফিরে যান" চেপে প্রয়োজনীয় তথ্য ফরমে টাইপ করতে পারেন।'
-                      : 'Verification was successful on Didit! If browser security prevents automatic sync, click below to return and enter details.'}
-                  </p>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-2 pt-1 w-full">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleManualCheckStatus}
-                    disabled={pollingStatus}
-                    className="flex-1 text-xs"
-                  >
-                    {pollingStatus ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
-                    ) : (
-                      <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-                    )}
-                    {bn ? 'স্ট্যাটাস রিফ্রেশ করুন' : 'Refresh Status Now'}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="default"
-                    size="sm"
-                    onClick={() => setDiditModalOpen(false)}
-                    className="flex-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
-                  >
-                    {bn ? 'ফরমে ফিরে যান' : 'Continue to Form'}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
