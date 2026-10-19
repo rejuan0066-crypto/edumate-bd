@@ -80,20 +80,37 @@ Deno.serve(async (req) => {
     };
 
     for (const table of tablesToExport) {
-      const { data, error } = await supabase.from(table).select('*');
-      if (error) {
-        backup[table] = { error: error.message, count: 0 };
-      } else {
-        let rows = data || [];
-        const redact = REDACT_FIELDS[table];
-        if (redact && rows.length > 0) {
-          rows = rows.map((row: any) => {
-            const r = { ...row };
-            redact.forEach((f) => { delete r[f]; });
-            return r;
-          });
+      const rows: any[] = [];
+      let from = 0;
+      const PAGE = 1000;
+      let hasError = false;
+      let errorMsg = '';
+
+      while (true) {
+        const { data, error } = await supabase.from(table).select('*').range(from, from + PAGE - 1);
+        if (error) {
+          hasError = true;
+          errorMsg = error.message;
+          break;
         }
-        backup[table] = { data: rows, count: rows.length };
+        if (!data || data.length === 0) break;
+        rows.push(...data);
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
+
+      if (hasError && rows.length === 0) {
+        backup[table] = { error: errorMsg, count: 0 };
+      } else {
+        const redact = REDACT_FIELDS[table];
+        const cleanedRows = (redact && rows.length > 0)
+          ? rows.map((row: any) => {
+              const r = { ...row };
+              redact.forEach((f) => { delete r[f]; });
+              return r;
+            })
+          : rows;
+        backup[table] = { data: cleanedRows, count: cleanedRows.length };
       }
     }
 
