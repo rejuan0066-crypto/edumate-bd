@@ -975,7 +975,8 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     { id: 'parents', bn: 'পিতা-মাতা', en: 'Parents' },
     ...(sectionConfig.showGuardian ? [{ id: 'guardian', bn: 'অভিভাবক', en: 'Guardian' }] : []),
     ...((sectionConfig.showIdentifier || sectionConfig.showRelativesIdentifier) ? [{ id: 'identifier', bn: 'পরিচয়দাতা', en: 'Identifier' }] : []),
-    { id: 'docs_approval', bn: 'নথি ও অনুমোদন', en: 'Docs & Approval' },
+    { id: 'documents', bn: 'ডকুমেন্ট আপলোড', en: 'Document Upload' },
+    ...(isAdmin ? [{ id: 'approval', bn: 'অনুমোদন ও বেতন', en: 'Approval & Salary' }] : []),
   ];
 
   const steps = rawSteps.map((s, idx) => ({
@@ -1433,7 +1434,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
           </div>
         </div>
 
-        {(isPendingStaff || isApprovalMode) && (
+        {isAdmin && (isPendingStaff || isApprovalMode) && (
           <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
             <div className="flex items-center gap-3">
               <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
@@ -1892,12 +1893,11 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
           </>
           )}
 
-          {/* ========== SECTION 6: Document Upload, Signatures & Approver ========== */}
-          {currentStepId === 'docs_approval' && (
-          <>
+          {/* ========== SECTION 6: Document Upload ========== */}
+          {currentStepId === 'documents' && (
           <div className="card-elevated p-6">
             <h2 className="font-display font-bold text-foreground mb-4 pb-2 border-b border-border text-center text-2xl">
-              {bn ? 'ডকুমেন্ট আপলোড (Document Upload)' : '5. Document Upload'}
+              {bn ? 'ডকুমেন্ট আপলোড (Document Upload)' : 'Document Upload'}
             </h2>
             <div className="flex flex-col sm:flex-row gap-3 mb-4">
               <Select value={docType} onValueChange={setDocType}>
@@ -1948,44 +1948,115 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
               <p className="text-sm text-muted-foreground text-center py-4">{bn ? 'কোনো ডকুমেন্ট আপলোড করা হয়নি' : 'No documents uploaded'}</p>
             )}
           </div>
+          )}
 
-          {/* ========== Signature for Print ========== */}
+          {/* ========== SECTION 7: Approval & Salary (Admin Only) ========== */}
+          {isAdmin && currentStepId === 'approval' && (
+          <>
+          {/* Signature for Print */}
           <div className="card-elevated p-6">
-            <h2 className="font-display font-bold text-foreground mb-4 pb-2 border-b border-border text-center text-2xl">
-              {bn ? 'স্বাক্ষর (প্রিন্ট/ডাউনলোডে দেখাবে)' : 'Signatures (shown in print/download)'}
-            </h2>
+            <div className="flex items-center justify-between pb-2 mb-4 border-b border-border">
+              <h2 className="font-display font-bold text-foreground text-xl sm:text-2xl">
+                {bn ? 'স্বাক্ষর (প্রিন্ট/ডাউনলোডে দেখাবে)' : 'Signatures (shown in print/download)'}
+              </h2>
+              {(principalName || principalPosition || otherSignName || otherSignPosition) && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setPrincipalName('');
+                    setPrincipalPosition('');
+                    setOtherSignName('');
+                    setOtherSignPosition('');
+                  }}
+                  className="text-xs text-destructive hover:bg-destructive/10"
+                >
+                  {bn ? 'সব মুছুন' : 'Clear All'}
+                </Button>
+              )}
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <Label>{bn ? 'অধ্যক্ষের নাম' : 'Principal Name'}</Label>
-                <Input className="bg-background mt-1" value={principalName} onChange={e => setPrincipalName(e.target.value)} />
+                <div className="flex items-center justify-between">
+                  <Label>{bn ? 'অধ্যক্ষের নাম' : 'Principal Name'}</Label>
+                  {principalName && (
+                    <button type="button" onClick={() => setPrincipalName('')} className="text-xs text-muted-foreground hover:text-destructive">
+                      {bn ? 'মুছুন' : 'Clear'}
+                    </button>
+                  )}
+                </div>
+                <Input className="bg-background mt-1" value={principalName} onChange={e => setPrincipalName(e.target.value)} placeholder={bn ? 'অধ্যক্ষের নাম লিখুন' : 'Enter principal name'} />
               </div>
               <div>
-                <Label>{bn ? 'অধ্যক্ষের পদবী' : 'Principal Position'}</Label>
-                <Input className="bg-background mt-1" value={principalPosition} onChange={e => setPrincipalPosition(e.target.value)} />
+                <div className="flex items-center justify-between">
+                  <Label>{bn ? 'অধ্যক্ষের পদবী' : 'Principal Position'}</Label>
+                  {principalPosition && (
+                    <button type="button" onClick={() => setPrincipalPosition('')} className="text-xs text-muted-foreground hover:text-destructive">
+                      {bn ? 'মুছুন' : 'Clear'}
+                    </button>
+                  )}
+                </div>
+                <Input className="bg-background mt-1" value={principalPosition} onChange={e => setPrincipalPosition(e.target.value)} placeholder={bn ? 'পদবী লিখুন' : 'Enter position'} />
               </div>
               <div>
-                <Label>{bn ? 'অন্য স্বাক্ষরকারীর নাম' : 'Other Signatory Name'}</Label>
-                <Input className="bg-background mt-1" value={otherSignName} onChange={e => setOtherSignName(e.target.value)} />
+                <div className="flex items-center justify-between">
+                  <Label>{bn ? 'অন্য স্বাক্ষরকারীর নাম' : 'Other Signatory Name'}</Label>
+                  {otherSignName && (
+                    <button type="button" onClick={() => setOtherSignName('')} className="text-xs text-muted-foreground hover:text-destructive">
+                      {bn ? 'মুছুন' : 'Clear'}
+                    </button>
+                  )}
+                </div>
+                <Input className="bg-background mt-1" value={otherSignName} onChange={e => setOtherSignName(e.target.value)} placeholder={bn ? 'অন্য স্বাক্ষরকারীর নাম লিখুন' : 'Enter signatory name'} />
               </div>
               <div>
-                <Label>{bn ? 'অন্য স্বাক্ষরকারীর পদবী' : 'Other Signatory Position'}</Label>
-                <Input className="bg-background mt-1" value={otherSignPosition} onChange={e => setOtherSignPosition(e.target.value)} />
+                <div className="flex items-center justify-between">
+                  <Label>{bn ? 'অন্য স্বাক্ষরকারীর পদবী' : 'Other Signatory Position'}</Label>
+                  {otherSignPosition && (
+                    <button type="button" onClick={() => setOtherSignPosition('')} className="text-xs text-muted-foreground hover:text-destructive">
+                      {bn ? 'মুছুন' : 'Clear'}
+                    </button>
+                  )}
+                </div>
+                <Input className="bg-background mt-1" value={otherSignPosition} onChange={e => setOtherSignPosition(e.target.value)} placeholder={bn ? 'পদবী লিখুন' : 'Enter position'} />
               </div>
             </div>
           </div>
 
-          {/* ========== Approver Section ========== */}
+          {/* Approver Section & Salary */}
           <div className="card-elevated p-6">
-            <h2 className="font-display font-bold text-foreground mb-4 pb-2 border-b border-border text-center text-2xl">
-              {bn ? 'অনুমোদন ও বেতন নির্ধারণ' : 'Approval & Salary Details'}
-            </h2>
+            <div className="flex items-center justify-between pb-2 mb-4 border-b border-border">
+              <div>
+                <h2 className="font-display font-bold text-foreground text-xl sm:text-2xl">
+                  {bn ? 'অনুমোদন ও বেতন নির্ধারণ' : 'Approval & Salary Details'}
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {bn ? 'শুধুমাত্র অ্যাডমিন দেখতে, যোগ করতে, এডিট ও মুছতে পারবেন।' : 'Only Admin can view, add, edit, and delete.'}
+                </p>
+              </div>
+              <span className="text-xs px-2.5 py-1 rounded-full bg-primary/10 text-primary font-medium">
+                {bn ? 'অ্যাডমিন অধিকার' : 'Admin Privileges'}
+              </span>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {isFieldActive('salary') && (
               <div className="sm:col-span-2 bg-primary/5 border border-primary/20 rounded-xl p-4 mb-2">
-                <Label className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                  {bn ? (getField('salary')?.label_bn || 'নির্ধারিত মাসিক বেতন (টাকা)') : (getField('salary')?.label || 'Assigned Monthly Salary (BDT)')}
-                  {((existingStaff?.status === 'active' || approveOnSave) && isFieldRequired('salary')) && <span className="text-destructive">*</span>}
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                    {bn ? (getField('salary')?.label_bn || 'নির্ধারিত মাসিক বেতন (টাকা)') : (getField('salary')?.label || 'Assigned Monthly Salary (BDT)')}
+                    {((existingStaff?.status === 'active' || approveOnSave) && isFieldRequired('salary')) && <span className="text-destructive">*</span>}
+                  </Label>
+                  {salary && (
+                    <button
+                      type="button"
+                      onClick={() => handleFieldChange('salary', '', setSalary)}
+                      className="text-xs text-destructive hover:underline font-medium"
+                    >
+                      {bn ? 'বেতন মুছুন / ক্লিয়ার' : 'Clear Salary'}
+                    </button>
+                  )}
+                </div>
                 <div className="relative mt-1.5 max-w-sm">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">৳</span>
                   <Input
@@ -1997,7 +2068,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
                   />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1.5">
-                  {bn ? 'অনুমোদনের সময় অ্যাডমিন স্টাফের মাসিক বেতন নির্ধারণ করবেন।' : 'Admin specifies the staff monthly salary during approval.'}
+                  {bn ? 'এখানে অ্যাডমিন কর্মীর মাসিক বেতন যোগ, এডিট বা মুছতে পারবেন।' : 'Admin can add, edit, or clear staff monthly salary here.'}
                 </p>
                 <FieldError field="salary" />
               </div>
@@ -2009,9 +2080,9 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
                     <button
                       type="button"
                       onClick={() => { setApproverName(''); setApproverPosition(''); }}
-                      className="text-xs text-primary hover:underline font-normal"
+                      className="text-xs text-destructive hover:underline font-medium"
                     >
-                      {bn ? 'ক্লিয়ার করুন' : 'Clear'}
+                      {bn ? 'কর্মকর্তা মুছুন / ক্লিয়ার' : 'Clear Officer'}
                     </button>
                   )}
                 </Label>
@@ -2043,16 +2114,30 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
                   </SelectContent>
                 </Select>
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  {bn ? 'প্রশাসনিক কর্মকর্তা সিলেক্ট করলে নাম ও পদবী নিজে থেকেই বসে যাবে, অথবা নিচে লিখে দিতে পারেন।' : 'Selecting an officer auto-fills name and position, or you can enter them below.'}
+                  {bn ? 'প্রশাসনিক কর্মকর্তা সিলেক্ট করলে নাম ও পদবী নিজে থেকেই বসে যাবে, অথবা নিচে লিখে বা এডিট করতে পারেন।' : 'Selecting an officer auto-fills name and position, or you can manually enter/edit below.'}
                 </p>
               </div>
 
               <div>
-                <Label>{bn ? 'এপ্রোভকারীর নাম' : "Approver's Name"} <span className="text-destructive">*</span></Label>
+                <div className="flex items-center justify-between">
+                  <Label>{bn ? 'এপ্রোভকারীর নাম' : "Approver's Name"} <span className="text-destructive">*</span></Label>
+                  {approverName && (
+                    <button type="button" onClick={() => setApproverName('')} className="text-xs text-muted-foreground hover:text-destructive">
+                      {bn ? 'মুছুন' : 'Clear'}
+                    </button>
+                  )}
+                </div>
                 <Input className="bg-background mt-1" value={approverName} onChange={e => setApproverName(e.target.value)} placeholder={bn ? 'নাম লিখুন' : 'Enter name'} />
               </div>
               <div>
-                <Label>{bn ? 'পদবী' : 'Position'} <span className="text-destructive">*</span></Label>
+                <div className="flex items-center justify-between">
+                  <Label>{bn ? 'পদবী' : 'Position'} <span className="text-destructive">*</span></Label>
+                  {approverPosition && (
+                    <button type="button" onClick={() => setApproverPosition('')} className="text-xs text-muted-foreground hover:text-destructive">
+                      {bn ? 'মুছুন' : 'Clear'}
+                    </button>
+                  )}
+                </div>
                 <Input className="bg-background mt-1" value={approverPosition} onChange={e => setApproverPosition(e.target.value)} placeholder={bn ? 'পদবী লিখুন' : 'Enter position'} />
               </div>
               <div>
@@ -2065,14 +2150,21 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
                   {approverSignatureUrl && (
                     <div className="flex items-center gap-2">
                       <img src={approverSignatureUrl} alt="Signature" className="h-8 border border-border rounded" />
-                      <button type="button" onClick={() => setApproverSignatureUrl('')} className="text-destructive hover:text-destructive/80"><X className="w-4 h-4" /></button>
+                      <button type="button" onClick={() => setApproverSignatureUrl('')} className="text-destructive hover:text-destructive/80" title={bn ? 'স্বাক্ষর মুছুন' : 'Delete Signature'}><X className="w-4 h-4" /></button>
                     </div>
                   )}
                   {!approverSignatureUrl && <span className="text-xs text-muted-foreground">{bn ? 'প্রিন্টে স্বাক্ষরের বক্স দেখাবে' : 'Signature box will show in print'}</span>}
                 </div>
               </div>
               <div>
-                <Label>{bn ? 'তারিখ' : 'Date'}</Label>
+                <div className="flex items-center justify-between">
+                  <Label>{bn ? 'তারিখ' : 'Date'}</Label>
+                  {approverDate && (
+                    <button type="button" onClick={() => setApproverDate('')} className="text-xs text-muted-foreground hover:text-destructive">
+                      {bn ? 'মুছুন' : 'Clear'}
+                    </button>
+                  )}
+                </div>
                 <DatePicker bengali={bn} className="mt-1" value={approverDate} onChange={v => setApproverDate(v)} />
               </div>
             </div>
