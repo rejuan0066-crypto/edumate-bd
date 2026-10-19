@@ -1092,7 +1092,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     printWindow.document.open();
     printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Staff Form</title>
       <link rel="preconnect" href="https://fonts.googleapis.com">
-      <style>@font-face{font-family:"SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}</style><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
       <style>${styles}</style></head><body>${content.innerHTML}</body></html>`);
     printWindow.document.close();
     // Wait for fonts to load before printing
@@ -1105,34 +1105,41 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
 
   const getPrintStyles = () => `
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'SutonnyOMJ', 'Noto Sans Bengali', sans-serif; font-size: 11pt; color: #000; padding: 15mm; }
-    .form-header { text-align: center; border-bottom: 3px double #1a5c2e; padding-bottom: 10px; margin-bottom: 12px; position: relative; }
-    .form-header .logo { width: 60px; height: 60px; object-fit: contain; }
-    .form-header h1 { font-size: 16pt; font-weight: 700; margin: 4px 0 2px; color: #1a5c2e; }
-    .form-header h2 { font-size: 12pt; font-weight: 600; color: #333; margin: 2px 0; }
-    .form-header p { font-size: 9pt; color: #555; }
-    .form-title { background: #1a5c2e; color: #fff; text-align: center; padding: 6px; font-size: 13pt; font-weight: 700; margin: 10px 0; border-radius: 2px; }
-    .photo-area { position: absolute; top: 0; right: 0; width: 90px; height: 110px; border: 2px solid #1a5c2e; overflow: hidden; background: #f9f9f9; display: flex; align-items: center; justify-content: center; }
+    body { font-family: 'Noto Sans Bengali', 'Kalpurush', 'SolaimanLipi', sans-serif; font-size: 10pt; color: #000; padding: 10mm 12mm; line-height: 1.35; }
+    .form-header { text-align: center; border-bottom: 2px solid #1a5c2e; padding-bottom: 8px; margin-bottom: 10px; position: relative; }
+    .form-header .logo { width: 55px; height: 55px; object-fit: contain; }
+    .form-header h1 { font-size: 15pt; font-weight: 700; margin: 3px 0 1px; color: #1a5c2e; }
+    .form-header h2 { font-size: 11pt; font-weight: 600; color: #333; margin: 1px 0; }
+    .form-header p { font-size: 8.5pt; color: #555; }
+    .form-title { background: #1a5c2e; color: #fff; text-align: center; padding: 5px; font-size: 12pt; font-weight: 700; margin: 8px 0; border-radius: 2px; }
+    .photo-area { position: absolute; top: 0; right: 0; width: 85px; height: 100px; border: 2px solid #1a5c2e; overflow: hidden; background: #f9f9f9; display: flex; align-items: center; justify-content: center; }
     .photo-area img { width: 100%; height: 100%; object-fit: cover; }
-    .photo-area .placeholder { font-size: 8pt; color: #999; text-align: center; padding: 5px; }
-    .section { margin: 10px 0; }
-    .section-title { background: #e8f5e9; padding: 5px 10px; font-size: 11pt; font-weight: 700; color: #1a5c2e; border-left: 4px solid #1a5c2e; margin-bottom: 6px; }
-    .form-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
-    .form-table td { border: 1px solid #ccc; padding: 4px 8px; font-size: 10pt; vertical-align: top; }
-    .form-table .label { background: #f5f5f5; font-weight: 600; width: 28%; color: #333; white-space: nowrap; }
-    .form-table .value { color: #000; }
-    .doc-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-    .doc-table th { background: #e8f5e9; border: 1px solid #ccc; padding: 4px 8px; font-size: 9pt; font-weight: 600; text-align: left; }
-    .doc-table td { border: 1px solid #ccc; padding: 3px 8px; font-size: 9pt; }
-    .signatures { display: flex; justify-content: space-between; margin-top: 50px; padding-top: 10px; }
-    .sig-box { text-align: center; min-width: 180px; }
-    .sig-line { border-top: 1px solid #000; padding-top: 5px; margin-top: 35px; }
-    .sig-name { font-weight: 600; font-size: 10pt; }
-    .sig-position { font-size: 9pt; color: #555; }
-    .form-date { text-align: right; font-size: 9pt; color: #555; margin-top: 8px; }
-    .approver-section { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px; }
-    .approver-section .section-title { background: #e8f5e9; padding: 5px 10px; font-size: 11pt; font-weight: 700; color: #1a5c2e; border-left: 4px solid #1a5c2e; margin-bottom: 6px; }
-    @media print { body { padding: 10mm; } @page { size: A4; margin: 0; } }
+    .photo-area .placeholder { font-size: 8pt; color: #999; text-align: center; padding: 4px; }
+    .section { margin: 8px 0; page-break-inside: avoid; }
+    .section-title { background: #e8f5e9; padding: 4px 8px; font-size: 10pt; font-weight: 700; color: #1a5c2e; border-left: 4px solid #1a5c2e; margin-bottom: 4px; }
+    .form-table { width: 100%; border-collapse: collapse; margin-bottom: 6px; table-layout: fixed; }
+    .form-table tr { page-break-inside: avoid; }
+    .form-table td { border: 1px solid #ccc; padding: 3px 6px; font-size: 9pt; vertical-align: middle; word-break: break-word; }
+    .form-table .label { background: #f8f9fa; font-weight: 600; width: 22%; color: #333; }
+    .form-table .value { color: #000; width: 28%; }
+    .form-table td.value[colspan="3"] { width: 78%; }
+    .doc-table { width: 100%; border-collapse: collapse; margin-top: 4px; table-layout: fixed; }
+    .doc-table tr { page-break-inside: avoid; }
+    .doc-table th { background: #e8f5e9; border: 1px solid #ccc; padding: 3px 6px; font-size: 8.5pt; font-weight: 600; text-align: left; }
+    .doc-table td { border: 1px solid #ccc; padding: 3px 6px; font-size: 8.5pt; }
+    .signatures { display: flex; justify-content: space-between; margin-top: 25px; padding-top: 5px; page-break-inside: avoid; }
+    .sig-box { text-align: center; min-width: 140px; }
+    .sig-line { border-top: 1px solid #000; padding-top: 4px; margin-top: 30px; }
+    .sig-name { font-weight: 600; font-size: 9pt; }
+    .sig-position { font-size: 8pt; color: #555; }
+    .form-date { text-align: right; font-size: 8.5pt; color: #555; margin-top: 6px; }
+    .approver-section { margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 8px; page-break-inside: avoid; }
+    .approver-section .section-title { background: #e8f5e9; padding: 4px 8px; font-size: 10pt; font-weight: 700; color: #1a5c2e; border-left: 4px solid #1a5c2e; margin-bottom: 4px; }
+    @media print {
+      body { padding: 8mm 10mm; }
+      @page { size: A4 portrait; margin: 8mm 10mm; }
+      .section, .approver-section, .signatures, tr { page-break-inside: avoid; }
+    }
   `;
 
   const getGuardianInfo = () => {
@@ -2312,32 +2319,34 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
             </div>
           )}
 
-          <div className="border border-border rounded-lg bg-white text-black p-8" style={{ fontFamily: "'Noto Sans Bengali', sans-serif", fontSize: '11pt' }}>
+          <div className="border border-border rounded-lg bg-white text-black p-4 sm:p-6" style={{ fontFamily: "'Noto Sans Bengali', 'Kalpurush', sans-serif", fontSize: '10pt' }}>
             <style dangerouslySetInnerHTML={{ __html: `
-              .preview-form .form-header { text-align: center; border-bottom: 3px double #1a5c2e; padding-bottom: 10px; margin-bottom: 12px; position: relative; }
-              .preview-form .form-header h1 { font-size: 16pt; font-weight: 700; margin: 4px 0 2px; color: #1a5c2e; }
-              .preview-form .form-header h2 { font-size: 12pt; font-weight: 600; color: #333; margin: 2px 0; }
-              .preview-form .form-header p { font-size: 9pt; color: #555; }
-              .preview-form .form-title { background: #1a5c2e; color: #fff; text-align: center; padding: 6px; font-size: 13pt; font-weight: 700; margin: 10px 0; border-radius: 2px; }
-              .preview-form .photo-area { position: absolute; top: 0; right: 0; width: 90px; height: 110px; border: 2px solid #1a5c2e; overflow: hidden; background: #f9f9f9; display: flex; align-items: center; justify-content: center; }
+              .preview-form .form-header { text-align: center; border-bottom: 2px solid #1a5c2e; padding-bottom: 8px; margin-bottom: 10px; position: relative; }
+              .preview-form .form-header h1 { font-size: 15pt; font-weight: 700; margin: 3px 0 1px; color: #1a5c2e; }
+              .preview-form .form-header h2 { font-size: 11pt; font-weight: 600; color: #333; margin: 1px 0; }
+              .preview-form .form-header p { font-size: 8.5pt; color: #555; }
+              .preview-form .form-title { background: #1a5c2e; color: #fff; text-align: center; padding: 5px; font-size: 12pt; font-weight: 700; margin: 8px 0; border-radius: 2px; }
+              .preview-form .photo-area { position: absolute; top: 0; right: 0; width: 85px; height: 100px; border: 2px solid #1a5c2e; overflow: hidden; background: #f9f9f9; display: flex; align-items: center; justify-content: center; }
               .preview-form .photo-area img { width: 100%; height: 100%; object-fit: cover; }
-              .preview-form .photo-area .placeholder { font-size: 8pt; color: #999; text-align: center; padding: 5px; }
-              .preview-form .section { margin: 10px 0; }
-              .preview-form .section-title { background: #e8f5e9; padding: 5px 10px; font-size: 11pt; font-weight: 700; color: #1a5c2e; border-left: 4px solid #1a5c2e; margin-bottom: 6px; }
-              .preview-form .form-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
-              .preview-form .form-table td { border: 1px solid #ccc; padding: 4px 8px; font-size: 10pt; vertical-align: top; }
-              .preview-form .form-table .label { background: #f5f5f5; font-weight: 600; width: 28%; color: #333; white-space: nowrap; }
-              .preview-form .doc-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-              .preview-form .doc-table th { background: #e8f5e9; border: 1px solid #ccc; padding: 4px 8px; font-size: 9pt; font-weight: 600; text-align: left; }
-              .preview-form .doc-table td { border: 1px solid #ccc; padding: 3px 8px; font-size: 9pt; }
-              .preview-form .signatures { display: flex; justify-content: space-between; margin-top: 50px; padding-top: 10px; }
-              .preview-form .sig-box { text-align: center; min-width: 180px; }
-              .preview-form .sig-line { border-top: 1px solid #000; padding-top: 5px; margin-top: 35px; }
-              .preview-form .sig-name { font-weight: 600; font-size: 10pt; }
-              .preview-form .sig-position { font-size: 9pt; color: #555; }
-              .preview-form .form-date { text-align: right; font-size: 9pt; color: #555; margin-top: 8px; }
-              .preview-form .approver-section { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px; }
-              .preview-form .approver-section .section-title { background: #e8f5e9; padding: 5px 10px; font-size: 11pt; font-weight: 700; color: #1a5c2e; border-left: 4px solid #1a5c2e; margin-bottom: 6px; }
+              .preview-form .photo-area .placeholder { font-size: 8pt; color: #999; text-align: center; padding: 4px; }
+              .preview-form .section { margin: 8px 0; }
+              .preview-form .section-title { background: #e8f5e9; padding: 4px 8px; font-size: 10pt; font-weight: 700; color: #1a5c2e; border-left: 4px solid #1a5c2e; margin-bottom: 4px; }
+              .preview-form .form-table { width: 100%; border-collapse: collapse; margin-bottom: 6px; table-layout: fixed; }
+              .preview-form .form-table td { border: 1px solid #ccc; padding: 3px 6px; font-size: 9pt; vertical-align: middle; word-break: break-word; }
+              .preview-form .form-table .label { background: #f8f9fa; font-weight: 600; width: 22%; color: #333; }
+              .preview-form .form-table .value { color: #000; width: 28%; }
+              .preview-form .form-table td.value[colspan="3"] { width: 78%; }
+              .preview-form .doc-table { width: 100%; border-collapse: collapse; margin-top: 4px; table-layout: fixed; }
+              .preview-form .doc-table th { background: #e8f5e9; border: 1px solid #ccc; padding: 3px 6px; font-size: 8.5pt; font-weight: 600; text-align: left; }
+              .preview-form .doc-table td { border: 1px solid #ccc; padding: 3px 6px; font-size: 8.5pt; }
+              .preview-form .signatures { display: flex; justify-content: space-between; margin-top: 25px; padding-top: 5px; }
+              .preview-form .sig-box { text-align: center; min-width: 140px; }
+              .preview-form .sig-line { border-top: 1px solid #000; padding-top: 4px; margin-top: 30px; }
+              .preview-form .sig-name { font-weight: 600; font-size: 9pt; }
+              .preview-form .sig-position { font-size: 8pt; color: #555; }
+              .preview-form .form-date { text-align: right; font-size: 8.5pt; color: #555; margin-top: 6px; }
+              .preview-form .approver-section { margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 8px; }
+              .preview-form .approver-section .section-title { background: #e8f5e9; padding: 4px 8px; font-size: 10pt; font-weight: 700; color: #1a5c2e; border-left: 4px solid #1a5c2e; margin-bottom: 4px; }
             `}} />
             <div className="preview-form">
               <PrintableForm />
