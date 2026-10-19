@@ -128,7 +128,7 @@
     --secondary-foreground: 220 18% 22%;
 
     --muted: 210 14% 92%;
-    --muted-foreground: 220 12% 42%;
+    --muted-foreground: 220 20% 25%;
 
     --accent: 42 85% 55%;
     --accent-foreground: 220 20% 10%;
@@ -143,14 +143,14 @@
     --radius: 1.25rem;
 
     --sidebar-background: 180 44% 97%;
-    --sidebar-foreground: 200 25% 26%;
+    --sidebar-foreground: 220 25% 15%;
     --sidebar-primary: 42 85% 52%;
     --sidebar-primary-foreground: 220 20% 10%;
     --sidebar-accent: 180 45% 90%;
     --sidebar-accent-foreground: 184 60% 22%;
     --sidebar-border: 180 40% 80%;
     --sidebar-ring: 174 62% 47%;
-    --sidebar-muted: 200 15% 45%;
+    --sidebar-muted: 220 18% 28%;
 
     --success: 160 84% 36%;
     --success-foreground: 0 0% 100%;
@@ -190,7 +190,7 @@
     --secondary: 220 16% 14%;
     --secondary-foreground: 210 20% 85%;
     --muted: 220 16% 14%;
-    --muted-foreground: 210 10% 55%;
+    --muted-foreground: 210 20% 78%;
     --accent: 42 85% 55%;
     --accent-foreground: 220 20% 10%;
     --destructive: 350 60% 32%;
@@ -200,14 +200,14 @@
     --ring: 160 84% 38%;
 
     --sidebar-background: 220 24% 7%;
-    --sidebar-foreground: 210 20% 85%;
+    --sidebar-foreground: 210 20% 92%;
     --sidebar-primary: 42 85% 55%;
     --sidebar-primary-foreground: 220 20% 10%;
     --sidebar-accent: 220 18% 13%;
     --sidebar-accent-foreground: 210 20% 92%;
     --sidebar-border: 220 15% 14%;
     --sidebar-ring: 42 85% 55%;
-    --sidebar-muted: 220 12% 40%;
+    --sidebar-muted: 210 15% 75%;
 
     --shadow-soft: 0 2px 20px -4px hsl(0 0% 0% / 0.3);
     --shadow-card: 0 12px 50px -12px hsl(0 0% 0% / 0.45);
@@ -615,30 +615,28 @@
 }
 
 @layer components {
-  /* ── Reusable frosted clean surface (modals, dropdowns, popovers) ── */
+  /* ── Reusable clean solid surface (modals, dropdowns, popovers) ── */
   .glass-surface {
-    background: hsl(var(--card) / 0.96) !important;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid hsl(var(--border) / 0.6) !important;
+    background: hsl(var(--card)) !important;
+    border: 1px solid hsl(var(--border)) !important;
     box-shadow: 0 16px 40px -10px hsl(0 0% 0% / 0.15) !important;
   }
   .dark .glass-surface {
-    background: hsl(var(--card) / 0.94) !important;
-    border-color: hsl(var(--border) / 0.5) !important;
+    background: hsl(var(--card)) !important;
+    border-color: hsl(var(--border)) !important;
   }
 
-  /* ── Premium Clean Cards ── */
+  /* ── Premium Clean Solid Cards ── */
   .glass-card {
     border-radius: 16px;
-    background: hsl(var(--card) / 0.95);
-    border: 1px solid hsl(var(--border) / 0.6);
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
     box-shadow: var(--shadow-card);
     transition: box-shadow 0.2s ease, transform 0.2s ease;
   }
   .dark .glass-card {
-    background: hsl(var(--card) / 0.8);
-    border-color: hsl(var(--border) / 0.4);
+    background: hsl(var(--card));
+    border-color: hsl(var(--border));
   }
   .glass-card:hover {
     box-shadow: var(--shadow-elevated);
@@ -648,13 +646,13 @@
   .card-elevated {
     border-radius: 16px;
     background: hsl(var(--card));
-    border: 1px solid hsl(var(--border) / 0.6);
+    border: 1px solid hsl(var(--border));
     box-shadow: var(--shadow-card);
     transition: box-shadow 0.2s ease, transform 0.2s ease;
   }
   .dark .card-elevated {
-    background: hsl(var(--card) / 0.85);
-    border-color: hsl(var(--border) / 0.4);
+    background: hsl(var(--card));
+    border-color: hsl(var(--border));
   }
   .card-elevated:hover {
     box-shadow: var(--shadow-elevated);
@@ -664,7 +662,7 @@
   .stat-card {
     border-radius: 16px;
     background: hsl(var(--card));
-    border: 1px solid hsl(var(--border) / 0.6);
+    border: 1px solid hsl(var(--border));
     box-shadow: var(--shadow-card);
     padding: 1.25rem 1.5rem;
     transition: box-shadow 0.2s ease, transform 0.2s ease;
@@ -672,8 +670,8 @@
     overflow: hidden;
   }
   .dark .stat-card {
-    background: hsl(var(--card) / 0.85);
-    border-color: hsl(var(--border) / 0.4);
+    background: hsl(var(--card));
+    border-color: hsl(var(--border));
   }
   .stat-card::before {
     content: '';
@@ -720,35 +718,31 @@
     transform: translateY(0) scale(0.97);
   }
 
-  /* Sidebar - clean minimalist SaaS border & glass */
+  /* Sidebar - clean minimalist SaaS border & solid surface */
   .sidebar-glass {
-    background: hsl(var(--card) / 0.95);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-right: 1px solid hsl(var(--border) / 0.7);
+    background: hsl(var(--card)) !important;
+    border-right: 1px solid hsl(var(--border)) !important;
     box-shadow: 1px 0 3px 0 rgba(0, 0, 0, 0.02);
   }
   .dark .sidebar-glass {
-    background: hsl(var(--card) / 0.85);
-    border-right-color: hsl(var(--border) / 0.5);
+    background: hsl(var(--card)) !important;
+    border-right-color: hsl(var(--border)) !important;
     box-shadow: 1px 0 4px 0 rgba(0, 0, 0, 0.2);
   }
 
-  /* ── Top header — seamless translucent glass ── */
+  /* ── Top header — clean solid surface ── */
   .admin-header-glass {
-    background: hsl(var(--background) / 0.85);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid hsl(var(--border) / 0.6) !important;
+    background: hsl(var(--card)) !important;
+    border-bottom: 1px solid hsl(var(--border)) !important;
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
   }
   .dark .admin-header-glass {
-    background: hsl(var(--background) / 0.85);
-    border-bottom-color: hsl(var(--border) / 0.4) !important;
+    background: hsl(var(--card)) !important;
+    border-bottom-color: hsl(var(--border)) !important;
   }
 
   .sidebar-item {
-    @apply flex items-center gap-2.5 rounded-xl transition-all duration-150 font-medium relative;
+    @apply flex items-center gap-2.5 rounded-xl transition-all duration-150 font-semibold relative;
     padding: 8px 12px;
     margin-bottom: 2px;
     font-size: var(--sidebar-font-size, 13px);
@@ -942,6 +936,8 @@
   .admin-page-card {
     position: relative;
     overflow: hidden;
+    background-color: hsl(var(--card)) !important;
+    border-color: hsl(var(--border)) !important;
   }
   .admin-page-card::before {
     content: '';
@@ -1520,6 +1516,27 @@
   scrollbar-width: none;
 }
 
+
+/* ── Global Contrast & Solid Surface Enforcement ──
+   Ensures that every card, container, and dialog modal has 100% solid opacity
+   so background photos never bleed through and Bengali text remains 100% crystal-clear. */
+@layer utilities {
+  [class*="bg-card/"],
+  [class*="bg-background/"] {
+    background-color: hsl(var(--card)) !important;
+  }
+  .dark [class*="bg-card/"],
+  .dark [class*="bg-background/"] {
+    background-color: hsl(var(--card)) !important;
+  }
+  /* Preserve text legibility: prevent over-diluted muted-foreground classes */
+  .text-muted-foreground\/40,
+  .text-muted-foreground\/50,
+  .text-muted-foreground\/60,
+  .text-muted-foreground\/70 {
+    color: hsl(var(--muted-foreground)) !important;
+  }
+}
 
 /* Hide and eradicate the "Made with Lovable" badge / watermark / injected overlays */
 #lovable-badge,

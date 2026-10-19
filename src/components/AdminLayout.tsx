@@ -637,10 +637,10 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
             <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
               {/* Search */}
               {adminTheme.headerShowSearch && (
-                <div className="hidden md:flex items-center gap-2 bg-muted/50 backdrop-blur-sm rounded-xl px-3 py-1.5 text-xs text-muted-foreground min-w-[200px] border border-border/60">
-                  <Search className="w-3.5 h-3.5 shrink-0" />
+                <div className="hidden md:flex items-center gap-2 bg-card rounded-xl px-3 py-1.5 text-xs text-foreground font-medium min-w-[200px] border border-border shadow-xs">
+                  <Search className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
                   <span className="flex-1 truncate">{language === 'bn' ? 'শিক্ষার্থী, শিক্ষক, ক্লাস খুঁজুন...' : 'Search students, teachers...'}</span>
-                  <kbd className="hidden lg:inline-flex items-center gap-0.5 rounded border border-border/60 bg-card px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                  <kbd className="hidden lg:inline-flex items-center gap-0.5 rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-bold text-foreground">
                     Ctrl+K
                   </kbd>
                 </div>
@@ -658,7 +658,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           <main className="flex-1 px-2.5 sm:px-6 md:px-8 pb-24 lg:pb-10 pt-2 sm:pt-4 w-full max-w-[1536px] mx-auto">
             <BackButton position="top" />
             {/* Modern SaaS Content Container */}
-            <div className="admin-page-card rounded-xl sm:rounded-2xl bg-card/95 sm:bg-card/90 dark:bg-card/70 backdrop-blur-xl border border-border/70 dark:border-border/50 p-3.5 sm:p-6 lg:p-7 min-h-[65vh] w-full shadow-xs">
+            <div className="admin-page-card rounded-xl sm:rounded-2xl bg-card border border-border p-3.5 sm:p-6 lg:p-7 min-h-[65vh] w-full shadow-xs">
               <div className="w-full min-w-0">
                 <AdminPageWithTabs>{children}</AdminPageWithTabs>
               </div>

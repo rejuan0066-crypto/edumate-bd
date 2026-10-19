@@ -332,9 +332,9 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[88vh] overflow-y-auto rounded-[28px] p-0 border-border/40 bg-background/80 backdrop-blur-xl">
+      <DialogContent className="max-w-2xl max-h-[88vh] overflow-y-auto rounded-2xl p-0 border border-border bg-card shadow-2xl">
         {/* Hero header with gradient */}
-        <div className="relative overflow-hidden rounded-t-[28px] border-b border-border/30">
+        <div className="relative overflow-hidden rounded-t-2xl border-b border-border">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-cyan-500/10 dark:from-emerald-500/15 dark:via-teal-500/10 dark:to-cyan-500/15" />
           <DialogHeader className="relative px-4 py-3">
             <DialogTitle className="flex items-center gap-3">
@@ -508,7 +508,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
         {/* Centered day-status picker: always in the middle of the screen on desktop & mobile */}
         <Dialog open={!!activeDateKey} onOpenChange={(o) => { if (!o) setActiveDateKey(null); }}>
           <DialogContent
-            className="w-[92vw] max-w-sm max-h-[85vh] overflow-y-auto rounded-[28px] p-0 border-border/40 bg-background/95 backdrop-blur-xl"
+            className="w-[92vw] max-w-sm max-h-[85vh] overflow-y-auto rounded-2xl p-0 border border-border bg-card shadow-2xl"
             onInteractOutside={(e) => {
               const t = e.target as HTMLElement | null;
               if (t && t.closest('[data-radix-popper-content-wrapper]')) {
@@ -684,7 +684,7 @@ function LeaveEditor({ bn, initialType, initialReason, saving, onSave }: {
             onChange={(e) => setLr(e.target.value)}
             rows={2}
             placeholder={bn ? 'যেমন: পারিবারিক কাজে...' : 'e.g. Family matter...'}
-            className="w-full text-xs rounded-lg border border-border/50 bg-background/80 p-2 outline-none focus:border-blue-400 resize-none"
+            className="w-full text-xs font-medium text-foreground rounded-lg border border-border bg-card p-2 outline-none focus:border-blue-400 resize-none"
           />
         </div>
       )}
@@ -719,7 +719,7 @@ function AbsentReasonEditor({ bn, initialReason, saving, onSave }: {
         onChange={(e) => setR(e.target.value)}
         rows={2}
         placeholder={bn ? 'যেমন: জরুরি কাজে আসতে পারেননি...' : 'e.g. Could not come due to urgent work...'}
-        className="w-full text-xs rounded-lg border border-border/50 bg-background/80 p-2 outline-none focus:border-rose-400 resize-none"
+        className="w-full text-xs font-medium text-foreground rounded-lg border border-border bg-card p-2 outline-none focus:border-rose-400 resize-none"
       />
       <Button
         size="sm"

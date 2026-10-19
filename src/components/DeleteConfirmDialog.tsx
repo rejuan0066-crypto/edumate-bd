@@ -35,27 +35,27 @@ const DeleteConfirmDialog = ({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="rounded-[28px] backdrop-blur-2xl bg-white/80 dark:bg-slate-900/80 border border-white/30 dark:border-white/10 shadow-2xl max-w-md">
+      <AlertDialogContent className="rounded-2xl bg-card border border-border text-card-foreground shadow-2xl max-w-md p-6">
         <AlertDialogHeader className="flex flex-col items-center text-center gap-3">
-          <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-1">
+          <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mb-1">
             <AlertTriangle className="w-8 h-8 text-destructive" />
           </div>
-          <AlertDialogTitle className="text-xl font-bold">
+          <AlertDialogTitle className="text-xl font-bold text-foreground">
             {title || (bn ? 'আপনি কি নিশ্চিত?' : 'Are you sure?')}
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-muted-foreground text-sm">
+          <AlertDialogDescription className="text-foreground/85 font-medium text-sm">
             {description || (bn ? 'এই তথ্যটি ডিলিট করলে তা রিসাইকেল বিন-এ জমা থাকবে।' : 'This item will be moved to the recycle bin.')}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="flex-row gap-3 sm:justify-center pt-2">
+        <AlertDialogFooter className="flex-row gap-3 sm:justify-center pt-3 border-t border-border">
           <AlertDialogAction
             onClick={onConfirm}
             disabled={isPending}
-            className="rounded-full px-6 bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-[0_0_15px_hsl(var(--destructive)/0.3)]"
+            className="rounded-xl px-6 font-semibold bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm"
           >
             {confirmLabel || (bn ? 'হ্যাঁ, ডিলিট করুন' : 'Yes, Delete')}
           </AlertDialogAction>
-          <AlertDialogCancel className="rounded-full px-6 mt-0">
+          <AlertDialogCancel className="rounded-xl px-6 mt-0 font-semibold border-border">
             {bn ? 'না, থাক' : 'Cancel'}
           </AlertDialogCancel>
         </AlertDialogFooter>

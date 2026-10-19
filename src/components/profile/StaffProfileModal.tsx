@@ -133,16 +133,16 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
       </div>
 
       {/* ═══════════ TABS ═══════════ */}
-      <div className="flex gap-1 p-1 rounded-2xl bg-muted/40 border border-border/20 backdrop-blur-sm">
+      <div className="flex gap-1 p-1 rounded-xl bg-muted border border-border">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              'flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300',
+              'flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all duration-150',
               activeTab === tab.id
-                ? 'bg-gradient-to-r from-emerald-500/15 to-teal-500/10 text-emerald-700 dark:text-emerald-400 shadow-sm border border-emerald-500/20'
-                : 'text-muted-foreground/70 hover:text-foreground hover:bg-background/60'
+                ? 'bg-card text-foreground shadow-xs border border-border'
+                : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
             )}
           >
             <tab.icon className="w-3.5 h-3.5" />

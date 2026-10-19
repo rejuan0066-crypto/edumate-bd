@@ -25,10 +25,10 @@ const ProfileInfoItem = ({ icon: Icon, label, value, className, fullWidth }: Pro
         </div>
       )}
       <div className="min-w-0 flex-1">
-        <p className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mb-0.5">{label}</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-0.5">{label}</p>
         <p className={cn(
-          'text-sm font-bold break-words leading-snug',
-          isEmpty ? 'text-muted-foreground/40 font-normal italic' : 'text-foreground'
+          'text-sm font-semibold break-words leading-snug',
+          isEmpty ? 'text-muted-foreground font-normal italic' : 'text-foreground'
         )}>
           {displayValue}
         </p>

@@ -47,29 +47,29 @@ const ConfirmDialog = ({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="rounded-[28px] backdrop-blur-2xl bg-white/80 dark:bg-slate-900/80 border border-white/30 dark:border-white/10 shadow-2xl max-w-md">
+      <AlertDialogContent className="rounded-2xl bg-card border border-border text-card-foreground shadow-2xl max-w-md p-6">
         <AlertDialogHeader className="flex flex-col items-center text-center gap-3">
-          <div className={`w-16 h-16 rounded-full ${bg} flex items-center justify-center mb-1`}>
+          <div className={`w-16 h-16 rounded-2xl ${bg} flex items-center justify-center mb-1`}>
             <Icon className={`w-8 h-8 ${accent}`} />
           </div>
-          <AlertDialogTitle className="text-xl font-bold">
+          <AlertDialogTitle className="text-xl font-bold text-foreground">
             {title || (bn ? 'আপনি কি নিশ্চিত?' : 'Are you sure?')}
           </AlertDialogTitle>
           {description && (
-            <AlertDialogDescription className="text-muted-foreground text-sm">
+            <AlertDialogDescription className="text-foreground/85 font-medium text-sm">
               {description}
             </AlertDialogDescription>
           )}
         </AlertDialogHeader>
-        <AlertDialogFooter className="flex-row gap-3 sm:justify-center pt-2">
+        <AlertDialogFooter className="flex-row gap-3 sm:justify-center pt-3 border-t border-border">
           <AlertDialogAction
             onClick={onConfirm}
             disabled={isPending}
-            className={`rounded-full px-6 ${btn}`}
+            className={`rounded-xl px-6 font-semibold ${btn}`}
           >
             {confirmLabel || (bn ? 'হ্যাঁ, নিশ্চিত' : 'Yes, Confirm')}
           </AlertDialogAction>
-          <AlertDialogCancel className="rounded-full px-6 mt-0">
+          <AlertDialogCancel className="rounded-xl px-6 mt-0 font-semibold border-border">
             {cancelLabel || (bn ? 'না, থাক' : 'Cancel')}
           </AlertDialogCancel>
         </AlertDialogFooter>

@@ -12,12 +12,12 @@ interface ProfileSectionCardProps {
 
 const ProfileSectionCard = ({ title, icon: Icon, children, className, columns = 2 }: ProfileSectionCardProps) => (
   <div className={cn(
-    'relative rounded-[28px] border border-border/15 bg-card/70 dark:bg-card/35 backdrop-blur-xl p-7 transition-all duration-500',
+    'relative rounded-2xl border border-border bg-card p-5 sm:p-6 transition-all duration-200 shadow-sm',
     className
-  )} style={{ boxShadow: 'var(--shadow-card)' }}>
-    <div className="flex items-center gap-3 mb-5 pb-3.5 border-b border-border/15">
+  )}>
+    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border">
       {Icon && (
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/15 to-teal-500/10 shadow-sm" style={{ boxShadow: 'var(--shadow-glow-emerald)' }}>
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/15 to-teal-500/10 shadow-xs">
           <Icon className="h-4.5 w-4.5 text-emerald-600 dark:text-emerald-400" />
         </div>
       )}
