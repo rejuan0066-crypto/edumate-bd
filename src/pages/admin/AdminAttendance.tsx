@@ -42,6 +42,7 @@ import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import StaffMonthlyAttendanceDialog from '@/components/admin/StaffMonthlyAttendanceDialog';
 import ResidentialDutyMonthlySheetDialog from '@/components/admin/ResidentialDutyMonthlySheetDialog';
 import BulkHolidayDialog from '@/components/admin/BulkHolidayDialog';
+import AttendanceRecoveryDialog from '@/components/admin/AttendanceRecoveryDialog';
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useAppTimezone } from '@/hooks/useAppTimezone';
 import { todayIsoInTz, addDaysIsoInTz, toMonthYearInTz } from '@/lib/timezone';
@@ -1223,6 +1224,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   // Special-day holiday dialog: pick which dates of the month + which people get leave.
   const [holidayDialogOpen, setHolidayDialogOpen] = useState(false);
   const [presentDialogOpen, setPresentDialogOpen] = useState(false);
+  const [recoveryDialogOpen, setRecoveryDialogOpen] = useState(false);
 
 
   // Reset attendance selectively
@@ -2556,6 +2558,17 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                 {!isDutyTab && canBulkMark && <Button size="sm" disabled={entities.length === 0} className="text-xs rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-[0_4px_16px_hsl(217_91%_50%/0.25)] hover:shadow-[0_6px_24px_hsl(217_91%_50%/0.35)] transition-all duration-200" onClick={() => setHolidayDialogOpen(true)}>
                   <CalendarOff className="h-3.5 w-3.5 mr-1" /> {bn ? 'সবাই ছুটি' : 'All Leave'}
                 </Button>}
+                {isAdmin && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs rounded-full border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 shadow-sm transition-all duration-200 font-medium"
+                    onClick={() => setRecoveryDialogOpen(true)}
+                  >
+                    <History className="h-3.5 w-3.5 mr-1 text-amber-600" />
+                    {bn ? 'হাজিরা রিকভার' : 'Recover'}
+                  </Button>
+                )}
                 {canDeleteItem && attendance.length > 0 && (
                   <Popover open={showResetMenu} onOpenChange={setShowResetMenu}>
                     <PopoverTrigger asChild>
@@ -3268,6 +3281,11 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
           bn={bn}
           mode="present"
           onApplied={(firstKey) => setSelectedDate(firstKey)}
+        />
+        <AttendanceRecoveryDialog
+          open={recoveryDialogOpen}
+          onOpenChange={setRecoveryDialogOpen}
+          bn={bn}
         />
       </div>
     </AdminLayout>

@@ -23,3 +23,5 @@ dist-ssr
 *.sln
 *.sw?
 supabase/.temp/
+supabase/*.json
+scripts/check_db.cjs
