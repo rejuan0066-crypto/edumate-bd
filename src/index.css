@@ -1270,8 +1270,8 @@
   .admin-page-card { border-radius: 20px !important; }
   .stat-card { padding: 0.875rem; }
 
-  /* Page card on admin layout — tighter padding on mobile */
-  .admin-page-card { padding: 0.625rem !important; }
+  /* Page card on admin layout — comfortable padding on mobile */
+  .admin-page-card { padding: 1rem !important; }
 
   /* Floating segmented tab pills should never overflow viewport */
   .seg-container { max-width: 100%; }

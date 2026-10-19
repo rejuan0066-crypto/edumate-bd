@@ -655,10 +655,10 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           </header>
 
           {/* Content */}
-          <main className="flex-1 px-1.5 sm:px-4 md:px-8 pb-24 lg:pb-8 pt-1 sm:pt-4 w-full max-w-[1440px] mx-auto">
+          <main className="flex-1 px-2.5 sm:px-6 md:px-8 pb-24 lg:pb-10 pt-2 sm:pt-4 w-full max-w-[1536px] mx-auto">
             <BackButton position="top" />
             {/* Modern Glass Content Container */}
-            <div className="admin-page-card rounded-xl sm:rounded-[36px] lg:rounded-[45px] bg-card/90 sm:bg-card/70 dark:bg-card/35 backdrop-blur-2xl border-0 sm:border border-border/10 dark:border-border/8 p-2 sm:p-6 lg:p-10 min-h-[60vh] w-full shadow-none sm:shadow-float">
+            <div className="admin-page-card rounded-2xl sm:rounded-[32px] lg:rounded-[40px] bg-card/95 sm:bg-card/85 dark:bg-card/40 backdrop-blur-2xl border border-border/50 dark:border-border/30 p-3.5 sm:p-6 lg:p-8 min-h-[65vh] w-full shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)]">
               <div className="w-full min-w-0">
                 <AdminPageWithTabs>{children}</AdminPageWithTabs>
               </div>
