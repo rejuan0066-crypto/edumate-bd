@@ -3575,70 +3575,50 @@ const AdminSalary = () => {
   return (
     <>
       <div className="space-y-5">
-        {/* Premium Banking-style Header */}
-        <div className="relative overflow-hidden rounded-[32px] border border-emerald-900/10 dark:border-emerald-400/10 bg-gradient-to-br from-emerald-950 via-emerald-900 to-teal-900 text-white shadow-[0_20px_60px_-20px_rgba(6,78,59,0.5)]">
-          {/* Decorative gold ornaments */}
-          <div className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-amber-300/10 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-32 -left-20 w-80 h-80 rounded-full bg-emerald-400/10 blur-3xl" />
-          <div className="pointer-events-none absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '24px 24px' }} />
-
-          <div className="relative z-10 px-6 py-5 sm:px-8 sm:py-6 flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4">
-              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-amber-300 to-amber-500 text-emerald-950 grid place-items-center shadow-lg ring-1 ring-amber-200/50">
-                <Wallet className="h-7 w-7" strokeWidth={2.5} />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="px-2.5 py-0.5 rounded-full bg-white/10 border border-white/15 text-[10px] font-bold tracking-[0.2em] uppercase text-amber-200">
-                    {bn ? 'অর্থ বিভাগ' : 'Finance Division'}
-                  </span>
-                </div>
-                <h1 className="text-[26px] sm:text-[28px] font-display font-extrabold tracking-tight leading-none">
-                  {bn ? 'বেতন ব্যবস্থাপনা' : 'Salary Management'}
-                </h1>
-                <p className="text-[13px] text-emerald-100/80 mt-1.5">
-                  {bn ? 'প্রতি-মিনিট ভিত্তিক বেতন হিসাব, কর্তন ও পেমেন্ট লেজার' : 'Per-minute payroll computation, deductions & payment ledger'}
-                </p>
-              </div>
+        {/* Unified Page Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-border/60">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-[10px] font-bold tracking-wider uppercase">
+                {bn ? 'অর্থ বিভাগ' : 'Finance'}
+              </span>
+              <span className="text-xs font-mono text-muted-foreground">
+                {bn ? toBnDigits(`${selectedMonth}/${selectedYear}`) : `${selectedMonth}/${selectedYear}`}
+              </span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="hidden sm:block text-right pr-3 border-r border-white/15">
-                <div className="text-[10px] uppercase tracking-[0.2em] text-emerald-200/70">{bn ? 'বিলিং পিরিয়ড' : 'Billing Period'}</div>
-                <div className="text-sm font-bold text-amber-200 mt-0.5 font-mono">
-                  {bn ? toBnDigits(`${selectedMonth}/${selectedYear}`) : `${selectedMonth}/${selectedYear}`}
-                </div>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}
-                className="bg-white/10 hover:bg-white/20 border-white/20 text-white hover:text-white backdrop-blur-sm">
-                <Settings2 className="h-4 w-4 mr-1.5" /> {bn ? 'সেটিংস' : 'Settings'}
-              </Button>
-            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-display">
+              {bn ? 'বেতন ব্যবস্থাপনা' : 'Salary Management'}
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+              {bn ? 'প্রতি-মিনিট ভিত্তিক বেতন হিসাব, কর্তন ও পেমেন্ট লেজার' : 'Per-minute payroll computation, deductions & payment ledger'}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
+              <Settings2 className="h-4 w-4 mr-1.5" /> {bn ? 'সেটিংস' : 'Settings'}
+            </Button>
           </div>
         </div>
 
-
-        {/* Premium Stats Cards — Banking grade */}
+        {/* KPI Stats Cards — Linear/SaaS Minimalist */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           {[
-            { label: bn ? 'মোট মূল বেতন' : 'Total Base', value: `৳${bn ? toBnDigits(stats.totalBase.toLocaleString()) : stats.totalBase.toLocaleString()}`, accent: 'from-slate-600 to-slate-800', text: 'text-slate-700 dark:text-slate-300', icon: Wallet },
-            { label: bn ? 'মোট নিট বেতন' : 'Total Net', value: `৳${bn ? toBnDigits(stats.totalNet.toLocaleString()) : stats.totalNet.toLocaleString()}`, accent: 'from-emerald-500 to-emerald-700', text: 'text-emerald-700 dark:text-emerald-400', icon: DollarSign },
-            { label: bn ? 'মোট কর্তন' : 'Total Deductions', value: `৳${bn ? toBnDigits(stats.totalDeduction.toLocaleString()) : stats.totalDeduction.toLocaleString()}`, accent: 'from-rose-500 to-rose-700', text: 'text-rose-700 dark:text-rose-400', icon: (props: any) => (<span className={`inline-flex items-center font-extrabold leading-none ${props.className || ''}`}><span>৳</span><Minus className="h-3 w-3 -ml-0.5" strokeWidth={3} /></span>) },
-            { label: bn ? 'মোট জমা' : 'Total Savings', value: `৳${bn ? toBnDigits(stats.totalSavings.toLocaleString()) : stats.totalSavings.toLocaleString()}`, accent: 'from-blue-500 to-blue-700', text: 'text-blue-700 dark:text-blue-400', icon: (props: any) => (<span className={`inline-flex items-center font-extrabold leading-none ${props.className || ''}`}><span>৳</span><Plus className="h-3 w-3 -ml-0.5" strokeWidth={3} /></span>) },
-            { label: bn ? 'পরিশোধিত' : 'Paid', value: bn ? toBnDigits(stats.paid) : stats.paid, accent: 'from-emerald-500 to-teal-600', text: 'text-emerald-700 dark:text-emerald-400', icon: FileText },
-            { label: bn ? 'বকেয়া' : 'Pending', value: bn ? toBnDigits(stats.pending) : stats.pending, accent: 'from-amber-500 to-orange-600', text: 'text-amber-700 dark:text-amber-400', icon: Calculator },
+            { label: bn ? 'মোট মূল বেতন' : 'Total Base', value: `৳${bn ? toBnDigits(stats.totalBase.toLocaleString()) : stats.totalBase.toLocaleString()}`, icon: Wallet, color: 'text-foreground' },
+            { label: bn ? 'মোট নিট বেতন' : 'Total Net', value: `৳${bn ? toBnDigits(stats.totalNet.toLocaleString()) : stats.totalNet.toLocaleString()}`, icon: DollarSign, color: 'text-emerald-600 dark:text-emerald-400' },
+            { label: bn ? 'মোট কর্তন' : 'Total Deductions', value: `৳${bn ? toBnDigits(stats.totalDeduction.toLocaleString()) : stats.totalDeduction.toLocaleString()}`, icon: Minus, color: 'text-rose-600 dark:text-rose-400' },
+            { label: bn ? 'মোট জমা' : 'Total Savings', value: `৳${bn ? toBnDigits(stats.totalSavings.toLocaleString()) : stats.totalSavings.toLocaleString()}`, icon: Plus, color: 'text-blue-600 dark:text-blue-400' },
+            { label: bn ? 'পরিশোধিত' : 'Paid', value: bn ? toBnDigits(stats.paid) : stats.paid, icon: FileText, color: 'text-emerald-600 dark:text-emerald-400' },
+            { label: bn ? 'বকেয়া' : 'Pending', value: bn ? toBnDigits(stats.pending) : stats.pending, icon: Calculator, color: 'text-amber-600 dark:text-amber-400' },
           ].map((s, i) => (
             <div key={i}
-              className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_-12px_rgba(0,0,0,0.18)] hover:border-emerald-300/50">
-              <div className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${s.accent}`} />
-              <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-gradient-to-br opacity-[0.06] group-hover:opacity-[0.12] transition-opacity"
-                style={{ background: `linear-gradient(135deg, currentColor, transparent)` }} />
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <span className={`text-[10px] font-bold tracking-[0.12em] uppercase ${s.text}`}>
+              className="rounded-xl border border-border/70 bg-card p-4 transition-all duration-150 hover:border-border hover:shadow-xs shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                   {s.label}
                 </span>
-                <s.icon className={`h-3.5 w-3.5 ${s.text} opacity-60`} />
+                <s.icon className={`h-3.5 w-3.5 ${s.color} opacity-70`} />
               </div>
-              <p className="text-xl font-extrabold tabular-nums text-foreground tracking-tight leading-none">
+              <p className={`text-xl font-bold tabular-nums tracking-tight leading-none ${s.color}`}>
                 {s.value}
               </p>
             </div>

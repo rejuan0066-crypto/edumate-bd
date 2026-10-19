@@ -441,25 +441,32 @@ const AdminStudents = () => {
 
   const studentListContent = (
     <div className="space-y-4 sm:space-y-6">
-        {/* Action bar */}
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-xs sm:text-sm text-muted-foreground font-medium">{bn ? `মোট ${formatDigits(filtered.length, true)} জন ছাত্র` : `Total ${filtered.length} students`}</p>
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-border/60">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-display font-bold text-foreground leading-tight">
+              {bn ? 'শিক্ষার্থী ব্যবস্থাপনা' : 'Student Management'}
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+              {bn ? `মোট ${formatDigits(filtered.length, true)} জন ছাত্র` : `Total ${filtered.length} students`}
+            </p>
+          </div>
           {canAddItem && isFeatureAllowed('tab_admission') !== false && (
-            <Button onClick={() => setShowAdd(true)} className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 shadow-md shadow-emerald-500/20 rounded-full px-4 sm:px-6 h-8 sm:h-11 text-xs sm:text-sm font-semibold transition-all">
-              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" /> {bn ? 'নতুন ভর্তি' : 'New Admission'}
+            <Button onClick={() => setShowAdd(true)} className="btn-primary-gradient h-8 text-xs flex items-center gap-1.5 shadow-sm rounded-xl px-4">
+              <Plus className="w-3.5 h-3.5 mr-1" /> {bn ? 'নতুন ভর্তি' : 'New Admission'}
             </Button>
           )}
         </div>
 
         {/* Filter Bar */}
-        <div className="rounded-2xl sm:rounded-[24px] border border-border/40 bg-card/80 backdrop-blur-md p-3 sm:p-5 shadow-sm">
+        <div className="rounded-xl border border-border/70 bg-card p-3 sm:p-4 shadow-xs">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <div className="relative flex-1 min-w-[180px] max-w-sm">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
-              <Input placeholder={bn ? 'নাম, আইডি বা রোল দিয়ে খুঁজুন...' : 'Search by name, ID or roll...'} className="pl-10 h-8 sm:h-10 rounded-full border-border/40 bg-muted/30 text-xs sm:text-sm placeholder:text-muted-foreground/50 focus:bg-background focus:border-emerald-500/40 focus:ring-emerald-500/20 transition-all" value={search} onChange={(e) => setSearch(e.target.value)} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input placeholder={bn ? 'নাম, আইডি বা রোল দিয়ে খুঁজুন...' : 'Search by name, ID or roll...'} className="pl-9 h-8 sm:h-9 rounded-xl border-border/70 bg-background text-xs sm:text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
             <Select value={filterDivisionId} onValueChange={(v) => { setFilterDivisionId(v); setFilterClassId('all'); }}>
-              <SelectTrigger className="h-8 sm:h-10 rounded-full border-border/40 bg-muted/30 text-xs sm:text-sm w-auto min-w-[100px] hover:bg-muted/50 transition-colors">
+              <SelectTrigger className="h-8 sm:h-9 rounded-xl border-border/70 bg-background text-xs sm:text-sm w-auto min-w-[110px]">
                 <SelectValue placeholder={bn ? 'বিভাগ' : 'Division'} />
               </SelectTrigger>
               <SelectContent>
@@ -470,7 +477,7 @@ const AdminStudents = () => {
               </SelectContent>
             </Select>
             <Select value={filterSessionId} onValueChange={setFilterSessionId}>
-              <SelectTrigger className="h-8 sm:h-10 rounded-full border-border/40 bg-muted/30 text-xs sm:text-sm w-auto min-w-[100px] hover:bg-muted/50 transition-colors">
+              <SelectTrigger className="h-8 sm:h-9 rounded-xl border-border/70 bg-background text-xs sm:text-sm w-auto min-w-[100px]">
                 <SelectValue placeholder={bn ? 'সেশন' : 'Session'} />
               </SelectTrigger>
               <SelectContent>
@@ -481,7 +488,7 @@ const AdminStudents = () => {
               </SelectContent>
             </Select>
             <Select value={filterClassId} onValueChange={setFilterClassId}>
-              <SelectTrigger className="h-8 sm:h-10 rounded-full border-border/40 bg-muted/30 text-xs sm:text-sm w-auto min-w-[100px] hover:bg-muted/50 transition-colors">
+              <SelectTrigger className="h-8 sm:h-9 rounded-xl border-border/70 bg-background text-xs sm:text-sm w-auto min-w-[100px]">
                 <SelectValue placeholder={bn ? 'শ্রেণী' : 'Class'} />
               </SelectTrigger>
               <SelectContent>
@@ -492,7 +499,7 @@ const AdminStudents = () => {
               </SelectContent>
             </Select>
             <Select value={filterApproval} onValueChange={setFilterApproval}>
-              <SelectTrigger className="h-8 sm:h-10 rounded-full border-border/40 bg-muted/30 text-xs sm:text-sm w-auto min-w-[100px] hover:bg-muted/50 transition-colors">
+              <SelectTrigger className="h-8 sm:h-9 rounded-xl border-border/70 bg-background text-xs sm:text-sm w-auto min-w-[100px]">
                 <SelectValue placeholder={bn ? 'অনুমোদন' : 'Approval'} />
               </SelectTrigger>
               <SelectContent>
@@ -503,7 +510,7 @@ const AdminStudents = () => {
               </SelectContent>
             </Select>
             <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="h-8 sm:h-10 rounded-full border-border/40 bg-muted/30 text-xs sm:text-sm w-auto min-w-[100px] hover:bg-muted/50 transition-colors">
+              <SelectTrigger className="h-8 sm:h-9 rounded-xl border-border/70 bg-background text-xs sm:text-sm w-auto min-w-[100px]">
                 <SelectValue placeholder={bn ? 'স্ট্যাটাস' : 'Status'} />
               </SelectTrigger>
               <SelectContent>

@@ -320,33 +320,28 @@
   input:is(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([role])):not(.chat-composer-input):not(.ai-chat-textarea),
   textarea:not(.chat-composer-input):not(.ai-chat-textarea),
   select:not(.chat-composer-input):not(.ai-chat-textarea) {
-    @apply rounded-2xl transition-all duration-300;
-    background-color: hsl(0 0% 100% / 0.5);
-    backdrop-filter: blur(16px) saturate(1.6);
-    -webkit-backdrop-filter: blur(16px) saturate(1.6);
-    border: 1.5px solid hsl(var(--aqua) / 0.4);
-    box-shadow: inset 0 1px 2px hsl(180 20% 40% / 0.06), 0 0 0 1px hsl(var(--aqua-glow) / 0.14), 0 0 14px -6px hsl(var(--aqua) / 0.3);
+    @apply rounded-xl transition-all duration-150;
+    background-color: hsl(var(--background));
+    border: 1px solid hsl(var(--border) / 0.85);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
   }
   .dark input:is(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([role])):not(.chat-composer-input):not(.ai-chat-textarea),
   .dark textarea:not(.chat-composer-input):not(.ai-chat-textarea),
   .dark select:not(.chat-composer-input):not(.ai-chat-textarea) {
-    background-color: hsl(200 30% 12% / 0.45);
-    border-color: hsl(var(--glass-border) / 0.28);
+    background-color: hsl(var(--card));
+    border-color: hsl(var(--border) / 0.6);
   }
   input:is(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([role])):not(.chat-composer-input):not(.ai-chat-textarea):focus,
   textarea:not(.chat-composer-input):not(.ai-chat-textarea):focus,
   select:not(.chat-composer-input):not(.ai-chat-textarea):focus {
-    @apply ring-2;
-    background-color: hsl(0 0% 100% / 0.72);
-    border-color: hsl(var(--aqua) / 0.6);
-    --tw-ring-color: hsl(var(--aqua) / 0.14);
+    border-color: hsl(var(--primary));
     outline: none;
-    box-shadow: 0 0 0 4px hsl(var(--aqua) / 0.08), var(--shadow-glow-aqua);
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15);
   }
   .dark input:is(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([role])):not(.chat-composer-input):not(.ai-chat-textarea):focus,
   .dark textarea:not(.chat-composer-input):not(.ai-chat-textarea):focus,
   .dark select:not(.chat-composer-input):not(.ai-chat-textarea):focus {
-    background-color: hsl(200 30% 12% / 0.6);
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.25);
   }
   input:is(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([role])):not(.chat-composer-input):not(.ai-chat-textarea)::placeholder,
   textarea:not(.chat-composer-input):not(.ai-chat-textarea)::placeholder {
@@ -725,68 +720,60 @@
     transform: translateY(0) scale(0.97);
   }
 
-  /* ── Sidebar — Light Frosted Aquamarine Glass ── */
+  /* Sidebar - clean minimalist SaaS border & glass */
   .sidebar-glass {
-    background: linear-gradient(180deg, hsl(0 0% 100% / 0.58), hsl(180 44% 97% / 0.5));
-    backdrop-filter: blur(44px) saturate(1.9);
-    -webkit-backdrop-filter: blur(44px) saturate(1.9);
-    border-right: 1px solid hsl(var(--aqua) / 0.4);
-    box-shadow: 4px 0 46px -12px hsl(180 50% 40% / 0.18), inset -1px 0 0 hsl(var(--aqua-glow) / 0.3), var(--shadow-glow-aqua);
+    background: hsl(var(--card) / 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-right: 1px solid hsl(var(--border) / 0.7);
+    box-shadow: 1px 0 3px 0 rgba(0, 0, 0, 0.02);
   }
   .dark .sidebar-glass {
-    background: linear-gradient(180deg, hsl(180 45% 12% / 0.72), hsl(172 42% 9% / 0.78));
-    border-right-color: hsl(var(--glass-border) / 0.35);
-    box-shadow: 4px 0 40px -10px hsl(180 60% 10% / 0.4), inset -1px 0 0 hsl(var(--aqua-glow) / 0.12), var(--shadow-glow-aqua);
+    background: hsl(var(--card) / 0.85);
+    border-right-color: hsl(var(--border) / 0.5);
+    box-shadow: 1px 0 4px 0 rgba(0, 0, 0, 0.2);
   }
 
   /* ── Top header — seamless translucent glass ── */
   .admin-header-glass {
-    background: hsl(0 0% 100% / 0.55);
-    backdrop-filter: blur(40px) saturate(1.9);
-    -webkit-backdrop-filter: blur(40px) saturate(1.9);
-    border-bottom: 1px solid hsl(var(--aqua) / 0.35) !important;
-    box-shadow: 0 8px 36px -14px hsl(180 45% 30% / 0.28), inset 0 -1px 0 hsl(var(--aqua-glow) / 0.28);
+    background: hsl(var(--background) / 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid hsl(var(--border) / 0.6) !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
   }
   .dark .admin-header-glass {
-    background: hsl(200 30% 8% / 0.55);
-    border-bottom-color: hsl(var(--glass-border) / 0.25) !important;
+    background: hsl(var(--background) / 0.85);
+    border-bottom-color: hsl(var(--border) / 0.4) !important;
   }
-
 
   .sidebar-item {
-    @apply flex items-center gap-3 rounded-xl transition-all duration-200 font-medium relative;
-    border: 1.5px solid hsl(var(--aqua) / 0.42);
-    box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.38), 0 0 0 1px hsl(var(--aqua-glow) / 0.14), 0 0 14px -8px hsl(var(--aqua) / 0.45);
-    padding: 10px 14px;
+    @apply flex items-center gap-2.5 rounded-xl transition-all duration-150 font-medium relative;
+    padding: 8px 12px;
     margin-bottom: 2px;
     font-size: var(--sidebar-font-size, 13px);
-    color: hsl(210 24% 16%);
-    line-height: 1.5;
+    color: hsl(var(--muted-foreground));
+    line-height: 1.4;
   }
   .sidebar-item .sidebar-icon {
-    color: hsl(210 22% 22%);
+    color: hsl(var(--muted-foreground));
   }
   .sidebar-item:hover {
-    color: hsl(184 80% 16%);
-    background: hsl(var(--aqua) / 0.14);
-    border-color: hsl(var(--aqua) / 0.62);
-    box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.48), 0 0 0 1px hsl(var(--aqua-glow) / 0.22), 0 0 18px -5px hsl(var(--aqua) / 0.5);
+    color: hsl(var(--foreground));
+    background: hsl(var(--muted) / 0.6);
   }
   .sidebar-item:hover .sidebar-icon {
-    color: hsl(184 80% 24%);
-    transform: scale(1.05);
+    color: hsl(var(--foreground));
   }
   .sidebar-icon {
-    transition: transform 0.2s ease, color 0.2s ease;
+    transition: transform 0.15s ease, color 0.15s ease;
   }
 
-  /* Active state — clearly filled, high contrast */
+  /* Active state — clearly filled, clean SaaS contrast */
   .sidebar-item.active {
-    @apply font-bold;
-    color: hsl(184 90% 12%);
-    background: hsl(var(--aqua) / 0.34);
-    border: 1.5px solid hsl(var(--aqua) / 0.9);
-    box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.55), 0 0 0 1px hsl(var(--aqua-glow) / 0.4), 0 2px 18px -4px hsl(var(--aqua) / 0.75);
+    @apply font-semibold;
+    color: hsl(var(--primary));
+    background: hsl(var(--primary) / 0.1);
   }
   .sidebar-item.active::before {
     content: '';
@@ -794,29 +781,27 @@
     left: 0;
     top: 50%;
     transform: translateY(-50%);
-    width: 5px;
-    height: 72%;
-    border-radius: 0 6px 6px 0;
-    background: hsl(var(--aqua));
-    box-shadow: 0 0 12px 2px hsl(var(--aqua) / 0.7);
+    width: 3px;
+    height: 60%;
+    border-radius: 0 4px 4px 0;
+    background: hsl(var(--primary));
   }
   .sidebar-item.active .sidebar-icon {
-    color: hsl(184 90% 16%);
+    color: hsl(var(--primary));
   }
   /* Expanded parent group */
   .sidebar-item.group-open {
-    background: hsl(var(--aqua) / 0.2);
-    border-color: hsl(var(--aqua) / 0.75);
+    background: hsl(var(--muted) / 0.4);
     @apply font-semibold;
   }
-  .dark .sidebar-item.group-open { background: hsl(160 50% 30% / 0.2); border-color: hsl(160 80% 55% / 0.7); }
-
+  .dark .sidebar-item.group-open {
+    background: hsl(var(--muted) / 0.25);
+  }
 
   .sidebar-item.has-active-child {
     @apply font-semibold;
-    color: hsl(200 30% 20%);
-    background: hsl(var(--aqua) / 0.1);
-    border-color: hsl(var(--aqua) / 0.5);
+    color: hsl(var(--foreground));
+    background: hsl(var(--muted) / 0.35);
   }
 
   /* ── Dark mode restores the original light-on-obsidian sidebar text ── */
@@ -890,33 +875,33 @@
 
   /* ── Sub-menu items ── */
   .sidebar-sub-item {
-    @apply flex items-center gap-2.5 rounded-lg transition-all duration-200 font-medium relative cursor-pointer;
-    padding: 7px 10px;
-    font-size: 12.5px;
-    color: hsl(210 22% 20%);
-    line-height: 1.5;
+    @apply flex items-center gap-2 rounded-lg transition-all duration-150 font-normal relative cursor-pointer;
+    padding: 6px 10px;
+    font-size: 12px;
+    color: hsl(var(--muted-foreground));
+    line-height: 1.4;
     margin-bottom: 1px;
   }
   .sidebar-sub-item .sidebar-icon {
-    color: hsl(210 20% 26%);
+    color: hsl(var(--muted-foreground));
   }
   .sidebar-sub-item:hover {
-    color: hsl(184 80% 16%);
-    background: hsl(var(--aqua) / 0.12);
+    color: hsl(var(--foreground));
+    background: hsl(var(--muted) / 0.5);
   }
   .sidebar-sub-item:hover .sidebar-icon {
-    color: hsl(184 80% 24%);
+    color: hsl(var(--foreground));
   }
   .sidebar-sub-item.active {
-    @apply font-semibold;
-    color: hsl(184 85% 15%);
-    background: hsl(var(--aqua) / 0.18);
+    @apply font-medium;
+    color: hsl(var(--primary));
+    background: hsl(var(--primary) / 0.08);
   }
   .sidebar-sub-item.active .sidebar-icon {
-    color: hsl(184 85% 20%);
+    color: hsl(var(--primary));
   }
   .sidebar-sub-item.active:hover {
-    background: hsl(var(--aqua) / 0.22);
+    background: hsl(var(--primary) / 0.12);
   }
   /* Dark mode restores original sub-item colors */
   .dark .sidebar-sub-item { color: hsl(210 15% 58%); }

@@ -2785,7 +2785,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     <AdminLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center justify-between flex-wrap gap-3 pb-4 border-b border-border/60">
           <div>
             <h1 className="text-2xl font-display font-bold text-foreground">
               {bn ? 'উপস্থিতি ব্যবস্থাপনা' : 'Attendance Management'}
@@ -2901,13 +2901,13 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
             { label: bn ? 'বিলম্ব উপস্থিত' : 'Late Present', value: stats.late, icon: Clock, gradient: 'from-amber-500/15 to-amber-500/5', iconBg: 'bg-amber-500/15', iconColor: 'text-amber-600' },
             { label: bn ? 'বাকি' : 'Unmarked', value: stats.unmarked, icon: AlertCircle, gradient: 'from-muted to-muted/50', iconBg: 'bg-muted', iconColor: 'text-muted-foreground' },
           ].map((s, i) => (
-            <div key={i} className={`relative overflow-hidden rounded-[24px] bg-gradient-to-br ${s.gradient} backdrop-blur-md border border-border/10 p-5 shadow-[0_8px_32px_-8px_hsl(220_20%_10%/0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_-8px_hsl(220_20%_10%/0.12)]`}>
+            <div key={i} className="rounded-xl border border-border/70 bg-card p-4 sm:p-5 transition-all duration-150 hover:border-border hover:shadow-xs shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-3xl font-bold text-foreground tracking-tight">{s.value}</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight tabular-nums">{s.value}</p>
                   <p className="text-xs font-medium text-muted-foreground mt-1">{s.label}</p>
                 </div>
-                <div className={`w-11 h-11 rounded-2xl ${s.iconBg} flex items-center justify-center`}>
+                <div className={`w-10 h-10 rounded-xl ${s.iconBg} flex items-center justify-center shrink-0`}>
                   <s.icon className={`h-5 w-5 ${s.iconColor}`} />
                 </div>
               </div>

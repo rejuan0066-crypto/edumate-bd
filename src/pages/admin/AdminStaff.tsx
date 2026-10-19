@@ -628,7 +628,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-border/60">
           <div>
             <h1 className="text-xl sm:text-2xl font-display font-bold text-foreground leading-tight">
               {staffType === 'teacher' ? (bn ? 'শিক্ষক ব্যবস্থাপনা' : 'Teacher Management') : staffType === 'administrative' ? (bn ? 'প্রশাসনিক কর্মকর্তা ব্যবস্থাপনা' : 'Administrative Staff Management') : staffType === 'staff' ? (bn ? 'সহায়ক কর্মী ব্যবস্থাপনা' : 'General Staff Management') : staffType === 'director' ? (bn ? 'পরিচালক ব্যবস্থাপনা' : 'Director Management') : staffType === 'committee_member' ? (bn ? 'কমিটি সদস্য ব্যবস্থাপনা' : 'Committee Member Management') : t('staff')}
