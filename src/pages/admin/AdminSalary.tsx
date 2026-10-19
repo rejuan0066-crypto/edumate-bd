@@ -3981,13 +3981,9 @@ const AdminSalary = () => {
                               {(() => {
                                 const t = getDutyTimeWithSource(s);
                                 const sourceLabel = t.source === 'special'
-                                  ? (bn ? 'উৎস: তারিখ-ভিত্তিক বিশেষ শিফট' : 'Source: Date-ranged special shift')
-                                  : t.source === 'category'
-                                  ? (bn ? 'উৎস: ডিপার্টমেন্ট শিফট' : 'Source: Department shift')
-                                  : t.source === 'staff'
-                                    ? (bn ? 'উৎস: স্টাফের ব্যক্তিগত সময়' : 'Source: Staff personal time')
-                                    : (bn ? 'উৎস: ডিফল্ট (০৮:০০–১৭:০০)' : 'Source: Default (08:00–17:00)');
-                                const dot = t.source === 'special' ? 'text-purple-600' : t.source === 'category' ? 'text-emerald-600' : t.source === 'staff' ? 'text-blue-600' : 'text-muted-foreground';
+                                  ? (bn ? 'উৎস: বিশেষ ডিউটি শিফট' : 'Source: Special duty shift')
+                                  : (bn ? 'উৎস: ডিপার্টমেন্ট শিফট' : 'Source: Department shift');
+                                const dot = t.source === 'special' ? 'text-purple-600' : 'text-emerald-600';
                                 return (
                                   <span className="text-[10px] text-primary" title={sourceLabel}>
                                     {bn ? toBnDigits(`${fmt(t.start)}-${fmt(t.end)}`) : `${fmt(t.start)}-${fmt(t.end)}`}
