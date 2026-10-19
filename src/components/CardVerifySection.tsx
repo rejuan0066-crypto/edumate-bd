@@ -197,13 +197,17 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
           </div>
           <div>
             <h3 className="text-sm sm:text-base font-semibold text-foreground flex items-center gap-2">
-              {bn ? 'কার্ড ভেরিফিকেশন ও অটো-ফিল' : 'Card Verification & Auto-fill'}
+              {formType === 'student'
+                ? (bn ? 'জন্ম নিবন্ধন ও স্মার্ট কার্ড ভেরিফিকেশন' : 'Birth Certificate & ID Verification')
+                : (bn ? 'এনআইডি ও কার্ড ভেরিফিকেশন' : 'NID & Card Verification')}
               <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
                 Didit AI Powered
               </span>
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {bn ? 'এনআইডি কার্ড বা জন্ম সনদের ছবি স্ক্যান করে নির্ভুলভাবে তথ্য পূরণ করুন' : 'Scan NID/ID to verify authenticity and auto-fill details'}
+              {formType === 'student'
+                ? (bn ? 'জন্ম নিবন্ধন সনদ বা স্মার্ট কার্ডের ছবি স্ক্যান করে নির্ভুলভাবে ছাত্রের তথ্য পূরণ করুন' : 'Scan Birth Certificate / ID to auto-fill student details')
+                : (bn ? 'এনআইডি কার্ড বা স্মার্ট কার্ড স্ক্যান করে নির্ভুলভাবে তথ্য পূরণ করুন' : 'Scan NID/ID to verify authenticity and auto-fill details')}
             </p>
           </div>
         </div>
@@ -220,14 +224,20 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
           ) : (
             <Scan className="w-4 h-4" />
           )}
-          <span>{bn ? 'NID/স্মার্ট কার্ড স্ক্যান করুন' : 'Scan NID / Smart Card'}</span>
+          <span>
+            {formType === 'student'
+              ? (bn ? 'জন্ম নিবন্ধন / NID স্ক্যান করুন' : 'Scan Birth Certificate / NID')
+              : (bn ? 'NID / স্মার্ট কার্ড স্ক্যান করুন' : 'Scan NID / Smart Card')}
+          </span>
         </Button>
       </div>
 
       {/* Manual ID Input option */}
       <div className="pt-3 border-t border-primary/10">
         <Label className="text-xs text-muted-foreground mb-1 block">
-          {bn ? 'অথবা পূর্ববর্তী আইডি/কার্ড নম্বর দিয়ে খুঁজুন' : 'Or search by existing ID/Card Number'}
+          {formType === 'student'
+            ? (bn ? 'অথবা জন্ম নিবন্ধন / শিক্ষার্থী আইডি নম্বর দিয়ে খুঁজুন' : 'Or search by 17-digit Birth Reg No / Student ID')
+            : (bn ? 'অথবা এনআইডি / স্টাফ আইডি নম্বর দিয়ে খুঁজুন' : 'Or search by existing NID / Staff ID')}
         </Label>
         <div className="flex flex-col sm:flex-row gap-3 items-end">
           <div className="flex-1 w-full">
@@ -242,7 +252,9 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
                 setCardNumber(converted);
                 setVerified(false);
               }}
-              placeholder={bn ? 'আইডি / কার্ড নম্বর লিখুন (ইংরেজি সংখ্যা)...' : 'Enter card or registration number (digits only)...'}
+              placeholder={formType === 'student'
+                ? (bn ? '১৭ ডিজিটের জন্ম নিবন্ধন নম্বর বা আইডি লিখুন...' : 'Enter 17-digit Birth Reg No or Student ID...')
+                : (bn ? 'এনআইডি নম্বর বা আইডি লিখুন (ইংরেজি সংখ্যা)...' : 'Enter NID or ID number (digits only)...')}
               disabled={loading}
               inputMode="numeric"
             />
