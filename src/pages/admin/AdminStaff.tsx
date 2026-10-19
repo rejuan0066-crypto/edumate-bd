@@ -861,14 +861,16 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                           <button onClick={() => setViewStaff(s)} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary active:scale-95" title={bn ? 'প্রোফাইল দেখুন' : 'View Profile'}>
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button 
-                            onClick={() => setMonthlyAttendanceStaff(s)} 
-                            className={`p-1 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary active:scale-95 ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`} 
-                            disabled={isPending}
-                            title={bn ? 'হাজিরা ও ডিউটি রিপোর্ট' : 'Attendance & Duty Report'}
-                          >
-                            <ClipboardList className="w-4 h-4 text-primary" />
-                          </button>
+                          {isAdminRole(role) && (
+                            <button 
+                              onClick={() => setMonthlyAttendanceStaff(s)} 
+                              className={`p-1 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary active:scale-95 ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`} 
+                              disabled={isPending}
+                              title={bn ? 'হাজিরা ও ডিউটি রিপোর্ট' : 'Attendance & Duty Report'}
+                            >
+                              <ClipboardList className="w-4 h-4 text-primary" />
+                            </button>
+                          )}
                           {canEditItem && (
                             <button 
                               disabled={isPending}
@@ -882,7 +884,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                               <Pencil className="w-4 h-4" />
                             </button>
                           )}
-                          {canEditItem && s.status === 'active' && isFeatureAllowed('action_salary_view') !== false && (
+                          {isAdminRole(role) && canEditItem && s.status === 'active' && isFeatureAllowed('action_salary_view') !== false && (
                             <button 
                               onClick={() => setLetterStaff(s)} 
                               className={`p-1 rounded-lg hover:bg-accent/10 text-muted-foreground hover:text-accent active:scale-95 ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`} 
@@ -892,7 +894,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                               <Award className="w-4 h-4" />
                             </button>
                           )}
-                          {canEditItem && s.status === 'active' && (
+                          {isAdminRole(role) && canEditItem && s.status === 'active' && (
                             <button 
                               onClick={() => setDutyStaff(s)} 
                               className={`p-1 rounded-lg hover:bg-primary/10 ${s.duty_start_time ? 'text-primary' : 'text-muted-foreground hover:text-primary'} active:scale-95 ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`} 
@@ -995,7 +997,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                             const cat = getStaffCategory(s, designationsMap, activeCategoryKeys);
                             const catDesignations = designationsList.filter((d: any) => d.staff_category === cat);
                             const isPending = isRecordPending(s.id);
-                            const canChangeDesignation = canEditItem && isFeatureAllowed('tab_designations') !== false;
+                            const canChangeDesignation = isAdminRole(role) && canEditItem && isFeatureAllowed('tab_designations') !== false;
 
                             if (!canChangeDesignation) {
                               return <span className="text-xs font-medium text-foreground">{s.designation || '-'}</span>;
@@ -1024,7 +1026,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                         <td className="px-4 py-3">
                           {(() => {
                             const isPending = isRecordPending(s.id);
-                            const canChangeCategory = canEditItem && isFeatureAllowed('tab_designations') !== false;
+                            const canChangeCategory = isAdminRole(role) && canEditItem && isFeatureAllowed('tab_designations') !== false;
                             const cat = getStaffCategory(s, designationsMap, activeCategoryKeys);
 
                             if (!canChangeCategory) {
@@ -1115,15 +1117,17 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                             </>
                           )}
                           <button onClick={() => setViewStaff(s)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary" title={bn ? 'প্রোফাইল দেখুন' : 'View Profile'}><Eye className="w-4 h-4" /></button>
-                          <button 
-                            onClick={() => setMonthlyAttendanceStaff(s)} 
-                            className={`p-2 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary ${isRecordPending(s.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
-                            disabled={isRecordPending(s.id)}
-                            title={bn ? 'হাজিরা ও ডিউটি রিপোর্ট' : 'Attendance & Duty Report'}
-                          >
-                            <ClipboardList className="w-4 h-4 text-primary" />
-                          </button>
-                          {canEditItem && s.status === 'active' && isFeatureAllowed('action_salary_view') !== false && (
+                          {isAdminRole(role) && (
+                            <button 
+                              onClick={() => setMonthlyAttendanceStaff(s)} 
+                              className={`p-2 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary ${isRecordPending(s.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
+                              disabled={isRecordPending(s.id)}
+                              title={bn ? 'হাজিরা ও ডিউটি রিপোর্ট' : 'Attendance & Duty Report'}
+                            >
+                              <ClipboardList className="w-4 h-4 text-primary" />
+                            </button>
+                          )}
+                          {isAdminRole(role) && canEditItem && s.status === 'active' && isFeatureAllowed('action_salary_view') !== false && (
                             <button 
                               onClick={() => setLetterStaff(s)} 
                               className={`p-2 rounded-lg hover:bg-accent/10 text-muted-foreground hover:text-accent ${isRecordPending(s.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
@@ -1133,7 +1137,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                               <Award className="w-4 h-4" />
                             </button>
                           )}
-                          {canEditItem && s.status === 'active' && (
+                          {isAdminRole(role) && canEditItem && s.status === 'active' && (
                             <button 
                               onClick={() => setDutyStaff(s)} 
                               className={`p-2 rounded-lg hover:bg-primary/10 ${s.duty_start_time ? 'text-primary' : 'text-muted-foreground hover:text-primary'} ${isRecordPending(s.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
