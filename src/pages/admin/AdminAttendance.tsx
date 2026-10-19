@@ -925,7 +925,9 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
 
   // Apply the Thursday half-day check-in/check-out window when the selected date is a
   // Thursday and the staff belongs to a configured department.
+  // NOTE: If a staff has an explicit personal duty time, that personal duty time MUST NOT be overridden!
   const applyThursdayWindow = (entity: any, base: { start: string; end: string }) => {
+    if (entity?.duty_start_time && entity?.duty_end_time) return base;
     const enabled = (thursdayHalfSetting as any)?.enabled === true;
     if (!enabled || entity?.type === 'student') return base;
     if (!isThursdayDate(selectedDate)) return base;

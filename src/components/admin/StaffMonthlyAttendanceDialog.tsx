@@ -48,7 +48,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
   const [activeDateKey, setActiveDateKey] = useState<string | null>(null);
   // Expected duty start (minutes-from-midnight) + Thursday half-day setting,
   // used to compute late minutes from check-in time (same rule as salary page).
-  const [dutyInfo, setDutyInfo] = useState<{ start: number; end: number; category: string | null }>({ start: 480, end: 1020, category: null });
+  const [dutyInfo, setDutyInfo] = useState<{ start: number; end: number; category: string | null; hasCustomDuty?: boolean }>({ start: 480, end: 1020, category: null, hasCustomDuty: false });
   const [thuSetting, setThuSetting] = useState<any>(null);
   // Residential-duty roster: which dates this staff actually has the shift on.
   // null = no restriction (full-day / student shifts); Set = allowed ISO dates.
@@ -152,7 +152,8 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
         start = parseClockMinutes(catMap[cat].start) ?? 480;
         end = parseClockMinutes(catMap[cat].end) ?? 1020;
       }
-      setDutyInfo({ start, end, category: cat });
+      const hasCustomDuty = !!((s as any)?.duty_start_time && (s as any)?.duty_end_time);
+      setDutyInfo({ start, end, category: cat, hasCustomDuty });
       setThuSetting(thu?.value || null);
     })();
     return () => { cancel = true; };
@@ -175,14 +176,14 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
   }, [records]);
 
   // Late minutes for a record = check-in time minus expected duty start
-  // (Thursday half-day start override applies when the rule is on for this category).
+  // (Thursday half-day start override applies when the rule is on for this category, but NOT for custom personal duty).
   const lateMinutesFor = (rec: any): number => {
     if (!rec?.check_in_time) return 0;
     const checkIn = parseClockMinutes(String(rec.check_in_time).slice(0, 5));
     if (checkIn == null) return 0;
     let expected = dutyInfo.start;
     const overnight = dutyInfo.end <= dutyInfo.start;
-    if (shouldApplyThursdayHalfDay({ setting: thuSetting, staffCategory: dutyInfo.category, attendanceDate: rec.attendance_date, isOvernight: overnight })) {
+    if (!dutyInfo.hasCustomDuty && shouldApplyThursdayHalfDay({ setting: thuSetting, staffCategory: dutyInfo.category, attendanceDate: rec.attendance_date, isOvernight: overnight })) {
       const thuStart = parseClockMinutes(thuSetting?.start_time);
       if (thuStart && thuStart > 0 && thuStart < dutyInfo.end) expected = thuStart;
     }

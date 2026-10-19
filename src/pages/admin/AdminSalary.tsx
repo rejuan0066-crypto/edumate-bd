@@ -1701,7 +1701,8 @@ const AdminSalary = () => {
       // কোন বিভাগে নিয়ম লাগবে তা সেটিংসে নির্বাচিত ক্যাটাগরি (fallback: 'teacher') দিয়ে ঠিক হয়।
       // শুধুমাত্র নির্বাচিত department/category-এর স্টাফেই প্রযোজ্য (shared helper দিয়ে যাচাইকৃত)।
       const thuHalfSetting = getSetting('thursday_half_day_education');
-      const applyThuHalf = shouldApplyThursdayHalfDay({
+      const hasPersonalDuty = !!(staffMember?.duty_start_time && staffMember?.duty_end_time);
+      const applyThuHalf = !hasPersonalDuty && shouldApplyThursdayHalfDay({
         setting: thuHalfSetting,
         staffCategory: staffMember?.staff_category,
         attendanceDate: r.attendance_date,
