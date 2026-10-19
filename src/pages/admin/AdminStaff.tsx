@@ -30,6 +30,7 @@ import { sanitizePasswordInput } from '@/lib/passwordInput';
 import { parseEdgeError } from '@/lib/edgeError';
 import { invalidateAllStaffQueries } from '@/lib/staffQueryInvalidator';
 import { sortStaffByDepartment } from '@/lib/staffOrderHelper';
+import { getStaffDisplayNames } from '@/lib/nameFormatter';
 
 
 export type StaffPageType = 'all' | 'staff' | 'teacher' | 'administrative' | 'support' | 'director' | 'committee_member';
@@ -432,7 +433,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
     return [...preFiltered].sort((a, b) => {
       const getSortVal = (s: any): string => {
         switch (sortKey) {
-          case 'name': return (bn ? (s.name_bn || s.name_en) : (s.name_en || s.name_bn)) || '';
+          case 'name': return getStaffDisplayNames(s.name_bn, s.name_en, bn).primary || '';
           case 'staff_id': return s.staff_id || '\uffff'; // empty IDs sort last on asc
           case 'designation': return s.designation || '';
           case 'status': return s.status || '';
@@ -738,6 +739,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                   const cat = getStaffCategory(s, designationsMap, activeCategoryKeys);
                   const isResigned = isStaffResigned(s);
                   const isPending = isRecordPending(s.id);
+                  const displayNames = getStaffDisplayNames(s.name_bn, s.name_en, bn);
                   return (
                     <div key={s.id} className="p-3 space-y-2 bg-card/60 hover:bg-card transition-colors">
                       <div className="flex items-start justify-between gap-2.5">
@@ -746,13 +748,16 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                             <img src={s.photo_url} alt="" className="w-10 h-10 rounded-full object-cover shrink-0 ring-1 ring-border" />
                           ) : (
                             <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0">
-                              {(bn ? s.name_bn : s.name_en)?.[0] || '?'}
+                              {displayNames.primary?.[0] || '?'}
                             </div>
                           )}
                           <div className="min-w-0">
                             <h4 className="font-semibold text-foreground text-sm truncate leading-tight">
-                              {bn ? (s.name_bn || s.name_en) : (s.name_en || s.name_bn)}
+                              {displayNames.primary || '-'}
                             </h4>
+                            {displayNames.secondary && (
+                              <p className="text-[11px] text-muted-foreground truncate">{displayNames.secondary}</p>
+                            )}
                             <p className="text-[11px] text-muted-foreground truncate mt-0.5">
                               {s.designation || (bn ? 'পদবী নেই' : 'No designation')} • {labelForCategory(cat)}
                             </p>
@@ -848,7 +853,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                           {canEditItem && (s.status === 'active' || s.status === 'inactive') && isAdminRole(role) && (
                             <button
                               disabled={statusMutation.isPending || isPending}
-                              onClick={async () => { const next = s.status === 'active' ? 'inactive' : 'active'; const ok = await confirm({ title: bn ? (next === 'active' ? 'স্টাফ সক্রিয় করবেন?' : 'স্টাফ নিষ্ক্রিয় করবেন?') : (next === 'active' ? 'Activate staff?' : 'Deactivate staff?'), description: bn ? `"${s.name_bn || s.name_en}" কে ${next === 'active' ? 'সক্রিয়' : 'নিষ্ক্রিয়'} করতে চান?` : `Are you sure you want to ${next === 'active' ? 'activate' : 'deactivate'} "${s.name_en || s.name_bn}"?`, confirmText: bn ? 'হ্যাঁ' : 'Yes', cancelText: bn ? 'বাতিল' : 'Cancel', variant: next === 'active' ? 'default' : 'warning' }); if (!ok) return; statusMutation.mutate({ id: s.id, status: next }); }}
+                              onClick={async () => { const next = s.status === 'active' ? 'inactive' : 'active'; const staffName = displayNames.primary || (s.name_bn || s.name_en); const ok = await confirm({ title: bn ? (next === 'active' ? 'স্টাফ সক্রিয় করবেন?' : 'স্টাফ নিষ্ক্রিয় করবেন?') : (next === 'active' ? 'Activate staff?' : 'Deactivate staff?'), description: bn ? `"${staffName}" কে ${next === 'active' ? 'সক্রিয়' : 'নিষ্ক্রিয়'} করতে চান?` : `Are you sure you want to ${next === 'active' ? 'activate' : 'deactivate'} "${staffName}"?`, confirmText: bn ? 'হ্যাঁ' : 'Yes', cancelText: bn ? 'বাতিল' : 'Cancel', variant: next === 'active' ? 'default' : 'warning' }); if (!ok) return; statusMutation.mutate({ id: s.id, status: next }); }}
                               className={`p-1 rounded-lg ${s.status === 'active' ? 'hover:bg-destructive/10 text-muted-foreground hover:text-destructive' : 'hover:bg-success/10 text-muted-foreground hover:text-success'} active:scale-95 ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
                               title={s.status === 'active' ? (bn ? 'নিষ্ক্রিয় করুন' : 'Inactivate') : (bn ? 'সক্রিয় করুন' : 'Activate')}
                             >
@@ -907,17 +912,24 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                       <tr key={s.id} className="hover:bg-secondary/30 transition-colors">
                         <td className="text-center px-3 py-3 text-xs text-muted-foreground font-mono">{i + 1}</td>
                         <td className="px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            {s.photo_url ? (
-                              <img src={s.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" />
-                            ) : (
-                              <div className="w-9 h-9 rounded-full bg-accent/20 flex items-center justify-center text-accent-foreground font-bold text-sm">{(bn ? s.name_bn : s.name_en)?.[0] || '?'}</div>
-                            )}
-                            <div>
-                              <span className="font-medium text-foreground text-sm block">{bn ? (s.name_bn || s.name_en) : (s.name_en || s.name_bn)}</span>
-                              {s.name_bn && s.name_en && <span className="text-xs text-muted-foreground">{bn ? s.name_en : s.name_bn}</span>}
-                            </div>
-                          </div>
+                          {(() => {
+                            const displayNames = getStaffDisplayNames(s.name_bn, s.name_en, bn);
+                            return (
+                              <div className="flex items-center gap-3">
+                                {s.photo_url ? (
+                                  <img src={s.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" />
+                                ) : (
+                                  <div className="w-9 h-9 rounded-full bg-accent/20 flex items-center justify-center text-accent-foreground font-bold text-sm">
+                                    {displayNames.primary?.[0] || '?'}
+                                  </div>
+                                )}
+                                <div>
+                                  <span className="font-medium text-foreground text-sm block">{displayNames.primary || '-'}</span>
+                                  {displayNames.secondary && <span className="text-xs text-muted-foreground">{displayNames.secondary}</span>}
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </td>
                         <td className="px-4 py-3">
                           {(s as any).staff_id ? (
@@ -1082,7 +1094,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                           {canEditItem && (s.status === 'active' || s.status === 'inactive') && isAdminRole(role) && (
                             <button
                               disabled={statusMutation.isPending || isRecordPending(s.id)}
-                              onClick={async () => { const next = s.status === 'active' ? 'inactive' : 'active'; const ok = await confirm({ title: bn ? (next === 'active' ? 'স্টাফ সক্রিয় করবেন?' : 'স্টাফ নিষ্ক্রিয় করবেন?') : (next === 'active' ? 'Activate staff?' : 'Deactivate staff?'), description: bn ? `"${s.name_bn || s.name_en}" কে ${next === 'active' ? 'সক্রিয়' : 'নিষ্ক্রিয়'} করতে চান?` : `Are you sure you want to ${next === 'active' ? 'activate' : 'deactivate'} "${s.name_en || s.name_bn}"?`, confirmText: bn ? 'হ্যাঁ' : 'Yes', cancelText: bn ? 'বাতিল' : 'Cancel', variant: next === 'active' ? 'default' : 'warning' }); if (!ok) return; statusMutation.mutate({ id: s.id, status: next }); }}
+                              onClick={async () => { const next = s.status === 'active' ? 'inactive' : 'active'; const staffName = getStaffDisplayNames(s.name_bn, s.name_en, bn).primary || (s.name_bn || s.name_en); const ok = await confirm({ title: bn ? (next === 'active' ? 'স্টাফ সক্রিয় করবেন?' : 'স্টাফ নিষ্ক্রিয় করবেন?') : (next === 'active' ? 'Activate staff?' : 'Deactivate staff?'), description: bn ? `"${staffName}" কে ${next === 'active' ? 'সক্রিয়' : 'নিষ্ক্রিয়'} করতে চান?` : `Are you sure you want to ${next === 'active' ? 'activate' : 'deactivate'} "${staffName}"?`, confirmText: bn ? 'হ্যাঁ' : 'Yes', cancelText: bn ? 'বাতিল' : 'Cancel', variant: next === 'active' ? 'default' : 'warning' }); if (!ok) return; statusMutation.mutate({ id: s.id, status: next }); }}
                               className={`p-2 rounded-lg ${s.status === 'active' ? 'hover:bg-destructive/10 text-muted-foreground hover:text-destructive' : 'hover:bg-success/10 text-muted-foreground hover:text-success'} ${isRecordPending(s.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
                               title={s.status === 'active' ? (bn ? 'নিষ্ক্রিয় করুন' : 'Inactivate') : (bn ? 'সক্রিয় করুন' : 'Activate')}
                             >
@@ -1161,7 +1173,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                 {bn ? 'অ্যাকাউন্ট তৈরি করতে ইমেইল ও পাসওয়ার্ড প্রদান করুন। পাসওয়ার্ড অবশ্যই ইংরেজি অক্ষরে হতে হবে এবং এতে কমপক্ষে ৬টি অক্ষর, বড়/ছোট হাতের অক্ষর, সংখ্যা ও বিশেষ চিহ্ন থাকতে হবে।' : 'Provide email and password to create an account. Password must be in English and include at least 6 characters, uppercase/lowercase letters, numbers, and symbols.'}
               </p>
               <p className="text-sm text-muted-foreground">
-                {bn ? `কর্মী: ${selectedStaff?.name_bn || selectedStaff?.name_en || ''}` : `Staff: ${selectedStaff?.name_en || selectedStaff?.name_bn || ''}`}
+                {bn ? `কর্মী: ${getStaffDisplayNames(selectedStaff?.name_bn, selectedStaff?.name_en, bn).primary || ''}` : `Staff: ${getStaffDisplayNames(selectedStaff?.name_bn, selectedStaff?.name_en, bn).primary || ''}`}
               </p>
               <div className="space-y-2">
                 <Label>{bn ? 'ইমেইল' : 'Email'}</Label>

@@ -29,6 +29,7 @@ import { invalidateAllStaffQueries } from '@/lib/staffQueryInvalidator';
 import { useAuth } from '@/hooks/useAuth';
 import { isAdminRole } from '@/lib/roles';
 import { isFutureJoiningDate } from '@/lib/joiningDate';
+import { resolveStaffFormNames, cleanStaffName, deduplicateRepeatedWords } from '@/lib/nameFormatter';
 
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 
@@ -321,8 +322,19 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     if (!isEditMode || !existingStaff || dataLoaded) return;
     const sd = (existingStaff.staff_data as any) || {};
     setSelectedStaffCategory(existingStaff.staff_category || initialStaffCategory);
-    setFirstName(sd.first_name || existingStaff.name_bn?.split(' ')[0] || '');
-    setLastName(sd.last_name || existingStaff.name_bn?.split(' ').slice(1).join(' ') || '');
+    const cleaned = cleanStaffName(existingStaff.name_bn, existingStaff.name_en);
+    const rawFirst = sd.first_name || '';
+    const rawLast = sd.last_name || '';
+    if (rawFirst && rawLast && rawFirst.trim().toLowerCase() === rawLast.trim().toLowerCase()) {
+      setFirstName(deduplicateRepeatedWords(rawFirst));
+      setLastName('');
+    } else if (rawFirst || rawLast) {
+      setFirstName(deduplicateRepeatedWords(rawFirst));
+      setLastName(deduplicateRepeatedWords(rawLast));
+    } else {
+      setFirstName(cleaned.name_bn || '');
+      setLastName(cleaned.has_distinct_english ? (cleaned.name_en || '') : '');
+    }
     setMobile(existingStaff.phone?.replace(/^\+\d{1,3}/, '') || '');
     setMobileCode(sd.mobile_code || '+880');
     setEmploymentType(existingStaff.employment_type || '');
@@ -550,7 +562,8 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
   // Submit
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const fullName = `${firstName} ${lastName}`.trim();
+      const { name_bn: resolvedBn, name_en: resolvedEn } = resolveStaffFormNames(firstName, lastName);
+      const fullName = bn ? (resolvedBn || resolvedEn || '') : (resolvedEn || resolvedBn || '');
       const desigLabel = designations.find(d => d.value === designation)?.[bn ? 'bn' : 'en'] || designation;
 
       const staffData = {
@@ -611,8 +624,8 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
       };
 
       const record = {
-        name_bn: fullName,
-        name_en: fullName,
+        name_bn: resolvedBn || fullName,
+        name_en: resolvedEn || null,
         designation: desigLabel,
         phone: mobile ? `${mobileCode}${mobile}` : null,
         email: staffEmail || null,
@@ -792,7 +805,9 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     };
 
     reqCheck('first_name', firstName, 'প্রথম নাম আবশ্যক', 'First name required');
-    reqCheck('last_name', lastName, 'শেষ নাম আবশ্যক', 'Last name required');
+    if (!firstName.trim() || firstName.trim().split(/\s+/).length < 2) {
+      reqCheck('last_name', lastName, 'শেষ নাম আবশ্যক', 'Last name required');
+    }
     reqCheck('mobile', mobile, 'মোবাইল নম্বর আবশ্যক', 'Mobile required');
     if (isFieldActive('employment_type') && isFieldRequired('employment_type') && !employmentType) errors['employment_type'] = bn ? 'চাকরির ধরন নির্বাচন করুন' : 'Select employment type';
     if (isFieldActive('designation') && isFieldRequired('designation') && !designation) errors['designation'] = bn ? 'পদবী নির্বাচন করুন' : 'Select designation';
@@ -901,7 +916,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
       }
       if (!isAdmin) {
         if (isFieldActive('first_name') && isFieldRequired('first_name') && !firstName.trim()) errors['first_name'] = bn ? 'প্রথম নাম আবশ্যক' : 'First name required';
-        if (isFieldActive('last_name') && isFieldRequired('last_name') && !lastName.trim()) errors['last_name'] = bn ? 'শেষ নাম আবশ্যক' : 'Last name required';
+        if (isFieldActive('last_name') && isFieldRequired('last_name') && !lastName.trim() && (!firstName.trim() || firstName.trim().split(/\s+/).length < 2)) errors['last_name'] = bn ? 'শেষ নাম আবশ্যক' : 'Last name required';
         if (isFieldActive('mobile') && isFieldRequired('mobile') && !mobile.trim()) errors['mobile'] = bn ? 'মোবাইল নম্বর আবশ্যক' : 'Mobile required';
         if (isFieldActive('employment_type') && isFieldRequired('employment_type') && !employmentType) errors['employment_type'] = bn ? 'চাকরির ধরন নির্বাচন করুন' : 'Select employment type';
         if (isFieldActive('designation') && isFieldRequired('designation') && !designation) errors['designation'] = bn ? 'পদবী নির্বাচন করুন' : 'Select designation';
@@ -1104,8 +1119,15 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
         <div className="section-title">{bn ? '১. ব্যক্তিগত তথ্য' : '1. Employee Details'}</div>
         <table className="form-table">
           <tbody>
-            <tr><td className="label">{bn ? 'নাম (বাংলা)' : 'Name (Bangla)'}</td><td className="value" colSpan={3}>{firstName || `${firstName} ${lastName}`.trim() || '-'}</td></tr>
-            <tr><td className="label">{bn ? 'নাম (ইংরেজি)' : 'Name (English)'}</td><td className="value" colSpan={3}>{lastName || '-'}</td></tr>
+            {(() => {
+              const { name_bn: previewBn, name_en: previewEn } = resolveStaffFormNames(firstName, lastName);
+              return (
+                <>
+                  <tr><td className="label">{bn ? 'নাম (বাংলা)' : 'Name (Bangla)'}</td><td className="value" colSpan={3}>{previewBn || firstName || '-'}</td></tr>
+                  <tr><td className="label">{bn ? 'নাম (ইংরেজি)' : 'Name (English)'}</td><td className="value" colSpan={3}>{previewEn || '-'}</td></tr>
+                </>
+              );
+            })()}
             <tr><td className="label">{bn ? 'বেতন' : 'Salary'}</td><td className="value">৳{salary}</td><td className="label">{bn ? 'মোবাইল' : 'Mobile'}</td><td className="value">{mobileCode}{mobile}</td></tr>
             <tr><td className="label">{bn ? 'চাকরির ধরন' : 'Employment'}</td><td className="value">{employmentType === 'full_time' ? (bn ? 'পূর্ণকালীন' : 'Full Time') : (bn ? 'খণ্ডকালীন' : 'Part Time')}</td><td className="label">{bn ? 'পদবী' : 'Designation'}</td><td className="value">{desigLabel}</td></tr>
             <tr><td className="label">{bn ? 'আবাসিক/অনাবাসিক' : 'Residential'}</td><td className="value">{residenceType === 'residential' ? (bn ? 'আবাসিক' : 'Residential') : (bn ? 'অনাবাসিক' : 'Non-Residential')}</td><td className="label">{bn ? 'জন্ম তারিখ' : 'Date of Birth'}</td><td className="value">{dob}</td></tr>
@@ -1352,8 +1374,8 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
               formType="staff"
               isEnabled={apiVerifyEnabled !== false}
               onDataReceived={(data) => {
-                if (data.name_bn) setFirstName(data.name_bn);
-                if (data.name_en) setLastName(data.name_en);
+                if (data.name_bn) setFirstName(deduplicateRepeatedWords(data.name_bn));
+                if (data.name_en) setLastName(deduplicateRepeatedWords(data.name_en));
                 if (data.father_name) setFatherName(data.father_name);
                 if (data.date_of_birth) setDob(data.date_of_birth);
                 if (data.phone) setMobile(data.phone);

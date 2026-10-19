@@ -20,6 +20,7 @@ import QRCode from 'qrcode';
 import { downloadLetterAsPdf } from '@/lib/letterPdfDownload';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
+import { getStaffDisplayNames } from '@/lib/nameFormatter';
 
 /* ── Editable span helper ─────────────────────────── */
 interface EditableProps {
@@ -624,8 +625,15 @@ const AdminResignLetters = () => {
                   <TableRow key={l.id}>
                     <TableCell className="font-mono text-sm">{l.letter_number}</TableCell>
                     <TableCell>
-                      <p className="font-medium">{l.staff_name_bn || l.staff_name}</p>
-                      {l.staff_name && l.staff_name_bn && <p className="text-xs text-muted-foreground">{l.staff_name}</p>}
+                      {(() => {
+                        const displayNames = getStaffDisplayNames(l.staff_name_bn, l.staff_name, bn);
+                        return (
+                          <>
+                            <p className="font-medium">{displayNames.primary || '—'}</p>
+                            {displayNames.secondary && <p className="text-xs text-muted-foreground">{displayNames.secondary}</p>}
+                          </>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell>{l.designation}</TableCell>
                     <TableCell>{l.resign_date ? new Date(l.resign_date).toLocaleDateString(bn ? 'bn-BD' : 'en-US') : '—'}</TableCell>

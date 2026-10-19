@@ -18,6 +18,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { sortStaffByDepartment } from '@/lib/staffOrderHelper';
+import { getStaffDisplayNames } from '@/lib/nameFormatter';
 const AdminIdCards = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
@@ -957,19 +958,24 @@ const AdminIdCards = () => {
                           </button>
                         </td>
                         <td className="px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            {s.photo_url ? (
-                              <img src={s.photo_url} className="w-8 h-8 rounded-full object-cover" alt="" />
-                            ) : (
-                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
-                                {(bn ? s.name_bn : s.name_en)?.[0] || '?'}
+                          {(() => {
+                            const displayNames = getStaffDisplayNames(s.name_bn, s.name_en, bn);
+                            return (
+                              <div className="flex items-center gap-3">
+                                {s.photo_url ? (
+                                  <img src={s.photo_url} className="w-8 h-8 rounded-full object-cover" alt="" />
+                                ) : (
+                                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                                    {displayNames.primary?.[0] || '?'}
+                                  </div>
+                                )}
+                                <div>
+                                  <span className="font-medium text-foreground text-sm block">{displayNames.primary || '-'}</span>
+                                  {displayNames.secondary && <span className="text-xs text-muted-foreground">{displayNames.secondary}</span>}
+                                </div>
                               </div>
-                            )}
-                            <div>
-                              <span className="font-medium text-foreground text-sm block">{bn ? (s.name_bn || s.name_en) : (s.name_en || s.name_bn)}</span>
-                              {s.name_bn && s.name_en && <span className="text-xs text-muted-foreground">{bn ? s.name_en : s.name_bn}</span>}
-                            </div>
-                          </div>
+                            );
+                          })()}
                         </td>
                         <td className="px-4 py-3 text-sm font-mono text-muted-foreground">{s.staff_id || '-'}</td>
                         <td className="px-4 py-3 text-sm text-muted-foreground">{s.designation || '-'}</td>

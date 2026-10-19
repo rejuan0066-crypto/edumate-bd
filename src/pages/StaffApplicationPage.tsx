@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { supabase } from '@/integrations/supabase/client';
+import { resolveStaffFormNames } from '@/lib/nameFormatter';
 
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 const formatAddress = (addr: AddressData) =>
@@ -200,13 +201,14 @@ const StaffApplicationPage = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const fullName = `${firstName} ${lastName}`.trim();
+      const { name_bn: resolvedBn, name_en: resolvedEn } = resolveStaffFormNames(firstName, lastName);
+      const fullName = bn ? (resolvedBn || resolvedEn || '') : (resolvedEn || resolvedBn || '');
       const desigObj = designationsList.find(d => d.id === designation);
       const desigLabel = desigObj ? (bn ? desigObj.name_bn : desigObj.name) : designation;
 
       const staffData = {
-        first_name: firstName,
-        last_name: lastName,
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
         mobile_code: mobileCode,
         employment_type: employmentType,
         residence_type: residenceType,
@@ -233,8 +235,8 @@ const StaffApplicationPage = () => {
       };
 
       const record = {
-        name_bn: fullName,
-        name_en: fullName,
+        name_bn: resolvedBn || fullName,
+        name_en: resolvedEn || null,
         designation: desigLabel,
         phone: mobile ? `${mobileCode}${mobile}` : null,
         email: staffEmail || null,

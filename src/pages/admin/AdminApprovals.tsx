@@ -17,6 +17,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { getStaffDisplayNames } from '@/lib/nameFormatter';
 import {
   ClipboardCheck,
   Check,
@@ -1071,17 +1072,24 @@ const AdminApprovals = () => {
                         <TableRow key={s.id} className="hover:bg-muted/30">
                           <TableCell>
                             <div className="flex items-center gap-3">
-                              {s.photo_url ? (
-                                <img src={s.photo_url} alt="" className="w-9 h-9 rounded-full object-cover border" />
-                              ) : (
-                                <div className="w-9 h-9 rounded-full bg-blue-500/10 text-blue-600 font-bold flex items-center justify-center text-xs">
-                                  {(s.name_bn || s.name_en || 'S')[0]}
-                                </div>
-                              )}
-                              <div>
-                                <p className="font-medium text-sm text-foreground">{s.name_bn || s.name_en || '—'}</p>
-                                <p className="text-xs text-muted-foreground">{s.name_en || ''}</p>
-                              </div>
+                              {(() => {
+                                const displayNames = getStaffDisplayNames(s.name_bn, s.name_en, bn);
+                                return (
+                                  <>
+                                    {s.photo_url ? (
+                                      <img src={s.photo_url} alt="" className="w-9 h-9 rounded-full object-cover border" />
+                                    ) : (
+                                      <div className="w-9 h-9 rounded-full bg-blue-500/10 text-blue-600 font-bold flex items-center justify-center text-xs">
+                                        {(displayNames.primary || 'S')[0]}
+                                      </div>
+                                    )}
+                                    <div>
+                                      <p className="font-medium text-sm text-foreground">{displayNames.primary || '—'}</p>
+                                      {displayNames.secondary && <p className="text-xs text-muted-foreground">{displayNames.secondary}</p>}
+                                    </div>
+                                  </>
+                                );
+                              })()}
                             </div>
                           </TableCell>
                           <TableCell className="text-sm">{s.father_name || '—'}</TableCell>
@@ -2013,13 +2021,18 @@ const AdminApprovals = () => {
                           {(detailModal.data.name_bn || 'S')[0]}
                         </div>
                       )}
-                      <div>
-                        <h3 className="font-bold text-lg">{detailModal.data.name_bn || detailModal.data.name_en}</h3>
-                        <p className="text-sm text-muted-foreground">{detailModal.data.name_en || ''}</p>
-                        <Badge variant="outline" className="mt-1">
-                          {bn ? 'রোল:' : 'Roll:'} {detailModal.data.roll_number || '—'}
-                        </Badge>
-                      </div>
+                      {(() => {
+                        const displayNames = getStaffDisplayNames(detailModal.data.name_bn, detailModal.data.name_en, bn);
+                        return (
+                          <div>
+                            <h3 className="font-bold text-lg">{displayNames.primary || '—'}</h3>
+                            {displayNames.secondary && <p className="text-sm text-muted-foreground">{displayNames.secondary}</p>}
+                            <Badge variant="outline" className="mt-1">
+                              {bn ? 'রোল:' : 'Roll:'} {detailModal.data.roll_number || '—'}
+                            </Badge>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 text-sm bg-card p-4 rounded-xl border">

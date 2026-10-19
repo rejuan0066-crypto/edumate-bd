@@ -1,5 +1,6 @@
 import { forwardRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { getStaffDisplayNames } from '@/lib/nameFormatter';
 
 interface StaffIdCardProps {
   staff: {
@@ -233,29 +234,34 @@ const StaffIdCard = forwardRef<HTMLDivElement, StaffIdCardProps>(
           </div>
 
           {/* ── Name in bold dark green ── */}
-          <div style={{ textAlign: 'center', marginBottom: '6px' }}>
-            <div style={{
-              fontWeight: 800,
-              fontSize: '12px',
-              color: '#064e3b',
-              fontFamily: BN,
-              lineHeight: 1.25,
-            }}>
-              {lang === 'bn' ? (staff.name_bn || staff.name_en || '—') : (staff.name_en || staff.name_bn || '—')}
-            </div>
-            {staff.name_en && staff.name_bn && (
-              <div style={{ fontSize: '7px', color: '#475569', fontFamily: EN, marginTop: '1px', fontWeight: 600 }}>
-                {lang === 'bn' ? staff.name_en : staff.name_bn}
+          {(() => {
+            const displayNames = getStaffDisplayNames(staff.name_bn, staff.name_en, lang === 'bn');
+            return (
+              <div style={{ textAlign: 'center', marginBottom: '6px' }}>
+                <div style={{
+                  fontWeight: 800,
+                  fontSize: '12px',
+                  color: '#064e3b',
+                  fontFamily: BN,
+                  lineHeight: 1.25,
+                }}>
+                  {displayNames.primary || '—'}
+                </div>
+                {displayNames.secondary && (
+                  <div style={{ fontSize: '7px', color: '#475569', fontFamily: EN, marginTop: '1px', fontWeight: 600 }}>
+                    {displayNames.secondary}
+                  </div>
+                )}
+                <div style={{
+                  width: '40px',
+                  height: '1.5px',
+                  background: '#d4af37',
+                  margin: '3px auto 0',
+                  borderRadius: '1px',
+                }} />
               </div>
-            )}
-            <div style={{
-              width: '40px',
-              height: '1.5px',
-              background: '#d4af37',
-              margin: '3px auto 0',
-              borderRadius: '1px',
-            }} />
-          </div>
+            );
+          })()}
 
           {/* ── Info rows ── */}
           <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '2px' }}>

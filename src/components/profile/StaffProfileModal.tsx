@@ -7,6 +7,7 @@ import ProfileSectionCard from './ProfileSectionCard';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { getStaffDisplayNames } from '@/lib/nameFormatter';
 
 interface StaffProfileModalProps {
   staff: any;
@@ -97,18 +98,21 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
             )}
           </div>
 
-          <div className="flex-1 min-w-0 space-y-2">
-            <h3 className="text-xl font-bold text-white tracking-tight truncate">
-              {bn ? (staff.name_bn || staff.name_en) : (staff.name_en || staff.name_bn) || '-'}
-            </h3>
-            {staff.name_bn && staff.name_en && (
-              <p className="text-sm text-white/80 truncate">{bn ? staff.name_en : staff.name_bn}</p>
-            )}
-            {staff.designation && (
-              <p className="text-sm font-bold text-white">{staff.designation}</p>
-            )}
-            {staff.department && <p className="text-xs text-white/70">{staff.department}</p>}
-            <div className="flex flex-wrap items-center gap-2 pt-1">
+          {(() => {
+            const displayNames = getStaffDisplayNames(staff.name_bn, staff.name_en, bn);
+            return (
+              <div className="flex-1 min-w-0 space-y-2">
+                <h3 className="text-xl font-bold text-white tracking-tight truncate">
+                  {displayNames.primary || '-'}
+                </h3>
+                {displayNames.secondary && (
+                  <p className="text-sm text-white/80 truncate">{displayNames.secondary}</p>
+                )}
+                {staff.designation && (
+                  <p className="text-sm font-bold text-white">{staff.designation}</p>
+                )}
+                {staff.department && <p className="text-xs text-white/70">{staff.department}</p>}
+                <div className="flex flex-wrap items-center gap-2 pt-1">
               {staff.staff_id && (
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-white/20 text-white border border-white/20">
                   <Hash className="w-3 h-3 text-white" /> {staff.staff_id}
@@ -123,6 +127,8 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
               </span>
             </div>
           </div>
+            );
+          })()}
         </div>
       </div>
 

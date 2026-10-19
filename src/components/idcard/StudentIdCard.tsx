@@ -196,7 +196,7 @@ const StudentIdCard = forwardRef<HTMLDivElement, StudentIdCardProps>(
             }}>
               {student.name_bn || student.name_en || '—'}
             </div>
-            {student.name_en && student.name_bn && (
+            {student.name_en && student.name_bn && student.name_en.trim().toLowerCase() !== student.name_bn.trim().toLowerCase() && (
               <div style={{ fontSize: '7px', color: '#475569', fontFamily: EN, marginTop: '1px', fontWeight: 600 }}>
                 {student.name_en}
               </div>

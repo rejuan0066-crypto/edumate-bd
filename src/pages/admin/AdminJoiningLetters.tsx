@@ -13,6 +13,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { QRCodeSVG } from 'qrcode.react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { getStaffDisplayNames } from '@/lib/nameFormatter';
 
 /* ── Editable span helper ────────────────────────────────── */
 interface EditableProps {
@@ -471,8 +472,15 @@ const AdminJoiningLetters = () => {
                   <TableRow key={l.id}>
                     <TableCell className="font-mono text-sm">{l.letter_number}</TableCell>
                     <TableCell>
-                      <p className="font-medium">{l.staff_name_bn || l.staff_name}</p>
-                      {l.staff_name && l.staff_name_bn && <p className="text-xs text-muted-foreground">{l.staff_name}</p>}
+                      {(() => {
+                        const displayNames = getStaffDisplayNames(l.staff_name_bn, l.staff_name, bn);
+                        return (
+                          <>
+                            <p className="font-medium">{displayNames.primary || '—'}</p>
+                            {displayNames.secondary && <p className="text-xs text-muted-foreground">{displayNames.secondary}</p>}
+                          </>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell>
                       <Badge variant={l.letter_type === 'reinstatement' ? 'secondary' : 'default'} className="text-xs">
