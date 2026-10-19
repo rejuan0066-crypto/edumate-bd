@@ -107,6 +107,8 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
 
   // Launch Didit KYC Session
   const handleStartDiditVerification = async () => {
+    // Open a blank window synchronously during the click gesture to avoid browser popup blockers
+    const popup = window.open('about:blank', '_blank', 'width=550,height=750');
     setCreatingSession(true);
     setExtractedData(null);
     try {
@@ -115,10 +117,14 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
       setSessionUrl(session.url);
       setDiditModalOpen(true);
       
-      // Auto open window
-      window.open(session.url, '_blank', 'width=550,height=750');
+      if (popup && !popup.closed) {
+        popup.location.href = session.url;
+      } else {
+        window.open(session.url, '_blank', 'width=550,height=750');
+      }
       toast.success(bn ? 'Didit ভেরিফিকেশন উইন্ডো চালু হয়েছে' : 'Didit verification window opened');
     } catch (err: any) {
+      if (popup && !popup.closed) popup.close();
       toast.error(err?.message || (bn ? 'Didit সেশন তৈরি করা যায়নি' : 'Failed to launch Didit session'));
     } finally {
       setCreatingSession(false);
@@ -310,22 +316,48 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
                   {bn ? 'লাইভ সেশন' : 'Live Session'}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                {bn 
-                  ? 'নতুন উইন্ডোটি পপআপে না খুললে নিচের বাটনে ক্লিক করে স্ক্যান পেজে যান:'
-                  : 'If the verification popup did not open, click the button below to proceed:'}
-              </p>
+              <div className="bg-primary/5 border border-primary/15 rounded-lg p-3 text-xs space-y-2">
+                <p className="font-semibold text-foreground flex items-center gap-1.5">
+                  <span>💻</span>
+                  {bn ? 'কম্পিউটার থেকে ব্যবহারের নিয়ম:' : 'How to use on a computer:'}
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground text-[11px] leading-relaxed">
+                  <li>
+                    {bn 
+                      ? 'কম্পিউটারে ওয়েবক্যাম থাকলে: স্ক্যান পেজে সরাসরি ওয়েবক্যাম দিয়ে ছবি তুলুন।' 
+                      : 'If PC has a webcam: Capture photo directly using your webcam.'}
+                  </li>
+                  <li>
+                    {bn 
+                      ? 'কম্পিউটারে ওয়েবক্যাম না থাকলে: স্ক্যান উইন্ডোতে একটি QR Code আসবে, যা আপনার মোবাইল ক্যামেরা দিয়ে স্ক্যান করলেই ফোনের ব্যাক ক্যামেরা দিয়ে কার্ডের ছবি তোলা যাবে এবং সাথে সাথে তথ্য কম্পিউটারে চলে আসবে!' 
+                      : 'No webcam on PC? A QR code will appear—scan it with your phone camera to take the photo and sync data back to this PC instantly!'}
+                  </li>
+                </ul>
+              </div>
+
               {sessionUrl && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.open(sessionUrl, '_blank', 'width=550,height=750')}
-                  className="w-full flex items-center justify-center gap-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  {bn ? 'স্ক্যান পেজ খুলুন (Open Didit)' : 'Open Verification Page'}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(sessionUrl, '_blank', 'width=550,height=750')}
+                    className="flex-1 flex items-center justify-center gap-1.5 border-emerald-600 text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    {bn ? 'পপআপ খুলুন' : 'Open Popup'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    onClick={() => window.open(sessionUrl, '_blank')}
+                    className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    {bn ? 'নতুন ট্যাবে খুলুন' : 'Open in New Tab'}
+                  </Button>
+                </div>
               )}
             </div>
 
