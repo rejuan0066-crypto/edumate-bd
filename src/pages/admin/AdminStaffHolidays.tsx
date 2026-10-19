@@ -389,11 +389,11 @@ export default function AdminStaffHolidays() {
             .eq('holiday_date', formDate)
             .maybeSingle();
 
-          if (existing?.id) {
+          if ((existing as any)?.id) {
             const { error } = await supabase
               .from('staff_holidays' as any)
               .update(payload)
-              .eq('id', existing.id);
+              .eq('id', (existing as any).id);
             if (error) throw error;
           } else {
             const { error } = await supabase
