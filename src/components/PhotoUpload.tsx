@@ -26,7 +26,16 @@ const PhotoUpload = ({ value, onChange, folder = 'general', className, size = 'm
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [preview, setPreview] = useState<string | null>(value || null);
+
+  // Keep preview in sync with external value if provided
+  useEffect(() => {
+    if (value) {
+      setPreview(value);
+    } else if (!uploading) {
+      setPreview(null);
+    }
+  }, [value, uploading]);
 
   const sizeClasses = {
     sm: 'w-24 h-28',
@@ -56,15 +65,18 @@ const PhotoUpload = ({ value, onChange, folder = 'general', className, size = 'm
     setError(null);
     setUploading(true);
 
-    // Show local preview immediately
+    // Show local preview immediately using FileReader
     const reader = new FileReader();
-    reader.onload = (e) => setPreview(e.target?.result as string);
+    reader.onload = (e) => {
+      const localDataUrl = e.target?.result as string;
+      setPreview(localDataUrl);
+    };
     reader.readAsDataURL(file);
 
     try {
       const res = await uploadToCloudinary(file, { folder: `photos/${folder}` });
       onChange(res.secure_url);
-      setPreview(null);
+      setPreview(res.secure_url);
       toast.success(bn ? 'ফটো আপলোড সফল' : 'Photo uploaded');
     } catch (cErr: any) {
       console.warn('Cloudinary photo upload failed, falling back to Supabase:', cErr?.message || cErr);
@@ -81,12 +93,15 @@ const PhotoUpload = ({ value, onChange, folder = 'general', className, size = 'm
 
         if (uploadError) throw uploadError;
 
-        // Store as "<bucket>/<path>" so SecureImage / useSecureUrl can resolve a
-        // short-lived signed URL on demand. Avoids getPublicUrl on a private bucket.
-        const storageRef = `photos/${fileName}`;
+        // Get public CDN URL directly since photos bucket is public
+        const { data: pubData } = supabase.storage
+          .from('photos')
+          .getPublicUrl(fileName);
 
-        onChange(storageRef);
-        setPreview(null);
+        const uploadedUrl = pubData?.publicUrl || `photos/${fileName}`;
+
+        onChange(uploadedUrl);
+        setPreview(uploadedUrl);
         toast.success(bn ? 'ফটো আপলোড সফল' : 'Photo uploaded');
       } catch (err: any) {
         console.error('Supabase storage upload error:', err);
@@ -120,6 +135,7 @@ const PhotoUpload = ({ value, onChange, folder = 'general', className, size = 'm
     onChange(null);
     setPreview(null);
     setError(null);
+    if (inputRef.current) inputRef.current.value = '';
   };
 
   const displayUrl = preview || value;
@@ -147,13 +163,14 @@ const PhotoUpload = ({ value, onChange, folder = 'general', className, size = 'm
 
         {displayUrl ? (
           <>
-            {preview ? (
+            {preview && preview.startsWith('data:') ? (
               <img src={preview} alt="Photo" className="w-full h-full object-cover" />
             ) : (
               <SecureImage src={displayUrl} alt="Photo" className="w-full h-full object-cover" />
             )}
             {!uploading && (
               <button
+                type="button"
                 onClick={handleRemove}
                 className="absolute top-1 right-1 p-1 rounded-full bg-destructive/90 text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
               >

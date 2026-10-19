@@ -83,17 +83,16 @@ Deno.serve(async (req) => {
     global: { headers: { Authorization: authHeader } },
     auth: { persistSession: false },
   });
-  const token = authHeader.replace("Bearer ", "");
-  const { data: claimsData, error: claimsErr } = await (userClient.auth as any).getClaims(token);
-  if (claimsErr || !claimsData?.claims?.sub) {
-    await logDenial(null, null, null, null, 401, "Invalid JWT");
+  const { data: { user }, error: userErr } = await userClient.auth.getUser();
+  if (userErr || !user?.id) {
+    await logDenial(null, null, null, null, 401, userErr?.message || "Invalid JWT");
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-  const userId = claimsData.claims.sub as string;
-  const email = (claimsData.claims.email as string) || null;
+  const userId = user.id;
+  const email = user.email || null;
 
   // 2) Validate body
   let body: { bucket?: string; path?: string; expiresIn?: number; download?: boolean };

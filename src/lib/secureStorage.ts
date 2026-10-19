@@ -13,8 +13,14 @@
  */
 import { supabase } from "@/integrations/supabase/client";
 
-export const PRIVATE_BUCKETS = new Set([
+export const PUBLIC_BUCKETS = new Set([
   "photos",
+  "institution-logos",
+  "website-assets",
+  "post-attachments",
+]);
+
+export const PRIVATE_BUCKETS = new Set([
   "committee-attachments",
   "receipts",
   "staff-letters",
@@ -28,6 +34,27 @@ export interface ResolvedRef {
 }
 
 /**
+ * Resolve a public storage reference (e.g. "photos/abc.jpg") to its full CDN public URL.
+ */
+export function resolvePublicStorageUrl(input: string | null | undefined): string | null {
+  if (!input) return null;
+  const s = String(input).trim();
+  if (!s) return null;
+  if (s.startsWith('data:') || s.startsWith('blob:') || s.includes('res.cloudinary.com') || s.startsWith('http://') || s.startsWith('https://')) {
+    return s;
+  }
+  const slash = s.indexOf("/");
+  if (slash > 0) {
+    const bucket = s.slice(0, slash);
+    const path = s.slice(slash + 1);
+    if (PUBLIC_BUCKETS.has(bucket)) {
+      return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+    }
+  }
+  return s;
+}
+
+/**
  * Try to extract { bucket, path } from a Supabase storage URL or a raw
  * "<bucket>/<path>" string. Returns null if it doesn't look like one of our
  * private buckets.
@@ -36,8 +63,8 @@ export function parseStorageRef(input: string | null | undefined): ResolvedRef |
   if (!input) return null;
   const s = String(input).trim();
   if (!s) return null;
-  if (s.includes('res.cloudinary.com') || s.startsWith('http://') || (s.startsWith('https://') && !s.includes('/storage/v1/object/'))) {
-    return null; // External or Cloudinary URL — already directly accessible
+  if (s.startsWith('data:') || s.startsWith('blob:') || s.includes('res.cloudinary.com') || s.startsWith('http://') || (s.startsWith('https://') && !s.includes('/storage/v1/object/'))) {
+    return null; // External, data URL or Cloudinary URL — already directly accessible
   }
 
   // Full URL form (public or sign endpoint)
@@ -73,7 +100,7 @@ export async function getSecureUrl(
   if (!input) return null;
   const ref = parseStorageRef(input);
   // Not a private-bucket reference — return as-is (public URL or external).
-  if (!ref) return typeof input === "string" ? input : null;
+  if (!ref) return typeof input === "string" ? resolvePublicStorageUrl(input) : null;
 
   const key = `${ref.bucket}/${ref.path}`;
   const cached = cache.get(key);
@@ -82,16 +109,20 @@ export async function getSecureUrl(
 
   // Route through the central authorization edge function so every signed-URL
   // request is JWT-verified, role-checked, and audited (security_logs on denial).
-  // Falls back to direct storage signing only for buckets where RLS is the sole
-  // gate (e.g., db-backups handled by super_admin policy).
+  // Falls back to direct storage signing if edge function is unavailable or returns an error.
   const routeViaEdge = ref.bucket !== "db-backups";
   if (routeViaEdge) {
-    const { data, error } = await supabase.functions.invoke("request-signed-url", {
-      body: { bucket: ref.bucket, path: ref.path, expiresIn },
-    });
-    if (error || !data?.url) return null;
-    cache.set(key, { url: data.url as string, expiresAt: now + expiresIn * 1000 });
-    return data.url as string;
+    try {
+      const { data, error } = await supabase.functions.invoke("request-signed-url", {
+        body: { bucket: ref.bucket, path: ref.path, expiresIn },
+      });
+      if (!error && data?.url) {
+        cache.set(key, { url: data.url as string, expiresAt: now + expiresIn * 1000 });
+        return data.url as string;
+      }
+    } catch {
+      // Best-effort edge invoke; proceed to direct storage sign fallback below
+    }
   }
 
   const { data, error } = await supabase.storage

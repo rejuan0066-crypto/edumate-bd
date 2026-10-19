@@ -23,10 +23,21 @@ export default function SecureImage({
   ...rest
 }: SecureImageProps) {
   const resolved = useSecureUrl(src, expiresIn);
-  const finalSrc = resolved || fallbackSrc;
+  const finalSrc = resolved || fallbackSrc || (typeof src === 'string' && (src.startsWith('http') || src.startsWith('data:') || src.startsWith('blob:')) ? src : undefined);
   if (!finalSrc) {
     // Avoid rendering an <img> with empty src (causes a needless network hit).
     return <span aria-label={alt} {...(rest as any)} />;
   }
-  return <img src={finalSrc} alt={alt} {...rest} />;
+  return (
+    <img
+      src={finalSrc}
+      alt={alt}
+      onError={(e) => {
+        if (fallbackSrc && (e.currentTarget as HTMLImageElement).src !== fallbackSrc) {
+          (e.currentTarget as HTMLImageElement).src = fallbackSrc;
+        }
+      }}
+      {...rest}
+    />
+  );
 }
