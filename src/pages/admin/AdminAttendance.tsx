@@ -987,7 +987,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     };
   };
 
-  // Helper: get shift time for a staff entity (special shift > per-staff override > department schedule > category > default)
+  // Helper: get shift time for a staff entity (special shift > per-staff override > department shift)
   const getCategoryTime = (entity: any) => {
     const resolved = resolveStaffShift({
       staffId: entity?.id,
@@ -1000,7 +1000,6 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       specialShifts,
       departmentSchedules,
       categoryTimes: categoryShiftTimes,
-      defaultTime: defaultCategoryTimes[entity?.staff_category] || defaultCategoryTimes.general,
     });
 
     return applyThursdayWindow(entity, { start: resolved.start, end: resolved.end }, resolved.isCustomDuty);

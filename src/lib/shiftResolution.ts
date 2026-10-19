@@ -30,7 +30,7 @@ export interface StaffSpecialShift {
 export interface ResolvedShift {
   start: string;
   end: string;
-  source: 'special' | 'profile' | 'department_schedule' | 'category_default' | 'default';
+  source: 'special' | 'profile' | 'department';
   specialShift?: StaffSpecialShift;
   isCustomDuty: boolean;
 }
@@ -68,7 +68,6 @@ export function findSpecialShiftForStaff(
   });
 
   if (matches.length === 0) return undefined;
-  // Sort by effective_from descending so latest scheduled shift takes precedence
   matches.sort((a, b) => (b.effective_from || '').localeCompare(a.effective_from || ''));
   return matches[0];
 }
@@ -93,11 +92,10 @@ export function findDepartmentSchedule(
 }
 
 /**
- * Pure 4-tier resolution of duty time for any staff member on a target date:
+ * Pure 3-tier resolution of duty time for any staff member on a target date:
  * Tier 1: Staff Date-Ranged Special Shift (Highest Priority)
  * Tier 2: Staff Personal Profile Duty Time (duty_start_time, duty_end_time on staff record)
- * Tier 3: Department Date-Ranged Shift Schedule
- * Tier 4: Department Flat Setting / Default (08:00 - 17:00)
+ * Tier 3: Department Shift Schedule / Settings (Strictly based on staff's assigned department)
  */
 export function resolveStaffShift(params: {
   staffId?: string | null;
@@ -117,7 +115,6 @@ export function resolveStaffShift(params: {
     specialShifts = [],
     departmentSchedules = [],
     categoryTimes = {},
-    defaultTime = { start: '08:00', end: '17:00' },
   } = params;
 
   // 1. Tier 1: Staff Date-Ranged Special Shift
@@ -144,34 +141,34 @@ export function resolveStaffShift(params: {
     };
   }
 
-  // 3. Tier 3: Department Date-Ranged Shift Schedule
+  // 3. Tier 3: Department Shift (Date-Ranged or Category Setting)
   const cat = staffCategory || 'general';
   const deptSched = findDepartmentSchedule(cat, targetDate, departmentSchedules);
   if (deptSched && deptSched.start_time && deptSched.end_time) {
     return {
       start: deptSched.start_time,
       end: deptSched.end_time,
-      source: 'department_schedule',
+      source: 'department',
       isCustomDuty: false,
     };
   }
 
-  // 4. Tier 4: Category Flat Setting
   const catSetting = categoryTimes[cat];
   if (catSetting?.start && catSetting?.end) {
     return {
       start: catSetting.start,
       end: catSetting.end,
-      source: 'category_default',
+      source: 'department',
       isCustomDuty: false,
     };
   }
 
-  // Fallback
+  // Department fallback: check any available department time
+  const fallback = categoryTimes['teacher'] || categoryTimes['general'] || Object.values(categoryTimes)[0] || { start: '09:00', end: '16:00' };
   return {
-    start: defaultTime.start,
-    end: defaultTime.end,
-    source: 'default',
+    start: fallback.start || '09:00',
+    end: fallback.end || '16:00',
+    source: 'department',
     isCustomDuty: false,
   };
 }

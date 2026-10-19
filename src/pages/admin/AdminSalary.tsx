@@ -547,7 +547,7 @@ const AdminSalary = () => {
   const getDutyTime = (staffMember: any, targetDate?: string): { start: string; end: string } => {
     return getDutyTimeWithSource(staffMember, targetDate);
   };
-  const getDutyTimeWithSource = (staffMember: any, targetDate?: string): { start: string; end: string; source: 'special' | 'category' | 'staff' | 'default' } => {
+  const getDutyTimeWithSource = (staffMember: any, targetDate?: string): { start: string; end: string; source: 'special' | 'category' | 'staff' } => {
     const effectiveDate = targetDate || `${monthYear}-15`;
     const res = resolveStaffShift({
       staffId: staffMember?.id,
@@ -560,13 +560,12 @@ const AdminSalary = () => {
       specialShifts,
       departmentSchedules,
       categoryTimes: categoryShiftTimes,
-      defaultTime: { start: '08:00', end: '17:00' },
     });
 
     return {
       start: res.start,
       end: res.end,
-      source: res.source === 'special' ? 'special' : res.source === 'profile' ? 'staff' : res.source === 'department_schedule' ? 'category' : 'default',
+      source: res.source === 'special' ? 'special' : res.source === 'profile' ? 'staff' : 'category',
     };
   };
   // Fetch morning/evening duty attendance for overtime calculation

@@ -160,7 +160,6 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
         specialShifts,
         departmentSchedules,
         categoryTimes: catMap,
-        defaultTime: { start: '08:00', end: '17:00' },
       });
 
       const start = parseClockMinutes(resolved.start) ?? 480;
