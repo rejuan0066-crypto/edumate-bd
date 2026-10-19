@@ -35,6 +35,7 @@ import {
   deleteSpecialShift,
   isDateInRange,
 } from '@/lib/shiftResolution';
+import { getStaffDisplayNames } from '@/lib/nameFormatter';
 
 interface StaffSpecialShiftDialogProps {
   open: boolean;
@@ -382,7 +383,7 @@ export const StaffSpecialShiftDialog: React.FC<StaffSpecialShiftDialogProps> = (
                             />
                             <div className="min-w-0">
                               <p className="text-xs font-semibold text-foreground truncate">
-                                {s.name_bn || s.name_en || s.name}
+                                {getStaffDisplayNames(s.name_bn, s.name_en, bn).primary}
                               </p>
                               <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                                 {s.staff_id && <span className="font-mono">ID: {s.staff_id}</span>}
@@ -548,7 +549,7 @@ export const StaffSpecialShiftDialog: React.FC<StaffSpecialShiftDialogProps> = (
                         <div className="space-y-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-sm font-bold text-foreground">
-                              {shift.staff_name || 'Staff Member'}
+                              {getStaffDisplayNames(shift.staff_name, null, bn).primary || (bn ? 'স্টাফ সদস্য' : 'Staff Member')}
                             </span>
                             {shift.category_key && (
                               <Badge variant="outline" className="text-[10px]">

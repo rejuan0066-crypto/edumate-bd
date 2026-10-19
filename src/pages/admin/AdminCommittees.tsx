@@ -19,6 +19,7 @@ import OtpVerificationDialog from "@/components/OtpVerificationDialog";
 import { useAdminOtpGate } from "@/hooks/useAdminOtpGate";
 import CommitteeAttachments from "@/components/CommitteeAttachments";
 import { usePagePermissions } from "@/hooks/usePagePermissions";
+import { getStaffDisplayNames } from "@/lib/nameFormatter";
 
 type Committee = {
   id: string;
@@ -387,11 +388,11 @@ export default function AdminCommittees() {
                                 <img src={m.photo_url} alt={m.name} className="w-14 h-14 rounded-full object-cover border-2 border-emerald-500/30" />
                               ) : (
                                 <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-lg">
-                                  {(bn ? m.name : (m.name_en || m.name)).charAt(0)}
+                                  {getStaffDisplayNames(m.name, m.name_en, bn).primary.charAt(0)}
                                 </div>
                               )}
                               <div className="flex-1 min-w-0">
-                                <div className="font-semibold truncate">{bn ? m.name : (m.name_en || m.name)}</div>
+                                <div className="font-semibold truncate">{getStaffDisplayNames(m.name, m.name_en, bn).primary}</div>
                                 <div className="text-xs text-amber-600 dark:text-amber-400 font-medium">{bn ? m.designation : (m.designation_en || m.designation)}</div>
                                 {m.occupation && <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><Briefcase className="w-3 h-3" />{bn ? m.occupation : (m.occupation_en || m.occupation)}</div>}
                                 {m.phone && <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><Phone className="w-3 h-3" />{m.phone}</div>}
