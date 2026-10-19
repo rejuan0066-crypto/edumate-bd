@@ -1304,25 +1304,17 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
       </div>
 
       {/* Approver Section */}
-      {(approverName || (salary && isAdmin)) && (
+      {approverName && (
         <div className="approver-section">
-          <div className="section-title">{bn ? 'অনুমোদন ও বেতন নির্ধারণ' : 'Approval & Salary Details'}</div>
+          <div className="section-title">{bn ? 'অনুমোদন বিবরণ' : 'Approval Details'}</div>
           <table className="form-table">
             <tbody>
-              {salary && (
-                <tr>
-                  <td className="label">{bn ? 'নির্ধারিত মাসিক বেতন' : 'Assigned Monthly Salary'}</td>
-                  <td className="value" colSpan={3}>৳{salary}</td>
-                </tr>
-              )}
-              {approverName && (
-                <tr>
-                  <td className="label">{bn ? 'অনুমোদনকারীর নাম' : "Approver's Name"}</td>
-                  <td className="value">{approverName}</td>
-                  <td className="label">{bn ? 'পদবী' : 'Position'}</td>
-                  <td className="value">{approverPosition}</td>
-                </tr>
-              )}
+              <tr>
+                <td className="label">{bn ? 'অনুমোদনকারীর নাম' : "Approver's Name"}</td>
+                <td className="value">{approverName}</td>
+                <td className="label">{bn ? 'পদবী' : 'Position'}</td>
+                <td className="value">{approverPosition}</td>
+              </tr>
               <tr>
                 <td className="label">{bn ? 'স্বাক্ষর' : 'Signature'}</td>
                 <td className="value">
