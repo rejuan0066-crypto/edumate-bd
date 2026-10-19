@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -7,11 +8,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { uploadToCloudinary } from '@/lib/cloudinary';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import {
   ClipboardCheck,
   Check,
@@ -41,6 +46,7 @@ import {
   Trash2,
   ChevronDown,
   ChevronUp,
+  Upload,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { invalidateAllStudentQueries } from '@/lib/studentQueryInvalidator';
@@ -113,6 +119,7 @@ const AdminApprovals = () => {
   const { user } = useAuth();
   const bn = language === 'bn';
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<string>('students');
@@ -129,6 +136,29 @@ const AdminApprovals = () => {
   const [rejectionModal, setRejectionModal] = useState<{ type: string; id: string; name?: string } | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [adminNote, setAdminNote] = useState('');
+
+  // Staff Approval Modal States (review, salary, signatures, approver)
+  const [staffApprovalModal, setStaffApprovalModal] = useState<any | null>(null);
+  const [staffSalary, setStaffSalary] = useState('');
+  const [principalName, setPrincipalName] = useState('');
+  const [principalPosition, setPrincipalPosition] = useState(bn ? 'অধ্যক্ষ' : 'Principal');
+  const [otherSignName, setOtherSignName] = useState('');
+  const [otherSignPosition, setOtherSignPosition] = useState('');
+  const [approverName, setApproverName] = useState('');
+  const [approverPosition, setApproverPosition] = useState(bn ? 'অধ্যক্ষ / অ্যাডমিন' : 'Principal / Admin');
+  const [approverSignatureUrl, setApproverSignatureUrl] = useState('');
+  const [approverDate, setApproverDate] = useState('');
+  const [uploadingSig, setUploadingSig] = useState(false);
+  const staffApproverSigRef = useRef<HTMLInputElement>(null);
+
+  // Institution info
+  const { data: institution } = useQuery({
+    queryKey: ['institution'],
+    queryFn: async () => {
+      const data = await fetchInstitutionInfo();
+      return data;
+    },
+  });
 
   // 1. Fetch Current User Profile
   const { data: currentProfile } = useQuery({
@@ -166,7 +196,7 @@ const AdminApprovals = () => {
     queryFn: async () => {
       let q = supabase
         .from('staff')
-        .select('id, first_name, last_name, staff_category, designation, mobile, nid, status, created_at, photo_url, email, salary')
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (statusFilter === 'pending') {
@@ -375,6 +405,102 @@ const AdminApprovals = () => {
     onError: (e: any) => toast.error(e.message || (bn ? 'সমস্যা হয়েছে' : 'Error occurred')),
   });
 
+  const openStaffApprovalModal = (s: any) => {
+    const sd = (s.staff_data as any) || {};
+    const sigs = sd.signatures || {};
+    const app = sd.approver || {};
+    setStaffSalary(s.salary ? String(s.salary) : '');
+    setPrincipalName(sigs.principal?.name || institution?.name || '');
+    setPrincipalPosition(sigs.principal?.position || (bn ? 'অধ্যক্ষ' : 'Principal'));
+    setOtherSignName(sigs.other?.name || '');
+    setOtherSignPosition(sigs.other?.position || '');
+    setApproverName(app.name || currentProfile?.full_name || '');
+    setApproverPosition(app.position || (bn ? 'অধ্যক্ষ / অ্যাডমিন' : 'Principal / Admin'));
+    setApproverSignatureUrl(app.signature_url || '');
+    setApproverDate(app.date || new Date().toISOString().split('T')[0]);
+    setStaffApprovalModal(s);
+  };
+
+  const handleStaffApproverSigUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 500 * 1024) {
+      toast.error(bn ? 'স্বাক্ষর ফাইলের সাইজ ৫০০KB এর কম হতে হবে' : 'Signature size must be under 500KB');
+      return;
+    }
+    setUploadingSig(true);
+    try {
+      const res = await uploadToCloudinary(file, { folder: 'approver-signatures' });
+      setApproverSignatureUrl(res.secure_url);
+      toast.success(bn ? 'স্বাক্ষর আপলোড সম্পন্ন' : 'Signature uploaded');
+    } catch (err: any) {
+      console.warn('Cloudinary upload error, trying Supabase storage fallback:', err);
+      try {
+        const { data: authData } = await supabase.auth.getUser();
+        const userPrefix = authData?.user?.id || 'public-uploads';
+        const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
+        const path = `${userPrefix}/approver-signatures/${Date.now()}.${ext}`;
+        const { error } = await supabase.storage.from('photos').upload(path, file, { upsert: false });
+        if (error) {
+          toast.error(bn ? 'স্বাক্ষর আপলোড ব্যর্থ' : 'Signature upload failed');
+        } else {
+          setApproverSignatureUrl(`photos/${path}`);
+          toast.success(bn ? 'স্বাক্ষর আপলোড সম্পন্ন' : 'Signature uploaded');
+        }
+      } catch {
+        toast.error(bn ? 'স্বাক্ষর আপলোড ব্যর্থ' : 'Signature upload failed');
+      }
+    } finally {
+      setUploadingSig(false);
+    }
+  };
+
+  const approveStaffWithDetailsMutation = useMutation({
+    mutationFn: async () => {
+      if (!staffApprovalModal) return;
+      const currentSd = (staffApprovalModal.staff_data as any) || {};
+      const updatedStaffData = {
+        ...currentSd,
+        signatures: {
+          principal: { name: principalName, position: principalPosition },
+          other: { name: otherSignName, position: otherSignPosition },
+        },
+        approver: {
+          name: approverName,
+          position: approverPosition,
+          signature_url: approverSignatureUrl,
+          date: approverDate,
+        },
+      };
+
+      const updatePayload: any = {
+        status: 'active',
+        salary: staffSalary ? parseFloat(staffSalary) : (staffApprovalModal.salary || 0),
+        staff_data: updatedStaffData,
+      };
+
+      if (!staffApprovalModal.joining_date) {
+        updatePayload.joining_date = new Date().toISOString().split('T')[0];
+      }
+
+      const { error } = await supabase
+        .from('staff')
+        .update(updatePayload)
+        .eq('id', staffApprovalModal.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['approvals-staff'] });
+      queryClient.invalidateQueries({ queryKey: ['staff'] });
+      toast.success(bn ? '✅ শিক্ষক/স্টাফ আবেদন অনুমোদিত ও সক্রিয় করা হয়েছে!' : '✅ Staff member approved and activated!');
+      setStaffApprovalModal(null);
+    },
+    onError: (e: any) => {
+      toast.error(e.message || (bn ? 'অনুমোদনে সমস্যা হয়েছে' : 'Error approving staff'));
+    },
+  });
+
   // 3. Parent Payment Verification / Rejection
   const paymentMutation = useMutation({
     mutationFn: async ({ id, status, reason }: { id: string; status: 'verified' | 'rejected'; reason?: string }) => {
@@ -571,10 +697,15 @@ const AdminApprovals = () => {
     if (!searchQuery.trim()) return staffList;
     const q = searchQuery.toLowerCase();
     return staffList.filter((s: any) =>
+      (s.name_bn || '').toLowerCase().includes(q) ||
+      (s.name_en || '').toLowerCase().includes(q) ||
       (s.first_name || '').toLowerCase().includes(q) ||
       (s.last_name || '').toLowerCase().includes(q) ||
       (s.designation || '').toLowerCase().includes(q) ||
-      (s.mobile || '').includes(q)
+      (s.phone || '').includes(q) ||
+      (s.mobile || '').includes(q) ||
+      (s.nid || '').includes(q) ||
+      String(s.salary || '').includes(q)
     );
   }, [staffList, searchQuery]);
 
@@ -1041,6 +1172,7 @@ const AdminApprovals = () => {
                       <TableRow className="bg-muted/10">
                         <TableHead>{bn ? 'শিক্ষক/স্টাফ নাম' : 'Name'}</TableHead>
                         <TableHead>{bn ? 'পদবি ও বিভাগ' : 'Designation'}</TableHead>
+                        <TableHead>{bn ? 'বেতন' : 'Salary'}</TableHead>
                         <TableHead>{bn ? 'মোবাইল' : 'Mobile'}</TableHead>
                         <TableHead>{bn ? 'এনআইডি' : 'NID'}</TableHead>
                         <TableHead>{bn ? 'স্ট্যাটাস' : 'Status'}</TableHead>
@@ -1049,74 +1181,94 @@ const AdminApprovals = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredStaff.map((s: any) => (
-                        <TableRow key={s.id} className="hover:bg-muted/30">
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              {s.photo_url ? (
-                                <img src={s.photo_url} alt="" className="w-9 h-9 rounded-full object-cover border" />
-                              ) : (
-                                <div className="w-9 h-9 rounded-full bg-purple-500/10 text-purple-600 font-bold flex items-center justify-center text-xs">
-                                  {`${s.first_name || ''} ${s.last_name || ''}`.trim()[0] || 'T'}
+                      {filteredStaff.map((s: any) => {
+                        const staffDisplayName = s.name_bn || s.name_en || `${s.first_name || ''} ${s.last_name || ''}`.trim() || '—';
+                        const staffDisplayPhone = s.phone || s.mobile || '—';
+                        return (
+                          <TableRow key={s.id} className="hover:bg-muted/30">
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                {s.photo_url ? (
+                                  <img src={s.photo_url} alt="" className="w-9 h-9 rounded-full object-cover border" />
+                                ) : (
+                                  <div className="w-9 h-9 rounded-full bg-purple-500/10 text-purple-600 font-bold flex items-center justify-center text-xs">
+                                    {(staffDisplayName || 'T')[0]}
+                                  </div>
+                                )}
+                                <div>
+                                  <p className="font-medium text-sm text-foreground">{staffDisplayName}</p>
+                                  <p className="text-xs text-muted-foreground">{s.email || ''}</p>
                                 </div>
-                              )}
-                              <div>
-                                <p className="font-medium text-sm text-foreground">{`${s.first_name || ''} ${s.last_name || ''}`.trim()}</p>
-                                <p className="text-xs text-muted-foreground">{s.email || ''}</p>
                               </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            <span className="font-medium">{s.designation || '—'}</span>
-                            <span className="text-xs text-muted-foreground block">{s.staff_category || ''}</span>
-                          </TableCell>
-                          <TableCell className="text-sm font-mono">{s.mobile || '—'}</TableCell>
-                          <TableCell className="text-xs font-mono">{s.nid || '—'}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className={STATUS_COLORS[s.status] || ''}>
-                              {s.status === 'active' ? (bn ? 'সক্রিয়/অনুমোদিত' : 'Active') : s.status === 'rejected' ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'অপেক্ষমান' : 'Pending')}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-xs text-muted-foreground">
-                            {new Date(s.created_at).toLocaleDateString(bn ? 'bn-BD' : 'en-US')}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => setDetailModal({ type: 'staff', data: s })}
-                                title={bn ? 'বিস্তারিত' : 'View'}
-                              >
-                                <Eye className="w-4 h-4 text-primary" />
-                              </Button>
-                              {s.status === 'pending' && (
-                                <>
-                                  <Button
-                                    size="sm"
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 px-2.5"
-                                    onClick={() => staffMutation.mutate({ id: s.id, status: 'active' })}
-                                    disabled={staffMutation.isPending}
-                                  >
-                                    <Check className="w-3.5 h-3.5 mr-1" />
-                                    {bn ? 'অনুমোদন' : 'Approve'}
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    className="h-8 px-2.5"
-                                    onClick={() => staffMutation.mutate({ id: s.id, status: 'rejected' })}
-                                    disabled={staffMutation.isPending}
-                                  >
-                                    <X className="w-3.5 h-3.5 mr-1" />
-                                    {bn ? 'বাতিল' : 'Reject'}
-                                  </Button>
-                                </>
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              <span className="font-medium">{s.designation || '—'}</span>
+                              <span className="text-xs text-muted-foreground block">{s.staff_category || ''}</span>
+                            </TableCell>
+                            <TableCell className="text-sm font-semibold font-mono text-emerald-600 whitespace-nowrap">
+                              {s.salary ? (
+                                `৳ ${Number(s.salary).toLocaleString('en-IN')}`
+                              ) : (
+                                <span className="text-xs text-amber-600 font-normal italic">{bn ? 'নির্ধারিত হয়নি' : 'Not set'}</span>
                               )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                            </TableCell>
+                            <TableCell className="text-sm font-mono">{staffDisplayPhone}</TableCell>
+                            <TableCell className="text-xs font-mono">{s.nid || '—'}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className={STATUS_COLORS[s.status] || ''}>
+                                {s.status === 'active' ? (bn ? 'সক্রিয়/অনুমোদিত' : 'Active') : s.status === 'rejected' ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'অপেক্ষমান' : 'Pending')}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {new Date(s.created_at).toLocaleDateString(bn ? 'bn-BD' : 'en-US')}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => setDetailModal({ type: 'staff', data: s })}
+                                  title={bn ? 'বিস্তারিত' : 'View'}
+                                >
+                                  <Eye className="w-4 h-4 text-primary" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-8 px-2.5 gap-1 text-xs border-primary/30 text-primary hover:bg-primary/10"
+                                  onClick={() => navigate(`/admin/staff/edit/${s.id}?from=approvals&mode=approve`)}
+                                  title={bn ? 'পূর্ণ ফর্ম পর্যালোচনা ও সংশোধন করুন' : 'Review & Edit Full Form'}
+                                >
+                                  <Edit className="w-3.5 h-3.5" />
+                                  {bn ? 'কারেকশন' : 'Edit'}
+                                </Button>
+                                {s.status === 'pending' && (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 px-2.5 gap-1 shadow-sm font-medium"
+                                      onClick={() => openStaffApprovalModal(s)}
+                                    >
+                                      <Check className="w-3.5 h-3.5" />
+                                      {bn ? 'অনুমোদন' : 'Approve'}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      className="h-8 px-2.5 gap-1"
+                                      onClick={() => staffMutation.mutate({ id: s.id, status: 'rejected' })}
+                                      disabled={staffMutation.isPending}
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                      {bn ? 'বাতিল' : 'Reject'}
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 )}
@@ -1879,33 +2031,69 @@ const AdminApprovals = () => {
                   </div>
                 )}
 
-                {detailModal.type === 'staff' && (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4 bg-muted/40 p-4 rounded-xl border">
-                      {detailModal.data.photo_url ? (
-                        <img src={detailModal.data.photo_url} alt="" className="w-16 h-16 rounded-full object-cover border" />
-                      ) : (
-                        <div className="w-16 h-16 rounded-full bg-purple-500/10 text-purple-600 flex items-center justify-center font-bold text-xl">
-                          {(detailModal.data.first_name || 'T')[0]}
+                {detailModal.type === 'staff' && (() => {
+                  const s = detailModal.data;
+                  const displayName = s.name_bn || s.name_en || `${s.first_name || ''} ${s.last_name || ''}`.trim() || '—';
+                  const displayPhone = s.phone || s.mobile || '—';
+                  return (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4 bg-muted/40 p-4 rounded-xl border">
+                        {s.photo_url ? (
+                          <img src={s.photo_url} alt="" className="w-16 h-16 rounded-full object-cover border" />
+                        ) : (
+                          <div className="w-16 h-16 rounded-full bg-purple-500/10 text-purple-600 flex items-center justify-center font-bold text-xl">
+                            {(displayName || 'T')[0]}
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <h3 className="font-bold text-lg">{displayName}</h3>
+                          <p className="text-sm text-muted-foreground">{s.designation || 'Staff'} {s.department ? `• ${s.department}` : ''}</p>
+                          <Badge variant="outline" className="mt-1">
+                            {s.staff_category || 'General'}
+                          </Badge>
                         </div>
-                      )}
-                      <div>
-                        <h3 className="font-bold text-lg">{`${detailModal.data.first_name || ''} ${detailModal.data.last_name || ''}`}</h3>
-                        <p className="text-sm text-muted-foreground">{detailModal.data.designation || 'Staff'}</p>
-                        <Badge variant="outline" className="mt-1">
-                          {detailModal.data.staff_category || 'General'}
-                        </Badge>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4 text-sm bg-card p-4 rounded-xl border">
+                        <div><p className="text-muted-foreground text-xs">{bn ? 'মোবাইল' : 'Mobile'}</p><p className="font-medium font-mono">{displayPhone}</p></div>
+                        <div><p className="text-muted-foreground text-xs">{bn ? 'ইমেইল' : 'Email'}</p><p className="font-medium">{s.email || '—'}</p></div>
+                        <div><p className="text-muted-foreground text-xs">{bn ? 'জাতীয় পরিচয়পত্র (NID)' : 'NID'}</p><p className="font-medium font-mono">{s.nid || '—'}</p></div>
+                        <div><p className="text-muted-foreground text-xs">{bn ? 'বেতন' : 'Salary'}</p><p className="font-semibold text-emerald-600 font-mono">৳ {s.salary ? Number(s.salary).toLocaleString('en-IN') : (bn ? 'নির্ধারিত হয়নি' : 'Not set')}</p></div>
+                        {s.education && <div className="col-span-2"><p className="text-muted-foreground text-xs">{bn ? 'শিক্ষাগত যোগ্যতা' : 'Education'}</p><p className="font-medium">{s.education}</p></div>}
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="flex-1 gap-1.5"
+                          onClick={() => {
+                            const id = s.id;
+                            setDetailModal(null);
+                            navigate(`/admin/staff/edit/${id}?from=approvals&mode=approve`);
+                          }}
+                        >
+                          <Edit className="w-4 h-4" />
+                          {bn ? 'কারেকশন / পূর্ণ ফর্ম রিভিউ' : 'Review & Edit Full Form'}
+                        </Button>
+                        {s.status === 'pending' && (
+                          <Button
+                            type="button"
+                            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 font-bold shadow-sm"
+                            onClick={() => {
+                              const staffObj = s;
+                              setDetailModal(null);
+                              openStaffApprovalModal(staffObj);
+                            }}
+                          >
+                            <Check className="w-4 h-4" />
+                            {bn ? 'অনুমোদন ও বেতন নির্ধারণ' : 'Approve & Set Salary'}
+                          </Button>
+                        )}
                       </div>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-4 text-sm bg-card p-4 rounded-xl border">
-                      <div><p className="text-muted-foreground text-xs">{bn ? 'মোবাইল' : 'Mobile'}</p><p className="font-medium font-mono">{detailModal.data.mobile || '—'}</p></div>
-                      <div><p className="text-muted-foreground text-xs">{bn ? 'ইমেইল' : 'Email'}</p><p className="font-medium">{detailModal.data.email || '—'}</p></div>
-                      <div><p className="text-muted-foreground text-xs">{bn ? 'জাতীয় পরিচয়পত্র (NID)' : 'NID'}</p><p className="font-medium font-mono">{detailModal.data.nid || '—'}</p></div>
-                      <div><p className="text-muted-foreground text-xs">{bn ? 'প্রস্তাবিত বেতন' : 'Salary'}</p><p className="font-medium">৳ {detailModal.data.salary || '—'}</p></div>
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {detailModal.type === 'payment' && (
                   <div className="space-y-4">
@@ -2067,6 +2255,239 @@ const AdminApprovals = () => {
                 })()}
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* ══════════════ STAFF APPROVAL & REVIEW MODAL ══════════════ */}
+        <Dialog open={!!staffApprovalModal} onOpenChange={(open) => { if (!open) setStaffApprovalModal(null); }}>
+          <DialogContent className="sm:max-w-3xl max-h-[92vh] overflow-hidden flex flex-col p-0 gap-0">
+            <DialogHeader className="px-6 py-4 border-b bg-muted/40">
+              <DialogTitle className="flex items-center justify-between text-base">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-emerald-600 text-white">
+                    <Check className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="font-bold">{bn ? 'শিক্ষক/স্টাফ আবেদন অনুমোদন ও বেতন নির্ধারণ' : 'Approve Staff Application & Set Salary'}</span>
+                    <p className="text-xs text-muted-foreground font-normal mt-0.5">
+                      {bn ? 'আবেদনকারীর তথ্য পর্যালোচনা করুন, বেতন ও স্বাক্ষর তথ্য প্রদান করে অনুমোদন নিশ্চিত করুন' : 'Review candidate details, assign salary, provide signatory info and approve'}
+                    </p>
+                  </div>
+                </div>
+              </DialogTitle>
+            </DialogHeader>
+
+            {staffApprovalModal && (
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {/* 1. Candidate Overview Card */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl border bg-muted/30">
+                  <div className="flex items-center gap-4">
+                    {staffApprovalModal.photo_url ? (
+                      <img src={staffApprovalModal.photo_url} alt="" className="w-16 h-16 rounded-xl object-cover border shadow-sm" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center font-bold text-2xl border">
+                        {(staffApprovalModal.name_bn || staffApprovalModal.first_name || 'T')[0]}
+                      </div>
+                    )}
+                    <div>
+                      <h3 className="font-bold text-base text-foreground">
+                        {staffApprovalModal.name_bn || staffApprovalModal.name_en || `${staffApprovalModal.first_name || ''} ${staffApprovalModal.last_name || ''}`.trim()}
+                      </h3>
+                      <p className="text-xs text-muted-foreground font-medium">
+                        {staffApprovalModal.designation || 'Staff'} {staffApprovalModal.department ? `• ${staffApprovalModal.department}` : ''}
+                      </p>
+                      <div className="flex flex-wrap gap-2 mt-1.5 text-xs text-muted-foreground">
+                        {(staffApprovalModal.phone || staffApprovalModal.mobile) && (
+                          <span className="font-mono">📱 {staffApprovalModal.phone || staffApprovalModal.mobile}</span>
+                        )}
+                        {staffApprovalModal.nid && <span className="font-mono">🆔 {staffApprovalModal.nid}</span>}
+                        {staffApprovalModal.education && <span>🎓 {staffApprovalModal.education}</span>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Full Form Review & Correction Button */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 text-xs border-primary/40 text-primary hover:bg-primary/10 shrink-0"
+                    onClick={() => {
+                      const id = staffApprovalModal.id;
+                      setStaffApprovalModal(null);
+                      navigate(`/admin/staff/edit/${id}?from=approvals&mode=approve`);
+                    }}
+                  >
+                    <Edit className="w-3.5 h-3.5" />
+                    {bn ? 'পূর্ণ ফর্মে গিয়ে সব তথ্য কারেকশন করুন' : 'Review & Edit Full Form'}
+                    <ExternalLink className="w-3 h-3 ml-0.5" />
+                  </Button>
+                </div>
+
+                {/* 2. Salary Assignment */}
+                <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="font-bold text-sm text-foreground flex items-center gap-1.5">
+                      <Coins className="w-4 h-4 text-emerald-600" />
+                      {bn ? 'বেতন নির্ধারণ (টাকা)' : 'Salary (BDT)'} <span className="text-destructive">*</span>
+                    </Label>
+                    <span className="text-[11px] text-muted-foreground">
+                      {bn ? 'অনুমোদনের সাথে সাথে এটি কর্মীর মাসিক মূল বেতন হিসেবে কার্যকর হবে' : 'Will be set as active monthly salary'}
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">৳</span>
+                    <Input
+                      type="number"
+                      className="bg-background pl-8 text-base font-bold font-mono"
+                      placeholder={bn ? 'যেমন: ১৫০০০' : 'e.g. 15000'}
+                      value={staffSalary}
+                      onChange={(e) => setStaffSalary(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* 3. Signatures for Print (স্বাক্ষর - প্রিন্ট/ডাউনলোডে দেখাবে) */}
+                <div className="p-4 rounded-xl border bg-card space-y-3">
+                  <h4 className="font-bold text-sm text-foreground border-b pb-2 flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-primary" />
+                    {bn ? 'স্বাক্ষর (প্রিন্ট/ডাউনলোডে দেখাবে)' : 'Signatures (shown in print/download)'}
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">{bn ? 'অধ্যক্ষের নাম' : 'Principal Name'}</Label>
+                      <Input
+                        className="bg-background mt-1 h-9 text-xs"
+                        value={principalName}
+                        onChange={(e) => setPrincipalName(e.target.value)}
+                        placeholder={bn ? 'অধ্যক্ষের নাম লিখুন' : 'Enter principal name'}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">{bn ? 'অধ্যক্ষের পদবী' : 'Principal Position'}</Label>
+                      <Input
+                        className="bg-background mt-1 h-9 text-xs"
+                        value={principalPosition}
+                        onChange={(e) => setPrincipalPosition(e.target.value)}
+                        placeholder={bn ? 'পদবী' : 'Position'}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">{bn ? 'অন্য স্বাক্ষরকারীর নাম' : 'Other Signatory Name'}</Label>
+                      <Input
+                        className="bg-background mt-1 h-9 text-xs"
+                        value={otherSignName}
+                        onChange={(e) => setOtherSignName(e.target.value)}
+                        placeholder={bn ? 'ঐচ্ছিক' : 'Optional'}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">{bn ? 'অন্য স্বাক্ষরকারীর পদবী' : 'Other Signatory Position'}</Label>
+                      <Input
+                        className="bg-background mt-1 h-9 text-xs"
+                        value={otherSignPosition}
+                        onChange={(e) => setOtherSignPosition(e.target.value)}
+                        placeholder={bn ? 'ঐচ্ছিক' : 'Optional'}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Approver Details (এপ্রোভকারীর তথ্য) */}
+                <div className="p-4 rounded-xl border bg-card space-y-3">
+                  <h4 className="font-bold text-sm text-foreground border-b pb-2 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    {bn ? 'এপ্রোভকারীর তথ্য' : 'Approver Details'}
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">{bn ? 'এপ্রোভকারীর নাম' : "Approver's Name"} <span className="text-destructive">*</span></Label>
+                      <Input
+                        className="bg-background mt-1 h-9 text-xs"
+                        value={approverName}
+                        onChange={(e) => setApproverName(e.target.value)}
+                        placeholder={bn ? 'আপনার বা কর্তৃপক্ষের নাম' : 'Enter name'}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">{bn ? 'পদবী' : 'Position'} <span className="text-destructive">*</span></Label>
+                      <Input
+                        className="bg-background mt-1 h-9 text-xs"
+                        value={approverPosition}
+                        onChange={(e) => setApproverPosition(e.target.value)}
+                        placeholder={bn ? 'পদবী' : 'Position'}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">{bn ? 'স্বাক্ষর (আপলোড বা প্রিন্টে বক্স দেখাবে)' : 'Signature (upload or box shown in print)'}</Label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <input
+                          ref={staffApproverSigRef}
+                          type="file"
+                          className="hidden"
+                          accept=".jpg,.jpeg,.png,.webp"
+                          onChange={handleStaffApproverSigUpload}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={uploadingSig}
+                          onClick={() => staffApproverSigRef.current?.click()}
+                          className="gap-1 h-9 text-xs"
+                        >
+                          {uploadingSig ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                          {bn ? 'স্বাক্ষর আপলোড' : 'Upload Signature'}
+                        </Button>
+                        {approverSignatureUrl && (
+                          <div className="flex items-center gap-2 bg-muted/40 p-1 rounded border">
+                            <img src={approverSignatureUrl} alt="Signature" className="h-7 max-w-[100px] object-contain rounded" />
+                            <button
+                              type="button"
+                              onClick={() => setApproverSignatureUrl('')}
+                              className="text-destructive hover:opacity-80 p-0.5"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                        {!approverSignatureUrl && !uploadingSig && (
+                          <span className="text-[11px] text-muted-foreground">{bn ? 'স্বাক্ষর না দিলে প্রিন্টে ফাঁকা বক্স দেখাবে' : 'Blank box in print'}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs">{bn ? 'তারিখ' : 'Date'}</Label>
+                      <DatePicker
+                        bengali={bn}
+                        className="mt-1 h-9 text-xs"
+                        value={approverDate}
+                        onChange={(v) => setApproverDate(v)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter className="px-6 py-3 border-t bg-muted/20 flex flex-row items-center justify-between sm:justify-between gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setStaffApprovalModal(null)}
+              >
+                {bn ? 'বন্ধ করুন' : 'Cancel'}
+              </Button>
+              <Button
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-bold px-6 shadow-md shadow-emerald-600/20"
+                onClick={() => approveStaffWithDetailsMutation.mutate()}
+                disabled={approveStaffWithDetailsMutation.isPending || uploadingSig}
+              >
+                {approveStaffWithDetailsMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                {bn ? 'অনুমোদন ও সক্রিয় করুন' : 'Save & Approve Application'}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
 

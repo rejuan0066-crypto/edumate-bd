@@ -13,7 +13,7 @@ import { uploadToCloudinary } from '@/lib/cloudinary';
 import CardVerifySection from '@/components/CardVerifySection';
 import { useApiVerificationEnabled } from '@/hooks/useApiVerification';
 import { useState, useRef, useEffect } from 'react';
-import { Plus, AlertCircle, CheckCircle, Loader2, Upload, Trash2, Eye, Printer, Download, FileText, X, CalendarIcon, Mail, ArrowLeft, ArrowRight, Clock } from 'lucide-react';
+import { Plus, AlertCircle, CheckCircle, Check, Loader2, Upload, Trash2, Eye, Printer, Download, FileText, X, CalendarIcon, Mail, ArrowLeft, ArrowRight, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
@@ -106,19 +106,6 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
   const { id: editId } = useParams<{ id: string }>();
   const isEditMode = !!editId;
   const [searchParams] = useSearchParams();
-  const { validate, validateAll } = useValidationRules('staff');
-  const { data: apiVerifyEnabled } = useApiVerificationEnabled();
-  const { isFieldActive, isFieldRequired, getField, isLoaded: staffConfigLoaded } = useStaffFormConfig();
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const sectionConfig = CATEGORY_SECTIONS[staffCategory];
-  const titleConfig = CATEGORY_TITLES[staffCategory];
-  const initialStaffCategory = staffCategory !== 'all' ? staffCategory : 'general';
-  const [selectedStaffCategory, setSelectedStaffCategory] = useState<string>(initialStaffCategory);
-  const [currentStep, setCurrentStep] = useState(0);
-  const printRef = useRef<HTMLDivElement>(null);
-  const [showPrintPreview, setShowPrintPreview] = useState(false);
-  const [dataLoaded, setDataLoaded] = useState(false);
-
   const { data: institution } = useQuery({
     queryKey: ['institution'],
     queryFn: async () => {
@@ -137,6 +124,22 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     },
     enabled: isEditMode,
   });
+
+  const isPendingStaff = (existingStaff as any)?.status === 'pending';
+  const isApprovalMode = searchParams.get('mode') === 'approve' || isPendingStaff;
+  const [approveOnSave, setApproveOnSave] = useState(false);
+  const { validate, validateAll } = useValidationRules('staff');
+  const { data: apiVerifyEnabled } = useApiVerificationEnabled();
+  const { isFieldActive, isFieldRequired, getField, isLoaded: staffConfigLoaded } = useStaffFormConfig();
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const sectionConfig = CATEGORY_SECTIONS[staffCategory];
+  const titleConfig = CATEGORY_TITLES[staffCategory];
+  const initialStaffCategory = staffCategory !== 'all' ? staffCategory : 'general';
+  const [selectedStaffCategory, setSelectedStaffCategory] = useState<string>(initialStaffCategory);
+  const [currentStep, setCurrentStep] = useState(0);
+  const printRef = useRef<HTMLDivElement>(null);
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
 
   // Section 1: Employee
@@ -640,6 +643,9 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
         const prevCategory = (existingStaff as any)?.staff_category || null;
         const nextCategory = record.staff_category;
         const updatePayload: any = { ...record };
+        if (approveOnSave || isApprovalMode) {
+          updatePayload.status = 'active';
+        }
         if (prevCategory && nextCategory && prevCategory !== nextCategory) {
           updatePayload.staff_id = null;
         }
@@ -678,6 +684,11 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
       queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.invalidateQueries({ queryKey: ['all-pending-actions'] });
       if (!res?.intercepted) {
+        if (approveOnSave || isPendingStaff || searchParams.get('from') === 'approvals') {
+          toast.success(bn ? '✅ শিক্ষক/স্টাফ আবেদন সফলভাবে সংরক্ষিত ও অনুমোদিত হয়েছে' : '✅ Staff application updated & approved successfully');
+          navigate('/admin/approvals');
+          return;
+        }
         toast.success(bn ? (isEditMode ? `${titleConfig.bn} সফলভাবে আপডেট হয়েছে` : `${titleConfig.bn} সফলভাবে যোগ হয়েছে`) : (isEditMode ? `${titleConfig.en} updated successfully` : `${titleConfig.en} added successfully`));
       }
       navigate(backPath);
@@ -791,7 +802,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     if (isFieldActive('nid') && isFieldRequired('nid') && (!nid || (nid.length !== 10 && nid.length !== 17))) errors['nid'] = bn ? 'NID ১০ বা ১৭ ডিজিট হতে হবে' : 'NID must be 10 or 17 digits';
     reqCheck('education', education, 'শিক্ষাগত যোগ্যতা আবশ্যক', 'Education required');
     if (isFieldActive('prev_institute') && experience && !prevInstitute.trim()) errors['prev_institute'] = bn ? 'পূর্ববর্তী কর্মস্থল আবশ্যক' : 'Previous institute required';
-    if (isEditMode && existingStaff?.status === 'active') reqCheck('salary', salary, 'বেতন আবশ্যক', 'Salary required');
+    if (isFieldActive('salary') && (existingStaff?.status === 'active' || approveOnSave) && isFieldRequired('salary')) reqCheck('salary', salary, 'বেতন আবশ্যক', 'Salary required');
 
     // Parents validation
     reqCheck('father_name', fatherName, 'পিতার নাম আবশ্যক', 'Father name required');
@@ -839,6 +850,26 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
       setPendingSave(false);
       saveMutation.mutate();
     }
+  };
+
+  const handleSaveAndApprove = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setApproveOnSave(true);
+    if (!joiningDate) {
+      setJoiningDate(new Date().toISOString().split('T')[0]);
+    }
+    if (!approverName.trim()) {
+      setApproverName(institution?.name ? (bn ? 'প্রধান কর্তৃপক্ষ' : 'Authorized Authority') : 'Admin');
+    }
+    if (!approverPosition.trim()) {
+      setApproverPosition(bn ? 'অধ্যক্ষ / অ্যাডমিন' : 'Principal / Admin');
+    }
+    if (!approverDate) {
+      setApproverDate(new Date().toISOString().split('T')[0]);
+    }
+    setTimeout(() => {
+      saveMutation.mutate();
+    }, 50);
   };
 
   const rawSteps = [
@@ -1285,6 +1316,36 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
           </div>
         </div>
 
+        {(isPendingStaff || isApprovalMode) && (
+          <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+              <div>
+                <p className="font-bold text-sm">
+                  {bn ? '📋 অপেক্ষমান শিক্ষক/স্টাফ আবেদন পর্যালোচনা ও কারেকশন মোড' : '📋 Pending Staff Application Review & Correction Mode'}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {bn ? 'প্রয়োজনে যেকোনো তথ্য সংশোধন করুন, বেতন নির্ধারণ করুন এবং শেষ ধাপে অনুমোদনকারী স্বাক্ষর যুক্ত করে সংরক্ষণ ও অনুমোদন করুন।' : 'Review or correct any field, set salary, and approve with signatures in the final step.'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                type="button"
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 font-medium shadow-sm"
+                onClick={() => {
+                  setCurrentStep(steps.length - 1);
+                  window.scrollTo({ top: 80, behavior: 'smooth' });
+                }}
+              >
+                <Check className="w-4 h-4" />
+                {bn ? 'অনুমোদন ধাপে যান' : 'Go to Approval Step'}
+              </Button>
+            </div>
+          </div>
+        )}
+
         <form className="space-y-6" onSubmit={handleSubmit}>
           {currentStepId === 'employee' && (
             <CardVerifySection
@@ -1312,7 +1373,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
             <div className="flex flex-col sm:flex-row gap-6 mb-6">
               {isFieldActive('photo_url') && <PhotoUpload value={photoUrl} onChange={setPhotoUrl} folder="staff" />}
               <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {isFieldActive('salary') && isEditMode && existingStaff?.status === 'active' && (
+                {isFieldActive('salary') && (
                 <div>
                   <Label>{bn ? (getField('salary')?.label_bn || 'বেতন (টাকা)') : (getField('salary')?.label || 'Salary (BDT)')} {isFieldRequired('salary') && <span className="text-destructive">*</span>}</Label>
                   <Input type="number" className={`bg-background mt-1 ${fieldErrors['salary'] ? 'border-destructive' : ''}`} value={salary || ''} onChange={e => handleFieldChange('salary', e.target.value, setSalary)} placeholder="৳" />
@@ -1862,14 +1923,37 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
               </Button>
             ) : (
               <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                <Button
-                  type="submit"
-                  className="btn-primary-gradient px-8 py-5 gap-2"
-                  disabled={saveMutation.isPending || (isEditMode && !!editId && isRecordPending(editId))}
-                >
-                  {saveMutation.isPending ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Plus className="w-5 h-5 mr-2" />}
-                  {bn ? (isEditMode ? 'আপডেট করুন' : `${titleConfig.bn} যোগ করুন`) : (isEditMode ? 'Update' : `Add ${titleConfig.en}`)}
-                </Button>
+                {(isPendingStaff || isApprovalMode) ? (
+                  <>
+                    <Button
+                      type="button"
+                      onClick={handleSaveAndApprove}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-5 gap-2 font-bold shadow-md shadow-emerald-600/20"
+                      disabled={saveMutation.isPending}
+                    >
+                      {saveMutation.isPending ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Check className="w-5 h-5 mr-2" />}
+                      {bn ? 'অনুমোদন ও সংরক্ষণ করুন' : 'Save & Approve Application'}
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant="outline"
+                      className="px-6 py-5 gap-2"
+                      disabled={saveMutation.isPending}
+                    >
+                      {saveMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                      {bn ? 'শুধুমাত্র তথ্য আপডেট করুন' : 'Update Info Only'}
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    type="submit"
+                    className="btn-primary-gradient px-8 py-5 gap-2"
+                    disabled={saveMutation.isPending || (isEditMode && !!editId && isRecordPending(editId))}
+                  >
+                    {saveMutation.isPending ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Plus className="w-5 h-5 mr-2" />}
+                    {bn ? (isEditMode ? 'আপডেট করুন' : `${titleConfig.bn} যোগ করুন`) : (isEditMode ? 'Update' : `Add ${titleConfig.en}`)}
+                  </Button>
+                )}
                 <Button type="button" variant="outline" className="py-5 gap-2" onClick={openPrintPreview}>
                   <Eye className="w-4 h-4" /> {bn ? 'প্রিভিউ' : 'Preview'}
                 </Button>
