@@ -366,7 +366,7 @@ const StaffApplicationPage = () => {
                     className={`bg-background mt-1 ${fieldErrors['first_name'] ? 'border-destructive' : ''}`}
                     value={firstName}
                     onChange={e => handleFieldChange('first_name', e.target.value, setFirstName)}
-                    placeholder={bn ? 'যেমন: মাওলানা ফারহান হোসাইন' : 'Full name in Bangla'}
+                    placeholder={bn ? 'বাংলায় সম্পূর্ণ নাম লিখুন' : 'Enter full name in Bangla'}
                   />
                   <FieldError field="first_name" />
                 </div>
@@ -376,7 +376,7 @@ const StaffApplicationPage = () => {
                     className={`bg-background mt-1 ${fieldErrors['last_name'] ? 'border-destructive' : ''}`}
                     value={lastName}
                     onChange={e => handleFieldChange('last_name', e.target.value, setLastName)}
-                    placeholder={bn ? 'যেমন: Maulana Farhan Hossain (ইংরেজি অক্ষরে)' : 'Full name in English'}
+                    placeholder={bn ? 'ইংরেজিতে সম্পূর্ণ নাম লিখুন' : 'Enter full name in English'}
                   />
                   {hasBangla(lastName) && (
                     <p className="text-xs text-amber-600 mt-1 flex items-center gap-1 font-medium">
