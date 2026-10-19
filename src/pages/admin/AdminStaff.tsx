@@ -116,6 +116,58 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
     : (staffListRaw as any[]).filter((s: any) => !committeeInfo.ids.has(s.id));
   const committeeHiddenCount = (staffListRaw as any[]).filter((s: any) => committeeInfo.ids.has(s.id)).length;
 
+  // Auto-correct any legacy staff IDs missing the year (e.g. TCH-2017 -> TCH-2026-2017)
+  useEffect(() => {
+    if (!isAdminRole(role) || !staffListRaw || staffListRaw.length === 0) return;
+    const malformed = (staffListRaw as any[]).filter(
+      (s) => s.staff_id && /^([A-Za-z]+)-(\d{4,})$/.test(s.staff_id)
+    );
+    if (malformed.length === 0) return;
+
+    let isCancelled = false;
+    (async () => {
+      let changed = false;
+      for (const s of malformed) {
+        if (isCancelled) break;
+        const match = s.staff_id.match(/^([A-Za-z]+)-(\d{4,})$/);
+        if (match) {
+          const prefix = match[1];
+          const serial = match[2];
+          const year = s.joining_date ? new Date(s.joining_date).getFullYear() : new Date().getFullYear();
+          const correctedId = `${prefix}-${year}-${serial}`;
+          const { error } = await supabase.from('staff').update({ staff_id: correctedId }).eq('id', s.id);
+          if (!error) changed = true;
+        }
+      }
+      if (!isCancelled && changed) {
+        queryClient.invalidateQueries({ queryKey: ['staff'] });
+      }
+    })();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [staffListRaw, role, queryClient]);
+
+  // Ensure id_format_config has include_year = true and reset_mode = 'yearly' for staff entities
+  useEffect(() => {
+    if (!isAdminRole(role)) return;
+    (async () => {
+      try {
+        const { data: configs } = await supabase.from('id_format_config').select('entity_key, include_year, reset_mode');
+        if (configs && configs.length > 0) {
+          const needFix = configs.filter((c: any) => !c.include_year || c.reset_mode !== 'yearly');
+          if (needFix.length > 0) {
+            await supabase
+              .from('id_format_config')
+              .update({ include_year: true, reset_mode: 'yearly' })
+              .in('entity_key', needFix.map((c: any) => c.entity_key));
+          }
+        }
+      } catch {}
+    })();
+  }, [role]);
+
   const { data: designationsList = [] } = useQuery({
     queryKey: ['designations-all'],
     queryFn: async () => {

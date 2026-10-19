@@ -745,6 +745,16 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
           updatePayload.staff_id = null;
         }
 
+        // If staff_id has legacy format missing year (e.g. TCH-2017), normalize it to include year
+        const currentStaffId = (existingStaff as any)?.staff_id;
+        if (currentStaffId && /^([A-Za-z]+)-(\d{4,})$/.test(currentStaffId)) {
+          const match = currentStaffId.match(/^([A-Za-z]+)-(\d{4,})$/);
+          if (match) {
+            const jYear = (updatePayload.joining_date || (existingStaff as any)?.joining_date || new Date().toISOString()).slice(0, 4);
+            updatePayload.staff_id = `${match[1]}-${jYear}-${match[2]}`;
+          }
+        }
+
         if (await checkApproval('edit', updatePayload, editId, `কর্মী তথ্য সম্পাদনা: ${fullName} (${desigLabel || ''})`)) {
           return { intercepted: true };
         }

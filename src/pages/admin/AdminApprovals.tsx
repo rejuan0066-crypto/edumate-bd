@@ -484,6 +484,28 @@ const AdminApprovals = () => {
         updatePayload.joining_date = new Date().toISOString().split('T')[0];
       }
 
+      // Ensure id_format_config has include_year = true for this staff category
+      try {
+        if (staffApprovalModal.staff_category) {
+          await supabase
+            .from('id_format_config')
+            .update({ include_year: true, reset_mode: 'yearly' })
+            .eq('entity_key', staffApprovalModal.staff_category);
+        }
+      } catch {}
+
+      // Ensure staff_id contains joining year (e.g. TCH-2026-2017 instead of TCH-2017)
+      const jYear = (updatePayload.joining_date || staffApprovalModal.joining_date || new Date().toISOString()).slice(0, 4);
+      const targetStaffId = staffApprovalModal.staff_id;
+      if (targetStaffId && /^([A-Za-z]+)-(\d{4,})$/.test(targetStaffId)) {
+        const m = targetStaffId.match(/^([A-Za-z]+)-(\d{4,})$/);
+        if (m) {
+          updatePayload.staff_id = `${m[1]}-${jYear}-${m[2]}`;
+        }
+      } else if (!targetStaffId) {
+        updatePayload.staff_id = null;
+      }
+
       const { error } = await supabase
         .from('staff')
         .update(updatePayload)
