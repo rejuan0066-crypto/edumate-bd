@@ -1163,8 +1163,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
                 </>
               );
             })()}
-            {isAdmin && <tr><td className="label">{bn ? 'বেতন' : 'Salary'}</td><td className="value">৳{salary}</td><td className="label">{bn ? 'মোবাইল' : 'Mobile'}</td><td className="value">{mobileCode}{mobile}</td></tr>}
-            {!isAdmin && <tr><td className="label">{bn ? 'মোবাইল' : 'Mobile'}</td><td className="value" colSpan={3}>{mobileCode}{mobile}</td></tr>}
+            <tr><td className="label">{bn ? 'মোবাইল' : 'Mobile'}</td><td className="value" colSpan={3}>{mobileCode}{mobile}</td></tr>
             <tr><td className="label">{bn ? 'চাকরির ধরন' : 'Employment'}</td><td className="value">{employmentType === 'full_time' ? (bn ? 'পূর্ণকালীন' : 'Full Time') : (bn ? 'খণ্ডকালীন' : 'Part Time')}</td><td className="label">{bn ? 'পদবী' : 'Designation'}</td><td className="value">{desigLabel}</td></tr>
             <tr><td className="label">{bn ? 'আবাসিক/অনাবাসিক' : 'Residential'}</td><td className="value">{residenceType === 'residential' ? (bn ? 'আবাসিক' : 'Residential') : (bn ? 'অনাবাসিক' : 'Non-Residential')}</td><td className="label">{bn ? 'জন্ম তারিখ' : 'Date of Birth'}</td><td className="value">{dob}</td></tr>
             <tr><td className="label">{bn ? 'ধর্ম' : 'Religion'}</td><td className="value">{religionLabel}</td><td className="label">{bn ? 'জাতীয় পরিচয়পত্র' : 'NID'}</td><td className="value">{nid}</td></tr>
@@ -1257,12 +1256,25 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
       </div>
 
       {/* Approver Section */}
-      {approverName && (
+      {(approverName || (salary && isAdmin)) && (
         <div className="approver-section">
-          <div className="section-title">{bn ? 'অনুমোদনকারী' : 'Approved By'}</div>
+          <div className="section-title">{bn ? 'অনুমোদন ও বেতন নির্ধারণ' : 'Approval & Salary Details'}</div>
           <table className="form-table">
             <tbody>
-              <tr><td className="label">{bn ? 'নাম' : 'Name'}</td><td className="value">{approverName}</td><td className="label">{bn ? 'পদবী' : 'Position'}</td><td className="value">{approverPosition}</td></tr>
+              {salary && (
+                <tr>
+                  <td className="label">{bn ? 'নির্ধারিত মাসিক বেতন' : 'Assigned Monthly Salary'}</td>
+                  <td className="value" colSpan={3}>৳{salary}</td>
+                </tr>
+              )}
+              {approverName && (
+                <tr>
+                  <td className="label">{bn ? 'অনুমোদনকারীর নাম' : "Approver's Name"}</td>
+                  <td className="value">{approverName}</td>
+                  <td className="label">{bn ? 'পদবী' : 'Position'}</td>
+                  <td className="value">{approverPosition}</td>
+                </tr>
+              )}
               <tr>
                 <td className="label">{bn ? 'স্বাক্ষর' : 'Signature'}</td>
                 <td className="value">
@@ -1431,13 +1443,6 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
             <div className="flex flex-col sm:flex-row gap-6 mb-6">
               {isFieldActive('photo_url') && <PhotoUpload value={photoUrl} onChange={setPhotoUrl} folder="staff" />}
               <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {isFieldActive('salary') && isAdmin && (
-                <div>
-                  <Label>{bn ? (getField('salary')?.label_bn || 'বেতন (টাকা)') : (getField('salary')?.label || 'Salary (BDT)')} {isFieldRequired('salary') && <span className="text-destructive">*</span>}</Label>
-                  <Input type="number" className={`bg-background mt-1 ${fieldErrors['salary'] ? 'border-destructive' : ''}`} value={salary || ''} onChange={e => handleFieldChange('salary', e.target.value, setSalary)} placeholder="৳" />
-                  <FieldError field="salary" />
-                </div>
-                )}
                 {isFieldActive('first_name') && (
                 <div>
                   <Label>{bn ? (getField('first_name')?.label_bn || 'সম্পূর্ণ নাম (বাংলা)') : (getField('first_name')?.label || 'Full Name (Bangla)')} {isFieldRequired('first_name') && <span className="text-destructive">*</span>}</Label>
@@ -1925,9 +1930,31 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
           {/* ========== Approver Section ========== */}
           <div className="card-elevated p-6">
             <h2 className="font-display font-bold text-foreground mb-4 pb-2 border-b border-border text-center text-2xl">
-              {bn ? 'এপ্রোভকারীর তথ্য' : 'Approver Details'}
+              {bn ? 'অনুমোদন ও বেতন নির্ধারণ' : 'Approval & Salary Details'}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {isFieldActive('salary') && (
+              <div className="sm:col-span-2 bg-primary/5 border border-primary/20 rounded-xl p-4 mb-2">
+                <Label className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                  {bn ? (getField('salary')?.label_bn || 'নির্ধারিত মাসিক বেতন (টাকা)') : (getField('salary')?.label || 'Assigned Monthly Salary (BDT)')}
+                  {((existingStaff?.status === 'active' || approveOnSave) && isFieldRequired('salary')) && <span className="text-destructive">*</span>}
+                </Label>
+                <div className="relative mt-1.5 max-w-sm">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">৳</span>
+                  <Input
+                    type="number"
+                    className={`bg-background pl-8 text-base font-medium ${fieldErrors['salary'] ? 'border-destructive' : ''}`}
+                    value={salary || ''}
+                    onChange={e => handleFieldChange('salary', e.target.value, setSalary)}
+                    placeholder="0.00"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  {bn ? 'অনুমোদনের সময় অ্যাডমিন স্টাফের মাসিক বেতন নির্ধারণ করবেন।' : 'Admin specifies the staff monthly salary during approval.'}
+                </p>
+                <FieldError field="salary" />
+              </div>
+              )}
               <div>
                 <Label>{bn ? 'এপ্রোভকারীর নাম' : "Approver's Name"} <span className="text-destructive">*</span></Label>
                 <Input className="bg-background mt-1" value={approverName} onChange={e => setApproverName(e.target.value)} placeholder={bn ? 'নাম লিখুন' : 'Enter name'} />
