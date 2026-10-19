@@ -3872,13 +3872,13 @@ const AdminSalary = () => {
             <Card>
               <CardContent className="p-0">
                 <div className="relative">
-                  <div className="pointer-events-none absolute right-0 top-0 bottom-2 w-10 bg-gradient-to-l from-card to-transparent rounded-r-[45px] z-10" />
+                  <div className="pointer-events-none absolute right-0 top-0 bottom-2 w-10 bg-gradient-to-l from-card to-transparent rounded-r-2xl z-10" />
                   <div className="w-full overflow-x-auto scrollbar-thin pb-2 salary-table-scroll">
                   <table className="w-full min-w-[1100px] text-sm">
 
                     <thead>
-                      <tr className="border-b bg-muted/50">
-                        <th className="px-3 py-2 text-left text-xs font-medium">#</th>
+                      <tr className="border-b border-border/60 bg-muted/40">
+                        <th className="px-3.5 py-3 text-left text-xs font-semibold text-muted-foreground/90 uppercase tracking-wider">#</th>
                         <th className="px-3 py-2 text-left text-xs font-medium">{bn ? 'নাম' : 'Name'}</th>
                         <th className="px-3 py-2 text-left text-xs font-medium">{bn ? 'স্টাফ আইডি' : 'Staff ID'}</th>
                         <th className="px-3 py-2 text-left text-xs font-medium">{bn ? 'পদবি' : 'Designation'}</th>
@@ -3916,7 +3916,7 @@ const AdminSalary = () => {
                         const isHardBlocked = !rec && (validation?.hasErrors ?? false);
 
                         return (
-                          <tr key={s.id} className="border-b hover:bg-muted/30 transition-colors">
+                          <tr key={s.id} className="border-b border-border/40 hover:bg-muted/35 transition-colors duration-150">
                             <td className="px-2 py-2 text-muted-foreground">
                               <div className="flex items-center gap-1">
                                 <div className="flex flex-col">

@@ -2783,7 +2783,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
 
   return (
     <AdminLayout>
-      <div className="space-y-4">
+      <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
