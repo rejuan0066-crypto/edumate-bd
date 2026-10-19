@@ -937,7 +937,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
               {/* Desktop Table View (>= md) */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
-                   <thead className="bg-secondary/50">
+                   <thead className="bg-muted/40 border-b border-border/60">
                      <tr>
                        <th className="text-center w-12 px-3 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'ক্রম' : '#'}</th>
                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('name')}>
@@ -961,9 +961,9 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                        <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'অ্যাকশন' : 'Action'}</th>
                      </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody className="divide-y divide-border/30">
                     {filtered.map((s: any, i: number) => (
-                      <tr key={s.id} className="hover:bg-secondary/30 transition-colors">
+                      <tr key={s.id} className="hover:bg-muted/30 transition-colors duration-150">
                         <td className="text-center px-3 py-3 text-xs text-muted-foreground font-mono">{i + 1}</td>
                         <td className="px-4 py-3">
                           {(() => {

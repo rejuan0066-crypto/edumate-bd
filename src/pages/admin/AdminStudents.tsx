@@ -516,7 +516,7 @@ const AdminStudents = () => {
         </div>
 
         {/* Student List Card */}
-        <div className="rounded-xl sm:rounded-[32px] border border-border/30 bg-card/90 backdrop-blur-md shadow-sm overflow-hidden">
+        <div className="rounded-2xl sm:rounded-3xl border border-border/60 bg-card/95 backdrop-blur-md shadow-sm overflow-hidden">
           {isLoading ? (
             <div className="flex items-center justify-center py-20"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>
           ) : (
@@ -668,8 +668,8 @@ const AdminStudents = () => {
               {/* Desktop Table View (>= md) */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border/30">
+                  <thead className="bg-muted/40 border-b border-border/60">
+                    <tr>
                       <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'সি.' : '#'}</th>
                       <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'নাম' : 'Name'}</th>
                       <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'রেজি / আইডি' : 'Reg / ID'}</th>

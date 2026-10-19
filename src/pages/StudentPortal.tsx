@@ -373,7 +373,7 @@ const StudentPortal = () => {
     return (
       <PublicLayout>
         <div className="container mx-auto px-4 py-12 max-w-3xl">
-          <Card className="rounded-[45px] backdrop-blur-xl border-border/50 bg-card/60">
+          <Card className="rounded-2xl sm:rounded-3xl backdrop-blur-xl border-border/60 bg-card/85 shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
@@ -417,7 +417,7 @@ const StudentPortal = () => {
     <PublicLayout>
       <div className="container mx-auto px-4 py-12 max-w-2xl">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-          <Card className="rounded-[45px] backdrop-blur-xl border-border/50 bg-card/60">
+          <Card className="rounded-2xl sm:rounded-3xl backdrop-blur-xl border-border/60 bg-card/85 shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">

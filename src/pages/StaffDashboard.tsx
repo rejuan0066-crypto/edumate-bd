@@ -348,7 +348,7 @@ const StaffDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-card shadow-sm">
+      <header className="sticky top-0 z-50 border-b border-border/60 bg-card/95 backdrop-blur-md shadow-xs">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             {institution?.logo_url ? (
@@ -443,7 +443,7 @@ const StaffDashboard = () => {
                     <img
                       src={staffRecord.photo_url}
                       alt=""
-                      className="w-28 h-28 rounded-lg object-cover border"
+                      className="w-28 h-28 rounded-2xl object-cover ring-2 ring-primary/20 shrink-0"
                     />
                   )}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">

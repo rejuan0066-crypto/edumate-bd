@@ -189,7 +189,7 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
           boxShadow: hs?.header_shadow !== false ? 'var(--shadow-soft)' : 'none',
         }}
       >
-        <div className={`${!hs?.header_bg_color ? 'bg-card' : ''}`}>
+        <div className={`${!hs?.header_bg_color ? 'bg-card/95 backdrop-blur-md' : ''}`}>
           <div className="container mx-auto px-4 py-3">
             <div className="relative flex items-center justify-center gap-2">
               <Link to="/" className="flex items-center gap-3 min-w-0 max-w-full">

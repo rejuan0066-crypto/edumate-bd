@@ -300,7 +300,7 @@ const StudentInfoPage = () => {
           <h1 className="text-3xl font-display font-bold text-foreground mb-8">
             {bn ? 'শিক্ষার্থী তথ্য' : 'Student Info'}
           </h1>
-          <Card className="rounded-[45px] backdrop-blur-xl border-border/50 bg-card/60">
+          <Card className="rounded-2xl sm:rounded-3xl border-border/60 bg-card/85 shadow-md">
             <CardContent className="p-10 text-center space-y-5">
               <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
                 <ShieldAlert className="w-8 h-8 text-primary" />
@@ -436,7 +436,7 @@ const StudentInfoPage = () => {
 
         {/* Staff search — only for staff, never for students/parents */}
         {isStaff && !isStudent && (
-          <Card className="rounded-[45px] backdrop-blur-xl border-border/50 bg-card/60 mb-6">
+          <Card className="rounded-2xl sm:rounded-3xl border-border/60 bg-card/85 shadow-md mb-6">
             <CardContent className="p-6">
               <form onSubmit={handleSearch} className="flex gap-3">
                 <div className="relative flex-1">
@@ -519,7 +519,7 @@ const StudentInfoPage = () => {
         )}
 
         {!loadingStudent && selectedStudentId && !student && (
-          <Card className="rounded-[45px] bg-card/60 backdrop-blur-xl border-border/50">
+          <Card className="rounded-2xl sm:rounded-3xl bg-card/85 backdrop-blur-xl border-border/60 shadow-md">
             <CardContent className="p-10 text-center text-muted-foreground">
               {bn ? 'শিক্ষার্থী পাওয়া যায়নি বা অ্যাক্সেস নেই' : 'Student not found or access denied'}
             </CardContent>
@@ -529,7 +529,7 @@ const StudentInfoPage = () => {
         {student && (
           <div className="space-y-6">
             {/* Header card */}
-            <Card className="rounded-[45px] backdrop-blur-xl border-border/50 bg-gradient-to-br from-primary/5 to-card/60">
+            <Card className="rounded-2xl sm:rounded-3xl backdrop-blur-xl border-border/60 bg-gradient-to-br from-primary/5 to-card/60 shadow-md">
               <CardContent className="p-6 sm:p-8 flex flex-col sm:flex-row gap-6 items-center sm:items-start">
                 <div className="w-28 h-28 rounded-3xl bg-primary/10 flex items-center justify-center overflow-hidden shrink-0 ring-2 ring-primary/20">
                   {student.photo_url ? (
@@ -572,7 +572,7 @@ const StudentInfoPage = () => {
             </Card>
 
             {/* Academic */}
-            <Card className="rounded-[45px] backdrop-blur-xl border-border/50 bg-card/60">
+            <Card className="rounded-2xl sm:rounded-3xl border-border/60 bg-card/85 shadow-md">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
                   <GraduationCap className="w-5 h-5 text-primary" />
@@ -590,7 +590,7 @@ const StudentInfoPage = () => {
             </Card>
 
             {/* Personal */}
-            <Card className="rounded-[45px] backdrop-blur-xl border-border/50 bg-card/60">
+            <Card className="rounded-2xl sm:rounded-3xl border-border/60 bg-card/85 shadow-md">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
                   <User className="w-5 h-5 text-primary" />
@@ -607,7 +607,7 @@ const StudentInfoPage = () => {
             </Card>
 
             {/* Guardian */}
-            <Card className="rounded-[45px] backdrop-blur-xl border-border/50 bg-card/60">
+            <Card className="rounded-2xl sm:rounded-3xl border-border/60 bg-card/85 shadow-md">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Users className="w-5 h-5 text-primary" />
@@ -637,7 +637,7 @@ const StudentInfoPage = () => {
 
         {/* Empty state for staff with no selection */}
         {isStaff && !selectedStudentId && !activeQuery && (
-          <Card className="rounded-[45px] bg-card/60 backdrop-blur-xl border-border/50">
+          <Card className="rounded-2xl sm:rounded-3xl bg-card/85 backdrop-blur-xl border-border/60 shadow-md">
             <CardContent className="p-10 text-center text-muted-foreground">
               <BookOpen className="w-10 h-10 mx-auto mb-3 opacity-50" />
               {bn ? 'শিক্ষার্থীর তথ্য দেখতে উপরে সার্চ করুন' : 'Search above to view student information'}

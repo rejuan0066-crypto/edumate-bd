@@ -184,7 +184,7 @@ const Home = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4 }}
-                className="relative overflow-hidden rounded-[45px] p-8 sm:p-10 text-white shadow-xl"
+                className="relative overflow-hidden rounded-2xl sm:rounded-3xl p-8 sm:p-10 text-white shadow-xl"
                 style={{ background: 'linear-gradient(135deg, hsl(160 84% 25%), hsl(160 84% 18%))' }}
               >
                 <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/10 blur-3xl" />
@@ -224,7 +224,7 @@ const Home = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4 }}
-                className="relative overflow-hidden rounded-[45px] p-8 sm:p-10 text-white shadow-xl"
+                className="relative overflow-hidden rounded-2xl sm:rounded-3xl p-8 sm:p-10 text-white shadow-xl"
                 style={{ background: 'linear-gradient(135deg, hsl(38 92% 45%), hsl(24 92% 38%))' }}
               >
                 <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/10 blur-3xl" />
