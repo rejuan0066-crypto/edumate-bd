@@ -230,7 +230,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   const [categoryShiftTimes, setCategoryShiftTimes] = useState<Record<string, { start: string; end: string }>>(defaultCategoryTimes);
 
   // Department shift effective date range states
-  const [deptEffectiveFrom, setDeptEffectiveFrom] = useState(todayIsoInTz(appTimezone));
+  const [deptEffectiveFrom, setDeptEffectiveFrom] = useState(todayIsoInTz(appTz));
   const [deptEffectiveTo, setDeptEffectiveTo] = useState('');
   const [deptIsOngoing, setDeptIsOngoing] = useState(true);
   const [specialShiftDialogOpen, setSpecialShiftDialogOpen] = useState(false);
