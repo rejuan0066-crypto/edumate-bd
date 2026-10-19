@@ -221,7 +221,10 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
   const attendanceRate = marked > 0 ? Math.round(((counts.present + counts.late * 0.5 + counts.half_day * 0.5) / marked) * 100) : 0;
   const isCurrentMonth = isSameDay(startOfMonth(cursor), startOfMonth(new Date()));
 
-  const monthLabel = bn ? format(cursor, 'MMMM yyyy', { locale: bnLocale }) : format(cursor, 'MMMM yyyy');
+  const toBnDigits = (str: string | number) => String(str).replace(/\d/g, (d) => '০১২৩৪৫৬৭৮৯'[+d]);
+  const monthMmYyyy = format(cursor, 'MM-yyyy');
+  const monthName = bn ? format(cursor, 'MMMM yyyy', { locale: bnLocale }) : format(cursor, 'MMMM yyyy');
+  const monthLabel = bn ? `${toBnDigits(monthMmYyyy)} (${monthName})` : `${monthMmYyyy} (${monthName})`;
   const leadingBlanks = getDay(monthStart);
 
   const setStatus = async (
@@ -516,7 +519,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
             <div className="px-4 py-4 space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-border/30">
                 <div className="text-sm font-semibold">
-                  {activeDate ? format(activeDate, 'dd/MM/yyyy') : activeDateKey}
+                  {activeDate ? (bn ? toBnDigits(format(activeDate, 'dd-MM-yyyy')) : format(activeDate, 'dd-MM-yyyy')) : activeDateKey}
                 </div>
                 {activeIsToday && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium">{bn ? 'আজ' : 'Today'}</span>}
               </div>

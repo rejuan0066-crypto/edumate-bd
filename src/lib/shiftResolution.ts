@@ -36,17 +36,51 @@ export interface ResolvedShift {
 }
 
 /**
- * Checks whether targetDate (YYYY-MM-DD) falls within [effectiveFrom, effectiveTo] inclusive.
+ * Normalizes any date or month-year string (MM-YYYY, YYYY-MM, DD-MM-YYYY, YYYY-MM-DD)
+ * to an ISO YYYY-MM-DD string for safe lexical comparison.
+ */
+export function normalizeDateToIso(dateStr?: string | null): string {
+  if (!dateStr) return '';
+  const s = String(dateStr).trim();
+  // If MM-YYYY or MM/YYYY (e.g. 10-2026 or 10/2026) -> use 15th of the month
+  const mmYyyy = s.match(/^(\d{1,2})[-/](\d{4})$/);
+  if (mmYyyy) {
+    const m = mmYyyy[1].padStart(2, '0');
+    const y = mmYyyy[2];
+    return `${y}-${m}-15`;
+  }
+  // If DD-MM-YYYY or DD/MM/YYYY (e.g. 15-10-2026)
+  const ddMmYyyy = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+  if (ddMmYyyy) {
+    const d = ddMmYyyy[1].padStart(2, '0');
+    const m = ddMmYyyy[2].padStart(2, '0');
+    const y = ddMmYyyy[3];
+    return `${y}-${m}-${d}`;
+  }
+  // If YYYY-MM (e.g. 2026-10) -> use 15th of the month
+  const yyyyMm = s.match(/^(\d{4})[-/](\d{1,2})$/);
+  if (yyyyMm) {
+    const y = yyyyMm[1];
+    const m = yyyyMm[2].padStart(2, '0');
+    return `${y}-${m}-15`;
+  }
+  // If already YYYY-MM-DD or other ISO format
+  return s.slice(0, 10);
+}
+
+/**
+ * Checks whether targetDate (YYYY-MM-DD, MM-YYYY, etc.) falls within [effectiveFrom, effectiveTo] inclusive.
  * If effectiveTo is null/empty, the range is considered ongoing.
  */
 export function isDateInRange(targetDate: string, effectiveFrom: string, effectiveTo?: string | null): boolean {
   if (!targetDate || !effectiveFrom) return false;
-  const d = String(targetDate).slice(0, 10);
-  const from = String(effectiveFrom).slice(0, 10);
+  const d = normalizeDateToIso(targetDate);
+  const from = normalizeDateToIso(effectiveFrom);
+  if (!d || !from) return false;
   if (d < from) return false;
   if (effectiveTo) {
-    const to = String(effectiveTo).slice(0, 10);
-    if (d > to) return false;
+    const to = normalizeDateToIso(effectiveTo);
+    if (to && d > to) return false;
   }
   return true;
 }

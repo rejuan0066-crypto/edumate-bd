@@ -218,6 +218,17 @@ export const StaffSpecialShiftDialog: React.FC<StaffSpecialShiftDialogProps> = (
     return catKey;
   };
 
+  const toBnDigits = (str: string | number) => String(str).replace(/\d/g, (d) => '০১২৩৪৫৬৭৮৯'[+d]);
+  const fmtDate = (dStr?: string | null) => {
+    if (!dStr) return '';
+    const parts = dStr.split('-');
+    if (parts.length === 3) {
+      const formatted = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      return bn ? toBnDigits(formatted) : formatted;
+    }
+    return dStr;
+  };
+
   const todayStr = new Date().toISOString().slice(0, 10);
 
   return (
@@ -568,7 +579,7 @@ export const StaffSpecialShiftDialog: React.FC<StaffSpecialShiftDialogProps> = (
                             <div className="flex items-center gap-1">
                               <Calendar className="w-3.5 h-3.5" />
                               <span>
-                                {shift.effective_from} {shift.effective_to ? `থেকে ${shift.effective_to}` : (bn ? 'থেকে চলমান' : 'onwards')}
+                                {fmtDate(shift.effective_from)} {shift.effective_to ? (bn ? `থেকে ${fmtDate(shift.effective_to)}` : `to ${fmtDate(shift.effective_to)}`) : (bn ? 'থেকে চলমান' : 'onwards')}
                               </span>
                             </div>
                             {shift.note && (
