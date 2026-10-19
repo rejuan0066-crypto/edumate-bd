@@ -26,7 +26,7 @@ import {
   CalendarDays, Users, UserCog, Search, Check, X, Clock,
   CalendarOff, Save, Settings2, Plus, Trash2, Edit2,
   CheckCircle2, XCircle, AlertCircle, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Home, Sun, Sunset, Moon, Utensils, Coffee,
-  Download, Printer, RotateCcw, QrCode, Send, Fingerprint, UserCheck
+  Download, Printer, RotateCcw, QrCode, Send, Fingerprint, UserCheck, History
 } from 'lucide-react';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { useAuth } from '@/hooks/useAuth';
