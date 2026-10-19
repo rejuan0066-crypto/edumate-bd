@@ -148,7 +148,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
       const cat = (s as any)?.staff_category || null;
       const catMap = ((cs?.value as any) || {}) as Record<string, { start?: string; end?: string }>;
       
-      const targetDate = `${month}-15`;
+      const targetDate = `${format(cursor, 'yyyy-MM')}-15`;
       const resolved = resolveStaffShift({
         staffId: staff.id,
         staffCategory: cat,
@@ -170,7 +170,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
       setThuSetting(thu?.value || null);
     })();
     return () => { cancel = true; };
-  }, [open, staff?.id, month]);
+  }, [open, staff?.id, cursor]);
 
   const byDate = useMemo(() => {
     const m: Record<string, any> = {};
