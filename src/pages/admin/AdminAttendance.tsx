@@ -229,10 +229,15 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   };
   const [categoryShiftTimes, setCategoryShiftTimes] = useState<Record<string, { start: string; end: string }>>(defaultCategoryTimes);
 
-  // Department shift effective date range states
-  const [deptEffectiveFrom, setDeptEffectiveFrom] = useState(todayIsoInTz(appTz));
-  const [deptEffectiveTo, setDeptEffectiveTo] = useState('');
-  const [deptIsOngoing, setDeptIsOngoing] = useState(true);
+  // Department shift configurations: start, end, and individual effective date ranges
+  interface DeptShiftConfig {
+    start: string;
+    end: string;
+    effectiveFrom: string;
+    effectiveTo: string;
+    isOngoing: boolean;
+  }
+  const [deptShiftConfigs, setDeptShiftConfigs] = useState<Record<string, DeptShiftConfig>>({});
   const [specialShiftDialogOpen, setSpecialShiftDialogOpen] = useState(false);
 
   // Dynamic staff categories from staff_categories table (synced with Designations page)
@@ -267,21 +272,78 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   });
 
   const dynamicStaffCategories = useMemo(() => {
-    return staffCategoriesData.map(c => c.key);
-  }, [staffCategoriesData]);
+    const list: string[] = [];
+    staffCategoriesData.forEach(c => {
+      if (c.key && !list.includes(c.key)) list.push(c.key);
+    });
+    if (savedCategoryTimes && typeof savedCategoryTimes === 'object') {
+      Object.keys(savedCategoryTimes).forEach(k => {
+        if (k && !list.includes(k) && !k.startsWith('__')) list.push(k);
+      });
+    }
+    const defaults = ['chef', 'teacher', 'administrative', 'support', 'general'];
+    defaults.forEach(d => {
+      if (!list.includes(d)) list.push(d);
+    });
+    return list;
+  }, [staffCategoriesData, savedCategoryTimes]);
 
   const categoryLabelMap: Record<string, { bn: string; en: string }> = useMemo(() => {
     const map: Record<string, { bn: string; en: string }> = {
-      teacher: { bn: 'শিক্ষক', en: 'Teacher' },
-      support: { bn: 'সাপোর্ট স্টাফ', en: 'Support Staff' },
+      teacher: { bn: 'শিক্ষা বিভাগ', en: 'Education / Academic' },
+      administrative: { bn: 'প্রশাসনিক কর্মকর্তা', en: 'Administrative' },
+      support: { bn: 'অফিস কর্মচারী', en: 'Office Staff' },
       general: { bn: 'সহায়ক কর্মী', en: 'General Staff' },
+      cook: { bn: 'রান্না বিভাগ', en: 'Cook / Kitchen' },
+      chef: { bn: 'রান্না বিভাগ', en: 'Cook / Kitchen' },
     };
-    // Override / extend with DB values
+    // Override / extend with DB values, ensuring teacher remains 'শিক্ষা বিভাগ'
     staffCategoriesData.forEach(c => {
-      map[c.key] = { bn: c.name_bn || c.name || c.key, en: c.name || c.name_bn || c.key };
+      if (c.key === 'teacher') {
+        map[c.key] = { bn: 'শিক্ষা বিভাগ', en: 'Education / Academic' };
+      } else {
+        map[c.key] = { bn: c.name_bn || c.name || c.key, en: c.name || c.name_bn || c.key };
+      }
     });
     return map;
   }, [staffCategoriesData]);
+
+  const getDeptConfig = (catKey: string): DeptShiftConfig => {
+    if (deptShiftConfigs[catKey]) return deptShiftConfigs[catKey];
+    const latest = departmentSchedules
+      .filter((s: any) => s.category_key === catKey)
+      .sort((a: any, b: any) => (b.effective_from || '').localeCompare(a.effective_from || ''))[0];
+
+    const base = categoryShiftTimes[catKey] || defaultCategoryTimes[catKey] || { start: '08:00', end: '17:00' };
+
+    return {
+      start: latest?.start_time || base.start,
+      end: latest?.end_time || base.end,
+      effectiveFrom: latest?.effective_from || todayIsoInTz(appTz),
+      effectiveTo: latest?.effective_to || '',
+      isOngoing: latest ? !latest.effective_to : true,
+    };
+  };
+
+  const updateDeptConfig = (catKey: string, patch: Partial<DeptShiftConfig>) => {
+    setDeptShiftConfigs((prev) => {
+      const current = prev[catKey] || getDeptConfig(catKey);
+      return {
+        ...prev,
+        [catKey]: { ...current, ...patch },
+      };
+    });
+
+    if (patch.start !== undefined || patch.end !== undefined) {
+      setCategoryShiftTimes((prev) => ({
+        ...prev,
+        [catKey]: {
+          start: patch.start ?? prev[catKey]?.start ?? '08:00',
+          end: patch.end ?? prev[catKey]?.end ?? '17:00',
+        },
+      }));
+    }
+  };
   const getCategoryLabel = (key: string) => categoryLabelMap[key] ? (bn ? categoryLabelMap[key].bn : categoryLabelMap[key].en) : key;
   const getCategoryResetTone = (key: string) => {
     const tones: Record<string, string> = {
@@ -832,11 +894,12 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   });
 
   const saveCategoryTimesMutation = useMutation({
-    mutationFn: async (times: Record<string, { start: string; end: string }>) => {
+    mutationFn: async (deptPayloads: Record<string, DeptShiftConfig>) => {
       // ===== Validation (overnight-aware via shared validateShiftWindow) =====
       const errors: string[] = [];
       const overnightWarnings: string[] = [];
-      for (const [k, v] of Object.entries(times)) {
+      for (const [k, v] of Object.entries(deptPayloads)) {
+        if (k === '__overnightWarnings') continue;
         const label = getCategoryLabel(k) || k;
         const res = validateShiftWindow(v?.start, v?.end);
         if (!res.ok) {
@@ -846,19 +909,22 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
         if (res.overnight) {
           overnightWarnings.push(`${label} (${v.start} → ${v.end})`);
         }
+        if (!v.isOngoing && v.effectiveTo && v.effectiveTo < v.effectiveFrom) {
+          errors.push(`${label}: ${bn ? 'সমাপ্তির তারিখ শুরুর তারিখের পূর্বের হতে পারবে না' : 'End date cannot be earlier than start date'}`);
+        }
       }
       if (errors.length) {
         throw new Error(errors.join(' • '));
       }
       // Stash warnings for onSuccess
-      (times as any).__overnightWarnings = overnightWarnings;
+      (deptPayloads as any).__overnightWarnings = overnightWarnings;
 
       // ===== Capture old values for audit =====
       const oldTimes = (savedCategoryTimes as Record<string, { start: string; end: string }>) || {};
 
       // ===== Save settings (strip transient warnings field) =====
       const cleanTimes: Record<string, { start: string; end: string }> = {};
-      for (const [k, v] of Object.entries(times)) {
+      for (const [k, v] of Object.entries(deptPayloads)) {
         if (k === '__overnightWarnings') continue;
         cleanTimes[k] = { start: (v as any).start, end: (v as any).end };
       }
@@ -868,16 +934,17 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       );
       if (error) throw error;
 
-      // ===== Save date-ranged schedules for department shifts =====
-      for (const [catKey, newVal] of Object.entries(cleanTimes)) {
+      // ===== Save date-ranged schedules for EACH department with its OWN date range =====
+      for (const [catKey, cfg] of Object.entries(deptPayloads)) {
+        if (catKey === '__overnightWarnings') continue;
         await saveDepartmentSchedule(supabase, {
           id: crypto.randomUUID(),
           category_key: catKey,
-          start_time: newVal.start,
-          end_time: newVal.end,
-          effective_from: deptEffectiveFrom,
-          effective_to: deptIsOngoing ? null : deptEffectiveTo || null,
-          note: bn ? 'ডিপার্টমেন্ট শিফট আপডেট' : 'Department shift update',
+          start_time: cfg.start,
+          end_time: cfg.end,
+          effective_from: cfg.effectiveFrom || todayIsoInTz(appTz),
+          effective_to: cfg.isOngoing ? null : cfg.effectiveTo || null,
+          note: bn ? `${getCategoryLabel(catKey)} শিফট আপডেট` : `${catKey} shift update`,
           updated_at: new Date().toISOString(),
         });
       }
@@ -894,7 +961,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       let totalRecalc = 0;
       const auditEntries: any[] = [];
 
-      for (const [catKey, newVal] of Object.entries(times)) {
+      for (const [catKey, newVal] of Object.entries(cleanTimes)) {
         const oldVal = oldTimes[catKey];
         const changed = !oldVal || oldVal.start !== newVal.start || oldVal.end !== newVal.end;
         if (!changed) continue;
@@ -2004,90 +2071,112 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                 </Label>
                 {dynamicStaffCategories
                   .filter(catKey => !['director', 'committee_member'].includes(catKey))
-                  .map(catKey => ({ key: catKey, label: getCategoryLabel(catKey) })).map(cat => (
-                  <div key={cat.key} className="rounded-xl border border-border/40 bg-background/60 p-3 space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                        <p className="text-xs font-semibold text-foreground truncate">{cat.label}</p>
+                  .map(catKey => ({ key: catKey, label: getCategoryLabel(catKey) })).map(cat => {
+                    const cfg = getDeptConfig(cat.key);
+                    return (
+                    <div key={cat.key} className="rounded-xl border border-border/40 bg-background/60 p-3 space-y-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                          <p className="text-xs font-bold text-foreground truncate">{cat.label}</p>
+                        </div>
+                        <button
+                          type="button"
+                          title={bn ? 'এই ক্যাটেগরির সবার ব্যক্তিগত ওভাররাইড মুছে দিন (ক্যাটেগরি টাইম প্রযোজ্য হবে)' : 'Clear per-staff override for this category (category time will apply)'}
+                          className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 transition font-medium whitespace-nowrap"
+                          onClick={async () => {
+                            const ok = await confirm({
+                              title: bn ? 'ব্যক্তিগত ওভাররাইড রিসেট?' : 'Reset personal overrides?',
+                              description: bn
+                                ? `${cat.label} ক্যাটেগরির সব স্টাফের নিজস্ব ডিউটি টাইম মুছে যাবে এবং ক্যাটেগরি টাইম প্রযোজ্য হবে।`
+                                : `All personal duty times for ${cat.label} will be cleared and the category time will apply.`,
+                              variant: 'warning',
+                            });
+                            if (!ok) return;
+                            const { error, count } = await supabase
+                              .from('staff')
+                              .update({ duty_start_time: null, duty_end_time: null, updated_at: new Date().toISOString() }, { count: 'exact' })
+                              .eq('staff_category', cat.key);
+                            if (error) { toast.error(error.message); return; }
+                            toast.success(bn ? `${count ?? 0} জনের ওভাররাইড মুছে দেওয়া হয়েছে` : `Cleared override for ${count ?? 0} staff`);
+                            queryClient.invalidateQueries({ queryKey: ['attendance'] });
+                            queryClient.invalidateQueries({ queryKey: ['staff'] });
+                          }}
+                        >
+                          {bn ? 'ওভাররাইড রিসেট' : 'Reset overrides'}
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        title={bn ? 'এই ক্যাটেগরির সবার ব্যক্তিগত ওভাররাইড মুছে দিন (ক্যাটেগরি টাইম প্রযোজ্য হবে)' : 'Clear per-staff override for this category (category time will apply)'}
-                        className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 transition font-medium whitespace-nowrap"
-                        onClick={async () => {
-                          const ok = await confirm({
-                            title: bn ? 'ব্যক্তিগত ওভাররাইড রিসেট?' : 'Reset personal overrides?',
-                            description: bn
-                              ? `${cat.label} ক্যাটেগরির সব স্টাফের নিজস্ব ডিউটি টাইম মুছে যাবে এবং ক্যাটেগরি টাইম প্রযোজ্য হবে।`
-                              : `All personal duty times for ${cat.label} will be cleared and the category time will apply.`,
-                            variant: 'warning',
-                          });
-                          if (!ok) return;
-                          const { error, count } = await supabase
-                            .from('staff')
-                            .update({ duty_start_time: null, duty_end_time: null, updated_at: new Date().toISOString() }, { count: 'exact' })
-                            .eq('staff_category', cat.key);
-                          if (error) { toast.error(error.message); return; }
-                          toast.success(bn ? `${count ?? 0} জনের ওভাররাইড মুছে দেওয়া হয়েছে` : `Cleared override for ${count ?? 0} staff`);
-                          queryClient.invalidateQueries({ queryKey: ['attendance'] });
-                          queryClient.invalidateQueries({ queryKey: ['staff'] });
-                        }}
-                      >
-                        {bn ? 'ওভাররাইড রিসেট' : 'Reset overrides'}
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <Label className="text-[10px]">{bn ? 'শুরু' : 'Start'}</Label>
-                        <TimePicker className="h-8 text-sm" displayFormat={timeFormat} value={categoryShiftTimes[cat.key]?.start || defaultCategoryTimes[cat.key]?.start || '08:00'} onChange={v => setCategoryShiftTimes(p => ({ ...p, [cat.key]: { start: v, end: p[cat.key]?.end || defaultCategoryTimes[cat.key]?.end || '17:00' } }))} />
-                      </div>
-                      <div>
-                        <Label className="text-[10px]">{bn ? 'শেষ' : 'End'}</Label>
-                        <TimePicker className="h-8 text-sm" displayFormat={timeFormat} value={categoryShiftTimes[cat.key]?.end || defaultCategoryTimes[cat.key]?.end || '17:00'} onChange={v => setCategoryShiftTimes(p => ({ ...p, [cat.key]: { start: p[cat.key]?.start || defaultCategoryTimes[cat.key]?.start || '08:00', end: v } }))} />
-                      </div>
-                    </div>
-                  </div>
-                ))}
 
-                {/* Department Shift Effective Date Range */}
-                <div className="rounded-xl border border-border/50 bg-background/50 p-2.5 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-foreground text-[11px] flex items-center gap-1.5">
-                      <CalendarDays className="w-3.5 h-3.5 text-primary" />
-                      {bn ? 'কার্যকর সময়সীমা' : 'Effective Date Range'}
-                    </span>
-                    <label className="flex items-center gap-1.5 text-[10px] cursor-pointer text-muted-foreground hover:text-foreground select-none">
-                      <Checkbox
-                        checked={deptIsOngoing}
-                        onCheckedChange={(c) => {
-                          setDeptIsOngoing(!!c);
-                          if (c) setDeptEffectiveTo('');
-                        }}
-                      />
-                      <span>{bn ? 'চলমান (স্থায়ী)' : 'Ongoing'}</span>
-                    </label>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-[10px] text-muted-foreground">{bn ? 'শুরু তারিখ' : 'From Date'}</Label>
-                      <DatePicker className="h-7 text-xs w-full" value={deptEffectiveFrom} onChange={(d) => setDeptEffectiveFrom(d || '')} />
+                      {/* Time Pickers */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">{bn ? 'শুরু' : 'Start'}</Label>
+                          <TimePicker
+                            className="h-8 text-sm"
+                            displayFormat={timeFormat}
+                            value={cfg.start}
+                            onChange={v => updateDeptConfig(cat.key, { start: v })}
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">{bn ? 'শেষ' : 'End'}</Label>
+                          <TimePicker
+                            className="h-8 text-sm"
+                            displayFormat={timeFormat}
+                            value={cfg.end}
+                            onChange={v => updateDeptConfig(cat.key, { end: v })}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Individual Department Date Range */}
+                      <div className="rounded-lg border border-border/50 bg-muted/20 p-2 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-foreground text-[10px] flex items-center gap-1">
+                            <CalendarDays className="w-3 h-3 text-primary" />
+                            {bn ? 'কার্যকর সময়সীমা' : 'Effective Date Range'}
+                          </span>
+                          <label className="flex items-center gap-1 text-[10px] cursor-pointer text-muted-foreground hover:text-foreground select-none">
+                            <Checkbox
+                              checked={cfg.isOngoing}
+                              onCheckedChange={(c) => updateDeptConfig(cat.key, { isOngoing: !!c, effectiveTo: c ? '' : cfg.effectiveTo })}
+                            />
+                            <span>{bn ? 'চলমান (স্থায়ী)' : 'Ongoing'}</span>
+                          </label>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label className="text-[9px] text-muted-foreground">{bn ? 'শুরু তারিখ' : 'From Date'}</Label>
+                            <DatePicker
+                              className="h-7 text-xs w-full"
+                              value={cfg.effectiveFrom}
+                              onChange={(d) => updateDeptConfig(cat.key, { effectiveFrom: d || '' })}
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-[9px] text-muted-foreground">{bn ? 'সমাপ্তির তারিখ' : 'To Date'}</Label>
+                            <DatePicker
+                              className="h-7 text-xs w-full"
+                              value={cfg.effectiveTo}
+                              onChange={(d) => updateDeptConfig(cat.key, { effectiveTo: d || '' })}
+                              disabled={cfg.isOngoing}
+                              placeholder={cfg.isOngoing ? (bn ? 'চলমান' : 'Ongoing') : ''}
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <Label className="text-[10px] text-muted-foreground">{bn ? 'সমাপ্তির তারিখ' : 'To Date'}</Label>
-                      <DatePicker className="h-7 text-xs w-full" value={deptEffectiveTo} onChange={(d) => setDeptEffectiveTo(d || '')} disabled={deptIsOngoing} placeholder={deptIsOngoing ? (bn ? 'চলমান' : 'Ongoing') : ''} />
-                    </div>
-                  </div>
-                </div>
+                  );
+                })}
 
                 <Button size="sm" className="w-full" onClick={() => {
-                  const visibleCategoryTimes = dynamicStaffCategories
-                    .filter(catKey => !['director', 'committee_member'].includes(catKey))
-                    .reduce((acc, catKey) => {
-                      acc[catKey] = categoryShiftTimes[catKey] || defaultCategoryTimes[catKey] || { start: '08:00', end: '17:00' };
-                      return acc;
-                    }, {} as Record<string, { start: string; end: string }>);
-                  saveCategoryTimesMutation.mutate(visibleCategoryTimes);
+                  const visibleCategories = dynamicStaffCategories
+                    .filter(catKey => !['director', 'committee_member'].includes(catKey));
+                  const payloads: Record<string, DeptShiftConfig> = {};
+                  visibleCategories.forEach((catKey) => {
+                    payloads[catKey] = getDeptConfig(catKey);
+                  });
+                  saveCategoryTimesMutation.mutate(payloads as any);
                 }} disabled={saveCategoryTimesMutation.isPending}>
                   <Save className="h-3 w-3 mr-1" /> {bn ? 'ডিপার্টমেন্ট শিফট সেভ করুন' : 'Save Department Shifts'}
                 </Button>

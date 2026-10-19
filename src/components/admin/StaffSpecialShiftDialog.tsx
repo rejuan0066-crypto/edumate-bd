@@ -213,6 +213,8 @@ export const StaffSpecialShiftDialog: React.FC<StaffSpecialShiftDialogProps> = (
   // Category label helper
   const getDeptLabel = (catKey?: string | null) => {
     if (!catKey) return bn ? 'সাধারণ' : 'General';
+    if (catKey === 'teacher') return bn ? 'শিক্ষা বিভাগ' : 'Education Department';
+    if (catKey === 'chef' || catKey === 'cook') return bn ? 'রান্না বিভাগ' : 'Kitchen';
     const found = categories.find((c) => c.key === catKey);
     if (found) return bn ? found.name_bn || found.name : found.name || found.name_bn;
     return catKey;
