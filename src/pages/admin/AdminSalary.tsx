@@ -48,6 +48,7 @@ import {
   type DutyAttendance,
 } from '@/lib/dutyShiftDeduction';
 import { shouldApplyThursdayHalfDay, effectiveDutyEndForThursday, parseHalfDayEndMinutes, parseClockMinutes } from '@/lib/thursdayHalfDay';
+import { resolveStaffShift, fetchSpecialShifts, fetchDepartmentSchedules } from '@/lib/shiftResolution';
 import { downloadSlipAsPdf, downloadSheetAsPdf, printSalarySlipHtml, shareSlipPdf, viewSlipPdfInNewTab, isMobileOrPwa } from '@/lib/salarySlipPdf';
 import { DatePicker } from '@/components/ui/date-picker';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
@@ -528,20 +529,45 @@ const AdminSalary = () => {
     return d;
   };
 
-  // Helper: resolve duty time for a staff member — prefers staff-specific time, falls back to category shift, then default
-  const getDutyTime = (staffMember: any): { start: string; end: string } => {
-    return getDutyTimeWithSource(staffMember);
+  // Date-ranged special shifts query
+  const { data: specialShifts = [] } = useQuery({
+    queryKey: ['staff_special_shifts'],
+    queryFn: async () => fetchSpecialShifts(supabase),
+    staleTime: 60000,
+  });
+
+  // Date-ranged department schedules query
+  const { data: departmentSchedules = [] } = useQuery({
+    queryKey: ['department_shift_schedules'],
+    queryFn: async () => fetchDepartmentSchedules(supabase),
+    staleTime: 60000,
+  });
+
+  // Helper: resolve duty time for a staff member — prefers special shift > staff-specific time > department schedule > category shift > default
+  const getDutyTime = (staffMember: any, targetDate?: string): { start: string; end: string } => {
+    return getDutyTimeWithSource(staffMember, targetDate);
   };
-  const getDutyTimeWithSource = (staffMember: any): { start: string; end: string; source: 'category' | 'staff' | 'default' } => {
-    if (staffMember?.duty_start_time && staffMember?.duty_end_time) {
-      return { start: staffMember.duty_start_time, end: staffMember.duty_end_time, source: 'staff' };
-    }
-    const catKey = staffMember?.staff_category;
-    if (catKey && (categoryShiftTimes as any)[catKey]) {
-      const t = (categoryShiftTimes as any)[catKey];
-      if (t.start && t.end) return { start: t.start, end: t.end, source: 'category' };
-    }
-    return { start: '08:00', end: '17:00', source: 'default' };
+  const getDutyTimeWithSource = (staffMember: any, targetDate?: string): { start: string; end: string; source: 'special' | 'category' | 'staff' | 'default' } => {
+    const effectiveDate = targetDate || `${monthYear}-15`;
+    const res = resolveStaffShift({
+      staffId: staffMember?.id,
+      staffCategory: staffMember?.staff_category,
+      targetDate: effectiveDate,
+      profileDuty: {
+        start: staffMember?.duty_start_time,
+        end: staffMember?.duty_end_time,
+      },
+      specialShifts,
+      departmentSchedules,
+      categoryTimes: categoryShiftTimes,
+      defaultTime: { start: '08:00', end: '17:00' },
+    });
+
+    return {
+      start: res.start,
+      end: res.end,
+      source: res.source === 'special' ? 'special' : res.source === 'profile' ? 'staff' : res.source === 'department_schedule' ? 'category' : 'default',
+    };
   };
   // Fetch morning/evening duty attendance for overtime calculation
   const { data: dutyAttendanceData = [] } = useQuery({
@@ -1701,7 +1727,7 @@ const AdminSalary = () => {
       // কোন বিভাগে নিয়ম লাগবে তা সেটিংসে নির্বাচিত ক্যাটাগরি (fallback: 'teacher') দিয়ে ঠিক হয়।
       // শুধুমাত্র নির্বাচিত department/category-এর স্টাফেই প্রযোজ্য (shared helper দিয়ে যাচাইকৃত)।
       const thuHalfSetting = getSetting('thursday_half_day_education');
-      const hasPersonalDuty = !!(staffMember?.duty_start_time && staffMember?.duty_end_time);
+      const hasPersonalDuty = !!(staffMember?.duty_start_time && staffMember?.duty_end_time) || dutyInfo.source === 'special' || dutyInfo.source === 'staff';
       const applyThuHalf = !hasPersonalDuty && shouldApplyThursdayHalfDay({
         setting: thuHalfSetting,
         staffCategory: staffMember?.staff_category,
@@ -3955,12 +3981,14 @@ const AdminSalary = () => {
                             <td className="px-3 py-2 text-center">
                               {(() => {
                                 const t = getDutyTimeWithSource(s);
-                                const sourceLabel = t.source === 'category'
-                                  ? (bn ? 'উৎস: ক্যাটাগরি শিফট সেটিংস' : 'Source: Category shift settings')
+                                const sourceLabel = t.source === 'special'
+                                  ? (bn ? 'উৎস: তারিখ-ভিত্তিক বিশেষ শিফট' : 'Source: Date-ranged special shift')
+                                  : t.source === 'category'
+                                  ? (bn ? 'উৎস: ডিপার্টমেন্ট শিফট' : 'Source: Department shift')
                                   : t.source === 'staff'
                                     ? (bn ? 'উৎস: স্টাফের ব্যক্তিগত সময়' : 'Source: Staff personal time')
                                     : (bn ? 'উৎস: ডিফল্ট (০৮:০০–১৭:০০)' : 'Source: Default (08:00–17:00)');
-                                const dot = t.source === 'category' ? 'text-emerald-600' : t.source === 'staff' ? 'text-blue-600' : 'text-muted-foreground';
+                                const dot = t.source === 'special' ? 'text-purple-600' : t.source === 'category' ? 'text-emerald-600' : t.source === 'staff' ? 'text-blue-600' : 'text-muted-foreground';
                                 return (
                                   <span className="text-[10px] text-primary" title={sourceLabel}>
                                     {bn ? toBnDigits(`${fmt(t.start)}-${fmt(t.end)}`) : `${fmt(t.start)}-${fmt(t.end)}`}

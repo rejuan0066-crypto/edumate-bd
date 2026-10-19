@@ -10,6 +10,7 @@ import { bn as bnLocale } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { parseClockMinutes, shouldApplyThursdayHalfDay } from '@/lib/thursdayHalfDay';
+import { resolveStaffShift, fetchSpecialShifts, fetchDepartmentSchedules } from '@/lib/shiftResolution';
 import { dedupeAttendanceRecords } from '@/lib/attendanceDedup';
 import { useAttendanceDuplicateRule } from '@/hooks/useAttendanceDuplicateRule';
 
@@ -136,28 +137,41 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
     if (!open || !staff?.id) return;
     let cancel = false;
     (async () => {
-      const [{ data: s }, { data: cs }, { data: thu }] = await Promise.all([
+      const [{ data: s }, { data: cs }, { data: thu }, specialShifts, departmentSchedules] = await Promise.all([
         supabase.from('staff').select('duty_start_time, duty_end_time, staff_category').eq('id', staff.id).maybeSingle(),
         supabase.from('website_settings').select('value').eq('key', 'category_shift_times').maybeSingle(),
         supabase.from('website_settings').select('value').eq('key', 'thursday_half_day_education').maybeSingle(),
+        fetchSpecialShifts(supabase),
+        fetchDepartmentSchedules(supabase),
       ]);
       if (cancel) return;
       const cat = (s as any)?.staff_category || null;
       const catMap = ((cs?.value as any) || {}) as Record<string, { start?: string; end?: string }>;
-      let start = 480, end = 1020;
-      if ((s as any)?.duty_start_time && (s as any)?.duty_end_time) {
-        start = parseClockMinutes((s as any).duty_start_time) ?? 480;
-        end = parseClockMinutes((s as any).duty_end_time) ?? 1020;
-      } else if (cat && catMap[cat]?.start && catMap[cat]?.end) {
-        start = parseClockMinutes(catMap[cat].start) ?? 480;
-        end = parseClockMinutes(catMap[cat].end) ?? 1020;
-      }
-      const hasCustomDuty = !!((s as any)?.duty_start_time && (s as any)?.duty_end_time);
+      
+      const targetDate = `${month}-15`;
+      const resolved = resolveStaffShift({
+        staffId: staff.id,
+        staffCategory: cat,
+        targetDate,
+        profileDuty: {
+          start: (s as any)?.duty_start_time,
+          end: (s as any)?.duty_end_time,
+        },
+        specialShifts,
+        departmentSchedules,
+        categoryTimes: catMap,
+        defaultTime: { start: '08:00', end: '17:00' },
+      });
+
+      const start = parseClockMinutes(resolved.start) ?? 480;
+      const end = parseClockMinutes(resolved.end) ?? 1020;
+      const hasCustomDuty = resolved.isCustomDuty;
+
       setDutyInfo({ start, end, category: cat, hasCustomDuty });
       setThuSetting(thu?.value || null);
     })();
     return () => { cancel = true; };
-  }, [open, staff?.id]);
+  }, [open, staff?.id, month]);
 
   const byDate = useMemo(() => {
     const m: Record<string, any> = {};

@@ -21,12 +21,13 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import {
   CalendarDays, Users, UserCog, Search, Check, X, Clock,
   CalendarOff, Save, Settings2, Plus, Trash2, Edit2,
   CheckCircle2, XCircle, AlertCircle, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Home, Sun, Sunset, Moon, Utensils, Coffee,
-  Download, Printer, RotateCcw, QrCode, Send, Fingerprint, UserCheck, History
+  Download, Printer, RotateCcw, QrCode, Send, Fingerprint, UserCheck, History, Sparkles
 } from 'lucide-react';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { useAuth } from '@/hooks/useAuth';
@@ -43,6 +44,13 @@ import StaffMonthlyAttendanceDialog from '@/components/admin/StaffMonthlyAttenda
 import ResidentialDutyMonthlySheetDialog from '@/components/admin/ResidentialDutyMonthlySheetDialog';
 import BulkHolidayDialog from '@/components/admin/BulkHolidayDialog';
 import AttendanceRecoveryDialog from '@/components/admin/AttendanceRecoveryDialog';
+import StaffSpecialShiftDialog from '@/components/admin/StaffSpecialShiftDialog';
+import {
+  resolveStaffShift,
+  fetchSpecialShifts,
+  fetchDepartmentSchedules,
+  saveDepartmentSchedule,
+} from '@/lib/shiftResolution';
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useAppTimezone } from '@/hooks/useAppTimezone';
 import { todayIsoInTz, addDaysIsoInTz, toMonthYearInTz } from '@/lib/timezone';
@@ -221,6 +229,12 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   };
   const [categoryShiftTimes, setCategoryShiftTimes] = useState<Record<string, { start: string; end: string }>>(defaultCategoryTimes);
 
+  // Department shift effective date range states
+  const [deptEffectiveFrom, setDeptEffectiveFrom] = useState(todayIsoInTz(appTimezone));
+  const [deptEffectiveTo, setDeptEffectiveTo] = useState('');
+  const [deptIsOngoing, setDeptIsOngoing] = useState(true);
+  const [specialShiftDialogOpen, setSpecialShiftDialogOpen] = useState(false);
+
   // Dynamic staff categories from staff_categories table (synced with Designations page)
   const { data: staffCategoriesData = [] } = useQuery({
     queryKey: ['staff-categories-for-shift'],
@@ -232,6 +246,24 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
         .order('sort_order', { ascending: true });
       return (data || []) as Array<{ key: string; name: string; name_bn: string; sort_order: number }>;
     },
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+
+  // Date-ranged special shifts query
+  const { data: specialShifts = [] } = useQuery({
+    queryKey: ['staff_special_shifts'],
+    queryFn: async () => fetchSpecialShifts(supabase),
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+
+  // Date-ranged department schedules query
+  const { data: departmentSchedules = [] } = useQuery({
+    queryKey: ['department_shift_schedules'],
+    queryFn: async () => fetchDepartmentSchedules(supabase),
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
   const dynamicStaffCategories = useMemo(() => {
@@ -836,6 +868,20 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       );
       if (error) throw error;
 
+      // ===== Save date-ranged schedules for department shifts =====
+      for (const [catKey, newVal] of Object.entries(cleanTimes)) {
+        await saveDepartmentSchedule(supabase, {
+          id: crypto.randomUUID(),
+          category_key: catKey,
+          start_time: newVal.start,
+          end_time: newVal.end,
+          effective_from: deptEffectiveFrom,
+          effective_to: deptIsOngoing ? null : deptEffectiveTo || null,
+          note: bn ? 'ডিপার্টমেন্ট শিফট আপডেট' : 'Department shift update',
+          updated_at: new Date().toISOString(),
+        });
+      }
+
       // ===== Audit log + auto-recalc per changed category =====
       const { data: { user } } = await supabase.auth.getUser();
       let actorName: string | null = null;
@@ -905,8 +951,10 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     onSuccess: ({ changedCount, totalRecalc, overnightWarnings }) => {
       queryClient.invalidateQueries({ queryKey: ['category-shift-times'] });
       queryClient.invalidateQueries({ queryKey: ['category-shift-times-salary'] });
+      queryClient.invalidateQueries({ queryKey: ['department_shift_schedules'] });
       queryClient.invalidateQueries({ queryKey: ['salary-records'] });
       queryClient.invalidateQueries({ queryKey: ['shift-time-audit-log'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
       const msg = bn
         ? `সেভ হয়েছে${changedCount > 0 ? ` • ${changedCount} ডিপার্টমেন্ট পরিবর্তিত • ${totalRecalc} বেতন রেকর্ড আপডেট` : ''}`
         : `Saved${changedCount > 0 ? ` • ${changedCount} category changes • ${totalRecalc} salary records refreshed` : ''}`;
@@ -925,9 +973,9 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
 
   // Apply the Thursday half-day check-in/check-out window when the selected date is a
   // Thursday and the staff belongs to a configured department.
-  // NOTE: If a staff has an explicit personal duty time, that personal duty time MUST NOT be overridden!
-  const applyThursdayWindow = (entity: any, base: { start: string; end: string }) => {
-    if (entity?.duty_start_time && entity?.duty_end_time) return base;
+  // NOTE: If a staff has an explicit personal duty time or date-ranged special shift, custom duty MUST NOT be overridden!
+  const applyThursdayWindow = (entity: any, base: { start: string; end: string }, isCustomDuty = false) => {
+    if (isCustomDuty || (entity?.duty_start_time && entity?.duty_end_time)) return base;
     const enabled = (thursdayHalfSetting as any)?.enabled === true;
     if (!enabled || entity?.type === 'student') return base;
     if (!isThursdayDate(selectedDate)) return base;
@@ -939,16 +987,23 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     };
   };
 
-  // Helper: get shift time for a staff entity (per-staff override > category > default)
+  // Helper: get shift time for a staff entity (special shift > per-staff override > department schedule > category > default)
   const getCategoryTime = (entity: any) => {
-    let base: { start: string; end: string };
-    if (entity?.duty_start_time && entity?.duty_end_time) {
-      base = { start: entity.duty_start_time, end: entity.duty_end_time };
-    } else {
-      const cat = entity?.staff_category || 'general';
-      base = categoryShiftTimes[cat] || defaultCategoryTimes.general;
-    }
-    return applyThursdayWindow(entity, base);
+    const resolved = resolveStaffShift({
+      staffId: entity?.id,
+      staffCategory: entity?.staff_category,
+      targetDate: selectedDate,
+      profileDuty: {
+        start: entity?.duty_start_time,
+        end: entity?.duty_end_time,
+      },
+      specialShifts,
+      departmentSchedules,
+      categoryTimes: categoryShiftTimes,
+      defaultTime: defaultCategoryTimes[entity?.staff_category] || defaultCategoryTimes.general,
+    });
+
+    return applyThursdayWindow(entity, { start: resolved.start, end: resolved.end }, resolved.isCustomDuty);
   };
 
   const getStaffShiftTime = (entity: any, shift?: string) => {
@@ -1995,6 +2050,37 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                     </div>
                   </div>
                 ))}
+
+                {/* Department Shift Effective Date Range */}
+                <div className="rounded-xl border border-border/50 bg-background/50 p-2.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-foreground text-[11px] flex items-center gap-1.5">
+                      <CalendarDays className="w-3.5 h-3.5 text-primary" />
+                      {bn ? 'কার্যকর সময়সীমা' : 'Effective Date Range'}
+                    </span>
+                    <label className="flex items-center gap-1.5 text-[10px] cursor-pointer text-muted-foreground hover:text-foreground select-none">
+                      <Checkbox
+                        checked={deptIsOngoing}
+                        onCheckedChange={(c) => {
+                          setDeptIsOngoing(!!c);
+                          if (c) setDeptEffectiveTo('');
+                        }}
+                      />
+                      <span>{bn ? 'চলমান (স্থায়ী)' : 'Ongoing'}</span>
+                    </label>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">{bn ? 'শুরু তারিখ' : 'From Date'}</Label>
+                      <DatePicker className="h-7 text-xs w-full" value={deptEffectiveFrom} onChange={(d) => setDeptEffectiveFrom(d || '')} />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">{bn ? 'সমাপ্তির তারিখ' : 'To Date'}</Label>
+                      <DatePicker className="h-7 text-xs w-full" value={deptEffectiveTo} onChange={(d) => setDeptEffectiveTo(d || '')} disabled={deptIsOngoing} placeholder={deptIsOngoing ? (bn ? 'চলমান' : 'Ongoing') : ''} />
+                    </div>
+                  </div>
+                </div>
+
                 <Button size="sm" className="w-full" onClick={() => {
                   const visibleCategoryTimes = dynamicStaffCategories
                     .filter(catKey => !['director', 'committee_member'].includes(catKey))
@@ -2006,6 +2092,24 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                 }} disabled={saveCategoryTimesMutation.isPending}>
                   <Save className="h-3 w-3 mr-1" /> {bn ? 'ডিপার্টমেন্ট শিফট সেভ করুন' : 'Save Department Shifts'}
                 </Button>
+
+                {/* Special Shift Assignment by Date Range Button */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-2 border-primary/40 text-primary hover:bg-primary/5 font-semibold bg-primary/[0.02]"
+                  onClick={() => setSpecialShiftDialogOpen(true)}
+                >
+                  <Sparkles className="h-3.5 w-3.5 text-amber-500 fill-amber-500/20" />
+                  {bn ? 'তারিখ অনুযায়ী বিশেষ ডিউটি শিফট' : 'Special Shift by Date Range'}
+                  {specialShifts.length > 0 && (
+                    <Badge className="ml-auto bg-primary text-primary-foreground text-[10px] px-1.5 py-0 h-4">
+                      {specialShifts.length}
+                    </Badge>
+                  )}
+                </Button>
+
                 <a href="/admin/shift-audit-log" className="block text-center text-[11px] text-primary hover:underline">
                   {bn ? '📜 পরিবর্তনের ইতিহাস দেখুন' : '📜 View change history'}
                 </a>
@@ -3267,6 +3371,13 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
           staff={monthlyStaff}
           shift={entityType === 'staff' ? effectiveShift : undefined}
           initialDate={selectedDate}
+        />
+        {/* Special Shift Assignment Dialog */}
+        <StaffSpecialShiftDialog
+          open={specialShiftDialogOpen}
+          onOpenChange={setSpecialShiftDialogOpen}
+          staffList={allStaff}
+          categories={staffCategoriesData}
         />
         <ResidentialDutyMonthlySheetDialog
           open={dutyMonthlySheetOpen}
