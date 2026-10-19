@@ -558,6 +558,11 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       if (rd && selectedDate > rd) {
         return false;
       }
+      // Strictly exclude from attendance roster on any date BEFORE the joining date
+      const jd = e.joining_date ? String(e.joining_date).slice(0, 10) : '';
+      if (jd && selectedDate < jd && !attendance.some((a: any) => a.entity_id === e.id)) {
+        return false;
+      }
       // Inactive staff with no record on this date are hidden
       if (e.status === 'inactive' && !attendance.some((a: any) => a.entity_id === e.id)) {
         return false;
@@ -589,6 +594,8 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     return list.filter((e: any) => {
       const rd = getResignDate(e.id);
       if (rd && selectedDate > rd) return false;
+      const jd = e.joining_date ? String(e.joining_date).slice(0, 10) : '';
+      if (jd && selectedDate < jd) return false;
       const hasAtt = attendance.some((a: any) => a.entity_id === e.id && a.shift === 'morning');
       if (e.status === 'inactive' && !hasAtt) return false;
       if (isResignedOnDate(e.id, selectedDate) && !hasAtt) return false;
@@ -614,6 +621,8 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     return list.filter((e: any) => {
       const rd = getResignDate(e.id);
       if (rd && selectedDate > rd) return false;
+      const jd = e.joining_date ? String(e.joining_date).slice(0, 10) : '';
+      if (jd && selectedDate < jd) return false;
       const hasAtt = attendance.some((a: any) => a.entity_id === e.id && a.shift === 'evening');
       if (e.status === 'inactive' && !hasAtt) return false;
       if (isResignedOnDate(e.id, selectedDate) && !hasAtt) return false;
