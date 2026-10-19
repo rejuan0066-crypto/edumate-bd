@@ -720,47 +720,43 @@ const AdminInventory = () => {
 
   return (
     <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-primary/10 border border-primary/20 text-primary shadow-sm">
-            <Package className="w-7 h-7 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              {bn ? 'ইনভেন্টরি ও সম্পদ ব্যবস্থাপনা' : 'Inventory & Asset Management'}
-            </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              {bn ? 'বিল্ডিং সামগ্রী, আসবাবপত্র, মালামাল ক্রয়-ব্যবহার ও অবশিষ্ট স্টক ট্র্যাকিং' : 'Materials, furniture, assets purchase, usage & stock tracking'}
-            </p>
-          </div>
+      {/* ── Standard Page Header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-border/60">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <Package className="w-5 sm:w-6 h-5 sm:h-6 text-primary" />
+            {bn ? 'ইনভেন্টরি ও সম্পদ ব্যবস্থাপনা' : 'Inventory & Asset Management'}
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+            {bn ? 'বিল্ডিং সামগ্রী, আসবাবপত্র, মালামাল ক্রয়-ব্যবহার ও অবশিষ্ট স্টক ট্র্যাকিং' : 'Materials, furniture, assets purchase, usage & stock tracking'}
+          </p>
         </div>
       </div>
 
       {/* Tabs */}
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="grid w-full grid-cols-5 p-1 bg-muted/50 rounded-2xl">
-          <TabsTrigger value="dashboard" className="rounded-xl flex items-center gap-1.5 text-xs sm:text-sm">
+        <TabsList className="grid w-full grid-cols-5 p-1 bg-muted/60 border border-border/70 rounded-xl h-auto gap-1">
+          <TabsTrigger value="dashboard" className="rounded-lg flex items-center gap-1.5 text-xs sm:text-sm py-1.5 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs">
             <BarChart3 className="w-4 h-4" />
             <span className="hidden sm:inline">{bn ? 'ড্যাশবোর্ড' : 'Dashboard'}</span>
           </TabsTrigger>
-          <TabsTrigger value="items" className="rounded-xl flex items-center gap-1.5 text-xs sm:text-sm font-semibold">
+          <TabsTrigger value="items" className="rounded-lg flex items-center gap-1.5 text-xs sm:text-sm font-medium py-1.5 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs">
             <Box className="w-4 h-4" />
-            <span>{bn ? 'মালামাল ও সামগ্রী' : 'Items'}</span>
+            <span>{bn ? 'মালামাল' : 'Items'}</span>
             <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0">{items.length}</Badge>
           </TabsTrigger>
-          <TabsTrigger value="assets" className="rounded-xl flex items-center gap-1.5 text-xs sm:text-sm font-semibold">
+          <TabsTrigger value="assets" className="rounded-lg flex items-center gap-1.5 text-xs sm:text-sm font-medium py-1.5 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs">
             <Monitor className="w-4 h-4" />
-            <span>{bn ? 'আসবাব ও সম্পদ' : 'Assets'}</span>
+            <span>{bn ? 'আসবাব' : 'Assets'}</span>
             <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0">{assets.length}</Badge>
           </TabsTrigger>
-          <TabsTrigger value="consumption" className="rounded-xl flex items-center gap-1.5 text-xs sm:text-sm">
+          <TabsTrigger value="consumption" className="rounded-lg flex items-center gap-1.5 text-xs sm:text-sm py-1.5 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs">
             <TrendingDown className="w-4 h-4" />
-            <span className="hidden sm:inline">{bn ? 'ব্যবহার ও বরাদ্দ' : 'Usage'}</span>
+            <span className="hidden sm:inline">{bn ? 'ব্যবহার' : 'Usage'}</span>
           </TabsTrigger>
-          <TabsTrigger value="logs" className="rounded-xl flex items-center gap-1.5 text-xs sm:text-sm">
+          <TabsTrigger value="logs" className="rounded-lg flex items-center gap-1.5 text-xs sm:text-sm py-1.5 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs">
             <ArrowDownUp className="w-4 h-4" />
-            <span className="hidden sm:inline">{bn ? 'লেনদেন লগ' : 'Logs'}</span>
+            <span className="hidden sm:inline">{bn ? 'লগ' : 'Logs'}</span>
           </TabsTrigger>
         </TabsList>
 

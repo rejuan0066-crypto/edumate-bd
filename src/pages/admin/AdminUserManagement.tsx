@@ -1595,24 +1595,30 @@ const AdminUserManagement = () => {
     <AdminLayout>
 
       <div className="space-y-6">
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
-            <Users className="w-6 h-6 text-primary" />
-            {bn ? 'ইউজার ব্যবস্থাপনা' : 'User Management'}
-          </h1>
+        {/* ── Standard Page Header ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-border/60">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+              <Users className="w-5 sm:w-6 h-5 sm:h-6 text-primary" />
+              {bn ? 'ইউজার ব্যবস্থাপনা' : 'User Management'}
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+              {bn ? 'অ্যাডমিন, শিক্ষক ও স্টাফদের লগইন অ্যাকাউন্ট, রোল ও পারমিশন নিয়ন্ত্রণ' : 'Manage system user accounts, roles, and granular access permissions'}
+            </p>
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="users" className="gap-1.5">
+          <TabsList className="p-1 bg-muted/60 border border-border/70 rounded-xl h-auto gap-1">
+            <TabsTrigger value="users" className="gap-1.5 text-xs sm:text-sm py-1.5 px-3 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs">
               <Users className="w-4 h-4" />
               {bn ? 'ইউজার তালিকা' : 'Users'}
             </TabsTrigger>
-            <TabsTrigger value="roles" className="gap-1.5">
+            <TabsTrigger value="roles" className="gap-1.5 text-xs sm:text-sm py-1.5 px-3 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs">
               <Tag className="w-4 h-4" />
               {bn ? 'রোল ব্যবস্থাপনা' : 'Roles'}
             </TabsTrigger>
-            <TabsTrigger value="access" className="gap-1.5">
+            <TabsTrigger value="access" className="gap-1.5 text-xs sm:text-sm py-1.5 px-3 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs">
               <Shield className="w-4 h-4" />
               {bn ? 'অ্যাক্সেস কন্ট্রোল' : 'Access Control'}
             </TabsTrigger>
@@ -1623,7 +1629,7 @@ const AdminUserManagement = () => {
             <div className="flex justify-end">
               {canAddItem && <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
                 <DialogTrigger asChild>
-                  <Button className="btn-primary-gradient gap-2">
+                  <Button size="sm" className="h-9 rounded-xl font-medium gap-2">
                     <Plus className="w-4 h-4" /> {bn ? 'নতুন ইউজার' : 'New User'}
                   </Button>
                 </DialogTrigger>

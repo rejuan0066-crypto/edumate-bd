@@ -478,27 +478,26 @@ export default function AdminDutyRoster() {
 
   return (
     <AdminLayout>
-      <div className="mx-auto w-full max-w-[1440px] space-y-6 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="rounded-2xl bg-primary/10 p-3">
-              <CalendarClock className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold">ডিউটি রোস্টার</h1>
-              <p className="text-sm text-muted-foreground">
-                {WEEKDAYS[weekday]}বার — শিফট ভিত্তিক ডিউটি ও হাজিরা
-              </p>
-            </div>
+      <div className="mx-auto w-full max-w-[1440px] space-y-6">
+        {/* ── Standard Page Header ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-border/60">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+              <CalendarClock className="w-5 sm:w-6 h-5 sm:h-6 text-primary" />
+              ডিউটি রোস্টার
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+              {WEEKDAYS[weekday]}বার — শিফট ভিত্তিক শিক্ষক ও স্টাফদের ডিউটি ও উপস্থিতি ব্যবস্থাপনা
+            </p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground hidden sm:inline mr-1">
               শেষ আপডেট: {dataUpdatedAt ? format(new Date(dataUpdatedAt), 'HH:mm:ss') : '—'}
             </span>
             <Button
               variant="outline"
               size="sm"
-              className="rounded-full"
+              className="h-9 rounded-xl font-medium"
               disabled={attFetching}
               onClick={() => {
                 qc.invalidateQueries({ queryKey: ['duty-shift-attendance', date] });
@@ -506,14 +505,14 @@ export default function AdminDutyRoster() {
                 qc.invalidateQueries({ queryKey: ['duty-weekly-template'] });
               }}
             >
-              <RefreshCw className={`mr-1 h-4 w-4 ${attFetching ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`mr-1.5 h-4 w-4 ${attFetching ? 'animate-spin' : ''}`} />
               রিফ্রেশ
             </Button>
-            <DatePicker value={date} onChange={setDate} className="w-[180px]" />
+            <DatePicker value={date} onChange={setDate} className="w-[170px] h-9 rounded-xl" />
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-5">
           {[
             { l: 'উপস্থিত (শিফট)', v: totals.present },
             { l: 'অনুপস্থিত (শিফট)', v: totals.absent },
@@ -521,16 +520,14 @@ export default function AdminDutyRoster() {
             { l: 'ডিউটি নাই (স্টাফ)', v: totals.noDuty },
             { l: 'শিফট ভাতা (৳)', v: totals.pay },
           ].map((c) => (
-            <Card key={c.l} className="rounded-[28px] border-border/60 backdrop-blur">
-              <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground">{c.l}</p>
-                <p className="text-2xl font-bold">{c.v}</p>
-              </CardContent>
-            </Card>
+            <div key={c.l} className="rounded-xl border border-border/70 bg-card p-3 sm:p-4 shadow-xs">
+              <p className="text-xs text-muted-foreground font-medium">{c.l}</p>
+              <p className="text-xl sm:text-2xl font-bold tabular-nums mt-1 text-foreground">{c.v}</p>
+            </div>
           ))}
         </div>
 
-        <Card className="rounded-[38px]">
+        <Card className="rounded-xl border border-border/70 shadow-xs">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">শিফট ভিত্তিক হিসাব</CardTitle>
           </CardHeader>
@@ -551,8 +548,8 @@ export default function AdminDutyRoster() {
                 {shiftSummary.map((r) => {
                   const w = machineWindow(r.shift);
                   return (
-                    <tr key={r.shift.id} className="rounded-[20px] bg-muted/30">
-                      <td className="rounded-l-[20px] px-3 py-2 font-medium">{r.shift.name_bn}</td>
+                    <tr key={r.shift.id} className="rounded-lg bg-muted/30">
+                      <td className="rounded-l-lg px-3 py-2 font-medium">{r.shift.name_bn}</td>
                       <td className="px-3 py-2 text-muted-foreground">
                         {dash(r.shift.start_time)}–{dash(r.shift.end_time)}
                       </td>
@@ -562,7 +559,7 @@ export default function AdminDutyRoster() {
                       <td className="px-3 py-2 text-center">{r.assigned}</td>
                       <td className="px-3 py-2 text-center text-emerald-700">{r.present}</td>
                       <td className="px-3 py-2 text-center text-rose-700">{r.absent}</td>
-                      <td className="rounded-r-[20px] px-3 py-2 text-right">
+                      <td className="rounded-r-lg px-3 py-2 text-right">
                         {r.shift.pay_amount ? r.pay : <span className="text-xs text-muted-foreground">পে সেটআপ নাই</span>}
                       </td>
                     </tr>
@@ -581,40 +578,40 @@ export default function AdminDutyRoster() {
         </Card>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="h-auto w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 rounded-[24px] bg-muted/60 p-2">
+          <TabsList className="h-auto w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 rounded-xl bg-muted/60 p-1 border border-border/70">
             <TabsTrigger
               value="roster"
-              className="rounded-[18px] px-5 py-2.5 text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg"
+              className="rounded-lg px-3 py-2 text-xs sm:text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs"
             >
               দৈনিক হাজিরা
             </TabsTrigger>
             <TabsTrigger
               value="weekly"
-              className="rounded-[18px] px-5 py-2.5 text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg"
+              className="rounded-lg px-3 py-2 text-xs sm:text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs"
             >
               সাপ্তাহিক ডিউটি সেটআপ
             </TabsTrigger>
             <TabsTrigger
               value="monthly"
-              className="rounded-[18px] px-5 py-2.5 text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg"
+              className="rounded-lg px-3 py-2 text-xs sm:text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs"
             >
               মাসিক ডিউটি সেটআপ
             </TabsTrigger>
             <TabsTrigger
               value="shifts"
-              className="rounded-[18px] px-5 py-2.5 text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg"
+              className="rounded-lg px-3 py-2 text-xs sm:text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs"
             >
               শিফট ও মেশিন সেটআপ
             </TabsTrigger>
             <TabsTrigger
               value="machine"
-              className="rounded-[18px] px-5 py-2.5 text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg"
+              className="rounded-lg px-3 py-2 text-xs sm:text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs"
             >
               ফিঙ্গার মেশিন হাজিরা
             </TabsTrigger>
             <TabsTrigger
               value="audit"
-              className="rounded-[18px] px-5 py-2.5 text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg"
+              className="rounded-lg px-3 py-2 text-xs sm:text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs"
             >
               পরিবর্তনের লগ
             </TabsTrigger>
@@ -636,7 +633,7 @@ export default function AdminDutyRoster() {
 
           {/* ---------------- Daily attendance ---------------- */}
           <TabsContent value="roster" className="mt-4">
-            <Card className="rounded-[38px]">
+            <Card className="rounded-xl border border-border/70 shadow-xs">
               <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
                 <div>
                   <CardTitle className="text-base">
@@ -675,8 +672,8 @@ export default function AdminDutyRoster() {
                     {visibleStaff.map((s) => {
                       const pay = payOfStaff(s.id);
                       return (
-                        <tr key={s.id} className="rounded-[20px] bg-muted/30 align-top">
-                          <td className="rounded-l-[20px] px-3 py-2 font-medium">
+                        <tr key={s.id} className="rounded-lg bg-muted/30 align-top">
+                          <td className="rounded-l-lg px-3 py-2 font-medium">
                             <div className="flex flex-wrap items-center gap-2">
                               <span>{s.name_bn}</span>
                               {roster.some((r) => r.staff_id === s.id) && (
@@ -813,7 +810,7 @@ export default function AdminDutyRoster() {
                               </td>
                             );
                           })}
-                          <td className="rounded-r-[20px] px-3 py-2 text-right">
+                          <td className="rounded-r-lg px-3 py-2 text-right">
                             {pay.configured ? pay.total : <span className="text-xs text-muted-foreground">পে সেটআপ নাই</span>}
                           </td>
                         </tr>
@@ -845,7 +842,7 @@ export default function AdminDutyRoster() {
 
           {/* ---------------- Weekly template ---------------- */}
           <TabsContent value="weekly" className="mt-4">
-            <Card className="rounded-[38px]">
+            <Card className="rounded-xl border border-border/70 shadow-xs">
               <CardHeader>
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <CardTitle className="text-base">কোন বারে কার কোন শিফটে ডিউটি</CardTitle>
@@ -855,7 +852,7 @@ export default function AdminDutyRoster() {
                 </div>
 
                 {showGuide && (
-                  <div className="mt-3 rounded-[24px] border border-primary/20 bg-primary/5 p-4">
+                  <div className="mt-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
                     <p className="mb-2 text-sm font-semibold">ধাপে ধাপে সেটআপ গাইড</p>
                     <ol className="space-y-2 text-xs text-muted-foreground">
                       <li className="flex gap-2">
@@ -924,8 +921,8 @@ export default function AdminDutyRoster() {
                   </thead>
                   <tbody>
                     {weeklyStaff.map((s) => (
-                      <tr key={s.id} className="rounded-[20px] bg-muted/30">
-                        <td className="rounded-l-[20px] px-3 py-2 font-medium">{s.name_bn}</td>
+                      <tr key={s.id} className="rounded-lg bg-muted/30">
+                        <td className="rounded-l-lg px-3 py-2 font-medium">{s.name_bn}</td>
                         {WEEKDAYS.map((_, wd) => (
                           <td key={wd} className="px-2 py-2">
                             <div className="flex flex-col gap-1">
@@ -955,7 +952,7 @@ export default function AdminDutyRoster() {
                             </div>
                           </td>
                         ))}
-                        <td className="rounded-r-[20px] px-2 py-2">
+                        <td className="rounded-r-lg px-2 py-2">
                           <div className="flex flex-col gap-1">
                             {activeShifts.map((sh) => {
                               const allOn = WEEKDAYS.every((_, wd) =>
@@ -1000,7 +997,7 @@ export default function AdminDutyRoster() {
 
           {/* ---------------- Shift settings ---------------- */}
           <TabsContent value="shifts" className="mt-4">
-            <Card className="rounded-[38px]">
+            <Card className="rounded-xl border border-border/70 shadow-xs">
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-base">শিফট তালিকা</CardTitle>
                 <Button
@@ -1033,8 +1030,8 @@ export default function AdminDutyRoster() {
                     {shifts.map((sh) => {
                       const w = machineWindow(sh);
                       return (
-                        <tr key={sh.id} className="rounded-[20px] bg-muted/30">
-                          <td className="rounded-l-[20px] px-3 py-2 font-medium">{sh.name_bn}</td>
+                        <tr key={sh.id} className="rounded-lg bg-muted/30">
+                          <td className="rounded-l-lg px-3 py-2 font-medium">{sh.name_bn}</td>
                           <td className="px-3 py-2">{dash(sh.start_time)} – {dash(sh.end_time)}</td>
                           <td className="px-3 py-2">
                             ↓{sh.grace_minutes} / ↑{sh.early_exit_grace_minutes}
@@ -1064,7 +1061,7 @@ export default function AdminDutyRoster() {
                           <td className="px-3 py-2">
                             <Badge variant={sh.is_active ? 'default' : 'secondary'}>{sh.is_active ? 'হ্যাঁ' : 'না'}</Badge>
                           </td>
-                          <td className="rounded-r-[20px] px-3 py-2 text-right">
+                          <td className="rounded-r-lg px-3 py-2 text-right">
                             <Button
                               size="sm"
                               variant="ghost"
@@ -1113,7 +1110,7 @@ export default function AdminDutyRoster() {
         </Tabs>
 
         <Dialog open={shiftDialog} onOpenChange={setShiftDialog}>
-          <DialogContent className="max-h-[85vh] overflow-y-auto rounded-[38px]">
+          <DialogContent className="max-h-[85vh] overflow-y-auto rounded-xl border border-border/70 shadow-xs">
             <DialogHeader>
               <DialogTitle>{editingShift ? 'শিফট সম্পাদনা' : 'নতুন ডিউটি/শিফট'}</DialogTitle>
             </DialogHeader>

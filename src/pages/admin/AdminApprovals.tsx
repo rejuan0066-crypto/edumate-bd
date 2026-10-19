@@ -805,160 +805,69 @@ const AdminApprovals = () => {
   return (
     <AdminLayout>
       <div className="space-y-6 max-w-7xl mx-auto pb-16">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 rounded-2xl border border-primary/20 backdrop-blur-sm">
+        {/* ── Standard Page Header ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-border/60">
           <div>
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/20">
-                <ClipboardCheck className="w-6 h-6" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold font-display text-foreground flex items-center gap-2">
-                  {bn ? 'কেন্দ্রীয় অনুমোদন হাব' : 'Central Admin Approval Hub'}
-                  {totalPending > 0 && (
-                    <Badge className="bg-amber-500 hover:bg-amber-600 text-white ml-2 text-xs px-2.5 py-0.5 rounded-full shadow-sm animate-pulse">
-                      {totalPending} {bn ? 'পেন্ডিং' : 'Pending'}
-                    </Badge>
-                  )}
-                </h1>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  {bn
-                    ? 'মাদ্রাসার সমস্ত ভর্তি, শিক্ষক নিয়োগ, পেমেন্ট ভেরিফিকেশন, প্রশ্নপত্র ও ডেটা পরিবর্তন অনুমোদন'
-                    : 'Unified command center for student admissions, staff recruitment, payments, exams & data audit approvals'}
-                </p>
-              </div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                <ClipboardCheck className="w-5 sm:w-6 h-5 sm:h-6 text-primary" />
+                {bn ? 'কেন্দ্রীয় অনুমোদন হাব' : 'Central Admin Approval Hub'}
+              </h1>
+              {totalPending > 0 && (
+                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-xs px-2 py-0.5 rounded-full font-medium">
+                  {totalPending} {bn ? 'পেন্ডিং' : 'Pending'}
+                </Badge>
+              )}
             </div>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+              {bn
+                ? 'মাদ্রাসার সমস্ত ভর্তি, শিক্ষক নিয়োগ, পেমেন্ট ভেরিফিকেশন, প্রশ্নপত্র ও ডেটা পরিবর্তন অনুমোদন'
+                : 'Unified command center for student admissions, staff recruitment, payments, exams & data audit approvals'}
+            </p>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button variant="outline" size="sm" onClick={refetchAll} className="gap-2">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={refetchAll} className="h-9 rounded-xl font-medium gap-2">
               <RefreshCw className="w-4 h-4" />
               {bn ? 'রিফ্রেশ' : 'Refresh'}
             </Button>
           </div>
         </div>
 
-        {/* Top Stat Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-          <Card
-            className={`cursor-pointer transition-all hover:shadow-md border-primary/20 ${activeTab === 'students' ? 'ring-2 ring-primary bg-primary/5' : 'bg-card'}`}
-            onClick={() => setActiveTab('students')}
-          >
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground font-medium">{bn ? 'ভর্তি আবেদন' : 'Admissions'}</p>
-                <p className="text-2xl font-bold mt-1 text-foreground">{counts.students}</p>
+        {/* ── Top Stat Cards ── */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 sm:gap-3">
+          {[
+            { key: 'students', label: bn ? 'ভর্তি আবেদন' : 'Admissions', count: counts.students, icon: GraduationCap, iconColor: 'text-blue-600 bg-blue-500/10' },
+            { key: 'staff', label: bn ? 'শিক্ষক/স্টাফ' : 'Staff', count: counts.staff, icon: Users, iconColor: 'text-purple-600 bg-purple-500/10' },
+            { key: 'finance', label: bn ? 'হিসাব ও লেনদেন' : 'Finance', count: counts.finance, icon: Coins, iconColor: 'text-emerald-600 bg-emerald-500/10' },
+            { key: 'payments', label: bn ? 'পেমেন্ট স্লিপ' : 'Payment Slips', count: counts.payments, icon: Wallet, iconColor: 'text-teal-600 bg-teal-500/10' },
+            { key: 'accounts', label: bn ? 'পোর্টাল আইডি' : 'Student Acct', count: counts.accounts, icon: UserCheck, iconColor: 'text-amber-600 bg-amber-500/10' },
+            { key: 'papers', label: bn ? 'প্রশ্নপত্র' : 'Exams', count: counts.papers, icon: BookOpen, iconColor: 'text-indigo-600 bg-indigo-500/10' },
+            { key: 'actions', label: bn ? 'মেকার-চেকার' : 'Maker-Checker', count: counts.actions, icon: ShieldCheck, iconColor: 'text-rose-600 bg-rose-500/10' },
+            { key: 'devices', label: bn ? 'ডিভাইস' : 'Devices', count: counts.devices, icon: Smartphone, iconColor: 'text-cyan-600 bg-cyan-500/10' },
+          ].map((c) => {
+            const Icon = c.icon;
+            const isSelected = activeTab === c.key;
+            return (
+              <div
+                key={c.key}
+                onClick={() => setActiveTab(c.key as any)}
+                className={`cursor-pointer transition-all rounded-xl border p-3 flex flex-col justify-between ${
+                  isSelected
+                    ? 'border-primary bg-primary/10 shadow-xs'
+                    : 'border-border/70 bg-card hover:border-border hover:bg-muted/30 shadow-xs'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-medium text-muted-foreground truncate">{c.label}</span>
+                  <div className={`w-7 h-7 rounded-lg ${c.iconColor} flex items-center justify-center shrink-0`}>
+                    <Icon className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+                <p className="text-lg font-bold tabular-nums text-foreground">{c.count}</p>
               </div>
-              <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-600">
-                <GraduationCap className="w-5 h-5" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card
-            className={`cursor-pointer transition-all hover:shadow-md border-primary/20 ${activeTab === 'staff' ? 'ring-2 ring-primary bg-primary/5' : 'bg-card'}`}
-            onClick={() => setActiveTab('staff')}
-          >
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground font-medium">{bn ? 'শিক্ষক/স্টাফ' : 'Staff'}</p>
-                <p className="text-2xl font-bold mt-1 text-foreground">{counts.staff}</p>
-              </div>
-              <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-600">
-                <Users className="w-5 h-5" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card
-            className={`cursor-pointer transition-all hover:shadow-md border-primary/20 ${activeTab === 'finance' ? 'ring-2 ring-primary bg-primary/5' : 'bg-card'}`}
-            onClick={() => setActiveTab('finance')}
-          >
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground font-medium">{bn ? 'হিসাব ও লেনদেন' : 'Finance'}</p>
-                <p className="text-2xl font-bold mt-1 text-foreground">{counts.finance}</p>
-              </div>
-              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600">
-                <Coins className="w-5 h-5" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card
-            className={`cursor-pointer transition-all hover:shadow-md border-primary/20 ${activeTab === 'payments' ? 'ring-2 ring-primary bg-primary/5' : 'bg-card'}`}
-            onClick={() => setActiveTab('payments')}
-          >
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground font-medium">{bn ? 'পেমেন্ট স্লিপ' : 'Payment Slips'}</p>
-                <p className="text-2xl font-bold mt-1 text-foreground">{counts.payments}</p>
-              </div>
-              <div className="p-2.5 rounded-xl bg-teal-500/10 text-teal-600">
-                <Wallet className="w-5 h-5" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card
-            className={`cursor-pointer transition-all hover:shadow-md border-primary/20 ${activeTab === 'accounts' ? 'ring-2 ring-primary bg-primary/5' : 'bg-card'}`}
-            onClick={() => setActiveTab('accounts')}
-          >
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground font-medium">{bn ? 'পোর্টাল আইডি' : 'Student Acct'}</p>
-                <p className="text-2xl font-bold mt-1 text-foreground">{counts.accounts}</p>
-              </div>
-              <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600">
-                <UserCheck className="w-5 h-5" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card
-            className={`cursor-pointer transition-all hover:shadow-md border-primary/20 ${activeTab === 'papers' ? 'ring-2 ring-primary bg-primary/5' : 'bg-card'}`}
-            onClick={() => setActiveTab('papers')}
-          >
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground font-medium">{bn ? 'প্রশ্নপত্র' : 'Exams'}</p>
-                <p className="text-2xl font-bold mt-1 text-foreground">{counts.papers}</p>
-              </div>
-              <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-600">
-                <BookOpen className="w-5 h-5" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card
-            className={`cursor-pointer transition-all hover:shadow-md border-primary/20 ${activeTab === 'actions' ? 'ring-2 ring-primary bg-primary/5' : 'bg-card'}`}
-            onClick={() => setActiveTab('actions')}
-          >
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground font-medium">{bn ? 'মেকার-চেকার' : 'Maker-Checker'}</p>
-                <p className="text-2xl font-bold mt-1 text-foreground">{counts.actions}</p>
-              </div>
-              <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-600">
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card
-            className={`cursor-pointer transition-all hover:shadow-md border-primary/20 ${activeTab === 'devices' ? 'ring-2 ring-primary bg-primary/5' : 'bg-card'}`}
-            onClick={() => setActiveTab('devices')}
-          >
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground font-medium">{bn ? 'ডিভাইস' : 'Devices'}</p>
-                <p className="text-2xl font-bold mt-1 text-foreground">{counts.devices}</p>
-              </div>
-              <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-600">
-                <Smartphone className="w-5 h-5" />
-              </div>
-            </CardContent>
-          </Card>
+            );
+          })}
         </div>
 
         {/* Global Filter Bar */}

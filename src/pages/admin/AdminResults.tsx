@@ -708,26 +708,31 @@ const AdminResults = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-primary/10">
-            <GraduationCap className="w-6 h-6 text-primary" />
+        {/* ── Standard Page Header ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-border/60">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+              <GraduationCap className="w-5 sm:w-6 h-5 sm:h-6 text-primary" />
+              {bn ? 'ফলাফল ব্যবস্থাপনা' : 'Result Management'}
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+              {bn ? 'ক্লাস-ওয়াইজ বা ব্যক্তিগত ফলাফল অনুসন্ধান, নম্বর এন্ট্রি ও প্রকাশনা' : 'Search class-wise or individual results, enter marks and publish marksheets'}
+            </p>
           </div>
-          <div className="flex-1">
-            <h1 className="text-2xl font-display font-bold text-foreground">{bn ? 'ফলাফল ব্যবস্থাপনা' : 'Result Management'}</h1>
-            <p className="text-sm text-muted-foreground">{bn ? 'ক্লাস-ওয়াইজ বা ব্যক্তিগত ফলাফল অনুসন্ধান করুন' : 'Search class-wise or individual results'}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setSigDialogOpen(true)} className="h-9 rounded-xl font-medium gap-1.5 text-xs sm:text-sm">
+              <Settings2 className="w-3.5 h-3.5" />
+              {bn ? 'স্বাক্ষরকারী' : 'Signatories'}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setGraceDialogOpen(true)} className="h-9 rounded-xl font-medium gap-1.5 text-xs sm:text-sm">
+              <Settings2 className="w-3.5 h-3.5" />
+              {bn ? 'বিবেচনায় পাস' : 'Consideration Pass'}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setGradingDialogOpen(true)} className="h-9 rounded-xl font-medium gap-1.5 text-xs sm:text-sm">
+              <Settings2 className="w-3.5 h-3.5" />
+              {bn ? 'গ্রেডিং নিয়ম' : 'Grading Rules'}
+            </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setSigDialogOpen(true)} className="gap-2">
-            <Settings2 className="w-4 h-4" />
-            {bn ? 'স্বাক্ষরকারী' : 'Signatories'}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setGraceDialogOpen(true)} className="gap-2">
-            <Settings2 className="w-4 h-4" />
-            {bn ? 'বিবেচনায় পাস' : 'Consideration Pass'}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setGradingDialogOpen(true)} className="gap-2">
-            <Settings2 className="w-4 h-4" />
-            {bn ? 'গ্রেডিং নিয়ম' : 'Grading Rules'}
-          </Button>
         </div>
 
         <GracePassSettings open={graceDialogOpen} onOpenChange={setGraceDialogOpen} />

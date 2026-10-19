@@ -574,114 +574,112 @@ const AdminReports = () => {
   return (
     <AdminLayout>
       <div className="space-y-4">
-        {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
+        {/* ── Standard Page Header ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-border/60">
           <div>
-            <h1 className="text-2xl font-display font-bold text-foreground">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               {bn ? 'রিপোর্ট ও অ্যানালিটিক্স' : 'Reports & Analytics'}
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
               {bn ? 'আয়-ব্যয়, ছাত্র, স্টাফ ও অ্যাটেন্ডেন্সের সামগ্রিক রিপোর্ট' : 'Overview of income, expense, students, staff & attendance'}
             </p>
           </div>
-          <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="w-32">
-              <CalendarDays className="h-4 w-4 mr-1" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Button size="sm" variant="outline" onClick={handlePrint}>
-            <Printer className="h-4 w-4 mr-1" />{bn ? 'প্রিন্ট/PDF' : 'Print/PDF'}
-          </Button>
-          <Button size="sm" variant="outline" onClick={handleDownloadCSV}>
-            <Download className="h-4 w-4 mr-1" />{bn ? 'এক্সেল' : 'Excel'}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger className="w-28 h-9 rounded-xl border border-border/70 bg-card text-xs sm:text-sm font-medium">
+                <CalendarDays className="h-4 w-4 mr-1.5" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Button size="sm" variant="outline" className="h-9 rounded-xl text-xs sm:text-sm font-medium" onClick={handlePrint}>
+              <Printer className="h-4 w-4 mr-1.5" />{bn ? 'প্রিন্ট/PDF' : 'Print/PDF'}
+            </Button>
+            <Button size="sm" variant="outline" className="h-9 rounded-xl text-xs sm:text-sm font-medium" onClick={handleDownloadCSV}>
+              <Download className="h-4 w-4 mr-1.5" />{bn ? 'এক্সেল' : 'Excel'}
+            </Button>
+          </div>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {/* ── Summary KPI Cards ── */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
           {summaryCards.map((s, i) => {
             const Icon = s.icon;
             return (
-              <Card key={i}>
-                <CardContent className="p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className={`h-8 w-8 rounded-lg ${s.color} flex items-center justify-center`}>
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    {s.change ? <ArrowUpRight className="h-3 w-3 text-emerald-500 ml-auto" /> : <ArrowDownRight className="h-3 w-3 text-red-500 ml-auto" />}
+              <div key={i} className="rounded-xl border border-border/70 bg-card p-3 sm:p-4 shadow-xs transition-all hover:border-border">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`h-8 w-8 rounded-lg ${s.color} flex items-center justify-center shrink-0`}>
+                    <Icon className="h-4 w-4" />
                   </div>
-                  <p className="text-lg font-bold">{s.value}</p>
-                  <p className="text-[10px] text-muted-foreground">{s.label}</p>
-                </CardContent>
-              </Card>
+                  {s.change ? <ArrowUpRight className="h-3 w-3 text-emerald-500 ml-auto" /> : <ArrowDownRight className="h-3 w-3 text-red-500 ml-auto" />}
+                </div>
+                <p className="text-base sm:text-lg font-bold tabular-nums text-foreground">{s.value}</p>
+                <p className="text-[11px] text-muted-foreground font-medium truncate mt-0.5">{s.label}</p>
+              </div>
             );
           })}
         </div>
 
         {/* === Bilingual PDF Report Generator === */}
-        <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/5">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <FileText className="h-5 w-5 text-primary" />
+        <div className="rounded-xl border border-border/70 bg-card p-4 sm:p-5 shadow-xs space-y-4">
+          <div>
+            <h3 className="flex items-center gap-2 text-sm sm:text-base font-bold text-foreground">
+              <FileText className="h-4 sm:h-5 w-4 sm:w-5 text-primary" />
               {bn ? 'অটোমেটেড PDF রিপোর্ট জেনারেটর (দ্বিভাষিক)' : 'Automated PDF Report Generator (Bilingual)'}
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
               {bn ? 'বাংলা ও ইংরেজিতে পেশাদার রিপোর্ট তৈরি করুন — ক্লিক করলে নতুন উইন্ডোতে রিপোর্ট খুলবে এবং সরাসরি PDF সংরক্ষণ করা যাবে।' : 'Generate professional bilingual reports. Click any report to open it in a new window and save as PDF directly.'}
             </p>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          </div>
+          <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <button
                 onClick={handleAttendancePDF}
-                className="group flex flex-col items-start gap-2 p-4 rounded-2xl border-2 border-border bg-card hover:border-primary hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left"
+                className="group flex flex-col items-start gap-2 p-3.5 sm:p-4 rounded-xl border border-border/70 bg-card hover:border-border hover:bg-muted/40 hover:shadow-xs transition-all text-left"
               >
-                <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <UserCheck className="h-5 w-5" />
+                <div className="h-9 w-9 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                  <UserCheck className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="font-semibold text-sm text-foreground">{bn ? 'মাসিক হাজিরা রিপোর্ট' : 'Monthly Attendance'}</p>
+                  <p className="font-semibold text-xs sm:text-sm text-foreground">{bn ? 'মাসিক হাজিরা রিপোর্ট' : 'Monthly Attendance'}</p>
                   <p className="text-[11px] text-muted-foreground mt-0.5">{bn ? 'উপস্থিত/অনুপস্থিত/বিলম্ব মাসিক বিশ্লেষণ' : 'Present/Absent/Late monthly breakdown'}</p>
                 </div>
               </button>
 
-              {/* মাসিক আর্থিক সারসংক্ষেপ → /admin/expenses (Summary tab) তে স্থানান্তরিত */}
-
               <button
                 onClick={handleAcademicPDF}
-                className="group flex flex-col items-start gap-2 p-4 rounded-2xl border-2 border-border bg-card hover:border-primary hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left"
+                className="group flex flex-col items-start gap-2 p-3.5 sm:p-4 rounded-xl border border-border/70 bg-card hover:border-border hover:bg-muted/40 hover:shadow-xs transition-all text-left"
               >
-                <div className="h-10 w-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <GraduationCap className="h-5 w-5" />
+                <div className="h-9 w-9 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                  <GraduationCap className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="font-semibold text-sm text-foreground">{bn ? 'একাডেমিক পারফরম্যান্স' : 'Academic Performance'}</p>
+                  <p className="font-semibold text-xs sm:text-sm text-foreground">{bn ? 'একাডেমিক পারফরম্যান্স' : 'Academic Performance'}</p>
                   <p className="text-[11px] text-muted-foreground mt-0.5">{bn ? 'GPA বণ্টন, পাস হার, শ্রেণীভিত্তিক' : 'GPA distribution, pass rate, class-wise'}</p>
                 </div>
               </button>
 
               <button
                 onClick={handleComprehensivePDF}
-                className="group flex flex-col items-start gap-2 p-4 rounded-2xl border-2 border-border bg-card hover:border-primary hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left"
+                className="group flex flex-col items-start gap-2 p-3.5 sm:p-4 rounded-xl border border-border/70 bg-card hover:border-border hover:bg-muted/40 hover:shadow-xs transition-all text-left"
               >
-                <div className="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <FileCheck2 className="h-5 w-5" />
+                <div className="h-9 w-9 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                  <FileCheck2 className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="font-semibold text-sm text-foreground">{bn ? 'কম্প্রিহেনসিভ রিপোর্ট' : 'Comprehensive Report'}</p>
+                  <p className="font-semibold text-xs sm:text-sm text-foreground">{bn ? 'কম্প্রিহেনসিভ রিপোর্ট' : 'Comprehensive Report'}</p>
                   <p className="text-[11px] text-muted-foreground mt-0.5">{bn ? 'সকল মডিউলের সমন্বিত সারসংক্ষেপ' : 'All modules combined overview'}</p>
                 </div>
               </button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Charts Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="flex flex-wrap gap-2 mb-4">
+          <div className="inline-flex flex-wrap items-center gap-1.5 p-1 bg-muted/60 border border-border/70 rounded-xl mb-4">
             {[
               { key: 'income-expense', icon: BarChart3, bn: 'আয় vs ব্যয়', en: 'Income vs Expense' },
               { key: 'fee', icon: CreditCard, bn: 'ফি রিপোর্ট', en: 'Fee Report' },
@@ -691,8 +689,8 @@ const AdminReports = () => {
               { key: 'syllabus', icon: BookOpen, bn: 'সিলেবাস কভারেজ', en: 'Syllabus Coverage' },
             ].map(t => (
               <button key={t.key} onClick={() => setActiveTab(t.key)}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 whitespace-nowrap ${activeTab === t.key ? 'bg-primary/10 border-primary text-primary shadow-sm' : 'bg-background border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'}`}>
-                <t.icon className="w-4 h-4" />{bn ? t.bn : t.en}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap cursor-pointer ${activeTab === t.key ? 'bg-background text-foreground shadow-xs border border-border/60 font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-background/40'}`}>
+                <t.icon className="w-3.5 h-3.5" />{bn ? t.bn : t.en}
               </button>
             ))}
           </div>
