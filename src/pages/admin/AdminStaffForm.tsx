@@ -311,7 +311,54 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     },
   });
 
-  // Use DB designations if available, else fallback to hardcoded.
+  // Load administrative officers & staff for approver selection
+  const { data: administrativeOfficers = [] } = useQuery({
+    queryKey: ['administrative-officers-approver-list', bn],
+    queryFn: async () => {
+      // 1. Fetch from administrative_officers table
+      const { data: officers } = await supabase
+        .from('administrative_officers' as any)
+        .select('id, name_bn, name_en, designation, photo_url')
+        .is('deleted_at', null)
+        .order('name_bn');
+
+      // 2. Fetch staff categorized as administrative or director
+      const { data: adminStaff } = await supabase
+        .from('staff')
+        .select('id, name_bn, name_en, designation, photo_url')
+        .or('staff_category.eq.administrative,staff_category.eq.director,department.ilike.%প্রশাসন%')
+        .is('deleted_at', null)
+        .order('name_bn');
+
+      const map = new Map<string, { id: string; name: string; position: string; photo_url?: string | null }>();
+
+      (officers || []).forEach((o: any) => {
+        const primary = (bn ? (o.name_bn || o.name_en) : (o.name_en || o.name_bn)) || '';
+        if (primary && primary.trim()) {
+          map.set(primary.trim().toLowerCase(), {
+            id: `off_${o.id}`,
+            name: primary.trim(),
+            position: (o.designation || (bn ? 'প্রশাসনিক কর্মকর্তা' : 'Administrative Officer')).trim(),
+            photo_url: o.photo_url || null,
+          });
+        }
+      });
+
+      (adminStaff || []).forEach((s: any) => {
+        const primary = (bn ? (s.name_bn || s.name_en) : (s.name_en || s.name_bn)) || '';
+        if (primary && primary.trim() && !map.has(primary.trim().toLowerCase())) {
+          map.set(primary.trim().toLowerCase(), {
+            id: `st_${s.id}`,
+            name: primary.trim(),
+            position: (s.designation || (bn ? 'প্রশাসনিক কর্মকর্তা' : 'Administrative Officer')).trim(),
+            photo_url: s.photo_url || null,
+          });
+        }
+      });
+
+      return Array.from(map.values());
+    },
+  });
   // Use unique id for keys (multiple designations may share the same English name with different Bangla labels).
   const designations = dbDesignations.length > 0
     ? dbDesignations.map((d: any) => ({ value: d.name, bn: d.name_bn, en: d.name, staff_category: d.staff_category, id: d.id }))
@@ -1955,6 +2002,51 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
                 <FieldError field="salary" />
               </div>
               )}
+              <div className="sm:col-span-2">
+                <Label className="text-sm font-medium text-foreground flex items-center justify-between">
+                  <span>{bn ? 'প্রশাসনিক কর্মকর্তা নির্বাচন করুন' : 'Select from Administrative Officers'}</span>
+                  {approverName && (
+                    <button
+                      type="button"
+                      onClick={() => { setApproverName(''); setApproverPosition(''); }}
+                      className="text-xs text-primary hover:underline font-normal"
+                    >
+                      {bn ? 'ক্লিয়ার করুন' : 'Clear'}
+                    </button>
+                  )}
+                </Label>
+                <Select
+                  value=""
+                  onValueChange={(val) => {
+                    const selected = administrativeOfficers.find(o => o.id === val);
+                    if (selected) {
+                      setApproverName(selected.name);
+                      if (selected.position) setApproverPosition(selected.position);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="bg-background mt-1">
+                    <SelectValue placeholder={bn ? '-- প্রশাসনিক কর্মকর্তা তালিকা থেকে বাছাই করুন --' : '-- Choose from administrative officers --'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {administrativeOfficers.length === 0 ? (
+                      <SelectItem value="none" disabled>
+                        {bn ? 'কোনো প্রশাসনিক কর্মকর্তা পাওয়া যায়নি' : 'No administrative officers found'}
+                      </SelectItem>
+                    ) : (
+                      administrativeOfficers.map(officer => (
+                        <SelectItem key={officer.id} value={officer.id}>
+                          {officer.name} {officer.position ? `(${officer.position})` : ''}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  {bn ? 'প্রশাসনিক কর্মকর্তা সিলেক্ট করলে নাম ও পদবী নিজে থেকেই বসে যাবে, অথবা নিচে লিখে দিতে পারেন।' : 'Selecting an officer auto-fills name and position, or you can enter them below.'}
+                </p>
+              </div>
+
               <div>
                 <Label>{bn ? 'এপ্রোভকারীর নাম' : "Approver's Name"} <span className="text-destructive">*</span></Label>
                 <Input className="bg-background mt-1" value={approverName} onChange={e => setApproverName(e.target.value)} placeholder={bn ? 'নাম লিখুন' : 'Enter name'} />
