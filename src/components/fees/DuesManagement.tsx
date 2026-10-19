@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search, Bell, AlertTriangle, Download, CalendarRange, CreditCard } from 'lucide-react';
+import { Search, Bell, AlertTriangle, Download, CalendarRange, CreditCard, Banknote, CheckCircle2, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 
@@ -28,11 +28,16 @@ const DuesManagement = () => {
   const [selectedMonth, setSelectedMonth] = useState(currentMonthKey);
   const [searchText, setSearchText] = useState('');
   const [classFilter, setClassFilter] = useState('all');
+  // Default to cumulative calculation up to current month (চলতি মাস পর্যন্ত)
+  const [isCumulative, setIsCumulative] = useState(true);
 
   const { data: sessions = [] } = useQuery({
     queryKey: ['dues-sessions'],
     queryFn: async () => {
-      const { data } = await supabase.from('academic_sessions').select('id, name, name_bn, start_date, end_date, is_active').order('start_date', { ascending: false, nullsFirst: false });
+      const { data } = await supabase
+        .from('academic_sessions')
+        .select('id, name, name_bn, start_date, end_date, is_active')
+        .order('start_date', { ascending: false, nullsFirst: false });
       return data || [];
     },
   });
@@ -60,7 +65,7 @@ const DuesManagement = () => {
     },
   });
 
-  // Fee types scoped to the selected session (or session-less i.e. global) — include ALL frequencies
+  // Fee types scoped to the selected session
   const { data: feeTypes = [] } = useQuery({
     queryKey: ['dues-fee-types', selectedSessionId],
     enabled: !!selectedSessionId,
@@ -70,24 +75,15 @@ const DuesManagement = () => {
     },
   });
 
-  // Monthly payments for the selected month/year
-  const { data: feePayments = [] } = useQuery({
-    queryKey: ['dues-fee-payments', selectedMonth],
-    queryFn: async () => {
-      const parts = selectedMonth.split('-');
-      const month = parts[0];
-      const year = parseInt(parts[1]);
-      const { data } = await supabase.from('fee_payments').select('student_id, fee_type_id, status, paid_amount, amount').eq('month', month).eq('year', year).eq('status', 'paid');
-      return data || [];
-    },
-  });
-
-  // One-time / non-monthly payments — any time within the selected session
-  const { data: oneTimePayments = [] } = useQuery({
-    queryKey: ['dues-onetime-payments', selectedSessionId],
+  // All session fee payments for calculating both cumulative and month-specific dues & paid amounts
+  const { data: allSessionPayments = [] } = useQuery({
+    queryKey: ['dues-all-session-payments', selectedSessionId],
     enabled: !!selectedSessionId,
     queryFn: async () => {
-      const { data } = await supabase.from('fee_payments').select('student_id, fee_type_id, status').eq('status', 'paid');
+      const { data } = await supabase
+        .from('fee_payments')
+        .select('id, student_id, fee_type_id, status, paid_amount, amount, month, year, paid_at')
+        .eq('status', 'paid');
       return data || [];
     },
   });
@@ -108,56 +104,157 @@ const DuesManagement = () => {
     },
   });
 
-  // Filter fee types applicable to the selected month:
-  // - If applicable_months is set (for monthly or one-time), only apply in those months
-  // - If applicable_months is empty / null, apply to all months as before
+  // Filter fee types applicable up to or in the selected month
   const applicableFeeTypesForMonth = useMemo(() => {
     const [selectedMonthName, selectedYearStr] = selectedMonth.split('-');
-    const selectedMonthKey = `${selectedMonthName}-${selectedYearStr}`;
-    return feeTypes.filter(ft => {
+    const selectedMonthIdx = MONTHS.indexOf(selectedMonthName);
+    const selectedYear = parseInt(selectedYearStr) || now.getFullYear();
+    const targetDate = new Date(selectedYear, selectedMonthIdx, 1);
+
+    return feeTypes.filter((ft: any) => {
       const months = Array.isArray(ft.applicable_months) ? ft.applicable_months : [];
       if (months.length === 0) return true;
-      return months.includes(selectedMonthName) || months.includes(selectedMonthKey) || months.includes(selectedMonth);
-    });
-  }, [feeTypes, selectedMonth]);
 
-  // Per-student per-fee-type breakdown for the selected month
-  const computeBreakdown = (s: any) => {
+      if (!isCumulative) {
+        return months.includes(selectedMonthName) || months.includes(`${selectedMonthName}-${selectedYearStr}`) || months.includes(selectedMonth);
+      }
+
+      return months.some((mStr: string) => {
+        const [mName, yStr] = mStr.split('-');
+        const mIdx = MONTHS.indexOf(mName);
+        const mYear = yStr ? parseInt(yStr) : selectedYear;
+        if (mIdx === -1) return true;
+        const appDate = new Date(mYear, mIdx, 1);
+        return appDate <= targetDate;
+      });
+    });
+  }, [feeTypes, selectedMonth, isCumulative, now]);
+
+  // Per-student per-fee-type breakdown (supports cumulative up to selected month or single month)
+  const computeBreakdown = useCallback((s: any) => {
     const [selMonthName, selYearStr] = selectedMonth.split('-');
     const selMonthIdx = MONTHS.indexOf(selMonthName);
-    const selYear = parseInt(selYearStr);
-    const selDate = new Date(selYear, selMonthIdx, 1);
-    const admDate = s.admission_date ? new Date(s.admission_date) : null;
-    const admMonthStart = admDate ? new Date(admDate.getFullYear(), admDate.getMonth(), 1) : null;
+    const selYear = parseInt(selYearStr) || now.getFullYear();
+    const targetMonthDate = new Date(selYear, selMonthIdx, 1);
 
-    const applicable = applicableFeeTypesForMonth.filter(ft => {
+    const session = sessions.find((ses: any) => ses.id === selectedSessionId);
+    const sessionStart = session?.start_date ? new Date(session.start_date) : new Date(selYear, 0, 1);
+    const admDate = s.admission_date ? new Date(s.admission_date) : sessionStart;
+    const effectiveStart = admDate > sessionStart ? admDate : sessionStart;
+    const startMonthDate = new Date(effectiveStart.getFullYear(), effectiveStart.getMonth(), 1);
+
+    const applicable = applicableFeeTypesForMonth.filter((ft: any) => {
       if (ft.session_id && s.session_id && ft.session_id !== s.session_id) return false;
       if (ft.division_id && s.division_id && ft.division_id !== s.division_id) return false;
       if (ft.class_id && s.class_id && ft.class_id !== s.class_id) return false;
       return true;
     });
-    const monthlyPaidIds = new Set(feePayments.filter(fp => fp.student_id === s.id).map(fp => fp.fee_type_id));
-    const oneTimePaidIds = new Set(oneTimePayments.filter(fp => fp.student_id === s.id).map(fp => fp.fee_type_id));
-    const studentWaivers = waivers.filter(w => w.student_id === s.id);
-    return applicable.map(ft => {
-      const waiver = studentWaivers.find(w => w.fee_type_id === ft.id);
+
+    const studentPayments = allSessionPayments.filter((p: any) => p.student_id === s.id);
+    const studentWaivers = waivers.filter((w: any) => w.student_id === s.id);
+
+    // Build array of months from admission / session start up to the selected month
+    const monthsInRange: { month: string; year: number }[] = [];
+    if (isCumulative) {
+      const cur = new Date(startMonthDate);
+      while (cur <= targetMonthDate) {
+        monthsInRange.push({ month: MONTHS[cur.getMonth()], year: cur.getFullYear() });
+        cur.setMonth(cur.getMonth() + 1);
+      }
+    } else {
+      if (targetMonthDate >= startMonthDate) {
+        monthsInRange.push({ month: selMonthName, year: selYear });
+      }
+    }
+
+    return applicable.map((ft: any) => {
+      const waiver = studentWaivers.find((w: any) => w.fee_type_id === ft.id);
       const waiverPct = waiver?.waiver_percent || 0;
-      // Skip fees for months before student's admission month (e.g. admission fee for March
-      // when student was admitted in April should not show in March's view).
-      const beforeAdmission = admMonthStart ? selDate < admMonthStart : false;
-      // Monthly fees → check this month's payments. Non-monthly (one-time/yearly) → any payment counts.
-      const isPaid = ft.payment_frequency === 'monthly' ? monthlyPaidIds.has(ft.id) : oneTimePaidIds.has(ft.id);
+      const baseAmount = Number(ft.amount) || 0;
+      const discountedAmount = baseAmount * (1 - waiverPct / 100);
       const isFullyWaived = waiverPct >= 100;
-      const due = (beforeAdmission || isPaid || isFullyWaived) ? 0 : ft.amount * (1 - waiverPct / 100);
-      return { feeTypeId: ft.id, due, isPaid, isFullyWaived, beforeAdmission };
+
+      let feeDue = 0;
+      let feePaid = 0;
+      let dueMonthsCount = 0;
+      let paidMonthsCount = 0;
+
+      if (ft.payment_frequency === 'monthly') {
+        const eligibleMonths = monthsInRange.filter(m => {
+          if (!ft.applicable_months || ft.applicable_months.length === 0) return true;
+          return ft.applicable_months.includes(m.month) || ft.applicable_months.includes(`${m.month}-${m.year}`);
+        });
+
+        eligibleMonths.forEach(m => {
+          const paidRec = studentPayments.find((p: any) => p.fee_type_id === ft.id && p.month === m.month && p.year === m.year);
+          if (paidRec) {
+            feePaid += Number(paidRec.paid_amount || paidRec.amount || baseAmount);
+            paidMonthsCount++;
+          } else if (isFullyWaived) {
+            // Waived
+          } else {
+            feeDue += discountedAmount;
+            dueMonthsCount++;
+          }
+        });
+
+        return {
+          feeTypeId: ft.id,
+          due: feeDue,
+          paid: feePaid,
+          dueMonthsCount,
+          paidMonthsCount,
+          totalMonths: eligibleMonths.length,
+          isMonthly: true,
+          isPaid: feeDue === 0 && feePaid > 0,
+          isFullyWaived: isFullyWaived && eligibleMonths.length > 0,
+          beforeAdmission: eligibleMonths.length === 0,
+        };
+      } else {
+        // One-time / yearly fee
+        let applies = true;
+        if (ft.applicable_months && Array.isArray(ft.applicable_months) && ft.applicable_months.length > 0) {
+          applies = ft.applicable_months.some((appM: string) => {
+            const [mName, yStr] = appM.split('-');
+            const mIdx = MONTHS.indexOf(mName);
+            const mYear = yStr ? parseInt(yStr) : selYear;
+            if (mIdx === -1) return true;
+            const appDate = new Date(mYear, mIdx, 1);
+            return isCumulative ? appDate <= targetMonthDate : (mIdx === selMonthIdx && mYear === selYear);
+          });
+        }
+
+        if (!applies) {
+          return { feeTypeId: ft.id, due: 0, paid: 0, isMonthly: false, isPaid: false, isFullyWaived: false, beforeAdmission: true };
+        }
+
+        const paidRec = studentPayments.find((p: any) => p.fee_type_id === ft.id);
+        if (paidRec) {
+          feePaid += Number(paidRec.paid_amount || paidRec.amount || baseAmount);
+        } else if (isFullyWaived) {
+          // Waived
+        } else {
+          feeDue += discountedAmount;
+        }
+
+        return {
+          feeTypeId: ft.id,
+          due: feeDue,
+          paid: feePaid,
+          isMonthly: false,
+          isPaid: feeDue === 0 && feePaid > 0,
+          isFullyWaived,
+          beforeAdmission: false,
+        };
+      }
     });
-  };
+  }, [selectedMonth, sessions, selectedSessionId, applicableFeeTypesForMonth, allSessionPayments, waivers, isCumulative, now]);
 
   // Students admitted on or before the selected month who are active and not deleted
   const enrolledStudentsInMonth = useMemo(() => {
     const [selMonthName, selYearStr] = selectedMonth.split('-');
     const selMonthIdx = MONTHS.indexOf(selMonthName);
-    const selYear = parseInt(selYearStr);
+    const selYear = parseInt(selYearStr) || now.getFullYear();
     const selDate = new Date(selYear, selMonthIdx, 1);
 
     return students.filter((s: any) => {
@@ -168,16 +265,24 @@ const DuesManagement = () => {
       const admMonthStart = new Date(admDate.getFullYear(), admDate.getMonth(), 1);
       return selDate >= admMonthStart;
     });
-  }, [students, selectedMonth]);
+  }, [students, selectedMonth, now]);
+
+  const computeStudentDue = useCallback((s: any) => {
+    return computeBreakdown(s).reduce((sum: number, b: any) => sum + b.due, 0);
+  }, [computeBreakdown]);
+
+  const computeStudentPaid = useCallback((s: any) => {
+    return computeBreakdown(s).reduce((sum: number, b: any) => sum + b.paid, 0);
+  }, [computeBreakdown]);
 
   const dueStudents = useMemo(() => {
     return enrolledStudentsInMonth
-      .filter(s => {
+      .filter((s: any) => {
         const breakdown = computeBreakdown(s);
         if (breakdown.length === 0) return false;
-        return breakdown.some(b => b.due > 0);
+        return breakdown.some((b: any) => b.due > 0);
       })
-      .filter(s => {
+      .filter((s: any) => {
         if (classFilter !== 'all' && s.class_id !== classFilter) return false;
         if (searchText) {
           const q = searchText.toLowerCase();
@@ -185,8 +290,7 @@ const DuesManagement = () => {
         }
         return true;
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enrolledStudentsInMonth, feePayments, oneTimePayments, applicableFeeTypesForMonth, waivers, classFilter, searchText]);
+  }, [enrolledStudentsInMonth, computeBreakdown, classFilter, searchText]);
 
   const filteredEnrolled = useMemo(() => {
     return classFilter === 'all'
@@ -199,25 +303,25 @@ const DuesManagement = () => {
     return Math.max(0, filteredEnrolled.length - dueStudents.length);
   }, [filteredEnrolled, dueStudents]);
 
-  const computeStudentDue = (s: any) => computeBreakdown(s).reduce((sum, b) => sum + b.due, 0);
-
   const totalDueAmount = useMemo(() => {
-    return dueStudents.reduce((sum, s) => sum + computeStudentDue(s), 0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dueStudents, applicableFeeTypesForMonth, feePayments, waivers]);
+    return dueStudents.reduce((sum: number, s: any) => sum + computeStudentDue(s), 0);
+  }, [dueStudents, computeStudentDue]);
+
+  const totalPaidAmount = useMemo(() => {
+    return filteredEnrolled.reduce((sum: number, s: any) => sum + computeStudentPaid(s), 0);
+  }, [filteredEnrolled, computeStudentPaid]);
 
   // Per-fee-type column totals
   const feeTypeColumnTotals = useMemo(() => {
     const totals: Record<string, number> = {};
-    applicableFeeTypesForMonth.forEach(ft => { totals[ft.id] = 0; });
-    dueStudents.forEach(s => {
-      computeBreakdown(s).forEach(b => {
+    applicableFeeTypesForMonth.forEach((ft: any) => { totals[ft.id] = 0; });
+    dueStudents.forEach((s: any) => {
+      computeBreakdown(s).forEach((b: any) => {
         totals[b.feeTypeId] = (totals[b.feeTypeId] || 0) + b.due;
       });
     });
     return totals;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dueStudents, applicableFeeTypesForMonth, feePayments, waivers]);
+  }, [dueStudents, applicableFeeTypesForMonth, computeBreakdown]);
 
   const handleSendReminder = (student: any) => {
     toast.info(bn ? `${student.name_bn} এর জন্য রিমাইন্ডার পাঠানো হবে (এসএমএস এপিআই যুক্ত হলে)` : `Reminder will be sent to ${student.name_en || student.name_bn} (when SMS API is connected)`);
@@ -229,24 +333,36 @@ const DuesManagement = () => {
 
   const handleExportCSV = () => {
     const monthLabel = selectedMonth;
-    const headers = ['#', bn ? 'নাম' : 'Name', bn ? 'আইডি' : 'ID', bn ? 'রোল' : 'Roll', bn ? 'শ্রেণী' : 'Class'];
-    applicableFeeTypesForMonth.forEach(ft => headers.push(bn ? ft.name_bn : ft.name));
-    headers.push(bn ? 'মোট বকেয়া' : 'Total Due', bn ? 'ফোন' : 'Phone');
+    const headers = [
+      '#',
+      bn ? 'নাম' : 'Name',
+      bn ? 'আইডি' : 'ID',
+      bn ? 'রোল' : 'Roll',
+      bn ? 'শ্রেণী' : 'Class'
+    ];
+    applicableFeeTypesForMonth.forEach((ft: any) => headers.push(bn ? ft.name_bn : ft.name));
+    headers.push(
+      bn ? (isCumulative ? 'মোট পরিশোধ (চলতি মাস পর্যন্ত)' : 'মোট পরিশোধ') : 'Total Paid',
+      bn ? (isCumulative ? 'মোট বকেয়া (চলতি মাস পর্যন্ত)' : 'মোট বকেয়া') : 'Total Due',
+      bn ? 'ফোন' : 'Phone'
+    );
 
     const rows = [
       headers,
-      ...dueStudents.map((s, i) => {
+      ...dueStudents.map((s: any, i: number) => {
         const breakdown = computeBreakdown(s);
-        const breakdownMap = new Map(breakdown.map(b => [b.feeTypeId, b]));
-        const cells = [String(i + 1), s.name_bn, s.student_id, s.roll_number || '-', (s as any).classes?.name_bn || '-'];
-        applicableFeeTypesForMonth.forEach(ft => {
-          const b = breakdownMap.get(ft.id);
+        const breakdownMap = new Map(breakdown.map((b: any) => [b.feeTypeId, b]));
+        const cells = [String(i + 1), s.name_bn, s.student_id, s.roll_number || '-', s.classes?.name_bn || '-'];
+        applicableFeeTypesForMonth.forEach((ft: any) => {
+          const b = breakdownMap.get(ft.id) as any;
           if (!b) cells.push('—');
-          else if (b.isPaid) cells.push(bn ? 'পরিশোধিত' : 'Paid');
+          else if (b.beforeAdmission) cells.push('—');
+          else if (b.isPaid) cells.push(bn ? `পরিশোধিত (৳${b.paid})` : `Paid (৳${b.paid})`);
           else if (b.isFullyWaived) cells.push(bn ? 'মওকুফ' : 'Waived');
+          else if (b.isMonthly && b.dueMonthsCount > 0) cells.push(`৳${b.due} (${b.dueMonthsCount} মাস)`);
           else cells.push(`৳${b.due}`);
         });
-        cells.push(`৳${computeStudentDue(s)}`, s.guardian_phone || s.phone || '-');
+        cells.push(`৳${computeStudentPaid(s)}`, `৳${computeStudentDue(s)}`, s.guardian_phone || s.phone || '-');
         return cells;
       })
     ];
@@ -293,39 +409,46 @@ const DuesManagement = () => {
 
   return (
     <div className="space-y-4">
-      {/* Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Card className="border-orange-200/30 bg-orange-50/50 dark:bg-orange-950/20">
+      {/* 4 Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Card 1: Due Students */}
+        <Card className="border-orange-200/40 bg-orange-50/50 dark:bg-orange-950/20 shadow-sm">
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center shrink-0">
               <AlertTriangle className="w-5 h-5 text-orange-600" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">{bn ? 'বকেয়া ছাত্র সংখ্যা' : 'Students with Dues'}</p>
-              <p className="text-lg font-bold text-orange-700 dark:text-orange-400">{dueStudents.length}</p>
+              <p className="text-xl font-bold text-orange-700 dark:text-orange-400">
+                {dueStudents.length} <span className="text-xs font-normal text-muted-foreground">{bn ? 'জন' : ''}</span>
+              </p>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-red-200/30 bg-red-50/50 dark:bg-red-950/20">
+
+        {/* Card 2: Total Due */}
+        <Card className="border-rose-200/40 bg-rose-50/50 dark:bg-rose-950/20 shadow-sm">
           <CardContent className="p-4 space-y-2">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-red-600" />
+              <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5 text-rose-600" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">{bn ? 'মোট বকেয়া' : 'Total Due Amount'}</p>
-                <p className="text-lg font-bold text-red-700 dark:text-red-400">৳{totalDueAmount.toLocaleString('en-IN')}</p>
+                <p className="text-xs text-muted-foreground">
+                  {bn ? (isCumulative ? 'চলতি মাস পর্যন্ত মোট বকেয়া' : 'এই মাসের মোট বকেয়া') : 'Total Due Amount'}
+                </p>
+                <p className="text-xl font-bold text-rose-700 dark:text-rose-400">৳{totalDueAmount.toLocaleString('en-IN')}</p>
               </div>
             </div>
-            {applicableFeeTypesForMonth.some(ft => (feeTypeColumnTotals[ft.id] || 0) > 0) && (
-              <div className="flex flex-wrap gap-1.5 pt-1 border-t border-red-200/30">
+            {applicableFeeTypesForMonth.some((ft: any) => (feeTypeColumnTotals[ft.id] || 0) > 0) && (
+              <div className="flex flex-wrap gap-1.5 pt-1 border-t border-rose-200/40">
                 {applicableFeeTypesForMonth
-                  .filter(ft => (feeTypeColumnTotals[ft.id] || 0) > 0)
-                  .sort((a, b) => (feeTypeColumnTotals[b.id] || 0) - (feeTypeColumnTotals[a.id] || 0))
-                  .map(ft => (
+                  .filter((ft: any) => (feeTypeColumnTotals[ft.id] || 0) > 0)
+                  .sort((a: any, b: any) => (feeTypeColumnTotals[b.id] || 0) - (feeTypeColumnTotals[a.id] || 0))
+                  .map((ft: any) => (
                     <span
                       key={ft.id}
-                      className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-700 dark:text-red-300 border border-red-500/20"
+                      className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20"
                       title={bn ? ft.name_bn : ft.name}
                     >
                       <span className="font-medium truncate max-w-[80px]">{bn ? ft.name_bn : ft.name}</span>
@@ -336,14 +459,33 @@ const DuesManagement = () => {
             )}
           </CardContent>
         </Card>
-        <Card className="border-emerald-200/30 bg-emerald-50/50 dark:bg-emerald-950/20">
+
+        {/* Card 3: Total Paid / Collected */}
+        <Card className="border-emerald-200/40 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-sm">
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-              <Bell className="w-5 h-5 text-emerald-600" />
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
+              <Banknote className="w-5 h-5 text-emerald-600" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">{bn ? 'পরিশোধিত ছাত্র' : 'Students Paid'}</p>
-              <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">
+              <p className="text-xs text-muted-foreground">
+                {bn ? (isCumulative ? 'চলতি মাস পর্যন্ত মোট পরিশোধ' : 'এই মাসের মোট পরিশোধ') : 'Total Paid Amount'}
+              </p>
+              <p className="text-xl font-bold text-emerald-700 dark:text-emerald-400">
+                ৳{totalPaidAmount.toLocaleString('en-IN')}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Card 4: Paid Students */}
+        <Card className="border-blue-200/40 bg-blue-50/50 dark:bg-blue-950/20 shadow-sm">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">{bn ? 'পরিশোধিত ছাত্র সংখ্যা' : 'Students Fully Paid'}</p>
+              <p className="text-xl font-bold text-blue-700 dark:text-blue-400">
                 {paidCount}
                 <span className="text-xs font-normal text-muted-foreground ml-1.5">
                   / {filteredEnrolled.length} {bn ? 'জন' : ''}
@@ -354,118 +496,277 @@ const DuesManagement = () => {
         </Card>
       </div>
 
-      {/* Filters - stack vertically on mobile, row on desktop */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-2 sm:gap-3 lg:items-center">
-        <Select value={selectedSessionId} onValueChange={setSelectedSessionId}>
-          <SelectTrigger className="w-full lg:w-[180px] gap-2"><CalendarRange className="w-4 h-4 text-muted-foreground shrink-0" /><SelectValue placeholder={bn ? 'সেশন' : 'Session'} /></SelectTrigger>
-          <SelectContent>
-            {sessions.map((s: any) => (
-              <SelectItem key={s.id} value={s.id}>{bn ? s.name_bn : s.name}{s.is_active && (bn ? ' (চলমান)' : ' (Active)')}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-          <SelectTrigger className="w-full lg:w-[180px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {monthOptions.map(o => <SelectItem key={o.key} value={o.key}>{o.label}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={classFilter} onValueChange={setClassFilter}>
-          <SelectTrigger className="w-full lg:w-[150px]"><SelectValue placeholder={bn ? 'শ্রেণী' : 'Class'} /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{bn ? 'সকল শ্রেণী' : 'All Classes'}</SelectItem>
-            {classes.map(c => <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <div className="relative w-full lg:flex-1 lg:min-w-[200px] sm:col-span-2 lg:col-span-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input placeholder={bn ? 'নাম, আইডি বা রোল দিয়ে খুঁজুন...' : 'Search by name, ID or roll...'} value={searchText} onChange={e => setSearchText(e.target.value)} className="pl-9 w-full" />
+      {/* Filters Bar with Mode Switcher */}
+      <div className="flex flex-col gap-3 p-3 rounded-xl bg-card border border-border shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
+          {/* Mode Switcher */}
+          <div className="inline-flex items-center p-1 bg-muted rounded-lg border border-border/70 text-xs">
+            <button
+              type="button"
+              onClick={() => setIsCumulative(true)}
+              className={`px-3 py-1.5 rounded-md font-semibold transition-all flex items-center gap-1.5 ${
+                isCumulative
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <CalendarRange className="w-3.5 h-3.5" />
+              {bn ? 'চলতি মাস পর্যন্ত (ক্রমপুঞ্জিত বকেয়া)' : 'Up to Current Month (Cumulative)'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsCumulative(false)}
+              className={`px-3 py-1.5 rounded-md font-semibold transition-all flex items-center gap-1.5 ${
+                !isCumulative
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              {bn ? 'শুধুমাত্র এই মাস' : 'Single Month Only'}
+            </button>
+          </div>
+
+          {isFeatureAllowed('action_export_dues') !== false && (
+            <Button variant="outline" size="sm" onClick={handleExportCSV} className="gap-2 text-xs">
+              <Download className="w-3.5 h-3.5" />
+              {bn ? 'এক্সপোর্ট CSV' : 'Export CSV'}
+            </Button>
+          )}
         </div>
-        {isFeatureAllowed('action_export_dues') !== false && (
-          <Button variant="outline" size="sm" onClick={handleExportCSV} className="gap-2 w-full lg:w-auto sm:col-span-2 lg:col-span-1">
-            <Download className="w-4 h-4" />{bn ? 'এক্সপোর্ট' : 'Export CSV'}
-          </Button>
-        )}
+
+        {/* Filters Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-2.5 sm:gap-3 lg:items-center">
+          <Select value={selectedSessionId} onValueChange={setSelectedSessionId}>
+            <SelectTrigger className="w-full lg:w-[190px] gap-2">
+              <CalendarRange className="w-4 h-4 text-muted-foreground shrink-0" />
+              <SelectValue placeholder={bn ? 'সেশন' : 'Session'} />
+            </SelectTrigger>
+            <SelectContent>
+              {sessions.map((s: any) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {bn ? s.name_bn : s.name}
+                  {s.is_active && (bn ? ' (চলমান)' : ' (Active)')}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <SelectTrigger className="w-full lg:w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {monthOptions.map(o => (
+                <SelectItem key={o.key} value={o.key}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={classFilter} onValueChange={setClassFilter}>
+            <SelectTrigger className="w-full lg:w-[160px]">
+              <SelectValue placeholder={bn ? 'শ্রেণী' : 'Class'} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{bn ? 'সকল শ্রেণী' : 'All Classes'}</SelectItem>
+              {classes.map((c: any) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {bn ? c.name_bn : c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="relative w-full lg:flex-1 lg:min-w-[220px]">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={bn ? 'নাম, আইডি বা রোল দিয়ে খুঁজুন...' : 'Search by name, ID or roll...'}
+              value={searchText}
+              onChange={e => setSearchText(e.target.value)}
+              className="pl-9 w-full"
+            />
+          </div>
+        </div>
       </div>
 
-      {/* Table - matrix view (horizontal scroll on mobile) */}
-      <Card>
+      {/* Table - Matrix view showing fee columns, Total Paid, and Total Due */}
+      <Card className="shadow-sm">
         <CardContent className="p-0">
-          <div className="w-full overflow-x-auto sm:overflow-y-auto sm:max-h-[560px]" style={{ WebkitOverflowScrolling: 'touch' }}>
-            <div className="min-w-[720px]">
-            <Table>
-              <TableHeader className="sticky top-0 bg-card z-10">
-                <TableRow>
-                  <TableHead className="w-12">#</TableHead>
-                  <TableHead className="min-w-[160px]">{bn ? 'নাম' : 'Name'}</TableHead>
-                  <TableHead>{bn ? 'আইডি' : 'ID'}</TableHead>
-                  <TableHead>{bn ? 'শ্রেণী' : 'Class'}</TableHead>
-                  {applicableFeeTypesForMonth.map(ft => (
-                    <TableHead key={ft.id} className="text-right whitespace-nowrap">
-                      {bn ? ft.name_bn : ft.name}
+          <div className="w-full overflow-x-auto sm:overflow-y-auto sm:max-h-[580px]" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div className="min-w-[840px]">
+              <Table>
+                <TableHeader className="sticky top-0 bg-card z-10 shadow-sm border-b">
+                  <TableRow>
+                    <TableHead className="w-12 text-center">#</TableHead>
+                    <TableHead className="min-w-[170px]">{bn ? 'নাম' : 'Name'}</TableHead>
+                    <TableHead>{bn ? 'আইডি' : 'ID'}</TableHead>
+                    <TableHead>{bn ? 'শ্রেণী' : 'Class'}</TableHead>
+                    {applicableFeeTypesForMonth.map((ft: any) => (
+                      <TableHead key={ft.id} className="text-right whitespace-nowrap">
+                        {bn ? ft.name_bn : ft.name}
+                      </TableHead>
+                    ))}
+                    <TableHead className="text-right font-semibold text-emerald-700 dark:text-emerald-400 whitespace-nowrap">
+                      {bn ? 'পরিশোধ' : 'Paid'}
                     </TableHead>
-                  ))}
-                  <TableHead className="text-right">{bn ? 'মোট' : 'Total'}</TableHead>
-                  <TableHead className="text-right">{bn ? 'অ্যাকশন' : 'Action'}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {applicableFeeTypesForMonth.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{bn ? 'এই মাসের জন্য কোনো প্রযোজ্য মাসিক ফি নেই' : 'No monthly fee types applicable for this month'}</TableCell></TableRow>
-                ) : filteredEnrolled.length === 0 ? (
-                  <TableRow><TableCell colSpan={6 + applicableFeeTypesForMonth.length} className="text-center py-8 text-muted-foreground">{bn ? 'এই মাসে কোনো শিক্ষার্থী ভর্তি ছিল না' : 'No students were enrolled in this month'}</TableCell></TableRow>
-                ) : dueStudents.length === 0 ? (
-                  <TableRow><TableCell colSpan={6 + applicableFeeTypesForMonth.length} className="text-center py-8 text-muted-foreground">{bn ? 'এই মাসে কোনো বকেয়া নেই' : 'No dues for this month'}</TableCell></TableRow>
-                ) : dueStudents.map((s, i) => {
-                  const breakdown = computeBreakdown(s);
-                  const breakdownMap = new Map(breakdown.map(b => [b.feeTypeId, b]));
-                  const total = computeStudentDue(s);
-                  return (
-                    <TableRow key={s.id}>
-                      <TableCell className="text-muted-foreground">{i + 1}</TableCell>
-                      <TableCell className="font-medium">{s.name_bn}</TableCell>
-                      <TableCell><Badge variant="outline" className="font-mono text-xs">{s.student_id}</Badge></TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{(s as any).classes?.name_bn || '-'}</TableCell>
-                      {applicableFeeTypesForMonth.map(ft => {
-                        const b = breakdownMap.get(ft.id);
-                        if (!b) return <TableCell key={ft.id} className="text-right text-muted-foreground/40">—</TableCell>;
-                        if ((b as any).beforeAdmission) return <TableCell key={ft.id} className="text-right text-muted-foreground/40" title={bn ? 'ভর্তির আগে' : 'Before admission'}>—</TableCell>;
-                        if (b.isPaid) return <TableCell key={ft.id} className="text-right"><Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px]">{bn ? '✓ পরিশোধিত' : '✓ Paid'}</Badge></TableCell>;
-                        if (b.isFullyWaived) return <TableCell key={ft.id} className="text-right"><Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[10px]">{bn ? 'মওকুফ' : 'Waived'}</Badge></TableCell>;
-                        return <TableCell key={ft.id} className="text-right font-semibold text-rose-600">৳{b.due.toLocaleString('en-IN')}</TableCell>;
-                      })}
-                      <TableCell className="text-right font-bold text-red-600">৳{total.toLocaleString('en-IN')}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <Button
-                            size="sm"
-                            onClick={() => handlePay(s)}
-                            className="gap-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
-                          >
-                            <CreditCard className="w-3 h-3" />{bn ? 'পরিশোধ' : 'Pay'}
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => handleSendReminder(s)} className="gap-1 text-xs">
-                            <Bell className="w-3 h-3" />{bn ? 'রিমাইন্ডার' : 'Remind'}
-                          </Button>
+                    <TableHead className="text-right font-semibold text-rose-700 dark:text-rose-400 whitespace-nowrap">
+                      {bn ? (isCumulative ? 'মোট বকেয়া' : 'বকেয়া') : 'Due'}
+                    </TableHead>
+                    <TableHead className="text-center w-28">{bn ? 'অ্যাকশন' : 'Action'}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {applicableFeeTypesForMonth.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        {bn ? 'এই সেশন বা মাসের জন্য কোনো প্রযোজ্য ফি নেই' : 'No fee types applicable'}
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredEnrolled.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7 + applicableFeeTypesForMonth.length} className="text-center py-8 text-muted-foreground">
+                        {bn ? 'এই মাসে কোনো শিক্ষার্থী ভর্তি ছিল না' : 'No students enrolled'}
+                      </TableCell>
+                    </TableRow>
+                  ) : dueStudents.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7 + applicableFeeTypesForMonth.length} className="text-center py-8 text-muted-foreground">
+                        <div className="flex flex-col items-center gap-1.5">
+                          <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                          <p className="font-semibold text-foreground">
+                            {bn ? (isCumulative ? 'চলতি মাস পর্যন্ত কোনো বকেয়া নেই!' : 'এই মাসে কোনো বকেয়া নেই!') : 'No dues found!'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {bn ? 'সকল শিক্ষার্থীর ফি সম্পূর্ণ পরিশোধিত।' : 'All fees are up to date.'}
+                          </p>
                         </div>
                       </TableCell>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-              {applicableFeeTypesForMonth.length > 0 && dueStudents.length > 0 && (
-                <TableFooter>
-                  <TableRow>
-                    <TableCell colSpan={4} className="font-bold text-right">{bn ? 'কলাম মোট' : 'Column Total'}</TableCell>
-                    {applicableFeeTypesForMonth.map(ft => (
-                      <TableCell key={ft.id} className="text-right font-bold text-rose-700">৳{(feeTypeColumnTotals[ft.id] || 0).toLocaleString('en-IN')}</TableCell>
-                    ))}
-                    <TableCell className="text-right font-black text-red-700">৳{totalDueAmount.toLocaleString('en-IN')}</TableCell>
-                    <TableCell />
-                  </TableRow>
-                </TableFooter>
-              )}
-            </Table>
+                  ) : (
+                    dueStudents.map((s: any, i: number) => {
+                      const breakdown = computeBreakdown(s);
+                      const breakdownMap = new Map(breakdown.map((b: any) => [b.feeTypeId, b]));
+                      const studentDue = computeStudentDue(s);
+                      const studentPaid = computeStudentPaid(s);
+
+                      return (
+                        <TableRow key={s.id} className="hover:bg-muted/40 transition-colors">
+                          <TableCell className="text-center text-muted-foreground text-xs">{i + 1}</TableCell>
+                          <TableCell className="font-medium text-foreground">{s.name_bn}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="font-mono text-xs font-medium">
+                              {s.student_id}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{s.classes?.name_bn || '-'}</TableCell>
+
+                          {applicableFeeTypesForMonth.map((ft: any) => {
+                            const b = breakdownMap.get(ft.id) as any;
+                            if (!b || b.beforeAdmission) {
+                              return (
+                                <TableCell key={ft.id} className="text-right text-muted-foreground/30 text-xs">
+                                  —
+                                </TableCell>
+                              );
+                            }
+                            if (b.isPaid) {
+                              return (
+                                <TableCell key={ft.id} className="text-right">
+                                  <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px] font-semibold">
+                                    ✓ {bn ? 'পরিশোধিত' : 'Paid'}
+                                  </Badge>
+                                </TableCell>
+                              );
+                            }
+                            if (b.isFullyWaived) {
+                              return (
+                                <TableCell key={ft.id} className="text-right">
+                                  <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[10px] font-semibold">
+                                    {bn ? 'মওকুফ' : 'Waived'}
+                                  </Badge>
+                                </TableCell>
+                              );
+                            }
+
+                            return (
+                              <TableCell key={ft.id} className="text-right">
+                                <div className="flex flex-col items-end">
+                                  <span className="font-semibold text-rose-600">
+                                    ৳{b.due.toLocaleString('en-IN')}
+                                  </span>
+                                  {isCumulative && b.isMonthly && b.dueMonthsCount > 1 && (
+                                    <span className="text-[10px] text-muted-foreground/80 font-normal">
+                                      ({b.dueMonthsCount} {bn ? 'মাস' : 'mo'})
+                                    </span>
+                                  )}
+                                </div>
+                              </TableCell>
+                            );
+                          })}
+
+                          {/* Student Total Paid */}
+                          <TableCell className="text-right font-bold text-emerald-600">
+                            {studentPaid > 0 ? `৳${studentPaid.toLocaleString('en-IN')}` : '৳০'}
+                          </TableCell>
+
+                          {/* Student Total Due */}
+                          <TableCell className="text-right font-black text-rose-600 text-sm">
+                            ৳{studentDue.toLocaleString('en-IN')}
+                          </TableCell>
+
+                          {/* Actions */}
+                          <TableCell className="text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <Button
+                                size="sm"
+                                onClick={() => handlePay(s)}
+                                className="h-7 px-2.5 gap-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-none"
+                              >
+                                <CreditCard className="w-3 h-3" />
+                                {bn ? 'পরিশোধ' : 'Pay'}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleSendReminder(s)}
+                                className="h-7 px-2 gap-1 text-xs text-muted-foreground hover:text-foreground"
+                                title={bn ? 'রিমাইন্ডার পাঠান' : 'Send Reminder'}
+                              >
+                                <Bell className="w-3 h-3" />
+                                <span className="hidden xl:inline">{bn ? 'রিমাইন্ডার' : 'Remind'}</span>
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+
+                {applicableFeeTypesForMonth.length > 0 && dueStudents.length > 0 && (
+                  <TableFooter className="bg-muted/50 border-t-2 font-bold">
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-right font-bold text-foreground">
+                        {bn ? (isCumulative ? 'কলাম মোট (চলতি মাস পর্যন্ত):' : 'কলাম মোট:') : 'Column Total:'}
+                      </TableCell>
+                      {applicableFeeTypesForMonth.map((ft: any) => (
+                        <TableCell key={ft.id} className="text-right font-bold text-rose-700 dark:text-rose-400">
+                          ৳{(feeTypeColumnTotals[ft.id] || 0).toLocaleString('en-IN')}
+                        </TableCell>
+                      ))}
+                      <TableCell className="text-right font-black text-emerald-700 dark:text-emerald-400">
+                        ৳{totalPaidAmount.toLocaleString('en-IN')}
+                      </TableCell>
+                      <TableCell className="text-right font-black text-rose-700 dark:text-rose-400 text-base">
+                        ৳{totalDueAmount.toLocaleString('en-IN')}
+                      </TableCell>
+                      <TableCell />
+                    </TableRow>
+                  </TableFooter>
+                )}
+              </Table>
             </div>
           </div>
         </CardContent>
