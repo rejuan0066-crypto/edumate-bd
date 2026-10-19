@@ -1416,26 +1416,6 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
                   <Label>{bn ? 'যোগদান তারিখ' : 'Joining Date'}</Label>
                   <DatePicker bengali={bn} className="mt-1" value={joiningDate} onChange={v => setJoiningDate(v)} />
                 </div>
-                <div>
-                  <Label>{bn ? 'কাস্টম রোল / পদমর্যাদা' : 'Custom Role'}</Label>
-                  <Select value={customRoleId} onValueChange={setCustomRoleId}>
-                    <SelectTrigger className="bg-background mt-1">
-                      <SelectValue placeholder={bn ? 'নির্বাচন (ঐচ্ছিক)' : 'Select (optional)'} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">{bn ? 'কোনোটি নয়' : 'None'}</SelectItem>
-                      {(customRolesList as any[]).map((cr) => (
-                        <SelectItem key={cr.id} value={cr.id}>
-                          {(bn ? cr.name_bn : cr.name) || cr.name}
-                          <span className="text-[10px] text-muted-foreground ml-1">({cr.base_role})</span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-[11px] text-muted-foreground mt-1">
-                    {bn ? 'যেমন চেয়ারম্যান, পরিচালক, সম্পাদক' : 'e.g. Chairman, Director, Secretary'}
-                  </p>
-                </div>
                 <div className="sm:col-span-2 flex flex-wrap gap-6 items-center pt-2 border-t border-border/50">
                   <label className="flex items-center gap-2 cursor-pointer text-sm">
                     <Checkbox checked={includeInPayroll} onCheckedChange={(v) => setIncludeInPayroll(!!v)} />
