@@ -55,7 +55,20 @@ export function deduplicateRepeatedWords(str: string | null | undefined): string
     }
   }
 
-  return dedupedWords.join(' ').trim();
+  const result = dedupedWords.join(' ').trim();
+
+  // 3. Check for repeated multi-word suffix (handles prefix + repeated phrase)
+  // E.g. "মাওলানাঃ ফারহান হোসাইন ফারহান হোসাইন" → "মাওলানাঃ ফারহান হোসাইন"
+  const rWords = result.split(' ');
+  for (let phraseLen = Math.floor(rWords.length / 2); phraseLen >= 1; phraseLen--) {
+    const candidate = rWords.slice(rWords.length - phraseLen).join(' ').toLowerCase();
+    const before = rWords.slice(rWords.length - phraseLen * 2, rWords.length - phraseLen).join(' ').toLowerCase();
+    if (candidate === before) {
+      return rWords.slice(0, rWords.length - phraseLen).join(' ').trim();
+    }
+  }
+
+  return result;
 }
 
 /**
