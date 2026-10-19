@@ -271,6 +271,20 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     refetchOnMount: 'always',
   });
 
+  // Fetch category shift times
+  const { data: savedCategoryTimes } = useQuery({
+    queryKey: ['category-shift-times'],
+    queryFn: async () => {
+      const { data } = await supabase.from('website_settings').select('value').eq('key', 'category_shift_times').maybeSingle();
+      return data?.value as any;
+    },
+  });
+  useEffect(() => {
+    if (savedCategoryTimes && typeof savedCategoryTimes === 'object') {
+      setCategoryShiftTimes((prev) => ({ ...defaultCategoryTimes, ...prev, ...savedCategoryTimes }));
+    }
+  }, [savedCategoryTimes]);
+
   const dynamicStaffCategories = useMemo(() => {
     const list: string[] = [];
     staffCategoriesData.forEach(c => {
@@ -869,20 +883,6 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       toast.error(e?.message || (bn ? 'সেভ করতে সমস্যা হয়েছে' : 'Failed to save'));
     },
   });
-
-  // Fetch category shift times
-  const { data: savedCategoryTimes } = useQuery({
-    queryKey: ['category-shift-times'],
-    queryFn: async () => {
-      const { data } = await supabase.from('website_settings').select('value').eq('key', 'category_shift_times').maybeSingle();
-      return data?.value as any;
-    },
-  });
-  useEffect(() => {
-    if (savedCategoryTimes && typeof savedCategoryTimes === 'object') {
-      setCategoryShiftTimes((prev) => ({ ...defaultCategoryTimes, ...prev, ...savedCategoryTimes }));
-    }
-  }, [savedCategoryTimes]);
 
   // Thursday half-day check-in/check-out setting (from salary settings)
   const { data: thursdayHalfSetting } = useQuery({
