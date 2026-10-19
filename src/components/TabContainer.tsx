@@ -60,27 +60,21 @@ const SegButton = ({
     type="button"
     onClick={onClick}
     className={cn(
-      'relative flex items-center justify-center gap-2 rounded-full font-semibold transition-colors duration-200 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
-      'border-[1.5px] border-[hsl(var(--aqua)_/_0.38)] shadow-[inset_0_1px_0_hsl(0_0%_100%_/_0.32),0_0_12px_-7px_hsl(var(--aqua)_/_0.45)]',
-      level === 1 ? 'px-5 py-2.5 text-sm' : 'px-4 py-2 text-[13px]',
+      'relative flex items-center justify-center gap-2 rounded-lg font-medium transition-colors duration-150 whitespace-nowrap focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+      level === 1 ? 'px-3.5 py-1.5 text-xs sm:text-sm' : 'px-3 py-1 text-xs',
       active
-        ? 'text-primary-foreground border-[hsl(var(--aqua)_/_0.62)]'
-        : 'text-muted-foreground hover:text-foreground hover:bg-primary/5 hover:border-[hsl(var(--aqua)_/_0.55)]',
+        ? 'text-foreground font-semibold'
+        : 'text-muted-foreground hover:text-foreground hover:bg-background/40',
     )}
   >
     {active && (
       <motion.span
         layoutId={layoutId}
-        className={cn(
-          'absolute inset-0 rounded-full',
-          level === 1
-            ? 'bg-gradient-to-r from-primary to-primary/85 shadow-[0_4px_14px_-2px_hsl(var(--primary)/0.45)]'
-            : 'bg-gradient-to-r from-primary/95 to-primary/80 shadow-[0_3px_10px_-2px_hsl(var(--primary)/0.35)]',
-        )}
-        transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+        className="absolute inset-0 rounded-lg bg-background border border-border/70 shadow-xs"
+        transition={{ type: 'spring', stiffness: 500, damping: 35 }}
       />
     )}
-    <span className="relative z-10 flex items-center gap-2">
+    <span className="relative z-10 flex items-center gap-1.5">
       {Icon && <Icon className={cn(level === 1 ? 'w-4 h-4' : 'w-3.5 h-3.5', 'shrink-0')} strokeWidth={1.75} />}
       <span>{label}</span>
     </span>
@@ -88,17 +82,13 @@ const SegButton = ({
 );
 
 /**
- * Glassmorphism container for floating segmented tabs.
+ * Container for segmented tabs.
  * Horizontally scrollable on small screens, sleek bar on desktop.
  */
 const SegContainer = ({ children, className }: { children: ReactNode; className?: string }) => (
   <div
     className={cn(
-      'inline-flex items-center gap-1 p-1.5 rounded-full max-w-full overflow-x-auto',
-      'border border-border/30',
-      'bg-gradient-to-r from-muted/70 via-muted/40 to-muted/70',
-      'backdrop-blur-xl',
-      'shadow-[inset_0_1px_0_hsl(var(--background)/0.4),0_2px_12px_-4px_hsl(var(--foreground)/0.08)]',
+      'inline-flex items-center gap-1 p-1 bg-muted/60 border border-border/70 rounded-xl max-w-full overflow-x-auto shadow-xs',
       '[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]',
       className,
     )}
@@ -212,7 +202,7 @@ const TabContainer = ({ groups, tabs, paramKey = 'tab', childParamKey = 'sub', c
       {activeGroup && childTabs.length > 0 && (
         <div className="sticky top-[60px] z-[19] mb-4 py-2 -mx-1 px-1">
           <LayoutGroup id={`tabs-${paramKey}-l2`}>
-            <SegContainer className="bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40">
+            <SegContainer className="bg-muted/40">
               {childTabs.map(t => (
                 <SegButton
                   key={t.id}

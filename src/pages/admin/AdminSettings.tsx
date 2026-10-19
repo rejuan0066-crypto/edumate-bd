@@ -605,19 +605,29 @@ const AdminSettings = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <h1 className="text-2xl font-display font-bold text-foreground">{bn ? 'সেটিংস' : 'Settings'}</h1>
-          <a
-            href="/admin/email-templates"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-sm font-medium shadow-md hover:shadow-lg transition-all"
-          >
-            <Mail className="w-4 h-4" /> {bn ? 'ইমেইল টেমপ্লেট ম্যানেজ করুন' : 'Manage Email Templates'}
-          </a>
+        {/* ── Standard Page Header ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-border/60">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+              {bn ? 'সিস্টেম সেটিংস' : 'System Settings'}
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+              {bn ? 'মাদ্রাসার ইমেইল, এসএমএস, পেমেন্ট গেটওয়ে, নিরাপত্তা ও সাধারণ কনফিগারেশন' : 'Manage mailers, SMS gateways, payment channels, security policies and workflows'}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" asChild className="h-9 rounded-xl font-medium gap-2">
+              <a href="/admin/email-templates">
+                <Mail className="w-4 h-4" />
+                <span className="truncate">{bn ? 'ইমেইল টেমপ্লেট' : 'Email Templates'}</span>
+              </a>
+            </Button>
+          </div>
         </div>
 
         <Tabs value={settingsTab} onValueChange={(v) => setSettingsTab(v as SettingsTab)} className="w-full">
-          <TabsList className="w-full justify-start overflow-x-auto">
-            <TabsTrigger value="email" className="gap-1.5">
+          <TabsList className="w-full justify-start overflow-x-auto p-1 bg-muted/60 border border-border/70 rounded-xl h-auto gap-1">
+            <TabsTrigger value="email" className="gap-1.5 text-xs py-1.5 px-3 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs">
               <Mail className="w-4 h-4" /> {bn ? 'ইমেইল' : 'Email'}
             </TabsTrigger>
             <TabsTrigger value="payment" className="gap-1.5">

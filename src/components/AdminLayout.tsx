@@ -637,10 +637,10 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
             <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
               {/* Search */}
               {adminTheme.headerShowSearch && (
-                <div className="hidden md:flex items-center gap-2 bg-secondary/50 backdrop-blur-sm rounded-2xl px-4 py-2 text-sm text-muted-foreground min-w-[200px] border border-border/20">
-                  <Search className="w-4 h-4 shrink-0" />
-                  <span className="flex-1 text-xs">{language === 'bn' ? 'শিক্ষার্থী, শিক্ষক, ক্লাস খুঁজুন...' : 'Search students, teachers...'}</span>
-                  <kbd className="hidden lg:inline-flex items-center gap-0.5 rounded border bg-card px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                <div className="hidden md:flex items-center gap-2 bg-muted/50 backdrop-blur-sm rounded-xl px-3 py-1.5 text-xs text-muted-foreground min-w-[200px] border border-border/60">
+                  <Search className="w-3.5 h-3.5 shrink-0" />
+                  <span className="flex-1 truncate">{language === 'bn' ? 'শিক্ষার্থী, শিক্ষক, ক্লাস খুঁজুন...' : 'Search students, teachers...'}</span>
+                  <kbd className="hidden lg:inline-flex items-center gap-0.5 rounded border border-border/60 bg-card px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
                     Ctrl+K
                   </kbd>
                 </div>
@@ -657,8 +657,8 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           {/* Content */}
           <main className="flex-1 px-2.5 sm:px-6 md:px-8 pb-24 lg:pb-10 pt-2 sm:pt-4 w-full max-w-[1536px] mx-auto">
             <BackButton position="top" />
-            {/* Modern Glass Content Container */}
-            <div className="admin-page-card rounded-2xl sm:rounded-[32px] lg:rounded-[40px] bg-card/95 sm:bg-card/85 dark:bg-card/40 backdrop-blur-2xl border border-border/50 dark:border-border/30 p-3.5 sm:p-6 lg:p-8 min-h-[65vh] w-full shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)]">
+            {/* Modern SaaS Content Container */}
+            <div className="admin-page-card rounded-xl sm:rounded-2xl bg-card/95 sm:bg-card/90 dark:bg-card/70 backdrop-blur-xl border border-border/70 dark:border-border/50 p-3.5 sm:p-6 lg:p-7 min-h-[65vh] w-full shadow-xs">
               <div className="w-full min-w-0">
                 <AdminPageWithTabs>{children}</AdminPageWithTabs>
               </div>

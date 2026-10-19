@@ -565,11 +565,19 @@ const AdminStudentsFees = () => {
   };
 
   const feeCollectionContent = (
-      <div className="max-w-3xl mx-auto space-y-6">
-        <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
-          <CreditCard className="w-6 h-6 text-primary" />
-          {bn ? 'ছাত্র ফি পরিশোধ' : 'Student Fee Payment'}
-        </h1>
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* ── Standard Page Header ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-border/60">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+              <CreditCard className="w-6 h-6 text-primary" />
+              {bn ? 'ছাত্র ফি আদায় ও পরিশোধ' : 'Student Fee Collection'}
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+              {bn ? 'ছাত্রদের নিয়মিত ফি, বকেয়া ও অন্যান্য পাওনা আদায়' : 'Collect academic tuition, admission fees, and manage student receipts'}
+            </p>
+          </div>
+        </div>
 
         {step === 'form' && (
           <div className="card-elevated p-6 space-y-5">

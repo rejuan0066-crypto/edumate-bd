@@ -576,24 +576,32 @@ const AdminWebsite = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
-            <Globe className="w-6 h-6 text-primary" />
-            {language === 'bn' ? 'ওয়েবসাইট UI বিল্ডার' : 'Website UI Builder'}
-          </h1>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => window.open('/', '_blank')}>
-              <Eye className="w-4 h-4 mr-1" /> {language === 'bn' ? 'প্রিভিউ' : 'Preview'}
+        {/* ── Standard Page Header ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-border/60">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+              <Globe className="w-5 sm:w-6 h-5 sm:h-6 text-primary" />
+              {language === 'bn' ? 'ওয়েবসাইট UI বিল্ডার' : 'Website UI Builder'}
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+              {language === 'bn' ? 'মাদ্রাসার পাবলিক ওয়েবসাইটের তথ্য, ব্যানার, মেনু ও কনটেন্ট নিয়ন্ত্রণ' : 'Manage public portal content, banners, navigation, and settings'}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="h-9 rounded-xl" onClick={() => window.open('/', '_blank')}>
+              <Eye className="w-4 h-4 mr-1.5" /> {language === 'bn' ? 'প্রিভিউ' : 'Preview'}
             </Button>
-            {canEditItem && <Button className="btn-primary-gradient" size="sm" onClick={saveAll} disabled={saving}>
-              <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'সব সংরক্ষণ' : 'Save All'}
-            </Button>}
+            {canEditItem && (
+              <Button size="sm" className="h-9 rounded-xl font-medium" onClick={saveAll} disabled={saving}>
+                <Save className="w-4 h-4 mr-1.5" /> {language === 'bn' ? 'সব সংরক্ষণ' : 'Save All'}
+              </Button>
+            )}
           </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as WebsiteTab)} className="w-full">
-          <TabsList className="w-full flex flex-wrap h-auto gap-1">
-            <TabsTrigger value="institution" className="text-xs py-2 px-2.5">
+          <TabsList className="w-full flex flex-wrap h-auto gap-1 p-1 bg-muted/60 border border-border/70 rounded-xl">
+            <TabsTrigger value="institution" className="text-xs py-1.5 px-3 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs">
               <Globe className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'প্রতিষ্ঠান' : 'Institution'}
             </TabsTrigger>
             <TabsTrigger value="header" className="text-xs py-2 px-2.5">

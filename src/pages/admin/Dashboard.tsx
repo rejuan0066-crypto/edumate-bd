@@ -414,14 +414,23 @@ const DashboardInner = () => {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      {/* ── Standard Page Header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-border/60">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+            {bn ? 'ড্যাশবোর্ড ওভারভিউ' : 'Dashboard Overview'}
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+            {bn ? 'প্রতিষ্ঠানের সামগ্রিক পরিসংখ্যান ও রিয়েল-টাইম তথ্য' : 'Real-time overview of institutional operations and metrics'}
+          </p>
+        </div>
         {isAdmin && (
-          <div className="flex flex-wrap justify-end gap-2 ml-auto">
-            <Button variant="outline" size="sm" onClick={() => setBuilderOpen(true)} className="gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setBuilderOpen(true)} className="gap-2 h-9 text-xs sm:text-sm font-medium">
               <LayoutDashboard className="w-4 h-4" />
               <span className="truncate">{bn ? 'ড্যাশবোর্ড বিল্ডার' : 'Dashboard Builder'}</span>
             </Button>
-            <Button variant="default" size="sm" asChild className="gap-2">
+            <Button variant="default" size="sm" asChild className="gap-2 h-9 text-xs sm:text-sm font-medium">
               <a href="/admin/analytics">
                 <LayoutDashboard className="w-4 h-4" />
                 <span className="truncate">{bn ? 'বিস্তারিত অ্যানালিটিক্স' : 'Detailed Analytics'}</span>
