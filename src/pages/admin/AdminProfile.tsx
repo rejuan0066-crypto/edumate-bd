@@ -170,7 +170,7 @@ const AdminProfile = () => {
     }
 
     if (editDesignation && !matching.some((d: any) => (d.name_bn === editDesignation || d.name === editDesignation))) {
-      matching = [{ id: 'current', name: editDesignation, name_bn: editDesignation, staff_category: editCategory }, ...matching];
+      matching = [{ id: 'current', name: editDesignation, name_bn: editDesignation, staff_category: editCategory } as any, ...matching];
     }
 
     const seenNames = new Set<string>();

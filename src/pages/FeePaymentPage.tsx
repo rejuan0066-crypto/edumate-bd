@@ -225,7 +225,7 @@ const FeePaymentPage = () => {
       setCustomAmount(String(ft.amount));
     }
     if (ft && Array.isArray(ft.applicable_months) && ft.applicable_months.length > 0) {
-      const firstMonth = ft.applicable_months[0].split('-')[0];
+      const firstMonth = String(ft.applicable_months[0]).split('-')[0];
       setSelectedMonth(firstMonth);
     }
   };
@@ -425,7 +425,7 @@ const FeePaymentPage = () => {
         collected_by: finalCollector,
         created_by: user?.id || null,
       };
-      await supabase.from('payments').insert(paymentPayload);
+      await supabase.from('payments').insert(paymentPayload as any);
 
       // 2. Record in fee_payments table
       const feePaymentPayload = {
@@ -1120,8 +1120,8 @@ const FeePaymentPage = () => {
                               </SelectTrigger>
                               <SelectContent>
                                 {MONTHS.filter((m) => {
-                                  if (!selectedFeeTypeObj?.applicable_months || selectedFeeTypeObj.applicable_months.length === 0) return true;
-                                  return selectedFeeTypeObj.applicable_months.some((am: string) => am.split('-')[0] === m.value);
+                                  if (!selectedFeeTypeObj?.applicable_months || (selectedFeeTypeObj.applicable_months as any).length === 0) return true;
+                                  return (selectedFeeTypeObj.applicable_months as any[]).some((am: string) => am.split('-')[0] === m.value);
                                 }).map((m) => (
                                   <SelectItem key={m.value} value={m.value}>{bn ? m.bn : m.en}</SelectItem>
                                 ))}

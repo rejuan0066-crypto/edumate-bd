@@ -461,7 +461,7 @@ const AdminStudentsFees = () => {
         return txnId;
       }
 
-      const { error } = await supabase.from('payments').insert(payload);
+      const { error } = await supabase.from('payments').insert(payload as any);
       if (error) throw error;
 
       // Also insert into fee_payments for student profile tracking
