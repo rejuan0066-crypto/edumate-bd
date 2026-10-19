@@ -50,6 +50,9 @@ import {
   fetchSpecialShifts,
   fetchDepartmentSchedules,
   saveDepartmentSchedule,
+  findSpecialShiftForStaff,
+  isDateInRange,
+  StaffSpecialShift,
 } from '@/lib/shiftResolution';
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useAppTimezone } from '@/hooks/useAppTimezone';
@@ -461,6 +464,75 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   }, [allStaffRaw, showCommitteeStaff, committeeInfo.ids, staffCategoriesData, bn]);
   const committeeHiddenCount = (allStaffRaw as any[]).filter((s: any) => committeeInfo.ids.has(s.id)).length;
 
+  const toBnDigits = (str: string | number) => String(str).replace(/\d/g, (d) => '০১২৩৪৫৬৭৮৯'[+d]);
+  const fmtDate = (dStr?: string | null) => {
+    if (!dStr) return '';
+    const parts = dStr.split('-');
+    if (parts.length === 3) {
+      const formatted = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      return bn ? toBnDigits(formatted) : formatted;
+    }
+    return dStr;
+  };
+
+  interface SpecialDutyGroup {
+    id: string;
+    name: string;
+    duty_start_time: string;
+    duty_end_time: string;
+    effective_from: string;
+    effective_to: string | null;
+    isOngoing: boolean;
+    staffIds: string[];
+    staffNames: string[];
+    shifts: StaffSpecialShift[];
+    isActiveOnSelectedDate: boolean;
+  }
+
+  // Groups all active special shifts into distinct named duties (just like departments)
+  const specialDutyGroups = useMemo<SpecialDutyGroup[]>(() => {
+    if (!Array.isArray(specialShifts) || specialShifts.length === 0) return [];
+
+    const map = new Map<string, SpecialDutyGroup>();
+
+    specialShifts.forEach((shift) => {
+      if (shift.is_active === false) return;
+      const rawName = (shift.note || '').trim();
+      const name = rawName || (bn ? 'আলাদা বিশেষ ডিউটি' : 'Special Duty Shift');
+      const groupKey = `${name}__${shift.duty_start_time}__${shift.duty_end_time}__${shift.effective_from}__${shift.effective_to || 'ongoing'}`;
+
+      const staffMember = allStaff.find((s: any) => s.id === shift.staff_id);
+      const staffName = staffMember
+        ? getStaffDisplayNames(staffMember.name_bn, staffMember.name_en, bn).primary
+        : (shift.staff_name || '');
+
+      if (!map.has(groupKey)) {
+        map.set(groupKey, {
+          id: groupKey,
+          name,
+          duty_start_time: shift.duty_start_time,
+          duty_end_time: shift.duty_end_time,
+          effective_from: shift.effective_from,
+          effective_to: shift.effective_to || null,
+          isOngoing: !shift.effective_to,
+          staffIds: [],
+          staffNames: [],
+          shifts: [],
+          isActiveOnSelectedDate: isDateInRange(selectedDate, shift.effective_from, shift.effective_to),
+        });
+      }
+
+      const g = map.get(groupKey)!;
+      if (shift.staff_id && !g.staffIds.includes(shift.staff_id)) {
+        g.staffIds.push(shift.staff_id);
+        if (staffName && !g.staffNames.includes(staffName)) g.staffNames.push(staffName);
+      }
+      g.shifts.push(shift);
+    });
+
+    return Array.from(map.values());
+  }, [specialShifts, allStaff, selectedDate, bn]);
+
   // Build session options: prefer academic_sessions (id-based), fallback to legacy session_year text
   const sessionOptions = useMemo(() => {
     if (academicSessions.length > 0) {
@@ -579,9 +651,16 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
 
     if (entityType === 'staff') {
       let staffFiltered = allStaff;
-      // Filter by staff category
+      // Filter by staff category or special duty
       if (selectedStaffCategory && selectedStaffCategory !== 'all') {
-        staffFiltered = staffFiltered.filter((s: any) => s.staff_category === selectedStaffCategory);
+        if (selectedStaffCategory.startsWith('special_')) {
+          const dutyName = selectedStaffCategory.replace('special_', '');
+          const matchingGroups = specialDutyGroups.filter(g => g.name === dutyName);
+          const staffIdSet = new Set(matchingGroups.flatMap(g => g.staffIds));
+          staffFiltered = staffFiltered.filter((s: any) => staffIdSet.has(s.id));
+        } else {
+          staffFiltered = staffFiltered.filter((s: any) => s.staff_category === selectedStaffCategory);
+        }
       }
       // Meal tab: only residential staff
       if (staffSubTab === 'meal') {
@@ -630,7 +709,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     });
 
     return filtered;
-  }, [entityType, allStudents, allStaff, studentSubTab, selectedSessionYear, selectedClassId, orderedClasses, staffSubTab, selectedStaffCategory, dutyRosterActive, dutyStaffIdsForDate, morningDutyStaffIds, eveningDutyStaffIds]);
+  }, [entityType, allStudents, allStaff, studentSubTab, selectedSessionYear, selectedClassId, orderedClasses, staffSubTab, selectedStaffCategory, specialDutyGroups, dutyRosterActive, dutyStaffIdsForDate, morningDutyStaffIds, eveningDutyStaffIds]);
 
   // Fetch attendance for selected date (for duty tab, fetch both morning & evening together)
   const { data: attendance = [] } = useQuery({
@@ -688,7 +767,14 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     if (!isDutyTab) return [];
     let list = allStaff;
     if (selectedStaffCategory && selectedStaffCategory !== 'all') {
-      list = list.filter((s: any) => s.staff_category === selectedStaffCategory);
+      if (selectedStaffCategory.startsWith('special_')) {
+        const dutyName = selectedStaffCategory.replace('special_', '');
+        const matchingGroups = specialDutyGroups.filter(g => g.name === dutyName);
+        const staffIdSet = new Set(matchingGroups.flatMap(g => g.staffIds));
+        list = list.filter((s: any) => staffIdSet.has(s.id));
+      } else {
+        list = list.filter((s: any) => s.staff_category === selectedStaffCategory);
+      }
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
@@ -709,13 +795,20 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       if (isResignedOnDate(e.id, selectedDate) && !hasAtt) return false;
       return morningDutyStaffIds.has(e.id) || hasAtt;
     });
-  }, [isDutyTab, allStaff, selectedStaffCategory, searchQuery, getResignDate, selectedDate, attendance, isResignedOnDate, morningDutyStaffIds]);
+  }, [isDutyTab, allStaff, selectedStaffCategory, specialDutyGroups, searchQuery, getResignDate, selectedDate, attendance, isResignedOnDate, morningDutyStaffIds]);
 
   const eveningDutyEntities = useMemo(() => {
     if (!isDutyTab) return [];
     let list = allStaff;
     if (selectedStaffCategory && selectedStaffCategory !== 'all') {
-      list = list.filter((s: any) => s.staff_category === selectedStaffCategory);
+      if (selectedStaffCategory.startsWith('special_')) {
+        const dutyName = selectedStaffCategory.replace('special_', '');
+        const matchingGroups = specialDutyGroups.filter(g => g.name === dutyName);
+        const staffIdSet = new Set(matchingGroups.flatMap(g => g.staffIds));
+        list = list.filter((s: any) => staffIdSet.has(s.id));
+      } else {
+        list = list.filter((s: any) => s.staff_category === selectedStaffCategory);
+      }
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
@@ -736,7 +829,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       if (isResignedOnDate(e.id, selectedDate) && !hasAtt) return false;
       return eveningDutyStaffIds.has(e.id) || hasAtt;
     });
-  }, [isDutyTab, allStaff, selectedStaffCategory, searchQuery, getResignDate, selectedDate, attendance, isResignedOnDate, eveningDutyStaffIds]);
+  }, [isDutyTab, allStaff, selectedStaffCategory, specialDutyGroups, searchQuery, getResignDate, selectedDate, attendance, isResignedOnDate, eveningDutyStaffIds]);
 
   // Fetch attendance rules
   const { data: rules = [] } = useQuery({
@@ -2181,22 +2274,118 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                   <Save className="h-3 w-3 mr-1" /> {bn ? 'ডিপার্টমেন্ট শিফট সেভ করুন' : 'Save Department Shifts'}
                 </Button>
 
-                {/* Special Shift Assignment by Date Range Button */}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-full gap-2 border-primary/40 text-primary hover:bg-primary/5 font-semibold bg-primary/[0.02]"
-                  onClick={() => setSpecialShiftDialogOpen(true)}
-                >
-                  <Sparkles className="h-3.5 w-3.5 text-amber-500 fill-amber-500/20" />
-                  {bn ? 'তারিখ অনুযায়ী বিশেষ ডিউটি শিফট' : 'Special Shift by Date Range'}
-                  {specialShifts.length > 0 && (
-                    <Badge className="ml-auto bg-primary text-primary-foreground text-[10px] px-1.5 py-0 h-4">
-                      {specialShifts.length}
+                {/* Special Duty Shifts Section - Displayed just like departments with saved name */}
+                <div className="pt-3 border-t border-border/50 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <Label className="font-bold text-xs flex items-center gap-1.5 text-amber-700 dark:text-amber-300">
+                      <Sparkles className="h-3.5 w-3.5 text-amber-500 fill-amber-500/20" />
+                      {bn ? 'আলাদা / বিশেষ ডিউটি শিফট' : 'Special Duty Shifts'}
+                    </Label>
+                    <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30">
+                      {specialDutyGroups.length} {bn ? 'টি ডিউটি' : 'duties'}
                     </Badge>
+                  </div>
+
+                  {specialDutyGroups.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-border/60 p-3 text-center text-xs text-muted-foreground bg-muted/10">
+                      {bn ? 'কোনো আলাদা ডিউটি শিফট তৈরি করা হয়নি।' : 'No special duty shift created yet.'}
+                    </div>
+                  ) : (
+                    specialDutyGroups.map((duty) => (
+                      <div key={duty.id} className="rounded-xl border border-amber-500/30 bg-amber-500/[0.04] dark:bg-amber-500/[0.08] p-3 space-y-2.5">
+                        {/* Header: Name & Actions */}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="inline-block h-2 w-2 rounded-full bg-amber-500 shrink-0" />
+                            <p className="text-xs font-bold text-foreground truncate">{duty.name}</p>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px] px-1.5 py-0 h-4">
+                              {duty.staffIds.length} {bn ? 'জন স্টাফ' : 'staff'}
+                            </Badge>
+                            <button
+                              type="button"
+                              title={bn ? 'এই আলাদা ডিউটি শিফট মুছে ফেলুন' : 'Delete this special duty shift'}
+                              className="text-muted-foreground hover:text-destructive p-1 rounded transition"
+                              onClick={async () => {
+                                const ok = await confirm({
+                                  title: bn ? 'আলাদা ডিউটি শিফট মুছবেন?' : 'Delete special duty shift?',
+                                  description: bn
+                                    ? `"${duty.name}" শিফট এবং এর অন্তর্ভুক্ত ${duty.staffIds.length} জন স্টাফের এই ডিউটি অ্যাসাইনমেন্ট মুছে যাবে।`
+                                    : `Delete "${duty.name}" and shift assignments for ${duty.staffIds.length} staff?`,
+                                  variant: 'destructive',
+                                });
+                                if (!ok) return;
+                                const shiftIds = duty.shifts.map(s => s.id);
+                                const { error } = await supabase.from('staff_special_shifts').delete().in('id', shiftIds);
+                                if (error) { toast.error(error.message); return; }
+                                toast.success(bn ? 'আলাদা ডিউটি শিফট মুছে ফেলা হয়েছে' : 'Special duty deleted');
+                                queryClient.invalidateQueries({ queryKey: ['staff_special_shifts'] });
+                                queryClient.invalidateQueries({ queryKey: ['attendance'] });
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Times */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label className="text-[9px] text-muted-foreground">{bn ? 'শুরু' : 'Start'}</Label>
+                            <div className="h-7 px-2 rounded-md border bg-background/70 flex items-center text-xs font-semibold text-foreground">
+                              <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400 mr-1 shrink-0" />
+                              {fmt(duty.duty_start_time)}
+                            </div>
+                          </div>
+                          <div>
+                            <Label className="text-[9px] text-muted-foreground">{bn ? 'শেষ' : 'End'}</Label>
+                            <div className="h-7 px-2 rounded-md border bg-background/70 flex items-center text-xs font-semibold text-foreground">
+                              <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400 mr-1 shrink-0" />
+                              {fmt(duty.duty_end_time)}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Date Range */}
+                        <div className="rounded-lg border border-border/40 bg-background/40 p-1.5 flex items-center justify-between text-[10px]">
+                          <span className="text-muted-foreground flex items-center gap-1">
+                            <CalendarDays className="w-3 h-3 text-primary shrink-0" />
+                            {fmtDate(duty.effective_from)} {bn ? 'থেকে' : 'to'} {duty.effective_to ? fmtDate(duty.effective_to) : (bn ? 'চলমান' : 'Ongoing')}
+                          </span>
+                          {duty.isOngoing && (
+                            <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                              {bn ? '🟢 চলমান' : '🟢 Ongoing'}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Staff Names Preview */}
+                        {duty.staffNames.length > 0 && (
+                          <div className="flex flex-wrap gap-1 pt-0.5">
+                            {duty.staffNames.map((name, i) => (
+                              <span key={i} className="text-[9px] px-1.5 py-0.5 rounded bg-background/90 border border-border/60 text-foreground truncate max-w-[130px]">
+                                {name}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))
                   )}
-                </Button>
+
+                  {/* Add New Special Duty Button */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-2 border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10 font-semibold bg-amber-500/[0.04]"
+                    onClick={() => setSpecialShiftDialogOpen(true)}
+                  >
+                    <Plus className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                    {bn ? 'নতুন আলাদা ডিউটি শিফট যোগ করুন' : 'Add New Special Duty Shift'}
+                  </Button>
+                </div>
 
                 <a href="/admin/shift-audit-log" className="block text-center text-[11px] text-primary hover:underline">
                   {bn ? '📜 পরিবর্তনের ইতিহাস দেখুন' : '📜 View change history'}
@@ -2979,16 +3168,28 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
 
 
 
-                {/* Staff Category Filter */}
+                {/* Staff Category & Special Duty Filter */}
                 <Select value={selectedStaffCategory} onValueChange={setSelectedStaffCategory}>
-                  <SelectTrigger className="w-44 h-8 text-xs">
-                    <SelectValue placeholder={bn ? 'ডিপার্টমেন্ট' : 'Department'} />
+                  <SelectTrigger className="w-52 h-8 text-xs">
+                    <SelectValue placeholder={bn ? 'ডিপার্টমেন্ট / ডিউটি' : 'Department / Duty'} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">{bn ? 'সকল ডিপার্টমেন্ট' : 'All Departments'}</SelectItem>
                     {staffCategoriesData.map((category) => (
                       <SelectItem key={category.key} value={category.key}>{getCategoryLabel(category.key)}</SelectItem>
                     ))}
+                    {specialDutyGroups.length > 0 && (
+                      <>
+                        <div className="px-2 py-1 text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase mt-1 border-t">
+                          {bn ? 'আলাদা / বিশেষ ডিউটি' : 'Special Duties'}
+                        </div>
+                        {specialDutyGroups.map((g) => (
+                          <SelectItem key={`special_${g.name}`} value={`special_${g.name}`}>
+                            🌟 {g.name} ({g.staffIds.length})
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
 
@@ -3278,7 +3479,22 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                             })()
                           : staffSubTab === 'duty'
                             ? `${entity.designation || '-'} | ${bn ? 'নির্ধারিত' : 'Scheduled'}: ${selectedShift === 'morning' ? `${fmt(dutyTimes.morning_start)} - ${fmt(dutyTimes.morning_end)}` : `${fmt(dutyTimes.evening_start)} - ${fmt(dutyTimes.evening_end)}`}`
-                            : `${entity.designation || '-'} | ${bn ? 'নির্ধারিত' : 'Scheduled'}: ${fmt(getCategoryTime(entity).start)} - ${fmt(getCategoryTime(entity).end)}`}
+                            : (() => {
+                                const activeSpecial = findSpecialShiftForStaff(entity.id, selectedDate, specialShifts);
+                                const dutyName = activeSpecial?.note?.trim();
+                                return (
+                                  <span className="inline-flex items-center gap-1.5 flex-wrap">
+                                    <span>{entity.designation || '-'}</span>
+                                    {dutyName && (
+                                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[10px] font-semibold">
+                                        <Sparkles className="w-2.5 h-2.5 text-amber-500" />
+                                        {dutyName}
+                                      </span>
+                                    )}
+                                    <span>| {bn ? 'নির্ধারিত' : 'Scheduled'}: {fmt(getCategoryTime(entity).start)} - {fmt(getCategoryTime(entity).end)}</span>
+                                  </span>
+                                );
+                              })()}
                       </p>
                     </div>
                   </div>

@@ -167,7 +167,7 @@ export const StaffSpecialShiftDialog: React.FC<StaffSpecialShiftDialogProps> = (
           duty_end_time: endTime,
           effective_from: effectiveFrom,
           effective_to: toDate,
-          note: shiftNote.trim() || null,
+          note: shiftNote.trim() || (bn ? 'আলাদা বিশেষ ডিউটি' : 'Special Duty'),
           is_active: true,
           created_at: new Date().toISOString(),
         };
@@ -473,15 +473,19 @@ export const StaffSpecialShiftDialog: React.FC<StaffSpecialShiftDialogProps> = (
 
                 {/* Shift Note / Label */}
                 <div>
-                  <Label className="text-xs font-medium mb-1 block">
-                    {bn ? 'বিবরণ / ট্যাগ (ঐচ্ছিক)' : 'Note / Reason (Optional)'}
+                  <Label className="text-xs font-semibold mb-1 flex items-center gap-1.5 text-foreground">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    {bn ? 'আলাদা ডিউটি / শিফটের নাম' : 'Duty / Shift Name'}
                   </Label>
                   <Input
                     value={shiftNote}
                     onChange={(e) => setShiftNote(e.target.value)}
-                    placeholder={bn ? 'যেমন: হিফজ বিভাগ বিশেষ ডিউটি, পরীক্ষা ডিউটি...' : 'e.g. Special Hifz Duty...'}
+                    placeholder={bn ? 'যেমন: হিফজ বিভাগ বিশেষ ডিউটি, পরীক্ষা ডিউটি...' : 'e.g. Special Hifz Duty, Exam Duty...'}
                     className="h-8 text-xs bg-background"
                   />
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    {bn ? '💡 এই নামটি সেটিংস ও হাজিরা তালিকায় ডিপার্টমেন্টের মতো প্রদর্শিত হবে।' : '💡 This name will appear in settings and attendance just like a department.'}
+                  </p>
                 </div>
               </div>
 
@@ -551,6 +555,11 @@ export const StaffSpecialShiftDialog: React.FC<StaffSpecialShiftDialogProps> = (
                             <span className="text-sm font-bold text-foreground">
                               {getStaffDisplayNames(shift.staff_name, null, bn).primary || (bn ? 'স্টাফ সদস্য' : 'Staff Member')}
                             </span>
+                            {shift.note && (
+                              <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30 text-[10px]">
+                                🌟 {shift.note}
+                              </Badge>
+                            )}
                             {shift.category_key && (
                               <Badge variant="outline" className="text-[10px]">
                                 {getDeptLabel(shift.category_key)}
