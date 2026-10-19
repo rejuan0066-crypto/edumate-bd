@@ -29,7 +29,7 @@ import { invalidateAllStaffQueries } from '@/lib/staffQueryInvalidator';
 import { useAuth } from '@/hooks/useAuth';
 import { isAdminRole } from '@/lib/roles';
 import { isFutureJoiningDate } from '@/lib/joiningDate';
-import { resolveStaffFormNames, cleanStaffName, deduplicateRepeatedWords } from '@/lib/nameFormatter';
+import { resolveStaffFormNames, cleanStaffName, deduplicateRepeatedWords, hasBangla, hasEnglish } from '@/lib/nameFormatter';
 
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 
@@ -325,12 +325,47 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     const cleaned = cleanStaffName(existingStaff.name_bn, existingStaff.name_en);
     const rawFirst = sd.first_name || '';
     const rawLast = sd.last_name || '';
-    if (rawFirst && rawLast && rawFirst.trim().toLowerCase() === rawLast.trim().toLowerCase()) {
-      setFirstName(deduplicateRepeatedWords(rawFirst));
-      setLastName('');
-    } else if (rawFirst || rawLast) {
+
+    // Field 1 (first_name) = সম্পূর্ণ নাম (বাংলা)
+    // Field 2 (last_name) = সম্পূর্ণ নাম (ইংরেজি)
+    const fHasBn = hasBangla(rawFirst);
+    const lHasBn = hasBangla(rawLast);
+    const fHasEn = hasEnglish(rawFirst);
+    const lHasEn = hasEnglish(rawLast);
+
+    if (fHasBn && lHasBn && !fHasEn && !lHasEn) {
+      // Both are purely Bengali! (e.g. rawFirst="মাওলানাঃ ফারহান হোসাইন", rawLast="ফারহান হোসাইন")
+      let fullBn = '';
+      if (rawFirst.toLowerCase().includes(rawLast.toLowerCase())) {
+        fullBn = rawFirst;
+      } else if (rawLast.toLowerCase().includes(rawFirst.toLowerCase())) {
+        fullBn = rawLast;
+      } else {
+        fullBn = `${rawFirst} ${rawLast}`;
+      }
+      setFirstName(deduplicateRepeatedWords(fullBn));
+      // English field must NOT contain Bengali!
+      setLastName(cleaned.has_distinct_english ? (cleaned.name_en || '') : '');
+    } else if (fHasBn && lHasEn && !fHasEn && !lHasBn) {
+      // Standard: first is Bengali, last is English
       setFirstName(deduplicateRepeatedWords(rawFirst));
       setLastName(deduplicateRepeatedWords(rawLast));
+    } else if (lHasBn && fHasEn && !lHasEn && !fHasBn) {
+      // Inverted: first is English, last is Bengali
+      setFirstName(deduplicateRepeatedWords(rawLast));
+      setLastName(deduplicateRepeatedWords(rawFirst));
+    } else if (rawFirst || rawLast) {
+      if (lHasBn && !lHasEn) {
+        // rawLast contains only Bengali, do not let it into English field
+        const combined = rawFirst.toLowerCase().includes(rawLast.toLowerCase())
+          ? rawFirst
+          : `${rawFirst} ${rawLast}`;
+        setFirstName(deduplicateRepeatedWords(combined));
+        setLastName(cleaned.has_distinct_english ? (cleaned.name_en || '') : '');
+      } else {
+        setFirstName(cleaned.name_bn || deduplicateRepeatedWords(rawFirst));
+        setLastName(lHasEn ? deduplicateRepeatedWords(rawLast) : (cleaned.has_distinct_english ? (cleaned.name_en || '') : ''));
+      }
     } else {
       setFirstName(cleaned.name_bn || '');
       setLastName(cleaned.has_distinct_english ? (cleaned.name_en || '') : '');
@@ -567,8 +602,8 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
       const desigLabel = designations.find(d => d.value === designation)?.[bn ? 'bn' : 'en'] || designation;
 
       const staffData = {
-        first_name: firstName,
-        last_name: lastName,
+        first_name: resolvedBn || firstName,
+        last_name: resolvedEn || (hasEnglish(lastName) ? lastName : ''),
         mobile_code: mobileCode,
         employment_type: employmentType,
         residence_type: residenceType,
@@ -1405,15 +1440,31 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
                 )}
                 {isFieldActive('first_name') && (
                 <div>
-                  <Label>{bn ? (getField('first_name')?.label_bn || 'প্রথম নাম') : (getField('first_name')?.label || 'First Name')} {isFieldRequired('first_name') && <span className="text-destructive">*</span>}</Label>
-                  <Input className={`bg-background mt-1 ${fieldErrors['first_name'] ? 'border-destructive' : ''}`} value={firstName} onChange={e => handleFieldChange('first_name', e.target.value, setFirstName)} />
+                  <Label>{bn ? (getField('first_name')?.label_bn || 'সম্পূর্ণ নাম (বাংলা)') : (getField('first_name')?.label || 'Full Name (Bangla)')} {isFieldRequired('first_name') && <span className="text-destructive">*</span>}</Label>
+                  <Input
+                    className={`bg-background mt-1 ${fieldErrors['first_name'] ? 'border-destructive' : ''}`}
+                    value={firstName}
+                    onChange={e => handleFieldChange('first_name', e.target.value, setFirstName)}
+                    placeholder={bn ? 'যেমন: মাওলানা ফারহান হোসাইন' : 'Full name in Bangla'}
+                  />
                   <FieldError field="first_name" />
                 </div>
                 )}
                 {isFieldActive('last_name') && (
                 <div>
-                  <Label>{bn ? (getField('last_name')?.label_bn || 'শেষ নাম') : (getField('last_name')?.label || 'Last Name')} {isFieldRequired('last_name') && <span className="text-destructive">*</span>}</Label>
-                  <Input className={`bg-background mt-1 ${fieldErrors['last_name'] ? 'border-destructive' : ''}`} value={lastName} onChange={e => handleFieldChange('last_name', e.target.value, setLastName)} />
+                  <Label>{bn ? (getField('last_name')?.label_bn || 'সম্পূর্ণ নাম (ইংরেজি)') : (getField('last_name')?.label || 'Full Name (English)')} {isFieldRequired('last_name') && <span className="text-destructive">*</span>}</Label>
+                  <Input
+                    className={`bg-background mt-1 ${fieldErrors['last_name'] ? 'border-destructive' : ''}`}
+                    value={lastName}
+                    onChange={e => handleFieldChange('last_name', e.target.value, setLastName)}
+                    placeholder={bn ? 'যেমন: Maulana Farhan Hossain (ইংরেজি অক্ষরে)' : 'Full name in English'}
+                  />
+                  {hasBangla(lastName) && (
+                    <p className="text-xs text-amber-600 mt-1 flex items-center gap-1 font-medium">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      {bn ? 'ইংরেজি নাম ফিল্ডে বাংলা অক্ষর দেওয়া হয়েছে। দয়া করে ইংরেজিতে লিখুন।' : 'Bangla script detected in English name field. Please enter in English.'}
+                    </p>
+                  )}
                   <FieldError field="last_name" />
                 </div>
                 )}

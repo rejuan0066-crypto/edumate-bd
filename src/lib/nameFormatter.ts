@@ -227,8 +227,17 @@ export function resolveStaffFormNames(
 
   // Case 2: Both fields are Bengali (e.g. First Name: "মাওলানা", Last Name: "ফারহান হোসাইন")
   if (fHasBn && lHasBn && !fHasEn && !lHasEn) {
-    const combined = deduplicateRepeatedWords(`${f} ${l}`);
-    return { name_bn: combined, name_en: null };
+    let combined = '';
+    const fLower = f.toLowerCase();
+    const lLower = l.toLowerCase();
+    if (fLower.includes(lLower)) {
+      combined = f;
+    } else if (lLower.includes(fLower)) {
+      combined = l;
+    } else {
+      combined = `${f} ${l}`;
+    }
+    return { name_bn: deduplicateRepeatedWords(combined), name_en: null };
   }
 
   // Case 3: Both fields are English (e.g. First Name: "Farhan", Last Name: "Hossain")

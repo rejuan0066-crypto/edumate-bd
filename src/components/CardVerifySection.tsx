@@ -27,6 +27,7 @@ import {
 import { toast } from 'sonner';
 import { verifyCard } from '@/hooks/useApiVerification';
 import { scanImageWithOcr, OcrCardResult } from '@/lib/ocrCardParser';
+import { hasBangla, hasEnglish, cleanStaffName } from '@/lib/nameFormatter';
 
 interface CardVerifySectionProps {
   formType: 'student' | 'staff';
@@ -54,6 +55,8 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
   const [extractedData, setExtractedData] = useState<{
     documentNumber: string;
     fullName: string;
+    fullNameBn: string;
+    fullNameEn: string;
     dateOfBirth: string;
     fatherName: string;
     motherName: string;
@@ -62,6 +65,8 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
   }>({
     documentNumber: '',
     fullName: '',
+    fullNameBn: '',
+    fullNameEn: '',
     dateOfBirth: '',
     fatherName: '',
     motherName: '',
@@ -124,6 +129,8 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
       setExtractedData({
         documentNumber: parsed.documentNumber || '',
         fullName: parsed.fullName || '',
+        fullNameBn: parsed.fullNameBn || '',
+        fullNameEn: parsed.fullNameEn || '',
         dateOfBirth: parsed.dateOfBirth || '',
         fatherName: parsed.fatherName || '',
         motherName: parsed.motherName || '',
@@ -234,9 +241,25 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
       if (extractedData.gender) mapped.gender = extractedData.gender;
     } else {
       // staff form
-      if (extractedData.fullName) {
-        mapped.name_bn = extractedData.fullName;
-        mapped.name_en = extractedData.fullName;
+      if (extractedData.fullNameBn) {
+        mapped.name_bn = extractedData.fullNameBn;
+      }
+      if (extractedData.fullNameEn) {
+        mapped.name_en = extractedData.fullNameEn;
+      }
+      if (!mapped.name_bn && !mapped.name_en && extractedData.fullName) {
+        if (hasBangla(extractedData.fullName) && !hasEnglish(extractedData.fullName)) {
+          mapped.name_bn = extractedData.fullName;
+          // Never assign Bengali to English field
+          mapped.name_en = '';
+        } else if (hasEnglish(extractedData.fullName) && !hasBangla(extractedData.fullName)) {
+          mapped.name_en = extractedData.fullName;
+          mapped.name_bn = '';
+        } else {
+          const cleaned = cleanStaffName(extractedData.fullName, null);
+          mapped.name_bn = cleaned.name_bn;
+          mapped.name_en = cleaned.has_distinct_english ? (cleaned.name_en || '') : '';
+        }
       }
       if (extractedData.documentNumber) mapped.nid = extractedData.documentNumber;
       if (extractedData.dateOfBirth) mapped.date_of_birth = extractedData.dateOfBirth;

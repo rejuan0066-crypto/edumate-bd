@@ -5,6 +5,8 @@ export interface OcrCardResult {
   documentNumber?: string;
   documentType: 'birth_certificate' | 'nid' | 'unknown';
   fullName?: string;
+  fullNameBn?: string;
+  fullNameEn?: string;
   firstName?: string;
   lastName?: string;
   dateOfBirth?: string;
@@ -108,13 +110,33 @@ export function extractCardFields(text: string): OcrCardResult {
 
   // 4. Extract Names
   let fullName: string | undefined;
+  let fullNameBn: string | undefined;
+  let fullNameEn: string | undefined;
   let fatherName: string | undefined;
   let motherName: string | undefined;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    // Candidate for person's name
+    // Candidate for Bengali name: e.g. "নাম: মাওলানাঃ ফারহান হোসাইন"
+    if (!fullNameBn && /^নাম[\s\:\-\.](.+)/i.test(line)) {
+      const match = line.match(/^নাম[\s\:\-\.](.+)/i);
+      if (match && match[1]) {
+        const candidate = match[1].trim().replace(/[^a-zA-Z\u0980-\u09FF\s\.]/g, '');
+        if (candidate.length > 2) fullNameBn = candidate;
+      }
+    }
+
+    // Candidate for English name: e.g. "Name: Farhan Hossain"
+    if (!fullNameEn && /^name[\s\:\-\.](.+)/i.test(line)) {
+      const match = line.match(/^name[\s\:\-\.](.+)/i);
+      if (match && match[1]) {
+        const candidate = match[1].trim().replace(/[^a-zA-Z\u0980-\u09FF\s\.]/g, '');
+        if (candidate.length > 2) fullNameEn = candidate;
+      }
+    }
+
+    // Generic fallback for person's name
     if (!fullName && /^(?:name|নাম)[\s\:\-\.](.+)/i.test(line)) {
       const match = line.match(/^(?:name|নাম)[\s\:\-\.](.+)/i);
       if (match && match[1]) {
@@ -142,6 +164,11 @@ export function extractCardFields(text: string): OcrCardResult {
     }
   }
 
+  // Fallback fullName logic
+  if (!fullName) {
+    fullName = fullNameBn || fullNameEn;
+  }
+
   // 5. Gender
   let gender: string | undefined;
   if (/female|নারী|মহিলা/i.test(norm)) {
@@ -163,6 +190,8 @@ export function extractCardFields(text: string): OcrCardResult {
     documentNumber,
     documentType,
     fullName,
+    fullNameBn,
+    fullNameEn,
     firstName,
     lastName,
     dateOfBirth,

@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { supabase } from '@/integrations/supabase/client';
-import { resolveStaffFormNames } from '@/lib/nameFormatter';
+import { resolveStaffFormNames, hasBangla } from '@/lib/nameFormatter';
 
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 const formatAddress = (addr: AddressData) =>
@@ -361,13 +361,29 @@ const StaffApplicationPage = () => {
               {isVisible('staff_photo') && <PhotoUpload value={photoUrl} onChange={setPhotoUrl} folder="staff" />}
               <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label>{bn ? 'সম্পুর্ণ নাম (বাংলা)' : 'Full Name (Bangla)'} <span className="text-destructive">*</span></Label>
-                  <Input className={`bg-background mt-1 ${fieldErrors['first_name'] ? 'border-destructive' : ''}`} value={firstName} onChange={e => handleFieldChange('first_name', e.target.value, setFirstName)} />
+                  <Label>{bn ? 'সম্পূর্ণ নাম (বাংলা)' : 'Full Name (Bangla)'} <span className="text-destructive">*</span></Label>
+                  <Input
+                    className={`bg-background mt-1 ${fieldErrors['first_name'] ? 'border-destructive' : ''}`}
+                    value={firstName}
+                    onChange={e => handleFieldChange('first_name', e.target.value, setFirstName)}
+                    placeholder={bn ? 'যেমন: মাওলানা ফারহান হোসাইন' : 'Full name in Bangla'}
+                  />
                   <FieldError field="first_name" />
                 </div>
                 <div>
-                  <Label>{bn ? 'সম্পুর্ণ নাম (ইংরেজি)' : 'Full Name (English)'} <span className="text-destructive">*</span></Label>
-                  <Input className={`bg-background mt-1 ${fieldErrors['last_name'] ? 'border-destructive' : ''}`} value={lastName} onChange={e => handleFieldChange('last_name', e.target.value, setLastName)} />
+                  <Label>{bn ? 'সম্পূর্ণ নাম (ইংরেজি)' : 'Full Name (English)'} <span className="text-destructive">*</span></Label>
+                  <Input
+                    className={`bg-background mt-1 ${fieldErrors['last_name'] ? 'border-destructive' : ''}`}
+                    value={lastName}
+                    onChange={e => handleFieldChange('last_name', e.target.value, setLastName)}
+                    placeholder={bn ? 'যেমন: Maulana Farhan Hossain (ইংরেজি অক্ষরে)' : 'Full name in English'}
+                  />
+                  {hasBangla(lastName) && (
+                    <p className="text-xs text-amber-600 mt-1 flex items-center gap-1 font-medium">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      {bn ? 'ইংরেজি নাম ফিল্ডে বাংলা অক্ষর দেওয়া হয়েছে। দয়া করে ইংরেজিতে লিখুন।' : 'Bangla script detected in English name field. Please enter in English.'}
+                    </p>
+                  )}
                   <FieldError field="last_name" />
                 </div>
                 <PhoneInput label={bn ? 'মোবাইল' : 'Mobile'} required value={mobile} countryCode={mobileCode} onChange={(p, c) => { setMobile(p); setMobileCode(c); }} />
