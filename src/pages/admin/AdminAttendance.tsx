@@ -31,6 +31,7 @@ import {
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { useAuth } from '@/hooks/useAuth';
 import { isAdminRole } from '@/lib/roles';
+import { getStaffDisplayNames } from '@/lib/nameFormatter';
 
 import ClassQRPoster from '@/components/attendance/ClassQRPoster';
 import AttendanceDeviceManager from '@/components/attendance/AttendanceDeviceManager';
@@ -629,6 +630,36 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     },
   });
 
+  // Auto-heal duplicate attendance rules in DB
+  useEffect(() => {
+    if (!isAdmin || !rules.length) return;
+    const seen = new Map<string, string>();
+    const duplicateIds: string[] = [];
+
+    rules.forEach((r: any) => {
+      const countsAs = (r.config as any)?.counts_as || r.name.toLowerCase();
+      const key = `${r.entity_type}:${r.rule_type}:${countsAs}`;
+      if (seen.has(key)) {
+        duplicateIds.push(r.id);
+      } else {
+        seen.set(key, r.id);
+      }
+    });
+
+    if (duplicateIds.length > 0) {
+      (async () => {
+        try {
+          const { error } = await supabase.from('attendance_rules').delete().in('id', duplicateIds);
+          if (!error) {
+            queryClient.invalidateQueries({ queryKey: ['attendance-rules'] });
+          }
+        } catch (e) {
+          console.error('Failed to auto-heal duplicate attendance rules:', e);
+        }
+      })();
+    }
+  }, [rules, isAdmin, queryClient]);
+
   // Fetch residential duty times
   const { data: savedDutyTimes } = useQuery({
     queryKey: ['residential-duty-times'],
@@ -988,7 +1019,14 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   }, [attendance, entities, entityType, selectedDate, effectiveShift, staffSubTab, isDutyTab, dutyTimes]);
 
   const statusOptions = useMemo(() => {
-    return rules.filter((r: any) => r.entity_type === entityType && r.rule_type === 'status' && r.is_active);
+    const filtered = rules.filter((r: any) => r.entity_type === entityType && r.rule_type === 'status' && r.is_active);
+    const seen = new Set<string>();
+    return filtered.filter((r: any) => {
+      const key = (r.config as any)?.counts_as || r.name.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }, [rules, entityType]);
 
   // Save attendance mutation
@@ -1501,7 +1539,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
         const eAtt = (eveningAtt as any[]).find((a: any) => a.entity_id === entity.id);
         rows.push([
           String(idx + 1),
-          entity.name_bn,
+          getStaffDisplayNames(entity.name_bn, entity.name_en, bn).primary || entity.name_bn,
           entity.designation || '-',
           mAtt ? statusLabel(mAtt.status) : (bn ? 'চিহ্নিত হয়নি' : 'Unmarked'),
           mAtt?.check_in_time ? fmt(mAtt.check_in_time) : '-',
@@ -1555,7 +1593,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
         const dAtt = (dinnerAtt as any[]).find((a: any) => a.entity_id === entity.id);
         rows.push([
           String(idx + 1),
-          entity.name_bn,
+          getStaffDisplayNames(entity.name_bn, entity.name_en, bn).primary || entity.name_bn,
           entity.designation || '-',
           bAtt ? statusLabel(bAtt.status) : (bn ? 'চিহ্নিত হয়নি' : 'Unmarked'),
           lAtt ? statusLabel(lAtt.status) : (bn ? 'চিহ্নিত হয়নি' : 'Unmarked'),
@@ -1615,7 +1653,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       const att = getAtt(entity.id);
       const row: Record<string, any> = {
         sl: idx + 1,
-        name: entity.name_bn,
+        name: entityType === 'staff' ? (getStaffDisplayNames(entity.name_bn, entity.name_en, bn).primary || entity.name_bn) : entity.name_bn,
         designation: entityType === 'student' ? (entity.student_id || '-') : (entity.designation || '-'),
         status: att ? statusLabel(att.status) : (bn ? 'চিহ্নিত হয়নি' : 'Unmarked'),
       };
@@ -1682,7 +1720,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
         const eColor = eAtt?.status === 'present' ? '#16a34a' : eAtt?.status === 'absent' ? '#dc2626' : eAtt?.status === 'late' ? '#ca8a04' : '#6b7280';
         return `<tr>
           <td style="text-align:center">${idx + 1}</td>
-          <td>${entity.name_bn}</td>
+          <td>${getStaffDisplayNames(entity.name_bn, entity.name_en, bn).primary || entity.name_bn}</td>
           <td>${entity.designation || '-'}</td>
           <td style="color:${mColor};font-weight:600">${mAtt ? statusLabel(mAtt.status) : (bn ? '-' : '-')}</td>
           <td>${mAtt?.check_in_time ? fmt(mAtt.check_in_time) : '-'}</td>
@@ -1738,7 +1776,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
         const dColor = dAtt?.status === 'present' ? '#16a34a' : dAtt?.status === 'absent' ? '#dc2626' : '#6b7280';
         return `<tr>
           <td style="text-align:center">${idx + 1}</td>
-          <td>${entity.name_bn}</td>
+          <td>${getStaffDisplayNames(entity.name_bn, entity.name_en, bn).primary || entity.name_bn}</td>
           <td>${entity.designation || '-'}</td>
           <td style="color:${bColor};font-weight:600">${bAtt ? statusLabel(bAtt.status) : '-'}</td>
           <td style="color:${lColor};font-weight:600">${lAtt ? statusLabel(lAtt.status) : '-'}</td>
@@ -1790,7 +1828,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
         const statusColor = att?.status === 'present' ? '#16a34a' : att?.status === 'absent' ? '#dc2626' : att?.status === 'late' ? '#ca8a04' : '#6b7280';
         return `<tr>
           <td style="text-align:center">${idx + 1}</td>
-          <td>${entity.name_bn}</td>
+          <td>${entityType === 'staff' ? (getStaffDisplayNames(entity.name_bn, entity.name_en, bn).primary || entity.name_bn) : entity.name_bn}</td>
           <td>${entityType === 'student' ? (entity.student_id || '-') : (entity.designation || '-')}</td>
           <td style="color:${statusColor};font-weight:600">${status}</td>
           ${entityType === 'staff' ? `<td>${att?.check_in_time ? fmt(att.check_in_time) : '-'}</td><td>${att?.check_out_time ? fmt(att.check_out_time) : '-'}</td>` : ''}
@@ -2225,7 +2263,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-foreground text-sm truncate">
-                  {bn ? entity.name_bn || entity.name : entity.name || entity.name_bn}
+                  {getStaffDisplayNames(entity.name_bn, entity.name_en, bn).primary}
                 </span>
                 <Badge variant="outline" className={`text-[10px] px-1.5 py-0 font-normal ${
                   shift === 'morning' ? 'bg-amber-500/10 text-amber-700 border-amber-500/20' : 'bg-indigo-500/10 text-indigo-700 border-indigo-500/20'
@@ -2546,9 +2584,9 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                           {(() => {
                             const staffWithAttendance = allStaff.filter((s: any) => attendance.some((a: any) => a.entity_id === s.id));
                             return staffWithAttendance.map((s: any) => (
-                              <button key={s.id} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-destructive/10 transition-colors text-left" onClick={() => { setResetType('single_staff'); setResetStaffId(s.id); setResetStaffName(bn ? s.name_bn : (s.name_en || s.name_bn)); setShowResetMenu(false); setShowResetDialog(true); }}>
+                              <button key={s.id} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-destructive/10 transition-colors text-left" onClick={() => { setResetType('single_staff'); setResetStaffId(s.id); setResetStaffName(getStaffDisplayNames(s.name_bn, s.name_en, bn).primary || (bn ? s.name_bn : (s.name_en || s.name_bn))); setShowResetMenu(false); setShowResetDialog(true); }}>
                                 <div className="w-7 h-7 rounded-full bg-rose-500/10 flex items-center justify-center shrink-0"><UserCog className="h-3.5 w-3.5 text-rose-500" /></div>
-                                <span className="text-sm text-foreground truncate">{bn ? s.name_bn : (s.name_en || s.name_bn)}</span>
+                                <span className="text-sm text-foreground truncate">{getStaffDisplayNames(s.name_bn, s.name_en, bn).primary || (bn ? s.name_bn : (s.name_en || s.name_bn))}</span>
                               </button>
                             ));
                           })()}
@@ -3008,7 +3046,11 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
 
                     {/* Name & Info */}
                     <div className="min-w-0">
-                      <p className={`text-sm font-semibold text-foreground truncate ${entityType === 'staff' ? 'hover:text-primary' : ''}`}>{bn ? entity.name_bn : (entity.name_en || entity.name_bn)}</p>
+                      <p className={`text-sm font-semibold text-foreground truncate ${entityType === 'staff' ? 'hover:text-primary' : ''}`}>
+                        {entityType === 'staff'
+                          ? getStaffDisplayNames(entity.name_bn, entity.name_en, bn).primary
+                          : (bn ? entity.name_bn : (entity.name_en || entity.name_bn))}
+                      </p>
                       <p className="text-[11px] text-muted-foreground/70 mt-0.5">
                         {entityType === 'student'
                           ? (() => {
