@@ -30,6 +30,7 @@ import {
   History,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { getEndMonthFromStart } from '@/lib/salarySavingsHelper';
 
 export interface StaffSavingsGroup {
   staff_id: string;
@@ -143,13 +144,6 @@ export function SalarySavingsLedgerDialog({
       }
       if (!monthYear || !/^\d{4}-\d{2}$/.test(monthYear)) {
         throw new Error(bn ? 'সঠিক মাস নির্বাচন করুন (YYYY-MM)' : 'Invalid month format');
-      }
-      if (joiningMonth && monthYear < joiningMonth) {
-        throw new Error(
-          bn
-            ? `যোগদানের মাস (${formatMonthLabel(joiningMonth, true)})-এর পূর্ববর্তী মাসের ডিপোজিট যুক্ত করা যাবে না`
-            : `Cannot add deposit prior to joining month (${formatMonthLabel(joiningMonth, false)})`
-        );
       }
       if (!amount || amount <= 0) {
         throw new Error(bn ? 'সঠিক পরিমাণ দিন' : 'Enter a valid amount');
@@ -272,10 +266,10 @@ export function SalarySavingsLedgerDialog({
 
   const ledgerEntries = group?.ledgerEntries || [];
   const rawStartMonth = group?.startMonth || currentMonthYear;
-  // If staff has a joining month, savings start month cannot be earlier than joining month
-  const startMonth = joiningMonth && rawStartMonth < joiningMonth ? joiningMonth : rawStartMonth;
+  const startMonth = rawStartMonth;
   const durationMonths = Math.max(1, group?.durationMonths || 12);
   const monthlyAmount = group?.monthlyAmount || 0;
+  const endMonth = getEndMonthFromStart(startMonth, durationMonths);
 
   // Map existing ledger entries by month_year
   const ledgerMap = useMemo(() => {
@@ -291,23 +285,20 @@ export function SalarySavingsLedgerDialog({
     // Generate duration range
     const baseRange = generateMonthRange(startMonth, durationMonths);
 
-    // Strictly exclude any months earlier than joiningMonth from baseRange
-    const validBaseRange = joiningMonth ? baseRange.filter((m) => m >= joiningMonth) : baseRange;
-
     // Also include any ledger entry months that might exist historically
-    const allMonthsSet = new Set<string>(validBaseRange);
+    const allMonthsSet = new Set<string>(baseRange);
     for (const l of ledgerEntries) {
       if (l.month_year) allMonthsSet.add(l.month_year);
     }
 
     // Sort chronologically ascending
     return Array.from(allMonthsSet).sort((a, b) => (a < b ? -1 : 1));
-  }, [startMonth, durationMonths, ledgerEntries, joiningMonth]);
+  }, [startMonth, durationMonths, ledgerEntries]);
 
-  // Missing months: months in timeline that have no ledger entry (strictly >= joiningMonth)
+  // Missing months: months in timeline that have no ledger entry
   const missingMonths = useMemo(() => {
-    return timelineMonths.filter((m) => (!joiningMonth || m >= joiningMonth) && !ledgerMap.has(m));
-  }, [timelineMonths, ledgerMap, joiningMonth]);
+    return timelineMonths.filter((m) => !ledgerMap.has(m));
+  }, [timelineMonths, ledgerMap]);
 
   const totalCalculated = useMemo(() => {
     return ledgerEntries.reduce((sum, l) => sum + Number(l.amount || 0), 0);
@@ -323,16 +314,7 @@ export function SalarySavingsLedgerDialog({
   const remainingAmount = Math.max(0, targetTotal - totalCalculated);
 
   const openAddForMonth = (m: string) => {
-    if (joiningMonth && m < joiningMonth) {
-      toast.error(
-        bn
-          ? `যোগদানের মাস (${formatMonthLabel(joiningMonth, true)})-এর পূর্ববর্তী মাস নির্বাচন করা যাবে না`
-          : `Cannot select month prior to joining month`
-      );
-      setAddMonthYear(joiningMonth);
-    } else {
-      setAddMonthYear(m);
-    }
+    setAddMonthYear(m);
     setAddAmount(group.monthlyAmount || 1000);
     setIsAddFormOpen(true);
   };
@@ -366,7 +348,7 @@ export function SalarySavingsLedgerDialog({
                   )}
                 </DialogTitle>
                 <p className="text-xs text-blue-200/80">
-                  {designation} • {bn ? 'বেতন ডিপোজিট লেজার ও মাসভিত্তিক হিসাব' : 'Salary Deposit History'}
+                  {designation} • {bn ? `ডিপোজিট মেয়াদ: ${formatMonthLabel(startMonth, true)} হতে ${formatMonthLabel(endMonth, true)} (${toBnDigits(durationMonths)} মাস)` : `Deposit Period: ${formatMonthLabel(startMonth, false)} to ${formatMonthLabel(endMonth, false)} (${durationMonths} mo)`}
                 </p>
               </div>
             </div>
@@ -375,8 +357,7 @@ export function SalarySavingsLedgerDialog({
               size="sm"
               className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs gap-1.5 font-semibold h-8 shadow-sm"
               onClick={() => {
-                const fallbackMonth = (joiningMonth && currentMonthYear < joiningMonth) ? joiningMonth : currentMonthYear;
-                const nextMissing = missingMonths[0] || fallbackMonth;
+                const nextMissing = missingMonths[0] || startMonth || currentMonthYear;
                 openAddForMonth(nextMissing);
               }}
             >
@@ -446,21 +427,10 @@ export function SalarySavingsLedgerDialog({
                   </div>
                   <Input
                     type="month"
-                    min={joiningMonth || undefined}
+                    min="2020-01"
+                    max="2040-12"
                     value={addMonthYear}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (joiningMonth && val && val < joiningMonth) {
-                        toast.error(
-                          bn
-                            ? `যোগদানের মাস (${formatMonthLabel(joiningMonth, true)})-এর পূর্ববর্তী মাসের ডিপোজিট যুক্ত করা যাবে না`
-                            : `Cannot add deposit for a month earlier than joining month`
-                        );
-                        setAddMonthYear(joiningMonth);
-                        return;
-                      }
-                      setAddMonthYear(val);
-                    }}
+                    onChange={(e) => setAddMonthYear(e.target.value)}
                     className="h-9 text-xs mt-1 bg-white dark:bg-card"
                   />
                   {addMonthYear && (
@@ -471,8 +441,8 @@ export function SalarySavingsLedgerDialog({
                   {joiningMonth && (
                     <p className="text-[10px] text-muted-foreground mt-0.5">
                       {bn
-                        ? `* যোগদানের মাস (${formatMonthLabel(joiningMonth, true)}) বা পরবর্তী যেকোনো মাস প্রযোজ্য`
-                        : `* Starts from joining month (${formatMonthLabel(joiningMonth, false)}) or later`}
+                        ? `ℹ️ যোগদানের মাস: ${formatMonthLabel(joiningMonth, true)}`
+                        : `ℹ️ Joining month: ${formatMonthLabel(joiningMonth, false)}`}
                     </p>
                   )}
                 </div>
@@ -504,8 +474,7 @@ export function SalarySavingsLedgerDialog({
                   disabled={
                     addDepositMutation.isPending ||
                     !addMonthYear ||
-                    addAmount <= 0 ||
-                    Boolean(joiningMonth && addMonthYear < joiningMonth)
+                    addAmount <= 0
                   }
                 >
                   {addDepositMutation.isPending ? (
