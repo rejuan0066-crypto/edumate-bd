@@ -57,7 +57,7 @@ import {
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useAppTimezone } from '@/hooks/useAppTimezone';
 import { todayIsoInTz, addDaysIsoInTz, toMonthYearInTz } from '@/lib/timezone';
-import { resolveThursdayHalfCategories, isThursdayDate, isSpecialDayDate } from '@/lib/thursdayHalfDay';
+import { resolveThursdayHalfCategories, isThursdayDate, isSpecialDayDate, DAY_OF_WEEK_OPTIONS, getSpecialDayDeductionRateMode } from '@/lib/thursdayHalfDay';
 import { attendanceRecordsForDate, MISSING_ATTENDANCE_CONFLICT_OPTIONS } from '@/lib/attendanceRecords';
 
 const STATUS_ICONS: Record<string, any> = {
@@ -235,13 +235,20 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   };
   const [categoryShiftTimes, setCategoryShiftTimes] = useState<Record<string, { start: string; end: string }>>(defaultCategoryTimes);
 
-  // Department shift configurations: start, end, and individual effective date ranges
+  // Department shift configurations: start, end, individual effective date ranges, and optional special-day schedule
   interface DeptShiftConfig {
     start: string;
     end: string;
     effectiveFrom: string;
     effectiveTo: string;
     isOngoing: boolean;
+    specialDay?: {
+      enabled: boolean;
+      days: number[];
+      start?: string;
+      end?: string;
+      rateMode?: 'regular_duty_rate' | 'special_day_rate';
+    };
   }
   const [deptShiftConfigs, setDeptShiftConfigs] = useState<Record<string, DeptShiftConfig>>({});
   const [specialShiftDialogOpen, setSpecialShiftDialogOpen] = useState(false);
@@ -345,12 +352,27 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
 
     const base = categoryShiftTimes[catKey] || defaultCategoryTimes[catKey] || { start: '08:00', end: '17:00' };
 
+    const deptSpecial = (base as any)?.specialDay || (catKey === 'teacher' && (thursdayHalfSetting as any)?.enabled ? {
+      enabled: true,
+      days: (thursdayHalfSetting as any)?.days || [4],
+      start: (thursdayHalfSetting as any)?.start_time || '',
+      end: (thursdayHalfSetting as any)?.end_time || '14:00',
+      rateMode: (thursdayHalfSetting as any)?.deduction_rate_mode || 'regular_duty_rate',
+    } : {
+      enabled: false,
+      days: [4],
+      start: '',
+      end: '14:00',
+      rateMode: 'regular_duty_rate',
+    });
+
     return {
       start: latest?.start_time || base.start,
       end: latest?.end_time || base.end,
       effectiveFrom: latest?.effective_from || todayIsoInTz(appTz),
       effectiveTo: latest?.effective_to || '',
       isOngoing: latest ? !latest.effective_to : true,
+      specialDay: deptSpecial,
     };
   };
 
@@ -1046,10 +1068,14 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       const oldTimes = (savedCategoryTimes as Record<string, { start: string; end: string }>) || {};
 
       // ===== Save settings (strip transient warnings field) =====
-      const cleanTimes: Record<string, { start: string; end: string }> = {};
+      const cleanTimes: Record<string, any> = {};
       for (const [k, v] of Object.entries(deptPayloads)) {
         if (k === '__overnightWarnings') continue;
-        cleanTimes[k] = { start: (v as any).start, end: (v as any).end };
+        cleanTimes[k] = {
+          start: (v as any).start,
+          end: (v as any).end,
+          specialDay: (v as any).specialDay || null,
+        };
       }
       const { error } = await supabase.from('website_settings').upsert(
         { key: 'category_shift_times', value: cleanTimes, updated_at: new Date().toISOString() },
@@ -1166,11 +1192,27 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   // NOTE: If a staff has an explicit personal duty time or date-ranged special shift, custom duty MUST NOT be overridden!
   const applyThursdayWindow = (entity: any, base: { start: string; end: string }, isCustomDuty = false) => {
     if (isCustomDuty || (entity?.duty_start_time && entity?.duty_end_time)) return base;
+    if (entity?.type === 'student') return base;
+    const catKey = entity?.staff_category;
+    if (!catKey) return base;
+
+    // Check department-specific special day setting first
+    const deptSpecial = (categoryShiftTimes[catKey] as any)?.specialDay;
+    if (deptSpecial && deptSpecial.enabled) {
+      if (isSpecialDayDate(selectedDate, { days: deptSpecial.days })) {
+        return {
+          start: deptSpecial.start || base.start,
+          end: deptSpecial.end || '14:00',
+        };
+      }
+    }
+
+    // Fallback to legacy/global setting
     const enabled = (thursdayHalfSetting as any)?.enabled === true;
-    if (!enabled || entity?.type === 'student') return base;
+    if (!enabled) return base;
     if (!isSpecialDayDate(selectedDate, thursdayHalfSetting as any)) return base;
     const cats = resolveThursdayHalfCategories(thursdayHalfSetting as any);
-    if (!entity?.staff_category || !cats.includes(entity.staff_category)) return base;
+    if (!cats.includes(catKey)) return base;
     return {
       start: (thursdayHalfSetting as any)?.start_time || base.start,
       end: (thursdayHalfSetting as any)?.end_time || '14:00',
@@ -2338,6 +2380,117 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                             />
                           </div>
                         </div>
+                      </div>
+
+                      {/* Day-of-Week Specific Shift for this Department */}
+                      <div className="rounded-lg border border-border/50 bg-muted/20 p-2.5 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="font-semibold text-foreground text-[11px] flex items-center gap-1">
+                              <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-500/20" />
+                              {bn ? 'বারভিত্তিক বিশেষ ডিউটি' : 'Day-Specific Duty'}
+                            </span>
+                            <p className="text-[9px] text-muted-foreground">
+                              {bn ? 'এই ডিপার্টমেন্টের জন্য নির্দিষ্ট বারে আলাদা সময়সূচি ও ফুল ডে গণ্য' : 'Day-specific hours & full-day counting'}
+                            </p>
+                          </div>
+                          <Switch
+                            checked={cfg.specialDay?.enabled === true}
+                            onCheckedChange={(c) => {
+                              updateDeptConfig(cat.key, {
+                                specialDay: {
+                                  enabled: c,
+                                  days: cfg.specialDay?.days || [4],
+                                  start: cfg.specialDay?.start ?? '',
+                                  end: cfg.specialDay?.end || '14:00',
+                                  rateMode: cfg.specialDay?.rateMode || 'regular_duty_rate',
+                                },
+                              });
+                            }}
+                          />
+                        </div>
+
+                        {cfg.specialDay?.enabled && (
+                          <div className="space-y-2 pt-1 border-t border-border/40">
+                            <div>
+                              <Label className="text-[10px] text-muted-foreground font-medium">{bn ? 'প্রযোজ্য বার নির্বাচন' : 'Select Days of Week'}</Label>
+                              <div className="mt-1 flex flex-wrap gap-1">
+                                {DAY_OF_WEEK_OPTIONS.map((dayOpt) => {
+                                  const curDays = cfg.specialDay?.days || [4];
+                                  const isSel = curDays.includes(dayOpt.value);
+                                  return (
+                                    <label
+                                      key={dayOpt.value}
+                                      className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] cursor-pointer border transition-colors ${
+                                        isSel
+                                          ? 'bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300 font-medium'
+                                          : 'bg-background hover:bg-muted text-muted-foreground border-border/40'
+                                      }`}
+                                    >
+                                      <Checkbox
+                                        checked={isSel}
+                                        onCheckedChange={(v) => {
+                                          let next = v ? Array.from(new Set([...curDays, dayOpt.value])) : curDays.filter(d => d !== dayOpt.value);
+                                          if (next.length === 0) next = [4];
+                                          updateDeptConfig(cat.key, {
+                                            specialDay: { ...cfg.specialDay!, days: next },
+                                          });
+                                        }}
+                                      />
+                                      <span>{bn ? dayOpt.shortBn : dayOpt.en.slice(0, 3)}</span>
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <Label className="text-[9px] text-muted-foreground">{bn ? 'বিশেষ শুরু' : 'Special Start'}</Label>
+                                <TimePicker
+                                  className="h-7 text-xs w-full"
+                                  displayFormat={timeFormat}
+                                  value={cfg.specialDay?.start || ''}
+                                  placeholder={bn ? 'ডিফল্ট শুরু' : 'Default start'}
+                                  onChange={(v) => updateDeptConfig(cat.key, { specialDay: { ...cfg.specialDay!, start: v } })}
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-[9px] text-muted-foreground">{bn ? 'বিশেষ শেষ (ফুল দিন)' : 'Special End (Full Day)'}</Label>
+                                <TimePicker
+                                  className="h-7 text-xs w-full"
+                                  displayFormat={timeFormat}
+                                  value={cfg.specialDay?.end || '14:00'}
+                                  onChange={(v) => updateDeptConfig(cat.key, { specialDay: { ...cfg.specialDay!, end: v || '14:00' } })}
+                                />
+                              </div>
+                            </div>
+
+                            <div className="space-y-1 pt-1 border-t border-border/30">
+                              <Label className="text-[9px] text-muted-foreground font-semibold">{bn ? 'মিনিট কর্তন রেট নির্ধারণ' : 'Minute Deduction Rate Mode'}</Label>
+                              <div className="space-y-1">
+                                <label className="flex items-center gap-1.5 text-[10px] cursor-pointer">
+                                  <input
+                                    type="radio"
+                                    name={`rate_mode_${cat.key}`}
+                                    checked={cfg.specialDay?.rateMode !== 'special_day_rate'}
+                                    onChange={() => updateDeptConfig(cat.key, { specialDay: { ...cfg.specialDay!, rateMode: 'regular_duty_rate' } })}
+                                  />
+                                  <span>{bn ? 'নিয়মিত ডিউটি রেটে কর্তন (সুপারিশকৃত)' : 'Regular duty rate (Recommended)'}</span>
+                                </label>
+                                <label className="flex items-center gap-1.5 text-[10px] cursor-pointer">
+                                  <input
+                                    type="radio"
+                                    name={`rate_mode_${cat.key}`}
+                                    checked={cfg.specialDay?.rateMode === 'special_day_rate'}
+                                    onChange={() => updateDeptConfig(cat.key, { specialDay: { ...cfg.specialDay!, rateMode: 'special_day_rate' } })}
+                                  />
+                                  <span>{bn ? 'বিশেষ দিনের রেটে কর্তন' : 'Special day rate'}</span>
+                                </label>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
