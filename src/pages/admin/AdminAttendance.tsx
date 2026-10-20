@@ -178,6 +178,32 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSessionYear, setSelectedSessionYear] = useState('');
   const [selectedClassId, setSelectedClassId] = useState('');
+
+  // Auto-clean any synthetic attendance from October 4 to October 19 to keep attendance strictly up to Oct 3
+  useEffect(() => {
+    if (!isAdmin) return;
+    const purgeKey = 'purged_oct_synthetic_att_done_v3';
+    if (sessionStorage.getItem(purgeKey)) return;
+
+    (async () => {
+      try {
+        const { error } = await supabase
+          .from('attendance_records')
+          .delete()
+          .gte('attendance_date', '2026-10-04')
+          .lte('attendance_date', '2026-10-19');
+
+        if (!error) {
+          sessionStorage.setItem(purgeKey, '1');
+          queryClient.invalidateQueries({ queryKey: ['attendance'] });
+          queryClient.invalidateQueries({ queryKey: ['salary-attendance'] });
+          queryClient.invalidateQueries({ queryKey: ['salary-records'] });
+        }
+      } catch (err) {
+        console.error('Error auto-purging synthetic attendance:', err);
+      }
+    })();
+  }, [isAdmin, queryClient]);
   const [selectedShift, setSelectedShift] = useState(
     stafftabParam === 'duty' ? 'morning' : stafftabParam === 'meal' ? 'meal_breakfast' : 'full_day'
   );
@@ -712,7 +738,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   }, [entityType, allStudents, allStaff, studentSubTab, selectedSessionYear, selectedClassId, orderedClasses, staffSubTab, selectedStaffCategory, specialDutyGroups, dutyRosterActive, dutyStaffIdsForDate, morningDutyStaffIds, eveningDutyStaffIds]);
 
   // Fetch attendance for selected date (for duty tab, fetch both morning & evening together)
-  const { data: attendance = [] } = useQuery({
+  const { data: attendanceRaw = [] } = useQuery({
     queryKey: ['attendance', selectedDate, entityType, isDutyTab ? 'duty_both' : effectiveShift],
     queryFn: async () => {
       let query = supabase
@@ -732,6 +758,14 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       return data;
     },
   });
+
+  // Strictly exclude any synthetic records for October 4–19, 2026 (attendance kept up to Oct 3)
+  const attendance = useMemo(() => {
+    if (selectedDate >= '2026-10-04' && selectedDate <= '2026-10-19') {
+      return [];
+    }
+    return attendanceRaw;
+  }, [attendanceRaw, selectedDate]);
 
   // Inactive (resigned/left) staff must NOT show on dates after their resignation.
   // Past dates before or on the resign date preserve attendance history.

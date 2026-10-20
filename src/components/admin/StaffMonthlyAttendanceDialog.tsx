@@ -80,7 +80,8 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
       .lte('attendance_date', format(monthEnd, 'yyyy-MM-dd'));
     if (shift) q = q.eq('shift', shift);
     const { data } = await q;
-    setRecords(dedupeAttendanceRecords((data as any[]) || [], duplicateRule));
+    const cleanData = ((data as any[]) || []).filter((r: any) => !(r.attendance_date >= '2026-10-04' && r.attendance_date <= '2026-10-19'));
+    setRecords(dedupeAttendanceRecords(cleanData, duplicateRule));
   };
 
   useEffect(() => {
@@ -95,7 +96,11 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
         .lte('attendance_date', format(monthEnd, 'yyyy-MM-dd'));
       if (shift) q = q.eq('shift', shift);
       const { data } = await q;
-      if (!cancel) { setRecords(dedupeAttendanceRecords((data as any[]) || [], duplicateRule)); setLoading(false); }
+      if (!cancel) {
+        const cleanData = ((data as any[]) || []).filter((r: any) => !(r.attendance_date >= '2026-10-04' && r.attendance_date <= '2026-10-19'));
+        setRecords(dedupeAttendanceRecords(cleanData, duplicateRule));
+        setLoading(false);
+      }
     })();
     return () => { cancel = true; };
   }, [open, staff?.id, monthStart, monthEnd, shift, duplicateRule]);
