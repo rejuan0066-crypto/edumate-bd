@@ -1700,13 +1700,18 @@ const AdminSalary = () => {
         return;
       }
 
-      const baseDayRaw = r.status === 'half_day' ? dailyRate / 2 : dailyRate;
       if (r.status === 'half_day') {
+        // অর্ধদিন (Half Day): দৈনিক বেতনের ৫০% প্রাপ্য এবং ৫০% কর্তন।
+        // একই দিনের জন্য আলাদা করে লেইট বা আগাম বের হওয়ার মিনিট কর্তন দ্বৈত (ডাবল) হবে না।
         entry.dailyEarning = Math.round(dailyRate / 2);
         entry.deduction = Math.round(dailyRate / 2);
-      } else {
-        entry.dailyEarning = Math.round(dailyRate);
+        totalDailyEarnings += dailyRate / 2;
+        dailyBreakdown.push(entry);
+        return;
       }
+
+      const baseDayRaw = dailyRate;
+      entry.dailyEarning = Math.round(dailyRate);
 
 
       // Map a clock time (minutes from midnight) onto the duty window timeline.
