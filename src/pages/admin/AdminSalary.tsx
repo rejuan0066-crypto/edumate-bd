@@ -47,7 +47,7 @@ import {
   type DutyDay,
   type DutyAttendance,
 } from '@/lib/dutyShiftDeduction';
-import { shouldApplyThursdayHalfDay, effectiveDutyEndForThursday, parseHalfDayEndMinutes, parseClockMinutes } from '@/lib/thursdayHalfDay';
+import { shouldApplyThursdayHalfDay, effectiveDutyEndForThursday, parseHalfDayEndMinutes, parseClockMinutes, DAY_OF_WEEK_OPTIONS, resolveSpecialDays, getSpecialDayDeductionRateMode } from '@/lib/thursdayHalfDay';
 import { resolveStaffShift, fetchSpecialShifts, fetchDepartmentSchedules } from '@/lib/shiftResolution';
 import { downloadSlipAsPdf, downloadSheetAsPdf, printSalarySlipHtml, shareSlipPdf, viewSlipPdfInNewTab, isMobileOrPwa } from '@/lib/salarySlipPdf';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -1750,7 +1750,13 @@ const AdminSalary = () => {
         startMinutes: parseClockMinutes((thuHalfSetting as any)?.start_time) ?? undefined,
         endMinutes: parseHalfDayEndMinutes((thuHalfSetting as any)?.end_time),
       });
-      const effPerMinuteRate = effScheduledMinutes > 0 ? dailyRate / effScheduledMinutes : perMinuteRate;
+      // মিনিট কর্তনের হার নির্ধারণ:
+      // সেটিংসে 'special_day_rate' সিলেক্ট থাকলে বিশেষ দিনের মোট মিনিট দিয়ে ভাগ হবে (dailyRate / effScheduledMinutes)।
+      // অন্যথায় (ডিফল্ট) ডিপার্টমেন্টের নিয়মিত ডিউটি রেটে (perMinuteRate) কর্তন হবে।
+      const rateMode = getSpecialDayDeductionRateMode(thuHalfSetting);
+      const effPerMinuteRate = (applyThuHalf && rateMode === 'special_day_rate' && effScheduledMinutes > 0)
+        ? dailyRate / effScheduledMinutes
+        : perMinuteRate;
 
       const checkIn = r.check_in_time ? mapToTimeline(timeToMinutes(r.check_in_time)) : effDutyStart;
       let checkOutRaw = r.check_out_time ? timeToMinutes(r.check_out_time) : effDutyEnd;
@@ -5391,13 +5397,12 @@ const AdminSalary = () => {
                   />
                 </div>
 
-                <div className="p-3 border rounded-lg space-y-2">
+                <div className="p-3 border rounded-lg space-y-3">
                   <div className="flex items-center justify-between">
-
                     <div>
-                      <Label>{bn ? 'বৃহস্পতিবার অর্ধদিন' : 'Thursday Half-Day'}</Label>
-                      <p className="text-[10px] text-muted-foreground">
-                        {bn ? 'নির্বাচিত বিভাগের জন্য বৃহস্পতিবার ২টা পর্যন্ত থাকলে পূর্ণ দিন গণ্য হবে' : 'For the selected department: staying until 2:00 PM on Thursday counts as a full day'}
+                      <Label className="text-sm font-semibold">{bn ? 'বারভিত্তিক বিশেষ ডিউটি ও কর্তন রেট' : 'Day-Specific Duty & Deduction Rate'}</Label>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {bn ? 'নির্বাচিত বারের জন্য নির্ধারিত শেষ সময় পর্যন্ত থাকলে পূর্ণ দিন গণ্য হবে এবং কর্তন রেট কনফিগার করা যাবে' : 'For configured days: staying until end time counts as full day; customizable deduction rate'}
                       </p>
                     </div>
                     <Switch
@@ -5405,9 +5410,45 @@ const AdminSalary = () => {
                       onCheckedChange={v => saveSettingMutation.mutate({ key: 'thursday_half_day_education', value: { ...getSetting('thursday_half_day_education'), enabled: v } })}
                     />
                   </div>
+
                   <div>
-                    <Label className="text-[11px]">{bn ? 'কোন কোন বিভাগে প্রযোজ্য' : 'Applies to departments'}</Label>
-                    <div className="mt-1 grid grid-cols-2 gap-1.5 rounded-lg border p-2">
+                    <Label className="text-[11px] font-medium">{bn ? 'কোন কোন বারে প্রযোজ্য' : 'Applies on Days of Week'}</Label>
+                    <div className="mt-1 flex flex-wrap gap-1.5 p-2 rounded-lg border bg-muted/20">
+                      {(() => {
+                        const s = getSetting('thursday_half_day_education') || {};
+                        const selectedDays = resolveSpecialDays(s);
+                        return DAY_OF_WEEK_OPTIONS.map((dayOpt) => {
+                          const isChecked = selectedDays.includes(dayOpt.value);
+                          return (
+                            <label
+                              key={dayOpt.value}
+                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs cursor-pointer border transition-colors ${
+                                isChecked
+                                  ? 'bg-primary/10 border-primary text-primary font-medium shadow-xs'
+                                  : 'bg-card hover:bg-muted border-border/60 text-muted-foreground'
+                              }`}
+                            >
+                              <Checkbox
+                                checked={isChecked}
+                                onCheckedChange={(v) => {
+                                  let nextDays = v
+                                    ? Array.from(new Set([...selectedDays, dayOpt.value]))
+                                    : selectedDays.filter(d => d !== dayOpt.value);
+                                  if (nextDays.length === 0) nextDays = [4]; // fallback to Thursday
+                                  saveSettingMutation.mutate({ key: 'thursday_half_day_education', value: { ...s, days: nextDays } });
+                                }}
+                              />
+                              <span>{bn ? dayOpt.shortBn : dayOpt.en.slice(0, 3)}</span>
+                            </label>
+                          );
+                        });
+                      })()}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-[11px] font-medium">{bn ? 'কোন কোন বিভাগে প্রযোজ্য' : 'Applies to departments'}</Label>
+                    <div className="mt-1 grid grid-cols-2 gap-1.5 rounded-lg border p-2 bg-muted/20">
                       {(() => {
                         const s = getSetting('thursday_half_day_education') || {};
                         const selected: string[] = Array.isArray(s.categories) && s.categories.length
@@ -5433,29 +5474,80 @@ const AdminSalary = () => {
                       })()}
                     </div>
                   </div>
-                   <div>
-                     <Label className="text-[11px]">{bn ? 'শুরুর সময় (বৃহস্পতিবার চেক-ইন)' : 'Start time (Thursday check-in)'}</Label>
-                     <TimePicker
-                       className="h-8 text-sm mt-1"
-                       value={getSetting('thursday_half_day_education')?.start_time || ''}
-                       placeholder={bn ? 'সময় নির্বাচন' : 'Select time'}
-                       onChange={value => saveSettingMutation.mutate({ key: 'thursday_half_day_education', value: { ...getSetting('thursday_half_day_education'), start_time: value || null } })}
-                     />
-                     <p className="text-[10px] text-muted-foreground mt-1">
-                       {bn ? 'খালি রাখলে স্বাভাবিক ডিউটি শুরুর সময় ধরা হবে।' : 'Leave empty to use the normal duty-start time.'}
-                     </p>
-                   </div>
+
+                  <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <Label className="text-[11px]">{bn ? 'শেষ সময় (এই সময় পর্যন্ত পূর্ণ দিন)' : 'End time (full day until this)'}</Label>
+                      <Label className="text-[11px] font-medium">{bn ? 'শুরুর সময় (চেক-ইন)' : 'Start time (Check-in)'}</Label>
+                      <TimePicker
+                        className="h-8 text-sm mt-1"
+                        value={getSetting('thursday_half_day_education')?.start_time || ''}
+                        placeholder={bn ? 'ডিফল্ট শুরু' : 'Default start'}
+                        onChange={value => saveSettingMutation.mutate({ key: 'thursday_half_day_education', value: { ...getSetting('thursday_half_day_education'), start_time: value || null } })}
+                      />
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        {bn ? 'খালি রাখলে সাধারণ সময় ধরা হবে।' : 'Empty = normal duty start.'}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-[11px] font-medium">{bn ? 'শেষ সময় (পূর্ণ দিন গণ্য)' : 'End time (Full Day)'}</Label>
                       <TimePicker
                         className="h-8 text-sm mt-1"
                         value={getSetting('thursday_half_day_education')?.end_time || '14:00'}
                         onChange={value => saveSettingMutation.mutate({ key: 'thursday_half_day_education', value: { ...getSetting('thursday_half_day_education'), end_time: value || '14:00' } })}
                       />
-                     <p className="text-[10px] text-muted-foreground mt-1">
-                       {bn ? 'বৃহস্পতিবার শুরু থেকে এই সময় পর্যন্ত ধরে লেইট/আগাম মিনিট কর্তন হবে।' : 'Late/early minutes are counted against duty-start to this time on Thursdays.'}
-                     </p>
-                   </div>
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        {bn ? 'এই সময় পর্যন্ত থাকলে পূর্ণ দিন।' : 'Staying until this counts as full day.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t space-y-2">
+                    <Label className="text-[11px] font-semibold text-foreground">
+                      {bn ? 'বিশেষ দিনে বিলম্ব/আগাম বের হওয়ার মিনিট কর্তনের হার' : 'Minute Deduction Rate on Special Days'}
+                    </Label>
+                    <div className="space-y-1.5">
+                      {(() => {
+                        const s = getSetting('thursday_half_day_education') || {};
+                        const currentMode = getSpecialDayDeductionRateMode(s);
+                        return (
+                          <>
+                            <label className={`flex items-start gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${currentMode === 'regular_duty_rate' ? 'bg-primary/5 border-primary/50' : 'bg-card hover:bg-muted/40 border-border/60'}`}>
+                              <input
+                                type="radio"
+                                name="deduction_rate_mode"
+                                value="regular_duty_rate"
+                                checked={currentMode === 'regular_duty_rate'}
+                                onChange={() => saveSettingMutation.mutate({ key: 'thursday_half_day_education', value: { ...s, deduction_rate_mode: 'regular_duty_rate' } })}
+                                className="mt-0.5 cursor-pointer"
+                              />
+                              <div className="text-xs">
+                                <span className="font-semibold text-foreground">{bn ? 'ডিপার্টমেন্টের নিয়মিত ডিউটি রেটে কর্তন (সুপারিশকৃত)' : 'Regular Department Duty Rate (Recommended)'}</span>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                  {bn ? 'বিশেষ দিনেও সাধারণ দিনের প্রতি মিনিট রেট (যেমন ১.১১ ৳/মি) অনুযায়ী কর্তন হবে।' : 'Deducts using regular daily per-minute rate (e.g. 1.11 ৳/min).'}
+                                </p>
+                              </div>
+                            </label>
+                            <label className={`flex items-start gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${currentMode === 'special_day_rate' ? 'bg-primary/5 border-primary/50' : 'bg-card hover:bg-muted/40 border-border/60'}`}>
+                              <input
+                                type="radio"
+                                name="deduction_rate_mode"
+                                value="special_day_rate"
+                                checked={currentMode === 'special_day_rate'}
+                                onChange={() => saveSettingMutation.mutate({ key: 'thursday_half_day_education', value: { ...s, deduction_rate_mode: 'special_day_rate' } })}
+                                className="mt-0.5 cursor-pointer"
+                              />
+                              <div className="text-xs">
+                                <span className="font-semibold text-foreground">{bn ? 'বিশেষ দিনের শিফট রেটে কর্তন' : 'Special Day Shift Rate'}</span>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                  {bn ? 'বিশেষ দিনের মোট ডিউটি মিনিটের ভিত্তিতে (যেমন ৪.৫ ঘণ্টার দিনে ১.৪৮ ৳/মি) কর্তন হবে।' : 'Deducts using rate calculated from special day minutes (e.g. 1.48 ৳/min).'}
+                                </p>
+                              </div>
+                            </label>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="p-3 border rounded-lg space-y-2">

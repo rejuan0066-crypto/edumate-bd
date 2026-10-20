@@ -20,6 +20,10 @@ export interface ThursdayHalfDaySetting {
   start_time?: string | null;
   /** Half-day check-out clock, "HH:MM" (default "14:00"). */
   end_time?: string | null;
+  /** Days of week (0 = Sunday, 1 = Monday, 2 = Tuesday, 3 = Wednesday, 4 = Thursday, 5 = Friday, 6 = Saturday). Default: [4] */
+  days?: number[] | null;
+  /** Deduction rate mode: 'regular_duty_rate' (default) or 'special_day_rate' */
+  deduction_rate_mode?: 'regular_duty_rate' | 'special_day_rate' | null;
 }
 
 /** Parse an "HH:MM" clock string to minutes-from-midnight. Returns null when invalid. */
@@ -48,6 +52,41 @@ export function parseHalfDayEndMinutes(endTime?: string | null): number {
 
 /** JS getDay() Thursday index. */
 export const THURSDAY = 4;
+
+/** Day of week options (0 = Sunday .. 6 = Saturday) */
+export const DAY_OF_WEEK_OPTIONS = [
+  { value: 6, bn: 'শনিবার', en: 'Saturday', shortBn: 'শনি' },
+  { value: 0, bn: 'রবিবার', en: 'Sunday', shortBn: 'রবি' },
+  { value: 1, bn: 'সোমবার', en: 'Monday', shortBn: 'সোম' },
+  { value: 2, bn: 'মঙ্গলবার', en: 'Tuesday', shortBn: 'মঙ্গল' },
+  { value: 3, bn: 'বুধবার', en: 'Wednesday', shortBn: 'বুধ' },
+  { value: 4, bn: 'বৃহস্পতিবার', en: 'Thursday', shortBn: 'বৃহঃ' },
+  { value: 5, bn: 'শুক্রবার', en: 'Friday', shortBn: 'শুক্র' },
+];
+
+/** Resolve configured days of week (default: [4] for Thursday). */
+export function resolveSpecialDays(setting?: ThursdayHalfDaySetting | null): number[] {
+  if (Array.isArray(setting?.days) && setting.days.length > 0) {
+    return setting.days;
+  }
+  return [THURSDAY];
+}
+
+/** Check if a date string matches any configured special days. */
+export function isSpecialDayDate(dateStr: string, setting?: ThursdayHalfDaySetting | null): boolean {
+  try {
+    const day = new Date(dateStr + 'T00:00:00').getDay();
+    const allowedDays = resolveSpecialDays(setting);
+    return allowedDays.includes(day);
+  } catch {
+    return false;
+  }
+}
+
+/** Resolve the deduction rate mode (default: 'regular_duty_rate'). */
+export function getSpecialDayDeductionRateMode(setting?: ThursdayHalfDaySetting | null): 'regular_duty_rate' | 'special_day_rate' {
+  return setting?.deduction_rate_mode === 'special_day_rate' ? 'special_day_rate' : 'regular_duty_rate';
+}
 
 /** Resolve the target departments/categories (fallback: ['teacher']). */
 export function resolveThursdayHalfCategories(setting?: ThursdayHalfDaySetting | null): string[] {
@@ -87,9 +126,13 @@ export function shouldApplyThursdayHalfDay(params: {
   const { setting, staffCategory, attendanceDate, isOvernight } = params;
   const enabled = setting?.enabled === true;
   if (!enabled || isOvernight) return false;
-  if (!isThursdayDate(attendanceDate)) return false;
+  if (!isSpecialDayDate(attendanceDate, setting)) return false;
   return !!staffCategory && resolveThursdayHalfCategories(setting).includes(staffCategory);
 }
+
+/** Aliases for readability */
+export const shouldApplySpecialDayShift = shouldApplyThursdayHalfDay;
+export const effectiveDutyEndForSpecialDay = effectiveDutyEndForThursday;
 
 /**
  * Compute the effective duty start/end minutes and scheduled minutes/day for a shift,

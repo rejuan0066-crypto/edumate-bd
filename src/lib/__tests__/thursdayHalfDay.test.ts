@@ -150,3 +150,71 @@ describe('integration — non-selected staff keep full-day early-exit deduction'
     expect(earlyExitMinutes('staff')).toBe(3 * 60);
   });
 });
+
+describe('custom special days of week (Day-specific schedule)', () => {
+  // 2026-07-01 is a Wednesday (3), 2026-07-02 is a Thursday (4), 2026-07-04 is a Saturday (6)
+  const WEDNESDAY = '2026-07-01';
+  const SATURDAY = '2026-07-04';
+
+  it('applies to configured custom days (e.g. Wednesday)', () => {
+    const customDaySetting = {
+      enabled: true,
+      category: 'teacher',
+      days: [3], // Wednesday
+    };
+
+    expect(
+      shouldApplyThursdayHalfDay({
+        setting: customDaySetting,
+        staffCategory: 'teacher',
+        attendanceDate: WEDNESDAY,
+        isOvernight: false,
+      }),
+    ).toBe(true);
+
+    // Should NOT apply on Thursday when days is explicitly set to Wednesday
+    expect(
+      shouldApplyThursdayHalfDay({
+        setting: customDaySetting,
+        staffCategory: 'teacher',
+        attendanceDate: THURSDAY,
+        isOvernight: false,
+      }),
+    ).toBe(false);
+  });
+
+  it('supports multiple special days (e.g. Wednesday and Saturday)', () => {
+    const multiDaySetting = {
+      enabled: true,
+      category: 'teacher',
+      days: [3, 6], // Wednesday and Saturday
+    };
+
+    expect(
+      shouldApplyThursdayHalfDay({
+        setting: multiDaySetting,
+        staffCategory: 'teacher',
+        attendanceDate: WEDNESDAY,
+        isOvernight: false,
+      }),
+    ).toBe(true);
+
+    expect(
+      shouldApplyThursdayHalfDay({
+        setting: multiDaySetting,
+        staffCategory: 'teacher',
+        attendanceDate: SATURDAY,
+        isOvernight: false,
+      }),
+    ).toBe(true);
+
+    expect(
+      shouldApplyThursdayHalfDay({
+        setting: multiDaySetting,
+        staffCategory: 'teacher',
+        attendanceDate: TUESDAY,
+        isOvernight: false,
+      }),
+    ).toBe(false);
+  });
+});

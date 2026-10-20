@@ -57,7 +57,7 @@ import {
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useAppTimezone } from '@/hooks/useAppTimezone';
 import { todayIsoInTz, addDaysIsoInTz, toMonthYearInTz } from '@/lib/timezone';
-import { resolveThursdayHalfCategories, isThursdayDate } from '@/lib/thursdayHalfDay';
+import { resolveThursdayHalfCategories, isThursdayDate, isSpecialDayDate } from '@/lib/thursdayHalfDay';
 import { attendanceRecordsForDate, MISSING_ATTENDANCE_CONFLICT_OPTIONS } from '@/lib/attendanceRecords';
 
 const STATUS_ICONS: Record<string, any> = {
@@ -1168,7 +1168,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     if (isCustomDuty || (entity?.duty_start_time && entity?.duty_end_time)) return base;
     const enabled = (thursdayHalfSetting as any)?.enabled === true;
     if (!enabled || entity?.type === 'student') return base;
-    if (!isThursdayDate(selectedDate)) return base;
+    if (!isSpecialDayDate(selectedDate, thursdayHalfSetting as any)) return base;
     const cats = resolveThursdayHalfCategories(thursdayHalfSetting as any);
     if (!entity?.staff_category || !cats.includes(entity.staff_category)) return base;
     return {
