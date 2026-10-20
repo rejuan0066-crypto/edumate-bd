@@ -25,7 +25,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import {
   CalendarDays, Users, UserCog, Search, Check, X, Clock,
-  CalendarOff, Save, Settings2, Plus, Trash2, Edit2,
+  CalendarOff, Save, Settings2, Plus, Trash2, Edit2, Lock,
   CheckCircle2, XCircle, AlertCircle, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Home, Sun, Sunset, Moon, Utensils, Coffee,
   Download, Printer, RotateCcw, Layers, QrCode, Send, Fingerprint, UserCheck, History, Sparkles
 } from 'lucide-react';
@@ -2759,7 +2759,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
           {/* Middle: Late/Early badges & Time Inputs */}
           <div className="flex-1 flex flex-wrap items-center gap-2 justify-end sm:justify-start">
             {(() => {
-              if (!att?.check_in_time) return null;
+              if (!att?.check_in_time || currentStatus === 'half_day') return null;
               const lateMin = calcLateMinutes(att.check_in_time, shiftTime.start);
               return lateMin > 0 ? (
                 <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-600 border border-amber-500/15">
@@ -2770,17 +2770,28 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
 
             {/* Time Picker */}
             {(['present', 'late', 'half_day'].includes(currentStatus || '') || isTimeEditorOpen) && (
-              <div className="flex flex-col gap-1 shrink-0 w-full sm:w-auto rounded-2xl border border-amber-500/20 bg-amber-500/5 px-3 py-2">
-                <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
-                  {bn ? 'ডিউটি চেক-ইন / চেক-আউট' : 'Duty Check-in / Out'}
+              <div className={`flex flex-col gap-1 shrink-0 w-full sm:w-auto rounded-2xl border px-3 py-2 transition-all ${
+                currentStatus === 'half_day'
+                  ? 'border-orange-500/20 bg-orange-500/5 opacity-80'
+                  : 'border-amber-500/20 bg-amber-500/5'
+              }`}>
+                <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1">
+                  {currentStatus === 'half_day' ? (
+                    <>
+                      <Lock className="h-3 w-3 text-orange-500" />
+                      <span className="text-orange-600 dark:text-orange-400">{bn ? 'সময় পরিবর্তন লক (অর্ধদিন)' : 'Time Locked (Half Day)'}</span>
+                    </>
+                  ) : (
+                    bn ? 'ডিউটি চেক-ইন / চেক-আউট' : 'Duty Check-in / Out'
+                  )}
                 </span>
                 <div className="flex gap-2 items-center">
                   <TimePicker
-                    className="h-8 w-[120px] text-xs rounded-xl bg-background/60 border-border/20 focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20 transition-all"
+                    className="h-8 w-[120px] text-xs rounded-xl bg-background/60 border-border/20 focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                     placeholder={bn ? 'প্রবেশ' : 'In'}
                     displayFormat={timeFormat}
                     value={att?.check_in_time || ''}
-                    disabled={!canMarkAttendance}
+                    disabled={!canMarkAttendance || currentStatus === 'half_day'}
                     onChange={v => saveMutation.mutate({
                       entityId: entity.id,
                       shift,
@@ -2791,11 +2802,11 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                   />
                   <span className="text-muted-foreground/40 text-xs">—</span>
                   <TimePicker
-                    className="h-8 w-[120px] text-xs rounded-xl bg-background/60 border-border/20 focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20 transition-all"
+                    className="h-8 w-[120px] text-xs rounded-xl bg-background/60 border-border/20 focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                     placeholder={bn ? 'বাহির' : 'Out'}
                     displayFormat={timeFormat}
                     value={att?.check_out_time || ''}
-                    disabled={!canMarkAttendance}
+                    disabled={!canMarkAttendance || currentStatus === 'half_day'}
                     onChange={v => saveMutation.mutate({
                       entityId: entity.id,
                       shift,
@@ -3593,7 +3604,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                   {/* Center: Late badges + Time inputs */}
                   <div className="flex items-center gap-3 flex-wrap sm:ml-auto">
                     {/* Late Minutes Display for staff */}
-                    {entityType === 'staff' && att?.check_in_time && (() => {
+                    {entityType === 'staff' && att?.check_in_time && currentStatus !== 'half_day' && (() => {
                       const effStart = staffSubTab === 'duty' ? (selectedShift === 'morning' ? dutyTimes.morning_start : dutyTimes.evening_start) : getCategoryTime(entity).start;
                       const effEnd = staffSubTab === 'duty' ? (selectedShift === 'morning' ? dutyTimes.morning_end : dutyTimes.evening_end) : getCategoryTime(entity).end;
                       const toMin = (t: string) => { const [h, m] = (t || '0:0').split(':').map(Number); return (h || 0) * 60 + (m || 0); };
@@ -3623,24 +3634,37 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
 
                     {/* Time Inputs for Staff (hide for meal tab) — also for students; show for present/late/half_day */}
                     {((entityType === 'staff' && staffSubTab !== 'meal' && (['present', 'late', 'half_day'].includes(currentStatus || '') || timeEditorOpenId === entity.id)) || (entityType === 'student' && (['present', 'late', 'half_day'].includes(currentStatus || '') || timeEditorOpenId === entity.id))) && (
-                      <div className="flex flex-col gap-1 shrink-0 w-full sm:w-auto rounded-2xl border border-amber-500/20 bg-amber-500/5 px-3 py-2">
-                        <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">{bn ? 'চেক-ইন / চেক-আউট সময়' : 'Check-in / Check-out time'}</span>
+                      <div className={`flex flex-col gap-1 shrink-0 w-full sm:w-auto rounded-2xl border px-3 py-2 transition-all ${
+                        currentStatus === 'half_day'
+                          ? 'border-orange-500/20 bg-orange-500/5 opacity-80'
+                          : 'border-amber-500/20 bg-amber-500/5'
+                      }`}>
+                        <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1">
+                          {currentStatus === 'half_day' ? (
+                            <>
+                              <Lock className="h-3 w-3 text-orange-500" />
+                              <span className="text-orange-600 dark:text-orange-400">{bn ? 'সময় পরিবর্তন লক (অর্ধদিন)' : 'Time Locked (Half Day)'}</span>
+                            </>
+                          ) : (
+                            bn ? 'চেক-ইন / চেক-আউট সময়' : 'Check-in / Check-out time'
+                          )}
+                        </span>
                         <div className="flex gap-2 items-center">
                           <TimePicker
-                            className="h-8 w-[120px] text-xs rounded-xl bg-background/60 border-border/20 focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20 transition-all"
+                            className="h-8 w-[120px] text-xs rounded-xl bg-background/60 border-border/20 focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                             placeholder={bn ? 'প্রবেশ' : 'In'}
                             displayFormat={timeFormat}
                             value={att?.check_in_time || ''}
-                            disabled={!canMarkAttendance}
+                            disabled={!canMarkAttendance || currentStatus === 'half_day'}
                             onChange={v => saveMutation.mutate({ entityId: entity.id, status: currentStatus || (timeEditorOpenId === entity.id ? 'late' : 'present'), check_in_time: v, check_out_time: att?.check_out_time || '' })}
                           />
                           <span className="text-muted-foreground/40 text-xs">—</span>
                           <TimePicker
-                            className="h-8 w-[120px] text-xs rounded-xl bg-background/60 border-border/20 focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20 transition-all"
+                            className="h-8 w-[120px] text-xs rounded-xl bg-background/60 border-border/20 focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                             placeholder={bn ? 'বাহির' : 'Out'}
                             displayFormat={timeFormat}
                             value={normalizeDaytimeCheckOut(att?.check_out_time, staffSubTab === 'duty' ? (selectedShift === 'morning' ? dutyTimes.morning_end : dutyTimes.evening_end) : getCategoryTime(entity).end)}
-                            disabled={!canMarkAttendance}
+                            disabled={!canMarkAttendance || currentStatus === 'half_day'}
                             onChange={v => {
                               const effEnd = staffSubTab === 'duty' ? (selectedShift === 'morning' ? dutyTimes.morning_end : dutyTimes.evening_end) : getCategoryTime(entity).end;
                               saveMutation.mutate({ entityId: entity.id, status: currentStatus || (timeEditorOpenId === entity.id ? 'late' : 'present'), check_in_time: att?.check_in_time || '', check_out_time: normalizeDaytimeCheckOut(v, effEnd) });

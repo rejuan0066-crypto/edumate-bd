@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { ChevronLeft, ChevronRight, CheckCircle2, XCircle, Clock, AlertCircle, CalendarOff, Stethoscope, ShieldCheck, Calendar as CalendarIcon, Trash2, Save } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle2, XCircle, Clock, AlertCircle, CalendarOff, Stethoscope, ShieldCheck, Calendar as CalendarIcon, Trash2, Save, Lock } from 'lucide-react';
 import { TimePicker } from '@/components/ui/time-picker';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, isSameDay, getDay } from 'date-fns';
 import { bn as bnLocale } from 'date-fns/locale';
@@ -552,7 +552,18 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                   );
                 })}
               </div>
-              {(activeRec?.status === 'present' || activeRec?.status === 'late' || activeRec?.status === 'half_day') && activeDateKey && (
+              {activeRec?.status === 'half_day' && activeDateKey && (
+                <div className="mt-1 p-2.5 rounded-xl border border-orange-300/40 bg-orange-50/60 dark:bg-orange-950/20 text-center space-y-1">
+                  <div className="text-xs font-semibold text-orange-700 dark:text-orange-400 flex items-center justify-center gap-1.5">
+                    <Lock className="h-3.5 w-3.5" />
+                    {bn ? 'অর্ধদিনে সময় পরিবর্তন লক করা আছে' : 'Time editing locked for half day'}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    {bn ? 'অর্ধদিনের জন্য নির্ধারিত ৫০% বেতন প্রযোজ্য (সময় বা মিনিট কর্তন হবে না)' : '50% fixed daily salary applies (no minute deduction)'}
+                  </p>
+                </div>
+              )}
+              {(activeRec?.status === 'present' || activeRec?.status === 'late') && activeDateKey && (
                 <LateTimeEditor
                   bn={bn}
                   status={activeRec.status}
