@@ -41,7 +41,6 @@ import { recomputeNetSalary, computeManualOverrideNet } from '@/lib/salaryNet';
 import { dedupeAttendanceRecords } from '@/lib/attendanceDedup';
 import { useAttendanceDuplicateRule } from '@/hooks/useAttendanceDuplicateRule';
 import { sortStaffByDepartment } from '@/lib/staffOrderHelper';
-import { normalizeStaffName } from '@/lib/nameFormatter';
 import {
   calcDutyDeduction,
   type DeductionResult,
@@ -1581,12 +1580,23 @@ const AdminSalary = () => {
     // Main attendance only (exclude morning/evening duty shifts which are handled separately as overtime)
     // AND strictly exclude any attendance dated AFTER resignation date or BEFORE joining date
     // Match by staff ID OR any linked duplicate ID of the same person
-    const personNormName = normalizeStaffName(staffMember?.name_bn);
+    const personNormName = (staffMember?.name_bn || '')
+      .replace(/[:ঃ\.,\-\(\)]/g, ' ')
+      .replace(/\b(মাওলানা|মুয়াল্লিম|মুআল্লিম|হাফেজ|হাফিজ|মাষ্টার|মাস্টার|জনাব|মোঃ|মো|মুহাদ্দিস|মুফতি)\b/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
     const relatedStaffIds = new Set<string>();
     if (staffMember?.id) relatedStaffIds.add(staffMember.id);
-    if (personNormName) {
-      (staffRaw as any[]).forEach((s: any) => {
-        if (normalizeStaffName(s.name_bn) === personNormName) relatedStaffIds.add(s.id);
+    if (personNormName && Array.isArray(staffRaw)) {
+      staffRaw.forEach((s: any) => {
+        const sNorm = (s?.name_bn || '')
+          .replace(/[:ঃ\.,\-\(\)]/g, ' ')
+          .replace(/\b(মাওলানা|মুয়াল্লিম|মুআল্লিম|হাফেজ|হাফিজ|মাষ্টার|মাস্টার|জনাব|মোঃ|মো|মুহাদ্দিস|মুফতি)\b/g, '')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .toLowerCase();
+        if (sNorm && sNorm === personNormName && s?.id) relatedStaffIds.add(s.id);
       });
     }
 
