@@ -1807,18 +1807,10 @@ const AdminSalary = () => {
     present = Math.min(present, daysInMonthForPresent);
     const totalMissedMinutes = totalLateArrivalMinutes + totalEarlyExitMinutes;
 
-    // For additive mode: add paid holidays that have NO attendance record
-    // (so weekend/public holidays still count as paid days within active employment)
+    // হাজিরা পেজ অনুযায়ীই কেবল বেতন নির্ধারিত হবে।
+    // কোনো কাল্পনিক দিন বা অনুপস্থিত ছুটির দিন অতিরিক্ত যোগ হবে না।
     const recordedDates = new Set(records.map((r: any) => r.attendance_date));
     let untouchedHolidayDays = 0;
-    paidHolidaySet.forEach((d: any) => {
-      const dayNum = Number(String(d).slice(8, 10));
-      // Paid holidays only count during active employment [firstCountedDay, resignLastDay]
-      if (dayNum >= firstCountedDay && dayNum <= resignLastDay) {
-        if (!recordedDates.has(d)) untouchedHolidayDays += 1;
-      }
-    });
-    totalDailyEarnings += untouchedHolidayDays * dailyRate;
 
     // যে দিনগুলোতে কোনো হাজিরা রেকর্ড নেই (সাপ্তাহিক ছুটি/সরকারি ছুটি বাদে),
     // default হিসেবে সেগুলো অনুপস্থিত ধরা হবে — যাতে হাজিরা না দিলে মূল বেতন
