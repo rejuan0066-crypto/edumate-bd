@@ -58,6 +58,7 @@ import { useConfirm } from "@/contexts/ConfirmContext";
 import { useAppTimezone } from '@/hooks/useAppTimezone';
 import { todayIsoInTz, addDaysIsoInTz, toMonthYearInTz } from '@/lib/timezone';
 import { resolveThursdayHalfCategories, isThursdayDate } from '@/lib/thursdayHalfDay';
+import { attendanceRecordsForDate, MISSING_ATTENDANCE_CONFLICT_OPTIONS } from '@/lib/attendanceRecords';
 
 const STATUS_ICONS: Record<string, any> = {
   present: CheckCircle2, absent: XCircle, late: Clock,
@@ -180,31 +181,6 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   const [selectedSessionYear, setSelectedSessionYear] = useState('');
   const [selectedClassId, setSelectedClassId] = useState('');
 
-  // Auto-clean any synthetic attendance from October 4 to October 19 to keep attendance strictly up to Oct 3
-  useEffect(() => {
-    if (!isAdmin) return;
-    const purgeKey = 'purged_oct_synthetic_att_done_v3';
-    if (sessionStorage.getItem(purgeKey)) return;
-
-    (async () => {
-      try {
-        const { error } = await supabase
-          .from('attendance_records')
-          .delete()
-          .gte('attendance_date', '2026-10-04')
-          .lte('attendance_date', '2026-10-19');
-
-        if (!error) {
-          sessionStorage.setItem(purgeKey, '1');
-          queryClient.invalidateQueries({ queryKey: ['attendance'] });
-          queryClient.invalidateQueries({ queryKey: ['salary-attendance'] });
-          queryClient.invalidateQueries({ queryKey: ['salary-records'] });
-        }
-      } catch (err) {
-        console.error('Error auto-purging synthetic attendance:', err);
-      }
-    })();
-  }, [isAdmin, queryClient]);
   const [selectedShift, setSelectedShift] = useState(
     stafftabParam === 'duty' ? 'morning' : stafftabParam === 'meal' ? 'meal_breakfast' : 'full_day'
   );
@@ -760,13 +736,10 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     },
   });
 
-  // Strictly exclude any synthetic records for October 4–19, 2026 (attendance kept up to Oct 3)
-  const attendance = useMemo(() => {
-    if (selectedDate >= '2026-10-04' && selectedDate <= '2026-10-19') {
-      return [];
-    }
-    return attendanceRaw;
-  }, [attendanceRaw, selectedDate]);
+  const attendance = useMemo(
+    () => attendanceRecordsForDate(attendanceRaw, selectedDate),
+    [attendanceRaw, selectedDate],
+  );
 
   // Inactive (resigned/left) staff must NOT show on dates after their resignation.
   // Past dates before or on the resign date preserve attendance history.
@@ -1141,7 +1114,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
         await supabase.from('shift_time_audit_log').insert(auditEntries);
       }
 
-      return { changedCount: auditEntries.length, totalRecalc, overnightWarnings: ((times as any).__overnightWarnings as string[]) || [] };
+      return { changedCount: auditEntries.length, totalRecalc, overnightWarnings };
     },
     onSuccess: ({ changedCount, totalRecalc, overnightWarnings }) => {
       queryClient.invalidateQueries({ queryKey: ['category-shift-times'] });
@@ -1308,19 +1281,16 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       shift?: string;
     }) => {
       const shiftVal = shift || (isDutyTab ? 'morning' : effectiveShift);
-      let existing: any = attendance.find((a: any) => a.entity_id === entityId && (isDutyTab ? a.shift === shiftVal : true));
-      if (!existing) {
-        const { data, error } = await supabase
-          .from('attendance_records')
-          .select('*')
-          .eq('attendance_date', selectedDate)
-          .eq('entity_type', entityType)
-          .eq('entity_id', entityId)
-          .eq('shift', shiftVal)
-          .maybeSingle();
-        if (error) throw error;
-        existing = data;
-      }
+      // Resolve the persisted row, never an optimistic or stale cached ID.
+      const { data: existing, error: lookupError } = await supabase
+        .from('attendance_records')
+        .select('*')
+        .eq('attendance_date', selectedDate)
+        .eq('entity_type', entityType)
+        .eq('entity_id', entityId)
+        .eq('shift', shiftVal)
+        .maybeSingle();
+      if (lookupError) throw lookupError;
       const updateData: any = { status, remarks, updated_at: new Date().toISOString() };
       const autoTimes = getAutoAttendanceTimes(entityId, status, existing, shiftVal);
       if (check_in_time !== undefined) updateData.check_in_time = check_in_time;
@@ -1416,7 +1386,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
         updated_at: new Date().toISOString(),
       };
     });
-    const { error } = await supabase.from('attendance_records').insert(records);
+    const { error } = await supabase.from('attendance_records').upsert(records, MISSING_ATTENDANCE_CONFLICT_OPTIONS);
     if (error) {
       toast.error(error.message);
       return;
@@ -1438,7 +1408,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
         entity_id: e.id, status, shift: shiftVal,
         ...getAutoAttendanceTimes(e.id, status),
       }));
-      const { error } = await supabase.from('attendance_records').insert(records);
+      const { error } = await supabase.from('attendance_records').upsert(records, MISSING_ATTENDANCE_CONFLICT_OPTIONS);
       if (error) throw error;
     },
     onMutate: async (status: string) => {
@@ -2406,7 +2376,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                                 });
                                 if (!ok) return;
                                 const shiftIds = duty.shifts.map(s => s.id);
-                                const { error } = await supabase.from('staff_special_shifts').delete().in('id', shiftIds);
+                                const { error } = await supabase.from('staff_special_shifts' as any).delete().in('id', shiftIds);
                                 if (error) { toast.error(error.message); return; }
                                 toast.success(bn ? 'আলাদা ডিউটি শিফট মুছে ফেলা হয়েছে' : 'Special duty deleted');
                                 queryClient.invalidateQueries({ queryKey: ['staff_special_shifts'] });
