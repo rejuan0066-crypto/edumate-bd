@@ -41,6 +41,7 @@ import { recomputeNetSalary, computeManualOverrideNet } from '@/lib/salaryNet';
 import { dedupeAttendanceRecords } from '@/lib/attendanceDedup';
 import { useAttendanceDuplicateRule } from '@/hooks/useAttendanceDuplicateRule';
 import { sortStaffByDepartment } from '@/lib/staffOrderHelper';
+import { normalizeStaffName } from '@/lib/nameFormatter';
 import {
   calcDutyDeduction,
   type DeductionResult,
