@@ -614,7 +614,7 @@ export const StaffSpecialShiftDialog: React.FC<StaffSpecialShiftDialogProps> = (
                                 description: bn
                                   ? `${shift.staff_name || 'এই কর্মীর'} জন্য নির্ধারিত বিশেষ ডিউটি শিফট মুছে ফেলা হবে।`
                                   : `This special shift assignment for ${shift.staff_name || 'this staff'} will be permanently removed.`,
-                                variant: 'danger',
+                                variant: 'destructive',
                               });
                               if (ok) {
                                 deleteMutation.mutate(shift.id);
