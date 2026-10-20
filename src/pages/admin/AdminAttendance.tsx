@@ -1281,19 +1281,16 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       shift?: string;
     }) => {
       const shiftVal = shift || (isDutyTab ? 'morning' : effectiveShift);
-      let existing: any = attendance.find((a: any) => a.entity_id === entityId && (isDutyTab ? a.shift === shiftVal : true));
-      if (!existing) {
-        const { data, error } = await supabase
-          .from('attendance_records')
-          .select('*')
-          .eq('attendance_date', selectedDate)
-          .eq('entity_type', entityType)
-          .eq('entity_id', entityId)
-          .eq('shift', shiftVal)
-          .maybeSingle();
-        if (error) throw error;
-        existing = data;
-      }
+      // Resolve the persisted row, never an optimistic or stale cached ID.
+      const { data: existing, error: lookupError } = await supabase
+        .from('attendance_records')
+        .select('*')
+        .eq('attendance_date', selectedDate)
+        .eq('entity_type', entityType)
+        .eq('entity_id', entityId)
+        .eq('shift', shiftVal)
+        .maybeSingle();
+      if (lookupError) throw lookupError;
       const updateData: any = { status, remarks, updated_at: new Date().toISOString() };
       const autoTimes = getAutoAttendanceTimes(entityId, status, existing, shiftVal);
       if (check_in_time !== undefined) updateData.check_in_time = check_in_time;
