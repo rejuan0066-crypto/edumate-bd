@@ -5591,8 +5591,9 @@ const AdminSalary = () => {
               const staffId = attendanceDetailDialog.staff.id;
               const stats = attendanceDetailDialog.stats;
               const breakdown = stats.dailyBreakdown || [];
-              const totalDeduction = breakdown.reduce((s: number, d: any) => s + d.deduction, 0);
-              const totalAddition = breakdown.reduce((s: number, d: any) => s + d.addition, 0);
+              const totalDeduction = breakdown.reduce((s: number, d: any) => s + (d.deduction || 0), 0);
+              const totalEarned = breakdown.reduce((s: number, d: any) => s + (d.dailyEarning || 0), 0);
+              const totalAddition = breakdown.reduce((s: number, d: any) => s + (d.addition || 0), 0);
               
               const STATUS_LABEL: Record<string, { bn: string; en: string; color: string }> = {
                 present: { bn: 'উপস্থিত', en: 'Present', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
@@ -5613,7 +5614,7 @@ const AdminSalary = () => {
                       { label: bn ? 'ছুটি' : 'Leave', value: stats.leave || 0, color: 'text-blue-600' },
                     ].map((s, i) => (
                       <div key={i} className="text-center p-2 border rounded-lg">
-                        <p className={`text-lg font-bold ${s.color}`}>{s.value}</p>
+                        <p className={`text-lg font-bold ${s.color}`}>{bn ? toBnDigits(s.value) : s.value}</p>
                         <p className="text-[10px] text-muted-foreground">{s.label}</p>
                       </div>
                     ))}
@@ -5621,58 +5622,74 @@ const AdminSalary = () => {
 
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="p-2 border rounded-lg space-y-1">
-                      <p className="text-xs font-semibold text-red-600">{bn ? 'কর্তন বিবরণ' : 'Deductions'}</p>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">{bn ? 'লেইট আসা' : 'Late Arrival'}</span>
-                        <span>{stats.totalLateArrivalMinutes} {bn ? 'মি.' : 'min'} = ৳{Math.round(Number(stats.totalLateArrivalDeduction || 0)).toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">{bn ? 'আগাম যাওয়া' : 'Early Exit'}</span>
-                        <span>{stats.totalEarlyExitMinutes} {bn ? 'মি.' : 'min'} = ৳{Math.round(Number(stats.totalEarlyExitDeduction || 0)).toLocaleString()}</span>
-                      </div>
+                      <p className="text-xs font-semibold text-red-600">{bn ? 'কর্তন (বিয়োগ) বিবরণ' : 'Deductions (-)'}</p>
                       <div className="flex justify-between text-xs">
                         <span className="text-muted-foreground">{bn ? 'অনুপস্থিতি' : 'Absence'}</span>
-                        <span>{stats.absent} {bn ? 'দিন' : 'days'} = ৳{Math.round(stats.absent * stats.dailyRate).toLocaleString()}</span>
+                        <span>{bn ? toBnDigits(stats.absent) : stats.absent} {bn ? 'দিন' : 'days'} = -৳{bn ? toBnDigits(Math.round(stats.absent * stats.dailyRate).toLocaleString()) : Math.round(stats.absent * stats.dailyRate).toLocaleString()}</span>
                       </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">{bn ? 'অর্ধদিন' : 'Half Day'}</span>
-                        <span>{stats.halfDay} {bn ? 'দিন' : 'days'} = ৳{Math.round(stats.halfDay * stats.dailyRate / 2).toLocaleString()}</span>
-                      </div>
+                      {stats.totalLateArrivalMinutes > 0 && (
+                        <div className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">{bn ? 'লেইট আসা' : 'Late Arrival'}</span>
+                          <span>{bn ? toBnDigits(stats.totalLateArrivalMinutes) : stats.totalLateArrivalMinutes} {bn ? 'মি.' : 'min'} = -৳{bn ? toBnDigits(Math.round(Number(stats.totalLateArrivalDeduction || 0)).toLocaleString()) : Math.round(Number(stats.totalLateArrivalDeduction || 0)).toLocaleString()}</span>
+                        </div>
+                      )}
+                      {stats.totalEarlyExitMinutes > 0 && (
+                        <div className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">{bn ? 'আগাম যাওয়া' : 'Early Exit'}</span>
+                          <span>{bn ? toBnDigits(stats.totalEarlyExitMinutes) : stats.totalEarlyExitMinutes} {bn ? 'মি.' : 'min'} = -৳{bn ? toBnDigits(Math.round(Number(stats.totalEarlyExitDeduction || 0)).toLocaleString()) : Math.round(Number(stats.totalEarlyExitDeduction || 0)).toLocaleString()}</span>
+                        </div>
+                      )}
+                      {stats.halfDay > 0 && (
+                        <div className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">{bn ? 'অর্ধদিন' : 'Half Day'}</span>
+                          <span>{bn ? toBnDigits(stats.halfDay) : stats.halfDay} {bn ? 'দিন' : 'days'} = -৳{bn ? toBnDigits(Math.round(stats.halfDay * stats.dailyRate / 2).toLocaleString()) : Math.round(stats.halfDay * stats.dailyRate / 2).toLocaleString()}</span>
+                        </div>
+                      )}
                       <div className="flex justify-between text-xs font-bold border-t pt-1 text-red-600">
                         <span>{bn ? 'মোট কর্তন' : 'Total Ded.'}</span>
-                        <span>৳{totalDeduction.toLocaleString()}</span>
+                        <span>-৳{bn ? toBnDigits(Math.round(totalDeduction).toLocaleString()) : Math.round(totalDeduction).toLocaleString()}</span>
                       </div>
                     </div>
                     <div className="p-2 border rounded-lg space-y-1">
-                      <p className="text-xs font-semibold text-emerald-600">{bn ? 'যোগ বিবরণ' : 'Additions'}</p>
+                      <p className="text-xs font-semibold text-emerald-600">{bn ? 'প্রাপ্য (যোগ) বিবরণ' : 'Earnings (+)'}</p>
                       <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">{bn ? 'ওভারটাইম' : 'Overtime'}</span>
-                        <span>{stats.totalOvertimeMinutes} {bn ? 'মি.' : 'min'} = ৳{Math.round(stats.totalOvertimeMinutes * stats.perMinuteRate).toLocaleString()}</span>
+                        <span className="text-muted-foreground">{bn ? 'উপস্থিতি ও ছুটি আয়' : 'Attendance & Leave'}</span>
+                        <span>{bn ? toBnDigits(stats.present + (stats.leave || 0)) : stats.present + (stats.leave || 0)} {bn ? 'দিন' : 'days'} = +৳{bn ? toBnDigits(Math.round((stats.present + (stats.leave || 0)) * stats.dailyRate).toLocaleString()) : Math.round((stats.present + (stats.leave || 0)) * stats.dailyRate).toLocaleString()}</span>
                       </div>
+                      {stats.totalOvertimeMinutes > 0 && (
+                        <div className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">{bn ? 'ওভারটাইম' : 'Overtime'}</span>
+                          <span>{bn ? toBnDigits(stats.totalOvertimeMinutes) : stats.totalOvertimeMinutes} {bn ? 'মি.' : 'min'} = +৳{bn ? toBnDigits(Math.round(stats.totalOvertimeMinutes * stats.perMinuteRate).toLocaleString()) : Math.round(stats.totalOvertimeMinutes * stats.perMinuteRate).toLocaleString()}</span>
+                        </div>
+                      )}
                       <div className="flex justify-between text-xs font-bold border-t pt-1 text-emerald-600 mt-auto">
-                        <span>{bn ? 'মোট যোগ' : 'Total Add.'}</span>
-                        <span>৳{totalAddition.toLocaleString()}</span>
+                        <span>{bn ? 'মোট প্রাপ্য (যোগ)' : 'Total Earned'}</span>
+                        <span>+৳{bn ? toBnDigits(Math.round(totalEarned).toLocaleString()) : Math.round(totalEarned).toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="p-2 bg-muted/50 rounded-lg text-xs text-muted-foreground">
-                    <Calculator className="h-3 w-3 inline mr-1" />
-                    {bn ? 'প্রতি মিনিট রেট' : 'Per-min rate'}: ৳{stats.perMinuteRate.toFixed(2)} | 
-                    {bn ? ' দৈনিক রেট' : ' Daily rate'}: ৳{Math.round(stats.dailyRate).toLocaleString()}
+                  <div className="p-2 bg-muted/50 rounded-lg text-xs text-muted-foreground flex justify-between items-center">
+                    <div>
+                      <Calculator className="h-3 w-3 inline mr-1" />
+                      {bn ? 'দৈনিক রেট' : 'Daily rate'}: ৳{bn ? toBnDigits(Math.round(stats.dailyRate).toLocaleString()) : Math.round(stats.dailyRate).toLocaleString()} | 
+                      {bn ? ' প্রতি মিনিট রেট' : ' Per-min'}: ৳{bn ? toBnDigits(stats.perMinuteRate.toFixed(2)) : stats.perMinuteRate.toFixed(2)}
+                    </div>
+                    <div className="font-semibold text-emerald-600">
+                      {bn ? 'নিট প্রাপ্য' : 'Net Total'}: ৳{bn ? toBnDigits(Math.round(totalEarned).toLocaleString()) : Math.round(totalEarned).toLocaleString()}
+                    </div>
                   </div>
 
                   <div className="border rounded-lg overflow-x-auto overflow-y-hidden -mx-1 px-1 [-webkit-overflow-scrolling:touch] [overscroll-behavior-x:contain] touch-pan-x">
                     <table className="w-full min-w-[560px] text-sm">
-
                       <thead>
                         <tr className="bg-muted/50 border-b">
-                          <th className="px-2 py-2 text-left text-xs">{bn ? 'তারিখ' : 'Date'}</th>
+                          <th className="px-2 py-2 text-left text-xs">{bn ? 'তারিখ ও বার' : 'Date & Day'}</th>
                           <th className="px-2 py-2 text-center text-xs">{bn ? 'স্ট্যাটাস' : 'Status'}</th>
                           <th className="px-2 py-2 text-center text-xs">{bn ? 'ইন/আউট' : 'In/Out'}</th>
                           <th className="px-2 py-2 text-center text-xs">{bn ? 'লেইট/আগাম' : 'Late/Early'}</th>
-                          <th className="px-2 py-2 text-right text-xs text-red-500">{bn ? 'কর্তন' : 'Ded.'}</th>
-                          <th className="px-2 py-2 text-right text-xs text-emerald-600">{bn ? 'যোগ' : 'Add.'}</th>
+                          <th className="px-2 py-2 text-right text-xs text-red-500">{bn ? 'কর্তন (বিয়োগ)' : 'Ded. (-)'}</th>
+                          <th className="px-2 py-2 text-right text-xs text-emerald-600">{bn ? 'প্রাপ্য (যোগ)' : 'Earned (+)'}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -5685,9 +5702,11 @@ const AdminSalary = () => {
                             .sort((a: any, b: any) => a.date.localeCompare(b.date))
                             .map((d: any, i: number) => {
                               const sl = STATUS_LABEL[d.status] || { bn: d.status, en: d.status, color: 'bg-muted' };
+                              const dateObj = new Date(d.date);
+                              const dateLabel = dateObj.toLocaleDateString(bn ? 'bn-BD' : 'en-US', { day: 'numeric', month: 'short', weekday: 'short' });
                               return (
                                 <tr key={i} className="border-b hover:bg-muted/30">
-                                  <td className="px-2 py-1.5 text-xs">{new Date(d.date).toLocaleDateString(bn ? 'bn-BD' : 'en-US', { day: 'numeric', month: 'short' })}</td>
+                                  <td className="px-2 py-1.5 text-xs font-medium">{dateLabel}</td>
                                   <td className="px-2 py-1.5 text-center">
                                     <Badge className={`${sl.color} text-[9px]`}>{bn ? sl.bn : sl.en}</Badge>
                                   </td>
@@ -5698,21 +5717,25 @@ const AdminSalary = () => {
                                   </td>
                                   <td className="px-2 py-1.5 text-center text-[10px]">
                                     {d.status === 'absent' ? (
-                                      <span className="text-red-500">{bn ? 'পুরো দিন' : 'Full day'}</span>
+                                      <span className="text-red-500 font-semibold">{bn ? 'পুরো দিন' : 'Full day'}</span>
                                     ) : (
                                       <>
-                                        {d.lateMin > 0 && <span className="text-yellow-600">{d.lateMin}{bn ? 'মি↓' : 'm↓'} </span>}
-                                        {d.earlyMin > 0 && <span className="text-orange-600">{d.earlyMin}{bn ? 'মি↑' : 'm↑'} </span>}
+                                        {d.lateMin > 0 && <span className="text-yellow-600">{bn ? toBnDigits(d.lateMin) : d.lateMin}{bn ? 'মি↓' : 'm↓'} </span>}
+                                        {d.earlyMin > 0 && <span className="text-orange-600">{bn ? toBnDigits(d.earlyMin) : d.earlyMin}{bn ? 'মি↑' : 'm↑'} </span>}
                                         {d.lateMin === 0 && d.earlyMin === 0 && d.status !== 'half_day' && <span className="text-emerald-500">✓</span>}
                                         {d.status === 'half_day' && <span className="text-orange-500">{bn ? '½দিন' : '½day'}</span>}
                                       </>
                                     )}
                                   </td>
-                                  <td className="px-2 py-1.5 text-right text-xs text-red-500">
-                                    {d.deduction > 0 ? `৳${d.deduction.toLocaleString()}` : '-'}
+                                  <td className="px-2 py-1.5 text-right text-xs text-red-500 font-semibold">
+                                    {d.deduction > 0 ? (
+                                      bn ? `-৳${toBnDigits(Math.round(d.deduction).toLocaleString())}` : `-৳${Math.round(d.deduction).toLocaleString()}`
+                                    ) : '-'}
                                   </td>
-                                  <td className="px-2 py-1.5 text-right text-xs text-emerald-600">
-                                    {d.addition > 0 ? `৳${d.addition.toLocaleString()}` : '-'}
+                                  <td className="px-2 py-1.5 text-right text-xs text-emerald-600 font-semibold">
+                                    {d.dailyEarning > 0 ? (
+                                      bn ? `+৳${toBnDigits(Math.round(d.dailyEarning).toLocaleString())}` : `+৳${Math.round(d.dailyEarning).toLocaleString()}`
+                                    ) : '-'}
                                   </td>
                                 </tr>
                               );
@@ -5722,9 +5745,15 @@ const AdminSalary = () => {
                       {breakdown.length > 0 && (
                         <tfoot>
                           <tr className="bg-muted/50 font-semibold">
-                            <td colSpan={4} className="px-2 py-2 text-xs text-right">{bn ? 'মোট' : 'Total'}</td>
-                            <td className="px-2 py-2 text-right text-xs text-red-600">৳{totalDeduction.toLocaleString()}</td>
-                            <td className="px-2 py-2 text-right text-xs text-emerald-600">৳{totalAddition.toLocaleString()}</td>
+                            <td colSpan={4} className="px-2 py-2 text-xs text-right">{bn ? 'সর্বমোট' : 'Grand Total'}</td>
+                            <td className="px-2 py-2 text-right text-xs text-red-600 font-bold">
+                              {totalDeduction > 0 ? (
+                                bn ? `-৳${toBnDigits(Math.round(totalDeduction).toLocaleString())}` : `-৳${Math.round(totalDeduction).toLocaleString()}`
+                              ) : '৳০'}
+                            </td>
+                            <td className="px-2 py-2 text-right text-xs text-emerald-600 font-bold">
+                              +৳{bn ? toBnDigits(Math.round(totalEarned).toLocaleString()) : Math.round(totalEarned).toLocaleString()}
+                            </td>
                           </tr>
                         </tfoot>
                       )}
