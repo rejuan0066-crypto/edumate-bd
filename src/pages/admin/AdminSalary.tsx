@@ -384,6 +384,7 @@ const AdminSalary = () => {
       const { data, error } = await supabase
         .from('staff')
         .select('*')
+        .is('deleted_at', null)
         // Inactive / resigned staff must stay visible for history and deposit ledger
         .in('status', ['active', 'inactive', 'resigned'])
         .order('salary_order', { ascending: true, nullsFirst: false })
@@ -1578,8 +1579,18 @@ const AdminSalary = () => {
 
     // Main attendance only (exclude morning/evening duty shifts which are handled separately as overtime)
     // AND strictly exclude any attendance dated AFTER resignation date or BEFORE joining date
+    // Match by staff ID OR any linked duplicate ID of the same person
+    const personNormName = normalizeStaffName(staffMember?.name_bn);
+    const relatedStaffIds = new Set<string>();
+    if (staffMember?.id) relatedStaffIds.add(staffMember.id);
+    if (personNormName) {
+      (staffRaw as any[]).forEach((s: any) => {
+        if (normalizeStaffName(s.name_bn) === personNormName) relatedStaffIds.add(s.id);
+      });
+    }
+
     const rawRecords = attendanceData.filter((a: any) => {
-      if (a.entity_id !== staffMember.id) return false;
+      if (!relatedStaffIds.has(a.entity_id)) return false;
       if (a.shift === 'morning' || a.shift === 'evening') return false;
       const dayNum = Number(String(a.attendance_date).slice(8, 10));
       if (dayNum > resignLastDay) return false;
@@ -1741,12 +1752,11 @@ const AdminSalary = () => {
       // Example: status stays "present" but check-in is late OR check-out is early
       // => count it in the late/early bucket and apply the minute deduction.
       // Example: user clicked "late" but did not adjust time yet => keep late day visible.
-      const hasTimeDeduction = lateMinutes > 0 || earlyExitMinutes > 0;
-      const isLateAttendance = r.status === 'late' || (r.status === 'present' && hasTimeDeduction);
-      if (isLateAttendance) late += 1;
-      if (r.status === 'present' && hasTimeDeduction) entry.status = 'late';
-      // লেইট/আগাম দিনও উপস্থিত দিন — স্টাফ হাজির ছিল, শুধু মিসড মিনিট কাটা যাবে।
-      if (r.status === 'present' || isLateAttendance) present += 1;
+      // বিলম্ব দিন হিসেবে গণনা হবে শুধুমাত্র যদি অ্যাডমিন বা হাজিরাতে স্ট্যাটাস 'late' দেওয়া থাকে।
+      // সাধারণ উপস্থিতিতে সামান্য মিনিট পার্থক্য থাকলে মিনিট কর্তন প্রযোজ্য হতে পারে কিন্তু উপস্থিতির স্ট্যাটাস বিলম্ব হবে না।
+      const isExplicitLate = r.status === 'late';
+      if (isExplicitLate) late += 1;
+      if (r.status === 'present' || isExplicitLate) present += 1;
 
       totalLateArrivalMinutes += lateMinutes;
       totalEarlyExitMinutes += earlyExitMinutes;

@@ -225,10 +225,25 @@ export function sortStaffByDepartment<T extends Record<string, any>>(
       if (normName) {
         const existing = seenNormalizedNames.get(normName);
         if (existing) {
-          // If existing doesn't have staff_id but this one does, replace it
-          const existingHasId = !!(existing as any).staff_id;
-          const currentHasId = !!(item as any).staff_id;
-          if (!existingHasId && currentHasId) {
+          // Compare existing vs current to pick the best canonical staff:
+          // 1. Prefer NOT soft-deleted over soft-deleted
+          // 2. Prefer 'active' status over 'inactive' / 'resigned'
+          // 3. Prefer valid non-temporary staff_id
+          const existingDeleted = !!(existing as any).deleted_at;
+          const currentDeleted = !!(item as any).deleted_at;
+          const existingActive = (existing as any).status === 'active';
+          const currentActive = (item as any).status === 'active';
+          const existingHasId = !!((existing as any).staff_id && !(existing as any).staff_id.startsWith('temp_'));
+          const currentHasId = !!((item as any).staff_id && !(item as any).staff_id.startsWith('temp_'));
+
+          let shouldReplace = false;
+          if (existingDeleted && !currentDeleted) shouldReplace = true;
+          else if (!existingDeleted && currentDeleted) shouldReplace = false;
+          else if (!existingActive && currentActive) shouldReplace = true;
+          else if (existingActive && !currentActive) shouldReplace = false;
+          else if (!existingHasId && currentHasId) shouldReplace = true;
+
+          if (shouldReplace) {
             const idx = uniqueList.indexOf(existing);
             if (idx > -1) uniqueList.splice(idx, 1);
             seenNormalizedNames.set(normName, item);

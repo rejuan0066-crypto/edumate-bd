@@ -320,6 +320,8 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
         toast.success(bn ? 'সেভ হয়েছে' : 'Saved');
       }
       qc.invalidateQueries({ queryKey: ['attendance'] });
+      qc.invalidateQueries({ queryKey: ['salary-attendance'] });
+      qc.invalidateQueries({ queryKey: ['salary-records'] });
       qc.invalidateQueries({ queryKey: ['staff-duty-records'] });
       qc.invalidateQueries({ queryKey: ['staff-att-records'] });
       qc.invalidateQueries({ queryKey: ['my-attendance'] });
