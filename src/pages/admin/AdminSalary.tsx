@@ -1763,7 +1763,11 @@ const AdminSalary = () => {
 
       const lateMinutes = Math.max(0, checkIn - effDutyStart);
       const earlyExitMinutes = Math.max(0, effDutyEnd - checkOut);
-      const overtimeMinutes = Math.max(0, checkOut - effDutyEnd);
+      // ওভারটাইম: শুধুমাত্র স্বাভাবিক পূর্ণ ডিউটি শেষ সময় (dutyEnd) অতিক্রম করলে এবং স্বয়ংক্রিয় ওভারটাইম অন থাকলে ওভারটাইম হবে।
+      // বৃহস্পতিবার ২টায় আগে বের হওয়ার ছাড় দেওয়া হলেও ৩:৩০ পর্যন্ত স্বাভাবিক সময় — তাই ২টা থেকে ৩:৩০ কোনো ওভারটাইম নয়।
+      const autoOvertimeEnabled = getSetting('auto_overtime_pay')?.enabled === true;
+      const regularDutyEnd = isOvernight ? dutyEnd : Math.max(dutyEnd, effDutyEnd);
+      const overtimeMinutes = autoOvertimeEnabled ? Math.max(0, checkOut - regularDutyEnd) : 0;
 
       // Missed-time days must come from the real time as well as manual status.
       // Example: status stays "present" but check-in is late OR check-out is early
@@ -1795,7 +1799,6 @@ const AdminSalary = () => {
       entry.dailyEarning = Math.max(0, entry.dailyEarning - timeDeduction);
       
       // স্বয়ংক্রিয় ওভারটাইম টাকা গণনা সেটিংস (ডিফল্ট: বন্ধ/false — শুধু সময় প্রদর্শিত হবে, টাকা নয়)
-      const autoOvertimeEnabled = getSetting('auto_overtime_pay')?.enabled === true;
       const overtimeAdditionRaw = autoOvertimeEnabled ? overtimeMinutes * effPerMinuteRate : 0;
       entry.addition = Math.round(overtimeAdditionRaw);
       entry.dailyEarning += entry.addition;
@@ -5680,7 +5683,7 @@ const AdminSalary = () => {
                         <span className="text-muted-foreground">{bn ? 'উপস্থিতি ও ছুটি আয়' : 'Attendance & Leave'}</span>
                         <span>{bn ? toBnDigits(stats.present + (stats.leave || 0)) : stats.present + (stats.leave || 0)} {bn ? 'দিন' : 'days'} = +৳{bn ? toBnDigits(Math.round((stats.present + (stats.leave || 0)) * stats.dailyRate).toLocaleString()) : Math.round((stats.present + (stats.leave || 0)) * stats.dailyRate).toLocaleString()}</span>
                       </div>
-                      {stats.totalOvertimeMinutes > 0 && (
+                      {getSetting('auto_overtime_pay')?.enabled === true && stats.totalOvertimeMinutes > 0 && (
                         <div className="flex justify-between text-xs">
                           <span className="text-muted-foreground">{bn ? 'ওভারটাইম' : 'Overtime'}</span>
                           <span>{bn ? toBnDigits(stats.totalOvertimeMinutes) : stats.totalOvertimeMinutes} {bn ? 'মি.' : 'min'} = +৳{bn ? toBnDigits(Math.round(stats.totalOvertimeMinutes * stats.perMinuteRate).toLocaleString()) : Math.round(stats.totalOvertimeMinutes * stats.perMinuteRate).toLocaleString()}</span>
