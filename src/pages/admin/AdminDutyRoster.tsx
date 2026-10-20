@@ -29,7 +29,7 @@ import {
   earlyExitMinutesFor,
 } from '@/lib/dutyMachineWindow';
 import { shiftMinutes, perMinuteRate } from '@/lib/dutyShiftDeduction';
-import { sortStaffByDepartment } from '@/lib/staffOrderHelper';
+import { sortStaffByDepartment, getStaffCategoryKey } from '@/lib/staffOrderHelper';
 
 interface DutyShift {
   id: string;
@@ -154,7 +154,7 @@ export default function AdminDutyRoster() {
 
   const activeShifts = useMemo(() => shifts.filter((s) => s.is_active), [shifts]);
 
-  const { data: staff = [] } = useQuery({
+  const { data: allStaffRaw = [] } = useQuery({
     queryKey: ['duty-roster-staff'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -166,6 +166,17 @@ export default function AdminDutyRoster() {
       return sortStaffByDepartment((data || []) as StaffRow[]);
     },
   });
+
+  // Filter: Default to strictly Education Department (শিক্ষা বিভাগ) for duty roster
+  const [deptFilter, setDeptFilter] = useState<'teacher' | 'all'>('teacher');
+
+  const staff = useMemo(() => {
+    if (deptFilter === 'all') return allStaffRaw;
+    return allStaffRaw.filter((s) => {
+      const cat = getStaffCategoryKey(s);
+      return cat === 'teacher' || s.staff_category === 'teacher' || s.department === 'শিক্ষা বিভাগ';
+    });
+  }, [allStaffRaw, deptFilter]);
 
   const { data: templates = [] } = useQuery({
     queryKey: ['duty-weekly-template'],
@@ -645,35 +656,62 @@ export default function AdminDutyRoster() {
                     সবাইকে দেখতে ডানের সুইচ চালু করুন।
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Label className="text-xs text-muted-foreground">ডিউটিহীন স্টাফও দেখান</Label>
-                  <Switch checked={showAll} onCheckedChange={setShowAll} />
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-1 p-0.5 rounded-full border border-border/50 bg-muted/40 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setDeptFilter('teacher')}
+                      className={`px-3 py-1 rounded-full font-medium transition-all ${
+                        deptFilter === 'teacher'
+                          ? 'bg-primary text-primary-foreground shadow-xs'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      শুধু শিক্ষা বিভাগ ({allStaffRaw.filter(s => getStaffCategoryKey(s) === 'teacher' || s.staff_category === 'teacher' || s.department === 'শিক্ষা বিভাগ').length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeptFilter('all')}
+                      className={`px-3 py-1 rounded-full font-medium transition-all ${
+                        deptFilter === 'all'
+                          ? 'bg-primary text-primary-foreground shadow-xs'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      সকল স্টাফ ({allStaffRaw.length})
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs text-muted-foreground">ডিউটিহীন স্টাফও দেখান</Label>
+                    <Switch checked={showAll} onCheckedChange={setShowAll} />
+                  </div>
                 </div>
               </CardHeader>
 
-              <CardContent className="overflow-x-auto">
-                <table className="w-full min-w-[900px] border-separate border-spacing-y-2 text-sm">
-                  <thead>
-                    <tr className="text-left text-xs text-muted-foreground">
-                      <th className="px-3">নাম</th>
-                      <th className="px-3">আইডি</th>
-                      {activeShifts.map((sh) => (
-                        <th key={sh.id} className="px-3">
-                          {sh.name_bn}
-                          <span className="block font-normal">
-                            {dash(sh.start_time)}–{dash(sh.end_time)}
-                          </span>
-                        </th>
-                      ))}
-                      <th className="px-3 text-right">ভাতা (৳)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visibleStaff.map((s) => {
-                      const pay = payOfStaff(s.id);
-                      return (
-                        <tr key={s.id} className="rounded-lg bg-muted/30 align-top">
-                          <td className="rounded-l-lg px-3 py-2 font-medium">
+              <CardContent className="p-0 sm:p-4">
+                <div className="relative overflow-x-auto overflow-y-auto max-h-[72vh] rounded-xl border border-border/40 scrollbar-thin">
+                  <table className="w-full min-w-[900px] border-separate border-spacing-y-1.5 text-sm">
+                    <thead className="sticky top-0 z-30 bg-background/95 backdrop-blur-md shadow-xs">
+                      <tr className="text-left text-xs text-muted-foreground border-b border-border/40">
+                        <th className="sticky left-0 z-40 bg-background/95 backdrop-blur-md px-3 py-3 font-bold min-w-[170px] max-w-[240px] shadow-[3px_0_6px_-2px_rgba(0,0,0,0.12)]">নাম</th>
+                        <th className="px-3 py-3">আইডি</th>
+                        {activeShifts.map((sh) => (
+                          <th key={sh.id} className="px-3 py-3">
+                            {sh.name_bn}
+                            <span className="block font-normal text-[11px] opacity-80">
+                              {dash(sh.start_time)}–{dash(sh.end_time)}
+                            </span>
+                          </th>
+                        ))}
+                        <th className="px-3 py-3 text-right">ভাতা (৳)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="px-2">
+                      {visibleStaff.map((s) => {
+                        const pay = payOfStaff(s.id);
+                        return (
+                          <tr key={s.id} className="rounded-lg bg-muted/20 align-top hover:bg-muted/40 transition-colors">
+                            <td className="sticky left-0 z-20 bg-background/95 backdrop-blur-md rounded-l-lg px-3 py-2.5 font-medium min-w-[170px] max-w-[240px] shadow-[3px_0_6px_-2px_rgba(0,0,0,0.12)] border-y border-l border-border/30">
                             <div className="flex flex-wrap items-center gap-2">
                               <span>{s.name_bn}</span>
                               {roster.some((r) => r.staff_id === s.id) && (
@@ -836,6 +874,7 @@ export default function AdminDutyRoster() {
 
                   </tbody>
                 </table>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -893,13 +932,39 @@ export default function AdminDutyRoster() {
                 <p className="mt-3 text-xs text-muted-foreground">
                   টিপস: প্রতিটি বাটনের উপর মাউস রাখলে ঐ স্টাফ, বার ও শিফটের সময়সহ বিস্তারিত দেখা যাবে।
                 </p>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <Input
-                    value={weeklySearch}
-                    onChange={(e) => setWeeklySearch(e.target.value)}
-                    placeholder="নাম দিয়ে খুঁজুন..."
-                    className="h-9 w-56 rounded-full"
-                  />
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Input
+                      value={weeklySearch}
+                      onChange={(e) => setWeeklySearch(e.target.value)}
+                      placeholder="নাম দিয়ে খুঁজুন..."
+                      className="h-9 w-56 rounded-full"
+                    />
+                    <div className="flex items-center gap-1 p-0.5 rounded-full border border-border/50 bg-muted/40 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setDeptFilter('teacher')}
+                        className={`px-3 py-1 rounded-full font-medium transition-all ${
+                          deptFilter === 'teacher'
+                            ? 'bg-primary text-primary-foreground shadow-xs'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        শুধু শিক্ষা বিভাগ ({allStaffRaw.filter(s => getStaffCategoryKey(s) === 'teacher' || s.staff_category === 'teacher' || s.department === 'শিক্ষা বিভাগ').length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeptFilter('all')}
+                        className={`px-3 py-1 rounded-full font-medium transition-all ${
+                          deptFilter === 'all'
+                            ? 'bg-primary text-primary-foreground shadow-xs'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        সকল স্টাফ ({allStaffRaw.length})
+                      </button>
+                    </div>
+                  </div>
                   {activeShifts.length === 0 && (
                     <Button size="sm" variant="outline" onClick={() => setTab('shifts')}>
                       আগে শিফট তৈরি করুন
@@ -908,21 +973,38 @@ export default function AdminDutyRoster() {
                 </div>
               </CardHeader>
 
-              <CardContent className="overflow-x-auto">
-                <table className="w-full min-w-[1100px] border-separate border-spacing-y-2 text-sm">
-                  <thead>
-                    <tr className="text-left text-xs text-muted-foreground">
-                      <th className="px-3">নাম</th>
-                      {WEEKDAYS.map((w) => (
-                        <th key={w} className="px-2 text-center">{w}বার</th>
-                      ))}
-                      <th className="px-2 text-center">দ্রুত</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {weeklyStaff.map((s) => (
-                      <tr key={s.id} className="rounded-lg bg-muted/30">
-                        <td className="rounded-l-lg px-3 py-2 font-medium">{s.name_bn}</td>
+              <CardContent className="p-0 sm:p-4">
+                <div className="relative overflow-x-auto overflow-y-auto max-h-[72vh] rounded-xl border border-border/40 scrollbar-thin">
+                  <table className="w-full min-w-[950px] border-separate border-spacing-y-1.5 text-sm">
+                    <thead className="sticky top-0 z-30 bg-background/95 backdrop-blur-md shadow-xs">
+                      <tr className="text-left text-xs text-muted-foreground border-b border-border/40">
+                        <th className="sticky left-0 z-40 bg-background/95 backdrop-blur-md px-3 py-3 font-bold min-w-[170px] max-w-[220px] shadow-[3px_0_6px_-2px_rgba(0,0,0,0.12)]">নাম</th>
+                        {WEEKDAYS.map((w) => (
+                          <th key={w} className="px-2 py-3 text-center font-bold">{w}বার</th>
+                        ))}
+                        <th className="px-2 py-3 text-center font-bold">দ্রুত</th>
+                      </tr>
+                    </thead>
+                    <tbody className="px-2">
+                      {weeklyStaff.map((s) => (
+                        <tr key={s.id} className="rounded-lg bg-muted/20 hover:bg-muted/40 transition-colors">
+                          <td className="sticky left-0 z-20 bg-background/95 backdrop-blur-md rounded-l-lg px-3 py-2.5 font-medium min-w-[170px] max-w-[220px] shadow-[3px_0_6px_-2px_rgba(0,0,0,0.12)] border-y border-l border-border/30">
+                            <div className="font-semibold text-foreground text-xs sm:text-sm truncate" title={s.name_bn}>
+                              {s.name_bn}
+                            </div>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              {s.staff_id && (
+                                <span className="text-[10px] text-muted-foreground font-mono">
+                                  {s.staff_id}
+                                </span>
+                              )}
+                              {s.designation && (
+                                <span className="text-[10px] text-muted-foreground/80 truncate max-w-[130px]" title={s.designation}>
+                                  • {s.designation}
+                                </span>
+                              )}
+                            </div>
+                          </td>
                         {WEEKDAYS.map((_, wd) => (
                           <td key={wd} className="px-2 py-2">
                             <div className="flex flex-col gap-1">
@@ -990,6 +1072,7 @@ export default function AdminDutyRoster() {
                     )}
                   </tbody>
                 </table>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
