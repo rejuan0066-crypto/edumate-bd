@@ -1843,14 +1843,11 @@ const AdminSalary = () => {
       if (paidHolidaySet.has(dateStr)) continue;
       untrackedPaidDays += 1;
     }
-    // যে দিনগুলোতে কোনো হাজিরা রেকর্ড নেই (অচিহ্নিত দিন):
-    // ডিফল্টভাবে তা কর্তন হবে না (enabled !== false), শুধুমাত্র স্পষ্ট 'absent' রেকর্ড থাকলেই অনুপস্থিতি কর্তন হবে।
-    const unmarkedPaid = getSetting('unmarked_days_paid')?.enabled !== false;
-    if (unmarkedPaid) {
-      totalDailyEarnings += untrackedPaidDays * dailyRate;
-    }
+    // যে দিনগুলোতে কোনো হাজিরা রেকর্ড নেই (অচিহ্নিত দিন বা চলতি মাসের বাকি দিন):
+    // কোনো অবস্থাতেই অচিহ্নিত দিনকে অনুপস্থিত গণ্য করা হবে না।
+    // শুধুমাত্র অ্যাডমিন সুস্পষ্টভাবে 'absent' মার্ক করলেই অনুপস্থিতি গণনা ও কর্তন হবে।
     const untrackedUnmarkedDays = untrackedPaidDays;
-    const absent = recordedAbsent + (unmarkedPaid ? 0 : untrackedPaidDays);
+    const absent = recordedAbsent;
 
 
 
