@@ -1701,11 +1701,12 @@ const AdminSalary = () => {
       }
 
       if (r.status === 'half_day') {
-        // অর্ধদিন (Half Day): দৈনিক বেতনের ৫০% প্রাপ্য এবং ৫০% কর্তন।
+        // অর্ধদিন (Half Day): দিন গণনায় এটি উপস্থিতির অংশ (উপস্থিতি +১), কিন্তু দৈনিক বেতনের ৫০% প্রাপ্য এবং ৫০% কর্তন।
         // একই দিনের জন্য আলাদা করে লেইট বা আগাম বের হওয়ার মিনিট কর্তন দ্বৈত (ডাবল) হবে না।
         entry.dailyEarning = Math.round(dailyRate / 2);
         entry.deduction = Math.round(dailyRate / 2);
         totalDailyEarnings += dailyRate / 2;
+        present += 1;
         dailyBreakdown.push(entry);
         return;
       }
@@ -1853,11 +1854,10 @@ const AdminSalary = () => {
     // শুধুমাত্র অ্যাডমিন সুস্পষ্টভাবে 'absent' মার্ক করলেই অনুপস্থিতি গণনা ও কর্তন হবে।
     const untrackedUnmarkedDays = untrackedPaidDays;
     const absent = recordedAbsent;
-
-
+    const regularPresent = Math.max(0, present - late - halfDay);
 
     return {
-      present, absent, late, halfDay, leave, holidayCovered, untouchedHolidayDays,
+      present, regularPresent, absent, late, halfDay, leave, holidayCovered, untouchedHolidayDays,
       untrackedAbsentDays: untrackedUnmarkedDays, untrackedPaidDays, recordedAbsent, preJoinDays, postResignDays, firstCountedDay,
       total: records.length,
       totalLateArrivalMinutes, totalEarlyExitMinutes, totalMissedMinutes, totalOvertimeMinutes,
@@ -4018,6 +4018,9 @@ const AdminSalary = () => {
                                      <span className="text-red-500">{bn ? toBnDigits(dispAbsent) : dispAbsent}</span>/
                                      <span className="text-yellow-600">{bn ? toBnDigits(dispLate) : dispLate}</span>/
                                      <span className="text-blue-600">{bn ? toBnDigits(dispLeave) : dispLeave}</span>
+                                     {attStats.halfDay > 0 && (
+                                       <span className="text-[9px] text-orange-600 ml-1 font-medium" title={bn ? 'অর্ধদিন' : 'Half day'}>½{bn ? toBnDigits(attStats.halfDay) : attStats.halfDay}</span>
+                                     )}
                                      {attStats.totalLateArrivalMinutes > 0 && (
                                        <span className="text-[9px] text-yellow-600 ml-1" title={bn ? 'লেইট আসা' : 'Late arrival'}>↓{bn ? toBnDigits(attStats.totalLateArrivalMinutes) : attStats.totalLateArrivalMinutes}{bn ? 'মি.' : 'm'}</span>
                                      )}
@@ -5610,19 +5613,35 @@ const AdminSalary = () => {
 
               return (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-5 gap-2">
-                    {[
-                      { label: bn ? 'উপস্থিত' : 'Present', value: stats.present, color: 'text-emerald-600' },
-                      { label: bn ? 'অনুপস্থিত' : 'Absent', value: stats.absent, color: 'text-red-500' },
-                      { label: bn ? 'বিলম্ব উপস্থিত' : 'Late Present', value: stats.late, color: 'text-yellow-600' },
-                      { label: bn ? 'অর্ধদিন' : 'Half Day', value: stats.halfDay, color: 'text-orange-600' },
-                      { label: bn ? 'ছুটি' : 'Leave', value: stats.leave || 0, color: 'text-blue-600' },
-                    ].map((s, i) => (
-                      <div key={i} className="text-center p-2 border rounded-lg">
-                        <p className={`text-lg font-bold ${s.color}`}>{bn ? toBnDigits(s.value) : s.value}</p>
-                        <p className="text-[10px] text-muted-foreground">{s.label}</p>
-                      </div>
-                    ))}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div className="text-center p-2 border rounded-lg bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200/50">
+                      <p className="text-lg font-bold text-emerald-600">{bn ? toBnDigits(stats.present) : stats.present}</p>
+                      <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">{bn ? 'মোট উপস্থিত' : 'Total Present'}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {bn
+                          ? `${toBnDigits(stats.regularPresent ?? Math.max(0, (stats.present || 0) - (stats.late || 0) - (stats.halfDay || 0)))} পূর্ণ${stats.late > 0 ? `, ${toBnDigits(stats.late)} বিলম্ব` : ''}${stats.halfDay > 0 ? `, ${toBnDigits(stats.halfDay)} অর্ধদিন` : ''}`
+                          : `${stats.regularPresent ?? Math.max(0, (stats.present || 0) - (stats.late || 0) - (stats.halfDay || 0))} full${stats.late > 0 ? `, ${stats.late} late` : ''}${stats.halfDay > 0 ? `, ${stats.halfDay} half` : ''}`}
+                      </p>
+                    </div>
+                    <div className="text-center p-2 border rounded-lg bg-red-50/40 dark:bg-red-950/20 border-red-200/50">
+                      <p className="text-lg font-bold text-red-500">{bn ? toBnDigits(stats.absent) : stats.absent}</p>
+                      <p className="text-xs font-semibold text-red-700 dark:text-red-400">{bn ? 'অনুপস্থিত' : 'Absent'}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{bn ? 'বেতন কর্তন' : 'Deducted'}</p>
+                    </div>
+                    <div className="text-center p-2 border rounded-lg bg-blue-50/40 dark:bg-blue-950/20 border-blue-200/50">
+                      <p className="text-lg font-bold text-blue-600">{bn ? toBnDigits(stats.leave || 0) : (stats.leave || 0)}</p>
+                      <p className="text-xs font-semibold text-blue-700 dark:text-blue-400">{bn ? 'ছুটি' : 'Leave'}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{bn ? 'অনুমোদিত' : 'Approved'}</p>
+                    </div>
+                    <div className="text-center p-2 border rounded-lg bg-muted/40">
+                      <p className="text-lg font-bold text-foreground">
+                        {bn
+                          ? toBnDigits(stats.present + stats.absent + (stats.leave || 0))
+                          : (stats.present + stats.absent + (stats.leave || 0))}
+                      </p>
+                      <p className="text-xs font-semibold text-muted-foreground">{bn ? 'মোট হিসাবকৃত দিন' : 'Total Days'}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{bn ? 'উপস্থিত+অনুপস্থিত+ছুটি' : 'Pres + Abs + Leave'}</p>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-sm">
