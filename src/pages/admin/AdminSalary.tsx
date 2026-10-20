@@ -1743,7 +1743,13 @@ const AdminSalary = () => {
       const effPerMinuteRate = effScheduledMinutes > 0 ? dailyRate / effScheduledMinutes : perMinuteRate;
 
       const checkIn = r.check_in_time ? mapToTimeline(timeToMinutes(r.check_in_time)) : effDutyStart;
-      const checkOut = r.check_out_time ? mapToTimeline(timeToMinutes(r.check_out_time)) : effDutyEnd;
+      let checkOutRaw = r.check_out_time ? timeToMinutes(r.check_out_time) : effDutyEnd;
+      // Smart 12h AM/PM resolution: if daytime shift ends in afternoon (>=12:00 PM),
+      // and check-out was entered as e.g. 03:30 (AM), treat as 15:30 (PM)
+      if (!isOvernight && effDutyEnd >= 12 * 60 && checkOutRaw < 12 * 60 && Math.abs((checkOutRaw + 12 * 60) - effDutyEnd) < Math.abs(checkOutRaw - effDutyEnd)) {
+        checkOutRaw += 12 * 60;
+      }
+      const checkOut = r.check_out_time ? mapToTimeline(checkOutRaw) : effDutyEnd;
 
       const lateMinutes = Math.max(0, checkIn - effDutyStart);
       const earlyExitMinutes = Math.max(0, effDutyEnd - checkOut);

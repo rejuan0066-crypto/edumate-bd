@@ -477,6 +477,19 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   const committeeHiddenCount = (allStaffRaw as any[]).filter((s: any) => committeeInfo.ids.has(s.id)).length;
 
   const toBnDigits = (str: string | number) => String(str).replace(/\d/g, (d) => '০১২৩৪৫৬৭৮৯'[+d]);
+  const normalizeDaytimeCheckOut = (val?: string | null, scheduledEnd?: string | null): string => {
+    if (!val || !scheduledEnd) return val || '';
+    const [sh, sm] = (scheduledEnd || '0:0').split(':').map(Number);
+    const sEndMin = (sh || 0) * 60 + (sm || 0);
+    if (sEndMin < 12 * 60) return val;
+    const [ch, cm] = val.split(':').map(Number);
+    const cMin = (ch || 0) * 60 + (cm || 0);
+    if (ch < 12 && Math.abs(((ch + 12) * 60 + (cm || 0)) - sEndMin) < Math.abs(cMin - sEndMin)) {
+      return `${String(ch + 12).padStart(2, '0')}:${String(cm || 0).padStart(2, '0')}`;
+    }
+    return val;
+  };
+
   const fmtDate = (dStr?: string | null) => {
     if (!dStr) return '';
     const parts = dStr.split('-');
@@ -3590,6 +3603,11 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                       if (overnight) sEnd += 24 * 60;
                       let cIn = toMin(att.check_in_time);
                       let cOut = att.check_out_time ? toMin(att.check_out_time) : sEnd;
+                      // Smart 12h AM/PM resolution: if daytime shift ends in afternoon (>=12:00 PM),
+                      // and check-out was entered as e.g. 03:30 (AM), treat as 15:30 (PM)
+                      if (!overnight && sEnd >= 12 * 60 && cOut < 12 * 60 && Math.abs((cOut + 12 * 60) - sEnd) < Math.abs(cOut - sEnd)) {
+                        cOut += 12 * 60;
+                      }
                       // For overnight: if check_in is earlier than start (e.g. 02:00 vs 17:00) treat as next-day
                       if (overnight && cIn < sStart) cIn += 24 * 60;
                       if (overnight && cOut <= cIn) cOut += 24 * 60;
@@ -3621,9 +3639,12 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                             className="h-8 w-[120px] text-xs rounded-xl bg-background/60 border-border/20 focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20 transition-all"
                             placeholder={bn ? 'বাহির' : 'Out'}
                             displayFormat={timeFormat}
-                            value={att?.check_out_time || ''}
+                            value={normalizeDaytimeCheckOut(att?.check_out_time, staffSubTab === 'duty' ? (selectedShift === 'morning' ? dutyTimes.morning_end : dutyTimes.evening_end) : getCategoryTime(entity).end)}
                             disabled={!canMarkAttendance}
-                            onChange={v => saveMutation.mutate({ entityId: entity.id, status: currentStatus || (timeEditorOpenId === entity.id ? 'late' : 'present'), check_in_time: att?.check_in_time || '', check_out_time: v })}
+                            onChange={v => {
+                              const effEnd = staffSubTab === 'duty' ? (selectedShift === 'morning' ? dutyTimes.morning_end : dutyTimes.evening_end) : getCategoryTime(entity).end;
+                              saveMutation.mutate({ entityId: entity.id, status: currentStatus || (timeEditorOpenId === entity.id ? 'late' : 'present'), check_in_time: att?.check_in_time || '', check_out_time: normalizeDaytimeCheckOut(v, effEnd) });
+                            }}
                           />
                         </div>
                       </div>
