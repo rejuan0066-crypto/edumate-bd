@@ -10,6 +10,12 @@
 // Keeping this logic pure lets both the salary page and the test-suite share one
 // source of truth so the "applies only to the matching department" guarantee is verified.
 
+export interface SpecialDayRule {
+  start?: string | null;
+  end: string;
+  rateMode?: 'regular_duty_rate' | 'special_day_rate';
+}
+
 export interface ThursdayHalfDaySetting {
   enabled?: boolean;
   /** Single target department (legacy). */
@@ -24,6 +30,8 @@ export interface ThursdayHalfDaySetting {
   days?: number[] | null;
   /** Deduction rate mode: 'regular_duty_rate' (default) or 'special_day_rate' */
   deduction_rate_mode?: 'regular_duty_rate' | 'special_day_rate' | null;
+  /** Per-day rules: day index (0..6) -> rule */
+  daySchedules?: Record<number, SpecialDayRule> | null;
 }
 
 /** Parse an "HH:MM" clock string to minutes-from-midnight. Returns null when invalid. */
@@ -66,18 +74,65 @@ export const DAY_OF_WEEK_OPTIONS = [
 
 /** Resolve configured days of week (default: [4] for Thursday). */
 export function resolveSpecialDays(setting?: ThursdayHalfDaySetting | null): number[] {
+  if (setting?.daySchedules && typeof setting.daySchedules === 'object') {
+    const active = Object.keys(setting.daySchedules).map(Number);
+    if (active.length > 0) return active;
+  }
   if (Array.isArray(setting?.days) && setting.days.length > 0) {
     return setting.days;
   }
   return [THURSDAY];
 }
 
+/**
+ * Get the specific schedule rule for a given day of week (0..6).
+ * Checks per-day `daySchedules` first, then falls back to legacy `setting.days`/`start_time`/`end_time`.
+ */
+export function getScheduleForDay(
+  setting: ThursdayHalfDaySetting | null | undefined,
+  dayOfWeek: number
+): { applies: boolean; start?: string | null; end: string; rateMode: 'regular_duty_rate' | 'special_day_rate' } | null {
+  if (!setting) return null;
+  if (setting.enabled === false) return null;
+
+  // Check daySchedules first if present
+  if (setting.daySchedules && typeof setting.daySchedules === 'object') {
+    const dayRule = setting.daySchedules[dayOfWeek];
+    if (dayRule) {
+      return {
+        applies: true,
+        start: dayRule.start || null,
+        end: dayRule.end || '14:00',
+        rateMode: dayRule.rateMode === 'special_day_rate' ? 'special_day_rate' : 'regular_duty_rate',
+      };
+    }
+    // If daySchedules is defined, only explicitly listed days apply
+    if (Object.keys(setting.daySchedules).length > 0) {
+      return null;
+    }
+  }
+
+  // Fallback to legacy days array
+  const allowedDays = resolveSpecialDays(setting);
+  if (allowedDays.includes(dayOfWeek)) {
+    return {
+      applies: true,
+      start: setting.start_time || null,
+      end: setting.end_time || '14:00',
+      rateMode: getSpecialDayDeductionRateMode(setting),
+    };
+  }
+
+  return null;
+}
+
 /** Check if a date string matches any configured special days. */
 export function isSpecialDayDate(dateStr: string, setting?: ThursdayHalfDaySetting | null): boolean {
   try {
     const day = new Date(dateStr + 'T00:00:00').getDay();
-    const allowedDays = resolveSpecialDays(setting);
-    return allowedDays.includes(day);
+    if (!setting) return day === THURSDAY;
+    if (setting.enabled === false) return false;
+    return getScheduleForDay(setting, day) !== null;
   } catch {
     return false;
   }

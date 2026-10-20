@@ -217,4 +217,45 @@ describe('custom special days of week (Day-specific schedule)', () => {
       }),
     ).toBe(false);
   });
+
+  it('supports distinct time schedules per day via daySchedules', () => {
+    const perDaySetting = {
+      enabled: true,
+      category: 'teacher',
+      daySchedules: {
+        3: { start: '09:30', end: '13:00', rateMode: 'special_day_rate' as const },
+        4: { start: '09:30', end: '14:00', rateMode: 'regular_duty_rate' as const },
+      },
+    };
+
+    // Wednesday matches Wednesday schedule
+    expect(
+      shouldApplyThursdayHalfDay({
+        setting: perDaySetting,
+        staffCategory: 'teacher',
+        attendanceDate: WEDNESDAY,
+        isOvernight: false,
+      }),
+    ).toBe(true);
+
+    // Thursday matches Thursday schedule
+    expect(
+      shouldApplyThursdayHalfDay({
+        setting: perDaySetting,
+        staffCategory: 'teacher',
+        attendanceDate: THURSDAY,
+        isOvernight: false,
+      }),
+    ).toBe(true);
+
+    // Saturday does NOT apply since it is not in daySchedules
+    expect(
+      shouldApplyThursdayHalfDay({
+        setting: perDaySetting,
+        staffCategory: 'teacher',
+        attendanceDate: SATURDAY,
+        isOvernight: false,
+      }),
+    ).toBe(false);
+  });
 });

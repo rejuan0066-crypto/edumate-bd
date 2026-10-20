@@ -57,7 +57,7 @@ import {
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useAppTimezone } from '@/hooks/useAppTimezone';
 import { todayIsoInTz, addDaysIsoInTz, toMonthYearInTz } from '@/lib/timezone';
-import { resolveThursdayHalfCategories, isThursdayDate, isSpecialDayDate, DAY_OF_WEEK_OPTIONS, getSpecialDayDeductionRateMode } from '@/lib/thursdayHalfDay';
+import { resolveThursdayHalfCategories, isThursdayDate, isSpecialDayDate, DAY_OF_WEEK_OPTIONS, getSpecialDayDeductionRateMode, getScheduleForDay } from '@/lib/thursdayHalfDay';
 import { attendanceRecordsForDate, MISSING_ATTENDANCE_CONFLICT_OPTIONS } from '@/lib/attendanceRecords';
 
 const STATUS_ICONS: Record<string, any> = {
@@ -248,6 +248,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       start?: string;
       end?: string;
       rateMode?: 'regular_duty_rate' | 'special_day_rate';
+      daySchedules?: Record<number, { start?: string; end: string; rateMode?: 'regular_duty_rate' | 'special_day_rate' }>;
     };
   }
   const [deptShiftConfigs, setDeptShiftConfigs] = useState<Record<string, DeptShiftConfig>>({});
@@ -352,7 +353,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
 
     const base = categoryShiftTimes[catKey] || defaultCategoryTimes[catKey] || { start: '08:00', end: '17:00' };
 
-    const deptSpecial = (base as any)?.specialDay || (catKey === 'teacher' && (thursdayHalfSetting as any)?.enabled ? {
+    const rawSpecial = (base as any)?.specialDay || (catKey === 'teacher' && (thursdayHalfSetting as any)?.enabled ? {
       enabled: true,
       days: (thursdayHalfSetting as any)?.days || [4],
       start: (thursdayHalfSetting as any)?.start_time || '',
@@ -365,6 +366,29 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       end: '14:00',
       rateMode: 'regular_duty_rate',
     });
+
+    let daySchedules: Record<number, { start?: string; end: string; rateMode?: 'regular_duty_rate' | 'special_day_rate' }> = {};
+    if (rawSpecial?.daySchedules && typeof rawSpecial.daySchedules === 'object' && Object.keys(rawSpecial.daySchedules).length > 0) {
+      daySchedules = { ...rawSpecial.daySchedules };
+    } else {
+      const days = Array.isArray(rawSpecial?.days) && rawSpecial.days.length > 0 ? rawSpecial.days : [4];
+      days.forEach((d: number) => {
+        daySchedules[d] = {
+          start: rawSpecial?.start || '',
+          end: rawSpecial?.end || '14:00',
+          rateMode: rawSpecial?.rateMode || 'regular_duty_rate',
+        };
+      });
+    }
+
+    const deptSpecial = {
+      enabled: rawSpecial?.enabled === true,
+      days: Object.keys(daySchedules).map(Number),
+      start: rawSpecial?.start || '',
+      end: rawSpecial?.end || '14:00',
+      rateMode: rawSpecial?.rateMode || 'regular_duty_rate',
+      daySchedules,
+    };
 
     return {
       start: latest?.start_time || base.start,
@@ -1071,10 +1095,25 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       const cleanTimes: Record<string, any> = {};
       for (const [k, v] of Object.entries(deptPayloads)) {
         if (k === '__overnightWarnings') continue;
+        const sp = (v as any).specialDay;
+        let cleanSp: any = null;
+        if (sp) {
+          const dayKeys = sp.daySchedules ? Object.keys(sp.daySchedules).map(Number) : (sp.days || [4]);
+          const firstDay = dayKeys[0];
+          const firstRule = (firstDay !== undefined && sp.daySchedules) ? sp.daySchedules[firstDay] : null;
+          cleanSp = {
+            enabled: sp.enabled === true,
+            days: dayKeys,
+            daySchedules: sp.daySchedules || null,
+            start: sp.start || firstRule?.start || '',
+            end: sp.end || firstRule?.end || '14:00',
+            rateMode: sp.rateMode || firstRule?.rateMode || 'regular_duty_rate',
+          };
+        }
         cleanTimes[k] = {
           start: (v as any).start,
           end: (v as any).end,
-          specialDay: (v as any).specialDay || null,
+          specialDay: cleanSp,
         };
       }
       const { error } = await supabase.from('website_settings').upsert(
@@ -1199,10 +1238,12 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     // Check department-specific special day setting first
     const deptSpecial = (categoryShiftTimes[catKey] as any)?.specialDay;
     if (deptSpecial && deptSpecial.enabled) {
-      if (isSpecialDayDate(selectedDate, { days: deptSpecial.days })) {
+      const dayOfWeek = new Date(selectedDate + 'T00:00:00').getDay();
+      const sched = getScheduleForDay(deptSpecial, dayOfWeek);
+      if (sched) {
         return {
-          start: deptSpecial.start || base.start,
-          end: deptSpecial.end || '14:00',
+          start: sched.start || base.start,
+          end: sched.end || '14:00',
         };
       }
     }
@@ -2397,13 +2438,21 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                           <Switch
                             checked={cfg.specialDay?.enabled === true}
                             onCheckedChange={(c) => {
-                              updateDeptConfig(cat.key, {
-                                specialDay: {
-                                  enabled: c,
-                                  days: cfg.specialDay?.days || [4],
+                              const curSchedules = cfg.specialDay?.daySchedules || {
+                                4: {
                                   start: cfg.specialDay?.start ?? '',
                                   end: cfg.specialDay?.end || '14:00',
                                   rateMode: cfg.specialDay?.rateMode || 'regular_duty_rate',
+                                },
+                              };
+                              updateDeptConfig(cat.key, {
+                                specialDay: {
+                                  enabled: c,
+                                  days: Object.keys(curSchedules).map(Number),
+                                  start: cfg.specialDay?.start ?? '',
+                                  end: cfg.specialDay?.end || '14:00',
+                                  rateMode: cfg.specialDay?.rateMode || 'regular_duty_rate',
+                                  daySchedules: curSchedules,
                                 },
                               });
                             }}
@@ -2411,29 +2460,44 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                         </div>
 
                         {cfg.specialDay?.enabled && (
-                          <div className="space-y-2 pt-1 border-t border-border/40">
+                          <div className="space-y-2.5 pt-1.5 border-t border-border/40">
                             <div>
-                              <Label className="text-[10px] text-muted-foreground font-medium">{bn ? 'প্রযোজ্য বার নির্বাচন' : 'Select Days of Week'}</Label>
+                              <Label className="text-[10px] text-muted-foreground font-medium">
+                                {bn ? 'প্রযোজ্য বার নির্বাচন (একাধিক বার নির্বাচন করতে পারেন)' : 'Select Days of Week'}
+                              </Label>
                               <div className="mt-1 flex flex-wrap gap-1">
                                 {DAY_OF_WEEK_OPTIONS.map((dayOpt) => {
-                                  const curDays = cfg.specialDay?.days || [4];
-                                  const isSel = curDays.includes(dayOpt.value);
+                                  const daySchedules = cfg.specialDay?.daySchedules || {};
+                                  const isSel = dayOpt.value in daySchedules;
                                   return (
                                     <label
                                       key={dayOpt.value}
                                       className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] cursor-pointer border transition-colors ${
                                         isSel
-                                          ? 'bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300 font-medium'
+                                          ? 'bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300 font-medium shadow-xs'
                                           : 'bg-background hover:bg-muted text-muted-foreground border-border/40'
                                       }`}
                                     >
                                       <Checkbox
                                         checked={isSel}
                                         onCheckedChange={(v) => {
-                                          let next = v ? Array.from(new Set([...curDays, dayOpt.value])) : curDays.filter(d => d !== dayOpt.value);
-                                          if (next.length === 0) next = [4];
+                                          const nextSchedules = { ...daySchedules };
+                                          if (v) {
+                                            nextSchedules[dayOpt.value] = {
+                                              start: cfg.specialDay?.start || '',
+                                              end: cfg.specialDay?.end || '14:00',
+                                              rateMode: cfg.specialDay?.rateMode || 'regular_duty_rate',
+                                            };
+                                          } else {
+                                            delete nextSchedules[dayOpt.value];
+                                          }
+                                          const nextDays = Object.keys(nextSchedules).map(Number);
                                           updateDeptConfig(cat.key, {
-                                            specialDay: { ...cfg.specialDay!, days: next },
+                                            specialDay: {
+                                              ...cfg.specialDay!,
+                                              days: nextDays,
+                                              daySchedules: nextSchedules,
+                                            },
                                           });
                                         }}
                                       />
@@ -2444,51 +2508,132 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                               </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-2">
-                              <div>
-                                <Label className="text-[9px] text-muted-foreground">{bn ? 'বিশেষ শুরু' : 'Special Start'}</Label>
-                                <TimePicker
-                                  className="h-7 text-xs w-full"
-                                  displayFormat={timeFormat}
-                                  value={cfg.specialDay?.start || ''}
-                                  placeholder={bn ? 'ডিফল্ট শুরু' : 'Default start'}
-                                  onChange={(v) => updateDeptConfig(cat.key, { specialDay: { ...cfg.specialDay!, start: v } })}
-                                />
-                              </div>
-                              <div>
-                                <Label className="text-[9px] text-muted-foreground">{bn ? 'বিশেষ শেষ (ফুল দিন)' : 'Special End (Full Day)'}</Label>
-                                <TimePicker
-                                  className="h-7 text-xs w-full"
-                                  displayFormat={timeFormat}
-                                  value={cfg.specialDay?.end || '14:00'}
-                                  onChange={(v) => updateDeptConfig(cat.key, { specialDay: { ...cfg.specialDay!, end: v || '14:00' } })}
-                                />
-                              </div>
-                            </div>
+                            {/* Per-Day Config Cards */}
+                            {(() => {
+                              const daySchedules = cfg.specialDay?.daySchedules || {};
+                              const activeDays = DAY_OF_WEEK_OPTIONS.filter((d) => d.value in daySchedules);
+                              if (activeDays.length === 0) {
+                                return (
+                                  <p className="text-[10px] text-muted-foreground italic p-2 bg-muted/20 rounded">
+                                    {bn ? 'উপরে অন্তত একটি বার নির্বাচন করুন।' : 'Please select at least one day above.'}
+                                  </p>
+                                );
+                              }
+                              return (
+                                <div className="space-y-2 mt-1">
+                                  {activeDays.map((dayOpt) => {
+                                    const sched = daySchedules[dayOpt.value] || { start: '', end: '14:00', rateMode: 'regular_duty_rate' };
+                                    return (
+                                      <div key={dayOpt.value} className="p-2.5 rounded-lg border border-amber-500/30 bg-amber-500/5 space-y-2">
+                                        <div className="flex items-center justify-between border-b border-amber-500/20 pb-1">
+                                          <span className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
+                                            📅 {bn ? dayOpt.bn : dayOpt.en}
+                                          </span>
+                                          <button
+                                            type="button"
+                                            className="text-[10px] text-destructive hover:underline cursor-pointer"
+                                            onClick={() => {
+                                              const nextSchedules = { ...daySchedules };
+                                              delete nextSchedules[dayOpt.value];
+                                              const nextDays = Object.keys(nextSchedules).map(Number);
+                                              updateDeptConfig(cat.key, {
+                                                specialDay: {
+                                                  ...cfg.specialDay!,
+                                                  days: nextDays,
+                                                  daySchedules: nextSchedules,
+                                                },
+                                              });
+                                            }}
+                                          >
+                                            {bn ? 'বাদ দিন' : 'Remove'}
+                                          </button>
+                                        </div>
 
-                            <div className="space-y-1 pt-1 border-t border-border/30">
-                              <Label className="text-[9px] text-muted-foreground font-semibold">{bn ? 'মিনিট কর্তন রেট নির্ধারণ' : 'Minute Deduction Rate Mode'}</Label>
-                              <div className="space-y-1">
-                                <label className="flex items-center gap-1.5 text-[10px] cursor-pointer">
-                                  <input
-                                    type="radio"
-                                    name={`rate_mode_${cat.key}`}
-                                    checked={cfg.specialDay?.rateMode !== 'special_day_rate'}
-                                    onChange={() => updateDeptConfig(cat.key, { specialDay: { ...cfg.specialDay!, rateMode: 'regular_duty_rate' } })}
-                                  />
-                                  <span>{bn ? 'নিয়মিত ডিউটি রেটে কর্তন (সুপারিশকৃত)' : 'Regular duty rate (Recommended)'}</span>
-                                </label>
-                                <label className="flex items-center gap-1.5 text-[10px] cursor-pointer">
-                                  <input
-                                    type="radio"
-                                    name={`rate_mode_${cat.key}`}
-                                    checked={cfg.specialDay?.rateMode === 'special_day_rate'}
-                                    onChange={() => updateDeptConfig(cat.key, { specialDay: { ...cfg.specialDay!, rateMode: 'special_day_rate' } })}
-                                  />
-                                  <span>{bn ? 'বিশেষ দিনের রেটে কর্তন' : 'Special day rate'}</span>
-                                </label>
-                              </div>
-                            </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                          <div>
+                                            <Label className="text-[9px] text-muted-foreground">{bn ? 'বিশেষ শুরু' : 'Special Start'}</Label>
+                                            <TimePicker
+                                              className="h-7 text-xs w-full bg-background"
+                                              displayFormat={timeFormat}
+                                              value={sched.start || ''}
+                                              placeholder={bn ? 'ডিফল্ট শুরু' : 'Default start'}
+                                              onChange={(v) => {
+                                                const nextSchedules = {
+                                                  ...daySchedules,
+                                                  [dayOpt.value]: { ...sched, start: v },
+                                                };
+                                                updateDeptConfig(cat.key, {
+                                                  specialDay: { ...cfg.specialDay!, daySchedules: nextSchedules },
+                                                });
+                                              }}
+                                            />
+                                          </div>
+                                          <div>
+                                            <Label className="text-[9px] text-muted-foreground">{bn ? 'বিশেষ শেষ (ফুল দিন)' : 'Special End (Full Day)'}</Label>
+                                            <TimePicker
+                                              className="h-7 text-xs w-full bg-background"
+                                              displayFormat={timeFormat}
+                                              value={sched.end || '14:00'}
+                                              onChange={(v) => {
+                                                const nextSchedules = {
+                                                  ...daySchedules,
+                                                  [dayOpt.value]: { ...sched, end: v || '14:00' },
+                                                };
+                                                updateDeptConfig(cat.key, {
+                                                  specialDay: { ...cfg.specialDay!, daySchedules: nextSchedules },
+                                                });
+                                              }}
+                                            />
+                                          </div>
+                                        </div>
+
+                                        <div className="space-y-1 pt-1 border-t border-amber-500/20">
+                                          <Label className="text-[9px] text-muted-foreground font-semibold">
+                                            {bn ? 'মিনিট কর্তন রেট নির্ধারণ' : 'Minute Deduction Rate Mode'}
+                                          </Label>
+                                          <div className="space-y-0.5">
+                                            <label className="flex items-center gap-1.5 text-[10px] cursor-pointer">
+                                              <input
+                                                type="radio"
+                                                name={`rate_mode_${cat.key}_${dayOpt.value}`}
+                                                checked={sched.rateMode !== 'special_day_rate'}
+                                                onChange={() => {
+                                                  const nextSchedules = {
+                                                    ...daySchedules,
+                                                    [dayOpt.value]: { ...sched, rateMode: 'regular_duty_rate' },
+                                                  };
+                                                  updateDeptConfig(cat.key, {
+                                                    specialDay: { ...cfg.specialDay!, daySchedules: nextSchedules },
+                                                  });
+                                                }}
+                                              />
+                                              <span>{bn ? 'নিয়মিত ডিউটি রেটে কর্তন (সুপারিশকৃত)' : 'Regular duty rate (Recommended)'}</span>
+                                            </label>
+                                            <label className="flex items-center gap-1.5 text-[10px] cursor-pointer">
+                                              <input
+                                                type="radio"
+                                                name={`rate_mode_${cat.key}_${dayOpt.value}`}
+                                                checked={sched.rateMode === 'special_day_rate'}
+                                                onChange={() => {
+                                                  const nextSchedules = {
+                                                    ...daySchedules,
+                                                    [dayOpt.value]: { ...sched, rateMode: 'special_day_rate' },
+                                                  };
+                                                  updateDeptConfig(cat.key, {
+                                                    specialDay: { ...cfg.specialDay!, daySchedules: nextSchedules },
+                                                  });
+                                                }}
+                                              />
+                                              <span>{bn ? 'বিশেষ দিনের রেটে কর্তন' : 'Special day rate'}</span>
+                                            </label>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            })()}
                           </div>
                         )}
                       </div>

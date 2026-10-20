@@ -47,7 +47,7 @@ import {
   type DutyDay,
   type DutyAttendance,
 } from '@/lib/dutyShiftDeduction';
-import { shouldApplyThursdayHalfDay, effectiveDutyEndForThursday, parseHalfDayEndMinutes, parseClockMinutes, getSpecialDayDeductionRateMode } from '@/lib/thursdayHalfDay';
+import { shouldApplyThursdayHalfDay, effectiveDutyEndForThursday, parseHalfDayEndMinutes, parseClockMinutes, getSpecialDayDeductionRateMode, getScheduleForDay } from '@/lib/thursdayHalfDay';
 import { resolveStaffShift, fetchSpecialShifts, fetchDepartmentSchedules } from '@/lib/shiftResolution';
 import { downloadSlipAsPdf, downloadSheetAsPdf, printSalarySlipHtml, shareSlipPdf, viewSlipPdfInNewTab, isMobileOrPwa } from '@/lib/salarySlipPdf';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -1741,12 +1741,16 @@ const AdminSalary = () => {
         ? {
             enabled: true,
             categories: [catKey],
-            days: deptSpecial.days || [4],
+            days: deptSpecial.days || (deptSpecial.daySchedules ? Object.keys(deptSpecial.daySchedules).map(Number) : [4]),
             start_time: deptSpecial.start || null,
             end_time: deptSpecial.end || '14:00',
             deduction_rate_mode: deptSpecial.rateMode || 'regular_duty_rate',
+            daySchedules: deptSpecial.daySchedules || null,
           }
         : thuHalfSetting;
+
+      const dayOfWeek = new Date(r.attendance_date + 'T00:00:00').getDay();
+      const daySched = getScheduleForDay(effectiveSpecialSetting, dayOfWeek);
 
       const hasPersonalDuty = !!(staffMember?.duty_start_time && staffMember?.duty_end_time) || dutyInfo.source === 'special' || dutyInfo.source === 'staff';
       const applyThuHalf = !hasPersonalDuty && shouldApplyThursdayHalfDay({
@@ -1759,13 +1763,13 @@ const AdminSalary = () => {
         applies: applyThuHalf,
         dutyStart,
         dutyEnd,
-        startMinutes: parseClockMinutes((effectiveSpecialSetting as any)?.start_time) ?? undefined,
-        endMinutes: parseHalfDayEndMinutes((effectiveSpecialSetting as any)?.end_time),
+        startMinutes: parseClockMinutes(daySched?.start ?? (effectiveSpecialSetting as any)?.start_time) ?? undefined,
+        endMinutes: parseHalfDayEndMinutes(daySched?.end ?? (effectiveSpecialSetting as any)?.end_time),
       });
       // মিনিট কর্তনের হার নির্ধারণ:
       // সেটিংসে 'special_day_rate' সিলেক্ট থাকলে বিশেষ দিনের মোট মিনিট দিয়ে ভাগ হবে (dailyRate / effScheduledMinutes)।
       // অন্যথায় (ডিফল্ট) ডিপার্টমেন্টের নিয়মিত ডিউটি রেটে (perMinuteRate) কর্তন হবে।
-      const rateMode = getSpecialDayDeductionRateMode(effectiveSpecialSetting);
+      const rateMode = daySched ? daySched.rateMode : getSpecialDayDeductionRateMode(effectiveSpecialSetting);
       const effPerMinuteRate = (applyThuHalf && rateMode === 'special_day_rate' && effScheduledMinutes > 0)
         ? dailyRate / effScheduledMinutes
         : perMinuteRate;
