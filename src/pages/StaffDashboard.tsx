@@ -1,4 +1,5 @@
-import { lazy, Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
+import { lazyWithRetry as lazy } from '@/lib/lazyWithRetry';
 import { EmbeddedProvider } from '@/contexts/EmbeddedContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';

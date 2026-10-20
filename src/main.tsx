@@ -3,6 +3,23 @@ import App from "./App.tsx";
 import "./index.css";
 import { installPwaPrintAdapter } from "./lib/pwaPrintAdapter";
 
+// Auto-recover from stale chunks after a new deployment without showing errors
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault();
+  const reloadKey = 'vite_preload_error_reload';
+  let lastReload = 0;
+  try {
+    lastReload = Number(sessionStorage.getItem(reloadKey) || '0');
+  } catch {}
+  const now = Date.now();
+  if (now - lastReload > 10000) {
+    try {
+      sessionStorage.setItem(reloadKey, String(now));
+    } catch {}
+    window.location.reload();
+  }
+});
+
 // Patch window.open / blob downloads so receipts, salary slips, certificates,
 // reports etc. work inside installed PWAs (Android Chrome standalone + iOS A2HS)
 // where popups and printing are otherwise blocked.

@@ -2,17 +2,14 @@ import { lazy, type ComponentType } from 'react';
 
 type Factory<T> = () => Promise<{ default: T }>;
 
-const RELOAD_FLAG = 'chunk_reload_attempt_v1';
-
 /**
- * Wraps React.lazy with automatic retry + one-time page reload recovery.
+ * Wraps React.lazy with automatic retry + page reload recovery.
  *
  * Dynamic imports can fail with "Importing a module script failed" / "Failed to
  * fetch dynamically imported module" — typically a transient network blip or a
- * stale chunk hash after a new deploy. Instead of surfacing the ErrorBoundary
- * ("আবার চেষ্টা করুন") on every admin page, we:
+ * stale chunk hash after a new deploy.
  *   1. retry the import a few times with a short backoff, then
- *   2. if it still fails, force a single full reload to fetch the new manifest.
+ *   2. if it still fails, force a full reload to fetch the new manifest.
  */
 export function lazyWithRetry<T extends ComponentType<unknown>>(
   factory: Factory<T>,
@@ -20,11 +17,13 @@ export function lazyWithRetry<T extends ComponentType<unknown>>(
   interval = 400,
 ): React.LazyExoticComponent<T> {
   return lazy(async () => {
+    const reloadKey = 'chunk_reload_' + window.location.pathname;
+
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const mod = await factory();
-        // Success: clear any prior reload guard so future failures can reload again.
-        try { sessionStorage.removeItem(RELOAD_FLAG); } catch { /* ignore */ }
+        // Success: clear reload key so subsequent deployments can reload smoothly
+        try { sessionStorage.removeItem(reloadKey); } catch { /* ignore */ }
         return mod;
       } catch (err) {
         const isLast = attempt === retries;
@@ -33,12 +32,13 @@ export function lazyWithRetry<T extends ComponentType<unknown>>(
           continue;
         }
 
-        // Final failure — try a single full reload to pick up fresh chunks.
-        let alreadyReloaded = false;
-        try { alreadyReloaded = sessionStorage.getItem(RELOAD_FLAG) === '1'; } catch { /* ignore */ }
+        // Final failure — try a reload to pick up fresh chunks (guarded against tight loops)
+        let lastReload = 0;
+        try { lastReload = Number(sessionStorage.getItem(reloadKey) || '0'); } catch { /* ignore */ }
+        const now = Date.now();
 
-        if (!alreadyReloaded) {
-          try { sessionStorage.setItem(RELOAD_FLAG, '1'); } catch { /* ignore */ }
+        if (now - lastReload > 12000) {
+          try { sessionStorage.setItem(reloadKey, String(now)); } catch { /* ignore */ }
           window.location.reload();
           // Return a never-resolving promise so React keeps the Suspense
           // fallback visible while the reload happens (no error flash).

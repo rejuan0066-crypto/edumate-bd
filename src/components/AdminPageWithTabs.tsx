@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
+import { lazyWithRetry as lazy } from '@/lib/lazyWithRetry';
 import { useLocation } from 'react-router-dom';
 import { motion, LayoutGroup } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';

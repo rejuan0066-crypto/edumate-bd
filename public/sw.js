@@ -12,7 +12,7 @@
 // Stale caches are cleaned ONLY by version bump on activate (targeted), never by
 // blanket clears on every load. Bump CACHE_VERSION whenever you change SW logic.
 
-const CACHE_VERSION = 'v25';
+const CACHE_VERSION = 'v26';
 const OFFLINE_URL = '/offline.html';
 const SHELL_CACHE = `subhania-shell-${CACHE_VERSION}`;
 const ASSET_CACHE = `subhania-assets-${CACHE_VERSION}`;
@@ -146,7 +146,8 @@ async function staleWhileRevalidate(req, cacheName) {
   const cached = await cache.match(req);
   const fetchPromise = fetch(req)
     .then((res) => {
-      if (res && res.ok) cache.put(req, res.clone()).catch(() => {});
+      const ct = res && res.headers ? (res.headers.get('content-type') || '') : '';
+    if (res && res.ok && !ct.includes('text/html')) cache.put(req, res.clone()).catch(() => {});
       return res;
     })
     .catch(() => cached);
@@ -160,7 +161,8 @@ async function cacheFirst(req, cacheName) {
   if (cached) return cached;
   try {
     const res = await fetch(req);
-    if (res && res.ok) cache.put(req, res.clone()).catch(() => {});
+    const ct = res && res.headers ? (res.headers.get('content-type') || '') : '';
+    if (res && res.ok && !ct.includes('text/html')) cache.put(req, res.clone()).catch(() => {});
     return res;
   } catch (e) {
     if (cached) return cached;
