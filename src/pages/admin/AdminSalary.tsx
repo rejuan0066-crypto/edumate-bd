@@ -1778,13 +1778,16 @@ const AdminSalary = () => {
       entry.earlyDeduction = Math.round(earlyDeductionRaw);
       entry.dailyEarning = Math.max(0, entry.dailyEarning - timeDeduction);
       
-      entry.addition = Math.round(overtimeMinutes * effPerMinuteRate);
+      // স্বয়ংক্রিয় ওভারটাইম টাকা গণনা সেটিংস (ডিফল্ট: বন্ধ/false — শুধু সময় প্রদর্শিত হবে, টাকা নয়)
+      const autoOvertimeEnabled = getSetting('auto_overtime_pay')?.enabled === true;
+      const overtimeAdditionRaw = autoOvertimeEnabled ? overtimeMinutes * effPerMinuteRate : 0;
+      entry.addition = Math.round(overtimeAdditionRaw);
       entry.dailyEarning += entry.addition;
 
       // Accumulate the UNROUNDED daily earning to avoid cumulative rounding drift.
       const rawEarn = Math.max(
         0,
-        baseDayRaw - (lateMinutes + earlyExitMinutes) * effPerMinuteRate + overtimeMinutes * effPerMinuteRate,
+        baseDayRaw - (lateMinutes + earlyExitMinutes) * effPerMinuteRate + overtimeAdditionRaw,
       );
       totalDailyEarnings += rawEarn;
 
@@ -1914,7 +1917,10 @@ const AdminSalary = () => {
     // দৈনিক হার = মাসিক বেতন ÷ ৩০। তাই ৩১ দিনের মাসে পূর্ণ হাজিরায় আয় ৩১/৩০ গুণ হয়ে
     // মাসিক বেতনের বেশি হয়ে যেত। মাসের সর্বোচ্চ কার্যদিবস ৩০ ধরে হাজিরাভিত্তিক আয়
     // মাসিক বেতনে সীমাবদ্ধ রাখা হয় (ওভারটাইম আলাদাভাবে যোগ হয়)।
-    const includedOvertime = Math.round(attStats.totalOvertimeMinutes * attStats.perMinuteRate);
+    const autoOvertimeEnabled = getSetting('auto_overtime_pay')?.enabled === true;
+    const includedOvertime = autoOvertimeEnabled
+      ? Math.round(attStats.totalOvertimeMinutes * attStats.perMinuteRate)
+      : 0;
     const attendanceEarningsWithoutOvertime = Math.max(0, Math.round(attStats.totalDailyEarnings) - includedOvertime);
     // Prorate maximum base salary for the month up to the resignation date / joining date
     const maxPayableBaseSalary = Math.round(baseSalary * (Math.max(0, workingDays) / daysInMonth));
@@ -5349,6 +5355,21 @@ const AdminSalary = () => {
                   />
                 </div>
 
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <Label>{bn ? 'স্বয়ংক্রিয় ওভারটাইম ভাতা প্রদান' : 'Automatic Overtime Pay'}</Label>
+                    <p className="text-[10px] text-muted-foreground">
+                      {bn
+                        ? 'চালু করলে নির্ধারিত ছুটির সময়ের পর অবস্থান করা অতিরিক্ত মিনিটের টাকা বেতনে যুক্ত হবে; বন্ধ/default থাকলে অতিরিক্ত সময় কেবল তথ্যের জন্য দেখা যাবে, কোনো টাকা যোগ হবে না'
+                        : 'Enable to convert extra minutes past shift end into overtime pay; off/default tracks minutes without paying overtime'}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={getSetting('auto_overtime_pay')?.enabled === true}
+                    onCheckedChange={v => saveSettingMutation.mutate({ key: 'auto_overtime_pay', value: { enabled: v } })}
+                  />
+                </div>
+
                 <div className="p-3 border rounded-lg space-y-2">
                   <div className="flex items-center justify-between">
 
@@ -5415,9 +5436,6 @@ const AdminSalary = () => {
                      </p>
                    </div>
                 </div>
-
-
-
 
                 <div className="p-3 border rounded-lg space-y-2">
                   <Label>{bn ? 'বেতন হিসাবের ভিত্তি' : 'Salary Calculation Basis'}</Label>
