@@ -402,7 +402,7 @@ const AdminSalary = () => {
     const base = showCommitteeStaff
       ? (staffRaw as any[])
       : (staffRaw as any[]).filter((s: any) => !committeeInfo.ids.has(s.id));
-    return sortStaffByDepartment(base, { categories: staffCategoriesList as any[], bn });
+    return sortStaffByDepartment(base, { categories: staffCategoriesList as any[], bn, deduplicate: true });
   }, [staffRaw, showCommitteeStaff, committeeInfo.ids, staffCategoriesList, bn]);
 
   const committeeHiddenCount = (staffRaw as any[]).filter((s: any) => committeeInfo.ids.has(s.id)).length;

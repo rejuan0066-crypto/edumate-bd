@@ -18,6 +18,7 @@ import { useAppTimezone } from '@/hooks/useAppTimezone';
 import { getDatePartsInTz } from '@/lib/timezone';
 import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { sortStaffByDepartment } from '@/lib/staffOrderHelper';
+import { formatStaffName } from '@/lib/nameFormatter';
 
 interface Props {
   open: boolean;
@@ -121,7 +122,7 @@ export default function ResidentialDutyMonthlySheetDialog({
         .from('staff')
         .select('id, name_bn, name_en, designation, department, staff_category, status, residence_type, salary_order')
         .is('deleted_at', null);
-      return sortStaffByDepartment((data || []) as any[]);
+      return sortStaffByDepartment((data || []) as any[], { deduplicate: true });
     },
     enabled: open,
   });
@@ -459,7 +460,7 @@ export default function ResidentialDutyMonthlySheetDialog({
         const stats = staffStats.get(st.id);
         const row: any[] = [
           idx + 1,
-          st.name_bn || st.name_en || '',
+          formatStaffName(st.name_bn, st.name_en, bn),
           st.designation || '-',
         ];
 
@@ -592,7 +593,7 @@ export default function ResidentialDutyMonthlySheetDialog({
       const stats = staffStats.get(st.id);
       tableRowsHtml += `<tr>
         <td style="border:1px solid #cbd5e1;padding:3px;text-align:center;font-size:10px;">${idx + 1}</td>
-        <td style="border:1px solid #cbd5e1;padding:3px 5px;font-weight:600;font-size:11px;text-align:left;">${st.name_bn || st.name_en}</td>
+        <td style="border:1px solid #cbd5e1;padding:3px 5px;font-weight:600;font-size:11px;text-align:left;">${formatStaffName(st.name_bn, st.name_en, bn)}</td>
         <td style="border:1px solid #cbd5e1;padding:3px 5px;font-size:10px;color:#475569;text-align:left;">${st.designation || '-'}</td>
       `;
 
@@ -861,7 +862,7 @@ export default function ResidentialDutyMonthlySheetDialog({
                         {idx + 1}
                       </td>
                       <td className="sticky left-10 z-10 bg-background px-3 py-2 border-r font-semibold text-foreground text-xs truncate max-w-[160px]">
-                        {st.name_bn || st.name_en}
+                        {formatStaffName(st.name_bn, st.name_en, bn)}
                       </td>
                       <td className="sticky left-[200px] z-10 bg-background px-2 py-2 border-r text-muted-foreground text-[11px] truncate max-w-[110px]">
                         {st.designation || '-'}

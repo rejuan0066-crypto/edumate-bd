@@ -31,6 +31,7 @@ import { parseEdgeError } from '@/lib/edgeError';
 import { invalidateAllStaffQueries } from '@/lib/staffQueryInvalidator';
 import { sortStaffByDepartment } from '@/lib/staffOrderHelper';
 import { getStaffDisplayNames } from '@/lib/nameFormatter';
+import { runStaffDeduplicationSync } from '@/lib/staffDeduplicationSync';
 
 
 export type StaffPageType = 'all' | 'staff' | 'teacher' | 'administrative' | 'support' | 'director' | 'committee_member';
@@ -167,6 +168,16 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
       } catch {}
     })();
   }, [role]);
+
+  // Auto-deduplicate staff names and remove redundant ghost records
+  useEffect(() => {
+    if (!isAdminRole(role)) return;
+    runStaffDeduplicationSync().then((res) => {
+      if (res.cleanedNamesCount > 0 || res.duplicateRowsHandled > 0) {
+        queryClient.invalidateQueries({ queryKey: ['staff'] });
+      }
+    }).catch(() => {});
+  }, [role, queryClient]);
 
   const { data: designationsList = [] } = useQuery({
     queryKey: ['designations-all'],

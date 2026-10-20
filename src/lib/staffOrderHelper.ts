@@ -3,6 +3,7 @@
  * Provides department-wise sorting, category resolution, and serial ordering
  * across all staff and teacher pages.
  */
+import { deduplicateRepeatedWords, normalizeStaffName } from './nameFormatter';
 
 export interface DepartmentConfig {
   key: string;
@@ -183,6 +184,7 @@ export function sortStaffByDepartment<T extends Record<string, any>>(
     designations?: DesignationConfig[];
     bn?: boolean;
     knownCategoryKeys?: Set<string>;
+    deduplicate?: boolean;
   }
 ): T[] {
   if (!Array.isArray(staffList) || staffList.length <= 1) {
@@ -193,6 +195,54 @@ export function sortStaffByDepartment<T extends Record<string, any>>(
   const designations = options?.designations;
   const knownKeys = options?.knownCategoryKeys;
   const bn = options?.bn !== false;
+  const shouldDedup = options?.deduplicate !== false;
+
+  // Build unique cleaned list
+  let preparedList = staffList.map((item) => {
+    if (item && typeof item === 'object' && item.name_bn) {
+      const cleaned = deduplicateRepeatedWords(item.name_bn);
+      if (cleaned !== item.name_bn) {
+        return { ...item, name_bn: cleaned };
+      }
+    }
+    return item;
+  });
+
+  if (shouldDedup) {
+    const seenIds = new Set<string>();
+    const seenNormalizedNames = new Map<string, T>();
+    const uniqueList: T[] = [];
+
+    for (const item of preparedList) {
+      const id = (item as any)?.id;
+      if (id) {
+        if (seenIds.has(id)) continue;
+        seenIds.add(id);
+      }
+
+      // Check normalized name to prevent duplicate person rows (e.g. Maulana Farhan appearing 2 times)
+      const normName = normalizeStaffName((item as any)?.name_bn || (item as any)?.name);
+      if (normName) {
+        const existing = seenNormalizedNames.get(normName);
+        if (existing) {
+          // If existing doesn't have staff_id but this one does, replace it
+          const existingHasId = !!(existing as any).staff_id;
+          const currentHasId = !!(item as any).staff_id;
+          if (!existingHasId && currentHasId) {
+            const idx = uniqueList.indexOf(existing);
+            if (idx > -1) uniqueList.splice(idx, 1);
+            seenNormalizedNames.set(normName, item);
+            uniqueList.push(item);
+          }
+          continue;
+        }
+        seenNormalizedNames.set(normName, item);
+      }
+
+      uniqueList.push(item);
+    }
+    preparedList = uniqueList;
+  }
 
   // Build quick map for designation sort_order
   const desigSortMap = new Map<string, number>();
@@ -204,7 +254,7 @@ export function sortStaffByDepartment<T extends Record<string, any>>(
     });
   }
 
-  return [...staffList].sort((a: any, b: any) => {
+  return [...preparedList].sort((a: any, b: any) => {
     // 1. Department order
     const catA = getStaffCategoryKey(a, designations, knownKeys);
     const catB = getStaffCategoryKey(b, designations, knownKeys);

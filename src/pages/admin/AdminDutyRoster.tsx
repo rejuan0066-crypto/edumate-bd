@@ -30,6 +30,7 @@ import {
 } from '@/lib/dutyMachineWindow';
 import { shiftMinutes, perMinuteRate } from '@/lib/dutyShiftDeduction';
 import { sortStaffByDepartment, getStaffCategoryKey } from '@/lib/staffOrderHelper';
+import { deduplicateRepeatedWords } from '@/lib/nameFormatter';
 
 interface DutyShift {
   id: string;
@@ -163,7 +164,11 @@ export default function AdminDutyRoster() {
         .is('deleted_at', null)
         .eq('status', 'active');
       if (error) throw error;
-      return sortStaffByDepartment((data || []) as StaffRow[]);
+      const cleaned = (data || []).map((s) => ({
+        ...s,
+        name_bn: deduplicateRepeatedWords(s.name_bn),
+      }));
+      return sortStaffByDepartment(cleaned as StaffRow[], { deduplicate: true });
     },
   });
 

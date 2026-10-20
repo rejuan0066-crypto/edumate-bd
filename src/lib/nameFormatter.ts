@@ -12,34 +12,63 @@ export function hasEnglish(str: string | null | undefined): boolean {
 }
 
 /**
+ * Normalizes a name string for comparison purposes (lowercased, punctuation/honorific prefixes stripped).
+ */
+export function normalizeStaffName(str: string | null | undefined): string {
+  if (!str) return '';
+  return str
+    .replace(/[:ঃ\.,\-\(\)]/g, ' ')
+    .replace(/\b(মাওলানা|মুয়াল্লিম|মুআল্লিম|হাফেজ|হাফিজ|মাষ্টার|মাস্টার|জনাব|মোঃ|মো|মুহাদ্দিস|মুফতি)\b/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+const cleanPunct = (s: string) => s.replace(/[:ঃ\.,\-\(\)]/g, '').trim().toLowerCase();
+
+/**
  * Deduplicates repeated phrases or words in a name.
  * Examples:
  *   "তেরা মিয়া তেরা মিয়া" -> "তেরা মিয়া"
+ *   "মাওলানাঃ ফারহান হোসাইন ফারহান হোসাইন" -> "মাওলানাঃ ফারহান হোসাইন"
+ *   "মাওলানা ফারহান মাওলানা ফারহান" -> "মাওলানা ফারহান"
+ *   "মাওলানা ফারহান ফারহান হোসাইন" -> "মাওলানা ফারহান হোসাইন"
  *   "মোহাম্মদ আলী মোহাম্মদ আলী" -> "মোহাম্মদ আলী"
  *   "রহিম রহিম" -> "রহিম"
  */
 export function deduplicateRepeatedWords(str: string | null | undefined): string {
   if (!str) return '';
   const trimmed = str.trim().replace(/\s+/g, ' ');
+
+  // 1. Direct regex: full phrase repetition with or without punctuation (e.g. "তেরা মিয়া তেরা মিয়া")
+  const fullHalfMatch = trimmed.match(/^(.+?)[\s,:ঃ\-]+(?:\1)$/i);
+  if (fullHalfMatch) {
+    return fullHalfMatch[1].trim();
+  }
+
+  // 2. Direct regex: prefix + repeated multi-word phrase
+  // E.g. "মাওলানাঃ ফারহান হোসাইন ফারহান হোসাইন" -> "মাওলানাঃ ফারহান হোসাইন"
+  const prefixRepeatedMatch = trimmed.match(/^(.+?[\s,:ঃ]+)(.+?)[\s,:ঃ]+(?:\2)$/i);
+  if (prefixRepeatedMatch) {
+    return (prefixRepeatedMatch[1] + prefixRepeatedMatch[2]).trim();
+  }
+
   const words = trimmed.split(' ');
 
-  // 1. Check if the string is formed by repeating the exact entire half
-  // E.g. ["তেরা", "মিয়া", "তেরা", "মিয়া"] (length 4) -> half is 2
+  // 3. Check if the string is formed by repeating the exact entire half
   if (words.length >= 2 && words.length % 2 === 0) {
     const half = words.length / 2;
     const firstHalf = words.slice(0, half).join(' ');
     const secondHalf = words.slice(half).join(' ');
-    if (firstHalf.trim().toLowerCase() === secondHalf.trim().toLowerCase()) {
+    if (cleanPunct(firstHalf) === cleanPunct(secondHalf)) {
       return firstHalf.trim();
     }
   }
 
-  // 2. Check if a 2-word or 3-word phrase repeats within an odd/even word array
-  // E.g. ["মাওলানা", "ফারহান", "মাওলানা", "ফারহান"]
-  // Also check consecutive duplicate adjacent words: e.g. "তেরা তেরা"
+  // 4. Consecutive adjacent duplicate words (e.g. "ফারহান ফারহান")
   const dedupedWords: string[] = [];
   for (let i = 0; i < words.length; i++) {
-    if (i > 0 && words[i].toLowerCase() === words[i - 1].toLowerCase()) {
+    if (i > 0 && cleanPunct(words[i]) === cleanPunct(words[i - 1])) {
       continue;
     }
     dedupedWords.push(words[i]);
@@ -50,21 +79,29 @@ export function deduplicateRepeatedWords(str: string | null | undefined): string
     const half = dedupedWords.length / 2;
     const firstHalf = dedupedWords.slice(0, half).join(' ');
     const secondHalf = dedupedWords.slice(half).join(' ');
-    if (firstHalf.trim().toLowerCase() === secondHalf.trim().toLowerCase()) {
+    if (cleanPunct(firstHalf) === cleanPunct(secondHalf)) {
       return firstHalf.trim();
     }
   }
 
   const result = dedupedWords.join(' ').trim();
-
-  // 3. Check for repeated multi-word suffix (handles prefix + repeated phrase)
-  // E.g. "মাওলানাঃ ফারহান হোসাইন ফারহান হোসাইন" → "মাওলানাঃ ফারহান হোসাইন"
   const rWords = result.split(' ');
+
+  // 5. Repeated multi-word suffix (e.g. prefix + repeated multi-word phrase)
   for (let phraseLen = Math.floor(rWords.length / 2); phraseLen >= 1; phraseLen--) {
-    const candidate = rWords.slice(rWords.length - phraseLen).join(' ').toLowerCase();
-    const before = rWords.slice(rWords.length - phraseLen * 2, rWords.length - phraseLen).join(' ').toLowerCase();
-    if (candidate === before) {
+    const candidate = rWords.slice(rWords.length - phraseLen).join(' ');
+    const before = rWords.slice(rWords.length - phraseLen * 2, rWords.length - phraseLen).join(' ');
+    if (cleanPunct(candidate) === cleanPunct(before)) {
       return rWords.slice(0, rWords.length - phraseLen).join(' ').trim();
+    }
+  }
+
+  // 6. Repeated multi-word prefix
+  for (let phraseLen = Math.floor(rWords.length / 2); phraseLen >= 1; phraseLen--) {
+    const candidate = rWords.slice(0, phraseLen).join(' ');
+    const after = rWords.slice(phraseLen, phraseLen * 2).join(' ');
+    if (cleanPunct(candidate) === cleanPunct(after)) {
+      return (candidate + ' ' + rWords.slice(phraseLen * 2).join(' ')).trim();
     }
   }
 
@@ -177,6 +214,20 @@ export function getStaffDisplayNames(
       secondary: cleaned.has_distinct_bangla ? cleaned.name_bn : null,
     };
   }
+}
+
+/**
+ * Convenience helper to format a staff member's name cleanly.
+ * Deduplicates repeated phrases, removes English leak in Bengali mode,
+ * and ensures a single consistent presentation.
+ */
+export function formatStaffName(
+  nameBn?: string | null,
+  nameEn?: string | null,
+  isBengali: boolean = true
+): string {
+  const display = getStaffDisplayNames(nameBn, nameEn, isBengali);
+  return display.primary || '';
 }
 
 /**

@@ -21,6 +21,8 @@ import NotificationPanel from './NotificationPanel';
 import DarkModeToggle from './DarkModeToggle';
 import { preloadRouteChunk } from '@/lib/routePreload';
 import MobileBottomNav from './MobileBottomNav';
+import { runStaffDeduplicationSync } from '@/lib/staffDeduplicationSync';
+import { formatStaffName } from '@/lib/nameFormatter';
 import {
   LayoutDashboard, Users, UserCog, BookOpen, FileText, Bell,
   CreditCard, Settings, Globe, GraduationCap, Menu, X, LogOut,
@@ -121,6 +123,13 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   // Fetch staff record for sidebar avatar (shared lookup: user_id → email fallback + auto-link)
   const { data: sidebarStaffPhoto } = useCurrentStaff();
 
+  // Background deduplication sync for staff names (e.g. Maulana Farhan, duplicate rows)
+  useEffect(() => {
+    if (isAdmin) {
+      runStaffDeduplicationSync().catch(() => {});
+    }
+  }, [isAdmin]);
+
   const { data: sidebarProfile } = useQuery({
     queryKey: ['sidebar-profile', user?.id],
     queryFn: async () => {
@@ -132,13 +141,9 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     staleTime: 5 * 60 * 1000,
   });
 
-  const sidebarDisplayName = (language === 'bn' ? sidebarStaffPhoto?.name_bn : sidebarStaffPhoto?.name_en)
-    || sidebarStaffPhoto?.name_bn
-    || sidebarStaffPhoto?.name_en
-    || sidebarProfile?.full_name
-    || user?.user_metadata?.full_name
-    || user?.email?.split('@')[0]
-    || 'User';
+  const sidebarDisplayName = (sidebarStaffPhoto?.name_bn || sidebarStaffPhoto?.name_en)
+    ? formatStaffName(sidebarStaffPhoto.name_bn, sidebarStaffPhoto.name_en, language === 'bn')
+    : (sidebarProfile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User');
   const sidebarAvatar = sidebarStaffPhoto?.photo_url || sidebarProfile?.avatar_url || '';
 
   // Apply default theme mode from settings

@@ -472,7 +472,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     const base = showCommitteeStaff
       ? (allStaffRaw as any[])
       : (allStaffRaw as any[]).filter((s: any) => !committeeInfo.ids.has(s.id));
-    return sortStaffByDepartment(base, { categories: staffCategoriesData, bn });
+    return sortStaffByDepartment(base, { categories: staffCategoriesData, bn, deduplicate: true });
   }, [allStaffRaw, showCommitteeStaff, committeeInfo.ids, staffCategoriesData, bn]);
   const committeeHiddenCount = (allStaffRaw as any[]).filter((s: any) => committeeInfo.ids.has(s.id)).length;
 
