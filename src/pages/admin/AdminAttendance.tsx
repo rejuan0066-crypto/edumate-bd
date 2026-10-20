@@ -2587,12 +2587,12 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                                           </div>
                                         </div>
 
-                                        <div className="space-y-1 pt-1 border-t border-amber-500/20">
-                                          <Label className="text-[9px] text-muted-foreground font-semibold">
-                                            {bn ? 'মিনিট কর্তন রেট নির্ধারণ' : 'Minute Deduction Rate Mode'}
+                                        <div className="space-y-1.5 pt-2 border-t border-amber-500/20">
+                                          <Label className="text-[11px] font-semibold text-foreground flex items-center gap-1">
+                                            💰 {bn ? 'বিশেষ দিনে বিলম্ব/আগাম বের হওয়ার মিনিট কর্তনের হার:' : 'Late/Early Minute Deduction Rate:'}
                                           </Label>
-                                          <div className="space-y-0.5">
-                                            <label className="flex items-center gap-1.5 text-[10px] cursor-pointer">
+                                          <div className="space-y-1 bg-background/80 p-2 rounded-md border border-border/50">
+                                            <label className="flex items-start gap-2 text-xs cursor-pointer">
                                               <input
                                                 type="radio"
                                                 name={`rate_mode_${cat.key}_${dayOpt.value}`}
@@ -2606,10 +2606,14 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                                                     specialDay: { ...cfg.specialDay!, daySchedules: nextSchedules },
                                                   });
                                                 }}
+                                                className="mt-0.5 cursor-pointer"
                                               />
-                                              <span>{bn ? 'নিয়মিত ডিউটি রেটে কর্তন (সুপারিশকৃত)' : 'Regular duty rate (Recommended)'}</span>
+                                              <div>
+                                                <span className="font-medium text-foreground">{bn ? 'ডিপার্টমেন্টের নিয়মিত ডিউটি রেটে কর্তন (সুপারিশকৃত)' : 'Regular duty rate (Recommended)'}</span>
+                                                <p className="text-[10px] text-muted-foreground">{bn ? 'বিশেষ দিনেও সাধারণ দিনের প্রতি মিনিট রেট অনুযায়ী কর্তন হবে।' : 'Deducts using regular per-minute rate.'}</p>
+                                              </div>
                                             </label>
-                                            <label className="flex items-center gap-1.5 text-[10px] cursor-pointer">
+                                            <label className="flex items-start gap-2 text-xs cursor-pointer">
                                               <input
                                                 type="radio"
                                                 name={`rate_mode_${cat.key}_${dayOpt.value}`}
@@ -2623,8 +2627,12 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                                                     specialDay: { ...cfg.specialDay!, daySchedules: nextSchedules },
                                                   });
                                                 }}
+                                                className="mt-0.5 cursor-pointer"
                                               />
-                                              <span>{bn ? 'বিশেষ দিনের রেটে কর্তন' : 'Special day rate'}</span>
+                                              <div>
+                                                <span className="font-medium text-foreground">{bn ? 'বিশেষ দিনের শিফট রেটে কর্তন' : 'Special day shift rate'}</span>
+                                                <p className="text-[10px] text-muted-foreground">{bn ? 'বিশেষ দিনের মোট ডিউটি মিনিটের ভিত্তিতে কর্তন হবে।' : 'Deducts using rate calculated from special day hours.'}</p>
+                                              </div>
                                             </label>
                                           </div>
                                         </div>
