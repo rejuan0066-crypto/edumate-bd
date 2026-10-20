@@ -37,6 +37,10 @@ export interface DutyDay {
   isHoliday?: boolean;
   /** true when the date is in the future -> skipped */
   isFuture?: boolean;
+  /** true when the staff is already absent in main attendance -> duty deduction waived to prevent double penalty */
+  isGeneralAbsent?: boolean;
+  /** true when unmarked duty attendance should not be penalized */
+  skipUnmarked?: boolean;
 }
 
 export interface DutyAttendance {
@@ -135,6 +139,7 @@ export const calcDayDeduction = (
 
   if (day.isHoliday) return none('ছুটি — কর্তন নাই');
   if (day.isFuture) return none('ভবিষ্যৎ তারিখ');
+  if (day.isGeneralAbsent) return none('মূল উপস্থিতিতে অনুপস্থিত — ডিউটি কর্তন মওকুফ (দ্বৈত কর্তনমুক্ত)');
 
   const absentAmount = num(shift.absent_deduction_amount);
   if (absentAmount <= 0 && !shift.late_deduction_enabled) return none('কর্তন সেটআপ নাই');
@@ -145,6 +150,11 @@ export const calcDayDeduction = (
   }
 
   // Missing record on a past rostered day counts as absent.
+  // If no attendance record exists and unmarked days are skipped, do not penalize
+  if (!att && day.skipUnmarked) {
+    return none('হাজিরা অচিহ্নিত — কর্তন নাই');
+  }
+
   const isAbsent = !att || status === 'absent';
   if (isAbsent) {
     if (absentAmount <= 0) return none('অনুপস্থিতি কর্তন সেট নাই');
@@ -207,6 +217,7 @@ export const calcDutyDeduction = (
   shifts: DeductionShift[],
   days: DutyDay[],
   attendance: DutyAttendance[],
+  options?: { skipUnmarked?: boolean },
 ): DeductionResult => {
   const shiftMap = new Map(shifts.map((s) => [s.id, s]));
 
@@ -224,7 +235,10 @@ export const calcDutyDeduction = (
     seen.add(k);
     const shift = shiftMap.get(d.shiftId);
     if (!shift) return;
-    const line = calcDayDeduction(shift, d, attMap.get(k));
+    const effectiveDay = options?.skipUnmarked !== undefined && d.skipUnmarked === undefined
+      ? { ...d, skipUnmarked: options.skipUnmarked }
+      : d;
+    const line = calcDayDeduction(shift, effectiveDay, attMap.get(k));
     if (line.amount > 0) lines.push(line);
   });
 

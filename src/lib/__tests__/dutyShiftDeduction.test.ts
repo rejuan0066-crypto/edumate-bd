@@ -66,6 +66,20 @@ describe('absence deduction', () => {
     const line = calcDayDeduction(baseShift, day, { ...day, status: 'leave' });
     expect(line.amount).toBe(0);
   });
+
+  it('waives duty deduction when staff is marked absent in main attendance (isGeneralAbsent)', () => {
+    const line = calcDayDeduction(baseShift, { ...day, isGeneralAbsent: true }, { ...day, status: 'absent' });
+    expect(line.amount).toBe(0);
+    expect(line.reason).toBe('none');
+    expect(line.note).toContain('দ্বৈত কর্তনমুক্ত');
+  });
+
+  it('skips deduction when duty record is unmarked and skipUnmarked is true', () => {
+    const line = calcDayDeduction(baseShift, { ...day, skipUnmarked: true }, null);
+    expect(line.amount).toBe(0);
+    expect(line.reason).toBe('none');
+    expect(line.amount).toBe(0);
+  });
 });
 
 describe('late deduction', () => {

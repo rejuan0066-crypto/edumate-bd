@@ -691,10 +691,26 @@ const AdminSalary = () => {
       return new Date(y, m - 1, dd).getDay();
     };
 
+    // মূল উপস্থিতিতে স্টাফ যেদিন অনুপস্থিত (absent), সেদিন ডিউটি কর্তন হবে না (দ্বৈত কর্তনমুক্ত)
+    const generalAbsentSetByStaff = new Map<string, Set<string>>();
+    (attendanceData || []).forEach((a: any) => {
+      if (a.shift === 'morning' || a.shift === 'evening') return;
+      if (a.status === 'absent') {
+        if (!generalAbsentSetByStaff.has(a.entity_id)) {
+          generalAbsentSetByStaff.set(a.entity_id, new Set());
+        }
+        generalAbsentSetByStaff.get(a.entity_id)!.add(a.attendance_date);
+      }
+    });
+
     const byStaffDays = new Map<string, DutyDay[]>();
     const push = (staffId: string, day: DutyDay) => {
+      const isGeneralAbsent = generalAbsentSetByStaff.get(staffId)?.has(day.date) ?? false;
       const arr = byStaffDays.get(staffId) || [];
-      arr.push(day);
+      arr.push({
+        ...day,
+        isGeneralAbsent,
+      });
       byStaffDays.set(staffId, arr);
     };
 
@@ -742,10 +758,10 @@ const AdminSalary = () => {
     });
 
     byStaffDays.forEach((days, staffId) => {
-      map.set(staffId, calcDutyDeduction(configured as any, days, attByStaff.get(staffId) || []));
+      map.set(staffId, calcDutyDeduction(configured as any, days, attByStaff.get(staffId) || [], { skipUnmarked: true }));
     });
     return map;
-  }, [dutyShiftDefs, dutyTemplateRows, dutyRosterRows, dutyShiftAttRows, holidaySet, monthYear, monthRange.lastDay]);
+  }, [dutyShiftDefs, dutyTemplateRows, dutyRosterRows, dutyShiftAttRows, holidaySet, monthYear, monthRange.lastDay, attendanceData]);
 
   const getDutyDeduction = (staffId: string): DeductionResult =>
     dutyDeductionByStaff.get(staffId) || { total: 0, lines: [], absentCount: 0, lateCount: 0 };
@@ -1814,9 +1830,9 @@ const AdminSalary = () => {
       if (paidHolidaySet.has(dateStr)) continue;
       untrackedPaidDays += 1;
     }
-    // সেটিংস: "অচিহ্নিত দিন বেতনসহ" শুধুমাত্র explicit ON থাকলে চালু।
-    // setting missing থাকলে OFF — অর্থাৎ নিট বেতন উপস্থিতি অনুযায়ী হবে।
-    const unmarkedPaid = getSetting('unmarked_days_paid')?.enabled === true;
+    // যে দিনগুলোতে কোনো হাজিরা রেকর্ড নেই (অচিহ্নিত দিন):
+    // ডিফল্টভাবে তা কর্তন হবে না (enabled !== false), শুধুমাত্র স্পষ্ট 'absent' রেকর্ড থাকলেই অনুপস্থিতি কর্তন হবে।
+    const unmarkedPaid = getSetting('unmarked_days_paid')?.enabled !== false;
     if (unmarkedPaid) {
       totalDailyEarnings += untrackedPaidDays * dailyRate;
     }
@@ -3437,18 +3453,18 @@ const AdminSalary = () => {
               <!-- ১. মূল বেতন -->
               <div class="ln" style="background:#f8fafc;font-weight:700"><span class="l">${bn ? '১। মূল বেতন' : '1. Base Salary'}</span><span class="v">৳${slipNum(Number(record.base_salary || 0))}</span></div>
 
-              <!-- ২. উপস্থিতি কর্তন -->
+              <!-- ২. উপস্থিতি ও ডিউটি কর্তন -->
               <div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অনুপস্থিতি কর্তন' : 'Absence Deduction'} (${bn ? toBnDigits(record.absent_days || 0) : (record.absent_days || 0)} ${bn ? 'দিন' : 'd'})</span><span class="v">৳${slipNum(Number(record.absence_deduction || 0))}</span></div>
               <div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'বিলম্ব কর্তন' : 'Late Deduction'}</span><span class="v">৳${slipNum(Number(record.late_deduction || 0))}</span></div>
-              <div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অন্যান্য কর্তন' : 'Other Deduction'}${record.other_deduction_note ? ` <span style="color:#64748b;font-weight:400">(${record.other_deduction_note})</span>` : ''}</span><span class="v">৳${slipNum(Number(record.other_deduction || 0))}</span></div>
+              ${dutyDed > 0 ? `<div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'আবাসিক ডিউটি কর্তন' : 'Residential Duty Deduction'} <span style="color:#64748b;font-weight:400">(${bn ? toBnDigits(dutyDedInfo.lines.length) : dutyDedInfo.lines.length} ${bn ? 'শিফট' : 'shifts'}${dutyDedInfo.absentCount ? ` • ${bn ? 'অনুপস্থিত' : 'absent'} ${bn ? toBnDigits(dutyDedInfo.absentCount) : dutyDedInfo.absentCount}` : ''}${dutyDedInfo.lateCount ? ` • ${bn ? 'বিলম্ব' : 'late'} ${bn ? toBnDigits(dutyDedInfo.lateCount) : dutyDedInfo.lateCount}` : ''})</span></span><span class="v">৳${slipNum(dutyDed)}</span></div>` : ''}
 
               <!-- সাবটোটাল: উপস্থিতি ভিত্তিক বেতন -->
               <div class="ln" style="border-top:1px dashed #94a3b8;padding-top:6px;margin-top:4px;background:#f0fdf4;color:#065f46"><span class="l"><strong>${bn ? '= উপস্থিতি ভিত্তিক বেতন' : '= Earned from Attendance'}</strong></span><span class="v"><strong>৳${slipNum(earnedFromAttendance)}</strong></span></div>
 
-              <!-- ৩. অগ্রিম ও জমা কর্তন -->
-              <div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অগ্রিম কর্তন' : 'Advance Deduction'}</span><span class="v">৳${slipNum(Number(record.advance_deduction || 0))}</span></div>
-              <div class="ln savings" style="color:#dc2626"><span class="l">− ${bn ? '⊕ বেতন জমা' : '⊕ Salary Savings'}</span><span class="v">৳${slipNum(savingsAmt)}</span></div>
-              ${dutyDed > 0 ? `<div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'আবাসিক ডিউটি কর্তন' : 'Residential Duty Deduction'} <span style="color:#64748b;font-weight:400">(${bn ? toBnDigits(dutyDedInfo.lines.length) : dutyDedInfo.lines.length} ${bn ? 'শিফট' : 'shifts'}${dutyDedInfo.absentCount ? ` • ${bn ? 'অনুপস্থিত' : 'absent'} ${bn ? toBnDigits(dutyDedInfo.absentCount) : dutyDedInfo.absentCount}` : ''}${dutyDedInfo.lateCount ? ` • ${bn ? 'বিলম্ব' : 'late'} ${bn ? toBnDigits(dutyDedInfo.lateCount) : dutyDedInfo.lateCount}` : ''})</span></span><span class="v">৳${slipNum(dutyDed)}</span></div>` : ''}
+              <!-- ৩. অগ্রিম, অন্যান্য কর্তন ও সঞ্চয় জমা -->
+              ${Number(record.advance_deduction || 0) > 0 ? `<div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অগ্রিম কর্তন' : 'Advance Deduction'}</span><span class="v">৳${slipNum(Number(record.advance_deduction || 0))}</span></div>` : ''}
+              ${Number(record.other_deduction || 0) > 0 ? `<div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অন্যান্য কর্তন' : 'Other Deduction'}${record.other_deduction_note ? ` <span style="color:#64748b;font-weight:400">(${record.other_deduction_note})</span>` : ''}</span><span class="v">৳${slipNum(Number(record.other_deduction || 0))}</span></div>` : ''}
+              ${savingsAmt > 0 ? `<div class="ln savings" style="color:#1d4ed8;background:#eff6ff;padding:4px 6px;border-radius:4px"><span class="l" style="font-weight:600">🏦 ${bn ? 'বেতন সঞ্চয় (ডিপোজিট)' : 'Salary Savings (Deposit)'}</span><span class="v" style="font-weight:700">৳${slipNum(savingsAmt)}</span></div>` : ''}
 
               <!-- ৪. বোনাস / ওভারটাইম / ভাতা -->
               <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'বোনাস' : 'Bonus'}</span><span class="v">৳${slipNum(Number(record.bonus || 0))}</span></div>
@@ -5320,15 +5336,15 @@ const AdminSalary = () => {
 
                 <div className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
-                    <Label>{bn ? 'অচিহ্নিত দিন বেতনসহ' : 'Unmarked Days Paid'}</Label>
+                    <Label>{bn ? 'অচিহ্নিত দিন বেতনসহ (হাজিরাহীন দিনে কর্তনমুক্ত)' : 'Unmarked Days Paid (No Deduction)'}</Label>
                     <p className="text-[10px] text-muted-foreground">
                       {bn
-                        ? 'চালু করলে হাজিরা-না-দেওয়া দিনগুলো বেতনসহ ধরা হবে; বন্ধ/default থাকলে অনুপস্থিত ধরে কর্তন হবে (ছুটি বাদে)'
-                        : 'Turn on to pay unmarked days; off/default treats days without attendance as absent (holidays excluded)'}
+                        ? 'চালু থাকলে যে দিনগুলোতে কোনো হাজিরা দেওয়া হয়নি তা কর্তন হবে না (শুধু স্পষ্ট অনুপস্থিতি কর্তন হবে); বন্ধ করলে হাজিরাহীন দিনগুলো অনুপস্থিত ধরে কর্তন হবে'
+                        : 'When enabled, days with missing attendance are not deducted (only explicit absents are deducted); when disabled, unmarked days are treated as absent'}
                     </p>
                   </div>
                   <Switch
-                    checked={getSetting('unmarked_days_paid')?.enabled === true}
+                    checked={getSetting('unmarked_days_paid')?.enabled !== false}
                     onCheckedChange={v => saveSettingMutation.mutate({ key: 'unmarked_days_paid', value: { enabled: v } })}
                   />
                 </div>
