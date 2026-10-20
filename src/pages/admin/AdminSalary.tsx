@@ -1361,29 +1361,18 @@ const AdminSalary = () => {
       record: liveRecord,
       stats: liveStats,
       isPaid: false,
-      isAdditive: (liveCalc.calc_basis || getSetting('salary_calc_basis')?.mode || 'additive') === 'additive',
+      isAdditive: (liveCalc.calc_basis || getSetting('salary_calc_basis')?.mode || 'subtractive') === 'additive',
       savingsDisplay: activeSavingsAmount,
       isLive: true,
     };
   };
 
   const getAdditiveAttendanceDeduction = (record: any): number => {
-    const baseForDed = Number(record?.base_salary || 0);
-    const earnedForDed = Number(record?.earned_from_attendance ?? NaN);
-    if (Number.isFinite(earnedForDed)) return Math.max(0, baseForDed - earnedForDed);
     return Number(record?.late_deduction || 0) + Number(record?.absence_deduction || 0) + Number(record?.other_deduction || 0);
   };
 
   const getSalaryDisplayTotalDeduction = (snapshot: ReturnType<typeof getSalaryDisplaySnapshot>): number => {
     const r = snapshot.record;
-    if (snapshot.isAdditive) {
-      return Math.round(
-        getAdditiveAttendanceDeduction(r)
-        + Number(r.advance_deduction || 0)
-        + Number(r.other_deduction || 0)
-        + Number(r.duty_deduction || 0)
-      );
-    }
     return Math.round(
       Number(r.late_deduction || 0)
       + Number(r.absence_deduction || 0)
@@ -1913,7 +1902,7 @@ const AdminSalary = () => {
 
     // Calculation basis toggle: 'subtractive' (default — পূর্ণ মাসিক বেতন − কর্তন; ছুটির দিনসহ)
     // অথবা 'additive' (শুধু উপস্থিত দিনের আয় যোগ; ছুটির দিনে বেতন নেই)
-    const calcBasis = getSetting('salary_calc_basis')?.mode || 'additive';
+    const calcBasis = getSetting('salary_calc_basis')?.mode || 'subtractive';
     // দৈনিক হার = মাসিক বেতন ÷ ৩০। তাই ৩১ দিনের মাসে পূর্ণ হাজিরায় আয় ৩১/৩০ গুণ হয়ে
     // মাসিক বেতনের বেশি হয়ে যেত। মাসের সর্বোচ্চ কার্যদিবস ৩০ ধরে হাজিরাভিত্তিক আয়
     // মাসিক বেতনে সীমাবদ্ধ রাখা হয় (ওভারটাইম আলাদাভাবে যোগ হয়)।
@@ -4037,12 +4026,13 @@ const AdminSalary = () => {
                                  const absD = Number(displayRecord?.absence_deduction || 0);
                                  const lateD = Number(displayRecord?.late_deduction || 0);
                                  const otherD = Number(displayRecord?.other_deduction || 0);
+                                 const dutyD = Number(displayRecord?.duty_deduction || 0);
                                  const earnedV = Number((displayRecord as any).earned_from_attendance || 0);
                                  const unearnedV = isAdditive ? Math.max(0, baseV - earnedV) : 0;
                                  const sumDed = totalDed;
                                 const expectedNet = isAdditive
                                   ? displayNet
-                                   : Math.max(0, baseV - absD - lateD - otherD + otV + bonusV + otherA - advD - savD);
+                                   : Math.max(0, baseV - absD - lateD - otherD - dutyD + otV + bonusV + otherA - advD - savD);
                                 const mismatch = Math.abs(expectedNet - displayNet) > 1;
                                 return (
                                   <Popover>
@@ -4065,8 +4055,9 @@ const AdminSalary = () => {
                                       </div>
                                       <div className="px-4 py-3 space-y-1.5 text-xs">
                                         {[
-                                          { lbl: bn ? 'অনুপস্থিতি' : 'Absence', v: absD, k: 'abs', info: isAdditive },
-                                          { lbl: bn ? 'বিলম্ব (মিনিট)' : 'Late (min)', v: lateD, k: 'late', info: isAdditive },
+                                          { lbl: bn ? 'অনুপস্থিতি' : 'Absence', v: absD, k: 'abs' },
+                                          { lbl: bn ? 'বিলম্ব (মিনিট)' : 'Late (min)', v: lateD, k: 'late' },
+                                          { lbl: bn ? 'ডিউটি শিফট' : 'Duty Shift', v: dutyD, k: 'duty' },
                                           { lbl: bn ? 'অগ্রিম' : 'Advance', v: advD, k: 'adv' },
                                           { lbl: bn ? 'সঞ্চয় (জমা)' : 'Savings', v: savD, k: 'sav', blue: true },
                                           { lbl: bn ? 'ম্যানুয়াল/অন্যান্য' : 'Manual / Other', v: otherD, k: 'other' },
@@ -5440,7 +5431,7 @@ const AdminSalary = () => {
                 <div className="p-3 border rounded-lg space-y-2">
                   <Label>{bn ? 'বেতন হিসাবের ভিত্তি' : 'Salary Calculation Basis'}</Label>
                   <Select
-                    value={getSetting('salary_calc_basis')?.mode || 'additive'}
+                    value={getSetting('salary_calc_basis')?.mode || 'subtractive'}
                     onValueChange={v => saveSettingMutation.mutate({ key: 'salary_calc_basis', value: { mode: v } })}
                   >
                     <SelectTrigger><SelectValue /></SelectTrigger>
