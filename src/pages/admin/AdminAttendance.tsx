@@ -301,7 +301,8 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
         if (k && !list.includes(k) && !k.startsWith('__')) list.push(k);
       });
     }
-    const defaults = ['chef', 'teacher', 'administrative', 'support', 'general'];
+    // Canonical department ordering: Administrative, Teacher, Support, General, Kitchen
+    const defaults = ['administrative', 'teacher', 'support', 'general', 'chef', 'cook'];
     defaults.forEach(d => {
       if (!list.includes(d)) list.push(d);
     });
@@ -310,20 +311,28 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
 
   const categoryLabelMap: Record<string, { bn: string; en: string }> = useMemo(() => {
     const map: Record<string, { bn: string; en: string }> = {
-      teacher: { bn: 'শিক্ষা বিভাগ', en: 'Education / Academic' },
-      administrative: { bn: 'প্রশাসনিক কর্মকর্তা', en: 'Administrative' },
-      support: { bn: 'অফিস কর্মচারী', en: 'Office Staff' },
-      general: { bn: 'সহায়ক কর্মী', en: 'General Staff' },
-      cook: { bn: 'রান্না বিভাগ', en: 'Cook / Kitchen' },
-      chef: { bn: 'রান্না বিভাগ', en: 'Cook / Kitchen' },
+      administrative: { bn: 'প্রশাসন বিভাগ', en: 'Administrative Department' },
+      teacher: { bn: 'শিক্ষা বিভাগ', en: 'Education Department' },
+      support: { bn: 'অফিস বিভাগ', en: 'Office Department' },
+      general: { bn: 'সাধারণ / সহায়ক বিভাগ', en: 'General Department' },
+      cook: { bn: 'রান্না বিভাগ', en: 'Kitchen Department' },
+      chef: { bn: 'রান্না বিভাগ', en: 'Kitchen Department' },
     };
-    // Override / extend with DB values, ensuring teacher remains 'শিক্ষা বিভাগ'
+    // Override / extend with DB values, normalizing legacy designation names to clean Department names
     staffCategoriesData.forEach(c => {
-      if (c.key === 'teacher') {
-        map[c.key] = { bn: 'শিক্ষা বিভাগ', en: 'Education / Academic' };
-      } else {
-        map[c.key] = { bn: c.name_bn || c.name || c.key, en: c.name || c.name_bn || c.key };
+      let bnName = c.name_bn || c.name || c.key;
+      if (c.key === 'teacher' || bnName === 'শিক্ষক') {
+        bnName = 'শিক্ষা বিভাগ';
+      } else if (c.key === 'administrative' && (bnName === 'প্রশাসনিক কর্মকর্তা' || bnName === 'প্রশাসনিক')) {
+        bnName = 'প্রশাসন বিভাগ';
+      } else if (c.key === 'support' && (bnName === 'অফিস কর্মচারী' || bnName === 'সাপোর্ট স্টাফ')) {
+        bnName = 'অফিস বিভাগ';
+      } else if (c.key === 'general' && (bnName === 'সহায়ক কর্মী' || bnName === 'সহায়ক কর্মী')) {
+        bnName = 'সাধারণ / সহায়ক বিভাগ';
+      } else if ((c.key === 'cook' || c.key === 'chef') && (bnName === 'বাবুর্চি' || bnName === 'কুক')) {
+        bnName = 'রান্না বিভাগ';
       }
+      map[c.key] = { bn: bnName, en: c.name || c.name_bn || c.key };
     });
     return map;
   }, [staffCategoriesData]);
