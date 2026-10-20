@@ -1830,9 +1830,15 @@ const AdminSalary = () => {
     const lastDay = Math.min(new Date(yy, mm, 0).getDate(), 30);
     const now = new Date();
     const isCurrentMonth = now.getFullYear() === yy && (now.getMonth() + 1) === mm;
-    // চলতি মাসের ক্ষেত্রে শুধুমাত্র গতকাল পর্যন্ত সম্পন্ন দিনগুলো অচিহ্নিত হিসেবে বিবেচনা হবে।
-    // আজকের চলমান দিন বা ভবিষ্যতের কোনো দিনকে অচিহ্নিত বা অনুপস্থিত গণ্য করা হবে না।
-    const lastCountedDay = isCurrentMonth ? Math.max(0, Math.min(lastDay, now.getDate() - 1)) : lastDay;
+    const isFutureMonth = (yy > now.getFullYear()) || (yy === now.getFullYear() && mm > (now.getMonth() + 1));
+    // যেকোনো মাসের জন্যই সার্বজনীন নিয়ম:
+    // ১. ভবিষ্যৎ মাসের ক্ষেত্রে কোনো দিনই অচিহ্নিত হিসেবে গণনা হবে না (lastCountedDay = 0)।
+    // ২. চলতি মাসের ক্ষেত্রে আজকের চলমান দিন বা ভবিষ্যতের কোনো দিনকে অচিহ্নিত বা অনুপস্থিত গণ্য করা হবে না (lastCountedDay = গতকাল পর্যন্ত)।
+    // ৩. বিগত মাসের ক্ষেত্রে পুরো মাসের দিনগুলো দেখা হবে।
+    // এবং যেকোনো মাস বা তারিখের জন্য: অচিহ্নিত কোনো দিন কখনোই অনুপস্থিত বা কর্তন হবে না (absent = recordedAbsent)।
+    const lastCountedDay = isFutureMonth
+      ? 0
+      : (isCurrentMonth ? Math.max(0, Math.min(lastDay, now.getDate() - 1)) : lastDay);
     let untrackedPaidDays = 0;
     let preJoinDays = 0;
     let postResignDays = 0;
@@ -2658,7 +2664,9 @@ const AdminSalary = () => {
       }
 
       // 2. Untracked days (past working days without attendance record).
-      if (stats.untrackedAbsentDays > 0) {
+      // শুধুমাত্র যদি সেটিংসে 'সম্পূর্ণ উপস্থিতি বাধ্যতামূলক' চালু থাকে, তখনই সতর্কবার্তা দেখাবে।
+      const requireCompleteAttendance = getSetting('require_complete_attendance')?.enabled === true;
+      if (requireCompleteAttendance && stats.untrackedAbsentDays > 0) {
         warnings.push(bn
           ? `${toBnDigits(stats.untrackedAbsentDays)} দিনের হাজিরা এন্ট্রি করা হয়নি`
           : `${stats.untrackedAbsentDays} day(s) missing attendance entry`);
