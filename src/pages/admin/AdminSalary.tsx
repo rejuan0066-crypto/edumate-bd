@@ -1830,7 +1830,9 @@ const AdminSalary = () => {
     const lastDay = Math.min(new Date(yy, mm, 0).getDate(), 30);
     const now = new Date();
     const isCurrentMonth = now.getFullYear() === yy && (now.getMonth() + 1) === mm;
-    const lastCountedDay = isCurrentMonth ? Math.min(lastDay, now.getDate()) : lastDay;
+    // চলতি মাসের ক্ষেত্রে শুধুমাত্র গতকাল পর্যন্ত সম্পন্ন দিনগুলো অচিহ্নিত হিসেবে বিবেচনা হবে।
+    // আজকের চলমান দিন বা ভবিষ্যতের কোনো দিনকে অচিহ্নিত বা অনুপস্থিত গণ্য করা হবে না।
+    const lastCountedDay = isCurrentMonth ? Math.max(0, Math.min(lastDay, now.getDate() - 1)) : lastDay;
     let untrackedPaidDays = 0;
     let preJoinDays = 0;
     let postResignDays = 0;
@@ -2655,12 +2657,11 @@ const AdminSalary = () => {
           : `${dupDates.length} day(s) have duplicate records (${dupDates.slice(0, 3).join(', ')}${dupDates.length > 3 ? '…' : ''})`);
       }
 
-      // 2. Untracked days (no attendance record). এগুলো এখন বেতনসহ ছুটি হিসেবে
-      // গণ্য হয় (কর্তন নয়), তাই বেতন জেনারেট আটকানো হয় না — শুধু তথ্যমূলক সতর্কবার্তা।
+      // 2. Untracked days (past working days without attendance record).
       if (stats.untrackedAbsentDays > 0) {
         warnings.push(bn
-          ? `${toBnDigits(stats.untrackedAbsentDays)} দিন কোনো হাজিরা রেকর্ড নেই — বেতনসহ ছুটি হিসেবে গণ্য`
-          : `${stats.untrackedAbsentDays} day(s) unmarked — counted as paid holiday`);
+          ? `${toBnDigits(stats.untrackedAbsentDays)} দিনের হাজিরা এন্ট্রি করা হয়নি`
+          : `${stats.untrackedAbsentDays} day(s) missing attendance entry`);
       }
 
 
