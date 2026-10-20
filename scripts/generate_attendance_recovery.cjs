@@ -153,12 +153,12 @@ for (const sal of septSalary) {
   }
 }
 
-// 2. Generate October records (2026-10-01 to 2026-10-19)
-const octFridays = new Set(['2026-10-02', '2026-10-09', '2026-10-16']);
+// 2. Generate October records (2026-10-01 to 2026-10-03 only - real attendance limit)
+const octFridays = new Set(['2026-10-02']);
 
 for (const staff of activeStaff) {
   const duty = getDutyTimes(staff);
-  for (let d = 1; d <= 19; d++) {
+  for (let d = 1; d <= 3; d++) {
     const dt = `2026-10-${String(d).padStart(2, '0')}`;
     if (octFridays.has(dt)) {
       records.push({
