@@ -27,7 +27,7 @@ import {
   CalendarDays, Users, UserCog, Search, Check, X, Clock,
   CalendarOff, Save, Settings2, Plus, Trash2, Edit2,
   CheckCircle2, XCircle, AlertCircle, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Home, Sun, Sunset, Moon, Utensils, Coffee,
-  Download, Printer, RotateCcw, QrCode, Send, Fingerprint, UserCheck, History, Sparkles
+  Download, Printer, RotateCcw, Layers, QrCode, Send, Fingerprint, UserCheck, History, Sparkles
 } from 'lucide-react';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { useAuth } from '@/hooks/useAuth';
@@ -157,6 +157,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   }, [forcedTab, tabParam, canShowStudentTab, canShowStaffTab]);
 const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal'>('all');
   const stafftabParam = searchParams.get('stafftab');
+  const [settingsSubTab, setSettingsSubTab] = useState<'all' | 'fulltime' | 'duty' | 'meal'>('all');
   const [staffSubTab, setStaffSubTab] = useState<'fulltime' | 'duty' | 'meal'>(
     stafftabParam === 'duty' ? 'duty' : stafftabParam === 'meal' ? 'meal' : 'fulltime'
   );
@@ -2188,8 +2189,62 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                 </div>
               </div>
 
-              {/* Category-wise Fulltime Shift Times - Staff fulltime tab only */}
-              {entityType === 'staff' && staffSubTab === 'fulltime' && (
+              {/* Staff Settings Section Switcher */}
+              {entityType === 'staff' && (
+                <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-muted/40 border border-border/50">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={settingsSubTab === 'all' ? 'default' : 'ghost'}
+                    className={`h-7 px-3 text-xs rounded-lg font-medium transition-all ${
+                      settingsSubTab === 'all' ? 'shadow-sm' : 'text-muted-foreground'
+                    }`}
+                    onClick={() => setSettingsSubTab('all')}
+                  >
+                    <Layers className="h-3.5 w-3.5 mr-1" />
+                    {bn ? 'সকল সেটিংস' : 'All Settings'}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={settingsSubTab === 'fulltime' ? 'default' : 'ghost'}
+                    className={`h-7 px-3 text-xs rounded-lg font-medium transition-all ${
+                      settingsSubTab === 'fulltime' ? 'shadow-sm' : 'text-muted-foreground'
+                    }`}
+                    onClick={() => setSettingsSubTab('fulltime')}
+                  >
+                    <Users className="h-3.5 w-3.5 mr-1" />
+                    {bn ? 'ফুল টাইম শিফট' : 'Full Time'}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={settingsSubTab === 'duty' ? 'default' : 'ghost'}
+                    className={`h-7 px-3 text-xs rounded-lg font-medium transition-all ${
+                      settingsSubTab === 'duty' ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-sm' : 'text-amber-700 dark:text-amber-400 hover:bg-amber-500/10'
+                    }`}
+                    onClick={() => setSettingsSubTab('duty')}
+                  >
+                    <Clock className="h-3.5 w-3.5 mr-1" />
+                    {bn ? 'আবাসিক ডিউটি সেটিংস' : 'Residential Duty'}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={settingsSubTab === 'meal' ? 'default' : 'ghost'}
+                    className={`h-7 px-3 text-xs rounded-lg font-medium transition-all ${
+                      settingsSubTab === 'meal' ? 'shadow-sm' : 'text-muted-foreground'
+                    }`}
+                    onClick={() => setSettingsSubTab('meal')}
+                  >
+                    <Utensils className="h-3.5 w-3.5 mr-1" />
+                    {bn ? 'খাবার হাজিরা' : 'Meal'}
+                  </Button>
+                </div>
+              )}
+
+              {/* Category-wise Fulltime Shift Times */}
+              {entityType === 'staff' && (settingsSubTab === 'all' || settingsSubTab === 'fulltime') && (
 
               <div className="border rounded-lg p-3 bg-muted/20 space-y-3">
                 <Label className="font-semibold flex items-center gap-2">
@@ -2427,8 +2482,8 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
               </div>
               )}
 
-              {/* Residential Duty Times - Staff duty tab only */}
-              {entityType === 'staff' && staffSubTab === 'duty' && (
+              {/* Residential Duty Times - Always accessible */}
+              {entityType === 'staff' && (settingsSubTab === 'all' || settingsSubTab === 'duty') && (
 
               <div className="border rounded-lg p-3 bg-muted/20 space-y-3">
                 <Label className="font-semibold flex items-center gap-2">
@@ -2540,8 +2595,8 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
               </div>
               )}
 
-              {/* Meal Attendance Settings - Staff meal tab only */}
-              {entityType === 'staff' && staffSubTab === 'meal' && (
+              {/* Meal Attendance Settings */}
+              {entityType === 'staff' && (settingsSubTab === 'all' || settingsSubTab === 'meal') && (
               <div className="border rounded-lg p-3 bg-muted/20 space-y-3">
                 <Label className="font-semibold flex items-center gap-2">
                   <Utensils className="h-4 w-4 text-primary" />
@@ -3187,12 +3242,22 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                       </a>
                     </Button>
                   )}
-                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => setRulesDialogOpen(true)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs font-semibold"
+                    onClick={() => {
+                      if (staffSubTab === 'duty') setSettingsSubTab('duty');
+                      else if (staffSubTab === 'meal') setSettingsSubTab('meal');
+                      else setSettingsSubTab('fulltime');
+                      setRulesDialogOpen(true);
+                    }}
+                  >
                     <Settings2 className="h-3.5 w-3.5 mr-1" />
                     {staffSubTab === 'fulltime'
                       ? (bn ? 'ফুল টাইম সেটিংস' : 'Full Time Settings')
                       : staffSubTab === 'duty'
-                        ? (bn ? 'ডিউটি টাইম সেটিংস' : 'Duty Time Settings')
+                        ? (bn ? 'আবাসিক ডিউটি সেটিংস' : 'Residential Duty Settings')
                         : (bn ? 'খাবার সেটিংস' : 'Meal Settings')}
                   </Button>
                 </div>
