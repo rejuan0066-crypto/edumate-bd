@@ -34,15 +34,29 @@ interface ClassResultTableProps {
   className?: string;
   examName?: string;
   sessionName?: string;
+  signatories?: any[];
 }
 
-const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave, isSaving, title, onViewMarksheet, onClose, lastSaved, readOnly = false, onEdit, className: classNameProp, examName, sessionName }: ClassResultTableProps) => {
+const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave, isSaving, title, onViewMarksheet, onClose, lastSaved, readOnly = false, onEdit, className: classNameProp, examName, sessionName, signatories }: ClassResultTableProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { getOverallGrade, getGraceLimit, scales, maxMarks, minMarks, passMark, gracePass } = useGradingSystem();
   
   const tableRef = useRef<HTMLDivElement>(null);
   const [explainStudent, setExplainStudent] = useState<any | null>(null);
+
+  const { data: fallbackSignatories } = useQuery({
+    queryKey: ['result-signatories'],
+    queryFn: async () => {
+      const { data: v2Data } = await supabase.from('website_settings').select('value').eq('key', 'result_signatories_v2').maybeSingle();
+      if (Array.isArray(v2Data?.value) && v2Data.value.length) return v2Data.value;
+      const { data } = await supabase.from('website_settings').select('value').eq('key', 'result_signatories').maybeSingle();
+      return (data?.value as any) || [];
+    },
+    staleTime: 60 * 1000,
+  });
+
+  const activeSignatories = signatories && signatories.length ? signatories : fallbackSignatories;
 
   const { data: institution } = useQuery({
     queryKey: ['institution-default'],
@@ -68,6 +82,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
       className: classNameProp,
       examName,
       sessionName,
+      signatories: activeSignatories,
     };
     type === 'csv' ? exportResultCSV(params) : exportResultPDF(params);
   };

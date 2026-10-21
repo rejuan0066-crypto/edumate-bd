@@ -180,6 +180,29 @@ export const exportResultCSV = (params: ExportData) => {
 };
 
 export const exportResultPDF = async (params: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
+  let activeSignatories = params.signatories;
+  if (!activeSignatories || !activeSignatories.length) {
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: v2Data } = await supabase.from('website_settings').select('value').eq('key', 'result_signatories_v2').maybeSingle();
+      if (Array.isArray(v2Data?.value) && v2Data.value.length) {
+        activeSignatories = v2Data.value as any;
+      } else {
+        const { data: legData } = await supabase.from('website_settings').select('value').eq('key', 'result_signatories').maybeSingle();
+        if (Array.isArray(legData?.value) && legData.value.length) {
+          activeSignatories = legData.value as any;
+        }
+      }
+    } catch (e) {
+      console.warn('Could not auto-fetch signatories for PDF:', e);
+    }
+  }
+
+  const effectiveParams = {
+    ...params,
+    signatories: activeSignatories,
+  };
+
   let qrCodeDataUrl = '';
   try {
     const qrUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/result`;
@@ -189,7 +212,7 @@ export const exportResultPDF = async (params: ExportData & { orientation?: 'land
   }
 
   if (isMobileOrPwa()) {
-    const html = getResultSheetHtml({ ...params, qrCodeDataUrl });
+    const html = getResultSheetHtml({ ...effectiveParams, qrCodeDataUrl });
     const fname = `${safeFileName(buildResultDocName(params))}.pdf`;
     try {
       const { toast } = await import('sonner');
@@ -202,7 +225,7 @@ export const exportResultPDF = async (params: ExportData & { orientation?: 'land
     }
     return;
   }
-  printResultSheet({ ...params, qrCodeDataUrl });
+  printResultSheet({ ...effectiveParams, qrCodeDataUrl });
 };
 
 const isMobileOrPwa = (): boolean => {
