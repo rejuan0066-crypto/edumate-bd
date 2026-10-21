@@ -735,25 +735,27 @@ const AdminResults = () => {
               {bn ? 'ক্লাস-ওয়াইজ বা ব্যক্তিগত ফলাফল অনুসন্ধান, নম্বর এন্ট্রি ও প্রকাশনা' : 'Search class-wise or individual results, enter marks and publish marksheets'}
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setSecurityDialogOpen(true)} className={`h-9 rounded-xl font-medium gap-1.5 text-xs sm:text-sm ${isSecurityActive ? 'border-primary/40 bg-primary/5 text-primary' : ''}`}>
-              <ShieldCheck className="w-3.5 h-3.5" />
-              {bn ? 'রেজাল্ট সুরক্ষা ও অনুমোদন' : 'Result Security'}
-              {isSecurityActive && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse ml-0.5" />}
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setSigDialogOpen(true)} className="h-9 rounded-xl font-medium gap-1.5 text-xs sm:text-sm">
-              <Settings2 className="w-3.5 h-3.5" />
-              {bn ? 'স্বাক্ষরকারী' : 'Signatories'}
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setGraceDialogOpen(true)} className="h-9 rounded-xl font-medium gap-1.5 text-xs sm:text-sm">
-              <Settings2 className="w-3.5 h-3.5" />
-              {bn ? 'বিবেচনায় পাস' : 'Consideration Pass'}
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setGradingDialogOpen(true)} className="h-9 rounded-xl font-medium gap-1.5 text-xs sm:text-sm">
-              <Settings2 className="w-3.5 h-3.5" />
-              {bn ? 'গ্রেডিং নিয়ম' : 'Grading Rules'}
-            </Button>
-          </div>
+          {isAdmin && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setSecurityDialogOpen(true)} className={`h-9 rounded-xl font-medium gap-1.5 text-xs sm:text-sm ${isSecurityActive ? 'border-primary/40 bg-primary/5 text-primary' : ''}`}>
+                <ShieldCheck className="w-3.5 h-3.5" />
+                {bn ? 'রেজাল্ট সুরক্ষা ও অনুমোদন' : 'Result Security'}
+                {isSecurityActive && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse ml-0.5" />}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setSigDialogOpen(true)} className="h-9 rounded-xl font-medium gap-1.5 text-xs sm:text-sm">
+                <Settings2 className="w-3.5 h-3.5" />
+                {bn ? 'স্বাক্ষরকারী' : 'Signatories'}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setGraceDialogOpen(true)} className="h-9 rounded-xl font-medium gap-1.5 text-xs sm:text-sm">
+                <Settings2 className="w-3.5 h-3.5" />
+                {bn ? 'বিবেচনায় পাস' : 'Consideration Pass'}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setGradingDialogOpen(true)} className="h-9 rounded-xl font-medium gap-1.5 text-xs sm:text-sm">
+                <Settings2 className="w-3.5 h-3.5" />
+                {bn ? 'গ্রেডিং নিয়ম' : 'Grading Rules'}
+              </Button>
+            </div>
+          )}
         </div>
 
         <GracePassSettings open={graceDialogOpen} onOpenChange={setGraceDialogOpen} />

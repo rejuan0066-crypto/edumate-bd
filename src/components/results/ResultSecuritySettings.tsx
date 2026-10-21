@@ -13,6 +13,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useResultSecurity } from '@/hooks/useResultSecurity';
+import { useAuth } from '@/hooks/useAuth';
+import { isAdminRole } from '@/lib/roles';
 import { ShieldCheck, Lock, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -24,12 +26,16 @@ interface Props {
 export default function ResultSecuritySettings({ open, onOpenChange }: Props) {
   const { language } = useLanguage();
   const bn = language === 'bn';
+  const { role } = useAuth();
+  const isAdmin = isAdminRole(role);
   const { config, isLoading, saveSecurityConfig, isSaving } = useResultSecurity();
 
   const [masterEnabled, setMasterEnabled] = useState(false);
   const [requireApproval, setRequireApproval] = useState(true);
   const [lockPublished, setLockPublished] = useState(true);
   const [allowAdminDirect, setAllowAdminDirect] = useState(true);
+
+  if (!isAdmin) return null;
 
   useEffect(() => {
     if (open) {
