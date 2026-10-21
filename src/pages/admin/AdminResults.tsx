@@ -472,12 +472,23 @@ const AdminResults = () => {
   const { data: signatories = DEFAULT_RESULT_SIGNATORIES } = useQuery<ResultSignatory[]>({
     queryKey: ['result-signatories'],
     queryFn: async () => {
+      // 1. Check modern v2 storage first (supports show_name without schema constraints)
+      const { data: v2Data } = await supabase.from('website_settings').select('value').eq('key', 'result_signatories_v2').maybeSingle();
+      const v2 = (v2Data?.value as any);
+      if (Array.isArray(v2) && v2.length) {
+        return (v2 as ResultSignatory[]).map(r => ({
+          ...r,
+          show_name: r.show_name !== false,
+        }));
+      }
+
+      // 2. Fallback to legacy result_signatories
       const { data } = await supabase.from('website_settings').select('value').eq('key', 'result_signatories').maybeSingle();
       const v = (data?.value as any);
       if (Array.isArray(v) && v.length) {
         return (v as ResultSignatory[]).map(r => ({
           ...r,
-          show_name: r.show_name !== false,
+          show_name: r.show_name !== false && r.name_bn !== '—' && r.name_bn !== '-',
         }));
       }
       return DEFAULT_RESULT_SIGNATORIES;
@@ -696,17 +707,48 @@ const AdminResults = () => {
         setSigErrors(errs);
         throw new Error(bn ? 'কিছু ক্ষেত্র সঠিকভাবে পূরণ করা হয়নি' : 'Please fix the highlighted fields');
       }
-      const cleaned = rows.map(r => ({
+      // Modern v2 format with full show_name support (bypasses legacy check constraint on key = 'result_signatories')
+      const v2Payload = rows.map(r => ({
         title_bn: (r.title_bn || '').trim(),
         title_en: (r.title_en || '').trim(),
         name_bn: (r.name_bn || '').trim(),
         name_en: (r.name_en || '').trim(),
         show_name: r.show_name !== false,
       }));
+
+      // Legacy payload for key = 'result_signatories' to satisfy the strict DB check constraint:
+      // IF btrim(n_bn) = '' AND btrim(n_en) = '' THEN RETURN false;
+      const legacyPayload = rows.map(r => {
+        const tBn = (r.title_bn || '').trim();
+        const tEn = (r.title_en || '').trim();
+        let nBn = (r.name_bn || '').trim();
+        let nEn = (r.name_en || '').trim();
+        if (!nBn && !nEn) {
+          nBn = tBn || '—';
+          nEn = tEn || '—';
+        }
+        return {
+          title_bn: tBn,
+          title_en: tEn,
+          name_bn: nBn,
+          name_en: nEn,
+        };
+      });
+
+      // Save both: v2 for modern clients, legacy for backward compatibility
+      const { error: v2Error } = await supabase
+        .from('website_settings')
+        .upsert({ key: 'result_signatories_v2', value: v2Payload as any, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+      if (v2Error) console.warn('Could not save result_signatories_v2:', v2Error);
+
       const { error } = await supabase
         .from('website_settings')
-        .upsert({ key: 'result_signatories', value: cleaned as any, updated_at: new Date().toISOString() }, { onConflict: 'key' });
-      if (error) throw error;
+        .upsert({ key: 'result_signatories', value: legacyPayload as any, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+      if (error && !v2Error) {
+        console.warn('Legacy signatories save failed, but v2 succeeded:', error);
+      } else if (error && v2Error) {
+        throw error;
+      }
     },
     onSuccess: () => {
       toast.success(bn ? 'স্বাক্ষরকারীর তথ্য সংরক্ষিত' : 'Signatories saved');
