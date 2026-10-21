@@ -447,39 +447,51 @@ const ClassResultTable = ({
                   </td>
                   <td className="w-[115px] min-w-[115px] max-w-[115px] px-1 text-center text-[10px] font-medium text-muted-foreground border-b border-r border-border">
                     <div className="flex items-center justify-center h-full">
-                      {readOnly ? (
-                        <div className="truncate flex items-center justify-center gap-1">
-                          <span>{overall ? (bn ? overall.title_bn : overall.title) : '-'}</span>
-                          {statusOverrides?.[st.id] && statusOverrides[st.id] !== 'auto' && (
-                            <span className="text-[9px] text-amber-600 font-bold px-1 rounded bg-amber-50 border border-amber-200" title={bn ? 'ম্যানুয়াল পরিবর্তিত' : 'Manually modified'}>
-                              {statusOverrides[st.id] === 'fail' ? (bn ? 'ফেল' : 'F') : (bn ? 'বিবেচনা' : 'G')}
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <select
-                          value={statusOverrides?.[st.id] || 'auto'}
-                          onChange={(e) => onStatusOverrideChange?.(st.id, e.target.value as any)}
-                          className={`text-[10px] font-semibold rounded px-1 py-1 border transition-all ${
-                            statusOverrides?.[st.id] === 'fail'
-                              ? 'border-destructive text-destructive bg-destructive/10'
-                              : statusOverrides?.[st.id] === 'grace_pass'
-                              ? 'border-amber-500 text-amber-700 bg-amber-500/15'
-                              : 'border-border text-muted-foreground bg-background hover:border-primary/50'
-                          } focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer w-full max-w-[108px] truncate`}
-                          title={bn ? 'ফলাফল পরিবর্তন (অটো / ফেইল / বিবেচনায় পাস)' : 'Override status (Auto / Fail / Grace Pass)'}
-                        >
-                          <option value="auto">
-                            {overall ? (bn ? `অটো (${overall.title_bn})` : `Auto (${overall.title})`) : (bn ? 'অটো' : 'Auto')}
-                          </option>
-                          <option value="fail">
-                            {bn ? 'অকৃতকার্য (ফেল)' : 'Fail'}
-                          </option>
-                          <option value="grace_pass">
-                            {bn ? 'বিবেচনায় পাস (মাকবুল)' : 'Grace Pass (Maqbul)'}
-                          </option>
-                        </select>
-                      )}
+                      {(() => {
+                        const isEligibleForChange = failed || overall?.graced || (statusOverrides?.[st.id] && statusOverrides[st.id] !== 'auto');
+                        const currentVal = statusOverrides?.[st.id] === 'grace_pass'
+                          ? 'grace_pass'
+                          : statusOverrides?.[st.id] === 'fail'
+                          ? 'fail'
+                          : overall?.graced
+                          ? 'grace_pass'
+                          : failed
+                          ? 'fail'
+                          : 'auto';
+
+                        if (readOnly || !isEligibleForChange) {
+                          return (
+                            <div className="truncate flex items-center justify-center gap-1 font-semibold text-foreground">
+                              <span>{overall ? (bn ? overall.title_bn : overall.title) : '-'}</span>
+                              {statusOverrides?.[st.id] && statusOverrides[st.id] !== 'auto' && (
+                                <span className="text-[9px] text-amber-600 font-bold px-1 rounded bg-amber-50 border border-amber-200" title={bn ? 'ম্যানুয়াল পরিবর্তিত' : 'Manually modified'}>
+                                  {statusOverrides[st.id] === 'fail' ? (bn ? 'ফেল' : 'F') : (bn ? 'বিবেচনা' : 'G')}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <select
+                            value={currentVal}
+                            onChange={(e) => onStatusOverrideChange?.(st.id, e.target.value as any)}
+                            className={`text-[10px] font-semibold rounded px-1.5 py-1 border transition-all ${
+                              currentVal === 'fail'
+                                ? 'border-destructive/60 text-destructive bg-destructive/10'
+                                : 'border-amber-500/70 text-amber-800 bg-amber-500/15'
+                            } focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer w-full max-w-[108px] truncate`}
+                            title={bn ? 'ফলাফল পরিবর্তন (ফেইল ⇄ বিবেচনায় পাস)' : 'Toggle Fail / Grace Pass'}
+                          >
+                            <option value="fail">
+                              {bn ? 'অকৃতকার্য (রাসিব)' : 'Fail (Rasib)'}
+                            </option>
+                            <option value="grace_pass">
+                              {bn ? 'মাকবুল (বিবেচনায়)' : 'Grace Pass (Maqbul)'}
+                            </option>
+                          </select>
+                        );
+                      })()}
                     </div>
                   </td>
                   <td className="w-[64px] min-w-[64px] max-w-[64px] px-1 text-center text-xs font-medium text-muted-foreground border-b border-r border-border">
