@@ -489,9 +489,9 @@ const AdminResults = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('staff')
-        .select('id, name, name_bn, name_en, designation')
-        .eq('is_active', true)
-        .order('name');
+        .select('id, name_bn, name_en, designation, status')
+        .is('deleted_at', null)
+        .order('name_bn');
       if (error) {
         console.error('Error fetching staff list for signatories:', error);
         return [];
@@ -500,6 +500,40 @@ const AdminResults = () => {
     },
     staleTime: 5 * 60 * 1000,
   });
+
+  // Find Muhtamim / Principal from staff list
+  const detectedMuhtamim = useMemo(() => {
+    return staffList.find((s: any) => {
+      const des = (s.designation || '').toLowerCase();
+      return (
+        des.includes('মুহতামিম') ||
+        des.includes('অধ্যক্ষ') ||
+        des.includes('প্রধান শিক্ষক') ||
+        des.includes('প্রিন্সিপাল') ||
+        des.includes('principal') ||
+        des.includes('headmaster')
+      );
+    });
+  }, [staffList]);
+
+  // When dialog opens, if Muhtamim row has no name, auto-fill with detected Muhtamim
+  useEffect(() => {
+    if (sigDialogOpen && detectedMuhtamim) {
+      setSigDraft(prev => prev.map((s, idx) => {
+        const isMuhtamimRow = idx === 3 || (s.title_bn || '').includes('মুহতামিম') || (s.title_bn || '').includes('অধ্যক্ষ');
+        if (isMuhtamimRow && !s.name_bn && !s.name_en) {
+          return {
+            ...s,
+            name_bn: detectedMuhtamim.name_bn || '',
+            name_en: detectedMuhtamim.name_en || detectedMuhtamim.name_bn || '',
+            title_bn: detectedMuhtamim.designation || s.title_bn || 'মুহতামিম / অধ্যক্ষ',
+            show_name: true,
+          };
+        }
+        return s;
+      }));
+    }
+  }, [sigDialogOpen, detectedMuhtamim]);
 
   const { data: footerOptions = DEFAULT_PRINT_FOOTER_OPTIONS, refetch: refetchFooterOptions } = useQuery<ResultPrintFooterOptions>({
     queryKey: ['result-print-footer'],
@@ -876,18 +910,68 @@ const AdminResults = () => {
                       <Label className="text-xs flex items-center justify-between text-muted-foreground mb-1">
                         <span>{bn ? 'শিক্ষক/স্টাফ ড্রপডাউন (বাছাই করলে নাম স্বয়ংক্রিয়ভাবে বসবে)' : 'Teacher/Staff Dropdown (Auto-fills name)'}</span>
                       </Label>
+                    {detectedMuhtamim && (i === 3 || (s.title_bn || '').includes('মুহতামিম') || (s.title_bn || '').includes('অধ্যক্ষ')) && (
+                      <div className="md:col-span-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                        <div className="text-xs text-emerald-900 dark:text-emerald-200 font-medium">
+                          <span className="font-bold">⭐ {bn ? 'প্রতিষ্ঠানের মুহতামিম/অধ্যক্ষ:' : 'Principal:'} </span>
+                          <span className="font-bold underline text-emerald-700 dark:text-emerald-300">{detectedMuhtamim.name_bn}</span>
+                          <span className="text-muted-foreground ml-1">({detectedMuhtamim.designation || (bn ? 'মুহতামিম' : 'Principal')})</span>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white border-0 shadow-sm shrink-0"
+                          onClick={() => {
+                            setSigDraft(d => d.map((x, j) => j === i ? {
+                              ...x,
+                              name_bn: detectedMuhtamim.name_bn || '',
+                              name_en: detectedMuhtamim.name_en || detectedMuhtamim.name_bn || '',
+                              title_bn: detectedMuhtamim.designation || 'মুহতামিম / অধ্যক্ষ',
+                              title_en: x.title_en || 'Principal',
+                              show_name: true,
+                            } : x));
+                            setSigErrors(prev => { const n = { ...prev }; delete n[i]; return n; });
+                            toast.success(bn ? 'মুহতামিম সাহেবের নাম ও পদবী যুক্ত করা হয়েছে' : 'Applied Principal name & title');
+                          }}
+                        >
+                          {bn ? 'উনার পদবী সহ বসান' : 'Apply with Title'}
+                        </Button>
+                      </div>
+                    )}
+
+                    <div className="md:col-span-2">
+                      <Label className="text-xs flex items-center justify-between text-muted-foreground mb-1">
+                        <span>{bn ? 'শিক্ষক/স্টাফ ড্রপডাউন (বাছাই করলে নাম ও পদবী স্বয়ংক্রিয়ভাবে বসবে)' : 'Teacher/Staff Dropdown (Auto-fills name & title)'}</span>
+                      </Label>
                       <Select
                         disabled={!isShowName}
                         value=""
                         onValueChange={(staffId) => {
                           const staffMember = staffList.find((st: any) => st.id === staffId);
                           if (staffMember) {
-                            const nameBn = staffMember.name_bn || staffMember.name || '';
-                            const nameEn = staffMember.name_en || staffMember.name || '';
+                            const nameBn = staffMember.name_bn || '';
+                            const nameEn = staffMember.name_en || staffMember.name_bn || '';
+                            const newTitleBn = staffMember.designation || s.title_bn || '';
+                            let newTitleEn = s.title_en || '';
+                            if (staffMember.designation) {
+                              const desLower = staffMember.designation.toLowerCase();
+                              if (desLower.includes('মুহতামিম') || desLower.includes('অধ্যক্ষ') || desLower.includes('প্রধান')) {
+                                newTitleEn = 'Principal';
+                              } else if (desLower.includes('পরীক্ষা')) {
+                                newTitleEn = 'Exam Controller';
+                              } else if (desLower.includes('শিক্ষা সচিব')) {
+                                newTitleEn = 'Education Secretary';
+                              } else if (desLower.includes('শ্রেণি') || desLower.includes('শিক্ষক')) {
+                                newTitleEn = s.title_en || 'Teacher';
+                              }
+                            }
                             setSigDraft(d => d.map((x, j) => j === i ? {
                               ...x,
                               name_bn: nameBn,
                               name_en: nameEn,
+                              title_bn: newTitleBn,
+                              title_en: newTitleEn,
                             } : x));
                             setSigErrors(prev => { const n = { ...prev }; delete n[i]; return n; });
                           }
@@ -899,8 +983,8 @@ const AdminResults = () => {
                         <SelectContent className="max-h-60">
                           {staffList.map((st: any) => {
                             const displayName = bn
-                              ? (st.name_bn || st.name) + (st.designation ? ` — ${st.designation}` : '')
-                              : (st.name_en || st.name) + (st.designation ? ` — ${st.designation}` : '');
+                              ? st.name_bn + (st.designation ? ` — ${st.designation}` : '')
+                              : (st.name_en || st.name_bn) + (st.designation ? ` — ${st.designation}` : '');
                             return (
                               <SelectItem key={st.id} value={st.id} className="text-xs">
                                 {displayName}
@@ -909,6 +993,7 @@ const AdminResults = () => {
                           })}
                         </SelectContent>
                       </Select>
+                    </div>
                     </div>
 
                     <div>
