@@ -133,12 +133,13 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
         examName,
         sessionName,
         passMark,
+        signatories: activeSignatories,
       });
     } catch (e) {
       console.error('Result sheet preview failed', e);
       return '';
     }
-  }, [readOnly, title, students, subjects, marksMap, bn, instName, institution, classNameProp, examName, sessionName, passMark, getOverallGrade]);
+  }, [readOnly, title, students, subjects, marksMap, bn, instName, institution, classNameProp, examName, sessionName, passMark, getOverallGrade, activeSignatories]);
 
   // Scale pages to fit iframe width and report full content height to parent
   const previewHtml = useMemo(() => {

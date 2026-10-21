@@ -449,8 +449,8 @@ export const getResultSheetHtml = ({
               ${sigList.map(sig => `
                 <div class="sig-block">
                   <div class="sig-line"></div>
-                  ${sig.show_name !== false && (sig.name_bn || sig.name_en) && sig.name_bn !== '—' && sig.name_bn !== '-' ? `<div class="sig-name">${bn ? (sig.name_bn || '') : (sig.name_en || sig.name_bn || '')}</div>` : ''}
-                  <div class="sig-title">${bn ? (sig.title_bn || '') : (sig.title_en || sig.title_bn || '')}</div>
+                  ${sig.show_name !== false && (sig.name_bn || sig.name_en) && sig.name_bn !== '—' && sig.name_bn !== '-' ? `<div class="sig-name">${bn ? (sig.name_bn || sig.name_en || '') : (sig.name_en || sig.name_bn || '')}</div>` : ''}
+                  <div class="sig-title">${bn ? (sig.title_bn || sig.title_en || '') : (sig.title_en || sig.title_bn || '')}</div>
                 </div>
               `).join('')}
             </div>
