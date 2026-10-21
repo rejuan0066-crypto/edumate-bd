@@ -46,6 +46,7 @@ import FulltimeMonthlyAttendanceSheetDialog from '@/components/admin/FulltimeMon
 import BulkHolidayDialog from '@/components/admin/BulkHolidayDialog';
 import AttendanceRecoveryDialog from '@/components/admin/AttendanceRecoveryDialog';
 import StaffSpecialShiftDialog from '@/components/admin/StaffSpecialShiftDialog';
+import { useApprovalWorkflow } from '@/hooks/useApprovalWorkflow';
 import {
   resolveStaffShift,
   fetchSpecialShifts,
@@ -129,6 +130,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   const canBulkMark = canViewPage && canMarkAttendance;
   const { role } = useAuth();
   const isAdmin = isAdminRole(role);
+  const { needsApproval, submitForApproval } = useApprovalWorkflow();
   // Non-admins can only mark attendance. Settings, rosters, devices, summaries
   // and exports stay hidden unless the matching permission is granted.
   const canManageAttendance = isAdmin || canApproveItem;
@@ -144,6 +146,12 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   const resolvedTab = forcedTab || (tabParam === 'staff' ? 'staff' : 'student');
 
   const [entityType, setEntityType] = useState<'student' | 'staff'>(resolvedTab);
+
+  const targetMenuPath = entityType === 'staff' ? '/admin/staff-attendance' : '/admin/student-attendance';
+  const requiresResetApproval = useMemo(() => {
+    if (isAdmin) return false;
+    return Boolean(needsApproval(targetMenuPath, 'delete') || needsApproval('/admin/attendance', 'delete'));
+  }, [isAdmin, needsApproval, targetMenuPath]);
 
   // Sync entityType when forcedTab, URL tab param, or permission changes
   useEffect(() => {
@@ -1586,11 +1594,51 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
         ids = attendance.filter((a: any) => catStaffIds.has(a.entity_id)).map((a: any) => a.id);
       }
       if (ids.length === 0) throw new Error('No records to reset');
+
+      if (requiresResetApproval) {
+        const success = await submitForApproval({
+          actionType: 'delete',
+          targetTable: 'attendance_records',
+          targetId: ids.length === 1 ? ids[0] : undefined,
+          menuPath: targetMenuPath,
+          payload: {
+            ids,
+            reset_type: type,
+            target_label: resetTargetLabel,
+            count: ids.length,
+            date: selectedDate,
+            entity_type: entityType,
+            shift: effectiveShift,
+          },
+          description: bn
+            ? `${selectedDate} তারিখের ${resetTargetLabel} (${ids.length}টি হাজিরা রেকর্ড) রিসেট করার আবেদন`
+            : `Reset attendance for ${resetTargetLabel} (${ids.length} records) on ${selectedDate}`,
+        });
+
+        if (!success) {
+          throw new Error('SUBMIT_APPROVAL_FAILED');
+        }
+        return { type, approvalSubmitted: true };
+      }
+
       const { error } = await supabase.from('attendance_records').delete().in('id', ids);
       if (error) throw error;
-      return type;
+      return { type, approvalSubmitted: false };
     },
-    onSuccess: (_data, type) => {
+    onSuccess: (result) => {
+      const { type, approvalSubmitted } = result;
+      setShowResetDialog(false);
+
+      if (approvalSubmitted) {
+        toast.info(
+          bn
+            ? '⏳ রিসেট অনুমোদনের জন্য জমা দেওয়া হয়েছে। প্রধান এডমিন অনুমোদন করার পর কার্যকর হবে।'
+            : '⏳ Reset request submitted for approval. It will take effect once approved by admin.',
+          { duration: 6000 }
+        );
+        return;
+      }
+
       queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType, effectiveShift] });
       queryClient.invalidateQueries({ queryKey: ['salary-attendance'] });
       queryClient.invalidateQueries({ queryKey: ['salary-duty-attendance'] });
@@ -1602,13 +1650,16 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
         single_staff: bn ? `${resetStaffName} এর হাজিরা` : `${resetStaffName}'s attendance`,
         staff_category: bn ? `${getCategoryLabel(resetStaffCategory) || resetStaffCategory} হাজিরা` : `${getCategoryLabel(resetStaffCategory) || resetStaffCategory} attendance`,
       };
-      setShowResetDialog(false);
       toast.success(bn ? `সাফল্যের সাথে ${labels[type]} রিসেট করা হয়েছে।` : `${labels[type]} reset successfully.`);
     },
     onError: (error) => {
       const message = error instanceof Error ? error.message : '';
       if (message === 'No records to reset') {
         toast.error(bn ? 'রিসেট করার মতো কোনো রেকর্ড নেই' : 'No records found to reset');
+        return;
+      }
+      if (message === 'SUBMIT_APPROVAL_FAILED') {
+        toast.error(bn ? 'অনুমোদনের জন্য আবেদন পাঠাতে ব্যর্থ হয়েছে' : 'Failed to submit reset approval request');
         return;
       }
 
@@ -3647,6 +3698,16 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                     ? `এই তারিখের ${resetRecordCount}টি হাজিরা রেকর্ড মুছে যাবে। এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।`
                     : `${resetRecordCount} attendance records for this date will be removed. This action cannot be undone.`}
                 </p>
+                {requiresResetApproval && (
+                  <div className="mt-3 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-300 flex items-start gap-2">
+                    <Clock className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
+                    <span>
+                      {bn
+                        ? 'আপনার একাউন্টে হাজিরা রিসেট করতে প্রধান এডমিনের অনুমোদন প্রযোজ্য। কনফার্ম করলে এটি অনুমোদনের কিউতে জমা হবে।'
+                        : 'Admin approval is required to reset attendance on your account. Confirming will submit a request to the admin approval queue.'}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-3">
@@ -3654,12 +3715,17 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                   {bn ? 'বাতিল' : 'Cancel'}
                 </Button>
                 <Button
-                  variant="destructive"
+                  variant={requiresResetApproval ? 'default' : 'destructive'}
+                  className={requiresResetApproval ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}
                   onClick={() => resetMutation.mutate(resetType)}
                   disabled={resetMutation.isPending || resetRecordCount === 0}
                 >
                   <RotateCcw className="mr-2 h-4 w-4" />
-                  {resetMutation.isPending ? (bn ? 'রিসেট হচ্ছে...' : 'Resetting...') : (bn ? 'রিসেট করুন' : 'Reset now')}
+                  {resetMutation.isPending
+                    ? (bn ? 'প্রক্রিয়াধীন...' : 'Processing...')
+                    : requiresResetApproval
+                    ? (bn ? 'অনুমোদনের আবেদন পাঠান' : 'Submit for Approval')
+                    : (bn ? 'রিসেট করুন' : 'Reset now')}
                 </Button>
               </div>
             </div>

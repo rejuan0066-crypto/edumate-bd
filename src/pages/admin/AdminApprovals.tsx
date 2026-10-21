@@ -84,7 +84,7 @@ const TABLE_MODULE_MAP: Record<string, { labelBn: string; labelEn: string; categ
   fixed_assets: { labelBn: 'স্থায়ী সম্পদ', labelEn: 'Fixed Assets', category: 'inventory', icon: '🏢' },
   inventory_items: { labelBn: 'মালামাল ও ইনভেন্টরি', labelEn: 'Inventory Items', category: 'inventory', icon: '📦' },
   notices: { labelBn: 'নোটিশ ও বিজ্ঞপ্তি', labelEn: 'Notices', category: 'other', icon: '📢' },
-  attendance_records: { labelBn: 'উপস্থিতি তথ্য', labelEn: 'Attendance Records', category: 'other', icon: '⏱️' },
+  attendance_records: { labelBn: 'উপস্থিতি তথ্য', labelEn: 'Attendance Records', category: 'staff', icon: '⏱️' },
 };
 
 const FIELD_LABEL_MAP: Record<string, string> = {
@@ -98,6 +98,12 @@ const FIELD_LABEL_MAP: Record<string, string> = {
   name_en: 'নাম (ইংরেজি)',
   roll_number: 'রোল নম্বর',
   class_id: 'শ্রেণি আইডি',
+  reset_type: 'রিসেটের ধরন',
+  target_label: 'রিসেটের আওতাভুক্ত',
+  count: 'মোট রেকর্ড সংখ্যা',
+  date: 'তারিখ',
+  entity_type: 'সত্তা ধরন',
+  shift: 'শিফট',
   phone: 'মোবাইল নম্বর',
   mobile: 'মোবাইল নম্বর',
   email: 'ইমেইল',
@@ -633,12 +639,17 @@ const AdminApprovals = () => {
           .eq('division_id', target_id)
           .is('deleted_at', null);
       }
-    } else if (action_type === 'delete' && target_id) {
-      if (target_table === 'classes') {
+    } else if (action_type === 'delete') {
+      if (target_table === 'classes' && target_id) {
         await supabase.from('students').update({ status: 'inactive' } as any).eq('class_id', target_id).is('deleted_at', null);
       }
-      const { error } = await supabase.from(target_table).delete().eq('id', target_id);
-      if (error) throw error;
+      if (cleanPayload.ids && Array.isArray(cleanPayload.ids) && cleanPayload.ids.length > 0) {
+        const { error } = await supabase.from(target_table).delete().in('id', cleanPayload.ids);
+        if (error) throw error;
+      } else if (target_id) {
+        const { error } = await supabase.from(target_table).delete().eq('id', target_id);
+        if (error) throw error;
+      }
     } else if (action_type === 'reject' && target_id) {
       delete (cleanPayload as any).id;
       const { error } = await supabase.from(target_table).update(cleanPayload as any).eq('id', target_id);
@@ -681,6 +692,9 @@ const AdminApprovals = () => {
       queryClient.invalidateQueries({ queryKey: ['salary'] });
       queryClient.invalidateQueries({ queryKey: ['all-classes'] });
       queryClient.invalidateQueries({ queryKey: ['classes'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-duty-attendance'] });
       invalidateAllStudentQueries(queryClient);
       toast.success(status === 'approved' ? (bn ? '✅ ডেটা পরিবর্তন অনুমোদিত ও কার্যকর হয়েছে!' : '✅ Action executed & approved!') : (bn ? '❌ পরিবর্তন বাতিল করা হয়েছে' : '❌ Action rejected'));
       setDetailModal(null);
@@ -2068,7 +2082,7 @@ const AdminApprovals = () => {
                   const payload = action.payload || {};
                   const amount = payload.amount || payload.net_salary || payload.total_amount;
                   const meta = TABLE_MODULE_MAP[action.target_table] || { labelBn: action.target_table, icon: '📁' };
-                  const displayEntries = Object.entries(payload).filter(([k]) => !k.startsWith('_'));
+                  const displayEntries = Object.entries(payload).filter(([k]) => !k.startsWith('_') && k !== 'ids');
 
                   return (
                     <div className="space-y-4">
