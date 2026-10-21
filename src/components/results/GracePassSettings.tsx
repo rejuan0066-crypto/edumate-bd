@@ -71,7 +71,7 @@ const GracePassSettings = ({ open, onOpenChange }: Props) => {
     const c: any = (row?.config && typeof row.config === 'object') ? row.config : {};
     setEnabled(!!row?.is_active && c.enabled !== false);
     setMaxSubjects(c.max_subjects ?? 1);
-    setGrade(c.grade || 'D');
+    setGrade((c.grade && c.grade !== "C") ? c.grade : "D");
     setApplyTo(c.apply_to === 'selected' ? 'selected' : 'all');
     setClassRules((c.class_rules && typeof c.class_rules === 'object') ? c.class_rules : {});
     setMinAggregatePercent(Number(c.min_aggregate_percent) || 0);

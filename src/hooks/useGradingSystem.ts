@@ -80,7 +80,7 @@ export const useGradingSystem = () => {
       return {
         enabled: !!data.is_active && c.enabled !== false,
         max_subjects: c.max_subjects ?? 1,
-        grade: c.grade || 'D',
+        grade: (c.grade && c.grade !== "C") ? c.grade : "D",
         apply_to: (c.apply_to === 'selected' ? 'selected' : 'all') as 'all' | 'selected',
         class_rules: (c.class_rules && typeof c.class_rules === 'object' ? c.class_rules : {}) as Record<string, number>,
         min_aggregate_percent: Number(c.min_aggregate_percent) || 0,

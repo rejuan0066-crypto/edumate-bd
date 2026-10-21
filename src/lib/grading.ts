@@ -153,13 +153,13 @@ export const overallGrade = (subjectMarks: number[], options: OverallGradeOption
   }
 
   if (graced) {
-    const targetScale = scales.find((s) => s.grade === targetGraceGrade) || scales.find((s) => s.grade === 'D') || DEFAULT_SCALES.find((s) => s.grade === 'D');
+    const dScale = scales.find((s) => s.grade === 'D') || DEFAULT_SCALES.find((s) => s.grade === 'D');
     return {
-      grade: targetScale?.grade || 'D',
-      gpa: targetScale?.gpa || '1.00',
-      color: colorMap[targetScale?.color || 'orange'] || colorMap.orange,
-      title: targetScale?.title ? `${targetScale.title} (Considered)` : 'Maqbul (Considered)',
-      title_bn: targetScale?.title_bn ? `${targetScale.title_bn} (বিবেচনায়)` : 'মাকবুল (বিবেচনায়)',
+      grade: 'D',
+      gpa: dScale?.gpa || '1.00',
+      color: colorMap[dScale?.color || 'orange'] || colorMap.orange,
+      title: 'Maqbul (Considered)',
+      title_bn: 'মাকবুল (বিবেচনায়)',
       hasFail: false,
       graced: true,
       failedCount,

@@ -103,7 +103,7 @@ describe('overallGrade — failures and consideration pass', () => {
 
   it('awards consideration pass within the allowed limit', () => {
     const r = overallGrade([90, 20, 80], { passMark: PASS, graceLimit: 1 });
-    expect(r).toMatchObject({ grade: 'D', gpa: '1.00', graced: true, hasFail: false, title_bn: 'যয়ীফ (বিবেচনায়)' });
+    expect(r).toMatchObject({ grade: 'D', gpa: '1.00', graced: true, hasFail: false, title_bn: "মাকবুল (বিবেচনায়)" });
   });
 
   it('denies consideration pass when total aggregate percent falls below minAggregatePercent', () => {
