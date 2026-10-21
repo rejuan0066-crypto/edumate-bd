@@ -653,19 +653,40 @@ export default function ResidentialDutyMonthlySheetDialog({
       <head>
         <meta charset="utf-8" />
         <title>${title}</title>
-        <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
         <style>
+          @font-face {
+            font-family: 'Kalpurush';
+            src: url('/fonts/Kalpurush.ttf') format('truetype'),
+                 url('https://cdn.jsdelivr.net/gh/maateen/bangla-web-fonts/fonts/kalpurush/Kalpurush-v0.258.ttf') format('truetype');
+            font-display: block;
+          }
+          @font-face {
+            font-family: 'SolaimanLipi';
+            src: url('https://cdn.jsdelivr.net/gh/maateen/bangla-web-fonts/fonts/solaiman-lipi/solaimanlipi-normal-v1.0.ttf') format('truetype');
+            font-display: block;
+          }
           * { margin:0; padding:0; box-sizing:border-box; }
-          @page { size: A4 landscape; margin: 6mm; }
-          body { font-family: 'Hind Siliguri', 'Noto Sans Bengali', sans-serif; margin: 0; padding: 10px; color: #1e293b; }
-          .header { text-align: center; margin-bottom: 10px; border-bottom: 2px solid #059669; padding-bottom: 6px; }
-          .header h1 { margin: 0; font-size: 18px; color: #0f172a; }
-          .header h2 { margin: 3px 0 0 0; font-size: 13px; color: #059669; }
+          @page { size: A4 landscape; margin: 6mm 8mm; }
+          body {
+            font-family: 'Kalpurush', 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', sans-serif !important;
+            margin: 0;
+            padding: 8px 10px;
+            color: #1e293b;
+            background: #ffffff;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .header { text-align: center; margin-bottom: 8px; border-bottom: 2px solid #059669; padding-bottom: 4px; }
+          .header h1 { margin: 0; font-size: 17px; color: #0f172a; }
+          .header h2 { margin: 2px 0 0 0; font-size: 12.5px; color: #059669; }
           table { width: 100%; border-collapse: collapse; margin-top: 6px; }
-          .legend { display: flex; gap: 14px; margin-top: 8px; font-size: 10.5px; justify-content: center; font-weight: 500; }
-          .footer-signs { display: flex; justify-content: space-between; margin-top: 36px; padding: 0 40px; }
-          .sign-box { text-align: center; border-top: 1px dashed #64748b; padding-top: 4px; width: 160px; font-size: 11px; }
-          @media print { body { padding:0; } }
+          .legend { display: flex; gap: 14px; margin-top: 6px; font-size: 9.5px; justify-content: center; font-weight: 500; }
+          .footer-signs { display: flex; justify-content: space-between; margin-top: 24px; padding: 0 40px; page-break-inside: avoid; break-inside: avoid; }
+          .sign-box { text-align: center; border-top: 1px dashed #64748b; padding-top: 4px; width: 160px; font-size: 10.5px; font-weight: 600; color: #334155; }
+          @media print {
+            body { padding:0 !important; background: #fff !important; }
+            .footer-signs { page-break-inside: avoid; break-inside: avoid; }
+          }
         </style>
       </head>
       <body>
@@ -705,9 +726,21 @@ export default function ResidentialDutyMonthlySheetDialog({
     const html = generatePrintAndPdfHtml();
     printWindow.document.write(html);
     printWindow.document.close();
-    setTimeout(() => {
+
+    const doPrint = () => {
+      printWindow.focus();
       printWindow.print();
-    }, 600);
+    };
+
+    if (printWindow.document.fonts && printWindow.document.fonts.ready) {
+      printWindow.document.fonts.ready.then(() => {
+        setTimeout(doPrint, 150);
+      }).catch(() => {
+        setTimeout(doPrint, 400);
+      });
+    } else {
+      setTimeout(doPrint, 500);
+    }
   };
 
   // ── PDF Download ──

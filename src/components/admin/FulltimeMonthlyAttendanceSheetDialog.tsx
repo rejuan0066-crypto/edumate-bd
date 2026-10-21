@@ -419,8 +419,8 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
     const title = `${bn ? 'ফুল টাইম মাসিক স্টাফ হাজিরা শিট' : 'Full-Time Monthly Staff Attendance Sheet'} — ${currentMonthLabel} ${selectedYear}`;
     const subtitle = `${currentDeptLabel} • ${bn ? `মোট স্টাফ: ${toBnDigits(filteredStaff.length)} জন` : `Total Staff: ${filteredStaff.length}`}`;
 
-    // Chunk staff into pages (e.g. 15 staff per page for comfortable A4 landscape fit)
-    const pageSize = 15;
+    // Chunk staff into pages (14 staff per page fits comfortably within A4 landscape with header and signatures)
+    const pageSize = 14;
     const pages: any[][] = [];
     for (let i = 0; i < filteredStaff.length; i += pageSize) {
       pages.push(filteredStaff.slice(i, i + pageSize));
@@ -440,11 +440,11 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
         const deptName = deptObj ? (bn ? deptObj.name_bn || deptObj.name : deptObj.name) : (st.department || '-');
 
         tableRowsHtml += `<tr>
-          <td style="border:1px solid #cbd5e1;padding:3px 2px;text-align:center;font-size:9.5px;width:24px;">${globalIdx}</td>
-          <td style="border:1px solid #cbd5e1;padding:3px 4px;font-weight:600;font-size:10px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          <td style="border:1px solid #cbd5e1;padding:2.5px 2px;text-align:center;font-size:9px;width:24px;">${globalIdx}</td>
+          <td style="border:1px solid #cbd5e1;padding:2.5px 4px;font-weight:600;font-size:9.5px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
             ${formatStaffName(st.name_bn, st.name_en, bn)}
           </td>
-          <td style="border:1px solid #cbd5e1;padding:3px 4px;font-size:9px;color:#475569;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          <td style="border:1px solid #cbd5e1;padding:2.5px 4px;font-size:8.5px;color:#475569;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
             ${st.designation || '-'}
           </td>
         `;
@@ -488,50 +488,50 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
           }
 
           tableRowsHtml += `
-            <td style="border:1px solid #cbd5e1;padding:2px 1px;text-align:center;font-size:9.5px;background:${bg};">
+            <td style="border:1px solid #cbd5e1;padding:2px 1px;text-align:center;font-size:9px;background:${bg};">
               ${badge}
             </td>
           `;
         });
 
         tableRowsHtml += `
-          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-weight:bold;color:#16a34a;font-size:9.5px;">${stats?.present || 0}</td>
-          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-weight:bold;color:#d97706;font-size:9.5px;">${stats?.late || 0}</td>
-          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-weight:bold;color:#ea580c;font-size:9.5px;">${stats?.halfDay || 0}</td>
-          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-weight:bold;color:#2563eb;font-size:9.5px;">${stats?.leave || 0}</td>
-          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-weight:bold;color:#dc2626;font-size:9.5px;">${stats?.absent || 0}</td>
-          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-weight:extrabold;color:#0f172a;font-size:10px;background:#f8fafc;">${stats?.effectivePresent || 0}</td>
+          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-weight:bold;color:#16a34a;font-size:9px;">${stats?.present || 0}</td>
+          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-weight:bold;color:#d97706;font-size:9px;">${stats?.late || 0}</td>
+          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-weight:bold;color:#ea580c;font-size:9px;">${stats?.halfDay || 0}</td>
+          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-weight:bold;color:#2563eb;font-size:9px;">${stats?.leave || 0}</td>
+          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-weight:bold;color:#dc2626;font-size:9px;">${stats?.absent || 0}</td>
+          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-weight:extrabold;color:#0f172a;font-size:9.5px;background:#f8fafc;">${stats?.effectivePresent || 0}</td>
         </tr>`;
       });
 
       // Headers for this page
       let tableHeadersHtml = `
         <tr>
-          <th style="border:1px solid #94a3b8;padding:4px 2px;background:#f1f5f9;font-size:9.5px;width:24px;">#</th>
-          <th style="border:1px solid #94a3b8;padding:4px 4px;background:#f1f5f9;font-size:10px;width:115px;text-align:left;">${bn ? 'শিক্ষক/স্টাফের নাম' : 'Name'}</th>
-          <th style="border:1px solid #94a3b8;padding:4px 4px;background:#f1f5f9;font-size:9.5px;width:80px;text-align:left;">${bn ? 'পদবী' : 'Designation'}</th>
+          <th style="border:1px solid #94a3b8;padding:3px 2px;background:#f1f5f9;font-size:9px;width:24px;">#</th>
+          <th style="border:1px solid #94a3b8;padding:3px 4px;background:#f1f5f9;font-size:9.5px;width:115px;text-align:left;">${bn ? 'শিক্ষক/স্টাফের নাম' : 'Name'}</th>
+          <th style="border:1px solid #94a3b8;padding:3px 4px;background:#f1f5f9;font-size:9px;width:80px;text-align:left;">${bn ? 'পদবী' : 'Designation'}</th>
       `;
 
       daysList.forEach(day => {
         tableHeadersHtml += `
-          <th style="border:1px solid #94a3b8;padding:2px 1px;background:${day.isFriday ? '#fee2e2' : '#f8fafc'};font-size:9px;text-align:center;min-width:18px;">
-            ${day.dayNum}<br/><span style="font-size:7.5px;color:#64748b;">${day.weekdayBn}</span>
+          <th style="border:1px solid #94a3b8;padding:2px 1px;background:${day.isFriday ? '#fee2e2' : '#f8fafc'};font-size:8.5px;text-align:center;min-width:18px;">
+            ${day.dayNum}<br/><span style="font-size:7px;color:#64748b;">${day.weekdayBn}</span>
           </th>
         `;
       });
 
       tableHeadersHtml += `
-          <th style="border:1px solid #94a3b8;padding:2px;background:#f1f5f9;font-size:9px;color:#16a34a;width:24px;" title="উপস্থিত">P</th>
-          <th style="border:1px solid #94a3b8;padding:2px;background:#f1f5f9;font-size:9px;color:#d97706;width:24px;" title="বিলম্ব">L</th>
-          <th style="border:1px solid #94a3b8;padding:2px;background:#f1f5f9;font-size:9px;color:#ea580c;width:24px;" title="অর্ধদিন">H</th>
-          <th style="border:1px solid #94a3b8;padding:2px;background:#f1f5f9;font-size:9px;color:#2563eb;width:24px;" title="ছুটি">Lv</th>
-          <th style="border:1px solid #94a3b8;padding:2px;background:#f1f5f9;font-size:9px;color:#dc2626;width:24px;" title="অনুপস্থিত">A</th>
-          <th style="border:1px solid #94a3b8;padding:2px;background:#e2e8f0;font-size:9.5px;font-weight:bold;width:30px;" title="মোট উপস্থিতি">মোট</th>
+          <th style="border:1px solid #94a3b8;padding:2px;background:#f1f5f9;font-size:8.5px;color:#16a34a;width:24px;" title="উপস্থিত">P</th>
+          <th style="border:1px solid #94a3b8;padding:2px;background:#f1f5f9;font-size:8.5px;color:#d97706;width:24px;" title="বিলম্ব">L</th>
+          <th style="border:1px solid #94a3b8;padding:2px;background:#f1f5f9;font-size:8.5px;color:#ea580c;width:24px;" title="অর্ধদিন">H</th>
+          <th style="border:1px solid #94a3b8;padding:2px;background:#f1f5f9;font-size:8.5px;color:#2563eb;width:24px;" title="ছুটি">Lv</th>
+          <th style="border:1px solid #94a3b8;padding:2px;background:#f1f5f9;font-size:8.5px;color:#dc2626;width:24px;" title="অনুপস্থিত">A</th>
+          <th style="border:1px solid #94a3b8;padding:2px;background:#e2e8f0;font-size:9px;font-weight:bold;width:30px;" title="মোট উপস্থিতি">মোট</th>
         </tr>
       `;
 
       pagesHtml += `
-        <div class="attendance-page" style="page-break-after: ${pageIdx < totalPages - 1 ? 'always' : 'auto'};">
+        <div class="attendance-page" style="page-break-after: ${pageIdx < totalPages - 1 ? 'always' : 'auto'}; break-after: ${pageIdx < totalPages - 1 ? 'page' : 'auto'};">
           <div class="page-inner">
             <div class="header">
               <h1>${institutionName}</h1>
@@ -558,7 +558,6 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
 
             <div class="footer-signs">
               <div class="sign-box">${bn ? 'হাজিরা গ্রহণকারী' : 'Attendance In-charge'}</div>
-              <div class="sign-box">${bn ? 'বিভাগীয় প্রধান / ইন-চার্জ' : 'Department In-charge'}</div>
               <div class="sign-box">${bn ? 'মুহতামিম / অধ্যক্ষ' : 'Principal'}</div>
             </div>
           </div>
@@ -572,44 +571,62 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
       <head>
         <meta charset="utf-8" />
         <title>${title}</title>
-        <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
         <style>
+          @font-face {
+            font-family: 'Kalpurush';
+            src: url('/fonts/Kalpurush.ttf') format('truetype'),
+                 url('https://cdn.jsdelivr.net/gh/maateen/bangla-web-fonts/fonts/kalpurush/Kalpurush-v0.258.ttf') format('truetype');
+            font-display: block;
+          }
+          @font-face {
+            font-family: 'SolaimanLipi';
+            src: url('https://cdn.jsdelivr.net/gh/maateen/bangla-web-fonts/fonts/solaiman-lipi/solaimanlipi-normal-v1.0.ttf') format('truetype');
+            font-display: block;
+          }
           * { margin:0; padding:0; box-sizing:border-box; }
-          @page { size: A4 landscape; margin: 5mm; }
+          @page { size: A4 landscape; margin: 6mm 8mm; }
           html, body {
-            font-family: 'Hind Siliguri', 'Noto Sans Bengali', sans-serif;
+            font-family: 'Kalpurush', 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', sans-serif !important;
             background: #ffffff;
             color: #1e293b;
             margin: 0;
             padding: 0;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
           .attendance-page {
             width: 100%;
             box-sizing: border-box;
             background: #ffffff;
-            padding: 6px 8px;
+            padding: 0;
+            page-break-after: always;
+            break-after: page;
+            page-break-inside: avoid;
+            break-inside: avoid;
+          }
+          .attendance-page:last-child {
+            page-break-after: auto;
+            break-after: auto;
           }
           .page-inner {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-height: 195mm;
+            width: 100%;
+            box-sizing: border-box;
           }
           .header {
             text-align: center;
             border-bottom: 2px solid #059669;
-            padding-bottom: 4px;
-            margin-bottom: 6px;
+            padding-bottom: 3px;
+            margin-bottom: 5px;
           }
           .header h1 {
-            font-size: 17px;
+            font-size: 16px;
             font-weight: 700;
             color: #0f172a;
             margin: 0;
             line-height: 1.2;
           }
           .header h2 {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             color: #059669;
             margin: 2px 0 0 0;
@@ -619,9 +636,9 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 10px;
+            font-size: 9.5px;
             color: #475569;
-            margin-top: 3px;
+            margin-top: 2px;
             padding: 0 4px;
           }
           .page-num {
@@ -632,36 +649,44 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
+            page-break-inside: avoid;
+            break-inside: avoid;
           }
           .legend {
             display: flex;
-            gap: 16px;
-            margin-top: 8px;
-            font-size: 10px;
+            gap: 14px;
+            margin-top: 6px;
+            font-size: 9px;
             justify-content: center;
             font-weight: 500;
             padding: 3px 0;
             border-top: 1px dashed #cbd5e1;
+            page-break-inside: avoid;
+            break-inside: avoid;
           }
           .footer-signs {
             display: flex;
             justify-content: space-between;
-            margin-top: 28px;
-            margin-bottom: 6px;
-            padding: 0 40px;
+            margin-top: 16px;
+            margin-bottom: 4px;
+            padding: 0 48px;
+            page-break-inside: avoid;
+            break-inside: avoid;
           }
           .sign-box {
             text-align: center;
             border-top: 1px dashed #64748b;
             padding-top: 4px;
-            width: 150px;
+            width: 170px;
             font-size: 10.5px;
             font-weight: 600;
             color: #334155;
           }
           @media print {
-            body { padding: 0; background: #fff; }
-            .attendance-page { padding: 4mm; }
+            body { padding: 0 !important; background: #fff !important; }
+            .attendance-page { padding: 0 !important; page-break-after: always; break-after: page; page-break-inside: avoid; break-inside: avoid; }
+            .attendance-page:last-child { page-break-after: auto; break-after: auto; }
+            .footer-signs { page-break-inside: avoid; break-inside: avoid; }
           }
         </style>
       </head>
@@ -683,9 +708,21 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
     const html = generatePrintAndPdfHtml(false);
     printWindow.document.write(html);
     printWindow.document.close();
-    setTimeout(() => {
+
+    const doPrint = () => {
+      printWindow.focus();
       printWindow.print();
-    }, 600);
+    };
+
+    if (printWindow.document.fonts && printWindow.document.fonts.ready) {
+      printWindow.document.fonts.ready.then(() => {
+        setTimeout(doPrint, 150);
+      }).catch(() => {
+        setTimeout(doPrint, 400);
+      });
+    } else {
+      setTimeout(doPrint, 500);
+    }
   };
 
   // ── PDF Download ──
