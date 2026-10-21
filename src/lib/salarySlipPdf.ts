@@ -408,7 +408,7 @@ export async function downloadSheetAsPdf(
       html, body { background:#fff !important; margin:0 !important; padding:0 !important; width:${pageW}px !important; }
       .print-settings, [data-print-settings] { display:none !important; }
       .sheet { width:${pageW}px !important; max-width:${pageW}px !important; margin:0 auto !important; }
-      .salary-page, .result-page {
+      .salary-page, .result-page, .attendance-page {
         box-shadow:none !important;
         width:${pageW}px !important;
         height:${pageH}px !important;
@@ -469,7 +469,7 @@ export async function downloadSheetAsPdf(
         );
         await new Promise((r) => setTimeout(r, 800));
 
-        const pages = Array.from(iframeDoc.querySelectorAll('.salary-page, .result-page')) as HTMLElement[];
+        const pages = Array.from(iframeDoc.querySelectorAll('.salary-page, .result-page, .attendance-page')) as HTMLElement[];
         const targets = pages.length > 0
           ? pages
           : [((iframeDoc.querySelector('.sheet') as HTMLElement) || iframeDoc.body)];

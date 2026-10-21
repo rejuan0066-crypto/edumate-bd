@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { ChevronLeft, ChevronRight, CheckCircle2, XCircle, Clock, AlertCircle, CalendarOff, Stethoscope, ShieldCheck, Calendar as CalendarIcon, Trash2, Save, Lock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle2, XCircle, Clock, AlertCircle, CalendarOff, Stethoscope, ShieldCheck, Calendar as CalendarIcon, Trash2, Save, Lock, Printer, Download, Loader2 } from 'lucide-react';
 import { TimePicker } from '@/components/ui/time-picker';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, isSameDay, getDay } from 'date-fns';
 import { bn as bnLocale } from 'date-fns/locale';
@@ -13,6 +13,8 @@ import { parseClockMinutes, shouldApplyThursdayHalfDay } from '@/lib/thursdayHal
 import { resolveStaffShift, fetchSpecialShifts, fetchDepartmentSchedules } from '@/lib/shiftResolution';
 import { dedupeAttendanceRecords } from '@/lib/attendanceDedup';
 import { useAttendanceDuplicateRule } from '@/hooks/useAttendanceDuplicateRule';
+import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { downloadSheetAsPdf } from '@/lib/salarySlipPdf';
 
 const STATUS_META: Record<string, {
   bnLabel: string; enLabel: string; icon: any;
@@ -41,6 +43,8 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
   const duplicateRule = useAttendanceDuplicateRule();
   const bn = language === 'bn';
   const qc = useQueryClient();
+  const { data: instInfo } = useInstitutionInfo();
+  const [isPdfGenerating, setIsPdfGenerating] = useState(false);
   const [cursor, setCursor] = useState<Date>(new Date());
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -334,6 +338,158 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
     }
   };
 
+  const generateIndividualHtml = () => {
+    const institutionName = instInfo?.name || 'মাদরাসা / প্রতিষ্ঠান';
+    const staffName = bn ? (staff?.name_bn || staff?.name_en) : (staff?.name_en || staff?.name_bn);
+    const title = `${bn ? 'মাসিক স্টাফ হাজিরা বিবরণী' : 'Staff Monthly Attendance Report'} — ${monthName}`;
+    const dutyStartFormatted = `${String(Math.floor(dutyInfo.start / 60)).padStart(2, '0')}:${String(dutyInfo.start % 60).padStart(2, '0')}`;
+    const dutyEndFormatted = `${String(Math.floor(dutyInfo.end / 60)).padStart(2, '0')}:${String(dutyInfo.end % 60).padStart(2, '0')}`;
+
+    let rowsHtml = '';
+    days.forEach((d, idx) => {
+      const key = format(d, 'yyyy-MM-dd');
+      const rec = byDate[key];
+      const weekday = format(d, 'EEEE', { locale: bn ? bnLocale : undefined });
+      const isFriday = getDay(d) === 5;
+      const isOffDuty = dutyAllowedDates ? !dutyAllowedDates.has(key) : false;
+
+      let statusBadge = '<span style="color:#94a3b8;">অচিহ্নিত</span>';
+      let bg = isFriday ? '#fff1f2' : (idx % 2 === 0 ? '#f8fafc' : '#ffffff');
+      const checkIn = rec?.check_in_time ? String(rec.check_in_time).slice(0, 5) : '—';
+      const checkOut = rec?.check_out_time ? String(rec.check_out_time).slice(0, 5) : '—';
+      const lateM = rec ? lateMinutesFor(rec) : 0;
+      const lateStr = lateM > 0 ? `<span style="color:#d97706;font-weight:600;">+${lateM} মি.</span>` : '—';
+      const remarks = rec?.leave_reason || rec?.leave_type || (isFriday ? 'সাপ্তাহিক ছুটি' : (isOffDuty ? 'ডিউটি অফ' : '—'));
+
+      if (rec?.status) {
+        const m = STATUS_META[rec.status];
+        if (m) {
+          statusBadge = `<span style="font-weight:bold;color:${rec.status === 'present' ? '#16a34a' : rec.status === 'late' ? '#d97706' : rec.status === 'absent' ? '#dc2626' : '#2563eb'};">${bn ? m.bnLabel : m.enLabel}</span>`;
+        }
+      }
+
+      rowsHtml += `
+        <tr style="background:${bg};">
+          <td style="border:1px solid #cbd5e1;padding:4px;text-align:center;font-size:10px;">${bn ? toBnDigits(idx + 1) : idx + 1}</td>
+          <td style="border:1px solid #cbd5e1;padding:4px;text-align:center;font-size:10.5px;font-weight:600;">${bn ? toBnDigits(format(d, 'dd-MM-yyyy')) : format(d, 'dd-MM-yyyy')}</td>
+          <td style="border:1px solid #cbd5e1;padding:4px;text-align:center;font-size:10px;color:${isFriday ? '#dc2626' : '#334155'};">${weekday}</td>
+          <td style="border:1px solid #cbd5e1;padding:4px;text-align:center;font-size:10px;font-family:monospace;">${checkIn}</td>
+          <td style="border:1px solid #cbd5e1;padding:4px;text-align:center;font-size:10px;font-family:monospace;">${checkOut}</td>
+          <td style="border:1px solid #cbd5e1;padding:4px;text-align:center;font-size:10px;">${lateStr}</td>
+          <td style="border:1px solid #cbd5e1;padding:4px;text-align:center;font-size:10px;">${statusBadge}</td>
+          <td style="border:1px solid #cbd5e1;padding:4px 6px;text-align:left;font-size:9.5px;color:#475569;">${remarks}</td>
+        </tr>
+      `;
+    });
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>${title}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+        <style>
+          * { margin:0; padding:0; box-sizing:border-box; }
+          @page { size: A4 portrait; margin: 6mm 8mm; }
+          body { font-family: 'Hind Siliguri', 'Noto Sans Bengali', sans-serif; margin: 0; padding: 12px; color: #1e293b; background: #fff; }
+          .header { text-align: center; border-bottom: 2px solid #059669; padding-bottom: 6px; margin-bottom: 8px; }
+          .header h1 { font-size: 19px; color: #0f172a; margin: 0; }
+          .header h2 { font-size: 13.5px; color: #059669; margin: 2px 0 0 0; }
+          .staff-card { display: flex; justify-content: space-between; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 12px; margin-bottom: 8px; font-size: 11px; }
+          .stats-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 8px; text-align: center; }
+          .stat-box { border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px; background: #fdfdfe; }
+          .stat-val { font-size: 13px; font-weight: bold; }
+          .stat-lbl { font-size: 9.5px; color: #64748b; }
+          table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+          th { border: 1px solid #94a3b8; padding: 5px 4px; background: #f1f5f9; font-size: 10.5px; }
+          .footer-signs { display: flex; justify-content: space-between; margin-top: 36px; padding: 0 30px; }
+          .sign-box { text-align: center; border-top: 1px dashed #64748b; padding-top: 4px; width: 140px; font-size: 10.5px; font-weight: 600; color: #334155; }
+          @media print { body { padding: 0; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${institutionName}</h1>
+          <h2>${title}</h2>
+        </div>
+        <div class="staff-card">
+          <div>
+            <div><strong>নাম:</strong> ${staffName}</div>
+            <div><strong>পদবী:</strong> ${staff?.designation || '-'}</div>
+          </div>
+          <div>
+            <div><strong>শিফট:</strong> ${shift ? shift.replace('_', ' ') : 'ফুল টাইম ডিউটি'}</div>
+            <div><strong>ডিউটি সময়:</strong> ${dutyStartFormatted} - ${dutyEndFormatted}</div>
+          </div>
+          <div>
+            <div><strong>উপস্থিতির হার:</strong> <strong style="color:#059669;font-size:12px;">${attendanceRate}%</strong></div>
+            <div><strong>মোট বিলম্ব:</strong> ${fmtDuration(totalLateMins)}</div>
+          </div>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-box"><div class="stat-val" style="color:#16a34a;">${counts.present}</div><div class="stat-lbl">উপস্থিত</div></div>
+          <div class="stat-box"><div class="stat-val" style="color:#d97706;">${counts.late}</div><div class="stat-lbl">বিলম্ব</div></div>
+          <div class="stat-box"><div class="stat-val" style="color:#ea580c;">${counts.half_day}</div><div class="stat-lbl">অর্ধদিন</div></div>
+          <div class="stat-box"><div class="stat-val" style="color:#2563eb;">${counts.leave}</div><div class="stat-lbl">ছুটি</div></div>
+          <div class="stat-box"><div class="stat-val" style="color:#dc2626;">${counts.absent}</div><div class="stat-lbl">অনুপস্থিত</div></div>
+          <div class="stat-box"><div class="stat-val" style="color:#64748b;">${unmarked}</div><div class="stat-lbl">অচিহ্নিত</div></div>
+          <div class="stat-box"><div class="stat-val" style="color:#0f172a;">${days.length}</div><div class="stat-lbl">মোট দিন</div></div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:30px;">#</th>
+              <th style="width:75px;">তারিখ</th>
+              <th style="width:65px;">বার</th>
+              <th style="width:65px;">চেক-ইন</th>
+              <th style="width:65px;">চেক-আউট</th>
+              <th style="width:65px;">বিলম্ব</th>
+              <th style="width:75px;">স্ট্যাটাস</th>
+              <th>ছুটির কারণ / মন্তব্য</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+        <div class="footer-signs">
+          <div class="sign-box">${bn ? 'সংশ্লিষ্ট স্টাফ' : 'Staff Signature'}</div>
+          <div class="sign-box">${bn ? 'বিভাগীয় প্রধান / ইন-চার্জ' : 'In-charge Signature'}</div>
+          <div class="sign-box">${bn ? 'মুহতামিম / অধ্যক্ষ' : 'Principal'}</div>
+        </div>
+      </body>
+      </html>
+    `;
+  };
+
+  const handlePrintIndividual = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error(bn ? 'পপআপ ব্লক হয়েছে, অনুমতি দিন' : 'Popup blocked');
+      return;
+    }
+    const html = generateIndividualHtml();
+    printWindow.document.write(html);
+    printWindow.document.close();
+    setTimeout(() => { printWindow.print(); }, 600);
+  };
+
+  const handleDownloadPdfIndividual = async () => {
+    try {
+      setIsPdfGenerating(true);
+      toast.info(bn ? 'পিডিএফ প্রস্তুত হচ্ছে...' : 'Generating PDF...');
+      const html = generateIndividualHtml();
+      const staffName = (staff?.name_en || staff?.name_bn || 'staff').replace(/\s+/g, '_');
+      await downloadSheetAsPdf(html, `Attendance_${staffName}_${monthMmYyyy}.pdf`, null, 'portrait', 'download');
+      toast.success(bn ? 'পিডিএফ ডাউনলোড সম্পন্ন' : 'PDF downloaded');
+    } catch (e: any) {
+      console.error(e);
+      toast.error(bn ? 'পিডিএফ ডাউনলোডে ত্রুটি' : 'Failed to download PDF');
+    } finally {
+      setIsPdfGenerating(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -368,26 +524,49 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
         </div>
 
         <div className="px-4 py-3 space-y-3">
-          {/* Month nav with chips */}
-          <div className="flex items-center justify-between gap-3 rounded-2xl border border-border/40 bg-gradient-to-r from-background/80 via-muted/20 to-background/80 backdrop-blur px-2 py-2 shadow-sm">
-            <Button variant="ghost" size="icon" className="rounded-xl hover:bg-emerald-500/10 hover:text-emerald-600" onClick={() => setCursor(c => subMonths(c, 1))}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <div className="flex items-center gap-2 min-w-0">
-              <CalendarIcon className="h-4 w-4 text-emerald-600 shrink-0" />
-              <div className="text-sm font-semibold tracking-tight truncate">{monthLabel}</div>
-              {!isCurrentMonth && (
-                <button
-                  onClick={() => setCursor(new Date())}
-                  className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 transition font-medium"
-                >
-                  {bn ? 'বর্তমান মাসে যান' : 'Today'}
-                </button>
-              )}
+          {/* Month nav with chips & Print/PDF actions */}
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border/40 bg-gradient-to-r from-background/80 via-muted/20 to-background/80 backdrop-blur p-2 shadow-sm">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl hover:bg-emerald-500/10 hover:text-emerald-600" onClick={() => setCursor(c => subMonths(c, 1))}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <div className="flex items-center gap-2 min-w-0">
+                <CalendarIcon className="h-4 w-4 text-emerald-600 shrink-0" />
+                <div className="text-sm font-semibold tracking-tight truncate">{monthLabel}</div>
+                {!isCurrentMonth && (
+                  <button
+                    onClick={() => setCursor(new Date())}
+                    className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 transition font-medium"
+                  >
+                    {bn ? 'বর্তমান মাসে যান' : 'Today'}
+                  </button>
+                )}
+              </div>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl hover:bg-emerald-500/10 hover:text-emerald-600" onClick={() => setCursor(c => addMonths(c, 1))}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
-            <Button variant="ghost" size="icon" className="rounded-xl hover:bg-emerald-500/10 hover:text-emerald-600" onClick={() => setCursor(c => addMonths(c, 1))}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+
+            <div className="flex items-center gap-1.5 ml-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs gap-1 rounded-xl px-2.5 bg-background hover:bg-muted font-medium"
+                onClick={handlePrintIndividual}
+              >
+                <Printer className="h-3.5 w-3.5 text-blue-600" />
+                <span>{bn ? 'প্রিন্ট' : 'Print'}</span>
+              </Button>
+              <Button
+                size="sm"
+                className="h-7 text-xs gap-1 rounded-xl px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+                onClick={handleDownloadPdfIndividual}
+                disabled={isPdfGenerating}
+              >
+                {isPdfGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                <span>{bn ? 'PDF ডাউনলোড' : 'PDF'}</span>
+              </Button>
+            </div>
           </div>
 
           {/* Stat tiles - compact */}

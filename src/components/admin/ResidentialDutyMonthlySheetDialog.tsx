@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Download, Printer, Search, Calendar, Sun, Moon, Users, CheckCircle2,
-  XCircle, Clock, AlertCircle, ChevronLeft, ChevronRight, FileSpreadsheet
+  XCircle, Clock, AlertCircle, ChevronLeft, ChevronRight, FileSpreadsheet, Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import XLSX from 'xlsx-js-style';
@@ -19,6 +19,7 @@ import { getDatePartsInTz } from '@/lib/timezone';
 import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { sortStaffByDepartment } from '@/lib/staffOrderHelper';
 import { formatStaffName } from '@/lib/nameFormatter';
+import { downloadSheetAsPdf } from '@/lib/salarySlipPdf';
 
 interface Props {
   open: boolean;
@@ -69,6 +70,7 @@ export default function ResidentialDutyMonthlySheetDialog({
   );
   const [searchQuery, setSearchQuery] = useState('');
   const [shiftFilter, setShiftFilter] = useState<'all' | 'morning' | 'evening'>('all');
+  const [isPdfGenerating, setIsPdfGenerating] = useState(false);
 
   const monthYearStr = `${selectedYear}-${selectedMonth}`;
   const daysInMonth = useMemo(() => {
@@ -536,14 +538,8 @@ export default function ResidentialDutyMonthlySheetDialog({
     }
   };
 
-  // ── Print / PDF ──
-  const handlePrint = () => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      toast.error(bn ? 'পপআপ ব্লক হয়েছে, অনুমতি দিন' : 'Popup blocked, please allow popups');
-      return;
-    }
-
+  // ── HTML generator for Print & PDF ──
+  const generatePrintAndPdfHtml = () => {
     const institutionName = instInfo?.name || 'মাদরাসা / প্রতিষ্ঠান';
     const shiftLabel = shiftFilter === 'morning' ? ` (${bn ? 'সকাল শিফট' : 'Morning Shift'})` : shiftFilter === 'evening' ? ` (${bn ? 'সন্ধ্যা শিফট' : 'Evening Shift'})` : '';
     const title = `${bn ? 'আবাসিক ডিউটি মাসিক হাজিরা শিট' : 'Residential Duty Monthly Attendance Sheet'} — ${currentMonthLabel} ${selectedYear}${shiftLabel}`;
@@ -638,7 +634,7 @@ export default function ResidentialDutyMonthlySheetDialog({
       }
     });
 
-    const html = `
+    return `
       <!DOCTYPE html>
       <html>
       <head>
@@ -684,12 +680,37 @@ export default function ResidentialDutyMonthlySheetDialog({
       </body>
       </html>
     `;
+  };
 
+  // ── Print ──
+  const handlePrint = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error(bn ? 'পপআপ ব্লক হয়েছে, অনুমতি দিন' : 'Popup blocked, please allow popups');
+      return;
+    }
+    const html = generatePrintAndPdfHtml();
     printWindow.document.write(html);
     printWindow.document.close();
     setTimeout(() => {
       printWindow.print();
     }, 600);
+  };
+
+  // ── PDF Download ──
+  const handleDownloadPdf = async () => {
+    try {
+      setIsPdfGenerating(true);
+      toast.info(bn ? 'পিডিএফ প্রস্তুত হচ্ছে...' : 'Generating PDF...');
+      const html = generatePrintAndPdfHtml();
+      await downloadSheetAsPdf(html, `Residential_Duty_${monthYearStr}.pdf`, null, 'landscape', 'download');
+      toast.success(bn ? 'পিডিএফ ডাউনলোড সম্পন্ন' : 'PDF downloaded');
+    } catch (e: any) {
+      console.error(e);
+      toast.error(bn ? 'পিডিএফ ডাউনলোডে ত্রুটি' : 'Failed to download PDF');
+    } finally {
+      setIsPdfGenerating(false);
+    }
   };
 
   return (
@@ -748,12 +769,16 @@ export default function ResidentialDutyMonthlySheetDialog({
             </div>
 
             <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8" onClick={handleExportExcel} disabled={filteredStaff.length === 0}>
-              <Download className="h-3.5 w-3.5" />
+              <Download className="h-3.5 w-3.5 text-emerald-600" />
               {bn ? 'এক্সেল ডাউনলোড' : 'Export Excel'}
             </Button>
             <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8" onClick={handlePrint} disabled={filteredStaff.length === 0}>
-              <Printer className="h-3.5 w-3.5" />
-              {bn ? 'প্রিন্ট / PDF' : 'Print / PDF'}
+              <Printer className="h-3.5 w-3.5 text-blue-600" />
+              {bn ? 'প্রিন্ট' : 'Print'}
+            </Button>
+            <Button size="sm" className="gap-1.5 text-xs h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-medium" onClick={handleDownloadPdf} disabled={filteredStaff.length === 0 || isPdfGenerating}>
+              {isPdfGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+              {bn ? 'PDF ডাউনলোড' : 'Download PDF'}
             </Button>
           </div>
         </DialogHeader>

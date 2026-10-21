@@ -42,6 +42,7 @@ import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import StaffMonthlyAttendanceDialog from '@/components/admin/StaffMonthlyAttendanceDialog';
 import ResidentialDutyMonthlySheetDialog from '@/components/admin/ResidentialDutyMonthlySheetDialog';
+import FulltimeMonthlyAttendanceSheetDialog from '@/components/admin/FulltimeMonthlyAttendanceSheetDialog';
 import BulkHolidayDialog from '@/components/admin/BulkHolidayDialog';
 import AttendanceRecoveryDialog from '@/components/admin/AttendanceRecoveryDialog';
 import StaffSpecialShiftDialog from '@/components/admin/StaffSpecialShiftDialog';
@@ -217,6 +218,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   });
   const [dutyViewFilter, setDutyViewFilter] = useState<'both' | 'morning' | 'evening'>('both');
   const [dutyMonthlySheetOpen, setDutyMonthlySheetOpen] = useState(false);
+  const [fulltimeMonthlySheetOpen, setFulltimeMonthlySheetOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<any>(null);
   const [ruleForm, setRuleForm] = useState({ name: '', name_bn: '', entity_type: 'student', config: { color: 'green', counts_as: 'present' } });
   const [dutyTimes, setDutyTimes] = useState({
@@ -3471,6 +3473,19 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                   </Select>
                 )}
 
+                {/* Full-time staff tab: Full Month Attendance Sheet button */}
+                {entityType === 'staff' && staffSubTab === 'fulltime' && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => setFulltimeMonthlySheetOpen(true)}
+                    className="h-8 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm gap-1.5"
+                  >
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    {bn ? 'পুরো মাসের ফুল টাইম হাজিরা শিট (প্রিন্ট / PDF / Excel)' : 'Monthly Full-Time Sheet (Print / PDF / Excel)'}
+                  </Button>
+                )}
+
                 {/* Duty tab: view filter (both / morning / evening) + Full Month Duty Sheet button */}
                 {staffSubTab === 'duty' && (
                   <div className="flex flex-wrap items-center gap-2">
@@ -4111,6 +4126,12 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
           onOpenChange={setSpecialShiftDialogOpen}
           staffList={allStaff}
           categories={staffCategoriesData}
+        />
+        <FulltimeMonthlyAttendanceSheetDialog
+          open={fulltimeMonthlySheetOpen}
+          onOpenChange={setFulltimeMonthlySheetOpen}
+          initialMonth={selectedDate.split('-')[1]}
+          initialYear={selectedDate.split('-')[0]}
         />
         <ResidentialDutyMonthlySheetDialog
           open={dutyMonthlySheetOpen}
