@@ -1203,6 +1203,35 @@ const AdminExpenses = () => {
         }
         descWithTags += `[memo:${cleanMemo}]`;
       }
+      // Smart Duplicate Detection: Check for duplicate amount + category + date
+      if (!editingExpenseId) {
+        const cleanFormDesc = (expenseForm.description || '').trim().toLowerCase();
+        const duplicateExpense = (allExpenses || expenses || []).find((e: any) => {
+          if (e.id === editingExpenseId) return false;
+          const isSameDate = e.expense_date === expenseForm.expense_date;
+          const isSameCat = e.category_id === expenseForm.category_id;
+          const isSameInst = !expenseForm.institution_id || e.institution_id === expenseForm.institution_id;
+          const isSameAmount = Math.abs(Number(e.amount) - parsedAmount) < 0.01;
+          const oldDesc = (e.description || '').replace(/\[.*?\]/g, '').trim().toLowerCase();
+          const isSameDesc = cleanFormDesc && oldDesc === cleanFormDesc;
+
+          return isSameDate && isSameCat && isSameInst && isSameAmount && (isSameDesc || !cleanFormDesc || oldDesc.includes(cleanFormDesc) || cleanFormDesc.includes(oldDesc));
+        });
+
+        if (duplicateExpense) {
+          const catName = categories.find((c: any) => c.id === expenseForm.category_id)?.name || '';
+          const existingDesc = (duplicateExpense.description || '').replace(/\[.*?\]/g, '').trim();
+          const confirmDuplicate = window.confirm(
+            bn
+              ? `⚠️ সম্ভাব্য ডুপ্লিকেট হিসাব সতর্কতা!\n\nআজকের তারিখে (${expenseForm.expense_date}) "${catName}" খাতে ঠিক একই পরিমাণ (৳ ${parsedAmount}) এর একটি খরচ ইতিমধ্যে সংরক্ষিত রয়েছে${existingDesc ? ` (বিবরণ: ${existingDesc})` : ''}।\n\nআপনি কি নিশ্চিত এটি নতুন কোনো পৃথক খরচ, নাকি ভুলবশত ডাবল এন্ট্রি হচ্ছে?\n\n[Cancel = বাতিল করুন | OK = হ্যাঁ, নতুন খরচ হিসেবে সংরক্ষণ করুন]`
+              : `⚠️ Potential Duplicate Expense Warning!\n\nAn expense of identical amount (৳ ${parsedAmount}) in "${catName}" already exists on ${expenseForm.expense_date}.\n\nDo you want to proceed and save as a separate entry?`
+          );
+          if (!confirmDuplicate) {
+            return;
+          }
+        }
+      }
+
       if (expenseForm.remarks && expenseForm.remarks.trim()) descWithTags += `[remarks:${expenseForm.remarks.trim()}]`;
       if (expenseForm.is_due) descWithTags += `[due:unpaid]`;
 

@@ -2314,22 +2314,51 @@ const AdminSalary = () => {
           const paymentMonthYear = getExpenseMonthYearFromDate(paymentDate);
           const salaryMonthTag = ` [salary_month:${record.month_year || monthYear}] [unit:মাস]`;
           const finalDesc = description.includes('[salary_month:') ? description : `${description}${salaryMonthTag}`;
+          const targetSalaryMonth = record.month_year || monthYear;
 
-          const { error: expError } = await supabase.from('expenses').insert({
-            institution_id: projectId,
-            category_id: categoryId,
-            month_year: paymentMonthYear,
-            expense_date: paymentDate,
-            amount: Number(payableRecord.net_salary),
-            quantity: 1,
-            description: finalDesc,
-            has_receipt: true,
-            receipt_url: pdfUrl,
-          });
-          if (expError) {
-            console.error('Expense creation error:', expError);
-            toast.warning(bn ? 'বেতন পরিশোধিত হয়েছে কিন্তু হিসাবে সেভ হয়নি' : 'Marked paid but expense save failed');
-            return;
+          // ডুপ্লিকেট এন্ট্রি রোধ: উক্ত শিক্ষক ও মাসের জন্য ইতিমধ্যে কোনো খরচ এন্ট্রি আছে কিনা চেক করা
+          const { data: existingExp } = await supabase
+            .from('expenses')
+            .select('id')
+            .ilike('description', `%[staff_id:${staffMember?.id}]%`)
+            .ilike('description', `%[salary_month:${targetSalaryMonth}]%`)
+            .is('deleted_at', null)
+            .maybeSingle();
+
+          if (existingExp?.id) {
+            const { error: expError } = await supabase.from('expenses').update({
+              institution_id: projectId,
+              category_id: categoryId,
+              month_year: paymentMonthYear,
+              expense_date: paymentDate,
+              amount: Number(payableRecord.net_salary),
+              quantity: 1,
+              description: finalDesc,
+              has_receipt: true,
+              receipt_url: pdfUrl,
+            }).eq('id', existingExp.id);
+            if (expError) {
+              console.error('Expense update error:', expError);
+              toast.warning(bn ? 'বেতন পরিশোধিত হয়েছে কিন্তু হিসাব আপডেট হয়নি' : 'Marked paid but expense update failed');
+              return;
+            }
+          } else {
+            const { error: expError } = await supabase.from('expenses').insert({
+              institution_id: projectId,
+              category_id: categoryId,
+              month_year: paymentMonthYear,
+              expense_date: paymentDate,
+              amount: Number(payableRecord.net_salary),
+              quantity: 1,
+              description: finalDesc,
+              has_receipt: true,
+              receipt_url: pdfUrl,
+            });
+            if (expError) {
+              console.error('Expense creation error:', expError);
+              toast.warning(bn ? 'বেতন পরিশোধিত হয়েছে কিন্তু হিসাবে সেভ হয়নি' : 'Marked paid but expense save failed');
+              return;
+            }
           }
         }
       }
@@ -2376,18 +2405,41 @@ const AdminSalary = () => {
         ? `${supabaseUrl}/functions/v1/salary-pdf`
         : (projectRef ? `https://${projectRef}.supabase.co/functions/v1/salary-pdf` : null);
 
-      const { error: expError } = await supabase.from('expenses').insert({
-        institution_id: projectId,
-        category_id: categoryId,
-        month_year: paymentMonthYear,
-        expense_date: paymentDate,
-        amount: Number(payableRecord.net_salary),
-        quantity: 1,
-        description,
-        has_receipt: true,
-        receipt_url: pdfUrl,
-      });
-      if (expError) throw expError;
+      const { data: existingExp } = await supabase
+        .from('expenses')
+        .select('id')
+        .ilike('description', `%[staff_id:${staffId}]%`)
+        .ilike('description', `%[salary_month:${record.month_year || monthYear}]%`)
+        .is('deleted_at', null)
+        .maybeSingle();
+
+      if (existingExp?.id) {
+        const { error: expError } = await supabase.from('expenses').update({
+          institution_id: projectId,
+          category_id: categoryId,
+          month_year: paymentMonthYear,
+          expense_date: paymentDate,
+          amount: Number(payableRecord.net_salary),
+          quantity: 1,
+          description,
+          has_receipt: true,
+          receipt_url: pdfUrl,
+        }).eq('id', existingExp.id);
+        if (expError) throw expError;
+      } else {
+        const { error: expError } = await supabase.from('expenses').insert({
+          institution_id: projectId,
+          category_id: categoryId,
+          month_year: paymentMonthYear,
+          expense_date: paymentDate,
+          amount: Number(payableRecord.net_salary),
+          quantity: 1,
+          description,
+          has_receipt: true,
+          receipt_url: pdfUrl,
+        });
+        if (expError) throw expError;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['salary-expenses-for-month', expenseMonthYear] });

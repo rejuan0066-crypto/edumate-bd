@@ -148,6 +148,50 @@ const AdminFees = () => {
   const payMutation = useMutation({
     mutationFn: async () => {
       if (!selectedStudent || !paidAmount || !selectedFeeType) throw new Error('Fill all fields');
+
+      // ── Anti-Duplicate Protection ──
+      const currentYear = new Date().getFullYear();
+
+      // 1. Monthly fee duplicate check
+      if (paymentMonth) {
+        const { data: existingPayment } = await supabase
+          .from('fee_payments')
+          .select('id, receipt_number, paid_amount')
+          .eq('student_id', selectedStudent)
+          .eq('fee_type_id', selectedFeeType)
+          .eq('month', paymentMonth)
+          .eq('year', currentYear)
+          .in('status', ['paid', 'pending'])
+          .maybeSingle();
+
+        if (existingPayment) {
+          const msg = bn
+            ? `⚠️ এই ছাত্রের ${paymentMonth} মাসের এই ফি ইতিমধ্যে পরিশোধ করা হয়েছে (রসিদ নং: ${existingPayment.receipt_number || 'পরিশোধিত'})। ডুপ্লিকেট এন্ট্রি গ্রহণ করা হবে না।`
+            : `⚠️ This fee for ${paymentMonth} has already been paid (Receipt: ${existingPayment.receipt_number || 'Paid'}). Duplicate entry prevented.`;
+          toast.error(msg, { duration: 6000 });
+          throw new Error(msg);
+        }
+      }
+
+      // 2. Anti double-click / rapid repeat check (within last 60s)
+      const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
+      const { data: recentIdentical } = await supabase
+        .from('fee_payments')
+        .select('id, receipt_number')
+        .eq('student_id', selectedStudent)
+        .eq('fee_type_id', selectedFeeType)
+        .eq('paid_amount', parseFloat(paidAmount))
+        .gte('created_at', oneMinuteAgo)
+        .maybeSingle();
+
+      if (recentIdentical) {
+        const msg = bn
+          ? `⚠️ মাত্র কয়েক সেকেন্ড আগে এই ছাত্রের ঠিক একই ফি জমা নেওয়া হয়েছে (রসিদ নং: ${recentIdentical.receipt_number || 'সদ্য পরিশোধিত'})। ডাবল এন্ট্রি আটকানো হয়েছে।`
+          : `⚠️ An identical payment was just submitted moments ago. Duplicate prevented.`;
+        toast.warning(msg, { duration: 6000 });
+        throw new Error(msg);
+      }
+
       const { data: serialNumber, error: serialErr } = await supabase.rpc('get_next_receipt_serial');
       if (serialErr) throw new Error('Serial number generation failed');
       const payload = {
