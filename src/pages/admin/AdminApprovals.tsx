@@ -611,6 +611,16 @@ const AdminApprovals = () => {
       cleanPayload.approved_by = currentProfile?.full_name || '';
     }
 
+    if (target_table === 'results') {
+      if (Array.isArray(cleanPayload.results) && cleanPayload.results.length > 0) {
+        const { error } = await supabase
+          .from('results')
+          .upsert(cleanPayload.results, { onConflict: 'exam_id,student_id,subject_id' });
+        if (error) throw error;
+      }
+      return;
+    }
+
     if (action_type === 'add') {
       delete (cleanPayload as any).id;
       const { error } = await supabase.from(target_table).insert(cleanPayload as any);
@@ -695,6 +705,8 @@ const AdminApprovals = () => {
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
       queryClient.invalidateQueries({ queryKey: ['salary-attendance'] });
       queryClient.invalidateQueries({ queryKey: ['salary-duty-attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['results'] });
+      queryClient.invalidateQueries({ queryKey: ['class-result-status'] });
       invalidateAllStudentQueries(queryClient);
       toast.success(status === 'approved' ? (bn ? '✅ ডেটা পরিবর্তন অনুমোদিত ও কার্যকর হয়েছে!' : '✅ Action executed & approved!') : (bn ? '❌ পরিবর্তন বাতিল করা হয়েছে' : '❌ Action rejected'));
       setDetailModal(null);

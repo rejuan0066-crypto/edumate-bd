@@ -18,6 +18,9 @@ import IndividualMarksheet from '@/components/results/IndividualMarksheet';
 import GradingChart from '@/components/results/GradingChart';
 import GracePassSettings from '@/components/results/GracePassSettings';
 import GradingSettings from '@/components/results/GradingSettings';
+import ResultSecuritySettings from '@/components/results/ResultSecuritySettings';
+import { useResultSecurity } from '@/hooks/useResultSecurity';
+import { ShieldCheck } from 'lucide-react';
 
 import { GraduationCap } from 'lucide-react';
 import { exportResultCSV, exportResultPDF, printResultSheet, DEFAULT_RESULT_SIGNATORIES, DEFAULT_PRINT_FOOTER_OPTIONS, DEFAULT_PRINT_MARGINS, PRINT_MARGIN_PRESETS, sanitizeMargins, type ResultSignatory, type ResultPrintFooterOptions, type PrintMargins } from '@/lib/resultExport';
@@ -41,6 +44,8 @@ const AdminResults = () => {
   const isAdmin = isAdminRole(role);
   const [rejectPublishOpen, setRejectPublishOpen] = useState(false);
   const [rejectPublishReason, setRejectPublishReason] = useState('');
+  const [securityDialogOpen, setSecurityDialogOpen] = useState(false);
+  const { enabled: isSecurityActive, requireApproval: securityRequireApproval, lockPublished: securityLockPublished, allowAdminDirect } = useResultSecurity();
 
   const [searchMode, setSearchMode] = useState<'class' | 'individual'>('class');
   const [examYear, setExamYear] = useState(searchParams.get('year') || '');
@@ -155,6 +160,8 @@ const AdminResults = () => {
   });
 
   const currentExamSession: any = examSessions.find((es: any) => es.id === examSessionId);
+  const isClassPublished = selectedClass ? (classPublishStatus[selectedClass] === true) : false;
+  const isClassLocked = isSecurityActive && securityLockPublished && isClassPublished && !isAdmin;
   const publishApprovalStatus = (currentExamSession?.publish_approval_status || 'pending') as 'pending' | 'approved' | 'rejected';
 
   const refreshSessions = () => {
@@ -351,15 +358,24 @@ const AdminResults = () => {
 
       if (upserts.length === 0 && cleared.length === 0) return { saved: false as const, reason: 'empty' as const };
 
-      const requiresApproval = await checkApproval(
-        'edit', 
-        { exam_id: selectedExamId, results_count: upserts.length, results: upserts }, 
-        selectedExamId, 
-        `ফলাফল সংরক্ষণ (${examSessions.find(s => s.id === examSessionId)?.name || ''})`
-      );
+      // Check if Result Security is active and requires approval
+      const shouldCheckApproval = isSecurityActive && securityRequireApproval ? (!isAdmin || !allowAdminDirect) : false;
 
-      if (requiresApproval) {
-        return { saved: false as const, reason: 'approval' as const };
+      if (shouldCheckApproval) {
+        const examName = examSessions.find((s: any) => s.id === examSessionId)?.name_bn || examSessions.find((s: any) => s.id === examSessionId)?.name || '';
+        const className = examClasses.find((c: any) => c.id === selectedClass)?.name_bn || examClasses.find((c: any) => c.id === selectedClass)?.name || '';
+        const desc = `ফলাফল সংরক্ষণ (${className} — ${examName}, মোট ${upserts.length} টি নম্বর)`;
+
+        const requiresApproval = await checkApproval(
+          'edit', 
+          { exam_id: selectedExamId, results_count: upserts.length, results: upserts }, 
+          selectedExamId, 
+          desc
+        );
+
+        if (requiresApproval) {
+          return { saved: false as const, reason: 'approval' as const };
+        }
       }
 
       if (cleared.length > 0) {
@@ -720,6 +736,11 @@ const AdminResults = () => {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setSecurityDialogOpen(true)} className={`h-9 rounded-xl font-medium gap-1.5 text-xs sm:text-sm ${isSecurityActive ? 'border-primary/40 bg-primary/5 text-primary' : ''}`}>
+              <ShieldCheck className="w-3.5 h-3.5" />
+              {bn ? 'রেজাল্ট সুরক্ষা ও অনুমোদন' : 'Result Security'}
+              {isSecurityActive && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse ml-0.5" />}
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setSigDialogOpen(true)} className="h-9 rounded-xl font-medium gap-1.5 text-xs sm:text-sm">
               <Settings2 className="w-3.5 h-3.5" />
               {bn ? 'স্বাক্ষরকারী' : 'Signatories'}
@@ -737,6 +758,7 @@ const AdminResults = () => {
 
         <GracePassSettings open={graceDialogOpen} onOpenChange={setGraceDialogOpen} />
         <GradingSettings open={gradingDialogOpen} onOpenChange={setGradingDialogOpen} />
+        <ResultSecuritySettings open={securityDialogOpen} onOpenChange={setSecurityDialogOpen} />
 
 
 
@@ -1183,8 +1205,14 @@ const AdminResults = () => {
               isSaving={saveMutation.isPending}
               title={getExamTitle()}
               lastSaved={lastSavedInfo || null}
-              readOnly={readOnlyView}
-              onEdit={() => setReadOnlyView(false)}
+              readOnly={isClassLocked ? true : readOnlyView}
+              onEdit={() => {
+                if (isClassLocked) {
+                  toast.warning(bn ? '🔒 এই ক্লাসের ফলাফল পাবলিশড এবং লক করা রয়েছে। সংশোধন করতে অ্যাডমিনের অনুমোদন প্রয়োজন।' : '🔒 This class result is published and locked.');
+                  return;
+                }
+                setReadOnlyView(false);
+              }}
               className={bn ? examClasses.find((c: any) => c.id === selectedClass)?.name_bn : examClasses.find((c: any) => c.id === selectedClass)?.name}
               examName={bn ? examSessions.find((es: any) => es.id === examSessionId)?.name_bn : examSessions.find((es: any) => es.id === examSessionId)?.name}
               sessionName={(() => { const y = academicSessions.find((s: any) => s.id === examYear); return bn ? (y?.name_bn || y?.name) : y?.name; })()}
