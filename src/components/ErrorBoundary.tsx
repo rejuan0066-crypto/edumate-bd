@@ -20,6 +20,8 @@ const isChunkLoadError = (error: Error | null): boolean => {
     msg.includes('failed to fetch dynamically imported module') ||
     msg.includes('importing a module script failed') ||
     msg.includes('error loading dynamically imported module') ||
+    msg.includes("cannot read properties of undefined (reading 'default')") ||
+    msg.includes("reading 'default'") ||
     msg.includes('chunkloaderror') ||
     name.includes('chunkloaderror')
   );

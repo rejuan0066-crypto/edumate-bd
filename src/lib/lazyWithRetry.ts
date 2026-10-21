@@ -22,6 +22,9 @@ export function lazyWithRetry<T extends ComponentType<unknown>>(
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const mod = await factory();
+        if (!mod || typeof (mod as any).default === 'undefined') {
+          throw new Error('Module has no default export or returned undefined');
+        }
         // Success: clear reload key so subsequent deployments can reload smoothly
         try { sessionStorage.removeItem(reloadKey); } catch { /* ignore */ }
         return mod;
