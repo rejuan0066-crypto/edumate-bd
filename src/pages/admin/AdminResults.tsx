@@ -342,6 +342,42 @@ const AdminResults = () => {
     setShowResults(true);
   };
 
+  // Result status overrides (per examSession and class)
+  const currentExamIdForOverrides = selectedExamId || examSessionId;
+  const overrideKey = currentExamIdForOverrides && selectedClass
+    ? `result_overrides_${currentExamIdForOverrides}_${selectedClass}`
+    : null;
+
+  const { data: serverOverrides = {} } = useQuery<Record<string, 'fail' | 'grace_pass' | 'auto'>>({
+    queryKey: ['result-overrides', overrideKey],
+    queryFn: async () => {
+      if (!overrideKey) return {};
+      const { data } = await supabase.from('website_settings').select('value').eq('key', overrideKey).maybeSingle();
+      return (data?.value as any) || {};
+    },
+    enabled: !!overrideKey,
+  });
+
+  const [statusOverrides, setStatusOverrides] = useState<Record<string, 'fail' | 'grace_pass' | 'auto'>>({});
+
+  useEffect(() => {
+    if (serverOverrides) {
+      setStatusOverrides(serverOverrides);
+    }
+  }, [serverOverrides]);
+
+  const handleStatusOverrideChange = (studentId: string, status: 'fail' | 'grace_pass' | 'auto') => {
+    setStatusOverrides(prev => {
+      const next = { ...prev };
+      if (status === 'auto') {
+        delete next[studentId];
+      } else {
+        next[studentId] = status;
+      }
+      return next;
+    });
+  };
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!selectedExamId) return { saved: false as const, reason: 'no-exam' as const };
@@ -400,6 +436,19 @@ const AdminResults = () => {
         const { error } = await supabase.from('results').upsert(upserts, { onConflict: 'exam_id,student_id,subject_id' });
         if (error) throw error;
       }
+
+      // Save status overrides if an overrideKey is active
+      if (overrideKey) {
+        const cleanOverrides = Object.fromEntries(
+          Object.entries(statusOverrides).filter(([, v]) => v === 'fail' || v === 'grace_pass')
+        );
+        await supabase.from('website_settings').upsert({
+          key: overrideKey,
+          value: cleanOverrides as any,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'key' });
+      }
+
       return { saved: true as const, count: upserts.length };
     },
     onSuccess: async (res: any) => {
@@ -413,6 +462,9 @@ const AdminResults = () => {
       queryClient.invalidateQueries({ queryKey: ['results'] });
       queryClient.invalidateQueries({ queryKey: ['class-result-status'] });
       queryClient.invalidateQueries({ queryKey: ['results-last-saved'] });
+      if (overrideKey) {
+        queryClient.invalidateQueries({ queryKey: ['result-overrides', overrideKey] });
+      }
       if (selectedExamId) {
         await loadResultsForExam(selectedExamId);
       }
@@ -819,6 +871,21 @@ const AdminResults = () => {
         serverFooter = resolved as any;
       }
 
+      // Fetch any saved overrides for this class
+      let classOverrides: Record<string, 'fail' | 'grace_pass' | 'auto'> = {};
+      try {
+        const { data: ovData } = await supabase
+          .from('website_settings')
+          .select('value')
+          .eq('key', `result_overrides_${examSessionId}_${classId}`)
+          .maybeSingle();
+        if (ovData?.value && typeof ovData.value === 'object') {
+          classOverrides = ovData.value as any;
+        }
+      } catch (err) {
+        console.warn('Could not fetch overrides for class export:', err);
+      }
+
       const params = {
         title: exportTitle,
         students: exportStudents,
@@ -834,6 +901,7 @@ const AdminResults = () => {
         examName: bn ? examSession.name_bn : examSession.name,
         sessionName: bn ? (year?.name_bn || year?.name) : year?.name,
         signatories,
+        statusOverrides: classOverrides,
         orientation,
         showPageNumbers: serverFooter ? serverFooter.show_page_numbers : true,
         showFooterInstitution: serverFooter ? serverFooter.show_footer_institution : true,
@@ -1472,6 +1540,7 @@ const AdminResults = () => {
               sessionName={(() => { const y = academicSessions.find((s: any) => s.id === examYear); return bn ? (y?.name_bn || y?.name) : y?.name; })()}
               onBack={() => setViewingStudentId(null)}
               rank={viewingStudentRank}
+              overrideStatus={viewingStudentId ? statusOverrides[viewingStudentId] : undefined}
             />
           ) : showResults ? (
             <ClassResultTable
@@ -1495,6 +1564,8 @@ const AdminResults = () => {
               examName={bn ? examSessions.find((es: any) => es.id === examSessionId)?.name_bn : examSessions.find((es: any) => es.id === examSessionId)?.name}
               sessionName={(() => { const y = academicSessions.find((s: any) => s.id === examYear); return bn ? (y?.name_bn || y?.name) : y?.name; })()}
               signatories={signatories}
+              statusOverrides={statusOverrides}
+              onStatusOverrideChange={handleStatusOverrideChange}
               onViewMarksheet={(id) => {
                 setViewingStudentId(id);
               }}

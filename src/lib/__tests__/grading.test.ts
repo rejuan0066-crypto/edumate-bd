@@ -79,12 +79,43 @@ describe('overallGrade — students who passed every subject', () => {
     expect(r).toMatchObject({ grade: 'A+', gpa: '5.00', hasFail: false, title_bn: 'মুমতাজ' });
   });
 
-  it('ignores blank subjects entirely (via studentStats)', () => {
-    const stats = studentStats('s1', [80, null, '', undefined, 90], { passMark: PASS });
+  it('ignores blank subjects when failOnBlank is false', () => {
+    const stats = studentStats('s1', [80, null, '', undefined, 90], { passMark: PASS, failOnBlank: false });
     expect(stats.total).toBe(170);
     
     expect(stats.overall?.grade).toBe('A+');
     expect(stats.failed).toBe(false);
+  });
+
+  it('fails a student if any subject is blank (unentered) when other marks exist', () => {
+    const stats = studentStats('s1', [80, '', 90], { passMark: PASS });
+    expect(stats.total).toBe(170);
+    expect(stats.failed).toBe(true);
+    expect(stats.overall?.grade).toBe('F');
+    expect(stats.overall?.graced).toBe(false);
+  });
+
+  it('denies consideration pass if a subject has mark 0', () => {
+    const stats = studentStats('s1', [80, 0, 90], { passMark: PASS, graceLimit: 1 });
+    expect(stats.failed).toBe(true);
+    expect(stats.overall?.grade).toBe('F');
+    expect(stats.overall?.graced).toBe(false);
+  });
+
+  it('allows manual override from fail to grace_pass', () => {
+    const stats = studentStats('s1', [80, 0, 90], { passMark: PASS, graceLimit: 1, override: 'grace_pass' });
+    expect(stats.failed).toBe(false);
+    expect(stats.overall?.grade).toBe('D');
+    expect(stats.overall?.graced).toBe(true);
+    expect(stats.overall?.title_bn).toBe('মাকবুল (বিবেচনায়)');
+  });
+
+  it('allows manual override from grace_pass to fail', () => {
+    const stats = studentStats('s1', [80, 25, 90], { passMark: PASS, graceLimit: 1, override: 'fail' });
+    expect(stats.failed).toBe(true);
+    expect(stats.overall?.grade).toBe('F');
+    expect(stats.overall?.graced).toBe(false);
+    expect(stats.overall?.title_bn).toBe('রাসিব');
   });
 });
 

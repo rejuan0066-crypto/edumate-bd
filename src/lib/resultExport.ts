@@ -19,7 +19,7 @@ interface ExportData {
   students: any[];
   subjects: any[];
   marksMap: Record<string, number>;
-  getOverallGrade: (marks: number[], classId?: string | null) => { grade: string; gpa: string; title?: string; title_bn?: string; hasFail: boolean };
+  getOverallGrade: (marks: number[], classId?: string | null, extraOptions?: any) => { grade: string; gpa: string; title?: string; title_bn?: string; hasFail: boolean; graced?: boolean };
   bn: boolean;
   institutionName?: string;
   institutionLogo?: string;
@@ -30,6 +30,7 @@ interface ExportData {
   sessionName?: string;
   passMark?: number;
   signatories?: ResultSignatory[];
+  statusOverrides?: Record<string, 'fail' | 'grace_pass' | 'auto'>;
   showPageNumbers?: boolean;
   showFooterInstitution?: boolean;
   margins?: PrintMargins;
@@ -115,7 +116,13 @@ export const exportResultCSV = (params: ExportData) => {
     const marks = raw.map((m: any) => (m === undefined || m === null || m === '' ? 0 : Number(m)));
     const graded = raw.filter((m: any) => m !== undefined && m !== null && m !== '' && !Number.isNaN(Number(m))).map((m: any) => Number(m));
     const total = hasEnteredAnyMark ? graded.reduce((a, b) => a + b, 0) : 0;
-    const overall = hasEnteredAnyMark ? getOverallGrade(graded, st.class_id) : { grade: '-', gpa: '-', hasFail: false };
+    const blankCount = raw.filter((m: any) => m === undefined || m === null || m === '').length;
+    const hasBlank = blankCount > 0;
+    const hasZero = graded.some((m: any) => Number(m) === 0);
+    const override = params.statusOverrides?.[st.id] || 'auto';
+    const overall = hasEnteredAnyMark
+      ? getOverallGrade(graded, st.class_id, { blankFailCount: blankCount, hasBlankOrZero: hasBlank || hasZero, override })
+      : { grade: '-', gpa: '-', hasFail: false };
     const failed = hasEnteredAnyMark ? ((overall as any).graced ? false : overall.hasFail) : false;
     return { idx, st, marks, total, overall, failed, hasEnteredAnyMark };
   });
@@ -253,7 +260,7 @@ const downloadSheetAsPdf = async (
 export const getResultSheetHtml = ({ 
   title, students, subjects, marksMap, getOverallGrade, bn, institutionName, 
   institutionLogo, institutionAddress, institutionPhone, className, examName, 
-  sessionName, passMark = 33, signatories, orientation = 'landscape', 
+  sessionName, passMark = 33, signatories, statusOverrides, orientation = 'landscape', 
   showPageNumbers = true, showFooterInstitution = true, margins, qrCodeDataUrl
 }: ExportData & { orientation?: 'landscape' | 'portrait', qrCodeDataUrl?: string }): string => {
   const m = sanitizeMargins(margins);
@@ -266,7 +273,15 @@ export const getResultSheetHtml = ({
     const marks = raw.map((m: any) => (m === undefined || m === null || m === '' ? 0 : Number(m)));
     const graded = raw.filter((m: any) => m !== undefined && m !== null && m !== '' && !Number.isNaN(Number(m))).map((m: any) => Number(m));
     const total = hasEnteredAnyMark ? graded.reduce((a, b) => a + b, 0) : 0;
-    const overall = hasEnteredAnyMark ? getOverallGrade(graded, st.class_id) : null;
+    const blankCount = raw.filter((m: any) => m === undefined || m === null || m === '').length;
+    const hasBlank = blankCount > 0;
+    const hasZero = graded.some((m: any) => Number(m) === 0);
+    const override = statusOverrides?.[st.id] || 'auto';
+    const overall = hasEnteredAnyMark ? getOverallGrade(graded, st.class_id, {
+      blankFailCount: blankCount,
+      hasBlankOrZero: hasBlank || hasZero,
+      override,
+    }) : null;
     const failed = overall ? ((overall as any).graced ? false : overall.hasFail) : false;
     return { idx, st, marks, total, overall, failed, hasEnteredAnyMark };
   });

@@ -6,9 +6,10 @@ import {
   overallGrade,
   resolveGraceLimit,
   type GradeScale,
+  type OverallGradeOptions,
 } from '@/lib/grading';
 
-export type { GradeScale } from '@/lib/grading';
+export type { GradeScale, OverallGradeOptions } from '@/lib/grading';
 export { DEFAULT_SCALES } from '@/lib/grading';
 
 
@@ -99,7 +100,7 @@ export const useGradingSystem = () => {
    *  0 (or undefined in "selected" mode) means consideration pass is off for that class. */
   const getGraceLimit = (classId?: string | null) => resolveGraceLimit(gracePass, classId);
 
-  const getOverallGrade = (subjectMarks: number[], classId?: string | null) =>
+  const getOverallGrade = (subjectMarks: number[], classId?: string | null, extraOptions?: Partial<OverallGradeOptions>) =>
     overallGrade(subjectMarks, {
       scales,
       passMark: passMarkConfig ?? 33,
@@ -108,6 +109,7 @@ export const useGradingSystem = () => {
       graceGrade: gracePass?.grade,
       minAggregatePercent: gracePass?.min_aggregate_percent,
       maxMarkDeficit: gracePass?.max_mark_deficit,
+      ...extraOptions,
     });
 
 

@@ -19,6 +19,7 @@ interface IndividualMarksheetProps {
   className?: string;
   examName?: string;
   sessionName?: string;
+  overrideStatus?: 'fail' | 'grace_pass' | 'auto';
 }
 
 const formatDob = (dobStr: string | null | undefined, isBn: boolean): string => {
@@ -43,7 +44,7 @@ const formatDob = (dobStr: string | null | undefined, isBn: boolean): string => 
   return isBn ? toBnDigits(str) : str;
 };
 
-const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, rank, className, examName, sessionName }: IndividualMarksheetProps) => {
+const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, rank, className, examName, sessionName, overrideStatus }: IndividualMarksheetProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { getOverallGrade, getGrade: getSubjectGrade, maxMarks } = useGradingSystem();
@@ -62,12 +63,17 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
 
   });
 
-  // Blank subjects are excluded from grading so they can't wrongly fail a student.
   const gradedMarks = subjectResults.filter(r => r.entered).map(r => r.marks);
   const totalMarks = gradedMarks.reduce((sum, m) => sum + m, 0);
-  const overall: any = getOverallGrade(gradedMarks, student?.class_id);
-  // Only subjects with an actual mark can cause a fail — blank subjects are ignored.
-  const hasFailedSubject = !overall.graced && subjectResults.some(r => r.entered && r.grade === 'F');
+  const blankCount = subjectResults.filter(r => !r.entered).length;
+  const hasBlank = blankCount > 0;
+  const hasZero = gradedMarks.some(m => m === 0);
+  const overall: any = getOverallGrade(gradedMarks, student?.class_id, {
+    blankFailCount: blankCount,
+    hasBlankOrZero: hasBlank || hasZero,
+    override: overrideStatus,
+  });
+  const hasFailedSubject = !overall.graced && (overall.hasFail || subjectResults.some(r => r.entered && r.grade === 'F'));
 
   const instName = bn 
     ? (institution?.name || "আল-আরাবিয়া হোসাইনিয়া হাফিজিয়া মাদরাসা") 

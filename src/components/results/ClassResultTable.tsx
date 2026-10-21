@@ -35,15 +35,23 @@ interface ClassResultTableProps {
   examName?: string;
   sessionName?: string;
   signatories?: any[];
+  statusOverrides?: Record<string, 'fail' | 'grace_pass' | 'auto'>;
+  onStatusOverrideChange?: (studentId: string, status: 'fail' | 'grace_pass' | 'auto') => void;
 }
 
-const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave, isSaving, title, onViewMarksheet, onClose, lastSaved, readOnly = false, onEdit, className: classNameProp, examName, sessionName, signatories }: ClassResultTableProps) => {
+const ClassResultTable = ({ 
+  students, subjects, marksMap, onMarksChange, onSave, isSaving, title, 
+  onViewMarksheet, onClose, lastSaved, readOnly = false, onEdit, 
+  className: classNameProp, examName, sessionName, signatories,
+  statusOverrides = {}, onStatusOverrideChange
+}: ClassResultTableProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { getOverallGrade, getGraceLimit, scales, maxMarks, minMarks, passMark, gracePass } = useGradingSystem();
   
   const tableRef = useRef<HTMLDivElement>(null);
   const [explainStudent, setExplainStudent] = useState<any | null>(null);
+  const [filterMode, setFilterMode] = useState<'all' | 'fail_or_grace'>('all');
 
   const { data: fallbackSignatories } = useQuery({
     queryKey: ['result-signatories'],
@@ -83,6 +91,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
       examName,
       sessionName,
       signatories: activeSignatories,
+      statusOverrides,
     };
     type === 'csv' ? exportResultCSV(params) : exportResultPDF(params);
   };
@@ -100,6 +109,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
   // Pre-calculate stats and ranks (shared, unit-tested logic)
   const studentsWithStats = students.map((st: any, idx: number) => {
     const rawMarks = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`]);
+    const override = statusOverrides?.[st.id] || 'auto';
     const stats = studentStats(st.id, rawMarks, {
       scales,
       passMark,
@@ -108,12 +118,19 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
       graceGrade: gracePass?.grade,
       minAggregatePercent: gracePass?.min_aggregate_percent,
       maxMarkDeficit: gracePass?.max_mark_deficit,
+      override,
     });
 
     return { st, ...stats, originalIdx: idx };
   });
 
   const rankMap = rankStudents(studentsWithStats);
+
+  const failedOrGracedCount = studentsWithStats.filter(s => s.failed || s.overall?.graced || (statusOverrides?.[s.st.id] && statusOverrides[s.st.id] !== 'auto')).length;
+
+  const displayedStudents = filterMode === 'fail_or_grace'
+    ? studentsWithStats.filter(s => s.failed || s.overall?.graced || (statusOverrides?.[s.st.id] && statusOverrides[s.st.id] !== 'auto'))
+    : studentsWithStats;
 
   const sheetHtml = useMemo(() => {
     if (!readOnly) return '';
@@ -134,12 +151,13 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
         sessionName,
         passMark,
         signatories: activeSignatories,
+        statusOverrides,
       });
     } catch (e) {
       console.error('Result sheet preview failed', e);
       return '';
     }
-  }, [readOnly, title, students, subjects, marksMap, bn, instName, institution, classNameProp, examName, sessionName, passMark, getOverallGrade, activeSignatories]);
+  }, [readOnly, title, students, subjects, marksMap, bn, instName, institution, classNameProp, examName, sessionName, passMark, getOverallGrade, activeSignatories, statusOverrides]);
 
   // Scale pages to fit iframe width and report full content height to parent
   const previewHtml = useMemo(() => {
@@ -248,10 +266,31 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
             </button>
           )}
           {lastSaved?.at && (
-            <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">
+            <p className="text-[10px] sm:text-xs text-muted-foreground hidden lg:block">
               {bn ? 'সর্বশেষ সংরক্ষণ' : 'Last saved'}: {new Date(lastSaved.at).toLocaleString(bn ? 'bn-BD' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' })}
             </p>
           )}
+
+          {/* Quick Filter: All vs Failed & Graced */}
+          <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border text-[11px] sm:text-xs">
+            <button
+              type="button"
+              onClick={() => setFilterMode('all')}
+              className={`px-2 py-1 rounded-md transition-all font-medium ${filterMode === 'all' ? 'bg-background shadow-xs text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              {bn ? `সব শিক্ষার্থী (${toBnDigits(students.length)})` : `All (${students.length})`}
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterMode('fail_or_grace')}
+              className={`px-2 py-1 rounded-md transition-all font-medium flex items-center gap-1.5 ${filterMode === 'fail_or_grace' ? 'bg-background shadow-xs text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <span>{bn ? 'অকৃতকার্য ও বিবেচনায়' : 'Failed & Graced'}</span>
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${failedOrGracedCount > 0 ? 'bg-destructive/15 text-destructive' : 'bg-muted text-muted-foreground'}`}>
+                {bn ? toBnDigits(failedOrGracedCount) : failedOrGracedCount}
+              </span>
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2">
@@ -321,7 +360,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
               <th className="w-[56px] min-w-[56px] max-w-[56px] px-1 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-white sticky top-0 z-40">
                 <div className="flex items-center justify-center h-full">GPA</div>
               </th>
-              <th className="w-[84px] min-w-[84px] max-w-[84px] px-1 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-white sticky top-0 z-40">
+              <th className="w-[115px] min-w-[115px] max-w-[115px] px-1 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-white sticky top-0 z-40">
                 <div className="flex items-center justify-center h-full">{bn ? 'মর্যাদা' : 'Title'}</div>
               </th>
               <th className="w-[64px] min-w-[64px] max-w-[64px] px-1 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-white sticky top-0 z-40">
@@ -331,7 +370,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
             </tr>
           </thead>
           <tbody>
-            {studentsWithStats.map(({ st, originalIdx, failed, total, overall, hasEnteredAnyMark }, rowIdx) => {
+            {displayedStudents.map(({ st, originalIdx, failed, total, overall, hasEnteredAnyMark }, rowIdx) => {
               const rank = rankMap.get(st.id) || st.rank || st.merit_rank || st.merit_position;
               const rankDisplay = formatOrdinalRank(rank, bn);
               
@@ -406,8 +445,42 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
                   <td className="w-[56px] min-w-[56px] max-w-[56px] px-1 text-center text-xs font-semibold text-primary border-b border-r border-border">
                     <div className="flex items-center justify-center h-full">{overall ? toBnDigits(overall.gpa) : '-'}</div>
                   </td>
-                  <td className="w-[84px] min-w-[84px] max-w-[84px] px-1 text-center text-[10px] font-medium text-muted-foreground border-b border-r border-border">
-                    <div className="flex items-center justify-center h-full truncate">{overall ? (bn ? overall.title_bn : overall.title) : '-'}</div>
+                  <td className="w-[115px] min-w-[115px] max-w-[115px] px-1 text-center text-[10px] font-medium text-muted-foreground border-b border-r border-border">
+                    <div className="flex items-center justify-center h-full">
+                      {readOnly ? (
+                        <div className="truncate flex items-center justify-center gap-1">
+                          <span>{overall ? (bn ? overall.title_bn : overall.title) : '-'}</span>
+                          {statusOverrides?.[st.id] && statusOverrides[st.id] !== 'auto' && (
+                            <span className="text-[9px] text-amber-600 font-bold px-1 rounded bg-amber-50 border border-amber-200" title={bn ? 'ম্যানুয়াল পরিবর্তিত' : 'Manually modified'}>
+                              {statusOverrides[st.id] === 'fail' ? (bn ? 'ফেল' : 'F') : (bn ? 'বিবেচনা' : 'G')}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <select
+                          value={statusOverrides?.[st.id] || 'auto'}
+                          onChange={(e) => onStatusOverrideChange?.(st.id, e.target.value as any)}
+                          className={`text-[10px] font-semibold rounded px-1 py-1 border transition-all ${
+                            statusOverrides?.[st.id] === 'fail'
+                              ? 'border-destructive text-destructive bg-destructive/10'
+                              : statusOverrides?.[st.id] === 'grace_pass'
+                              ? 'border-amber-500 text-amber-700 bg-amber-500/15'
+                              : 'border-border text-muted-foreground bg-background hover:border-primary/50'
+                          } focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer w-full max-w-[108px] truncate`}
+                          title={bn ? 'ফলাফল পরিবর্তন (অটো / ফেইল / বিবেচনায় পাস)' : 'Override status (Auto / Fail / Grace Pass)'}
+                        >
+                          <option value="auto">
+                            {overall ? (bn ? `অটো (${overall.title_bn})` : `Auto (${overall.title})`) : (bn ? 'অটো' : 'Auto')}
+                          </option>
+                          <option value="fail">
+                            {bn ? 'অকৃতকার্য (ফেল)' : 'Fail'}
+                          </option>
+                          <option value="grace_pass">
+                            {bn ? 'বিবেচনায় পাস (মাকবুল)' : 'Grace Pass (Maqbul)'}
+                          </option>
+                        </select>
+                      )}
+                    </div>
                   </td>
                   <td className="w-[64px] min-w-[64px] max-w-[64px] px-1 text-center text-xs font-medium text-muted-foreground border-b border-r border-border">
                     <div className="flex items-center justify-center h-full">

@@ -98,6 +98,16 @@ export interface OverallGradeOptions {
   minAggregatePercent?: number;
   /** Maximum mark shortfall allowed below pass mark in any failed subject (0 = off). */
   maxMarkDeficit?: number;
+  /** When true (default: true), blank subject cells are treated as failed/absent */
+  failOnBlank?: boolean;
+  /** Number of blank subjects to include as failures */
+  blankFailCount?: number;
+  /** When true (default: true), mark 0 or blank strictly disallows automatic grace pass */
+  disallowGraceOnZeroOrBlank?: boolean;
+  /** Indicator whether there was any blank or 0 mark */
+  hasBlankOrZero?: boolean;
+  /** Manual override for student status: 'fail' | 'grace_pass' | 'auto' */
+  override?: 'fail' | 'grace_pass' | 'auto';
 }
 
 
@@ -113,14 +123,49 @@ export const overallGrade = (subjectMarks: number[], options: OverallGradeOption
   const pm = options.passMark ?? 33;
   const graceLimit = options.graceLimit ?? 0;
   const fullMarks = options.fullMarks ?? DEFAULT_FULL_MARKS;
-  const targetGraceGrade = options.graceGrade || 'D';
   const minAggregatePercent = options.minAggregatePercent ?? 0;
   const maxMarkDeficit = options.maxMarkDeficit ?? 0;
+  const blankFailCount = options.blankFailCount ?? 0;
+
+  // Check manual override first
+  if (options.override === 'fail') {
+    const failScale = scales.find((s) => s.grade === 'F') || DEFAULT_SCALES[DEFAULT_SCALES.length - 1];
+    return {
+      grade: failScale.grade,
+      gpa: failScale.gpa,
+      color: colorMap[failScale.color] || colorMap.destructive,
+      title: failScale.title,
+      title_bn: failScale.title_bn,
+      hasFail: true,
+      graced: false,
+      failedCount: Math.max(1, subjectMarks.filter((m) => Number(m) < pm).length + blankFailCount),
+    };
+  }
+
+  if (options.override === 'grace_pass') {
+    const dScale = scales.find((s) => s.grade === 'D') || DEFAULT_SCALES.find((s) => s.grade === 'D');
+    return {
+      grade: 'D',
+      gpa: dScale?.gpa || '1.00',
+      color: colorMap[dScale?.color || 'orange'] || colorMap.orange,
+      title: 'Maqbul (Considered)',
+      title_bn: 'মাকবুল (বিবেচনায়)',
+      hasFail: false,
+      graced: true,
+      failedCount: Math.max(1, subjectMarks.filter((m) => Number(m) < pm).length + blankFailCount),
+    };
+  }
 
   const failedSubjects = subjectMarks.filter((m) => Number(m) < pm);
-  const failedCount = failedSubjects.length;
+  const failedCount = failedSubjects.length + blankFailCount;
 
-  let graced = graceLimit > 0 && failedCount > 0 && failedCount <= graceLimit;
+  // Strict rule: If any subject has 0 OR was blank, consideration/grace pass is DISALLOWED
+  const disallowZeroOrBlank = options.disallowGraceOnZeroOrBlank ?? true;
+  const hasZero = subjectMarks.some((m) => Number(m) === 0);
+  const hasBlank = blankFailCount > 0;
+  const disallowGrace = disallowZeroOrBlank && (hasZero || hasBlank || !!options.hasBlankOrZero);
+
+  let graced = !disallowGrace && graceLimit > 0 && failedCount > 0 && failedCount <= graceLimit;
 
   if (graced && maxMarkDeficit > 0) {
     const hasExcessiveDeficit = failedSubjects.some((m) => (pm - Number(m)) > maxMarkDeficit);
@@ -131,14 +176,14 @@ export const overallGrade = (subjectMarks: number[], options: OverallGradeOption
 
   if (graced && minAggregatePercent > 0) {
     const total = subjectMarks.reduce((a, b) => a + b, 0);
-    const fullTotal = subjectMarks.length * fullMarks;
+    const fullTotal = (subjectMarks.length + blankFailCount) * fullMarks;
     const aggregatePct = fullTotal > 0 ? (total / fullTotal) * 100 : 0;
     if (aggregatePct < minAggregatePercent) {
       graced = false;
     }
   }
 
-  if (failedCount > 0 && subjectMarks.length > 0 && !graced) {
+  if (failedCount > 0 && (subjectMarks.length > 0 || blankFailCount > 0) && !graced) {
     const failScale = scales.find((s) => s.grade === 'F') || DEFAULT_SCALES[DEFAULT_SCALES.length - 1];
     return {
       grade: failScale.grade,
@@ -167,7 +212,7 @@ export const overallGrade = (subjectMarks: number[], options: OverallGradeOption
   }
 
   const total = subjectMarks.reduce((a, b) => a + b, 0);
-  const fullTotal = subjectMarks.length * fullMarks;
+  const fullTotal = (subjectMarks.length + blankFailCount) * fullMarks;
   const byTotal = gradeFromTotal(total, fullTotal, scales);
 
   if (byTotal.grade === 'F' && subjectMarks.length > 0) {
@@ -204,7 +249,22 @@ export const studentStats = (id: string, rawMarks: unknown[], options: OverallGr
   const graded = enteredMarks(rawMarks);
   const hasEnteredAnyMark = graded.length > 0;
   const total = graded.reduce((a, b) => a + b, 0);
-  const overall = hasEnteredAnyMark ? overallGrade(graded, options) : null;
+
+  if (!hasEnteredAnyMark) {
+    return { id, total: 0, hasEnteredAnyMark: false, failed: false, overall: null };
+  }
+
+  const failOnBlank = options.failOnBlank ?? true;
+  const blankCount = rawMarks.filter((m) => m === undefined || m === null || m === '').length;
+  const hasBlank = blankCount > 0;
+  const hasZero = graded.some((m) => Number(m) === 0);
+
+  const overall = overallGrade(graded, {
+    ...options,
+    blankFailCount: failOnBlank ? blankCount : 0,
+    hasBlankOrZero: hasBlank || hasZero,
+  });
+
   const failed = overall ? (overall.graced ? false : overall.hasFail) : false;
   return { id, total, hasEnteredAnyMark, failed, overall };
 };
