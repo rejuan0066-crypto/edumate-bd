@@ -96,8 +96,8 @@ export const useApprovalWorkflow = () => {
         await supabase.from('notifications').insert({
           title: 'Approval Required: New Request',
           title_bn: 'অনুমোদন প্রযোজ্য — নতুন অনুরোধ',
-          message: `${userName} sent a ${params.actionType} request: ${description}`,
-          message_bn: `${userName} একটি ${params.actionType} অনুরোধ পাঠিয়েছেন: ${description}`,
+          message: `${userName} sent a ${params.actionType} request (will take effect after approval): ${description}`,
+          message_bn: `${userName} একটি ${params.actionType} অনুরোধ পাঠিয়েছেন (অনুমোদন করার পর কার্যকর হবে): ${description}`,
           type: 'warning',
           category: 'approval',
           link: '/admin/approvals',

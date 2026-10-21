@@ -857,7 +857,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     const errors: Record<string, string> = {};
 
     if (isEditMode && editId && isRecordPending(editId)) {
-      toast.warning(bn ? '⏳ এই কর্মীর পূর্ববর্তী পরিবর্তন ইতিমধ্যে অ্যাডমিন অনুমোদনের অপেক্ষায় রয়েছে।' : '⏳ Previous changes for this staff are already awaiting admin approval.');
+      toast.warning(bn ? '⏳ এই কর্মীর পূর্ববর্তী পরিবর্তন ইতিমধ্যে অনুমোদনের অপেক্ষায় রয়েছে। অনুমোদন করার পর কার্যকর হবে।' : '⏳ Previous changes for this staff are already awaiting approval. It will take effect after approval.');
       return;
     }
 
@@ -1383,7 +1383,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
             <Clock className="w-5 h-5 shrink-0 animate-pulse text-amber-600" />
             <div className="flex-1">
               <p className="font-semibold">
-                {bn ? '⏳ এই কর্মীর তথ্য ইতিমধ্যে অ্যাডমিন অনুমোদনের অপেক্ষায় রয়েছে।' : '⏳ This staff record is already awaiting admin approval.'}
+                {bn ? '⏳ এই কর্মীর তথ্য ইতিমধ্যে অনুমোদনের অপেক্ষায় রয়েছে। অনুমোদন করার পর কার্যকর হবে।' : '⏳ This staff record is already awaiting approval. It will take effect after approval.'}
               </p>
               <p className="text-[11px] opacity-90 mt-0.5">
                 {bn ? 'পূর্ববর্তী পরিবর্তনের অনুরোধ প্রধান অ্যাডমিন কর্তৃক অনুমোদিত বা প্রত্যাখ্যাত না হওয়া পর্যন্ত পুনরায় সাবমিট করা যাবে না।' : 'New modifications cannot be submitted until the pending request is approved or rejected.'}

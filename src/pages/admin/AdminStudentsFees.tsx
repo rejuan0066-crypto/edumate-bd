@@ -494,7 +494,7 @@ const AdminStudentsFees = () => {
         if (isUserAdmin) {
           toast.success(bn ? 'ক্যাশ পেমেন্ট সফলভাবে সংরক্ষিত ও অনুমোদিত হয়েছে' : 'Cash payment saved and approved');
         } else {
-          toast.success(bn ? 'ফি আদায় এন্ট্রি জমা হয়েছে! এডমিনের অনুমোদনের পর রশিদ চূড়ান্ত হবে।' : 'Fee collection entry submitted! Awaiting admin approval.');
+          toast.success(bn ? 'ফি আদায় এন্ট্রি জমা হয়েছে! অনুমোদন করার পর কার্যকর হবে।' : 'Fee collection entry submitted! Will take effect after approval.');
         }
       } else {
         // Call process-payment edge function
@@ -1017,7 +1017,7 @@ const AdminStudentsFees = () => {
                         {blockedStatus === 'failed'
                           ? (bn ? '❌ পূর্ববর্তী এন্ট্রি প্রত্যাখ্যাত — সংশোধন বা ডিলিট প্রয়োজন' : '❌ Previous Entry Rejected')
                           : blockedStatus === 'pending'
-                          ? (bn ? '⏳ পেন্ডিং রিসিট — অনুমোদনের অপেক্ষায়' : '⏳ Pending Receipt — Awaiting Approval')
+                          ? (bn ? '⏳ পেন্ডিং রিসিট — অনুমোদন করার পর কার্যকর হবে' : '⏳ Pending Receipt — Will take effect after approval')
                           : (bn ? '✅ অনুমোদিত রিসিট — পরিশোধিত' : '✅ Approved Receipt — Paid')}
                       </span>
                     </div>

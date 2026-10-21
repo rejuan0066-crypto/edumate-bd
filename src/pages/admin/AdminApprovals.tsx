@@ -2126,6 +2126,13 @@ const AdminApprovals = () => {
                             <span className="text-foreground">{payload._description}</span>
                           </div>
                         )}
+
+                        {action.status === 'pending' && (
+                          <div className="flex items-center gap-2 text-xs text-amber-800 dark:text-amber-300 bg-amber-500/10 px-3 py-2 rounded-lg border border-amber-500/20 font-medium">
+                            <Clock className="w-4 h-4 shrink-0 text-amber-600" />
+                            <span>{bn ? 'অনুমোদন করার পর কার্যকর হবে' : 'Will take effect after approval'}</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* If amount exists, prominent highlight card */}

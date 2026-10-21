@@ -1632,8 +1632,8 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       if (approvalSubmitted) {
         toast.info(
           bn
-            ? '⏳ অনুমোদন প্রযোজ্য — রিসেট রিকোয়েস্টটি জমা দেওয়া হয়েছে। প্রধান এডমিন অনুমোদন করার পর কার্যকর হবে।'
-            : '⏳ Approval applicable — reset request submitted. It will take effect once approved by admin.',
+            ? '⏳ অনুমোদন প্রযোজ্য — রিসেট রিকোয়েস্টটি জমা দেওয়া হয়েছে। অনুমোদন করার পর কার্যকর হবে।'
+            : '⏳ Approval applicable — reset request submitted. It will take effect after approval.',
           { duration: 6000 }
         );
         return;
@@ -3722,8 +3722,8 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                     <Clock className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
                     <span>
                       {bn
-                        ? 'এই রিসেটের ক্ষেত্রে প্রধান এডমিনের অনুমোদন প্রযোজ্য। কনফার্ম করলে তা অনুমোদনের কিউতে জমা হবে।'
-                        : 'Admin approval is applicable for this reset. Confirming will submit it to the approval queue.'}
+                        ? 'এই রিসেটের ক্ষেত্রে প্রধান এডমিনের অনুমোদন প্রযোজ্য। অনুমোদন করার পর কার্যকর হবে।'
+                        : 'Admin approval is applicable for this reset. It will take effect after approval.'}
                     </span>
                   </div>
                 )}

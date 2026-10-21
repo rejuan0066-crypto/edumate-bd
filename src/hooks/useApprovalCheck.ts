@@ -23,8 +23,8 @@ export const useApprovalCheck = (menuPath: string, targetTable: string) => {
     if (targetId && isRecordPending(targetTable, targetId)) {
       toast.warning(
         bn
-          ? '⏳ এই রেকর্ডটি ইতিমধ্যে অ্যাডমিন অনুমোদনের অপেক্ষায় রয়েছে।'
-          : '⏳ This record is already awaiting admin approval.',
+          ? '⏳ এই রেকর্ডটি ইতিমধ্যে অনুমোদনের অপেক্ষায় রয়েছে। অনুমোদন করার পর কার্যকর হবে।'
+          : '⏳ This record is already awaiting approval. It will take effect after approval.',
         { duration: 5000 }
       );
       return true;
@@ -42,8 +42,8 @@ export const useApprovalCheck = (menuPath: string, targetTable: string) => {
     if (success) {
       toast.info(
         bn
-          ? '⏳ অনুমোদন প্রযোজ্য — রিকোয়েস্টটি জমা দেওয়া হয়েছে। এডমিনের অনুমোদনের পর কার্যকর হবে।'
-          : '⏳ Approval applicable — request submitted. Will take effect after admin approval.',
+          ? '⏳ অনুমোদন প্রযোজ্য — রিকোয়েস্টটি জমা দেওয়া হয়েছে। অনুমোদন করার পর কার্যকর হবে।'
+          : '⏳ Approval applicable — request submitted. Will take effect after approval.',
         { duration: 5000 }
       );
     } else {
