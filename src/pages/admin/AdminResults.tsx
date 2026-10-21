@@ -71,7 +71,10 @@ const AdminResults = () => {
   useEffect(() => {
     if (!showResults) return;
     const t = setTimeout(() => {
-      resultsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (resultsSectionRef.current) {
+        const top = resultsSectionRef.current.getBoundingClientRect().top + window.scrollY - 80;
+        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+      }
     }, 250);
     return () => clearTimeout(t);
   }, [showResults, viewingStudentId, selectedClass]);
