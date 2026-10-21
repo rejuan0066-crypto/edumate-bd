@@ -57,9 +57,20 @@ const ClassResultTable = ({
     queryKey: ['result-signatories'],
     queryFn: async () => {
       const { data: v2Data } = await supabase.from('website_settings').select('value').eq('key', 'result_signatories_v2').maybeSingle();
-      if (Array.isArray(v2Data?.value) && v2Data.value.length) return v2Data.value;
+      if (Array.isArray(v2Data?.value) && v2Data.value.length) {
+        return (v2Data.value as any[]).map(r => {
+          const isAct = r.show_name !== false && r.enabled !== false;
+          return { ...r, show_name: isAct, enabled: isAct };
+        });
+      }
       const { data } = await supabase.from('website_settings').select('value').eq('key', 'result_signatories').maybeSingle();
-      return (data?.value as any) || [];
+      if (Array.isArray(data?.value)) {
+        return (data.value as any[]).map(r => {
+          const isAct = r.show_name !== false && r.name_bn !== '—' && r.name_bn !== '-';
+          return { ...r, show_name: isAct, enabled: isAct };
+        });
+      }
+      return [];
     },
     staleTime: 60 * 1000,
   });
@@ -526,24 +537,34 @@ const ClassResultTable = ({
       </div>
 
       {/* Signature Section */}
-      <div className="px-5 py-6 border-t border-border bg-background shrink-0">
-        <div className="grid grid-cols-3 gap-2 sm:gap-6 mt-2 pt-2">
-          {[
-            { label: bn ? 'পরীক্ষা নিয়ন্ত্রক' : 'Exam Controller' },
-            { label: bn ? 'শিক্ষা সচিব' : 'Education Secretary' },
-            { label: bn ? 'মুহতামিম' : 'Principal' },
-          ].map((sig, i) => (
-            <div key={i} className="text-center space-y-1 sm:space-y-2">
-              <div className="border-b border-dashed border-muted-foreground/40 mx-2 sm:mx-4 pb-1 min-h-[30px] sm:min-h-[40px]" />
-              <p className="text-[9px] sm:text-xs font-semibold text-foreground truncate">{sig.label}</p>
-              <Input
-                className="text-center text-[9px] sm:text-xs h-6 sm:h-7 border-dashed"
-                placeholder={bn ? 'নাম লিখুন' : 'Enter name'}
-              />
+      {(() => {
+        const visibleSigs = (activeSignatories || [])
+          .filter((s: any) => s.show_name !== false && s.enabled !== false)
+          .slice(0, 4);
+        if (!visibleSigs.length) return null;
+        return (
+          <div className="px-5 py-6 border-t border-border bg-background shrink-0">
+            <div
+              className="grid gap-4 sm:gap-8 mt-2 pt-2 max-w-4xl mx-auto"
+              style={{ gridTemplateColumns: `repeat(${visibleSigs.length}, minmax(0, 1fr))` }}
+            >
+              {visibleSigs.map((sig: any, i: number) => {
+                const title = bn ? (sig.title_bn || sig.title_en) : (sig.title_en || sig.title_bn);
+                const name = bn ? (sig.name_bn || sig.name_en) : (sig.name_en || sig.name_bn);
+                return (
+                  <div key={i} className="text-center space-y-1 sm:space-y-1.5">
+                    <div className="border-b-2 border-dashed border-muted-foreground/40 mx-2 sm:mx-4 pb-1 min-h-[28px] sm:min-h-[36px]" />
+                    <p className="text-xs sm:text-sm font-bold text-foreground truncate">{title}</p>
+                    {name && name !== '—' && name !== '-' && (
+                      <p className="text-xs sm:text-sm font-medium text-muted-foreground truncate">{name}</p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+        );
+      })()}
         </>
       )}
       

@@ -78,13 +78,14 @@ export interface ResultSignatory {
   name_bn?: string;
   name_en?: string;
   show_name?: boolean;
+  enabled?: boolean;
 }
 
 export const DEFAULT_RESULT_SIGNATORIES: ResultSignatory[] = [
-  { title_bn: L.classTeacher,        title_en: 'Class Teacher',     name_bn: '', name_en: '', show_name: true },
-  { title_bn: L.examController,      title_en: 'Exam Controller',   name_bn: '', name_en: '', show_name: true },
-  { title_bn: L.educationSecretary,  title_en: 'Education Secretary', name_bn: '', name_en: '', show_name: true },
-  { title_bn: `${L.muhtamim} / ${L.headmaster}`, title_en: 'Principal', name_bn: '', name_en: '', show_name: true },
+  { title_bn: L.classTeacher,        title_en: 'Class Teacher',     name_bn: '', name_en: '', show_name: true, enabled: true },
+  { title_bn: L.examController,      title_en: 'Exam Controller',   name_bn: '', name_en: '', show_name: true, enabled: true },
+  { title_bn: L.educationSecretary,  title_en: 'Education Secretary', name_bn: '', name_en: '', show_name: true, enabled: true },
+  { title_bn: `${L.muhtamim} / ${L.headmaster}`, title_en: 'Principal', name_bn: '', name_en: '', show_name: true, enabled: true },
 ];
 
 /** Build "[Exam] - [Session] - [Class]" document/file name for result sheets. */
@@ -265,7 +266,8 @@ export const getResultSheetHtml = ({
 }: ExportData & { orientation?: 'landscape' | 'portrait', qrCodeDataUrl?: string }): string => {
   const m = sanitizeMargins(margins);
   const docName = buildResultDocName({ examName, sessionName, className, title });
-  const sigList = (signatories && signatories.length ? signatories : DEFAULT_RESULT_SIGNATORIES).slice(0, 4);
+  const rawSigList = (signatories && signatories.length ? signatories : DEFAULT_RESULT_SIGNATORIES);
+  const sigList = rawSigList.filter(s => s.show_name !== false && (s as any).enabled !== false).slice(0, 4);
   
   const computed = students.map((st: any, idx: number) => {
     const raw = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`]);
@@ -459,17 +461,18 @@ export const getResultSheetHtml = ({
             ` : ''}
           </div>
 
+          ${sigList.length > 0 ? `
           <div class="signatures-wrap">
             <div class="signatures">
               ${sigList.map(sig => `
                 <div class="sig-block">
                   <div class="sig-line"></div>
-                  ${sig.show_name !== false && (sig.name_bn || sig.name_en) && sig.name_bn !== '—' && sig.name_bn !== '-' ? `<div class="sig-name">${bn ? (sig.name_bn || sig.name_en || '') : (sig.name_en || sig.name_bn || '')}</div>` : ''}
+                  ${(sig.name_bn || sig.name_en) && sig.name_bn !== '—' && sig.name_bn !== '-' ? `<div class="sig-name">${bn ? (sig.name_bn || sig.name_en || '') : (sig.name_en || sig.name_bn || '')}</div>` : ''}
                   <div class="sig-title">${bn ? (sig.title_bn || sig.title_en || '') : (sig.title_en || sig.title_bn || '')}</div>
                 </div>
               `).join('')}
             </div>
-          </div>
+          </div>` : ''}
 
           <div class="footer print-hidden">
             <div style="font-weight:700;">${showFooterInstitution ? (institutionName || '') : ''}</div>
@@ -554,8 +557,8 @@ export const getResultSheetHtml = ({
   .stat-v{font-size:15px;font-weight:800;color:#064e3b;margin-top:2px;}
   .signatures-keeper{page-break-inside:avoid;break-inside:avoid;display:block;}
   .signatures-wrap{margin-top:45px;page-break-inside:avoid;break-inside:avoid;display:block;}
-  .signatures{display:flex;flex-wrap:nowrap;justify-content:space-between;gap:25px;padding:0 5px;page-break-inside:avoid;break-inside:avoid;}
-  .sig-block{flex:1 1 0;min-width:0;text-align:center;page-break-inside:avoid;break-inside:avoid;}
+  .signatures{display:flex;flex-wrap:nowrap;justify-content:space-around;gap:25px;padding:0 5px;page-break-inside:avoid;break-inside:avoid;}
+  .sig-block{flex:1 1 0;min-width:0;max-width:260px;text-align:center;page-break-inside:avoid;break-inside:avoid;}
   .sig-line{border-top:1.5px solid #64748b;padding-top:6px;margin-top:35px;}
   .sig-name{font-size:12px;font-weight:700;color:#0f172a;min-height:16px;}
   .sig-title{font-size:12.5px;font-weight:700;color:#064e3b;margin-top:2px;}

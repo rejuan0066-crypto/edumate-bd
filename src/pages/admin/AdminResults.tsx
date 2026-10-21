@@ -531,20 +531,28 @@ const AdminResults = () => {
       const { data: v2Data } = await supabase.from('website_settings').select('value').eq('key', 'result_signatories_v2').maybeSingle();
       const v2 = (v2Data?.value as any);
       if (Array.isArray(v2) && v2.length) {
-        return (v2 as ResultSignatory[]).map(r => ({
-          ...r,
-          show_name: r.show_name !== false,
-        }));
+        return (v2 as ResultSignatory[]).map(r => {
+          const isAct = r.show_name !== false && (r as any).enabled !== false;
+          return {
+            ...r,
+            show_name: isAct,
+            enabled: isAct,
+          };
+        });
       }
 
       // 2. Fallback to legacy result_signatories
       const { data } = await supabase.from('website_settings').select('value').eq('key', 'result_signatories').maybeSingle();
       const v = (data?.value as any);
       if (Array.isArray(v) && v.length) {
-        return (v as ResultSignatory[]).map(r => ({
-          ...r,
-          show_name: r.show_name !== false && r.name_bn !== '—' && r.name_bn !== '-',
-        }));
+        return (v as ResultSignatory[]).map(r => {
+          const isAct = r.show_name !== false && r.name_bn !== '—' && r.name_bn !== '-';
+          return {
+            ...r,
+            show_name: isAct,
+            enabled: isAct,
+          };
+        });
       }
       return DEFAULT_RESULT_SIGNATORIES;
     },
@@ -732,22 +740,18 @@ const AdminResults = () => {
   const validateSignatories = (rows: ResultSignatory[]) => {
     const errs: typeof sigErrors = {};
     rows.forEach((s, i) => {
+      const isEnabled = s.show_name !== false && (s as any).enabled !== false;
+      if (!isEnabled) return; // Disabled signatories are omitted from output and do not block save
       const tBn = (s.title_bn || '').trim();
       const tEn = (s.title_en || '').trim();
-      const nBn = (s.name_bn || '').trim();
-      const nEn = (s.name_en || '').trim();
-      const isShowName = s.show_name !== false;
       const e: any = {};
       if (!tBn && !tEn) e.title = bn ? 'অন্তত একটি ভাষায় পদবী দিন' : 'Title required in at least one language';
-      if (isShowName) {
-        if (!nBn && !nEn) e.name = bn ? 'অন্তত একটি ভাষায় নাম দিন' : 'Name required in at least one language';
-      }
       if (tBn.length > MAX_LEN) e.title_bn = bn ? `সর্বোচ্চ ${MAX_LEN} অক্ষর` : `Max ${MAX_LEN} chars`;
       if (tEn.length > MAX_LEN) e.title_en = bn ? `সর্বোচ্চ ${MAX_LEN} অক্ষর` : `Max ${MAX_LEN} chars`;
-      if (isShowName) {
-        if (nBn.length > MAX_LEN) e.name_bn = bn ? `সর্বোচ্চ ${MAX_LEN} অক্ষর` : `Max ${MAX_LEN} chars`;
-        if (nEn.length > MAX_LEN) e.name_en = bn ? `সর্বোচ্চ ${MAX_LEN} অক্ষর` : `Max ${MAX_LEN} chars`;
-      }
+      const nBn = (s.name_bn || '').trim();
+      const nEn = (s.name_en || '').trim();
+      if (nBn.length > MAX_LEN) e.name_bn = bn ? `সর্বোচ্চ ${MAX_LEN} অক্ষর` : `Max ${MAX_LEN} chars`;
+      if (nEn.length > MAX_LEN) e.name_en = bn ? `সর্বোচ্চ ${MAX_LEN} অক্ষর` : `Max ${MAX_LEN} chars`;
       if (Object.keys(e).length) errs[i] = e;
     });
     return errs;
@@ -763,28 +767,33 @@ const AdminResults = () => {
         throw new Error(bn ? 'কিছু ক্ষেত্র সঠিকভাবে পূরণ করা হয়নি' : 'Please fix the highlighted fields');
       }
       // Modern v2 format with full show_name support (bypasses legacy check constraint on key = 'result_signatories')
-      const v2Payload = rows.map(r => ({
-        title_bn: (r.title_bn || '').trim(),
-        title_en: (r.title_en || '').trim(),
-        name_bn: (r.name_bn || '').trim(),
-        name_en: (r.name_en || '').trim(),
-        show_name: r.show_name !== false,
-      }));
+      const v2Payload = rows.map(r => {
+        const isEnabled = r.show_name !== false && (r as any).enabled !== false;
+        return {
+          title_bn: (r.title_bn || '').trim(),
+          title_en: (r.title_en || '').trim(),
+          name_bn: (r.name_bn || '').trim(),
+          name_en: (r.name_en || '').trim(),
+          show_name: isEnabled,
+          enabled: isEnabled,
+        };
+      });
 
       // Legacy payload for key = 'result_signatories' to satisfy the strict DB check constraint:
       // IF btrim(n_bn) = '' AND btrim(n_en) = '' THEN RETURN false;
       const legacyPayload = rows.map(r => {
+        const isEnabled = r.show_name !== false && (r as any).enabled !== false;
         const tBn = (r.title_bn || '').trim();
         const tEn = (r.title_en || '').trim();
         let nBn = (r.name_bn || '').trim();
         let nEn = (r.name_en || '').trim();
-        if (!nBn && !nEn) {
-          nBn = tBn || '—';
-          nEn = tEn || '—';
+        if (!isEnabled || (!nBn && !nEn)) {
+          nBn = isEnabled ? (tBn || '—') : '—';
+          nEn = isEnabled ? (tEn || '—') : '—';
         }
         return {
-          title_bn: tBn,
-          title_en: tEn,
+          title_bn: tBn || '—',
+          title_en: tEn || '—',
           name_bn: nBn,
           name_en: nEn,
         };
@@ -1004,36 +1013,40 @@ const AdminResults = () => {
                     return trimmed === cur ? x : { ...x, [field]: trimmed };
                   }));
                 };
-                const isShowName = s.show_name !== false;
+                const isEnabled = s.show_name !== false && (s as any).enabled !== false;
                 return (
-                  <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3.5 rounded-xl border bg-card/60 shadow-sm">
+                  <div key={i} className={`grid grid-cols-1 md:grid-cols-2 gap-3 p-3.5 rounded-xl border transition-all ${isEnabled ? 'bg-card/60 shadow-sm border-border' : 'bg-muted/30 border-dashed border-muted-foreground/30 opacity-75'}`}>
                     <div className="md:col-span-2 flex items-center justify-between border-b pb-2">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-foreground">
                           {bn ? `স্বাক্ষরকারী ${i + 1}` : `Signatory ${i + 1}`}
                         </span>
-                        {!isShowName && (
-                          <Badge variant="secondary" className="text-[10px] py-0 px-2 font-normal">
-                            {bn ? 'নাম বন্ধ (শুধু পদবী)' : 'Name Off (Title Only)'}
+                        {isEnabled ? (
+                          <Badge variant="outline" className="text-[10px] py-0 px-2 font-semibold bg-emerald-50 text-emerald-700 border-emerald-300">
+                            {bn ? 'চালু (শীটে আসবে)' : 'Active (Will show)'}
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-[10px] py-0 px-2 font-semibold bg-muted text-muted-foreground border">
+                            {bn ? 'বন্ধ (শীটে আসবে না)' : 'Disabled (Hidden on sheet)'}
                           </Badge>
                         )}
                       </div>
 
                       <div className="flex items-center gap-3">
-                        {(err.title || err.name) && (
+                        {err.title && (
                           <div className="text-[11px] text-destructive font-medium">
-                            {err.title || err.name}
+                            {err.title}
                           </div>
                         )}
                         <div className="flex items-center gap-2 bg-muted/50 px-2.5 py-1 rounded-lg border border-border/50">
-                          <Label htmlFor={`sig-toggle-${i}`} className="text-xs font-medium cursor-pointer select-none">
-                            {bn ? 'নাম প্রদর্শন' : 'Show Name'}
+                          <Label htmlFor={`sig-toggle-${i}`} className="text-xs font-semibold cursor-pointer select-none">
+                            {isEnabled ? (bn ? 'স্বাক্ষরকারী চালু' : 'Signatory: On') : (bn ? 'স্বাক্ষরকারী বন্ধ' : 'Signatory: Off')}
                           </Label>
                           <Switch
                             id={`sig-toggle-${i}`}
-                            checked={isShowName}
+                            checked={isEnabled}
                             onCheckedChange={(checked) => {
-                              setSigDraft(d => d.map((x, j) => j === i ? { ...x, show_name: checked } : x));
+                              setSigDraft(d => d.map((x, j) => j === i ? { ...x, show_name: checked, enabled: checked } : x));
                               setSigErrors(prev => { const n = { ...prev }; delete n[i]; return n; });
                             }}
                           />
@@ -1042,16 +1055,18 @@ const AdminResults = () => {
                     </div>
 
                     <div>
-                      <Label className="text-xs">{bn ? 'পদবী (বাংলা)' : 'Title (Bangla)'} <span className="text-muted-foreground">*</span></Label>
-                      <Input maxLength={MAX_LEN} value={s.title_bn || ''} onChange={(e) => setField('title_bn', e.target.value)}
+                      <Label className="text-xs">{bn ? 'পদবী (বাংলা)' : 'Title (Bangla)'} {isEnabled && <span className="text-muted-foreground">*</span>}</Label>
+                      <Input maxLength={MAX_LEN} value={s.title_bn || ''} disabled={!isEnabled} onChange={(e) => setField('title_bn', e.target.value)}
                         onBlur={() => trimField('title_bn')}
+                        placeholder={!isEnabled ? (bn ? 'স্বাক্ষরকারী বন্ধ রয়েছে' : 'Signatory disabled') : ''}
                         className={(err.title || err.title_bn) ? 'border-destructive focus-visible:ring-destructive' : ''} />
                       {err.title_bn && <p className="text-[11px] text-destructive mt-1">{err.title_bn}</p>}
                     </div>
                     <div>
-                      <Label className="text-xs">{bn ? 'পদবী (English)' : 'Title (English)'} <span className="text-muted-foreground">*</span></Label>
-                      <Input maxLength={MAX_LEN} value={s.title_en || ''} onChange={(e) => setField('title_en', e.target.value)}
+                      <Label className="text-xs">{bn ? 'পদবী (English)' : 'Title (English)'} {isEnabled && <span className="text-muted-foreground">*</span>}</Label>
+                      <Input maxLength={MAX_LEN} value={s.title_en || ''} disabled={!isEnabled} onChange={(e) => setField('title_en', e.target.value)}
                         onBlur={() => trimField('title_en')}
+                        placeholder={!isEnabled ? (bn ? 'স্বাক্ষরকারী বন্ধ রয়েছে' : 'Signatory disabled') : ''}
                         className={(err.title || err.title_en) ? 'border-destructive focus-visible:ring-destructive' : ''} />
                       {err.title_en && <p className="text-[11px] text-destructive mt-1">{err.title_en}</p>}
                     </div>
@@ -1067,6 +1082,7 @@ const AdminResults = () => {
                           type="button"
                           size="sm"
                           variant="outline"
+                          disabled={!isEnabled}
                           className="h-7 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white border-0 shadow-sm shrink-0"
                           onClick={() => {
                             setSigDraft(d => d.map((x, j) => j === i ? {
@@ -1076,6 +1092,7 @@ const AdminResults = () => {
                               title_bn: detectedMuhtamim.designation || 'মুহতামিম / অধ্যক্ষ',
                               title_en: detectedMuhtamim.name_en ? 'Founder & Principal' : 'Principal',
                               show_name: true,
+                              enabled: true,
                             } : x));
                             setSigErrors(prev => { const n = { ...prev }; delete n[i]; return n; });
                             toast.success(bn ? 'মুহতামিম/প্রিন্সিপাল সাহেবের নাম ও পদবী যুক্ত করা হয়েছে' : 'Applied Principal name & title');
@@ -1092,7 +1109,7 @@ const AdminResults = () => {
                         <span>{bn ? 'শিক্ষক/স্টাফ ড্রপডাউন (বাছাই করলে নাম ও পদবী স্বয়ংক্রিয়ভাবে বসবে)' : 'Teacher/Staff Dropdown (Auto-fills name & title)'}</span>
                       </Label>
                       <Select
-                        disabled={!isShowName}
+                        disabled={!isEnabled}
                         value=""
                         onValueChange={(staffId) => {
                           const staffMember = combinedStaffList.find((st: any) => st.id === staffId);
@@ -1119,6 +1136,8 @@ const AdminResults = () => {
                               name_en: nameEn,
                               title_bn: newTitleBn,
                               title_en: newTitleEn,
+                              show_name: true,
+                              enabled: true,
                             } : x));
                             setSigErrors(prev => { const n = { ...prev }; delete n[i]; return n; });
                           }
@@ -1144,13 +1163,13 @@ const AdminResults = () => {
 
                     <div>
                       <Label className="text-xs">
-                        {bn ? 'নাম (বাংলা)' : 'Name (Bangla)'} {isShowName && <span className="text-muted-foreground">*</span>}
+                        {bn ? 'নাম (বাংলা)' : 'Name (Bangla)'}
                       </Label>
                       <Input
                         maxLength={MAX_LEN}
                         value={s.name_bn || ''}
-                        disabled={!isShowName}
-                        placeholder={!isShowName ? (bn ? 'নাম প্রদর্শন বন্ধ রয়েছে' : 'Name display disabled') : ''}
+                        disabled={!isEnabled}
+                        placeholder={!isEnabled ? (bn ? 'স্বাক্ষরকারী বন্ধ রয়েছে' : 'Signatory disabled') : (bn ? 'নাম (ঐচ্ছিক)' : 'Name (Optional)')}
                         onChange={(e) => setField('name_bn', e.target.value)}
                         onBlur={() => trimField('name_bn')}
                         className={(err.name || err.name_bn) ? 'border-destructive focus-visible:ring-destructive' : ''}
@@ -1159,13 +1178,13 @@ const AdminResults = () => {
                     </div>
                     <div>
                       <Label className="text-xs">
-                        {bn ? 'নাম (English)' : 'Name (English)'} {isShowName && <span className="text-muted-foreground">*</span>}
+                        {bn ? 'নাম (English)' : 'Name (English)'}
                       </Label>
                       <Input
                         maxLength={MAX_LEN}
                         value={s.name_en || ''}
-                        disabled={!isShowName}
-                        placeholder={!isShowName ? (bn ? 'নাম প্রদর্শন বন্ধ রয়েছে' : 'Name display disabled') : ''}
+                        disabled={!isEnabled}
+                        placeholder={!isEnabled ? (bn ? 'স্বাক্ষরকারী বন্ধ রয়েছে' : 'Signatory disabled') : (bn ? 'Name (Optional)' : 'Name (Optional)')}
                         onChange={(e) => setField('name_en', e.target.value)}
                         onBlur={() => trimField('name_en')}
                         className={(err.name || err.name_en) ? 'border-destructive focus-visible:ring-destructive' : ''}
@@ -1176,7 +1195,7 @@ const AdminResults = () => {
                 );
               })}
               <p className="text-[11px] text-muted-foreground">
-                {bn ? 'প্রতিটি স্বাক্ষরকারীর পদবী আবশ্যক। নাম প্রদর্শন চালু থাকলে নাম অন্তত একটি ভাষায় (বাংলা বা English) প্রদান করুন।' : 'Title is required for each signatory. When Show Name is on, name is required in at least one language.'}
+                {bn ? 'যেসব স্বাক্ষরকারী "চালু" থাকবে, শুধুমাত্র সেগুলো রেজাল্ট শীটে প্রদর্শিত হবে। যে স্বাক্ষরকারী "বন্ধ" থাকবে তা রেজাল্ট শীট থেকে সম্পূর্ণ বাদ যাবে।' : 'Only active signatories will appear on the result sheet. Disabled signatories will be excluded completely.'}
               </p>
             </div>
             <DialogFooter className="flex-col sm:flex-row gap-2 items-stretch sm:items-center">

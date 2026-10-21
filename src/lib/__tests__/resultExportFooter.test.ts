@@ -33,6 +33,7 @@ const build = (o: any = {}) => {
     getOverallGrade,
     bn: o.bn ?? false,
     institutionName: 'Test Institution',
+    signatories: o.signatories,
     orientation: o.orientation ?? 'landscape',
     showPageNumbers: true,
     showFooterInstitution: o.showFooterInstitution ?? true,
@@ -78,5 +79,21 @@ describe('getResultSheetHtml — pagination & footer', () => {
     const html = build({ orientation: 'portrait' });
     expect(html).toMatch(/tbody tr\s*\{[^}]*page-break-inside:\s*avoid/);
     expect(html).toMatch(/@page\s*\{[^}]*size:\s*A4\s+portrait/);
+  });
+
+  it('excludes disabled signatories when show_name or enabled is false', () => {
+    const customSignatories = [
+      { title_bn: 'শ্রেণি শিক্ষক', name_bn: '', show_name: false },
+      { title_bn: 'পরীক্ষা নিয়ন্ত্রক', name_bn: '', show_name: false },
+      { title_bn: 'নাজিম', name_bn: 'মাওলানাঃ ফারহান হোসাইন', show_name: true },
+      { title_bn: 'প্রতিষ্ঠাতা ও প্রিন্সিপাল', name_bn: 'আলহাজ্ব আব্দুছ ছোবহান', show_name: true },
+    ];
+    const html = build({ bn: true, signatories: customSignatories });
+    expect(html).not.toContain('শ্রেণি শিক্ষক');
+    expect(html).not.toContain('পরীক্ষা নিয়ন্ত্রক');
+    expect(html).toContain('নাজিম');
+    expect(html).toContain('মাওলানাঃ ফারহান হোসাইন');
+    expect(html).toContain('প্রতিষ্ঠাতা ও প্রিন্সিপাল');
+    expect(html).toContain('আলহাজ্ব আব্দুছ ছোবহান');
   });
 });
