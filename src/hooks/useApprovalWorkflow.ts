@@ -94,9 +94,9 @@ export const useApprovalWorkflow = () => {
       // Add notification for admins
       if (newAction) {
         await supabase.from('notifications').insert({
-          title: 'নতুন অনুমোদনের অনুরোধ',
-          title_bn: 'নতুন অনুমোদনের অনুরোধ',
-          message: `${userName} একটি ${params.actionType} অনুরোধ পাঠিয়েছেন: ${description}`,
+          title: 'Approval Required: New Request',
+          title_bn: 'অনুমোদন প্রযোজ্য — নতুন অনুরোধ',
+          message: `${userName} sent a ${params.actionType} request: ${description}`,
           message_bn: `${userName} একটি ${params.actionType} অনুরোধ পাঠিয়েছেন: ${description}`,
           type: 'warning',
           category: 'approval',

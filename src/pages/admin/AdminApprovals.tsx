@@ -909,7 +909,7 @@ const AdminApprovals = () => {
                 className={`h-8 px-3 text-xs ${statusFilter === st ? 'btn-primary-gradient' : ''}`}
               >
                 {st === 'pending'
-                  ? bn ? 'অপেক্ষমান' : 'Pending'
+                  ? bn ? 'অনুমোদন প্রযোজ্য' : 'Pending'
                   : st === 'approved'
                   ? bn ? 'অনুমোদিত' : 'Approved'
                   : st === 'rejected'
@@ -1042,7 +1042,7 @@ const AdminApprovals = () => {
                           <TableCell className="text-sm font-semibold">{s.roll_number || '—'}</TableCell>
                           <TableCell>
                             <Badge variant="outline" className={STATUS_COLORS[s.approval_status || 'pending']}>
-                              {s.approval_status === 'approved' ? (bn ? 'অনুমোদিত' : 'Approved') : s.approval_status === 'rejected' ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'অপেক্ষমান' : 'Pending')}
+                              {s.approval_status === 'approved' ? (bn ? 'অনুমোদিত' : 'Approved') : s.approval_status === 'rejected' ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'অনুমোদন প্রযোজ্য' : 'Pending')}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground">
@@ -1169,7 +1169,7 @@ const AdminApprovals = () => {
                             <TableCell className="text-xs font-mono">{s.nid || '—'}</TableCell>
                             <TableCell>
                               <Badge variant="outline" className={STATUS_COLORS[s.status] || ''}>
-                                {s.status === 'active' ? (bn ? 'সক্রিয়/অনুমোদিত' : 'Active') : s.status === 'rejected' ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'অপেক্ষমান' : 'Pending')}
+                                {s.status === 'active' ? (bn ? 'সক্রিয়/অনুমোদিত' : 'Active') : s.status === 'rejected' ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'অনুমোদন প্রযোজ্য' : 'Pending')}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-xs text-muted-foreground">
@@ -1304,7 +1304,7 @@ const AdminApprovals = () => {
                             </TableCell>
                             <TableCell>
                               <Badge variant="outline" className={STATUS_COLORS[action.status] || ''}>
-                                {action.status === 'approved' ? (bn ? 'অনুমোদিত' : 'Approved') : action.status === 'rejected' ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'অপেক্ষমান' : 'Pending')}
+                                {action.status === 'approved' ? (bn ? 'অনুমোদিত' : 'Approved') : action.status === 'rejected' ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'অনুমোদন প্রযোজ্য' : 'Pending')}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-xs text-muted-foreground">
@@ -1424,7 +1424,7 @@ const AdminApprovals = () => {
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className={STATUS_COLORS[p.status] || ''}>
-                              {p.status === 'verified' ? (bn ? 'যাচাইকৃত' : 'Verified') : p.status === 'rejected' ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'অপেক্ষমান' : 'Pending')}
+                              {p.status === 'verified' ? (bn ? 'যাচাইকৃত' : 'Verified') : p.status === 'rejected' ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'অনুমোদন প্রযোজ্য' : 'Pending')}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground">
@@ -1532,7 +1532,7 @@ const AdminApprovals = () => {
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className={STATUS_COLORS[a.status] || ''}>
-                              {a.status === 'active' ? (bn ? 'অনুমোদিত' : 'Approved') : a.status === 'rejected' ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'অপেক্ষমান' : 'Pending')}
+                              {a.status === 'active' ? (bn ? 'অনুমোদিত' : 'Approved') : a.status === 'rejected' ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'অনুমোদন প্রযোজ্য' : 'Pending')}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground">
@@ -1620,7 +1620,7 @@ const AdminApprovals = () => {
                           <TableCell className="text-sm">{paper.duration_minutes ? `${paper.duration_minutes} min` : '—'}</TableCell>
                           <TableCell>
                             <Badge variant="outline" className={STATUS_COLORS[paper.status] || ''}>
-                              {paper.status === 'approved' ? (bn ? 'অনুমোদিত' : 'Approved') : paper.status === 'rejected' ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'অপেক্ষমান' : 'Pending')}
+                              {paper.status === 'approved' ? (bn ? 'অনুমোদিত' : 'Approved') : paper.status === 'rejected' ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'অনুমোদন প্রযোজ্য' : 'Pending')}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground">
@@ -1796,7 +1796,7 @@ const AdminApprovals = () => {
                             </TableCell>
                             <TableCell>
                               <Badge variant="outline" className={STATUS_COLORS[action.status] || ''}>
-                                {action.status === 'approved' ? (bn ? 'অনুমোদিত' : 'Approved') : action.status === 'rejected' ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'অপেক্ষমান' : 'Pending')}
+                                {action.status === 'approved' ? (bn ? 'অনুমোদিত' : 'Approved') : action.status === 'rejected' ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'অনুমোদন প্রযোজ্য' : 'Pending')}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-xs text-muted-foreground">
@@ -1902,7 +1902,7 @@ const AdminApprovals = () => {
                           <TableCell className="font-mono text-xs">{d.ip_address || '—'}</TableCell>
                           <TableCell>
                             <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[10px]">
-                              {bn ? 'অপেক্ষমান' : 'Pending'}
+                              {bn ? 'অনুমোদন প্রযোজ্য' : 'Pending'}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground">

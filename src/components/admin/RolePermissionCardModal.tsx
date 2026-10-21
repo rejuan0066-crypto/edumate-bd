@@ -745,12 +745,12 @@ export const RolePermissionCardModal = ({
                         <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30">
                           <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1">
                             <AlertTriangle className="w-3 h-3 text-amber-500" />
-                            {bn ? 'অনুমোদন লাগবে:' : 'Needs Approval:'}
+                            {bn ? 'অনুমোদন প্রযোজ্য:' : 'Approval Applicable:'}
                           </span>
 
                           {/* Approval Add */}
                           {profile.allowAdd && (
-                            <label className="flex items-center gap-1 text-[11px] cursor-pointer select-none" title={bn ? 'যোগ করার পর অ্যাডমিন অনুমোদন লাগবে' : 'Needs admin approval on add'}>
+                            <label className="flex items-center gap-1 text-[11px] cursor-pointer select-none" title={bn ? 'যোগ করার জন্য অনুমোদন প্রযোজ্য' : 'Approval applicable on add'}>
                               <Checkbox
                                 checked={perm.approval_add}
                                 onCheckedChange={() => toggleApproval(mp.path, 'approval_add')}
@@ -763,7 +763,7 @@ export const RolePermissionCardModal = ({
 
                           {/* Approval Edit */}
                           {profile.allowEdit && (
-                            <label className="flex items-center gap-1 text-[11px] cursor-pointer select-none" title={bn ? 'এডিট করার পর অ্যাডমিন অনুমোদন লাগবে' : 'Needs admin approval on edit'}>
+                            <label className="flex items-center gap-1 text-[11px] cursor-pointer select-none" title={bn ? 'এডিট করার জন্য অনুমোদন প্রযোজ্য' : 'Approval applicable on edit'}>
                               <Checkbox
                                 checked={perm.approval_edit}
                                 onCheckedChange={() => toggleApproval(mp.path, 'approval_edit')}
@@ -776,7 +776,7 @@ export const RolePermissionCardModal = ({
 
                           {/* Approval Delete */}
                           {profile.allowDelete && (
-                            <label className="flex items-center gap-1 text-[11px] cursor-pointer select-none" title={bn ? 'ডিলিট করার পর অ্যাডমিন অনুমোদন লাগবে' : 'Needs admin approval on delete'}>
+                            <label className="flex items-center gap-1 text-[11px] cursor-pointer select-none" title={bn ? 'ডিলিট/রিসেট করার জন্য অনুমোদন প্রযোজ্য' : 'Approval applicable on delete'}>
                               <Checkbox
                                 checked={perm.approval_delete}
                                 onCheckedChange={() => toggleApproval(mp.path, 'approval_delete')}
