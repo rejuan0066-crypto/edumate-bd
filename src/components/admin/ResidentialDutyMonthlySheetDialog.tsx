@@ -20,6 +20,7 @@ import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { sortStaffByDepartment } from '@/lib/staffOrderHelper';
 import { formatStaffName } from '@/lib/nameFormatter';
 import { downloadSheetAsPdf } from '@/lib/salarySlipPdf';
+import { useResignedStaff } from '@/hooks/useResignedStaff';
 
 interface Props {
   open: boolean;
@@ -116,6 +117,8 @@ export default function ResidentialDutyMonthlySheetDialog({
   const morningShift = useMemo(() => dutyShifts.find((s: any) => s.code === 'morning'), [dutyShifts]);
   const eveningShift = useMemo(() => dutyShifts.find((s: any) => s.code === 'evening'), [dutyShifts]);
 
+  const { isResignedOnDate, getResignDate } = useResignedStaff();
+
   // 2. Fetch all staff
   const { data: staffList = [] } = useQuery({
     queryKey: ['staff-for-duty-monthly'],
@@ -123,6 +126,7 @@ export default function ResidentialDutyMonthlySheetDialog({
       const { data } = await supabase
         .from('staff')
         .select('id, name_bn, name_en, designation, department, staff_category, status, residence_type, salary_order')
+        .eq('status', 'active')
         .is('deleted_at', null);
       return sortStaffByDepartment((data || []) as any[], { deduplicate: true });
     },
@@ -226,9 +230,18 @@ export default function ResidentialDutyMonthlySheetDialog({
     return map;
   }, [attendanceRecords]);
 
-  // Filter staff: only include staff who have at least 1 duty rostered or 1 attendance record in this month
+  const monthEndDate = useMemo(() => {
+    return `${selectedYear}-${selectedMonth}-${String(daysInMonth).padStart(2, '0')}`;
+  }, [selectedYear, selectedMonth, daysInMonth]);
+
+  // Filter staff: only include active, non-resigned staff who have at least 1 duty rostered or 1 attendance record in this month
   const rosteredStaffList = useMemo(() => {
     return staffList.filter(st => {
+      // Must be active and not resigned
+      if (st.status && st.status !== 'active') return false;
+      const isResigned = isResignedOnDate(st.id, monthEndDate) || !!getResignDate(st.id);
+      if (isResigned) return false;
+
       // Check if st has any roster in this month
       let hasRosterOrAtt = false;
       for (const day of daysList) {
@@ -244,7 +257,7 @@ export default function ResidentialDutyMonthlySheetDialog({
       }
       return hasRosterOrAtt;
     });
-  }, [staffList, daysList, rosterMap, attMap]);
+  }, [staffList, daysList, rosterMap, attMap, isResignedOnDate, getResignDate, monthEndDate]);
 
   // Filtered by search query
   const filteredStaff = useMemo(() => {

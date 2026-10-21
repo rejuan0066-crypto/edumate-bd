@@ -18,6 +18,7 @@ import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { sortStaffByDepartment } from '@/lib/staffOrderHelper';
 import { formatStaffName } from '@/lib/nameFormatter';
 import { downloadSheetAsPdf } from '@/lib/salarySlipPdf';
+import { useResignedStaff } from '@/hooks/useResignedStaff';
 
 interface Props {
   open: boolean;
@@ -97,6 +98,8 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
     });
   }, [selectedYear, selectedMonth, daysInMonth]);
 
+  const { isResignedOnDate, getResignDate } = useResignedStaff();
+
   // 1. Fetch staff categories
   const { data: staffCategories = [] } = useQuery({
     queryKey: ['staff-categories-monthly-sheet'],
@@ -118,6 +121,7 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
       const { data } = await supabase
         .from('staff')
         .select('id, name_bn, name_en, designation, department, staff_category, status, residence_type, salary_order')
+        .eq('status', 'active')
         .is('deleted_at', null)
         .order('salary_order', { ascending: true });
       return sortStaffByDepartment((data || []) as any[], { deduplicate: true });
@@ -153,9 +157,25 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
     return map;
   }, [attendanceRecords]);
 
+  const monthEndDate = useMemo(() => {
+    return `${selectedYear}-${selectedMonth}-${String(daysInMonth).padStart(2, '0')}`;
+  }, [selectedYear, selectedMonth, daysInMonth]);
+
+  // Exclude resigned & inactive staff
+  const activeStaffList = useMemo(() => {
+    return staffList.filter((st: any) => {
+      // Must have active status
+      if (st.status && st.status !== 'active') return false;
+      // Must not be resigned
+      const isResigned = isResignedOnDate(st.id, monthEndDate) || !!getResignDate(st.id);
+      if (isResigned) return false;
+      return true;
+    });
+  }, [staffList, isResignedOnDate, getResignDate, monthEndDate]);
+
   // Filter staff by department and search
   const filteredStaff = useMemo(() => {
-    let list = staffList;
+    let list = activeStaffList;
     if (departmentFilter !== 'all') {
       list = list.filter(st => st.staff_category === departmentFilter || st.department === departmentFilter);
     }
@@ -169,7 +189,7 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
       });
     }
     return list;
-  }, [staffList, departmentFilter, searchQuery]);
+  }, [activeStaffList, departmentFilter, searchQuery]);
 
   // Compute per-staff statistics
   const staffStats = useMemo(() => {
@@ -185,7 +205,7 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
       effectivePresent: number;
     }>();
 
-    staffList.forEach(st => {
+    activeStaffList.forEach(st => {
       let p = 0, l = 0, h = 0, a = 0, lv = 0, e = 0, m = 0, u = 0;
       daysList.forEach(day => {
         const att = attMap.get(`${st.id}_${day.isoDate}`);
@@ -219,7 +239,7 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
     });
 
     return map;
-  }, [staffList, daysList, attMap]);
+  }, [activeStaffList, daysList, attMap]);
 
   // Overall totals across filtered staff
   const overallTotals = useMemo(() => {
