@@ -294,21 +294,21 @@ const ClassResultTable = ({
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2">
-          <Button variant="outline" size="sm" onClick={() => handleExport('csv')} className="h-8 px-2 sm:px-3 text-[10px] sm:text-sm gap-1">
-            <FileSpreadsheet className="w-3.5 h-3.5" /> <span className="hidden xs:inline">Excel</span>
+          <Button variant="outline" size="sm" onClick={() => handleExport('csv')} className="h-9 px-3 text-xs sm:text-sm font-semibold gap-1.5">
+            <FileSpreadsheet className="w-4 h-4" /> <span className="hidden xs:inline">Excel</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={() => handleExport('pdf')} className="h-8 px-2 sm:px-3 text-[10px] sm:text-sm gap-1">
-            <FileDown className="w-3.5 h-3.5" /> <span className="hidden xs:inline">PDF</span>
+          <Button variant="outline" size="sm" onClick={() => handleExport('pdf')} className="h-9 px-3 text-xs sm:text-sm font-semibold gap-1.5">
+            <FileDown className="w-4 h-4" /> <span className="hidden xs:inline">PDF</span>
           </Button>
           {readOnly ? (
             onEdit && (
-              <Button variant="outline" size="sm" onClick={onEdit} className="h-8 px-2 sm:px-3 text-[10px] sm:text-sm gap-1">
-                <Save className="w-3.5 h-3.5" /> {bn ? 'এডিট করুন' : 'Edit'}
+              <Button variant="outline" size="sm" onClick={onEdit} className="h-9 px-3 text-xs sm:text-sm font-semibold gap-1.5">
+                <Save className="w-4 h-4" /> {bn ? 'এডিট করুন' : 'Edit'}
               </Button>
             )
           ) : (
-            <Button size="sm" className="btn-primary-gradient h-8 px-2 sm:px-3 text-[10px] sm:text-sm gap-1" onClick={onSave} disabled={isSaving}>
-              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            <Button size="sm" className="btn-primary-gradient h-9 px-4 text-xs sm:text-sm font-semibold gap-1.5" onClick={onSave} disabled={isSaving}>
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {bn ? 'সংরক্ষণ' : 'Save'}
             </Button>
           )}
@@ -333,40 +333,40 @@ const ClassResultTable = ({
           <thead className="sticky top-0 z-40 bg-white shadow-sm">
             <tr className="bg-white h-[56px]">
               {/* Sticky Columns Header */}
-              <th className="sticky left-0 top-0 z-[60] bg-white border-b border-r border-border w-[36px] min-w-[36px] max-w-[36px] px-1 text-center text-[10px] sm:text-xs font-bold text-muted-foreground shadow-[1px_0_0_0_#e2e8f0]">
+              <th className="sticky left-0 top-0 z-[60] bg-white border-b border-r border-border w-[40px] min-w-[40px] max-w-[40px] px-1 text-center text-xs sm:text-sm font-bold text-muted-foreground shadow-[1px_0_0_0_#e2e8f0]">
                 <div className="flex items-center justify-center h-full">#</div>
               </th>
-              <th className="sticky left-[36px] top-0 z-[60] bg-white border-b border-r border-border w-[54px] min-w-[54px] max-w-[54px] px-1 text-center text-[10px] sm:text-xs font-bold text-muted-foreground shadow-[1px_0_0_0_#e2e8f0]">
+              <th className="sticky left-[40px] top-0 z-[60] bg-white border-b border-r border-border w-[58px] min-w-[58px] max-w-[58px] px-1 text-center text-xs sm:text-sm font-bold text-muted-foreground shadow-[1px_0_0_0_#e2e8f0]">
                 <div className="flex items-center justify-center h-full">{bn ? 'রোল' : 'Roll'}</div>
               </th>
-              <th className="sticky left-[90px] top-0 z-[60] bg-white border-b border-r border-border w-[140px] min-w-[140px] max-w-[140px] px-2 text-left text-[10px] sm:text-xs font-bold text-muted-foreground shadow-[2px_0_8px_-2px_rgba(0,0,0,0.1)]">
+              <th className="sticky left-[98px] top-0 z-[60] bg-white border-b border-r border-border w-[160px] min-w-[160px] max-w-[160px] px-2 text-left text-xs sm:text-sm font-bold text-muted-foreground shadow-[2px_0_8px_-2px_rgba(0,0,0,0.1)]">
                 <div className="flex items-center h-full">{bn ? 'নাম' : 'Name'}</div>
               </th>
 
               {/* Scrollable Columns Header */}
               {subjects.map((s: any) => (
-                <th key={s.id} className="w-[84px] min-w-[84px] max-w-[84px] px-1 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-white sticky top-0 z-40">
-                  <div className="flex items-center justify-center h-full text-center whitespace-normal break-words leading-snug py-1.5 text-[10px] sm:text-[11px] line-clamp-2" title={bn ? s.name_bn : s.name}>
+                <th key={s.id} className="w-[90px] min-w-[90px] max-w-[90px] px-1 text-center text-xs sm:text-sm font-bold text-muted-foreground border-b border-r border-border bg-white sticky top-0 z-40">
+                  <div className="flex items-center justify-center h-full text-center whitespace-normal break-words leading-snug py-1.5 text-xs sm:text-sm font-bold line-clamp-2" title={bn ? s.name_bn : s.name}>
                     {bn ? s.name_bn : s.name}
                   </div>
                 </th>
               ))}
-              <th className="w-[64px] min-w-[64px] max-w-[64px] px-1 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-white sticky top-0 z-40">
+              <th className="w-[70px] min-w-[70px] max-w-[70px] px-1 text-center text-xs sm:text-sm font-bold text-muted-foreground border-b border-r border-border bg-white sticky top-0 z-40">
                 <div className="flex items-center justify-center h-full">{bn ? 'মোট' : 'Total'}</div>
               </th>
-              <th className="w-[56px] min-w-[56px] max-w-[56px] px-1 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-white sticky top-0 z-40">
+              <th className="w-[64px] min-w-[64px] max-w-[64px] px-1 text-center text-xs sm:text-sm font-bold text-muted-foreground border-b border-r border-border bg-white sticky top-0 z-40">
                 <div className="flex items-center justify-center h-full">{bn ? 'গ্রেড' : 'Grade'}</div>
               </th>
-              <th className="w-[56px] min-w-[56px] max-w-[56px] px-1 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-white sticky top-0 z-40">
+              <th className="w-[64px] min-w-[64px] max-w-[64px] px-1 text-center text-xs sm:text-sm font-bold text-muted-foreground border-b border-r border-border bg-white sticky top-0 z-40">
                 <div className="flex items-center justify-center h-full">GPA</div>
               </th>
-              <th className="w-[115px] min-w-[115px] max-w-[115px] px-1 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-white sticky top-0 z-40">
+              <th className="w-[130px] min-w-[130px] max-w-[130px] px-1 text-center text-xs sm:text-sm font-bold text-muted-foreground border-b border-r border-border bg-white sticky top-0 z-40">
                 <div className="flex items-center justify-center h-full">{bn ? 'মর্যাদা' : 'Title'}</div>
               </th>
-              <th className="w-[64px] min-w-[64px] max-w-[64px] px-1 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b border-r border-border bg-white sticky top-0 z-40">
+              <th className="w-[64px] min-w-[64px] max-w-[64px] px-1 text-center text-xs sm:text-sm font-bold text-muted-foreground border-b border-r border-border bg-white sticky top-0 z-40">
                 <div className="flex items-center justify-center h-full">{bn ? 'মেধা' : 'Rank'}</div>
               </th>
-              <th className="w-[64px] min-w-[64px] max-w-[64px] px-1 text-center text-[10px] sm:text-xs font-bold text-muted-foreground border-b bg-white sticky top-0 z-40"></th>
+              <th className="w-[68px] min-w-[68px] max-w-[68px] px-1 text-center text-xs sm:text-sm font-bold text-muted-foreground border-b bg-white sticky top-0 z-40"></th>
             </tr>
           </thead>
           <tbody>
@@ -377,13 +377,13 @@ const ClassResultTable = ({
               return (
                 <tr key={st.id} className={`hover:bg-slate-50 transition-colors h-[56px] group ${failed ? 'bg-destructive/5' : ''}`}>
                   {/* Sticky Columns */}
-                  <td className={`sticky left-0 z-20 border-b border-r border-border w-[36px] min-w-[36px] max-w-[36px] text-center text-[10px] sm:text-xs text-muted-foreground shadow-[1px_0_0_0_#e2e8f0] ${failed ? 'bg-[#fff5f5]' : 'bg-white'}`}>
+                  <td className={`sticky left-0 z-20 border-b border-r border-border w-[40px] min-w-[40px] max-w-[40px] text-center text-xs sm:text-sm text-muted-foreground shadow-[1px_0_0_0_#e2e8f0] ${failed ? 'bg-[#fff5f5]' : 'bg-white'}`}>
                     <div className="flex items-center justify-center h-full">{bn ? toBnDigits(originalIdx + 1) : (originalIdx + 1)}</div>
                   </td>
-                  <td className={`sticky left-[36px] z-20 border-b border-r border-border w-[54px] min-w-[54px] max-w-[54px] text-center text-[10px] sm:text-xs font-medium text-foreground shadow-[1px_0_0_0_#e2e8f0] ${failed ? 'bg-[#fff5f5]' : 'bg-white'}`}>
+                  <td className={`sticky left-[40px] z-20 border-b border-r border-border w-[58px] min-w-[58px] max-w-[58px] text-center text-xs sm:text-sm font-semibold text-foreground shadow-[1px_0_0_0_#e2e8f0] ${failed ? 'bg-[#fff5f5]' : 'bg-white'}`}>
                     <div className="flex items-center justify-center h-full">{st.roll_number ? (bn ? toBnDigits(st.roll_number) : st.roll_number) : '-'}</div>
                   </td>
-                  <td className={`sticky left-[90px] z-20 border-b border-r border-border w-[140px] min-w-[140px] max-w-[140px] px-2 text-[10px] sm:text-xs font-medium text-foreground truncate shadow-[2px_0_8px_-2px_rgba(0,0,0,0.1)] ${failed ? 'bg-[#fff5f5]' : 'bg-white'}`}>
+                  <td className={`sticky left-[98px] z-20 border-b border-r border-border w-[160px] min-w-[160px] max-w-[160px] px-2 text-xs sm:text-sm font-semibold text-foreground truncate shadow-[2px_0_8px_-2px_rgba(0,0,0,0.1)] ${failed ? 'bg-[#fff5f5]' : 'bg-white'}`}>
                     <div className="flex items-center h-full truncate">{bn ? st.name_bn : (st.name_en || st.name_bn)}</div>
                   </td>
 
@@ -394,17 +394,17 @@ const ClassResultTable = ({
                     const mark = isEntered ? Number(rawVal) : null;
                     const isFail = isEntered && mark !== null && mark < passMark;
                     return (
-                      <td key={sub.id} className="w-[84px] min-w-[84px] max-w-[84px] px-1 text-center border-b border-r border-border">
+                      <td key={sub.id} className="w-[90px] min-w-[90px] max-w-[90px] px-1 text-center border-b border-r border-border">
                         <div className="flex items-center justify-center h-full">
                           {readOnly ? (
-                            <span className={`text-xs font-semibold ${isFail ? 'text-destructive font-bold' : 'text-foreground'}`}>
+                            <span className={`text-sm sm:text-base font-bold ${isFail ? 'text-destructive' : 'text-foreground'}`}>
                               {!isEntered ? '-' : (bn ? toBnDigits(mark) : mark)}
                             </span>
                           ) : (
                             <Input
                               data-row={rowIdx}
                               data-col={colIdx}
-                              className={`w-[64px] h-8 px-1 text-center bg-white border-2 rounded-lg text-xs font-semibold transition-all focus:ring-2 focus:ring-primary/20 ${isFail ? 'border-destructive/40 text-destructive focus:border-destructive font-bold' : 'border-border/60 focus:border-primary'}`}
+                              className={`w-[72px] h-9 px-1 text-center bg-white border-2 rounded-lg text-sm sm:text-base font-bold transition-all focus:ring-2 focus:ring-primary/20 ${isFail ? 'border-destructive/40 text-destructive focus:border-destructive' : 'border-border/60 focus:border-primary'}`}
                               type="text"
                               inputMode="numeric"
                               data-bijoy={bn}
@@ -430,22 +430,22 @@ const ClassResultTable = ({
                     );
                   })}
                   
-                  <td className="w-[64px] min-w-[64px] max-w-[64px] px-1 text-center text-xs font-bold border-b border-r border-border">
+                  <td className="w-[70px] min-w-[70px] max-w-[70px] px-1 text-center text-sm sm:text-base font-bold border-b border-r border-border">
                     <div className="flex items-center justify-center h-full bg-slate-50/50 rounded-md py-1">{hasEnteredAnyMark ? toBnDigits(total) : '-'}</div>
                   </td>
-                  <td className="w-[56px] min-w-[56px] max-w-[56px] px-1 text-center border-b border-r border-border">
+                  <td className="w-[64px] min-w-[64px] max-w-[64px] px-1 text-center border-b border-r border-border">
                     <div className="flex items-center justify-center h-full">
                       {overall ? (
-                        <span className={`inline-flex items-center justify-center px-2 py-1 rounded-full text-[10px] font-bold shadow-sm ${overall.color}`}>
+                        <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-extrabold shadow-sm ${overall.color}`}>
                           {String(overall.grade).toUpperCase()}
                         </span>
                       ) : '-'}
                     </div>
                   </td>
-                  <td className="w-[56px] min-w-[56px] max-w-[56px] px-1 text-center text-xs font-semibold text-primary border-b border-r border-border">
+                  <td className="w-[64px] min-w-[64px] max-w-[64px] px-1 text-center text-sm sm:text-base font-bold text-primary border-b border-r border-border">
                     <div className="flex items-center justify-center h-full">{overall ? toBnDigits(overall.gpa) : '-'}</div>
                   </td>
-                  <td className="w-[115px] min-w-[115px] max-w-[115px] px-1 text-center text-[10px] font-medium text-muted-foreground border-b border-r border-border">
+                  <td className="w-[130px] min-w-[130px] max-w-[130px] px-1 text-center text-xs sm:text-sm font-semibold border-b border-r border-border">
                     <div className="flex items-center justify-center h-full">
                       {(() => {
                         const isEligibleForChange = failed || overall?.graced || (statusOverrides?.[st.id] && statusOverrides[st.id] !== 'auto');
@@ -461,10 +461,10 @@ const ClassResultTable = ({
 
                         if (readOnly || !isEligibleForChange) {
                           return (
-                            <div className="truncate flex items-center justify-center gap-1 font-semibold text-foreground">
+                            <div className="truncate flex items-center justify-center gap-1 font-semibold text-foreground text-xs sm:text-sm">
                               <span>{overall ? (bn ? overall.title_bn : overall.title) : '-'}</span>
                               {statusOverrides?.[st.id] && statusOverrides[st.id] !== 'auto' && (
-                                <span className="text-[9px] text-amber-600 font-bold px-1 rounded bg-amber-50 border border-amber-200" title={bn ? 'ম্যানুয়াল পরিবর্তিত' : 'Manually modified'}>
+                                <span className="text-[10px] text-amber-600 font-bold px-1 rounded bg-amber-50 border border-amber-200" title={bn ? 'ম্যানুয়াল পরিবর্তিত' : 'Manually modified'}>
                                   {statusOverrides[st.id] === 'fail' ? (bn ? 'ফেল' : 'F') : (bn ? 'বিবেচনা' : 'G')}
                                 </span>
                               )}
@@ -476,11 +476,11 @@ const ClassResultTable = ({
                           <select
                             value={currentVal}
                             onChange={(e) => onStatusOverrideChange?.(st.id, e.target.value as any)}
-                            className={`text-[10px] font-semibold rounded px-1.5 py-1 border transition-all ${
+                            className={`text-xs font-semibold rounded px-2 py-1 border transition-all ${
                               currentVal === 'fail'
                                 ? 'border-destructive/60 text-destructive bg-destructive/10'
                                 : 'border-amber-500/70 text-amber-800 bg-amber-500/15'
-                            } focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer w-full max-w-[108px] truncate`}
+                            } focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer w-full max-w-[120px] truncate`}
                             title={bn ? 'ফলাফল পরিবর্তন (ফেইল ⇄ বিবেচনায় পাস)' : 'Toggle Fail / Grace Pass'}
                           >
                             <option value="fail">
@@ -494,14 +494,14 @@ const ClassResultTable = ({
                       })()}
                     </div>
                   </td>
-                  <td className="w-[64px] min-w-[64px] max-w-[64px] px-1 text-center text-xs font-medium text-muted-foreground border-b border-r border-border">
+                  <td className="w-[64px] min-w-[64px] max-w-[64px] px-1 text-center text-xs sm:text-sm font-semibold text-muted-foreground border-b border-r border-border">
                     <div className="flex items-center justify-center h-full">
                       <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full ${rank && rank <= 3 ? 'bg-emerald-500/10 text-emerald-600 font-bold border border-emerald-500/20' : ''}`}>
                         {hasEnteredAnyMark ? rankDisplay : '-'}
                       </span>
                     </div>
                   </td>
-                  <td className="w-[64px] min-w-[64px] max-w-[64px] px-1 text-center border-b">
+                  <td className="w-[68px] min-w-[68px] max-w-[68px] px-1 text-center border-b">
                     <div className="flex items-center justify-center h-full gap-1">
                       <button
                         onClick={() => setExplainStudent(st)}

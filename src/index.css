@@ -1214,8 +1214,8 @@
     display: table;
     overflow: visible;
   }
-  table thead th { padding: 0.6rem 0.7rem; font-size: 10px; white-space: nowrap; }
-  table tbody td { padding: 0.6rem 0.7rem; font-size: 12px; }
+  table thead th { padding: 0.6rem 0.7rem; font-size: 13px; white-space: nowrap; }
+  table tbody td { padding: 0.6rem 0.7rem; font-size: 14px; }
   table:not(.border-collapse):not([class*="border-collapse"]):not(.excel-table) { border-spacing: 0 6px; }
 
   /* ===== FIXED-WIDTH CHILDREN inside common page containers: cap to viewport
