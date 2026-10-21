@@ -27,6 +27,9 @@ import { exportResultCSV, exportResultPDF, printResultSheet, DEFAULT_RESULT_SIGN
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { bnToEn, enToBn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -470,8 +473,30 @@ const AdminResults = () => {
     queryFn: async () => {
       const { data } = await supabase.from('website_settings').select('value').eq('key', 'result_signatories').maybeSingle();
       const v = (data?.value as any);
-      if (Array.isArray(v) && v.length) return v as ResultSignatory[];
+      if (Array.isArray(v) && v.length) {
+        return (v as ResultSignatory[]).map(r => ({
+          ...r,
+          show_name: r.show_name !== false,
+        }));
+      }
       return DEFAULT_RESULT_SIGNATORIES;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: staffList = [] } = useQuery({
+    queryKey: ['staff-for-result-signatories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('staff')
+        .select('id, name, name_bn, name_en, designation')
+        .eq('is_active', true)
+        .order('name');
+      if (error) {
+        console.error('Error fetching staff list for signatories:', error);
+        return [];
+      }
+      return data || [];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -573,13 +598,18 @@ const AdminResults = () => {
       const tEn = (s.title_en || '').trim();
       const nBn = (s.name_bn || '').trim();
       const nEn = (s.name_en || '').trim();
+      const isShowName = s.show_name !== false;
       const e: any = {};
       if (!tBn && !tEn) e.title = bn ? 'অন্তত একটি ভাষায় পদবী দিন' : 'Title required in at least one language';
-      if (!nBn && !nEn) e.name = bn ? 'অন্তত একটি ভাষায় নাম দিন' : 'Name required in at least one language';
+      if (isShowName) {
+        if (!nBn && !nEn) e.name = bn ? 'অন্তত একটি ভাষায় নাম দিন' : 'Name required in at least one language';
+      }
       if (tBn.length > MAX_LEN) e.title_bn = bn ? `সর্বোচ্চ ${MAX_LEN} অক্ষর` : `Max ${MAX_LEN} chars`;
       if (tEn.length > MAX_LEN) e.title_en = bn ? `সর্বোচ্চ ${MAX_LEN} অক্ষর` : `Max ${MAX_LEN} chars`;
-      if (nBn.length > MAX_LEN) e.name_bn = bn ? `সর্বোচ্চ ${MAX_LEN} অক্ষর` : `Max ${MAX_LEN} chars`;
-      if (nEn.length > MAX_LEN) e.name_en = bn ? `সর্বোচ্চ ${MAX_LEN} অক্ষর` : `Max ${MAX_LEN} chars`;
+      if (isShowName) {
+        if (nBn.length > MAX_LEN) e.name_bn = bn ? `সর্বোচ্চ ${MAX_LEN} অক্ষর` : `Max ${MAX_LEN} chars`;
+        if (nEn.length > MAX_LEN) e.name_en = bn ? `সর্বোচ্চ ${MAX_LEN} অক্ষর` : `Max ${MAX_LEN} chars`;
+      }
       if (Object.keys(e).length) errs[i] = e;
     });
     return errs;
@@ -599,6 +629,7 @@ const AdminResults = () => {
         title_en: (r.title_en || '').trim(),
         name_bn: (r.name_bn || '').trim(),
         name_en: (r.name_en || '').trim(),
+        show_name: r.show_name !== false,
       }));
       const { error } = await supabase
         .from('website_settings')
@@ -788,18 +819,43 @@ const AdminResults = () => {
                     return trimmed === cur ? x : { ...x, [field]: trimmed };
                   }));
                 };
+                const isShowName = s.show_name !== false;
                 return (
-                  <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 rounded-lg border bg-muted/30">
-                    <div className="md:col-span-2 flex items-center justify-between">
-                      <div className="text-xs font-semibold text-muted-foreground">
-                        {bn ? `স্বাক্ষরকারী ${i + 1}` : `Signatory ${i + 1}`}
+                  <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3.5 rounded-xl border bg-card/60 shadow-sm">
+                    <div className="md:col-span-2 flex items-center justify-between border-b pb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-foreground">
+                          {bn ? `স্বাক্ষরকারী ${i + 1}` : `Signatory ${i + 1}`}
+                        </span>
+                        {!isShowName && (
+                          <Badge variant="secondary" className="text-[10px] py-0 px-2 font-normal">
+                            {bn ? 'নাম বন্ধ (শুধু পদবী)' : 'Name Off (Title Only)'}
+                          </Badge>
+                        )}
                       </div>
-                      {(err.title || err.name) && (
-                        <div className="text-[11px] text-destructive font-medium">
-                          {err.title || err.name}
+
+                      <div className="flex items-center gap-3">
+                        {(err.title || err.name) && (
+                          <div className="text-[11px] text-destructive font-medium">
+                            {err.title || err.name}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 bg-muted/50 px-2.5 py-1 rounded-lg border border-border/50">
+                          <Label htmlFor={`sig-toggle-${i}`} className="text-xs font-medium cursor-pointer select-none">
+                            {bn ? 'নাম প্রদর্শন' : 'Show Name'}
+                          </Label>
+                          <Switch
+                            id={`sig-toggle-${i}`}
+                            checked={isShowName}
+                            onCheckedChange={(checked) => {
+                              setSigDraft(d => d.map((x, j) => j === i ? { ...x, show_name: checked } : x));
+                              setSigErrors(prev => { const n = { ...prev }; delete n[i]; return n; });
+                            }}
+                          />
                         </div>
-                      )}
+                      </div>
                     </div>
+
                     <div>
                       <Label className="text-xs">{bn ? 'পদবী (বাংলা)' : 'Title (Bangla)'} <span className="text-muted-foreground">*</span></Label>
                       <Input maxLength={MAX_LEN} value={s.title_bn || ''} onChange={(e) => setField('title_bn', e.target.value)}
@@ -814,25 +870,82 @@ const AdminResults = () => {
                         className={(err.title || err.title_en) ? 'border-destructive focus-visible:ring-destructive' : ''} />
                       {err.title_en && <p className="text-[11px] text-destructive mt-1">{err.title_en}</p>}
                     </div>
+
+                    {/* Staff Dropdown selector */}
+                    <div className="md:col-span-2">
+                      <Label className="text-xs flex items-center justify-between text-muted-foreground mb-1">
+                        <span>{bn ? 'শিক্ষক/স্টাফ ড্রপডাউন (বাছাই করলে নাম স্বয়ংক্রিয়ভাবে বসবে)' : 'Teacher/Staff Dropdown (Auto-fills name)'}</span>
+                      </Label>
+                      <Select
+                        disabled={!isShowName}
+                        value=""
+                        onValueChange={(staffId) => {
+                          const staffMember = staffList.find((st: any) => st.id === staffId);
+                          if (staffMember) {
+                            const nameBn = staffMember.name_bn || staffMember.name || '';
+                            const nameEn = staffMember.name_en || staffMember.name || '';
+                            setSigDraft(d => d.map((x, j) => j === i ? {
+                              ...x,
+                              name_bn: nameBn,
+                              name_en: nameEn,
+                            } : x));
+                            setSigErrors(prev => { const n = { ...prev }; delete n[i]; return n; });
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="h-9 rounded-md text-xs bg-background">
+                          <SelectValue placeholder={bn ? 'তালিকা থেকে শিক্ষক বা স্টাফ বাছাই করুন...' : 'Choose teacher or staff from list...'} />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60">
+                          {staffList.map((st: any) => {
+                            const displayName = bn
+                              ? (st.name_bn || st.name) + (st.designation ? ` — ${st.designation}` : '')
+                              : (st.name_en || st.name) + (st.designation ? ` — ${st.designation}` : '');
+                            return (
+                              <SelectItem key={st.id} value={st.id} className="text-xs">
+                                {displayName}
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
                     <div>
-                      <Label className="text-xs">{bn ? 'নাম (বাংলা)' : 'Name (Bangla)'} <span className="text-muted-foreground">*</span></Label>
-                      <Input maxLength={MAX_LEN} value={s.name_bn || ''} onChange={(e) => setField('name_bn', e.target.value)}
+                      <Label className="text-xs">
+                        {bn ? 'নাম (বাংলা)' : 'Name (Bangla)'} {isShowName && <span className="text-muted-foreground">*</span>}
+                      </Label>
+                      <Input
+                        maxLength={MAX_LEN}
+                        value={s.name_bn || ''}
+                        disabled={!isShowName}
+                        placeholder={!isShowName ? (bn ? 'নাম প্রদর্শন বন্ধ রয়েছে' : 'Name display disabled') : ''}
+                        onChange={(e) => setField('name_bn', e.target.value)}
                         onBlur={() => trimField('name_bn')}
-                        className={(err.name || err.name_bn) ? 'border-destructive focus-visible:ring-destructive' : ''} />
+                        className={(err.name || err.name_bn) ? 'border-destructive focus-visible:ring-destructive' : ''}
+                      />
                       {err.name_bn && <p className="text-[11px] text-destructive mt-1">{err.name_bn}</p>}
                     </div>
                     <div>
-                      <Label className="text-xs">{bn ? 'নাম (English)' : 'Name (English)'} <span className="text-muted-foreground">*</span></Label>
-                      <Input maxLength={MAX_LEN} value={s.name_en || ''} onChange={(e) => setField('name_en', e.target.value)}
+                      <Label className="text-xs">
+                        {bn ? 'নাম (English)' : 'Name (English)'} {isShowName && <span className="text-muted-foreground">*</span>}
+                      </Label>
+                      <Input
+                        maxLength={MAX_LEN}
+                        value={s.name_en || ''}
+                        disabled={!isShowName}
+                        placeholder={!isShowName ? (bn ? 'নাম প্রদর্শন বন্ধ রয়েছে' : 'Name display disabled') : ''}
+                        onChange={(e) => setField('name_en', e.target.value)}
                         onBlur={() => trimField('name_en')}
-                        className={(err.name || err.name_en) ? 'border-destructive focus-visible:ring-destructive' : ''} />
+                        className={(err.name || err.name_en) ? 'border-destructive focus-visible:ring-destructive' : ''}
+                      />
                       {err.name_en && <p className="text-[11px] text-destructive mt-1">{err.name_en}</p>}
                     </div>
                   </div>
                 );
               })}
               <p className="text-[11px] text-muted-foreground">
-                {bn ? 'প্রতিটি স্বাক্ষরকারীর জন্য পদবী ও নাম অন্তত একটি ভাষায় (বাংলা বা English) আবশ্যক।' : 'Title and name are required in at least one language (Bangla or English) for each signatory.'}
+                {bn ? 'প্রতিটি স্বাক্ষরকারীর পদবী আবশ্যক। নাম প্রদর্শন চালু থাকলে নাম অন্তত একটি ভাষায় (বাংলা বা English) প্রদান করুন।' : 'Title is required for each signatory. When Show Name is on, name is required in at least one language.'}
               </p>
             </div>
             <DialogFooter className="flex-col sm:flex-row gap-2 items-stretch sm:items-center">

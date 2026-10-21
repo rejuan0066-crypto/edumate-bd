@@ -76,13 +76,14 @@ export interface ResultSignatory {
   title_en?: string;
   name_bn?: string;
   name_en?: string;
+  show_name?: boolean;
 }
 
 export const DEFAULT_RESULT_SIGNATORIES: ResultSignatory[] = [
-  { title_bn: L.classTeacher,        title_en: 'Class Teacher',     name_bn: '', name_en: '' },
-  { title_bn: L.examController,      title_en: 'Exam Controller',   name_bn: '', name_en: '' },
-  { title_bn: L.educationSecretary,  title_en: 'Education Secretary', name_bn: '', name_en: '' },
-  { title_bn: `${L.muhtamim} / ${L.headmaster}`, title_en: 'Principal', name_bn: '', name_en: '' },
+  { title_bn: L.classTeacher,        title_en: 'Class Teacher',     name_bn: '', name_en: '', show_name: true },
+  { title_bn: L.examController,      title_en: 'Exam Controller',   name_bn: '', name_en: '', show_name: true },
+  { title_bn: L.educationSecretary,  title_en: 'Education Secretary', name_bn: '', name_en: '', show_name: true },
+  { title_bn: `${L.muhtamim} / ${L.headmaster}`, title_en: 'Principal', name_bn: '', name_en: '', show_name: true },
 ];
 
 /** Build "[Exam] - [Session] - [Class]" document/file name for result sheets. */
@@ -425,7 +426,7 @@ export const getResultSheetHtml = ({
               ${sigList.map(sig => `
                 <div class="sig-block">
                   <div class="sig-line"></div>
-                  <div class="sig-name">${bn ? (sig.name_bn || '') : (sig.name_en || sig.name_bn || '')}</div>
+                  ${sig.show_name !== false && (sig.name_bn || sig.name_en) ? `<div class="sig-name">${bn ? (sig.name_bn || '') : (sig.name_en || sig.name_bn || '')}</div>` : ''}
                   <div class="sig-title">${bn ? (sig.title_bn || '') : (sig.title_en || sig.title_bn || '')}</div>
                 </div>
               `).join('')}
