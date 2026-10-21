@@ -1,3 +1,4 @@
+import { DatePicker } from '@/components/ui/date-picker';
 import { Suspense, useState, useEffect } from 'react';
 import { lazyWithRetry as lazy } from '@/lib/lazyWithRetry';
 import { EmbeddedProvider } from '@/contexts/EmbeddedContext';
@@ -624,12 +625,7 @@ const StaffDashboard = () => {
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">
                       {bn ? 'ডিউটির তারিখ' : 'Duty Date'}
                     </label>
-                    <input
-                      type="date"
-                      value={dutyDate}
-                      onChange={e => setDutyDate(e.target.value)}
-                      className="w-full h-9 border rounded-md px-3 text-xs bg-background"
-                    />
+                    <DatePicker value={dutyDate} onChange={setDutyDate} bengali={bn} className="h-9 rounded-md text-xs" />
                   </div>
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">

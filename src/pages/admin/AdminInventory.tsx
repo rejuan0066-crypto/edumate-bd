@@ -1603,12 +1603,7 @@ const AdminInventory = () => {
 
               <div>
                 <Label className="text-xs font-semibold">{bn ? 'ব্যবহারের তারিখ' : 'Date'}</Label>
-                <Input
-                  type="date"
-                  value={stockOutForm.date}
-                  onChange={e => setStockOutForm(f => ({ ...f, date: e.target.value }))}
-                  className="mt-1 rounded-xl"
-                />
+                <div className="mt-1"><DatePicker value={stockOutForm.date} onChange={val => setStockOutForm(f => ({ ...f, date: val }))} bengali={bn} className="rounded-xl" /></div>
               </div>
 
               <div>
@@ -1813,12 +1808,7 @@ const AdminInventory = () => {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs font-semibold">{bn ? 'ক্রয় তারিখ' : 'Purchase Date'}</Label>
-                <Input
-                  type="date"
-                  value={assetForm.purchase_date}
-                  onChange={e => setAssetForm(f => ({ ...f, purchase_date: e.target.value }))}
-                  className="mt-1 rounded-xl"
-                />
+                <div className="mt-1"><DatePicker value={assetForm.purchase_date} onChange={val => setAssetForm(f => ({ ...f, purchase_date: val }))} bengali={bn} className="rounded-xl" /></div>
               </div>
               <div>
                 <Label className="text-xs font-semibold">{bn ? 'মোট ক্রয়মূল্য (৳)' : 'Purchase Price'}</Label>
