@@ -20,6 +20,7 @@ import GracePassSettings from '@/components/results/GracePassSettings';
 import GradingSettings from '@/components/results/GradingSettings';
 import ResultSecuritySettings from '@/components/results/ResultSecuritySettings';
 import { useResultSecurity } from '@/hooks/useResultSecurity';
+import { useSignatoryAuthorities } from '@/hooks/useSignatoryAuthorities';
 import { ShieldCheck } from 'lucide-react';
 
 import { GraduationCap } from 'lucide-react';
@@ -484,6 +485,8 @@ const AdminResults = () => {
     staleTime: 5 * 60 * 1000,
   });
 
+  const { data: signatoryAuthorities = [] } = useSignatoryAuthorities();
+
   const { data: staffList = [] } = useQuery({
     queryKey: ['staff-for-result-signatories'],
     queryFn: async () => {
@@ -491,6 +494,7 @@ const AdminResults = () => {
         .from('staff')
         .select('id, name_bn, name_en, designation, status')
         .is('deleted_at', null)
+        .eq('status', 'active')
         .order('name_bn');
       if (error) {
         console.error('Error fetching staff list for signatories:', error);
@@ -501,20 +505,51 @@ const AdminResults = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Find Muhtamim / Principal from staff list
+  // Find Muhtamim / Principal:
+  // 1. From official Signatory Authorities (institution_signatories / institutions: head_of_institute)
+  // 2. Fallback to active staff, strictly excluding assistant/vice roles
   const detectedMuhtamim = useMemo(() => {
+    const officialHead = signatoryAuthorities.find((a: any) => a.role_key === 'head_of_institute');
+    if (officialHead?.person_name_bn) {
+      return {
+        name_bn: officialHead.person_name_bn,
+        name_en: officialHead.person_name_en || officialHead.person_name_bn,
+        designation: officialHead.person_designation_bn || 'প্রতিষ্ঠাতা ও প্রিন্সিপাল',
+      };
+    }
+
+    const assistantKeywords = ['সহকারী', 'নায়েবে', 'নায়েবে', 'উপ-', 'সহ-', 'সহঃ', 'vice', 'assistant', 'sub-'];
     return staffList.find((s: any) => {
+      if (s.status && s.status !== 'active') return false;
       const des = (s.designation || '').toLowerCase();
+      const isAssistant = assistantKeywords.some(k => des.includes(k));
+      if (isAssistant) return false;
       return (
         des.includes('মুহতামিম') ||
         des.includes('অধ্যক্ষ') ||
         des.includes('প্রধান শিক্ষক') ||
         des.includes('প্রিন্সিপাল') ||
         des.includes('principal') ||
-        des.includes('headmaster')
+        des.includes('headmaster') ||
+        des.includes('প্রতিষ্ঠাতা')
       );
     });
-  }, [staffList]);
+  }, [signatoryAuthorities, staffList]);
+
+  // Combined staff for dropdown, ensuring the principal is always selectable
+  const combinedStaffList = useMemo(() => {
+    const list = [...staffList];
+    if (detectedMuhtamim?.name_bn && !list.some((s: any) => s.name_bn === detectedMuhtamim.name_bn)) {
+      list.unshift({
+        id: 'authority-principal-head',
+        name_bn: detectedMuhtamim.name_bn,
+        name_en: detectedMuhtamim.name_en,
+        designation: detectedMuhtamim.designation,
+        status: 'active',
+      } as any);
+    }
+    return list;
+  }, [staffList, detectedMuhtamim]);
 
 
 
@@ -602,12 +637,13 @@ const AdminResults = () => {
   const [sigErrors, setSigErrors] = useState<Record<number, { title?: string; name?: string; title_bn?: string; title_en?: string; name_bn?: string; name_en?: string }>>({});
   useEffect(() => { setSigDraft(signatories); setSigErrors({}); }, [signatories]);
 
-  // When dialog opens, if Muhtamim row has no name, auto-fill with detected Muhtamim
+  // When dialog opens, if Muhtamim row has no name (or previously had resigned staff), auto-fill with detected Muhtamim
   useEffect(() => {
     if (sigDialogOpen && detectedMuhtamim) {
       setSigDraft(prev => prev.map((s, idx) => {
-        const isMuhtamimRow = idx === 3 || (s.title_bn || '').includes('মুহতামিম') || (s.title_bn || '').includes('অধ্যক্ষ');
-        if (isMuhtamimRow && !s.name_bn && !s.name_en) {
+        const isMuhtamimRow = idx === 3 || (s.title_bn || '').includes('মুহতামিম') || (s.title_bn || '').includes('অধ্যক্ষ') || (s.title_bn || '').includes('প্রিন্সিপাল');
+        const hasResignedAutoFill = s.name_bn?.includes('আব্দুল হাফিজ');
+        if (isMuhtamimRow && (!s.name_bn && !s.name_en || hasResignedAutoFill)) {
           return {
             ...s,
             name_bn: detectedMuhtamim.name_bn || '',
@@ -907,15 +943,10 @@ const AdminResults = () => {
                       {err.title_en && <p className="text-[11px] text-destructive mt-1">{err.title_en}</p>}
                     </div>
 
-                    {/* Staff Dropdown selector */}
-                    <div className="md:col-span-2">
-                      <Label className="text-xs flex items-center justify-between text-muted-foreground mb-1">
-                        <span>{bn ? 'শিক্ষক/স্টাফ ড্রপডাউন (বাছাই করলে নাম স্বয়ংক্রিয়ভাবে বসবে)' : 'Teacher/Staff Dropdown (Auto-fills name)'}</span>
-                      </Label>
-                    {detectedMuhtamim && (i === 3 || (s.title_bn || '').includes('মুহতামিম') || (s.title_bn || '').includes('অধ্যক্ষ')) && (
+                    {detectedMuhtamim && (i === 3 || (s.title_bn || '').includes('মুহতামিম') || (s.title_bn || '').includes('অধ্যক্ষ') || (s.title_bn || '').includes('প্রিন্সিপাল')) && (
                       <div className="md:col-span-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
                         <div className="text-xs text-emerald-900 dark:text-emerald-200 font-medium">
-                          <span className="font-bold">⭐ {bn ? 'প্রতিষ্ঠানের মুহতামিম/অধ্যক্ষ:' : 'Principal:'} </span>
+                          <span className="font-bold">⭐ {bn ? 'প্রতিষ্ঠানের প্রধান (মুহতামিম/প্রিন্সিপাল):' : 'Principal:'} </span>
                           <span className="font-bold underline text-emerald-700 dark:text-emerald-300">{detectedMuhtamim.name_bn}</span>
                           <span className="text-muted-foreground ml-1">({detectedMuhtamim.designation || (bn ? 'মুহতামিম' : 'Principal')})</span>
                         </div>
@@ -930,11 +961,11 @@ const AdminResults = () => {
                               name_bn: detectedMuhtamim.name_bn || '',
                               name_en: detectedMuhtamim.name_en || detectedMuhtamim.name_bn || '',
                               title_bn: detectedMuhtamim.designation || 'মুহতামিম / অধ্যক্ষ',
-                              title_en: x.title_en || 'Principal',
+                              title_en: detectedMuhtamim.name_en ? 'Founder & Principal' : 'Principal',
                               show_name: true,
                             } : x));
                             setSigErrors(prev => { const n = { ...prev }; delete n[i]; return n; });
-                            toast.success(bn ? 'মুহতামিম সাহেবের নাম ও পদবী যুক্ত করা হয়েছে' : 'Applied Principal name & title');
+                            toast.success(bn ? 'মুহতামিম/প্রিন্সিপাল সাহেবের নাম ও পদবী যুক্ত করা হয়েছে' : 'Applied Principal name & title');
                           }}
                         >
                           {bn ? 'উনার পদবী সহ বসান' : 'Apply with Title'}
@@ -942,6 +973,7 @@ const AdminResults = () => {
                       </div>
                     )}
 
+                    {/* Staff Dropdown selector */}
                     <div className="md:col-span-2">
                       <Label className="text-xs flex items-center justify-between text-muted-foreground mb-1">
                         <span>{bn ? 'শিক্ষক/স্টাফ ড্রপডাউন (বাছাই করলে নাম ও পদবী স্বয়ংক্রিয়ভাবে বসবে)' : 'Teacher/Staff Dropdown (Auto-fills name & title)'}</span>
@@ -950,7 +982,7 @@ const AdminResults = () => {
                         disabled={!isShowName}
                         value=""
                         onValueChange={(staffId) => {
-                          const staffMember = staffList.find((st: any) => st.id === staffId);
+                          const staffMember = combinedStaffList.find((st: any) => st.id === staffId);
                           if (staffMember) {
                             const nameBn = staffMember.name_bn || '';
                             const nameEn = staffMember.name_en || staffMember.name_bn || '';
@@ -958,7 +990,7 @@ const AdminResults = () => {
                             let newTitleEn = s.title_en || '';
                             if (staffMember.designation) {
                               const desLower = staffMember.designation.toLowerCase();
-                              if (desLower.includes('মুহতামিম') || desLower.includes('অধ্যক্ষ') || desLower.includes('প্রধান')) {
+                              if (desLower.includes('মুহতামিম') || desLower.includes('অধ্যক্ষ') || desLower.includes('প্রধান') || desLower.includes('প্রিন্সিপাল')) {
                                 newTitleEn = 'Principal';
                               } else if (desLower.includes('পরীক্ষা')) {
                                 newTitleEn = 'Exam Controller';
@@ -983,7 +1015,7 @@ const AdminResults = () => {
                           <SelectValue placeholder={bn ? 'তালিকা থেকে শিক্ষক বা স্টাফ বাছাই করুন...' : 'Choose teacher or staff from list...'} />
                         </SelectTrigger>
                         <SelectContent className="max-h-60">
-                          {staffList.map((st: any) => {
+                          {combinedStaffList.map((st: any) => {
                             const displayName = bn
                               ? st.name_bn + (st.designation ? ` — ${st.designation}` : '')
                               : (st.name_en || st.name_bn) + (st.designation ? ` — ${st.designation}` : '');
@@ -995,7 +1027,6 @@ const AdminResults = () => {
                           })}
                         </SelectContent>
                       </Select>
-                    </div>
                     </div>
 
                     <div>
