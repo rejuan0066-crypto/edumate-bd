@@ -327,17 +327,7 @@ const Login = () => {
               </button>
             </div>
           </div>
-          <div className="flex items-center justify-between text-sm">
-            <button
-              type="button"
-              onClick={() => {
-                setEmailVerifyEmail(email.trim().toLowerCase());
-                setEmailVerifyOpen(true);
-              }}
-              className="text-primary hover:underline font-medium text-xs sm:text-sm"
-            >
-              {language === 'bn' ? 'ইমেইল ভেরিফাই করুন (OTP / লিংক)' : 'Verify Email (OTP / Link)'}
-            </button>
+          <div className="flex items-center justify-end text-sm">
             <button
               type="button"
               onClick={() => setForgotOpen(true)}
