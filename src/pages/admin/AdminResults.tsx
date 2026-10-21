@@ -516,24 +516,7 @@ const AdminResults = () => {
     });
   }, [staffList]);
 
-  // When dialog opens, if Muhtamim row has no name, auto-fill with detected Muhtamim
-  useEffect(() => {
-    if (sigDialogOpen && detectedMuhtamim) {
-      setSigDraft(prev => prev.map((s, idx) => {
-        const isMuhtamimRow = idx === 3 || (s.title_bn || '').includes('মুহতামিম') || (s.title_bn || '').includes('অধ্যক্ষ');
-        if (isMuhtamimRow && !s.name_bn && !s.name_en) {
-          return {
-            ...s,
-            name_bn: detectedMuhtamim.name_bn || '',
-            name_en: detectedMuhtamim.name_en || detectedMuhtamim.name_bn || '',
-            title_bn: detectedMuhtamim.designation || s.title_bn || 'মুহতামিম / অধ্যক্ষ',
-            show_name: true,
-          };
-        }
-        return s;
-      }));
-    }
-  }, [sigDialogOpen, detectedMuhtamim]);
+
 
   const { data: footerOptions = DEFAULT_PRINT_FOOTER_OPTIONS, refetch: refetchFooterOptions } = useQuery<ResultPrintFooterOptions>({
     queryKey: ['result-print-footer'],
@@ -618,6 +601,25 @@ const AdminResults = () => {
   const [sigDraft, setSigDraft] = useState<ResultSignatory[]>(DEFAULT_RESULT_SIGNATORIES);
   const [sigErrors, setSigErrors] = useState<Record<number, { title?: string; name?: string; title_bn?: string; title_en?: string; name_bn?: string; name_en?: string }>>({});
   useEffect(() => { setSigDraft(signatories); setSigErrors({}); }, [signatories]);
+
+  // When dialog opens, if Muhtamim row has no name, auto-fill with detected Muhtamim
+  useEffect(() => {
+    if (sigDialogOpen && detectedMuhtamim) {
+      setSigDraft(prev => prev.map((s, idx) => {
+        const isMuhtamimRow = idx === 3 || (s.title_bn || '').includes('মুহতামিম') || (s.title_bn || '').includes('অধ্যক্ষ');
+        if (isMuhtamimRow && !s.name_bn && !s.name_en) {
+          return {
+            ...s,
+            name_bn: detectedMuhtamim.name_bn || '',
+            name_en: detectedMuhtamim.name_en || detectedMuhtamim.name_bn || '',
+            title_bn: detectedMuhtamim.designation || s.title_bn || 'মুহতামিম / অধ্যক্ষ',
+            show_name: true,
+          };
+        }
+        return s;
+      }));
+    }
+  }, [sigDialogOpen, detectedMuhtamim]);
 
   // Export options: PDF vs browser print + A4 portrait/landscape
   const [exportOptions, setExportOptions] = useState<{ open: boolean; classId: string | null; mode: 'pdf' | 'print'; orientation: 'landscape' | 'portrait' }>(
