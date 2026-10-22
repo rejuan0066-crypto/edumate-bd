@@ -2168,16 +2168,6 @@ const AdminResults = () => {
                   </div>
                 </div>
               ) : null}
-                          {bn ? `রোল: ${enToBn(st.roll_number ?? '—')}` : `Roll: ${st.roll_number ?? '—'}`}
-                        </span>
-                        <span className="text-xs font-semibold text-foreground truncate">
-                          {bn ? (st.name_bn || st.name) : (st.name || st.name_bn)}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
             </div>
           )}
 
