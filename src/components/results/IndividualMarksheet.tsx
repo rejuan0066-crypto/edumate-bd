@@ -658,7 +658,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         <div className="border border-slate-200 rounded p-2 bg-emerald-50/30 text-xs mb-3 flex items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-1.5 flex-1 text-left min-w-0">
             <span className="font-bold text-[#064e3b] shrink-0 whitespace-nowrap">
-              {bn ? 'শিক্ষকের মন্তব্য:' : "Teacher's Remarks:"}
+              {bn ? 'মন্তব্য:' : "Remarks:"}
             </span>
             <span className="text-slate-700 italic leading-normal">
               "{remarksText}"
