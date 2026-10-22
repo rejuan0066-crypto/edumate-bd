@@ -1331,7 +1331,7 @@ const AdminExamSessions = () => {
                             </div>
                           )}
 
-                          {/* Metadata badges matching Mockup */}
+                          {/* Metadata badges */}
                           <div className="flex items-center gap-2 mt-2 text-xs flex-wrap">
                             <span className="inline-flex items-center gap-1 font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
                               📚 {esClasses.length} {bn ? 'টি শ্রেণি' : 'classes'}
@@ -1339,15 +1339,6 @@ const AdminExamSessions = () => {
                             <span className="inline-flex items-center gap-1 font-semibold text-foreground bg-muted px-2 py-0.5 rounded">
                               👥 {totalStudents} {bn ? 'জন ছাত্র' : 'students'}
                             </span>
-                            {hasResults ? (
-                              <span className="inline-flex items-center gap-1 font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800">
-                                ✓ {bn ? 'ফলাফল প্রস্তুত' : 'Result Ready'}
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
-                                • {bn ? 'অপেক্ষমান' : 'Pending'}
-                              </span>
-                            )}
                             <button
                               onClick={() => setExpandedSessionId(isExpanded ? null : es.id)}
                               className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5 ml-1 font-medium"
@@ -1368,17 +1359,8 @@ const AdminExamSessions = () => {
                         </div>
                       </div>
 
-                      {/* Action Buttons matching Mockup */}
+                      {/* Action Buttons */}
                       <div className="flex items-center gap-2 shrink-0 flex-wrap">
-                        <Button
-                          size="sm"
-                          className="h-8 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs flex items-center gap-1.5 transition-all"
-                          onClick={() => navigate(`/admin/results?year=${es.academic_session_id}&session=${es.id}`)}
-                        >
-                          <GraduationCap className="w-3.5 h-3.5" />
-                          {bn ? 'ফলাফল তৈরি' : 'Create Result'}
-                        </Button>
-
                         {canEditItem && (
                           <Button
                             variant="outline"
