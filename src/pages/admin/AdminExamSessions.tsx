@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useState, useEffect } from 'react';
-import { Plus, Loader2, Trash2, Users, BookOpen, Edit2, Check, X, Settings2, BookMarked, UserMinus, GraduationCap, ChevronDown, ChevronRight, Eye, FileSpreadsheet, AlertTriangle } from 'lucide-react';
+import { Plus, Loader2, Trash2, Users, BookOpen, Edit2, Check, X, Settings2, BookMarked, UserMinus, GraduationCap, ChevronDown, ChevronRight, Eye, FileSpreadsheet, AlertTriangle, Search, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -36,6 +36,8 @@ const AdminExamSessions = () => {
   const [nameBn, setNameBn] = useState('');
   const [academicSessionId, setAcademicSessionId] = useState('');
   const [examType, setExamType] = useState('');
+  const [activeDivisionTab, setActiveDivisionTab] = useState<string>('all');
+  const [searchSessionQuery, setSearchSessionQuery] = useState('');
   const [selectedDivisionIds, setSelectedDivisionIds] = useState<string[]>([]);
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
   const [selectedSubjectIds, setSelectedSubjectIds] = useState<string[]>([]);
@@ -129,8 +131,8 @@ const AdminExamSessions = () => {
     },
   });
 
-  const filteredClasses = (selectedDivisionIds.length > 0
-    ? classes.filter((c: any) => selectedDivisionIds.includes(c.division_id))
+  const filteredClasses = (activeDivisionTab !== 'all'
+    ? classes.filter((c: any) => c.division_id === activeDivisionTab)
     : classes
   ).sort((a: any, b: any) => {
     const divA = divisions.findIndex((d: any) => d.id === a.division_id);
@@ -243,6 +245,17 @@ const AdminExamSessions = () => {
     },
   });
 
+  const filteredExamSessions = examSessions.filter((es: any) => {
+    if (!searchSessionQuery.trim()) return true;
+    const q = searchSessionQuery.toLowerCase();
+    return (
+      (es.name && es.name.toLowerCase().includes(q)) ||
+      (es.name_bn && es.name_bn.toLowerCase().includes(q)) ||
+      (es.academic_sessions?.name && es.academic_sessions.name.toLowerCase().includes(q)) ||
+      (es.academic_sessions?.name_bn && es.academic_sessions.name_bn.toLowerCase().includes(q))
+    );
+  });
+
   const { data: examSessionClasses = [] } = useQuery({
     queryKey: ['exam_session_classes_all'],
     queryFn: async () => {
@@ -292,6 +305,22 @@ const AdminExamSessions = () => {
       setSelectedSubjectIds([]);
       return next;
     });
+  };
+
+  const selectAllClasses = () => {
+    const ids = filteredClasses.map((c: any) => c.id);
+    setSelectedClassIds(prev => Array.from(new Set([...prev, ...ids])));
+    setSelectedSubjectIds([]);
+  };
+
+  const deselectAllClasses = () => {
+    if (activeDivisionTab === 'all') {
+      setSelectedClassIds([]);
+    } else {
+      const idsToRemove = new Set(filteredClasses.map((c: any) => c.id));
+      setSelectedClassIds(prev => prev.filter(id => !idsToRemove.has(id)));
+    }
+    setSelectedSubjectIds([]);
   };
 
   const handleCreate = async () => {
@@ -478,6 +507,53 @@ const AdminExamSessions = () => {
           </Button>
         </div>
 
+        {/* KPI Stats Overview */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+          <div className="card-elevated p-4 flex items-center justify-between border-l-4 border-l-primary">
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{bn ? 'মোট এক্সাম সেশন' : 'Total Sessions'}</p>
+              <p className="text-2xl font-bold text-foreground mt-1">{examSessions.length} {bn ? 'টি' : ''}</p>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
+              <BookOpen className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="card-elevated p-4 flex items-center justify-between border-l-4 border-l-emerald-600">
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{bn ? 'সক্রিয় সেশন' : 'Active Sessions'}</p>
+              <p className="text-2xl font-bold text-emerald-600 mt-1">
+                {examSessions.filter((s: any) => s.academic_sessions?.is_active).length} {bn ? 'টি' : ''}
+              </p>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
+              <Check className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="card-elevated p-4 flex items-center justify-between border-l-4 border-l-blue-600">
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{bn ? 'মোট শ্রেণি' : 'Total Classes'}</p>
+              <p className="text-2xl font-bold text-blue-600 mt-1">{classes.length} {bn ? 'টি' : ''}</p>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold">
+              <GraduationCap className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="card-elevated p-4 flex items-center justify-between border-l-4 border-l-purple-600">
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{bn ? 'মোট পরীক্ষার্থী' : 'Total Candidates'}</p>
+              <p className="text-2xl font-bold text-purple-600 mt-1">
+                {examSessionClasses.reduce((s: number, c: any) => s + (c.student_count || 0), 0)} {bn ? 'জন' : ''}
+              </p>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center font-bold">
+              <Users className="w-5 h-5" />
+            </div>
+          </div>
+        </div>
+
         {/* Exam Type Manager */}
         {showTypeManager && (
           <div className="card-elevated p-5 space-y-4 border-l-4 border-l-primary">
@@ -546,258 +622,546 @@ const AdminExamSessions = () => {
           </div>
         )}
 
-        {/* Create Form */}
+        {/* Modern Create Form */}
         {canAddItem && (
-          <div className="card-elevated p-5 space-y-4">
-            <h3 className="font-display font-bold text-foreground">
-              <Plus className="inline w-4 h-4 mr-1" />
-              {bn ? 'নতুন এক্সাম সেশন তৈরি' : 'Create New Exam Session'}
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground mb-1 block">{bn ? 'শিক্ষাবর্ষ' : 'Academic Session'} *</label>
-                <Select value={academicSessionId} onValueChange={setAcademicSessionId}>
-                  <SelectTrigger className="bg-background"><SelectValue placeholder={bn ? 'শিক্ষাবর্ষ নির্বাচন' : 'Select session'} /></SelectTrigger>
-                  <SelectContent>
-                    {academicSessions.map((s: any) => <SelectItem key={s.id} value={s.id}>{bn ? (s.name_bn || s.name) : s.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-muted-foreground mb-1 block">{bn ? 'পরীক্ষার ধরন' : 'Exam Type'} *</label>
-                <div className="flex gap-2">
-                  <Select value={examType} onValueChange={setExamType}>
-                    <SelectTrigger className="bg-background flex-1"><SelectValue placeholder={bn ? 'ধরন নির্বাচন' : 'Select type'} /></SelectTrigger>
-                    <SelectContent>
-                      {examTypes.filter((t: any) => t.is_active).map((t: any) => (
-                        <SelectItem key={t.id} value={t.key}>
-                          <span className="flex items-center gap-2">
-                            <span>{bn ? t.name_bn : t.name}</span>
-                            {t.name_ar && (
-                              <span
-                                dir="rtl"
-                                lang="ar"
-                                className="text-muted-foreground text-sm"
-                                style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}
-                              >
-                                — {t.name_ar}
-                              </span>
-                            )}
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {canAddItem && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setQuickAddOpen(true)}
-                      title={bn ? 'নতুন ধরন যোগ' : 'Add new type'}
-                      className="shrink-0"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  )}
+          <div className="card-elevated p-0 overflow-hidden border border-border/80 shadow-sm">
+            {/* Emerald Gradient Header */}
+            <div className="p-4 sm:p-5 bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-900 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center border border-white/20 shadow-xs">
+                  <Plus className="w-5 h-5 text-white" />
                 </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-muted-foreground mb-1 block">{bn ? 'নাম (বাংলা)' : 'Name (Bangla)'} *</label>
-                <Input value={nameBn} onChange={e => setNameBn(e.target.value)} placeholder={bn ? 'যেমন: বার্ষিক পরীক্ষা ২০২৬' : 'e.g. Annual Exam 2026'} className="bg-background" />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-muted-foreground mb-1 block">{bn ? 'নাম (ইংরেজি)' : 'Name (English)'}</label>
-                <Input value={name} onChange={e => setName(e.target.value)} placeholder={bn ? 'যেমন: Annual Exam 2026' : 'e.g. Annual Exam 2026'} className="bg-background" />
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                    {bn ? 'নতুন এক্সাম সেশন তৈরি করুন' : 'Create New Exam Session'}
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-200 border border-emerald-400/30">
+                      {bn ? 'স্মার্ট সেটআপ' : 'Smart Setup'}
+                    </span>
+                  </h2>
+                  <p className="text-xs text-emerald-100/80">
+                    {bn ? 'স্বয়ংক্রিয় নামকরণের সাথে শ্রেণি, বিষয় ও ছাত্র নির্বাচন করে সেশন তৈরি করুন' : 'Select classes, subjects & students with smart auto-naming to create session'}
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* Class Selection */}
-            {academicSessionId && (
-              <div>
-                <label className="text-sm font-medium text-muted-foreground mb-2 block">{bn ? 'বিভাগ নির্বাচন করুন' : 'Select Division'}</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                  <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${selectedDivisionIds.length === 0 ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}>
-                    <Checkbox checked={selectedDivisionIds.length === 0} onCheckedChange={() => { setSelectedDivisionIds([]); setSelectedClassIds([]); }} />
-                    <span className="text-sm font-medium text-foreground">{bn ? 'সকল বিভাগ' : 'All Divisions'}</span>
-                  </label>
-                  {divisions.map((d: any) => (
-                    <label key={d.id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${selectedDivisionIds.includes(d.id) ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}>
-                      <Checkbox checked={selectedDivisionIds.includes(d.id)} onCheckedChange={() => {
-                        setSelectedDivisionIds(prev => prev.includes(d.id) ? prev.filter(id => id !== d.id) : [...prev, d.id]);
-                        setSelectedClassIds([]);
-                      }} />
-                      <span className="text-sm font-medium text-foreground">{bn ? d.name_bn : d.name}</span>
+            <div className="p-5 sm:p-6 space-y-6">
+              {/* Step 1: Basic Information */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center justify-center">১</span>
+                  <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">
+                    {bn ? 'মৌলিক তথ্য ও স্বয়ংক্রিয় নামকরণ' : 'Basic Information & Auto-Naming'}
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-4 rounded-xl bg-muted/30 border border-border">
+                  <div>
+                    <label className="text-xs font-bold text-foreground mb-1.5 block">
+                      {bn ? 'শিক্ষাবর্ষ' : 'Academic Session'} <span className="text-destructive">*</span>
                     </label>
-                  ))}
-                </div>
-
-                <label className="text-sm font-medium text-muted-foreground mb-2 block mt-3">{bn ? 'ক্লাস নির্বাচন করুন' : 'Select Classes'} *</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {filteredClasses.map((cls: any) => {
-                    const count = (studentCounts as Record<string, number>)[cls.id] || 0;
-                    const divName = cls.divisions ? (bn ? cls.divisions.name_bn : cls.divisions.name) : '';
-                    return (
-                      <label key={cls.id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${selectedClassIds.includes(cls.id) ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}>
-                        <Checkbox checked={selectedClassIds.includes(cls.id)} onCheckedChange={() => toggleClass(cls.id)} />
-                        <div className="flex-1">
-                          <span className="text-sm font-medium text-foreground">{bn ? cls.name_bn : cls.name}</span>
-                          {divName && <span className="text-xs text-muted-foreground ml-1">({divName})</span>}
-                        </div>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${count > 0 ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'}`}>
-                          <Users className="inline w-3 h-3 mr-0.5" />{count}
-                        </span>
-                      </label>
-                    );
-                  })}
-                  {filteredClasses.length === 0 && (
-                    <p className="text-sm text-muted-foreground col-span-full py-4 text-center">{bn ? 'এই বিভাগে কোনো ক্লাস নেই' : 'No classes in this division'}</p>
-                  )}
-                </div>
-
-                {selectedClassIds.length > 0 && (
-                  <div className="mt-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
-                    <p className="text-sm font-medium text-primary">
-                      {bn ? `মোট নির্বাচিত: ${selectedClassIds.length} টি ক্লাস — ${totalSelected} জন ছাত্র` : `Total selected: ${selectedClassIds.length} classes — ${totalSelected} students`}
-                    </p>
+                    <Select value={academicSessionId} onValueChange={setAcademicSessionId}>
+                      <SelectTrigger className="bg-background">
+                        <SelectValue placeholder={bn ? 'শিক্ষাবর্ষ নির্বাচন' : 'Select session'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {academicSessions.map((s: any) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {bn ? (s.name_bn || s.name) : s.name}
+                            {s.is_active && (
+                              <span className="text-[10px] text-emerald-600 font-bold ml-1.5 bg-emerald-50 dark:bg-emerald-950 px-1 rounded">
+                                ({bn ? 'বর্তমান' : 'Active'})
+                              </span>
+                            )}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                )}
 
-                {/* Subject Selection */}
-                {selectedClassIds.length > 0 && sortedSubjects.length > 0 && (
-                  <div className="mt-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
-                        <BookMarked className="w-4 h-4" />
-                        {bn ? 'বিষয় নির্বাচন করুন' : 'Select Subjects'}
-                      </label>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSelectedSubjectIds(sortedSubjects.map((s: any) => s.id))}>
-                          {bn ? 'সব নির্বাচন' : 'Select All'}
-                        </Button>
-                        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSelectedSubjectIds([])}>
-                          {bn ? 'সব বাদ' : 'Deselect All'}
-                        </Button>
-                      </div>
+                  <div>
+                    <label className="text-xs font-bold text-foreground mb-1.5 flex justify-between items-center">
+                      <span>{bn ? 'পরীক্ষার ধরন' : 'Exam Type'} <span className="text-destructive">*</span></span>
+                      {canAddItem && (
+                        <button
+                          type="button"
+                          onClick={() => setQuickAddOpen(true)}
+                          className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 text-[11px] font-semibold flex items-center gap-0.5"
+                        >
+                          + {bn ? 'নতুন ধরন' : 'New Type'}
+                        </button>
+                      )}
+                    </label>
+                    <div className="flex gap-2">
+                      <Select value={examType} onValueChange={setExamType}>
+                        <SelectTrigger className="bg-background flex-1">
+                          <SelectValue placeholder={bn ? 'ধরন নির্বাচন' : 'Select type'} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {examTypes.filter((t: any) => t.is_active).map((t: any) => (
+                            <SelectItem key={t.id} value={t.key}>
+                              <span className="flex items-center gap-2">
+                                <span>{bn ? t.name_bn : t.name}</span>
+                                {t.name_ar && (
+                                  <span
+                                    dir="rtl"
+                                    lang="ar"
+                                    className="text-muted-foreground text-xs"
+                                    style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}
+                                  >
+                                    — {t.name_ar}
+                                  </span>
+                                )}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                      {sortedSubjects.map((subj: any) => {
-                        const subjClass = subj.class_id ? classes.find((c: any) => c.id === subj.class_id) : null;
-                        const subjDiv = subj.division_id ? divisions.find((d: any) => d.id === subj.division_id) : null;
-                        const context = subjClass ? (bn ? subjClass.name_bn : subjClass.name) : subjDiv ? (bn ? subjDiv.name_bn : subjDiv.name) : '';
-                        return (
-                          <label key={subj.id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${selectedSubjectIds.includes(subj.id) ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}>
-                            <Checkbox checked={selectedSubjectIds.includes(subj.id)} onCheckedChange={() => toggleSubject(subj.id)} />
-                            <div className="flex-1">
-                              <span className="text-sm font-medium text-foreground">{bn ? subj.name_bn : subj.name}</span>
-                              {subj.code && <span className="text-xs text-muted-foreground ml-1.5">({subj.code})</span>}
-                              {context && <p className="text-xs text-muted-foreground">{context}</p>}
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-foreground mb-1.5 flex items-center justify-between">
+                      <span>{bn ? 'নাম (বাংলা)' : 'Name (Bangla)'} <span className="text-destructive">*</span></span>
+                      {nameBn && (
+                        <span className="text-[10px] text-emerald-700 bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 font-semibold px-1.5 py-0.5 rounded">
+                          {bn ? 'অটো-সাজেশন' : 'Auto'}
+                        </span>
+                      )}
+                    </label>
+                    <Input
+                      value={nameBn}
+                      onChange={e => setNameBn(e.target.value)}
+                      placeholder={bn ? 'যেমন: বার্ষিক পরীক্ষা ২০২৬' : 'e.g. Annual Exam 2026'}
+                      className="bg-background font-semibold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-foreground mb-1.5 block">
+                      {bn ? 'নাম (ইংরেজি)' : 'Name (English)'}
+                    </label>
+                    <Input
+                      value={name}
+                      onChange={e => setName(e.target.value)}
+                      placeholder="e.g. Annual Exam 2026"
+                      className="bg-background font-medium"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 2: Division & Class Selection */}
+              {academicSessionId && (
+                <div className="space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center justify-center">২</span>
+                      <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">
+                        {bn ? 'বিভাগ ও শ্রেণি নির্বাচন' : 'Division & Class Selection'}
+                      </h3>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800"
+                        onClick={selectAllClasses}
+                      >
+                        {bn ? '✓ সব শ্রেণি নির্বাচন' : 'Select All Classes'}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs font-semibold"
+                        onClick={deselectAllClasses}
+                      >
+                        {bn ? 'সব বাদ' : 'Deselect All'}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Division Filter Tabs */}
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1.5 custom-scrollbar">
+                    <button
+                      type="button"
+                      onClick={() => setActiveDivisionTab('all')}
+                      className={`px-3 py-1 rounded-full text-xs font-bold transition-all shrink-0 ${
+                        activeDivisionTab === 'all'
+                          ? 'bg-emerald-800 text-white shadow-xs'
+                          : 'bg-muted/60 text-muted-foreground hover:bg-muted border border-border'
+                      }`}
+                    >
+                      {bn ? `সকল বিভাগ (${classes.length})` : `All Divisions (${classes.length})`}
+                    </button>
+                    {divisions.map((d: any) => {
+                      const divClassCount = classes.filter((c: any) => c.division_id === d.id).length;
+                      return (
+                        <button
+                          key={d.id}
+                          type="button"
+                          onClick={() => setActiveDivisionTab(d.id)}
+                          className={`px-3 py-1 rounded-full text-xs font-bold transition-all shrink-0 ${
+                            activeDivisionTab === d.id
+                              ? 'bg-emerald-800 text-white shadow-xs'
+                              : 'bg-muted/60 text-muted-foreground hover:bg-muted border border-border'
+                          }`}
+                        >
+                          {bn ? d.name_bn : d.name} ({divClassCount})
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Class Cards Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-56 overflow-y-auto p-1 custom-scrollbar">
+                    {filteredClasses.map((cls: any) => {
+                      const isSelected = selectedClassIds.includes(cls.id);
+                      const count = (studentCounts as Record<string, number>)[cls.id] || 0;
+                      const divName = cls.divisions ? (bn ? cls.divisions.name_bn : cls.divisions.name) : '';
+                      return (
+                        <div
+                          key={cls.id}
+                          onClick={() => toggleClass(cls.id)}
+                          className={`p-2.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between gap-2 ${
+                            isSelected
+                              ? 'border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/30 dark:border-emerald-500 shadow-xs'
+                              : 'border-border bg-card hover:border-emerald-300 dark:hover:border-emerald-700'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleClass(cls.id)}
+                              onClick={e => e.stopPropagation()}
+                            />
+                            <div className="truncate">
+                              <p className="text-xs font-bold text-foreground truncate">{bn ? cls.name_bn : cls.name}</p>
+                              {divName && <p className="text-[10px] text-muted-foreground truncate">{divName}</p>}
                             </div>
-                          </label>
-                        );
-                      })}
-                    </div>
-                    {selectedSubjectIds.length > 0 && (
-                      <div className="mt-2 p-2 rounded-lg bg-accent/50 border border-accent">
-                        <p className="text-xs font-medium text-foreground">
-                          {bn ? `${selectedSubjectIds.length} টি বিষয় নির্বাচিত` : `${selectedSubjectIds.length} subjects selected`}
-                        </p>
-                      </div>
+                          </div>
+                          <span
+                            className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                              count > 0
+                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                                : 'bg-muted text-muted-foreground'
+                            }`}
+                          >
+                            <Users className="inline w-3 h-3 mr-0.5" />{count} {bn ? 'জন' : ''}
+                          </span>
+                        </div>
+                      );
+                    })}
+                    {filteredClasses.length === 0 && (
+                      <p className="text-xs text-muted-foreground col-span-full py-4 text-center">
+                        {bn ? 'এই বিভাগে কোনো শ্রেণি নেই' : 'No classes in this division'}
+                      </p>
                     )}
                   </div>
-                )}
 
-                {/* Student Exclusion */}
-                {selectedClassIds.length > 0 && classStudents.length > 0 && (
-                  <div className="mt-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
-                        <UserMinus className="w-4 h-4" />
-                        {bn ? 'ছাত্র নির্বাচন / বাদ দিন' : 'Select / Exclude Students'}
-                        {excludedStudentIds.length > 0 && (
-                          <span className="text-xs text-destructive ml-1">({bn ? `${excludedStudentIds.length} জন বাদ` : `${excludedStudentIds.length} excluded`})</span>
-                        )}
-                      </label>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setShowStudentSelection(!showStudentSelection)}>
-                          {showStudentSelection ? (bn ? 'লুকান' : 'Hide') : (bn ? 'দেখান' : 'Show')}
-                        </Button>
-                        {showStudentSelection && (
-                          <>
-                            <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setExcludedStudentIds([])}>
-                              {bn ? 'সব রাখুন' : 'Include All'}
-                            </Button>
-                            <Button variant="outline" size="sm" className="h-7 text-xs text-destructive" onClick={() => setExcludedStudentIds(classStudents.map((s: any) => s.id))}>
-                              {bn ? 'সব বাদ' : 'Exclude All'}
-                            </Button>
-                          </>
-                        )}
+                  {/* Selected Classes Summary Bar */}
+                  {selectedClassIds.length > 0 && (
+                    <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between text-xs font-semibold text-emerald-900 dark:text-emerald-200">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
+                        <span>
+                          {bn 
+                            ? `মোট নির্বাচিত: ${selectedClassIds.length} টি শ্রেণি` 
+                            : `Total selected: ${selectedClassIds.length} classes`}
+                        </span>
+                        <span>•</span>
+                        <span>
+                          {bn 
+                            ? `মোট পরীক্ষার্থী: ${totalSelected} জন ছাত্র` 
+                            : `Total candidates: ${totalSelected} students`}
+                        </span>
                       </div>
                     </div>
-                    {showStudentSelection && (
-                      <div className="space-y-3">
-                        {selectedClassIds.map(classId => {
-                          const cls = classes.find((c: any) => c.id === classId);
-                          const clsStudents = classStudents.filter((s: any) => s.class_id === classId);
-                          if (clsStudents.length === 0) return null;
-                          const excludedInClass = clsStudents.filter((s: any) => excludedStudentIds.includes(s.id)).length;
+                  )}
+
+                  {/* Step 3: Subject Selection */}
+                  {selectedClassIds.length > 0 && sortedSubjects.length > 0 && (
+                    <div className="space-y-3 pt-3 border-t border-border">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center justify-center">৩</span>
+                          <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                            <BookMarked className="w-4 h-4 text-emerald-600" />
+                            {bn ? 'বিষয় নির্বাচন' : 'Subject Selection'}
+                            <span className="text-xs font-normal text-muted-foreground">
+                              ({selectedSubjectIds.length}/{sortedSubjects.length} {bn ? 'নির্বাচিত' : 'selected'})
+                            </span>
+                          </h4>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs font-semibold border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                            onClick={() => setSelectedSubjectIds(sortedSubjects.map((s: any) => s.id))}
+                          >
+                            {bn ? '✓ সব বিষয় নির্বাচন' : 'Select All'}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs font-semibold"
+                            onClick={() => setSelectedSubjectIds([])}
+                          >
+                            {bn ? 'সব বাদ' : 'Deselect All'}
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-56 overflow-y-auto p-1 custom-scrollbar">
+                        {sortedSubjects.map((subj: any) => {
+                          const isSelected = selectedSubjectIds.includes(subj.id);
+                          const subjClass = subj.class_id ? classes.find((c: any) => c.id === subj.class_id) : null;
+                          const subjDiv = subj.division_id ? divisions.find((d: any) => d.id === subj.division_id) : null;
+                          const context = subjClass ? (bn ? subjClass.name_bn : subjClass.name) : subjDiv ? (bn ? subjDiv.name_bn : subjDiv.name) : '';
                           return (
-                            <div key={classId} className="border border-border rounded-lg overflow-hidden">
-                              <div className="px-3 py-2 bg-secondary/50 flex items-center justify-between">
-                                <span className="text-sm font-medium text-foreground">
-                                  {bn ? cls?.name_bn : cls?.name}
-                                  <span className="text-xs text-muted-foreground ml-2">({clsStudents.length - excludedInClass}/{clsStudents.length})</span>
+                            <div
+                              key={subj.id}
+                              onClick={() => toggleSubject(subj.id)}
+                              className={`p-2.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between gap-2 ${
+                                isSelected
+                                  ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20 shadow-xs'
+                                  : 'border-border bg-card hover:border-emerald-300'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Checkbox
+                                  checked={isSelected}
+                                  onCheckedChange={() => toggleSubject(subj.id)}
+                                  onClick={e => e.stopPropagation()}
+                                />
+                                <div className="truncate">
+                                  <span className="text-xs font-bold text-foreground truncate block">
+                                    {bn ? subj.name_bn : subj.name}
+                                    {subj.code && <span className="text-[10px] text-muted-foreground ml-1 font-mono">({subj.code})</span>}
+                                  </span>
+                                  {context && <p className="text-[10px] text-muted-foreground truncate">{context}</p>}
+                                </div>
+                              </div>
+                              {subj.is_optional && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-medium shrink-0">
+                                  {bn ? 'ঐচ্ছিক' : 'Optional'}
                                 </span>
-                              </div>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 p-2">
-                                {clsStudents.map((st: any) => {
-                                  const isExcluded = excludedStudentIds.includes(st.id);
-                                  return (
-                                    <label key={st.id} className={`flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors text-sm ${isExcluded ? 'bg-destructive/5 border border-destructive/20 line-through opacity-60' : 'border border-border hover:border-primary/50'}`}>
-                                      <Checkbox checked={!isExcluded} onCheckedChange={() => setExcludedStudentIds(prev => isExcluded ? prev.filter(id => id !== st.id) : [...prev, st.id])} />
-                                      <span className="flex-1 truncate">
-                                        {st.roll_number && <span className="font-medium mr-1">{st.roll_number}.</span>}
-                                        {bn ? st.name_bn : (st.name_en || st.name_bn)}
-                                      </span>
-                                      <span className="text-xs text-muted-foreground">{st.student_id}</span>
-                                    </label>
-                                  );
-                                })}
-                              </div>
+                              )}
                             </div>
                           );
                         })}
                       </div>
-                    )}
-                    <div className="mt-2 p-2 rounded-lg bg-primary/5 border border-primary/20">
-                      <p className="text-xs font-medium text-primary">
-                        {bn ? `মোট: ${classStudents.length} জন — অন্তর্ভুক্ত: ${classStudents.length - excludedStudentIds.length} জন — বাদ: ${excludedStudentIds.length} জন` : `Total: ${classStudents.length} — Included: ${classStudents.length - excludedStudentIds.length} — Excluded: ${excludedStudentIds.length}`}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
 
-            <Button onClick={handleCreate} disabled={isCreating} className="btn-primary-gradient">
-              {isCreating && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-              {bn ? 'এক্সাম সেশন তৈরি করুন' : 'Create Exam Session'}
-            </Button>
+                      {selectedSubjectIds.length > 0 && (
+                        <div className="p-2 rounded-lg bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60">
+                          <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">
+                            {bn ? `✓ ${selectedSubjectIds.length} টি বিষয় নির্বাচিত হয়েছে` : `✓ ${selectedSubjectIds.length} subjects selected`}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Step 4: Student Selection / Exclusion */}
+                  {selectedClassIds.length > 0 && classStudents.length > 0 && (
+                    <div className="space-y-3 pt-3 border-t border-border">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center justify-center">৪</span>
+                          <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                            <UserMinus className="w-4 h-4 text-emerald-600" />
+                            {bn ? 'শিক্ষার্থী অন্তর্ভুক্তি / বাদ দিন' : 'Student Inclusion / Exclusion'}
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
+                              {bn ? `${classStudents.length - excludedStudentIds.length} জন অন্তর্ভুক্ত` : `${classStudents.length - excludedStudentIds.length} included`}
+                            </span>
+                            {excludedStudentIds.length > 0 && (
+                              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">
+                                {bn ? `${excludedStudentIds.length} জন বাদ` : `${excludedStudentIds.length} excluded`}
+                              </span>
+                            )}
+                          </h4>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs font-medium"
+                            onClick={() => setShowStudentSelection(!showStudentSelection)}
+                          >
+                            {showStudentSelection ? (bn ? 'লুকান' : 'Hide') : (bn ? 'শিক্ষার্থী তালিকা দেখুন' : 'View Students')}
+                          </Button>
+                          {showStudentSelection && (
+                            <>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-xs font-medium border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                                onClick={() => setExcludedStudentIds([])}
+                              >
+                                {bn ? 'সব অন্তর্ভুক্ত রাখুন' : 'Include All'}
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-xs font-medium text-destructive hover:bg-destructive/10 border-destructive/30"
+                                onClick={() => setExcludedStudentIds(classStudents.map((s: any) => s.id))}
+                              >
+                                {bn ? 'সব বাদ দিন' : 'Exclude All'}
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {showStudentSelection && (
+                        <div className="space-y-3 max-h-72 overflow-y-auto p-1.5 border border-border rounded-xl bg-muted/20 custom-scrollbar">
+                          {selectedClassIds.map(classId => {
+                            const cls = classes.find((c: any) => c.id === classId);
+                            const clsStudents = classStudents.filter((s: any) => s.class_id === classId);
+                            if (clsStudents.length === 0) return null;
+                            const excludedInClass = clsStudents.filter((s: any) => excludedStudentIds.includes(s.id)).length;
+                            return (
+                              <div key={classId} className="border border-border/70 rounded-lg overflow-hidden bg-card">
+                                <div className="px-3 py-2 bg-muted/50 flex items-center justify-between border-b border-border/50">
+                                  <span className="text-xs font-bold text-foreground">
+                                    {bn ? cls?.name_bn : cls?.name}
+                                  </span>
+                                  <span className="text-[11px] font-semibold text-muted-foreground">
+                                    {bn
+                                      ? `${clsStudents.length - excludedInClass}/${clsStudents.length} জন উপস্থিত/অন্তর্ভুক্ত`
+                                      : `${clsStudents.length - excludedInClass}/${clsStudents.length} included`}
+                                  </span>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 p-2">
+                                  {clsStudents.map((st: any) => {
+                                    const isExcluded = excludedStudentIds.includes(st.id);
+                                    return (
+                                      <label
+                                        key={st.id}
+                                        className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors text-xs ${
+                                          isExcluded
+                                            ? 'bg-destructive/5 border border-destructive/20 line-through opacity-60 text-muted-foreground'
+                                            : 'border border-border bg-background hover:border-emerald-400'
+                                        }`}
+                                      >
+                                        <Checkbox
+                                          checked={!isExcluded}
+                                          onCheckedChange={() => setExcludedStudentIds(prev => isExcluded ? prev.filter(id => id !== st.id) : [...prev, st.id])}
+                                        />
+                                        <span className="flex-1 truncate font-medium">
+                                          {st.roll_number && <span className="font-bold text-emerald-700 dark:text-emerald-400 mr-1.5">#{st.roll_number}</span>}
+                                          {bn ? st.name_bn : (st.name_en || st.name_bn)}
+                                        </span>
+                                        <span className="text-[10px] font-mono text-muted-foreground">{st.student_id}</span>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Bottom Action Footer */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-border">
+                <div className="text-xs text-muted-foreground">
+                  {selectedClassIds.length > 0 ? (
+                    <span className="font-medium text-foreground">
+                      {bn 
+                        ? `✓ প্রস্তুত: ${selectedClassIds.length} টি শ্রেণি • ${classStudents.length - excludedStudentIds.length} জন ছাত্র • ${selectedSubjectIds.length} টি বিষয়` 
+                        : `Ready: ${selectedClassIds.length} classes • ${classStudents.length - excludedStudentIds.length} students • ${selectedSubjectIds.length} subjects`}
+                    </span>
+                  ) : (
+                    <span>{bn ? 'কমপক্ষে একটি শ্রেণি নির্বাচন করুন' : 'Select at least one class to proceed'}</span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedClassIds([]);
+                      setSelectedSubjectIds([]);
+                      setExcludedStudentIds([]);
+                      setName('');
+                      setNameBn('');
+                    }}
+                    disabled={isCreating}
+                    className="text-xs"
+                  >
+                    {bn ? 'রিসেট' : 'Reset'}
+                  </Button>
+                  <Button
+                    onClick={handleCreate}
+                    disabled={isCreating || !nameBn.trim() || !academicSessionId || selectedClassIds.length === 0}
+                    className="btn-primary-gradient px-6 py-2.5 font-bold shadow-md shadow-primary/20 flex items-center gap-2"
+                  >
+                    {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                    {bn 
+                      ? `এক্সাম সেশন তৈরি করুন (${classStudents.length - excludedStudentIds.length} জন ছাত্র, ${selectedSubjectIds.length} টি বিষয়)` 
+                      : `Create Exam Session (${classStudents.length - excludedStudentIds.length} students, ${selectedSubjectIds.length} subjects)`}
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
         {/* Existing Exam Sessions List */}
-        <div className="card-elevated p-5">
-          <h3 className="font-display font-bold text-foreground mb-4">{bn ? 'এক্সাম সেশন তালিকা' : 'Exam Sessions List'}</h3>
-          {examSessions.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground text-sm">{bn ? 'কোনো এক্সাম সেশন নেই' : 'No exam sessions yet'}</p>
+        <div className="card-elevated p-5 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
+            <div className="flex items-center gap-2">
+              <h3 className="font-display font-bold text-foreground text-base">
+                {bn ? 'বিদ্যমান এক্সাম সেশন তালিকা' : 'Exam Sessions List'}
+              </h3>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
+                {filteredExamSessions.length}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchSessionQuery}
+                  onChange={(e) => setSearchSessionQuery(e.target.value)}
+                  placeholder={bn ? 'সেশন খুঁজুন...' : 'Search session...'}
+                  className="h-8 pl-8 text-xs w-48 bg-background"
+                />
+                {searchSessionQuery && (
+                  <button 
+                    onClick={() => setSearchSessionQuery('')} 
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {filteredExamSessions.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground text-sm">
+              {searchSessionQuery 
+                ? (bn ? 'কোনো ফলাফল পাওয়া যায়নি' : 'No matching sessions found') 
+                : (bn ? 'কোনো এক্সাম সেশন নেই' : 'No exam sessions yet')}
+            </p>
           ) : (
             <div className="space-y-2">
-              {examSessions.map((es: any) => {
+              {filteredExamSessions.map((es: any) => {
                 const esClasses = examSessionClasses.filter((c: any) => c.exam_session_id === es.id);
                 const totalStudents = esClasses.reduce((s: number, c: any) => s + (c.student_count || 0), 0);
                 const isExpanded = expandedSessionId === es.id;
