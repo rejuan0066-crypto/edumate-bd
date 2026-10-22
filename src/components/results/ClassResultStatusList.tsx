@@ -16,6 +16,7 @@ import {
   Search,
   ShieldCheck,
   ShieldX,
+  RotateCcw,
 } from 'lucide-react';
 
 export interface ClassPublishStatusItem {
@@ -33,6 +34,8 @@ interface ClassResultStatusListProps {
   onPublishToggle?: (classId: string, publish: boolean) => void;
   onApprovePublishClass?: (classId: string) => void;
   onRejectPublishClass?: (classId: string) => void;
+  onRevokePublishClass?: (classId: string) => void;
+  onResetAllPublish?: () => void;
   exportingClassId: string | null;
   examSessionName: string;
   publishApprovalStatus?: 'pending' | 'approved' | 'rejected';
@@ -51,6 +54,8 @@ const ClassResultStatusList = ({
   onPublishToggle,
   onApprovePublishClass,
   onRejectPublishClass,
+  onRevokePublishClass,
+  onResetAllPublish,
   exportingClassId,
   examSessionName,
   publishApprovalStatus = 'pending',
@@ -119,18 +124,32 @@ const ClassResultStatusList = ({
               className="pl-9 bg-background h-9 rounded-xl text-xs sm:text-sm"
             />
           </div>
-          {isAdmin && onApprovePublish && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 text-xs font-semibold rounded-lg text-emerald-700 hover:bg-emerald-50 border-emerald-300 gap-1.5 self-end sm:self-auto"
-              onClick={onApprovePublish}
-              title={bn ? 'সবগুলো ক্লাসের পাবলিশ অনুমোদন একসাথে দিন' : 'Approve publishing for all classes'}
-            >
-              <ShieldCheck className="w-4 h-4" />
-              {bn ? 'সকল ক্লাসের পাবলিশ অনুমোদন' : 'Approve All Publishing'}
-            </Button>
-          )}
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            {isAdmin && onResetAllPublish && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 text-xs font-semibold rounded-lg text-amber-700 hover:bg-amber-50 border-amber-300 gap-1.5"
+                onClick={onResetAllPublish}
+                title={bn ? 'সকল ক্লাসের অনুমোদন রিসেট করে আবার অপেক্ষমান রাখুন' : 'Reset all classes to pending approval'}
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                {bn ? 'সকল অনুমোদন রিসেট' : 'Reset All'}
+              </Button>
+            )}
+            {isAdmin && onApprovePublish && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 text-xs font-semibold rounded-lg text-emerald-700 hover:bg-emerald-50 border-emerald-300 gap-1.5"
+                onClick={onApprovePublish}
+                title={bn ? 'সবগুলো ক্লাসের পাবলিশ অনুমোদন একসাথে দিন' : 'Approve publishing for all classes'}
+              >
+                <ShieldCheck className="w-4 h-4" />
+                {bn ? 'সকল ক্লাসের পাবলিশ অনুমোদন' : 'Approve All Publishing'}
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Structured Table (Exact Match to Mockup) */}
@@ -150,10 +169,11 @@ const ClassResultStatusList = ({
               {visibleClasses.map((cls: any) => {
                 const hasResults = resultStatusMap[cls.id] || false;
                 const classInfo = publishStatusMap[cls.id];
-                const isPublished = typeof classInfo === 'boolean' ? classInfo : (classInfo?.is_published || false);
-                const rawApproval = typeof classInfo === 'object' && classInfo?.approval_status ? classInfo.approval_status : publishApprovalStatus;
-                // If published, it is approved
-                const classApproval: 'pending' | 'approved' | 'rejected' = isPublished ? 'approved' : (rawApproval || 'pending');
+                const rawApproval = typeof classInfo === 'object' && classInfo?.approval_status ? classInfo.approval_status : 'pending';
+                // Strictly evaluate approval: default to pending!
+                const classApproval: 'pending' | 'approved' | 'rejected' = rawApproval || 'pending';
+                // A class can ONLY be published if it is explicitly approved AND marked as published
+                const isPublished = classApproval === 'approved' && (typeof classInfo === 'boolean' ? classInfo : (classInfo?.is_published || false));
                 const isExporting = exportingClassId === cls.id;
 
                 return (
@@ -195,11 +215,24 @@ const ClassResultStatusList = ({
                         <span className="text-muted-foreground italic text-xs">
                           — {bn ? 'ফলাফল অপ্রস্তুত' : 'Not Ready'} —
                         </span>
-                      ) : isPublished || classApproval === 'approved' ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300">
-                          <ShieldCheck className="w-3.5 h-3.5" />
-                          {bn ? 'পাবলিশ অনুমোদিত' : 'Publish Approved'}
-                        </span>
+                      ) : classApproval === 'approved' ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300">
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                            {bn ? 'পাবলিশ অনুমোদিত' : 'Publish Approved'}
+                          </span>
+                          {isAdmin && onRevokePublishClass && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 text-[11px] px-1.5 text-muted-foreground hover:text-rose-600 hover:bg-rose-50"
+                              onClick={() => onRevokePublishClass(cls.id)}
+                              title={bn ? 'অনুমোদন প্রত্যাহার করে আবার অপেক্ষমান রাখুন' : 'Revoke approval'}
+                            >
+                              {bn ? 'অনুমোদন বাতিল' : 'Revoke'}
+                            </Button>
+                          )}
+                        </div>
                       ) : classApproval === 'rejected' ? (
                         <div className="flex items-center gap-1.5">
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-300">
@@ -213,7 +246,7 @@ const ClassResultStatusList = ({
                               className="h-6 text-[11px] px-2 text-emerald-700 border-emerald-300"
                               onClick={() => onApprovePublishClass ? onApprovePublishClass(cls.id) : onApprovePublish?.()}
                             >
-                              {bn ? 'পুনঃ অনুমোদন' : 'Re-approve'}
+                              {bn ? 'অনুমোদন দিন' : 'Approve'}
                             </Button>
                           )}
                         </div>
@@ -249,7 +282,7 @@ const ClassResultStatusList = ({
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300">
                             <Clock className="w-3.5 h-3.5" />
-                            {bn ? 'পাবলিশ অনুমোদনের অপেক্ষায়' : 'Awaiting Approval'}
+                            {bn ? 'অনুমোদনের অপেক্ষায়' : 'Awaiting Approval'}
                           </span>
                         )
                       )}
