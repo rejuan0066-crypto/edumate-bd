@@ -65,6 +65,51 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       });
     }, [suggestions, items]);
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (effectiveLang === 'en') {
+        // Block typing non-ASCII characters directly (Bangla/Arabic keys)
+        if (e.key && e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+          if (/[^\x20-\x7E]/.test(e.key)) {
+            e.preventDefault();
+            return;
+          }
+        }
+      }
+      props.onKeyDown?.(e);
+    };
+
+    const handleBeforeInput = (e: React.FormEvent<HTMLInputElement>) => {
+      if (effectiveLang === 'en') {
+        const inputEvent = e.nativeEvent as InputEvent;
+        if (inputEvent?.data && /[^\x20-\x7E]/.test(inputEvent.data)) {
+          e.preventDefault();
+          return;
+        }
+      }
+      props.onBeforeInput?.(e);
+    };
+
+    const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+      if (effectiveLang === 'en') {
+        const text = e.clipboardData.getData('text');
+        if (text && /[^\x20-\x7E]/.test(text)) {
+          e.preventDefault();
+          const cleanText = filterEnglishInput(text);
+          const target = e.currentTarget;
+          const start = target.selectionStart ?? 0;
+          const end = target.selectionEnd ?? 0;
+          const val = target.value;
+          const newVal = val.slice(0, start) + cleanText + val.slice(end);
+          target.value = newVal;
+          try { target.setSelectionRange(start + cleanText.length, start + cleanText.length); } catch {}
+          const event = new Event('input', { bubbles: true });
+          target.dispatchEvent(event);
+          return;
+        }
+      }
+      props.onPaste?.(e);
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const el = e.target;
       const prevVal = el.value;
@@ -122,6 +167,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             placeholder={placeholder}
             autoComplete={autoComplete}
             list={listId}
+            onKeyDown={handleKeyDown}
+            onBeforeInput={handleBeforeInput}
+            onPaste={handlePaste}
             onChange={handleChange}
             onBlur={handleBlur}
             {...props}

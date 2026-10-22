@@ -1223,6 +1223,9 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
           <div data-field={fieldKey}>
             <Label className={errorLabel}>{label} {reqStar}</Label>
             <Input className={`bg-background mt-1 ${errorBorder}`}
+              name="first_name"
+              id="first_name"
+              langType="bn"
               value={form.first_name || ''}
               onChange={e => setForm(prev => ({ ...prev, first_name: e.target.value }))}
               placeholder={bn ? 'বাংলায় লিখুন' : 'Full Name (Bangla)'} />
@@ -1235,9 +1238,12 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
           <div data-field={fieldKey}>
             <Label className={errorLabel}>{label} {reqStar}</Label>
             <Input className={`bg-background mt-1 ${errorBorder}`}
+              name="last_name"
+              id="last_name"
+              langType="en"
               value={form.last_name || ''}
               onChange={e => setForm(prev => ({ ...prev, last_name: e.target.value }))}
-              placeholder={bn ? 'ইংরেজিতে লিখুন' : 'Full Name (English)'} />
+              placeholder={bn ? 'ইংরেজিতে লিখুন (শুধুমাত্র ইংরেজি অক্ষর)' : 'Full Name (English)'} />
             <FieldError field={fieldKey} />
           </div>
         );
@@ -1248,9 +1254,12 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
           <div data-field={fieldKey}>
             <Label className={errorLabel}>{label}</Label>
             <Input className={`bg-background mt-1 ${errorBorder}`}
+              name={fieldKey}
+              id={fieldKey}
+              langType="en"
               value={form[fieldKey] || ''}
               onChange={e => setForm(prev => ({ ...prev, [fieldKey]: e.target.value }))}
-              placeholder={bn ? 'ইংরেজিতে লিখুন' : 'Enter in English'} />
+              placeholder={bn ? 'ইংরেজিতে লিখুন (শুধুমাত্র ইংরেজি অক্ষর)' : 'Enter in English'} />
             <FieldError field={fieldKey} />
           </div>
         );
@@ -1261,6 +1270,8 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
           <div>
             <Label className={errorLabel}>{label} {reqStar}</Label>
             <Input className={`bg-background mt-1 ${errorBorder}`}
+              name={fieldKey}
+              id={fieldKey}
               value={form[fieldKey] || ''} onChange={e => setForm(prev => ({ ...prev, [fieldKey]: e.target.value }))}
               placeholder={config.placeholder || ''} />
             <FieldError field={fieldKey} />
@@ -1282,9 +1293,29 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     return (
       <div key={config.id}>
         <Label>{label} {required && <span className="text-destructive">*</span>}</Label>
-        {config.field_type === 'text' && <Input className="bg-background mt-1" value={val} onChange={e => update(e.target.value)} placeholder={config.placeholder || ''} />}
-        {config.field_type === 'number' && <Input type="number" className="bg-background mt-1" value={val || ''} onChange={e => update(e.target.value)} />}
-        {config.field_type === 'textarea' && <Textarea className="bg-background mt-1" rows={3} value={val} onChange={e => update(e.target.value)} />}
+        {config.field_type === 'text' && (
+          <Input
+            className="bg-background mt-1"
+            name={config.id}
+            id={config.id}
+            langType={config.default_value?.endsWith('_en') || config.label?.toLowerCase().includes('english') || config.label_bn?.includes('ইংরেজি') ? 'en' : undefined}
+            value={val}
+            onChange={e => update(e.target.value)}
+            placeholder={config.placeholder || ''}
+          />
+        )}
+        {config.field_type === 'number' && <Input type="number" name={config.id} id={config.id} className="bg-background mt-1" value={val || ''} onChange={e => update(e.target.value)} />}
+        {config.field_type === 'textarea' && (
+          <Textarea
+            className="bg-background mt-1"
+            name={config.id}
+            id={config.id}
+            langType={config.default_value?.endsWith('_en') || config.label?.toLowerCase().includes('english') || config.label_bn?.includes('ইংরেজি') ? 'en' : undefined}
+            rows={3}
+            value={val}
+            onChange={e => update(e.target.value)}
+          />
+        )}
         {config.field_type === 'date' && <DatePicker bengali={bn} className="mt-1" value={val} onChange={v => update(v)} />}
         {config.field_type === 'email' && <Input type="email" className="bg-background mt-1" value={val} onChange={e => update(e.target.value)} />}
         {config.field_type === 'switch' && <Switch checked={!!val} onCheckedChange={c => update(c)} />}

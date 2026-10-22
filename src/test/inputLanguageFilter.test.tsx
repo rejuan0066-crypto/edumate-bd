@@ -19,6 +19,9 @@ describe('inputLanguageFilter unit logic', () => {
     expect(detectInputLang({ id: 'guardian_phone' })).toBe('en');
     expect(detectInputLang({ name: 'username' })).toBe('en');
     expect(detectInputLang({ placeholder: 'e.g. Madrasah' })).toBe('en');
+    expect(detectInputLang({ placeholder: 'ইংরেজিতে লিখুন' })).toBe('en');
+    expect(detectInputLang({ name: 'last_name' })).toBe('en');
+    expect(detectInputLang({ name: 'father_name_en' })).toBe('en');
   });
 
   it('detects Bangla input fields properly', () => {
@@ -39,7 +42,7 @@ describe('inputLanguageFilter unit logic', () => {
     expect(detectInputLang({ type: 'password' })).toBe('auto');
   });
 
-  it('filters English inputs: converts Bangla digits to English and strips Bangla letters', () => {
+  it('filters English inputs: converts Bangla digits to English and strips Bangla and Arabic letters', () => {
     // Digits converted
     expect(filterEnglishInput('১২৩৪৫')).toBe('12345');
     // Mixed digits
@@ -47,6 +50,8 @@ describe('inputLanguageFilter unit logic', () => {
     // Bangla letters stripped
     expect(filterEnglishInput('রহিম রহিম')).toBe(' ');
     expect(filterEnglishInput('User রহিম ১২৩')).toBe('User  123');
+    // Arabic letters stripped
+    expect(filterEnglishInput('User محمد 123')).toBe('User  123');
   });
 
   it('filters Bangla inputs: converts English digits to Bangla digits', () => {

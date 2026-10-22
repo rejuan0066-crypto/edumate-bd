@@ -1504,6 +1504,9 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
                 <div>
                   <Label>{bn ? (getField('first_name')?.label_bn || 'সম্পূর্ণ নাম (বাংলা)') : (getField('first_name')?.label || 'Full Name (Bangla)')} {isFieldRequired('first_name') && <span className="text-destructive">*</span>}</Label>
                   <Input
+                    name="first_name"
+                    id="first_name"
+                    langType="bn"
                     className={`bg-background mt-1 ${fieldErrors['first_name'] ? 'border-destructive' : ''}`}
                     value={firstName}
                     onChange={e => handleFieldChange('first_name', e.target.value, setFirstName)}
@@ -1516,10 +1519,13 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
                 <div>
                   <Label>{bn ? (getField('last_name')?.label_bn || 'সম্পূর্ণ নাম (ইংরেজি)') : (getField('last_name')?.label || 'Full Name (English)')} {isFieldRequired('last_name') && <span className="text-destructive">*</span>}</Label>
                   <Input
+                    name="last_name"
+                    id="last_name"
+                    langType="en"
                     className={`bg-background mt-1 ${fieldErrors['last_name'] ? 'border-destructive' : ''}`}
                     value={lastName}
                     onChange={e => handleFieldChange('last_name', e.target.value, setLastName)}
-                    placeholder={bn ? 'ইংরেজিতে সম্পূর্ণ নাম লিখুন' : 'Enter full name in English'}
+                    placeholder={bn ? 'ইংরেজিতে সম্পূর্ণ নাম লিখুন (শুধুমাত্র ইংরেজি)' : 'Enter full name in English'}
                   />
                   {hasBangla(lastName) && (
                     <p className="text-xs text-amber-600 mt-1 flex items-center gap-1 font-medium">

@@ -30,13 +30,19 @@ export function detectInputLang(props: DetectLangProps): InputLangType {
   const targetKey = `${name} ${id}`;
   const placeholder = (props.placeholder || '').toLowerCase();
 
-  // English indicators in name/id
+  // English indicators in name/id/placeholder
   if (
     name.endsWith('_en') ||
     id.endsWith('_en') ||
+    name === 'last_name' ||
+    id === 'last_name' ||
     targetKey.includes('name_en') ||
     targetKey.includes('title_en') ||
     targetKey.includes('address_en') ||
+    targetKey.includes('father_name_en') ||
+    targetKey.includes('mother_name_en') ||
+    targetKey.includes('guardian_name_en') ||
+    targetKey.includes('last_name') ||
     targetKey.includes('email') ||
     targetKey.includes('phone') ||
     targetKey.includes('mobile') ||
@@ -49,7 +55,9 @@ export function detectInputLang(props: DetectLangProps): InputLangType {
     targetKey.includes('established_year_en') ||
     placeholder.includes('e.g.') ||
     placeholder.includes('example') ||
-    placeholder.includes('english')
+    placeholder.includes('english') ||
+    placeholder.includes('ইংরেজি') ||
+    placeholder.includes('ইংরেজিতে')
   ) {
     return 'en';
   }
@@ -65,7 +73,8 @@ export function detectInputLang(props: DetectLangProps): InputLangType {
     targetKey.includes('father_name_bn') ||
     targetKey.includes('mother_name_bn') ||
     placeholder.includes('বাংলা') ||
-    placeholder.includes('বাংলায়')
+    placeholder.includes('বাংলায়') ||
+    placeholder.includes('বাংলায়')
   ) {
     return 'bn';
   }
@@ -76,14 +85,15 @@ export function detectInputLang(props: DetectLangProps): InputLangType {
 /**
  * Filter and convert string for English input fields:
  * - Converts Bengali (and Arabic) digits to English 0-9
- * - Removes any Bengali unicode glyphs (blocks Bangla characters)
+ * - STRICTLY removes ANY non-English/non-ASCII character (completely blocks Bangla, Arabic, etc.)
+ * - Only permits standard ASCII printable characters (A-Z, a-z, 0-9, space, punctuation)
  */
 export function filterEnglishInput(value: string): string {
   if (!value) return value;
   // 1. Convert Bengali digits (০-৯) to English digits (0-9)
   let result = toEnDigits(value);
-  // 2. Strip any Bengali unicode characters ([\u0980-\u09FF])
-  result = result.replace(/[\u0980-\u09FF]/g, '');
+  // 2. Strip ALL non-English/non-ASCII characters (e.g. Bangla [\u0980-\u09FF], Arabic [\u0600-\u06FF], etc.)
+  result = result.replace(/[^\x20-\x7E\t\r\n]/g, '');
   return result;
 }
 
