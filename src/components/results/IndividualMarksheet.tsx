@@ -655,16 +655,16 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         </div>
 
         {/* Teacher Remarks & Date Section */}
-        <div className="border border-slate-200 rounded p-2 bg-emerald-50/30 text-xs mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2 overflow-hidden">
-            <span className="font-bold text-[#064e3b] whitespace-nowrap">
+        <div className="border border-slate-200 rounded p-2 bg-emerald-50/30 text-xs mb-3 flex items-center justify-between gap-3">
+          <div className="flex-1 text-left">
+            <span className="font-bold text-[#064e3b] inline mr-1.5">
               {bn ? 'শ্রেণি শিক্ষক ও মুহতামিমের মন্তব্য:' : "Evaluation & Remarks:"}
             </span>
-            <span className="text-slate-700 italic truncate">
+            <span className="text-slate-700 italic leading-relaxed">
               "{remarksText}"
             </span>
           </div>
-          <div className="text-[11px] text-slate-500 font-semibold whitespace-nowrap pl-3 border-l border-emerald-200 shrink-0">
+          <div className="text-[10.5px] text-slate-500 font-semibold whitespace-nowrap pl-3 border-l border-emerald-200 shrink-0 self-center">
             {bn ? `ইস্যু তারিখ: ${issueDateFormatted}` : `Issue Date: ${issueDateFormatted}`}
           </div>
         </div>
