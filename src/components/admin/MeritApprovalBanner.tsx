@@ -106,11 +106,11 @@ const MeritApprovalBanner = ({
           badgeBg: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30',
         }
       : {
-          cardBg: 'bg-gradient-to-r from-muted/60 via-muted/30 to-transparent border-border',
-          iconBox: 'bg-muted text-muted-foreground border border-border',
-          icon: <Clock className="w-5 h-5 text-muted-foreground" />,
-          label: bn ? 'অনুমোদনের জন্য পাঠানো হয়নি' : 'Not Submitted',
-          tone: 'text-muted-foreground',
+          cardBg: 'bg-gradient-to-r from-primary/5 via-card to-secondary/30 border-border shadow-xs',
+          iconBox: 'bg-primary/10 text-primary border border-primary/20',
+          icon: <Send className="w-5 h-5 text-primary" />,
+          label: bn ? 'অনুমোদনের জন্য পাঠান' : 'Submit for Approval',
+          tone: 'text-foreground',
           badgeBg: 'bg-muted text-muted-foreground border-border',
         };
 

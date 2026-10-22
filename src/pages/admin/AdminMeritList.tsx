@@ -225,7 +225,21 @@ const AdminMeritList = () => {
     enabled: !!examSessionId && !!classId,
   });
 
-  const approvalStatus: ApprovalStatus = (approval?.status as ApprovalStatus) || 'none';
+  // Auto-cleanup any rejected status and reset to 'none' ('অনুমোদনের জন্য পাঠান' state)
+  useEffect(() => {
+    if (approval?.status === 'rejected' && examSessionId && classId) {
+      supabase
+        .from('merit_list_approvals' as any)
+        .delete()
+        .eq('exam_session_id', examSessionId)
+        .eq('class_id', classId)
+        .then(() => {
+          refreshApproval();
+        });
+    }
+  }, [approval?.status, examSessionId, classId]);
+
+  const approvalStatus: ApprovalStatus = (!approval || approval.status === 'rejected') ? 'none' : (approval.status as ApprovalStatus);
   const refreshApproval = () => queryClient.invalidateQueries({ queryKey: ['merit-approval', examSessionId, classId] });
 
   const callRpc = async (fn: string, args: Record<string, unknown>, successMsg: string) => {
