@@ -199,26 +199,29 @@ const ClassResultStatusList = ({
                     </Button>
                   </>
                 )}
-                {hasResults && (
+                {hasResults ? (
                   <Button
                     size="sm"
-                    variant="ghost"
+                    variant="outline"
                     className="gap-1.5"
-                    onClick={() => onClassClick(cls.id, 'entry')}
+                    onClick={() => onClassClick(cls.id, 'view')}
+                    title={bn ? 'ক্লাস রেজাল্ট শিট দেখুন' : 'View Class Result Sheet'}
                   >
-                    <PenLine className="w-3.5 h-3.5" />
-                    {bn ? 'এডিট' : 'Edit'}
+                    <Eye className="w-3.5 h-3.5" />
+                    {bn ? 'শিট দেখুন' : 'View Sheet'}
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled
+                    className="gap-1.5 opacity-50 cursor-not-allowed"
+                    title={bn ? 'ফলাফল এখনও এন্ট্রি করা হয়নি' : 'Results pending'}
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    {bn ? 'শিট দেখুন' : 'View Sheet'}
                   </Button>
                 )}
-                <Button
-                  size="sm"
-                  variant={hasResults ? 'outline' : 'default'}
-                  className="gap-1.5"
-                  onClick={() => onClassClick(cls.id, hasResults ? 'view' : 'entry')}
-                >
-                  {hasResults ? <Eye className="w-3.5 h-3.5" /> : <PenLine className="w-3.5 h-3.5" />}
-                  {hasResults ? (bn ? 'দেখুন' : 'View') : (bn ? 'এন্ট্রি' : 'Entry')}
-                </Button>
               </div>
             </div>
           );
