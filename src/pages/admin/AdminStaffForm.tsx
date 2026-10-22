@@ -21,6 +21,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useValidationRules } from '@/hooks/useValidationRules';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import OtpVerificationDialog from '@/components/OtpVerificationDialog';
+import DocumentPreviewModal from '@/components/DocumentPreviewModal';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import { useStaffFormConfig } from '@/hooks/useStaffFormConfig';
@@ -2371,33 +2372,14 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
         </DialogContent>
       </Dialog>
 
-      {/* Document Preview Dialog */}
-      <Dialog open={!!previewDoc} onOpenChange={() => setPreviewDoc(null)}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader><DialogTitle>{previewDoc?.type} - {previewDoc?.name}</DialogTitle></DialogHeader>
-          <div className="flex justify-center p-4">
-            {previewDoc?.name?.toLowerCase().endsWith('.pdf') ? (
-              <embed
-                src={previewDoc.url + '#toolbar=1&navpanes=0'}
-                type="application/pdf"
-                className="w-full h-[500px] border border-border rounded"
-              />
-            ) : (
-              <img src={previewDoc?.url} alt={previewDoc?.name} className="max-w-full max-h-[500px] object-contain rounded" />
-            )}
-          </div>
-          <div className="flex justify-end gap-2">
-            {previewDoc?.name?.toLowerCase().endsWith('.pdf') && (
-              <Button variant="outline" asChild>
-                <a href={`https://docs.google.com/gview?url=${encodeURIComponent(previewDoc?.url || '')}&embedded=true`} target="_blank" rel="noopener noreferrer" className="gap-2"><Eye className="w-4 h-4" /> {bn ? 'Google এ দেখুন' : 'View in Google'}</a>
-              </Button>
-            )}
-            <Button variant="outline" asChild>
-              <a href={previewDoc?.url} download={previewDoc?.name} className="gap-2"><Download className="w-4 h-4" /> {bn ? 'ডাউনলোড' : 'Download'}</a>
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Universal Document Preview Modal */}
+      <DocumentPreviewModal
+        open={!!previewDoc}
+        onOpenChange={() => setPreviewDoc(null)}
+        fileUrl={previewDoc?.url}
+        fileName={previewDoc?.name}
+        title={previewDoc ? `${previewDoc.type} - ${previewDoc.name}` : undefined}
+      />
 
       {/* Email OTP Verification */}
       <OtpVerificationDialog

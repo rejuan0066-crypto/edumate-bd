@@ -12,10 +12,11 @@ import {
   BadgePercent, FileText, Pencil, CheckCircle, XCircle, Clock, Loader2,
   Plus, Trash2, GraduationCap, Users, Home, CreditCard, ClipboardList,
   Fingerprint, School, Building2, Library, CalendarCheck, BarChart3, Award, TrendingUp,
-  Printer
+  Printer, Eye
 } from 'lucide-react';
 import ProfileInfoItem from './ProfileInfoItem';
 import ProfileSectionCard from './ProfileSectionCard';
+import DocumentPreviewModal from '@/components/DocumentPreviewModal';
 import { toast } from 'sonner';
 import { cn, formatDigits } from '@/lib/utils';
 import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
@@ -41,6 +42,39 @@ const StudentProfileModal = ({
 }: StudentProfileModalProps) => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'profile' | 'finance' | 'academic' | 'others'>('profile');
+  const [previewDoc, setPreviewDoc] = useState<{ url: string; name?: string } | null>(null);
+
+  const studentDocs = useMemo(() => {
+    const adm = student.admission_data || {};
+    const results: Array<{ id: string; name: string; url: string }> = [];
+
+    if (adm.custom_fields && typeof adm.custom_fields === 'object') {
+      Object.entries(adm.custom_fields).forEach(([k, v]) => {
+        const strVal = String(v || '');
+        if (typeof v === 'string' && (strVal.startsWith('http://') || strVal.startsWith('https://') || strVal.startsWith('photos/') || strVal.startsWith('receipts/') || /\.(pdf|png|jpe?g|webp)($|[?#])/i.test(strVal))) {
+          results.push({
+            id: k,
+            name: k.replace(/_/g, ' '),
+            url: strVal,
+          });
+        }
+      });
+    }
+
+    if (Array.isArray(adm.documents)) {
+      adm.documents.forEach((d: any, idx: number) => {
+        if (d && (d.url || d.file_url)) {
+          results.push({
+            id: d.id || `doc-${idx}`,
+            name: d.name || d.type || `Document ${idx + 1}`,
+            url: d.url || d.file_url,
+          });
+        }
+      });
+    }
+
+    return results;
+  }, [student.admission_data]);
   const [showWaiverDialog, setShowWaiverDialog] = useState(false);
   const [waiverForm, setWaiverForm] = useState({ fee_type_id: '', waiver_amount: '', reason: '' });
   const [duesSessionId, setDuesSessionId] = useState<string>('');
@@ -809,6 +843,33 @@ const StudentProfileModal = ({
       {/* ═══════════ OTHERS TAB ═══════════ */}
       {activeTab === 'others' && (
         <div className="space-y-4">
+          {studentDocs.length > 0 && (
+            <ProfileSectionCard title={bn ? 'সংযুক্ত ডকুমেন্টস ও ফাইল' : 'Attached Documents & Files'} icon={FileText}>
+              <div className="col-span-full space-y-2">
+                {studentDocs.map((doc, idx) => (
+                  <div key={doc.id || idx} className="flex items-center justify-between p-3 rounded-xl bg-muted/20 border border-border/15 hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600">
+                        <FileText className="w-4 h-4" />
+                      </div>
+                      <span className="text-sm font-bold truncate">{doc.name}</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs gap-1 rounded-full border-emerald-500/20 text-emerald-600 hover:bg-emerald-500/10 shrink-0"
+                      onClick={() => setPreviewDoc(doc)}
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      {bn ? 'দেখুন' : 'View'}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </ProfileSectionCard>
+          )}
+
           <ProfileSectionCard title={bn ? 'লাইব্রেরি বই ইতিহাস' : 'Library Book History'} icon={Library}>
             <div className="col-span-full">
               {libLoading ? (
@@ -923,6 +984,14 @@ const StudentProfileModal = ({
           </Button>
         )}
       </div>
+      {/* Universal Document Preview Modal */}
+      <DocumentPreviewModal
+        open={!!previewDoc}
+        onOpenChange={() => setPreviewDoc(null)}
+        fileUrl={previewDoc?.url}
+        fileName={previewDoc?.name}
+        title={previewDoc?.name || (bn ? 'ডকুমেন্ট প্রিভিউ' : 'Document Preview')}
+      />
     </div>
   );
 };

@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import AddressFields, { type AddressData } from '@/components/AddressFields';
 import PhoneInput from '@/components/PhoneInput';
 import PhotoUpload from '@/components/PhotoUpload';
+import DocumentPreviewModal from '@/components/DocumentPreviewModal';
 import { useState, useRef } from 'react';
 import { AlertCircle, CheckCircle, Loader2, Upload, Trash2, Eye } from 'lucide-react';
 import { toast } from 'sonner';
@@ -139,6 +140,7 @@ const StaffApplicationPage = () => {
 
   // Document upload state
   const [documents, setDocuments] = useState<{ id: string; type: string; name: string; url: string }[]>([]);
+  const [previewDoc, setPreviewDoc] = useState<{ id: string; type: string; name: string; url: string } | null>(null);
   const [docType, setDocType] = useState('');
   const [customDocType, setCustomDocType] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -296,7 +298,14 @@ const StaffApplicationPage = () => {
         <div className="container mx-auto px-4 py-20 text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
         </div>
-      </PublicLayout>
+        <DocumentPreviewModal
+        open={!!previewDoc}
+        onOpenChange={() => setPreviewDoc(null)}
+        fileUrl={previewDoc?.url}
+        fileName={previewDoc?.name}
+        title={previewDoc ? `${previewDoc.type} - ${previewDoc.name}` : undefined}
+      />
+    </PublicLayout>
     );
   }
 
@@ -643,7 +652,7 @@ const StaffApplicationPage = () => {
                         <td className="px-4 py-2 text-sm text-muted-foreground">{doc.name}</td>
                         <td className="px-4 py-2 text-right">
                           <div className="flex gap-1 justify-end">
-                            <a href={doc.url} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground"><Eye className="w-4 h-4" /></a>
+                            <button type="button" onClick={() => setPreviewDoc(doc)} className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground" title={bn ? 'প্রিভিউ দেখুন' : 'Preview'}><Eye className="w-4 h-4" /></button>
                             <button type="button" onClick={() => setDocuments(prev => prev.filter(d => d.id !== doc.id))} className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-destructive"><Trash2 className="w-4 h-4" /></button>
                           </div>
                         </td>

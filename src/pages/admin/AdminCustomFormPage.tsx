@@ -17,6 +17,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useState } from 'react';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
+import FileUploadField from '@/components/FileUploadField';
+import DocumentPreviewModal from '@/components/DocumentPreviewModal';
 import AddressFields, { type AddressData } from '@/components/AddressFields';
 import { FileText, Send, List, Trash2, Eye } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -38,6 +40,7 @@ const AdminCustomFormPage = () => {
   const [presentAddr, setPresentAddr] = useState<AddressData>({ division: '', district: '', upazila: '', union: '', postOffice: '', village: '' });
   const [sameAsPermanent, setSameAsPermanent] = useState(false);
   const [viewSubmission, setViewSubmission] = useState<any>(null);
+  const [previewDocUrl, setPreviewDocUrl] = useState<{ url: string; name?: string } | null>(null);
   const [activeTab, setActiveTab] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -190,7 +193,15 @@ const AdminCustomFormPage = () => {
           <FileText className="h-12 w-12 mx-auto mb-3 opacity-30" />
           <p>{bn ? 'ফর্ম পাওয়া যায়নি' : 'Form not found'}</p>
         </CardContent></Card>
-      </AdminLayout>
+        {/* Universal Document Preview Modal */}
+      <DocumentPreviewModal
+        open={!!previewDocUrl}
+        onOpenChange={() => setPreviewDocUrl(null)}
+        fileUrl={previewDocUrl?.url}
+        fileName={previewDocUrl?.name}
+        title={previewDocUrl?.name || (bn ? 'ডকুমেন্ট প্রিভিউ' : 'Document Preview')}
+      />
+    </AdminLayout>
     );
   }
 
@@ -235,7 +246,13 @@ const AdminCustomFormPage = () => {
                       {field.field_type === 'number' && <Input type="number" placeholder={field.placeholder || ''} value={value || ''} onChange={e => updateValue(field.id, e.target.value)} />}
                       {field.field_type === 'textarea' && <Textarea placeholder={field.placeholder || ''} rows={3} value={value} onChange={e => updateValue(field.id, e.target.value)} />}
                       {field.field_type === 'date' && <DatePicker bengali={bn} value={value} onChange={v => updateValue(field.id, v)} />}
-                      {field.field_type === 'file' && <Input type="file" onChange={e => updateValue(field.id, e.target.files?.[0]?.name || '')} />}
+                      {field.field_type === 'file' && (
+                        <FileUploadField
+                          value={value}
+                          onChange={url => updateValue(field.id, url || '')}
+                          folder="custom-forms"
+                        />
+                      )}
                       {field.field_type === 'switch' && <Switch checked={!!value} onCheckedChange={c => updateValue(field.id, c)} />}
                       {field.field_type === 'post_office' && <Input placeholder={bn ? 'পোস্ট অফিস লিখুন' : 'Enter post office'} value={value} onChange={e => updateValue(field.id, e.target.value)} />}
                       {field.field_type === 'village' && <Input placeholder={bn ? 'গ্রাম লিখুন' : 'Enter village'} value={value} onChange={e => updateValue(field.id, e.target.value)} />}
@@ -443,11 +460,29 @@ const AdminCustomFormPage = () => {
               {Object.entries(viewSubmission.data || {}).map(([key, val]) => {
                 const field = fields.find(f => f.id === key);
                 const label = field ? (bn ? field.label_bn : field.label) : key;
-                const displayVal = typeof val === 'object' ? JSON.stringify(val, null, 2) : String(val);
+                const strVal = String(val || '');
+                const isFileField = field?.field_type === 'file' || (typeof val === 'string' && (strVal.startsWith('http://') || strVal.startsWith('https://') || strVal.startsWith('photos/') || strVal.startsWith('receipts/') || /\.(pdf|png|jpe?g|webp)($|[?#])/i.test(strVal)));
+                const displayVal = typeof val === 'object' ? JSON.stringify(val, null, 2) : strVal;
                 return (
                   <div key={key} className="border-b border-border pb-2">
                     <p className="text-xs font-medium text-muted-foreground">{label}</p>
-                    <p className="text-sm text-foreground whitespace-pre-wrap">{displayVal}</p>
+                    {isFileField && strVal ? (
+                      <div className="flex items-center justify-between gap-2 mt-1 p-2 rounded-lg bg-muted/40 border border-border/40">
+                        <span className="text-xs text-foreground font-mono truncate max-w-[220px]">{displayVal}</span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs gap-1 shrink-0"
+                          onClick={() => setPreviewDocUrl({ url: strVal, name: label })}
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          {bn ? 'ডকুমেন্ট দেখুন' : 'View Document'}
+                        </Button>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-foreground whitespace-pre-wrap">{displayVal}</p>
+                    )}
                   </div>
                 );
               })}

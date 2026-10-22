@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import PhotoUpload from '@/components/PhotoUpload';
+import FileUploadField from '@/components/FileUploadField';
 import AddressFields, { type AddressData } from '@/components/AddressFields';
 import PhoneInput from '@/components/PhoneInput';
 import CardVerifySection from '@/components/CardVerifySection';
@@ -1343,6 +1344,15 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
               </label>
             );
           })}</div>
+        )}
+        {config.field_type === 'file' && (
+          <div className="mt-1">
+            <FileUploadField
+              value={val}
+              onChange={url => update(url || '')}
+              folder="admission-docs"
+            />
+          </div>
         )}
       </div>
     );

@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import ProfileInfoItem from './ProfileInfoItem';
 import ProfileSectionCard from './ProfileSectionCard';
+import DocumentPreviewModal from '@/components/DocumentPreviewModal';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -61,6 +62,7 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
   const formatAddr = (a: any) => [a?.village, a?.postOffice, a?.union, a?.upazila, a?.district, a?.division].filter(Boolean).join(', ');
 
   const [activeTab, setActiveTab] = useState<'profile' | 'employment' | 'others'>('profile');
+  const [previewDoc, setPreviewDoc] = useState<{ url: string; name?: string } | null>(null);
 
   const tabs = [
     { id: 'profile' as const, label: bn ? 'প্রোফাইল' : 'Profile', icon: User },
@@ -243,9 +245,13 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
                     </div>
                     <span className="flex-1 text-sm font-bold truncate">{doc.name || doc.type || `Document ${i + 1}`}</span>
                     {doc.url && (
-                      <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-emerald-600 hover:text-emerald-700 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/15 hover:bg-emerald-500/15 transition-colors shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setPreviewDoc({ url: doc.url, name: doc.name || doc.type })}
+                        className="text-xs font-bold text-emerald-600 hover:text-emerald-700 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/15 hover:bg-emerald-500/15 transition-colors shrink-0"
+                      >
                         {bn ? 'দেখুন' : 'View'}
-                      </a>
+                      </button>
                     )}
                   </div>
                 ))}
@@ -260,6 +266,13 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
           )}
         </div>
       )}
+      <DocumentPreviewModal
+        open={!!previewDoc}
+        onOpenChange={() => setPreviewDoc(null)}
+        fileUrl={previewDoc?.url}
+        fileName={previewDoc?.name}
+        title={previewDoc?.name || (bn ? 'ডকুমেন্ট প্রিভিউ' : 'Document Preview')}
+      />
     </div>
   );
 };

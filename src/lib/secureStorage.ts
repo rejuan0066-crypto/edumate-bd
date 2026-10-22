@@ -130,10 +130,71 @@ export async function getSecureUrl(
     .createSignedUrl(ref.path, expiresIn);
 
   if (error || !data?.signedUrl) {
-    return null;
+    // Fallback to public URL in case bucket is accessible publicly or signed URL failed
+    const pub = supabase.storage.from(ref.bucket).getPublicUrl(ref.path);
+    return pub.data?.publicUrl || null;
   }
   cache.set(key, { url: data.signedUrl, expiresAt: now + expiresIn * 1000 });
   return data.signedUrl;
+}
+
+/**
+ * Resolves any file path / URL to an accessible, absolute URL.
+ * Handles:
+ * - Empty/null -> ""
+ * - data: and blob: -> as-is
+ * - Cloudinary URLs -> as-is
+ * - External http(s) -> if not private supabase storage, as-is
+ * - Private supabase buckets (receipts, committee-attachments, etc.) -> signed URL (with fallback to public)
+ * - Public supabase buckets (photos, website-assets, etc.) -> public URL
+ * - Bare paths without prefix (e.g. "my-receipt.png") -> checks receipts or photos
+ */
+export async function resolveFileUrl(
+  input: string | null | undefined,
+  expiresIn = 3600,
+): Promise<string> {
+  if (!input) return "";
+  const s = String(input).trim();
+  if (!s) return "";
+
+  if (s.startsWith("data:") || s.startsWith("blob:") || s.includes("res.cloudinary.com")) {
+    return s;
+  }
+
+  // Check if it's a private bucket reference or needs signing
+  const ref = parseStorageRef(s);
+  if (ref) {
+    const signed = await getSecureUrl(s, expiresIn);
+    if (signed) return signed;
+    const pub = supabase.storage.from(ref.bucket).getPublicUrl(ref.path);
+    return pub.data?.publicUrl || s;
+  }
+
+  // Check public bucket reference
+  const slash = s.indexOf("/");
+  if (slash > 0 && !s.startsWith("http://") && !s.startsWith("https://")) {
+    const bucket = s.slice(0, slash);
+    const path = s.slice(slash + 1);
+    const pub = supabase.storage.from(bucket).getPublicUrl(path);
+    if (pub.data?.publicUrl) return pub.data.publicUrl;
+  }
+
+  if (s.startsWith("http://") || s.startsWith("https://")) {
+    return s;
+  }
+
+  // Bare relative path without bucket, fallback to receipts or photos
+  const receiptPub = supabase.storage.from("receipts").getPublicUrl(s.replace(/^receipts\//, ''));
+  return receiptPub.data?.publicUrl || s;
+}
+
+/**
+ * Determines whether a given URL or filename is a PDF document.
+ * Safely handles query strings and fragment identifiers.
+ */
+export function isPdfUrl(urlOrName: string | null | undefined): boolean {
+  if (!urlOrName) return false;
+  return /\.pdf($|[?#])/i.test(urlOrName);
 }
 
 export function clearSecureUrlCache() {

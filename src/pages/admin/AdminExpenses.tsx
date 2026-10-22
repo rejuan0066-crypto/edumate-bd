@@ -24,6 +24,7 @@ import ExpenseVoucherPrint from '@/components/expenses/ExpenseVoucherPrint';
 import ExpenseHierarchyReport from '@/components/expenses/ExpenseHierarchyReport';
 import LedgerReport from '@/components/expenses/LedgerReport';
 import AccountsAuditView from '@/components/admin/AccountsAuditView';
+import DocumentPreviewModal from '@/components/DocumentPreviewModal';
 import { useSearchParams } from 'react-router-dom';
 import { useOptionalAuth } from '@/hooks/useAuth';
 import { logAccountsAudit } from '@/lib/accountsAudit';
@@ -5141,9 +5142,14 @@ const AdminExpenses = () => {
                 <p className="text-xs text-muted-foreground mt-1 truncate">{receiptFile.name}</p>
               )}
               {expenseForm.receipt_url && !receiptFile && (
-                <a href={expenseForm.receipt_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline mt-1 inline-block">
-                  {bn ? 'বর্তমান রসিদ দেখুন' : 'View current receipt'}
-                </a>
+                <button
+                  type="button"
+                  onClick={() => setReceiptPreview(expenseForm.receipt_url)}
+                  className="text-xs text-primary underline mt-1 inline-flex items-center gap-1 font-medium hover:text-primary/80"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  {bn ? 'বর্তমান রসিদ/মেমো প্রিভিউ দেখুন' : 'View current receipt/memo'}
+                </button>
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -5475,28 +5481,13 @@ const AdminExpenses = () => {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!receiptPreview} onOpenChange={() => setReceiptPreview(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle>{bn ? 'রসিদ প্রিভিউ' : 'Receipt Preview'}</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col items-center gap-3 overflow-auto max-h-[70vh]">
-            {receiptPreview?.endsWith('.pdf') ? (
-              <iframe src={receiptPreview} className="w-full h-[60vh] border rounded" />
-            ) : (
-              <img src={receiptPreview || ''} alt="Receipt" className="max-w-full max-h-[60vh] object-contain rounded border" />
-            )}
-            <div className="flex gap-2">
-              <a href={receiptPreview || ''} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" size="sm"><Download className="w-4 h-4 mr-1" />{bn ? 'ডাউনলোড' : 'Download'}</Button>
-              </a>
-              <Button variant="outline" size="sm" onClick={() => { if (receiptPreview) window.print(); }}>
-                <Printer className="w-4 h-4 mr-1" />{bn ? 'প্রিন্ট' : 'Print'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Universal Receipt / Memo / Document Preview Modal */}
+      <DocumentPreviewModal
+        open={!!receiptPreview}
+        onOpenChange={() => setReceiptPreview(null)}
+        fileUrl={receiptPreview}
+        title={bn ? 'ভাউচার / মেমো / রসিদ প্রিভিউ' : 'Voucher / Memo / Receipt Preview'}
+      />
 
       {/* Project Entries Edit Dialog */}
       <Dialog open={!!editInstitutionEntriesId} onOpenChange={(open) => { if (!open) { setEditInstitutionEntriesId(null); setEntriesFilterCategoryId('all'); setEntriesSearchText(''); } }}>
