@@ -96,7 +96,7 @@ const ClassResultStatusList = ({
         <div className="px-5 py-2.5 border-b border-border bg-muted/10 flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">
-              💡 {bn ? 'প্রতিটি জামাতের ফলাফল স্বাধীনভাবে আলাদা আলাদা অনুমোদন ও প্রকাশ (Publish) করা যায়।' : 'Each class result can be approved and published independently.'}
+              💡 {bn ? 'নম্বর এন্ট্রি শেষে ফলাফল ডাটাবেজে সংরক্ষিত থাকে। পাবলিক ওয়েবসাইটে প্রকাশের জন্য অ্যাডমিনের "পাবলিশ অনুমোদন" প্রয়োজন।' : 'Entered marks are saved in the database. Admin "Publish Approval" is required before publishing to public site.'}
             </span>
           </div>
           {isAdmin && onApprovePublish && (
@@ -106,10 +106,10 @@ const ClassResultStatusList = ({
                 variant="outline"
                 className="h-7 text-xs rounded-lg text-emerald-700 hover:bg-emerald-50 border-emerald-300 gap-1"
                 onClick={onApprovePublish}
-                title={bn ? 'সবগুলো ক্লাস একসাথে অনুমোদন দিন' : 'Approve all classes together'}
+                title={bn ? 'সবগুলো ক্লাসের পাবলিশ অনুমোদন একসাথে দিন' : 'Approve publishing for all classes'}
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
-                {bn ? 'সবগুলো একসাথে অনুমোদন দিন' : 'Approve All'}
+                {bn ? 'সকল ক্লাসের পাবলিশ অনুমোদন' : 'Approve All Publishing'}
               </Button>
             </div>
           )}
@@ -136,7 +136,9 @@ const ClassResultStatusList = ({
             const hasResults = resultStatusMap[cls.id] || false;
             const classInfo = publishStatusMap[cls.id];
             const isPublished = typeof classInfo === 'boolean' ? classInfo : (classInfo?.is_published || false);
-            const classApproval = typeof classInfo === 'object' && classInfo?.approval_status ? classInfo.approval_status : publishApprovalStatus;
+            const rawApproval = typeof classInfo === 'object' && classInfo?.approval_status ? classInfo.approval_status : publishApprovalStatus;
+            // When already published, the class is treated as approved
+            const classApproval: 'pending' | 'approved' | 'rejected' = isPublished ? 'approved' : (rawApproval || 'pending');
             const isExporting = exportingClassId === cls.id;
 
             return (
@@ -151,57 +153,57 @@ const ClassResultStatusList = ({
                     {bn ? cls.name_bn : cls.name}
                   </span>
 
+                  {/* 1. Results Entry / Saved Status Badge */}
                   {hasResults ? (
                     <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 gap-1 text-[11px] font-semibold">
                       <CheckCircle className="w-3 h-3" />
-                      {bn ? 'সংরক্ষিত' : 'Saved'}
+                      {bn ? 'ফলাফল সংরক্ষিত' : 'Results Saved'}
                     </Badge>
                   ) : (
                     <Badge variant="outline" className="text-amber-700 dark:text-amber-400 border-amber-300 bg-amber-50/50 text-[11px] font-semibold gap-1">
                       <Clock className="w-3 h-3" />
-                      {bn ? 'অপেক্ষমান (এন্ট্রি বাকি)' : 'Pending'}
+                      {bn ? 'অপেক্ষমান (এন্ট্রি বাকি)' : 'Pending (Marks Entry Needed)'}
                     </Badge>
                   )}
 
+                  {/* 2. Public Publishing & Approval Status Badge */}
                   {hasResults && (
-                    classApproval === 'approved' ? (
+                    isPublished ? (
+                      <Badge className="bg-sky-50 text-sky-700 border-sky-300 gap-1 text-[11px] font-semibold">
+                        <Globe className="w-3 h-3" />
+                        {bn ? 'পাবলিক সাইটে প্রকাশিত' : 'Published on Public Site'}
+                      </Badge>
+                    ) : classApproval === 'approved' ? (
                       <Badge className="bg-emerald-50 text-emerald-700 border-emerald-300 gap-1 text-[11px] font-semibold">
                         <ShieldCheck className="w-3 h-3" />
-                        {bn ? 'অনুমোদিত' : 'Approved'}
+                        {bn ? 'পাবলিশ অনুমোদিত (প্রকাশের জন্য প্রস্তুত)' : 'Publish Approved (Ready to Publish)'}
                       </Badge>
                     ) : classApproval === 'rejected' ? (
                       <Badge variant="destructive" className="gap-1 text-[11px] font-semibold">
                         <ShieldX className="w-3 h-3" />
-                        {bn ? 'প্রত্যাখ্যাত' : 'Rejected'}
+                        {bn ? 'পাবলিশ প্রত্যাখ্যাত' : 'Publish Rejected'}
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="border-amber-400 text-amber-700 bg-amber-50 gap-1 text-[11px] font-semibold">
+                      <Badge variant="outline" className="border-amber-400 text-amber-800 bg-amber-50 gap-1 text-[11px] font-semibold">
                         <Clock className="w-3 h-3" />
-                        {bn ? 'অনুমোদনের অপেক্ষায়' : 'Needs Approval'}
+                        {bn ? 'পাবলিশ অনুমোদনের অপেক্ষায়' : 'Awaiting Publish Approval'}
                       </Badge>
                     )
-                  )}
-
-                  {hasResults && isPublished && (
-                    <Badge className="bg-sky-50 text-sky-700 border-sky-300 gap-1 text-[11px] font-semibold">
-                      <Globe className="w-3 h-3" />
-                      {bn ? 'পাবলিশড' : 'Published'}
-                    </Badge>
                   )}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-1.5 justify-end">
-                  {/* Per-class Admin Approval Buttons */}
-                  {hasResults && isAdmin && classApproval !== 'approved' && (
+                  {/* Per-class Admin Approval Buttons: Only when results exist, not yet published, and not yet approved */}
+                  {hasResults && isAdmin && !isPublished && classApproval !== 'approved' && (
                     <div className="flex items-center gap-1 mr-1">
                       <Button
                         size="sm"
                         className="h-7 text-xs rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white gap-1 px-2.5 shadow-sm"
                         onClick={() => onApprovePublishClass ? onApprovePublishClass(cls.id) : onApprovePublish?.()}
-                        title={bn ? 'এই ক্লাসের ফলাফল অনুমোদন দিন' : 'Approve this class'}
+                        title={bn ? 'এই ক্লাসের ফলাফল পাবলিক সাইটে পাবলিশের অনুমোদন দিন' : 'Approve publishing this class'}
                       >
                         <ShieldCheck className="w-3 h-3" />
-                        {bn ? 'অনুমোদন দিন' : 'Approve'}
+                        {bn ? 'পাবলিশ অনুমোদন' : 'Approve Publish'}
                       </Button>
                       {onRejectPublishClass && (
                         <Button
@@ -209,7 +211,7 @@ const ClassResultStatusList = ({
                           variant="outline"
                           className="h-7 px-2 text-xs rounded-lg text-rose-700 hover:bg-rose-50 border-rose-200"
                           onClick={() => onRejectPublishClass(cls.id)}
-                          title={bn ? 'প্রত্যাখ্যান' : 'Reject'}
+                          title={bn ? 'পাবলিশ প্রত্যাখ্যান' : 'Reject Publish'}
                         >
                           <ShieldX className="w-3 h-3" />
                         </Button>
@@ -221,18 +223,18 @@ const ClassResultStatusList = ({
                   {hasResults && onPublishToggle && (
                     <Button
                       disabled={!isPublished && classApproval !== 'approved'}
-                      title={!isPublished && classApproval !== 'approved' ? (bn ? 'অ্যাডমিন অনুমোদনের পর পাবলিশ করা যাবে' : 'Needs admin approval') : undefined}
+                      title={!isPublished && classApproval !== 'approved' ? (bn ? 'পাবলিক সাইটে প্রকাশের জন্য অ্যাডমিনের পাবলিশ অনুমোদন প্রয়োজন' : 'Needs admin publish approval') : undefined}
                       variant={isPublished ? 'outline' : 'default'}
                       size="sm"
                       className={`gap-1.5 h-8 text-xs font-semibold rounded-lg ${
                         isPublished
                           ? 'text-amber-700 border-amber-300 bg-amber-50/50 hover:bg-amber-100'
-                          : 'bg-sky-600 hover:bg-sky-700 text-white'
+                          : 'bg-sky-600 hover:bg-sky-700 text-white disabled:opacity-50'
                       }`}
                       onClick={() => onPublishToggle(cls.id, !isPublished)}
                     >
                       {isPublished ? <GlobeLock className="w-3.5 h-3.5" /> : <Globe className="w-3.5 h-3.5" />}
-                      {isPublished ? (bn ? 'আনপাবলিশ' : 'Unpublish') : (bn ? 'পাবলিশ' : 'Publish')}
+                      {isPublished ? (bn ? 'আনপাবলিশ' : 'Unpublish') : (bn ? 'পাবলিশ করুন' : 'Publish')}
                     </Button>
                   )}
 

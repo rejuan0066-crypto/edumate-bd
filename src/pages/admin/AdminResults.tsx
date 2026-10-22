@@ -235,11 +235,15 @@ const AdminResults = () => {
       const map: Record<string, { is_published: boolean; approval_status: 'pending' | 'approved' | 'rejected'; rejection_reason?: string }> = {};
       examClasses.forEach((c: any) => {
         if (perClassData[c.id]) {
-          map[c.id] = perClassData[c.id];
+          const item = { ...perClassData[c.id] };
+          if (item.is_published) {
+            item.approval_status = 'approved';
+          }
+          map[c.id] = item;
         } else {
           map[c.id] = {
             is_published: defaultPublished,
-            approval_status: defaultApproval === 'approved' ? 'approved' : 'pending',
+            approval_status: defaultPublished ? 'approved' : (defaultApproval === 'approved' ? 'approved' : 'pending'),
           };
         }
       });
