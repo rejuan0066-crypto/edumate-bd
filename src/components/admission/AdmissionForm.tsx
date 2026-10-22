@@ -1411,13 +1411,85 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
             }}
           />
 
-          {/* Photo + type selectors */}
-          <div className="flex flex-col sm:flex-row gap-6 p-4 rounded-2xl bg-muted/20 border border-border/70 shadow-2xs">
-            {photoField && renderSystemField('photo_url', photoField)}
-            <div className="flex-1 space-y-4">
-              {typeField && renderSystemField('student_type', typeField)}
-              {resField && renderSystemField('residence_type', resField)}
-            </div>
+          {/* Top Row: Student Type & Residence Type Segmented Cards (Mockup Design) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {typeField && (
+              <div className="bg-card border border-border/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <User className="w-4 h-4 text-primary" />
+                    {bn ? 'ছাত্রের ধরণ (Student Type)' : 'Student Type'}
+                  </span>
+                  <span className="text-[11px] text-primary font-semibold bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md">
+                    {bn ? 'আবশ্যক' : 'Required'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 bg-muted/60 p-1.5 rounded-xl border border-border/70">
+                  <button
+                    type="button"
+                    onClick={() => setForm(prev => ({ ...prev, student_type: 'new' }))}
+                    className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                      form.student_type === 'new'
+                        ? 'bg-card text-primary shadow-xs border border-border/80 font-bold'
+                        : 'text-muted-foreground hover:text-foreground font-semibold'
+                    }`}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    {bn ? 'নতুন ছাত্র' : 'New Student'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm(prev => ({ ...prev, student_type: 'old' }))}
+                    className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                      form.student_type === 'old'
+                        ? 'bg-card text-primary shadow-xs border border-border/80 font-bold'
+                        : 'text-muted-foreground hover:text-foreground font-semibold'
+                    }`}
+                  >
+                    <Search className="w-3.5 h-3.5" />
+                    {bn ? 'পুরাতন ছাত্র' : 'Old Student'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {resField && (
+              <div className="bg-card border border-border/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <MapPin className="w-4 h-4 text-primary" />
+                    {bn ? 'আবাসন ধরণ (Residence)' : 'Residence Type'}
+                  </span>
+                  <span className="text-[11px] text-primary font-semibold bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md">
+                    {bn ? 'আবশ্যক' : 'Required'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 bg-muted/60 p-1.5 rounded-xl border border-border/70">
+                  <button
+                    type="button"
+                    onClick={() => setForm(prev => ({ ...prev, residence_type: 'non-resident' }))}
+                    className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                      form.residence_type === 'non-resident' || !form.residence_type
+                        ? 'bg-card text-primary shadow-xs border border-border/80 font-bold'
+                        : 'text-muted-foreground hover:text-foreground font-semibold'
+                    }`}
+                  >
+                    {bn ? 'অনাবাসিক (Day)' : 'Non-Resident'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm(prev => ({ ...prev, residence_type: 'resident' }))}
+                    className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                      form.residence_type === 'resident'
+                        ? 'bg-card text-primary shadow-xs border border-border/80 font-bold'
+                        : 'text-muted-foreground hover:text-foreground font-semibold'
+                    }`}
+                  >
+                    {bn ? 'আবাসিক (Hostel)' : 'Resident'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Old student search */}
@@ -1479,23 +1551,28 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
             </div>
           </div>
 
-          {/* Group 1: Academic Information */}
-          <div className="rounded-2xl border border-primary/20 bg-card p-4 sm:p-5 shadow-xs space-y-4">
-            <div className="flex items-center gap-2.5 pb-3 border-b border-border/60">
-              <div className="p-2 rounded-xl bg-primary/10 text-primary">
-                <GraduationCap className="w-5 h-5" />
+          {/* Group 1: Academic Information (3-Column Grid matching mockup) */}
+          <div className="rounded-2xl border border-primary/25 bg-card p-4 sm:p-5 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-border/60">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm sm:text-base font-bold text-foreground">
+                    {bn ? 'একাডেমিক তথ্য (Academic Information)' : 'Academic Information'}
+                  </h4>
+                  <p className="text-xs text-muted-foreground">
+                    {bn ? 'সেশন, বিভাগ, শ্রেণী, রোল ও ভর্তির তারিখ' : 'Session, division, class, roll and admission date'}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h4 className="text-sm sm:text-base font-bold text-foreground">
-                  {bn ? 'একাডেমিক তথ্য' : 'Academic Information'}
-                </h4>
-                <p className="text-xs text-muted-foreground">
-                  {bn ? 'সেশন, বিভাগ, শ্রেণী ও রোল সংক্রান্ত তথ্য' : 'Session, division, class and roll information'}
-                </p>
-              </div>
+              <span className="text-xs bg-muted px-2.5 py-1 rounded-full text-muted-foreground font-medium hidden sm:inline-block">
+                {bn ? 'ধারাবাহিক বিন্যাস' : 'Sequential Order'}
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {academicFields.map(f => {
                 const key = f.default_value;
                 if (!key) return <div key={f.id} data-field={f.id}>{renderCustomField(f)}</div>;
@@ -1505,21 +1582,34 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
             </div>
           </div>
 
-          {/* Group 2: Personal Information */}
+          {/* Group 2: Personal Information (With Avatar Photo Box from Mockup) */}
           <div className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs space-y-4">
             <div className="flex items-center gap-2.5 pb-3 border-b border-border/60">
-              <div className="p-2 rounded-xl bg-secondary text-foreground">
+              <div className="p-2 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400">
                 <User className="w-5 h-5" />
               </div>
               <div>
                 <h4 className="text-sm sm:text-base font-bold text-foreground">
-                  {bn ? 'ব্যক্তিগত বিবরণ' : 'Personal Details'}
+                  {bn ? 'ব্যক্তিগত বিবরণ (Personal Details)' : 'Personal Details'}
                 </h4>
                 <p className="text-xs text-muted-foreground">
-                  {bn ? 'শিক্ষার্থীর নাম, লিঙ্গ, জন্ম তারিখ ও অন্যান্য তথ্য' : 'Student name, gender, birth date and other details'}
+                  {bn ? 'শিক্ষার্থীর ছবি, নাম, লিঙ্গ, জন্ম তারিখ ও অন্যান্য তথ্য' : 'Student photo, name, gender, birth date and details'}
                 </p>
               </div>
             </div>
+
+            {/* Photo Avatar Uploader */}
+            {photoField && (
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-4 rounded-xl bg-muted/30 border border-border/60">
+                <div className="shrink-0">
+                  <PhotoUpload value={form.photo_url || null} onChange={(url) => setForm(prev => ({ ...prev, photo_url: url || '' }))} folder="students" />
+                </div>
+                <div className="space-y-1 text-center sm:text-left self-center">
+                  <h5 className="text-xs font-bold text-foreground">{bn ? 'শিক্ষার্থীর ছবি' : 'Student Photo'}</h5>
+                  <p className="text-[11px] text-muted-foreground">{bn ? 'পরিচ্ছন্ন পাসপোর্ট সাইজ ছবি আপলোড করুন' : 'Upload a clear passport size photo'}</p>
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {personalFields.map(f => {
@@ -1697,7 +1787,15 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     // Generic section (address etc.)
     return (
       <div key={sectionKey} className="border rounded-lg p-4 space-y-4 shadow-md">
-        <h3 className="text-md font-display font-semibold text-foreground border-b pb-2 text-center text-2xl bg-secondary">{title}</h3>
+        <div className="flex items-center gap-3 pb-3 border-b border-border/60">
+          <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="text-base font-bold text-foreground">{title}</h4>
+            <p className="text-xs text-muted-foreground">{bn ? 'বিবরণ সঠিকভাবে পূরণ করুন' : 'Fill in the information accurately'}</p>
+          </div>
+        </div>
         {sectionFields.map(f => {
           const key = f.default_value;
           if (!key) return <div key={f.id} data-field={f.id}>{renderCustomField(f)}</div>;
@@ -1763,9 +1861,17 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
           <div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
         ) : (
           <div className="space-y-6 py-2">
-            {/* Step Wizard Header */}
-            <div className="w-full bg-muted/30 border border-border/70 rounded-2xl p-3 sm:p-4 shadow-sm backdrop-blur-sm">
-              <div className="flex items-center justify-between overflow-x-auto pb-1 gap-2 sm:gap-3 scrollbar-none">
+            {/* Step Wizard Header (Direct Mockup Design) */}
+            <div className="w-full bg-card border border-border/80 rounded-2xl p-4 sm:p-5 shadow-xs">
+              <div className="relative flex items-center justify-between max-w-2xl mx-auto">
+                {/* Background Progress Line */}
+                <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 h-1 bg-muted rounded-full -z-0">
+                  <div
+                    className="h-full bg-primary rounded-full transition-all duration-300"
+                    style={{ width: `${(safeCurrentStep / Math.max(1, allStepKeys.length - 1)) * 100}%` }}
+                  />
+                </div>
+
                 {allStepKeys.map((stepKey, idx) => {
                   const isCurrent = idx === safeCurrentStep;
                   const isCompleted = idx < safeCurrentStep;
@@ -1774,27 +1880,18 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                       key={stepKey}
                       type="button"
                       onClick={() => handleStepClick(idx)}
-                      className={`flex flex-col items-center flex-1 min-w-[72px] sm:min-w-[95px] relative focus:outline-none transition-all group ${
-                        idx < safeCurrentStep ? 'cursor-pointer' : isCurrent ? 'cursor-default' : 'cursor-pointer hover:opacity-100 opacity-75'
+                      className={`relative z-10 flex flex-col items-center group focus:outline-none transition-all ${
+                        idx < safeCurrentStep ? 'cursor-pointer' : isCurrent ? 'cursor-default' : 'cursor-pointer hover:opacity-100 opacity-80'
                       }`}
                     >
-                      {/* Connecting Line */}
-                      {idx > 0 && (
-                        <div
-                          className={`hidden sm:block absolute top-4 -left-1/2 w-full h-[2px] -z-0 transition-all duration-300 ${
-                            idx <= safeCurrentStep ? 'bg-gradient-to-r from-emerald-500 to-primary' : 'bg-muted-foreground/20'
-                          }`}
-                        />
-                      )}
-
                       {/* Step Circle */}
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold z-10 transition-all duration-200 shadow-sm ${
+                        className={`w-9 h-9 rounded-full font-bold text-xs sm:text-sm flex items-center justify-center transition-all duration-200 ${
                           isCompleted
-                            ? 'bg-emerald-600 text-white ring-2 ring-emerald-600/30'
+                            ? 'bg-primary text-primary-foreground ring-2 ring-primary/25 shadow-sm'
                             : isCurrent
-                            ? 'bg-primary text-primary-foreground ring-4 ring-primary/25 scale-110 shadow-md shadow-primary/20'
-                            : 'bg-muted text-muted-foreground border border-border/80 group-hover:border-primary/50'
+                            ? 'bg-primary text-primary-foreground ring-4 ring-primary/20 shadow-md scale-105'
+                            : 'bg-card text-muted-foreground border-2 border-border/80 hover:border-primary/50'
                         }`}
                       >
                         {isCompleted ? <CheckCircle className="w-4 h-4" /> : idx + 1}
@@ -1802,8 +1899,8 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
 
                       {/* Step Title */}
                       <span
-                        className={`mt-1.5 text-[11px] sm:text-xs text-center font-medium line-clamp-1 max-w-[85px] sm:max-w-none transition-colors ${
-                          isCurrent ? 'text-primary font-bold' : isCompleted ? 'text-foreground font-semibold' : 'text-muted-foreground'
+                        className={`mt-1.5 text-xs text-center font-semibold line-clamp-1 max-w-[90px] sm:max-w-none transition-colors ${
+                          isCurrent ? 'text-primary font-bold' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
                         }`}
                       >
                         {getStepTitle(stepKey)}
