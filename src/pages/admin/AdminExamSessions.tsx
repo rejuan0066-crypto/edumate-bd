@@ -46,6 +46,19 @@ const AdminExamSessions = () => {
   const [showStudentSelection, setShowStudentSelection] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
 
+  // View class details modal state
+  const [viewingClassDetails, setViewingClassDetails] = useState<{
+    sessionId: string;
+    sessionName: string;
+    academicSessionId: string;
+    classId: string;
+    className: string;
+    divisionName?: string;
+    studentCount?: number;
+  } | null>(null);
+  const [classDetailsTab, setClassDetailsTab] = useState<'subjects' | 'students'>('subjects');
+  const [detailsSearchQuery, setDetailsSearchQuery] = useState('');
+
   // Exam type manager state
   const [showTypeManager, setShowTypeManager] = useState(false);
   const [newTypeName, setNewTypeName] = useState('');
@@ -297,6 +310,110 @@ const AdminExamSessions = () => {
       return counts;
     },
     staleTime: 30 * 1000,
+  });
+
+  // Fetch details (subjects & students) for selected class in an exam session
+  const { data: classDetailsSubjects = [], isLoading: isLoadingDetailsSubjects } = useQuery({
+    queryKey: ['class_details_subjects', viewingClassDetails?.sessionId, viewingClassDetails?.classId],
+    queryFn: async () => {
+      if (!viewingClassDetails) return [];
+      
+      // 1. Try to find subjects mapped in exam_session_subjects for this session
+      const { data: sessionSubjs, error: sError } = await supabase
+        .from('exam_session_subjects')
+        .select('subject_id, class_id, subjects(*)')
+        .eq('exam_session_id', viewingClassDetails.sessionId);
+
+      if (!sError && sessionSubjs && sessionSubjs.length > 0) {
+        const currentClass = classes.find((c: any) => c.id === viewingClassDetails.classId);
+        
+        // Check if there are subjects specifically mapped to this class
+        const classSpecific = sessionSubjs.filter((item: any) => item.class_id === viewingClassDetails.classId);
+        if (classSpecific.length > 0) {
+          return classSpecific.map((item: any) => item.subjects).filter(Boolean);
+        }
+
+        // Filter by subject's own class_id or division_id
+        const matched = sessionSubjs
+          .map((item: any) => item.subjects)
+          .filter(Boolean)
+          .filter((s: any) => {
+            if (s.class_id) return s.class_id === viewingClassDetails.classId;
+            if (s.division_id && currentClass?.division_id) return s.division_id === currentClass.division_id;
+            return !s.class_id && !s.division_id;
+          });
+
+        if (matched.length > 0) return matched;
+      }
+
+      // 2. Fallback: all active subjects for this class or division
+      const currentClass = classes.find((c: any) => c.id === viewingClassDetails.classId);
+      let query = supabase.from('subjects').select('*').eq('is_active', true);
+      if (currentClass?.division_id) {
+        query = query.or(`class_id.eq.${viewingClassDetails.classId},division_id.eq.${currentClass.division_id}`);
+      } else {
+        query = query.eq('class_id', viewingClassDetails.classId);
+      }
+      const { data: fbSubjs } = await query;
+      return fbSubjs || [];
+    },
+    enabled: !!viewingClassDetails,
+  });
+
+  const { data: classDetailsStudents = [], isLoading: isLoadingDetailsStudents } = useQuery({
+    queryKey: ['class_details_students', viewingClassDetails?.sessionId, viewingClassDetails?.classId],
+    queryFn: async () => {
+      if (!viewingClassDetails) return [];
+
+      // 1. Check if exam_session_students has records
+      const { data: sessionStuds, error: sError } = await supabase
+        .from('exam_session_students')
+        .select('student_id, students(id, name_bn, name_en, roll_number, student_id, gender, photo_url, status)')
+        .eq('exam_session_id', viewingClassDetails.sessionId)
+        .eq('class_id', viewingClassDetails.classId);
+
+      if (!sError && sessionStuds && sessionStuds.length > 0) {
+        return sessionStuds
+          .map((item: any) => item.students)
+          .filter(Boolean)
+          .sort((a: any, b: any) => (Number(a.roll_number) || 0) - (Number(b.roll_number) || 0));
+      }
+
+      // 2. Fallback: Active students of this class in this academic session
+      let query = supabase
+        .from('students')
+        .select('id, name_bn, name_en, roll_number, student_id, gender, photo_url, status')
+        .eq('class_id', viewingClassDetails.classId)
+        .eq('status', 'active')
+        .is('deleted_at', null);
+
+      if (viewingClassDetails.academicSessionId) {
+        query = query.eq('session_id', viewingClassDetails.academicSessionId);
+      }
+
+      const { data: fbStuds } = await query.order('roll_number');
+      return fbStuds || [];
+    },
+    enabled: !!viewingClassDetails,
+  });
+
+  const filteredDetailsSubjects = classDetailsSubjects.filter((subj: any) => {
+    if (!detailsSearchQuery.trim()) return true;
+    const q = detailsSearchQuery.toLowerCase();
+    const nameBn = (subj.name_bn || '').toLowerCase();
+    const nameEn = (subj.name || '').toLowerCase();
+    const code = (subj.code || '').toLowerCase();
+    return nameBn.includes(q) || nameEn.includes(q) || code.includes(q);
+  });
+
+  const filteredDetailsStudents = classDetailsStudents.filter((st: any) => {
+    if (!detailsSearchQuery.trim()) return true;
+    const q = detailsSearchQuery.toLowerCase();
+    const nameBn = (st.name_bn || '').toLowerCase();
+    const nameEn = (st.name_en || '').toLowerCase();
+    const roll = String(st.roll_number || '');
+    const sid = (st.student_id || '').toLowerCase();
+    return nameBn.includes(q) || nameEn.includes(q) || roll.includes(q) || sid.includes(q);
   });
 
   const toggleClass = (classId: string) => {
@@ -1403,50 +1520,57 @@ const AdminExamSessions = () => {
                       </div>
                     </div>
 
-                    {/* Expanded: Class-wise Result List */}
+                    {/* Expanded: Class List */}
                     {isExpanded && esClasses.length > 0 && (
                       <div className="border-t border-border bg-muted/20">
                         <div className="hidden sm:block px-4 py-2 bg-muted/40 border-b border-border">
-                          <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground">
+                          <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground items-center">
                             <div className="col-span-1">#</div>
                             <div className="col-span-4">{bn ? 'শ্রেণী' : 'Class'}</div>
-                            <div className="col-span-2 text-center">{bn ? 'ছাত্র' : 'Students'}</div>
-                            <div className="col-span-2 text-center">{bn ? 'ফলাফল' : 'Result'}</div>
-                            <div className="col-span-3 text-right">{bn ? 'অ্যাকশন' : 'Action'}</div>
+                            <div className="col-span-3">{bn ? 'বিভাগ' : 'Division'}</div>
+                            <div className="col-span-2 text-center">{bn ? 'ছাত্র সংখ্যা' : 'Students'}</div>
+                            <div className="col-span-2 text-right">{bn ? 'অ্যাকশন' : 'Action'}</div>
                           </div>
                         </div>
                         {esClasses.map((ec: any, idx: number) => {
-                          const depInfo = (sessionDependencyCounts as Record<string, any>)[es.id] || { resultCount: 0, paperCount: 0 };
-                          const hasResults = depInfo.resultCount > 0;
+                          const divObj = divisions.find((d: any) => d.id === ec.classes?.division_id);
+                          const divName = divObj ? (bn ? divObj.name_bn : divObj.name) : (bn ? 'সাধারণ' : 'General');
+                          const clsName = bn ? ec.classes?.name_bn : ec.classes?.name;
 
                           return (
                             <div key={ec.id} className="border-b border-border/50 last:border-b-0 hover:bg-secondary/20 transition-colors">
                               {/* Desktop grid */}
                               <div className="hidden sm:grid grid-cols-12 gap-2 items-center px-4 py-2.5 text-sm">
                                 <div className="col-span-1 text-xs text-muted-foreground">{idx + 1}</div>
-                                <div className="col-span-4 font-medium text-foreground">{bn ? ec.classes?.name_bn : ec.classes?.name}</div>
-                                <div className="col-span-2 text-center text-muted-foreground">{ec.student_count || 0}</div>
-                                <div className="col-span-2 text-center">
-                                  {hasResults ? (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium">
-                                      <Check className="w-3 h-3" />
-                                      {bn ? 'সংরক্ষিত' : 'Saved'}
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium">
-                                      {bn ? 'অপেক্ষমান' : 'Pending'}
-                                    </span>
-                                  )}
+                                <div className="col-span-4 font-medium text-foreground">{clsName}</div>
+                                <div className="col-span-3 text-xs text-muted-foreground">
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted/80 text-[11px] font-medium text-muted-foreground">
+                                    {divName}
+                                  </span>
                                 </div>
-                                <div className="col-span-3 text-right">
+                                <div className="col-span-2 text-center">
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs bg-primary/10 text-primary font-semibold">
+                                    <Users className="w-3 h-3" />
+                                    {ec.student_count || 0}
+                                  </span>
+                                </div>
+                                <div className="col-span-2 text-right">
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className="h-7 gap-1 text-xs"
-                                    onClick={() => navigate(`/admin/results?year=${es.academic_session_id}&session=${es.id}&class=${ec.class_id || ec.classes?.id}`)}
+                                    className="h-7 gap-1.5 text-xs bg-card hover:bg-primary/10 hover:text-primary hover:border-primary/40 font-medium"
+                                    onClick={() => setViewingClassDetails({
+                                      sessionId: es.id,
+                                      sessionName: bn ? es.name_bn : es.name,
+                                      academicSessionId: es.academic_session_id,
+                                      classId: ec.class_id || ec.classes?.id,
+                                      className: clsName,
+                                      divisionName: divName,
+                                      studentCount: ec.student_count || 0,
+                                    })}
                                   >
-                                    {hasResults ? <Eye className="w-3.5 h-3.5" /> : <GraduationCap className="w-3.5 h-3.5" />}
-                                    {hasResults ? (bn ? 'দেখুন' : 'View') : (bn ? 'এন্ট্রি' : 'Entry')}
+                                    <Eye className="w-3.5 h-3.5" />
+                                    {bn ? 'দেখুন' : 'View'}
                                   </Button>
                                 </div>
                               </div>
@@ -1455,30 +1579,34 @@ const AdminExamSessions = () => {
                                 <div className="min-w-0">
                                   <div className="font-medium text-foreground truncate">
                                     <span className="text-xs text-muted-foreground mr-1">{idx + 1}.</span>
-                                    {bn ? ec.classes?.name_bn : ec.classes?.name}
+                                    {clsName}
                                   </div>
-                                  <div className="flex items-center gap-2 mt-0.5">
-                                    <span className="text-xs text-muted-foreground">{ec.student_count || 0} {bn ? 'ছাত্র' : 'students'}</span>
-                                    {hasResults ? (
-                                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium">
-                                        <Check className="w-2.5 h-2.5" />
-                                        {bn ? 'সংরক্ষিত' : 'Saved'}
-                                      </span>
-                                    ) : (
-                                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium">
-                                        {bn ? 'অপেক্ষমান' : 'Pending'}
-                                      </span>
-                                    )}
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] bg-muted text-muted-foreground">
+                                      {divName}
+                                    </span>
+                                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-primary">
+                                      <Users className="w-3 h-3" />
+                                      {ec.student_count || 0} {bn ? 'ছাত্র' : 'students'}
+                                    </span>
                                   </div>
                                 </div>
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="h-7 gap-1 text-xs shrink-0"
-                                  onClick={() => navigate(`/admin/results?year=${es.academic_session_id}&session=${es.id}&class=${ec.class_id || ec.classes?.id}`)}
+                                  className="h-7 gap-1 text-xs shrink-0 bg-card hover:bg-primary/10 hover:text-primary font-medium"
+                                  onClick={() => setViewingClassDetails({
+                                    sessionId: es.id,
+                                    sessionName: bn ? es.name_bn : es.name,
+                                    academicSessionId: es.academic_session_id,
+                                    classId: ec.class_id || ec.classes?.id,
+                                    className: clsName,
+                                    divisionName: divName,
+                                    studentCount: ec.student_count || 0,
+                                  })}
                                 >
-                                  {hasResults ? <Eye className="w-3.5 h-3.5" /> : <GraduationCap className="w-3.5 h-3.5" />}
-                                  {hasResults ? (bn ? 'দেখুন' : 'View') : (bn ? 'এন্ট্রি' : 'Entry')}
+                                  <Eye className="w-3.5 h-3.5" />
+                                  {bn ? 'দেখুন' : 'View'}
                                 </Button>
                               </div>
                             </div>
@@ -1493,6 +1621,241 @@ const AdminExamSessions = () => {
           )}
         </div>
       </div>
+
+      {/* View Class Details Dialog (Subjects & Students) */}
+      <Dialog
+        open={!!viewingClassDetails}
+        onOpenChange={(open) => {
+          if (!open) {
+            setViewingClassDetails(null);
+            setDetailsSearchQuery('');
+            setClassDetailsTab('subjects');
+          }
+        }}
+      >
+        <DialogContent className="max-w-2xl max-h-[88vh] flex flex-col p-0 overflow-hidden rounded-2xl border border-border shadow-2xl">
+          {/* Header */}
+          <div className="p-4 sm:p-5 border-b border-border bg-gradient-to-r from-primary/5 via-card to-secondary/30">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-sm">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
+                    {viewingClassDetails?.className}
+                    {viewingClassDetails?.divisionName && (
+                      <span className="text-[11px] px-2 py-0.5 rounded-md bg-muted text-muted-foreground font-normal border border-border/60">
+                        {viewingClassDetails.divisionName}
+                      </span>
+                    )}
+                  </h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {viewingClassDetails?.sessionName}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Sub-navigation Tabs */}
+            <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border/60">
+              <button
+                type="button"
+                onClick={() => { setClassDetailsTab('subjects'); setDetailsSearchQuery(''); }}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  classDetailsTab === 'subjects'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
+                }`}
+              >
+                <BookMarked className="w-3.5 h-3.5" />
+                {bn ? 'বিষয়সমূহ' : 'Subjects'}
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  classDetailsTab === 'subjects' ? 'bg-primary-foreground/25 text-primary-foreground' : 'bg-background text-muted-foreground'
+                }`}>
+                  {classDetailsSubjects.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setClassDetailsTab('students'); setDetailsSearchQuery(''); }}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  classDetailsTab === 'students'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                {bn ? 'শিক্ষার্থী তালিকা' : 'Students'}
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  classDetailsTab === 'students' ? 'bg-primary-foreground/25 text-primary-foreground' : 'bg-background text-muted-foreground'
+                }`}>
+                  {classDetailsStudents.length}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* Search bar inside dialog */}
+          <div className="px-4 sm:px-5 py-2.5 bg-muted/20 border-b border-border">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={detailsSearchQuery}
+                onChange={(e) => setDetailsSearchQuery(e.target.value)}
+                placeholder={
+                  classDetailsTab === 'subjects'
+                    ? (bn ? 'বিষয় খুঁজুন...' : 'Search subjects...')
+                    : (bn ? 'রোল, নাম বা আইডি দিয়ে খুঁজুন...' : 'Search by roll, name or ID...')
+                }
+                className="h-8 pl-8 pr-8 text-xs bg-background"
+              />
+              {detailsSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setDetailsSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Tab Content Body */}
+          <div className="p-4 sm:p-5 overflow-y-auto max-h-[50vh] flex-1">
+            {classDetailsTab === 'subjects' && (
+              <div>
+                {isLoadingDetailsSubjects ? (
+                  <div className="flex items-center justify-center py-12 text-muted-foreground">
+                    <Loader2 className="w-5 h-5 animate-spin mr-2 text-primary" />
+                    <span className="text-xs">{bn ? 'বিষয় লোড হচ্ছে...' : 'Loading subjects...'}</span>
+                  </div>
+                ) : filteredDetailsSubjects.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                    <p className="text-xs">{bn ? 'কোনো বিষয় পাওয়া যায়নি' : 'No subjects found'}</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {filteredDetailsSubjects.map((subj: any, i: number) => (
+                      <div
+                        key={subj.id || i}
+                        className="flex items-center justify-between p-3 rounded-xl border border-border/70 bg-card hover:bg-muted/40 transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="w-6 h-6 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
+                            {i + 1}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-xs sm:text-sm font-semibold text-foreground truncate">
+                              {bn ? (subj.name_bn || subj.name) : (subj.name || subj.name_bn)}
+                            </p>
+                            <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-muted-foreground mt-0.5">
+                              {subj.code && <span>{bn ? `কোড: ${subj.code}` : `Code: ${subj.code}`}</span>}
+                              {subj.full_marks !== undefined && (
+                                <span>{bn ? `পূর্ণমান: ${subj.full_marks}` : `Marks: ${subj.full_marks}`}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        {subj.is_optional ? (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium shrink-0 ml-2">
+                            {bn ? 'ঐচ্ছিক' : 'Optional'}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium shrink-0 ml-2">
+                            {bn ? 'আবশ্যক' : 'Compulsory'}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {classDetailsTab === 'students' && (
+              <div>
+                {isLoadingDetailsStudents ? (
+                  <div className="flex items-center justify-center py-12 text-muted-foreground">
+                    <Loader2 className="w-5 h-5 animate-spin mr-2 text-primary" />
+                    <span className="text-xs">{bn ? 'শিক্ষার্থী তালিকা লোড হচ্ছে...' : 'Loading students...'}</span>
+                  </div>
+                ) : filteredDetailsStudents.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                    <p className="text-xs">{bn ? 'কোনো শিক্ষার্থী পাওয়া যায়নি' : 'No students found'}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {filteredDetailsStudents.map((st: any, i: number) => (
+                      <div
+                        key={st.id || i}
+                        className="flex items-center justify-between p-2.5 rounded-xl border border-border/60 bg-card hover:bg-muted/30 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="w-7 h-7 rounded-lg bg-secondary text-foreground font-bold flex items-center justify-center text-xs shrink-0">
+                            #{st.roll_number ?? (i + 1)}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-foreground truncate">
+                              {bn ? (st.name_bn || st.name_en) : (st.name_en || st.name_bn)}
+                            </p>
+                            {st.name_en && st.name_bn && (
+                              <p className="text-[10px] text-muted-foreground truncate">
+                                {bn ? st.name_en : st.name_bn}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        {st.student_id && (
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground shrink-0 ml-2">
+                            ID: {st.student_id}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="p-3.5 sm:p-4 border-t border-border bg-muted/20 flex items-center justify-between gap-2">
+            <div className="text-xs text-muted-foreground">
+              {classDetailsTab === 'subjects' 
+                ? (bn ? `মোট ${filteredDetailsSubjects.length} টি বিষয়` : `Total ${filteredDetailsSubjects.length} subjects`)
+                : (bn ? `মোট ${filteredDetailsStudents.length} জন শিক্ষার্থী` : `Total ${filteredDetailsStudents.length} students`)}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs gap-1.5"
+                onClick={() => {
+                  if (viewingClassDetails) {
+                    navigate(`/admin/results?year=${viewingClassDetails.academicSessionId}&session=${viewingClassDetails.sessionId}&class=${viewingClassDetails.classId}`);
+                  }
+                }}
+              >
+                <GraduationCap className="w-3.5 h-3.5 text-primary" />
+                {bn ? 'ফলাফল পেজে যান' : 'Go to Results'}
+              </Button>
+              <Button
+                size="sm"
+                variant="default"
+                className="h-8 text-xs"
+                onClick={() => setViewingClassDetails(null)}
+              >
+                {bn ? 'বন্ধ করুন' : 'Close'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <ManageExamSessionDialog
         open={!!manageSession}
