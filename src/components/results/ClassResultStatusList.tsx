@@ -3,7 +3,20 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { CheckCircle, Clock, Eye, ChevronDown, ChevronRight, FileSpreadsheet, FileDown, Printer, Loader2, Globe, GlobeLock, Search, ShieldCheck, ShieldX, ShieldAlert } from 'lucide-react';
+import {
+  CheckCircle,
+  Clock,
+  Eye,
+  FileSpreadsheet,
+  FileDown,
+  Printer,
+  Loader2,
+  Globe,
+  GlobeLock,
+  Search,
+  ShieldCheck,
+  ShieldX,
+} from 'lucide-react';
 
 export interface ClassPublishStatusItem {
   is_published?: boolean;
@@ -48,7 +61,6 @@ const ClassResultStatusList = ({
 }: ClassResultStatusListProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
-  const [isOpen, setIsOpen] = useState(true);
   const [query, setQuery] = useState('');
 
   if (!classes.length) {
@@ -71,54 +83,34 @@ const ClassResultStatusList = ({
   }).length;
 
   return (
-    <div className="card-elevated rounded-2xl overflow-hidden border border-border shadow-sm bg-card">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between border-b border-border bg-muted/30 px-5 py-3.5 hover:bg-muted/50 transition-colors cursor-pointer"
-      >
-        <div className="flex items-center gap-2.5">
-          {isOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
-          <h3 className="font-bold text-foreground text-sm sm:text-base">
-            {examSessionName} — {bn ? 'ক্লাস ভিত্তিক ফলাফল অনুমোদন ও প্রকাশনা' : 'Class-wise Result Approval & Publishing'}
-          </h3>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-800 border-emerald-300">
-            {savedCount}/{classes.length} {bn ? 'প্রস্তুত' : 'ready'}
-          </Badge>
-          <Badge variant="outline" className="text-xs bg-sky-50 text-sky-800 border-sky-300">
-            {publishedCount} {bn ? 'পাবলিশড' : 'published'}
-          </Badge>
-        </div>
-      </button>
-
-      {isOpen && (
-        <div className="px-5 py-2.5 border-b border-border bg-muted/10 flex flex-wrap items-center justify-between gap-2 text-xs">
+    <div className="space-y-4">
+      <div className="bg-card rounded-2xl p-5 md:p-6 border border-border shadow-sm space-y-4">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
+          <div>
+            <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+              <span className="text-primary">📋</span>
+              {examSessionName} — {bn ? 'ক্লাস ভিত্তিক ফলাফল অনুমোদন, প্রকাশনা ও রেজাল্ট শিট' : 'Class-wise Result Approval, Publishing & Result Sheet'}
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {bn
+                ? 'প্রতিটি ক্লাসের ফলাফল স্বাধীনভাবে অ্যাডমিন অনুমোদন ও প্রকাশ (Publish) করা যায়'
+                : 'Each class result can be approved and published independently by admin'}
+            </p>
+          </div>
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">
-              💡 {bn ? 'নম্বর এন্ট্রি শেষে ফলাফল ডাটাবেজে সংরক্ষিত থাকে। পাবলিক ওয়েবসাইটে প্রকাশের জন্য অ্যাডমিনের "পাবলিশ অনুমোদন" প্রয়োজন।' : 'Entered marks are saved in the database. Admin "Publish Approval" is required before publishing to public site.'}
+            <span className="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300">
+              {savedCount} {bn ? 'টি প্রস্তুত' : 'ready'}
+            </span>
+            <span className="text-xs font-semibold px-3 py-1 rounded-full bg-sky-50 text-sky-800 border border-sky-200 dark:bg-sky-950/40 dark:text-sky-300">
+              {publishedCount} {bn ? 'টি পাবলিশড' : 'published'}
             </span>
           </div>
-          {isAdmin && onApprovePublish && (
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 text-xs rounded-lg text-emerald-700 hover:bg-emerald-50 border-emerald-300 gap-1"
-                onClick={onApprovePublish}
-                title={bn ? 'সবগুলো ক্লাসের পাবলিশ অনুমোদন একসাথে দিন' : 'Approve publishing for all classes'}
-              >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                {bn ? 'সকল ক্লাসের পাবলিশ অনুমোদন' : 'Approve All Publishing'}
-              </Button>
-            </div>
-          )}
         </div>
-      )}
 
-      {isOpen && (
-        <div className="px-5 py-3 border-b border-border bg-background">
-          <div className="relative">
+        {/* Search & Bulk Action Bar */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="relative flex-1 w-full sm:max-w-xs">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
@@ -127,177 +119,265 @@ const ClassResultStatusList = ({
               className="pl-9 bg-background h-9 rounded-xl text-xs sm:text-sm"
             />
           </div>
+          {isAdmin && onApprovePublish && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs font-semibold rounded-lg text-emerald-700 hover:bg-emerald-50 border-emerald-300 gap-1.5 self-end sm:self-auto"
+              onClick={onApprovePublish}
+              title={bn ? 'সবগুলো ক্লাসের পাবলিশ অনুমোদন একসাথে দিন' : 'Approve publishing for all classes'}
+            >
+              <ShieldCheck className="w-4 h-4" />
+              {bn ? 'সকল ক্লাসের পাবলিশ অনুমোদন' : 'Approve All Publishing'}
+            </Button>
+          )}
         </div>
-      )}
 
-      {isOpen && (
-        <div className="divide-y divide-border">
-          {visibleClasses.map((cls: any) => {
-            const hasResults = resultStatusMap[cls.id] || false;
-            const classInfo = publishStatusMap[cls.id];
-            const isPublished = typeof classInfo === 'boolean' ? classInfo : (classInfo?.is_published || false);
-            const rawApproval = typeof classInfo === 'object' && classInfo?.approval_status ? classInfo.approval_status : publishApprovalStatus;
-            // When already published, the class is treated as approved
-            const classApproval: 'pending' | 'approved' | 'rejected' = isPublished ? 'approved' : (rawApproval || 'pending');
-            const isExporting = exportingClassId === cls.id;
+        {/* Structured Table (Exact Match to Mockup) */}
+        <div className="overflow-x-auto border border-border rounded-xl">
+          <table className="w-full text-left border-collapse bg-card">
+            <thead>
+              <tr className="bg-muted/40 border-b border-border text-xs font-bold text-muted-foreground">
+                <th className="p-3.5 whitespace-nowrap">{bn ? 'শ্রেণি / জামাত' : 'Class / Jamat'}</th>
+                <th className="p-3.5 whitespace-nowrap">{bn ? 'ফলাফল স্ট্যাটাস' : 'Result Status'}</th>
+                <th className="p-3.5 whitespace-nowrap">{bn ? 'ক্লাস অনুমোদন (Admin Approval)' : 'Admin Approval'}</th>
+                <th className="p-3.5 whitespace-nowrap">{bn ? 'পাবলিক সাইট প্রকাশ' : 'Public Publishing'}</th>
+                <th className="p-3.5 text-center whitespace-nowrap">{bn ? 'এক্সপোর্ট ও প্রিন্ট' : 'Export & Print'}</th>
+                <th className="p-3.5 text-right whitespace-nowrap">{bn ? 'রেজাল্ট শিট অ্যাকশন' : 'Action'}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border text-xs font-medium">
+              {visibleClasses.map((cls: any) => {
+                const hasResults = resultStatusMap[cls.id] || false;
+                const classInfo = publishStatusMap[cls.id];
+                const isPublished = typeof classInfo === 'boolean' ? classInfo : (classInfo?.is_published || false);
+                const rawApproval = typeof classInfo === 'object' && classInfo?.approval_status ? classInfo.approval_status : publishApprovalStatus;
+                // If published, it is approved
+                const classApproval: 'pending' | 'approved' | 'rejected' = isPublished ? 'approved' : (rawApproval || 'pending');
+                const isExporting = exportingClassId === cls.id;
 
-            return (
-              <div
-                key={cls.id}
-                className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3.5 transition-colors ${
-                  !hasResults ? 'bg-muted/10 opacity-70' : 'hover:bg-muted/20'
-                }`}
-              >
-                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                  <span className="font-bold text-foreground text-sm">
-                    {bn ? cls.name_bn : cls.name}
-                  </span>
+                return (
+                  <tr
+                    key={cls.id}
+                    className={`transition-colors ${
+                      !hasResults
+                        ? 'bg-muted/10 opacity-75'
+                        : isPublished
+                        ? 'hover:bg-muted/20'
+                        : classApproval === 'pending'
+                        ? 'hover:bg-amber-50/20 bg-amber-50/5'
+                        : 'hover:bg-muted/20'
+                    }`}
+                  >
+                    {/* Column 1: শ্রেণি / জামাত */}
+                    <td className="p-3.5 font-bold text-foreground text-sm whitespace-nowrap">
+                      {bn ? cls.name_bn : cls.name}
+                    </td>
 
-                  {/* 1. Results Entry / Saved Status Badge */}
-                  {hasResults ? (
-                    <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 gap-1 text-[11px] font-semibold">
-                      <CheckCircle className="w-3 h-3" />
-                      {bn ? 'ফলাফল সংরক্ষিত' : 'Results Saved'}
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-amber-700 dark:text-amber-400 border-amber-300 bg-amber-50/50 text-[11px] font-semibold gap-1">
-                      <Clock className="w-3 h-3" />
-                      {bn ? 'অপেক্ষমান (এন্ট্রি বাকি)' : 'Pending (Marks Entry Needed)'}
-                    </Badge>
-                  )}
+                    {/* Column 2: ফলাফল স্ট্যাটাস */}
+                    <td className="p-3.5 whitespace-nowrap">
+                      {hasResults ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          {bn ? 'ফলাফল সংরক্ষিত' : 'Results Saved'}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-300 dark:bg-amber-950/40 dark:text-amber-300">
+                          <Clock className="w-3.5 h-3.5" />
+                          {bn ? 'অপেক্ষমান (এন্ট্রি বাকি)' : 'Pending (Entry Needed)'}
+                        </span>
+                      )}
+                    </td>
 
-                  {/* 2. Public Publishing & Approval Status Badge */}
-                  {hasResults && (
-                    isPublished ? (
-                      <Badge className="bg-sky-50 text-sky-700 border-sky-300 gap-1 text-[11px] font-semibold">
-                        <Globe className="w-3 h-3" />
-                        {bn ? 'পাবলিক সাইটে প্রকাশিত' : 'Published on Public Site'}
-                      </Badge>
-                    ) : classApproval === 'approved' ? (
-                      <Badge className="bg-emerald-50 text-emerald-700 border-emerald-300 gap-1 text-[11px] font-semibold">
-                        <ShieldCheck className="w-3 h-3" />
-                        {bn ? 'পাবলিশ অনুমোদিত (প্রকাশের জন্য প্রস্তুত)' : 'Publish Approved (Ready to Publish)'}
-                      </Badge>
-                    ) : classApproval === 'rejected' ? (
-                      <Badge variant="destructive" className="gap-1 text-[11px] font-semibold">
-                        <ShieldX className="w-3 h-3" />
-                        {bn ? 'পাবলিশ প্রত্যাখ্যাত' : 'Publish Rejected'}
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="border-amber-400 text-amber-800 bg-amber-50 gap-1 text-[11px] font-semibold">
-                        <Clock className="w-3 h-3" />
-                        {bn ? 'পাবলিশ অনুমোদনের অপেক্ষায়' : 'Awaiting Publish Approval'}
-                      </Badge>
-                    )
-                  )}
-                </div>
+                    {/* Column 3: ক্লাস অনুমোদন (Admin Approval) */}
+                    <td className="p-3.5 whitespace-nowrap">
+                      {!hasResults ? (
+                        <span className="text-muted-foreground italic text-xs">
+                          — {bn ? 'ফলাফল অপ্রস্তুত' : 'Not Ready'} —
+                        </span>
+                      ) : isPublished || classApproval === 'approved' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300">
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          {bn ? 'পাবলিশ অনুমোদিত' : 'Publish Approved'}
+                        </span>
+                      ) : classApproval === 'rejected' ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-300">
+                            <ShieldX className="w-3.5 h-3.5" />
+                            {bn ? 'পাবলিশ প্রত্যাখ্যাত' : 'Rejected'}
+                          </span>
+                          {isAdmin && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-6 text-[11px] px-2 text-emerald-700 border-emerald-300"
+                              onClick={() => onApprovePublishClass ? onApprovePublishClass(cls.id) : onApprovePublish?.()}
+                            >
+                              {bn ? 'পুনঃ অনুমোদন' : 'Re-approve'}
+                            </Button>
+                          )}
+                        </div>
+                      ) : (
+                        /* Pending Approval */
+                        isAdmin ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-400 mr-1">
+                              <Clock className="w-3 h-3" />
+                              {bn ? 'অনুমোদনের অপেক্ষায়' : 'Awaiting Approval'}
+                            </span>
+                            <Button
+                              size="sm"
+                              className="h-7 text-xs rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 shadow-sm gap-1"
+                              onClick={() => onApprovePublishClass ? onApprovePublishClass(cls.id) : onApprovePublish?.()}
+                              title={bn ? 'এই ক্লাসের ফলাফল পাবলিক সাইটে পাবলিশের অনুমোদন দিন' : 'Approve publishing this class'}
+                            >
+                              <ShieldCheck className="w-3.5 h-3.5" />
+                              {bn ? 'অনুমোদন দিন' : 'Approve'}
+                            </Button>
+                            {onRejectPublishClass && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 px-2 text-xs rounded-lg text-rose-700 hover:bg-rose-50 border-rose-200"
+                                onClick={() => onRejectPublishClass(cls.id)}
+                                title={bn ? 'প্রত্যাখ্যান' : 'Reject'}
+                              >
+                                <ShieldX className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300">
+                            <Clock className="w-3.5 h-3.5" />
+                            {bn ? 'পাবলিশ অনুমোদনের অপেক্ষায়' : 'Awaiting Approval'}
+                          </span>
+                        )
+                      )}
+                    </td>
 
-                <div className="flex flex-wrap items-center gap-1.5 justify-end">
-                  {/* Per-class Admin Approval Buttons: Only when results exist, not yet published, and not yet approved */}
-                  {hasResults && isAdmin && !isPublished && classApproval !== 'approved' && (
-                    <div className="flex items-center gap-1 mr-1">
-                      <Button
-                        size="sm"
-                        className="h-7 text-xs rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white gap-1 px-2.5 shadow-sm"
-                        onClick={() => onApprovePublishClass ? onApprovePublishClass(cls.id) : onApprovePublish?.()}
-                        title={bn ? 'এই ক্লাসের ফলাফল পাবলিক সাইটে পাবলিশের অনুমোদন দিন' : 'Approve publishing this class'}
-                      >
-                        <ShieldCheck className="w-3 h-3" />
-                        {bn ? 'পাবলিশ অনুমোদন' : 'Approve Publish'}
-                      </Button>
-                      {onRejectPublishClass && (
+                    {/* Column 4: পাবলিক সাইট প্রকাশ */}
+                    <td className="p-3.5 whitespace-nowrap">
+                      {!hasResults ? (
+                        <span className="text-muted-foreground italic text-xs">
+                          — {bn ? 'ফলাফল অপ্রস্তুত' : 'Not Ready'} —
+                        </span>
+                      ) : isPublished ? (
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-md border border-sky-200 dark:bg-sky-950/40 dark:text-sky-300">
+                            <Globe className="w-3.5 h-3.5" />
+                            {bn ? 'পাবলিক সাইটে প্রকাশিত' : 'Published'}
+                          </span>
+                          {onPublishToggle && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs font-semibold px-2.5 py-0.5 rounded-md border-amber-300 text-amber-800 hover:bg-amber-50 gap-1"
+                              onClick={() => onPublishToggle(cls.id, false)}
+                            >
+                              <GlobeLock className="w-3.5 h-3.5" />
+                              {bn ? 'আনপাবলিশ' : 'Unpublish'}
+                            </Button>
+                          )}
+                        </div>
+                      ) : classApproval === 'approved' ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-emerald-700 font-medium">
+                            {bn ? 'প্রকাশের জন্য প্রস্তুত' : 'Ready to publish'}
+                          </span>
+                          {onPublishToggle && (
+                            <Button
+                              size="sm"
+                              className="h-7 text-xs font-semibold px-2.5 py-0.5 rounded-md bg-sky-600 hover:bg-sky-700 text-white gap-1 shadow-sm"
+                              onClick={() => onPublishToggle(cls.id, true)}
+                            >
+                              <Globe className="w-3.5 h-3.5" />
+                              {bn ? 'পাবলিশ করুন' : 'Publish'}
+                            </Button>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-amber-700 font-medium">
+                          ⏳ {bn ? 'পাবলিশ অনুমোদনের পর প্রকাশ করা যাবে' : 'Needs publish approval'}
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Column 5: এক্সপোর্ট ও প্রিন্ট */}
+                    <td className="p-3.5 text-center whitespace-nowrap">
+                      {hasResults ? (
+                        <div className="inline-flex items-center justify-center gap-1">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 rounded-lg hover:bg-muted"
+                            disabled={isExporting}
+                            onClick={() => onExport(cls.id, 'csv')}
+                            title="Excel"
+                          >
+                            {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 rounded-lg hover:bg-muted"
+                            disabled={isExporting}
+                            onClick={() => onExport(cls.id, 'pdf')}
+                            title="PDF"
+                          >
+                            <FileDown className="w-3.5 h-3.5 text-rose-600" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 rounded-lg hover:bg-muted"
+                            disabled={isExporting}
+                            onClick={() => onExport(cls.id, 'print')}
+                            title={bn ? 'প্রিন্ট' : 'Print'}
+                          >
+                            <Printer className="w-3.5 h-3.5 text-slate-700 dark:text-slate-300" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
+
+                    {/* Column 6: রেজাল্ট শিট অ্যাকশন */}
+                    <td className="p-3.5 text-right whitespace-nowrap">
+                      {hasResults ? (
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-7 px-2 text-xs rounded-lg text-rose-700 hover:bg-rose-50 border-rose-200"
-                          onClick={() => onRejectPublishClass(cls.id)}
-                          title={bn ? 'পাবলিশ প্রত্যাখ্যান' : 'Reject Publish'}
+                          className="gap-1.5 h-8 text-xs font-bold text-emerald-800 border-emerald-300 bg-emerald-50 hover:bg-emerald-100 rounded-lg"
+                          onClick={() => onClassClick(cls.id, 'view')}
+                          title={bn ? 'ক্লাস রেজাল্ট শিট দেখুন' : 'View Class Result Sheet'}
                         >
-                          <ShieldX className="w-3 h-3" />
+                          <Eye className="w-3.5 h-3.5" />
+                          {bn ? 'শিট দেখুন' : 'View Sheet'}
                         </Button>
+                      ) : (
+                        <span className="text-muted-foreground italic px-2 py-1 select-none">
+                          —
+                        </span>
                       )}
-                    </div>
-                  )}
-
-                  {/* Publish / Unpublish Toggle for this class */}
-                  {hasResults && onPublishToggle && (
-                    <Button
-                      disabled={!isPublished && classApproval !== 'approved'}
-                      title={!isPublished && classApproval !== 'approved' ? (bn ? 'পাবলিক সাইটে প্রকাশের জন্য অ্যাডমিনের পাবলিশ অনুমোদন প্রয়োজন' : 'Needs admin publish approval') : undefined}
-                      variant={isPublished ? 'outline' : 'default'}
-                      size="sm"
-                      className={`gap-1.5 h-8 text-xs font-semibold rounded-lg ${
-                        isPublished
-                          ? 'text-amber-700 border-amber-300 bg-amber-50/50 hover:bg-amber-100'
-                          : 'bg-sky-600 hover:bg-sky-700 text-white disabled:opacity-50'
-                      }`}
-                      onClick={() => onPublishToggle(cls.id, !isPublished)}
-                    >
-                      {isPublished ? <GlobeLock className="w-3.5 h-3.5" /> : <Globe className="w-3.5 h-3.5" />}
-                      {isPublished ? (bn ? 'আনপাবলিশ' : 'Unpublish') : (bn ? 'পাবলিশ করুন' : 'Publish')}
-                    </Button>
-                  )}
-
-                  {/* Export Icons */}
-                  {hasResults ? (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-lg"
-                        disabled={isExporting}
-                        onClick={() => onExport(cls.id, 'csv')}
-                        title="Excel"
-                      >
-                        {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileSpreadsheet className="w-3.5 h-3.5" />}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-lg"
-                        disabled={isExporting}
-                        onClick={() => onExport(cls.id, 'pdf')}
-                        title="PDF"
-                      >
-                        <FileDown className="w-3.5 h-3.5 text-rose-600" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-lg"
-                        disabled={isExporting}
-                        onClick={() => onExport(cls.id, 'print')}
-                        title={bn ? 'প্রিন্ট' : 'Print'}
-                      >
-                        <Printer className="w-3.5 h-3.5" />
-                      </Button>
-                    </>
-                  ) : null}
-
-                  {/* Result Sheet View Button */}
-                  {hasResults ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="gap-1.5 h-8 text-xs font-semibold text-emerald-800 border-emerald-300 bg-emerald-50 hover:bg-emerald-100 rounded-lg ml-1"
-                      onClick={() => onClassClick(cls.id, 'view')}
-                      title={bn ? 'ক্লাস রেজাল্ট শিট দেখুন' : 'View Class Result Sheet'}
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      {bn ? 'শিট দেখুন' : 'View Sheet'}
-                    </Button>
-                  ) : (
-                    /* STRICTLY NO ENTRY BUTTON HERE! Clean placeholder */
-                    <span className="text-xs text-muted-foreground italic px-2 py-1 select-none">
-                      —
-                    </span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-      )}
+
+        {/* Footer tip box */}
+        <div className="p-3 rounded-xl bg-muted/40 border border-border text-xs text-muted-foreground flex flex-col sm:flex-row items-center justify-between gap-2">
+          <span>
+            💡 <strong>{bn ? 'টিপ:' : 'Tip:'}</strong> {bn ? 'কোনো ক্লাসের নম্বর ইনপুট বা সংশোধনের প্রয়োজন হলে উপরের "✍️ নম্বর এন্ট্রি (Marks Entry)" ট্যাবে যান।' : 'To enter or edit marks, please go to the "Marks Entry" tab above.'}
+          </span>
+          <span className="text-muted-foreground/80">
+            {bn ? 'ট্যাবুলেশন শিট পেজটি সম্পূর্ণ রিপোর্ট ও পাবলিশিংয়ের জন্য সংরক্ষিত' : 'Tabulation Sheet is dedicated for reports and publishing'}
+          </span>
+        </div>
+      </div>
     </div>
   );
 };
