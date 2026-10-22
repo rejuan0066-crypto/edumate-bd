@@ -214,25 +214,43 @@ const AdminResults = () => {
     enabled: showClassList && examClasses.length > 0 && examSessions.length > 0,
   });
 
-  // Fetch publish status (now on exam_sessions directly)
-  const { data: classPublishStatus = {} } = useQuery({
+  // Fetch per-class publish & approval status from website_settings
+  const classPublishSettingsKey = `class_publish_status_${examSessionId}`;
+  const { data: classPublishStatus = {} } = useQuery<Record<string, { is_published: boolean; approval_status: 'pending' | 'approved' | 'rejected'; rejection_reason?: string }>>({
     queryKey: ['class-publish-status', examSessionId, examClasses.map((c: any) => c.id)],
     queryFn: async () => {
       const examSession = examSessions.find((es: any) => es.id === examSessionId);
       if (!examSession) return {};
 
-      const isPublished = (examSession as any).is_published || false;
-      const map: Record<string, boolean> = {};
+      const { data: settingsRow } = await supabase
+        .from('website_settings')
+        .select('value')
+        .eq('key', classPublishSettingsKey)
+        .maybeSingle();
+
+      const perClassData = (settingsRow?.value as any) || {};
+      const defaultPublished = (examSession as any).is_published || false;
+      const defaultApproval = (examSession as any).publish_approval_status || 'approved';
+
+      const map: Record<string, { is_published: boolean; approval_status: 'pending' | 'approved' | 'rejected'; rejection_reason?: string }> = {};
       examClasses.forEach((c: any) => {
-        map[c.id] = isPublished;
+        if (perClassData[c.id]) {
+          map[c.id] = perClassData[c.id];
+        } else {
+          map[c.id] = {
+            is_published: defaultPublished,
+            approval_status: defaultApproval === 'approved' ? 'approved' : 'pending',
+          };
+        }
       });
       return map;
     },
-    enabled: showClassList && examClasses.length > 0 && examSessions.length > 0,
+    enabled: !!examSessionId && examClasses.length > 0 && examSessions.length > 0,
   });
 
+  const [rejectingClassId, setRejectingClassId] = useState<string | null>(null);
   const currentExamSession: any = examSessions.find((es: any) => es.id === examSessionId);
-  const isClassPublished = selectedClass ? (classPublishStatus[selectedClass] === true) : false;
+  const isClassPublished = selectedClass ? ((classPublishStatus as any)[selectedClass]?.is_published === true) : false;
   const isClassLocked = isSecurityActive && securityLockPublished && isClassPublished && !isAdmin;
   const publishApprovalStatus = (currentExamSession?.publish_approval_status || 'pending') as 'pending' | 'approved' | 'rejected';
 
@@ -245,12 +263,71 @@ const AdminResults = () => {
     if (!examSessionId) return;
     const { error } = await (supabase as any).rpc('approve_result_publish', { p_exam_session_id: examSessionId });
     if (error) { toast.error(error.message); return; }
+    
+    // Also approve all individual classes
+    const current = { ...(classPublishStatus as any) };
+    examClasses.forEach((c: any) => {
+      current[c.id] = {
+        ...(current[c.id] || {}),
+        approval_status: 'approved',
+      };
+    });
+    await supabase.from('website_settings').upsert({
+      key: classPublishSettingsKey,
+      value: current,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'key' });
+
     refreshSessions();
-    toast.success(bn ? 'পাবলিশ অনুমোদিত হয়েছে' : 'Publishing approved');
+    toast.success(bn ? 'সকল ক্লাসের পাবলিশ অনুমোদিত হয়েছে' : 'All classes publishing approved');
+  };
+
+  const handleApprovePublishClass = async (classId: string) => {
+    if (!examSessionId || !classId) return;
+    const current = { ...(classPublishStatus as any) };
+    current[classId] = {
+      ...(current[classId] || {}),
+      approval_status: 'approved',
+    };
+    await supabase.from('website_settings').upsert({
+      key: classPublishSettingsKey,
+      value: current,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'key' });
+
+    refreshSessions();
+    toast.success(bn ? 'ক্লাসের ফলাফল পাবলিশ অনুমোদিত হয়েছে' : 'Class publishing approved');
+  };
+
+  const handleRejectPublishClass = (classId: string) => {
+    setRejectingClassId(classId);
+    setRejectPublishOpen(true);
   };
 
   const handleRejectPublish = async () => {
     if (!examSessionId || !rejectPublishReason.trim()) return;
+
+    if (rejectingClassId) {
+      const current = { ...(classPublishStatus as any) };
+      current[rejectingClassId] = {
+        ...(current[rejectingClassId] || {}),
+        approval_status: 'rejected',
+        rejection_reason: rejectPublishReason.trim(),
+        is_published: false,
+      };
+      await supabase.from('website_settings').upsert({
+        key: classPublishSettingsKey,
+        value: current,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'key' });
+      setRejectingClassId(null);
+      setRejectPublishOpen(false);
+      setRejectPublishReason('');
+      refreshSessions();
+      toast.success(bn ? 'ক্লাসের ফলাফল প্রকাশ প্রত্যাখ্যান করা হয়েছে' : 'Class publishing rejected');
+      return;
+    }
+
     const { error } = await (supabase as any).rpc('reject_result_publish', {
       p_exam_session_id: examSessionId,
       p_reason: rejectPublishReason.trim(),
@@ -263,30 +340,51 @@ const AdminResults = () => {
   };
 
   const handlePublishToggle = async (classId: string, publish: boolean) => {
-    const examSession = examSessions.find((es: any) => es.id === examSessionId);
-    if (!examSession) return;
+    const classInfo = (classPublishStatus as any)[classId];
+    const isApproved = classInfo?.approval_status === 'approved';
 
-    if (publish && publishApprovalStatus !== 'approved') {
+    if (publish && !isApproved) {
       if (!isAdmin) {
-        await (supabase as any).rpc('submit_result_publish_for_approval', { p_exam_session_id: examSessionId });
+        const current = { ...(classPublishStatus as any) };
+        current[classId] = {
+          ...(current[classId] || {}),
+          approval_status: 'pending',
+          is_published: false,
+        };
+        await supabase.from('website_settings').upsert({
+          key: classPublishSettingsKey,
+          value: current,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'key' });
         refreshSessions();
       }
       toast.warning(bn
-        ? '⏳ ফলাফল পাবলিশ করতে অ্যাডমিনের অনুমোদন প্রয়োজন।'
-        : '⏳ Admin approval is required before publishing results.');
+        ? '⏳ এই ক্লাসের ফলাফল পাবলিশ করতে অ্যাডমিনের অনুমোদন প্রয়োজন।'
+        : '⏳ Admin approval is required before publishing this class result.');
       return;
     }
 
-    const { error } = await supabase.from('exam_sessions').update({ is_published: publish } as any).eq('id', examSessionId);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
+    const current = { ...(classPublishStatus as any) };
+    current[classId] = {
+      ...(current[classId] || {}),
+      is_published: publish,
+      approval_status: publish ? 'approved' : (current[classId]?.approval_status || 'approved'),
+    };
+
+    await supabase.from('website_settings').upsert({
+      key: classPublishSettingsKey,
+      value: current,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'key' });
+
+    // Sync exam_sessions.is_published
+    const anyPublished = Object.values(current).some((c: any) => c.is_published);
+    await supabase.from('exam_sessions').update({ is_published: anyPublished } as any).eq('id', examSessionId);
 
     refreshSessions();
     toast.success(publish
-      ? (bn ? 'ফলাফল পাবলিশ করা হয়েছে' : 'Result published')
-      : (bn ? 'ফলাফল আনপাবলিশ করা হয়েছে' : 'Result unpublished')
+      ? (bn ? 'ক্লাসের ফলাফল পাবলিশ করা হয়েছে' : 'Class result published')
+      : (bn ? 'ক্লাসের ফলাফল আনপাবলিশ করা হয়েছে' : 'Class result unpublished')
     );
   };
 
@@ -1860,10 +1958,12 @@ const AdminResults = () => {
               <ClassResultStatusList
                 classes={examClasses}
                 resultStatusMap={classResultStatus as Record<string, boolean>}
-                publishStatusMap={classPublishStatus as Record<string, boolean>}
+                publishStatusMap={classPublishStatus as any}
                 onClassClick={(id) => handleClassFromList(id, 'view')}
                 onExport={handleClassExport}
                 onPublishToggle={handlePublishToggle}
+                onApprovePublishClass={handleApprovePublishClass}
+                onRejectPublishClass={handleRejectPublishClass}
                 exportingClassId={exportingClassId}
                 examSessionName={getExamSessionName()}
                 publishApprovalStatus={publishApprovalStatus}
