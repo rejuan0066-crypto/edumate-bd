@@ -1440,81 +1440,95 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
             }}
           />
 
-          {/* Top Row: Student Type & Residence Type Segmented Cards (Mockup Design) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Top Row: Student Type & Residence Type Segmented Cards (Exact Mockup Matching) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {typeField && (
-              <div className="bg-card border border-border/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between gap-3">
+              <div className="bg-white dark:bg-card border border-slate-200/90 dark:border-border rounded-2xl p-4 shadow-sm flex flex-col justify-between gap-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                    <User className="w-4 h-4 text-primary" />
+                  <span className="text-xs font-bold text-slate-800 dark:text-foreground flex items-center gap-1.5">
+                    <User className="w-4 h-4 text-emerald-600" />
                     {bn ? 'ছাত্রের ধরণ (Student Type)' : 'Student Type'}
                   </span>
-                  <span className="text-[11px] text-primary font-semibold bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md">
+                  <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-md">
                     {bn ? 'আবশ্যক' : 'Required'}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-2 bg-muted/60 p-1.5 rounded-xl border border-border/70">
+                <div className="grid grid-cols-2 gap-2 bg-slate-100 dark:bg-muted/70 p-1.5 rounded-xl border border-slate-200 dark:border-border">
                   <button
                     type="button"
                     onClick={() => setForm(prev => ({ ...prev, student_type: 'new' }))}
-                    className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                    className={`py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 ${
                       form.student_type === 'new'
-                        ? 'bg-card text-primary shadow-xs border border-border/80 font-bold'
-                        : 'text-muted-foreground hover:text-foreground font-semibold'
+                        ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/30 scale-[1.02]'
+                        : 'bg-white dark:bg-card text-slate-600 dark:text-muted-foreground hover:text-slate-900 font-semibold border border-slate-200/80 dark:border-border/60 shadow-2xs'
                     }`}
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    {bn ? 'নতুন ছাত্র' : 'New Student'}
+                    {form.student_type === 'new' ? (
+                      <CheckCircle className="w-3.5 h-3.5 text-white shrink-0" />
+                    ) : (
+                      <Plus className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    )}
+                    <span>{bn ? 'নতুন ছাত্র' : 'New Student'}</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setForm(prev => ({ ...prev, student_type: 'old' }))}
-                    className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                    className={`py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 ${
                       form.student_type === 'old'
-                        ? 'bg-card text-primary shadow-xs border border-border/80 font-bold'
-                        : 'text-muted-foreground hover:text-foreground font-semibold'
+                        ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/30 scale-[1.02]'
+                        : 'bg-white dark:bg-card text-slate-600 dark:text-muted-foreground hover:text-slate-900 font-semibold border border-slate-200/80 dark:border-border/60 shadow-2xs'
                     }`}
                   >
-                    <Search className="w-3.5 h-3.5" />
-                    {bn ? 'পুরাতন ছাত্র' : 'Old Student'}
+                    {form.student_type === 'old' ? (
+                      <CheckCircle className="w-3.5 h-3.5 text-white shrink-0" />
+                    ) : (
+                      <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    )}
+                    <span>{bn ? 'পুরাতন ছাত্র' : 'Old Student'}</span>
                   </button>
                 </div>
               </div>
             )}
 
             {resField && (
-              <div className="bg-card border border-border/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between gap-3">
+              <div className="bg-white dark:bg-card border border-slate-200/90 dark:border-border rounded-2xl p-4 shadow-sm flex flex-col justify-between gap-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                    <MapPin className="w-4 h-4 text-primary" />
-                    {bn ? 'আবাসন ধরণ (Residence)' : 'Residence Type'}
+                  <span className="text-xs font-bold text-slate-800 dark:text-foreground flex items-center gap-1.5">
+                    <MapPin className="w-4 h-4 text-emerald-600" />
+                    {bn ? 'আবাসন ধরণ (Residence)' : 'Residence'}
                   </span>
-                  <span className="text-[11px] text-primary font-semibold bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md">
+                  <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-md">
                     {bn ? 'আবশ্যক' : 'Required'}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-2 bg-muted/60 p-1.5 rounded-xl border border-border/70">
+                <div className="grid grid-cols-2 gap-2 bg-slate-100 dark:bg-muted/70 p-1.5 rounded-xl border border-slate-200 dark:border-border">
                   <button
                     type="button"
                     onClick={() => setForm(prev => ({ ...prev, residence_type: 'non-resident' }))}
-                    className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                      form.residence_type === 'non-resident' || !form.residence_type
-                        ? 'bg-card text-primary shadow-xs border border-border/80 font-bold'
-                        : 'text-muted-foreground hover:text-foreground font-semibold'
+                    className={`py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 ${
+                      form.residence_type === 'non-resident'
+                        ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/30 scale-[1.02]'
+                        : 'bg-white dark:bg-card text-slate-600 dark:text-muted-foreground hover:text-slate-900 font-semibold border border-slate-200/80 dark:border-border/60 shadow-2xs'
                     }`}
                   >
-                    {bn ? 'অনাবাসিক (Day)' : 'Non-Resident'}
+                    {form.residence_type === 'non-resident' && (
+                      <CheckCircle className="w-3.5 h-3.5 text-white shrink-0" />
+                    )}
+                    <span>{bn ? 'অনাবাসিক (Day Scholar)' : 'Non-Resident'}</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setForm(prev => ({ ...prev, residence_type: 'resident' }))}
-                    className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                    className={`py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 ${
                       form.residence_type === 'resident'
-                        ? 'bg-card text-primary shadow-xs border border-border/80 font-bold'
-                        : 'text-muted-foreground hover:text-foreground font-semibold'
+                        ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/30 scale-[1.02]'
+                        : 'bg-white dark:bg-card text-slate-600 dark:text-muted-foreground hover:text-slate-900 font-semibold border border-slate-200/80 dark:border-border/60 shadow-2xs'
                     }`}
                   >
-                    {bn ? 'আবাসিক (Hostel)' : 'Resident'}
+                    {form.residence_type === 'resident' && (
+                      <CheckCircle className="w-3.5 h-3.5 text-white shrink-0" />
+                    )}
+                    <span>{bn ? 'আবাসিক (Hostel/Boarding)' : 'Resident'}</span>
                   </button>
                 </div>
               </div>
@@ -1580,24 +1594,24 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
             </div>
           </div>
 
-          {/* Group 1: Academic Information (3-Column Grid matching mockup) */}
-          <div className="rounded-2xl border border-primary/25 bg-card p-4 sm:p-5 shadow-xs space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-border/60">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-primary/10 text-primary">
+          {/* Group 1: Academic Information (Exact Mockup Match) */}
+          <div className="bg-white dark:bg-card border border-slate-200/90 dark:border-border rounded-2xl p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between pb-3.5 mb-2 border-b border-slate-100 dark:border-border/60">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0">
                   <GraduationCap className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm sm:text-base font-bold text-foreground">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-foreground">
                     {bn ? 'একাডেমিক তথ্য (Academic Information)' : 'Academic Information'}
-                  </h4>
-                  <p className="text-xs text-muted-foreground">
-                    {bn ? 'সেশন, বিভাগ, শ্রেণী, রোল ও ভর্তির তারিখ' : 'Session, division, class, roll and admission date'}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-muted-foreground">
+                    {bn ? 'ভর্তি সেশন, বিভাগ ও শ্রেণীর তথ্য নির্বাচন করুন' : 'Select admission session, division and class'}
                   </p>
                 </div>
               </div>
-              <span className="text-xs bg-muted px-2.5 py-1 rounded-full text-muted-foreground font-medium hidden sm:inline-block">
-                {bn ? 'ধারাবাহিক বিন্যাস' : 'Sequential Order'}
+              <span className="text-xs bg-slate-100 dark:bg-muted text-slate-700 dark:text-muted-foreground px-3 py-1 rounded-full border border-slate-200 dark:border-border font-semibold">
+                {bn ? 'সঠিক ক্রম সাজানো' : 'Sequential Order'}
               </span>
             </div>
 
@@ -1864,81 +1878,95 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
 
   return (
     <Dialog open={open} onOpenChange={o => { onOpenChange(o); if (!o) resetForm(); }}>
-      <DialogContent className="sm:max-w-4xl max-h-[92vh] overflow-y-auto dialog-content-scroll border-border/80 shadow-2xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-background/95 backdrop-blur-xl">
-        <DialogHeader className="pb-3 border-b border-border/60">
-          <DialogTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-lg sm:text-xl font-bold font-display text-foreground">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold shadow-inner">
-                {isEditMode ? <Save className="w-5 h-5" /> : <GraduationCap className="w-5 h-5" />}
-              </div>
-              <div>
-                <span>{isEditMode ? (bn ? 'ছাত্রের তথ্য সম্পাদনা' : 'Edit Student Details') : (bn ? 'ভর্তি আবেদন ফরম' : 'Student Admission Form')}</span>
-                <p className="text-xs font-normal text-muted-foreground mt-0.5">
-                  {bn ? 'সকল আবশ্যকীয় তথ্য সঠিকভাবে পূরণ করে পরবর্তী ধাপে এগিয়ে যান' : 'Fill in all required fields accurately to proceed'}
-                </p>
-              </div>
+      <DialogContent className="sm:max-w-4xl max-h-[92vh] overflow-y-auto dialog-content-scroll border border-slate-200/90 dark:border-border rounded-3xl shadow-2xl p-0 bg-white dark:bg-card overflow-hidden">
+        
+        {/* Top Modal Header (1:1 Mockup Match) */}
+        <div className="px-6 py-5 bg-gradient-to-r from-emerald-50/70 via-white to-teal-50/50 dark:from-emerald-950/30 dark:via-background dark:to-teal-950/20 border-b border-slate-200/80 dark:border-border/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-white dark:bg-card border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center text-emerald-600 shadow-sm shrink-0">
+              {isEditMode ? <Save className="w-6 h-6" /> : <GraduationCap className="w-6 h-6" />}
             </div>
-            <div className="flex items-center gap-2 self-start sm:self-center">
-              <span className="text-xs font-semibold text-primary bg-primary/10 border border-primary/25 px-3 py-1 rounded-full shadow-sm">
+            <div>
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-foreground tracking-tight">
+                  {isEditMode ? (bn ? 'ছাত্রের তথ্য সম্পাদনা' : 'Edit Student Details') : (bn ? 'ভর্তি আবেদন ফরম' : 'Admission Application Form')}
+                </h2>
+                <span className="text-xs bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2.5 py-0.5 rounded-full font-semibold">
+                  {form.admission_session || '২০২৬'} শিক্ষাবর্ষ
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-muted-foreground mt-0.5">
+                {bn ? 'আবশ্যকীয় তথ্যগুলো পূরণ করে পরবর্তী ধাপে এগিয়ে যান। ' : 'Fill in required fields to proceed. '}
+                <span className="text-rose-500 font-bold">*</span>
+                {bn ? ' চিহ্নিত ঘর বাধ্যতামূলক।' : ' denotes required.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-center">
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white dark:bg-card border border-slate-200 dark:border-border shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+              <span className="text-xs font-bold text-slate-700 dark:text-foreground">
                 {bn ? `ধাপ ${safeCurrentStep + 1} / ${allStepKeys.length}` : `Step ${safeCurrentStep + 1} of ${allStepKeys.length}`}
               </span>
             </div>
-          </DialogTitle>
-        </DialogHeader>
+          </div>
+        </div>
+
+        {/* Stepper Wizard (1:1 Mockup Match) */}
+        <div className="px-4 sm:px-6 py-4 bg-slate-50/80 dark:bg-muted/40 border-b border-slate-200/70 dark:border-border/70">
+          <div className="relative flex items-center justify-between max-w-2xl mx-auto">
+            {/* Background Progress Line */}
+            <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 h-1 bg-slate-200 dark:bg-muted rounded-full -z-0">
+              <div
+                className="h-full bg-emerald-600 rounded-full transition-all duration-400"
+                style={{ width: `${(safeCurrentStep / Math.max(1, allStepKeys.length - 1)) * 100}%` }}
+              />
+            </div>
+
+            {allStepKeys.map((stepKey, idx) => {
+              const isCurrent = idx === safeCurrentStep;
+              const isCompleted = idx < safeCurrentStep;
+              return (
+                <button
+                  key={stepKey}
+                  type="button"
+                  onClick={() => handleStepClick(idx)}
+                  className={`relative z-10 flex flex-col items-center group focus:outline-none transition-all ${
+                    idx < safeCurrentStep ? 'cursor-pointer' : isCurrent ? 'cursor-default' : 'cursor-pointer hover:opacity-100 opacity-80'
+                  }`}
+                >
+                  {/* Step Circle */}
+                  <div
+                    className={`w-9 h-9 rounded-full font-bold text-xs sm:text-sm flex items-center justify-center transition-all duration-200 ${
+                      isCompleted
+                        ? 'bg-emerald-600 text-white ring-2 ring-emerald-200 dark:ring-emerald-800 shadow-sm'
+                        : isCurrent
+                        ? 'bg-emerald-600 text-white ring-4 ring-emerald-100 dark:ring-emerald-950 shadow-md scale-105'
+                        : 'bg-white dark:bg-card text-slate-500 dark:text-muted-foreground border-2 border-slate-300 dark:border-border/80'
+                    }`}
+                  >
+                    {isCompleted ? <CheckCircle className="w-4 h-4" /> : idx + 1}
+                  </div>
+
+                  {/* Step Title */}
+                  <span
+                    className={`mt-1.5 text-xs text-center font-semibold line-clamp-1 max-w-[90px] sm:max-w-none transition-colors ${
+                      isCurrent ? 'text-emerald-700 dark:text-emerald-400 font-bold' : isCompleted ? 'text-slate-700 dark:text-foreground' : 'text-slate-400 dark:text-muted-foreground'
+                    }`}
+                  >
+                    {getStepTitle(stepKey)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {!isLoaded ? (
-          <div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+          <div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-emerald-600" /></div>
         ) : (
-          <div className="space-y-6 py-2">
-            {/* Step Wizard Header (Direct Mockup Design) */}
-            <div className="w-full bg-card border border-border/80 rounded-2xl p-4 sm:p-5 shadow-xs">
-              <div className="relative flex items-center justify-between max-w-2xl mx-auto">
-                {/* Background Progress Line */}
-                <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 h-1 bg-muted rounded-full -z-0">
-                  <div
-                    className="h-full bg-primary rounded-full transition-all duration-300"
-                    style={{ width: `${(safeCurrentStep / Math.max(1, allStepKeys.length - 1)) * 100}%` }}
-                  />
-                </div>
-
-                {allStepKeys.map((stepKey, idx) => {
-                  const isCurrent = idx === safeCurrentStep;
-                  const isCompleted = idx < safeCurrentStep;
-                  return (
-                    <button
-                      key={stepKey}
-                      type="button"
-                      onClick={() => handleStepClick(idx)}
-                      className={`relative z-10 flex flex-col items-center group focus:outline-none transition-all ${
-                        idx < safeCurrentStep ? 'cursor-pointer' : isCurrent ? 'cursor-default' : 'cursor-pointer hover:opacity-100 opacity-80'
-                      }`}
-                    >
-                      {/* Step Circle */}
-                      <div
-                        className={`w-9 h-9 rounded-full font-bold text-xs sm:text-sm flex items-center justify-center transition-all duration-200 ${
-                          isCompleted
-                            ? 'bg-primary text-primary-foreground ring-2 ring-primary/25 shadow-sm'
-                            : isCurrent
-                            ? 'bg-primary text-primary-foreground ring-4 ring-primary/20 shadow-md scale-105'
-                            : 'bg-card text-muted-foreground border-2 border-border/80 hover:border-primary/50'
-                        }`}
-                      >
-                        {isCompleted ? <CheckCircle className="w-4 h-4" /> : idx + 1}
-                      </div>
-
-                      {/* Step Title */}
-                      <span
-                        className={`mt-1.5 text-xs text-center font-semibold line-clamp-1 max-w-[90px] sm:max-w-none transition-colors ${
-                          isCurrent ? 'text-primary font-bold' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
-                        }`}
-                      >
-                        {getStepTitle(stepKey)}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+          <div className="p-5 sm:p-6 lg:p-8 space-y-6 max-h-[66vh] overflow-y-auto custom-scroll bg-slate-50/40 dark:bg-transparent">
 
             {/* Error summary banner */}
             {Object.keys(fieldErrors).length > 0 && (
@@ -2051,70 +2079,66 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
               );
             })()}
 
-            {/* Step Navigation Controls */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-border/70 mt-6 sticky -bottom-4 sm:-bottom-6 bg-background/95 backdrop-blur-md py-3.5 -mx-4 sm:-mx-6 px-4 sm:px-6 z-20 rounded-b-2xl sm:rounded-b-3xl shadow-lg">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setCurrentStep(prev => Math.max(0, prev - 1));
+                      </div>
+        )}
+
+        {/* Modern Sticky Bottom Navigation Bar (Exact 1:1 Mockup Match) */}
+        <div className="px-6 py-4 bg-white dark:bg-card border-t border-slate-200 dark:border-border flex flex-col sm:flex-row items-center justify-between gap-3 shadow-inner sticky bottom-0 z-20">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setCurrentStep(prev => Math.max(0, prev - 1));
+              const dialogContent = document.querySelector('[role="dialog"]');
+              if (dialogContent) dialogContent.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            disabled={safeCurrentStep === 0}
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-300 dark:border-border bg-white dark:bg-card text-xs font-semibold text-slate-600 dark:text-muted-foreground hover:text-slate-900 dark:hover:text-foreground hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-xs"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            {bn ? 'পূর্ববর্তী ধাপ' : 'Previous Step'}
+          </Button>
+
+          <div className="text-xs text-slate-600 dark:text-muted-foreground font-medium order-first sm:order-none flex items-center gap-2 bg-slate-100 dark:bg-muted/70 px-4 py-1.5 rounded-full border border-slate-200 dark:border-border">
+            <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+            <span className="font-semibold text-slate-800 dark:text-foreground">
+              {bn ? `ধাপ ${safeCurrentStep + 1} : ${getStepTitle(allStepKeys[safeCurrentStep])}` : `Step ${safeCurrentStep + 1} : ${getStepTitle(allStepKeys[safeCurrentStep])}`}
+            </span>
+          </div>
+
+          {safeCurrentStep < allStepKeys.length - 1 ? (
+            <Button
+              type="button"
+              onClick={() => {
+                if (validateCurrentStep(allStepKeys[safeCurrentStep])) {
+                  setCurrentStep(prev => Math.min(allStepKeys.length - 1, prev + 1));
                   const dialogContent = document.querySelector('[role="dialog"]');
                   if (dialogContent) dialogContent.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                disabled={safeCurrentStep === 0}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl gap-2 hover:bg-muted font-medium transition-all"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                {bn ? 'পূর্ববর্তী ধাপ' : 'Previous Step'}
-              </Button>
-
-              <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-muted-foreground order-first sm:order-none bg-muted/60 px-3.5 py-1.5 rounded-full border border-border/50">
-                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                <span>{bn ? `ধাপ ${safeCurrentStep + 1} / ${allStepKeys.length} : ` : `Step ${safeCurrentStep + 1} of ${allStepKeys.length} : `}</span>
-                <span className="font-semibold text-foreground">{getStepTitle(allStepKeys[safeCurrentStep])}</span>
-              </div>
-
-              {safeCurrentStep < allStepKeys.length - 1 ? (
-                <Button
-                  type="button"
-                  onClick={() => {
-                    if (validateCurrentStep(allStepKeys[safeCurrentStep])) {
-                      setCurrentStep(prev => Math.min(allStepKeys.length - 1, prev + 1));
-                      const dialogContent = document.querySelector('[role="dialog"]');
-                      if (dialogContent) dialogContent.scrollTo({ top: 0, behavior: 'smooth' });
-                    }
-                  }}
-                  className="btn-primary-gradient w-full sm:w-auto px-6 py-2.5 rounded-xl gap-2 font-medium shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all"
-                >
-                  {bn ? 'পরবর্তী ধাপ' : 'Next Step'}
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
+                }
+              }}
+              className="w-full sm:w-auto px-7 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-xs font-bold text-white shadow-md shadow-emerald-600/20 hover:shadow-lg transition-all flex items-center justify-center gap-2"
+            >
+              <span>{bn ? 'পরবর্তী ধাপ' : 'Next Step'}</span>
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              className="w-full sm:w-auto px-7 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-xs font-bold text-white shadow-md shadow-emerald-600/25 hover:shadow-lg transition-all flex items-center justify-center gap-2"
+              disabled={addMutation.isPending || updateMutation.isPending}
+            >
+              {(addMutation.isPending || updateMutation.isPending) ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
+              ) : isEditMode ? (
+                <Save className="w-4 h-4 mr-1.5" />
               ) : (
-                <Button
-                  type="button"
-                  onClick={handleSubmit}
-                  className="btn-primary-gradient w-full sm:w-auto px-7 py-2.5 rounded-xl gap-2 font-semibold shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/35 transition-all"
-                  disabled={addMutation.isPending || updateMutation.isPending}
-                >
-                  {(addMutation.isPending || updateMutation.isPending) ? (
-                    <Loader2 className="w-5 h-5 animate-spin mr-1.5" />
-                  ) : isEditMode ? (
-                    <Save className="w-5 h-5 mr-1.5" />
-                  ) : (
-                    <Sparkles className="w-5 h-5 mr-1.5" />
-                  )}
-                  {isEditMode ? (bn ? 'আপডেট সম্পন্ন করুন' : 'Complete Update') : (bn ? 'আবেদন জমা দিন' : 'Submit Application')}
-                </Button>
+                <Sparkles className="w-4 h-4 mr-1.5" />
               )}
-            </div>
-
-            {!isEditMode && safeCurrentStep === allStepKeys.length - 1 && (
-              <p className="text-center text-xs text-muted-foreground">
-                {bn ? 'জমা দেওয়ার পর অ্যাডমিনের অনুমোদন প্রয়োজন' : 'Admin approval required after submission'}
-              </p>
-            )}
-          </div>
-        )}
+              {isEditMode ? (bn ? 'আপডেট সম্পন্ন করুন' : 'Complete Update') : (bn ? 'আবেদন জমা দিন' : 'Submit Application')}
+            </Button>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );
