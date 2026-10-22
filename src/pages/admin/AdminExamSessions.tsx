@@ -38,11 +38,12 @@ const AdminExamSessions = () => {
   const [examType, setExamType] = useState('');
   const [activeDivisionTab, setActiveDivisionTab] = useState<string>('all');
   const [searchSessionQuery, setSearchSessionQuery] = useState('');
+  const [studentSearchQuery, setStudentSearchQuery] = useState('');
   const [selectedDivisionIds, setSelectedDivisionIds] = useState<string[]>([]);
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
   const [selectedSubjectIds, setSelectedSubjectIds] = useState<string[]>([]);
   const [excludedStudentIds, setExcludedStudentIds] = useState<string[]>([]);
-  const [showStudentSelection, setShowStudentSelection] = useState(false);
+  const [showStudentSelection, setShowStudentSelection] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
 
   // Exam type manager state
@@ -233,7 +234,7 @@ const AdminExamSessions = () => {
   // Reset excluded students when classes change
   useEffect(() => {
     setExcludedStudentIds([]);
-    setShowStudentSelection(false);
+    setShowStudentSelection(true);
   }, [selectedClassIds.join(',')]);
 
   const { data: examSessions = [] } = useQuery({
@@ -994,109 +995,183 @@ const AdminExamSessions = () => {
                     </div>
                   )}
 
-                  {/* Step 4: Student Selection / Exclusion */}
-                  {selectedClassIds.length > 0 && classStudents.length > 0 && (
+                  {/* Step 4: Student Selection / Inclusion & Exclusion */}
+                  {selectedClassIds.length > 0 && (
                     <div className="space-y-3 pt-3 border-t border-border">
-                      <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                           <span className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center justify-center">৪</span>
-                          <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                            <UserMinus className="w-4 h-4 text-emerald-600" />
-                            {bn ? 'শিক্ষার্থী অন্তর্ভুক্তি / বাদ দিন' : 'Student Inclusion / Exclusion'}
-                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
+                          <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5 flex-wrap">
+                            <Users className="w-4 h-4 text-emerald-600" />
+                            {bn ? 'শিক্ষার্থী নির্বাচন ও অন্তর্ভুক্তি' : 'Student Selection & Inclusion'}
+                            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300">
                               {bn ? `${classStudents.length - excludedStudentIds.length} জন অন্তর্ভুক্ত` : `${classStudents.length - excludedStudentIds.length} included`}
                             </span>
                             {excludedStudentIds.length > 0 && (
-                              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">
+                              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">
                                 {bn ? `${excludedStudentIds.length} জন বাদ` : `${excludedStudentIds.length} excluded`}
                               </span>
                             )}
                           </h4>
                         </div>
-                        <div className="flex items-center gap-2">
+
+                        {/* Global Batch Action Buttons & Search */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <div className="relative">
+                            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                              value={studentSearchQuery}
+                              onChange={(e) => setStudentSearchQuery(e.target.value)}
+                              placeholder={bn ? 'ছাত্র বা রোল খুঁজুন...' : 'Search student or roll...'}
+                              className="h-7 pl-8 text-xs w-40 sm:w-48 bg-background"
+                            />
+                            {studentSearchQuery && (
+                              <button 
+                                onClick={() => setStudentSearchQuery('')} 
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
                           <Button
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="h-7 text-xs font-medium"
-                            onClick={() => setShowStudentSelection(!showStudentSelection)}
+                            className="h-7 text-xs font-semibold border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                            onClick={() => setExcludedStudentIds([])}
                           >
-                            {showStudentSelection ? (bn ? 'লুকান' : 'Hide') : (bn ? 'শিক্ষার্থী তালিকা দেখুন' : 'View Students')}
+                            {bn ? '✓ সব ছাত্র অন্তর্ভুক্ত' : 'Include All'}
                           </Button>
-                          {showStudentSelection && (
-                            <>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="h-7 text-xs font-medium border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
-                                onClick={() => setExcludedStudentIds([])}
-                              >
-                                {bn ? 'সব অন্তর্ভুক্ত রাখুন' : 'Include All'}
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="h-7 text-xs font-medium text-destructive hover:bg-destructive/10 border-destructive/30"
-                                onClick={() => setExcludedStudentIds(classStudents.map((s: any) => s.id))}
-                              >
-                                {bn ? 'সব বাদ দিন' : 'Exclude All'}
-                              </Button>
-                            </>
-                          )}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs font-semibold text-destructive hover:bg-destructive/10 border-destructive/30"
+                            onClick={() => setExcludedStudentIds(classStudents.map((s: any) => s.id))}
+                          >
+                            {bn ? 'সব বাদ দিন' : 'Exclude All'}
+                          </Button>
                         </div>
                       </div>
 
-                      {showStudentSelection && (
-                        <div className="space-y-3 max-h-72 overflow-y-auto p-1.5 border border-border rounded-xl bg-muted/20 custom-scrollbar">
-                          {selectedClassIds.map(classId => {
+                      {/* Helper notice explaining click to select/unselect */}
+                      <p className="text-xs text-muted-foreground bg-muted/40 p-2 rounded-lg border border-border">
+                        💡 {bn 
+                          ? 'পরীক্ষায় যেসব ছাত্র অংশগ্রহণ করবে তাদের টিকচিহ্ন (✓) দিয়ে অন্তর্ভুক্ত রাখুন। কাউকে বাদ দিতে কার্ডের উপর ক্লিক করুন বা টিকচিহ্ন তুলে দিন।' 
+                          : 'Students participating in the exam are checked (✓). Click any student to exclude/include them.'}
+                      </p>
+
+                      {/* Class-wise Student List */}
+                      <div className="space-y-3 max-h-80 overflow-y-auto p-1.5 border border-border rounded-xl bg-muted/20 custom-scrollbar">
+                        {classStudents.length === 0 ? (
+                          <p className="text-xs text-muted-foreground text-center py-6">
+                            {bn ? 'নির্বাচিত শ্রেণিগুলোতে কোনো শিক্ষার্থী লোড হয়নি বা পাওয়া যায়নি' : 'No students found for selected classes'}
+                          </p>
+                        ) : (
+                          selectedClassIds.map(classId => {
                             const cls = classes.find((c: any) => c.id === classId);
-                            const clsStudents = classStudents.filter((s: any) => s.class_id === classId);
-                            if (clsStudents.length === 0) return null;
-                            const excludedInClass = clsStudents.filter((s: any) => excludedStudentIds.includes(s.id)).length;
+                            let clsStudents = classStudents.filter((s: any) => s.class_id === classId);
+                            if (studentSearchQuery.trim()) {
+                              const q = studentSearchQuery.toLowerCase();
+                              clsStudents = clsStudents.filter((s: any) =>
+                                (s.name_bn && s.name_bn.toLowerCase().includes(q)) ||
+                                (s.name_en && s.name_en.toLowerCase().includes(q)) ||
+                                (s.roll_number && String(s.roll_number).includes(q)) ||
+                                (s.student_id && s.student_id.toLowerCase().includes(q))
+                              );
+                            }
+                            if (clsStudents.length === 0 && !studentSearchQuery.trim()) return null;
+
+                            const totalInThisClass = classStudents.filter((s: any) => s.class_id === classId).length;
+                            const excludedInClass = classStudents.filter((s: any) => s.class_id === classId && excludedStudentIds.includes(s.id)).length;
+                            const includedInClass = totalInThisClass - excludedInClass;
+
+                            const includeAllInClass = () => {
+                              const classStudentIds = new Set(classStudents.filter((s: any) => s.class_id === classId).map((s: any) => s.id));
+                              setExcludedStudentIds(prev => prev.filter(id => !classStudentIds.has(id)));
+                            };
+
+                            const excludeAllInClass = () => {
+                              const classStudentIds = classStudents.filter((s: any) => s.class_id === classId).map((s: any) => s.id);
+                              setExcludedStudentIds(prev => Array.from(new Set([...prev, ...classStudentIds])));
+                            };
+
                             return (
-                              <div key={classId} className="border border-border/70 rounded-lg overflow-hidden bg-card">
-                                <div className="px-3 py-2 bg-muted/50 flex items-center justify-between border-b border-border/50">
-                                  <span className="text-xs font-bold text-foreground">
-                                    {bn ? cls?.name_bn : cls?.name}
-                                  </span>
-                                  <span className="text-[11px] font-semibold text-muted-foreground">
-                                    {bn
-                                      ? `${clsStudents.length - excludedInClass}/${clsStudents.length} জন উপস্থিত/অন্তর্ভুক্ত`
-                                      : `${clsStudents.length - excludedInClass}/${clsStudents.length} included`}
-                                  </span>
+                              <div key={classId} className="border border-border/70 rounded-xl overflow-hidden bg-card shadow-xs">
+                                <div className="px-3.5 py-2 bg-muted/60 flex items-center justify-between border-b border-border/60 flex-wrap gap-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold text-foreground">
+                                      {bn ? cls?.name_bn : cls?.name}
+                                    </span>
+                                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                                      {bn ? `${includedInClass}/${totalInThisClass} জন অন্তর্ভুক্ত` : `${includedInClass}/${totalInThisClass} included`}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex items-center gap-1.5 text-xs">
+                                    <button
+                                      type="button"
+                                      onClick={includeAllInClass}
+                                      className="px-2 py-0.5 rounded text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50"
+                                    >
+                                      {bn ? 'এই শ্রেণির সব অন্তর্ভুক্ত' : 'Include All'}
+                                    </button>
+                                    <span className="text-muted-foreground">|</span>
+                                    <button
+                                      type="button"
+                                      onClick={excludeAllInClass}
+                                      className="px-2 py-0.5 rounded text-[11px] font-semibold text-destructive hover:bg-destructive/10"
+                                    >
+                                      {bn ? 'সব বাদ' : 'Exclude All'}
+                                    </button>
+                                  </div>
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 p-2">
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 p-2.5">
                                   {clsStudents.map((st: any) => {
                                     const isExcluded = excludedStudentIds.includes(st.id);
                                     return (
-                                      <label
+                                      <div
                                         key={st.id}
-                                        className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors text-xs ${
-                                          isExcluded
-                                            ? 'bg-destructive/5 border border-destructive/20 line-through opacity-60 text-muted-foreground'
-                                            : 'border border-border bg-background hover:border-emerald-400'
+                                        onClick={() => setExcludedStudentIds(prev => isExcluded ? prev.filter(id => id !== st.id) : [...prev, st.id])}
+                                        className={`p-2.5 rounded-lg border cursor-pointer transition-all flex items-center justify-between gap-2 ${
+                                          !isExcluded
+                                            ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-xs'
+                                            : 'border-destructive/30 bg-destructive/5 line-through opacity-60 text-muted-foreground'
                                         }`}
                                       >
-                                        <Checkbox
-                                          checked={!isExcluded}
-                                          onCheckedChange={() => setExcludedStudentIds(prev => isExcluded ? prev.filter(id => id !== st.id) : [...prev, st.id])}
-                                        />
-                                        <span className="flex-1 truncate font-medium">
-                                          {st.roll_number && <span className="font-bold text-emerald-700 dark:text-emerald-400 mr-1.5">#{st.roll_number}</span>}
-                                          {bn ? st.name_bn : (st.name_en || st.name_bn)}
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          <Checkbox
+                                            checked={!isExcluded}
+                                            onCheckedChange={() => setExcludedStudentIds(prev => isExcluded ? prev.filter(id => id !== st.id) : [...prev, st.id])}
+                                            onClick={e => e.stopPropagation()}
+                                          />
+                                          <div className="truncate">
+                                            <span className="text-xs font-semibold text-foreground truncate block">
+                                              {st.roll_number && <span className="font-bold text-emerald-700 dark:text-emerald-400 mr-1.5">#{st.roll_number}</span>}
+                                              {bn ? st.name_bn : (st.name_en || st.name_bn)}
+                                            </span>
+                                            <span className="text-[10px] font-mono text-muted-foreground">{st.student_id}</span>
+                                          </div>
+                                        </div>
+
+                                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ${
+                                          !isExcluded 
+                                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' 
+                                            : 'bg-destructive/10 text-destructive'
+                                        }`}>
+                                          {!isExcluded ? (bn ? 'অন্তর্ভুক্ত' : 'Included') : (bn ? 'বাদ' : 'Excluded')}
                                         </span>
-                                        <span className="text-[10px] font-mono text-muted-foreground">{st.student_id}</span>
-                                      </label>
+                                      </div>
                                     );
                                   })}
                                 </div>
                               </div>
                             );
-                          })}
-                        </div>
-                      )}
+                          })
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
