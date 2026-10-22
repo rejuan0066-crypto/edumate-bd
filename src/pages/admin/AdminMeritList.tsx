@@ -253,6 +253,21 @@ const AdminMeritList = () => {
       { p_exam_session_id: examSessionId, p_class_id: classId, p_reason: reason },
       bn ? 'মেধা তালিকা প্রত্যাখ্যাত' : 'Merit list rejected');
 
+  const handleResetApproval = async () => {
+    try {
+      const { error } = await supabase
+        .from('merit_list_approvals' as any)
+        .delete()
+        .eq('exam_session_id', examSessionId)
+        .eq('class_id', classId);
+      if (error) throw error;
+      toast({ title: bn ? 'মেধা তালিকা স্ট্যাটাস ফ্রেশ করা হয়েছে' : 'Merit list status reset to fresh' });
+      refreshApproval();
+    } catch (err: any) {
+      toast({ title: bn ? 'ত্রুটি' : 'Error', description: err.message, variant: 'destructive' });
+    }
+  };
+
   // ----- Print approval report -----
   const { data: institution } = useInstitutionInfo();
 
@@ -360,6 +375,7 @@ const AdminMeritList = () => {
               onSubmit={handleSubmitApproval}
               onApprove={handleApprove}
               onReject={handleReject}
+              onReset={handleResetApproval}
             />
             {approvalStatus === 'approved' && (rankingData?.rankings?.length ?? 0) > 0 && (
               <div className="flex justify-end">
