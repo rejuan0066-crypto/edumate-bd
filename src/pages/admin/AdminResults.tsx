@@ -61,6 +61,7 @@ const AdminResults = () => {
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [marksMap, setMarksMap] = useState<Record<string, number>>({});
   const [viewingStudentId, setViewingStudentId] = useState<string | null>(null);
+  const [directViewingStudent, setDirectViewingStudent] = useState<any | null>(null);
   const [exportingClassId, setExportingClassId] = useState<string | null>(null);
   const [readOnlyView, setReadOnlyView] = useState(false);
 
@@ -545,7 +546,29 @@ const AdminResults = () => {
       const q = rollNumber.trim();
       const qEn = bnToEn(q);
       const qBn = enToBn(q);
-      const found = students.find((st: any) => {
+
+      // Query exam_session_students for this exam session across all classes (or selected class)
+      let studentQuery = supabase
+        .from('exam_session_students')
+        .select('class_id, student_id, students(*, divisions(name, name_bn))')
+        .eq('exam_session_id', examSessionId);
+
+      if (selectedClass) {
+        studentQuery = studentQuery.eq('class_id', selectedClass);
+      }
+
+      const { data: sessionStudentRows, error: sErr } = await studentQuery;
+      if (sErr) {
+        toast.error(sErr.message);
+        return;
+      }
+
+      let matchedClassId: string | null = null;
+      let matchedStudent: any = null;
+
+      const foundRow = (sessionStudentRows || []).find((row: any) => {
+        const st = row.students;
+        if (!st) return false;
         const r = String(st.roll_number ?? '').trim();
         const sid = String(st.student_id ?? '').trim();
         const reg = String((st.registration_no || st.registration_number) ?? '').trim();
@@ -555,14 +578,43 @@ const AdminResults = () => {
           reg === q || reg === qEn || reg === qBn
         );
       });
-      if (found) {
-        setViewingStudentId(found.id);
+
+      if (foundRow && foundRow.students) {
+        matchedStudent = foundRow.students;
+        matchedClassId = foundRow.class_id;
       } else {
-        toast.error(bn ? 'ছাত্র পাওয়া যায়নি' : 'Student not found');
+        // Fallback: check students table directly
+        const { data: directList } = await supabase
+          .from('students')
+          .select('*, divisions(name, name_bn)')
+          .or(`roll_number.eq.${qEn},student_id.eq.${q},registration_no.eq.${q}`);
+
+        if (directList && directList.length > 0) {
+          const directMatch = directList[0];
+          matchedStudent = directMatch;
+          matchedClassId = directMatch.class_id;
+        }
+      }
+
+      if (!matchedStudent) {
+        toast.error(
+          bn
+            ? `"${rollNumber}" নম্বরের কোনো ছাত্র পাওয়া যায়নি। অনুগ্রহ করে সঠিক রোল নম্বর দিন (যেমন: ১০০১ বা 1001)।`
+            : `No student found for "${rollNumber}". Please enter a valid roll number.`
+        );
         return;
       }
+
+      if (matchedClassId) {
+        setSelectedClass(matchedClassId);
+      }
+      setDirectViewingStudent(matchedStudent);
+      setViewingStudentId(matchedStudent.id);
+      setShowResults(true);
+      return;
     } else {
       setViewingStudentId(null);
+      setDirectViewingStudent(null);
     }
     setShowResults(true);
   };
@@ -1152,7 +1204,7 @@ const AdminResults = () => {
     }
   };
 
-  const viewingStudent = viewingStudentId ? students.find((st: any) => st.id === viewingStudentId) : null;
+  const viewingStudent = directViewingStudent || (viewingStudentId ? students.find((st: any) => st.id === viewingStudentId) : null);
   const viewingStudentRank = useMemo(() => {
     if (!viewingStudentId || !students?.length || !subjects?.length) return undefined;
     const statsList = students.map((st: any) => {
@@ -2031,17 +2083,38 @@ const AdminResults = () => {
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-2 max-w-xl">
-                <Input
-                  type="text"
-                  placeholder={bn ? 'রোল নম্বর বা আইডি লিখুন (উদাঃ ১, ২, ৩...)' : 'Enter roll or ID (e.g. 1, 2, 3...)'}
-                  value={rollNumber}
-                  onChange={(e) => setRollNumber(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSearch();
+              <div className="flex flex-col sm:flex-row gap-2 max-w-2xl">
+                <select
+                  value={selectedClass}
+                  onChange={(e) => {
+                    setSelectedClass(e.target.value);
+                    setDirectViewingStudent(null);
+                    setViewingStudentId(null);
+                    setShowResults(false);
                   }}
-                  className="h-10 rounded-xl bg-background border-border text-sm font-semibold"
-                />
+                  className="h-10 rounded-xl bg-background border border-border px-3 text-xs sm:text-sm font-semibold text-foreground"
+                >
+                  <option value="">{bn ? '— সকল শ্রেণি / জামাত —' : '— All Classes —'}</option>
+                  {examClasses.map((c: any) => (
+                    <option key={c.id} value={c.id}>
+                      {bn ? c.name_bn : c.name}
+                    </option>
+                  ))}
+                </select>
+
+                <div className="relative flex-1">
+                  <Input
+                    type="text"
+                    placeholder={bn ? 'রোল নম্বর বা আইডি লিখুন (যেমন: ১০০১ বা 1001)' : 'Enter roll or ID (e.g. 1001)'}
+                    value={rollNumber}
+                    onChange={(e) => setRollNumber(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSearch();
+                    }}
+                    className="h-10 rounded-xl bg-background border-border text-sm font-semibold"
+                  />
+                </div>
+
                 <Button
                   onClick={handleSearch}
                   className="h-10 bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-6 rounded-xl shadow-sm shrink-0 gap-1.5"
@@ -2060,7 +2133,10 @@ const AdminResults = () => {
                   examName={bn ? examSessions.find((es: any) => es.id === examSessionId)?.name_bn : examSessions.find((es: any) => es.id === examSessionId)?.name}
                   className={bn ? examClasses.find((c: any) => c.id === selectedClass)?.name_bn : examClasses.find((c: any) => c.id === selectedClass)?.name}
                   sessionName={(() => { const y = academicSessions.find((s: any) => s.id === examYear); return bn ? (y?.name_bn || y?.name) : y?.name; })()}
-                  onBack={() => setViewingStudentId(null)}
+                  onBack={() => {
+                    setViewingStudentId(null);
+                    setDirectViewingStudent(null);
+                  }}
                   rank={viewingStudentRank}
                   overrideStatus={viewingStudentId ? statusOverrides[viewingStudentId] : undefined}
                 />
@@ -2076,11 +2152,22 @@ const AdminResults = () => {
                         type="button"
                         onClick={() => {
                           setViewingStudentId(st.id);
+                          setDirectViewingStudent(st);
                           setShowResults(true);
                         }}
                         className="p-2.5 rounded-xl border border-border bg-card hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:border-emerald-500/50 text-left transition flex flex-col gap-0.5"
                       >
                         <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
+                          {bn ? `রোল: ${enToBn(st.roll_number ?? '—')}` : `Roll: ${st.roll_number ?? '—'}`}
+                        </span>
+                        <span className="text-xs font-semibold text-foreground truncate">
+                          {bn ? (st.name_bn || st.name) : (st.name || st.name_bn)}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
                           {bn ? `রোল: ${enToBn(st.roll_number ?? '—')}` : `Roll: ${st.roll_number ?? '—'}`}
                         </span>
                         <span className="text-xs font-semibold text-foreground truncate">
