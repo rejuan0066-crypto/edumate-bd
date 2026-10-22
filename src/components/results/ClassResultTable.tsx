@@ -322,18 +322,15 @@ const ClassResultTable = ({
 
         <div className="flex items-center gap-1 sm:gap-2">
           <Button variant="outline" size="sm" onClick={() => handleExport('csv')} className="h-9 px-3 text-xs sm:text-sm font-semibold gap-1.5">
-            <FileSpreadsheet className="w-4 h-4" /> <span className="hidden xs:inline">Excel</span>
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" /> <span className="hidden xs:inline">Excel</span>
           </Button>
           <Button variant="outline" size="sm" onClick={() => handleExport('pdf')} className="h-9 px-3 text-xs sm:text-sm font-semibold gap-1.5">
-            <FileDown className="w-4 h-4" /> <span className="hidden xs:inline">PDF</span>
+            <FileDown className="w-4 h-4 text-rose-600" /> <span className="hidden xs:inline">PDF</span>
           </Button>
-          {readOnly ? (
-            onEdit && (
-              <Button variant="outline" size="sm" onClick={onEdit} className="h-9 px-3 text-xs sm:text-sm font-semibold gap-1.5">
-                <Save className="w-4 h-4" /> {bn ? 'এডিট করুন' : 'Edit'}
-              </Button>
-            )
-          ) : (
+          <Button variant="outline" size="sm" onClick={() => window.print()} className="h-9 px-3 text-xs sm:text-sm font-semibold gap-1.5">
+            <Printer className="w-4 h-4 text-slate-700 dark:text-slate-300" /> <span className="hidden xs:inline">{bn ? 'প্রিন্ট' : 'Print'}</span>
+          </Button>
+          {!readOnly && (
             <Button size="sm" className="btn-primary-gradient h-9 px-4 text-xs sm:text-sm font-semibold gap-1.5" onClick={onSave} disabled={isSaving}>
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {bn ? 'সংরক্ষণ' : 'Save'}
