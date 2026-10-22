@@ -18,7 +18,7 @@ import AddressFields, { type AddressData } from '@/components/AddressFields';
 import PhoneInput from '@/components/PhoneInput';
 import CardVerifySection from '@/components/CardVerifySection';
 import { useApiVerificationEnabled } from '@/hooks/useApiVerification';
-import { Plus, Search, Loader2, AlertCircle, CheckCircle, Save, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Plus, Search, Loader2, AlertCircle, CheckCircle, Save, ArrowLeft, ArrowRight, GraduationCap, User, UserCheck, Heart, MapPin, ShieldCheck, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { invalidateAllStudentQueries } from '@/lib/studentQueryInvalidator';
 
@@ -882,11 +882,19 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       case 'student_type':
         return (
           <div>
-            <Label>{label} {reqStar}</Label>
-            <div className="flex gap-3 mt-1">
+            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label} {reqStar}</Label>
+            <div className="flex gap-2.5 mt-1.5">
               {(['new', 'old'] as const).map(type => (
-                <button key={type} type="button" onClick={() => setForm(prev => ({ ...prev, student_type: type }))}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${form.student_type === type ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border text-muted-foreground hover:border-primary'}`}>
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setForm(prev => ({ ...prev, student_type: type }))}
+                  className={`flex-1 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold border transition-all ${
+                    form.student_type === type
+                      ? 'bg-primary text-primary-foreground border-primary shadow-sm ring-2 ring-primary/20'
+                      : 'bg-background border-border text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                  }`}
+                >
                   {type === 'new' ? (bn ? 'নতুন ছাত্র' : 'New Student') : (bn ? 'পুরাতন ছাত্র' : 'Old Student')}
                 </button>
               ))}
@@ -897,11 +905,19 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       case 'residence_type':
         return (
           <div>
-            <Label>{label} {reqStar}</Label>
-            <div className="flex gap-3 mt-1">
+            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label} {reqStar}</Label>
+            <div className="flex gap-2.5 mt-1.5">
               {[{ v: 'resident', l: bn ? 'আবাসিক' : 'Resident' }, { v: 'non-resident', l: bn ? 'অনাবাসিক' : 'Non-Resident' }].map(r => (
-                <button key={r.v} type="button" onClick={() => setForm(prev => ({ ...prev, residence_type: r.v }))}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${form.residence_type === r.v ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border text-muted-foreground hover:border-primary'}`}>
+                <button
+                  key={r.v}
+                  type="button"
+                  onClick={() => setForm(prev => ({ ...prev, residence_type: r.v }))}
+                  className={`flex-1 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold border transition-all ${
+                    form.residence_type === r.v
+                      ? 'bg-primary text-primary-foreground border-primary shadow-sm ring-2 ring-primary/20'
+                      : 'bg-background border-border text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                  }`}
+                >
                   {r.l}
                 </button>
               ))}
@@ -1380,8 +1396,12 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
         return (a.sort_order || 0) - (b.sort_order || 0);
       });
 
+      const ACADEMIC_KEYS = ['admission_session', 'admission_division', 'admission_class', 'roll_number', 'registration_no', 'admission_date', 'session_year'];
+      const academicFields = otherFields.filter(f => ACADEMIC_KEYS.includes(f.default_value || ''));
+      const personalFields = otherFields.filter(f => !ACADEMIC_KEYS.includes(f.default_value || ''));
+
       return (
-        <div key={sectionKey} className="rounded-lg p-4 space-y-4 border-2 opacity-100 border-secondary border-solid shadow-md">
+        <div key={sectionKey} className="space-y-5">
           {/* Card Verification with Didit AI & ID Search */}
           <CardVerifySection
             formType="student"
@@ -1391,10 +1411,8 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
             }}
           />
 
-          <h3 className="text-md font-display font-semibold text-foreground border-b pb-2 text-2xl text-center bg-secondary">{title}</h3>
-
           {/* Photo + type selectors */}
-          <div className="flex flex-col sm:flex-row gap-6">
+          <div className="flex flex-col sm:flex-row gap-6 p-4 rounded-2xl bg-muted/20 border border-border/70 shadow-2xs">
             {photoField && renderSystemField('photo_url', photoField)}
             <div className="flex-1 space-y-4">
               {typeField && renderSystemField('student_type', typeField)}
@@ -1404,26 +1422,29 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
 
           {/* Old student search */}
           {isFieldActive('student_type') && form.student_type === 'old' && (
-            <div className="p-4 rounded-lg bg-secondary/50 border space-y-3">
-              <p className="text-sm font-medium">{bn ? 'পুরাতন ছাত্রের তথ্য অনুসন্ধান' : 'Search Old Student'}</p>
+            <div className="p-4 rounded-2xl bg-secondary/50 border border-border space-y-3 shadow-2xs">
+              <p className="text-sm font-semibold flex items-center gap-2">
+                <Search className="w-4 h-4 text-primary" />
+                {bn ? 'পুরাতন ছাত্রের তথ্য অনুসন্ধান' : 'Search Old Student'}
+              </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <Input placeholder={bn ? 'রোল' : 'Roll'} value={oldRoll} onChange={e => setOldRoll(e.target.value)} className="bg-background" />
-                <Input placeholder={bn ? 'ভর্তি সেশন' : 'Session'} value={oldSession} onChange={e => setOldSession(e.target.value)} className="bg-background" />
+                <Input placeholder={bn ? 'রোল' : 'Roll'} value={oldRoll} onChange={e => setOldRoll(e.target.value)} className="bg-background rounded-xl" />
+                <Input placeholder={bn ? 'ভর্তি সেশন' : 'Session'} value={oldSession} onChange={e => setOldSession(e.target.value)} className="bg-background rounded-xl" />
                 <Select value={oldClass} onValueChange={setOldClass}>
-                  <SelectTrigger className="bg-background"><SelectValue placeholder={bn ? 'শ্রেণী' : 'Class'} /></SelectTrigger>
+                  <SelectTrigger className="bg-background rounded-xl"><SelectValue placeholder={bn ? 'শ্রেণী' : 'Class'} /></SelectTrigger>
                   <SelectContent>{classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <Button type="button" variant="outline" onClick={handleOldStudentSearch} className="flex items-center gap-2">
-                <Search className="w-4 h-4" /> {bn ? 'অনুসন্ধান' : 'Search'}
+              <Button type="button" variant="outline" onClick={handleOldStudentSearch} className="flex items-center gap-2 rounded-xl text-xs">
+                <Search className="w-3.5 h-3.5" /> {bn ? 'অনুসন্ধান' : 'Search'}
               </Button>
             </div>
           )}
 
-          {/* Student Category & Free Student - prominent placement */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 rounded-lg border border-primary/20 bg-primary/5">
+          {/* Student Category & Free Student */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl border border-primary/25 bg-gradient-to-r from-primary/5 via-background to-secondary/30 shadow-2xs">
             <div>
-              <Label className="text-sm font-medium">{bn ? 'ছাত্রের ক্যাটাগরি' : 'Student Category'} <span className="text-destructive">*</span></Label>
+              <Label className="text-xs font-semibold text-foreground uppercase tracking-wider">{bn ? 'ছাত্রের ক্যাটাগরি' : 'Student Category'} <span className="text-destructive">*</span></Label>
               <Select value={form.student_category} onValueChange={v => {
                 setForm(prev => ({
                   ...prev,
@@ -1432,7 +1453,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                   is_poor: v === 'poor',
                 }));
               }}>
-                <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
+                <SelectTrigger className="bg-background mt-1.5 h-10 rounded-xl"><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
                 <SelectContent>
                   {studentCategories.map((cat: any) => (
                     <SelectItem key={cat.id} value={cat.name}>{bn ? cat.name_bn : cat.name}</SelectItem>
@@ -1443,23 +1464,71 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center gap-3 p-3 rounded-lg border border-border bg-background self-end">
-              <Switch id="isFree" checked={form.is_free} onCheckedChange={v => setForm(prev => ({ ...prev, is_free: !!v }))} />
-              <Label htmlFor="isFree" className="text-sm font-medium cursor-pointer">
-                {bn ? 'বিনা বেতন (Free Student)' : 'Free Student (No Fee)'}
-              </Label>
-              {form.is_free && <span className="text-xs px-2 py-0.5 rounded-full bg-success/10 text-success font-medium">{bn ? 'সক্রিয়' : 'Active'}</span>}
+            <div className="flex items-center justify-between gap-3 p-3 rounded-xl border border-border/80 bg-background self-end shadow-2xs">
+              <div className="flex items-center gap-3">
+                <Switch id="isFree" checked={form.is_free} onCheckedChange={v => setForm(prev => ({ ...prev, is_free: !!v }))} />
+                <Label htmlFor="isFree" className="text-xs sm:text-sm font-semibold cursor-pointer">
+                  {bn ? 'বিনা বেতন (Free Student)' : 'Free Student (No Fee)'}
+                </Label>
+              </div>
+              {form.is_free && (
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold border border-emerald-500/20">
+                  {bn ? 'সক্রিয়' : 'Active'}
+                </span>
+              )}
             </div>
           </div>
 
-          {/* Other fields in grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {otherFields.map(f => {
-              const key = f.default_value;
-              if (!key) return <div key={f.id} data-field={f.id}>{renderCustomField(f)}</div>;
-              if (SYSTEM_KEYS.includes(key)) return <div key={f.id} data-field={key}>{renderSystemField(key, f)}</div>;
-              return <div key={f.id} data-field={key}>{renderCustomField(f)}</div>;
-            })}
+          {/* Group 1: Academic Information */}
+          <div className="rounded-2xl border border-primary/20 bg-card p-4 sm:p-5 shadow-xs space-y-4">
+            <div className="flex items-center gap-2.5 pb-3 border-b border-border/60">
+              <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                <GraduationCap className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm sm:text-base font-bold text-foreground">
+                  {bn ? 'একাডেমিক তথ্য' : 'Academic Information'}
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  {bn ? 'সেশন, বিভাগ, শ্রেণী ও রোল সংক্রান্ত তথ্য' : 'Session, division, class and roll information'}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {academicFields.map(f => {
+                const key = f.default_value;
+                if (!key) return <div key={f.id} data-field={f.id}>{renderCustomField(f)}</div>;
+                if (SYSTEM_KEYS.includes(key)) return <div key={f.id} data-field={key}>{renderSystemField(key, f)}</div>;
+                return <div key={f.id} data-field={key}>{renderCustomField(f)}</div>;
+              })}
+            </div>
+          </div>
+
+          {/* Group 2: Personal Information */}
+          <div className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs space-y-4">
+            <div className="flex items-center gap-2.5 pb-3 border-b border-border/60">
+              <div className="p-2 rounded-xl bg-secondary text-foreground">
+                <User className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm sm:text-base font-bold text-foreground">
+                  {bn ? 'ব্যক্তিগত বিবরণ' : 'Personal Details'}
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  {bn ? 'শিক্ষার্থীর নাম, লিঙ্গ, জন্ম তারিখ ও অন্যান্য তথ্য' : 'Student name, gender, birth date and other details'}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {personalFields.map(f => {
+                const key = f.default_value;
+                if (!key) return <div key={f.id} data-field={f.id}>{renderCustomField(f)}</div>;
+                if (SYSTEM_KEYS.includes(key)) return <div key={f.id} data-field={key}>{renderSystemField(key, f)}</div>;
+                return <div key={f.id} data-field={key}>{renderCustomField(f)}</div>;
+              })}
+            </div>
           </div>
         </div>
       );
@@ -1468,8 +1537,16 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     // Father info section
     if (sectionKey === 'father_info') {
       return (
-        <div key={sectionKey} className="border rounded-lg p-4 space-y-4 shadow-md">
-          <h3 className="text-md font-display font-semibold text-foreground border-b pb-2 text-2xl text-center bg-secondary">{title}</h3>
+        <div key={sectionKey} className="rounded-2xl border border-border/80 bg-card p-5 sm:p-6 space-y-5 shadow-xs">
+          <div className="flex items-center gap-3 pb-3 border-b border-border/60">
+            <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+              <UserCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-base font-bold text-foreground">{title}</h4>
+              <p className="text-xs text-muted-foreground">{bn ? 'পিতার নাম, পেশা, মোবাইল ও জাতীয় পরিচয়পত্র' : "Father's name, occupation, mobile and NID"}</p>
+            </div>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {sectionFields.map(f => {
               const key = f.default_value;
@@ -1482,11 +1559,19 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       );
     }
 
-    // Student address section (only student address fields)
+    // Student address section
     if (sectionKey === 'student_address') {
       return (
-        <div key={sectionKey} className="border rounded-lg p-4 space-y-4 shadow-md">
-          <h3 className="text-md font-display font-semibold text-foreground border-b pb-2 text-center text-2xl bg-secondary">{title}</h3>
+        <div key={sectionKey} className="rounded-2xl border border-border/80 bg-card p-5 sm:p-6 space-y-5 shadow-xs">
+          <div className="flex items-center gap-3 pb-3 border-b border-border/60">
+            <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+              <MapPin className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-base font-bold text-foreground">{title}</h4>
+              <p className="text-xs text-muted-foreground">{bn ? 'শিক্ষার্থীর স্থায়ী ও বর্তমান ঠিকানা' : 'Student permanent and present address'}</p>
+            </div>
+          </div>
           <div className="grid grid-cols-1 gap-4">
             {sectionFields.map(f => {
               const key = f.default_value;
@@ -1503,8 +1588,16 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     if (sectionKey === 'mother_info') {
       return (
         <React.Fragment key={sectionKey}>
-          <div className="border rounded-lg p-4 space-y-4 shadow-md">
-            <h3 className="text-md font-display font-semibold text-foreground border-b pb-2 text-2xl text-center bg-secondary">{title}</h3>
+          <div className="rounded-2xl border border-border/80 bg-card p-5 sm:p-6 space-y-5 shadow-xs">
+            <div className="flex items-center gap-3 pb-3 border-b border-border/60">
+              <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                <Heart className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-base font-bold text-foreground">{title}</h4>
+                <p className="text-xs text-muted-foreground">{bn ? 'মাতার নাম, পেশা, মোবাইল ও জাতীয় পরিচয়পত্র' : "Mother's name, occupation, mobile and NID"}</p>
+              </div>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {sectionFields.map(f => {
                 const key = f.default_value;
@@ -1513,30 +1606,39 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                 return <div key={f.id} data-field={key}>{renderCustomField(f)}</div>;
               })}
             </div>
-            <p className="text-xs text-destructive flex items-center gap-1 mt-2">
-              <AlertCircle className="w-3 h-3" />
-              {bn ? 'কমপক্ষে একটি NID এবং একটি মোবাইল নম্বর প্রয়োজন' : 'At least one NID and one mobile number required'}
-            </p>
+            <div className="mt-3 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-xs text-destructive font-medium flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{bn ? 'কমপক্ষে একটি NID এবং একটি মোবাইল নম্বর আবশ্যক' : 'At least one NID and one mobile number required'}</span>
+            </div>
           </div>
-          {/* Parent address - separate section after mother info */}
-          <div className="border rounded-lg p-4 space-y-4 shadow-md">
-            <h3 className="text-md font-display font-semibold text-foreground border-b pb-2 text-2xl text-center bg-secondary">{bn ? 'পিতা/মাতার ঠিকানা' : 'Parent Address'}</h3>
-            <div className="flex items-center gap-2">
+
+          {/* Parent address */}
+          <div className="rounded-2xl border border-border/80 bg-card p-5 sm:p-6 space-y-5 shadow-xs mt-5">
+            <div className="flex items-center gap-3 pb-3 border-b border-border/60">
+              <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                <MapPin className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-base font-bold text-foreground">{bn ? 'পিতা/মাতার ঠিকানা' : 'Parent Address'}</h4>
+                <p className="text-xs text-muted-foreground">{bn ? 'পিতা বা মাতার স্থায়ী ও বর্তমান ঠিকানা' : "Parent's permanent and present address"}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5 p-3 rounded-xl bg-muted/40 border border-border/60">
               <Checkbox id="parentAddrSame" checked={parentAddrSameAsStudent} onCheckedChange={v => {
                 setParentAddrSameAsStudent(!!v);
                 if (v) { setParentPermanentAddr({ ...permanentAddr }); setParentPresentAddr(sameAddress ? { ...permanentAddr } : { ...presentAddr }); }
               }} />
-              <Label htmlFor="parentAddrSame">{bn ? 'ছাত্রের ঠিকানার মতো' : 'Same as student address'}</Label>
+              <Label htmlFor="parentAddrSame" className="text-sm font-medium cursor-pointer">{bn ? 'ছাত্রের ঠিকানার মতো' : 'Same as student address'}</Label>
             </div>
             {!parentAddrSameAsStudent && (
-              <>
+              <div className="space-y-4">
                 <AddressFields label={bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'} value={parentPermanentAddr} onChange={setParentPermanentAddr} />
-                <div className="flex items-center gap-2 mt-2">
+                <div className="flex items-center gap-2.5 p-3 rounded-xl bg-muted/40 border border-border/60">
                   <Checkbox id="parentSamePres" checked={parentSamePresAddr} onCheckedChange={v => { setParentSamePresAddr(!!v); if (v) setParentPresentAddr({ ...parentPermanentAddr }); }} />
-                  <Label htmlFor="parentSamePres">{bn ? 'বর্তমান ঠিকানা স্থায়ী ঠিকানার মতো' : 'Present same as permanent'}</Label>
+                  <Label htmlFor="parentSamePres" className="text-sm font-medium cursor-pointer">{bn ? 'বর্তমান ঠিকানা স্থায়ী ঠিকানার মতো' : 'Present same as permanent'}</Label>
                 </div>
                 {!parentSamePresAddr && <AddressFields label={bn ? 'বর্তমান ঠিকানা' : 'Present Address'} value={parentPresentAddr} onChange={setParentPresentAddr} />}
-              </>
+              </div>
             )}
           </div>
         </React.Fragment>
@@ -1549,21 +1651,29 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       const otherGuardianFields = sectionFields.filter(f => f.default_value !== 'guardian_type');
 
       return (
-        <div key={sectionKey} className="border rounded-lg p-4 space-y-4 shadow-md">
-          <h3 className="text-md font-display font-semibold text-foreground border-b pb-2 text-2xl text-center border-secondary bg-secondary">{title}</h3>
+        <div key={sectionKey} className="rounded-2xl border border-border/80 bg-card p-5 sm:p-6 space-y-5 shadow-xs">
+          <div className="flex items-center gap-3 pb-3 border-b border-border/60">
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-base font-bold text-foreground">{title}</h4>
+              <p className="text-xs text-muted-foreground">{bn ? 'আইনগত অভিভাবক নির্বাচন ও যোগাযোগের বিবরণ' : 'Legal guardian selection and contact details'}</p>
+            </div>
+          </div>
           {guardianTypeField && renderSystemField('guardian_type', guardianTypeField)}
 
           {(form.guardian_type === 'father' || form.guardian_type === 'mother') && (
-            <div className="p-4 rounded-lg bg-success/10 border border-success/20">
-              <p className="text-sm text-success flex items-center gap-2">
-                <CheckCircle className="w-4 h-4" />
+            <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/25">
+              <p className="text-sm text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-600" />
                 {bn ? `${form.guardian_type === 'father' ? 'পিতার' : 'মাতার'} তথ্য থেকে স্বয়ংক্রিয়ভাবে পূরণ হবে` : `Will auto-fill from ${form.guardian_type === 'father' ? "father's" : "mother's"} information`}
               </p>
             </div>
           )}
 
           {form.guardian_type === 'other' && (
-            <div className="space-y-4">
+            <div className="space-y-4 pt-2">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {otherGuardianFields.map(f => {
                   const key = f.default_value;
@@ -1573,9 +1683,9 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                 })}
               </div>
               <AddressFields label={bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'} value={guardianPermAddr} onChange={setGuardianPermAddr} />
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5 p-3 rounded-xl bg-muted/40 border border-border/60">
                 <Checkbox id="guardianSameAddr" checked={guardianSameAddr} onCheckedChange={v => { setGuardianSameAddr(!!v); if (v) setGuardianPresAddr({ ...guardianPermAddr }); }} />
-                <Label htmlFor="guardianSameAddr">{bn ? 'বর্তমান ঠিকানা স্থায়ী ঠিকানার মতো' : 'Present same as permanent'}</Label>
+                <Label htmlFor="guardianSameAddr" className="text-sm font-medium cursor-pointer">{bn ? 'বর্তমান ঠিকানা স্থায়ী ঠিকানার মতো' : 'Present same as permanent'}</Label>
               </div>
               {!guardianSameAddr && <AddressFields label={bn ? 'বর্তমান ঠিকানা' : 'Present Address'} value={guardianPresAddr} onChange={setGuardianPresAddr} />}
             </div>
@@ -1627,13 +1737,25 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
 
   return (
     <Dialog open={open} onOpenChange={o => { onOpenChange(o); if (!o) resetForm(); }}>
-      <DialogContent className="sm:max-w-4xl max-h-[92vh] overflow-y-auto dialog-content-scroll">
-        <DialogHeader>
-          <DialogTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-3">
-            <span>{isEditMode ? (bn ? 'ছাত্রের তথ্য সম্পাদনা' : 'Edit Student') : (bn ? 'ভর্তি আবেদন ফর্ম' : 'Admission Application Form')}</span>
-            <span className="text-xs font-normal text-muted-foreground bg-secondary/80 px-2.5 py-1 rounded-full w-fit">
-              {bn ? `ধাপ ${safeCurrentStep + 1} / ${allStepKeys.length}` : `Step ${safeCurrentStep + 1} of ${allStepKeys.length}`}
-            </span>
+      <DialogContent className="sm:max-w-4xl max-h-[92vh] overflow-y-auto dialog-content-scroll border-border/80 shadow-2xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-background/95 backdrop-blur-xl">
+        <DialogHeader className="pb-3 border-b border-border/60">
+          <DialogTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-lg sm:text-xl font-bold font-display text-foreground">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold shadow-inner">
+                {isEditMode ? <Save className="w-5 h-5" /> : <GraduationCap className="w-5 h-5" />}
+              </div>
+              <div>
+                <span>{isEditMode ? (bn ? 'ছাত্রের তথ্য সম্পাদনা' : 'Edit Student Details') : (bn ? 'ভর্তি আবেদন ফরম' : 'Student Admission Form')}</span>
+                <p className="text-xs font-normal text-muted-foreground mt-0.5">
+                  {bn ? 'সকল আবশ্যকীয় তথ্য সঠিকভাবে পূরণ করে পরবর্তী ধাপে এগিয়ে যান' : 'Fill in all required fields accurately to proceed'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 self-start sm:self-center">
+              <span className="text-xs font-semibold text-primary bg-primary/10 border border-primary/25 px-3 py-1 rounded-full shadow-sm">
+                {bn ? `ধাপ ${safeCurrentStep + 1} / ${allStepKeys.length}` : `Step ${safeCurrentStep + 1} of ${allStepKeys.length}`}
+              </span>
+            </div>
           </DialogTitle>
         </DialogHeader>
 
@@ -1642,7 +1764,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
         ) : (
           <div className="space-y-6 py-2">
             {/* Step Wizard Header */}
-            <div className="w-full bg-secondary/30 border border-border/80 rounded-xl p-3 sm:p-4 shadow-sm">
+            <div className="w-full bg-muted/30 border border-border/70 rounded-2xl p-3 sm:p-4 shadow-sm backdrop-blur-sm">
               <div className="flex items-center justify-between overflow-x-auto pb-1 gap-2 sm:gap-3 scrollbar-none">
                 {allStepKeys.map((stepKey, idx) => {
                   const isCurrent = idx === safeCurrentStep;
@@ -1652,36 +1774,36 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                       key={stepKey}
                       type="button"
                       onClick={() => handleStepClick(idx)}
-                      className={`flex flex-col items-center flex-1 min-w-[70px] sm:min-w-[90px] relative focus:outline-none transition-all group ${
-                        idx < safeCurrentStep ? 'cursor-pointer' : isCurrent ? 'cursor-default' : 'cursor-pointer hover:opacity-100 opacity-70'
+                      className={`flex flex-col items-center flex-1 min-w-[72px] sm:min-w-[95px] relative focus:outline-none transition-all group ${
+                        idx < safeCurrentStep ? 'cursor-pointer' : isCurrent ? 'cursor-default' : 'cursor-pointer hover:opacity-100 opacity-75'
                       }`}
                     >
                       {/* Connecting Line */}
                       {idx > 0 && (
                         <div
-                          className={`hidden sm:block absolute top-4 -left-1/2 w-full h-[2px] -z-0 transition-colors ${
-                            idx <= safeCurrentStep ? 'bg-primary' : 'bg-muted'
+                          className={`hidden sm:block absolute top-4 -left-1/2 w-full h-[2px] -z-0 transition-all duration-300 ${
+                            idx <= safeCurrentStep ? 'bg-gradient-to-r from-emerald-500 to-primary' : 'bg-muted-foreground/20'
                           }`}
                         />
                       )}
 
                       {/* Step Circle */}
                       <div
-                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-bold z-10 transition-all shadow-sm ${
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold z-10 transition-all duration-200 shadow-sm ${
                           isCompleted
-                            ? 'bg-primary text-primary-foreground ring-2 ring-primary/20'
+                            ? 'bg-emerald-600 text-white ring-2 ring-emerald-600/30'
                             : isCurrent
-                            ? 'bg-primary text-primary-foreground ring-4 ring-primary/25 scale-105'
-                            : 'bg-muted text-muted-foreground border border-border'
+                            ? 'bg-primary text-primary-foreground ring-4 ring-primary/25 scale-110 shadow-md shadow-primary/20'
+                            : 'bg-muted text-muted-foreground border border-border/80 group-hover:border-primary/50'
                         }`}
                       >
-                        {isCompleted ? <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : idx + 1}
+                        {isCompleted ? <CheckCircle className="w-4 h-4" /> : idx + 1}
                       </div>
 
                       {/* Step Title */}
                       <span
                         className={`mt-1.5 text-[11px] sm:text-xs text-center font-medium line-clamp-1 max-w-[85px] sm:max-w-none transition-colors ${
-                          isCurrent ? 'text-primary font-bold' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
+                          isCurrent ? 'text-primary font-bold' : isCompleted ? 'text-foreground font-semibold' : 'text-muted-foreground'
                         }`}
                       >
                         {getStepTitle(stepKey)}
@@ -1804,7 +1926,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
             })()}
 
             {/* Step Navigation Controls */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t mt-4 sticky bottom-0 bg-background/95 backdrop-blur py-3 -mx-2 px-2 z-20">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-border/70 mt-6 sticky -bottom-4 sm:-bottom-6 bg-background/95 backdrop-blur-md py-3.5 -mx-4 sm:-mx-6 px-4 sm:px-6 z-20 rounded-b-2xl sm:rounded-b-3xl shadow-lg">
               <Button
                 type="button"
                 variant="outline"
@@ -1814,14 +1936,16 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                   if (dialogContent) dialogContent.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
                 disabled={safeCurrentStep === 0}
-                className="w-full sm:w-auto px-5 py-2.5 gap-2"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl gap-2 hover:bg-muted font-medium transition-all"
               >
                 <ArrowLeft className="w-4 h-4" />
                 {bn ? 'পূর্ববর্তী ধাপ' : 'Previous Step'}
               </Button>
 
-              <div className="text-xs sm:text-sm font-medium text-muted-foreground order-first sm:order-none">
-                {bn ? `ধাপ ${safeCurrentStep + 1} / ${allStepKeys.length} : ${getStepTitle(allStepKeys[safeCurrentStep])}` : `Step ${safeCurrentStep + 1} of ${allStepKeys.length} : ${getStepTitle(allStepKeys[safeCurrentStep])}`}
+              <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-muted-foreground order-first sm:order-none bg-muted/60 px-3.5 py-1.5 rounded-full border border-border/50">
+                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <span>{bn ? `ধাপ ${safeCurrentStep + 1} / ${allStepKeys.length} : ` : `Step ${safeCurrentStep + 1} of ${allStepKeys.length} : `}</span>
+                <span className="font-semibold text-foreground">{getStepTitle(allStepKeys[safeCurrentStep])}</span>
               </div>
 
               {safeCurrentStep < allStepKeys.length - 1 ? (
@@ -1834,7 +1958,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                       if (dialogContent) dialogContent.scrollTo({ top: 0, behavior: 'smooth' });
                     }
                   }}
-                  className="btn-primary-gradient w-full sm:w-auto px-6 py-2.5 gap-2"
+                  className="btn-primary-gradient w-full sm:w-auto px-6 py-2.5 rounded-xl gap-2 font-medium shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all"
                 >
                   {bn ? 'পরবর্তী ধাপ' : 'Next Step'}
                   <ArrowRight className="w-4 h-4" />
@@ -1843,17 +1967,17 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                 <Button
                   type="button"
                   onClick={handleSubmit}
-                  className="btn-primary-gradient w-full sm:w-auto px-6 py-2.5 gap-2"
+                  className="btn-primary-gradient w-full sm:w-auto px-7 py-2.5 rounded-xl gap-2 font-semibold shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/35 transition-all"
                   disabled={addMutation.isPending || updateMutation.isPending}
                 >
                   {(addMutation.isPending || updateMutation.isPending) ? (
-                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                    <Loader2 className="w-5 h-5 animate-spin mr-1.5" />
                   ) : isEditMode ? (
-                    <Save className="w-5 h-5 mr-2" />
+                    <Save className="w-5 h-5 mr-1.5" />
                   ) : (
-                    <Plus className="w-5 h-5 mr-2" />
+                    <Sparkles className="w-5 h-5 mr-1.5" />
                   )}
-                  {isEditMode ? (bn ? 'আপডেট করুন' : 'Update Student') : (bn ? 'আবেদন জমা দিন' : 'Submit Application')}
+                  {isEditMode ? (bn ? 'আপডেট সম্পন্ন করুন' : 'Complete Update') : (bn ? 'আবেদন জমা দিন' : 'Submit Application')}
                 </Button>
               )}
             </div>
