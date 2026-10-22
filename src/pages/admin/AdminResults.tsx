@@ -1766,7 +1766,11 @@ const AdminResults = () => {
                       return (
                         <div
                           key={c.id}
-                          className="p-4 rounded-xl border border-border bg-card/50 hover:border-emerald-500/50 hover:shadow-md transition-all flex flex-col justify-between gap-4"
+                          className={`p-4 rounded-xl border transition-all flex flex-col justify-between gap-4 ${
+                            isDone
+                              ? 'border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/20 dark:bg-emerald-950/10'
+                              : 'border-border bg-card/50 hover:border-amber-500/50'
+                          }`}
                         >
                           <div>
                             <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -1774,12 +1778,12 @@ const AdminResults = () => {
                                 {bn ? (c.name_bn || c.name) : c.name}
                               </span>
                               {isDone ? (
-                                <Badge className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300 text-[11px] font-semibold">
-                                  {bn ? 'এন্ট্রি বিদ্যমান' : 'Marks Entered'}
+                                <Badge className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300 text-[11px] font-semibold gap-1">
+                                  <span>✅</span> {bn ? 'এন্ট্রি সম্পন্ন' : 'Marks Entered'}
                                 </Badge>
                               ) : (
-                                <Badge variant="outline" className="text-muted-foreground text-[11px]">
-                                  {bn ? 'বাকি রয়েছে' : 'Pending'}
+                                <Badge variant="outline" className="text-amber-700 dark:text-amber-400 border-amber-300 bg-amber-50/50 dark:bg-amber-950/20 text-[11px] font-semibold gap-1">
+                                  <span>⏳</span> {bn ? 'বাকি রয়েছে' : 'Pending'}
                                 </Badge>
                               )}
                             </div>
@@ -1787,13 +1791,24 @@ const AdminResults = () => {
                               {bn ? 'পরীক্ষা:' : 'Exam:'} {bn ? (currentExamSession?.name_bn || currentExamSession?.name) : currentExamSession?.name}
                             </p>
                           </div>
-                          <Button
-                            onClick={() => handleClassFromList(c.id, 'entry')}
-                            className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs py-2 rounded-xl shadow-sm gap-1.5"
-                          >
-                            <span>✍️</span>
-                            {bn ? 'নম্বর এন্ট্রি শুরু করুন' : 'Start Marks Entry'}
-                          </Button>
+                          {isDone ? (
+                            <Button
+                              onClick={() => handleClassFromList(c.id, 'entry')}
+                              variant="outline"
+                              className="w-full border-emerald-600/40 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100/60 dark:hover:bg-emerald-950/50 font-semibold text-xs py-2 rounded-xl shadow-sm gap-1.5"
+                            >
+                              <span>✏️</span>
+                              {bn ? 'নম্বর সংশোধন / পরিবর্তন করুন' : 'Edit / Update Marks'}
+                            </Button>
+                          ) : (
+                            <Button
+                              onClick={() => handleClassFromList(c.id, 'entry')}
+                              className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs py-2 rounded-xl shadow-sm gap-1.5"
+                            >
+                              <span>✍️</span>
+                              {bn ? 'নম্বর এন্ট্রি শুরু করুন' : 'Start Marks Entry'}
+                            </Button>
+                          )}
                         </div>
                       );
                     })}
