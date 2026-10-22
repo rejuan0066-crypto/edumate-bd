@@ -9,12 +9,13 @@ import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { useAuth } from '@/hooks/useAuth';
 import { isAdminRole } from '@/lib/roles';
-import ResultSelectionBrowser from '@/components/results/ResultSelectionBrowser';
+import ResultSelectionBrowser, { type ResultSearchMode } from '@/components/results/ResultSelectionBrowser';
 import ClassResultTable from '@/components/results/ClassResultTable';
 import ClassResultStatusList from '@/components/results/ClassResultStatusList';
 import { studentStats, rankStudents, gradeFromMark } from '@/lib/grading';
 import { useGradingSystem } from '@/hooks/useGradingSystem';
 import IndividualMarksheet from '@/components/results/IndividualMarksheet';
+import ResultAnalyticsView from '@/components/results/ResultAnalyticsView';
 import GradingChart from '@/components/results/GradingChart';
 import GracePassSettings from '@/components/results/GracePassSettings';
 import GradingSettings from '@/components/results/GradingSettings';
@@ -51,7 +52,7 @@ const AdminResults = () => {
   const [securityDialogOpen, setSecurityDialogOpen] = useState(false);
   const { enabled: isSecurityActive, requireApproval: securityRequireApproval, lockPublished: securityLockPublished, allowAdminDirect } = useResultSecurity();
 
-  const [searchMode, setSearchMode] = useState<'class' | 'individual'>('class');
+  const [searchMode, setSearchMode] = useState<ResultSearchMode>('entry');
   const [examYear, setExamYear] = useState(searchParams.get('year') || '');
   const [examSessionId, setExamSessionId] = useState(searchParams.get('session') || '');
   const [selectedClass, setSelectedClass] = useState('');
@@ -63,8 +64,8 @@ const AdminResults = () => {
   const [exportingClassId, setExportingClassId] = useState<string | null>(null);
   const [readOnlyView, setReadOnlyView] = useState(false);
 
-  // Show class list when we have year+session from URL but no class selected
-  const showClassList = searchMode === 'class' && !!examYear && !!examSessionId && !selectedClass && !showResults;
+  // Show class list when we have year+session but no class selected yet
+  const showClassList = (searchMode === 'class' || searchMode === 'entry' || searchMode === 'analytics') && !!examYear && !!examSessionId && !selectedClass && !showResults;
 
   // Scroll the saved result sheet into view as soon as it opens
   const resultsSectionRef = useRef<HTMLDivElement>(null);
@@ -261,8 +262,9 @@ const AdminResults = () => {
   });
 
   // When class is selected from the list, auto-trigger search
-  const handleClassFromList = async (classId: string, mode: 'view' | 'entry' = 'entry') => {
-    setReadOnlyView(mode === 'view');
+  const handleClassFromList = async (classId: string, mode?: 'view' | 'entry') => {
+    const isEntry = mode === 'entry' || (mode === undefined && searchMode === 'entry');
+    setReadOnlyView(!isEntry);
     setSelectedClass(classId);
     // We need to wait for students/subjects queries, so set state and trigger search after
     setShowResults(false);
@@ -295,20 +297,32 @@ const AdminResults = () => {
   }, [urlClassId, examSessionId, examClasses, autoClassDone]);
 
   const handleSearch = async () => {
-    if (!examYear || !examSessionId || !selectedClass) {
-      toast.error(bn ? 'শিক্ষাবর্ষ, সেশন ও ক্লাস নির্বাচন করুন' : 'Select year, session and class');
+    if (!examYear || !examSessionId) {
+      toast.error(bn ? 'শিক্ষাবর্ষ ও পরীক্ষা নির্বাচন করুন' : 'Select year and exam session');
       return;
     }
-    if (searchMode === 'individual' && !rollNumber.trim()) {
-      toast.error(bn ? 'রোল / রেজিস্ট্রেশন নম্বর দিন' : 'Enter roll or registration number');
-      return;
+    if (searchMode === 'individual') {
+      if (!rollNumber.trim()) {
+        toast.error(bn ? 'রোল / রেজিস্ট্রেশন নম্বর দিন' : 'Enter roll or registration number');
+        return;
+      }
+    } else {
+      if (!selectedClass) {
+        toast.error(bn ? 'শ্রেণি / জামাত নির্বাচন করুন' : 'Select a class');
+        return;
+      }
+    }
+
+    if (searchMode === 'entry') {
+      setReadOnlyView(false);
+    } else if (searchMode === 'class' || searchMode === 'analytics') {
+      setReadOnlyView(true);
     }
 
     // exam_id is now the exam_session id directly
     const examId = examSessionId;
 
     try {
-      setReadOnlyView(false);
       setSelectedExamId(examId);
       await loadResultsForExam(examId);
     } catch (error: any) {
@@ -1478,6 +1492,11 @@ const AdminResults = () => {
             setSelectedExamId(null);
             setMarksMap({});
             setViewingStudentId(null);
+            if (m === 'entry') {
+              setReadOnlyView(false);
+            } else if (m === 'class' || m === 'analytics') {
+              setReadOnlyView(true);
+            }
           }}
           examYear={examYear}
           onExamYearChange={(v) => {
@@ -1546,7 +1565,7 @@ const AdminResults = () => {
         )}
 
         <div ref={resultsSectionRef} className="scroll-mt-24 space-y-4">
-          {showResults && <GradingChart />}
+          {showResults && searchMode !== 'analytics' && <GradingChart />}
 
           {showResults && viewingStudent ? (
             <IndividualMarksheet
@@ -1561,6 +1580,17 @@ const AdminResults = () => {
               rank={viewingStudentRank}
               overrideStatus={viewingStudentId ? statusOverrides[viewingStudentId] : undefined}
             />
+          ) : showResults && searchMode === 'analytics' ? (
+            <ResultAnalyticsView
+              students={students}
+              subjects={subjects}
+              marksMap={marksMap}
+              className={bn ? examClasses.find((c: any) => c.id === selectedClass)?.name_bn : examClasses.find((c: any) => c.id === selectedClass)?.name}
+              examName={bn ? examSessions.find((es: any) => es.id === examSessionId)?.name_bn : examSessions.find((es: any) => es.id === examSessionId)?.name}
+              sessionName={(() => { const y = academicSessions.find((s: any) => s.id === examYear); return bn ? (y?.name_bn || y?.name) : y?.name; })()}
+              getOverallGrade={getOverallGrade}
+              statusOverrides={statusOverrides}
+            />
           ) : showResults ? (
             <ClassResultTable
               students={students}
@@ -1571,7 +1601,7 @@ const AdminResults = () => {
               isSaving={saveMutation.isPending}
               title={getExamTitle()}
               lastSaved={lastSavedInfo || null}
-              readOnly={isClassLocked ? true : readOnlyView}
+              readOnly={isClassLocked ? true : (searchMode === 'entry' ? false : readOnlyView)}
               onEdit={() => {
                 if (isClassLocked) {
                   toast.warning(bn ? '🔒 এই ক্লাসের ফলাফল পাবলিশড এবং লক করা রয়েছে। সংশোধন করতে অ্যাডমিনের অনুমোদন প্রয়োজন।' : '🔒 This class result is published and locked.');

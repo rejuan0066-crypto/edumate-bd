@@ -263,7 +263,23 @@ const ClassResultTable = ({
           )}
           <div>
             <h2 className="text-base font-bold text-foreground">{instName || ''}</h2>
-            <h3 className="font-display font-bold text-foreground text-lg mt-1">{title}</h3>
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-1">
+              <h3 className="font-display font-bold text-foreground text-lg">{title}</h3>
+              {readOnly ? (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-muted text-foreground border border-border">
+                  {bn ? '📋 ক্লাস রেজাল্ট শিট' : 'Tabulation Sheet'}
+                </span>
+              ) : (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-300">
+                  {bn ? '✍️ নম্বর এন্ট্রি মোড' : 'Marks Entry Mode'}
+                </span>
+              )}
+            </div>
+            {!readOnly && (
+              <p className="text-[11px] text-muted-foreground mt-1">
+                {bn ? '💡 কীবোর্ডের Tab চেপে সহজে এক ঘর থেকে অন্য ঘরে যাওয়া যাবে। কোনো বিষয় খালি বা ০ থাকলে অকৃতকার্য হিসেব হবে।' : 'Tip: Press Tab to move across cells. Empty or 0 marks count as Fail.'}
+              </p>
+            )}
           </div>
         </div>
       </div>
