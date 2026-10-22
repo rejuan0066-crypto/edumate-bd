@@ -769,6 +769,9 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
 
     if (stepKey === 'student_details') {
       if (birthRegError) errors['birth_reg_no'] = birthRegError;
+      if (!selectedDivisionId && isFormFieldVisible('admission_class')) {
+        errors['admission_division'] = bn ? 'বিভাগ নির্বাচন আবশ্যক' : 'Division is required';
+      }
       const secFields = getFieldsBySection('student_details');
       secFields.forEach(f => {
         const k = f.default_value;
@@ -1004,29 +1007,41 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
           </div>
         );
 
+      case 'admission_division':
+        return (
+          <div data-field="admission_division">
+            <Label className="text-sm font-medium text-foreground">{bn ? 'বিভাগ' : 'Division'} <span className="text-destructive">*</span></Label>
+            <Select value={selectedDivisionId} onValueChange={(v) => {
+              setSelectedDivisionId(v);
+              setForm(prev => ({ ...prev, admission_class: '' }));
+              if (fieldErrors['admission_division']) {
+                setFieldErrors(prev => {
+                  const copy = { ...prev };
+                  delete copy['admission_division'];
+                  return copy;
+                });
+              }
+            }}>
+              <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={bn ? 'বিভাগ নির্বাচন' : 'Select Division'} /></SelectTrigger>
+              <SelectContent>{divisions.map((d: any) => <SelectItem key={d.id} value={d.id}>{bn ? d.name_bn : d.name}</SelectItem>)}</SelectContent>
+            </Select>
+            <FieldError field="admission_division" />
+          </div>
+        );
+
       case 'admission_class':
         if (!isFormFieldVisible('admission_class')) return null;
         return (
-          <div className="space-y-2">
-            {/* Division select before class */}
-            <div>
-              <Label className="text-sm font-medium text-foreground">{bn ? 'বিভাগ' : 'Division'} <span className="text-destructive">*</span></Label>
-              <Select value={selectedDivisionId} onValueChange={(v) => { setSelectedDivisionId(v); setForm(prev => ({ ...prev, admission_class: '' })); }}>
-                <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={bn ? 'বিভাগ নির্বাচন' : 'Select Division'} /></SelectTrigger>
-                <SelectContent>{divisions.map((d: any) => <SelectItem key={d.id} value={d.id}>{bn ? d.name_bn : d.name}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className={errorLabel}>{label} {reqStar}</Label>
-              <Select value={form.admission_class} onValueChange={v => setForm(prev => ({ ...prev, admission_class: v }))} disabled={!selectedDivisionId}>
-                <SelectTrigger className={`bg-background mt-1 ${errorBorder}`}><SelectValue placeholder={!selectedDivisionId ? (bn ? 'প্রথমে বিভাগ নির্বাচন করুন' : 'Select Division first') : (bn ? 'নির্বাচন' : 'Select')} /></SelectTrigger>
-                <SelectContent>
-                  {filteredClasses.map((c: any) => <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}</SelectItem>)}
-                  {filteredClasses.length === 0 && <SelectItem value="none" disabled>{bn ? 'এই বিভাগে কোনো শ্রেণী নেই' : 'No classes in this division'}</SelectItem>}
-                </SelectContent>
-              </Select>
-              <FieldError field={fieldKey} />
-            </div>
+          <div data-field={fieldKey}>
+            <Label className={errorLabel}>{label} {reqStar}</Label>
+            <Select value={form.admission_class} onValueChange={v => setForm(prev => ({ ...prev, admission_class: v }))} disabled={!selectedDivisionId}>
+              <SelectTrigger className={`bg-background mt-1 ${errorBorder}`}><SelectValue placeholder={!selectedDivisionId ? (bn ? 'প্রথমে বিভাগ নির্বাচন করুন' : 'Select Division first') : (bn ? 'নির্বাচন' : 'Select')} /></SelectTrigger>
+              <SelectContent>
+                {filteredClasses.map((c: any) => <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}</SelectItem>)}
+                {filteredClasses.length === 0 && <SelectItem value="none" disabled>{bn ? 'এই বিভাগে কোনো শ্রেণী নেই' : 'No classes in this division'}</SelectItem>}
+              </SelectContent>
+            </Select>
+            <FieldError field={fieldKey} />
           </div>
         );
 
@@ -1291,7 +1306,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
   // Known system field keys
   const SYSTEM_KEYS = [
     'photo_url', 'student_type', 'residence_type', 'admission_session', 'roll_number',
-    'registration_no', 'admission_date', 'session_year', 'admission_class',
+    'registration_no', 'admission_date', 'session_year', 'admission_division', 'admission_class',
     'first_name', 'last_name', 'gender', 'religion', 'date_of_birth', 'birth_reg_no',
     'previous_class', 'previous_institute', 'is_orphan', 'is_poor',
     'address_permanent', 'address_present',
@@ -1318,9 +1333,52 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       const resField = sectionFields.find(f => f.default_value === 'residence_type');
       const orphanField = sectionFields.find(f => f.default_value === 'is_orphan');
       const poorField = sectionFields.find(f => f.default_value === 'is_poor');
-      const otherFields = sectionFields.filter(f =>
+      const rawOtherFields = sectionFields.filter(f =>
         !['photo_url', 'student_type', 'residence_type', 'is_orphan', 'is_poor'].includes(f.default_value || '')
       );
+
+      const syntheticDivisionField: any = {
+        id: 'synthetic_admission_division',
+        default_value: 'admission_division',
+        label: 'Division',
+        label_bn: 'বিভাগ',
+        field_type: 'select',
+        is_required: true,
+        section: 'student_details',
+      };
+
+      const otherWithDiv = [...rawOtherFields];
+      if (!otherWithDiv.some(f => f.default_value === 'admission_division')) {
+        otherWithDiv.push(syntheticDivisionField);
+      }
+
+      // Ordered strictly: সেশন -> বিভাগ -> শ্রেণী -> রোল -> রেজিস্ট্রেশন -> ভর্তির তারিখ -> নাম ...
+      const FIELD_ORDER = [
+        'admission_session',
+        'admission_division',
+        'admission_class',
+        'roll_number',
+        'registration_no',
+        'admission_date',
+        'session_year',
+        'first_name',
+        'last_name',
+        'gender',
+        'date_of_birth',
+        'religion',
+        'birth_reg_no',
+        'previous_class',
+        'previous_institute',
+      ];
+
+      const otherFields = otherWithDiv.sort((a, b) => {
+        const orderA = a.default_value ? FIELD_ORDER.indexOf(a.default_value) : -1;
+        const orderB = b.default_value ? FIELD_ORDER.indexOf(b.default_value) : -1;
+        if (orderA !== -1 && orderB !== -1) return orderA - orderB;
+        if (orderA !== -1) return -1;
+        if (orderB !== -1) return 1;
+        return (a.sort_order || 0) - (b.sort_order || 0);
+      });
 
       return (
         <div key={sectionKey} className="rounded-lg p-4 space-y-4 border-2 opacity-100 border-secondary border-solid shadow-md">
