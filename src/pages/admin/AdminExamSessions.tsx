@@ -496,59 +496,79 @@ const AdminExamSessions = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-display font-bold text-foreground">
-            <BookOpen className="inline w-6 h-6 mr-2" />
-            {bn ? 'এক্সাম সেশন ব্যবস্থাপনা' : 'Exam Session Management'}
-          </h1>
-          <Button variant="outline" size="sm" onClick={() => setShowTypeManager(!showTypeManager)} className="gap-1.5">
-            <Settings2 className="w-4 h-4" />
-            {bn ? 'পরীক্ষার ধরন' : 'Exam Types'}
-          </Button>
+        {/* Page Header matching Mockup */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/20">
+              <BookOpen className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
+                {bn ? 'এক্সাম সেশন ব্যবস্থাপনা' : 'Exam Session Management'}
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                  v2.0 Modern
+                </span>
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {bn ? 'পরীক্ষার সেশন তৈরি, শ্রেণি ও বিষয় বরাদ্দ এবং ফলাফল কার্যক্রম পরিচালনা' : 'Manage exam sessions, assign classes & subjects, and process results'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowTypeManager(!showTypeManager)}
+              className="gap-2 shadow-xs bg-background"
+            >
+              <Settings2 className="w-4 h-4 text-muted-foreground" />
+              {bn ? 'পরীক্ষার ধরন (Exam Types)' : 'Exam Types'}
+            </Button>
+          </div>
         </div>
 
-        {/* KPI Stats Overview */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-          <div className="card-elevated p-4 flex items-center justify-between border-l-4 border-l-primary">
+        {/* Stats Grid matching Mockup */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="bg-card p-4 rounded-xl border border-border shadow-xs flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{bn ? 'মোট এক্সাম সেশন' : 'Total Sessions'}</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{bn ? 'মোট এক্সাম সেশন' : 'Total Exam Sessions'}</p>
               <p className="text-2xl font-bold text-foreground mt-1">{examSessions.length} {bn ? 'টি' : ''}</p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
-              <BookOpen className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 flex items-center justify-center font-bold text-sm">
+              {examSessions.length}
             </div>
           </div>
 
-          <div className="card-elevated p-4 flex items-center justify-between border-l-4 border-l-emerald-600">
+          <div className="bg-card p-4 rounded-xl border border-border shadow-xs flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{bn ? 'সক্রিয় সেশন' : 'Active Sessions'}</p>
-              <p className="text-2xl font-bold text-emerald-600 mt-1">
+              <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400 mt-1">
                 {examSessions.filter((s: any) => s.academic_sessions?.is_active).length} {bn ? 'টি' : ''}
               </p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
-              <Check className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 flex items-center justify-center font-bold">
+              ✓
             </div>
           </div>
 
-          <div className="card-elevated p-4 flex items-center justify-between border-l-4 border-l-blue-600">
+          <div className="bg-card p-4 rounded-xl border border-border shadow-xs flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{bn ? 'মোট শ্রেণি' : 'Total Classes'}</p>
-              <p className="text-2xl font-bold text-blue-600 mt-1">{classes.length} {bn ? 'টি' : ''}</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{bn ? 'অন্তর্ভুক্ত শ্রেণি' : 'Total Classes'}</p>
+              <p className="text-2xl font-bold text-blue-700 dark:text-blue-400 mt-1">{classes.length} {bn ? 'টি' : ''}</p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold">
-              <GraduationCap className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 flex items-center justify-center font-bold text-sm">
+              {classes.length}
             </div>
           </div>
 
-          <div className="card-elevated p-4 flex items-center justify-between border-l-4 border-l-purple-600">
+          <div className="bg-card p-4 rounded-xl border border-border shadow-xs flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{bn ? 'মোট পরীক্ষার্থী' : 'Total Candidates'}</p>
-              <p className="text-2xl font-bold text-purple-600 mt-1">
+              <p className="text-2xl font-bold text-purple-700 dark:text-purple-400 mt-1">
                 {examSessionClasses.reduce((s: number, c: any) => s + (c.student_count || 0), 0)} {bn ? 'জন' : ''}
               </p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 flex items-center justify-center font-bold">
               <Users className="w-5 h-5" />
             </div>
           </div>
@@ -725,7 +745,7 @@ const AdminExamSessions = () => {
                       <span>{bn ? 'নাম (বাংলা)' : 'Name (Bangla)'} <span className="text-destructive">*</span></span>
                       {nameBn && (
                         <span className="text-[10px] text-emerald-700 bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 font-semibold px-1.5 py-0.5 rounded">
-                          {bn ? 'অটো-সাজেশন' : 'Auto'}
+                          {bn ? 'অটো-জেনারেটেড' : 'Auto-Generated'}
                         </span>
                       )}
                     </label>
@@ -863,7 +883,7 @@ const AdminExamSessions = () => {
 
                   {/* Selected Classes Summary Bar */}
                   {selectedClassIds.length > 0 && (
-                    <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between text-xs font-semibold text-emerald-900 dark:text-emerald-200">
+                    <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between text-xs font-semibold text-emerald-900 dark:text-emerald-200 flex-wrap gap-2">
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
                         <span>
@@ -878,6 +898,13 @@ const AdminExamSessions = () => {
                             : `Total candidates: ${totalSelected} students`}
                         </span>
                       </div>
+                      <button 
+                        type="button" 
+                        onClick={() => setShowStudentSelection(true)}
+                        className="text-emerald-700 dark:text-emerald-400 hover:underline text-[11px] font-bold"
+                      >
+                        {bn ? 'শিক্ষার্থী তালিকা যাচাই করুন →' : 'Review Students →'}
+                      </button>
                     </div>
                   )}
 
@@ -1108,7 +1135,7 @@ const AdminExamSessions = () => {
                   <Button
                     onClick={handleCreate}
                     disabled={isCreating || !nameBn.trim() || !academicSessionId || selectedClassIds.length === 0}
-                    className="btn-primary-gradient px-6 py-2.5 font-bold shadow-md shadow-primary/20 flex items-center gap-2"
+                    className="px-7 py-2.5 text-sm font-bold rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white shadow-md shadow-emerald-700/20 flex items-center gap-2 transition-all"
                   >
                     {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                     {bn 
@@ -1121,14 +1148,12 @@ const AdminExamSessions = () => {
           </div>
         )}
 
-        {/* Existing Exam Sessions List */}
-        <div className="card-elevated p-5 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
+        {/* Modern Exam Sessions List matching Mockup */}
+        <div className="bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
+          <div className="p-4 px-6 bg-muted/40 border-b border-border flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2">
-              <h3 className="font-display font-bold text-foreground text-base">
-                {bn ? 'বিদ্যমান এক্সাম সেশন তালিকা' : 'Exam Sessions List'}
-              </h3>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
+              <h2 className="text-base font-bold text-foreground">{bn ? 'বিদ্যমান এক্সাম সেশন তালিকা' : 'Exam Sessions List'}</h2>
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-muted text-foreground font-bold">
                 {filteredExamSessions.length}
               </span>
             </div>
@@ -1138,8 +1163,8 @@ const AdminExamSessions = () => {
                 <Input
                   value={searchSessionQuery}
                   onChange={(e) => setSearchSessionQuery(e.target.value)}
-                  placeholder={bn ? 'সেশন খুঁজুন...' : 'Search session...'}
-                  className="h-8 pl-8 text-xs w-48 bg-background"
+                  placeholder={bn ? 'সেশন বা পরীক্ষা খুঁজুন...' : 'Search session...'}
+                  className="h-8 pl-8 text-xs w-48 sm:w-56 bg-background"
                 />
                 {searchSessionQuery && (
                   <button 
@@ -1160,73 +1185,164 @@ const AdminExamSessions = () => {
                 : (bn ? 'কোনো এক্সাম সেশন নেই' : 'No exam sessions yet')}
             </p>
           ) : (
-            <div className="space-y-2">
+            <div className="divide-y divide-border/60">
               {filteredExamSessions.map((es: any) => {
                 const esClasses = examSessionClasses.filter((c: any) => c.exam_session_id === es.id);
                 const totalStudents = esClasses.reduce((s: number, c: any) => s + (c.student_count || 0), 0);
                 const isExpanded = expandedSessionId === es.id;
+                const depInfo = (sessionDependencyCounts as Record<string, any>)[es.id] || { resultCount: 0, paperCount: 0 };
+                const hasResults = depInfo.resultCount > 0;
+                const sessionYear = String(es.academic_sessions?.name || es.academic_sessions?.name_bn || '২০২৬').split('-')[0].trim();
+                const typeShort = es.exam_type?.includes('1st') ? '১ম' : es.exam_type?.includes('2nd') ? '২য়' : es.exam_type?.includes('annual') ? 'বার্ষিক' : 'পরীক্ষা';
 
                 return (
-                  <div key={es.id} className="border border-border rounded-lg overflow-hidden">
-                    {/* Session Header Row */}
-                    <div
-                      className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 px-4 py-3 bg-background hover:bg-secondary/30 cursor-pointer transition-colors"
-                      onClick={() => setExpandedSessionId(isExpanded ? null : es.id)}
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <button className="p-0.5 text-muted-foreground shrink-0">
-                          {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                        </button>
+                  <div key={es.id} className="transition-colors hover:bg-muted/20">
+                    {/* Session Header Card Row matching Mockup */}
+                    <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex items-start gap-3.5 min-w-0">
+                        {/* Square Year/Type Badge */}
+                        <div className="w-12 h-12 rounded-xl bg-emerald-100/80 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex flex-col items-center justify-center shrink-0 shadow-xs">
+                          <span className="text-[10px] font-bold uppercase leading-none">{sessionYear}</span>
+                          <span className="text-xs font-bold mt-0.5 truncate max-w-[40px] text-center">{typeShort}</span>
+                        </div>
+
                         <div className="min-w-0">
                           {editingSessionId === es.id ? (
-                            <div className="flex flex-wrap items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                              <Input value={editSessionNameBn} onChange={e => setEditSessionNameBn(e.target.value)} placeholder={bn ? 'বাংলা নাম' : 'Bangla name'} className="h-7 w-40 text-sm bg-background" />
-                              <Input value={editSessionName} onChange={e => setEditSessionName(e.target.value)} placeholder={bn ? 'ইংরেজি নাম' : 'English name'} className="h-7 w-40 text-sm bg-background" />
-                              <Button size="icon" variant="ghost" className="h-7 w-7 text-success" disabled={updateSessionMutation.isPending} onClick={() => updateSessionMutation.mutate({ id: es.id, name: editSessionName, name_bn: editSessionNameBn })}>
-                                <Check className="w-3.5 h-3.5" />
+                            <div className="flex flex-wrap items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                              <Input
+                                value={editSessionNameBn}
+                                onChange={e => setEditSessionNameBn(e.target.value)}
+                                placeholder={bn ? 'বাংলা নাম' : 'Bangla name'}
+                                className="h-8 w-44 text-sm bg-background"
+                              />
+                              <Input
+                                value={editSessionName}
+                                onChange={e => setEditSessionName(e.target.value)}
+                                placeholder={bn ? 'ইংরেজি নাম' : 'English name'}
+                                className="h-8 w-44 text-sm bg-background"
+                              />
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 text-xs text-success"
+                                disabled={updateSessionMutation.isPending}
+                                onClick={() => updateSessionMutation.mutate({ id: es.id, name: editSessionName, name_bn: editSessionNameBn })}
+                              >
+                                <Check className="w-4 h-4 mr-1" />
+                                {bn ? 'সেভ' : 'Save'}
                               </Button>
-                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingSessionId(null)}>
-                                <X className="w-3.5 h-3.5" />
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 text-xs"
+                                onClick={() => setEditingSessionId(null)}
+                              >
+                                <X className="w-4 h-4" />
                               </Button>
                             </div>
                           ) : (
-                            <div className="font-medium text-foreground text-sm truncate">{bn ? es.name_bn : es.name}</div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="text-base font-bold text-foreground leading-tight">
+                                {bn ? es.name_bn : es.name}
+                              </h3>
+                              {es.academic_sessions?.is_active && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-600 text-white shadow-xs">
+                                  {bn ? 'সক্রিয়' : 'Active'}
+                                </span>
+                              )}
+                              <span className="text-xs text-muted-foreground font-medium">
+                                {bn ? `শিক্ষাবর্ষ: ${es.academic_sessions?.name_bn || es.academic_sessions?.name || '-'}` : `Session: ${es.academic_sessions?.name || '-'}`}
+                              </span>
+                            </div>
                           )}
-                          <div className="text-xs text-muted-foreground truncate">
-                            {bn ? (es.academic_sessions?.name_bn || es.academic_sessions?.name) : es.academic_sessions?.name || '-'}
+
+                          {/* Metadata badges matching Mockup */}
+                          <div className="flex items-center gap-2 mt-2 text-xs flex-wrap">
+                            <span className="inline-flex items-center gap-1 font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+                              📚 {esClasses.length} {bn ? 'টি শ্রেণি' : 'classes'}
+                            </span>
+                            <span className="inline-flex items-center gap-1 font-semibold text-foreground bg-muted px-2 py-0.5 rounded">
+                              👥 {totalStudents} {bn ? 'জন ছাত্র' : 'students'}
+                            </span>
+                            {hasResults ? (
+                              <span className="inline-flex items-center gap-1 font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800">
+                                ✓ {bn ? 'ফলাফল প্রস্তুত' : 'Result Ready'}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+                                • {bn ? 'অপেক্ষমান' : 'Pending'}
+                              </span>
+                            )}
+                            <button
+                              onClick={() => setExpandedSessionId(isExpanded ? null : es.id)}
+                              className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5 ml-1 font-medium"
+                            >
+                              {isExpanded ? (
+                                <>
+                                  <ChevronDown className="w-3.5 h-3.5" />
+                                  {bn ? 'শ্রেণি তালিকা লুকান' : 'Hide Classes'}
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronRight className="w-3.5 h-3.5" />
+                                  {bn ? 'শ্রেণি তালিকা দেখুন' : 'View Classes'}
+                                </>
+                              )}
+                            </button>
                           </div>
                         </div>
-
                       </div>
-                      <div className="flex items-center gap-2 flex-wrap pl-7 sm:pl-0 sm:ml-auto">
-                        <span className="px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary whitespace-nowrap">{getTypeLabel(es.exam_type)}</span>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {esClasses.length} {bn ? 'ক্লাস' : 'classes'} • {totalStudents} {bn ? 'ছাত্র' : 'students'}
-                        </span>
-                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                          <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={() => navigate(`/admin/results?year=${es.academic_session_id}&session=${es.id}`)}>
-                            <GraduationCap className="w-3.5 h-3.5" />
-                            {bn ? 'ফলাফল তৈরি' : 'Create Result'}
+
+                      {/* Action Buttons matching Mockup */}
+                      <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                        <Button
+                          size="sm"
+                          className="h-8 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs flex items-center gap-1.5 transition-all"
+                          onClick={() => navigate(`/admin/results?year=${es.academic_session_id}&session=${es.id}`)}
+                        >
+                          <GraduationCap className="w-3.5 h-3.5" />
+                          {bn ? 'ফলাফল তৈরি' : 'Create Result'}
+                        </Button>
+
+                        {canEditItem && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs font-semibold rounded-lg bg-background border-border hover:bg-muted text-foreground flex items-center gap-1.5 transition-all"
+                            onClick={() => setManageSession(es)}
+                          >
+                            <Settings2 className="w-3.5 h-3.5 text-muted-foreground" />
+                            {bn ? 'ক্লাস/বিষয়/ছাত্র' : 'Classes/Subjects/Students'}
                           </Button>
-                          {canEditItem && (
-                            <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={() => setManageSession(es)}>
-                              <Settings2 className="w-3.5 h-3.5" />
-                              {bn ? 'ক্লাস/বিষয়/ছাত্র' : 'Classes/Subjects/Students'}
-                            </Button>
-                          )}
-                          {canEditItem && editingSessionId !== es.id && (
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingSessionId(es.id); setEditSessionName(es.name || ''); setEditSessionNameBn(es.name_bn || ''); }}>
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </Button>
-                          )}
+                        )}
 
+                        {canEditItem && editingSessionId !== es.id && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
+                            title={bn ? 'সম্পাদনা' : 'Edit'}
+                            onClick={() => {
+                              setEditingSessionId(es.id);
+                              setEditSessionName(es.name || '');
+                              setEditSessionNameBn(es.name_bn || '');
+                            }}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                        )}
 
-                          {canDeleteItem && (
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => deleteMutation.mutate(es.id)}>
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          )}
-                        </div>
+                        {canDeleteItem && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+                            title={bn ? 'মুছুন' : 'Delete'}
+                            onClick={() => deleteMutation.mutate(es.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
 
