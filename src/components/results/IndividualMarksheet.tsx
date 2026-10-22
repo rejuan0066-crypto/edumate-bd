@@ -83,17 +83,17 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
   const remarksText = (() => {
     if (isFail) {
       return bn 
-        ? "অকৃতকার্য বিষয়ে বিশেষ মনোযোগ ও নিয়মিত অধ্যয়ন জরুরি। সম্মানিত অভিভাবকের বিশেষ দৃষ্টি আকর্ষণ করছি।"
+        ? "অকৃতকার্য বিষয়ে বিশেষ মনোযোগ ও নিয়মিত অধ্যয়ন জরুরি। সম্মানিত অভিভাবকের দৃষ্টি আকর্ষণ করছি।"
         : "Special attention is required in failed subjects. Regular study and parental guidance needed.";
     }
     if (finalGPA >= 5.0) {
       return bn 
-        ? "মাশাআল্লাহ, সার্বিক ফলাফল অত্যন্ত চমৎকার ও অনুকরণীয়। ভবিষ্যতে এই কৃতিত্ব বজায় রাখার শুভকামনা রইল।"
+        ? "মাশাআল্লাহ, সার্বিক ফলাফল চমৎকার ও অনুকরণীয়। এই কৃতিত্ব বজায় রাখার শুভকামনা রইল।"
         : "MashaAllah, outstanding and commendable result. Best wishes to maintain this success.";
     }
     if (finalGPA >= 4.0) {
       return bn 
-        ? "মাশাআল্লাহ, ফলাফল প্রশংসনীয়। নিয়মিত পড়াশোনায় আরও একাগ্র হলে ভবিষ্যতে আরও ভালো ফলাফল অর্জন সম্ভব।"
+        ? "মাশাআল্লাহ, ফলাফল প্রশংসনীয়। নিয়মিত পড়াশোনায় আরও একাগ্র হলে ভবিষ্যতে আরও ভালো ফল অর্জন সম্ভব।"
         : "Commendable result. With continued dedication and effort, even higher success is achievable.";
     }
     if (finalGPA >= 3.0) {
@@ -102,7 +102,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         : "Satisfactory performance. More focus on weaker subjects and regular attendance is recommended.";
     }
     return bn 
-      ? "ফলাফল মানোন্নয়নের সুযোগ রয়েছে। শিক্ষকদের পরামর্শ অনুযায়ী নিয়মিত পড়াশোনা অব্যাহত রাখতে হবে।"
+      ? "ফলাফল মানোন্নয়নের সুযোগ রয়েছে। শিক্ষকদের পরামর্শ অনুযায়ী নিয়মিত অধ্যয়ন অব্যাহত রাখতে হবে।"
       : "Room for improvement. Consistent effort and teacher guidance recommended.";
   })();
 
@@ -654,18 +654,18 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           </div>
         </div>
 
-        {/* Teacher Remarks & Date Section */}
-        <div className="border border-slate-200 rounded p-2 bg-emerald-50/30 text-xs mb-3 flex items-center justify-between gap-3">
-          <div className="flex items-start gap-1.5 flex-1 text-left">
-            <span className="font-bold text-[#064e3b] shrink-0 whitespace-nowrap pt-[0.5px]">
-              {bn ? 'শ্রেণি শিক্ষক ও মুহতামিমের মন্তব্য:' : "Evaluation & Remarks:"}
+        {/* Teacher Remarks & Date Section - Merged Single Line */}
+        <div className="border border-slate-200 rounded p-2 bg-emerald-50/30 text-xs mb-3 flex items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-1.5 flex-1 text-left min-w-0">
+            <span className="font-bold text-[#064e3b] shrink-0 whitespace-nowrap">
+              {bn ? 'শিক্ষকের মন্তব্য:' : "Teacher's Remarks:"}
             </span>
-            <p className="text-slate-700 italic leading-relaxed m-0 p-0 flex-1">
+            <span className="text-slate-700 italic leading-normal">
               "{remarksText}"
-            </p>
+            </span>
           </div>
-          <div className="text-[10.5px] text-slate-500 font-semibold whitespace-nowrap pl-3 border-l border-emerald-200 shrink-0 self-center">
-            {bn ? `ইস্যু তারিখ: ${issueDateFormatted}` : `Issue Date: ${issueDateFormatted}`}
+          <div className="text-[10.5px] text-slate-500 font-semibold whitespace-nowrap pl-3 border-l border-emerald-200 shrink-0">
+            {bn ? `তারিখ: ${issueDateFormatted}` : `Date: ${issueDateFormatted}`}
           </div>
         </div>
 
