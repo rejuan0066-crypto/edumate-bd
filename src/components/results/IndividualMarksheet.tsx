@@ -65,6 +65,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
 
   const gradedMarks = subjectResults.filter(r => r.entered).map(r => r.marks);
   const totalMarks = gradedMarks.reduce((sum, m) => sum + m, 0);
+  const totalFullMarks = subjects.reduce((sum: number, sub: any) => sum + (Number(sub.full_marks) || maxMarks || 100), 0);
   const blankCount = subjectResults.filter(r => !r.entered).length;
   const hasBlank = blankCount > 0;
   const hasZero = gradedMarks.some(m => m === 0);
@@ -74,6 +75,48 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
     override: overrideStatus,
   });
   const hasFailedSubject = !overall.graced && (overall.hasFail || subjectResults.some(r => r.entered && r.grade === 'F'));
+  const finalGPA = Number(overall.graced ? overall.gpa : (student.gpa || overall.gpa));
+  const finalGrade = overall.graced ? overall.grade : (hasFailedSubject ? 'F' : (student.letter_grade || overall.grade));
+  const isFail = !overall.graced && (finalGrade === 'F' || hasFailedSubject || finalGPA === 0);
+  const displayTotalMarks = student.total_marks || totalMarks;
+
+  const remarksText = (() => {
+    if (isFail) {
+      return bn 
+        ? "অকৃতকার্য বিষয়ে বিশেষ মনোযোগ ও নিয়মিত অধ্যয়ন জরুরি। সম্মানিত অভিভাবকের বিশেষ দৃষ্টি আকর্ষণ করছি।"
+        : "Special attention is required in failed subjects. Regular study and parental guidance needed.";
+    }
+    if (finalGPA >= 5.0) {
+      return bn 
+        ? "মাশাআল্লাহ, সার্বিক ফলাফল অত্যন্ত চমৎকার ও অনুকরণীয়। ভবিষ্যতে এই কৃতিত্ব বজায় রাখার শুভকামনা রইল।"
+        : "MashaAllah, outstanding and commendable result. Best wishes to maintain this success.";
+    }
+    if (finalGPA >= 4.0) {
+      return bn 
+        ? "মাশাআল্লাহ, ফলাফল প্রশংসনীয়। নিয়মিত পড়াশোনায় আরও একাগ্র হলে ভবিষ্যতে আরও ভালো ফলাফল অর্জন সম্ভব।"
+        : "Commendable result. With continued dedication and effort, even higher success is achievable.";
+    }
+    if (finalGPA >= 3.0) {
+      return bn 
+        ? "সার্বিক ফলাফল সন্তোষজনক। দুর্বল বিষয়গুলোতে বিশেষ যত্ন ও ক্লাসে নিয়মিত উপস্থিতি আবশ্যক।"
+        : "Satisfactory performance. More focus on weaker subjects and regular attendance is recommended.";
+    }
+    return bn 
+      ? "ফলাফল মানোন্নয়নের সুযোগ রয়েছে। শিক্ষকদের পরামর্শ অনুযায়ী নিয়মিত পড়াশোনা অব্যাহত রাখতে হবে।"
+      : "Room for improvement. Consistent effort and teacher guidance recommended.";
+  })();
+
+  const issueDateFormatted = (() => {
+    const d = new Date();
+    const day = d.getDate();
+    const month = d.getMonth();
+    const year = d.getFullYear();
+    const bnMonths = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
+    const enMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return bn 
+      ? `${toBnDigits(day)} ${bnMonths[month]}, ${toBnDigits(year)}`
+      : `${day} ${enMonths[month]}, ${year}`;
+  })();
 
   const instName = bn 
     ? (institution?.name || "আল-আরাবিয়া হোসাইনিয়া হাফিজিয়া মাদরাসা") 
@@ -525,15 +568,45 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr className="bg-emerald-50/70 border-t-2 border-[#064e3b] font-bold">
+                <td colSpan={2} className="text-right px-4 font-bold text-[12px] text-emerald-950">
+                  {bn ? 'সর্বমোট (Total):' : 'Total:'}
+                </td>
+                <td className="font-bold text-[12px] text-emerald-950">
+                  {bn ? toBnDigits(totalFullMarks) : totalFullMarks}
+                </td>
+                <td className="font-bold text-[14px] text-emerald-950">
+                  {bn ? toBnDigits(displayTotalMarks) : displayTotalMarks}
+                </td>
+                <td>
+                  <span className={cn(
+                    "grade-badge",
+                    isFail ? 'grade-f' :
+                    finalGrade === 'A+' ? 'grade-a-plus' :
+                    finalGrade === 'A' ? 'grade-a' :
+                    finalGrade === 'A-' ? 'grade-a-minus' :
+                    finalGrade === 'B' ? 'grade-b' :
+                    finalGrade === 'C' ? 'grade-c' :
+                    finalGrade === 'D' ? 'grade-d' : 'grade-none'
+                  )}>
+                    {finalGrade}
+                  </span>
+                </td>
+                <td className="font-bold text-[13px] text-emerald-950">
+                  {bn ? toBnDigits(finalGPA.toFixed(2)) : finalGPA.toFixed(2)}
+                </td>
+              </tr>
+            </tfoot>
           </table>
         </div>
 
         {/* Summary & Result Statistics Cards */}
-        <div className="grid grid-cols-5 gap-2 my-1.5">
+        <div className="grid grid-cols-5 gap-2 my-1">
           <div className="bg-white border border-slate-200 p-1.5 rounded-md text-center shadow-sm">
             <span className="text-[9px] text-slate-500 font-bold uppercase block mb-0.5">{bn ? 'মোট নম্বর' : 'Total Marks'}</span>
             <span className="text-[17px] font-bold text-slate-800">
-              {bn ? toBnDigits(student.total_marks || totalMarks) : (student.total_marks || totalMarks)}
+              {bn ? toBnDigits(displayTotalMarks) : displayTotalMarks}
             </span>
           </div>
           <div className="bg-white border border-slate-200 p-1.5 rounded-md text-center shadow-sm">
@@ -565,42 +638,26 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           <div className="bg-white border border-slate-200 p-1.5 rounded-md text-center shadow-sm">
             <span className="text-[9px] text-slate-500 font-bold uppercase block mb-0.5">{bn ? 'সর্বমোট GPA' : 'Overall GPA'}</span>
             <span className="text-[17px] font-bold text-slate-800">
-              {(() => {
-                const g = Number(overall.graced ? overall.gpa : (student.gpa || overall.gpa));
-                return bn ? toBnDigits(g.toFixed(2)) : g.toFixed(2);
-              })()}
+              {bn ? toBnDigits(finalGPA.toFixed(2)) : finalGPA.toFixed(2)}
             </span>
           </div>
           <div className="bg-white border border-slate-200 p-1.5 rounded-md text-center shadow-sm flex flex-col items-center justify-center">
             <span className="text-[9px] text-slate-500 font-bold uppercase block mb-0.5">{bn ? 'চুড়ান্ত গ্রেড' : 'Grade'}</span>
             <span className={cn(
               "text-white text-[12px] px-3.5 py-0.5 rounded-full font-bold shadow-sm",
-              (() => {
-                const isFail = !overall.graced && ((student.letter_grade || overall.grade) === 'F' || hasFailedSubject);
-                return !isFail ? 'bg-emerald-600' : 'bg-rose-600';
-              })()
+              !isFail ? 'bg-emerald-600' : 'bg-rose-600'
             )}>
-              {(() => {
-                if (overall.graced) return overall.grade;
-                return hasFailedSubject ? 'F' : (student.letter_grade || overall.grade);
-              })()}
+              {finalGrade}
             </span>
           </div>
           <div className="bg-white border border-slate-200 p-1.5 rounded-md text-center shadow-sm flex flex-col items-center justify-center">
             <span className="text-[9px] text-slate-500 font-bold uppercase block mb-0.5">{bn ? 'মর্যাদা' : 'Division'}</span>
             <span className={cn(
               "text-[12px] font-bold px-3 py-0.5 rounded-full",
-              (() => {
-                const gpa = Number(overall.graced ? overall.gpa : (student.gpa || overall.gpa));
-                const isFail = !overall.graced && (student.letter_grade === 'F' || overall.grade === 'F' || gpa === 0 || hasFailedSubject);
-                return isFail ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200';
-              })()
+              isFail ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
             )}>
               {(() => {
                 if (overall.graced) return bn ? (overall.title_bn || 'মাকবুল (বিবেচনায়)') : (overall.title || 'MAQBUL (Considered)');
-                const gpa = Number(student.gpa || overall.gpa);
-                const isFail = student.letter_grade === 'F' || overall.grade === 'F' || gpa === 0 || hasFailedSubject;
-
                 if (isFail) return bn ? "রাসিব" : "FAIL";
                 if (student.division || student.status_text || student.madrasha_grade) {
                   return student.division || student.status_text || student.madrasha_grade;
@@ -608,15 +665,29 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
                 if (bn && overall.title_bn) return overall.title_bn;
                 if (!bn && overall.title) return overall.title;
 
-                if (gpa >= 5.0) return bn ? "মুমতাজ" : "MUMTAZ";
-                if (gpa >= 4.0) return bn ? "জায়্যিদ জিদ্দান" : "JAYYID JIDDAN";
-                if (gpa >= 3.5) return bn ? "জায়্যিদ" : "JAYYID";
-                if (gpa >= 1.0) return bn ? "মাকবুল" : "MAQBUL";
+                if (finalGPA >= 5.0) return bn ? "মুমতাজ" : "MUMTAZ";
+                if (finalGPA >= 4.0) return bn ? "জায়্যিদ জিদ্দান" : "JAYYID JIDDAN";
+                if (finalGPA >= 3.5) return bn ? "জায়্যিদ" : "JAYYID";
+                if (finalGPA >= 1.0) return bn ? "মাকবুল" : "MAQBUL";
                 return bn ? "রাসিব" : "FAIL";
               })()}
             </span>
           </div>
+        </div>
 
+        {/* Remarks & Assessment Banner */}
+        <div className="border border-slate-200 rounded-md px-3 py-1 bg-emerald-50/30 my-1 text-[10.5px] flex items-center justify-between shadow-xs">
+          <div className="flex items-center gap-1.5 overflow-hidden">
+            <span className="font-bold text-[#064e3b] whitespace-nowrap">
+              {bn ? 'শিক্ষকের মন্তব্য:' : "Teacher's Remarks:"}
+            </span>
+            <span className="text-slate-700 italic truncate">
+              "{remarksText}"
+            </span>
+          </div>
+          <div className="text-[9.5px] text-slate-500 font-medium whitespace-nowrap pl-2.5 ml-2 border-l border-emerald-200 shrink-0">
+            {bn ? `ইস্যু তারিখ: ${issueDateFormatted}` : `Issue Date: ${issueDateFormatted}`}
+          </div>
         </div>
 
         {/* Grading Scale & Signatures */}
@@ -636,19 +707,25 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           </div>
 
           {/* Signature Grid */}
-          <div className="flex-1 flex justify-between items-end px-4 pb-0.5">
-            <div className="flex flex-col items-center w-[140px]">
+          <div className="flex-1 flex justify-between items-end px-3 pb-0.5">
+            <div className="flex flex-col items-center w-[110px]">
+              <div className="w-full border-t border-dotted border-slate-400 mb-1.5"></div>
+              <span className="text-[10px] font-bold text-slate-700">{bn ? 'শ্রেণি শিক্ষক' : 'CLASS TEACHER'}</span>
+              <span className="text-[7.5px] text-slate-400 font-medium uppercase tracking-tighter">{bn ? '(CLASS TEACHER)' : ''}</span>
+            </div>
+
+            <div className="flex flex-col items-center w-[120px]">
               <div className="w-full border-t border-dotted border-slate-400 mb-1.5"></div>
               <span className="text-[10px] font-bold text-slate-700">{bn ? 'পরীক্ষা নিয়ন্ত্রক' : 'EXAM CONTROLLER'}</span>
               <span className="text-[7.5px] text-slate-400 font-medium uppercase tracking-tighter">{bn ? '(EXAM CONTROLLER)' : ''}</span>
             </div>
             
-            <div className="flex flex-col items-center w-[150px]">
-              <div className="w-10 h-10 border border-dashed border-emerald-200 rounded-full flex items-center justify-center mb-1 bg-emerald-50/20">
-                <span className="text-[6.5px] text-emerald-600/30 font-bold tracking-tighter uppercase leading-none">OFFICIAL SEAL</span>
+            <div className="flex flex-col items-center w-[130px]">
+              <div className="w-9 h-9 border border-dashed border-emerald-300 rounded-full flex items-center justify-center mb-1 bg-emerald-50/20">
+                <span className="text-[6.5px] text-emerald-700/50 font-bold tracking-tighter uppercase leading-none">{bn ? 'অফিসিয়াল সিল' : 'OFFICIAL SEAL'}</span>
               </div>
               <div className="w-full border-t border-dotted border-slate-400 mb-1.5"></div>
-              <span className="text-[10px] font-bold text-slate-700 uppercase">{bn ? 'মুহতামিম' : 'PRINCIPAL'}</span>
+              <span className="text-[10px] font-bold text-slate-700 uppercase">{bn ? 'মুহতামিম / অধ্যক্ষ' : 'PRINCIPAL'}</span>
               <span className="text-[7.5px] text-slate-400 font-medium uppercase tracking-tighter">{bn ? '(PRINCIPAL)' : ''}</span>
             </div>
           </div>
