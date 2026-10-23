@@ -636,12 +636,12 @@ const AdminStudents = () => {
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
                         )}
-                        {canEditItem && (s.approval_status !== 'approved') && (
+                        {(canEditItem || canApproveItem) && (s.approval_status !== 'approved') && (
                           <button onClick={() => statusMutation.mutate({ id: s.id, status: 'approved' })} className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/50 dark:border-emerald-800/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 active:scale-95" title={bn ? 'অনুমোদন' : 'Approve'}>
                             <CheckCircle className="w-3.5 h-3.5" />
                           </button>
                         )}
-                        {canEditItem && (s.approval_status !== 'rejected') && (
+                        {(canEditItem || canApproveItem) && (s.approval_status !== 'rejected') && (
                           <button onClick={() => statusMutation.mutate({ id: s.id, status: 'rejected' })} className="w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200/50 dark:border-rose-800/30 flex items-center justify-center text-rose-600 dark:text-rose-400 active:scale-95" title={bn ? 'প্রত্যাখ্যান' : 'Reject'}>
                             <XCircle className="w-3.5 h-3.5" />
                           </button>
@@ -805,13 +805,13 @@ const AdminStudents = () => {
                                 <Pencil className="w-4 h-4" strokeWidth={1.75} />
                               </button>
                             )}
-                            {canEditItem && (s.approval_status !== 'approved') && (
+                            {(canEditItem || canApproveItem) && (s.approval_status !== 'approved') && (
                               <button onClick={() => statusMutation.mutate({ id: s.id, status: 'approved' })} className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/30 shadow-sm border border-emerald-200/50 dark:border-emerald-800/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 hover:shadow-md hover:scale-110 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all duration-200" title={bn ? 'অনুমোদন' : 'Approve'}><CheckCircle className="w-4 h-4" strokeWidth={1.75} /></button>
                             )}
-                            {canEditItem && (s.approval_status !== 'rejected') && (
+                            {(canEditItem || canApproveItem) && (s.approval_status !== 'rejected') && (
                               <button onClick={() => statusMutation.mutate({ id: s.id, status: 'rejected' })} className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/30 shadow-sm border border-rose-200/50 dark:border-rose-800/30 flex items-center justify-center text-rose-600 dark:text-rose-400 hover:shadow-md hover:scale-110 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-all duration-200" title={bn ? 'প্রত্যাখ্যান' : 'Reject'}><XCircle className="w-4 h-4" strokeWidth={1.75} /></button>
                             )}
-                            {canEditItem && (s.approval_status === 'rejected') && (
+                            {(canEditItem || canApproveItem) && (s.approval_status === 'rejected') && (
                               <button onClick={() => statusMutation.mutate({ id: s.id, status: 'pending' })} className="w-8 h-8 rounded-full bg-amber-50 dark:bg-amber-950/30 shadow-sm border border-amber-200/50 dark:border-amber-800/30 flex items-center justify-center text-amber-600 dark:text-amber-400 hover:shadow-md hover:scale-110 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all duration-200" title={bn ? 'অপেক্ষমাণে ফেরত' : 'Back to Pending'}><Clock className="w-4 h-4" strokeWidth={1.75} /></button>
                             )}
                             {canEditItem && isFeatureAllowed('action_status_change') !== false && (
