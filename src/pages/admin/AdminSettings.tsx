@@ -590,33 +590,6 @@ const AdminSettings = () => {
           setSmtpTestResult({ success: false, message: msg, hint, profile: profile.name });
         }
       }
-        setSmtpTestResult({ success: true, message: data.message || (bn ? 'টেস্ট ইমেইল পাঠানো হয়েছে' : 'Test email sent'), profile: profile.name });
-        toast.success(bn ? `✅ "${profile.name}" → ${smtpTestEmail}` : `✅ "${profile.name}" → ${smtpTestEmail}`);
-      } else {
-        // Smart fallback: If test-smtp edge function had a 401/cloud block, test via send-otp engine
-        const otpRes = await otpService.testSendOtp(smtpTestEmail);
-        if (otpRes.success) {
-          setSmtpTestResult({
-            success: true,
-            message: bn
-              ? `✅ ইমেইল সফলভাবে পাঠানো হয়েছে (${(otpRes.method || 'SMTP').toUpperCase()} মারফত)! অনুগ্রহ করে ${smtpTestEmail} এর ইনবক্স ও স্প্যাম ফোল্ডার চেক করুন।`
-              : `✅ Test email successfully sent via ${otpRes.method}! Check inbox/spam.`,
-            profile: profile.name,
-          });
-          toast.success(bn ? '✅ টেস্ট ইমেইল পাঠানো হয়েছে' : '✅ Test email sent');
-        } else {
-          let msg = (data?.error as string) || (error?.message as string) || otpRes.message || (bn ? 'ইমেইল পাঠাতে ব্যর্থ হয়েছে' : 'Failed to send email');
-          let hint: string | undefined = data?.hint;
-          try {
-            if (error && 'context' in (error as any) && (error as any).context) {
-              const body = await (error as any).context.json();
-              if (body?.error) msg = body.error;
-              if (body?.hint) hint = body.hint;
-            }
-          } catch (_) {}
-          setSmtpTestResult({ success: false, message: msg, hint, profile: profile.name });
-        }
-      }
       setSmtpTesting(false);
       return;
     } catch (e: any) {
