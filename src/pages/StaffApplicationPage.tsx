@@ -18,6 +18,7 @@ import { uploadToCloudinary } from '@/lib/cloudinary';
 import { supabase } from '@/integrations/supabase/client';
 import { resolveStaffFormNames, hasBangla } from '@/lib/nameFormatter';
 import { formatAddress as formatAddressBn } from '@/lib/banglaAddressHelper';
+import { cleanPhoneNumber } from '@/lib/phoneUtils';
 
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 const formatAddress = (addr: AddressData, bn = true) => formatAddressBn(addr, bn);
@@ -208,10 +209,16 @@ const StaffApplicationPage = () => {
       const desigObj = designationsList.find(d => d.id === designation);
       const desigLabel = desigObj ? (bn ? desigObj.name_bn : desigObj.name) : designation;
 
+      const cleanStaff = cleanPhoneNumber(mobile, mobileCode);
+      const cleanFather = cleanPhoneNumber(fatherMobile, fatherMobileCode);
+      const cleanMother = cleanPhoneNumber(motherMobile, motherMobileCode);
+      const cleanIdentifier = cleanPhoneNumber(identifierMobile, identifierMobileCode);
+      const cleanRelId = cleanPhoneNumber(relIdMobile, relIdMobileCode);
+
       const staffData = {
         first_name: firstName.trim(),
         last_name: lastName.trim(),
-        mobile_code: mobileCode,
+        mobile_code: cleanStaff ? cleanStaff.code : mobileCode,
         employment_type: employmentType,
         residence_type: residenceType,
         religion: religion === 'other' ? customReligion : religion,
@@ -221,17 +228,17 @@ const StaffApplicationPage = () => {
         permanent_address: permanentAddr,
         present_address: sameAddress ? permanentAddr : presentAddr,
         parents: {
-          father: { name: fatherName, mobile: fatherMobile, mobile_code: fatherMobileCode, nid: fatherNid, occupation: fatherOccupation },
-          mother: { name: motherName, mobile: motherMobile, mobile_code: motherMobileCode, nid: motherNid, occupation: motherOccupation },
+          father: { name: fatherName, mobile: cleanFather ? cleanFather.number : fatherMobile, mobile_code: cleanFather ? cleanFather.code : fatherMobileCode, nid: fatherNid, occupation: fatherOccupation },
+          mother: { name: motherName, mobile: cleanMother ? cleanMother.number : motherMobile, mobile_code: cleanMother ? cleanMother.code : motherMobileCode, nid: motherNid, occupation: motherOccupation },
         },
         identifier: {
           name: identifierName, relation: identifierRelation,
-          mobile: identifierMobile, mobile_code: identifierMobileCode,
+          mobile: cleanIdentifier ? cleanIdentifier.number : identifierMobile, mobile_code: cleanIdentifier ? cleanIdentifier.code : identifierMobileCode,
           nid: identifierNid, address: identifierAddr,
         },
         relatives_identifier: {
           name: relIdName, relation: relIdRelation,
-          mobile: relIdMobile, mobile_code: relIdMobileCode,
+          mobile: cleanRelId ? cleanRelId.number : relIdMobile, mobile_code: cleanRelId ? cleanRelId.code : relIdMobileCode,
           nid: relIdNid, address: relIdAddr,
         },
       };
@@ -240,7 +247,7 @@ const StaffApplicationPage = () => {
         name_bn: resolvedBn || fullName,
         name_en: resolvedEn || null,
         designation: desigLabel,
-        phone: mobile ? `${mobileCode}${mobile}` : null,
+        phone: cleanStaff ? cleanStaff.full : (mobile ? `${mobileCode}${mobile}` : null),
         email: staffEmail || null,
         department: designation?.includes('teacher') ? 'শিক্ষা বিভাগ' : 'প্রশাসন',
         address: formatAddress(permanentAddr) || null,

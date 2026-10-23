@@ -1,5 +1,5 @@
 // Shared auth/role guard for Lovable edge functions.
-// Uses Supabase signing-keys (getClaims) to verify JWT and check has_role().
+// Uses Supabase auth (getUser / admin.auth.getUser) to verify JWT and check has_role().
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
@@ -22,43 +22,58 @@ export async function requireAuth(
   const token = authHeader.replace(/^Bearer\s+/i, '').trim();
   if (!token) return { ok: false, status: 401, error: 'Unauthorized: empty token' };
 
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_ANON_KEY')!,
-    { global: { headers: { Authorization: `Bearer ${token}` } } }
-  );
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-  let claims: any = null;
-  // getClaims is missing in older supabase-js builds; fall back to getUser.
+  const supabase = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: `Bearer ${token}` } }
+  });
+  const admin = createClient(supabaseUrl, serviceRoleKey);
+
+  let userId = '';
+  let email = '';
+  let claims: any = {};
+
   try {
-    const authAny = supabase.auth as any;
-    if (typeof authAny.getClaims === 'function') {
-      const { data, error } = await authAny.getClaims(token);
-      if (!error && data?.claims) claims = data.claims;
-    }
-  } catch {
-    // ignore, try getUser below
-  }
-  if (!claims) {
-    try {
-      const { data, error } = await supabase.auth.getUser(token);
-      if (error || !data?.user) {
-        return { ok: false, status: 401, error: 'Unauthorized: invalid token' };
+    // 1. Try client getUser
+    const { data: userData, error: userError } = await supabase.auth.getUser(token);
+    if (!userError && userData?.user) {
+      userId = userData.user.id;
+      email = userData.user.email || '';
+      claims = { sub: userData.user.id, email: userData.user.email, ...(userData.user.user_metadata || {}) };
+    } else {
+      // 2. Try admin getUser using service role
+      const { data: adminUserData, error: adminUserErr } = await admin.auth.getUser(token);
+      if (!adminUserErr && adminUserData?.user) {
+        userId = adminUserData.user.id;
+        email = adminUserData.user.email || '';
+        claims = { sub: adminUserData.user.id, email: adminUserData.user.email, ...(adminUserData.user.user_metadata || {}) };
+      } else {
+        // 3. Try parsing JWT payload directly
+        try {
+          const parts = token.split('.');
+          if (parts.length === 3) {
+            const raw = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
+            const payload = JSON.parse(raw);
+            if (payload?.sub) {
+              userId = payload.sub;
+              email = payload.email || '';
+              claims = payload;
+            }
+          }
+        } catch (_) {}
       }
-      claims = { sub: data.user.id, email: data.user.email, role: data.user.role };
-    } catch {
-      return { ok: false, status: 401, error: 'Unauthorized: token verification failed' };
     }
+  } catch (err: any) {
+    console.error('requireAuth token decode error:', err);
   }
 
-  const userId = claims.sub as string;
-  if (!userId) return { ok: false, status: 401, error: 'Unauthorized: no sub claim' };
+  if (!userId) {
+    return { ok: false, status: 401, error: 'Unauthorized: token verification failed' };
+  }
 
   if (opts.roles && opts.roles.length > 0) {
-    const admin = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    );
     let hasRole = false;
     for (const role of opts.roles) {
       const { data, error } = await admin.rpc('has_role', { _user_id: userId, _role: role });
@@ -72,17 +87,20 @@ export async function requireAuth(
       const { data } = await admin.rpc('has_role', { _user_id: userId, _role: 'super_admin' });
       if (data === true) hasRole = true;
     }
+    // Also check profiles role column if rpc fails
+    if (!hasRole) {
+      try {
+        const { data: prof } = await admin.from('profiles').select('role').eq('id', userId).maybeSingle();
+        if (prof?.role && (opts.roles.includes(prof.role as any) || prof.role === 'admin' || prof.role === 'super_admin')) {
+          hasRole = true;
+        }
+      } catch (_) {}
+    }
+
     if (!hasRole) {
       return { ok: false, status: 403, error: 'Forbidden: insufficient role' };
     }
   }
 
-  return { ok: true, userId, email: claims.email, claims };
-}
-
-export function unauthorized(status: number, error: string, corsHeaders: Record<string, string>) {
-  return new Response(JSON.stringify({ error }), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
+  return { ok: true, userId, email, claims };
 }

@@ -22,6 +22,7 @@ import { cn, formatDigits } from '@/lib/utils';
 import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { printStudentProfile } from '@/lib/studentProfilePrint';
 import { formatAddress } from '@/lib/banglaAddressHelper';
+import { formatPhoneNumber } from '@/lib/phoneUtils';
 
 interface StudentProfileModalProps {
   student: any;
@@ -424,8 +425,8 @@ const StudentProfileModal = ({
             <ProfileInfoItem icon={Heart} label={bn ? 'ধর্ম' : 'Religion'} value={translateReligion(student.religion)} />
             <ProfileInfoItem icon={CreditCard} label={bn ? 'জন্ম নিবন্ধন' : 'Birth Reg'} value={student.birth_reg_no ? formatDigits(student.birth_reg_no, bn) : undefined} />
             <ProfileInfoItem icon={Mail} label={bn ? 'ইমেইল' : 'Email'} value={student.email} />
-            <ProfileInfoItem icon={Phone} label={bn ? 'ফোন' : 'Phone'} value={student.phone ? formatDigits(student.phone, bn) : undefined} />
-            <ProfileInfoItem icon={Phone} label={bn ? 'অভিভাবক ফোন' : 'Guardian Phone'} value={student.guardian_phone ? formatDigits(student.guardian_phone, bn) : undefined} />
+            <ProfileInfoItem icon={Phone} label={bn ? 'ফোন' : 'Phone'} value={formatPhoneNumber(student.phone, undefined, bn)} />
+            <ProfileInfoItem icon={Phone} label={bn ? 'অভিভাবক ফোন' : 'Guardian Phone'} value={formatPhoneNumber(student.guardian_phone, undefined, bn)} />
           </ProfileSectionCard>
 
           <ProfileSectionCard title={bn ? 'অভিভাবক তথ্য' : 'Parents Info'} icon={Users}>
@@ -433,13 +434,13 @@ const StudentProfileModal = ({
             <ProfileInfoItem icon={User} label={bn ? 'পিতা (ইংরেজি)' : 'Father (EN)'} value={student.father_name_en} />
             <ProfileInfoItem icon={ClipboardList} label={bn ? 'পিতার পেশা' : 'Father Occupation'} value={student.father_occupation} />
             <ProfileInfoItem icon={CreditCard} label={bn ? 'পিতার NID' : 'Father NID'} value={student.father_nid ? formatDigits(student.father_nid, bn) : undefined} />
-            <ProfileInfoItem icon={Phone} label={bn ? 'পিতার ফোন' : 'Father Phone'} value={student.father_phone ? formatDigits(student.father_phone, bn) : undefined} />
+            <ProfileInfoItem icon={Phone} label={bn ? 'পিতার ফোন' : 'Father Phone'} value={formatPhoneNumber(student.father_phone, undefined, bn)} />
             <div className="col-span-full border-t border-border/15 my-1" />
             <ProfileInfoItem icon={User} label={bn ? 'মাতা (বাংলা)' : 'Mother (BN)'} value={student.mother_name} />
             <ProfileInfoItem icon={User} label={bn ? 'মাতা (ইংরেজি)' : 'Mother (EN)'} value={student.mother_name_en} />
             <ProfileInfoItem icon={ClipboardList} label={bn ? 'মাতার পেশা' : 'Mother Occupation'} value={student.mother_occupation} />
             <ProfileInfoItem icon={CreditCard} label={bn ? 'মাতার NID' : 'Mother NID'} value={student.mother_nid ? formatDigits(student.mother_nid, bn) : undefined} />
-            <ProfileInfoItem icon={Phone} label={bn ? 'মাতার ফোন' : 'Mother Phone'} value={student.mother_phone ? formatDigits(student.mother_phone, bn) : undefined} />
+            <ProfileInfoItem icon={Phone} label={bn ? 'মাতার ফোন' : 'Mother Phone'} value={formatPhoneNumber(student.mother_phone, undefined, bn)} />
           </ProfileSectionCard>
 
           <ProfileSectionCard title={bn ? 'একাডেমিক তথ্য' : 'Academic Info'} icon={GraduationCap}>

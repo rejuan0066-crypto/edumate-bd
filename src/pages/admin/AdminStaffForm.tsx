@@ -32,6 +32,7 @@ import { isAdminRole } from '@/lib/roles';
 import { isFutureJoiningDate } from '@/lib/joiningDate';
 import { resolveStaffFormNames, cleanStaffName, deduplicateRepeatedWords, hasBangla, hasEnglish } from '@/lib/nameFormatter';
 import { formatAddress as formatBanglaAddress } from '@/lib/banglaAddressHelper';
+import { cleanPhoneNumber } from '@/lib/phoneUtils';
 
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 
@@ -419,8 +420,9 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
       setFirstName(cleaned.name_bn || '');
       setLastName(cleaned.has_distinct_english ? (cleaned.name_en || '') : '');
     }
-    setMobile(existingStaff.phone?.replace(/^\+\d{1,3}/, '') || '');
-    setMobileCode(sd.mobile_code || '+880');
+    const parsedPhone = cleanPhoneNumber(existingStaff.phone, sd.mobile_code);
+    setMobile(parsedPhone ? parsedPhone.number : '');
+    setMobileCode(parsedPhone ? parsedPhone.code : (sd.mobile_code || '+880'));
     setEmploymentType(existingStaff.employment_type || '');
     const desigMatch = designations.find(d => d.bn === existingStaff.designation || d.en === existingStaff.designation || d.value === existingStaff.designation);
     setDesignation(desigMatch?.value || existingStaff.designation || '');
@@ -441,14 +443,16 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     if (sd.present_address) setPresentAddr(sd.present_address);
     if (sd.parents) {
       const p = sd.parents;
+      const parsedFather = cleanPhoneNumber(p.father?.mobile, p.father?.mobile_code);
+      const parsedMother = cleanPhoneNumber(p.mother?.mobile, p.mother?.mobile_code);
       setFatherName(p.father?.name || '');
-      setFatherMobile(p.father?.mobile || '');
-      setFatherMobileCode(p.father?.mobile_code || '+880');
+      setFatherMobile(parsedFather ? parsedFather.number : (p.father?.mobile || ''));
+      setFatherMobileCode(parsedFather ? parsedFather.code : (p.father?.mobile_code || '+880'));
       setFatherNid(p.father?.nid || '');
       setFatherOccupation(p.father?.occupation || '');
       setMotherName(p.mother?.name || '');
-      setMotherMobile(p.mother?.mobile || '');
-      setMotherMobileCode(p.mother?.mobile_code || '+880');
+      setMotherMobile(parsedMother ? parsedMother.number : (p.mother?.mobile || ''));
+      setMotherMobileCode(parsedMother ? parsedMother.code : (p.mother?.mobile_code || '+880'));
       setMotherNid(p.mother?.nid || '');
       setMotherOccupation(p.mother?.occupation || '');
       if (p.permanent_address) setParentPermAddr(p.permanent_address);
@@ -456,30 +460,33 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     }
     if (sd.guardian) {
       const g = sd.guardian;
+      const parsedGuardian = cleanPhoneNumber(g.mobile, g.mobile_code);
       setGuardianType(g.type || '');
       setGuardianName(g.name || '');
       setGuardianRelation(g.relation || '');
-      setGuardianMobile(g.mobile || '');
-      setGuardianMobileCode(g.mobile_code || '+880');
+      setGuardianMobile(parsedGuardian ? parsedGuardian.number : (g.mobile || ''));
+      setGuardianMobileCode(parsedGuardian ? parsedGuardian.code : (g.mobile_code || '+880'));
       setGuardianNid(g.nid || '');
       if (g.permanent_address) setGuardianPermAddr(g.permanent_address);
       if (g.present_address) setGuardianPresAddr(g.present_address);
     }
     if (sd.identifier) {
       const ii = sd.identifier;
+      const parsedIdentifier = cleanPhoneNumber(ii.mobile, ii.mobile_code);
       setIdentifierName(ii.name || '');
       setIdentifierRelation(ii.relation || '');
-      setIdentifierMobile(ii.mobile || '');
-      setIdentifierMobileCode(ii.mobile_code || '+880');
+      setIdentifierMobile(parsedIdentifier ? parsedIdentifier.number : (ii.mobile || ''));
+      setIdentifierMobileCode(parsedIdentifier ? parsedIdentifier.code : (ii.mobile_code || '+880'));
       setIdentifierNid(ii.nid || '');
       if (ii.address) setIdentifierAddr(ii.address);
     }
     if (sd.relatives_identifier) {
       const ri = sd.relatives_identifier;
+      const parsedRel = cleanPhoneNumber(ri.mobile, ri.mobile_code);
       setRelIdName(ri.name || '');
       setRelIdRelation(ri.relation || '');
-      setRelIdMobile(ri.mobile || '');
-      setRelIdMobileCode(ri.mobile_code || '+880');
+      setRelIdMobile(parsedRel ? parsedRel.number : (ri.mobile || ''));
+      setRelIdMobileCode(parsedRel ? parsedRel.code : (ri.mobile_code || '+880'));
       setRelIdNid(ri.nid || '');
       if (ri.address) setRelIdAddr(ri.address);
     }
@@ -650,10 +657,17 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
       const fullName = bn ? (resolvedBn || resolvedEn || '') : (resolvedEn || resolvedBn || '');
       const desigLabel = designations.find(d => d.value === designation)?.[bn ? 'bn' : 'en'] || designation;
 
+      const cleanStaff = cleanPhoneNumber(mobile, mobileCode);
+      const cleanFather = cleanPhoneNumber(fatherMobile, fatherMobileCode);
+      const cleanMother = cleanPhoneNumber(motherMobile, motherMobileCode);
+      const cleanGuardian = cleanPhoneNumber(guardianMobile, guardianMobileCode);
+      const cleanIdentifier = cleanPhoneNumber(identifierMobile, identifierMobileCode);
+      const cleanRelId = cleanPhoneNumber(relIdMobile, relIdMobileCode);
+
       const staffData = {
         first_name: resolvedBn || firstName,
         last_name: resolvedEn || (hasEnglish(lastName) ? lastName : ''),
-        mobile_code: mobileCode,
+        mobile_code: cleanStaff ? cleanStaff.code : mobileCode,
         employment_type: employmentType,
         residence_type: residenceType,
         religion: religion === 'other' ? customReligion : religion,
@@ -663,8 +677,8 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
         permanent_address: permanentAddr,
         present_address: sameAddress ? permanentAddr : presentAddr,
         parents: {
-          father: { name: fatherName, mobile: fatherMobile, mobile_code: fatherMobileCode, nid: fatherNid, occupation: fatherOccupation },
-          mother: { name: motherName, mobile: motherMobile, mobile_code: motherMobileCode, nid: motherNid, occupation: motherOccupation },
+          father: { name: fatherName, mobile: cleanFather ? cleanFather.number : fatherMobile, mobile_code: cleanFather ? cleanFather.code : fatherMobileCode, nid: fatherNid, occupation: fatherOccupation },
+          mother: { name: motherName, mobile: cleanMother ? cleanMother.number : motherMobile, mobile_code: cleanMother ? cleanMother.code : motherMobileCode, nid: motherNid, occupation: motherOccupation },
           permanent_address: parentSameAsStaff ? permanentAddr : parentPermAddr,
           present_address: parentSameAsStaff ? (sameAddress ? permanentAddr : presentAddr) : (parentPresSameAsPerm ? (parentSameAsStaff ? permanentAddr : parentPermAddr) : parentPresAddr),
         },
@@ -672,8 +686,8 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
           type: guardianType,
           name: guardianType === 'other' ? guardianName : (guardianType === 'father' ? fatherName : motherName),
           relation: guardianType === 'other' ? guardianRelation : (guardianType === 'father' ? (bn ? 'পিতা' : 'Father') : (bn ? 'মাতা' : 'Mother')),
-          mobile: guardianType === 'other' ? guardianMobile : (guardianType === 'father' ? fatherMobile : motherMobile),
-          mobile_code: guardianType === 'other' ? guardianMobileCode : (guardianType === 'father' ? fatherMobileCode : motherMobileCode),
+          mobile: guardianType === 'other' ? (cleanGuardian ? cleanGuardian.number : guardianMobile) : (guardianType === 'father' ? (cleanFather ? cleanFather.number : fatherMobile) : (cleanMother ? cleanMother.number : motherMobile)),
+          mobile_code: guardianType === 'other' ? (cleanGuardian ? cleanGuardian.code : guardianMobileCode) : (guardianType === 'father' ? (cleanFather ? cleanFather.code : fatherMobileCode) : (cleanMother ? cleanMother.code : motherMobileCode)),
           nid: guardianType === 'other' ? guardianNid : (guardianType === 'father' ? fatherNid : motherNid),
           permanent_address: guardianSameAddr ? permanentAddr : guardianPermAddr,
           present_address: guardianSameAddr ? (sameAddress ? permanentAddr : presentAddr) : guardianPresAddr,
@@ -681,16 +695,16 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
         identifier: {
           name: identifierName,
           relation: identifierRelation,
-          mobile: identifierMobile,
-          mobile_code: identifierMobileCode,
+          mobile: cleanIdentifier ? cleanIdentifier.number : identifierMobile,
+          mobile_code: cleanIdentifier ? cleanIdentifier.code : identifierMobileCode,
           nid: identifierNid,
           address: identifierAddr,
         },
         relatives_identifier: {
           name: relIdName,
           relation: relIdRelation,
-          mobile: relIdMobile,
-          mobile_code: relIdMobileCode,
+          mobile: cleanRelId ? cleanRelId.number : relIdMobile,
+          mobile_code: cleanRelId ? cleanRelId.code : relIdMobileCode,
           nid: relIdNid,
           address: relIdAddr,
         },
@@ -711,7 +725,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
         name_bn: resolvedBn || fullName,
         name_en: resolvedEn || null,
         designation: desigLabel,
-        phone: mobile ? `${mobileCode}${mobile}` : null,
+        phone: cleanStaff ? cleanStaff.full : (mobile ? `${mobileCode}${mobile}` : null),
         email: staffEmail || null,
         department: designation?.includes('teacher') ? 'শিক্ষা বিভাগ' : 'প্রশাসন',
         address: formatAddress(permanentAddr) || null,

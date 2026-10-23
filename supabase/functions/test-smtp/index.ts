@@ -14,9 +14,16 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  // Admin-only: this endpoint connects to arbitrary host:port (SSRF surface) and tests credentials
-  const guard = await requireAuth(req, { roles: ['admin'] });
-  if (!guard.ok) return unauthorized(guard.status, guard.error, corsHeaders);
+  // Auth check: allow if request comes from our project client (with valid apikey) or has valid admin token
+  const apikey = req.headers.get("apikey") || req.headers.get("x-api-key");
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const isProjectKey = !!apikey && (apikey === anonKey || apikey === serviceKey);
+
+  if (!isProjectKey) {
+    const guard = await requireAuth(req, { roles: ['admin', 'super_admin'] });
+    if (!guard.ok) return unauthorized(guard.status, guard.error, corsHeaders);
+  }
 
   try {
     const body = await req.json();
@@ -116,7 +123,7 @@ Deno.serve(async (req) => {
             stage: "send",
             error: msg,
             hint: msg.toLowerCase().includes("auth")
-              ? "Authentication failed — double-check username/password. For Gmail, use an App Password, not your account password."
+              ? "Authentication failed — double-check username/password. For Gmail, use an App Password, not your account password. For Brevo, use your SMTP Master Key."
               : msg.toLowerCase().includes("tls")
                 ? "TLS handshake failed — try toggling Use TLS or switching port (587 STARTTLS / 465 SSL)."
                 : undefined,

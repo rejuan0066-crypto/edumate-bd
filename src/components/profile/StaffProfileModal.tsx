@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { getStaffDisplayNames } from '@/lib/nameFormatter';
 import { formatAddress } from '@/lib/banglaAddressHelper';
+import { formatPhoneNumber } from '@/lib/phoneUtils';
 
 interface StaffProfileModalProps {
   staff: any;
@@ -206,7 +207,7 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
             <ProfileInfoItem icon={Heart} label={bn ? 'ধর্ম' : 'Religion'} value={translateReligion(staff.religion || sd.religion, bn)} />
             <ProfileInfoItem icon={User} label={bn ? 'লিঙ্গ' : 'Gender'} value={translateGender(staff.gender || sd.gender, bn)} />
             <ProfileInfoItem icon={CreditCard} label="NID" value={staff.nid} />
-            <ProfileInfoItem icon={Phone} label={bn ? 'ফোন' : 'Phone'} value={staff.phone ? `${sd.mobile_code || ''}${staff.phone}` : undefined} />
+            <ProfileInfoItem icon={Phone} label={bn ? 'ফোন' : 'Phone'} value={formatPhoneNumber(staff.phone, sd.mobile_code)} />
             <ProfileInfoItem icon={Mail} label={bn ? 'ইমেইল' : 'Email'} value={staff.email} />
             <ProfileInfoItem icon={Home} label={bn ? 'আবাসিক' : 'Residence'} value={translateResidence(staff.residence_type || sd.residence_type, bn)} />
           </ProfileSectionCard>
@@ -221,12 +222,12 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
               {father.name && <ProfileInfoItem icon={User} label={bn ? 'পিতার নাম' : 'Father'} value={father.name} />}
               {father.occupation && <ProfileInfoItem icon={Briefcase} label={bn ? 'পিতার পেশা' : "Father's Occupation"} value={father.occupation} />}
               {father.nid && <ProfileInfoItem icon={CreditCard} label={bn ? 'পিতার NID' : "Father's NID"} value={father.nid} />}
-              {father.mobile && <ProfileInfoItem icon={Phone} label={bn ? 'পিতার ফোন' : "Father's Phone"} value={`${father.mobile_code || ''}${father.mobile}`} />}
+              {father.mobile && <ProfileInfoItem icon={Phone} label={bn ? 'পিতার ফোন' : "Father's Phone"} value={formatPhoneNumber(father.mobile, father.mobile_code)} />}
               {(father.name && mother.name) && <div className="col-span-full border-t border-border/15 my-1" />}
               {mother.name && <ProfileInfoItem icon={User} label={bn ? 'মাতার নাম' : 'Mother'} value={mother.name} />}
               {mother.occupation && <ProfileInfoItem icon={Briefcase} label={bn ? 'মাতার পেশা' : "Mother's Occupation"} value={mother.occupation} />}
               {mother.nid && <ProfileInfoItem icon={CreditCard} label={bn ? 'মাতার NID' : "Mother's NID"} value={mother.nid} />}
-              {mother.mobile && <ProfileInfoItem icon={Phone} label={bn ? 'মাতার ফোন' : "Mother's Phone"} value={`${mother.mobile_code || ''}${mother.mobile}`} />}
+              {mother.mobile && <ProfileInfoItem icon={Phone} label={bn ? 'মাতার ফোন' : "Mother's Phone"} value={formatPhoneNumber(mother.mobile, mother.mobile_code)} />}
             </ProfileSectionCard>
           )}
         </div>
@@ -256,7 +257,7 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
               {guardian.name && <ProfileInfoItem icon={User} label={bn ? 'নাম' : 'Name'} value={guardian.name} />}
               {guardian.relation && <ProfileInfoItem icon={Users} label={bn ? 'সম্পর্ক' : 'Relation'} value={guardian.relation} />}
               {guardian.nid && <ProfileInfoItem icon={CreditCard} label="NID" value={guardian.nid} />}
-              {guardian.mobile && <ProfileInfoItem icon={Phone} label={bn ? 'ফোন' : 'Phone'} value={`${guardian.mobile_code || ''}${guardian.mobile}`} />}
+              {guardian.mobile && <ProfileInfoItem icon={Phone} label={bn ? 'ফোন' : 'Phone'} value={formatPhoneNumber(guardian.mobile, guardian.mobile_code)} />}
               {formatAddr(guardian.present_address) && <ProfileInfoItem icon={MapPin} label={bn ? 'বর্তমান ঠিকানা' : 'Present Address'} value={formatAddr(guardian.present_address)} fullWidth />}
               {formatAddr(guardian.permanent_address) && <ProfileInfoItem icon={MapPin} label={bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'} value={formatAddr(guardian.permanent_address)} fullWidth />}
             </ProfileSectionCard>
@@ -267,7 +268,7 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
               {identifier.name && <ProfileInfoItem icon={User} label={bn ? 'নাম' : 'Name'} value={identifier.name} />}
               {identifier.relation && <ProfileInfoItem icon={Users} label={bn ? 'সম্পর্ক' : 'Relation'} value={identifier.relation} />}
               {identifier.nid && <ProfileInfoItem icon={CreditCard} label="NID" value={identifier.nid} />}
-              {identifier.mobile && <ProfileInfoItem icon={Phone} label={bn ? 'ফোন' : 'Phone'} value={`${identifier.mobile_code || ''}${identifier.mobile}`} />}
+              {identifier.mobile && <ProfileInfoItem icon={Phone} label={bn ? 'ফোন' : 'Phone'} value={formatPhoneNumber(identifier.mobile, identifier.mobile_code)} />}
               {formatAddr(identifier.address) && <ProfileInfoItem icon={MapPin} label={bn ? 'ঠিকানা' : 'Address'} value={formatAddr(identifier.address)} fullWidth />}
             </ProfileSectionCard>
           )}

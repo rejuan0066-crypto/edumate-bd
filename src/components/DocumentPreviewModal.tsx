@@ -16,8 +16,6 @@ import {
   RotateCw,
   FileText,
   AlertCircle,
-  Globe,
-  Image as ImageIcon,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { resolveFileUrl, isPdfUrl } from '@/lib/secureStorage';
@@ -51,7 +49,6 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
-  const [pdfMode, setPdfMode] = useState<'image' | 'google' | 'direct'>('google');
 
   useEffect(() => {
     if (!open || !fileUrl) {
@@ -80,8 +77,6 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
             const pdf = isPdfUrl(url) || isPdfUrl(fileName) || isPdfUrl(fileUrl);
 
             if (pdf) {
-              setPdfMode(isCloudinary ? 'image' : 'google');
-
               // If it's a Supabase storage file, pre-fetch as a local blob
               // This completely bypasses Chrome client adblockers (ERR_BLOCKED_BY_CLIENT)
               const m = url.match(/\/storage\/v1\/object\/(?:public|sign)\/([^/]+)\/(.+?)(?:\?.*)?$/);
@@ -255,8 +250,6 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     }
   };
 
-  const directViewUrl = localBlobUrl || resolvedUrl;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl w-[95vw] max-h-[92vh] flex flex-col p-4 sm:p-6 overflow-hidden">
@@ -274,55 +267,8 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
             </div>
 
             <div className="flex items-center gap-2 flex-wrap shrink-0">
-              {/* PDF Viewer Mode Switcher */}
-              {isPdf && resolvedUrl && !loading && (
-                <div className="flex items-center gap-1 bg-muted/80 p-1 rounded-lg text-xs font-semibold">
-                  {isCloudinary && (
-                    <button
-                      type="button"
-                      onClick={() => setPdfMode('image')}
-                      className={cn(
-                        'px-2.5 py-1 rounded-md transition-all text-xs font-bold flex items-center gap-1',
-                        pdfMode === 'image'
-                          ? 'bg-background shadow-xs text-foreground'
-                          : 'text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>{bn ? 'ছবি মোড' : 'Image'}</span>
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setPdfMode('google')}
-                    className={cn(
-                      'px-2.5 py-1 rounded-md transition-all text-xs font-bold flex items-center gap-1',
-                      pdfMode === 'google'
-                        ? 'bg-background shadow-xs text-foreground'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <Globe className="w-3.5 h-3.5 text-blue-600" />
-                    <span>{bn ? 'গুগল ভিউয়ার' : 'Google Viewer'}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPdfMode('direct')}
-                    className={cn(
-                      'px-2.5 py-1 rounded-md transition-all text-xs font-bold flex items-center gap-1',
-                      pdfMode === 'direct'
-                        ? 'bg-background shadow-xs text-foreground'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <FileText className="w-3.5 h-3.5 text-amber-600" />
-                    <span>{bn ? 'সরাসরি ভিউ' : 'Direct'}</span>
-                  </button>
-                </div>
-              )}
-
-              {/* Zoom / Rotate controls (Active for images and PDF image mode) */}
-              {(!isPdf || (isPdf && pdfMode === 'image')) && resolvedUrl && !loading && (
+              {/* Zoom / Rotate controls (Active only for images) */}
+              {!isPdf && resolvedUrl && !loading && (
                 <div className="flex items-center gap-1 bg-muted/60 rounded-lg p-1">
                   <Button
                     type="button"
@@ -383,58 +329,26 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               )}
             </div>
           ) : isPdf ? (
-            pdfMode === 'image' && cloudinaryPdfImageUrl ? (
+            localBlobUrl ? (
+              <iframe
+                src={`${localBlobUrl}#toolbar=1&navpanes=0`}
+                className="w-full flex-1 min-h-[500px] border-0 rounded-lg bg-background"
+                title={displayName}
+              />
+            ) : cloudinaryPdfImageUrl ? (
               <div className="w-full h-full flex flex-col items-center justify-center overflow-auto p-2">
                 <img
                   src={cloudinaryPdfImageUrl}
                   alt={displayName}
-                  onError={() => setPdfMode('google')}
-                  style={{
-                    transform: `scale(${zoom}) rotate(${rotation}deg)`,
-                    transition: 'transform 0.2s ease-in-out',
-                  }}
-                  className="max-w-full max-h-[58vh] object-contain rounded-lg shadow-sm border border-border/30 bg-white"
+                  className="max-w-full max-h-[62vh] object-contain rounded-lg shadow-sm border border-border/30 bg-white"
                 />
-                <p className="mt-2 text-[11px] text-muted-foreground text-center">
-                  {bn
-                    ? '✨ ক্রোম ব্লকিং এড়াতে ডকুমেন্টটি ছবি আকারে প্রদর্শিত হচ্ছে। পুরো PDF দেখতে উপরের "গুগল ভিউয়ার" অথবা "নতুন ট্যাবে খুলুন" ব্যবহার করুন।'
-                    : 'Rendered as image. Switch to Google Viewer or Open in New Tab for full PDF.'}
-                </p>
-              </div>
-            ) : pdfMode === 'google' ? (
-              <div className="w-full h-full min-h-[500px] flex flex-col">
-                <iframe
-                  src={`https://docs.google.com/gview?url=${encodeURIComponent(resolvedUrl)}&embedded=true`}
-                  className="w-full flex-1 min-h-[450px] border-0 rounded-lg bg-background"
-                  title={displayName}
-                />
-                <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground px-1">
-                  <span>
-                    {bn ? '🌐 গুগল ডক্স ভিউয়ারে প্রদর্শিত হচ্ছে' : '🌐 Rendered via Google Docs Viewer'}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleDownload}
-                    className="text-primary underline font-medium inline-flex items-center gap-1"
-                  >
-                    <Download className="w-3 h-3" />
-                    {bn ? 'ফাইল ডাউনলোড করুন' : 'Download File'}
-                  </button>
-                </div>
               </div>
             ) : (
-              <div className="w-full h-full min-h-[500px] flex flex-col">
-                <iframe
-                  src={`${directViewUrl}#toolbar=1&navpanes=0`}
-                  className="w-full flex-1 min-h-[450px] border-0 rounded-lg bg-background"
-                  title={displayName}
-                />
-                <div className="mt-2 p-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-center text-xs text-amber-800 dark:text-amber-300">
-                  {bn
-                    ? '⚠️ ক্রোম ব্রাউজার সরাসরি আইফ্রেমে PDF ব্লক করলে উপরের "গুগল ভিউয়ার" অথবা নিচে "ডাউনলোড" বাটনে ক্লিক করুন।'
-                    : '⚠️ If Chrome blocks raw PDF in iframe, switch to Google Viewer above or click Download below.'}
-                </div>
-              </div>
+              <iframe
+                src={`https://docs.google.com/gview?url=${encodeURIComponent(resolvedUrl)}&embedded=true`}
+                className="w-full flex-1 min-h-[500px] border-0 rounded-lg bg-background"
+                title={displayName}
+              />
             )
           ) : (
             <div className="w-full h-full flex items-center justify-center overflow-auto p-2">
