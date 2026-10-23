@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { useConfirm } from '@/contexts/ConfirmContext';
@@ -30,6 +31,7 @@ const AdminStudents = () => {
   const { canAddItem, canEditItem, canDeleteItem, canApproveItem, isFeatureAllowed } = usePagePermissions('/admin/students');
   const confirm = useConfirm();
   const bn = language === 'bn';
+  const navigate = useNavigate();
   const { data: institution } = useInstitutionInfo();
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
@@ -616,7 +618,7 @@ const AdminStudents = () => {
 
                       {/* Action buttons row */}
                       <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-border/10">
-                        <button onClick={() => setShowDetail(s)} className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-800/30 flex items-center justify-center text-blue-600 dark:text-blue-400 active:scale-95" title={bn ? 'দেখুন' : 'View'}>
+                        <button onClick={() => navigate(`/admin/students/profile/${s.id}`)} className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-800/30 flex items-center justify-center text-blue-600 dark:text-blue-400 active:scale-95" title={bn ? 'দেখুন' : 'View'}>
                           <Eye className="w-3.5 h-3.5" />
                         </button>
                         {isFeatureAllowed('action_print_profile') !== false && (
@@ -789,7 +791,7 @@ const AdminStudents = () => {
                         </td>
                         <td className="px-5 py-4 text-right">
                           <div className="flex items-center justify-end gap-2 flex-nowrap">
-                            <button onClick={() => setShowDetail(s)} className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/30 shadow-sm border border-blue-200/50 dark:border-blue-800/30 flex items-center justify-center text-blue-600 dark:text-blue-400 hover:shadow-md hover:scale-110 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all duration-200" title={bn ? 'দেখুন' : 'View'}><Eye className="w-4 h-4" strokeWidth={1.75} /></button>
+                            <button onClick={() => navigate(`/admin/students/profile/${s.id}`)} className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/30 shadow-sm border border-blue-200/50 dark:border-blue-800/30 flex items-center justify-center text-blue-600 dark:text-blue-400 hover:shadow-md hover:scale-110 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all duration-200" title={bn ? 'দেখুন' : 'View'}><Eye className="w-4 h-4" strokeWidth={1.75} /></button>
                             {isFeatureAllowed('action_print_profile') !== false && (
                               <button onClick={() => printStudentProfile({ student: s, bn, institution: institution || {}, className: getClassName(getEffectiveClassId(s)), sessionName: getSessionName(s.session_id, s.admission_session || s.session_year) })} className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/30 shadow-sm border border-indigo-200/50 dark:border-indigo-800/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 hover:shadow-md hover:scale-110 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all duration-200" title={bn ? 'প্রোফাইল প্রিন্ট' : 'Print Profile'}><Printer className="w-4 h-4" strokeWidth={1.75} /></button>
                             )}

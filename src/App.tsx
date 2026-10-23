@@ -71,6 +71,8 @@ const QuranPage = lazy(() => import("./pages/QuranPage"));
 const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
 const AdminStudents = lazy(() => import("./pages/admin/AdminStudents"));
 const AdminStaff = lazy(() => import("./pages/admin/AdminStaff"));
+const AdminStaffProfilePage = lazy(() => import("./pages/admin/AdminStaffProfilePage"));
+const AdminStudentProfilePage = lazy(() => import("./pages/admin/AdminStudentProfilePage"));
 const AdminTeachers = lazy(() => import("./pages/admin/AdminTeachers"));
 const AdminAdministrativeStaff = lazy(() => import("./pages/admin/AdminAdministrativeStaff"));
 const AdminAdministrative = lazy(() => import("./pages/admin/AdminAdministrative"));
@@ -415,7 +417,11 @@ const App = () => (
                     <Route path="committees" element={<ModuleGuard menuPath="/admin/committees"><AdminCommittees /></ModuleGuard>} />
                     <Route path="committee-audit-log" element={<ModuleGuard menuPath="/admin/committee-audit-log"><AdminCommitteeAuditLog /></ModuleGuard>} />
                     <Route path="students" element={<ModuleGuard menuPath="/admin/students"><AdminStudents /></ModuleGuard>} />
+                    <Route path="students/profile/:id" element={<ModuleGuard menuPath="/admin/students"><AdminStudentProfilePage /></ModuleGuard>} />
                     <Route path="staff" element={<ModuleGuard menuPath="/admin/staff"><AdminStaff staffType="all" /></ModuleGuard>} />
+                    <Route path="staff/profile/:id" element={<ModuleGuard menuPath="/admin/staff"><AdminStaffProfilePage /></ModuleGuard>} />
+                    <Route path="teachers/profile/:id" element={<ModuleGuard menuPath="/admin/teachers"><AdminStaffProfilePage /></ModuleGuard>} />
+                    <Route path="general-staff/profile/:id" element={<ModuleGuard menuPath="/admin/general-staff"><AdminStaffProfilePage /></ModuleGuard>} />
                     <Route path="staff/add" element={<ModuleGuard action="add" menuPath="/admin/staff"><AdminStaffForm /></ModuleGuard>} />
                     <Route path="staff/edit/:id" element={<ModuleGuard action="edit" menuPath="/admin/staff"><AdminStaffForm /></ModuleGuard>} />
                     <Route path="general-staff" element={<ModuleGuard menuPath="/admin/general-staff"><AdminGeneralStaff /></ModuleGuard>} />

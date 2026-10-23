@@ -26,22 +26,39 @@ import { formatAddress } from '@/lib/banglaAddressHelper';
 interface StudentProfileModalProps {
   student: any;
   bn: boolean;
-  getApprovalBadge: (status: string) => any;
-  getSessionName: (id: string, fallback?: string) => string;
-  getClassName: (id: string) => string;
-  setEditStudent: (s: any) => void;
-  setShowDetail: (s: any) => void;
-  setShowAdd: (v: boolean) => void;
-  statusMutation: any;
-  canEditItem: boolean;
+  getApprovalBadge?: (status: string) => any;
+  getSessionName?: (id: string, fallback?: string) => string;
+  getClassName?: (id: string) => string;
+  setEditStudent?: (s: any) => void;
+  setShowDetail?: (s: any) => void;
+  setShowAdd?: (v: boolean) => void;
+  statusMutation?: any;
+  canEditItem?: boolean;
   canDeleteItem?: boolean;
 }
 
 const StudentProfileModal = ({
-  student, bn, getApprovalBadge, getSessionName, getClassName,
-  setEditStudent, setShowDetail, setShowAdd, statusMutation, canEditItem, canDeleteItem
+  student,
+  bn,
+  getApprovalBadge,
+  getSessionName,
+  getClassName,
+  setEditStudent,
+  setShowDetail,
+  setShowAdd,
+  statusMutation,
+  canEditItem = true,
+  canDeleteItem = true,
 }: StudentProfileModalProps) => {
   const queryClient = useQueryClient();
+
+  const resolveClassName = getClassName || ((cId: string) => student?.classes?.name_bn || student?.classes?.name || cId || '-');
+  const resolveSessionName = getSessionName || ((sId: string, fallback?: string) => student?.academic_sessions?.name_bn || student?.academic_sessions?.name || fallback || sId || '-');
+  const resolveApprovalBadge = getApprovalBadge || ((st: string) => (
+    <Badge className={st === 'approved' ? 'bg-emerald-600 text-white' : st === 'rejected' ? 'bg-rose-600 text-white' : 'bg-amber-600 text-white'}>
+      {st === 'approved' ? (bn ? 'অনুমোদিত' : 'Approved') : st === 'rejected' ? (bn ? 'প্রত্যাখ্যাত' : 'Rejected') : (bn ? 'অপেক্ষমাণ' : 'Pending')}
+    </Badge>
+  ));
   const [activeTab, setActiveTab] = useState<'profile' | 'finance' | 'academic' | 'others'>('profile');
   const [previewDoc, setPreviewDoc] = useState<{ url: string; name?: string } | null>(null);
 
@@ -86,8 +103,8 @@ const StudentProfileModal = ({
       student,
       bn,
       institution: institution || {},
-      className: getClassName(student.class_id),
-      sessionName: getSessionName(student.session_id, student.admission_session),
+      className: resolveClassName(student.class_id),
+      sessionName: resolveSessionName(student.session_id, student.admission_session),
     });
   };
 
@@ -427,8 +444,8 @@ const StudentProfileModal = ({
 
           <ProfileSectionCard title={bn ? 'একাডেমিক তথ্য' : 'Academic Info'} icon={GraduationCap}>
             <ProfileInfoItem icon={Building2} label={bn ? 'বিভাগ' : 'Division'} value={bn ? student.divisions?.name_bn : student.divisions?.name} />
-            <ProfileInfoItem icon={School} label={bn ? 'শ্রেণী' : 'Class'} value={getClassName(student.class_id)} />
-            <ProfileInfoItem icon={CalendarCheck} label={bn ? 'সেশন' : 'Session'} value={getSessionName(student.session_id, student.admission_session)} />
+            <ProfileInfoItem icon={School} label={bn ? 'শ্রেণী' : 'Class'} value={resolveClassName(student.class_id)} />
+            <ProfileInfoItem icon={CalendarCheck} label={bn ? 'সেশন' : 'Session'} value={resolveSessionName(student.session_id, student.admission_session)} />
             <ProfileInfoItem icon={Calendar} label={bn ? 'সেশন বছর' : 'Session Year'} value={student.session_year ? formatDigits(student.session_year, bn) : undefined} />
             <ProfileInfoItem icon={Calendar} label={bn ? 'ভর্তির তারিখ' : 'Admission Date'} value={student.admission_date ? formatDigits(student.admission_date, bn) : undefined} />
             <ProfileInfoItem icon={School} label={bn ? 'পূর্বের শ্রেণী' : 'Previous Class'} value={student.previous_class} />
@@ -948,7 +965,7 @@ const StudentProfileModal = ({
         >
           <Printer className="w-4 h-4 mr-2" /> {bn ? 'প্রোফাইল প্রিন্ট' : 'Print Profile'}
         </Button>
-        {canEditItem && (
+        {canEditItem && setEditStudent && setShowDetail && setShowAdd && (
           <Button
             variant="outline"
             onClick={() => { setEditStudent(student); setShowDetail(null); setShowAdd(true); }}
@@ -957,28 +974,28 @@ const StudentProfileModal = ({
             <Pencil className="w-4 h-4 mr-2" /> {bn ? 'সম্পাদনা' : 'Edit'}
           </Button>
         )}
-        {student.approval_status !== 'approved' && (
+        {statusMutation && student.approval_status !== 'approved' && (
           <Button
             variant="outline"
-            onClick={() => { statusMutation.mutate({ id: student.id, status: 'approved' }); setShowDetail(null); }}
+            onClick={() => { statusMutation.mutate({ id: student.id, status: 'approved' }); setShowDetail?.(null); }}
             className="flex-1 rounded-full h-11 border-emerald-500/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all duration-300"
           >
             <CheckCircle className="w-4 h-4 mr-2" /> {bn ? 'অনুমোদন' : 'Approve'}
           </Button>
         )}
-        {student.approval_status !== 'rejected' && (
+        {statusMutation && student.approval_status !== 'rejected' && (
           <Button
             variant="outline"
-            onClick={() => { statusMutation.mutate({ id: student.id, status: 'rejected' }); setShowDetail(null); }}
+            onClick={() => { statusMutation.mutate({ id: student.id, status: 'rejected' }); setShowDetail?.(null); }}
             className="flex-1 rounded-full h-11 border-rose-500/20 text-rose-600 hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-all duration-300"
           >
             <XCircle className="w-4 h-4 mr-2" /> {bn ? 'প্রত্যাখ্যান' : 'Reject'}
           </Button>
         )}
-        {student.approval_status === 'rejected' && (
+        {statusMutation && student.approval_status === 'rejected' && (
           <Button
             variant="outline"
-            onClick={() => { statusMutation.mutate({ id: student.id, status: 'pending' }); setShowDetail(null); }}
+            onClick={() => { statusMutation.mutate({ id: student.id, status: 'pending' }); setShowDetail?.(null); }}
             className="flex-1 rounded-full h-11 border-amber-500/20 text-amber-600 hover:bg-amber-500 hover:text-white hover:border-amber-500 transition-all duration-300"
           >
             <Clock className="w-4 h-4 mr-2" /> {bn ? 'অপেক্ষমাণে ফেরত' : 'Back to Pending'}

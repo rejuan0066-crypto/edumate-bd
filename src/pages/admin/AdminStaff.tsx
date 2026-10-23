@@ -869,7 +869,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                         </div>
 
                         <div className="flex items-center gap-0.5">
-                          <button onClick={() => setViewStaff(s)} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary active:scale-95" title={bn ? 'প্রোফাইল দেখুন' : 'View Profile'}>
+                          <button onClick={() => navigate(`/admin/staff/profile/${s.id}`)} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary active:scale-95" title={bn ? 'প্রোফাইল দেখুন' : 'View Profile'}>
                             <Eye className="w-4 h-4" />
                           </button>
                           {isAdminRole(role) && (
@@ -1127,7 +1127,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                               </button>
                             </>
                           )}
-                          <button onClick={() => setViewStaff(s)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary" title={bn ? 'প্রোফাইল দেখুন' : 'View Profile'}><Eye className="w-4 h-4" /></button>
+                          <button onClick={() => navigate(`/admin/staff/profile/${s.id}`)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary" title={bn ? 'প্রোফাইল দেখুন' : 'View Profile'}><Eye className="w-4 h-4" /></button>
                           {isAdminRole(role) && (
                             <button 
                               onClick={() => setMonthlyAttendanceStaff(s)} 
