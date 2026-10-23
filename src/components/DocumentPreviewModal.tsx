@@ -16,9 +16,13 @@ import {
   RotateCw,
   FileText,
   AlertCircle,
+  Globe,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { resolveFileUrl, isPdfUrl } from '@/lib/secureStorage';
+import { isCloudinaryUrl } from '@/lib/cloudinary';
+import { cn } from '@/lib/utils';
 
 interface DocumentPreviewModalProps {
   open: boolean;
@@ -43,6 +47,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
+  const [pdfMode, setPdfMode] = useState<'image' | 'google' | 'direct'>('google');
 
   useEffect(() => {
     if (!open || !fileUrl) {
@@ -66,6 +71,12 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
             setError(bn ? 'ফাইলের সঠিক লিঙ্ক পাওয়া যায়নি' : 'File URL could not be resolved');
           } else {
             setResolvedUrl(url);
+            const isCloudinary = isCloudinaryUrl(url) || url.includes('cloudinary');
+            const pdf = isPdfUrl(url) || isPdfUrl(fileName) || isPdfUrl(fileUrl);
+            if (pdf) {
+              // Default to image mode for Cloudinary (instant, no iframe blockage), otherwise Google viewer
+              setPdfMode(isCloudinary ? 'image' : 'google');
+            }
           }
         }
       })
@@ -82,11 +93,17 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     return () => {
       isCancelled = true;
     };
-  }, [open, fileUrl, bn]);
+  }, [open, fileUrl, fileName, bn]);
 
   const isPdf = isPdfUrl(resolvedUrl) || isPdfUrl(fileName) || isPdfUrl(fileUrl);
+  const isCloudinary = isCloudinaryUrl(resolvedUrl) || resolvedUrl.includes('cloudinary');
   const displayName = fileName || (isPdf ? (bn ? 'ডকুমেন্ট.pdf' : 'document.pdf') : (bn ? 'মেমো / রসিদ' : 'memo_receipt'));
   const modalTitle = title || (isPdf ? (bn ? 'ডকুমেন্ট প্রিভিউ' : 'Document Preview') : (bn ? 'মেমো / রসিদ প্রিভিউ' : 'Memo / Receipt Preview'));
+
+  // Cloudinary image representation of PDF page 1
+  const cloudinaryPdfImageUrl = isCloudinary && isPdf && resolvedUrl
+    ? resolvedUrl.replace(/\.pdf($|[?#])/i, '.jpg$1')
+    : null;
 
   const handlePrint = () => {
     if (!resolvedUrl) return;
@@ -132,7 +149,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl w-[95vw] max-h-[92vh] flex flex-col p-4 sm:p-6 overflow-hidden">
         <DialogHeader className="pb-3 border-b border-border/50 shrink-0">
-          <div className="flex items-center justify-between gap-3 pr-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-6">
             <div className="min-w-0">
               <DialogTitle className="text-base sm:text-lg font-bold truncate">
                 {modalTitle}
@@ -143,41 +160,91 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                 </p>
               )}
             </div>
-            {/* Zoom / Rotate controls for images */}
-            {!isPdf && resolvedUrl && !loading && (
-              <div className="flex items-center gap-1 bg-muted/60 rounded-lg p-1 shrink-0">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setZoom((z) => Math.min(z + 0.25, 3))}
-                  title={bn ? 'জুম ইন' : 'Zoom In'}
-                >
-                  <ZoomIn className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setZoom((z) => Math.max(z - 0.25, 0.5))}
-                  title={bn ? 'জুম আউট' : 'Zoom Out'}
-                >
-                  <ZoomOut className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setRotation((r) => (r + 90) % 360)}
-                  title={bn ? 'ঘোরান' : 'Rotate'}
-                >
-                  <RotateCw className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            )}
+
+            <div className="flex items-center gap-2 flex-wrap shrink-0">
+              {/* PDF Viewer Mode Switcher */}
+              {isPdf && resolvedUrl && !loading && (
+                <div className="flex items-center gap-1 bg-muted/80 p-1 rounded-lg text-xs font-semibold">
+                  {isCloudinary && (
+                    <button
+                      type="button"
+                      onClick={() => setPdfMode('image')}
+                      className={cn(
+                        'px-2.5 py-1 rounded-md transition-all text-xs font-bold flex items-center gap-1',
+                        pdfMode === 'image'
+                          ? 'bg-background shadow-xs text-foreground'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>{bn ? 'ছবি মোড' : 'Image'}</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setPdfMode('google')}
+                    className={cn(
+                      'px-2.5 py-1 rounded-md transition-all text-xs font-bold flex items-center gap-1',
+                      pdfMode === 'google'
+                        ? 'bg-background shadow-xs text-foreground'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    <Globe className="w-3.5 h-3.5 text-blue-600" />
+                    <span>{bn ? 'গুগল ভিউয়ার' : 'Google Viewer'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPdfMode('direct')}
+                    className={cn(
+                      'px-2.5 py-1 rounded-md transition-all text-xs font-bold flex items-center gap-1',
+                      pdfMode === 'direct'
+                        ? 'bg-background shadow-xs text-foreground'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    <FileText className="w-3.5 h-3.5 text-amber-600" />
+                    <span>{bn ? 'সরাসরি ভিউ' : 'Direct'}</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Zoom / Rotate controls (Active for images and PDF image mode) */}
+              {(!isPdf || (isPdf && pdfMode === 'image')) && resolvedUrl && !loading && (
+                <div className="flex items-center gap-1 bg-muted/60 rounded-lg p-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => setZoom((z) => Math.min(z + 0.25, 3))}
+                    title={bn ? 'জুম ইন' : 'Zoom In'}
+                  >
+                    <ZoomIn className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => setZoom((z) => Math.max(z - 0.25, 0.5))}
+                    title={bn ? 'জুম আউট' : 'Zoom Out'}
+                  >
+                    <ZoomOut className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => setRotation((r) => (r + 90) % 360)}
+                    title={bn ? 'ঘোরান' : 'Rotate'}
+                  >
+                    <RotateCw className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         </DialogHeader>
 
@@ -205,25 +272,60 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               )}
             </div>
           ) : isPdf ? (
-            <div className="w-full h-full min-h-[500px] flex flex-col">
-              <iframe
-                src={`${resolvedUrl}#toolbar=1&navpanes=0`}
-                className="w-full flex-1 min-h-[450px] border-0 rounded-lg bg-background"
-                title={displayName}
-              />
-              <div className="mt-2 text-center text-xs text-muted-foreground">
-                {bn ? 'যদি PDF প্রিভিউ দেখতে সমস্যা হয়: ' : 'If PDF preview fails to render: '}
-                <a
-                  href={`https://docs.google.com/gview?url=${encodeURIComponent(resolvedUrl)}&embedded=true`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary underline ml-1 font-medium inline-flex items-center gap-1"
-                >
-                  <ExternalLink className="w-3 h-3" />
-                  {bn ? 'গুগল ভিউয়ারে দেখুন' : 'View in Google Docs'}
-                </a>
+            pdfMode === 'image' && cloudinaryPdfImageUrl ? (
+              <div className="w-full h-full flex flex-col items-center justify-center overflow-auto p-2">
+                <img
+                  src={cloudinaryPdfImageUrl}
+                  alt={displayName}
+                  onError={() => setPdfMode('google')}
+                  style={{
+                    transform: `scale(${zoom}) rotate(${rotation}deg)`,
+                    transition: 'transform 0.2s ease-in-out',
+                  }}
+                  className="max-w-full max-h-[58vh] object-contain rounded-lg shadow-sm border border-border/30 bg-white"
+                />
+                <p className="mt-2 text-[11px] text-muted-foreground text-center">
+                  {bn
+                    ? '✨ ক্রোম ব্লকিং এড়াতে ডকুমেন্টটি ছবি আকারে প্রদর্শিত হচ্ছে। পুরো PDF দেখতে উপরের "গুগল ভিউয়ার" অথবা "নতুন ট্যাবে খুলুন" ব্যবহার করুন।'
+                    : 'Rendered as image. Switch to Google Viewer or Open in New Tab for full PDF.'}
+                </p>
               </div>
-            </div>
+            ) : pdfMode === 'google' ? (
+              <div className="w-full h-full min-h-[500px] flex flex-col">
+                <iframe
+                  src={`https://docs.google.com/gview?url=${encodeURIComponent(resolvedUrl)}&embedded=true`}
+                  className="w-full flex-1 min-h-[450px] border-0 rounded-lg bg-background"
+                  title={displayName}
+                />
+                <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground px-1">
+                  <span>
+                    {bn ? '🌐 গুগল ডক্স ভিউয়ারে প্রদর্শিত হচ্ছে' : '🌐 Rendered via Google Docs Viewer'}
+                  </span>
+                  <a
+                    href={resolvedUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline font-medium inline-flex items-center gap-1"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    {bn ? 'সরাসরি ফাইলে যান' : 'Direct Link'}
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <div className="w-full h-full min-h-[500px] flex flex-col">
+                <iframe
+                  src={`${resolvedUrl}#toolbar=1&navpanes=0`}
+                  className="w-full flex-1 min-h-[450px] border-0 rounded-lg bg-background"
+                  title={displayName}
+                />
+                <div className="mt-2 p-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-center text-xs text-amber-800 dark:text-amber-300">
+                  {bn
+                    ? '⚠️ ক্রোম ব্রাউজার সরাসরি আইফ্রেমে PDF ব্লক করলে উপরের "গুগল ভিউয়ার" অথবা "ছবি মোড" বাটনে ক্লিক করুন।'
+                    : '⚠️ If Chrome blocks raw PDF in iframe, switch to Google Viewer or Image Mode above.'}
+                </div>
+              </div>
+            )
           ) : (
             <div className="w-full h-full flex items-center justify-center overflow-auto p-2">
               <img
@@ -278,7 +380,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               size="sm"
               onClick={() => resolvedUrl && window.open(resolvedUrl, '_blank', 'noopener,noreferrer')}
               disabled={!resolvedUrl || loading}
-              className="gap-1.5"
+              className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
             >
               <ExternalLink className="w-4 h-4" />
               <span>{bn ? 'নতুন ট্যাবে খুলুন' : 'Open in New Tab'}</span>
