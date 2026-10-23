@@ -86,7 +86,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           return;
         }
       }
-      props.onBeforeInput?.(e);
+      props.onBeforeInput?.(e as any);
     };
 
     const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {

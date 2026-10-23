@@ -2656,7 +2656,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                                                     [dayOpt.value]: { ...sched, rateMode: 'regular_duty_rate' },
                                                   };
                                                   updateDeptConfig(cat.key, {
-                                                    specialDay: { ...cfg.specialDay!, daySchedules: nextSchedules },
+                                                    specialDay: { ...cfg.specialDay!, daySchedules: nextSchedules as any },
                                                   });
                                                 }}
                                                 className="mt-0.5 cursor-pointer"
@@ -2677,7 +2677,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                                                     [dayOpt.value]: { ...sched, rateMode: 'special_day_rate' },
                                                   };
                                                   updateDeptConfig(cat.key, {
-                                                    specialDay: { ...cfg.specialDay!, daySchedules: nextSchedules },
+                                                    specialDay: { ...cfg.specialDay!, daySchedules: nextSchedules as any },
                                                   });
                                                 }}
                                                 className="mt-0.5 cursor-pointer"
