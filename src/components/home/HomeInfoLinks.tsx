@@ -29,22 +29,22 @@ const HomeInfoLinks = ({ language, infoLinks }: Props) => {
 
   return (
     <div className="card-elevated overflow-hidden h-full flex flex-col">
-      <div className="bg-primary px-4 py-3">
-        <h2 className="text-sm font-bold text-primary-foreground font-display text-center flex items-center justify-center gap-2">
+      <div className="bg-primary px-4 py-3 sm:py-3.5">
+        <h2 className="text-base sm:text-lg font-bold text-primary-foreground font-display text-center flex items-center justify-center gap-2 tracking-wide">
           <span>✦</span>
           {bn ? 'মাদ্রাসা সম্পর্কিত তথ্য' : 'Institution Info'}
         </h2>
       </div>
-      <div className="flex-1 p-2">
+      <div className="flex-1 p-3 space-y-1">
         {links.map((link) => {
           const IconComp = ICON_MAP[link.icon] || Globe;
           return (
             <Link
               key={link.id}
               to={link.path}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-foreground hover:bg-primary/5 transition-colors group"
+              className="flex items-center gap-3 px-3.5 py-3 rounded-xl text-base text-foreground hover:bg-primary/10 transition-colors group"
             >
-              <IconComp className="w-4 h-4 text-primary shrink-0" />
+              <IconComp className="w-5 h-5 text-primary shrink-0 transition-transform group-hover:scale-110" />
               <span className="group-hover:text-primary transition-colors font-medium">
                 {bn ? link.label_bn : link.label_en}
               </span>

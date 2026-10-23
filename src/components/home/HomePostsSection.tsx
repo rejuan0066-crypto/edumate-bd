@@ -24,11 +24,11 @@ const HomePostsSection = ({ posts, language }: Props) => {
     <div className="space-y-4">
       {/* Section Header */}
       <div className="section-header-bar flex items-center justify-between">
-        <h2 className="text-base sm:text-lg font-display font-bold text-foreground flex items-center gap-2">
+        <h2 className="text-lg sm:text-xl font-display font-bold text-foreground flex items-center gap-2">
           <span className="w-1 h-6 bg-primary rounded-full" />
           {bn ? 'সর্বশেষ পোস্ট' : 'Latest Posts'}
         </h2>
-        <Link to="/posts" className="text-xs text-primary hover:underline flex items-center gap-1 font-medium">
+        <Link to="/posts" className="text-sm text-primary hover:underline flex items-center gap-1 font-semibold">
           {bn ? 'সব দেখুন' : 'View All'} <ArrowRight className="w-3 h-3" />
         </Link>
       </div>
@@ -54,7 +54,7 @@ const HomePostsSection = ({ posts, language }: Props) => {
                   <h3 className="text-base sm:text-lg font-bold text-foreground line-clamp-3 group-hover:text-primary transition-colors leading-snug mb-2">
                     {bn ? (featured.title_bn || featured.title) : featured.title}
                   </h3>
-                  <p className="text-xs text-muted-foreground line-clamp-3 mb-3 leading-relaxed">
+                  <p className="text-sm sm:text-base text-muted-foreground line-clamp-3 mb-3 leading-relaxed">
                     {bn ? (featured.content_bn || featured.content) : featured.content}
                   </p>
                   <div className="flex items-center gap-2 text-[10px] text-muted-foreground/70">
@@ -83,7 +83,7 @@ const HomePostsSection = ({ posts, language }: Props) => {
                       )}
                     </div>
                     <div className="p-3">
-                      <h3 className="text-sm font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors mb-1">
+                      <h3 className="text-base font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors mb-1">
                         {bn ? (post.title_bn || post.title) : post.title}
                       </h3>
                       <div className="flex items-center gap-2 text-[10px] text-muted-foreground/70">

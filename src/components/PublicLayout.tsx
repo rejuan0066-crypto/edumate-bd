@@ -45,7 +45,7 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
   const logoSizeMap = { small: 'w-12 h-12', medium: 'w-16 h-16', large: 'w-20 h-20 lg:w-24 lg:h-24' };
   const logoSize = logoSizeMap[hs?.logo_size || 'medium'];
 
-  const navFontSize = ns?.nav_font_size === 'small' ? 'text-xs' : ns?.nav_font_size === 'large' ? 'text-base' : 'text-sm';
+  const navFontSize = ns?.nav_font_size === 'small' ? 'text-sm' : ns?.nav_font_size === 'large' ? 'text-lg' : 'text-base sm:text-[15px]';
 
   const getNavItemStyle = (isActive: boolean) => {
     const base: React.CSSProperties = {};
@@ -60,7 +60,7 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
 
   const getNavItemClass = (isActive: boolean) => {
     const styleType = ns?.nav_style || 'pills';
-    const baseClass = `px-3 py-2 ${navFontSize} font-medium transition-colors`;
+    const baseClass = `px-3.5 py-2 ${navFontSize} font-semibold transition-colors`;
 
     if (styleType === 'underline') {
       return `${baseClass} border-b-2 ${isActive ? 'border-primary' : 'border-transparent hover:border-primary/50'}`;
@@ -157,7 +157,7 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
           }}
         >
           <div className={`${!hs?.topbar_bg_color ? 'bg-primary text-primary-foreground' : ''}`}>
-            <div className="container mx-auto px-4 py-2 flex items-center justify-between text-xs sm:text-sm">
+            <div className="container mx-auto px-4 py-2 flex items-center justify-between text-sm sm:text-base">
               <div className="flex items-center gap-4">
                 {announcement ? (
                   <span className="truncate max-w-[200px] sm:max-w-none">{announcement}</span>
@@ -171,7 +171,7 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
               <div className="flex items-center gap-3">
                 <BijoyToggle />
                 <LanguageToggle />
-                <Link to="/login" className="btn-gold-gradient !px-4 !py-1.5 !text-xs rounded-full">
+                <Link to="/login" className="btn-gold-gradient !px-4 !py-1.5 !text-sm font-semibold rounded-full">
                   {t('login')}
                 </Link>
               </div>

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Phone, Mail } from 'lucide-react';
 import { usePrincipalOfficer } from '@/hooks/usePrincipalOfficer';
 
 interface Props {
@@ -27,39 +27,39 @@ const HomePrincipalCard = ({ settings: rawSettings, language, t }: Props) => {
 
   return (
     <div className="card-elevated overflow-hidden h-full flex flex-col">
-      <div className="bg-primary px-4 py-3">
-        <h2 className="text-sm font-bold text-primary-foreground font-display text-center flex items-center justify-center gap-2">
+      <div className="bg-primary px-4 py-3 sm:py-3.5">
+        <h2 className="text-base sm:text-lg font-bold text-primary-foreground font-display text-center flex items-center justify-center gap-2 tracking-wide">
           <span>✦</span>
           {t('principalMessage')}
         </h2>
       </div>
-      <div className="p-5 text-center flex-1 flex flex-col items-center justify-center">
-        <div className="w-24 h-24 mx-auto rounded-full bg-secondary overflow-hidden mb-4 border-4 border-primary/15 shadow-lg">
+      <div className="p-5 sm:p-6 text-center flex-1 flex flex-col items-center justify-center">
+        <div className="w-24 h-24 sm:w-28 sm:h-28 mx-auto rounded-full bg-secondary overflow-hidden mb-4 border-4 border-primary/20 shadow-md">
           {settings.principal_photo_url ? (
             <img src={settings.principal_photo_url} alt="Principal" className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-3xl text-muted-foreground/40">👤</div>
+            <div className="w-full h-full flex items-center justify-center text-4xl text-muted-foreground/40">👤</div>
           )}
         </div>
-        <p className="font-bold text-foreground text-sm">{settings.principal_name}</p>
-        <p className="text-xs text-muted-foreground mb-1">
+        <p className="font-bold text-foreground text-base sm:text-lg">{settings.principal_name}</p>
+        <p className="text-sm text-primary font-medium mt-0.5 mb-1.5">
           {bn ? 'পদবী:' : 'Position:'} {bn ? settings.principal_title_bn : settings.principal_title_en}
         </p>
         {settings.email && (
-          <p className="text-xs text-muted-foreground">
-            {bn ? 'ইমেইল:' : 'Email:'} {settings.email}
+          <p className="text-sm text-muted-foreground flex items-center gap-1 justify-center">
+            <Mail className="w-3.5 h-3.5" /> {settings.email}
           </p>
         )}
         {settings.phone && (
-          <p className="text-xs text-muted-foreground">
-            {bn ? 'মোবাইল:' : 'Mobile:'} {settings.phone}
+          <p className="text-sm text-muted-foreground flex items-center gap-1 justify-center mt-0.5">
+            <Phone className="w-3.5 h-3.5" /> {settings.phone}
           </p>
         )}
-        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-4 mt-3">
+        <p className="text-sm sm:text-base text-foreground/80 leading-relaxed line-clamp-4 mt-3">
           {bn ? settings.principal_message_bn : settings.principal_message_en}
         </p>
-        <Link to="/about#principal-message" className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-4 font-medium">
-          {bn ? 'আরও পড়ুন.....' : 'Read more.....'} <ArrowRight className="w-3 h-3" />
+        <Link to="/about#principal-message" className="inline-flex items-center gap-1.5 text-sm sm:text-base text-primary hover:underline mt-4 font-semibold">
+          {bn ? 'আরও পড়ুন.....' : 'Read more.....'} <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
     </div>

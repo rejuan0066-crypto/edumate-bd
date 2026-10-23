@@ -7,9 +7,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface Props {
-  // Kept for backward compatibility but no longer used for rendering — we always
-  // pull divisions/classes live from the backend so the public page reflects
-  // the current academic structure.
   divisions?: Array<{ name: string; nameEn: string; icon?: string }>;
   language: string;
   t: (key: string) => string;
@@ -52,21 +49,21 @@ const HomeAdmissionButtons = ({ language }: Props) => {
 
   return (
     <div className="card-elevated overflow-hidden h-full flex flex-col">
-      <div className="bg-accent px-4 py-3">
-        <h2 className="text-sm font-bold text-accent-foreground font-display text-center flex items-center justify-center gap-2">
-          <GraduationCap className="w-4 h-4" />
+      <div className="bg-accent px-4 py-3 sm:py-3.5">
+        <h2 className="text-base sm:text-lg font-bold text-accent-foreground font-display text-center flex items-center justify-center gap-2 tracking-wide">
+          <GraduationCap className="w-5 h-5" />
           {bn ? 'অনলাইন এডমিশন' : 'Online Admission'}
         </h2>
       </div>
-      <div className="flex-1 p-4 flex flex-col gap-3 justify-center">
+      <div className="flex-1 p-4 sm:p-5 flex flex-col gap-3 justify-center">
         {isLoading && (
-          <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
-            <Loader2 className="w-4 h-4 animate-spin" />
+          <div className="flex items-center justify-center gap-2 py-6 text-base text-muted-foreground">
+            <Loader2 className="w-5 h-5 animate-spin" />
             {bn ? 'লোড হচ্ছে...' : 'Loading...'}
           </div>
         )}
         {!isLoading && dbDivisions.length === 0 && (
-          <p className="text-center text-sm text-muted-foreground py-6">
+          <p className="text-center text-base text-muted-foreground py-6">
             {bn ? 'কোনো বিভাগ পাওয়া যায়নি' : 'No divisions found'}
           </p>
         )}
@@ -81,7 +78,7 @@ const HomeAdmissionButtons = ({ language }: Props) => {
             <button
               type="button"
               onClick={() => setOpenDivId(div.id)}
-              className="block w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg text-center text-sm font-bold hover:bg-primary/90 transition-all duration-200 shadow-sm hover:shadow-md"
+              className="block w-full px-4 py-3.5 bg-primary text-primary-foreground rounded-xl text-center text-base sm:text-lg font-bold hover:bg-primary/90 transition-all duration-200 shadow-sm hover:shadow-md tracking-wide"
             >
               {bn ? (div.name_bn || div.name) : (div.name || div.name_bn)}
             </button>
@@ -96,9 +93,9 @@ const HomeAdmissionButtons = ({ language }: Props) => {
         >
           <Link
             to="/parent"
-            className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-secondary text-secondary-foreground rounded-lg text-center text-sm font-bold hover:bg-secondary/80 transition-all duration-200 shadow-sm hover:shadow-md"
+            className="flex items-center justify-center gap-2 w-full px-4 py-3.5 bg-secondary text-secondary-foreground rounded-xl text-center text-base sm:text-lg font-bold hover:bg-secondary/80 transition-all duration-200 shadow-sm hover:shadow-md tracking-wide"
           >
-            <Users className="w-4 h-4" />
+            <Users className="w-5 h-5" />
             {bn ? 'অভিভাবক লগইন' : 'Parent Login'}
           </Link>
         </motion.div>
@@ -107,7 +104,7 @@ const HomeAdmissionButtons = ({ language }: Props) => {
       <Dialog open={!!openDivId} onOpenChange={(o) => !o && setOpenDivId(null)}>
         <DialogContent className="max-w-md rounded-3xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base">
+            <DialogTitle className="flex items-center gap-2 text-lg">
               <GraduationCap className="w-5 h-5 text-primary" />
               {bn
                 ? `${openDiv ? (openDiv as any).name_bn || (openDiv as any).name : ''} — শ্রেণি নির্বাচন`
@@ -117,30 +114,26 @@ const HomeAdmissionButtons = ({ language }: Props) => {
           <div className="max-h-[60vh] overflow-y-auto space-y-2 pr-1">
             <AnimatePresence>
               {classesForDiv.length === 0 && (
-                <p className="text-center text-sm text-muted-foreground py-6">
-                  {bn ? 'এই বিভাগের জন্য কোনো শ্রেণি কনফিগার করা হয়নি' : 'No classes configured for this division'}
+                <p className="text-center text-base text-muted-foreground py-6">
+                  {bn ? 'কোনো সক্রিয় শ্রেণি নেই' : 'No active classes'}
                 </p>
               )}
-              {classesForDiv.map((c: any, idx: number) => (
-                <motion.button
-                  key={c.id}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.03 }}
-                  onClick={() => handleClassClick(c.id)}
-                  className="block w-full px-4 py-3 bg-primary text-primary-foreground rounded-xl text-center text-sm font-semibold hover:bg-primary/90 transition shadow-sm"
+              {classesForDiv.map((cls: any) => (
+                <button
+                  key={cls.id}
+                  onClick={() => handleClassClick(cls.id)}
+                  className="w-full text-left p-3.5 rounded-xl border border-border/60 hover:border-primary/60 hover:bg-primary/5 transition-all flex items-center justify-between group"
                 >
-                  {bn ? (c.name_bn || c.name) : (c.name || c.name_bn)}
-                </motion.button>
+                  <span className="font-semibold text-base text-foreground group-hover:text-primary transition-colors">
+                    {bn ? cls.name_bn || cls.name : cls.name || cls.name_bn}
+                  </span>
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary">
+                    {bn ? 'ভর্তি হন →' : 'Apply →'}
+                  </span>
+                </button>
               ))}
             </AnimatePresence>
           </div>
-          <button
-            onClick={() => setOpenDivId(null)}
-            className="mt-2 flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="w-3 h-3" /> {bn ? 'বিভাগে ফিরে যান' : 'Back to divisions'}
-          </button>
         </DialogContent>
       </Dialog>
     </div>

@@ -14,7 +14,7 @@ const HomeHeroBanner = ({ settings, language, t }: Props) => {
 
   return (
     <div className="card-elevated overflow-hidden h-full flex flex-col">
-      <div className="relative flex-1 min-h-[220px] sm:min-h-[280px] bg-primary/5 overflow-hidden">
+      <div className="relative flex-1 min-h-[260px] sm:min-h-[320px] bg-primary/5 overflow-hidden">
         {settings.hero_bg_image_url ? (
           <img
             src={settings.hero_bg_image_url}
@@ -23,28 +23,28 @@ const HomeHeroBanner = ({ settings, language, t }: Props) => {
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-accent/10">
-            <div className="text-center p-6">
-              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <span className="text-4xl">🕌</span>
+            <div className="text-center p-6 sm:p-8">
+              <div className="w-24 h-24 rounded-full bg-primary/15 flex items-center justify-center mx-auto mb-5 shadow-sm">
+                <span className="text-5xl">🕌</span>
               </div>
-              <h2 className="text-lg font-display font-bold text-foreground">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-extrabold text-foreground tracking-wide leading-tight">
                 {bn ? settings.hero_title_bn : settings.hero_title_en}
               </h2>
-              <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
+              <p className="text-base sm:text-lg text-muted-foreground mt-3.5 max-w-xl mx-auto leading-relaxed font-medium">
                 {bn ? settings.hero_subtitle_bn : settings.hero_subtitle_en}
               </p>
             </div>
           </div>
         )}
         {settings.hero_bg_image_url && (
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent" />
         )}
         {settings.hero_bg_image_url && (
-          <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-            <h2 className="text-lg font-display font-bold drop-shadow-lg">
+          <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8 text-white">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-extrabold drop-shadow-lg leading-tight">
               {bn ? settings.hero_title_bn : settings.hero_title_en}
             </h2>
-            <p className="text-xs text-white/80 mt-1 line-clamp-2">
+            <p className="text-base sm:text-lg text-white/90 mt-2.5 line-clamp-2 max-w-2xl leading-relaxed">
               {bn ? settings.hero_subtitle_bn : settings.hero_subtitle_en}
             </p>
           </div>
