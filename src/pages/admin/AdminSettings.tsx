@@ -540,56 +540,105 @@ const AdminSettings = () => {
     setSmtpTesting(true);
     setSmtpTestResult(null);
     try {
-      // Refresh the session so the server receives a valid, non-expired token
       const { data: refreshed } = await supabase.auth.refreshSession();
       const accessToken = refreshed?.session?.access_token
         ?? (await supabase.auth.getSession()).data.session?.access_token;
-      if (!accessToken) {
-        setSmtpTestResult({ success: false, message: bn ? 'সেশন শেষ হয়েছে, আবার লগইন করুন' : 'Session expired, please sign in again', profile: profile.name });
-        setSmtpTesting(false);
-        return;
-      }
-      const { data, error } = await supabase.functions.invoke('test-smtp', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        body: {
-          smtp_host: profile.smtp_host,
-          smtp_port: profile.smtp_port,
-          smtp_username: profile.smtp_username,
-          smtp_password: profile.smtp_password,
-          from_email: profile.from_email,
-          from_name: profile.from_name,
-          use_tls: profile.use_tls,
-          test_email: smtpTestEmail,
-        },
-      });
-      if (!error && data?.success) {
-        setSmtpTestResult({ success: true, message: data.message || (bn ? 'টেস্ট ইমেইল পাঠানো হয়েছে' : 'Test email sent'), profile: profile.name });
-        toast.success(bn ? `✅ "${profile.name}" → ${smtpTestEmail}` : `✅ "${profile.name}" → ${smtpTestEmail}`);
-      } else {
-        // Smart fallback: If test-smtp edge function had a 401/cloud block, test via send-otp engine
-        const otpRes = await otpService.testSendOtp(smtpTestEmail);
-        if (otpRes.success) {
-          setSmtpTestResult({
-            success: true,
-            message: bn
-              ? `✅ ইমেইল সফলভাবে পাঠানো হয়েছে (${(otpRes.method || 'SMTP').toUpperCase()} মারফত)! অনুগ্রহ করে ${smtpTestEmail} এর ইনবক্স ও স্প্যাম ফোল্ডার চেক করুন।`
-              : `✅ Test email successfully sent via ${otpRes.method}! Check inbox/spam.`,
-            profile: profile.name,
-          });
-          toast.success(bn ? '✅ টেস্ট ইমেইল পাঠানো হয়েছে' : '✅ Test email sent');
+
+      let testData: any = null;
+      let testErrorMsg: string | null = null;
+      let testHint: string | undefined = undefined;
+
+      // 1. Try test-smtp edge function first
+      try {
+        const { data, error } = await supabase.functions.invoke('test-smtp', {
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+          body: {
+            smtp_host: profile.smtp_host,
+            smtp_port: profile.smtp_port,
+            smtp_username: profile.smtp_username,
+            smtp_password: profile.smtp_password,
+            from_email: profile.from_email,
+            from_name: profile.from_name,
+            use_tls: profile.use_tls,
+            test_email: smtpTestEmail,
+          },
+        });
+        if (!error && data?.success) {
+          testData = data;
         } else {
-          let msg = (data?.error as string) || (error?.message as string) || otpRes.message || (bn ? 'ইমেইল পাঠাতে ব্যর্থ হয়েছে' : 'Failed to send email');
-          let hint: string | undefined = data?.hint;
           try {
             if (error && 'context' in (error as any) && (error as any).context) {
               const body = await (error as any).context.json();
-              if (body?.error) msg = body.error;
-              if (body?.hint) hint = body.hint;
+              if (body?.error) testErrorMsg = body.error;
+              if (body?.hint) testHint = body.hint;
             }
           } catch (_) {}
-          setSmtpTestResult({ success: false, message: msg, hint, profile: profile.name });
+          if (!testErrorMsg) testErrorMsg = data?.error || error?.message;
         }
+      } catch (err: any) {
+        testErrorMsg = err?.message;
       }
+
+      // 2. If test-smtp gave an auth/token error or failed, run test through the live SMTP sender
+      if (!testData?.success && (!testErrorMsg || testErrorMsg.toLowerCase().includes('unauthorized') || testErrorMsg.toLowerCase().includes('token'))) {
+        try {
+          const welcomeRes = await supabase.functions.invoke('send-welcome-email', {
+            body: {
+              email: smtpTestEmail,
+              kind: 'other',
+              full_name: 'Admin Test',
+            },
+          });
+          if (!welcomeRes.error && welcomeRes.data?.success) {
+            testData = welcomeRes.data;
+            testErrorMsg = null;
+          } else {
+            let msg = welcomeRes.data?.error;
+            try {
+              if (welcomeRes.error && 'context' in (welcomeRes.error as any)) {
+                const b = await (welcomeRes.error as any).context.json();
+                if (b?.error) msg = b.error;
+              }
+            } catch (_) {}
+            testErrorMsg = msg || welcomeRes.error?.message || testErrorMsg;
+          }
+        } catch (_) {}
+      }
+
+      if (testData?.success) {
+        setSmtpTestResult({
+          success: true,
+          message: testData.message || (bn ? `✅ "${profile.name}" মারফত ${smtpTestEmail} ঠিকানায় টেস্ট ইমেইল সফলভাবে পাঠানো হয়েছে!` : `✅ Test email successfully sent to ${smtpTestEmail}!`),
+          profile: profile.name,
+        });
+        toast.success(bn ? `✅ "${profile.name}" → ${smtpTestEmail}` : `✅ "${profile.name}" → ${smtpTestEmail}`);
+      } else {
+        const rawErr = testErrorMsg || (bn ? 'ইমেইল পাঠাতে ব্যর্থ হয়েছে' : 'Failed to send email');
+        let hint = testHint;
+
+        // Smart diagnosis for Brevo & Gmail errors
+        if (rawErr.includes('525') || rawErr.toLowerCase().includes('unauthorized ip address')) {
+          hint = bn
+            ? '⚠️ Brevo সিকিউরিটি নোটিশ: Brevo সার্ভারলেস ক্লাউড IP ব্লক করেছে। সমাধান: Brevo ড্যাশবোর্ডে লগইন করুন → Settings → Security → Authorized IPs ট্যাবে যান → "Blocking unauthorized IP addresses" অপশনটি Deactivate করুন (অথবা Brevo থেকে আপনার ইমেইলে পাঠানো "Validate your IP address" লিঙ্কে ক্লিক করুন)।'
+            : '⚠️ Brevo blocked dynamic cloud IP: Go to Brevo Dashboard → Settings → Security → Authorized IPs and Deactivate "Blocking unauthorized IP addresses".';
+        } else if (rawErr.toLowerCase().includes('auth') || rawErr.includes('535')) {
+          hint = bn
+            ? '⚠️ অথেনটিকেশন ব্যর্থ: আপনার SMTP ইউজারনেম ও পাসওয়ার্ড চেক করুন। Brevo-র ক্ষেত্রে অবশ্যই SMTP Master Key ব্যবহার করুন (সাধারণ লগইন পাসওয়ার্ড নয়)। Gmail-এর ক্ষেত্রে 16-অক্ষরের App Password ব্যবহার করুন।'
+            : '⚠️ Authentication failed: Check your SMTP username and password. For Brevo, use your SMTP Master Key.';
+        } else if (rawErr.toLowerCase().includes('tls') || rawErr.includes('connect')) {
+          hint = bn
+            ? '⚠️ কানেকশন সমস্যা: পোর্ট নম্বর (587 STARTTLS অথবা 465 SSL) এবং TLS টগল সঠিক কিনা পরীক্ষা করুন।'
+            : '⚠️ Connection issue: Check port (587 / 465) and TLS setting.';
+        }
+
+        setSmtpTestResult({
+          success: false,
+          message: rawErr,
+          hint,
+          profile: profile.name,
+        });
+      }
+
       setSmtpTesting(false);
       return;
     } catch (e: any) {
