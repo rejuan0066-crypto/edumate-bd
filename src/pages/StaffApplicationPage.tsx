@@ -17,10 +17,10 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { supabase } from '@/integrations/supabase/client';
 import { resolveStaffFormNames, hasBangla } from '@/lib/nameFormatter';
+import { formatAddress as formatAddressBn } from '@/lib/banglaAddressHelper';
 
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
-const formatAddress = (addr: AddressData) =>
-  [addr.village, addr.postOffice, addr.union, addr.upazila, addr.district, addr.division].filter(Boolean).join(', ');
+const formatAddress = (addr: AddressData, bn = true) => formatAddressBn(addr, bn);
 
 const RELIGIONS = [
   { value: 'islam', bn: 'ইসলাম', en: 'Islam' },

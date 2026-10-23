@@ -113,11 +113,15 @@ const AddressFields = ({ label, value, onChange, disabled }: AddressFieldsProps)
   };
 
   const divisionOptions: SelectOption[] = divisions.map(d => ({
-    value: d.nameEn, label: bn ? d.name : d.nameEn,
+    value: d.nameEn,
+    label: bn ? d.name : d.nameEn,
+    aliases: [d.name, d.nameEn],
   }));
 
   const districtOptions: SelectOption[] = districts.map(d => ({
-    value: d.nameEn, label: bn ? d.name : d.nameEn,
+    value: d.nameEn,
+    label: bn ? d.name : d.nameEn,
+    aliases: [d.name, d.nameEn],
   }));
 
   const upazilaOptions: SelectOption[] = useMemo(() => {
@@ -125,6 +129,7 @@ const AddressFields = ({ label, value, onChange, disabled }: AddressFieldsProps)
       value: u.nameEn,
       label: bn ? u.name : u.nameEn,
       group: u.type === 'city_corporation' ? 'cc' : u.type === 'municipality' ? 'muni' : 'upazila',
+      aliases: [u.name, u.nameEn],
     }));
   }, [upazilas, bn]);
 
@@ -137,12 +142,20 @@ const AddressFields = ({ label, value, onChange, disabled }: AddressFieldsProps)
   }, [upazilas, bn]);
 
   const unionOptions: SelectOption[] = unions.map(u => ({
-    value: u.nameEn, label: bn ? u.name : u.nameEn,
+    value: bn ? (u.name || u.nameEn) : u.nameEn,
+    label: bn ? u.name : u.nameEn,
+    aliases: [u.name, u.nameEn],
   }));
 
-  const postOfficeOptions: SelectOption[] = postOffices.map(po => ({
-    value: `${po.nameEn} - ${po.code}`, label: `${po.nameEn} - ${po.code}`,
-  }));
+  const postOfficeOptions: SelectOption[] = postOffices.map(po => {
+    const bnLabel = `${po.name || po.nameEn} - ${po.code}`;
+    const enLabel = `${po.nameEn} - ${po.code}`;
+    return {
+      value: bn ? bnLabel : enLabel,
+      label: bn ? bnLabel : enLabel,
+      aliases: [bnLabel, enLabel, po.name, po.nameEn, po.code],
+    };
+  });
 
   // Render a field based on level key
   const renderField = (levelKey: string) => {

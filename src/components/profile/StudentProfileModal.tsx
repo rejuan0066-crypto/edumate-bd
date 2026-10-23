@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { cn, formatDigits } from '@/lib/utils';
 import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { printStudentProfile } from '@/lib/studentProfilePrint';
+import { formatAddress } from '@/lib/banglaAddressHelper';
 
 interface StudentProfileModalProps {
   student: any;
@@ -442,7 +443,7 @@ const StudentProfileModal = ({
               student.student_category === 'teacher_child' ? (bn ? 'শিক্ষক সন্তান' : "Teacher's Child") :
               (bn ? 'সাধারণ' : 'General')
             } />
-            <ProfileInfoItem icon={MapPin} label={bn ? 'ঠিকানা' : 'Address'} value={student.address} fullWidth />
+            <ProfileInfoItem icon={MapPin} label={bn ? 'ঠিকানা' : 'Address'} value={formatAddress(student.address, bn)} fullWidth />
           </ProfileSectionCard>
         </div>
       )}

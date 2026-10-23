@@ -22,11 +22,11 @@ import { useApiVerificationEnabled } from '@/hooks/useApiVerification';
 import { Plus, Search, Loader2, AlertCircle, CheckCircle, Save, ArrowLeft, ArrowRight, GraduationCap, User, UserCheck, Heart, MapPin, ShieldCheck, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { invalidateAllStudentQueries } from '@/lib/studentQueryInvalidator';
+import { formatAddress as formatAddressBn } from '@/lib/banglaAddressHelper';
 
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 
-const formatAddress = (addr: AddressData) =>
-  [addr.village, addr.postOffice, addr.union, addr.upazila, addr.district, addr.division].filter(Boolean).join(', ');
+const formatAddress = (addr: AddressData, bn = true) => formatAddressBn(addr, bn);
 
 interface AdmissionFormProps {
   open: boolean;

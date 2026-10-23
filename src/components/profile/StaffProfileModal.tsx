@@ -1,6 +1,6 @@
 import {
   User, Calendar, Heart, Phone, Mail, MapPin, CreditCard, ClipboardList,
-  Fingerprint, Building2, GraduationCap, Briefcase, Clock, Users, Home, FileText, DollarSign, Hash
+  Fingerprint, Building2, GraduationCap, Briefcase, Clock, Users, Home, FileText, DollarSign, Hash, CheckCircle2
 } from 'lucide-react';
 import ProfileInfoItem from './ProfileInfoItem';
 import ProfileSectionCard from './ProfileSectionCard';
@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { getStaffDisplayNames } from '@/lib/nameFormatter';
+import { formatAddress } from '@/lib/banglaAddressHelper';
 
 interface StaffProfileModalProps {
   staff: any;
@@ -25,6 +26,39 @@ const translateReligion = (val: string | undefined, bn: boolean): string => {
 const translateGender = (val: string | undefined, bn: boolean): string => {
   if (!val) return '-';
   const map: Record<string, [string, string]> = { male: ['পুরুষ', 'Male'], female: ['মহিলা', 'Female'], other: ['অন্যান্য', 'Other'] };
+  return map[val.toLowerCase()]?.[bn ? 0 : 1] || val;
+};
+
+const translateDepartment = (val: string | undefined, bn: boolean): string => {
+  if (!val) return '';
+  const map: Record<string, [string, string]> = {
+    teacher: ['শিক্ষক', 'Teacher'],
+    staff: ['স্টাফ', 'Staff'],
+    admin: ['অ্যাডমিন', 'Admin'],
+    management: ['ব্যবস্থাপনা', 'Management'],
+    academic: ['একাডেমিক', 'Academic'],
+    accounts: ['হিসাব শাখা', 'Accounts'],
+    general: ['সাধারণ', 'General'],
+    principal: ['অধ্যক্ষ', 'Principal'],
+    headmaster: ['প্রধান শিক্ষক', 'Headmaster'],
+    assistant_teacher: ['সহকারী শিক্ষক', 'Assistant Teacher'],
+  };
+  return map[val.toLowerCase()]?.[bn ? 0 : 1] || val;
+};
+
+const translateEmploymentType = (val: string | undefined, bn: boolean): string => {
+  if (!val) return '-';
+  const map: Record<string, [string, string]> = {
+    full_time: ['পূর্ণকালীন', 'Full Time'],
+    'full time': ['পূর্ণকালীন', 'Full Time'],
+    part_time: ['খণ্ডকালীন', 'Part Time'],
+    'part time': ['খণ্ডকালীন', 'Part Time'],
+    contractual: ['চুক্তিভিত্তিক', 'Contractual'],
+    guest: ['অতিথি', 'Guest'],
+    permanent: ['স্থায়ী', 'Permanent'],
+    probation: ['শিক্ষানবিস', 'Probation'],
+    intern: ['ইন্টার্ন', 'Intern'],
+  };
   return map[val.toLowerCase()]?.[bn ? 0 : 1] || val;
 };
 
@@ -47,6 +81,8 @@ const translateResidence = (val: string | undefined, bn: boolean): string => {
   return map[val.toLowerCase()]?.[bn ? 0 : 1] || val;
 };
 
+type TabId = 'profile' | 'employment' | 'others' | 'approver' | 'documents';
+
 const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalProps) => {
   const sd = staff.staff_data || {};
   const parents = sd.parents || {};
@@ -59,15 +95,17 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
   const permanentAddr = sd.permanent_address || {};
   const docs = sd.documents || [];
 
-  const formatAddr = (a: any) => [a?.village, a?.postOffice, a?.union, a?.upazila, a?.district, a?.division].filter(Boolean).join(', ');
+  const formatAddr = (a: any) => formatAddress(a, bn);
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'employment' | 'others'>('profile');
+  const [activeTab, setActiveTab] = useState<TabId>('profile');
   const [previewDoc, setPreviewDoc] = useState<{ url: string; name?: string } | null>(null);
 
-  const tabs = [
-    { id: 'profile' as const, label: bn ? 'প্রোফাইল' : 'Profile', icon: User },
-    { id: 'employment' as const, label: bn ? 'কর্মসংস্থান' : 'Employment', icon: Briefcase },
-    { id: 'others' as const, label: bn ? 'অন্যান্য' : 'Others', icon: ClipboardList },
+  const tabs: { id: TabId; label: string; icon: any; count?: number }[] = [
+    { id: 'profile', label: bn ? 'প্রোফাইল' : 'Profile', icon: User },
+    { id: 'employment', label: bn ? 'কর্মসংস্থান' : 'Employment', icon: Briefcase },
+    { id: 'others', label: bn ? 'অন্যান্য' : 'Others', icon: Users },
+    { id: 'approver', label: bn ? 'অনুমোদনকারী' : 'Approver', icon: CheckCircle2 },
+    { id: 'documents', label: bn ? 'ভিউ ডকুমেন্ট' : 'Documents', icon: FileText, count: docs.length },
   ];
 
   const statusColor = staff.status === 'active'
@@ -113,42 +151,49 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
                 {staff.designation && (
                   <p className="text-sm font-bold text-white">{staff.designation}</p>
                 )}
-                {staff.department && <p className="text-xs text-white/70">{staff.department}</p>}
+                {staff.department && (
+                  <p className="text-xs text-white/70">{translateDepartment(staff.department, bn)}</p>
+                )}
                 <div className="flex flex-wrap items-center gap-2 pt-1">
-              {staff.staff_id && (
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-white/20 text-white border border-white/20">
-                  <Hash className="w-3 h-3 text-white" /> {staff.staff_id}
-                </span>
-              )}
-              <span className={cn(
-                'inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full text-white shadow-lg bg-gradient-to-r',
-                statusColor
-              )}>
-                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                {statusLabel}
-              </span>
-            </div>
-          </div>
+                  {staff.staff_id && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-white/20 text-white border border-white/20">
+                      <Hash className="w-3 h-3 text-white" /> {staff.staff_id}
+                    </span>
+                  )}
+                  <span className={cn(
+                    'inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full text-white shadow-lg bg-gradient-to-r',
+                    statusColor
+                  )}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                    {statusLabel}
+                  </span>
+                </div>
+              </div>
             );
           })()}
         </div>
       </div>
 
       {/* ═══════════ TABS ═══════════ */}
-      <div className="flex gap-1 p-1 rounded-xl bg-muted border border-border">
+      <div className="flex gap-1 p-1 rounded-xl bg-muted border border-border overflow-x-auto scrollbar-none">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              'flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all duration-150',
+              'flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all duration-150 whitespace-nowrap min-w-max sm:min-w-0',
               activeTab === tab.id
                 ? 'bg-card text-foreground shadow-xs border border-border'
                 : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
             )}
           >
-            <tab.icon className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{tab.label}</span>
+            <tab.icon className="w-3.5 h-3.5 shrink-0" />
+            <span>{tab.label}</span>
+            {typeof tab.count === 'number' && tab.count > 0 && (
+              <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
+                {tab.count}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -167,7 +212,7 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
           </ProfileSectionCard>
 
           <ProfileSectionCard title={bn ? 'ঠিকানা' : 'Address'} icon={MapPin} columns={2}>
-            <ProfileInfoItem icon={MapPin} label={bn ? 'বর্তমান ঠিকানা' : 'Present Address'} value={formatAddr(presentAddr) || staff.address} fullWidth />
+            <ProfileInfoItem icon={MapPin} label={bn ? 'বর্তমান ঠিকানা' : 'Present Address'} value={formatAddr(presentAddr) || (staff.address ? formatAddress(staff.address, bn) : undefined)} fullWidth />
             <ProfileInfoItem icon={MapPin} label={bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'} value={formatAddr(permanentAddr)} fullWidth />
           </ProfileSectionCard>
 
@@ -191,7 +236,7 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
       {activeTab === 'employment' && (
         <div className="space-y-4">
           <ProfileSectionCard title={bn ? 'কর্মসংস্থান তথ্য' : 'Employment Info'} icon={Briefcase}>
-            <ProfileInfoItem icon={Briefcase} label={bn ? 'কর্মের ধরন' : 'Employment Type'} value={staff.employment_type || sd.employment_type} />
+            <ProfileInfoItem icon={Briefcase} label={bn ? 'কর্মের ধরন' : 'Employment Type'} value={translateEmploymentType(staff.employment_type || sd.employment_type, bn)} />
             <ProfileInfoItem icon={Calendar} label={bn ? 'যোগদানের তারিখ' : 'Joining Date'} value={staff.joining_date} />
             <ProfileInfoItem icon={GraduationCap} label={bn ? 'শিক্ষাগত যোগ্যতা' : 'Education'} value={staff.education || sd.education} />
             <ProfileInfoItem icon={ClipboardList} label={bn ? 'অভিজ্ঞতা' : 'Experience'} value={staff.experience || sd.experience} />
@@ -203,7 +248,7 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
         </div>
       )}
 
-      {/* ═══════════ OTHERS TAB ═══════════ */}
+      {/* ═══════════ OTHERS TAB (GUARDIAN & REFEREE) ═══════════ */}
       {activeTab === 'others' && (
         <div className="space-y-4">
           {(guardian.name || guardian.relation) && (
@@ -227,45 +272,90 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
             </ProfileSectionCard>
           )}
 
-          {(approver.name || approver.position) && (
-            <ProfileSectionCard title={bn ? 'অনুমোদনকারী' : 'Approver'} icon={ClipboardList}>
-              {approver.name && <ProfileInfoItem icon={User} label={bn ? 'নাম' : 'Name'} value={approver.name} />}
-              {approver.position && <ProfileInfoItem icon={Briefcase} label={bn ? 'পদবী' : 'Position'} value={approver.position} />}
-              {approver.date && <ProfileInfoItem icon={Calendar} label={bn ? 'তারিখ' : 'Date'} value={approver.date} />}
-            </ProfileSectionCard>
+          {!guardian.name && !guardian.relation && !identifier.name && !identifier.relation && (
+            <div className="text-center py-12 rounded-2xl border border-dashed border-border/70 bg-muted/15">
+              <Users className="w-10 h-10 text-muted-foreground/35 mx-auto mb-2" />
+              <p className="text-sm font-semibold text-muted-foreground">
+                {bn ? 'কোনো অভিভাবক বা পরিচয়দাতার তথ্য নেই' : 'No guardian or referee information'}
+              </p>
+            </div>
           )}
+        </div>
+      )}
 
-          {docs.length > 0 && (
-            <ProfileSectionCard title={bn ? 'ডকুমেন্টস' : 'Documents'} icon={FileText}>
-              <div className="col-span-full space-y-2">
+      {/* ═══════════ APPROVER TAB ═══════════ */}
+      {activeTab === 'approver' && (
+        <div className="space-y-4">
+          {(approver.name || approver.position || approver.date || approver.signature || approver.comments) ? (
+            <ProfileSectionCard title={bn ? 'অনুমোদনকারীর তথ্য' : 'Approver Details'} icon={CheckCircle2}>
+              {approver.name && <ProfileInfoItem icon={User} label={bn ? 'অনুমোদনকারীর নাম' : 'Approver Name'} value={approver.name} />}
+              {approver.position && <ProfileInfoItem icon={Briefcase} label={bn ? 'পদবী' : 'Position / Designation'} value={approver.position} />}
+              {approver.date && <ProfileInfoItem icon={Calendar} label={bn ? 'অনুমোদনের তারিখ' : 'Approval Date'} value={approver.date} />}
+              {approver.comments && <ProfileInfoItem icon={FileText} label={bn ? 'মন্তব্য' : 'Comments'} value={approver.comments} fullWidth />}
+              {approver.signature && (
+                <div className="col-span-full pt-2">
+                  <p className="text-xs font-semibold text-muted-foreground mb-1.5">{bn ? 'অনুমোদনকারীর স্বাক্ষর' : 'Approver Signature'}</p>
+                  <div className="inline-block p-2 rounded-xl bg-white border border-border">
+                    <img src={approver.signature} alt="Signature" className="h-16 max-w-[200px] object-contain" />
+                  </div>
+                </div>
+              )}
+            </ProfileSectionCard>
+          ) : (
+            <div className="text-center py-12 rounded-2xl border border-dashed border-border/70 bg-muted/15">
+              <CheckCircle2 className="w-10 h-10 text-muted-foreground/35 mx-auto mb-2" />
+              <p className="text-sm font-semibold text-muted-foreground">
+                {bn ? 'কোনো অনুমোদনকারীর তথ্য সংরক্ষণ করা নেই' : 'No approver information available'}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══════════ DOCUMENTS TAB ═══════════ */}
+      {activeTab === 'documents' && (
+        <div className="space-y-4">
+          {docs.length > 0 ? (
+            <ProfileSectionCard title={bn ? 'সংযুক্ত ডকুমেন্টস' : 'Attached Documents'} icon={FileText}>
+              <div className="col-span-full space-y-2.5">
                 {docs.map((doc: any, i: number) => (
-                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-muted/20 border border-border/15 hover:bg-muted/30 transition-colors">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/15 to-teal-500/10">
-                      <FileText className="w-4 h-4 text-emerald-600" />
+                  <div key={i} className="flex items-center justify-between gap-3 p-3.5 rounded-xl bg-card border border-border/60 hover:border-emerald-500/40 hover:shadow-xs transition-all">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                        <FileText className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold truncate text-foreground">{doc.name || doc.type || (bn ? `ডকুমেন্ট ${i + 1}` : `Document ${i + 1}`)}</p>
+                        {doc.type && doc.name && <p className="text-xs text-muted-foreground truncate">{doc.type}</p>}
+                      </div>
                     </div>
-                    <span className="flex-1 text-sm font-bold truncate">{doc.name || doc.type || `Document ${i + 1}`}</span>
-                    {doc.url && (
+                    {doc.url ? (
                       <button
                         type="button"
                         onClick={() => setPreviewDoc({ url: doc.url, name: doc.name || doc.type })}
-                        className="text-xs font-bold text-emerald-600 hover:text-emerald-700 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/15 hover:bg-emerald-500/15 transition-colors shrink-0"
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-white px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 shadow-xs hover:shadow transition-colors shrink-0"
                       >
-                        {bn ? 'দেখুন' : 'View'}
+                        <FileText className="w-3.5 h-3.5" />
+                        {bn ? 'ভিউ ডকুমেন্ট' : 'View Document'}
                       </button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground italic shrink-0">{bn ? 'ফাইল নেই' : 'No file'}</span>
                     )}
                   </div>
                 ))}
               </div>
             </ProfileSectionCard>
-          )}
-
-          {!guardian.name && !identifier.name && !approver.name && docs.length === 0 && (
-            <div className="text-center py-10 text-muted-foreground/50 text-sm">
-              {bn ? 'কোনো অতিরিক্ত তথ্য নেই' : 'No additional information'}
+          ) : (
+            <div className="text-center py-12 rounded-2xl border border-dashed border-border/70 bg-muted/15">
+              <FileText className="w-10 h-10 text-muted-foreground/35 mx-auto mb-2" />
+              <p className="text-sm font-semibold text-muted-foreground">
+                {bn ? 'কোনো ডকুমেন্ট আপলোড করা হয়নি' : 'No documents uploaded'}
+              </p>
             </div>
           )}
         </div>
       )}
+
       <DocumentPreviewModal
         open={!!previewDoc}
         onOpenChange={() => setPreviewDoc(null)}

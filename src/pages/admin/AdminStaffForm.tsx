@@ -31,11 +31,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { isAdminRole } from '@/lib/roles';
 import { isFutureJoiningDate } from '@/lib/joiningDate';
 import { resolveStaffFormNames, cleanStaffName, deduplicateRepeatedWords, hasBangla, hasEnglish } from '@/lib/nameFormatter';
+import { formatAddress as formatBanglaAddress } from '@/lib/banglaAddressHelper';
 
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 
-const formatAddress = (addr: AddressData) => {
-  return [addr.village, addr.postOffice, addr.union, addr.upazila, addr.district, addr.division].filter(Boolean).join(', ');
+const formatAddress = (addr: AddressData, bn = true) => {
+  return formatBanglaAddress(addr, bn);
 };
 
 interface DocFile {
@@ -1235,8 +1236,8 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
             <tr><td className="label">{bn ? 'ধর্ম' : 'Religion'}</td><td className="value">{religionLabel}</td><td className="label">{bn ? 'জাতীয় পরিচয়পত্র' : 'NID'}</td><td className="value">{nid}</td></tr>
             <tr><td className="label">{bn ? 'শিক্ষাগত যোগ্যতা' : 'Education'}</td><td className="value" colSpan={3}>{education}</td></tr>
             <tr><td className="label">{bn ? 'অভিজ্ঞতা' : 'Experience'}</td><td className="value">{experience || '-'}</td><td className="label">{bn ? 'পূর্ববর্তী কর্মস্থল' : 'Previous Institute'}</td><td className="value">{prevInstitute || '-'}</td></tr>
-            <tr><td className="label">{bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'}</td><td className="value" colSpan={3}>{formatAddress(permanentAddr)}</td></tr>
-            <tr><td className="label">{bn ? 'বর্তমান ঠিকানা' : 'Present Address'}</td><td className="value" colSpan={3}>{formatAddress(sameAddress ? permanentAddr : presentAddr)}</td></tr>
+            <tr><td className="label">{bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'}</td><td className="value" colSpan={3}>{formatAddress(permanentAddr, bn)}</td></tr>
+            <tr><td className="label">{bn ? 'বর্তমান ঠিকানা' : 'Present Address'}</td><td className="value" colSpan={3}>{formatAddress(sameAddress ? permanentAddr : presentAddr, bn)}</td></tr>
           </tbody>
         </table>
       </div>
@@ -1271,7 +1272,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
           <tbody>
             <tr><td className="label">{bn ? 'নাম' : 'Name'}</td><td className="value">{identifierName}</td><td className="label">{bn ? 'সম্পর্ক' : 'Relation'}</td><td className="value">{identifierRelation}</td></tr>
             <tr><td className="label">{bn ? 'মোবাইল' : 'Mobile'}</td><td className="value">{identifierMobileCode}{identifierMobile}</td><td className="label">NID</td><td className="value">{identifierNid}</td></tr>
-            <tr><td className="label">{bn ? 'ঠিকানা' : 'Address'}</td><td className="value" colSpan={3}>{formatAddress(identifierAddr)}</td></tr>
+            <tr><td className="label">{bn ? 'ঠিকানা' : 'Address'}</td><td className="value" colSpan={3}>{formatAddress(identifierAddr, bn)}</td></tr>
           </tbody>
         </table>
       </div>

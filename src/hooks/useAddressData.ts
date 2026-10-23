@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { bangladeshAddresses, type Division, type District, type Upazila, type Union, type PostOffice } from '@/data/bangladeshAddresses';
+import { getPostOfficeBn } from '@/data/bangladeshPostcodesBn';
 
 export interface AddressCustomEntry {
   id: string;
@@ -138,8 +139,9 @@ export const useMergedAddressData = () => {
 
     const merged = basePOs.map(po => {
       const edit = edits.find(e => e.original_name_en === po.nameEn);
-      if (edit) return { ...po, name: edit.name, nameEn: edit.name_en, code: edit.post_code || po.code };
-      return po;
+      const bnName = getPostOfficeBn(po.nameEn, po.code) || po.name;
+      if (edit) return { ...po, name: edit.name || bnName, nameEn: edit.name_en, code: edit.post_code || po.code };
+      return { ...po, name: bnName };
     });
 
     additions.forEach(a => {

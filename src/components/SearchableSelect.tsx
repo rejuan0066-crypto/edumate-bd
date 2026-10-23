@@ -8,6 +8,7 @@ export interface SelectOption {
   value: string;
   label: string;
   group?: string;
+  aliases?: string[];
 }
 
 interface SearchableSelectProps {
@@ -48,13 +49,22 @@ const SearchableSelect = ({
   }, [open]);
 
   const filtered = search
-    ? options.filter(o =>
-        o.label.toLowerCase().includes(search.toLowerCase()) ||
-        o.value.toLowerCase().includes(search.toLowerCase())
-      )
+    ? options.filter(o => {
+        const q = search.toLowerCase();
+        return (
+          o.label.toLowerCase().includes(q) ||
+          o.value.toLowerCase().includes(q) ||
+          (o.aliases && o.aliases.some(a => a.toLowerCase().includes(q)))
+        );
+      })
     : options;
 
-  const selectedLabel = options.find(o => o.value === value)?.label || (value && !options.find(o => o.value === value) ? value : undefined);
+  const selectedOption = options.find(o =>
+    o.value === value ||
+    o.label === value ||
+    (o.aliases && o.aliases.includes(value))
+  );
+  const selectedLabel = selectedOption?.label || (value && !selectedOption ? value : undefined);
 
   const showAddCustom = allowCustom && search.trim().length > 0 && !options.some(o => o.label.toLowerCase() === search.trim().toLowerCase() || o.value.toLowerCase() === search.trim().toLowerCase());
 

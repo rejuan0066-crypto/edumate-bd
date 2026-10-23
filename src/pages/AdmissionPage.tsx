@@ -20,10 +20,10 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import CardVerifySection from '@/components/CardVerifySection';
+import { formatAddress as formatAddressBn } from '@/lib/banglaAddressHelper';
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 
-const formatAddress = (addr: AddressData) =>
-  [addr.village, addr.postOffice, addr.union, addr.upazila, addr.district, addr.division].filter(Boolean).join(', ');
+const formatAddress = (addr: AddressData, bn = true) => formatAddressBn(addr, bn);
 
 const AdmissionPage = () => {
   const { language } = useLanguage();
