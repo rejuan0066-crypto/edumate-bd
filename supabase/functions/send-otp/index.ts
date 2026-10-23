@@ -377,8 +377,16 @@ Deno.serve(async (req) => {
           }
           console.error("EmailJS server-side send failed:", sent.error);
         }
-        return new Response(JSON.stringify({ error: "Failed to send email" }), {
-          status: 500,
+        // Delivery failure is a configuration/provider problem, not a crash:
+        // return 200 with success:false so the UI shows a message instead of a blank screen.
+        return new Response(JSON.stringify({
+          success: false,
+          code: "EMAIL_DELIVERY_FAILED",
+          error: "Failed to send email",
+          message: "Could not send the verification email. Please check the email (SMTP) settings or try again later.",
+          detail: errMsg.substring(0, 200),
+        }), {
+          status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -395,8 +403,13 @@ Deno.serve(async (req) => {
         );
       }
       console.error("EmailJS server-side send failed:", sent.error);
-      return new Response(JSON.stringify({ error: "Failed to send verification email" }), {
-        status: 500,
+      return new Response(JSON.stringify({
+        success: false,
+        code: "EMAIL_DELIVERY_FAILED",
+        error: "Failed to send verification email",
+        message: "Could not send the verification email. Please check the email settings or try again later.",
+      }), {
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
