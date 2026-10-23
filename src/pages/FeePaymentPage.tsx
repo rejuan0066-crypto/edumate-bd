@@ -8,7 +8,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import ManualPaymentMethods from '@/components/ManualPaymentMethods';
-import CollectorSelector from '@/components/fees/CollectorSelector';
 import { cleanRoleSuffix } from '@/lib/paymentUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +22,7 @@ import {
   CreditCard, Receipt, Search, Calendar, Building2, CheckCircle2,
   Download, Printer, User, Banknote, Shield, ArrowRight, Clock,
   AlertTriangle, Loader2, Sparkles, Phone, RefreshCw, X, ChevronRight,
-  Check, GraduationCap
+  Check, GraduationCap, Smartphone, Globe
 } from 'lucide-react';
 
 interface ReceiptData {
@@ -76,7 +75,6 @@ const FeePaymentPage = () => {
   const bn = language === 'bn';
   const { user, role } = useAuth();
   const queryClient = useQueryClient();
-  const [customCollector, setCustomCollector] = useState<string>('');
 
   const [activeTab, setActiveTab] = useState<'pay' | 'receipts'>('pay');
 
@@ -93,11 +91,24 @@ const FeePaymentPage = () => {
   const [selectedMonth, setSelectedMonth] = useState(currentMonthValue);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [customAmount, setCustomAmount] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'online'>('online');
+  const [paymentMethod, setPaymentMethod] = useState<'manual' | 'online'>('manual');
   const [manualMethod, setManualMethod] = useState('bkash');
   const [manualTrxId, setManualTrxId] = useState('');
   const [senderPhone, setSenderPhone] = useState('');
   const [paymentSuccess, setPaymentSuccess] = useState<any | null>(null);
+
+  // Active Payment Gateways
+  const { data: gateways = [] } = useQuery({
+    queryKey: ['public-payment-gateways-fee'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('payment_gateway_config')
+        .select('provider, provider_name, is_enabled')
+        .eq('is_enabled', true);
+      return data || [];
+    },
+  });
+  const hasOnlineGateway = gateways.length > 0;
 
   // Receipt Tab State (Private Student Receipt Lookup)
   const [receiptSession, setReceiptSession] = useState('all');
@@ -355,6 +366,12 @@ const FeePaymentPage = () => {
         throw new Error(bn ? 'সঠিক টাকার পরিমাণ লিখুন' : 'Enter a valid amount');
       }
 
+      if (paymentMethod === 'manual') {
+        if (!senderPhone.trim() || !manualTrxId.trim()) {
+          throw new Error(bn ? 'প্রেরক মোবাইল নম্বর এবং ট্রানজেকশন আইডি (TrxID) প্রদান করুন' : 'Sender phone and Transaction ID are required');
+        }
+      }
+
       const txnId = generateTransactionId();
       let serialNumber: string | null = null;
       try {
@@ -365,10 +382,33 @@ const FeePaymentPage = () => {
       }
 
       const feeTypeName = selectedFeeTypeObj ? (bn ? selectedFeeTypeObj.name_bn : selectedFeeTypeObj.name) : 'Student Fee';
-      const isCash = isStaffOrAdmin && paymentMethod === 'cash';
-      const finalCollector = cleanRoleSuffix(customCollector || collectorName);
-      const isUserAdmin = isAdminRole(role);
-      const isAutoApproved = isCash && isUserAdmin;
+
+      // Automated Online Gateway Checkout
+      if (paymentMethod === 'online') {
+        if (!hasOnlineGateway) {
+          throw new Error(bn ? 'স্বয়ংক্রিয় অনলাইন গেটওয়ে বর্তমানে সেটআপাধীন রয়েছে। অনুগ্রহ করে ম্যানুয়াল পেমেন্ট (বিকাশ/নগদ/রকেট) অপশন ব্যবহার করুন।' : 'Online gateway is under setup. Please use manual payment.');
+        }
+        const { data: gwData, error: gwErr } = await supabase.functions.invoke('process-payment', {
+          body: {
+            amount: amtNum,
+            fee_type: feeTypeName,
+            payer_name: foundStudent.name_bn || foundStudent.name_en,
+            payer_phone: senderPhone || foundStudent.guardian_phone || foundStudent.mobile || '01700000000',
+            student_id: foundStudent.id,
+            fee_type_id: selectedFeeTypeId,
+            month: selectedMonth,
+            year: parseInt(selectedYear),
+            transaction_id: txnId,
+            callback_url: window.location.origin + '/fees?status=success',
+          },
+        });
+        if (gwErr) throw new Error(gwErr.message || (bn ? 'গেটওয়েতে সংযোগ করা যায়নি' : 'Gateway connection error'));
+        if (gwData?.redirect_url) {
+          window.location.href = gwData.redirect_url;
+          return { isOnlineRedirect: true };
+        }
+        throw new Error(bn ? 'গেটওয়ে থেকে কোনো সাড়া পাওয়া যায়নি' : 'No gateway response');
+      }
 
       // Duplicate Payment Checking:
       // 1) For monthly fee, check fee_payments
@@ -412,17 +452,17 @@ const FeePaymentPage = () => {
         }
       }
 
-      // 1. Record in payments table
+      // 1. Record in payments table (Manual Payment)
       const paymentPayload: Record<string, any> = {
         fee_type: feeTypeName,
         amount: amtNum,
-        transaction_id: txnId,
-        status: isAutoApproved ? 'success' : 'pending',
+        transaction_id: manualTrxId || txnId,
+        status: 'pending',
         student_id: foundStudent.id,
         payer_name: foundStudent.name_bn || foundStudent.name_en,
-        payment_method: isCash ? 'cash' : (manualMethod || 'online'),
-        notes: `${bn ? 'আদায়কারী' : 'Collector'}: ${finalCollector} | ${isCash ? 'Cash Payment' : manualMethod} | TrxID: ${manualTrxId || txnId} | Sender: ${senderPhone} | Reg: ${foundStudent.registration_no || ''}${serialNumber ? ` | Serial: ${serialNumber}` : ''}`,
-        collected_by: finalCollector,
+        payment_method: manualMethod || 'manual',
+        notes: `Manual Payment (${manualMethod}) | TrxID: ${manualTrxId} | Sender: ${senderPhone} | Reg: ${foundStudent.registration_no || ''}${serialNumber ? ` | Serial: ${serialNumber}` : ''}`,
+        collected_by: `Manual (${manualMethod})`,
         created_by: user?.id || null,
       };
       await supabase.from('payments').insert(paymentPayload as any);
@@ -432,14 +472,14 @@ const FeePaymentPage = () => {
         fee_type_id: selectedFeeTypeId,
         student_id: foundStudent.id,
         amount: amtNum,
-        paid_amount: isAutoApproved ? amtNum : 0,
-        status: isAutoApproved ? 'paid' : 'pending',
+        paid_amount: 0,
+        status: 'pending',
         receipt_number: serialNumber || undefined,
-        paid_at: isAutoApproved ? new Date().toISOString() : null,
+        paid_at: null,
         month: (selectedFeeTypeObj?.payment_frequency === 'monthly' || (Array.isArray(selectedFeeTypeObj?.applicable_months) && selectedFeeTypeObj.applicable_months.length > 0)) ? selectedMonth : null,
         year: parseInt(selectedYear),
-        collected_by: finalCollector || (isCash ? 'Office' : 'Online'),
-        approved_by: isAutoApproved ? finalCollector : null,
+        collected_by: `Manual (${manualMethod})`,
+        approved_by: null,
       };
 
       const { data: insertedRecord, error: feeErr } = await supabase
@@ -453,29 +493,22 @@ const FeePaymentPage = () => {
       const finalSerialNumber = (insertedRecord as any)?.receipt_number || serialNumber || txnId;
 
       return {
-        txnId,
+        txnId: manualTrxId || txnId,
         serialNumber: finalSerialNumber,
         feePayment: insertedRecord,
         feeTypeName,
         amount: amtNum,
-        isCash,
-        isAutoApproved,
+        isCash: false,
+        isAutoApproved: false,
       };
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
+      if (data?.isOnlineRedirect) return;
       setPaymentSuccess(data);
       refetchStudentPayments();
       queryClient.invalidateQueries({ queryKey: ['fee-payments-public'] });
       queryClient.invalidateQueries({ queryKey: ['payments'] });
-      if (data.isCash) {
-        if (data.isAutoApproved) {
-          toast.success(bn ? 'ক্যাশ পেমেন্ট সফলভাবে সংরক্ষিত ও অনুমোদিত হয়েছে!' : 'Cash payment recorded and approved!');
-        } else {
-          toast.success(bn ? 'ক্যাশ পেমেন্ট এন্ট্রি জমা হয়েছে! এডমিনের অনুমোদনের পর রশিদ চূড়ান্ত হবে।' : 'Cash payment submitted! Awaiting admin approval.');
-        }
-      } else {
-        toast.success(bn ? 'পেমেন্ট রিকোয়েস্ট সফলভাবে জমা হয়েছে!' : 'Payment request submitted successfully!');
-      }
+      toast.success(bn ? 'ফি পরিশোধের রিকোয়েস্ট সফলভাবে জমা হয়েছে! এডমিন ভেরিফাই করলে রসিদ চূড়ান্ত হবে।' : 'Payment request submitted! Awaiting admin verification.');
     },
     onError: (err: any) => {
       toast.error(err.message || (bn ? 'পেমেন্ট প্রক্রিয়ায় ত্রুটি' : 'Payment process error'));
@@ -1140,42 +1173,39 @@ const FeePaymentPage = () => {
                         {/* Payment Method Toggle */}
                         <div className="space-y-1.5 sm:col-span-2">
                           <Label className="text-xs font-semibold">{bn ? 'পরিশোধের মাধ্যম' : 'Payment Method'} *</Label>
-                          <div className="grid grid-cols-2 gap-3">
-                            {isStaffOrAdmin && (
-                              <button
-                                type="button"
-                                onClick={() => setPaymentMethod('cash')}
-                                className={`p-3.5 rounded-xl border text-center transition-all flex items-center justify-center gap-2 ${
-                                  paymentMethod === 'cash'
-                                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 font-bold'
-                                    : 'border-border bg-background hover:bg-muted/40 text-muted-foreground'
-                                }`}
-                              >
-                                <Banknote className="w-5 h-5 text-emerald-600" />
-                                <span>{bn ? 'ক্যাশ আদায় (অফিস)' : 'Cash (Office)'}</span>
-                              </button>
-                            )}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <button
                               type="button"
-                              onClick={() => setPaymentMethod('online')}
-                              className={`p-3.5 rounded-xl border text-center transition-all flex items-center justify-center gap-2 ${
-                                !isStaffOrAdmin ? 'col-span-2' : ''
-                              } ${
-                                paymentMethod === 'online'
-                                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 font-bold'
+                              onClick={() => setPaymentMethod('manual')}
+                              className={`p-3.5 rounded-xl border text-center transition-all flex items-center justify-center gap-2.5 ${
+                                paymentMethod === 'manual'
+                                  ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 font-bold shadow-xs'
                                   : 'border-border bg-background hover:bg-muted/40 text-muted-foreground'
                               }`}
                             >
-                              <CreditCard className="w-5 h-5 text-blue-600" />
-                              <span>{bn ? 'অনলাইন / মোবাইল ব্যাংকিং' : 'Mobile Banking / Online'}</span>
+                              <Smartphone className="w-5 h-5 text-emerald-600" />
+                              <span>{bn ? 'ম্যানুয়াল পেমেন্ট (বিকাশ / নগদ / রকেট)' : 'Manual (bKash / Nagad / Rocket)'}</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setPaymentMethod('online')}
+                              className={`p-3.5 rounded-xl border text-center transition-all flex items-center justify-center gap-2.5 ${
+                                paymentMethod === 'online'
+                                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 font-bold shadow-xs'
+                                  : 'border-border bg-background hover:bg-muted/40 text-muted-foreground'
+                              }`}
+                            >
+                              <Globe className="w-5 h-5 text-blue-600" />
+                              <span>{bn ? 'অনলাইন গেটওয়ে (স্বয়ংক্রিয় / কার্ড)' : 'Online Gateway (Automated)'}</span>
                             </button>
                           </div>
                         </div>
                       </div>
 
-                      {/* Online / Manual Payment Details (bKash / Nagad / Rocket) */}
-                      {paymentMethod === 'online' && (
-                        <div className="rounded-xl border border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 p-4 space-y-4">
+                      {/* Manual Payment Section (bKash / Nagad / Rocket / Bank) */}
+                      {paymentMethod === 'manual' && (
+                        <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 dark:bg-emerald-950/20 p-4 space-y-4">
                           <ManualPaymentMethods
                             transactionId={manualTrxId}
                             onTransactionIdChange={setManualTrxId}
@@ -1203,17 +1233,64 @@ const FeePaymentPage = () => {
                               />
                             </div>
                           </div>
+                          <p className="text-[11px] text-muted-foreground pt-1">
+                            {bn
+                              ? 'ℹ️ টাকা পাঠিয়ে প্রেরক নম্বর ও TrxID প্রদান করুন। অফিস কর্তৃপক্ষ যাচাই শেষে রসিদ অনুমোদন করবেন।'
+                              : 'ℹ️ Send money to the account and provide Sender Phone & TrxID. The office will verify and approve the receipt.'}
+                          </p>
                         </div>
                       )}
 
-                      {/* Cash Collector Selection (Staff/Teacher or Custom) */}
-                      {paymentMethod === 'cash' && (
-                        <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 dark:bg-emerald-950/20 p-4 space-y-3">
-                          <CollectorSelector
-                            value={customCollector}
-                            onChange={setCustomCollector}
-                            defaultCollectorName={collectorName}
-                          />
+                      {/* Automated Online Payment Gateway Section */}
+                      {paymentMethod === 'online' && (
+                        <div className="rounded-xl border border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 p-4 space-y-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 shrink-0">
+                              <Globe className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-bold text-foreground">
+                                {bn ? 'স্বয়ংক্রিয় অনলাইন পেমেন্ট গেটওয়ে' : 'Automated Online Payment Gateway'}
+                              </h4>
+                              <p className="text-xs text-muted-foreground">
+                                {bn ? 'ভিসা, মাস্টারকার্ড, বিকাশ, নগদ বা ইন্টারনেট ব্যাংকিংয়ের মাধ্যমে সরাসরি পেমেন্ট' : 'Pay instantly via Card, MFS, or Internet Banking'}
+                              </p>
+                            </div>
+                          </div>
+
+                          {hasOnlineGateway ? (
+                            <div className="p-3 rounded-lg bg-background border border-border text-xs text-muted-foreground space-y-1">
+                              <p className="font-semibold text-foreground">
+                                {bn ? 'সক্রিয় গেটওয়ে:' : 'Active Gateways:'} {gateways.map((g: any) => g.provider_name || g.provider).join(', ')}
+                              </p>
+                              <p>
+                                {bn
+                                  ? 'নিচের বাটনে ক্লিক করলে আপনাকে পেমেন্ট গেটওয়ের নিরাপদ চেকআউট পেজে নিয়ে যাওয়া হবে।'
+                                  : 'Clicking the button below will securely redirect you to the payment gateway checkout page.'}
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="p-3.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-200 space-y-2">
+                              <p className="font-semibold flex items-center gap-1.5">
+                                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                                {bn ? 'স্বয়ংক্রিয় অনলাইন গেটওয়ে কনফিগারেশন প্রক্রিয়াধীন' : 'Online Gateway Under Configuration'}
+                              </p>
+                              <p>
+                                {bn
+                                  ? 'স্বয়ংক্রিয় পেমেন্ট গেটওয়ে বর্তমানে সেটআপাধীন রয়েছে। আপনি খুব সহজেই "ম্যানুয়াল পেমেন্ট (বিকাশ / নগদ / রকেট)" অপশন ব্যবহার করে ফি পরিশোধ করতে পারেন।'
+                                  : 'Automated gateway is currently being configured. Please use the "Manual Payment" option to pay via bKash/Nagad/Rocket.'}
+                              </p>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setPaymentMethod('manual')}
+                                className="text-xs font-bold border-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40"
+                              >
+                                {bn ? '👉 ম্যানুয়াল পেমেন্টে যান' : '👉 Switch to Manual Payment'}
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -1221,17 +1298,25 @@ const FeePaymentPage = () => {
                       <div className="pt-2">
                         <Button
                           className="w-full h-12 text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md"
-                          disabled={payMutation.isPending || !selectedFeeTypeId || !customAmount}
+                          disabled={
+                            payMutation.isPending ||
+                            !selectedFeeTypeId ||
+                            !customAmount ||
+                            (paymentMethod === 'manual' && (!senderPhone || !manualTrxId)) ||
+                            (paymentMethod === 'online' && !hasOnlineGateway)
+                          }
                           onClick={() => payMutation.mutate()}
                         >
                           {payMutation.isPending ? (
                             <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          ) : paymentMethod === 'online' ? (
+                            <Globe className="w-5 h-5 mr-2" />
                           ) : (
                             <CheckCircle2 className="w-5 h-5 mr-2" />
                           )}
-                          {paymentMethod === 'cash'
-                            ? (bn ? 'ক্যাশ ফি আদায় নিশ্চিত করুন' : 'Confirm Cash Payment')
-                            : (bn ? 'ফি পরিশোধের তথ্য জমা দিন' : 'Submit Fee Payment')}
+                          {paymentMethod === 'online'
+                            ? (bn ? `অনলাইন গেটওয়েতে ৳${customAmount || '০'} পরিশোধ করুন` : `Pay ৳${customAmount || '0'} via Gateway`)
+                            : (bn ? 'ফি পরিশোধের তথ্য জমা দিন' : 'Submit Fee Payment Info')}
                         </Button>
                       </div>
                     </CardContent>
