@@ -22,7 +22,9 @@ import {
 import { useLanguage } from '@/contexts/LanguageContext';
 import { resolveFileUrl, isPdfUrl } from '@/lib/secureStorage';
 import { isCloudinaryUrl } from '@/lib/cloudinary';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface DocumentPreviewModalProps {
   open: boolean;
@@ -43,7 +45,9 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
   const bn = language === 'bn';
 
   const [resolvedUrl, setResolvedUrl] = useState<string>('');
+  const [localBlobUrl, setLocalBlobUrl] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
@@ -52,6 +56,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
   useEffect(() => {
     if (!open || !fileUrl) {
       setResolvedUrl('');
+      setLocalBlobUrl('');
       setError(null);
       setZoom(1);
       setRotation(0);
@@ -65,7 +70,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     setRotation(0);
 
     resolveFileUrl(fileUrl)
-      .then((url) => {
+      .then(async (url) => {
         if (!isCancelled) {
           if (!url) {
             setError(bn ? 'ফাইলের সঠিক লিঙ্ক পাওয়া যায়নি' : 'File URL could not be resolved');
@@ -73,9 +78,26 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
             setResolvedUrl(url);
             const isCloudinary = isCloudinaryUrl(url) || url.includes('cloudinary');
             const pdf = isPdfUrl(url) || isPdfUrl(fileName) || isPdfUrl(fileUrl);
+
             if (pdf) {
-              // Default to image mode for Cloudinary (instant, no iframe blockage), otherwise Google viewer
               setPdfMode(isCloudinary ? 'image' : 'google');
+
+              // If it's a Supabase storage file, pre-fetch as a local blob
+              // This completely bypasses Chrome client adblockers (ERR_BLOCKED_BY_CLIENT)
+              const m = url.match(/\/storage\/v1\/object\/(?:public|sign)\/([^/]+)\/(.+?)(?:\?.*)?$/);
+              if (m) {
+                const bucket = m[1];
+                const path = decodeURIComponent(m[2]);
+                try {
+                  const { data: sbBlob } = await supabase.storage.from(bucket).download(path);
+                  if (sbBlob && !isCancelled) {
+                    const bUrl = URL.createObjectURL(sbBlob);
+                    setLocalBlobUrl(bUrl);
+                  }
+                } catch (e) {
+                  console.warn('Pre-fetch blob warning:', e);
+                }
+              }
             }
           }
         }
@@ -92,6 +114,9 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
 
     return () => {
       isCancelled = true;
+      if (localBlobUrl) {
+        URL.revokeObjectURL(localBlobUrl);
+      }
     };
   }, [open, fileUrl, fileName, bn]);
 
@@ -105,10 +130,33 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     ? resolvedUrl.replace(/\.pdf($|[?#])/i, '.jpg$1')
     : null;
 
-  const handlePrint = () => {
-    if (!resolvedUrl) return;
+  const handlePrint = async () => {
+    const targetUrl = localBlobUrl || resolvedUrl || fileUrl;
+    if (!targetUrl) return;
+
     if (isPdf) {
-      const printWindow = window.open(resolvedUrl, '_blank');
+      if (localBlobUrl) {
+        const win = window.open(localBlobUrl, '_blank');
+        win?.focus();
+        return;
+      }
+
+      // Check if Supabase
+      const m = targetUrl.match(/\/storage\/v1\/object\/(?:public|sign)\/([^/]+)\/(.+?)(?:\?.*)?$/);
+      if (m) {
+        const bucket = m[1];
+        const path = decodeURIComponent(m[2]);
+        const { data: sbBlob } = await supabase.storage.from(bucket).download(path);
+        if (sbBlob) {
+          const bUrl = URL.createObjectURL(sbBlob);
+          const win = window.open(bUrl, '_blank');
+          win?.focus();
+          setTimeout(() => URL.revokeObjectURL(bUrl), 30000);
+          return;
+        }
+      }
+
+      const printWindow = window.open(targetUrl, '_blank');
       printWindow?.focus();
       printWindow?.print();
     } else {
@@ -124,7 +172,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               </style>
             </head>
             <body>
-              <img src="${resolvedUrl}" onload="window.print();window.close();" />
+              <img src="${targetUrl}" onload="window.print();window.close();" />
             </body>
           </html>
         `);
@@ -133,17 +181,81 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     }
   };
 
-  const handleDownload = () => {
-    if (!resolvedUrl) return;
-    const a = document.createElement('a');
-    a.href = resolvedUrl;
-    a.download = displayName;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+  /**
+   * Direct, true in-browser file download.
+   * Converts the target into a local same-origin Blob, ensuring the browser saves
+   * the file directly into Downloads folder without opening an external tab or
+   * triggering adblockers (ERR_BLOCKED_BY_CLIENT).
+   */
+  const handleDownload = async () => {
+    const targetUrl = resolvedUrl || fileUrl;
+    if (!targetUrl && !localBlobUrl) return;
+
+    setDownloading(true);
+    toast.info(bn ? 'ফাইল ডাউনলোড হচ্ছে...' : 'Downloading file...');
+
+    try {
+      let blob: Blob | null = null;
+
+      // 1. If we already have a local blob, use it
+      if (localBlobUrl) {
+        const res = await fetch(localBlobUrl);
+        if (res.ok) blob = await res.blob();
+      }
+
+      // 2. If it's a Supabase storage URL, download directly via Supabase SDK
+      if (!blob && targetUrl) {
+        const m = targetUrl.match(/\/storage\/v1\/object\/(?:public|sign)\/([^/]+)\/(.+?)(?:\?.*)?$/);
+        if (m) {
+          const bucket = m[1];
+          const path = decodeURIComponent(m[2]);
+          const { data: sbBlob, error: sbErr } = await supabase.storage.from(bucket).download(path);
+          if (!sbErr && sbBlob) {
+            blob = sbBlob;
+          }
+        }
+      }
+
+      // 3. Fallback to standard fetch
+      if (!blob && targetUrl) {
+        const resp = await fetch(targetUrl);
+        if (resp.ok) {
+          blob = await resp.blob();
+        }
+      }
+
+      if (blob) {
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = displayName || (isPdf ? 'document.pdf' : 'download');
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 15000);
+        toast.success(bn ? 'ডাউনলোড সম্পন্ন হয়েছে!' : 'Downloaded successfully!');
+        return;
+      }
+
+      // 4. Extreme fallback
+      if (targetUrl) {
+        const a = document.createElement('a');
+        a.href = targetUrl;
+        a.download = displayName || 'download';
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    } catch (err: any) {
+      console.error('Download error:', err);
+      toast.error(bn ? 'ডাউনলোড করতে সমস্যা হয়েছে' : 'Download failed');
+    } finally {
+      setDownloading(false);
+    }
   };
+
+  const directViewUrl = localBlobUrl || resolvedUrl;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -260,15 +372,14 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               <AlertCircle className="w-10 h-10 stroke-1" />
               <p className="text-sm font-medium">{error}</p>
               {fileUrl && (
-                <a
-                  href={fileUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={handleDownload}
                   className="text-xs text-primary underline flex items-center gap-1"
                 >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  {bn ? 'সরাসরি লিঙ্ক খুলুন' : 'Open direct link'}
-                </a>
+                  <Download className="w-3.5 h-3.5" />
+                  {bn ? 'সরাসরি ডাউনলোড করুন' : 'Download directly'}
+                </button>
               )}
             </div>
           ) : isPdf ? (
@@ -301,35 +412,34 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                   <span>
                     {bn ? '🌐 গুগল ডক্স ভিউয়ারে প্রদর্শিত হচ্ছে' : '🌐 Rendered via Google Docs Viewer'}
                   </span>
-                  <a
-                    href={resolvedUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={handleDownload}
                     className="text-primary underline font-medium inline-flex items-center gap-1"
                   >
-                    <ExternalLink className="w-3 h-3" />
-                    {bn ? 'সরাসরি ফাইলে যান' : 'Direct Link'}
-                  </a>
+                    <Download className="w-3 h-3" />
+                    {bn ? 'ফাইল ডাউনলোড করুন' : 'Download File'}
+                  </button>
                 </div>
               </div>
             ) : (
               <div className="w-full h-full min-h-[500px] flex flex-col">
                 <iframe
-                  src={`${resolvedUrl}#toolbar=1&navpanes=0`}
+                  src={`${directViewUrl}#toolbar=1&navpanes=0`}
                   className="w-full flex-1 min-h-[450px] border-0 rounded-lg bg-background"
                   title={displayName}
                 />
                 <div className="mt-2 p-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-center text-xs text-amber-800 dark:text-amber-300">
                   {bn
-                    ? '⚠️ ক্রোম ব্রাউজার সরাসরি আইফ্রেমে PDF ব্লক করলে উপরের "গুগল ভিউয়ার" অথবা "ছবি মোড" বাটনে ক্লিক করুন।'
-                    : '⚠️ If Chrome blocks raw PDF in iframe, switch to Google Viewer or Image Mode above.'}
+                    ? '⚠️ ক্রোম ব্রাউজার সরাসরি আইফ্রেমে PDF ব্লক করলে উপরের "গুগল ভিউয়ার" অথবা নিচে "ডাউনলোড" বাটনে ক্লিক করুন।'
+                    : '⚠️ If Chrome blocks raw PDF in iframe, switch to Google Viewer above or click Download below.'}
                 </div>
               </div>
             )
           ) : (
             <div className="w-full h-full flex items-center justify-center overflow-auto p-2">
               <img
-                src={resolvedUrl}
+                src={localBlobUrl || resolvedUrl}
                 alt={displayName}
                 style={{
                   transform: `scale(${zoom}) rotate(${rotation}deg)`,
@@ -358,7 +468,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               variant="outline"
               size="sm"
               onClick={handlePrint}
-              disabled={!resolvedUrl || loading}
+              disabled={(!resolvedUrl && !localBlobUrl) || loading}
               className="gap-1.5"
             >
               <Printer className="w-4 h-4" />
@@ -369,17 +479,24 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               variant="outline"
               size="sm"
               onClick={handleDownload}
-              disabled={!resolvedUrl || loading}
+              disabled={(!resolvedUrl && !localBlobUrl) || loading || downloading}
               className="gap-1.5"
             >
-              <Download className="w-4 h-4" />
-              <span>{bn ? 'ডাউনলোড' : 'Download'}</span>
+              {downloading ? (
+                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+              ) : (
+                <Download className="w-4 h-4" />
+              )}
+              <span>{downloading ? (bn ? 'ডাউনলোড হচ্ছে...' : 'Downloading...') : (bn ? 'ডাউনলোড' : 'Download')}</span>
             </Button>
             <Button
               type="button"
               size="sm"
-              onClick={() => resolvedUrl && window.open(resolvedUrl, '_blank', 'noopener,noreferrer')}
-              disabled={!resolvedUrl || loading}
+              onClick={() => {
+                const target = localBlobUrl || resolvedUrl;
+                if (target) window.open(target, '_blank', 'noopener,noreferrer');
+              }}
+              disabled={(!resolvedUrl && !localBlobUrl) || loading}
               className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
             >
               <ExternalLink className="w-4 h-4" />
