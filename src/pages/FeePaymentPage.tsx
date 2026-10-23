@@ -796,26 +796,6 @@ const FeePaymentPage = () => {
   return (
     <PublicLayout>
       <div className="container mx-auto px-4 py-8 max-w-5xl space-y-6">
-        {/* Top Admin Quick Switcher Banner */}
-        {isStaffOrAdmin && (
-          <div className="rounded-xl border border-blue-200 bg-blue-50/70 dark:bg-blue-950/30 dark:border-blue-900/50 p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
-            <div className="flex items-center gap-2 text-blue-950 dark:text-blue-200">
-              <Shield className="w-4 h-4 text-blue-600 shrink-0" />
-              <span>
-                {bn
-                  ? `আপনি অ্যাডমিন হিসেবে লগইন আছেন (${collectorName})। সরাসরি অফিস ফি আদায় সিস্টেমে যেতে পারেন:`
-                  : `Logged in as staff/admin (${collectorName}). You can switch to full office fee portal:`}
-              </span>
-            </div>
-            <Link to="/admin/students-fees">
-              <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs whitespace-nowrap">
-                {bn ? 'অফিস ফি কালেকশন প্যানেল' : 'Office Fee Collection'}
-                <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-              </Button>
-            </Link>
-          </div>
-        )}
-
         {/* Page Title & Subtitle */}
         <div className="text-center space-y-1.5">
           <h1 className="text-3xl sm:text-4xl font-display font-bold text-foreground flex items-center justify-center gap-2.5">
