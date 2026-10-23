@@ -540,7 +540,17 @@ const AdminSettings = () => {
     setSmtpTesting(true);
     setSmtpTestResult(null);
     try {
+      // Refresh the session so the server receives a valid, non-expired token
+      const { data: refreshed } = await supabase.auth.refreshSession();
+      const accessToken = refreshed?.session?.access_token
+        ?? (await supabase.auth.getSession()).data.session?.access_token;
+      if (!accessToken) {
+        setSmtpTestResult({ success: false, message: bn ? 'সেশন শেষ হয়েছে, আবার লগইন করুন' : 'Session expired, please sign in again', profile: profile.name });
+        setSmtpTesting(false);
+        return;
+      }
       const { data, error } = await supabase.functions.invoke('test-smtp', {
+        headers: { Authorization: `Bearer ${accessToken}` },
         body: {
           smtp_host: profile.smtp_host,
           smtp_port: profile.smtp_port,
@@ -553,7 +563,11 @@ const AdminSettings = () => {
         },
       });
       if (error) {
-        setSmtpTestResult({ success: false, message: error.message || 'Function call failed', profile: profile.name });
+        const status = (error as any)?.context?.status;
+        const msg = status === 401
+          ? (bn ? 'সার্ভার আপনার লগইন যাচাই করতে পারেনি। test-smtp ফাংশনটি নতুন করে ডিপ্লয় করুন, তারপর আবার লগইন করে চেষ্টা করুন।' : 'Server could not verify your login. Redeploy the test-smtp function, then sign in again and retry.')
+          : (error.message || 'Function call failed');
+        setSmtpTestResult({ success: false, message: msg, profile: profile.name });
       } else if (data?.success) {
         setSmtpTestResult({ success: true, message: data.message || (bn ? 'টেস্ট ইমেইল পাঠানো হয়েছে' : 'Test email sent'), profile: profile.name });
         toast.success(bn ? `✅ "${profile.name}" → ${smtpTestEmail}` : `✅ "${profile.name}" → ${smtpTestEmail}`);
