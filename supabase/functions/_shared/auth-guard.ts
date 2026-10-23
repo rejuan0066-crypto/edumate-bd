@@ -28,15 +28,27 @@ export async function requireAuth(
     { global: { headers: { Authorization: `Bearer ${token}` } } }
   );
 
-  let claims: any;
+  let claims: any = null;
+  // getClaims is missing in older supabase-js builds; fall back to getUser.
   try {
-    const { data, error } = await (supabase.auth as any).getClaims(token);
-    if (error || !data?.claims) {
-      return { ok: false, status: 401, error: 'Unauthorized: invalid token' };
+    const authAny = supabase.auth as any;
+    if (typeof authAny.getClaims === 'function') {
+      const { data, error } = await authAny.getClaims(token);
+      if (!error && data?.claims) claims = data.claims;
     }
-    claims = data.claims;
   } catch {
-    return { ok: false, status: 401, error: 'Unauthorized: token verification failed' };
+    // ignore, try getUser below
+  }
+  if (!claims) {
+    try {
+      const { data, error } = await supabase.auth.getUser(token);
+      if (error || !data?.user) {
+        return { ok: false, status: 401, error: 'Unauthorized: invalid token' };
+      }
+      claims = { sub: data.user.id, email: data.user.email, role: data.user.role };
+    } catch {
+      return { ok: false, status: 401, error: 'Unauthorized: token verification failed' };
+    }
   }
 
   const userId = claims.sub as string;
