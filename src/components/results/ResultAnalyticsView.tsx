@@ -35,12 +35,12 @@ export const ResultAnalyticsView = ({
   const computed = useMemo(() => {
     return students.map((st, idx) => {
       const raw = subjects.map(s => marksMap[`${st.id}_${s.id}`]);
-      const hasEnteredAny = raw.some(m => m !== undefined && m !== null && m !== '');
+      const hasEnteredAny = raw.some(m => m !== undefined && m !== null && (m as unknown) !== '');
       const graded = raw
-        .filter(m => m !== undefined && m !== null && m !== '' && !Number.isNaN(Number(m)))
+        .filter(m => m !== undefined && m !== null && (m as unknown) !== '' && !Number.isNaN(Number(m)))
         .map(m => Number(m));
       const total = hasEnteredAny ? graded.reduce((a, b) => a + b, 0) : 0;
-      const blankCount = raw.filter(m => m === undefined || m === null || m === '').length;
+      const blankCount = raw.filter(m => m === undefined || m === null || (m as unknown) === '').length;
       const hasBlank = blankCount > 0;
       const hasZero = graded.some(m => Number(m) === 0);
       const override = statusOverrides[st.id] || 'auto';
@@ -124,7 +124,7 @@ export const ResultAnalyticsView = ({
     return subjects.map(sub => {
       const marks = students
         .map(st => marksMap[`${st.id}_${sub.id}`])
-        .filter(m => m !== undefined && m !== null && m !== '' && !Number.isNaN(Number(m)))
+        .filter(m => m !== undefined && m !== null && (m as unknown) !== '' && !Number.isNaN(Number(m)))
         .map(m => Number(m));
 
       const count = marks.length;
