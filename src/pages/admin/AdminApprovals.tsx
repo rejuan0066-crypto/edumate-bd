@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '@/components/AdminLayout';
+import AdmissionForm from '@/components/admission/AdmissionForm';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,6 +39,7 @@ import {
   RefreshCw,
   Search,
   CheckCircle2,
+  Sparkles,
   AlertCircle,
   ExternalLink,
   Filter,
@@ -53,6 +55,8 @@ import { toast } from 'sonner';
 import { invalidateAllStudentQueries } from '@/lib/studentQueryInvalidator';
 
 // Status badge helper
+const bnToEn = (str: any) => String(str || '').replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+
 const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-amber-500/10 text-amber-600 border-amber-500/30',
   approved: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30',
@@ -144,6 +148,17 @@ const AdminApprovals = () => {
   const [rejectionReason, setRejectionReason] = useState('');
   const [adminNote, setAdminNote] = useState('');
 
+  // Student Approval Modal States (review, roll/reg assignment, approver)
+  const [studentApprovalModal, setStudentApprovalModal] = useState<any | null>(null);
+  const [assignedRoll, setAssignedRoll] = useState('');
+  const [assignedReg, setAssignedReg] = useState('');
+  const [studentApproverName, setStudentApproverName] = useState('');
+  const [studentApproverDesignation, setStudentApproverDesignation] = useState('');
+  const [studentApproverDate, setStudentApproverDate] = useState('');
+  const [calculatingRoll, setCalculatingRoll] = useState(false);
+  const [editStudentForModal, setEditStudentForModal] = useState<any | null>(null);
+  const [showEditAdmissionForm, setShowEditAdmissionForm] = useState(false);
+
   // Staff Approval Modal States (review, salary, signatures, approver)
   const [staffApprovalModal, setStaffApprovalModal] = useState<any | null>(null);
   const [staffSalary, setStaffSalary] = useState('');
@@ -167,6 +182,23 @@ const AdminApprovals = () => {
     },
   });
 
+  // Classes and Divisions for roll/reg auto-generation
+  const { data: allClasses = [] } = useQuery({
+    queryKey: ['all-classes-approvals'],
+    queryFn: async () => {
+      const { data } = await supabase.from('classes').select('id, name, name_bn, sort_order, division_id').order('sort_order');
+      return data || [];
+    },
+  });
+
+  const { data: allDivisions = [] } = useQuery({
+    queryKey: ['all-divisions-approvals'],
+    queryFn: async () => {
+      const { data } = await supabase.from('divisions').select('id, name, name_bn, prefix');
+      return data || [];
+    },
+  });
+
   // 1. Fetch Current User Profile
   const { data: currentProfile } = useQuery({
     queryKey: ['current-profile-approvals', user?.id],
@@ -185,7 +217,10 @@ const AdminApprovals = () => {
     queryFn: async () => {
       let q = supabase
         .from('students')
-        .select('id, name_bn, name_en, roll_number, phone, father_name, mother_name, class_id, approval_status, status, created_at, photo_url, blood_group')
+        .select(`
+          *,
+          classes:class_id(id, name, name_bn, division_id, sort_order, divisions(id, name, name_bn, prefix))
+        `)
         .order('created_at', { ascending: false });
 
       if (statusFilter !== 'all') {
@@ -392,6 +427,162 @@ const AdminApprovals = () => {
       setDetailModal(null);
     },
     onError: (e: any) => toast.error(e.message || (bn ? 'সমস্যা হয়েছে' : 'Error occurred')),
+  });
+
+  // ─── Student Admission Approval Handlers ───
+  const openStudentApprovalModal = async (s: any) => {
+    setStudentApprovalModal(s);
+    setStudentApproverName(currentProfile?.full_name || institution?.name || (bn ? 'অধ্যক্ষ' : 'Principal'));
+    setStudentApproverDesignation(bn ? 'অধ্যক্ষ / ভর্তি পরিচালক' : 'Principal / Admission Incharge');
+    setStudentApproverDate(new Date().toISOString().split('T')[0]);
+
+    let roll = s.roll_number ? String(s.roll_number) : '';
+    let reg = s.registration_no || s.student_id || '';
+
+    if (!roll) {
+      setCalculatingRoll(true);
+      try {
+        const cls = allClasses.find((c: any) => c.id === s.class_id || c.name === s.admission_class || c.name_bn === s.admission_class);
+        const classId = cls?.id || s.class_id;
+        const sortOrder = cls?.sort_order ?? 1;
+        const rollStart = sortOrder * 1000 + 1;
+        const rollPrefix = Math.floor(rollStart / 1000);
+
+        let nextRoll = '';
+        try {
+          const { data: rpcRoll, error: rpcErr } = await (supabase as any).rpc('get_next_student_roll', {
+            p_class_id: classId,
+            p_session_id: s.session_id || null,
+            p_roll_start: rollStart,
+          });
+          if (!rpcErr && rpcRoll) {
+            nextRoll = String(rpcRoll);
+          }
+        } catch {}
+
+        if (!nextRoll) {
+          let q = supabase.from('students').select('roll_number').not('roll_number', 'is', null);
+          if (classId) q = q.eq('class_id', classId);
+          if (s.session_id) q = q.eq('session_id', s.session_id);
+          const { data: rollData } = await q;
+
+          let maxRoll = rollStart - 1;
+          if (rollData && rollData.length > 0) {
+            for (const r of rollData) {
+              const num = parseInt(r.roll_number || '0', 10);
+              if (!isNaN(num) && num >= rollStart && num < (rollPrefix + 1) * 1000) {
+                maxRoll = Math.max(maxRoll, num);
+              }
+            }
+          }
+          nextRoll = String(maxRoll + 1);
+        }
+        roll = nextRoll;
+      } catch (err) {
+        console.warn('Error calculating roll:', err);
+      } finally {
+        setCalculatingRoll(false);
+      }
+    }
+
+    setAssignedRoll(roll);
+
+    if (!reg) {
+      const year = (s.session_year || s.admission_date || new Date().toISOString()).slice(0, 4);
+      const div = allDivisions.find((d: any) => d.id === s.division_id || d.name === s.admission_division || d.name_bn === s.admission_division);
+      const prefix = div?.prefix || '';
+      reg = prefix ? `${prefix}-${year}${roll}` : `${year}${roll}`;
+    }
+    setAssignedReg(reg);
+  };
+
+  const handleAutoRegenerateReg = (overrideRoll?: string) => {
+    if (!studentApprovalModal) return;
+    const s = studentApprovalModal;
+    const roll = bnToEn(overrideRoll !== undefined ? overrideRoll : assignedRoll).trim();
+    const year = (s.session_year || s.admission_date || new Date().toISOString()).slice(0, 4);
+    const div = allDivisions.find((d: any) => d.id === s.division_id || d.name === s.admission_division || d.name_bn === s.admission_division);
+    const prefix = div?.prefix || '';
+    const reg = prefix ? `${prefix}-${year}${roll}` : `${year}${roll}`;
+    setAssignedReg(reg);
+  };
+
+  const approveStudentWithDetailsMutation = useMutation({
+    mutationFn: async ({ studentId, status, reason }: { studentId?: string; status: 'approved' | 'rejected'; reason?: string }) => {
+      const targetId = studentId || studentApprovalModal?.id;
+      if (!targetId) return;
+
+      if (status === 'rejected') {
+        const { error } = await supabase
+          .from('students')
+          .update({
+            approval_status: 'rejected',
+            status: 'inactive',
+          } as any)
+          .eq('id', targetId);
+        if (error) throw error;
+        return;
+      }
+
+      // Approved
+      const finalRoll = bnToEn(assignedRoll).trim();
+      const finalReg = bnToEn(assignedReg).trim();
+
+      const currentExtra = (studentApprovalModal?.extra_fields as any) || {};
+      const updatedExtra = {
+        ...currentExtra,
+        approver_info: {
+          name: studentApproverName,
+          designation: studentApproverDesignation,
+          date: studentApproverDate,
+        },
+      };
+
+      const updatePayload: any = {
+        approval_status: 'approved',
+        status: 'active',
+        roll_number: finalRoll || null,
+        registration_no: finalReg || null,
+        student_id: studentApprovalModal?.student_id || finalReg || null,
+        extra_fields: updatedExtra,
+      };
+
+      const { error } = await supabase
+        .from('students')
+        .update(updatePayload)
+        .eq('id', targetId);
+
+      if (error) throw error;
+
+      if (studentApprovalModal?.phone) {
+        try {
+          await supabase
+            .from('student_accounts')
+            .update({
+              status: 'active',
+              student_id: updatePayload.student_id,
+              linked_student_uuid: targetId,
+              approved_at: new Date().toISOString(),
+            })
+            .eq('contact', studentApprovalModal.phone);
+        } catch {}
+      }
+    },
+    onSuccess: (_, { status }) => {
+      queryClient.invalidateQueries({ queryKey: ['approvals-students'] });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      invalidateAllStudentQueries(queryClient);
+      toast.success(
+        status === 'approved'
+          ? (bn ? '✅ শিক্ষার্থী ভর্তি অনুমোদিত হয়েছে এবং রোল ও রেজিস্ট্রেশন বরাদ্দ সম্পন্ন!' : '✅ Student admitted with roll and registration assigned!')
+          : (bn ? '❌ শিক্ষার্থীর আবেদন বাতিল করা হয়েছে' : '❌ Student application rejected')
+      );
+      setStudentApprovalModal(null);
+      setRejectionReason('');
+    },
+    onError: (e: any) => {
+      toast.error(e.message || (bn ? 'অনুমোদনে সমস্যা হয়েছে' : 'Error updating student approval'));
+    },
   });
 
   // 2. Staff Application Approval / Rejection
@@ -1061,12 +1252,25 @@ const AdminApprovals = () => {
                             {new Date(s.created_at).toLocaleDateString(bn ? 'bn-BD' : 'en-US')}
                           </TableCell>
                           <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1.5">
+                            <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 px-2.5 gap-1 text-xs border-primary/30 text-primary hover:bg-primary/10"
+                                onClick={() => {
+                                  setEditStudentForModal(s);
+                                  setShowEditAdmissionForm(true);
+                                }}
+                                title={bn ? 'সম্পূর্ণ ফর্ম পর্যালোচনা ও সংশোধন করুন' : 'Review & Edit Full Form'}
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                                {bn ? 'কারেকশন' : 'Edit'}
+                              </Button>
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => setDetailModal({ type: 'student', data: s })}
-                                title={bn ? 'বিস্তারিত' : 'View'}
+                                onClick={() => openStudentApprovalModal(s)}
+                                title={bn ? 'বিস্তারিত ও রোল বরাদ্দ' : 'View & Assign Roll'}
                               >
                                 <Eye className="w-4 h-4 text-primary" />
                               </Button>
@@ -1074,21 +1278,21 @@ const AdminApprovals = () => {
                                 <>
                                   <Button
                                     size="sm"
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 px-2.5"
-                                    onClick={() => studentMutation.mutate({ id: s.id, status: 'approved' })}
-                                    disabled={studentMutation.isPending}
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 px-2.5 gap-1 shadow-sm font-medium"
+                                    onClick={() => openStudentApprovalModal(s)}
                                   >
-                                    <Check className="w-3.5 h-3.5 mr-1" />
+                                    <Check className="w-3.5 h-3.5" />
                                     {bn ? 'অনুমোদন' : 'Approve'}
                                   </Button>
                                   <Button
                                     size="sm"
                                     variant="destructive"
-                                    className="h-8 px-2.5"
-                                    onClick={() => studentMutation.mutate({ id: s.id, status: 'rejected' })}
-                                    disabled={studentMutation.isPending}
+                                    className="h-8 px-2.5 gap-1"
+                                    onClick={() => {
+                                      setRejectionModal({ type: 'student', id: s.id, name: s.name_bn || s.name_en || 'শিক্ষার্থী' });
+                                    }}
                                   >
-                                    <X className="w-3.5 h-3.5 mr-1" />
+                                    <X className="w-3.5 h-3.5" />
                                     {bn ? 'বাতিল' : 'Reject'}
                                   </Button>
                                 </>
@@ -1985,7 +2189,7 @@ const AdminApprovals = () => {
                             <h3 className="font-bold text-lg">{displayNames.primary || '—'}</h3>
                             {displayNames.secondary && <p className="text-sm text-muted-foreground">{displayNames.secondary}</p>}
                             <Badge variant="outline" className="mt-1">
-                              {bn ? 'রোল:' : 'Roll:'} {detailModal.data.roll_number || '—'}
+                              {bn ? 'রোল:' : 'Roll:'} {detailModal.data.roll_number || (bn ? 'বরাদ্দ বাকি' : 'Unassigned')}
                             </Badge>
                           </div>
                         );
@@ -1997,6 +2201,35 @@ const AdminApprovals = () => {
                       <div><p className="text-muted-foreground text-xs">{bn ? 'মাতার নাম' : 'Mother Name'}</p><p className="font-medium">{detailModal.data.mother_name || '—'}</p></div>
                       <div><p className="text-muted-foreground text-xs">{bn ? 'মোবাইল' : 'Phone'}</p><p className="font-medium font-mono">{detailModal.data.phone || '—'}</p></div>
                       <div><p className="text-muted-foreground text-xs">{bn ? 'রক্তের গ্রুপ' : 'Blood Group'}</p><p className="font-medium">{detailModal.data.blood_group || '—'}</p></div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="flex-1 gap-1.5"
+                        onClick={() => {
+                          const s = detailModal.data;
+                          setDetailModal(null);
+                          setEditStudentForModal(s);
+                          setShowEditAdmissionForm(true);
+                        }}
+                      >
+                        <Edit className="w-4 h-4" />
+                        {bn ? 'কারেকশন / পূর্ণ ফর্ম রিভিউ' : 'Review & Edit Full Form'}
+                      </Button>
+                      <Button
+                        type="button"
+                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 font-medium"
+                        onClick={() => {
+                          const s = detailModal.data;
+                          setDetailModal(null);
+                          openStudentApprovalModal(s);
+                        }}
+                      >
+                        <ShieldCheck className="w-4 h-4" />
+                        {bn ? 'রোল নির্ধারণ ও অনুমোদন' : 'Assign Roll & Approve'}
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -2468,6 +2701,378 @@ const AdminApprovals = () => {
           </DialogContent>
         </Dialog>
 
+        {/* ══════════════ STUDENT ADMISSION APPROVAL & REVIEW MODAL ══════════════ */}
+        <Dialog open={!!studentApprovalModal} onOpenChange={(open) => { if (!open) setStudentApprovalModal(null); }}>
+          <DialogContent className="max-w-4xl max-h-[92vh] flex flex-col p-0 overflow-hidden">
+            <DialogHeader className="px-6 py-4 border-b bg-muted/40">
+              <DialogTitle className="flex items-center justify-between text-base">
+                <span className="flex items-center gap-2 font-bold text-lg">
+                  <GraduationCap className="w-5 h-5 text-blue-600" />
+                  {bn ? 'শিক্ষার্থী ভর্তি আবেদন ও অনুমোদন পর্যালোচনা' : 'Student Admission Review & Approval'}
+                </span>
+                {studentApprovalModal && (
+                  <Badge variant="outline" className={STATUS_COLORS[studentApprovalModal.approval_status || 'pending']}>
+                    {studentApprovalModal.approval_status === 'approved'
+                      ? (bn ? 'অনুমোদিত' : 'Approved')
+                      : studentApprovalModal.approval_status === 'rejected'
+                      ? (bn ? 'বাতিল' : 'Rejected')
+                      : (bn ? 'অনুমোদন প্রযোজ্য' : 'Pending')}
+                  </Badge>
+                )}
+              </DialogTitle>
+            </DialogHeader>
+
+            {studentApprovalModal && (
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {/* 1. Candidate Overview Card */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl border bg-muted/30">
+                  <div className="flex items-center gap-4">
+                    {studentApprovalModal.photo_url ? (
+                      <img src={studentApprovalModal.photo_url} alt="" className="w-16 h-16 rounded-xl object-cover border shadow-sm" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold text-2xl border">
+                        {(studentApprovalModal.name_bn || studentApprovalModal.name_en || 'S')[0]}
+                      </div>
+                    )}
+                    <div>
+                      <h3 className="font-bold text-base text-foreground">
+                        {studentApprovalModal.name_bn || studentApprovalModal.name_en || '—'}
+                      </h3>
+                      {studentApprovalModal.name_en && studentApprovalModal.name_bn && (
+                        <p className="text-xs text-muted-foreground font-medium">{studentApprovalModal.name_en}</p>
+                      )}
+                      <div className="flex flex-wrap gap-2 mt-1.5 text-xs text-muted-foreground">
+                        {studentApprovalModal.phone && (
+                          <span className="font-mono">📱 {studentApprovalModal.phone}</span>
+                        )}
+                        {studentApprovalModal.gender && <span>👤 {studentApprovalModal.gender}</span>}
+                        {studentApprovalModal.blood_group && <span>🩸 {studentApprovalModal.blood_group}</span>}
+                        {studentApprovalModal.student_category && (
+                          <Badge variant="secondary" className="text-[10px] py-0 px-1.5">
+                            {studentApprovalModal.student_category === 'poor' ? 'অসচ্ছল' : studentApprovalModal.student_category}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="border-primary/40 text-primary hover:bg-primary/10 gap-2 shrink-0"
+                    onClick={() => {
+                      setEditStudentForModal(studentApprovalModal);
+                      setShowEditAdmissionForm(true);
+                    }}
+                  >
+                    <Edit className="w-4 h-4" />
+                    {bn ? 'সম্পূর্ণ ফর্ম এডিট / সংশোধন' : 'Review & Edit Full Form'}
+                  </Button>
+                </div>
+
+                {/* 2. Application Information Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Academic Info */}
+                  <div className="p-4 rounded-xl border bg-card space-y-3">
+                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 border-b pb-2">
+                      <BookOpen className="w-4 h-4 text-primary" />
+                      {bn ? 'একাডেমিক তথ্য' : 'Academic Information'}
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <span className="text-muted-foreground block">{bn ? 'ভর্তি সেশন' : 'Session'}</span>
+                        <span className="font-medium text-foreground">{studentApprovalModal.admission_session || '—'}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block">{bn ? 'শ্রেণি' : 'Class'}</span>
+                        <span className="font-medium text-foreground">
+                          {studentApprovalModal.classes?.name_bn || studentApprovalModal.classes?.name || studentApprovalModal.admission_class || '—'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block">{bn ? 'বিভাগ' : 'Division'}</span>
+                        <span className="font-medium text-foreground">
+                          {studentApprovalModal.classes?.divisions?.name_bn || studentApprovalModal.classes?.divisions?.name || studentApprovalModal.admission_division || '—'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block">{bn ? 'আবেদনের তারিখ' : 'Admission Date'}</span>
+                        <span className="font-medium text-foreground font-mono">
+                          {studentApprovalModal.admission_date || new Date(studentApprovalModal.created_at).toLocaleDateString(bn ? 'bn-BD' : 'en-US')}
+                        </span>
+                      </div>
+                      {studentApprovalModal.previous_institute && (
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground block">{bn ? 'পূর্ববর্তী প্রতিষ্ঠান' : 'Previous Institute'}</span>
+                          <span className="font-medium text-foreground">{studentApprovalModal.previous_institute}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Parents Info */}
+                  <div className="p-4 rounded-xl border bg-card space-y-3">
+                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 border-b pb-2">
+                      <Users className="w-4 h-4 text-purple-600" />
+                      {bn ? 'পিতামাতা ও অভিভাবক' : 'Parents & Guardian'}
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <span className="text-muted-foreground block">{bn ? 'পিতার নাম' : 'Father Name'}</span>
+                        <span className="font-medium text-foreground">{studentApprovalModal.father_name || '—'}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block">{bn ? 'পিতার মোবাইল' : 'Father Phone'}</span>
+                        <span className="font-medium text-foreground font-mono">{studentApprovalModal.father_phone || '—'}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block">{bn ? 'মাতার নাম' : 'Mother Name'}</span>
+                        <span className="font-medium text-foreground">{studentApprovalModal.mother_name || '—'}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block">{bn ? 'মাতার মোবাইল' : 'Mother Phone'}</span>
+                        <span className="font-medium text-foreground font-mono">{studentApprovalModal.mother_phone || '—'}</span>
+                      </div>
+                      {studentApprovalModal.guardian_name && (
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground block">{bn ? 'অভিভাবক' : 'Guardian'}</span>
+                          <span className="font-medium text-foreground">
+                            {studentApprovalModal.guardian_name} {studentApprovalModal.guardian_relation ? `(${studentApprovalModal.guardian_relation})` : ''} - {studentApprovalModal.guardian_phone || ''}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Personal & Address */}
+                  <div className="p-4 rounded-xl border bg-card space-y-3 md:col-span-2">
+                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 border-b pb-2">
+                      <UserCheck className="w-4 h-4 text-emerald-600" />
+                      {bn ? 'ব্যক্তিগত তথ্য ও ঠিকানা' : 'Personal & Address Information'}
+                    </h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                      <div>
+                        <span className="text-muted-foreground block">{bn ? 'জন্ম তারিখ' : 'Date of Birth'}</span>
+                        <span className="font-medium text-foreground font-mono">{studentApprovalModal.date_of_birth || '—'}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block">{bn ? 'জন্ম নিবন্ধন / NID' : 'Birth Reg / NID'}</span>
+                        <span className="font-medium text-foreground font-mono">{studentApprovalModal.birth_certificate_no || studentApprovalModal.birth_reg_no || studentApprovalModal.nid || '—'}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block">{bn ? 'ভর্তি ফি' : 'Admission Fee'}</span>
+                        <span className="font-medium text-foreground font-mono">৳ {studentApprovalModal.admission_fee || '0'}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block">{bn ? 'মাসিক বেতন' : 'Monthly Fee'}</span>
+                        <span className="font-medium text-foreground font-mono">৳ {studentApprovalModal.monthly_fee || '0'}</span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-muted-foreground block">{bn ? 'বর্তমান ঠিকানা' : 'Present Address'}</span>
+                        <span className="font-medium text-foreground">
+                          {[studentApprovalModal.present_village, studentApprovalModal.present_post, studentApprovalModal.present_thana, studentApprovalModal.present_district].filter(Boolean).join(', ') || studentApprovalModal.present_address || '—'}
+                        </span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-muted-foreground block">{bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'}</span>
+                        <span className="font-medium text-foreground">
+                          {[studentApprovalModal.permanent_village, studentApprovalModal.permanent_post, studentApprovalModal.permanent_thana, studentApprovalModal.permanent_district].filter(Boolean).join(', ') || studentApprovalModal.permanent_address || '—'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Office Assignment & Approval Card (রোল ও রেজিস্ট্রেশন বরাদ্দ) */}
+                <div className="p-5 rounded-2xl border-2 border-primary/30 bg-primary/5 space-y-4">
+                  <div className="flex items-center justify-between border-b border-primary/20 pb-3">
+                    <div>
+                      <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                        <ShieldCheck className="w-5 h-5 text-primary" />
+                        {bn ? 'অফিস ও অনুমোদন নির্ধারণ (রোল ও রেজিস্ট্রেশন বরাদ্দ)' : 'Office Approval & Roll/Registration Assignment'}
+                      </h4>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {bn
+                          ? 'পাবলিক পেজে রোল ও রেজিস্ট্রেশন গোপন রাখা হয়েছিল। আপনি অনুমোদন দিয়ে রোল ও রেজিস্ট্রেশন নম্বর চূড়ান্ত করুন।'
+                          : 'Assign roll number and registration number to finalize admission.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Roll Number Field */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-bold text-foreground">
+                          {bn ? 'রোল নম্বর *' : 'Roll Number *'}
+                        </Label>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-[11px] gap-1 text-primary hover:bg-primary/10"
+                          onClick={() => openStudentApprovalModal(studentApprovalModal)}
+                          disabled={calculatingRoll}
+                          title={bn ? 'পরবর্তী রোল পুনরায় হিসাব করুন' : 'Recalculate next roll'}
+                        >
+                          <RefreshCw className={`w-3 h-3 ${calculatingRoll ? 'animate-spin' : ''}`} />
+                          {bn ? 'অটো রোল' : 'Auto'}
+                        </Button>
+                      </div>
+                      <Input
+                        value={assignedRoll}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setAssignedRoll(val);
+                          handleAutoRegenerateReg(val);
+                        }}
+                        placeholder={bn ? 'যেমন: ১০১ বা ১০০১' : 'e.g. 101'}
+                        className="h-10 font-mono font-bold text-base bg-background"
+                      />
+                      <p className="text-[11px] text-muted-foreground">
+                        {bn ? '💡 শ্রেণি অনুযায়ী পরবর্তী ফাঁকা রোল অটো প্রস্তাবিত করা হয়েছে।' : 'Auto-suggested next roll for this class.'}
+                      </p>
+                    </div>
+
+                    {/* Registration Number Field */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-bold text-foreground">
+                          {bn ? 'রেজিস্ট্রেশন নম্বর *' : 'Registration Number *'}
+                        </Label>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-[11px] gap-1 text-primary hover:bg-primary/10"
+                          onClick={() => handleAutoRegenerateReg()}
+                          title={bn ? 'রোল ও শিক্ষাবর্ষ অনুযায়ী রেজিস্ট্রেশন জেনারেট' : 'Generate registration'}
+                        >
+                          <Sparkles className="w-3 h-3" />
+                          {bn ? 'অটো জেনারেট' : 'Auto Reg'}
+                        </Button>
+                      </div>
+                      <Input
+                        value={assignedReg}
+                        onChange={(e) => setAssignedReg(e.target.value)}
+                        placeholder={bn ? 'যেমন: HIFZ-2026101' : 'e.g. HIFZ-2026101'}
+                        className="h-10 font-mono font-bold text-base bg-background"
+                      />
+                      <p className="text-[11px] text-muted-foreground">
+                        {bn ? '💡 ফরম্যাট: [বিভাগ প্রিফিক্স]-[শিক্ষাবর্ষ][রোল]' : 'Format: [Prefix]-[Year][Roll]'}
+                      </p>
+                    </div>
+
+                    {/* Approver Name */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-foreground">
+                        {bn ? 'অনুমোদনকারীর নাম' : 'Approver Name'}
+                      </Label>
+                      <Input
+                        value={studentApproverName}
+                        onChange={(e) => setStudentApproverName(e.target.value)}
+                        placeholder={bn ? 'অনুমোদনকারীর নাম' : 'Approver Name'}
+                        className="h-9 text-xs bg-background"
+                      />
+                    </div>
+
+                    {/* Approver Designation & Date */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium text-foreground">
+                          {bn ? 'পদবি' : 'Designation'}
+                        </Label>
+                        <Input
+                          value={studentApproverDesignation}
+                          onChange={(e) => setStudentApproverDesignation(e.target.value)}
+                          placeholder={bn ? 'যেমন: অধ্যক্ষ' : 'e.g. Principal'}
+                          className="h-9 text-xs bg-background"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium text-foreground">
+                          {bn ? 'অনুমোদনের তারিখ' : 'Approval Date'}
+                        </Label>
+                        <Input
+                          type="date"
+                          value={studentApproverDate}
+                          onChange={(e) => setStudentApproverDate(e.target.value)}
+                          className="h-9 text-xs bg-background font-mono"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter className="px-6 py-3 border-t bg-muted/20 flex flex-row items-center justify-between sm:justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setStudentApprovalModal(null)}
+                >
+                  {bn ? 'বন্ধ করুন' : 'Close'}
+                </Button>
+                {studentApprovalModal?.approval_status !== 'rejected' && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => {
+                      const s = studentApprovalModal;
+                      setStudentApprovalModal(null);
+                      setRejectionModal({ type: 'student', id: s.id, name: s.name_bn || s.name_en || 'শিক্ষার্থী' });
+                    }}
+                  >
+                    <X className="w-4 h-4" />
+                    {bn ? 'আবেদন বাতিল' : 'Reject'}
+                  </Button>
+                )}
+              </div>
+
+              <Button
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-bold px-6 shadow-md shadow-emerald-600/20"
+                onClick={() => approveStudentWithDetailsMutation.mutate({ status: 'approved' })}
+                disabled={approveStudentWithDetailsMutation.isPending || !assignedRoll.trim()}
+              >
+                {approveStudentWithDetailsMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                {bn ? 'সংরক্ষণ ও অনুমোদন করুন' : 'Save & Approve Application'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dynamic Admission Form Modal for Edit / Review */}
+        {showEditAdmissionForm && (
+          <AdmissionForm
+            open={showEditAdmissionForm}
+            onOpenChange={(o) => {
+              setShowEditAdmissionForm(o);
+              if (!o) {
+                refetchStudents();
+                if (editStudentForModal?.id) {
+                  supabase
+                    .from('students')
+                    .select('*, classes:class_id(id, name, name_bn, division_id, sort_order, divisions(id, name, name_bn, prefix))')
+                    .eq('id', editStudentForModal.id)
+                    .maybeSingle()
+                    .then(({ data }) => {
+                      if (data) {
+                        setStudentApprovalModal(data);
+                        if (data.roll_number) setAssignedRoll(data.roll_number);
+                        if (data.registration_no) setAssignedReg(data.registration_no);
+                      }
+                    });
+                }
+              }
+            }}
+            editStudent={editStudentForModal}
+          />
+        )}
+
         {/* ══════════════ REJECTION REASON MODAL ══════════════ */}
         <Dialog open={!!rejectionModal} onOpenChange={(open) => { if (!open) setRejectionModal(null); }}>
           <DialogContent className="sm:max-w-md">
@@ -2505,6 +3110,9 @@ const AdminApprovals = () => {
                     accountMutation.mutate({ id: rejectionModal.id, status: 'rejected', reason: rejectionReason });
                   } else if (rejectionModal.type === 'paper') {
                     paperMutation.mutate({ id: rejectionModal.id, status: 'rejected', note: rejectionReason });
+                  } else if (rejectionModal.type === 'student') {
+                    approveStudentWithDetailsMutation.mutate({ studentId: rejectionModal.id, status: 'rejected', reason: rejectionReason });
+                    setRejectionModal(null);
                   }
                 }}
               >

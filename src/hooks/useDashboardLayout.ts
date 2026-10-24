@@ -70,7 +70,7 @@ export const SECTION_CARDS: Record<string, { labelBn: string; labelEn: string; k
   ],
   student_category: [
     { key: 'orphan', labelBn: 'এতিম ছাত্র', labelEn: 'Orphan Students' },
-    { key: 'poor', labelBn: 'গরীব ছাত্র', labelEn: 'Poor Students' },
+    { key: 'poor', labelBn: 'অসচ্ছল ছাত্র', labelEn: 'Insolvent Students' },
     { key: 'teacher_child', labelBn: 'শিক্ষক সন্তান', labelEn: "Teacher's Child" },
     { key: 'free', labelBn: 'বিনা বেতন ছাত্র', labelEn: 'Free Students' },
     { key: 'general_paid', labelBn: 'সাধারণ ছাত্র ও পরিশোধিত', labelEn: 'Non-Orphan&Poor + Amounts' },

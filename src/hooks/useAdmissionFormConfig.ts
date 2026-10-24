@@ -59,7 +59,7 @@ const DEFAULT_FIELDS: Array<{
   { label: 'Previous Class', label_bn: 'পূর্ববর্তী শ্রেণী', field_type: 'text', is_required: false, sort_order: 17, default_value: 'previous_class', section: 'student_details' },
   { label: 'Previous Institute', label_bn: 'পূর্ববর্তী প্রতিষ্ঠান', field_type: 'text', is_required: false, sort_order: 18, default_value: 'previous_institute', section: 'student_details' },
   { label: 'Orphan', label_bn: 'এতিম', field_type: 'switch', is_required: false, sort_order: 18, default_value: 'is_orphan', section: 'student_details' },
-  { label: 'Poor', label_bn: 'গরীব', field_type: 'switch', is_required: false, sort_order: 19, default_value: 'is_poor', section: 'student_details' },
+  { label: 'Insolvent', label_bn: 'অসচ্ছল', field_type: 'switch', is_required: false, sort_order: 19, default_value: 'is_poor', section: 'student_details' },
   // Address
   { label: 'Permanent Address', label_bn: 'স্থায়ী ঠিকানা', field_type: 'address_permanent', is_required: false, sort_order: 20, default_value: 'address_permanent', section: 'student_address' },
   { label: 'Present Address', label_bn: 'বর্তমান ঠিকানা', field_type: 'address_present', is_required: false, sort_order: 21, default_value: 'address_present', section: 'student_address' },

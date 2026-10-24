@@ -404,7 +404,7 @@ const AdmissionPage = () => {
       const key = f.default_value;
       if (!key || !f.is_active || !f.is_required) return;
       const val = form[key];
-      if (key === 'address_permanent' || key === 'address_present') return;
+      if (key === 'address_permanent' || key === 'address_present' || key === 'roll_number' || key === 'registration_no') return;
       if (key === 'guardian_name' || key === 'guardian_relation' || key === 'guardian_phone' || key === 'guardian_nid') {
         if (form.guardian_type !== 'other') return;
       }
@@ -583,55 +583,9 @@ const AdmissionPage = () => {
         );
 
       case 'roll_number':
-        return (
-          <div data-field={fieldKey}>
-            <Label className={errorLabel}>{label} {reqStar}</Label>
-            <Input className={`bg-background mt-1 ${errorBorder}`}
-              value={form.roll_number || ''}
-              onChange={e => {
-                const val = bnToEn(e.target.value);
-                setForm(prev => {
-                  const year = bnToEn(prev.session_year || '').trim().slice(0, 4);
-                  const prevRoll = bnToEn(prev.roll_number || '').trim();
-                  const newRoll = val.trim();
-                  const div = divisions.find((d: any) => d.id === selectedDivisionId);
-                  const prefix = (div as any)?.prefix || '';
-                  const oldReg = prefix ? `${prefix}-${year}${prevRoll}` : `${year}${prevRoll}`;
-                  const isAuto = !prev.registration_no || prev.registration_no === oldReg;
-                  const newReg = isAuto && val ? (prefix ? `${prefix}-${year}${newRoll}` : `${year}${newRoll}`) : prev.registration_no;
-                  return {
-                    ...prev,
-                    roll_number: val,
-                    registration_no: newReg,
-                  };
-                });
-              }}
-              placeholder={bn ? 'রোল নম্বর' : 'Roll Number'} />
-            <FieldError field={fieldKey} />
-          </div>
-        );
-
       case 'registration_no':
-        return (
-          <div data-field={fieldKey}>
-            <Label className={errorLabel}>{label} {reqStar}</Label>
-            <div className="relative">
-              <Input className={`bg-background mt-1 pr-24 ${errorBorder}`}
-                value={form.registration_no || ''}
-                onChange={e => {
-                  const converted = bnToEn(e.target.value);
-                  setForm(prev => ({ ...prev, registration_no: converted }));
-                }}
-                placeholder={bn ? 'রেজিস্ট্রেশন নম্বর লিখুন' : 'Registration Number'} />
-              <button type="button"
-                className="absolute right-1 top-1/2 -translate-y-1/2 mt-0.5 text-xs px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                onClick={() => updateRegistrationFromRoll(form.session_year, form.roll_number || '', true)}>
-                {bn ? 'অটো' : 'Auto'}
-              </button>
-            </div>
-            <FieldError field={fieldKey} />
-          </div>
-        );
+        // Assigned by admin / office upon admission approval
+        return null;
 
       case 'admission_session':
         return (
@@ -1007,8 +961,10 @@ const AdmissionPage = () => {
         return (a.sort_order || 0) - (b.sort_order || 0);
       });
 
-      const ACADEMIC_KEYS = ['admission_session', 'admission_division', 'admission_class', 'roll_number', 'registration_no', 'admission_date', 'session_year'];
-      const academicFields = otherFields.filter(f => ACADEMIC_KEYS.includes(f.default_value || ''));
+      const ACADEMIC_KEYS = ['admission_session', 'admission_division', 'admission_class', 'admission_date', 'session_year'];
+      const academicFields = otherFields
+        .filter(f => !['roll_number', 'registration_no'].includes(f.default_value || ''))
+        .filter(f => ACADEMIC_KEYS.includes(f.default_value || ''));
       const personalFields = otherFields.filter(f => !ACADEMIC_KEYS.includes(f.default_value || ''));
 
       return (
@@ -1099,7 +1055,7 @@ const AdmissionPage = () => {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {academicFields.map(f => {
                 const key = f.default_value;
                 if (!key) return <div key={f.id} data-field={f.id}>{renderCustomField(f)}</div>;

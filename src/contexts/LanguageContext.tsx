@@ -60,7 +60,7 @@ const translations: Translations = {
   phone: { bn: 'ফোন', en: 'Phone' },
   email: { bn: 'ইমেইল', en: 'Email' },
   orphan: { bn: 'এতিম', en: 'Orphan' },
-  poor: { bn: 'গরীব', en: 'Poor' },
+  poor: { bn: 'অসচ্ছল', en: 'Insolvent' },
   resident: { bn: 'আবাসিক', en: 'Resident' },
   nonResident: { bn: 'অনাবাসিক', en: 'Non-Resident' },
   newStudent: { bn: 'নতুন ছাত্র', en: 'New Student' },
