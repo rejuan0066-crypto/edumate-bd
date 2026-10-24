@@ -12,6 +12,8 @@ import {
   Bell,
   CalendarClock,
   UserCircle,
+  DollarSign,
+  GraduationCap,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -39,8 +41,8 @@ export const MobileBottomNav = ({ onOpenMenu, canAccessPath }: MobileBottomNavPr
     return canAccessPath(path);
   };
 
-  // Primary navigation candidates in order of priority (হাজিরা removed from mobile bottom nav per request)
-  const candidates: NavCandidate[] = [
+  // Candidate navigation items across the system in priority order (হাজিরা removed)
+  const allCandidates: NavCandidate[] = [
     {
       path: '/admin',
       labelBn: 'হোম',
@@ -63,6 +65,20 @@ export const MobileBottomNav = ({ onOpenMenu, canAccessPath }: MobileBottomNavPr
       matches: (p) => p.startsWith('/admin/expenses') || p.startsWith('/admin/fees') || p.startsWith('/admin/salary'),
     },
     {
+      path: '/admin/students-fees',
+      labelBn: 'ফি আদায়',
+      labelEn: 'Fees',
+      icon: DollarSign,
+      matches: (p) => p.startsWith('/admin/students-fees') || p.startsWith('/admin/fee-receipts'),
+    },
+    {
+      path: '/admin/class-routine',
+      labelBn: 'রুটিন',
+      labelEn: 'Routine',
+      icon: CalendarClock,
+      matches: (p) => p.startsWith('/admin/class-routine') || p.startsWith('/admin/exam-routine'),
+    },
+    {
       path: '/admin/results',
       labelBn: 'ফলাফল',
       labelEn: 'Results',
@@ -70,11 +86,18 @@ export const MobileBottomNav = ({ onOpenMenu, canAccessPath }: MobileBottomNavPr
       matches: (p) => p.startsWith('/admin/results'),
     },
     {
-      path: '/admin/routine',
-      labelBn: 'রুটিন',
-      labelEn: 'Routine',
-      icon: CalendarClock,
-      matches: (p) => p.startsWith('/admin/routine'),
+      path: '/admin/teachers',
+      labelBn: 'শিক্ষক',
+      labelEn: 'Teachers',
+      icon: GraduationCap,
+      matches: (p) => p.startsWith('/admin/teachers'),
+    },
+    {
+      path: '/admin/staff',
+      labelBn: 'স্টাফ',
+      labelEn: 'Staff',
+      icon: Users,
+      matches: (p) => p.startsWith('/admin/staff'),
     },
     {
       path: '/admin/messages',
@@ -99,17 +122,10 @@ export const MobileBottomNav = ({ onOpenMenu, canAccessPath }: MobileBottomNavPr
     },
   ];
 
-  // Pick up to 3 permitted tabs (Dashboard always first, then next 2 accessible) + 1 Menu button = total 4 spacious tabs
-  const accessibleItems: NavCandidate[] = [];
-  const dashboardItem = candidates[0];
-  accessibleItems.push(dashboardItem);
-
-  for (let i = 1; i < candidates.length && accessibleItems.length < 3; i++) {
-    const item = candidates[i];
-    if (isAccessible(item.path)) {
-      accessibleItems.push(item);
-    }
-  }
+  // Dynamically resolve permitted tabs strictly based on current user's role permissions
+  // Pick up to 3 permitted items for this specific user/role + 1 Menu button = total 4 spacious tabs
+  const permittedCandidates = allCandidates.filter(item => isAccessible(item.path));
+  const accessibleItems: NavCandidate[] = permittedCandidates.slice(0, 3);
 
   const handleTouchFeedback = () => {
     try {
