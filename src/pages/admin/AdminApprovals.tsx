@@ -1,3 +1,17 @@
+
+const translateMaritalStatus = (val: string | undefined, bn: boolean): string => {
+  if (!val) return '-';
+  const map: Record<string, [string, string]> = {
+    unmarried: ['অবিবাহিত', 'Unmarried'],
+    single: ['অবিবাহিত', 'Unmarried'],
+    married: ['বিবাহিত', 'Married'],
+    widowed: ['বিধবা / বিপত্নীক', 'Widowed'],
+    widow: ['বিধবা / বিপত্নীক', 'Widowed'],
+    divorced: ['তালাকপ্রাপ্ত', 'Divorced']
+  };
+  return map[val.toLowerCase()]?.[bn ? 0 : 1] || val;
+};
+
 import { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '@/components/AdminLayout';
@@ -2550,6 +2564,7 @@ const AdminApprovals = () => {
                         )}
                         {staffApprovalModal.nid && <span className="font-mono">🆔 {staffApprovalModal.nid}</span>}
                         {staffApprovalModal.education && <span>🎓 {staffApprovalModal.education}</span>}
+                        {(staffApprovalModal.marital_status || staffApprovalModal.staff_data?.marital_status) && <span>💍 {translateMaritalStatus(staffApprovalModal.marital_status || staffApprovalModal.staff_data?.marital_status, bn)}</span>}
                       </div>
                     </div>
                   </div>

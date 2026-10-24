@@ -140,6 +140,14 @@ export function buildStaffApplicationHTML(staff: any, institution?: InstitutionI
   const instLogo = institution?.logo_url || '';
 
   const appNo = staff?.staff_data?.application_no || staff?.staff_id || staff?.id?.slice(0, 8) || '';
+  
+  const maritalRaw = staff?.staff_data?.marital_status || staff?.marital_status;
+  const maritalLabel = maritalRaw === 'married' ? 'বিবাহিত'
+    : maritalRaw === 'unmarried' || maritalRaw === 'single' ? 'অবিবাহিত'
+    : maritalRaw === 'widowed' || maritalRaw === 'widow' ? 'বিধবা / বিপত্নীক'
+    : maritalRaw === 'divorced' ? 'তালাকপ্রাপ্ত'
+    : (maritalRaw || '—');
+
   const applyDate = staff?.joining_date || (staff?.created_at ? new Date(staff.created_at).toLocaleDateString('bn-BD') : '');
 
   const statusLabel = staff?.status === 'active'
@@ -225,6 +233,7 @@ export function buildStaffApplicationHTML(staff: any, institution?: InstitutionI
       <div class="field"><span class="label">জাতীয় পরিচয়পত্র (NID):</span><span class="value">${staff?.nid || '—'}</span></div>
       <div class="field"><span class="label">ইমেইল:</span><span class="value">${staff?.email || '—'}</span></div>
       <div class="field"><span class="label">ধর্ম:</span><span class="value">${staff?.religion || 'ইসলাম'}</span></div>
+      <div class="field"><span class="label">বৈবাহিক অবস্থা:</span><span class="value">${maritalLabel}</span></div>
       <div class="field"><span class="label">শিক্ষাগত যোগ্যতা:</span><span class="value">${staff?.education || '—'}</span></div>
       <div class="field"><span class="label">কাজের অভিজ্ঞতা:</span><span class="value">${staff?.experience || '—'}</span></div>
       <div class="field" style="grid-column: span 2;"><span class="label">পূর্ববর্তী প্রতিষ্ঠান:</span><span class="value">${staff?.previous_institute || '—'}</span></div>

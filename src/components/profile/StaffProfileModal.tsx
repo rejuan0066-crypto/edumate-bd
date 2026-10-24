@@ -36,6 +36,20 @@ const translateReligion = (val: string | undefined, bn: boolean): string => {
   return map[val.toLowerCase()]?.[bn ? 0 : 1] || val;
 };
 
+
+const translateMaritalStatus = (val: string | undefined, bn: boolean): string => {
+  if (!val) return '-';
+  const map: Record<string, [string, string]> = {
+    unmarried: ['অবিবাহিত', 'Unmarried'],
+    single: ['অবিবাহিত', 'Unmarried'],
+    married: ['বিবাহিত', 'Married'],
+    widowed: ['বিধবা / বিপত্নীক', 'Widowed'],
+    widow: ['বিধবা / বিপত্নীক', 'Widowed'],
+    divorced: ['তালাকপ্রাপ্ত', 'Divorced']
+  };
+  return map[val.toLowerCase()]?.[bn ? 0 : 1] || val;
+};
+
 const translateGender = (val: string | undefined, bn: boolean): string => {
   if (!val) return '-';
   const map: Record<string, [string, string]> = { 
@@ -317,7 +331,7 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
             <ProfileInfoItem icon={Mail} label={bn ? 'ইমেইল' : 'Email'} value={staff.email} />
             <ProfileInfoItem icon={Home} label={bn ? 'আবাসিক অবস্থা' : 'Residence Type'} value={translateResidence(staff.residence_type || sd.residence_type, bn)} />
             <ProfileInfoItem icon={Heart} label={bn ? 'রক্তের গ্রুপ' : 'Blood Group'} value={staff.blood_group || sd.blood_group} />
-            <ProfileInfoItem icon={Users} label={bn ? 'বৈবাহিক অবস্থা' : 'Marital Status'} value={staff.marital_status || sd.marital_status} />
+            <ProfileInfoItem icon={Users} label={bn ? 'বৈবাহিক অবস্থা' : 'Marital Status'} value={translateMaritalStatus(staff.marital_status || sd.marital_status, bn)} />
           </ProfileSectionCard>
         </div>
       )}

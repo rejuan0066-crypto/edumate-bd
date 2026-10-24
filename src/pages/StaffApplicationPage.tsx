@@ -32,6 +32,14 @@ import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 const formatAddress = (addr: AddressData, bn = true) => formatAddressBn(addr, bn);
 
+
+const MARITAL_STATUSES = [
+  { value: 'unmarried', bn: 'অবিবাহিত', en: 'Unmarried' },
+  { value: 'married', bn: 'বিবাহিত', en: 'Married' },
+  { value: 'widowed', bn: 'বিধবা / বিপত্নীক', en: 'Widowed' },
+  { value: 'divorced', bn: 'তালাকপ্রাপ্ত', en: 'Divorced' },
+];
+
 const RELIGIONS = [
   { value: 'islam', bn: 'ইসলাম', en: 'Islam' },
   { value: 'hinduism', bn: 'হিন্দু', en: 'Hinduism' },
@@ -134,6 +142,7 @@ const StaffApplicationPage = () => {
   const [designation, setDesignation] = useState('');
   const [residenceType, setResidenceType] = useState('non_residential');
   const [dob, setDob] = useState('');
+  const [maritalStatus, setMaritalStatus] = useState('unmarried');
   const [religion, setReligion] = useState('islam');
   const [customReligion, setCustomReligion] = useState('');
   const [nid, setNid] = useState('');
@@ -308,6 +317,7 @@ const StaffApplicationPage = () => {
         mobile_code: cleanStaff ? cleanStaff.code : mobileCode,
         employment_type: employmentType,
         residence_type: residenceType,
+        marital_status: maritalStatus,
         religion: religion === 'other' ? customReligion : religion,
         education,
         experience,
@@ -420,6 +430,7 @@ const StaffApplicationPage = () => {
     setEmploymentType('full_time');
     setDesignation('');
     setResidenceType('non_residential');
+    setMaritalStatus('unmarried');
     setDob('');
     setReligion('islam');
     setCustomReligion('');
@@ -567,6 +578,14 @@ const StaffApplicationPage = () => {
                   <span className="text-muted-foreground">{bn ? 'চাকরির ধরন:' : 'Employment Type:'}</span>
                   <span className="font-medium text-foreground">
                     {submittedStaffData.employment_type === 'full_time' ? (bn ? 'পূর্ণকালীন' : 'Full Time') : (bn ? 'খণ্ডকালীন' : 'Part Time')}
+                  </span>
+                </div>
+              )}
+              {submittedStaffData?.staff_data?.marital_status && (
+                <div className="flex justify-between py-1 border-b border-border/50">
+                  <span className="text-muted-foreground">{bn ? 'বৈবাহিক অবস্থা:' : 'Marital Status:'}</span>
+                  <span className="font-medium text-foreground">
+                    {MARITAL_STATUSES.find(m => m.value === submittedStaffData.staff_data.marital_status)?.[bn ? 'bn' : 'en'] || submittedStaffData.staff_data.marital_status}
                   </span>
                 </div>
               )}
@@ -738,6 +757,21 @@ const StaffApplicationPage = () => {
                     <SelectContent>
                       <SelectItem value="non_residential">{bn ? 'অনাবাসিক' : 'Non-Residential'}</SelectItem>
                       <SelectItem value="residential">{bn ? 'আবাসিক' : 'Residential'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {isVisible('staff_marital_status') && (
+                <div>
+                  <Label>{bn ? 'বৈবাহিক অবস্থা' : 'Marital Status'}</Label>
+                  <Select value={maritalStatus} onValueChange={setMaritalStatus}>
+                    <SelectTrigger className="bg-background mt-1">
+                      <SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MARITAL_STATUSES.map(m => (
+                        <SelectItem key={m.value} value={m.value}>{bn ? m.bn : m.en}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -1103,6 +1137,7 @@ const StaffApplicationPage = () => {
               <div><span className="text-muted-foreground">{bn ? 'প্রার্থীর নাম (বাংলা): ' : 'Name (Bangla): '}</span><span className="font-semibold">{firstName || '—'}</span></div>
               <div><span className="text-muted-foreground">{bn ? 'নাম (ইংরেজি): ' : 'Name (English): '}</span><span className="font-semibold">{lastName || '—'}</span></div>
               <div><span className="text-muted-foreground">{bn ? 'পদবী: ' : 'Designation: '}</span><span className="font-semibold text-emerald-700 dark:text-emerald-400">{desigLabel || '—'}</span></div>
+              <div><span className="text-muted-foreground">{bn ? 'বৈবাহিক অবস্থা: ' : 'Marital Status: '}</span><span className="font-semibold">{MARITAL_STATUSES.find(m => m.value === maritalStatus)?.[bn ? 'bn' : 'en'] || maritalStatus}</span></div>
               <div><span className="text-muted-foreground">{bn ? 'মোবাইল নম্বর: ' : 'Mobile: '}</span><span className="font-mono">{mobile ? `${mobileCode} ${mobile}` : '—'}</span></div>
               <div><span className="text-muted-foreground">{bn ? 'পিতার নাম: ' : "Father's Name: "}</span><span className="font-medium">{fatherName || '—'}</span></div>
               <div><span className="text-muted-foreground">{bn ? 'স্থায়ী জেলা: ' : 'District: '}</span><span className="font-medium">{permanentAddr?.district || '—'}</span></div>

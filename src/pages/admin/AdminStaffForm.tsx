@@ -47,6 +47,14 @@ interface DocFile {
   file?: File;
 }
 
+
+const MARITAL_STATUSES = [
+  { value: 'unmarried', bn: 'অবিবাহিত', en: 'Unmarried' },
+  { value: 'married', bn: 'বিবাহিত', en: 'Married' },
+  { value: 'widowed', bn: 'বিধবা / বিপত্নীক', en: 'Widowed' },
+  { value: 'divorced', bn: 'তালাকপ্রাপ্ত', en: 'Divorced' },
+];
+
 const RELIGIONS = [
   { value: 'islam', bn: 'ইসলাম', en: 'Islam' },
   { value: 'hinduism', bn: 'হিন্দু', en: 'Hinduism' },
@@ -189,6 +197,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
   const [designation, setDesignation] = useState('');
   const [residenceType, setResidenceType] = useState('');
   const [dob, setDob] = useState('');
+  const [maritalStatus, setMaritalStatus] = useState('');
   const [religion, setReligion] = useState('');
   const [customReligion, setCustomReligion] = useState('');
   const [nid, setNid] = useState('');
@@ -429,6 +438,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     setResidenceType(existingStaff.residence_type || '');
     setDob(existingStaff.date_of_birth || '');
     setReligion(existingStaff.religion || '');
+      setMaritalStatus((existingStaff as any)?.marital_status || sd.marital_status || '');
     setNid(existingStaff.nid || '');
     setEducation(existingStaff.education || '');
     setExperience(existingStaff.experience || '');
@@ -670,6 +680,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
         mobile_code: cleanStaff ? cleanStaff.code : mobileCode,
         employment_type: employmentType,
         residence_type: residenceType,
+        marital_status: maritalStatus,
         religion: religion === 'other' ? customReligion : religion,
         education,
         experience,
@@ -1177,7 +1188,8 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
 
   const guardianInfo = getGuardianInfo();
   const desigLabel = designations.find(d => d.value === designation)?.[bn ? 'bn' : 'en'] || '';
-  const religionLabel = religion === 'other' ? customReligion : RELIGIONS.find(r => r.value === religion)?.[bn ? 'bn' : 'en'] || '';
+  const maritalLabel = MARITAL_STATUSES.find(m => m.value === maritalStatus)?.[bn ? 'bn' : 'en'] || maritalStatus || '-';
+    const religionLabel = religion === 'other' ? customReligion : RELIGIONS.find(r => r.value === religion)?.[bn ? 'bn' : 'en'] || '';
   const todayDate = new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB');
 
   // Edit mode overrides for print preview
