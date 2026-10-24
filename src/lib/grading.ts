@@ -80,9 +80,18 @@ export const gradeFromMark = (mark: number, fullMarks: number = DEFAULT_FULL_MAR
   gradeFromTotal(mark, fullMarks, scales);
 
 /** Only marks that were actually entered take part in grading — blanks must never count as 0. */
+export const isAbsentMark = (val: unknown): boolean => {
+  if (val === null || val === undefined) return false;
+  if (typeof val === 'string') {
+    const s = val.trim().toLowerCase();
+    return s === 'abs' || s === 'absent' || s === '/absent' || s === 'অনুপস্থিত' || s === 'a';
+  }
+  return false;
+};
+
 export const enteredMarks = (rawMarks: unknown[]): number[] =>
   rawMarks
-    .filter((m) => m !== undefined && m !== null && m !== '' && !Number.isNaN(Number(m)))
+    .filter((m) => m !== undefined && m !== null && m !== '' && !isAbsentMark(m) && !Number.isNaN(Number(m)))
     .map((m) => Number(m));
 
 export interface OverallGradeOptions {
@@ -241,21 +250,78 @@ export interface StudentStats {
   total: number;
   hasEnteredAnyMark: boolean;
   failed: boolean;
+  isAllAbsent?: boolean;
+  absentCount?: number;
   overall: OverallGradeResult | null;
 }
 
-/** Total / final grade for one student from their raw (possibly blank) subject marks. */
+/** Total / final grade for one student from their raw (possibly blank or absent) subject marks. */
 export const studentStats = (id: string, rawMarks: unknown[], options: OverallGradeOptions = {}): StudentStats => {
   const graded = enteredMarks(rawMarks);
-  const hasEnteredAnyMark = graded.length > 0;
+  const absentCount = rawMarks.filter((m) => isAbsentMark(m)).length;
+  const blankCount = rawMarks.filter((m) => m === undefined || m === null || m === '').length;
+  const totalSubjects = rawMarks.length;
+
+  const hasEnteredAnyMark = graded.length > 0 || absentCount > 0;
   const total = graded.reduce((a, b) => a + b, 0);
 
   if (!hasEnteredAnyMark) {
-    return { id, total: 0, hasEnteredAnyMark: false, failed: false, overall: null };
+    return { id, total: 0, hasEnteredAnyMark: false, failed: false, isAllAbsent: false, absentCount: 0, overall: null };
+  }
+
+  // Case 1: ALL subjects absent
+  if (totalSubjects > 0 && absentCount === totalSubjects) {
+    return {
+      id,
+      total: 0,
+      hasEnteredAnyMark: true,
+      failed: false,
+      isAllAbsent: true,
+      absentCount,
+      overall: {
+        grade: 'Abs',
+        gpa: '-',
+        color: 'text-amber-700 dark:text-amber-400 bg-amber-500/10 border-amber-300',
+        title: 'Absent',
+        title_bn: 'অনুপস্থিত',
+        hasFail: false,
+        graced: false,
+        failedCount: absentCount,
+      },
+    };
+  }
+
+  // Case 2: Partial absent (1 or more subjects absent, but present in at least 1)
+  if (absentCount > 0) {
+    const scales = options.scales?.length ? options.scales : DEFAULT_SCALES;
+    const failScale = scales.find((s) => s.grade === 'F') || DEFAULT_SCALES[DEFAULT_SCALES.length - 1];
+    const pm = options.passMark ?? 33;
+    const failedSubjects = graded.filter((m) => Number(m) < pm);
+    const failOnBlank = options.failOnBlank ?? true;
+    const blankFailCount = failOnBlank ? blankCount : 0;
+    const failedCount = failedSubjects.length + absentCount + blankFailCount;
+
+    return {
+      id,
+      total,
+      hasEnteredAnyMark: true,
+      failed: true,
+      isAllAbsent: false,
+      absentCount,
+      overall: {
+        grade: failScale.grade,
+        gpa: failScale.gpa,
+        color: colorMap[failScale.color] || colorMap.destructive,
+        title: failScale.title || 'Rasib',
+        title_bn: 'অকৃতকার্য',
+        hasFail: true,
+        graced: false,
+        failedCount,
+      },
+    };
   }
 
   const failOnBlank = options.failOnBlank ?? true;
-  const blankCount = rawMarks.filter((m) => m === undefined || m === null || m === '').length;
   const hasBlank = blankCount > 0;
   const hasZero = graded.some((m) => Number(m) === 0);
 
@@ -266,7 +332,7 @@ export const studentStats = (id: string, rawMarks: unknown[], options: OverallGr
   });
 
   const failed = overall ? (overall.graced ? false : overall.hasFail) : false;
-  return { id, total, hasEnteredAnyMark, failed, overall };
+  return { id, total, hasEnteredAnyMark, failed, isAllAbsent: false, absentCount: 0, overall };
 };
 
 /**
@@ -278,9 +344,11 @@ export const studentStats = (id: string, rawMarks: unknown[], options: OverallGr
  *   tier 0 — regular pass (all subjects passed)
  *   tier 1 — grace pass ("মাকবুল (বিবেচনায়)")
  *   tier 2 — failed (never ranked)
+ *   tier 3 — all absent (never ranked)
  * Within the same tier, higher total ranks first.
  */
 const meritTier = (s: StudentStats): number => {
+  if (s.isAllAbsent) return 3;
   if (s.failed) return 2;
   if (s.overall?.graced) return 1;
   return 0;
@@ -288,7 +356,7 @@ const meritTier = (s: StudentStats): number => {
 
 export const rankStudents = (stats: StudentStats[]): Map<string, number> => {
   const ordered = stats
-    .filter((s) => s.hasEnteredAnyMark)
+    .filter((s) => s.hasEnteredAnyMark && !s.isAllAbsent)
     .sort((a, b) => {
       const tierDiff = meritTier(a) - meritTier(b);
       if (tierDiff !== 0) return tierDiff;
@@ -298,7 +366,7 @@ export const rankStudents = (stats: StudentStats[]): Map<string, number> => {
   const map = new Map<string, number>();
   let currentRank = 1;
   ordered.forEach((s, i) => {
-    if (s.failed) return;
+    if (s.failed || s.isAllAbsent) return;
     if (i > 0) {
       const prev = ordered[i - 1];
       if (meritTier(prev) === meritTier(s) && prev.total === s.total) {

@@ -1,7 +1,8 @@
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Printer, Save, Loader2, Eye, FileDown, FileSpreadsheet, X, Calculator } from 'lucide-react';
+import { Printer, Save, Loader2, Eye, FileDown, FileSpreadsheet, X, Calculator, ChevronDown, UserX, Trash2, RotateCcw } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import ResultCalculationDialog from '@/components/results/ResultCalculationDialog';
 import { useState } from 'react';
 import { useGradingSystem } from '@/hooks/useGradingSystem';
@@ -10,7 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { toBnDigits, toEnDigits, formatOrdinalRank } from '@/lib/digits';
-import { studentStats, rankStudents, gradeFromMark } from '@/lib/grading';
+import { studentStats, rankStudents, gradeFromMark, isAbsentMark } from '@/lib/grading';
 import React, { useRef, useEffect, useMemo } from 'react';
 
 // Per-subject grade helper (total-based scale, no average anywhere)
@@ -20,8 +21,8 @@ const getGrade = (mark: number, fullMarks = 100) => gradeFromMark(mark, fullMark
 interface ClassResultTableProps {
   students: any[];
   subjects: any[];
-  marksMap: Record<string, number>;
-  onMarksChange: (key: string, value: number) => void;
+  marksMap: Record<string, number | string>;
+  onMarksChange: (key: string, value: number | string) => void;
   onSave: () => void;
   isSaving: boolean;
   title: string;
@@ -394,60 +395,124 @@ const ClassResultTable = ({
             </tr>
           </thead>
           <tbody>
-            {displayedStudents.map(({ st, originalIdx, failed, total, overall, hasEnteredAnyMark }, rowIdx) => {
+            {displayedStudents.map(({ st, originalIdx, failed, total, overall, hasEnteredAnyMark, isAllAbsent }, rowIdx) => {
               const rank = rankMap.get(st.id) || st.rank || st.merit_rank || st.merit_position;
               const rankDisplay = formatOrdinalRank(rank, bn);
               
               return (
-                <tr key={st.id} className={`hover:bg-slate-50 transition-colors h-[56px] group ${failed ? 'bg-destructive/5' : ''}`}>
+                <tr key={st.id} className={`hover:bg-slate-50 transition-colors h-[56px] group ${isAllAbsent ? 'bg-amber-500/5' : failed ? 'bg-destructive/5' : ''}`}>
                   {/* Sticky Columns */}
-                  <td className={`sticky left-0 z-20 border-b border-r border-border w-[40px] min-w-[40px] max-w-[40px] text-center text-xs sm:text-sm text-muted-foreground shadow-[1px_0_0_0_#e2e8f0] ${failed ? 'bg-[#fff5f5]' : 'bg-white'}`}>
+                  <td className={`sticky left-0 z-20 border-b border-r border-border w-[40px] min-w-[40px] max-w-[40px] text-center text-xs sm:text-sm text-muted-foreground shadow-[1px_0_0_0_#e2e8f0] ${isAllAbsent ? 'bg-[#fffbf0]' : failed ? 'bg-[#fff5f5]' : 'bg-white'}`}>
                     <div className="flex items-center justify-center h-full">{bn ? toBnDigits(originalIdx + 1) : (originalIdx + 1)}</div>
                   </td>
-                  <td className={`sticky left-[40px] z-20 border-b border-r border-border w-[58px] min-w-[58px] max-w-[58px] text-center text-xs sm:text-sm font-semibold text-foreground shadow-[1px_0_0_0_#e2e8f0] ${failed ? 'bg-[#fff5f5]' : 'bg-white'}`}>
+                  <td className={`sticky left-[40px] z-20 border-b border-r border-border w-[58px] min-w-[58px] max-w-[58px] text-center text-xs sm:text-sm font-semibold text-foreground shadow-[1px_0_0_0_#e2e8f0] ${isAllAbsent ? 'bg-[#fffbf0]' : failed ? 'bg-[#fff5f5]' : 'bg-white'}`}>
                     <div className="flex items-center justify-center h-full">{st.roll_number ? (bn ? toBnDigits(st.roll_number) : st.roll_number) : '-'}</div>
                   </td>
-                  <td className={`sticky left-[98px] z-20 border-b border-r border-border w-[160px] min-w-[160px] max-w-[160px] px-2 text-xs sm:text-sm font-semibold text-foreground truncate shadow-[2px_0_8px_-2px_rgba(0,0,0,0.1)] ${failed ? 'bg-[#fff5f5]' : 'bg-white'}`}>
+                  <td className={`sticky left-[98px] z-20 border-b border-r border-border w-[160px] min-w-[160px] max-w-[160px] px-2 text-xs sm:text-sm font-semibold text-foreground truncate shadow-[2px_0_8px_-2px_rgba(0,0,0,0.1)] ${isAllAbsent ? 'bg-[#fffbf0]' : failed ? 'bg-[#fff5f5]' : 'bg-white'}`}>
                     <div className="flex items-center h-full truncate">{bn ? st.name_bn : (st.name_en || st.name_bn)}</div>
                   </td>
 
                   {/* Scrollable Data Columns */}
                   {subjects.map((sub: any, colIdx: number) => {
                     const rawVal = marksMap[`${st.id}_${sub.id}`];
-                    const isEntered = rawVal !== undefined && rawVal !== null && (rawVal as any) !== '' && !Number.isNaN(Number(rawVal));
+                    const isAbsent = isAbsentMark(rawVal);
+                    const isEntered = !isAbsent && rawVal !== undefined && rawVal !== null && (rawVal as any) !== '' && !Number.isNaN(Number(rawVal));
                     const mark = isEntered ? Number(rawVal) : null;
                     const isFail = isEntered && mark !== null && mark < passMark;
                     return (
                       <td key={sub.id} className="w-[90px] min-w-[90px] max-w-[90px] px-1 text-center border-b border-r border-border">
                         <div className="flex items-center justify-center h-full">
                           {readOnly ? (
-                            <span className={`text-sm sm:text-base font-bold ${isFail ? 'text-destructive' : 'text-foreground'}`}>
-                              {!isEntered ? '-' : (bn ? toBnDigits(mark) : mark)}
-                            </span>
+                            isAbsent ? (
+                              <span className="text-xs sm:text-sm font-extrabold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/40 px-2 py-0.5 rounded shadow-xs" title={bn ? 'অনুপস্থিত' : 'Absent'}>
+                                {bn ? 'অনুপস্থিত' : 'Abs'}
+                              </span>
+                            ) : (
+                              <span className={`text-sm sm:text-base font-bold ${isFail ? 'text-destructive' : 'text-foreground'}`}>
+                                {!isEntered ? '-' : (bn ? toBnDigits(mark) : mark)}
+                              </span>
+                            )
                           ) : (
-                            <Input
-                              data-row={rowIdx}
-                              data-col={colIdx}
-                              className={`w-[72px] h-9 px-1 text-center bg-white border-2 rounded-lg text-sm sm:text-base font-bold transition-all focus:ring-2 focus:ring-primary/20 ${isFail ? 'border-destructive/40 text-destructive focus:border-destructive' : 'border-border/60 focus:border-primary'}`}
-                              type="text"
-                              inputMode="numeric"
-                              data-bijoy={bn}
-                              placeholder="-"
-                              value={!isEntered ? '' : (bn ? toBnDigits(mark) : String(mark))}
-                              onFocus={(e) => e.target.select()}
-                              onKeyDown={(e) => handleKeyDown(e, rowIdx, colIdx)}
-                              onChange={(e) => {
-                                const raw = toEnDigits(e.target.value).replace(/[^0-9]/g, '');
-                                if (raw === '') {
-                                  onMarksChange(`${st.id}_${sub.id}`, '' as any);
-                                  return;
-                                }
-                                let num = parseInt(raw, 10) || 0;
-                                const subjectMax = sub.full_marks || maxMarks || 100;
-                                if (num > subjectMax) num = subjectMax;
-                                onMarksChange(`${st.id}_${sub.id}`, num);
-                              }}
-                            />
+                            isAbsent ? (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className="w-[74px] h-9 px-1 bg-amber-100/90 hover:bg-amber-200/90 text-amber-900 border-2 border-amber-400/80 rounded-lg text-xs font-bold flex items-center justify-center gap-0.5 transition-all shadow-xs"
+                                    title={bn ? 'অনুপস্থিত (ক্লিক করে পরিবর্তন করুন)' : 'Absent (click to change)'}
+                                  >
+                                    <span className="truncate">{bn ? 'অনুপস্থিত' : 'Abs'}</span>
+                                    <ChevronDown className="h-3 w-3 shrink-0 opacity-70" />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="center" className="w-40">
+                                  <DropdownMenuItem onClick={() => onMarksChange(`${st.id}_${sub.id}`, '' as any)}>
+                                    <RotateCcw className="h-3.5 w-3.5 mr-2 text-primary" />
+                                    {bn ? 'নম্বর লিখুন' : 'Enter Marks'}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => onMarksChange(`${st.id}_${sub.id}`, '' as any)}>
+                                    <Trash2 className="h-3.5 w-3.5 mr-2 text-destructive" />
+                                    {bn ? 'খালি করুন' : 'Clear'}
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            ) : (
+                              <div className="relative flex items-center justify-center">
+                                <Input
+                                  data-row={rowIdx}
+                                  data-col={colIdx}
+                                  className={`w-[72px] h-9 pl-1 pr-4 text-center bg-white border-2 rounded-lg text-sm sm:text-base font-bold transition-all focus:ring-2 focus:ring-primary/20 ${isFail ? 'border-destructive/40 text-destructive focus:border-destructive' : 'border-border/60 focus:border-primary'}`}
+                                  type="text"
+                                  inputMode="numeric"
+                                  data-bijoy={bn}
+                                  placeholder="-"
+                                  value={!isEntered ? '' : (bn ? toBnDigits(mark) : String(mark))}
+                                  onFocus={(e) => e.target.select()}
+                                  onKeyDown={(e) => handleKeyDown(e, rowIdx, colIdx)}
+                                  onChange={(e) => {
+                                    const rawInput = e.target.value;
+                                    const lower = rawInput.trim().toLowerCase();
+                                    if (lower === 'a' || lower === 'abs' || lower === 'absent' || lower === '/absent' || lower === 'অনুপস্থিত') {
+                                      onMarksChange(`${st.id}_${sub.id}`, 'abs');
+                                      return;
+                                    }
+                                    const raw = toEnDigits(rawInput).replace(/[^0-9]/g, '');
+                                    if (raw === '') {
+                                      onMarksChange(`${st.id}_${sub.id}`, '' as any);
+                                      return;
+                                    }
+                                    let num = parseInt(raw, 10) || 0;
+                                    const subjectMax = sub.full_marks || maxMarks || 100;
+                                    if (num > subjectMax) num = subjectMax;
+                                    onMarksChange(`${st.id}_${sub.id}`, num);
+                                  }}
+                                />
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <button
+                                      type="button"
+                                      tabIndex={-1}
+                                      className="absolute right-0.5 w-4 h-8 flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:bg-slate-100 rounded transition-colors"
+                                      title={bn ? 'অপশন (অনুপস্থিত)' : 'Options (Absent)'}
+                                    >
+                                      <ChevronDown className="h-3 w-3" />
+                                    </button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-36">
+                                    <DropdownMenuItem onClick={() => onMarksChange(`${st.id}_${sub.id}`, 'abs')}>
+                                      <UserX className="h-3.5 w-3.5 mr-2 text-amber-600" />
+                                      <span className="font-semibold text-amber-700">{bn ? 'অনুপস্থিত' : 'Absent (Abs)'}</span>
+                                    </DropdownMenuItem>
+                                    {isEntered && (
+                                      <DropdownMenuItem onClick={() => onMarksChange(`${st.id}_${sub.id}`, '' as any)}>
+                                        <Trash2 className="h-3.5 w-3.5 mr-2 text-destructive" />
+                                        {bn ? 'খালি করুন' : 'Clear'}
+                                      </DropdownMenuItem>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            )
                           )}
                         </div>
                       </td>
@@ -455,7 +520,9 @@ const ClassResultTable = ({
                   })}
                   
                   <td className="w-[70px] min-w-[70px] max-w-[70px] px-1 text-center text-sm sm:text-base font-bold border-b border-r border-border">
-                    <div className="flex items-center justify-center h-full bg-slate-50/50 rounded-md py-1">{hasEnteredAnyMark ? toBnDigits(total) : '-'}</div>
+                    <div className="flex items-center justify-center h-full bg-slate-50/50 rounded-md py-1">
+                      {hasEnteredAnyMark ? (isAllAbsent ? '-' : toBnDigits(total)) : '-'}
+                    </div>
                   </td>
                   <td className="w-[64px] min-w-[64px] max-w-[64px] px-1 text-center border-b border-r border-border">
                     <div className="flex items-center justify-center h-full">
@@ -467,12 +534,14 @@ const ClassResultTable = ({
                     </div>
                   </td>
                   <td className="w-[64px] min-w-[64px] max-w-[64px] px-1 text-center text-sm sm:text-base font-bold text-primary border-b border-r border-border">
-                    <div className="flex items-center justify-center h-full">{overall ? toBnDigits(overall.gpa) : '-'}</div>
+                    <div className="flex items-center justify-center h-full">
+                      {overall ? (overall.gpa === '-' ? '-' : toBnDigits(overall.gpa)) : '-'}
+                    </div>
                   </td>
                   <td className="w-[130px] min-w-[130px] max-w-[130px] px-1 text-center text-xs sm:text-sm font-semibold border-b border-r border-border">
                     <div className="flex items-center justify-center h-full">
                       {(() => {
-                        const isEligibleForChange = failed || overall?.graced || (statusOverrides?.[st.id] && statusOverrides[st.id] !== 'auto');
+                        const isEligibleForChange = !isAllAbsent && (failed || overall?.graced || (statusOverrides?.[st.id] && statusOverrides[st.id] !== 'auto'));
                         const currentVal = statusOverrides?.[st.id] === 'grace_pass'
                           ? 'grace_pass'
                           : statusOverrides?.[st.id] === 'fail'
@@ -483,11 +552,11 @@ const ClassResultTable = ({
                           ? 'fail'
                           : 'auto';
 
-                        if (readOnly || !isEligibleForChange) {
+                        if (readOnly || !isEligibleForChange || isAllAbsent) {
                           return (
                             <div className="truncate flex items-center justify-center gap-1 font-semibold text-foreground text-xs sm:text-sm">
-                              <span>{overall ? (bn ? overall.title_bn : overall.title) : '-'}</span>
-                              {statusOverrides?.[st.id] && statusOverrides[st.id] !== 'auto' && (
+                              <span>{isAllAbsent ? (bn ? 'অনুপস্থিত' : 'Absent') : overall ? (bn ? overall.title_bn : overall.title) : '-'}</span>
+                              {!isAllAbsent && statusOverrides?.[st.id] && statusOverrides[st.id] !== 'auto' && (
                                 <span className="text-[10px] text-amber-600 font-bold px-1 rounded bg-amber-50 border border-amber-200" title={bn ? 'ম্যানুয়াল পরিবর্তিত' : 'Manually modified'}>
                                   {statusOverrides[st.id] === 'fail' ? (bn ? 'ফেল' : 'F') : (bn ? 'বিবেচনা' : 'G')}
                                 </span>
@@ -521,7 +590,7 @@ const ClassResultTable = ({
                   <td className="w-[64px] min-w-[64px] max-w-[64px] px-1 text-center text-xs sm:text-sm font-semibold text-muted-foreground border-b border-r border-border">
                     <div className="flex items-center justify-center h-full">
                       <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full ${rank && rank <= 3 ? 'bg-emerald-500/10 text-emerald-600 font-bold border border-emerald-500/20' : ''}`}>
-                        {hasEnteredAnyMark ? rankDisplay : '-'}
+                        {hasEnteredAnyMark && !isAllAbsent ? rankDisplay : '-'}
                       </span>
                     </div>
                   </td>

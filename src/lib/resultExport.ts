@@ -1,13 +1,15 @@
 import { CANONICAL_BANGLA_LABELS as L } from './banglaCanonicalLabels';
 import { formatOrdinalRank, toBnDigits } from './digits';
+import { isAbsentMark } from './grading';
 import QRCode from 'qrcode';
 
 /**
- * Merit tier: 0 = regular pass, 1 = grace pass (consideration), 2 = failed.
+ * Merit tier: 0 = regular pass, 1 = grace pass (consideration), 2 = failed, 3 = absent.
  * Grace-passed students always rank below regular pass students, even with a
  * higher total; failed students are never ranked.
  */
-const meritTierOf = (r: { failed: boolean; overall: any }): number => {
+const meritTierOf = (r: { failed: boolean; overall: any; isAllAbsent?: boolean }): number => {
+  if (r.isAllAbsent) return 3;
   if (r.failed) return 2;
   if (r.overall?.graced) return 1;
   return 0;
@@ -18,7 +20,7 @@ interface ExportData {
   title: string;
   students: any[];
   subjects: any[];
-  marksMap: Record<string, number>;
+  marksMap: Record<string, number | string>;
   getOverallGrade: (marks: number[], classId?: string | null, extraOptions?: any) => { grade: string; gpa: string; title?: string; title_bn?: string; hasFail: boolean; graced?: boolean };
   bn: boolean;
   institutionName?: string;
@@ -113,24 +115,37 @@ export const exportResultCSV = (params: ExportData) => {
 
   const computed = students.map((st: any, idx: number) => {
     const raw = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`]);
+    const absentCount = raw.filter((m: any) => isAbsentMark(m)).length;
+    const isAllAbsent = subjects.length > 0 && absentCount === subjects.length;
     const hasEnteredAnyMark = raw.some((m: any) => m !== undefined && m !== null && m !== '');
-    const marks = raw.map((m: any) => (m === undefined || m === null || m === '' ? 0 : Number(m)));
-    const graded = raw.filter((m: any) => m !== undefined && m !== null && m !== '' && !Number.isNaN(Number(m))).map((m: any) => Number(m));
+    const graded = raw.filter((m: any) => m !== undefined && m !== null && m !== '' && !isAbsentMark(m) && !Number.isNaN(Number(m))).map((m: any) => Number(m));
     const total = hasEnteredAnyMark ? graded.reduce((a, b) => a + b, 0) : 0;
     const blankCount = raw.filter((m: any) => m === undefined || m === null || m === '').length;
     const hasBlank = blankCount > 0;
     const hasZero = graded.some((m: any) => Number(m) === 0);
     const override = params.statusOverrides?.[st.id] || 'auto';
-    const overall = hasEnteredAnyMark
-      ? getOverallGrade(graded, st.class_id, { blankFailCount: blankCount, hasBlankOrZero: hasBlank || hasZero, override })
-      : { grade: '-', gpa: '-', hasFail: false };
-    const failed = hasEnteredAnyMark ? ((overall as any).graced ? false : overall.hasFail) : false;
-    return { idx, st, marks, total, overall, failed, hasEnteredAnyMark };
+
+    let overall: any;
+    let failed = false;
+
+    if (!hasEnteredAnyMark) {
+      overall = { grade: '-', gpa: '-', hasFail: false, title: '-', title_bn: '-' };
+    } else if (isAllAbsent) {
+      overall = { grade: 'Abs', gpa: '-', hasFail: false, title: 'Absent', title_bn: 'অনুপস্থিত' };
+      failed = false;
+    } else if (absentCount > 0) {
+      overall = { grade: 'F', gpa: '0.00', hasFail: true, title: 'Rasib', title_bn: 'অকৃতকার্য' };
+      failed = true;
+    } else {
+      overall = getOverallGrade(graded, st.class_id, { blankFailCount: blankCount, hasBlankOrZero: hasBlank || hasZero, override });
+      failed = overall ? (overall.graced ? false : overall.hasFail) : false;
+    }
+
+    return { idx, st, total, overall, failed, isAllAbsent, hasEnteredAnyMark };
   });
 
-
   const sortedByTotal = [...computed]
-    .filter(a => a.hasEnteredAnyMark)
+    .filter(a => a.hasEnteredAnyMark && !a.isAllAbsent)
     .sort((a, b) => {
       const tierDiff = meritTierOf(a) - meritTierOf(b);
       if (tierDiff !== 0) return tierDiff;
@@ -140,7 +155,7 @@ export const exportResultCSV = (params: ExportData) => {
   const rankMap = new Map<number, number>();
   let currentRank = 1;
   sortedByTotal.forEach((r, i) => {
-    if (r.failed) return;
+    if (r.failed || r.isAllAbsent) return;
     const meritRank = r.st.rank || r.st.merit_rank || r.st.merit_position;
     if (meritRank) {
       rankMap.set(r.idx, meritRank);
@@ -157,17 +172,20 @@ export const exportResultCSV = (params: ExportData) => {
     rankMap.set(r.idx, currentRank);
   });
 
-  const rows = computed.map(({ st, idx, marks, total, overall, failed, hasEnteredAnyMark }) => {
+  const rows = computed.map(({ st, idx, total, overall, isAllAbsent, hasEnteredAnyMark }) => {
     const rank = rankMap.get(idx);
-    const rankDisplay = hasEnteredAnyMark ? formatOrdinalRank(rank, true) : '-';
-
+    const rankDisplay = hasEnteredAnyMark && !isAllAbsent ? formatOrdinalRank(rank, true) : '-';
 
     return [
       idx + 1,
       st.roll_number || '-',
       bn ? st.name_bn : (st.name_en || st.name_bn),
-      ...marks.map((m, i) => marksMap[`${st.id}_${subjects[i].id}`] !== undefined ? m : '-'),
-      hasEnteredAnyMark ? total : '-',
+      ...subjects.map((sub: any) => {
+        const val = marksMap[`${st.id}_${sub.id}`];
+        if (isAbsentMark(val)) return bn ? 'অনুপস্থিত' : 'Abs';
+        return val !== undefined && val !== null && val !== '' ? val : '-';
+      }),
+      hasEnteredAnyMark ? (isAllAbsent ? '-' : total) : '-',
       overall.grade,
       overall.gpa,
       hasEnteredAnyMark ? (bn ? overall.title_bn : overall.title) : '-',
@@ -271,21 +289,37 @@ export const getResultSheetHtml = ({
   
   const computed = students.map((st: any, idx: number) => {
     const raw = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`]);
+    const absentCount = raw.filter((m: any) => isAbsentMark(m)).length;
+    const isAllAbsent = subjects.length > 0 && absentCount === subjects.length;
     const hasEnteredAnyMark = raw.some((m: any) => m !== undefined && m !== null && m !== '');
-    const marks = raw.map((m: any) => (m === undefined || m === null || m === '' ? 0 : Number(m)));
-    const graded = raw.filter((m: any) => m !== undefined && m !== null && m !== '' && !Number.isNaN(Number(m))).map((m: any) => Number(m));
+    const graded = raw.filter((m: any) => m !== undefined && m !== null && m !== '' && !isAbsentMark(m) && !Number.isNaN(Number(m))).map((m: any) => Number(m));
     const total = hasEnteredAnyMark ? graded.reduce((a, b) => a + b, 0) : 0;
     const blankCount = raw.filter((m: any) => m === undefined || m === null || m === '').length;
     const hasBlank = blankCount > 0;
     const hasZero = graded.some((m: any) => Number(m) === 0);
     const override = statusOverrides?.[st.id] || 'auto';
-    const overall = hasEnteredAnyMark ? getOverallGrade(graded, st.class_id, {
-      blankFailCount: blankCount,
-      hasBlankOrZero: hasBlank || hasZero,
-      override,
-    }) : null;
-    const failed = overall ? ((overall as any).graced ? false : overall.hasFail) : false;
-    return { idx, st, marks, total, overall, failed, hasEnteredAnyMark };
+
+    let overall: any;
+    let failed = false;
+
+    if (!hasEnteredAnyMark) {
+      overall = null;
+    } else if (isAllAbsent) {
+      overall = { grade: 'Abs', gpa: '-', hasFail: false, title: 'Absent', title_bn: 'অনুপস্থিত' };
+      failed = false;
+    } else if (absentCount > 0) {
+      overall = { grade: 'F', gpa: '0.00', hasFail: true, title: 'Rasib', title_bn: 'অকৃতকার্য' };
+      failed = true;
+    } else {
+      overall = getOverallGrade(graded, st.class_id, {
+        blankFailCount: blankCount,
+        hasBlankOrZero: hasBlank || hasZero,
+        override,
+      });
+      failed = overall ? ((overall as any).graced ? false : overall.hasFail) : false;
+    }
+
+    return { idx, st, total, overall, failed, isAllAbsent, hasEnteredAnyMark };
   });
 
   const sortedByTotal = [...computed].sort((a, b) => {
@@ -296,7 +330,7 @@ export const getResultSheetHtml = ({
   const rankMap = new Map<number, number>();
   let currentRank = 1;
   sortedByTotal.forEach((r, i) => {
-    if (r.failed) {
+    if (r.failed || r.isAllAbsent) {
       rankMap.set(r.idx, 0); 
       return;
     }
@@ -316,7 +350,7 @@ export const getResultSheetHtml = ({
     rankMap.set(r.idx, currentRank);
   });
 
-  const activeStudents = computed.filter(c => c.hasEnteredAnyMark);
+  const activeStudents = computed.filter(c => c.hasEnteredAnyMark && !c.isAllAbsent);
   const passCount = activeStudents.filter(c => !c.failed).length;
   const failCount = activeStudents.length - passCount;
   const classAvg = activeStudents.length ? (activeStudents.reduce((s, c) => s + c.total, 0) / activeStudents.length).toFixed(2) : '0';
@@ -362,28 +396,32 @@ export const getResultSheetHtml = ({
     return `<colgroup>${cols}</colgroup>`;
   })();
 
-  const renderRow = ({ idx, st, marks, total, overall, failed, hasEnteredAnyMark }: any) => {
+  const renderRow = ({ idx, st, total, overall, failed, isAllAbsent, hasEnteredAnyMark }: any) => {
     const rank = rankMap.get(idx);
-    const merit = hasEnteredAnyMark ? ((bn ? (overall as any).title_bn : (overall as any).title) || (overall as any).title_bn || (overall as any).title || '-') : '-';
+    const merit = hasEnteredAnyMark ? (isAllAbsent ? (bn ? 'অনুপস্থিত' : 'Absent') : ((bn ? (overall as any)?.title_bn : (overall as any)?.title) || (overall as any)?.title_bn || (overall as any)?.title || '-')) : '-';
     
-    const rankDisplay = hasEnteredAnyMark ? formatOrdinalRank(rank, true) : '-';
+    const rankDisplay = hasEnteredAnyMark && !isAllAbsent ? formatOrdinalRank(rank, true) : '-';
 
-
-    const marksCells = marks.map((mk: number, i: number) => {
-      const subjectId = subjects[i].id;
-      const isEntered = marksMap[`${st.id}_${subjectId}`] !== undefined;
+    const marksCells = subjects.map((sub: any) => {
+      const subjectId = sub.id;
+      const rawVal = marksMap[`${st.id}_${subjectId}`];
+      if (isAbsentMark(rawVal)) {
+        return `<td class="num bold" style="color: #b45309; background-color: #fef3c7; font-size: 11px;">${bn ? 'অনুপস্থিত' : 'Abs'}</td>`;
+      }
+      const isEntered = rawVal !== undefined && rawVal !== null && rawVal !== '' && !Number.isNaN(Number(rawVal));
+      const mk = isEntered ? Number(rawVal) : 0;
       return `<td class="num ${isEntered && mk < passMark ? 'fail-cell' : ''}">${isEntered ? toBnDigits(mk) : '-'}</td>`;
     }).join('');
 
-    return `<tr class="${failed ? 'row-fail' : ''}">
+    return `<tr class="${isAllAbsent ? 'row-absent' : failed ? 'row-fail' : ''}">
       <td class="num">${toBnDigits(idx + 1)}</td>
       <td class="num bold">${st.roll_number ? toBnDigits(st.roll_number) : '-'}</td>
       <td class="name">${bn ? st.name_bn : (st.name_en || st.name_bn)}</td>
       ${marksCells}
-      <td class="num bold">${hasEnteredAnyMark ? toBnDigits(total) : '-'}</td>
+      <td class="num bold">${hasEnteredAnyMark ? (isAllAbsent ? '-' : toBnDigits(total)) : '-'}</td>
       
       <td class="num bold grade-${overall?.grade?.replace(/[^A-Z]/g, '') || 'N'}">${(overall?.grade || '-').toUpperCase()}</td>
-      <td class="num bold">${overall?.gpa ? toBnDigits(overall.gpa) : '-'}</td>
+      <td class="num bold">${overall?.gpa && overall.gpa !== '-' ? toBnDigits(overall.gpa) : '-'}</td>
       <td class="num">${merit}</td>
       <td class="num"><span class="rank-pill ${rank && rank <= 3 ? 'rank-top' : ''}">${rankDisplay}</span></td>
     </tr>`;

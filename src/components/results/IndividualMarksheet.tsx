@@ -6,13 +6,14 @@ import { Printer, ArrowLeft } from 'lucide-react';
 import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { useGradingSystem } from '@/hooks/useGradingSystem';
 import { toBnDigits } from '@/lib/digits';
+import { isAbsentMark } from '@/lib/grading';
 import { cn } from '@/lib/utils';
 import { QRCodeSVG } from 'qrcode.react';
 
 interface IndividualMarksheetProps {
   student: any;
   subjects: any[];
-  marksMap: Record<string, number>;
+  marksMap: Record<string, number | string>;
   examTitle: string;
   onBack: () => void;
   rank?: number;
@@ -54,39 +55,71 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
 
   const subjectResults = subjects.map((sub: any) => {
     const raw = isSample ? (Math.random() > 0.2 ? 70 + Math.floor(Math.random() * 30) : 30 + Math.floor(Math.random() * 10)) : marksMap[`${student.id}_${sub.id}`];
-    const entered = raw !== undefined && raw !== null && (raw as any) !== '' && !Number.isNaN(Number(raw));
+    const isAbsent = isAbsentMark(raw);
+    const entered = !isAbsent && raw !== undefined && raw !== null && (raw as any) !== '' && !Number.isNaN(Number(raw));
     const marks = entered ? Number(raw) : 0;
     const g = getSubjectGrade(marks);
-    const grade = entered ? g.grade : '-';
-    const gpa = entered ? g.gpa : '-';
-    return { subject: sub, marks, grade, gpa, entered };
-
+    const grade = isAbsent ? 'Abs' : (entered ? g.grade : '-');
+    const gpa = isAbsent ? '-' : (entered ? g.gpa : '-');
+    return { subject: sub, marks, grade, gpa, entered, isAbsent };
   });
+
+  const absentCount = subjectResults.filter(r => r.isAbsent).length;
+  const isAllAbsent = subjects.length > 0 && absentCount === subjects.length;
+  const hasPartialAbsent = absentCount > 0 && !isAllAbsent;
 
   const gradedMarks = subjectResults.filter(r => r.entered).map(r => r.marks);
   const totalMarks = gradedMarks.reduce((sum, m) => sum + m, 0);
   const totalFullMarks = subjects.reduce((sum: number, sub: any) => sum + (Number(sub.full_marks) || maxMarks || 100), 0);
-  const blankCount = subjectResults.filter(r => !r.entered).length;
+  const blankCount = subjectResults.filter(r => !r.entered && !r.isAbsent).length;
   const hasBlank = blankCount > 0;
   const hasZero = gradedMarks.some(m => m === 0);
-  const overall: any = getOverallGrade(gradedMarks, student?.class_id, {
-    blankFailCount: blankCount,
-    hasBlankOrZero: hasBlank || hasZero,
-    override: overrideStatus,
-  });
-  const hasFailedSubject = !overall.graced && (overall.hasFail || subjectResults.some(r => r.entered && r.grade === 'F'));
-  const finalGPA = Number(overall.graced ? overall.gpa : (student.gpa || overall.gpa));
-  const finalGrade = overall.graced ? overall.grade : (hasFailedSubject ? 'F' : (student.letter_grade || overall.grade));
-  const isFail = !overall.graced && (finalGrade === 'F' || hasFailedSubject || finalGPA === 0);
-  const displayTotalMarks = student.total_marks || totalMarks;
+
+  let overall: any;
+  if (isAllAbsent) {
+    overall = {
+      grade: 'Abs',
+      gpa: '-',
+      title: 'Absent',
+      title_bn: 'অনুপস্থিত',
+      hasFail: false,
+      graced: false,
+    };
+  } else if (hasPartialAbsent) {
+    overall = {
+      grade: 'F',
+      gpa: '0.00',
+      title: 'Rasib',
+      title_bn: 'অকৃতকার্য',
+      hasFail: true,
+      graced: false,
+    };
+  } else {
+    overall = getOverallGrade(gradedMarks, student?.class_id, {
+      blankFailCount: blankCount,
+      hasBlankOrZero: hasBlank || hasZero,
+      override: overrideStatus,
+    });
+  }
+
+  const hasFailedSubject = !overall.graced && (overall.hasFail || subjectResults.some(r => r.entered && r.grade === 'F') || hasPartialAbsent);
+  const finalGPA = isAllAbsent ? '-' : Number(overall.graced ? overall.gpa : (student.gpa || overall.gpa));
+  const finalGrade = isAllAbsent ? 'Abs' : (overall.graced ? overall.grade : (hasFailedSubject ? 'F' : (student.letter_grade || overall.grade)));
+  const isFail = isAllAbsent ? false : (!overall.graced && (finalGrade === 'F' || hasFailedSubject || finalGPA === 0));
+  const displayTotalMarks = isAllAbsent ? '-' : (student.total_marks || totalMarks);
 
   const remarksText = (() => {
+    if (isAllAbsent) {
+      return bn 
+        ? "পরীক্ষার্থী সকল বিষয়ে অনুপস্থিত ছিল।"
+        : "The candidate was absent in all subjects.";
+    }
     if (isFail) {
       return bn 
         ? "অকৃতকার্য বিষয়ে বিশেষ মনোযোগ ও নিয়মিত অধ্যয়ন জরুরি। সম্মানিত অভিভাবকের দৃষ্টি আকর্ষণ করছি।"
         : "Special attention is required in failed subjects. Regular study and parental guidance needed.";
     }
-    if (finalGPA >= 5.0) {
+    if (typeof finalGPA === 'number' && finalGPA >= 5.0) {
       return bn 
         ? "মাশাআল্লাহ, সার্বিক ফলাফল চমৎকার ও অনুকরণীয়। এই কৃতিত্ব বজায় রাখার শুভকামনা রইল।"
         : "MashaAllah, outstanding and commendable result. Best wishes to maintain this success.";
@@ -527,10 +560,15 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
                   <td>{bn ? toBnDigits(i + 1) : (i + 1)}</td>
                   <td className="subject-col px-3">{bn ? r.subject.name_bn : (r.subject.name_en || r.subject.name)}</td>
                   <td className="font-semibold text-slate-700">{bn ? toBnDigits(r.subject.full_marks || maxMarks || 100) : (r.subject.full_marks || maxMarks || 100)}</td>
-                  <td className="font-bold text-slate-900 text-sm">{!r.entered ? '-' : (isSample || bn ? toBnDigits(r.marks) : r.marks)}</td>
+                  <td className="font-bold text-slate-900 text-sm">
+                    {r.isAbsent ? (
+                      <span className="text-amber-700 bg-amber-100 font-bold px-2 py-0.5 rounded text-xs">{bn ? 'অনুপস্থিত' : 'Abs'}</span>
+                    ) : !r.entered ? '-' : (isSample || bn ? toBnDigits(r.marks) : r.marks)}
+                  </td>
                   <td>
                      <span className={cn(
                        "grade-badge",
+                       r.isAbsent ? 'bg-amber-100 text-amber-800 border-amber-300' :
                        !r.entered ? 'grade-none' :
                        r.grade === 'A+' ? 'grade-a-plus' : 
                        r.grade === 'A' ? 'grade-a' :
@@ -539,11 +577,11 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
                        r.grade === 'C' ? 'grade-c' :
                        r.grade === 'D' ? 'grade-d' : 'grade-f'
                      )}>
-                      {r.grade}
+                      {r.isAbsent ? 'Abs' : r.grade}
                     </span>
                   </td>
                   <td className="font-bold text-slate-900 text-sm">
-                    {!r.entered ? '-' : (isSample || bn ? toBnDigits(Number(r.gpa).toFixed(2)) : Number(r.gpa).toFixed(2))}
+                    {r.isAbsent || !r.entered ? '-' : (isSample || bn ? toBnDigits(Number(r.gpa).toFixed(2)) : Number(r.gpa).toFixed(2))}
                   </td>
                 </tr>
               ))}
@@ -556,11 +594,12 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
                   {bn ? toBnDigits(totalFullMarks) : totalFullMarks}
                 </td>
                 <td className="font-bold text-emerald-900 text-base">
-                  {bn ? toBnDigits(displayTotalMarks) : displayTotalMarks}
+                  {isAllAbsent ? '-' : (bn ? toBnDigits(displayTotalMarks) : displayTotalMarks)}
                 </td>
                 <td>
                   <span className={cn(
                     "grade-badge",
+                    isAllAbsent ? 'bg-amber-100 text-amber-800 border-amber-300' :
                     isFail ? 'grade-f' :
                     finalGrade === 'A+' ? 'grade-a-plus' :
                     finalGrade === 'A' ? 'grade-a' :
@@ -573,7 +612,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
                   </span>
                 </td>
                 <td className="font-bold text-emerald-900 text-sm">
-                  {bn ? toBnDigits(finalGPA.toFixed(2)) : finalGPA.toFixed(2)}
+                  {isAllAbsent ? '-' : (bn ? toBnDigits(typeof finalGPA === 'number' ? finalGPA.toFixed(2) : finalGPA) : (typeof finalGPA === 'number' ? finalGPA.toFixed(2) : finalGPA))}
                 </td>
               </tr>
             </tbody>
@@ -585,13 +624,14 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           <div className="bg-white border border-slate-300 rounded p-1.5 text-center shadow-sm">
             <span className="text-[10px] text-slate-500 font-bold block uppercase">{bn ? 'মোট নম্বর' : 'Total Marks'}</span>
             <span className="text-base font-bold text-slate-900">
-              {bn ? toBnDigits(displayTotalMarks) : displayTotalMarks} / {bn ? toBnDigits(totalFullMarks) : totalFullMarks}
+              {isAllAbsent ? '-' : (bn ? toBnDigits(displayTotalMarks) : displayTotalMarks)} / {bn ? toBnDigits(totalFullMarks) : totalFullMarks}
             </span>
           </div>
           <div className="bg-white border border-slate-300 rounded p-1.5 text-center shadow-sm">
             <span className="text-[10px] text-slate-500 font-bold block uppercase">{bn ? 'মেধা স্থান' : 'Merit Rank'}</span>
             <span className="text-base font-bold text-[#064e3b]">
               {(() => {
+                if (isAllAbsent) return '-';
                 const meritRank = rank ?? student.rank ?? student.merit_rank ?? student.merit_position;
                 if (isSample) return bn ? '১ম' : '1st';
 
@@ -617,14 +657,14 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
           <div className="bg-white border border-slate-300 rounded p-1.5 text-center shadow-sm">
             <span className="text-[10px] text-slate-500 font-bold block uppercase">{bn ? 'সর্বমোট GPA' : 'Overall GPA'}</span>
             <span className="text-base font-bold text-slate-900">
-              {bn ? toBnDigits(finalGPA.toFixed(2)) : finalGPA.toFixed(2)}
+              {isAllAbsent ? '-' : (bn ? toBnDigits(typeof finalGPA === 'number' ? finalGPA.toFixed(2) : finalGPA) : (typeof finalGPA === 'number' ? finalGPA.toFixed(2) : finalGPA))}
             </span>
           </div>
           <div className="bg-white border border-slate-300 rounded p-1.5 text-center shadow-sm flex flex-col items-center justify-center">
             <span className="text-[10px] text-slate-500 font-bold block uppercase">{bn ? 'চুড়ান্ত গ্রেড' : 'Grade'}</span>
             <span className={cn(
               "text-white text-xs px-3 py-0.5 rounded-full font-bold",
-              !isFail ? 'bg-emerald-600' : 'bg-rose-600'
+              isAllAbsent ? 'bg-amber-600' : !isFail ? 'bg-emerald-600' : 'bg-rose-600'
             )}>
               {finalGrade}
             </span>
@@ -633,9 +673,12 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
             <span className="text-[10px] text-slate-500 font-bold block uppercase">{bn ? 'মর্যাদা / বিভাগ' : 'Division'}</span>
             <span className={cn(
               "text-xs px-2.5 py-0.5 rounded-full font-bold border",
+              isAllAbsent ? 'bg-amber-50 text-amber-800 border-amber-200' :
               isFail ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'
             )}>
               {(() => {
+                if (isAllAbsent) return bn ? 'অনুপস্থিত' : 'Absent';
+                if (hasPartialAbsent) return bn ? 'অকৃতকার্য' : 'Fail';
                 if (overall.graced) return bn ? (overall.title_bn || 'মাকবুল (বিবেচনায়)') : (overall.title || 'MAQBUL (Considered)');
                 if (isFail) return bn ? "রাসিব" : "FAIL";
                 if (student.division || student.status_text || student.madrasha_grade) {
@@ -644,10 +687,12 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
                 if (bn && overall.title_bn) return overall.title_bn;
                 if (!bn && overall.title) return overall.title;
 
-                if (finalGPA >= 5.0) return bn ? "মুমতাজ" : "MUMTAZ";
-                if (finalGPA >= 4.0) return bn ? "জায়্যিদ জিদ্দান" : "JAYYID JIDDAN";
-                if (finalGPA >= 3.5) return bn ? "জায়্যিদ" : "JAYYID";
-                if (finalGPA >= 1.0) return bn ? "মাকবুল" : "MAQBUL";
+                if (typeof finalGPA === 'number') {
+                  if (finalGPA >= 5.0) return bn ? "মুমতাজ" : "MUMTAZ";
+                  if (finalGPA >= 4.0) return bn ? "জায়্যিদ জিদ্দান" : "JAYYID JIDDAN";
+                  if (finalGPA >= 3.5) return bn ? "জায়্যিদ" : "JAYYID";
+                  if (finalGPA >= 1.0) return bn ? "মাকবুল" : "MAQBUL";
+                }
                 return bn ? "রাসিব" : "FAIL";
               })()}
             </span>

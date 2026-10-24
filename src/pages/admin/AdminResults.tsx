@@ -12,7 +12,7 @@ import { isAdminRole } from '@/lib/roles';
 import ResultSelectionBrowser, { type ResultSearchMode } from '@/components/results/ResultSelectionBrowser';
 import ClassResultTable from '@/components/results/ClassResultTable';
 import ClassResultStatusList from '@/components/results/ClassResultStatusList';
-import { studentStats, rankStudents, gradeFromMark } from '@/lib/grading';
+import { studentStats, rankStudents, gradeFromMark, isAbsentMark } from '@/lib/grading';
 import { useGradingSystem } from '@/hooks/useGradingSystem';
 import IndividualMarksheet from '@/components/results/IndividualMarksheet';
 import ResultAnalyticsView from '@/components/results/ResultAnalyticsView';
@@ -59,7 +59,7 @@ const AdminResults = () => {
   const [rollNumber, setRollNumber] = useState('');
   const [showResults, setShowResults] = useState(false);
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
-  const [marksMap, setMarksMap] = useState<Record<string, number>>({});
+  const [marksMap, setMarksMap] = useState<Record<string, number | string>>({});
   const [viewingStudentId, setViewingStudentId] = useState<string | null>(null);
   const [directViewingStudent, setDirectViewingStudent] = useState<any | null>(null);
   const [exportingClassId, setExportingClassId] = useState<string | null>(null);
@@ -84,9 +84,13 @@ const AdminResults = () => {
   const loadResultsForExam = async (examId: string) => {
     const { data, error } = await supabase.from('results').select('*').eq('exam_id', examId);
     if (error) throw error;
-    const map: Record<string, number> = {};
+    const map: Record<string, number | string> = {};
     data?.forEach((result: any) => {
-      map[`${result.student_id}_${result.subject_id}`] = result.marks ?? 0;
+      if (result.grade === 'Abs' || isAbsentMark(result.grade) || isAbsentMark(result.marks)) {
+        map[`${result.student_id}_${result.subject_id}`] = 'abs';
+      } else if (result.marks !== null && result.marks !== undefined) {
+        map[`${result.student_id}_${result.subject_id}`] = result.marks;
+      }
     });
     setMarksMap(map);
     return data || [];
@@ -659,9 +663,23 @@ const AdminResults = () => {
     mutationFn: async () => {
       if (!selectedExamId) return { saved: false as const, reason: 'no-exam' as const };
       const upserts = Object.entries(marksMap)
-        .filter(([, marks]) => marks !== undefined && marks !== null && (marks as any) !== '' && !Number.isNaN(Number(marks)))
+        .filter(([, marks]) => {
+          if (marks === undefined || marks === null || (marks as any) === '') return false;
+          if (isAbsentMark(marks)) return true;
+          return !Number.isNaN(Number(marks));
+        })
         .map(([key, marks]) => {
           const [student_id, subject_id] = key.split('_');
+          if (isAbsentMark(marks)) {
+            return {
+              exam_id: selectedExamId,
+              student_id,
+              subject_id,
+              marks: null,
+              grade: 'Abs',
+              gpa: 0,
+            };
+          }
           const markNum = Number(marks);
           const sub = subjects.find((s: any) => s.id === subject_id);
           const subFull = sub?.full_marks || maxMarks || 100;
