@@ -796,146 +796,54 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
             <div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
           ) : (
             <>
-              {/* Mobile Native Card View (< md) */}
+              {/* Mobile Card View (< md) */}
               <div className="md:hidden divide-y divide-border/60">
                 {filtered.map((s: any) => {
-                  const cat = getStaffCategory(s, designationsMap, activeCategoryKeys);
-                  const isResigned = isStaffResigned(s);
-                  const isPending = isRecordPending(s.id);
                   const displayNames = getStaffDisplayNames(s.name_bn, s.name_en, bn);
                   return (
-                    <div key={s.id} className="p-3 space-y-2 bg-card/60 hover:bg-card transition-colors">
-                      <div className="flex items-start justify-between gap-2.5">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          {s.photo_url ? (
-                            <img src={s.photo_url} alt="" className="w-10 h-10 rounded-full object-cover shrink-0 ring-1 ring-border" />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0">
-                              {displayNames.primary?.[0] || '?'}
-                            </div>
-                          )}
-                          <div className="min-w-0">
-                            <h4 className="font-semibold text-foreground text-sm truncate leading-tight">
-                              {displayNames.primary || '-'}
-                            </h4>
-                            {displayNames.secondary && (
-                              <p className="text-[11px] text-muted-foreground truncate">{displayNames.secondary}</p>
-                            )}
-                            <p className="text-[11px] text-muted-foreground truncate mt-0.5">
-                              {s.designation || (bn ? 'পদবী নেই' : 'No designation')} • {labelForCategory(cat)}
-                            </p>
+                    <div 
+                      key={s.id} 
+                      className="p-3.5 bg-card/60 hover:bg-card transition-colors flex items-center justify-between gap-3 cursor-pointer"
+                      onClick={() => navigate(`/admin/staff/profile/${s.id}`)}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        {s.photo_url ? (
+                          <img src={s.photo_url} alt="" className="w-11 h-11 rounded-full object-cover shrink-0 ring-1 ring-border shadow-xs" />
+                        ) : (
+                          <div className="w-11 h-11 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-base shrink-0 ring-1 ring-primary/20">
+                            {displayNames.primary?.[0] || '?'}
                           </div>
-                        </div>
-
-                        <div className="shrink-0 flex flex-col items-end gap-1">
-                          {isPending && (
-                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20 inline-flex items-center gap-1 animate-pulse">
-                              <Clock className="w-3 h-3" />
-                              {bn ? 'অনুমোদনের অপেক্ষায়' : 'Pending Approval'}
-                            </span>
+                        )}
+                        <div className="min-w-0">
+                          <h4 className="font-semibold text-foreground text-sm truncate leading-tight">
+                            {displayNames.primary || '-'}
+                          </h4>
+                          {displayNames.secondary && (
+                            <p className="text-[11px] text-muted-foreground truncate">{displayNames.secondary}</p>
                           )}
-                          {isResigned ? (
-                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20">
-                              {bn ? 'পদত্যাগী' : 'Resigned'}
-                            </span>
-                          ) : (
-                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                              s.status === 'active' ? 'bg-success/10 text-success' : 
-                              s.status === 'pending' ? 'bg-warning/10 text-warning' : 
-                              'bg-destructive/10 text-destructive'
-                            }`}>
-                              {s.status === 'active' ? (bn ? 'সক্রিয়' : 'Active') : 
-                               s.status === 'pending' ? (bn ? 'আবেদন' : 'Pending') : 
-                               (bn ? 'নিষ্ক্রিয়' : 'Inactive')}
-                            </span>
-                          )}
+                          <div className="flex items-center gap-2 mt-1">
+                            {s.staff_id ? (
+                              <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0 h-4.5 bg-primary/5 text-primary border-primary/20">
+                                {s.staff_id}
+                              </Badge>
+                            ) : (
+                              <span className="text-[10px] text-muted-foreground italic">{bn ? 'আইডি নেই' : 'No ID'}</span>
+                            )}
+                            {s.designation && <span className="text-[11px] text-muted-foreground truncate">• {s.designation}</span>}
+                          </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t border-border/30">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {s.staff_id ? (
-                            <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0 h-4.5 bg-primary/5 text-primary border-primary/20">
-                              {s.staff_id}
-                            </Badge>
-                          ) : (
-                            <span className="text-[10px] text-muted-foreground italic">{bn ? 'আইডি নেই' : 'No ID'}</span>
-                          )}
-                          {s.phone && (
-                            <span className="text-[11px] text-muted-foreground">
-                              📞 {s.phone}
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-0.5">
-                          <button onClick={() => navigate(`/admin/staff/profile/${s.id}`)} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary active:scale-95" title={bn ? 'প্রোফাইল দেখুন' : 'View Profile'}>
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          {isAdminRole(role) && (
-                            <button 
-                              onClick={() => setMonthlyAttendanceStaff(s)} 
-                              className={`p-1 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary active:scale-95 ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`} 
-                              disabled={isPending}
-                              title={bn ? 'হাজিরা ও ডিউটি রিপোর্ট' : 'Attendance & Duty Report'}
-                            >
-                              <ClipboardList className="w-4 h-4 text-primary" />
-                            </button>
-                          )}
-                          {canEditItem && (
-                            <button 
-                              disabled={isPending}
-                              onClick={() => {
-                                const path = cat === 'teacher' ? 'teachers' : cat === 'administrative' ? 'administrative-staff' : cat === 'support' ? 'support-staff' : cat === 'director' ? 'directors' : cat === 'committee_member' ? 'committee-members' : 'general-staff';
-                                navigate(`/admin/${path}/edit/${s.id}`);
-                              }} 
-                              className={`p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary active:scale-95 ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`} 
-                              title={bn ? 'সম্পাদনা' : 'Edit'}
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </button>
-                          )}
-                          {isAdminRole(role) && canEditItem && s.status === 'active' && isFeatureAllowed('action_salary_view') !== false && (
-                            <button 
-                              onClick={() => setLetterStaff(s)} 
-                              className={`p-1 rounded-lg hover:bg-accent/10 text-muted-foreground hover:text-accent active:scale-95 ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`} 
-                              disabled={isPending}
-                              title={bn ? 'পদোন্নতি / বেতন পত্র' : 'Promotion / Salary Letter'}
-                            >
-                              <Award className="w-4 h-4" />
-                            </button>
-                          )}
-                          {isAdminRole(role) && canEditItem && s.status === 'active' && (
-                            <button 
-                              onClick={() => setDutyStaff(s)} 
-                              className={`p-1 rounded-lg hover:bg-primary/10 ${s.duty_start_time ? 'text-primary' : 'text-muted-foreground hover:text-primary'} active:scale-95 ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`} 
-                              disabled={isPending}
-                              title={bn ? 'ব্যক্তিগত ডিউটি সময়' : 'Personal Duty Time'}
-                            >
-                              <Clock className="w-4 h-4" />
-                            </button>
-                          )}
-                          {canEditItem && (s.status === 'active' || s.status === 'inactive') && isAdminRole(role) && (
-                            <button
-                              disabled={statusMutation.isPending || isPending}
-                              onClick={async () => { const next = s.status === 'active' ? 'inactive' : 'active'; const staffName = displayNames.primary || (s.name_bn || s.name_en); const ok = await confirm({ title: bn ? (next === 'active' ? 'স্টাফ সক্রিয় করবেন?' : 'স্টাফ নিষ্ক্রিয় করবেন?') : (next === 'active' ? 'Activate staff?' : 'Deactivate staff?'), description: bn ? `"${staffName}" কে ${next === 'active' ? 'সক্রিয়' : 'নিষ্ক্রিয়'} করতে চান?` : `Are you sure you want to ${next === 'active' ? 'activate' : 'deactivate'} "${staffName}"?`, confirmText: bn ? 'হ্যাঁ' : 'Yes', cancelText: bn ? 'বাতিল' : 'Cancel', variant: next === 'active' ? 'default' : 'warning' }); if (!ok) return; statusMutation.mutate({ id: s.id, status: next }); }}
-                              className={`p-1 rounded-lg ${s.status === 'active' ? 'hover:bg-destructive/10 text-muted-foreground hover:text-destructive' : 'hover:bg-success/10 text-muted-foreground hover:text-success'} active:scale-95 ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
-                              title={s.status === 'active' ? (bn ? 'নিষ্ক্রিয় করুন' : 'Inactivate') : (bn ? 'সক্রিয় করুন' : 'Activate')}
-                            >
-                              {s.status === 'active' ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
-                            </button>
-                          )}
-                          {canDeleteItem && isFeatureAllowed('action_delete_staff') !== false && (
-                            <button 
-                              disabled={isPending}
-                              onClick={() => setDeleteId(s.id)} 
-                              className={`p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-destructive active:scale-95 ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`} 
-                              title={bn ? 'মুছুন' : 'Delete'}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
+                      <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/admin/staff/profile/${s.id}`)}
+                          className="gap-1.5 text-xs font-semibold rounded-xl shadow-xs"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-primary" />
+                          <span>{bn ? 'প্রোফাইল' : 'Profile'}</span>
+                        </Button>
                       </div>
                     </div>
                   );
@@ -948,255 +856,75 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
               {/* Desktop Table View (>= md) */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
-                   <thead className="bg-muted/40 border-b border-border/60">
-                     <tr>
-                       <th className="text-center w-12 px-3 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'ক্রম' : '#'}</th>
-                       <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('name')}>
-                         {bn ? 'নাম' : 'Name'} <span className="ml-1 opacity-60">{sortIcon('name')}</span>
-                       </th>
-                       <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('staff_id')}>
-                         {bn ? 'স্টাফ আইডি' : 'Staff ID'} <span className="ml-1 opacity-60">{sortIcon('staff_id')}</span>
-                       </th>
-                       <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('designation')}>
-                         {bn ? 'পদবী' : 'Designation'} <span className="ml-1 opacity-60">{sortIcon('designation')}</span>
-                       </th>
-                       <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('department')}>
-                         {bn ? 'ডিপার্টমেন্ট' : 'Department'} <span className="ml-1 opacity-60">{sortIcon('department')}</span>
-                       </th>
-                       <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'মোবাইল' : 'Mobile'}</th>
-                       {isAdminRole(role) && <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'অ্যাকাউন্ট' : 'Account'}</th>}
-                       <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('status')}>
-                         {bn ? 'স্ট্যাটাস' : 'Status'} <span className="ml-1 opacity-60">{sortIcon('status')}</span>
-                       </th>
-                       <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'পেন্ডিং অবস্থা' : 'Pending Status'}</th>
-                       <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'অ্যাকশন' : 'Action'}</th>
-                     </tr>
+                  <thead className="bg-muted/40 border-b border-border/60">
+                    <tr>
+                      <th className="text-center w-12 px-4 py-3.5 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'ক্রম' : '#'}</th>
+                      <th className="text-left px-5 py-3.5 text-xs font-semibold text-muted-foreground uppercase cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('name')}>
+                        {bn ? 'স্টাফের নাম' : 'Staff Name'} <span className="ml-1 opacity-60">{sortIcon('name')}</span>
+                      </th>
+                      <th className="text-left px-5 py-3.5 text-xs font-semibold text-muted-foreground uppercase cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('staff_id')}>
+                        {bn ? 'আইডি নাম্বার' : 'Staff ID'} <span className="ml-1 opacity-60">{sortIcon('staff_id')}</span>
+                      </th>
+                      <th className="text-right px-6 py-3.5 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'প্রোফাইল' : 'Profile'}</th>
+                    </tr>
                   </thead>
                   <tbody className="divide-y divide-border/30">
-                    {filtered.map((s: any, i: number) => (
-                      <tr key={s.id} className="hover:bg-muted/30 transition-colors duration-150">
-                        <td className="text-center px-3 py-3 text-xs text-muted-foreground font-mono">{i + 1}</td>
-                        <td className="px-4 py-3">
-                          {(() => {
-                            const displayNames = getStaffDisplayNames(s.name_bn, s.name_en, bn);
-                            return (
-                              <div className="flex items-center gap-3">
-                                {s.photo_url ? (
-                                  <img src={s.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" />
-                                ) : (
-                                  <div className="w-9 h-9 rounded-full bg-accent/20 flex items-center justify-center text-accent-foreground font-bold text-sm">
-                                    {displayNames.primary?.[0] || '?'}
-                                  </div>
-                                )}
-                                <div>
-                                  <span className="font-medium text-foreground text-sm block">{displayNames.primary || '-'}</span>
-                                  {displayNames.secondary && <span className="text-xs text-muted-foreground">{displayNames.secondary}</span>}
+                    {filtered.map((s: any, i: number) => {
+                      const displayNames = getStaffDisplayNames(s.name_bn, s.name_en, bn);
+                      return (
+                        <tr 
+                          key={s.id} 
+                          className="hover:bg-muted/30 transition-colors duration-150 cursor-pointer group"
+                          onClick={() => navigate(`/admin/staff/profile/${s.id}`)}
+                        >
+                          <td className="text-center px-4 py-3.5 text-xs text-muted-foreground font-mono">{i + 1}</td>
+                          <td className="px-5 py-3.5">
+                            <div className="flex items-center gap-3">
+                              {s.photo_url ? (
+                                <img src={s.photo_url} alt="" className="w-10 h-10 rounded-full object-cover border border-border/60 shadow-xs" />
+                              ) : (
+                                <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm border border-primary/20">
+                                  {displayNames.primary?.[0] || '?'}
                                 </div>
+                              )}
+                              <div>
+                                <span className="font-semibold text-foreground text-sm block group-hover:text-primary transition-colors">
+                                  {displayNames.primary || '-'}
+                                </span>
+                                {displayNames.secondary && (
+                                  <span className="text-xs text-muted-foreground block">{displayNames.secondary}</span>
+                                )}
+                                {s.designation && (
+                                  <span className="text-[11px] text-muted-foreground/80 block mt-0.5">{s.designation}</span>
+                                )}
                               </div>
-                            );
-                          })()}
-                        </td>
-                        <td className="px-4 py-3">
-                          {(s as any).staff_id ? (
-                            <Badge variant="outline" className="font-mono text-xs bg-primary/5 text-primary border-primary/20">{(s as any).staff_id}</Badge>
-                          ) : (
-                            <span className="text-xs text-muted-foreground italic">{bn ? 'জেনারেট হয়নি' : 'Not generated'}</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          {(() => {
-                            const cat = getStaffCategory(s, designationsMap, activeCategoryKeys);
-                            const catDesignations = designationsList.filter((d: any) => d.staff_category === cat);
-                            const isPending = isRecordPending(s.id);
-                            const canChangeDesignation = isAdminRole(role) && canEditItem && isFeatureAllowed('tab_designations') !== false;
-
-                            if (!canChangeDesignation) {
-                              return <span className="text-xs font-medium text-foreground">{s.designation || '-'}</span>;
-                            }
-
-                            return (
-                              <Select
-                                value={s.designation || ''}
-                                disabled={isPending}
-                                onValueChange={(val) => designationMutation.mutate({ id: s.id, designation: val })}
-                              >
-                                <SelectTrigger className={`h-7 text-xs w-[150px] ${isPending ? 'opacity-60 cursor-not-allowed' : ''}`}>
-                                  <SelectValue placeholder={bn ? 'পদবী নির্বাচন' : 'Select'} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {catDesignations.map((d: any) => (
-                                    <SelectItem key={d.id} value={bn ? d.name_bn : d.name}>
-                                      {bn ? d.name_bn : d.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            );
-                          })()}
-                        </td>
-                        <td className="px-4 py-3">
-                          {(() => {
-                            const isPending = isRecordPending(s.id);
-                            const canChangeCategory = isAdminRole(role) && canEditItem && isFeatureAllowed('tab_designations') !== false;
-                            const cat = getStaffCategory(s, designationsMap, activeCategoryKeys);
-
-                            if (!canChangeCategory) {
-                              return <Badge variant="secondary" className="text-xs font-normal">{labelForCategory(cat)}</Badge>;
-                            }
-
-                            return (
-                              <Select
-                                value={cat}
-                                disabled={isPending}
-                                onValueChange={(val) => categoryMutation.mutate({ id: s.id, category: val })}
-                              >
-                                <SelectTrigger className={`h-7 text-xs w-[130px] ${isPending ? 'opacity-60 cursor-not-allowed' : ''}`}>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {(staffCategories as any[]).map((category: any) => (
-                                    <SelectItem key={category.key} value={category.key}>{labelForCategory(category.key)}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            );
-                          })()}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-muted-foreground">{s.phone || '-'}</td>
-                        {isAdminRole(role) && (
-                        <td className="px-4 py-3">
-                          {s.user_id ? (
-                            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs">
-                              {bn ? 'সক্রিয়' : 'Linked'}
-                            </Badge>
-                          ) : (
-                            <button
-                              onClick={() => openAccountDialog(s)}
-                              className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"
+                            </div>
+                          </td>
+                          <td className="px-5 py-3.5">
+                            {(s as any).staff_id ? (
+                              <Badge variant="outline" className="font-mono text-xs bg-primary/5 text-primary border-primary/20 font-semibold px-2.5 py-0.5">
+                                {(s as any).staff_id}
+                              </Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground italic">{bn ? 'জেনারেট হয়নি' : 'Not generated'}</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-3.5 text-right" onClick={(e) => e.stopPropagation()}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => navigate(`/admin/staff/profile/${s.id}`)}
+                              className="gap-2 text-xs font-semibold hover:bg-primary hover:text-primary-foreground transition-all shadow-xs rounded-xl"
                             >
-                              <UserPlus className="w-3.5 h-3.5" />
-                              {bn ? 'অ্যাকাউন্ট তৈরি' : 'Create Account'}
-                            </button>
-                          )}
-                        </td>
-                        )}
-                        <td className="px-4 py-3">
-                          {isStaffResigned(s) ? (
-                            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-destructive/10 text-destructive border border-destructive/20 inline-flex items-center gap-1">
-                              {bn ? 'পদত্যাগী' : 'Resigned'}
-                              {getResignDate(s.id) && <span className="opacity-75 text-[10px]">({getResignDate(s.id)})</span>}
-                            </span>
-                          ) : (
-                            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                              s.status === 'active' ? 'bg-success/10 text-success' : 
-                              s.status === 'pending' ? 'bg-warning/10 text-warning' : 
-                              'bg-destructive/10 text-destructive'
-                            }`}>
-                              {s.status === 'active' ? (bn ? 'সক্রিয়' : 'Active') : 
-                               s.status === 'pending' ? (bn ? 'আবেদন' : 'Pending') : 
-                               (bn ? 'নিষ্ক্রিয়' : 'Inactive')}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          {isRecordPending(s.id) && (
-                            <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse text-[10px]">
-                              <Clock className="w-3 h-3 mr-1" />
-                              {bn ? 'অ্যাডমিন অনুমোদনের অপেক্ষায়' : 'Awaiting Admin Approval'}
-                            </Badge>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-right flex items-center justify-end gap-1">
-                          {s.status === 'pending' && isAdminRole(role) && (
-                            <>
-                              <button 
-                                onClick={() => statusMutation.mutate({ id: s.id, status: 'active' })} 
-                                className={`p-2 rounded-lg hover:bg-success/10 text-success ${isRecordPending(s.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
-                                title={bn ? 'অনুমোদন' : 'Approve'} 
-                                disabled={statusMutation.isPending || isRecordPending(s.id)}
-                              >
-                                <Check className="w-4 h-4" />
-                              </button>
-                              <button 
-                                onClick={() => setDeleteId(s.id)} 
-                                className={`p-2 rounded-lg hover:bg-destructive/10 text-destructive ${isRecordPending(s.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
-                                title={bn ? 'বাতিল' : 'Reject'} 
-                                disabled={statusMutation.isPending || isRecordPending(s.id)}
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </>
-                          )}
-                          <button onClick={() => navigate(`/admin/staff/profile/${s.id}`)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary" title={bn ? 'প্রোফাইল দেখুন' : 'View Profile'}><Eye className="w-4 h-4" /></button>
-                          {isAdminRole(role) && (
-                            <button 
-                              onClick={() => setMonthlyAttendanceStaff(s)} 
-                              className={`p-2 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary ${isRecordPending(s.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
-                              disabled={isRecordPending(s.id)}
-                              title={bn ? 'হাজিরা ও ডিউটি রিপোর্ট' : 'Attendance & Duty Report'}
-                            >
-                              <ClipboardList className="w-4 h-4 text-primary" />
-                            </button>
-                          )}
-                          {isAdminRole(role) && canEditItem && s.status === 'active' && isFeatureAllowed('action_salary_view') !== false && (
-                            <button 
-                              onClick={() => setLetterStaff(s)} 
-                              className={`p-2 rounded-lg hover:bg-accent/10 text-muted-foreground hover:text-accent ${isRecordPending(s.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
-                              disabled={isRecordPending(s.id)}
-                              title={bn ? 'পদোন্নতি / বেতন পত্র' : 'Promotion / Salary Letter'}
-                            >
-                              <Award className="w-4 h-4" />
-                            </button>
-                          )}
-                          {isAdminRole(role) && canEditItem && s.status === 'active' && (
-                            <button 
-                              onClick={() => setDutyStaff(s)} 
-                              className={`p-2 rounded-lg hover:bg-primary/10 ${s.duty_start_time ? 'text-primary' : 'text-muted-foreground hover:text-primary'} ${isRecordPending(s.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
-                              disabled={isRecordPending(s.id)}
-                              title={bn ? 'ব্যক্তিগত ডিউটি সময়' : 'Personal Duty Time'}
-                            >
-                              <Clock className="w-4 h-4" />
-                            </button>
-                          )}
-                          {canEditItem && (s.status === 'active' || s.status === 'inactive') && isAdminRole(role) && (
-                            <button
-                              disabled={statusMutation.isPending || isRecordPending(s.id)}
-                              onClick={async () => { const next = s.status === 'active' ? 'inactive' : 'active'; const staffName = getStaffDisplayNames(s.name_bn, s.name_en, bn).primary || (s.name_bn || s.name_en); const ok = await confirm({ title: bn ? (next === 'active' ? 'স্টাফ সক্রিয় করবেন?' : 'স্টাফ নিষ্ক্রিয় করবেন?') : (next === 'active' ? 'Activate staff?' : 'Deactivate staff?'), description: bn ? `"${staffName}" কে ${next === 'active' ? 'সক্রিয়' : 'নিষ্ক্রিয়'} করতে চান?` : `Are you sure you want to ${next === 'active' ? 'activate' : 'deactivate'} "${staffName}"?`, confirmText: bn ? 'হ্যাঁ' : 'Yes', cancelText: bn ? 'বাতিল' : 'Cancel', variant: next === 'active' ? 'default' : 'warning' }); if (!ok) return; statusMutation.mutate({ id: s.id, status: next }); }}
-                              className={`p-2 rounded-lg ${s.status === 'active' ? 'hover:bg-destructive/10 text-muted-foreground hover:text-destructive' : 'hover:bg-success/10 text-muted-foreground hover:text-success'} ${isRecordPending(s.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
-                              title={s.status === 'active' ? (bn ? 'নিষ্ক্রিয় করুন' : 'Inactivate') : (bn ? 'সক্রিয় করুন' : 'Activate')}
-                            >
-                              {s.status === 'active' ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
-                            </button>
-                          )}
-                          {canEditItem && (
-                            <button 
-                              disabled={isRecordPending(s.id)}
-                              onClick={() => {
-                                const cat = getStaffCategory(s, designationsMap, activeCategoryKeys);
-                                const path = cat === 'teacher' ? 'teachers' : cat === 'administrative' ? 'administrative-staff' : cat === 'support' ? 'support-staff' : cat === 'director' ? 'directors' : cat === 'committee_member' ? 'committee-members' : 'general-staff';
-                                navigate(`/admin/${path}/edit/${s.id}`);
-                              }} 
-                              className={`p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary ${isRecordPending(s.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
-                              title={bn ? 'সম্পাদনা' : 'Edit'}
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </button>
-                          )}
-                          {canDeleteItem && isFeatureAllowed('action_delete_staff') !== false && (
-                            <button 
-                              disabled={isRecordPending(s.id)}
-                              onClick={() => setDeleteId(s.id)} 
-                              className={`p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-destructive ${isRecordPending(s.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
-                              title={bn ? 'মুছুন' : 'Delete'}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                              <Eye className="w-4 h-4 text-primary" />
+                              <span>{bn ? 'প্রোফাইল দেখুন' : 'View Profile'}</span>
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                     {filtered.length === 0 && (
-                      <tr><td colSpan={8} className="text-center py-8 text-sm text-muted-foreground">{bn ? 'কোনো কর্মী পাওয়া যায়নি' : 'No staff found'}</td></tr>
+                      <tr><td colSpan={4} className="text-center py-8 text-sm text-muted-foreground">{bn ? 'কোনো কর্মী পাওয়া যায়নি' : 'No staff found'}</td></tr>
                     )}
                   </tbody>
                 </table>
