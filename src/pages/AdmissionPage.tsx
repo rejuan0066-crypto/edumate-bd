@@ -414,7 +414,7 @@ const AdmissionPage = () => {
       const key = f.default_value;
       if (!key || !f.is_active || !f.is_required) return;
       const val = form[key];
-      if (key === 'address_permanent' || key === 'address_present' || key === 'roll_number' || key === 'registration_no') return;
+      if (key === 'address_permanent' || key === 'address_present' || key === 'roll_number' || key === 'registration_no' || key === 'student_type' || key === 'student_category' || key === 'is_free') return;
       if (key === 'guardian_name' || key === 'guardian_relation' || key === 'guardian_phone' || key === 'guardian_nid') {
         if (form.guardian_type !== 'other') return;
       }
@@ -499,53 +499,9 @@ const AdmissionPage = () => {
         );
 
       case 'student_type':
-        return (
-          <div className="bg-white dark:bg-card border border-slate-200/90 dark:border-border rounded-2xl p-4 shadow-sm flex flex-col justify-between gap-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-800 dark:text-foreground flex items-center gap-1.5">
-                <User className="w-4 h-4 text-emerald-600" />
-                {bn ? 'ছাত্রের ধরন (Student Type)' : 'Student Type'}
-              </span>
-              <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-md">
-                {bn ? 'আবশ্যক' : 'Required'}
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-2 bg-slate-100 dark:bg-muted/70 p-1.5 rounded-xl border border-slate-200 dark:border-border">
-              <button
-                type="button"
-                onClick={() => setForm(prev => ({ ...prev, student_type: 'new' }))}
-                className={`py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 ${
-                  form.student_type === 'new'
-                    ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/30 scale-[1.02]'
-                    : 'bg-white dark:bg-card text-slate-600 dark:text-muted-foreground hover:text-slate-900 font-semibold border border-slate-200/80 dark:border-border/60 shadow-2xs'
-                }`}
-              >
-                {form.student_type === 'new' ? (
-                  <CheckCircle className="w-3.5 h-3.5 text-white shrink-0" />
-                ) : (
-                  <Plus className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                )}
-                <span>{bn ? 'নতুন ছাত্র' : 'New Student'}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setForm(prev => ({ ...prev, student_type: 'old' }))}
-                className={`py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 ${
-                  form.student_type === 'old'
-                    ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/30 scale-[1.02]'
-                    : 'bg-white dark:bg-card text-slate-600 dark:text-muted-foreground hover:text-slate-900 font-semibold border border-slate-200/80 dark:border-border/60 shadow-2xs'
-                }`}
-              >
-                {form.student_type === 'old' ? (
-                  <CheckCircle className="w-3.5 h-3.5 text-white shrink-0" />
-                ) : (
-                  <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                )}
-                <span>{bn ? 'পুরাতন ছাত্র' : 'Old Student'}</span>
-              </button>
-            </div>
-          </div>
-        );
+      case 'student_category':
+      case 'is_free':
+        return null;
 
       case 'residence_type':
         return (
@@ -979,69 +935,9 @@ const AdmissionPage = () => {
 
       return (
         <div key={sectionKey} className="space-y-5">
-          {/* Top Row: Student Type & Residence Type Segmented Cards (1:1 Mockup Match) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {typeField ? renderSystemField('student_type', typeField) : renderSystemField('student_type', { label: 'Student Type', label_bn: 'ছাত্রের ধরন', default_value: 'student_type' } as any)}
+          {/* Residence Type (Full Width) */}
+          <div>
             {resField ? renderSystemField('residence_type', resField) : renderSystemField('residence_type', { label: 'Residence', label_bn: 'আবাসন ধরন', default_value: 'residence_type' } as any)}
-          </div>
-
-          {/* Old student search */}
-          {form.student_type === 'old' && (
-            <div className="p-4 rounded-2xl bg-secondary/50 border border-border space-y-3 shadow-2xs">
-              <p className="text-sm font-semibold flex items-center gap-2">
-                <Search className="w-4 h-4 text-primary" />
-                {bn ? 'পুরাতন ছাত্রের তথ্য অনুসন্ধান' : 'Search Old Student'}
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <Input placeholder={bn ? 'রোল' : 'Roll'} value={oldRoll} onChange={e => setOldRoll(e.target.value)} className="bg-background rounded-xl" />
-                <Input placeholder={bn ? 'ভর্তি সেশন' : 'Session'} value={oldSession} onChange={e => setOldSession(e.target.value)} className="bg-background rounded-xl" />
-                <Select value={oldClass} onValueChange={setOldClass}>
-                  <SelectTrigger className="bg-background rounded-xl"><SelectValue placeholder={bn ? 'শ্রেণী' : 'Class'} /></SelectTrigger>
-                  <SelectContent>{classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <Button type="button" variant="outline" onClick={handleOldStudentSearch} className="flex items-center gap-2 rounded-xl text-xs">
-                <Search className="w-3.5 h-3.5" /> {bn ? 'অনুসন্ধান' : 'Search'}
-              </Button>
-            </div>
-          )}
-
-          {/* Student Category & Free Student */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl border border-primary/25 bg-gradient-to-r from-primary/5 via-background to-secondary/30 shadow-2xs">
-            <div>
-              <Label className="text-xs font-semibold text-foreground uppercase tracking-wider">{bn ? 'ছাত্রের ক্যাটাগরি' : 'Student Category'} <span className="text-destructive">*</span></Label>
-              <Select value={form.student_category} onValueChange={v => {
-                setForm(prev => ({
-                  ...prev,
-                  student_category: v,
-                  is_orphan: v === 'orphan',
-                  is_poor: v === 'poor',
-                }));
-              }}>
-                <SelectTrigger className="bg-background mt-1.5 h-10 rounded-xl"><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
-                <SelectContent>
-                  {studentCategories.map((cat: any) => (
-                    <SelectItem key={cat.id} value={cat.name}>{bn ? cat.name_bn : cat.name}</SelectItem>
-                  ))}
-                  {studentCategories.length === 0 && (
-                    <SelectItem value="general">{bn ? 'সাধারণ' : 'General'}</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center justify-between gap-3 p-3 rounded-xl border border-border/80 bg-background self-end shadow-2xs">
-              <div className="flex items-center gap-3">
-                <Switch id="isFree" checked={form.is_free} onCheckedChange={v => setForm(prev => ({ ...prev, is_free: !!v }))} />
-                <Label htmlFor="isFree" className="text-xs sm:text-sm font-semibold cursor-pointer">
-                  {bn ? 'বিনা বেতন (Free Student)' : 'Free Student (No Fee)'}
-                </Label>
-              </div>
-              {form.is_free && (
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold border border-emerald-500/20">
-                  {bn ? 'সক্রিয়' : 'Active'}
-                </span>
-              )}
-            </div>
           </div>
 
           {/* Group 1: Academic Information (Exact Mockup Match) */}

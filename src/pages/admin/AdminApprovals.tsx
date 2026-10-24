@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
@@ -158,6 +159,8 @@ const AdminApprovals = () => {
   const [calculatingRoll, setCalculatingRoll] = useState(false);
   const [editStudentForModal, setEditStudentForModal] = useState<any | null>(null);
   const [showEditAdmissionForm, setShowEditAdmissionForm] = useState(false);
+  const [assignedCategory, setAssignedCategory] = useState('general');
+  const [assignedIsFree, setAssignedIsFree] = useState(false);
 
   // Staff Approval Modal States (review, salary, signatures, approver)
   const [staffApprovalModal, setStaffApprovalModal] = useState<any | null>(null);
@@ -179,6 +182,15 @@ const AdminApprovals = () => {
     queryFn: async () => {
       const data = await fetchInstitutionInfo();
       return data;
+    },
+  });
+
+  // Student Categories for approval assignment
+  const { data: studentCategories = [] } = useQuery({
+    queryKey: ['student-categories-approvals'],
+    queryFn: async () => {
+      const { data } = await supabase.from('student_categories').select('id, name, name_bn').order('name');
+      return data || [];
     },
   });
 
@@ -435,6 +447,8 @@ const AdminApprovals = () => {
     setStudentApproverName(currentProfile?.full_name || institution?.name || (bn ? 'অধ্যক্ষ' : 'Principal'));
     setStudentApproverDesignation(bn ? 'অধ্যক্ষ / ভর্তি পরিচালক' : 'Principal / Admission Incharge');
     setStudentApproverDate(new Date().toISOString().split('T')[0]);
+    setAssignedCategory(s.student_category || (s.is_poor ? 'poor' : s.is_orphan ? 'orphan' : 'general'));
+    setAssignedIsFree(!!s.is_free);
 
     let roll = s.roll_number ? String(s.roll_number) : '';
     let reg = s.registration_no || s.student_id || '';
@@ -544,6 +558,10 @@ const AdminApprovals = () => {
         roll_number: finalRoll || null,
         registration_no: finalReg || null,
         student_id: studentApprovalModal?.student_id || finalReg || null,
+        student_category: assignedCategory,
+        is_free: assignedIsFree,
+        is_orphan: assignedCategory === 'orphan',
+        is_poor: assignedCategory === 'poor' || assignedCategory === 'insolvent',
         extra_fields: updatedExtra,
       };
 
@@ -2985,6 +3003,62 @@ const AdminApprovals = () => {
                       />
                       <p className="text-[11px] text-muted-foreground">
                         {bn ? '💡 ফরম্যাট: [বিভাগ প্রিফিক্স]-[শিক্ষাবর্ষ][রোল]' : 'Format: [Prefix]-[Year][Roll]'}
+                      </p>
+                    </div>
+
+                    {/* Student Category Field */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-foreground">
+                        {bn ? 'ছাত্রের ক্যাটাগরি *' : 'Student Category *'}
+                      </Label>
+                      <Select value={assignedCategory} onValueChange={setAssignedCategory}>
+                        <SelectTrigger className="h-10 bg-background text-xs font-medium">
+                          <SelectValue placeholder={bn ? 'ক্যাটাগরি নির্বাচন করুন' : 'Select Category'} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {studentCategories.map((cat: any) => (
+                            <SelectItem key={cat.id} value={cat.name}>
+                              {bn ? cat.name_bn : cat.name}
+                            </SelectItem>
+                          ))}
+                          {studentCategories.length === 0 && (
+                            <>
+                              <SelectItem value="general">{bn ? 'সাধারণ' : 'General'}</SelectItem>
+                              <SelectItem value="poor">{bn ? 'অসচ্ছল' : 'Insolvent'}</SelectItem>
+                              <SelectItem value="orphan">{bn ? 'এতিম' : 'Orphan'}</SelectItem>
+                            </>
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[11px] text-muted-foreground">
+                        {bn ? '💡 ভর্তির অনুমোদন অনুযায়ী ক্যাটাগরি নির্ধারণ করুন।' : 'Assign student category on admission.'}
+                      </p>
+                    </div>
+
+                    {/* Free Student (No Fee) Toggle */}
+                    <div className="space-y-1.5 flex flex-col justify-end">
+                      <Label className="text-xs font-bold text-foreground">
+                        {bn ? 'ফি মওকুফ সুবিধা' : 'Fee Waiver'}
+                      </Label>
+                      <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-border bg-background h-10">
+                        <div className="flex items-center gap-2.5">
+                          <Switch
+                            id="adminIsFree"
+                            checked={assignedIsFree}
+                            onCheckedChange={setAssignedIsFree}
+                          />
+                          <Label htmlFor="adminIsFree" className="text-xs font-semibold cursor-pointer">
+                            {bn ? 'বিনা বেতন (Free Student)' : 'Free Student (No Fee)'}
+                          </Label>
+                        </div>
+                        {assignedIsFree && (
+                          <Badge className="bg-emerald-600 text-white text-[10px] py-0 px-1.5 font-bold">
+                            {bn ? 'সক্রিয়' : 'Active'}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        {bn ? '💡 সক্রিয় করলে শিক্ষার্থীর মাসিক ফি ফ্রি প্রযোজ্য হবে।' : 'No monthly fee charged if active.'}
                       </p>
                     </div>
 
