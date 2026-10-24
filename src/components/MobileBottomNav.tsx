@@ -39,7 +39,7 @@ export const MobileBottomNav = ({ onOpenMenu, canAccessPath }: MobileBottomNavPr
     return canAccessPath(path);
   };
 
-  // Primary navigation candidates in order of priority
+  // Primary navigation candidates in order of priority (হাজিরা removed from mobile bottom nav per request)
   const candidates: NavCandidate[] = [
     {
       path: '/admin',
@@ -61,13 +61,6 @@ export const MobileBottomNav = ({ onOpenMenu, canAccessPath }: MobileBottomNavPr
       labelEn: 'Accounts',
       icon: Wallet,
       matches: (p) => p.startsWith('/admin/expenses') || p.startsWith('/admin/fees') || p.startsWith('/admin/salary'),
-    },
-    {
-      path: '/admin/attendance',
-      labelBn: 'হাজিরা',
-      labelEn: 'Attendance',
-      icon: ClipboardList,
-      matches: (p) => p.startsWith('/admin/attendance'),
     },
     {
       path: '/admin/results',
@@ -106,12 +99,12 @@ export const MobileBottomNav = ({ onOpenMenu, canAccessPath }: MobileBottomNavPr
     },
   ];
 
-  // Pick up to 4 permitted tabs (Dashboard always first, then next 3 accessible)
+  // Pick up to 3 permitted tabs (Dashboard always first, then next 2 accessible) + 1 Menu button = total 4 spacious tabs
   const accessibleItems: NavCandidate[] = [];
   const dashboardItem = candidates[0];
   accessibleItems.push(dashboardItem);
 
-  for (let i = 1; i < candidates.length && accessibleItems.length < 4; i++) {
+  for (let i = 1; i < candidates.length && accessibleItems.length < 3; i++) {
     const item = candidates[i];
     if (isAccessible(item.path)) {
       accessibleItems.push(item);
@@ -164,7 +157,7 @@ export const MobileBottomNav = ({ onOpenMenu, canAccessPath }: MobileBottomNavPr
                   <span className="absolute -bottom-1 w-1 h-1 rounded-full bg-primary" />
                 )}
               </div>
-              <span className={`text-[10px] mt-0.5 tracking-tight truncate max-w-[64px] ${isActive ? 'font-bold' : 'font-medium'}`}>
+              <span className={`text-[10px] sm:text-xs mt-0.5 tracking-tight truncate max-w-[84px] text-center ${isActive ? 'font-bold' : 'font-medium'}`}>
                 {label}
               </span>
             </Link>
