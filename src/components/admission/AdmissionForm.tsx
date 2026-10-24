@@ -1877,6 +1877,9 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     }
   };
 
+  const activeSessionObj = academicSessions.find((s: any) => s.id === form.admission_session || s.name === form.admission_session);
+  const sessionDisplayName = (bn ? (activeSessionObj?.name_bn || activeSessionObj?.name) : activeSessionObj?.name) || form.session_year || (bn ? 'চলতি' : 'Current');
+
   return (
     <Dialog open={open} onOpenChange={o => { onOpenChange(o); if (!o) resetForm(); }}>
       <DialogContent className="sm:max-w-4xl max-h-[92vh] overflow-y-auto dialog-content-scroll border border-slate-200/90 dark:border-border rounded-3xl shadow-2xl p-0 bg-white dark:bg-card overflow-hidden">
@@ -1893,7 +1896,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                   {isEditMode ? (bn ? 'ছাত্রের তথ্য সম্পাদনা' : 'Edit Student Details') : (bn ? 'ভর্তি আবেদন ফরম' : 'Admission Application Form')}
                 </h2>
                 <span className="text-xs bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2.5 py-0.5 rounded-full font-semibold">
-                  {form.admission_session || '২০২৬'} শিক্ষাবর্ষ
+                  {sessionDisplayName} {bn ? 'শিক্ষাবর্ষ' : 'Academic Year'}
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-muted-foreground mt-0.5">

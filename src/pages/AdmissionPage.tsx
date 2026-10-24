@@ -1,7 +1,7 @@
 import { normalizeGender } from '@/lib/ocrCardParser';
 import PublicLayout from '@/components/PublicLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,14 +13,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import PhotoUpload from '@/components/PhotoUpload';
 import AddressFields, { type AddressData } from '@/components/AddressFields';
 import PhoneInput from '@/components/PhoneInput';
-import { Camera, Search, Loader2, AlertCircle, CheckCircle, Plus, Printer, Download, RotateCcw, ArrowLeft, ArrowRight } from 'lucide-react';
+import {
+  Search, Loader2, AlertCircle, CheckCircle, Plus,
+  Printer, Download, RotateCcw, ArrowLeft, ArrowRight,
+  GraduationCap, User, UserCheck, Heart, MapPin, ShieldCheck, Sparkles
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { DatePicker } from '@/components/ui/date-picker';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
-import { uploadToCloudinary } from '@/lib/cloudinary';
 import { formatAddress as formatAddressBn } from '@/lib/banglaAddressHelper';
+
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 
 const formatAddress = (addr: AddressData, bn = true) => formatAddressBn(addr, bn);
@@ -30,7 +35,7 @@ const AdmissionPage = () => {
   const bn = language === 'bn';
   const { fields: configFields, isLoaded, isFieldActive, getField, getFieldsBySection, getCustomFields, sections } = useAdmissionFormConfig();
 
-  // Form state (same as admin form)
+  // Form state
   const [currentStep, setCurrentStep] = useState(0);
   const [form, setForm] = useState<Record<string, any>>({
     student_type: 'new', residence_type: 'non-resident',
@@ -40,9 +45,9 @@ const AdmissionPage = () => {
     admission_class: '', first_name: '', last_name: '',
     gender: 'male', religion: 'islam', date_of_birth: '',
     birth_reg_no: '', previous_class: '', previous_institute: '',
-    is_orphan: false, is_poor: false, photo_url: '',
-    father_name: '', father_occupation: '', father_nid: '', father_phone: '', father_phone_code: '+880',
-    mother_name: '', mother_occupation: '', mother_nid: '', mother_phone: '', mother_phone_code: '+880',
+    is_orphan: false, is_poor: false, is_free: false, student_category: '', photo_url: '',
+    father_name: '', father_name_en: '', father_occupation: '', father_nid: '', father_phone: '', father_phone_code: '+880',
+    mother_name: '', mother_name_en: '', mother_occupation: '', mother_nid: '', mother_phone: '', mother_phone_code: '+880',
     guardian_type: '', guardian_name: '', guardian_relation: '', guardian_phone: '', guardian_phone_code: '+880', guardian_nid: '',
   });
 
@@ -71,9 +76,25 @@ const AdmissionPage = () => {
   const [guardianNidError, setGuardianNidError] = useState('');
   const [birthRegError, setBirthRegError] = useState('');
 
-  // Photo upload
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [selectedDivisionId, setSelectedDivisionId] = useState('');
+
+  const { data: divisions = [] } = useQuery({
+    queryKey: ['divisions-active'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('divisions').select('*').eq('is_active', true).order('sort_order');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: studentCategories = [] } = useQuery({
+    queryKey: ['student_categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('student_categories').select('*').eq('is_active', true).order('sort_order');
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const { data: classes = [] } = useQuery({
     queryKey: ['classes'],
@@ -148,37 +169,26 @@ const AdmissionPage = () => {
   const footerSpacingBottom = Number(websiteAdmissionSettings?.global_footer_spacing_bottom ?? 6);
   const footerFontSize = Number(websiteAdmissionSettings?.global_footer_font_size ?? 10);
 
-  const getRollStartForClass = useCallback((classId: string) => {
-    const cls = classes.find((c: any) => c.id === classId);
-    if (!cls) return 1001;
-    const order = cls.sort_order || 1;
-    return order * 1000 + 1;
-  }, [classes]);
-
-  const generateRollNumber = useCallback(async (classId: string, sessionId: string) => {
-    if (!classId || !sessionId) return;
-    const { data, error } = await supabase.rpc('get_next_admission_roll', {
-      p_class_id: classId,
-      p_session_id: sessionId,
-    });
-    if (!error && data) {
-      setForm(prev => ({ ...prev, roll_number: String(data) }));
-    }
-  }, []);
+  const filteredClasses = selectedDivisionId
+    ? classes.filter((c: any) => c.division_id === selectedDivisionId)
+    : classes;
 
   const bnToEn = (str: any) => String(str || '').replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
 
-  const updateRegistrationFromRoll = useCallback((sessionYear: any, rollNumber: any) => {
+  const updateRegistrationFromRoll = useCallback((sessionYear: any, rollNumber: any, force = false) => {
     if (!sessionYear || !rollNumber) return;
     const year = bnToEn(String(sessionYear).trim()).slice(0, 4);
-    setForm(prev => ({ ...prev, registration_no: `${year}${rollNumber}` }));
-  }, []);
-
-  // NOTE: Public admission no longer auto-generates roll/registration.
-  // These are assigned automatically by a DB trigger when an admin approves
-  // the application from /admin/students. Kept the helpers above for reuse
-  // by admin flows (e.g. inline edit) but disabled the public auto-fill.
-  // void generateRollNumber; void updateRegistrationFromRoll;
+    const cleanRoll = bnToEn(String(rollNumber).trim());
+    const div = divisions.find((d: any) => d.id === selectedDivisionId);
+    const prefix = (div as any)?.prefix || '';
+    const newReg = prefix ? `${prefix}-${year}${cleanRoll}` : `${year}${cleanRoll}`;
+    setForm(prev => {
+      if (force || !prev.registration_no) {
+        return { ...prev, registration_no: newReg };
+      }
+      return prev;
+    });
+  }, [divisions, selectedDivisionId]);
 
   // Auto-prefill running session if not set
   useEffect(() => {
@@ -206,6 +216,7 @@ const AdmissionPage = () => {
     if (classes.length === 0) return;
     const cls = classes.find((c: any) => c.id === urlClassId);
     if (!cls) return;
+    if (cls.division_id) setSelectedDivisionId(cls.division_id);
     setForm(prev => {
       const next: Record<string, any> = { ...prev };
       if (!prev.admission_class) next.admission_class = urlClassId;
@@ -218,6 +229,14 @@ const AdmissionPage = () => {
     });
   }, [urlClassId, classes, academicSessions]);
 
+  useEffect(() => {
+    if (form.admission_class && classes.length > 0 && !selectedDivisionId) {
+      const cls = classes.find((c: any) => c.id === form.admission_class);
+      if (cls?.division_id) {
+        setSelectedDivisionId(cls.division_id);
+      }
+    }
+  }, [form.admission_class, classes, selectedDivisionId]);
 
   const calculateAge = useCallback((dateStr: string) => {
     if (!dateStr) return '';
@@ -281,43 +300,14 @@ const AdmissionPage = () => {
         photo_url: s.photo_url || '', religion: s.religion || 'islam',
         admission_session: s.admission_session || '', registration_no: s.registration_no || '',
       }));
+      if (s.division_id) setSelectedDivisionId(s.division_id);
+      if (s.class_id) setForm(prev => ({ ...prev, admission_class: s.class_id }));
       const admData = s.admission_data || {};
       if (admData.permanentAddr) setPermanentAddr(admData.permanentAddr);
       if (admData.presentAddr) setPresentAddr(admData.presentAddr);
       toast.success(bn ? 'ছাত্রের তথ্য পাওয়া গেছে' : 'Student data found');
     } else {
       toast.error(bn ? 'কোনো তথ্য পাওয়া যায়নি' : 'No data found');
-    }
-  };
-
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 300 * 1024) {
-        toast.error(bn ? 'ছবির সাইজ ৩০০KB এর কম হতে হবে' : 'Image must be less than 300KB');
-        return;
-      }
-      setPhotoFile(file);
-      const reader = new FileReader();
-      reader.onload = (ev) => setPhotoPreview(ev.target?.result as string);
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const uploadPhoto = async (): Promise<string | null> => {
-    if (!photoFile) return form.photo_url || null;
-    try {
-      const res = await uploadToCloudinary(photoFile, { folder: 'students' });
-      return res.secure_url;
-    } catch (cErr) {
-      const { data: authData } = await supabase.auth.getUser();
-      const user = authData?.user;
-      const userPrefix = user?.id || 'public-uploads';
-      const ext = photoFile.name.split('.').pop()?.toLowerCase() || 'jpg';
-      const path = `${userPrefix}/students/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
-      const { error } = await supabase.storage.from('photos').upload(path, photoFile, { upsert: false });
-      if (error) { toast.error('Photo upload failed'); return null; }
-      return `photos/${path}`;
     }
   };
 
@@ -340,37 +330,36 @@ const AdmissionPage = () => {
     previous_institute: form.previous_institute,
     admission_class: form.admission_class,
     student_type: form.student_type,
+    is_free: form.is_free,
+    student_category: form.student_category,
     custom_fields: customFieldValues,
   });
 
   const addMutation = useMutation({
     mutationFn: async () => {
-      const photoUrl = await uploadPhoto();
       const admissionData = buildAdmissionData();
       const selectedSession = academicSessions.find((s: any) => s.id === form.admission_session)
         || academicSessions.find((s: any) => s.name === form.admission_session || s.name_bn === form.admission_session || s.name === form.session_year || s.name_bn === form.session_year);
       const finalSessionName = selectedSession?.name || form.admission_session || form.session_year || null;
       const finalSessionId = selectedSession?.id || (form.admission_session && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(form.admission_session) ? form.admission_session : null);
       const finalSessionYear = form.session_year || selectedSession?.name || form.admission_session || null;
-      // Pending admissions have no generated student ID yet (roll/reg is assigned on approval);
-      // use the applicant-provided registration number as a reference if present.
       const studentId = form.registration_no || null;
 
       const payload = {
         name_bn: form.first_name.trim(),
         name_en: form.last_name.trim() || null,
-        roll_number: form.roll_number.trim() || null,
+        roll_number: form.roll_number?.trim() || null,
         father_name: form.father_name.trim() || null,
         mother_name: form.mother_name.trim() || null,
         phone: form.father_phone || null,
         guardian_phone: form.guardian_type === 'other' ? form.guardian_phone : (form.guardian_type === 'mother' ? form.mother_phone : form.father_phone) || null,
         address: formatAddress(permanentAddr) || null,
-        division_id: form.admission_class ? (classes.find((c: any) => c.id === form.admission_class) as any)?.division_id || null : null,
+        division_id: selectedDivisionId || (form.admission_class ? (classes.find((c: any) => c.id === form.admission_class) as any)?.division_id || null : null),
         class_id: form.admission_class || null,
         gender: form.gender,
         date_of_birth: form.date_of_birth || null,
-        photo_url: photoUrl,
-        student_category: form.is_orphan ? 'orphan' : form.is_poor ? 'poor' : 'general',
+        photo_url: form.photo_url || null,
+        student_category: form.student_category || (form.is_orphan ? 'orphan' : form.is_poor ? 'poor' : 'general'),
         residence_type: form.residence_type,
         admission_date: form.admission_date || null,
         birth_reg_no: form.birth_reg_no || null,
@@ -395,28 +384,10 @@ const AdmissionPage = () => {
       };
       const { error } = await supabase.from('students').insert(payload as any);
       if (error) throw error;
-      // Best-effort welcome email via SMTP (Mailtrap)
-      const recipientEmail = (payload as any).email;
-      if (recipientEmail) {
-        try {
-          await supabase.functions.invoke('send-welcome-email', {
-            body: {
-              email: recipientEmail,
-              full_name: (payload as any).name_en || (payload as any).name_bn,
-              kind: 'student',
-              student_id: studentId,
-              login_url: `${window.location.origin}/parent-portal`,
-            },
-          });
-        } catch (mailErr) {
-          console.error('send-welcome-email failed (non-fatal):', mailErr);
-        }
-      }
       return payload;
     },
     onSuccess: (payload) => {
       toast.success(bn ? 'ভর্তি আবেদন সফলভাবে জমা হয়েছে! অনুমোদনের অপেক্ষায়।' : 'Admission submitted! Pending approval.');
-      // Store submitted data for print/download
       setSubmittedData(payload);
     },
     onError: (e: any) => toast.error(e.message || 'Error submitting application'),
@@ -424,6 +395,10 @@ const AdmissionPage = () => {
 
   const handleSubmit = () => {
     const errors: Record<string, string> = {};
+
+    if (!selectedDivisionId && isFormFieldVisible('admission_class')) {
+      errors['admission_division'] = bn ? 'বিভাগ নির্বাচন আবশ্যক' : 'Division is required';
+    }
 
     configFields.forEach(f => {
       const key = f.default_value;
@@ -505,52 +480,160 @@ const AdmissionPage = () => {
         return (
           <div>
             <Label className="mb-2 block">{label}</Label>
-            <div
-              onClick={() => document.getElementById('public-photo-input')?.click()}
-              className="w-32 h-40 border-2 border-dashed border-primary/40 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all overflow-hidden"
-            >
-              {photoPreview || form.photo_url ? (
-                <img src={photoPreview || form.photo_url} alt="Student" className="w-full h-full object-cover" />
-              ) : (
-                <>
-                  <Camera className="w-8 h-8 text-muted-foreground mb-1" />
-                  <span className="text-xs text-muted-foreground">{bn ? 'ছবি তুলুন' : 'Upload'}</span>
-                </>
-              )}
-            </div>
-            <input id="public-photo-input" type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+            <PhotoUpload
+              value={form.photo_url || null}
+              onChange={(url) => setForm(prev => ({ ...prev, photo_url: url || '' }))}
+              folder="students"
+            />
           </div>
         );
 
       case 'student_type':
-        // Hidden on the public admission page — admin sets this after approval.
-        return null;
+        return (
+          <div className="bg-white dark:bg-card border border-slate-200/90 dark:border-border rounded-2xl p-4 shadow-sm flex flex-col justify-between gap-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-800 dark:text-foreground flex items-center gap-1.5">
+                <User className="w-4 h-4 text-emerald-600" />
+                {bn ? 'ছাত্রের ধরন (Student Type)' : 'Student Type'}
+              </span>
+              <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-md">
+                {bn ? 'আবশ্যক' : 'Required'}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 bg-slate-100 dark:bg-muted/70 p-1.5 rounded-xl border border-slate-200 dark:border-border">
+              <button
+                type="button"
+                onClick={() => setForm(prev => ({ ...prev, student_type: 'new' }))}
+                className={`py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 ${
+                  form.student_type === 'new'
+                    ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/30 scale-[1.02]'
+                    : 'bg-white dark:bg-card text-slate-600 dark:text-muted-foreground hover:text-slate-900 font-semibold border border-slate-200/80 dark:border-border/60 shadow-2xs'
+                }`}
+              >
+                {form.student_type === 'new' ? (
+                  <CheckCircle className="w-3.5 h-3.5 text-white shrink-0" />
+                ) : (
+                  <Plus className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                )}
+                <span>{bn ? 'নতুন ছাত্র' : 'New Student'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm(prev => ({ ...prev, student_type: 'old' }))}
+                className={`py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 ${
+                  form.student_type === 'old'
+                    ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/30 scale-[1.02]'
+                    : 'bg-white dark:bg-card text-slate-600 dark:text-muted-foreground hover:text-slate-900 font-semibold border border-slate-200/80 dark:border-border/60 shadow-2xs'
+                }`}
+              >
+                {form.student_type === 'old' ? (
+                  <CheckCircle className="w-3.5 h-3.5 text-white shrink-0" />
+                ) : (
+                  <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                )}
+                <span>{bn ? 'পুরাতন ছাত্র' : 'Old Student'}</span>
+              </button>
+            </div>
+          </div>
+        );
 
       case 'residence_type':
         return (
-          <div>
-            <Label>{label} {reqStar}</Label>
-            <div className="flex gap-3 mt-1">
-              {[{ v: 'resident', l: bn ? 'আবাসিক' : 'Resident' }, { v: 'non-resident', l: bn ? 'অনাবাসিক' : 'Non-Resident' }].map(r => (
-                <button key={r.v} type="button" onClick={() => setForm(prev => ({ ...prev, residence_type: r.v }))}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${form.residence_type === r.v ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border text-muted-foreground hover:border-primary'}`}>
-                  {r.l}
-                </button>
-              ))}
+          <div className="bg-white dark:bg-card border border-slate-200/90 dark:border-border rounded-2xl p-4 shadow-sm flex flex-col justify-between gap-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-800 dark:text-foreground flex items-center gap-1.5">
+                <MapPin className="w-4 h-4 text-emerald-600" />
+                {bn ? 'আবাসন ধরন (Residence)' : 'Residence'}
+              </span>
+              <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-md">
+                {bn ? 'আবশ্যক' : 'Required'}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 bg-slate-100 dark:bg-muted/70 p-1.5 rounded-xl border border-slate-200 dark:border-border">
+              <button
+                type="button"
+                onClick={() => setForm(prev => ({ ...prev, residence_type: 'non-resident' }))}
+                className={`py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 ${
+                  form.residence_type === 'non-resident'
+                    ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/30 scale-[1.02]'
+                    : 'bg-white dark:bg-card text-slate-600 dark:text-muted-foreground hover:text-slate-900 font-semibold border border-slate-200/80 dark:border-border/60 shadow-2xs'
+                }`}
+              >
+                {form.residence_type === 'non-resident' && (
+                  <CheckCircle className="w-3.5 h-3.5 text-white shrink-0" />
+                )}
+                <span>{bn ? 'অনাবাসিক (Day Scholar)' : 'Non-Resident'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm(prev => ({ ...prev, residence_type: 'resident' }))}
+                className={`py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 ${
+                  form.residence_type === 'resident'
+                    ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/30 scale-[1.02]'
+                    : 'bg-white dark:bg-card text-slate-600 dark:text-muted-foreground hover:text-slate-900 font-semibold border border-slate-200/80 dark:border-border/60 shadow-2xs'
+                }`}
+              >
+                {form.residence_type === 'resident' && (
+                  <CheckCircle className="w-3.5 h-3.5 text-white shrink-0" />
+                )}
+                <span>{bn ? 'আবাসিক (Hostel/Boarding)' : 'Resident'}</span>
+              </button>
             </div>
           </div>
         );
 
       case 'roll_number':
-        // Hidden on public admission — assigned automatically on admin approval.
-        return null;
+        return (
+          <div data-field={fieldKey}>
+            <Label className={errorLabel}>{label} {reqStar}</Label>
+            <Input className={`bg-background mt-1 ${errorBorder}`}
+              value={form.roll_number || ''}
+              onChange={e => {
+                const val = bnToEn(e.target.value);
+                setForm(prev => {
+                  const year = bnToEn(prev.session_year || '').trim().slice(0, 4);
+                  const prevRoll = bnToEn(prev.roll_number || '').trim();
+                  const newRoll = val.trim();
+                  const div = divisions.find((d: any) => d.id === selectedDivisionId);
+                  const prefix = (div as any)?.prefix || '';
+                  const oldReg = prefix ? `${prefix}-${year}${prevRoll}` : `${year}${prevRoll}`;
+                  const isAuto = !prev.registration_no || prev.registration_no === oldReg;
+                  const newReg = isAuto && val ? (prefix ? `${prefix}-${year}${newRoll}` : `${year}${newRoll}`) : prev.registration_no;
+                  return {
+                    ...prev,
+                    roll_number: val,
+                    registration_no: newReg,
+                  };
+                });
+              }}
+              placeholder={bn ? 'রোল নম্বর' : 'Roll Number'} />
+            <FieldError field={fieldKey} />
+          </div>
+        );
 
       case 'registration_no':
-        // Hidden on public admission — assigned automatically on admin approval.
-        return null;
+        return (
+          <div data-field={fieldKey}>
+            <Label className={errorLabel}>{label} {reqStar}</Label>
+            <div className="relative">
+              <Input className={`bg-background mt-1 pr-24 ${errorBorder}`}
+                value={form.registration_no || ''}
+                onChange={e => {
+                  const converted = bnToEn(e.target.value);
+                  setForm(prev => ({ ...prev, registration_no: converted }));
+                }}
+                placeholder={bn ? 'রেজিস্ট্রেশন নম্বর লিখুন' : 'Registration Number'} />
+              <button type="button"
+                className="absolute right-1 top-1/2 -translate-y-1/2 mt-0.5 text-xs px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                onClick={() => updateRegistrationFromRoll(form.session_year, form.roll_number || '', true)}>
+                {bn ? 'অটো' : 'Auto'}
+              </button>
+            </div>
+            <FieldError field={fieldKey} />
+          </div>
+        );
 
       case 'admission_session':
-        if (!showSession) return null;
         return (
           <div data-field={fieldKey}>
             <Label className={errorLabel}>{label} {reqStar}</Label>
@@ -576,7 +659,7 @@ const AdmissionPage = () => {
             <Input className={`bg-background mt-1 ${errorBorder}`}
               value={form.session_year || ''}
               onChange={e => {
-                const val = e.target.value;
+                const val = bnToEn(e.target.value);
                 setForm(prev => {
                   const match = academicSessions.find((s: any) => s.name === val || s.name_bn === val);
                   return {
@@ -591,14 +674,38 @@ const AdmissionPage = () => {
           </div>
         );
 
+      case 'admission_division':
+        return (
+          <div data-field="admission_division">
+            <Label className="text-sm font-medium text-foreground">{bn ? 'বিভাগ' : 'Division'} <span className="text-destructive">*</span></Label>
+            <Select value={selectedDivisionId} onValueChange={(v) => {
+              setSelectedDivisionId(v);
+              setForm(prev => ({ ...prev, admission_class: '' }));
+              if (fieldErrors['admission_division']) {
+                setFieldErrors(prev => {
+                  const copy = { ...prev };
+                  delete copy['admission_division'];
+                  return copy;
+                });
+              }
+            }}>
+              <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={bn ? 'বিভাগ নির্বাচন' : 'Select Division'} /></SelectTrigger>
+              <SelectContent>{divisions.map((d: any) => <SelectItem key={d.id} value={d.id}>{bn ? d.name_bn : d.name}</SelectItem>)}</SelectContent>
+            </Select>
+            <FieldError field="admission_division" />
+          </div>
+        );
+
       case 'admission_class':
-        if (!isFormFieldVisible('admission_class')) return null;
         return (
           <div data-field={fieldKey}>
             <Label className={errorLabel}>{label} {reqStar}</Label>
-            <Select value={form.admission_class} onValueChange={v => setForm(prev => ({ ...prev, admission_class: v }))}>
-              <SelectTrigger className={`bg-background mt-1 ${errorBorder}`}><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
-              <SelectContent>{classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}</SelectItem>)}</SelectContent>
+            <Select value={form.admission_class} onValueChange={v => setForm(prev => ({ ...prev, admission_class: v }))} disabled={!selectedDivisionId}>
+              <SelectTrigger className={`bg-background mt-1 ${errorBorder}`}><SelectValue placeholder={!selectedDivisionId ? (bn ? 'প্রথমে বিভাগ নির্বাচন করুন' : 'Select Division first') : (bn ? 'নির্বাচন' : 'Select')} /></SelectTrigger>
+              <SelectContent>
+                {filteredClasses.map((c: any) => <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}</SelectItem>)}
+                {filteredClasses.length === 0 && <SelectItem value="none" disabled>{bn ? 'এই বিভাগে কোনো শ্রেণী নেই' : 'No classes in this division'}</SelectItem>}
+              </SelectContent>
             </Select>
             <FieldError field={fieldKey} />
           </div>
@@ -606,7 +713,7 @@ const AdmissionPage = () => {
 
       case 'gender':
         return (
-          <div data-field={fieldKey}>
+          <div>
             <Label className={errorLabel}>{label} {reqStar}</Label>
             <Select value={normalizeGender(form.gender)} onValueChange={v => setForm(prev => ({ ...prev, gender: normalizeGender(v) }))}>
               <SelectTrigger className={`bg-background mt-1 ${errorBorder}`}><SelectValue /></SelectTrigger>
@@ -621,15 +728,15 @@ const AdmissionPage = () => {
 
       case 'religion':
         return (
-          <div data-field={fieldKey}>
+          <div>
             <Label className={errorLabel}>{label} {reqStar}</Label>
             <Select value={form.religion} onValueChange={v => setForm(prev => ({ ...prev, religion: v }))}>
               <SelectTrigger className={`bg-background mt-1 ${errorBorder}`}><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="islam">{bn ? 'ইসলাম' : 'Islam'}</SelectItem>
-                <SelectItem value="hinduism">{bn ? 'হিন্দু' : 'Hinduism'}</SelectItem>
-                <SelectItem value="christianity">{bn ? 'খ্রিস্টান' : 'Christianity'}</SelectItem>
-                <SelectItem value="buddhism">{bn ? 'বৌদ্ধ' : 'Buddhism'}</SelectItem>
+                <SelectItem value="hindu">{bn ? 'হিন্দু' : 'Hindu'}</SelectItem>
+                <SelectItem value="christian">{bn ? 'খ্রিস্টান' : 'Christian'}</SelectItem>
+                <SelectItem value="buddhist">{bn ? 'বৌদ্ধ' : 'Buddhist'}</SelectItem>
                 <SelectItem value="other">{bn ? 'অন্যান্য' : 'Other'}</SelectItem>
               </SelectContent>
             </Select>
@@ -649,12 +756,13 @@ const AdmissionPage = () => {
         );
 
       case 'birth_reg_no':
-        if (!isFormFieldVisible('birth_reg_no')) return null;
         return (
           <div data-field={fieldKey}>
             <Label className={errorLabel}>{label} {reqStar}</Label>
             <Input className={`bg-background mt-1 ${errorBorder || (birthRegError ? 'border-destructive ring-1 ring-destructive/30' : '')}`}
-              maxLength={17} value={form.birth_reg_no} onChange={e => validateBirthReg(e.target.value)} />
+              maxLength={17} value={form.birth_reg_no}
+              onChange={e => validateBirthReg(e.target.value)}
+              placeholder={bn ? '১৭ ডিজিটের নম্বর' : '17 digit number'} />
             {birthRegError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {birthRegError}</p>}
             {form.birth_reg_no.length === 17 && !birthRegError && <p className="text-xs text-success mt-1 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> {bn ? 'সঠিক' : 'Valid'}</p>}
             <FieldError field={fieldKey} />
@@ -663,10 +771,9 @@ const AdmissionPage = () => {
 
       case 'is_orphan':
       case 'is_poor':
-        return null; // Rendered together in special block
+        return null; // Handled in student category block
 
       case 'father_nid':
-        if (!isFormFieldVisible('father_nid')) return null;
         return (
           <div data-field={fieldKey}>
             <Label className={errorLabel}>{label}</Label>
@@ -680,7 +787,6 @@ const AdmissionPage = () => {
         );
 
       case 'mother_nid':
-        if (!isFormFieldVisible('mother_nid')) return null;
         return (
           <div data-field={fieldKey}>
             <Label className={errorLabel}>{label}</Label>
@@ -694,7 +800,6 @@ const AdmissionPage = () => {
         );
 
       case 'guardian_nid':
-        if (!isFormFieldVisible('guardian_nid')) return null;
         return (
           <div data-field={fieldKey}>
             <Label className={errorLabel}>{label} {reqStar}</Label>
@@ -856,158 +961,348 @@ const AdmissionPage = () => {
       const photoField = sectionFields.find(f => f.default_value === 'photo_url');
       const typeField = sectionFields.find(f => f.default_value === 'student_type');
       const resField = sectionFields.find(f => f.default_value === 'residence_type');
-      const orphanField = sectionFields.find(f => f.default_value === 'is_orphan');
-      const poorField = sectionFields.find(f => f.default_value === 'is_poor');
-      const otherFields = sectionFields.filter(f =>
+      const rawOtherFields = sectionFields.filter(f =>
         !['photo_url', 'student_type', 'residence_type', 'is_orphan', 'is_poor'].includes(f.default_value || '')
       );
 
+      const syntheticDivisionField: any = {
+        id: 'synthetic_admission_division',
+        default_value: 'admission_division',
+        label: 'Division',
+        label_bn: 'বিভাগ',
+        field_type: 'select',
+        is_required: true,
+        section: 'student_details',
+      };
+
+      const otherWithDiv = [...rawOtherFields];
+      if (!otherWithDiv.some(f => f.default_value === 'admission_division')) {
+        otherWithDiv.push(syntheticDivisionField);
+      }
+
+      const FIELD_ORDER = [
+        'admission_session',
+        'admission_division',
+        'admission_class',
+        'roll_number',
+        'registration_no',
+        'admission_date',
+        'session_year',
+        'first_name',
+        'last_name',
+        'gender',
+        'date_of_birth',
+        'religion',
+        'birth_reg_no',
+        'previous_class',
+        'previous_institute',
+      ];
+
+      const otherFields = otherWithDiv.sort((a, b) => {
+        const orderA = a.default_value ? FIELD_ORDER.indexOf(a.default_value) : -1;
+        const orderB = b.default_value ? FIELD_ORDER.indexOf(b.default_value) : -1;
+        if (orderA !== -1 && orderB !== -1) return orderA - orderB;
+        if (orderA !== -1) return -1;
+        if (orderB !== -1) return 1;
+        return (a.sort_order || 0) - (b.sort_order || 0);
+      });
+
+      const ACADEMIC_KEYS = ['admission_session', 'admission_division', 'admission_class', 'roll_number', 'registration_no', 'admission_date', 'session_year'];
+      const academicFields = otherFields.filter(f => ACADEMIC_KEYS.includes(f.default_value || ''));
+      const personalFields = otherFields.filter(f => !ACADEMIC_KEYS.includes(f.default_value || ''));
+
       return (
-        <div key={sectionKey} className="card-elevated p-6 space-y-4">
-          <h2 className="text-lg font-display font-bold text-foreground border-b pb-2">{title}</h2>
-          <div className="flex flex-col sm:flex-row gap-6">
-            {photoField && renderSystemField('photo_url', photoField)}
-            <div className="flex-1 space-y-4">
-              {typeField && renderSystemField('student_type', typeField)}
-              {resField && renderSystemField('residence_type', resField)}
-            </div>
+        <div key={sectionKey} className="space-y-5">
+          {/* Top Row: Student Type & Residence Type Segmented Cards (1:1 Mockup Match) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {typeField ? renderSystemField('student_type', typeField) : renderSystemField('student_type', { label: 'Student Type', label_bn: 'ছাত্রের ধরন', default_value: 'student_type' } as any)}
+            {resField ? renderSystemField('residence_type', resField) : renderSystemField('residence_type', { label: 'Residence', label_bn: 'আবাসন ধরন', default_value: 'residence_type' } as any)}
           </div>
 
-          {isFieldActive('student_type') && form.student_type === 'old' && (
-            <div className="p-4 rounded-lg bg-secondary/50 border space-y-3">
-              <p className="text-sm font-medium">{bn ? 'পুরাতন ছাত্রের তথ্য অনুসন্ধান' : 'Search Old Student'}</p>
+          {/* Old student search */}
+          {form.student_type === 'old' && (
+            <div className="p-4 rounded-2xl bg-secondary/50 border border-border space-y-3 shadow-2xs">
+              <p className="text-sm font-semibold flex items-center gap-2">
+                <Search className="w-4 h-4 text-primary" />
+                {bn ? 'পুরাতন ছাত্রের তথ্য অনুসন্ধান' : 'Search Old Student'}
+              </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <Input placeholder={bn ? 'রোল' : 'Roll'} value={oldRoll} onChange={e => setOldRoll(e.target.value)} className="bg-background" />
-                <Input placeholder={bn ? 'ভর্তি সেশন' : 'Session'} value={oldSession} onChange={e => setOldSession(e.target.value)} className="bg-background" />
+                <Input placeholder={bn ? 'রোল' : 'Roll'} value={oldRoll} onChange={e => setOldRoll(e.target.value)} className="bg-background rounded-xl" />
+                <Input placeholder={bn ? 'ভর্তি সেশন' : 'Session'} value={oldSession} onChange={e => setOldSession(e.target.value)} className="bg-background rounded-xl" />
                 <Select value={oldClass} onValueChange={setOldClass}>
-                  <SelectTrigger className="bg-background"><SelectValue placeholder={bn ? 'শ্রেণী' : 'Class'} /></SelectTrigger>
+                  <SelectTrigger className="bg-background rounded-xl"><SelectValue placeholder={bn ? 'শ্রেণী' : 'Class'} /></SelectTrigger>
                   <SelectContent>{classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <Button type="button" variant="outline" onClick={handleOldStudentSearch} className="flex items-center gap-2">
-                <Search className="w-4 h-4" /> {bn ? 'অনুসন্ধান' : 'Search'}
+              <Button type="button" variant="outline" onClick={handleOldStudentSearch} className="flex items-center gap-2 rounded-xl text-xs">
+                <Search className="w-3.5 h-3.5" /> {bn ? 'অনুসন্ধান' : 'Search'}
               </Button>
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {otherFields.map(f => {
-              const key = f.default_value;
-              if (!key) return <div key={f.id}>{renderCustomField(f)}</div>;
-              if (SYSTEM_KEYS.includes(key)) return <div key={f.id}>{renderSystemField(key, f)}</div>;
-              return <div key={f.id}>{renderCustomField(f)}</div>;
-            })}
+          {/* Student Category & Free Student */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl border border-primary/25 bg-gradient-to-r from-primary/5 via-background to-secondary/30 shadow-2xs">
+            <div>
+              <Label className="text-xs font-semibold text-foreground uppercase tracking-wider">{bn ? 'ছাত্রের ক্যাটাগরি' : 'Student Category'} <span className="text-destructive">*</span></Label>
+              <Select value={form.student_category} onValueChange={v => {
+                setForm(prev => ({
+                  ...prev,
+                  student_category: v,
+                  is_orphan: v === 'orphan',
+                  is_poor: v === 'poor',
+                }));
+              }}>
+                <SelectTrigger className="bg-background mt-1.5 h-10 rounded-xl"><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
+                <SelectContent>
+                  {studentCategories.map((cat: any) => (
+                    <SelectItem key={cat.id} value={cat.name}>{bn ? cat.name_bn : cat.name}</SelectItem>
+                  ))}
+                  {studentCategories.length === 0 && (
+                    <SelectItem value="general">{bn ? 'সাধারণ' : 'General'}</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center justify-between gap-3 p-3 rounded-xl border border-border/80 bg-background self-end shadow-2xs">
+              <div className="flex items-center gap-3">
+                <Switch id="isFree" checked={form.is_free} onCheckedChange={v => setForm(prev => ({ ...prev, is_free: !!v }))} />
+                <Label htmlFor="isFree" className="text-xs sm:text-sm font-semibold cursor-pointer">
+                  {bn ? 'বিনা বেতন (Free Student)' : 'Free Student (No Fee)'}
+                </Label>
+              </div>
+              {form.is_free && (
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold border border-emerald-500/20">
+                  {bn ? 'সক্রিয়' : 'Active'}
+                </span>
+              )}
+            </div>
           </div>
 
-          {(orphanField && isFormFieldVisible('is_orphan') || poorField && isFormFieldVisible('is_poor')) && (
-            <div className="flex flex-wrap gap-6">
-              {orphanField && isFormFieldVisible('is_orphan') && (
-                <div className="flex items-center gap-2">
-                  <Checkbox id="isOrphan" checked={form.is_orphan} onCheckedChange={v => setForm(prev => ({ ...prev, is_orphan: !!v, is_poor: false }))} />
-                  <Label htmlFor="isOrphan">{bn ? orphanField.label_bn : orphanField.label}</Label>
+          {/* Group 1: Academic Information (Exact Mockup Match) */}
+          <div className="bg-white dark:bg-card border border-slate-200/90 dark:border-border rounded-2xl p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between pb-3.5 mb-2 border-b border-slate-100 dark:border-border/60">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                  <GraduationCap className="w-5 h-5" />
                 </div>
-              )}
-              {poorField && isFormFieldVisible('is_poor') && (
-                <div className="flex items-center gap-2">
-                  <Checkbox id="isPoor" checked={form.is_poor} onCheckedChange={v => setForm(prev => ({ ...prev, is_poor: !!v, is_orphan: false }))} />
-                  <Label htmlFor="isPoor">{bn ? poorField.label_bn : poorField.label}</Label>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-foreground">
+                    {bn ? 'একাডেমিক তথ্য' : 'Academic Information'}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-muted-foreground">
+                    {bn ? 'ভর্তি সেশন, বিভাগ ও শ্রেণীর তথ্য নির্বাচন করুন' : 'Select admission session, division and class'}
+                  </p>
                 </div>
-              )}
-              <div className="flex items-center gap-2">
-                <Checkbox id="isNormal" checked={!form.is_orphan && !form.is_poor} onCheckedChange={() => setForm(prev => ({ ...prev, is_orphan: false, is_poor: false }))} />
-                <Label htmlFor="isNormal">{bn ? 'সাধারণ' : 'General'}</Label>
+              </div>
+              <span className="text-xs bg-slate-100 dark:bg-muted text-slate-700 dark:text-muted-foreground px-3 py-1 rounded-full border border-slate-200 dark:border-border font-semibold">
+                {bn ? 'সঠিক ক্রম সাজানো' : 'Sequential Order'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {academicFields.map(f => {
+                const key = f.default_value;
+                if (!key) return <div key={f.id} data-field={f.id}>{renderCustomField(f)}</div>;
+                if (SYSTEM_KEYS.includes(key)) return <div key={f.id} data-field={key}>{renderSystemField(key, f)}</div>;
+                return <div key={f.id} data-field={key}>{renderCustomField(f)}</div>;
+              })}
+            </div>
+          </div>
+
+          {/* Group 2: Personal Information (With Avatar Photo Box from Mockup) */}
+          <div className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs space-y-4">
+            <div className="flex items-center gap-2.5 pb-3 border-b border-border/60">
+              <div className="p-2 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400">
+                <User className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm sm:text-base font-bold text-foreground">
+                  {bn ? 'ব্যক্তিগত বিবরণ' : 'Personal Details'}
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  {bn ? 'শিক্ষার্থীর ছবি, নাম, লিঙ্গ, জন্ম তারিখ ও অন্যান্য তথ্য' : 'Student photo, name, gender, birth date and details'}
+                </p>
               </div>
             </div>
-          )}
+
+            {/* Photo Avatar Uploader */}
+            {photoField && (
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-4 rounded-xl bg-muted/30 border border-border/60">
+                <div className="shrink-0">
+                  <PhotoUpload value={form.photo_url || null} onChange={(url) => setForm(prev => ({ ...prev, photo_url: url || '' }))} folder="students" />
+                </div>
+                <div className="space-y-1 text-center sm:text-left self-center">
+                  <h5 className="text-xs font-bold text-foreground">{bn ? 'শিক্ষার্থীর ছবি' : 'Student Photo'}</h5>
+                  <p className="text-[11px] text-muted-foreground">{bn ? 'পরিচ্ছন্ন পাসপোর্ট সাইজ ছবি আপলোড করুন' : 'Upload a clear passport size photo'}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {personalFields.map(f => {
+                const key = f.default_value;
+                if (!key) return <div key={f.id} data-field={f.id}>{renderCustomField(f)}</div>;
+                if (SYSTEM_KEYS.includes(key)) return <div key={f.id} data-field={key}>{renderSystemField(key, f)}</div>;
+                return <div key={f.id} data-field={key}>{renderCustomField(f)}</div>;
+              })}
+            </div>
+          </div>
         </div>
       );
     }
 
+    // Student address section
+    if (sectionKey === 'student_address') {
+      return (
+        <div key={sectionKey} className="rounded-2xl border border-border/80 bg-card p-5 sm:p-6 space-y-5 shadow-xs">
+          <div className="flex items-center gap-3 pb-3 border-b border-border/60">
+            <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+              <MapPin className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-base font-bold text-foreground">{title}</h4>
+              <p className="text-xs text-muted-foreground">{bn ? 'শিক্ষার্থীর স্থায়ী ও বর্তমান ঠিকানা' : 'Student permanent and present address'}</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-4">
+            {sectionFields.map(f => {
+              const key = f.default_value;
+              if (!key) return <div key={f.id} data-field={f.id}>{renderCustomField(f)}</div>;
+              if (SYSTEM_KEYS.includes(key)) return <div key={f.id} data-field={key}>{renderSystemField(key, f)}</div>;
+              return <div key={f.id} data-field={key}>{renderCustomField(f)}</div>;
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    // Father info section
     if (sectionKey === 'father_info') {
       return (
-        <div key={sectionKey} className="card-elevated p-6 space-y-4">
-          <h2 className="text-lg font-display font-bold text-foreground border-b pb-2">{title}</h2>
+        <div key={sectionKey} className="rounded-2xl border border-border/80 bg-card p-5 sm:p-6 space-y-5 shadow-xs">
+          <div className="flex items-center gap-3 pb-3 border-b border-border/60">
+            <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+              <UserCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-base font-bold text-foreground">{title}</h4>
+              <p className="text-xs text-muted-foreground">{bn ? 'পিতার নাম, পেশা, মোবাইল ও জাতীয় পরিচয়পত্র' : "Father's name, occupation, mobile and NID"}</p>
+            </div>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {sectionFields.map(f => {
               const key = f.default_value;
-              if (!key) return <div key={f.id}>{renderCustomField(f)}</div>;
-              if (SYSTEM_KEYS.includes(key)) return <div key={f.id}>{renderSystemField(key, f)}</div>;
-              return <div key={f.id}>{renderCustomField(f)}</div>;
+              if (!key) return <div key={f.id} data-field={f.id}>{renderCustomField(f)}</div>;
+              if (SYSTEM_KEYS.includes(key)) return <div key={f.id} data-field={key}>{renderSystemField(key, f)}</div>;
+              return <div key={f.id} data-field={key}>{renderCustomField(f)}</div>;
             })}
           </div>
         </div>
       );
     }
 
+    // Mother info section - also renders parent address after it
     if (sectionKey === 'mother_info') {
       return (
-        <div key={sectionKey} className="card-elevated p-6 space-y-4">
-          <h2 className="text-lg font-display font-bold text-foreground border-b pb-2">{title}</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {sectionFields.map(f => {
-              const key = f.default_value;
-              if (!key) return <div key={f.id}>{renderCustomField(f)}</div>;
-              if (SYSTEM_KEYS.includes(key)) return <div key={f.id}>{renderSystemField(key, f)}</div>;
-              return <div key={f.id}>{renderCustomField(f)}</div>;
-            })}
-          </div>
-          <p className="text-xs text-destructive flex items-center gap-1 mt-2">
-            <AlertCircle className="w-3 h-3" />
-            {bn ? 'কমপক্ষে একটি NID এবং একটি মোবাইল নম্বর প্রয়োজন' : 'At least one NID and one mobile number required'}
-          </p>
-          <div className="flex items-center gap-2 mt-4">
-            <Checkbox id="parentAddrSame" checked={parentAddrSameAsStudent} onCheckedChange={v => {
-              setParentAddrSameAsStudent(!!v);
-              if (v) { setParentPermanentAddr({ ...permanentAddr }); setParentPresentAddr(sameAddress ? { ...permanentAddr } : { ...presentAddr }); }
-            }} />
-            <Label htmlFor="parentAddrSame">{bn ? 'ছাত্রের ঠিকানার মতো' : 'Same as student address'}</Label>
-          </div>
-          {!parentAddrSameAsStudent && (
-            <>
-              <AddressFields label={bn ? 'অভিভাবক স্থায়ী ঠিকানা' : 'Parent Permanent Address'} value={parentPermanentAddr} onChange={setParentPermanentAddr} />
-              <div className="flex items-center gap-2 mt-2">
-                <Checkbox id="parentSamePres" checked={parentSamePresAddr} onCheckedChange={v => { setParentSamePresAddr(!!v); if (v) setParentPresentAddr({ ...parentPermanentAddr }); }} />
-                <Label htmlFor="parentSamePres">{bn ? 'বর্তমান ঠিকানা স্থায়ী ঠিকানার মতো' : 'Present same as permanent'}</Label>
+        <React.Fragment key={sectionKey}>
+          <div className="rounded-2xl border border-border/80 bg-card p-5 sm:p-6 space-y-5 shadow-xs">
+            <div className="flex items-center gap-3 pb-3 border-b border-border/60">
+              <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                <Heart className="w-5 h-5" />
               </div>
-              {!parentSamePresAddr && <AddressFields label={bn ? 'অভিভাবক বর্তমান ঠিকানা' : 'Parent Present Address'} value={parentPresentAddr} onChange={setParentPresentAddr} />}
-            </>
-          )}
-        </div>
+              <div>
+                <h4 className="text-base font-bold text-foreground">{title}</h4>
+                <p className="text-xs text-muted-foreground">{bn ? 'মাতার নাম, পেশা, মোবাইল ও জাতীয় পরিচয়পত্র' : "Mother's name, occupation, mobile and NID"}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {sectionFields.map(f => {
+                const key = f.default_value;
+                if (!key) return <div key={f.id} data-field={f.id}>{renderCustomField(f)}</div>;
+                if (SYSTEM_KEYS.includes(key)) return <div key={f.id} data-field={key}>{renderSystemField(key, f)}</div>;
+                return <div key={f.id} data-field={key}>{renderCustomField(f)}</div>;
+              })}
+            </div>
+            <div className="mt-3 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-xs text-destructive font-medium flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{bn ? 'কমপক্ষে একটি NID এবং একটি মোবাইল নম্বর আবশ্যক' : 'At least one NID and one mobile number required'}</span>
+            </div>
+          </div>
+
+          {/* Parent address */}
+          <div className="rounded-2xl border border-border/80 bg-card p-5 sm:p-6 space-y-5 shadow-xs mt-5">
+            <div className="flex items-center gap-3 pb-3 border-b border-border/60">
+              <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                <MapPin className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-base font-bold text-foreground">{bn ? 'পিতা/মাতার ঠিকানা' : 'Parent Address'}</h4>
+                <p className="text-xs text-muted-foreground">{bn ? 'পিতা বা মাতার স্থায়ী ও বর্তমান ঠিকানা' : "Parent's permanent and present address"}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5 p-3 rounded-xl bg-muted/40 border border-border/60">
+              <Checkbox id="parentAddrSame" checked={parentAddrSameAsStudent} onCheckedChange={v => {
+                setParentAddrSameAsStudent(!!v);
+                if (v) { setParentPermanentAddr({ ...permanentAddr }); setParentPresentAddr(sameAddress ? { ...permanentAddr } : { ...presentAddr }); }
+              }} />
+              <Label htmlFor="parentAddrSame" className="text-sm font-medium cursor-pointer">{bn ? 'ছাত্রের ঠিকানার মতো' : 'Same as student address'}</Label>
+            </div>
+            {!parentAddrSameAsStudent && (
+              <div className="space-y-4">
+                <AddressFields label={bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'} value={parentPermanentAddr} onChange={setParentPermanentAddr} />
+                <div className="flex items-center gap-2.5 p-3 rounded-xl bg-muted/40 border border-border/60">
+                  <Checkbox id="parentSamePres" checked={parentSamePresAddr} onCheckedChange={v => { setParentSamePresAddr(!!v); if (v) setParentPresentAddr({ ...parentPermanentAddr }); }} />
+                  <Label htmlFor="parentSamePres" className="text-sm font-medium cursor-pointer">{bn ? 'বর্তমান ঠিকানা স্থায়ী ঠিকানার মতো' : 'Present same as permanent'}</Label>
+                </div>
+                {!parentSamePresAddr && <AddressFields label={bn ? 'বর্তমান ঠিকানা' : 'Present Address'} value={parentPresentAddr} onChange={setParentPresentAddr} />}
+              </div>
+            )}
+          </div>
+        </React.Fragment>
       );
     }
 
+    // Guardian section
     if (sectionKey === 'guardian_info') {
       const guardianTypeField = sectionFields.find(f => f.default_value === 'guardian_type');
       const otherGuardianFields = sectionFields.filter(f => f.default_value !== 'guardian_type');
 
       return (
-        <div key={sectionKey} className="card-elevated p-6 space-y-4">
-          <h2 className="text-lg font-display font-bold text-foreground border-b pb-2">{title}</h2>
+        <div key={sectionKey} className="rounded-2xl border border-border/80 bg-card p-5 sm:p-6 space-y-5 shadow-xs">
+          <div className="flex items-center gap-3 pb-3 border-b border-border/60">
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-base font-bold text-foreground">{title}</h4>
+              <p className="text-xs text-muted-foreground">{bn ? 'আইনগত অভিভাবক নির্বাচন ও যোগাযোগের বিবরণ' : 'Legal guardian selection and contact details'}</p>
+            </div>
+          </div>
           {guardianTypeField && renderSystemField('guardian_type', guardianTypeField)}
 
           {(form.guardian_type === 'father' || form.guardian_type === 'mother') && (
-            <div className="p-4 rounded-lg bg-success/10 border border-success/20">
-              <p className="text-sm text-success flex items-center gap-2">
-                <CheckCircle className="w-4 h-4" />
+            <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/25">
+              <p className="text-sm text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-600" />
                 {bn ? `${form.guardian_type === 'father' ? 'পিতার' : 'মাতার'} তথ্য থেকে স্বয়ংক্রিয়ভাবে পূরণ হবে` : `Will auto-fill from ${form.guardian_type === 'father' ? "father's" : "mother's"} information`}
               </p>
             </div>
           )}
 
           {form.guardian_type === 'other' && (
-            <div className="space-y-4">
+            <div className="space-y-4 pt-2">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {otherGuardianFields.map(f => {
                   const key = f.default_value;
-                  if (!key) return <div key={f.id}>{renderCustomField(f)}</div>;
-                  if (SYSTEM_KEYS.includes(key)) return <div key={f.id}>{renderSystemField(key, f)}</div>;
-                  return <div key={f.id}>{renderCustomField(f)}</div>;
+                  if (!key) return <div key={f.id} data-field={f.id}>{renderCustomField(f)}</div>;
+                  if (SYSTEM_KEYS.includes(key)) return <div key={f.id} data-field={key}>{renderSystemField(key, f)}</div>;
+                  return <div key={f.id} data-field={key}>{renderCustomField(f)}</div>;
                 })}
               </div>
               <AddressFields label={bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'} value={guardianPermAddr} onChange={setGuardianPermAddr} />
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5 p-3 rounded-xl bg-muted/40 border border-border/60">
                 <Checkbox id="guardianSameAddr" checked={guardianSameAddr} onCheckedChange={v => { setGuardianSameAddr(!!v); if (v) setGuardianPresAddr({ ...guardianPermAddr }); }} />
-                <Label htmlFor="guardianSameAddr">{bn ? 'বর্তমান ঠিকানা স্থায়ী ঠিকানার মতো' : 'Present same as permanent'}</Label>
+                <Label htmlFor="guardianSameAddr" className="text-sm font-medium cursor-pointer">{bn ? 'বর্তমান ঠিকানা স্থায়ী ঠিকানার মতো' : 'Present same as permanent'}</Label>
               </div>
               {!guardianSameAddr && <AddressFields label={bn ? 'বর্তমান ঠিকানা' : 'Present Address'} value={guardianPresAddr} onChange={setGuardianPresAddr} />}
             </div>
@@ -1016,16 +1311,25 @@ const AdmissionPage = () => {
       );
     }
 
-    // Generic section (address)
     return (
-      <div key={sectionKey} className="card-elevated p-6 space-y-4">
-        <h2 className="text-lg font-display font-bold text-foreground border-b pb-2">{title}</h2>
-        {sectionFields.map(f => {
-          const key = f.default_value;
-          if (!key) return <div key={f.id}>{renderCustomField(f)}</div>;
-          if (SYSTEM_KEYS.includes(key)) return <div key={f.id}>{renderSystemField(key, f)}</div>;
-          return <div key={f.id}>{renderCustomField(f)}</div>;
-        })}
+      <div key={sectionKey} className="rounded-2xl border border-border/80 bg-card p-5 space-y-4 shadow-xs">
+        <div className="flex items-center gap-3 pb-3 border-b border-border/60">
+          <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="text-base font-bold text-foreground">{title}</h4>
+            <p className="text-xs text-muted-foreground">{bn ? 'বিবরণ সঠিকভাবে পূরণ করুন' : 'Fill in the information accurately'}</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {sectionFields.map(f => {
+            const key = f.default_value;
+            if (!key) return <div key={f.id} data-field={f.id}>{renderCustomField(f)}</div>;
+            if (SYSTEM_KEYS.includes(key)) return <div key={f.id} data-field={key}>{renderSystemField(key, f)}</div>;
+            return <div key={f.id} data-field={key}>{renderCustomField(f)}</div>;
+          })}
+        </div>
       </div>
     );
   };
@@ -1035,6 +1339,9 @@ const AdmissionPage = () => {
 
     if (stepKey === 'student_details') {
       if (birthRegError) errors['birth_reg_no'] = birthRegError;
+      if (!selectedDivisionId && isFormFieldVisible('admission_class')) {
+        errors['admission_division'] = bn ? 'বিভাগ নির্বাচন আবশ্যক' : 'Division is required';
+      }
       const secFields = getFieldsBySection('student_details');
       secFields.forEach(f => {
         const k = f.default_value;
@@ -1102,7 +1409,6 @@ const AdmissionPage = () => {
       }
     }
 
-    // Check custom fields for this section
     const customSecFields = getFieldsBySection(stepKey as any).filter(f => !f.default_value);
     customSecFields.forEach(f => {
       if (f.is_required && f.is_active) {
@@ -1136,9 +1442,9 @@ const AdmissionPage = () => {
       admission_class: '', first_name: '', last_name: '',
       gender: 'male', religion: 'islam', date_of_birth: '',
       birth_reg_no: '', previous_class: '', previous_institute: '',
-      is_orphan: false, is_poor: false, photo_url: '',
-      father_name: '', father_occupation: '', father_nid: '', father_phone: '', father_phone_code: '+880',
-      mother_name: '', mother_occupation: '', mother_nid: '', mother_phone: '', mother_phone_code: '+880',
+      is_orphan: false, is_poor: false, is_free: false, student_category: '', photo_url: '',
+      father_name: '', father_name_en: '', father_occupation: '', father_nid: '', father_phone: '', father_phone_code: '+880',
+      mother_name: '', mother_name_en: '', mother_occupation: '', mother_nid: '', mother_phone: '', mother_phone_code: '+880',
       guardian_type: '', guardian_name: '', guardian_relation: '', guardian_phone: '', guardian_phone_code: '+880', guardian_nid: '',
     });
     setFieldErrors({});
@@ -1148,7 +1454,6 @@ const AdmissionPage = () => {
     setGuardianPermAddr(emptyAddress); setGuardianPresAddr(emptyAddress);
     setSameAddress(false); setParentAddrSameAsStudent(false);
     setParentSamePresAddr(false); setGuardianSameAddr(false);
-    setPhotoFile(null); setPhotoPreview(null);
   };
 
   const buildFormHTML = (blank = false) => {
@@ -1270,7 +1575,6 @@ const AdmissionPage = () => {
     if (!blank && !submittedData) return;
     const html = buildFormHTML(blank);
 
-    // Use a hidden iframe to render the HTML properly
     const iframe = document.createElement('iframe');
     iframe.style.position = 'fixed';
     iframe.style.left = '-10000px';
@@ -1290,7 +1594,6 @@ const AdmissionPage = () => {
     iframeDoc.write(html);
     iframeDoc.close();
 
-    // Wait for fonts and content to load
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     try {
@@ -1314,7 +1617,6 @@ const AdmissionPage = () => {
       const pdfWidth = 210;
       const pageHeight = 297;
       const imgAspect = canvas.height / canvas.width;
-      // Scale to fit within one A4 page
       let imgW = pdfWidth;
       let imgH = pdfWidth * imgAspect;
       if (imgH > pageHeight) {
@@ -1362,10 +1664,12 @@ const AdmissionPage = () => {
                   <span className="font-medium">{submittedData.name_en}</span>
                 </div>
               )}
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{bn ? 'আইডি:' : 'ID:'}</span>
-                <span className="font-medium">{submittedData.student_id}</span>
-              </div>
+              {submittedData.student_id && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{bn ? 'আইডি:' : 'ID:'}</span>
+                  <span className="font-medium">{submittedData.student_id}</span>
+                </div>
+              )}
               {submittedData.roll_number && (
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{bn ? 'রোল:' : 'Roll:'}</span>
@@ -1404,7 +1708,7 @@ const AdmissionPage = () => {
     );
   }
 
-  if (!isAdmissionOpen) {
+  if (isLoaded && !isAdmissionOpen) {
     return (
       <PublicLayout>
         <div className="container mx-auto px-4 py-20 max-w-2xl text-center">
@@ -1445,200 +1749,223 @@ const AdmissionPage = () => {
     }
   };
 
+  const activeSessionObj = academicSessions.find((s: any) => s.id === form.admission_session || s.name === form.admission_session);
+  const sessionDisplayName = (bn ? (activeSessionObj?.name_bn || activeSessionObj?.name) : activeSessionObj?.name) || form.session_year || (bn ? 'চলতি' : 'Current');
+
   return (
     <PublicLayout>
       <div className="container mx-auto px-4 py-8 sm:py-12 max-w-4xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground">
-              {bn ? 'ভর্তি আবেদন ফর্ম' : 'Admission Application Form'}
-            </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              {bn ? 'ধাপে ধাপে সকল তথ্য সঠিকভাবে পূরণ করুন' : 'Please fill all information step by step'}
-            </p>
-          </div>
-          <span className="text-xs font-semibold text-primary bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-full w-fit">
-            {bn ? `ধাপ ${safeCurrentStep + 1} / ${activeSections.length}` : `Step ${safeCurrentStep + 1} of ${activeSections.length}`}
-          </span>
-        </div>
+        <div className="border border-slate-200/90 dark:border-border rounded-3xl shadow-xl overflow-hidden bg-white dark:bg-card">
+          
+          {/* Top Header (1:1 Mockup Match) */}
+          <div className="px-6 py-5 bg-gradient-to-r from-emerald-50/70 via-white to-teal-50/50 dark:from-emerald-950/30 dark:via-background dark:to-teal-950/20 border-b border-slate-200/80 dark:border-border/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-white dark:bg-card border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center text-emerald-600 shadow-sm shrink-0">
+                <GraduationCap className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-foreground tracking-tight">
+                    {bn ? 'ভর্তি আবেদন ফরম' : 'Admission Application Form'}
+                  </h1>
+                  <span className="text-xs bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2.5 py-0.5 rounded-full font-semibold">
+                    {sessionDisplayName} {bn ? 'শিক্ষাবর্ষ' : 'Academic Year'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-muted-foreground mt-0.5">
+                  {bn ? 'আবশ্যকীয় তথ্যগুলো পূরণ করে পরবর্তী ধাপে এগিয়ে যান। ' : 'Fill in required fields to proceed. '}
+                  <span className="text-rose-500 font-bold">*</span>
+                  {bn ? ' চিহ্নিত ঘর বাধ্যতামূলক।' : ' denotes required.'}
+                </p>
+              </div>
+            </div>
 
-        {!isLoaded ? (
-          <div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
-        ) : (
-          <div className="space-y-6">
-            {/* Step Wizard Header */}
-            <div className="w-full bg-card border border-border rounded-xl p-3 sm:p-5 shadow-sm">
-              <div className="flex items-center justify-between overflow-x-auto pb-1 gap-2 sm:gap-4 scrollbar-none">
-                {activeSections.map((sectionKey, idx) => {
-                  const isCurrent = idx === safeCurrentStep;
-                  const isCompleted = idx < safeCurrentStep;
-                  return (
-                    <button
-                      key={sectionKey}
-                      type="button"
-                      onClick={() => handleStepClick(idx)}
-                      className={`flex flex-col items-center flex-1 min-w-[70px] sm:min-w-[90px] relative focus:outline-none transition-all group ${
-                        idx < safeCurrentStep ? 'cursor-pointer' : isCurrent ? 'cursor-default' : 'cursor-pointer hover:opacity-100 opacity-70'
+            <div className="flex items-center gap-2 self-start sm:self-center">
+              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white dark:bg-card border border-slate-200 dark:border-border shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+                <span className="text-xs font-bold text-slate-700 dark:text-foreground">
+                  {bn ? `ধাপ ${safeCurrentStep + 1} / ${activeSections.length}` : `Step ${safeCurrentStep + 1} of ${activeSections.length}`}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Stepper Wizard (1:1 Mockup Match) */}
+          <div className="px-4 sm:px-6 py-4 bg-slate-50/80 dark:bg-muted/40 border-b border-slate-200/70 dark:border-border/70">
+            <div className="relative flex items-center justify-between max-w-2xl mx-auto">
+              {/* Background Progress Line */}
+              <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 h-1 bg-slate-200 dark:bg-muted rounded-full -z-0">
+                <div
+                  className="h-full bg-emerald-600 rounded-full transition-all duration-400"
+                  style={{ width: `${(safeCurrentStep / Math.max(1, activeSections.length - 1)) * 100}%` }}
+                />
+              </div>
+
+              {activeSections.map((stepKey, idx) => {
+                const isCurrent = idx === safeCurrentStep;
+                const isCompleted = idx < safeCurrentStep;
+                return (
+                  <button
+                    key={stepKey}
+                    type="button"
+                    onClick={() => handleStepClick(idx)}
+                    className={`relative z-10 flex flex-col items-center group focus:outline-none transition-all ${
+                      idx < safeCurrentStep ? 'cursor-pointer' : isCurrent ? 'cursor-default' : 'cursor-pointer hover:opacity-100 opacity-80'
+                    }`}
+                  >
+                    {/* Step Circle */}
+                    <div
+                      className={`w-9 h-9 rounded-full font-bold text-xs sm:text-sm flex items-center justify-center transition-all duration-200 ${
+                        isCompleted
+                          ? 'bg-emerald-600 text-white ring-2 ring-emerald-200 dark:ring-emerald-800 shadow-sm'
+                          : isCurrent
+                          ? 'bg-emerald-600 text-white ring-4 ring-emerald-100 dark:ring-emerald-950 shadow-md scale-105'
+                          : 'bg-white dark:bg-card text-slate-500 dark:text-muted-foreground border-2 border-slate-300 dark:border-border/80'
                       }`}
                     >
-                      {/* Connecting Line */}
-                      {idx > 0 && (
-                        <div
-                          className={`hidden sm:block absolute top-4 -left-1/2 w-full h-[2px] -z-0 transition-colors ${
-                            idx <= safeCurrentStep ? 'bg-primary' : 'bg-muted'
-                          }`}
-                        />
-                      )}
+                      {isCompleted ? <CheckCircle className="w-4 h-4" /> : idx + 1}
+                    </div>
 
-                      {/* Step Circle */}
-                      <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold z-10 transition-all shadow-sm ${
-                          isCompleted
-                            ? 'bg-primary text-primary-foreground ring-2 ring-primary/20'
-                            : isCurrent
-                            ? 'bg-primary text-primary-foreground ring-4 ring-primary/25 scale-110'
-                            : 'bg-muted text-muted-foreground border border-border'
-                        }`}
-                      >
-                        {isCompleted ? <CheckCircle className="w-4 h-4" /> : idx + 1}
-                      </div>
-
-                      {/* Step Title */}
-                      <span
-                        className={`mt-2 text-[11px] sm:text-xs text-center font-medium line-clamp-1 max-w-[85px] sm:max-w-none transition-colors ${
-                          isCurrent ? 'text-primary font-bold' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
-                        }`}
-                      >
-                        {getStepTitle(sectionKey)}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+                    {/* Step Title */}
+                    <span
+                      className={`mt-1.5 text-xs text-center font-semibold line-clamp-1 max-w-[90px] sm:max-w-none transition-colors ${
+                        isCurrent ? 'text-emerald-700 dark:text-emerald-400 font-bold' : isCompleted ? 'text-slate-700 dark:text-foreground' : 'text-slate-400 dark:text-muted-foreground'
+                      }`}
+                    >
+                      {getStepTitle(stepKey)}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
+          </div>
 
-            {/* Error summary */}
-            {Object.keys(fieldErrors).length > 0 && (
-              <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 space-y-2">
-                <p className="text-sm font-semibold text-destructive flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4" />
-                  {bn ? `${Object.keys(fieldErrors).length}টি ত্রুটি সংশোধন করুন` : `Please fix ${Object.keys(fieldErrors).length} error(s)`}
-                </p>
-                <ul className="space-y-1 ml-6 list-disc">
-                  {Object.entries(fieldErrors).map(([key, msg]) => {
-                    const fieldConfig = configFields.find(f => f.default_value === key);
-                    const fieldLabel = fieldConfig ? (bn ? fieldConfig.label_bn : fieldConfig.label) : key;
-                    return (
-                      <li key={key} className="text-xs text-destructive">
-                        <button type="button" className="underline hover:no-underline text-left"
-                          onClick={() => {
-                            const el = document.querySelector(`[data-field="${key}"]`);
-                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                          }}>
-                          <span className="font-medium">{fieldLabel}</span>: {msg}
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            )}
+          {!isLoaded ? (
+            <div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-emerald-600" /></div>
+          ) : (
+            <div className="p-5 sm:p-6 lg:p-8 space-y-6 bg-slate-50/40 dark:bg-transparent">
 
-            {/* Render Current Section */}
-            <div className="transition-all duration-200">
-              {renderSection(activeSections[safeCurrentStep])}
-            </div>
-
-            {/* Footer: on the final step */}
-            {safeCurrentStep === activeSections.length - 1 && (() => {
-              const overrideText = (footerParagraph?.is_visible && footerParagraph?.footer_text)
-                ? footerParagraph.footer_text
-                : websiteFooterText;
-              const finalFooter = overrideText || globalFooterText;
-              if (!finalFooter) return null;
-              return (
-                <div
-                  className="border rounded-lg bg-muted/50 print-footer"
-                  style={{
-                    marginTop: `${footerSpacingTop}mm`,
-                    marginBottom: `${footerSpacingBottom}mm`,
-                    padding: '1rem',
-                  }}
-                >
-                  <p
-                    className="text-foreground whitespace-pre-wrap text-center"
-                    style={{ fontSize: `${footerFontSize}pt`, lineHeight: 1.4 }}
-                  >
-                    {finalFooter}
+              {/* Error summary banner */}
+              {Object.keys(fieldErrors).length > 0 && (
+                <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 space-y-2">
+                  <p className="text-sm font-semibold text-destructive flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    {bn ? `${Object.keys(fieldErrors).length}টি ত্রুটি সংশোধন করুন` : `Please fix ${Object.keys(fieldErrors).length} error(s)`}
                   </p>
-                </div>
-              );
-            })()}
-
-            {/* Step Navigation Controls */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6 border-t mt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setCurrentStep(prev => Math.max(0, prev - 1));
-                  window.scrollTo({ top: 120, behavior: 'smooth' });
-                }}
-                disabled={safeCurrentStep === 0}
-                className="w-full sm:w-auto px-6 py-5 gap-2"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                {bn ? 'পূর্ববর্তী ধাপ' : 'Previous Step'}
-              </Button>
-
-              <div className="text-xs sm:text-sm font-medium text-muted-foreground order-first sm:order-none">
-                {bn ? `ধাপ ${safeCurrentStep + 1} / ${activeSections.length} : ${getStepTitle(activeSections[safeCurrentStep])}` : `Step ${safeCurrentStep + 1} of ${activeSections.length} : ${getStepTitle(activeSections[safeCurrentStep])}`}
-              </div>
-
-              {safeCurrentStep < activeSections.length - 1 ? (
-                <Button
-                  type="button"
-                  onClick={() => {
-                    if (validateCurrentStep(activeSections[safeCurrentStep])) {
-                      setCurrentStep(prev => Math.min(activeSections.length - 1, prev + 1));
-                      window.scrollTo({ top: 120, behavior: 'smooth' });
-                    }
-                  }}
-                  className="btn-primary-gradient w-full sm:w-auto px-8 py-5 gap-2"
-                >
-                  {bn ? 'পরবর্তী ধাপ' : 'Next Step'}
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              ) : (
-                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                  <Button
-                    type="button"
-                    onClick={handleSubmit}
-                    className="btn-primary-gradient px-8 py-5 gap-2"
-                    disabled={addMutation.isPending}
-                  >
-                    {addMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
-                    {bn ? 'আবেদন জমা দিন' : 'Submit Application'}
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => handleDownloadPDF(true)}
-                    variant="outline"
-                    className="py-5 gap-2"
-                  >
-                    <Download className="w-4 h-4" /> {bn ? 'ফর্ম ডাউনলোড' : 'Download Form'}
-                  </Button>
+                  <ul className="space-y-1 ml-6 list-disc">
+                    {Object.entries(fieldErrors).map(([key, msg]) => {
+                      const fieldConfig = configFields.find(f => f.default_value === key);
+                      const fieldLabel = fieldConfig ? (bn ? fieldConfig.label_bn : fieldConfig.label) : key;
+                      return (
+                        <li key={key} className="text-xs text-destructive">
+                          <button type="button" className="underline hover:no-underline text-left"
+                            onClick={() => {
+                              const el = document.querySelector(`[data-field="${key}"]`);
+                              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }}>
+                            <span className="font-medium">{fieldLabel}</span>: {msg}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 </div>
               )}
+
+              {/* Active Section Content */}
+              <div className="transition-all duration-200">
+                {renderSection(activeSections[safeCurrentStep])}
+              </div>
+
+              {/* Footer on final step */}
+              {safeCurrentStep === activeSections.length - 1 && (() => {
+                const overrideText = (footerParagraph?.is_visible && footerParagraph?.footer_text)
+                  ? footerParagraph.footer_text
+                  : websiteFooterText;
+                const finalFooter = overrideText || globalFooterText;
+                if (!finalFooter) return null;
+                return (
+                  <div
+                    className="border rounded-lg bg-muted/50 print-footer"
+                    style={{
+                      marginTop: `${footerSpacingTop}mm`,
+                      marginBottom: `${footerSpacingBottom}mm`,
+                      padding: '1rem',
+                    }}
+                  >
+                    <p
+                      className="text-foreground whitespace-pre-wrap text-center"
+                      style={{ fontSize: `${footerFontSize}pt`, lineHeight: 1.4 }}
+                    >
+                      {finalFooter}
+                    </p>
+                  </div>
+                );
+              })()}
+
+            </div>
+          )}
+
+          {/* Modern Sticky Bottom Navigation Bar */}
+          <div className="px-6 py-4 bg-white dark:bg-card border-t border-slate-200 dark:border-border flex flex-col sm:flex-row items-center justify-between gap-3 shadow-inner sticky bottom-0 z-20">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setCurrentStep(prev => Math.max(0, prev - 1));
+                window.scrollTo({ top: 120, behavior: 'smooth' });
+              }}
+              disabled={safeCurrentStep === 0}
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-300 dark:border-border bg-white dark:bg-card text-xs font-semibold text-slate-600 dark:text-muted-foreground hover:text-slate-900 dark:hover:text-foreground hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-xs"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              {bn ? 'পূর্ববর্তী ধাপ' : 'Previous Step'}
+            </Button>
+
+            <div className="text-xs text-slate-600 dark:text-muted-foreground font-medium order-first sm:order-none flex items-center gap-2 bg-slate-100 dark:bg-muted/70 px-4 py-1.5 rounded-full border border-slate-200 dark:border-border">
+              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+              <span className="font-semibold text-slate-800 dark:text-foreground">
+                {bn ? `ধাপ ${safeCurrentStep + 1} : ${getStepTitle(activeSections[safeCurrentStep])}` : `Step ${safeCurrentStep + 1} : ${getStepTitle(activeSections[safeCurrentStep])}`}
+              </span>
             </div>
 
-            {safeCurrentStep === activeSections.length - 1 && (
-              <p className="text-center text-xs text-muted-foreground">
-                {bn ? 'জমা দেওয়ার পর অ্যাডমিনের অনুমোদন প্রয়োজন' : 'Admin approval required after submission'}
-              </p>
+            {safeCurrentStep < activeSections.length - 1 ? (
+              <Button
+                type="button"
+                onClick={() => {
+                  if (validateCurrentStep(activeSections[safeCurrentStep])) {
+                    setCurrentStep(prev => Math.min(activeSections.length - 1, prev + 1));
+                    window.scrollTo({ top: 120, behavior: 'smooth' });
+                  }
+                }}
+                className="w-full sm:w-auto px-7 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-xs font-bold text-white shadow-md shadow-emerald-600/20 hover:shadow-lg transition-all flex items-center justify-center gap-2"
+              >
+                <span>{bn ? 'পরবর্তী ধাপ' : 'Next Step'}</span>
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            ) : (
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <Button
+                  type="button"
+                  onClick={handleSubmit}
+                  className="w-full sm:w-auto px-7 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-xs font-bold text-white shadow-md shadow-emerald-600/25 hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                  disabled={addMutation.isPending}
+                >
+                  {addMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Sparkles className="w-4 h-4 mr-1.5" />}
+                  {bn ? 'আবেদন জমা দিন' : 'Submit Application'}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => handleDownloadPDF(true)}
+                  variant="outline"
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-300 dark:border-border text-xs font-semibold"
+                >
+                  <Download className="w-4 h-4 mr-1.5" /> {bn ? 'ফর্ম ডাউনলোড' : 'Download Form'}
+                </Button>
+              </div>
             )}
           </div>
-        )}
+        </div>
       </div>
     </PublicLayout>
   );
