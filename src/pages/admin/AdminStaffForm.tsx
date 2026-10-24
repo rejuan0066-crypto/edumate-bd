@@ -1510,7 +1510,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
           {currentStepId === 'employee' && (
           <div className="card-elevated p-6">
             <h2 className="font-display font-bold text-foreground mb-4 pb-2 border-b border-border text-2xl text-center">
-              {bn ? 'ব্যক্তিগত তথ্য (Employee Details)' : '1. Employee Details'}
+              {bn ? '১. কর্মচারীর ব্যক্তিগত তথ্য' : '1. Employee Details'}
             </h2>
             <div className="flex flex-col sm:flex-row gap-6 mb-6">
               {isFieldActive('photo_url') && <PhotoUpload value={photoUrl} onChange={setPhotoUrl} folder="staff" />}
@@ -1662,7 +1662,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
 
             {sectionConfig.showEducation && (isFieldActive('nid') || isFieldActive('education') || isFieldActive('experience') || isFieldActive('prev_institute')) && (
             <div className="border-t border-border pt-4 mb-4">
-              <h3 className="text-md font-semibold text-foreground mb-3 text-center text-2xl">{bn ? 'পরিচিতি (Identity)' : 'Identity'}</h3>
+              <h3 className="text-md font-semibold text-foreground mb-3 text-center text-2xl">{bn ? 'পরিচিতি' : 'Identity'}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {isFieldActive('nid') && (
                 <div>
@@ -1709,7 +1709,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
           {currentStepId === 'address' && (
             <div className="card-elevated p-6 space-y-4">
               <h2 className="font-display font-bold text-foreground mb-4 pb-2 border-b border-border text-center text-2xl">
-                {bn ? '২. ঠিকানা (Employee Address)' : '2. Address'}
+                {bn ? '২. ঠিকানা' : '2. Address'}
               </h2>
               {isFieldActive('address_permanent') && <AddressFields label={bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'} value={permanentAddr} onChange={setPermanentAddr} />}
               {isFieldActive('address_present') && (
@@ -1732,7 +1732,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
           {currentStepId === 'parents' && (
           <div className="card-elevated p-6">
             <h2 className="font-display font-bold text-foreground mb-4 pb-2 border-b border-border text-center text-2xl">
-              {bn ? ' পিতা-মাতার তথ্য (Parents Details)' : '2. Parents Details'}
+              {bn ? '৩. পিতা-মাতার তথ্য' : '3. Parents Details'}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {isFieldActive('father_name') && (
@@ -1808,7 +1808,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
           {sectionConfig.showGuardian && currentStepId === 'guardian' && (
           <div className="card-elevated p-6">
             <h2 className="font-display font-bold text-foreground mb-4 pb-2 border-b border-border text-center text-2xl">
-              {bn ? ' অভিভাবক তথ্য (Guardian Details)' : 'Guardian Details'}
+              {bn ? '৪. অভিভাবক তথ্য' : '4. Guardian Details'}
             </h2>
             <div>
               <Label>{bn ? 'অভিভাবক' : 'Guardian'} <span className="text-destructive">*</span></Label>
@@ -1985,7 +1985,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
           {currentStepId === 'documents' && (
           <div className="card-elevated p-6">
             <h2 className="font-display font-bold text-foreground mb-4 pb-2 border-b border-border text-center text-2xl">
-              {bn ? 'ডকুমেন্ট আপলোড (Document Upload)' : 'Document Upload'}
+              {bn ? 'ডকুমেন্ট আপলোড' : 'Document Upload'}
             </h2>
             <div className="flex flex-col sm:flex-row gap-3 mb-4">
               <Select value={docType} onValueChange={setDocType}>

@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import SearchableSelect, { type SelectOption } from '@/components/SearchableSelect';
 import { useMergedAddressData } from '@/hooks/useAddressData';
 import { useAddressLevels } from '@/components/admin/AddressLevelManager';
+import { toBnDigits } from '@/lib/digits';
+import { getPostOfficeBn } from '@/data/bangladeshPostcodesBn';
 
 export interface AddressData {
   division: string;
@@ -113,20 +115,20 @@ const AddressFields = ({ label, value, onChange, disabled }: AddressFieldsProps)
   };
 
   const divisionOptions: SelectOption[] = divisions.map(d => ({
-    value: d.nameEn,
+    value: bn ? d.name : d.nameEn,
     label: bn ? d.name : d.nameEn,
     aliases: [d.name, d.nameEn],
   }));
 
   const districtOptions: SelectOption[] = districts.map(d => ({
-    value: d.nameEn,
+    value: bn ? d.name : d.nameEn,
     label: bn ? d.name : d.nameEn,
     aliases: [d.name, d.nameEn],
   }));
 
   const upazilaOptions: SelectOption[] = useMemo(() => {
     return upazilas.map(u => ({
-      value: u.nameEn,
+      value: bn ? u.name : u.nameEn,
       label: bn ? u.name : u.nameEn,
       group: u.type === 'city_corporation' ? 'cc' : u.type === 'municipality' ? 'muni' : 'upazila',
       aliases: [u.name, u.nameEn],
@@ -142,18 +144,19 @@ const AddressFields = ({ label, value, onChange, disabled }: AddressFieldsProps)
   }, [upazilas, bn]);
 
   const unionOptions: SelectOption[] = unions.map(u => ({
-    value: bn ? (u.name || u.nameEn) : u.nameEn,
-    label: bn ? u.name : u.nameEn,
-    aliases: [u.name, u.nameEn],
+    value: bn ? (u.name || u.nameEn) : (u.nameEn || u.name),
+    label: bn ? (u.name || u.nameEn) : (u.nameEn || u.name),
+    aliases: [u.name, u.nameEn].filter(Boolean) as string[],
   }));
 
   const postOfficeOptions: SelectOption[] = postOffices.map(po => {
-    const bnLabel = `${po.name || po.nameEn} - ${po.code}`;
+    const poBn = getPostOfficeBn(po.nameEn, po.code) || po.name || po.nameEn;
+    const bnLabel = `${poBn} - ${toBnDigits(po.code)}`;
     const enLabel = `${po.nameEn} - ${po.code}`;
     return {
       value: bn ? bnLabel : enLabel,
       label: bn ? bnLabel : enLabel,
-      aliases: [bnLabel, enLabel, po.name, po.nameEn, po.code],
+      aliases: [bnLabel, enLabel, po.name, po.nameEn, poBn, po.code, toBnDigits(po.code)].filter(Boolean) as string[],
     };
   });
 

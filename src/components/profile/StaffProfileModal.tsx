@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { getStaffDisplayNames } from '@/lib/nameFormatter';
-import { formatAddress } from '@/lib/banglaAddressHelper';
+import { formatAddress, translateAddressComponent } from '@/lib/banglaAddressHelper';
 import { formatPhoneNumber } from '@/lib/phoneUtils';
 
 interface StaffProfileModalProps {
@@ -326,12 +326,12 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
       {/* ═══════════ STEP 2: ঠিকানা (Address) ═══════════ */}
       {activeStep === 'address' && (
         <div className="space-y-4 animate-in fade-in-50 duration-200">
-          <ProfileSectionCard title={bn ? '২. বর্তমান ঠিকানা (Present Address)' : '2. Present Address'} icon={MapPin} columns={2}>
-            {presentAddr.division && <ProfileInfoItem icon={MapPin} label={bn ? 'বিভাগ' : 'Division'} value={presentAddr.division} />}
-            {presentAddr.district && <ProfileInfoItem icon={MapPin} label={bn ? 'জেলা' : 'District'} value={presentAddr.district} />}
-            {presentAddr.upazila && <ProfileInfoItem icon={MapPin} label={bn ? 'উপজেলা/থানা' : 'Upazila'} value={presentAddr.upazila} />}
-            {presentAddr.union && <ProfileInfoItem icon={MapPin} label={bn ? 'ইউনিয়ন' : 'Union'} value={presentAddr.union} />}
-            {presentAddr.postOffice && <ProfileInfoItem icon={MapPin} label={bn ? 'ডাকঘর' : 'Post Office'} value={presentAddr.postOffice} />}
+          <ProfileSectionCard title={bn ? '২. বর্তমান ঠিকানা' : '2. Present Address'} icon={MapPin} columns={2}>
+            {presentAddr.division && <ProfileInfoItem icon={MapPin} label={bn ? 'বিভাগ' : 'Division'} value={translateAddressComponent(presentAddr.division, bn)} />}
+            {presentAddr.district && <ProfileInfoItem icon={MapPin} label={bn ? 'জেলা' : 'District'} value={translateAddressComponent(presentAddr.district, bn)} />}
+            {presentAddr.upazila && <ProfileInfoItem icon={MapPin} label={bn ? 'উপজেলা/থানা' : 'Upazila'} value={translateAddressComponent(presentAddr.upazila, bn)} />}
+            {presentAddr.union && <ProfileInfoItem icon={MapPin} label={bn ? 'ইউনিয়ন' : 'Union'} value={translateAddressComponent(presentAddr.union, bn)} />}
+            {presentAddr.postOffice && <ProfileInfoItem icon={MapPin} label={bn ? 'ডাকঘর' : 'Post Office'} value={translateAddressComponent(presentAddr.postOffice, bn)} />}
             {presentAddr.village && <ProfileInfoItem icon={MapPin} label={bn ? 'গ্রাম/মহল্লা' : 'Village/Street'} value={presentAddr.village} />}
             <ProfileInfoItem 
               icon={MapPin} 
@@ -341,12 +341,12 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
             />
           </ProfileSectionCard>
 
-          <ProfileSectionCard title={bn ? 'স্থায়ী ঠিকানা (Permanent Address)' : 'Permanent Address'} icon={Home} columns={2}>
-            {permanentAddr.division && <ProfileInfoItem icon={Home} label={bn ? 'বিভাগ' : 'Division'} value={permanentAddr.division} />}
-            {permanentAddr.district && <ProfileInfoItem icon={Home} label={bn ? 'জেলা' : 'District'} value={permanentAddr.district} />}
-            {permanentAddr.upazila && <ProfileInfoItem icon={Home} label={bn ? 'উপজেলা/থানা' : 'Upazila'} value={permanentAddr.upazila} />}
-            {permanentAddr.union && <ProfileInfoItem icon={Home} label={bn ? 'ইউনিয়ন' : 'Union'} value={permanentAddr.union} />}
-            {permanentAddr.postOffice && <ProfileInfoItem icon={Home} label={bn ? 'ডাকঘর' : 'Post Office'} value={permanentAddr.postOffice} />}
+          <ProfileSectionCard title={bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'} icon={Home} columns={2}>
+            {permanentAddr.division && <ProfileInfoItem icon={Home} label={bn ? 'বিভাগ' : 'Division'} value={translateAddressComponent(permanentAddr.division, bn)} />}
+            {permanentAddr.district && <ProfileInfoItem icon={Home} label={bn ? 'জেলা' : 'District'} value={translateAddressComponent(permanentAddr.district, bn)} />}
+            {permanentAddr.upazila && <ProfileInfoItem icon={Home} label={bn ? 'উপজেলা/থানা' : 'Upazila'} value={translateAddressComponent(permanentAddr.upazila, bn)} />}
+            {permanentAddr.union && <ProfileInfoItem icon={Home} label={bn ? 'ইউনিয়ন' : 'Union'} value={translateAddressComponent(permanentAddr.union, bn)} />}
+            {permanentAddr.postOffice && <ProfileInfoItem icon={Home} label={bn ? 'ডাকঘর' : 'Post Office'} value={translateAddressComponent(permanentAddr.postOffice, bn)} />}
             {permanentAddr.village && <ProfileInfoItem icon={Home} label={bn ? 'গ্রাম/মহল্লা' : 'Village/Street'} value={permanentAddr.village} />}
             <ProfileInfoItem 
               icon={Home} 
@@ -361,19 +361,19 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
       {/* ═══════════ STEP 3: পিতা-মাতা (Parents) ═══════════ */}
       {activeStep === 'parents' && (
         <div className="space-y-4 animate-in fade-in-50 duration-200">
-          <ProfileSectionCard title={bn ? '৩. পিতার বিবরণ (Father Details)' : "3. Father's Details"} icon={Users}>
+          <ProfileSectionCard title={bn ? '৩. পিতার বিবরণ' : "3. Father's Details"} icon={Users}>
             <ProfileInfoItem icon={User} label={bn ? 'পিতার নাম' : "Father's Name"} value={father.name} />
             <ProfileInfoItem icon={Briefcase} label={bn ? 'পেশা' : 'Occupation'} value={father.occupation} />
             <ProfileInfoItem icon={Phone} label={bn ? 'মোবাইল' : 'Mobile'} value={formatPhoneNumber(father.mobile, father.mobile_code)} />
-            <ProfileInfoItem icon={CreditCard} label={bn ? 'NID' : 'National ID'} value={father.nid} />
+            <ProfileInfoItem icon={CreditCard} label={bn ? 'জাতীয় পরিচয়পত্র (NID)' : 'National ID'} value={father.nid} />
             {formatAddr(father.address) && <ProfileInfoItem icon={MapPin} label={bn ? 'পিতার ঠিকানা' : 'Address'} value={formatAddr(father.address)} fullWidth />}
           </ProfileSectionCard>
 
-          <ProfileSectionCard title={bn ? 'মাতার বিবরণ (Mother Details)' : "Mother's Details"} icon={Heart}>
+          <ProfileSectionCard title={bn ? 'মাতার বিবরণ' : "Mother's Details"} icon={Heart}>
             <ProfileInfoItem icon={User} label={bn ? 'মাতার নাম' : "Mother's Name"} value={mother.name} />
             <ProfileInfoItem icon={Briefcase} label={bn ? 'পেশা' : 'Occupation'} value={mother.occupation} />
             <ProfileInfoItem icon={Phone} label={bn ? 'মোবাইল' : 'Mobile'} value={formatPhoneNumber(mother.mobile, mother.mobile_code)} />
-            <ProfileInfoItem icon={CreditCard} label={bn ? 'NID' : 'National ID'} value={mother.nid} />
+            <ProfileInfoItem icon={CreditCard} label={bn ? 'জাতীয় পরিচয়পত্র (NID)' : 'National ID'} value={mother.nid} />
             {formatAddr(mother.address) && <ProfileInfoItem icon={MapPin} label={bn ? 'মাতার ঠিকানা' : 'Address'} value={formatAddr(mother.address)} fullWidth />}
           </ProfileSectionCard>
         </div>
@@ -383,7 +383,7 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
       {activeStep === 'guardian' && (
         <div className="space-y-4 animate-in fade-in-50 duration-200">
           {(guardian.name || guardian.relation || guardian.mobile || guardian.nid) ? (
-            <ProfileSectionCard title={bn ? '৪. অভিভাবকের তথ্য (Guardian Details)' : '4. Guardian Details'} icon={UserCheck}>
+            <ProfileSectionCard title={bn ? '৪. অভিভাবকের তথ্য' : '4. Guardian Details'} icon={UserCheck}>
               <ProfileInfoItem icon={User} label={bn ? 'অভিভাবকের নাম' : 'Guardian Name'} value={guardian.name} />
               <ProfileInfoItem icon={Users} label={bn ? 'সম্পর্ক' : 'Relation'} value={guardian.relation} />
               <ProfileInfoItem icon={Phone} label={bn ? 'মোবাইল নম্বর' : 'Mobile'} value={formatPhoneNumber(guardian.mobile, guardian.mobile_code)} />
@@ -462,7 +462,7 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
                 <div className="flex items-center justify-between pb-2 border-b border-border/50">
                   <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
                     <ShieldCheck className="w-5 h-5 text-emerald-700" />
-                    {bn ? 'সনাক্তকারীর তথ্য (Identifier Details)' : 'Identifier Details'}
+                    {bn ? 'সনাক্তকারীর তথ্য' : 'Identifier Details'}
                   </h3>
                 </div>
 
@@ -493,7 +493,7 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
                 <div className="flex items-center justify-between pb-2 border-b border-border/50">
                   <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
                     <Users className="w-5 h-5 text-emerald-700" />
-                    {bn ? 'পরিচয়কারীর তথ্য (Introducer Details)' : 'Introducer Details'}
+                    {bn ? 'পরিচয়কারীর তথ্য' : 'Introducer Details'}
                   </h3>
                 </div>
 
@@ -525,7 +525,7 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
       {activeStep === 'documents' && (
         <div className="space-y-4 animate-in fade-in-50 duration-200">
           {docs.length > 0 ? (
-            <ProfileSectionCard title={bn ? '৬. সংযুক্ত ডকুমেন্টসমূহ (Attached Documents)' : '6. Attached Documents'} icon={FileText}>
+            <ProfileSectionCard title={bn ? '৬. সংযুক্ত ডকুমেন্টসমূহ' : '6. Attached Documents'} icon={FileText}>
               <div className="col-span-full space-y-3">
                 {docs.map((doc: any, i: number) => (
                   <div key={i} className="flex items-center justify-between gap-3 p-4 rounded-xl bg-card border border-border/60 hover:border-emerald-500/40 hover:shadow-xs transition-all">
@@ -569,7 +569,7 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
       {/* ═══════════ STEP 7: অনুমোদন ও বেতন (Approval & Salary) ═══════════ */}
       {activeStep === 'salary' && (
         <div className="space-y-4 animate-in fade-in-50 duration-200">
-          <ProfileSectionCard title={bn ? '৮. কর্মসংস্থান ও ডিউটি বিবরণ (Employment & Duty Details)' : '8. Employment & Duty Details'} icon={Briefcase}>
+          <ProfileSectionCard title={bn ? '৭. কর্মসংস্থান ও ডিউটি বিবরণ' : '7. Employment & Duty Details'} icon={Briefcase}>
             <ProfileInfoItem icon={Briefcase} label={bn ? 'পদবী' : 'Designation'} value={staff.designation} />
             <ProfileInfoItem icon={Building2} label={bn ? 'ডিপার্টমেন্ট' : 'Department'} value={translateDepartment(staff.department, bn)} />
             <ProfileInfoItem icon={Briefcase} label={bn ? 'কর্মের ধরন' : 'Employment Type'} value={translateEmploymentType(staff.employment_type || sd.employment_type, bn)} />
@@ -589,7 +589,7 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
             />
           </ProfileSectionCard>
 
-          <ProfileSectionCard title={bn ? 'অনুমোদন ও বেতন স্কেল (Approval & Salary)' : 'Approval & Salary'} icon={CheckCircle2}>
+          <ProfileSectionCard title={bn ? 'অনুমোদন ও বেতন স্কেল' : 'Approval & Salary'} icon={CheckCircle2}>
             <ProfileInfoItem 
               icon={CheckCircle2} 
               label={bn ? 'বর্তমান স্ট্যাটাস' : 'Status'} 

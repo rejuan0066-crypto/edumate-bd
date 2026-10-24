@@ -1,5 +1,6 @@
 import { bangladeshAddresses } from '@/data/bangladeshAddresses';
 import { getPostOfficeBn } from '@/data/bangladeshPostcodesBn';
+import { toBnDigits, toEnDigits } from './digits';
 
 // Translation caches
 const enToBnMap = new Map<string, string>();
@@ -61,14 +62,12 @@ export function translateAddressComponent(text: string | null | undefined, bn = 
   if (direct) return direct;
 
   // Check post office with code pattern: "Name - 1234"
-  const poMatch = s.match(/^([A-Za-z\s]+?)\s*-\s*(\d+)$/);
+  const poMatch = s.match(/^(.+?)\s*-\s*([0-9০-৯]+)$/);
   if (poMatch) {
     const rawName = poMatch[1].trim();
-    const code = poMatch[2].trim();
-    const bnName = getPostOfficeBn(rawName, code) || enToBnMap.get(rawName.toLowerCase());
-    if (bnName) {
-      return `${bnName} - ${code}`;
-    }
+    const codeEn = toEnDigits(poMatch[2].trim());
+    const bnName = getPostOfficeBn(rawName, codeEn) || enToBnMap.get(rawName.toLowerCase()) || rawName;
+    return `${bnName} - ${toBnDigits(codeEn)}`;
   }
 
   return s;

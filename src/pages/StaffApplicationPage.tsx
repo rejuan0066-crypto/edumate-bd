@@ -371,7 +371,7 @@ const StaffApplicationPage = () => {
           {isVisible('section_personal') && (
           <div className="card-elevated p-6">
             <h2 className="font-display font-bold text-foreground mb-4 pb-2 border-b border-border text-center text-2xl">
-              {bn ? 'ব্যক্তিগত তথ্য (Employee Details)' : 'Employee Details'}
+              {bn ? 'ব্যক্তিগত তথ্য' : 'Employee Details'}
             </h2>
             <div className="flex flex-col sm:flex-row gap-6 mb-6">
               {isVisible('staff_photo') && <PhotoUpload value={photoUrl} onChange={setPhotoUrl} folder="staff" />}
@@ -518,7 +518,7 @@ const StaffApplicationPage = () => {
           {isVisible('section_parents') && (
           <div className="card-elevated p-6">
             <h2 className="font-display font-bold text-foreground mb-4 pb-2 border-b border-border text-center text-2xl">
-              {bn ? 'পিতা-মাতার তথ্য (Parents Details)' : 'Parents Details'}
+              {bn ? 'পিতা-মাতার তথ্য' : 'Parents Details'}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -566,7 +566,7 @@ const StaffApplicationPage = () => {
           {isVisible('section_identifier') && (
           <div className="card-elevated p-6">
             <h2 className="font-display font-bold text-foreground mb-4 pb-2 border-b border-border text-center text-2xl">
-              {bn ? 'সনাক্তকারীর তথ্য (Identifier Details)' : 'Identifier Details'}
+              {bn ? 'সনাক্তকারীর তথ্য' : 'Identifier Details'}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -594,7 +594,7 @@ const StaffApplicationPage = () => {
           {isVisible('section_relatives') && (
           <div className="card-elevated p-6">
             <h2 className="font-display font-bold text-foreground mb-4 pb-2 border-b border-border text-center text-2xl">
-              {bn ? 'পরিচয়কারীর তথ্য (Introducer Information)' : 'Introducer Information'}
+              {bn ? 'পরিচয়কারীর তথ্য' : 'Introducer Information'}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -622,7 +622,7 @@ const StaffApplicationPage = () => {
           {isVisible('section_documents') && (
           <div className="card-elevated p-6">
             <h2 className="font-display font-bold text-foreground mb-4 pb-2 border-b border-border text-center text-2xl">
-              {bn ? 'ডকুমেন্ট আপলোড (Document Upload)' : 'Document Upload'}
+              {bn ? 'ডকুমেন্ট আপলোড' : 'Document Upload'}
             </h2>
             <div className="flex flex-col sm:flex-row gap-3 mb-4">
               <Select value={docType} onValueChange={setDocType}>

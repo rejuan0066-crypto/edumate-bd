@@ -25,7 +25,7 @@ export const SECTION_INFO: Record<SectionKey, { en: string; bn: string; order: n
   student_address: { en: 'Address', bn: 'ঠিকানা', order: 2 },
   father_info: { en: '2. Father Information', bn: 'পিতার তথ্য', order: 3 },
   mother_info: { en: '3. Mother Information', bn: ' মাতার তথ্য', order: 4 },
-  guardian_info: { en: '4. Guardian Information', bn: ' অভিভাবক তথ্য', order: 7 },
+  guardian_info: { en: '4. Guardian Information', bn: 'অভিভাবক তথ্য', order: 7 },
   documents: { en: '5. Documents', bn: '৫. ডকুমেন্ট', order: 7 },
 };
 

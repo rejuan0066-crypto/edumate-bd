@@ -55,13 +55,17 @@ export const useMergedAddressData = () => {
     return merged;
   };
 
-  const getDistricts = (divisionNameEn: string): District[] => {
-    const div = getDivisions().find(d => d.nameEn === divisionNameEn);
-    const staticDiv = bangladeshAddresses.find(d => d.nameEn === divisionNameEn);
-    const baseDistricts = staticDiv?.districts || [];
+  const getDistricts = (divisionName: string): District[] => {
+    if (!divisionName) return [];
+    const norm = divisionName.trim().toLowerCase();
+    const allDivs = getDivisions();
+    const div = allDivs.find(d => d.nameEn.toLowerCase() === norm || d.name.toLowerCase() === norm);
+    const staticDiv = bangladeshAddresses.find(d => d.nameEn.toLowerCase() === norm || d.name.toLowerCase() === norm);
+    const divNameEn = div?.nameEn || staticDiv?.nameEn || divisionName;
+    const baseDistricts = staticDiv?.districts || div?.districts || [];
 
-    const edits = customEntries.filter(e => e.level === 'district' && e.action === 'edit' && e.parent_path === divisionNameEn);
-    const additions = customEntries.filter(e => e.level === 'district' && e.action === 'add' && e.parent_path === divisionNameEn);
+    const edits = customEntries.filter(e => e.level === 'district' && e.action === 'edit' && (e.parent_path === divNameEn || e.parent_path === divisionName));
+    const additions = customEntries.filter(e => e.level === 'district' && e.action === 'add' && (e.parent_path === divNameEn || e.parent_path === divisionName));
 
     const merged = baseDistricts.map(dist => {
       const edit = edits.find(e => e.original_name_en === dist.nameEn);
@@ -78,14 +82,20 @@ export const useMergedAddressData = () => {
     return merged;
   };
 
-  const getUpazilas = (divisionNameEn: string, districtNameEn: string): Upazila[] => {
-    const parentPath = `${divisionNameEn}/${districtNameEn}`;
-    const staticDiv = bangladeshAddresses.find(d => d.nameEn === divisionNameEn);
-    const staticDist = staticDiv?.districts.find(d => d.nameEn === districtNameEn);
+  const getUpazilas = (divisionName: string, districtName: string): Upazila[] => {
+    if (!divisionName || !districtName) return [];
+    const normDiv = divisionName.trim().toLowerCase();
+    const normDist = districtName.trim().toLowerCase();
+    const staticDiv = bangladeshAddresses.find(d => d.nameEn.toLowerCase() === normDiv || d.name.toLowerCase() === normDiv);
+    const staticDist = staticDiv?.districts.find(d => d.nameEn.toLowerCase() === normDist || d.name.toLowerCase() === normDist);
+    const divNameEn = staticDiv?.nameEn || divisionName;
+    const distNameEn = staticDist?.nameEn || districtName;
+    const parentPath = `${divNameEn}/${distNameEn}`;
+    const altParentPath = `${divisionName}/${districtName}`;
     const baseUpazilas = staticDist?.upazilas || [];
 
-    const edits = customEntries.filter(e => e.level === 'upazila' && e.action === 'edit' && e.parent_path === parentPath);
-    const additions = customEntries.filter(e => e.level === 'upazila' && e.action === 'add' && e.parent_path === parentPath);
+    const edits = customEntries.filter(e => e.level === 'upazila' && e.action === 'edit' && (e.parent_path === parentPath || e.parent_path === altParentPath));
+    const additions = customEntries.filter(e => e.level === 'upazila' && e.action === 'add' && (e.parent_path === parentPath || e.parent_path === altParentPath));
 
     const merged = baseUpazilas.map(upz => {
       const edit = edits.find(e => e.original_name_en === upz.nameEn);
@@ -102,15 +112,23 @@ export const useMergedAddressData = () => {
     return merged;
   };
 
-  const getUnions = (divisionNameEn: string, districtNameEn: string, upazilaNameEn: string): Union[] => {
-    const parentPath = `${divisionNameEn}/${districtNameEn}/${upazilaNameEn}`;
-    const staticDiv = bangladeshAddresses.find(d => d.nameEn === divisionNameEn);
-    const staticDist = staticDiv?.districts.find(d => d.nameEn === districtNameEn);
-    const staticUpz = staticDist?.upazilas.find(u => u.nameEn === upazilaNameEn);
+  const getUnions = (divisionName: string, districtName: string, upazilaName: string): Union[] => {
+    if (!divisionName || !districtName || !upazilaName) return [];
+    const normDiv = divisionName.trim().toLowerCase();
+    const normDist = districtName.trim().toLowerCase();
+    const normUpz = upazilaName.trim().toLowerCase();
+    const staticDiv = bangladeshAddresses.find(d => d.nameEn.toLowerCase() === normDiv || d.name.toLowerCase() === normDiv);
+    const staticDist = staticDiv?.districts.find(d => d.nameEn.toLowerCase() === normDist || d.name.toLowerCase() === normDist);
+    const staticUpz = staticDist?.upazilas.find(u => u.nameEn.toLowerCase() === normUpz || u.name.toLowerCase() === normUpz);
+    const divNameEn = staticDiv?.nameEn || divisionName;
+    const distNameEn = staticDist?.nameEn || districtName;
+    const upzNameEn = staticUpz?.nameEn || upazilaName;
+    const parentPath = `${divNameEn}/${distNameEn}/${upzNameEn}`;
+    const altParentPath = `${divisionName}/${districtName}/${upazilaName}`;
     const baseUnions = staticUpz?.unions || [];
 
-    const edits = customEntries.filter(e => e.level === 'union' && e.action === 'edit' && e.parent_path === parentPath);
-    const additions = customEntries.filter(e => e.level === 'union' && e.action === 'add' && e.parent_path === parentPath);
+    const edits = customEntries.filter(e => e.level === 'union' && e.action === 'edit' && (e.parent_path === parentPath || e.parent_path === altParentPath));
+    const additions = customEntries.filter(e => e.level === 'union' && e.action === 'add' && (e.parent_path === parentPath || e.parent_path === altParentPath));
 
     const merged = baseUnions.map(u => {
       const edit = edits.find(e => e.original_name_en === u.nameEn);
@@ -127,15 +145,23 @@ export const useMergedAddressData = () => {
     return merged;
   };
 
-  const getPostOffices = (divisionNameEn: string, districtNameEn: string, upazilaNameEn: string): PostOffice[] => {
-    const parentPath = `${divisionNameEn}/${districtNameEn}/${upazilaNameEn}`;
-    const staticDiv = bangladeshAddresses.find(d => d.nameEn === divisionNameEn);
-    const staticDist = staticDiv?.districts.find(d => d.nameEn === districtNameEn);
-    const staticUpz = staticDist?.upazilas.find(u => u.nameEn === upazilaNameEn);
+  const getPostOffices = (divisionName: string, districtName: string, upazilaName: string): PostOffice[] => {
+    if (!divisionName || !districtName || !upazilaName) return [];
+    const normDiv = divisionName.trim().toLowerCase();
+    const normDist = districtName.trim().toLowerCase();
+    const normUpz = upazilaName.trim().toLowerCase();
+    const staticDiv = bangladeshAddresses.find(d => d.nameEn.toLowerCase() === normDiv || d.name.toLowerCase() === normDiv);
+    const staticDist = staticDiv?.districts.find(d => d.nameEn.toLowerCase() === normDist || d.name.toLowerCase() === normDist);
+    const staticUpz = staticDist?.upazilas.find(u => u.nameEn.toLowerCase() === normUpz || u.name.toLowerCase() === normUpz);
+    const divNameEn = staticDiv?.nameEn || divisionName;
+    const distNameEn = staticDist?.nameEn || districtName;
+    const upzNameEn = staticUpz?.nameEn || upazilaName;
+    const parentPath = `${divNameEn}/${distNameEn}/${upzNameEn}`;
+    const altParentPath = `${divisionName}/${districtName}/${upazilaName}`;
     const basePOs = staticUpz?.postOffices || [];
 
-    const edits = customEntries.filter(e => e.level === 'post_office' && e.action === 'edit' && e.parent_path === parentPath);
-    const additions = customEntries.filter(e => e.level === 'post_office' && e.action === 'add' && e.parent_path === parentPath);
+    const edits = customEntries.filter(e => e.level === 'post_office' && e.action === 'edit' && (e.parent_path === parentPath || e.parent_path === altParentPath));
+    const additions = customEntries.filter(e => e.level === 'post_office' && e.action === 'add' && (e.parent_path === parentPath || e.parent_path === altParentPath));
 
     const merged = basePOs.map(po => {
       const edit = edits.find(e => e.original_name_en === po.nameEn);

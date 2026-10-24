@@ -1604,7 +1604,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-foreground">
-                    {bn ? 'একাডেমিক তথ্য (Academic Information)' : 'Academic Information'}
+                    {bn ? 'একাডেমিক তথ্য' : 'Academic Information'}
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-muted-foreground">
                     {bn ? 'ভর্তি সেশন, বিভাগ ও শ্রেণীর তথ্য নির্বাচন করুন' : 'Select admission session, division and class'}
@@ -1634,7 +1634,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
               </div>
               <div>
                 <h4 className="text-sm sm:text-base font-bold text-foreground">
-                  {bn ? 'ব্যক্তিগত বিবরণ (Personal Details)' : 'Personal Details'}
+                  {bn ? 'ব্যক্তিগত বিবরণ' : 'Personal Details'}
                 </h4>
                 <p className="text-xs text-muted-foreground">
                   {bn ? 'শিক্ষার্থীর ছবি, নাম, লিঙ্গ, জন্ম তারিখ ও অন্যান্য তথ্য' : 'Student photo, name, gender, birth date and details'}
