@@ -99,7 +99,7 @@ const translateResidence = (val: string | undefined, bn: boolean): string => {
   return map[val.toLowerCase()]?.[bn ? 0 : 1] || val;
 };
 
-export type ProfileStepId = 'personal' | 'address' | 'parents' | 'guardian' | 'identifier' | 'documents' | 'salary';
+export type ProfileStepId = 'personal' | 'address' | 'parents' | 'guardian' | 'identifier' | 'introducer' | 'documents' | 'salary';
 
 const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalProps) => {
   const sd = staff.staff_data || {};
@@ -127,9 +127,10 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
     { id: 'address', stepNumber: 2, bn: 'ঠিকানা', en: 'Address', icon: MapPin },
     { id: 'parents', stepNumber: 3, bn: 'পিতা-মাতা', en: 'Parents', icon: Users },
     { id: 'guardian', stepNumber: 4, bn: 'অভিভাবক', en: 'Guardian', icon: UserCheck },
-    { id: 'identifier', stepNumber: 5, bn: 'সনাক্তকারী ও পরিচয়কারী', en: 'Identifier & Introducer', icon: ShieldCheck },
-    { id: 'documents', stepNumber: 6, bn: 'ডকুমেন্ট আপলোড', en: 'Documents', icon: FileText, count: docs.length },
-    { id: 'salary', stepNumber: 7, bn: 'অনুমোদন ও বেতন', en: 'Approval & Salary', icon: CheckCircle2 },
+    { id: 'identifier', stepNumber: 5, bn: 'সনাক্তকারী', en: 'Identifier', icon: ShieldCheck },
+    { id: 'introducer', stepNumber: 6, bn: 'পরিচয়কারী', en: 'Introducer', icon: Users },
+    { id: 'documents', stepNumber: 7, bn: 'ডকুমেন্ট আপলোড', en: 'Documents', icon: FileText, count: docs.length },
+    { id: 'salary', stepNumber: 8, bn: 'অনুমোদন ও বেতন', en: 'Approval & Salary', icon: CheckCircle2 },
   ];
 
   const currentStepIndex = steps.findIndex(s => s.id === activeStep);

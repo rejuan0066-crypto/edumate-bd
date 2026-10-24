@@ -1000,7 +1000,8 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     { id: 'address', bn: 'ঠিকানা', en: 'Address' },
     { id: 'parents', bn: 'পিতা-মাতা', en: 'Parents' },
     ...(sectionConfig.showGuardian ? [{ id: 'guardian', bn: 'অভিভাবক', en: 'Guardian' }] : []),
-    ...((sectionConfig.showIdentifier || sectionConfig.showRelativesIdentifier) ? [{ id: 'identifier', bn: 'সনাক্তকারী ও পরিচয়কারী', en: 'Identifier & Introducer' }] : []),
+    ...(sectionConfig.showIdentifier ? [{ id: 'identifier', bn: 'সনাক্তকারী', en: 'Identifier' }] : []),
+    ...(sectionConfig.showRelativesIdentifier ? [{ id: 'introducer', bn: 'পরিচয়কারী', en: 'Introducer' }] : []),
     { id: 'documents', bn: 'ডকুমেন্ট আপলোড', en: 'Document Upload' },
     ...(isAdmin ? [{ id: 'approval', bn: 'অনুমোদন ও বেতন', en: 'Approval & Salary' }] : []),
   ];
@@ -1860,207 +1861,127 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
           </div>
           )}
 
-          {/* ========== SECTION 5: Identifier & Introducer (Two Tabs) ========== */}
-          {(sectionConfig.showIdentifier || sectionConfig.showRelativesIdentifier) && currentStepId === 'identifier' && (
+          {/* ========== SECTION 5: Identifier (সনাক্তকারী) ========== */}
+          {sectionConfig.showIdentifier && currentStepId === 'identifier' && (
             <div className="card-elevated p-6 space-y-6">
               <div className="text-center border-b border-border pb-4">
-                <h2 className="font-display font-bold text-foreground text-2xl">
-                  {bn ? 'সনাক্তকারী ও পরিচয়কারীর তথ্য' : 'Identifier & Introducer Information'}
+                <h2 className="font-display font-bold text-foreground text-2xl flex items-center justify-center gap-2">
+                  <ShieldCheck className="w-6 h-6 text-primary" />
+                  <span>{bn ? 'সনাক্তকারীর তথ্য' : 'Identifier Information'}</span>
                 </h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {bn ? 'নিচের ট্যাব থেকে নির্বাচন করে সনাক্তকারী ও পরিচয়কারীর তথ্য পূরণ করুন' : 'Select tabs below to fill in Identifier and Introducer details'}
+                  {bn ? 'স্টাফের ব্যক্তিগত বা প্রাতিষ্ঠানিক সনাক্তকারী ব্যক্তির বিবরণ পূরণ করুন' : 'Fill in details of staff institutional / personal identifier'}
                 </p>
               </div>
 
-              {/* Two Tab Buttons */}
-              <div className="flex border-b border-border gap-2">
-                {sectionConfig.showIdentifier && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveIdentifierTab('identifier')}
-                    className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-all rounded-t-lg ${
-                      activeIdentifierTab === 'identifier'
-                        ? 'border-primary text-primary bg-primary/10 shadow-xs'
-                        : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/40'
-                    }`}
-                  >
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>{bn ? 'সনাক্তকারী' : 'Identifier'}</span>
-                    {(fieldErrors['identifier_name'] || fieldErrors['identifier_relation'] || fieldErrors['identifier_mobile'] || fieldErrors['identifier_nid']) && (
-                      <span className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
-                    )}
-                    {identifierName && !fieldErrors['identifier_name'] && (
-                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-600 font-bold">✓</span>
-                    )}
-                  </button>
-                )}
-
-                {sectionConfig.showRelativesIdentifier && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveIdentifierTab('introducer')}
-                    className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-all rounded-t-lg ${
-                      activeIdentifierTab === 'introducer'
-                        ? 'border-primary text-primary bg-primary/10 shadow-xs'
-                        : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/40'
-                    }`}
-                  >
-                    <Users className="w-4 h-4" />
-                    <span>{bn ? 'পরিচয়কারী' : 'Introducer'}</span>
-                    {relIdName && (
-                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-600 font-bold">✓</span>
-                    )}
-                  </button>
-                )}
+              <div className="space-y-4 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label>{bn ? 'পূর্ণ নাম' : 'Full Name'} <span className="text-destructive">*</span></Label>
+                    <Input
+                      className={`bg-background mt-1 ${fieldErrors['identifier_name'] ? 'border-destructive' : ''}`}
+                      value={identifierName}
+                      onChange={e => handleFieldChange('identifier_name', e.target.value, setIdentifierName)}
+                      placeholder={bn ? 'সনাক্তকারীর পূর্ণ নাম' : 'Full name'}
+                    />
+                    <FieldError field="identifier_name" />
+                  </div>
+                  <div>
+                    <Label>{bn ? 'সম্পর্ক' : 'Relation'} <span className="text-destructive">*</span></Label>
+                    <Input
+                      className={`bg-background mt-1 ${fieldErrors['identifier_relation'] ? 'border-destructive' : ''}`}
+                      value={identifierRelation}
+                      onChange={e => handleFieldChange('identifier_relation', e.target.value, setIdentifierRelation)}
+                      placeholder={bn ? 'সম্পর্ক (যেমন: প্রতিবেশী, পরিচিতজন)' : 'Relation'}
+                    />
+                    <FieldError field="identifier_relation" />
+                  </div>
+                  <PhoneInput
+                    label={bn ? 'মোবাইল' : 'Mobile'}
+                    required
+                    value={identifierMobile}
+                    countryCode={identifierMobileCode}
+                    onChange={(p, c) => { setIdentifierMobile(p); setIdentifierMobileCode(c); }}
+                  />
+                  <div>
+                    <Label>{bn ? 'NID (১০/১৭ ডিজিট)' : 'NID (10/17 digits)'} <span className="text-destructive">*</span></Label>
+                    <Input
+                      className={`bg-background mt-1 ${fieldErrors['identifier_nid'] || identifierNidError ? 'border-destructive' : ''}`}
+                      maxLength={17}
+                      value={identifierNid}
+                      onChange={e => validateNid(e.target.value, setIdentifierNid, setIdentifierNidError)}
+                      placeholder="0123456789"
+                    />
+                    {identifierNidError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {identifierNidError}</p>}
+                    <FieldError field="identifier_nid" />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <AddressFields label={bn ? 'পূর্ণ ঠিকানা' : 'Full Address'} value={identifierAddr} onChange={setIdentifierAddr} />
+                  </div>
+                </div>
               </div>
-
-              {/* Tab 1: সনাক্তকারী */}
-              {activeIdentifierTab === 'identifier' && sectionConfig.showIdentifier && (
-                <div className="space-y-4 pt-1 animate-in fade-in duration-150">
-                  <div className="flex items-center justify-between pb-2 border-b border-border/50">
-                    <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                      <ShieldCheck className="w-5 h-5 text-primary" />
-                      {bn ? 'সনাক্তকারীর তথ্য (Identifier Details)' : 'Identifier Details'}
-                    </h3>
-                    <span className="text-xs text-muted-foreground hidden sm:inline">
-                      {bn ? 'স্টাফের ব্যক্তিগত সনাক্তকারী ব্যক্তির বিবরণ' : 'Details of staff identifier'}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label>{bn ? 'পূর্ণ নাম' : 'Full Name'} <span className="text-destructive">*</span></Label>
-                      <Input
-                        className={`bg-background mt-1 ${fieldErrors['identifier_name'] ? 'border-destructive' : ''}`}
-                        value={identifierName}
-                        onChange={e => handleFieldChange('identifier_name', e.target.value, setIdentifierName)}
-                        placeholder={bn ? 'সনাক্তকারীর পূর্ণ নাম' : 'Full name'}
-                      />
-                      <FieldError field="identifier_name" />
-                    </div>
-                    <div>
-                      <Label>{bn ? 'সম্পর্ক' : 'Relation'} <span className="text-destructive">*</span></Label>
-                      <Input
-                        className={`bg-background mt-1 ${fieldErrors['identifier_relation'] ? 'border-destructive' : ''}`}
-                        value={identifierRelation}
-                        onChange={e => handleFieldChange('identifier_relation', e.target.value, setIdentifierRelation)}
-                        placeholder={bn ? 'সম্পর্ক (যেমন: প্রতিবেশী, পরিচিতজন)' : 'Relation'}
-                      />
-                      <FieldError field="identifier_relation" />
-                    </div>
-                    <PhoneInput
-                      label={bn ? 'মোবাইল' : 'Mobile'}
-                      required
-                      value={identifierMobile}
-                      countryCode={identifierMobileCode}
-                      onChange={(p, c) => { setIdentifierMobile(p); setIdentifierMobileCode(c); }}
-                    />
-                    <div>
-                      <Label>{bn ? 'NID (১০/১৭ ডিজিট)' : 'NID (10/17 digits)'} <span className="text-destructive">*</span></Label>
-                      <Input
-                        className={`bg-background mt-1 ${fieldErrors['identifier_nid'] || identifierNidError ? 'border-destructive' : ''}`}
-                        maxLength={17}
-                        value={identifierNid}
-                        onChange={e => validateNid(e.target.value, setIdentifierNid, setIdentifierNidError)}
-                        placeholder="0123456789"
-                      />
-                      {identifierNidError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {identifierNidError}</p>}
-                      <FieldError field="identifier_nid" />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <AddressFields label={bn ? 'পূর্ণ ঠিকানা' : 'Full Address'} value={identifierAddr} onChange={setIdentifierAddr} />
-                    </div>
-                  </div>
-
-                  {sectionConfig.showRelativesIdentifier && (
-                    <div className="flex justify-end pt-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setActiveIdentifierTab('introducer')}
-                        className="gap-2 text-xs font-medium"
-                      >
-                        <Users className="w-4 h-4" />
-                        {bn ? 'পরবর্তী ট্যাব: পরিচয়কারীর তথ্য →' : 'Next Tab: Introducer Details →'}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Tab 2: পরিচয়কারী */}
-              {activeIdentifierTab === 'introducer' && sectionConfig.showRelativesIdentifier && (
-                <div className="space-y-4 pt-1 animate-in fade-in duration-150">
-                  <div className="flex items-center justify-between pb-2 border-b border-border/50">
-                    <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                      <Users className="w-5 h-5 text-primary" />
-                      {bn ? 'পরিচয়কারীর তথ্য (Introducer Information)' : 'Introducer Information'}
-                    </h3>
-                    <span className="text-xs text-muted-foreground hidden sm:inline">
-                      {bn ? 'স্টাফের পরিচয় প্রদানকারী ব্যক্তি বা আত্মীয়ের বিবরণ' : 'Details of introducer or relative reference'}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label>{bn ? 'পূর্ণ নাম' : 'Full Name'}</Label>
-                      <Input
-                        className="bg-background mt-1"
-                        value={relIdName}
-                        onChange={e => setRelIdName(e.target.value)}
-                        placeholder={bn ? 'পরিচয়কারীর পূর্ণ নাম' : 'Full name'}
-                      />
-                    </div>
-                    <div>
-                      <Label>{bn ? 'সম্পর্ক' : 'Relation'}</Label>
-                      <Input
-                        className="bg-background mt-1"
-                        value={relIdRelation}
-                        onChange={e => setRelIdRelation(e.target.value)}
-                        placeholder={bn ? 'সম্পর্ক (যেমন: চাচা, মামা)' : 'Relation'}
-                      />
-                    </div>
-                    <PhoneInput
-                      label={bn ? 'মোবাইল' : 'Mobile'}
-                      value={relIdMobile}
-                      countryCode={relIdMobileCode}
-                      onChange={(p, c) => { setRelIdMobile(p); setRelIdMobileCode(c); }}
-                    />
-                    <div>
-                      <Label>{bn ? 'NID (১০/১৭ ডিজিট)' : 'NID (10/17 digits)'}</Label>
-                      <Input
-                        className={`bg-background mt-1 ${relIdNidError ? 'border-destructive' : ''}`}
-                        maxLength={17}
-                        value={relIdNid}
-                        onChange={e => validateNid(e.target.value, setRelIdNid, setRelIdNidError)}
-                        placeholder="0123456789"
-                      />
-                      {relIdNidError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {relIdNidError}</p>}
-                    </div>
-                    <div className="sm:col-span-2">
-                      <AddressFields label={bn ? 'পূর্ণ ঠিকানা' : 'Full Address'} value={relIdAddr} onChange={setRelIdAddr} />
-                    </div>
-                  </div>
-
-                  {sectionConfig.showIdentifier && (
-                    <div className="flex justify-start pt-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setActiveIdentifierTab('identifier')}
-                        className="gap-2 text-xs font-medium"
-                      >
-                        <ShieldCheck className="w-4 h-4" />
-                        {bn ? '← পূর্ববর্তী ট্যাব: সনাক্তকারী' : '← Previous Tab: Identifier'}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           )}
 
-          {/* ========== SECTION 6: Document Upload ========== */}
+          {/* ========== SECTION 6: Introducer (পরিচয়কারী) ========== */}
+          {sectionConfig.showRelativesIdentifier && currentStepId === 'introducer' && (
+            <div className="card-elevated p-6 space-y-6">
+              <div className="text-center border-b border-border pb-4">
+                <h2 className="font-display font-bold text-foreground text-2xl flex items-center justify-center gap-2">
+                  <Users className="w-6 h-6 text-primary" />
+                  <span>{bn ? 'পরিচয়কারীর তথ্য' : 'Introducer Information'}</span>
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {bn ? 'স্টাফের পরিচয় প্রদানকারী ব্যক্তি বা আত্মীয়ের বিবরণ পূরণ করুন' : 'Fill in details of introducer or relative reference'}
+                </p>
+              </div>
+
+              <div className="space-y-4 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label>{bn ? 'পূর্ণ নাম' : 'Full Name'}</Label>
+                    <Input
+                      className="bg-background mt-1"
+                      value={relIdName}
+                      onChange={e => setRelIdName(e.target.value)}
+                      placeholder={bn ? 'পরিচয়কারীর পূর্ণ নাম' : 'Full name'}
+                    />
+                  </div>
+                  <div>
+                    <Label>{bn ? 'সম্পর্ক' : 'Relation'}</Label>
+                    <Input
+                      className="bg-background mt-1"
+                      value={relIdRelation}
+                      onChange={e => setRelIdRelation(e.target.value)}
+                      placeholder={bn ? 'সম্পর্ক (যেমন: চাচা, মামা)' : 'Relation'}
+                    />
+                  </div>
+                  <PhoneInput
+                    label={bn ? 'মোবাইল' : 'Mobile'}
+                    value={relIdMobile}
+                    countryCode={relIdMobileCode}
+                    onChange={(p, c) => { setRelIdMobile(p); setRelIdMobileCode(c); }}
+                  />
+                  <div>
+                    <Label>{bn ? 'NID (১০/১৭ ডিজিট)' : 'NID (10/17 digits)'}</Label>
+                    <Input
+                      className={`bg-background mt-1 ${relIdNidError ? 'border-destructive' : ''}`}
+                      maxLength={17}
+                      value={relIdNid}
+                      onChange={e => validateNid(e.target.value, setRelIdNid, setRelIdNidError)}
+                      placeholder="0123456789"
+                    />
+                    {relIdNidError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {relIdNidError}</p>}
+                  </div>
+                  <div className="sm:col-span-2">
+                    <AddressFields label={bn ? 'পূর্ণ ঠিকানা' : 'Full Address'} value={relIdAddr} onChange={setRelIdAddr} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========== SECTION 7: Document Upload ========== */}
           {currentStepId === 'documents' && (
           <div className="card-elevated p-6">
             <h2 className="font-display font-bold text-foreground mb-4 pb-2 border-b border-border text-center text-2xl">
