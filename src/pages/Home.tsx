@@ -19,6 +19,7 @@ import HomePostsSection from '@/components/home/HomePostsSection';
 import PrayerTimesWidget from '@/components/home/PrayerTimesWidget';
 import IslamicCalendarWidget from '@/components/home/IslamicCalendarWidget';
 import PageLoader from '@/components/PageLoader';
+import FloatingSocialIcons from '@/components/home/FloatingSocialIcons';
 
 const Home = () => {
   const { t, language } = useLanguage();
@@ -360,6 +361,9 @@ const Home = () => {
 
       {/* ===== Dynamic Standalone Sections ===== */}
       {orderedStandalone.map(s => renderSection(s.key))}
+
+      {/* ===== Floating Social Media Icons ===== */}
+      <FloatingSocialIcons />
     </PublicLayout>
   );
 };
