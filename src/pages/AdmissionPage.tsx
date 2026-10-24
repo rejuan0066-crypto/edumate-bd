@@ -22,6 +22,9 @@ import {
   GraduationCap, User, UserCheck, Heart, MapPin, ShieldCheck, Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
+import { generateStudentApplicationNo } from '@/lib/applicationIdGenerator';
+import { Copy } from 'lucide-react';
 import { DatePicker } from '@/components/ui/date-picker';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { formatAddress as formatAddressBn } from '@/lib/banglaAddressHelper';
@@ -337,13 +340,17 @@ const AdmissionPage = () => {
 
   const addMutation = useMutation({
     mutationFn: async () => {
-      const admissionData = buildAdmissionData();
+      const appNo = await generateStudentApplicationNo();
+      const admissionData = {
+        ...buildAdmissionData(),
+        application_no: appNo,
+      };
       const selectedSession = academicSessions.find((s: any) => s.id === form.admission_session)
         || academicSessions.find((s: any) => s.name === form.admission_session || s.name_bn === form.admission_session || s.name === form.session_year || s.name_bn === form.session_year);
       const finalSessionName = selectedSession?.name || form.admission_session || form.session_year || null;
       const finalSessionId = selectedSession?.id || (form.admission_session && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(form.admission_session) ? form.admission_session : null);
       const finalSessionYear = form.session_year || selectedSession?.name || form.admission_session || null;
-      const studentId = form.registration_no || null;
+      const studentId = appNo;
 
       const payload = {
         name_bn: form.first_name.trim(),
@@ -388,7 +395,10 @@ const AdmissionPage = () => {
     },
     onSuccess: (payload) => {
       toast.success(bn ? 'ভর্তি আবেদন সফলভাবে জমা হয়েছে! অনুমোদনের অপেক্ষায়।' : 'Admission submitted! Pending approval.');
-      setSubmittedData(payload);
+      setSubmittedData({
+        ...payload,
+        application_no: payload.student_id,
+      });
     },
     onError: (e: any) => toast.error(e.message || 'Error submitting application'),
   });

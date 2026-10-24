@@ -39,6 +39,7 @@ const Contact = lazy(() => import("./pages/Contact"));
 const ResultFind = lazy(() => import("./pages/ResultFind"));
 const StudentInfoPage = lazy(() => import("./pages/StudentInfoPage"));
 const AdmissionPage = lazy(() => import("./pages/AdmissionPage"));
+const ApplicationTrackingPage = lazy(() => import("./pages/ApplicationTrackingPage"));
 const AdmissionTestsPublic = lazy(() => import("./pages/AdmissionTestsPublic"));
 const AdmissionTestTake = lazy(() => import("./pages/AdmissionTestTake"));
 const AdmissionTestMerit = lazy(() => import("./pages/AdmissionTestMerit"));
@@ -379,6 +380,8 @@ const App = () => (
                   <Route path="/result" element={<ResultFind />} />
                   <Route path="/student-info" element={<StudentInfoPage />} />
                   <Route path="/admission" element={<AdmissionPage />} />
+                  <Route path="/application-tracking" element={<ApplicationTrackingPage />} />
+                  <Route path="/track-application" element={<ApplicationTrackingPage />} />
                   <Route path="/admission-tests" element={<AdmissionTestsPublic />} />
                   <Route path="/admission-test/:id" element={<AdmissionTestTake />} />
                   <Route path="/admission-test/:id/merit" element={<AdmissionTestMerit />} />

@@ -924,18 +924,22 @@ const AdminApprovals = () => {
   // Filter lists based on Search Query
   const filteredStudents = useMemo(() => {
     if (!searchQuery.trim()) return students;
-    const q = searchQuery.toLowerCase();
+    const q = searchQuery.toLowerCase().trim();
+    const cleanQ = q.replace(/[-\s]/g, '');
     return students.filter((s: any) =>
       (s.name_bn || '').toLowerCase().includes(q) ||
       (s.name_en || '').toLowerCase().includes(q) ||
       (s.phone || '').includes(q) ||
-      (s.roll_number || '').includes(q)
+      (s.roll_number || '').includes(q) ||
+      (s.student_id || '').toLowerCase().replace(/[-\s]/g, '').includes(cleanQ) ||
+      ((s.admission_data as any)?.application_no || '').toLowerCase().replace(/[-\s]/g, '').includes(cleanQ)
     );
   }, [students, searchQuery]);
 
   const filteredStaff = useMemo(() => {
     if (!searchQuery.trim()) return staffList;
-    const q = searchQuery.toLowerCase();
+    const q = searchQuery.toLowerCase().trim();
+    const cleanQ = q.replace(/[-\s]/g, '');
     return staffList.filter((s: any) =>
       (s.name_bn || '').toLowerCase().includes(q) ||
       (s.name_en || '').toLowerCase().includes(q) ||
@@ -944,6 +948,8 @@ const AdminApprovals = () => {
       (s.designation || '').toLowerCase().includes(q) ||
       (s.phone || '').includes(q) ||
       (s.mobile || '').includes(q) ||
+      (s.staff_id || '').toLowerCase().replace(/[-\s]/g, '').includes(cleanQ) ||
+      ((s.staff_data as any)?.application_no || '').toLowerCase().replace(/[-\s]/g, '').includes(cleanQ) ||
       (s.nid || '').includes(q) ||
       String(s.salary || '').includes(q)
     );
@@ -1233,7 +1239,14 @@ const AdminApprovals = () => {
                                     )}
                                     <div>
                                       <p className="font-medium text-sm text-foreground">{displayNames.primary || '—'}</p>
-                                      {displayNames.secondary && <p className="text-xs text-muted-foreground">{displayNames.secondary}</p>}
+                                      <div className="flex items-center gap-1.5 mt-0.5">
+                                        {(s.admission_data?.application_no || s.student_id) && (
+                                          <span className="font-mono text-[10px] font-bold text-primary bg-primary/10 px-1 py-0.2 rounded border border-primary/20">
+                                            {s.admission_data?.application_no || s.student_id}
+                                          </span>
+                                        )}
+                                        {displayNames.secondary && <span className="text-xs text-muted-foreground">{displayNames.secondary}</span>}
+                                      </div>
                                     </div>
                                   </>
                                 );
@@ -1366,7 +1379,14 @@ const AdminApprovals = () => {
                                 )}
                                 <div>
                                   <p className="font-medium text-sm text-foreground">{staffDisplayName}</p>
-                                  <p className="text-xs text-muted-foreground">{s.email || ''}</p>
+                                  <div className="flex items-center gap-1.5 mt-0.5">
+                                    {((s.staff_data as any)?.application_no || s.staff_id) && (
+                                      <span className="font-mono text-[10px] font-bold text-purple-600 bg-purple-500/10 px-1 py-0.2 rounded border border-purple-500/20">
+                                        {(s.staff_data as any)?.application_no || s.staff_id}
+                                      </span>
+                                    )}
+                                    {s.email && <span className="text-xs text-muted-foreground">{s.email}</span>}
+                                  </div>
                                 </div>
                               </div>
                             </TableCell>
@@ -2742,6 +2762,11 @@ const AdminApprovals = () => {
                         <p className="text-xs text-muted-foreground font-medium">{studentApprovalModal.name_en}</p>
                       )}
                       <div className="flex flex-wrap gap-2 mt-1.5 text-xs text-muted-foreground">
+                        {(studentApprovalModal.admission_data?.application_no || studentApprovalModal.student_id) && (
+                          <Badge variant="outline" className="font-mono font-bold text-[10px] border-primary/30 text-primary bg-primary/5">
+                            App ID: {studentApprovalModal.admission_data?.application_no || studentApprovalModal.student_id}
+                          </Badge>
+                        )}
                         {studentApprovalModal.phone && (
                           <span className="font-mono">📱 {studentApprovalModal.phone}</span>
                         )}

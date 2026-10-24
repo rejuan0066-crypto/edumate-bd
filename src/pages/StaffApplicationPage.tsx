@@ -13,6 +13,10 @@ import DocumentPreviewModal from '@/components/DocumentPreviewModal';
 import { useState, useRef } from 'react';
 import { AlertCircle, CheckCircle, Loader2, Upload, Trash2, Eye } from 'lucide-react';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
+import { generateStaffApplicationNo } from '@/lib/applicationIdGenerator';
+import { buildStaffApplicationHTML, downloadHTMLAsPDF, printHTML } from '@/lib/applicationSlipGenerator';
+import { Copy, Download, Printer } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { supabase } from '@/integrations/supabase/client';
@@ -45,6 +49,8 @@ const StaffApplicationPage = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const [submitted, setSubmitted] = useState(false);
+  const [submittedStaffData, setSubmittedStaffData] = useState<any | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Check if form is open
   const { data: isOpen, isLoading: checkingOpen } = useQuery({
