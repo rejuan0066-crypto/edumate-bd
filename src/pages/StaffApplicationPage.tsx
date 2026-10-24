@@ -36,8 +36,6 @@ const formatAddress = (addr: AddressData, bn = true) => formatAddressBn(addr, bn
 const MARITAL_STATUSES = [
   { value: 'unmarried', bn: 'অবিবাহিত', en: 'Unmarried' },
   { value: 'married', bn: 'বিবাহিত', en: 'Married' },
-  { value: 'widowed', bn: 'বিধবা / বিপত্নীক', en: 'Widowed' },
-  { value: 'divorced', bn: 'তালাকপ্রাপ্ত', en: 'Divorced' },
 ];
 
 const RELIGIONS = [

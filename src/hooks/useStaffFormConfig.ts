@@ -48,7 +48,7 @@ const DEFAULT_FIELDS: Array<{
   { label: 'Residence Type', label_bn: 'আবাসিক ধরন', field_type: 'radio', is_required: true, sort_order: 9, default_value: 'residence_type', section: 'employee_details', options: ['residential', 'non-residential'] },
   { label: 'Date of Birth', label_bn: 'জন্ম তারিখ', field_type: 'date', is_required: true, sort_order: 10, default_value: 'dob', section: 'employee_details' },
   { label: 'Religion', label_bn: 'ধর্ম', field_type: 'select', is_required: true, sort_order: 11, default_value: 'religion', section: 'employee_details', options: ['islam', 'hinduism', 'christianity', 'buddhism', 'other'] },
-  { label: 'Marital Status', label_bn: 'বৈবাহিক অবস্থা', field_type: 'select', is_required: false, sort_order: 11.5, default_value: 'marital_status', section: 'employee_details', options: ['unmarried', 'married', 'widowed', 'divorced'] },
+  { label: 'Marital Status', label_bn: 'বৈবাহিক অবস্থা', field_type: 'select', is_required: false, sort_order: 11.5, default_value: 'marital_status', section: 'employee_details', options: ['unmarried', 'married'] },
   { label: 'NID (10/17 digits)', label_bn: 'NID (১০/১৭ ডিজিট)', field_type: 'text', is_required: true, sort_order: 12, default_value: 'nid', section: 'employee_details' },
   { label: 'Education', label_bn: 'শিক্ষাগত যোগ্যতা', field_type: 'text', is_required: true, sort_order: 13, default_value: 'education', section: 'employee_details' },
   { label: 'Experience', label_bn: 'অভিজ্ঞতা', field_type: 'text', is_required: false, sort_order: 14, default_value: 'experience', section: 'employee_details' },
