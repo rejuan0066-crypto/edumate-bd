@@ -414,7 +414,7 @@ const AdmissionPage = () => {
       const key = f.default_value;
       if (!key || !f.is_active || !f.is_required) return;
       const val = form[key];
-      if (key === 'address_permanent' || key === 'address_present' || key === 'roll_number' || key === 'registration_no' || key === 'student_type' || key === 'student_category' || key === 'is_free') return;
+      if (key === 'address_permanent' || key === 'address_present' || key === 'roll_number' || key === 'registration_no' || key === 'student_type' || key === 'student_category' || key === 'is_free' || key === 'admission_division') return;
       if (key === 'guardian_name' || key === 'guardian_relation' || key === 'guardian_phone' || key === 'guardian_nid') {
         if (form.guardian_type !== 'other') return;
       }
@@ -861,7 +861,7 @@ const AdmissionPage = () => {
 
   const SYSTEM_KEYS = [
     'photo_url', 'student_type', 'residence_type', 'admission_session', 'roll_number',
-    'registration_no', 'admission_date', 'session_year', 'admission_class',
+    'registration_no', 'admission_date', 'session_year', 'admission_division', 'admission_class',
     'first_name', 'last_name', 'gender', 'religion', 'date_of_birth', 'birth_reg_no',
     'previous_class', 'previous_institute', 'is_orphan', 'is_poor',
     'address_permanent', 'address_present',
