@@ -132,6 +132,8 @@ export default function StaffDutyTimeDialog({ open, onOpenChange, staff, bn = tr
       }
 
       qc.invalidateQueries({ queryKey: ['staff'] });
+      qc.invalidateQueries({ queryKey: ['staff_profile_page'] });
+      qc.invalidateQueries({ queryKey: ['staff_dynamic_shift'] });
       qc.invalidateQueries({ queryKey: ['staff_special_shifts'] });
       qc.invalidateQueries({ queryKey: ['attendance'] });
       qc.invalidateQueries({ queryKey: ['salary'] });

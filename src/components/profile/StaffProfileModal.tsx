@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { resolveStaffShift, fetchSpecialShifts, fetchDepartmentSchedules } from '@/lib/shiftResolution';
 import {
   User, Calendar, Heart, Phone, Mail, MapPin, CreditCard, ClipboardList,
   Fingerprint, Building2, GraduationCap, Briefcase, Clock, Users, Home, FileText, 
@@ -115,6 +118,44 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
   const docs = sd.documents || [];
 
   const formatAddr = (a: any) => formatAddress(a, bn);
+
+  // Dynamically resolve duty time across all 3 tiers (Special Shift, Profile Shift, Department Schedule / Category Default)
+  const { data: dynamicShift } = useQuery({
+    queryKey: ['staff_dynamic_shift', staff?.id, staff?.duty_start_time, staff?.duty_end_time],
+    queryFn: async () => {
+      if (!staff?.id) return null;
+      const today = new Date().toISOString().slice(0, 10);
+      const [specialShifts, departmentSchedules, catRes] = await Promise.all([
+        fetchSpecialShifts(supabase),
+        fetchDepartmentSchedules(supabase),
+        supabase.from('website_settings').select('value').eq('key', 'category_shift_times').maybeSingle(),
+      ]);
+
+      const catMap = ((catRes?.data?.value as any) || {}) as Record<string, { start?: string; end?: string }>;
+      const cat = staff?.staff_category || staff?.department || null;
+
+      const resolved = resolveStaffShift({
+        staffId: staff.id,
+        staffCategory: cat,
+        targetDate: today,
+        profileDuty: {
+          start: staff.duty_start_time || sd.duty_start_time,
+          end: staff.duty_end_time || sd.duty_end_time,
+        },
+        specialShifts,
+        departmentSchedules,
+        categoryTimes: catMap,
+        defaultTime: { start: '09:00', end: '17:00' },
+      });
+
+      return resolved;
+    },
+    enabled: !!staff?.id,
+    staleTime: 30 * 1000,
+  });
+
+  const effectiveStart = dynamicShift?.start || staff.duty_start_time || sd.duty_start_time || '09:00';
+  const effectiveEnd = dynamicShift?.end || staff.duty_end_time || sd.duty_end_time || '17:00';
 
   // Stepper state
   const [activeStep, setActiveStep] = useState<ProfileStepId>('personal');
@@ -528,7 +569,7 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
       {/* ═══════════ STEP 7: অনুমোদন ও বেতন (Approval & Salary) ═══════════ */}
       {activeStep === 'salary' && (
         <div className="space-y-4 animate-in fade-in-50 duration-200">
-          <ProfileSectionCard title={bn ? '৭. কর্মসংস্থান বিবরণ (Employment Details)' : '7. Employment Details'} icon={Briefcase}>
+          <ProfileSectionCard title={bn ? '৮. কর্মসংস্থান ও ডিউটি বিবরণ (Employment & Duty Details)' : '8. Employment & Duty Details'} icon={Briefcase}>
             <ProfileInfoItem icon={Briefcase} label={bn ? 'পদবী' : 'Designation'} value={staff.designation} />
             <ProfileInfoItem icon={Building2} label={bn ? 'ডিপার্টমেন্ট' : 'Department'} value={translateDepartment(staff.department, bn)} />
             <ProfileInfoItem icon={Briefcase} label={bn ? 'কর্মের ধরন' : 'Employment Type'} value={translateEmploymentType(staff.employment_type || sd.employment_type, bn)} />
@@ -536,8 +577,16 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
             <ProfileInfoItem icon={GraduationCap} label={bn ? 'শিক্ষাগত যোগ্যতা' : 'Education'} value={staff.education || sd.education} />
             <ProfileInfoItem icon={ClipboardList} label={bn ? 'অভিজ্ঞতা' : 'Experience'} value={staff.experience || sd.experience} />
             <ProfileInfoItem icon={Building2} label={bn ? 'পূর্বের প্রতিষ্ঠান' : 'Previous Institute'} value={staff.previous_institute || sd.previous_institute} />
-            <ProfileInfoItem icon={Clock} label={bn ? 'ডিউটি শুরু' : 'Duty Start'} value={formatDutyTime(staff.duty_start_time, bn)} />
-            <ProfileInfoItem icon={Clock} label={bn ? 'ডিউটি শেষ' : 'Duty End'} value={formatDutyTime(staff.duty_end_time, bn)} />
+            <ProfileInfoItem 
+              icon={Clock} 
+              label={bn ? 'ডিউটি শুরু' : 'Duty Start'} 
+              value={`${formatDutyTime(effectiveStart, bn) || '-'}${dynamicShift?.isCustomDuty ? (bn ? ' (বিশেষ শিফট)' : ' (Special Shift)') : ''}`} 
+            />
+            <ProfileInfoItem 
+              icon={Clock} 
+              label={bn ? 'ডিউটি শেষ' : 'Duty End'} 
+              value={formatDutyTime(effectiveEnd, bn) || '-'} 
+            />
           </ProfileSectionCard>
 
           <ProfileSectionCard title={bn ? 'অনুমোদন ও বেতন স্কেল (Approval & Salary)' : 'Approval & Salary'} icon={CheckCircle2}>
@@ -586,7 +635,7 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
         </Button>
 
         <span className="text-xs font-semibold text-muted-foreground">
-          {bn ? `ধাপ ${currentStepIndex + 1} / ৭ : ${steps[currentStepIndex].bn}` : `Step ${currentStepIndex + 1} of 7 : ${steps[currentStepIndex].en}`}
+          {bn ? `ধাপ ${currentStepIndex + 1} / ${steps.length} : ${steps[currentStepIndex].bn}` : `Step ${currentStepIndex + 1} of ${steps.length} : ${steps[currentStepIndex].en}`}
         </span>
 
         <Button
