@@ -159,10 +159,9 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
 
   // Stepper state
   const [activeStep, setActiveStep] = useState<ProfileStepId>('personal');
-  const [identifierSubTab, setIdentifierSubTab] = useState<'identifier' | 'introducer'>('identifier');
   const [previewDoc, setPreviewDoc] = useState<{ url: string; name?: string } | null>(null);
 
-  // 7-step definition
+  // 8-step definition
   const steps: { id: ProfileStepId; stepNumber: number; bn: string; en: string; icon: any; count?: number }[] = [
     { id: 'personal', stepNumber: 1, bn: 'ব্যক্তিগত তথ্য', en: 'Personal Info', icon: User },
     { id: 'address', stepNumber: 2, bn: 'ঠিকানা', en: 'Address', icon: MapPin },
@@ -406,126 +405,59 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
         </div>
       )}
 
-      {/* ═══════════ STEP 5: সনাক্তকারী ও পরিচয়কারী (Two Tabs) ═══════════ */}
+      {/* ═══════════ STEP 5: সনাক্তকারী (Identifier) ═══════════ */}
       {activeStep === 'identifier' && (
-        <div className="space-y-5 animate-in fade-in-50 duration-200">
-          <div className="card-elevated p-6 space-y-6">
-            <div className="text-center border-b border-border pb-3">
-              <h2 className="font-display font-bold text-foreground text-xl sm:text-2xl">
-                {bn ? '৫. সনাক্তকারী ও পরিচয়কারীর তথ্য' : '5. Identifier & Introducer Details'}
-              </h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                {bn ? 'স্টাফের ব্যক্তিগত সনাক্তকারী ও পরিচয় প্রদানকারীর বিবরণ' : 'Details of staff identifier and referee'}
+        <div className="space-y-4 animate-in fade-in-50 duration-200">
+          {(identifier.name || identifier.relation || identifier.mobile || identifier.nid || identifier.address) ? (
+            <ProfileSectionCard title={bn ? '৫. সনাক্তকারীর তথ্য' : '5. Identifier Details'} icon={ShieldCheck}>
+              <ProfileInfoItem icon={User} label={bn ? 'পূর্ণ নাম' : 'Full Name'} value={identifier.name} />
+              <ProfileInfoItem icon={Users} label={bn ? 'সম্পর্ক' : 'Relation'} value={identifier.relation} />
+              <ProfileInfoItem icon={Phone} label={bn ? 'মোবাইল নম্বর' : 'Mobile'} value={formatPhoneNumber(identifier.mobile, identifier.mobile_code)} />
+              <ProfileInfoItem icon={CreditCard} label={bn ? 'NID (১০/১৭ ডিজিট)' : 'National ID'} value={identifier.nid} />
+              {formatAddr(identifier.address) && (
+                <ProfileInfoItem icon={MapPin} label={bn ? 'ঠিকানা' : 'Address'} value={formatAddr(identifier.address)} fullWidth />
+              )}
+            </ProfileSectionCard>
+          ) : (
+            <div className="text-center py-16 rounded-2xl border border-dashed border-border/80 bg-muted/15">
+              <ShieldCheck className="w-12 h-12 text-muted-foreground/35 mx-auto mb-2" />
+              <p className="text-sm font-semibold text-muted-foreground">
+                {bn ? 'কোনো সনাক্তকারীর তথ্য সংরক্ষিত নেই' : 'No identifier details available'}
               </p>
             </div>
-
-            {/* Sub Tabs */}
-            <div className="flex border-b border-border gap-2">
-              <button
-                type="button"
-                onClick={() => setIdentifierSubTab('identifier')}
-                className={cn(
-                  'flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-all rounded-t-lg',
-                  identifierSubTab === 'identifier'
-                    ? 'border-emerald-700 text-emerald-800 dark:text-emerald-400 bg-emerald-500/10 shadow-xs'
-                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40'
-                )}
-              >
-                <ShieldCheck className="w-4 h-4" />
-                <span>{bn ? 'সনাক্তকারী' : 'Identifier'}</span>
-                {identifier.name && (
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-700 font-bold">✓</span>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIdentifierSubTab('introducer')}
-                className={cn(
-                  'flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-all rounded-t-lg',
-                  identifierSubTab === 'introducer'
-                    ? 'border-emerald-700 text-emerald-800 dark:text-emerald-400 bg-emerald-500/10 shadow-xs'
-                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40'
-                )}
-              >
-                <Users className="w-4 h-4" />
-                <span>{bn ? 'পরিচয়কারী' : 'Introducer'}</span>
-                {relId.name && (
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-700 font-bold">✓</span>
-                )}
-              </button>
-            </div>
-
-            {/* Sub Tab 1: সনাক্তকারী */}
-            {identifierSubTab === 'identifier' && (
-              <div className="space-y-4 pt-1 animate-in fade-in duration-150">
-                <div className="flex items-center justify-between pb-2 border-b border-border/50">
-                  <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                    <ShieldCheck className="w-5 h-5 text-emerald-700" />
-                    {bn ? 'সনাক্তকারীর তথ্য' : 'Identifier Details'}
-                  </h3>
-                </div>
-
-                {identifier.name || identifier.relation || identifier.mobile || identifier.nid ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <ProfileInfoItem icon={User} label={bn ? 'পূর্ণ নাম' : 'Full Name'} value={identifier.name} />
-                    <ProfileInfoItem icon={Users} label={bn ? 'সম্পর্ক' : 'Relation'} value={identifier.relation} />
-                    <ProfileInfoItem icon={Phone} label={bn ? 'মোবাইল নম্বর' : 'Mobile'} value={formatPhoneNumber(identifier.mobile, identifier.mobile_code)} />
-                    <ProfileInfoItem icon={CreditCard} label={bn ? 'NID (১০/১৭ ডিজিট)' : 'National ID'} value={identifier.nid} />
-                    {formatAddr(identifier.address) && (
-                      <ProfileInfoItem icon={MapPin} label={bn ? 'ঠিকানা' : 'Address'} value={formatAddr(identifier.address)} fullWidth />
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 rounded-xl border border-dashed border-border/70 bg-muted/10">
-                    <ShieldCheck className="w-10 h-10 text-muted-foreground/35 mx-auto mb-2" />
-                    <p className="text-sm font-semibold text-muted-foreground">
-                      {bn ? 'কোনো সনাক্তকারীর তথ্য সংরক্ষিত নেই' : 'No identifier details available'}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Sub Tab 2: পরিচয়কারী */}
-            {identifierSubTab === 'introducer' && (
-              <div className="space-y-4 pt-1 animate-in fade-in duration-150">
-                <div className="flex items-center justify-between pb-2 border-b border-border/50">
-                  <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                    <Users className="w-5 h-5 text-emerald-700" />
-                    {bn ? 'পরিচয়কারীর তথ্য' : 'Introducer Details'}
-                  </h3>
-                </div>
-
-                {relId.name || relId.relation || relId.mobile || relId.nid ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <ProfileInfoItem icon={User} label={bn ? 'পূর্ণ নাম' : 'Full Name'} value={relId.name} />
-                    <ProfileInfoItem icon={Users} label={bn ? 'সম্পর্ক' : 'Relation'} value={relId.relation} />
-                    <ProfileInfoItem icon={Phone} label={bn ? 'মোবাইল নম্বর' : 'Mobile'} value={formatPhoneNumber(relId.mobile, relId.mobile_code)} />
-                    <ProfileInfoItem icon={CreditCard} label={bn ? 'NID (১০/১৭ ডিজিট)' : 'National ID'} value={relId.nid} />
-                    {formatAddr(relId.address) && (
-                      <ProfileInfoItem icon={MapPin} label={bn ? 'ঠিকানা' : 'Address'} value={formatAddr(relId.address)} fullWidth />
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 rounded-xl border border-dashed border-border/70 bg-muted/10">
-                    <Users className="w-10 h-10 text-muted-foreground/35 mx-auto mb-2" />
-                    <p className="text-sm font-semibold text-muted-foreground">
-                      {bn ? 'কোনো পরিচয়কারীর তথ্য সংরক্ষিত নেই' : 'No introducer details available'}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          )}
         </div>
       )}
 
-      {/* ═══════════ STEP 6: ডকুমেন্ট আপলোড (Documents) ═══════════ */}
+      {/* ═══════════ STEP 6: পরিচয়কারী (Introducer) ═══════════ */}
+      {activeStep === 'introducer' && (
+        <div className="space-y-4 animate-in fade-in-50 duration-200">
+          {(relId.name || relId.relation || relId.mobile || relId.nid || relId.address) ? (
+            <ProfileSectionCard title={bn ? '৬. পরিচয়কারীর তথ্য' : '6. Introducer Details'} icon={Users}>
+              <ProfileInfoItem icon={User} label={bn ? 'পূর্ণ নাম' : 'Full Name'} value={relId.name} />
+              <ProfileInfoItem icon={Users} label={bn ? 'সম্পর্ক' : 'Relation'} value={relId.relation} />
+              <ProfileInfoItem icon={Phone} label={bn ? 'মোবাইল নম্বর' : 'Mobile'} value={formatPhoneNumber(relId.mobile, relId.mobile_code)} />
+              <ProfileInfoItem icon={CreditCard} label={bn ? 'NID (১০/১৭ ডিজিট)' : 'National ID'} value={relId.nid} />
+              {formatAddr(relId.address) && (
+                <ProfileInfoItem icon={MapPin} label={bn ? 'ঠিকানা' : 'Address'} value={formatAddr(relId.address)} fullWidth />
+              )}
+            </ProfileSectionCard>
+          ) : (
+            <div className="text-center py-16 rounded-2xl border border-dashed border-border/80 bg-muted/15">
+              <Users className="w-12 h-12 text-muted-foreground/35 mx-auto mb-2" />
+              <p className="text-sm font-semibold text-muted-foreground">
+                {bn ? 'কোনো পরিচয়কারীর তথ্য সংরক্ষিত নেই' : 'No introducer details available'}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══════════ STEP 7: ডকুমেন্ট আপলোড (Documents) ═══════════ */}
       {activeStep === 'documents' && (
         <div className="space-y-4 animate-in fade-in-50 duration-200">
           {docs.length > 0 ? (
-            <ProfileSectionCard title={bn ? '৬. সংযুক্ত ডকুমেন্টসমূহ' : '6. Attached Documents'} icon={FileText}>
+            <ProfileSectionCard title={bn ? '৭. সংযুক্ত ডকুমেন্টসমূহ' : '7. Attached Documents'} icon={FileText}>
               <div className="col-span-full space-y-3">
                 {docs.map((doc: any, i: number) => (
                   <div key={i} className="flex items-center justify-between gap-3 p-4 rounded-xl bg-card border border-border/60 hover:border-emerald-500/40 hover:shadow-xs transition-all">
@@ -566,10 +498,10 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
         </div>
       )}
 
-      {/* ═══════════ STEP 7: অনুমোদন ও বেতন (Approval & Salary) ═══════════ */}
+      {/* ═══════════ STEP 8: অনুমোদন ও বেতন (Approval & Salary) ═══════════ */}
       {activeStep === 'salary' && (
         <div className="space-y-4 animate-in fade-in-50 duration-200">
-          <ProfileSectionCard title={bn ? '৭. কর্মসংস্থান ও ডিউটি বিবরণ' : '7. Employment & Duty Details'} icon={Briefcase}>
+          <ProfileSectionCard title={bn ? '৮. কর্মসংস্থান ও ডিউটি বিবরণ' : '8. Employment & Duty Details'} icon={Briefcase}>
             <ProfileInfoItem icon={Briefcase} label={bn ? 'পদবী' : 'Designation'} value={staff.designation} />
             <ProfileInfoItem icon={Building2} label={bn ? 'ডিপার্টমেন্ট' : 'Department'} value={translateDepartment(staff.department, bn)} />
             <ProfileInfoItem icon={Briefcase} label={bn ? 'কর্মের ধরন' : 'Employment Type'} value={translateEmploymentType(staff.employment_type || sd.employment_type, bn)} />

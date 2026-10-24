@@ -35,8 +35,10 @@ bangladeshAddresses.forEach((div) => {
         if (poBn && po.nameEn) {
           enToBnMap.set(po.nameEn.trim().toLowerCase(), poBn.trim());
           if (po.code) {
-            enToBnMap.set(`${po.nameEn.trim().toLowerCase()} - ${po.code.trim()}`, `${poBn.trim()} - ${po.code.trim()}`);
-            enToBnMap.set(`${po.nameEn.trim().toLowerCase()}-${po.code.trim()}`, `${poBn.trim()} - ${po.code.trim()}`);
+            const bnCode = toBnDigits(po.code.trim());
+            enToBnMap.set(`${po.nameEn.trim().toLowerCase()} - ${po.code.trim()}`, `${poBn.trim()} - ${bnCode}`);
+            enToBnMap.set(`${po.nameEn.trim().toLowerCase()}-${po.code.trim()}`, `${poBn.trim()} - ${bnCode}`);
+            enToBnMap.set(`${po.nameEn.trim().toLowerCase()} - ${bnCode}`, `${poBn.trim()} - ${bnCode}`);
           }
         }
       });
