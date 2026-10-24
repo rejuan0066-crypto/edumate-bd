@@ -39,6 +39,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { 
+  ShieldAlert,
   ArrowLeft, 
   Pencil, 
   Loader2, 
@@ -247,6 +248,20 @@ const AdminStaffProfilePage = () => {
     if (dept.includes('committee')) return `/admin/committee-members/edit/${staff.id}`;
     return `/admin/staff/edit/${staff.id}`;
   };
+
+  if (!isAdmin && !canViewPage) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-6">
+          <ShieldAlert className="w-16 h-16 text-destructive mb-4" />
+          <h2 className="text-xl font-bold">{bn ? 'অনুমতি নেই' : 'Access Denied'}</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {bn ? 'এই স্টাফের প্রোফাইল দেখার অনুমতি আপনার নেই।' : 'You do not have permission to view this staff profile.'}
+          </p>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>

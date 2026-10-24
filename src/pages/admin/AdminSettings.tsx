@@ -13,6 +13,9 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { otpService } from '@/hooks/useOtpService';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
+import { useAuth } from '@/hooks/useAuth';
+import { isAdminRole } from '@/lib/roles';
+import { ShieldAlert } from 'lucide-react';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 import PaymentGatewaySettings from '@/components/admin/PaymentGatewaySettings';
 import SmsGatewaySettings from '@/components/admin/SmsGatewaySettings';
@@ -40,7 +43,9 @@ const AdminSettings = () => {
   const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
-  const { canEditItem } = usePagePermissions('/admin/settings');
+  const { role } = useAuth();
+  const isAdmin = isAdminRole(role);
+  const { canViewPage, canEditItem } = usePagePermissions('/admin/settings');
   const { settings: websiteSettings, updateSetting } = useWebsiteSettings();
   const [settingsTab, setSettingsTab] = usePersistentTab<SettingsTab>('email', {
     paramName: 'tab',
@@ -683,6 +688,34 @@ const AdminSettings = () => {
     setEmailjsTesting(false);
   };
 
+
+  if (!isAdmin && !canViewPage) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-6">
+          <ShieldAlert className="w-16 h-16 text-destructive mb-4" />
+          <h2 className="text-xl font-bold">{bn ? 'অনুমতি নেই' : 'Access Denied'}</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {bn ? 'সেটিংস পেজটি দেখার জন্য আপনার পর্যাপ্ত অনুমতি নেই।' : 'You do not have permission to access Settings.'}
+          </p>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (!isAdmin && !canViewPage) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-6">
+          <ShieldAlert className="w-16 h-16 text-destructive mb-4" />
+          <h2 className="text-xl font-bold">{bn ? 'অনুমতি নেই' : 'Access Denied'}</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {bn ? 'সেটিংস পেজটি দেখার জন্য আপনার পর্যাপ্ত অনুমতি নেই।' : 'You do not have permission to access Settings.'}
+          </p>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>

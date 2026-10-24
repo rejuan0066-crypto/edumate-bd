@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
+import { ShieldAlert } from 'lucide-react';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import { isAdminRole } from '@/lib/roles';
 import { useOtpService } from '@/hooks/useOtpService';
@@ -137,7 +138,7 @@ const AdminUserManagement = () => {
 
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/user-management');
+  const { canViewPage, canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/user-management');
   const { checkApproval, needsApproval } = useApprovalCheck('/admin/user-management', 'staff');
   const { role: currentUserRole } = useAuth();
   const { authorities = [] } = useSignatoryAuthorities();
@@ -1587,6 +1588,34 @@ const AdminUserManagement = () => {
             }}
           />
         )}
+      </AdminLayout>
+    );
+  }
+
+  if (!isAdminRole(currentUserRole) && !canViewPage) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-6">
+          <ShieldAlert className="w-16 h-16 text-destructive mb-4" />
+          <h2 className="text-xl font-bold">{bn ? 'অনুমতি নেই' : 'Access Denied'}</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {bn ? 'ইউজার ম্যানেজমেন্ট পেজটি দেখার জন্য আপনার অনুমতি নেই।' : 'You do not have permission to access User Management.'}
+          </p>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (!isAdminRole(currentUserRole) && !canViewPage) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-6">
+          <ShieldAlert className="w-16 h-16 text-destructive mb-4" />
+          <h2 className="text-xl font-bold">{bn ? 'অনুমতি নেই' : 'Access Denied'}</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {bn ? 'ইউজার ম্যানেজমেন্ট পেজটি দেখার জন্য আপনার অনুমতি নেই।' : 'You do not have permission to access User Management.'}
+          </p>
+        </div>
       </AdminLayout>
     );
   }

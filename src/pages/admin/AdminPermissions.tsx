@@ -6,6 +6,9 @@ import { useMenuSettings } from '@/hooks/useMenuSettings';
 import { flattenMenuPaths, mergeMenuPaths, DEFAULT_MENU_PATHS, MenuPathItem } from '@/lib/menuPathList';
 import { KNOWN_PAGE_FEATURES } from '@/lib/pageFeatures';
 import AdminLayout from '@/components/AdminLayout';
+import { useAuth } from '@/hooks/useAuth';
+import { isAdminRole } from '@/lib/roles';
+import { ShieldAlert } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -124,6 +127,23 @@ const DEFAULT_SYSTEM_ROLES: CustomRole[] = [
 ];
 
 const AdminPermissions = () => {
+  const { role } = useAuth();
+  const isAdmin = isAdminRole(role);
+  // language declared above
+
+  if (!isAdmin) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-6">
+          <ShieldAlert className="w-16 h-16 text-destructive mb-4" />
+          <h2 className="text-xl font-bold">{bn ? 'অনুমতি নেই' : 'Access Denied'}</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {bn ? 'রোল ও পারমিশন পেজটি শুধুমাত্র সিস্টেম অ্যাডমিন দেখতে ও পরিবর্তন করতে পারবেন।' : 'Only system administrators can access and modify permissions.'}
+          </p>
+        </div>
+      </AdminLayout>
+    );
+  }
   const { language } = useLanguage();
   const bn = language === 'bn';
   const confirm = useConfirm();
