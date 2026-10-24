@@ -779,7 +779,7 @@ const AdmissionPage = () => {
       case 'admission_date':
         return (
           <div data-field={fieldKey}>
-            <Label className={errorLabel}>{label} {reqStar}</Label>
+            <Label className={errorLabel}>{bn ? 'আবেদনের তারিখ' : 'Application Date'} {reqStar}</Label>
             <DatePicker bengali={bn} className={`mt-1 ${errorBorder}`} value={form.admission_date}
               onChange={v => setForm(prev => ({ ...prev, admission_date: v }))} />
             <FieldError field={fieldKey} />
@@ -956,9 +956,7 @@ const AdmissionPage = () => {
                   </p>
                 </div>
               </div>
-              <span className="text-xs bg-slate-100 dark:bg-muted text-slate-700 dark:text-muted-foreground px-3 py-1 rounded-full border border-slate-200 dark:border-border font-semibold">
-                {bn ? 'সঠিক ক্রম সাজানো' : 'Sequential Order'}
-              </span>
+              
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

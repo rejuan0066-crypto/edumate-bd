@@ -48,7 +48,7 @@ const DEFAULT_FIELDS: Array<{
   { label: 'Admission Class', label_bn: 'ভর্তি শ্রেণী', field_type: 'select', is_required: true, sort_order: 6, default_value: 'admission_class', section: 'student_details' },
   { label: 'Roll', label_bn: 'রোল', field_type: 'text', is_required: false, sort_order: 7, default_value: 'roll_number', section: 'student_details' },
   { label: 'Registration No', label_bn: 'রেজিস্ট্রেশন নং', field_type: 'text', is_required: false, sort_order: 8, default_value: 'registration_no', section: 'student_details' },
-  { label: 'Admission Date', label_bn: 'ভর্তির তারিখ', field_type: 'date', is_required: true, sort_order: 9, default_value: 'admission_date', section: 'student_details' },
+  { label: 'Application Date', label_bn: 'আবেদনের তারিখ', field_type: 'date', is_required: true, sort_order: 9, default_value: 'admission_date', section: 'student_details' },
   { label: 'Session Year', label_bn: 'সেশন বছর', field_type: 'text', is_required: false, sort_order: 10, default_value: 'session_year', section: 'student_details' },
   { label: 'Full Name (Bangla)', label_bn: 'সম্পুর্ণ নাম (বাংলা)', field_type: 'text', is_required: true, sort_order: 11, default_value: 'first_name', section: 'student_details' },
   { label: 'Full Name (English)', label_bn: 'সম্পুর্ণ নাম (ইংরেজি)', field_type: 'text', is_required: true, sort_order: 12, default_value: 'last_name', section: 'student_details' },
