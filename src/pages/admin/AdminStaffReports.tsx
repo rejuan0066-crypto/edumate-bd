@@ -62,9 +62,9 @@ const formatTimeDisplay = (timeStr: string | null | undefined, bn: boolean) => {
 const STAFF_CATEGORIES = [
   { key: 'all', label_bn: 'সকল', label_en: 'All' },
   { key: 'administrative', label_bn: 'প্রশাসন বিভাগ', label_en: 'Administrative' },
-  { key: 'teacher', label_bn: 'শিক্ষা বিভাগ / শিক্ষক', label_en: 'Teacher' },
-  { key: 'support', label_bn: 'অফিস / সাপোর্ট স্টাফ', label_en: 'Support' },
-  { key: 'general', label_bn: 'সাধারণ / সহায়ক কর্মী', label_en: 'General' },
+  { key: 'teacher', label_bn: 'শিক্ষা বিভাগ', label_en: 'Education Department' },
+  { key: 'support', label_bn: 'অফিস বিভাগ', label_en: 'Office Department' },
+  { key: 'general', label_bn: 'সাধারণ বিভাগ', label_en: 'General Department' },
 ];
 
 const AdminStaffReports = () => {

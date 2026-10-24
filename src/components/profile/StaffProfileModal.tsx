@@ -49,13 +49,13 @@ const translateGender = (val: string | undefined, bn: boolean): string => {
 const translateDepartment = (val: string | undefined, bn: boolean): string => {
   if (!val) return '';
   const map: Record<string, [string, string]> = {
-    teacher: ['শিক্ষক', 'Teacher'],
-    staff: ['স্টাফ', 'Staff'],
-    admin: ['অ্যাডমিন', 'Admin'],
-    management: ['ব্যবস্থাপনা', 'Management'],
-    academic: ['একাডেমিক', 'Academic'],
+    teacher: ['শিক্ষা বিভাগ', 'Education Department'],
+    staff: ['অফিস বিভাগ', 'Office Department'],
+    admin: ['প্রশাসন বিভাগ', 'Administrative Department'],
+    management: ['ব্যবস্থাপনা বিভাগ', 'Management Department'],
+    academic: ['শিক্ষা বিভাগ', 'Education Department'],
     accounts: ['হিসাব শাখা', 'Accounts'],
-    general: ['সাধারণ', 'General'],
+    general: ['সাধারণ বিভাগ', 'General Department'],
     principal: ['অধ্যক্ষ', 'Principal'],
     headmaster: ['প্রধান শিক্ষক', 'Headmaster'],
     assistant_teacher: ['সহকারী শিক্ষক', 'Assistant Teacher'],

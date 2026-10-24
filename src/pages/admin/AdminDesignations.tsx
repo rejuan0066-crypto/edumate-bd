@@ -47,7 +47,15 @@ const AdminDesignations = () => {
     queryFn: async () => {
       const { data, error } = await supabase.from('staff_categories').select('*').order('sort_order', { ascending: true });
       if (error) throw error;
-      return data;
+      const normalized = (data || []).map((cat: any) => {
+        if (cat.key === 'teacher' && (cat.name_bn === 'শিক্ষক' || !cat.name_bn)) {
+          // Standardize in DB to permanently resolve mismatch with Attendance
+          supabase.from('staff_categories').update({ name_bn: 'শিক্ষা বিভাগ' }).eq('id', cat.id).then(() => {});
+          return { ...cat, name_bn: 'শিক্ষা বিভাগ' };
+        }
+        return cat;
+      });
+      return normalized;
     },
   });
 
@@ -291,7 +299,21 @@ const AdminDesignations = () => {
 
   const resetCatForm = () => { setCatKey(''); setCatName(''); setCatNameBn(''); setCatRoutePath(''); setCatColor('gray'); setCatSortOrder(0); setCatIsActive(true); setCatDescription(''); setCatIdPrefix(''); setCatIdStartRange(1001); setCatEditItem(null); };
   const openCatAdd = () => { resetCatForm(); setCatDialogOpen(true); };
-  const openCatEdit = (item: any) => { setCatEditItem(item); setCatKey(item.key || ''); setCatName(item.name || ''); setCatNameBn(item.name_bn || ''); setCatRoutePath(item.route_path || ''); setCatColor(item.color || 'gray'); setCatSortOrder(item.sort_order || 0); setCatIsActive(item.is_active ?? true); setCatDescription(item.description || ''); setCatIdPrefix((item as any).id_prefix || ''); setCatIdStartRange((item as any).id_start_range || 1001); setCatDialogOpen(true); };
+  const openCatEdit = (item: any) => {
+    setCatEditItem(item);
+    setCatKey(item.key || '');
+    setCatName(item.name || '');
+    const currentNameBn = item.key === 'teacher' && (item.name_bn === 'শিক্ষক' || !item.name_bn) ? 'শিক্ষা বিভাগ' : (item.name_bn || '');
+    setCatNameBn(currentNameBn);
+    setCatRoutePath(item.route_path || '');
+    setCatColor(item.color || 'gray');
+    setCatSortOrder(item.sort_order || 0);
+    setCatIsActive(item.is_active ?? true);
+    setCatDescription(item.description || '');
+    setCatIdPrefix((item as any).id_prefix || '');
+    setCatIdStartRange((item as any).id_start_range || 1001);
+    setCatDialogOpen(true);
+  };
 
   const saveCatMutation = useMutation({
     mutationFn: async () => {

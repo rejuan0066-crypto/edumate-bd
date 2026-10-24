@@ -39,9 +39,9 @@ export const CANONICAL_DEPARTMENT_ORDER: Record<string, number> = {
 
 export const CANONICAL_DEPARTMENT_LABELS: Record<string, { bn: string; en: string }> = {
   administrative: { bn: 'প্রশাসন বিভাগ', en: 'Administrative' },
-  teacher: { bn: 'শিক্ষা বিভাগ / শিক্ষক', en: 'Teaching / Academic' },
-  support: { bn: 'অফিস / সাপোর্ট স্টাফ', en: 'Support Staff' },
-  general: { bn: 'সহায়ক কর্মী / সাধারণ বিভাগ', en: 'General Staff' },
+  teacher: { bn: 'শিক্ষা বিভাগ', en: 'Teaching / Education' },
+  support: { bn: 'অফিস বিভাগ', en: 'Office Department' },
+  general: { bn: 'সাধারণ বিভাগ', en: 'General Department' },
 };
 
 const TEACHER_KEYWORDS = [
