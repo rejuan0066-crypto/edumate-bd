@@ -176,13 +176,56 @@ const StudentInfoPage = () => {
   // Staff search
   const { data: searchResults = [], isFetching: searching } = useQuery({
     queryKey: ['student-info-search', activeQuery],
-    enabled: isStaff && activeQuery.trim().length >= 2,
+    enabled: isStaff && activeQuery.trim().length >= 1,
     queryFn: async () => {
       const q = activeQuery.trim();
+      const qEn = q.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+      const qBn = q.replace(/[0-9]/g, (d) => '০১২৩৪৫৬৭৮৯'[Number(d)]);
+      const isNumeric = /^[0-9]+$/.test(qEn);
+
+      if (isNumeric) {
+        // When searching by numeric roll/ID:
+        // 1. Strictly look for exact match on roll_number, student_id, or registration_no
+        const exactFilters = [
+          `roll_number.eq.${qEn}`,
+          `roll_number.eq.${qBn}`,
+          `student_id.eq.${qEn}`,
+          `student_id.eq.${qBn}`,
+          `student_id.eq.${q}`,
+          `registration_no.eq.${qEn}`,
+          `registration_no.eq.${qBn}`,
+          `registration_no.eq.${q}`,
+        ].join(',');
+
+        const { data: exactMatches, error: exactError } = await supabase
+          .from('students')
+          .select('id, name_bn, name_en, student_id, roll_number, registration_no, photo_url, status, class_id, session_id')
+          .or(exactFilters)
+          .is('deleted_at', null)
+          .limit(20);
+
+        if (exactError) throw exactError;
+        if (exactMatches && exactMatches.length > 0) {
+          return exactMatches;
+        }
+
+        // If no exact match on roll/id/reg, allow search on student_id or registration_no prefix/suffix or names
+        const { data: fallbackNumeric, error: numError } = await supabase
+          .from('students')
+          .select('id, name_bn, name_en, student_id, roll_number, registration_no, photo_url, status, class_id, session_id')
+          .or(`student_id.ilike.${qEn}%,registration_no.ilike.%${qEn},name_bn.ilike.%${q}%,name_en.ilike.%${q}%`)
+          .is('deleted_at', null)
+          .limit(20);
+
+        if (numError) throw numError;
+        return fallbackNumeric || [];
+      }
+
+      // Text search by name, student_id, or registration_no (excluding loose roll_number substring)
       const { data, error } = await supabase
         .from('students')
         .select('id, name_bn, name_en, student_id, roll_number, registration_no, photo_url, status, class_id, session_id')
-        .or(`name_bn.ilike.%${q}%,name_en.ilike.%${q}%,student_id.ilike.%${q}%,roll_number.ilike.%${q}%,registration_no.ilike.%${q}%`)
+        .or(`name_bn.ilike.%${q}%,name_en.ilike.%${q}%,student_id.ilike.%${q}%,registration_no.ilike.%${q}%`)
         .is('deleted_at', null)
         .limit(20);
       if (error) throw error;

@@ -342,21 +342,31 @@ const AdminStudents = () => {
       }
       // Text search
       if (search) {
-        const q = search.toLowerCase();
+        const q = search.toLowerCase().trim();
         const qEn = bnToEn(q);
         const qBn = enToBn(q);
+        const isNumeric = /^[0-9]+$/.test(qEn);
+
+        if (isNumeric) {
+          const sRoll = String(s.roll_number || '').trim();
+          const sId = String(s.student_id || '').trim();
+          const sReg = String(s.registration_no || '').trim();
+
+          // Prioritize exact match on roll number, student ID, or registration
+          if (
+            sRoll === q || sRoll === qEn || sRoll === qBn ||
+            sId === q || sId === qEn || sId === qBn ||
+            sReg === q || sReg === qEn || sReg === qBn
+          ) {
+            return true;
+          }
+        }
+
         return (
           String(s.name_bn || '').toLowerCase().includes(q) ||
+          String(s.name_en || '').toLowerCase().includes(q) ||
           String(s.student_id || '').toLowerCase().includes(q) ||
-          String(s.student_id || '').toLowerCase().includes(qEn) ||
-          String(s.student_id || '').toLowerCase().includes(qBn) ||
-          String(s.registration_no || '').toLowerCase().includes(q) ||
-          String(s.registration_no || '').toLowerCase().includes(qEn) ||
-          String(s.registration_no || '').toLowerCase().includes(qBn) ||
-          String(s.roll_number || '').toLowerCase().includes(q) ||
-          String(s.roll_number || '').toLowerCase().includes(qEn) ||
-          String(s.roll_number || '').toLowerCase().includes(qBn) ||
-          String(s.name_en || '').toLowerCase().includes(q)
+          String(s.registration_no || '').toLowerCase().includes(q)
         );
       }
       return true;
