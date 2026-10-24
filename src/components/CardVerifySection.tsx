@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { verifyCard } from '@/hooks/useApiVerification';
-import { scanImageWithOcr, OcrCardResult } from '@/lib/ocrCardParser';
+import { scanImageWithOcr, OcrCardResult, normalizeGender } from '@/lib/ocrCardParser';
 import { hasBangla, hasEnglish, cleanStaffName } from '@/lib/nameFormatter';
 
 interface CardVerifySectionProps {
@@ -60,7 +60,7 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
     dateOfBirth: string;
     fatherName: string;
     motherName: string;
-    gender: string;
+    gender: 'male' | 'female';
     bloodGroup: string;
     address: string;
     rawText: string;
@@ -72,7 +72,7 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
     dateOfBirth: '',
     fatherName: '',
     motherName: '',
-    gender: '',
+    gender: 'male',
     bloodGroup: '',
     address: '',
     rawText: '',
@@ -138,7 +138,7 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
         dateOfBirth: parsed.dateOfBirth || '',
         fatherName: parsed.fatherName || '',
         motherName: parsed.motherName || '',
-        gender: parsed.gender || '',
+        gender: normalizeGender(parsed.gender),
         bloodGroup: parsed.bloodGroup || '',
         address: parsed.address || '',
         rawText: parsed.rawText || '',
@@ -237,7 +237,7 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
       date_of_birth: extractedData.dateOfBirth,
       father_name: extractedData.fatherName,
       mother_name: extractedData.motherName,
-      gender: extractedData.gender,
+      gender: normalizeGender(extractedData.gender),
       blood_group: extractedData.bloodGroup,
       address: extractedData.address,
     };
@@ -543,12 +543,30 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
 
                     <div>
                       <Label className="text-[11px] text-muted-foreground">{bn ? 'জেন্ডার / লিঙ্গ' : 'Gender'}</Label>
-                      <Input
-                        value={extractedData.gender}
-                        onChange={e => setExtractedData(p => ({ ...p, gender: e.target.value }))}
-                        className="h-8 text-xs mt-0.5"
-                        placeholder="male / female"
-                      />
+                      <div className="flex gap-2 mt-0.5">
+                        <button
+                          type="button"
+                          onClick={() => setExtractedData(p => ({ ...p, gender: 'male' }))}
+                          className={`flex-1 py-1.5 px-3 rounded-md text-xs font-semibold border transition-all ${
+                            extractedData.gender === 'male'
+                              ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                              : 'bg-background hover:bg-muted text-muted-foreground border-border'
+                          }`}
+                        >
+                          {bn ? 'পুরুষ (Male)' : 'Male'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setExtractedData(p => ({ ...p, gender: 'female' }))}
+                          className={`flex-1 py-1.5 px-3 rounded-md text-xs font-semibold border transition-all ${
+                            extractedData.gender === 'female'
+                              ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                              : 'bg-background hover:bg-muted text-muted-foreground border-border'
+                          }`}
+                        >
+                          {bn ? 'মহিলা (Female)' : 'Female'}
+                        </button>
+                      </div>
                     </div>
 
                     <div>

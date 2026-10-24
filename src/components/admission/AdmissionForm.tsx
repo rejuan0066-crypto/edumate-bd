@@ -1,3 +1,4 @@
+import { normalizeGender } from '@/lib/ocrCardParser';
 import React, { useState, useCallback, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -1064,7 +1065,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
         return (
           <div>
             <Label className={errorLabel}>{label} {reqStar}</Label>
-            <Select value={form.gender} onValueChange={v => setForm(prev => ({ ...prev, gender: v }))}>
+            <Select value={normalizeGender(form.gender)} onValueChange={v => setForm(prev => ({ ...prev, gender: normalizeGender(v) }))}>
               <SelectTrigger className={`bg-background mt-1 ${errorBorder}`}><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="male">{bn ? 'পুরুষ' : 'Male'}</SelectItem>
@@ -1452,7 +1453,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                 last_name: data.last_name || data.name_en || prev.last_name,
                 birth_reg_no: data.birth_reg_no || data.documentNumber || prev.birth_reg_no,
                 date_of_birth: data.date_of_birth || prev.date_of_birth,
-                gender: data.gender || prev.gender,
+                gender: normalizeGender(data.gender || prev.gender),
                 religion: data.religion || prev.religion,
                 residence_type: data.residence_type || prev.residence_type,
                 student_category: data.student_category || prev.student_category,

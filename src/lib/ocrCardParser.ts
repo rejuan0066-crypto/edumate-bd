@@ -12,7 +12,7 @@ export interface OcrCardResult {
   dateOfBirth?: string;
   fatherName?: string;
   motherName?: string;
-  gender?: string;
+  gender?: 'male' | 'female';
   bloodGroup?: string;
   address?: string;
 }
@@ -23,6 +23,26 @@ export interface OcrCardResult {
 export function normalizeBengaliDigits(text: string): string {
   const bnDigits = '০১২৩৪৫৬৭৮৯';
   return text.replace(/[০-৯]/g, (ch) => String(bnDigits.indexOf(ch)));
+}
+
+/**
+ * Normalizes any gender representation to strict 'male' | 'female'.
+ */
+export function normalizeGender(val?: string | null): 'male' | 'female' {
+  if (!val) return 'male';
+  const clean = String(val).trim().toLowerCase();
+  if (
+    clean === 'female' ||
+    clean === 'f' ||
+    clean.includes('মহিলা') ||
+    clean.includes('নারী') ||
+    clean.includes('মেয়ে') ||
+    clean.includes('মেয়ে') ||
+    clean.includes('ছাত্রী')
+  ) {
+    return 'female';
+  }
+  return 'male';
 }
 
 /**
@@ -70,7 +90,7 @@ export function normalizeDateToISO(dateStr: string): string | undefined {
 }
 
 /**
- * Extracts structured data (17-digit birth reg, 10/13/17-digit NID, names, DOB, address) from OCR text.
+ * Extracts structured data (17-digit birth reg, 10/13/17-digit NID, names, DOB, address, gender) from OCR text.
  */
 export function extractCardFields(text: string): OcrCardResult {
   const norm = normalizeBengaliDigits(text);
@@ -198,12 +218,24 @@ export function extractCardFields(text: string): OcrCardResult {
   // Fallback fullName logic
   fullName = fullNameBn || fullNameEn;
 
-  // 6. Gender
-  let gender: string | undefined;
-  if (/female|নারী|মহিলা/i.test(norm)) {
+  // 6. Gender extraction & intelligent deduction
+  let gender: 'male' | 'female' = 'male';
+  if (/(?:sex|gender|লিঙ্গ)[\s\:\-\.\/]*(?:female|মহিলা|নারী|মেয়ে|মেয়ে|f\b)/i.test(norm)) {
     gender = 'female';
-  } else if (/male|পুরুষ/i.test(norm)) {
+  } else if (/(?:sex|gender|লিঙ্গ)[\s\:\-\.\/]*(?:male|পুরুষ|ছেলে|m\b)/i.test(norm)) {
     gender = 'male';
+  } else if (/\b(?:female|নারী|মহিলা)\b/i.test(norm)) {
+    gender = 'female';
+  } else if (/\b(?:male|পুরুষ)\b/i.test(norm)) {
+    gender = 'male';
+  } else {
+    // Infer from female indicators in student's name if card doesn't explicitly print gender
+    const combinedName = `${fullName || ''} ${fullNameBn || ''} ${fullNameEn || ''}`.toLowerCase();
+    if (/(?:মোসা|মোসাম্মৎ|মোছাম্মৎ|খাতুন|বেগম|আক্তার|সুলতানা|জন্নাত|মারিয়া|mst|most|begum|khatun|akter|sultana|jannat|fatema|ayesha|maria)/i.test(combinedName)) {
+      gender = 'female';
+    } else {
+      gender = 'male';
+    }
   }
 
   // 7. Blood Group

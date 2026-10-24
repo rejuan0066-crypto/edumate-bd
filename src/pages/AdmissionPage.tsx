@@ -1,3 +1,4 @@
+import { normalizeGender } from '@/lib/ocrCardParser';
 import PublicLayout from '@/components/PublicLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useState, useCallback, useEffect } from 'react';
@@ -608,7 +609,7 @@ const AdmissionPage = () => {
         return (
           <div data-field={fieldKey}>
             <Label className={errorLabel}>{label} {reqStar}</Label>
-            <Select value={form.gender} onValueChange={v => setForm(prev => ({ ...prev, gender: v }))}>
+            <Select value={normalizeGender(form.gender)} onValueChange={v => setForm(prev => ({ ...prev, gender: normalizeGender(v) }))}>
               <SelectTrigger className={`bg-background mt-1 ${errorBorder}`}><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="male">{bn ? 'পুরুষ' : 'Male'}</SelectItem>
@@ -875,7 +876,7 @@ const AdmissionPage = () => {
                 last_name: data.last_name || data.name_en || prev.last_name,
                 birth_reg_no: data.birth_reg_no || data.documentNumber || prev.birth_reg_no,
                 date_of_birth: data.date_of_birth || prev.date_of_birth,
-                gender: data.gender || prev.gender,
+                gender: normalizeGender(data.gender || prev.gender),
                 religion: data.religion || prev.religion,
                 residence_type: data.residence_type || prev.residence_type,
                 father_name: data.father_name || prev.father_name,
