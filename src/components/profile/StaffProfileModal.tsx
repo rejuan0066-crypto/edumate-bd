@@ -595,16 +595,23 @@ const StaffProfileModal = ({ staff, bn, showSalary = true }: StaffProfileModalPr
               label={bn ? 'বর্তমান স্ট্যাটাস' : 'Status'} 
               value={statusLabel} 
             />
-            {showSalary && (
+            {showSalary ? (
               <ProfileInfoItem 
                 icon={DollarSign} 
                 label={bn ? 'মূল বেতন' : 'Salary'} 
                 value={staff.salary ? `৳${staff.salary}` : (bn ? 'নির্ধারিত হয়নি' : 'Not set')} 
               />
+            ) : (
+              <ProfileInfoItem icon={Calendar} label={bn ? 'অনুমোদনের তারিখ' : 'Approval Date'} value={approver.date} />
             )}
+
+            {/* অনুমোদনকারী কর্মকর্তা ও অনুমোদনকারীর পদবী এক সারিতে */}
             <ProfileInfoItem icon={User} label={bn ? 'অনুমোদনকারী কর্মকর্তা' : 'Approver Name'} value={approver.name} />
             <ProfileInfoItem icon={Briefcase} label={bn ? 'অনুমোদনকারীর পদবী' : 'Approver Designation'} value={approver.position} />
-            <ProfileInfoItem icon={Calendar} label={bn ? 'অনুমোদনের তারিখ' : 'Approval Date'} value={approver.date} />
+
+            {showSalary && (
+              <ProfileInfoItem icon={Calendar} label={bn ? 'অনুমোদনের তারিখ' : 'Approval Date'} value={approver.date} />
+            )}
             {approver.comments && (
               <ProfileInfoItem icon={FileText} label={bn ? 'অনুমোদনকারীর মন্তব্য' : 'Approver Comments'} value={approver.comments} fullWidth />
             )}
