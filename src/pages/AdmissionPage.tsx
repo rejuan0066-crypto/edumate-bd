@@ -24,6 +24,7 @@ import {
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { generateStudentApplicationNo } from '@/lib/applicationIdGenerator';
+import { buildStudentApplicationHTML, downloadHTMLAsPDF, printHTML } from '@/lib/applicationSlipGenerator';
 import { Copy } from 'lucide-react';
 import { DatePicker } from '@/components/ui/date-picker';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
@@ -336,6 +337,7 @@ const AdmissionPage = () => {
     is_free: form.is_free,
     student_category: form.student_category,
     custom_fields: customFieldValues,
+    signature_url: signatureUrl,
   });
 
   const addMutation = useMutation({
@@ -468,6 +470,10 @@ const AdmissionPage = () => {
       return;
     }
     setFieldErrors({});
+    if (!declarationAgreed) {
+      toast.error(bn ? 'দয়া করে ঘোষণাপত্রে সম্মতি দিন' : 'Please agree to the declaration');
+      return;
+    }
     addMutation.mutate();
   };
 
@@ -1289,10 +1295,39 @@ const AdmissionPage = () => {
     return true;
   };
 
-  const activeSections = sections.filter(section => getFieldsBySection(section).length > 0);
+  const baseSections = sections.filter(section => getFieldsBySection(section).length > 0);
+  const activeSections = [...baseSections, 'review_submit'];
+
+  const handleSignatureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error(bn ? 'স্বাক্ষরের ফাইলের সাইজ ২MB এর বেশি হতে পারবে না' : 'Signature file size must be under 2MB');
+      return;
+    }
+    setUploadingSig(true);
+    try {
+      const res = await uploadToCloudinary(file, { folder: 'student-signatures' });
+      setSignatureUrl(res.secure_url);
+      toast.success(bn ? 'স্বাক্ষর আপলোড হয়েছে' : 'Signature uploaded successfully');
+    } catch (cErr) {
+      console.warn('Cloudinary upload failed, falling back to Supabase:', cErr);
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
+      const path = `signatures/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase.storage.from('photos').upload(path, file, { upsert: false });
+      if (error) { toast.error(error.message); return; }
+      setSignatureUrl(`photos/${path}`);
+      toast.success(bn ? 'স্বাক্ষর আপলোড হয়েছে' : 'Signature uploaded successfully');
+    } finally {
+      setUploadingSig(false);
+      if (sigInputRef.current) sigInputRef.current.value = '';
+    }
+  };
 
   const resetForm = () => {
     setSubmittedData(null);
+    setSignatureUrl(null);
+    setDeclarationAgreed(true);
     setCurrentStep(0);
     setForm({
       student_type: 'new', residence_type: 'non-resident',
@@ -1498,70 +1533,150 @@ const AdmissionPage = () => {
 
   // If submitted, show success screen
   if (submittedData) {
+    const appNo = submittedData.student_id || submittedData.application_no || '';
     const className = submittedData.class_id ? (classes.find((c: any) => c.id === submittedData.class_id) as any)?.name_bn || '' : '';
+    const applyDate = submittedData.admission_date || new Date().toISOString().split('T')[0];
+
+    const handlePrintSlip = () => {
+      const html = buildStudentApplicationHTML(submittedData, institution);
+      printHTML(html);
+    };
+
+    const handleDownloadSlipPDF = async () => {
+      try {
+        setIsDownloading(true);
+        const html = buildStudentApplicationHTML(submittedData, institution);
+        await downloadHTMLAsPDF(html, `ভর্তি_আবেদন_${appNo}.pdf`);
+        toast.success(bn ? 'পিডিএফ ডাউনলোড সম্পন্ন হয়েছে' : 'PDF downloaded successfully');
+      } catch (err: any) {
+        toast.error(err.message || 'Error downloading PDF');
+      } finally {
+        setIsDownloading(false);
+      }
+    };
+
+    const copyAppId = (num: string) => {
+      navigator.clipboard.writeText(num);
+      toast.success(bn ? 'আবেদন নম্বর কপি করা হয়েছে!' : 'Application number copied!');
+    };
+
     return (
       <PublicLayout>
         <div className="container mx-auto px-4 py-12 max-w-2xl">
           <div className="card-elevated p-8 text-center space-y-6">
-            <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto">
-              <CheckCircle className="w-10 h-10 text-success" />
+            <div className="w-20 h-20 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center mx-auto text-emerald-600">
+              <CheckCircle className="w-10 h-10" />
             </div>
-            <h1 className="text-2xl font-display font-bold text-foreground">
-              {bn ? 'আবেদন সফলভাবে জমা হয়েছে!' : 'Application Submitted Successfully!'}
-            </h1>
-            <p className="text-muted-foreground">
-              {bn ? 'আপনার ভর্তি আবেদন অনুমোদনের অপেক্ষায় রয়েছে।' : 'Your admission application is pending approval.'}
-            </p>
 
-            <div className="bg-secondary/50 rounded-lg p-4 text-left space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{bn ? 'নাম:' : 'Name:'}</span>
-                <span className="font-medium">{submittedData.name_bn}</span>
+            <div className="space-y-1">
+              <h1 className="text-2xl font-display font-bold text-foreground">
+                {bn ? 'ভর্তি আবেদন সফলভাবে জমা হয়েছে!' : 'Admission Submitted Successfully!'}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {bn
+                  ? 'আপনার ভর্তি আবেদনটি সফলভাবে গৃহীত হয়েছে এবং অনুমোদনের অপেক্ষায় রয়েছে।'
+                  : 'Your admission application has been received and is pending review.'}
+              </p>
+            </div>
+
+            {/* Application ID Card */}
+            <div className="bg-gradient-to-br from-emerald-50/70 to-teal-50/50 dark:from-emerald-950/30 dark:to-teal-950/20 border-2 border-emerald-300 dark:border-emerald-800 rounded-2xl p-5 shadow-sm">
+              <div className="text-xs font-semibold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider mb-1">
+                {bn ? 'আপনার আবেদন নম্বর (Application ID)' : 'Your Application ID'}
+              </div>
+              <div className="flex items-center justify-center gap-3 mt-1">
+                <span className="font-mono text-2xl sm:text-3xl font-extrabold text-emerald-700 dark:text-emerald-300 tracking-wider">
+                  {appNo}
+                </span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => copyAppId(appNo)}
+                  className="h-8 px-2.5 bg-white dark:bg-card border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50"
+                  title={bn ? 'কপি করুন' : 'Copy ID'}
+                >
+                  <Copy className="w-4 h-4 mr-1" />
+                  <span className="text-xs">{bn ? 'কপি' : 'Copy'}</span>
+                </Button>
+              </div>
+              <p className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-2">
+                {bn
+                  ? 'ভবিষ্যতে আবেদনের অগ্রগতি জানতে এবং স্লিপ পুনঃডাউনলোড করতে এই নম্বরটি সংরক্ষণ করুন।'
+                  : 'Save this Application ID for tracking and re-downloading.'}
+              </p>
+            </div>
+
+            {/* Summary Details */}
+            <div className="bg-slate-50 dark:bg-secondary/40 rounded-xl p-4 text-left space-y-2 border border-slate-200 dark:border-border text-xs sm:text-sm">
+              <div className="flex justify-between py-1 border-b border-border/50">
+                <span className="text-muted-foreground">{bn ? 'শিক্ষার্থীর নাম (বাংলা):' : 'Student Name (Bangla):'}</span>
+                <span className="font-semibold text-foreground">{submittedData.name_bn}</span>
               </div>
               {submittedData.name_en && (
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between py-1 border-b border-border/50">
                   <span className="text-muted-foreground">{bn ? 'নাম (ইংরেজি):' : 'Name (English):'}</span>
-                  <span className="font-medium">{submittedData.name_en}</span>
-                </div>
-              )}
-              {submittedData.student_id && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{bn ? 'আইডি:' : 'ID:'}</span>
-                  <span className="font-medium">{submittedData.student_id}</span>
-                </div>
-              )}
-              {submittedData.roll_number && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{bn ? 'রোল:' : 'Roll:'}</span>
-                  <span className="font-medium">{submittedData.roll_number}</span>
+                  <span className="font-medium text-foreground">{submittedData.name_en}</span>
                 </div>
               )}
               {className && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{bn ? 'শ্রেণী:' : 'Class:'}</span>
-                  <span className="font-medium">{className}</span>
+                <div className="flex justify-between py-1 border-b border-border/50">
+                  <span className="text-muted-foreground">{bn ? 'ভর্তি শ্রেণি:' : 'Admission Class:'}</span>
+                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">{className}</span>
                 </div>
               )}
-              {submittedData.registration_no && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{bn ? 'রেজিস্ট্রেশন:' : 'Registration:'}</span>
-                  <span className="font-medium">{submittedData.registration_no}</span>
+              {submittedData.phone && (
+                <div className="flex justify-between py-1 border-b border-border/50">
+                  <span className="text-muted-foreground">{bn ? 'যোগাযোগ মোবাইল:' : 'Contact Phone:'}</span>
+                  <span className="font-mono text-foreground">{submittedData.phone}</span>
                 </div>
               )}
+              <div className="flex justify-between py-1">
+                <span className="text-muted-foreground">{bn ? 'আবেদনের তারিখ:' : 'Application Date:'}</span>
+                <span className="font-medium text-foreground">{applyDate}</span>
+              </div>
             </div>
 
+            {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button onClick={() => handlePrint(false)} className="flex-1 flex items-center justify-center gap-2" variant="outline">
-                <Printer className="w-4 h-4" /> {bn ? 'প্রিন্ট করুন' : 'Print'}
+              <Button
+                type="button"
+                onClick={handlePrintSlip}
+                className="flex-1 flex items-center justify-center gap-2"
+                variant="outline"
+              >
+                <Printer className="w-4 h-4" />
+                {bn ? 'আবেদন স্লিপ প্রিন্ট' : 'Print Slip'}
               </Button>
-              <Button onClick={() => handleDownloadPDF(false)} className="flex-1 flex items-center justify-center gap-2 btn-primary-gradient">
-                <Download className="w-4 h-4" /> {bn ? 'ডাউনলোড (PDF)' : 'Download (PDF)'}
+              <Button
+                type="button"
+                onClick={handleDownloadSlipPDF}
+                disabled={isDownloading}
+                className="flex-1 flex items-center justify-center gap-2 btn-primary-gradient"
+              >
+                {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                {bn ? 'স্লিপ ডাউনলোড (PDF)' : 'Download PDF'}
               </Button>
             </div>
 
-            <Button onClick={resetForm} variant="ghost" className="flex items-center gap-2 mx-auto text-muted-foreground">
-              <RotateCcw className="w-4 h-4" /> {bn ? 'নতুন আবেদন করুন' : 'Submit New Application'}
-            </Button>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+              <Button asChild variant="outline" size="sm">
+                <Link to={`/application-tracking?id=${appNo}`}>
+                  {bn ? 'আবেদনের অবস্থা ট্র্যাক করুন' : 'Track Application Status'}
+                </Link>
+              </Button>
+
+              <Button
+                type="button"
+                onClick={resetForm}
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                {bn ? 'নতুন আবেদন করুন' : 'Submit Another Application'}
+              </Button>
+            </div>
           </div>
         </div>
       </PublicLayout>
@@ -1591,6 +1706,7 @@ const AdmissionPage = () => {
   const safeCurrentStep = Math.min(currentStep, Math.max(0, activeSections.length - 1));
 
   const getStepTitle = (key: string) => {
+    if (key === 'review_submit') return bn ? 'পর্যালোচনা ও সাবমিট' : 'Review & Submit';
     const info = SECTION_INFO[key as keyof typeof SECTION_INFO];
     if (info) return bn ? info.bn.trim() : info.en.trim();
     return key;

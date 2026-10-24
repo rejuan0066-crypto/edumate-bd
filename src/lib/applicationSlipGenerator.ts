@@ -16,6 +16,8 @@ export function buildStudentApplicationHTML(student: any, institution?: Institut
   const divName = student?.classes?.divisions?.name_bn || student?.classes?.divisions?.name || student?.admission_division || '';
   const applyDate = student?.admission_date || (student?.created_at ? new Date(student.created_at).toLocaleDateString('bn-BD') : '');
 
+  const applicantSignature = student?.admission_data?.signature_url || student?.signature_url || '';
+
   const statusLabel = student?.approval_status === 'approved'
     ? 'অনুমোদিত (Approved)'
     : student?.approval_status === 'rejected'
@@ -52,19 +54,19 @@ export function buildStudentApplicationHTML(student: any, institution?: Institut
     .section { margin-top: 10px; margin-bottom: 10px; }
     .section-title { font-size: 11.5px; font-weight: 700; padding: 3px 8px; background: #e2e8f0; border-left: 3px solid #0f172a; color: #0f172a; margin-bottom: 6px; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; }
-    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px 16px; }
     .field { display: flex; padding: 2.5px 0; border-bottom: 1px dotted #e2e8f0; }
-    .label { font-weight: 600; min-width: 110px; color: #475569; font-size: 10.5px; }
+    .label { font-weight: 600; min-width: 115px; color: #475569; font-size: 10.5px; }
     .value { flex: 1; font-weight: 500; color: #0f172a; font-size: 10.5px; }
-    .notice { margin-top: 15px; padding: 8px 12px; background: #fefce8; border: 1px solid #fef08a; border-radius: 4px; font-size: 9.5px; color: #713f12; }
-    .signatures { margin-top: 35px; display: flex; justify-content: space-between; padding: 0 10px; }
-    .sign-box { text-align: center; border-top: 1px solid #475569; padding-top: 4px; width: 150px; font-size: 10px; font-weight: 600; color: #334155; }
+    .notice { margin-top: 14px; padding: 8px 12px; background: #fefce8; border: 1px solid #fef08a; border-radius: 4px; font-size: 9.5px; color: #713f12; }
+    .signatures { margin-top: 30px; display: flex; justify-content: space-between; padding: 0 10px; }
+    .sign-box { text-align: center; border-top: 1px solid #475569; padding-top: 4px; width: 155px; font-size: 10px; font-weight: 600; color: #334155; }
+    .sign-img { max-height: 38px; max-width: 120px; object-fit: contain; margin: 0 auto 3px auto; display: block; }
     @media print { body { padding: 10mm; } @page { margin: 8mm; } }
   </style>
 </head>
 <body>
   <div class="header">
-    ${instLogo ? `<img src="${instLogo}" alt="Logo">` : ''}
+    ${instLogo ? `<img src="${instLogo}" alt="Logo" crossorigin="anonymous">` : ''}
     <h1>${instName}</h1>
     ${instNameEn ? `<p>${instNameEn}</p>` : ''}
     ${instAddr ? `<p>${instAddr}</p>` : ''}
@@ -92,7 +94,7 @@ export function buildStudentApplicationHTML(student: any, institution?: Institut
       </div>
     </div>
     <div class="photo-box">
-      ${student?.photo_url ? `<img src="${student.photo_url}" alt="Photo">` : 'ছবি'}
+      ${student?.photo_url ? `<img src="${student.photo_url}" alt="Photo" crossorigin="anonymous">` : 'ছবি'}
     </div>
   </div>
 
@@ -101,14 +103,14 @@ export function buildStudentApplicationHTML(student: any, institution?: Institut
     <div class="grid-2">
       <div class="field"><span class="label">জন্ম তারিখ:</span><span class="value">${student?.date_of_birth || '—'}</span></div>
       <div class="field"><span class="label">জন্ম নিবন্ধন / NID:</span><span class="value">${student?.birth_certificate_no || student?.birth_reg_no || student?.nid || '—'}</span></div>
-      <div class="field"><span class="label">লিঙ্গ:</span><span class="value">${student?.gender || '—'}</span></div>
-      <div class="field"><span class="label">রক্তের গ্রুপ:</span><span class="value">${student?.blood_group || '—'}</span></div>
+      <div class="field"><span class="label">লিঙ্গ:</span><span class="value">${student?.gender === 'female' ? 'মহিলা' : 'পুরুষ'}</span></div>
+      <div class="field"><span class="label">ধর্ম:</span><span class="value">${student?.religion || 'ইসলাম'}</span></div>
       <div class="field"><span class="label">পিতার নাম:</span><span class="value">${student?.father_name || '—'}</span></div>
       <div class="field"><span class="label">পিতার মোবাইল:</span><span class="value">${student?.father_phone || '—'}</span></div>
       <div class="field"><span class="label">মাতার নাম:</span><span class="value">${student?.mother_name || '—'}</span></div>
       <div class="field"><span class="label">মাতার মোবাইল:</span><span class="value">${student?.mother_phone || '—'}</span></div>
-      <div class="field"><span class="label">অভিভাবকের নাম:</span><span class="value">${student?.guardian_name || '—'} (${student?.guardian_relation || 'অভিভাবক'})</span></div>
-      <div class="field"><span class="label">অভিভাবকের ফোন:</span><span class="value">${student?.guardian_phone || '—'}</span></div>
+      <div class="field"><span class="label">অভিভাবকের নাম:</span><span class="value">${student?.guardian_name || student?.father_name || '—'} (${student?.guardian_relation || 'অভিভাবক'})</span></div>
+      <div class="field"><span class="label">অভিভাবকের ফোন:</span><span class="value">${student?.guardian_phone || student?.father_phone || '—'}</span></div>
     </div>
   </div>
 
@@ -121,13 +123,22 @@ export function buildStudentApplicationHTML(student: any, institution?: Institut
   </div>
 
   <div class="notice">
-    <strong>নির্দেশনা:</strong> এই আবেদনপত্রটি অনলাইনে সংরক্ষণ করা হয়েছে। আবেদনের অগ্রগতি জানতে এবং চূড়ান্ত ভর্তি নিশ্চিতকরণের জন্য আপনার আবেদন নম্বর (${appNo}) ব্যবহার করে ওয়েবসাইটে স্ট্যাটাস যাচাই করতে পারবেন।
+    <strong>নির্দেশনা:</strong> এই আবেদনপত্রটি অনলাইনে সংরক্ষণ করা হয়েছে। আবেদনের অগ্রগতি জানতে এবং চূড়ান্ত ভর্তি নিশ্চিতকরণের জন্য আপনার আবেদন নম্বর (${appNo}) ব্যবহার করে ওয়েবসাইটে স্ট্যাটাস যাচাই করতে পারবেন।
   </div>
 
   <div class="signatures">
-    <div class="sign-box">অভিভাবকের স্বাক্ষর</div>
-    <div class="sign-box">আবেদনকারীর স্বাক্ষর</div>
-    <div class="sign-box">অধ্যক্ষ / ভর্তি পরিচালকের স্বাক্ষর</div>
+    <div class="sign-box">
+      <div style="height: 38px;"></div>
+      <div>অভিভাবকের স্বাক্ষর</div>
+    </div>
+    <div class="sign-box">
+      ${applicantSignature ? `<img src="${applicantSignature}" alt="Signature" class="sign-img" crossorigin="anonymous">` : '<div style="height: 38px;"></div>'}
+      <div>আবেদনকারীর স্বাক্ষর</div>
+    </div>
+    <div class="sign-box">
+      <div style="height: 38px;"></div>
+      <div>অধ্যক্ষ / ভর্তি পরিচালকের স্বাক্ষর</div>
+    </div>
   </div>
 </body>
 </html>`;
@@ -140,15 +151,16 @@ export function buildStaffApplicationHTML(staff: any, institution?: InstitutionI
   const instLogo = institution?.logo_url || '';
 
   const appNo = staff?.staff_data?.application_no || staff?.staff_id || staff?.id?.slice(0, 8) || '';
-  
+  const applyDate = staff?.joining_date || (staff?.created_at ? new Date(staff.created_at).toLocaleDateString('bn-BD') : '');
+
+  const applicantSignature = staff?.staff_data?.signature_url || staff?.signature_url || '';
+
   const maritalRaw = staff?.staff_data?.marital_status || staff?.marital_status;
   const maritalLabel = maritalRaw === 'married' ? 'বিবাহিত'
     : maritalRaw === 'unmarried' || maritalRaw === 'single' ? 'অবিবাহিত'
     : maritalRaw === 'widowed' || maritalRaw === 'widow' ? 'বিধবা / বিপত্নীক'
     : maritalRaw === 'divorced' ? 'তালাকপ্রাপ্ত'
     : (maritalRaw || '—');
-
-  const applyDate = staff?.joining_date || (staff?.created_at ? new Date(staff.created_at).toLocaleDateString('bn-BD') : '');
 
   const statusLabel = staff?.status === 'active'
     ? 'অনুমোদিত ও সক্রিয় (Approved)'
@@ -186,15 +198,16 @@ export function buildStaffApplicationHTML(staff: any, institution?: InstitutionI
     .field { display: flex; padding: 2.5px 0; border-bottom: 1px dotted #e2e8f0; }
     .label { font-weight: 600; min-width: 120px; color: #475569; font-size: 10.5px; }
     .value { flex: 1; font-weight: 500; color: #0f172a; font-size: 10.5px; }
-    .notice { margin-top: 15px; padding: 8px 12px; background: #fefce8; border: 1px solid #fef08a; border-radius: 4px; font-size: 9.5px; color: #713f12; }
-    .signatures { margin-top: 40px; display: flex; justify-content: space-between; padding: 0 10px; }
+    .notice { margin-top: 14px; padding: 8px 12px; background: #fefce8; border: 1px solid #fef08a; border-radius: 4px; font-size: 9.5px; color: #713f12; }
+    .signatures { margin-top: 35px; display: flex; justify-content: space-between; padding: 0 10px; }
     .sign-box { text-align: center; border-top: 1px solid #475569; padding-top: 4px; width: 160px; font-size: 10px; font-weight: 600; color: #334155; }
+    .sign-img { max-height: 38px; max-width: 120px; object-fit: contain; margin: 0 auto 3px auto; display: block; }
     @media print { body { padding: 10mm; } @page { margin: 8mm; } }
   </style>
 </head>
 <body>
   <div class="header">
-    ${instLogo ? `<img src="${instLogo}" alt="Logo">` : ''}
+    ${instLogo ? `<img src="${instLogo}" alt="Logo" crossorigin="anonymous">` : ''}
     <h1>${instName}</h1>
     ${instNameEn ? `<p>${instNameEn}</p>` : ''}
     ${instAddr ? `<p>${instAddr}</p>` : ''}
@@ -215,14 +228,14 @@ export function buildStaffApplicationHTML(staff: any, institution?: InstitutionI
         <div class="field"><span class="label">নাম (ইংরেজি):</span><span class="value">${staff?.name_en || '—'}</span></div>
         <div class="field"><span class="label">আবেদনকৃত পদবি:</span><span class="value" style="font-weight: 700;">${staff?.designation || '—'}</span></div>
         <div class="field"><span class="label">বিভাগ:</span><span class="value">${staff?.department || '—'}</span></div>
-        <div class="field"><span class="label">চাকরির ধরন:</span><span class="value">${staff?.employment_type || '—'}</span></div>
+        <div class="field"><span class="label">চাকরির ধরন:</span><span class="value">${staff?.employment_type === 'full_time' ? 'পূর্ণকালীন' : (staff?.employment_type === 'part_time' ? 'খণ্ডকালীন' : staff?.employment_type || '—')}</span></div>
         <div class="field"><span class="label">আবেদনের তারিখ:</span><span class="value">${applyDate || '—'}</span></div>
         <div class="field"><span class="label">আবেদনের স্ট্যাটাস:</span><span class="value" style="font-weight: 700; color: ${statusColor};">${statusLabel}</span></div>
         <div class="field"><span class="label">যোগাযোগ মোবাইল:</span><span class="value font-mono">${staff?.phone || staff?.mobile || '—'}</span></div>
       </div>
     </div>
     <div class="photo-box">
-      ${staff?.photo_url ? `<img src="${staff.photo_url}" alt="Photo">` : 'ছবি'}
+      ${staff?.photo_url ? `<img src="${staff.photo_url}" alt="Photo" crossorigin="anonymous">` : 'ছবি'}
     </div>
   </div>
 
@@ -230,7 +243,7 @@ export function buildStaffApplicationHTML(staff: any, institution?: InstitutionI
     <div class="section-title">২. ব্যক্তিগত ও শিক্ষাগত যোগ্যতা</div>
     <div class="grid-2">
       <div class="field"><span class="label">জন্ম তারিখ:</span><span class="value">${staff?.date_of_birth || '—'}</span></div>
-      <div class="field"><span class="label">জাতীয় পরিচয়পত্র (NID):</span><span class="value">${staff?.nid || '—'}</span></div>
+      <div class="field"><span class="label">জাতীয় পরিচয়পত্র (NID):</span><span class="value">${staff?.nid || '—'}</span></div>
       <div class="field"><span class="label">ইমেইল:</span><span class="value">${staff?.email || '—'}</span></div>
       <div class="field"><span class="label">ধর্ম:</span><span class="value">${staff?.religion || 'ইসলাম'}</span></div>
       <div class="field"><span class="label">বৈবাহিক অবস্থা:</span><span class="value">${maritalLabel}</span></div>
@@ -242,13 +255,22 @@ export function buildStaffApplicationHTML(staff: any, institution?: InstitutionI
   </div>
 
   <div class="notice">
-    <strong>নির্দেশনা:</strong> এই আবেদনপত্রটি প্রাতিষ্ঠানিক নিয়োগ পর্যালোচনার জন্য জমা নেওয়া হয়েছে। কর্তৃপক্ষ যাচাই-বাছাই শেষে মৌখিক/ব্যবহারিক পরীক্ষার জন্য যোগাযোগ করবে। আবেদন নম্বর (${appNo}) সংরক্ষণ করুন।
+    <strong>নির্দেশনা:</strong> এই আবেদনপত্রটি প্রাতিষ্ঠানিক নিয়োগ পর্যালোচনার জন্য জমা নেওয়া হয়েছে। কর্তৃপক্ষ যাচাই-বাছাই শেষে পরবর্তী প্রক্রিয়ার জন্য যোগাযোগ করবে। আবেদন নম্বর (${appNo}) সংরক্ষণ করুন।
   </div>
 
   <div class="signatures">
-    <div class="sign-box">আবেদনকারীর স্বাক্ষর</div>
-    <div class="sign-box">যাচাইকারী কর্মকর্তার স্বাক্ষর</div>
-    <div class="sign-box">অধ্যক্ষ / নিয়োগ বোর্ডের স্বাক্ষর</div>
+    <div class="sign-box">
+      ${applicantSignature ? `<img src="${applicantSignature}" alt="Signature" class="sign-img" crossorigin="anonymous">` : '<div style="height: 38px;"></div>'}
+      <div>আবেদনকারীর স্বাক্ষর</div>
+    </div>
+    <div class="sign-box">
+      <div style="height: 38px;"></div>
+      <div>যাচাইকারী কর্মকর্তার স্বাক্ষর</div>
+    </div>
+    <div class="sign-box">
+      <div style="height: 38px;"></div>
+      <div>অধ্যক্ষ / নিয়োগ বোর্ডের স্বাক্ষর</div>
+    </div>
   </div>
 </body>
 </html>`;
@@ -257,11 +279,14 @@ export function buildStaffApplicationHTML(staff: any, institution?: InstitutionI
 export async function downloadHTMLAsPDF(htmlContent: string, fileName: string): Promise<void> {
   const iframe = document.createElement('iframe');
   iframe.style.position = 'fixed';
-  iframe.style.left = '-10000px';
+  iframe.style.left = '0';
   iframe.style.top = '0';
   iframe.style.width = '794px';
-  iframe.style.height = 'auto';
+  iframe.style.height = '1123px';
   iframe.style.border = 'none';
+  iframe.style.zIndex = '-9999';
+  iframe.style.opacity = '0';
+  iframe.style.pointerEvents = 'none';
   document.body.appendChild(iframe);
 
   const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
@@ -274,17 +299,41 @@ export async function downloadHTMLAsPDF(htmlContent: string, fileName: string): 
   iframeDoc.write(htmlContent);
   iframeDoc.close();
 
-  await new Promise(resolve => setTimeout(resolve, 1500));
+  // Wait for fonts and all images inside iframe to complete
+  try {
+    if ((iframeDoc as any).fonts?.ready) {
+      await (iframeDoc as any).fonts.ready;
+    }
+    const images = Array.from(iframeDoc.images);
+    if (images.length > 0) {
+      await Promise.all(
+        images.map(img => {
+          if (img.complete) return Promise.resolve();
+          return new Promise(resolve => {
+            img.onload = resolve;
+            img.onerror = resolve;
+            setTimeout(resolve, 3000);
+          });
+        })
+      );
+    }
+  } catch (e) {
+    console.warn('Image/font load wait notice:', e);
+  }
+
+  await new Promise(resolve => setTimeout(resolve, 800));
 
   try {
     const { default: html2canvas } = await import('html2canvas');
     const { jsPDF } = await import('jspdf');
 
     const body = iframeDoc.body;
-    const actualHeight = body.scrollHeight;
+    const actualHeight = Math.max(body.scrollHeight, body.offsetHeight, 1123);
+
     const canvas = await html2canvas(body, {
       scale: 2,
       useCORS: true,
+      allowTaint: true,
       logging: false,
       width: 794,
       height: actualHeight,
@@ -292,7 +341,7 @@ export async function downloadHTMLAsPDF(htmlContent: string, fileName: string): 
       windowHeight: actualHeight,
     });
 
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const imgData = canvas.toDataURL('image/jpeg', 0.98);
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pdfWidth = 210;
     const pageHeight = 297;

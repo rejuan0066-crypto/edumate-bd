@@ -69,7 +69,8 @@ const ALL_STEPS: StepDef[] = [
   { id: 'education_address', bn: 'যোগ্যতা ও ঠিকানা', en: 'Education & Address', icon: GraduationCap },
   { id: 'parents', bn: 'পিতা-মাতার তথ্য', en: 'Parents Info', icon: Users },
   { id: 'references', bn: 'পরিচয়কারী ও শনাক্তকারী', en: 'References', icon: ShieldCheck },
-  { id: 'documents', bn: 'কাগজপত্র ও নিশ্চিতকরণ', en: 'Documents & Submit', icon: FileText },
+  { id: 'documents', bn: 'কাগজপত্র', en: 'Documents', icon: FileText },
+  { id: 'review_submit', bn: 'পর্যালোচনা ও সাবমিট', en: 'Review & Submit', icon: Sparkles },
 ];
 
 const StaffApplicationPage = () => {
@@ -77,6 +78,10 @@ const StaffApplicationPage = () => {
   const bn = language === 'bn';
   const [currentStep, setCurrentStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
+  const [uploadingSig, setUploadingSig] = useState(false);
+  const sigInputRef = useRef<HTMLInputElement>(null);
+  const [declarationAgreed, setDeclarationAgreed] = useState(true);
   const [submittedStaffData, setSubmittedStaffData] = useState<any | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -193,6 +198,32 @@ const StaffApplicationPage = () => {
   const [docType, setDocType] = useState('');
   const [customDocType, setCustomDocType] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSignatureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error(bn ? 'স্বাক্ষরের ফাইলের সাইজ ২MB এর বেশি হতে পারবে না' : 'Signature file size must be under 2MB');
+      return;
+    }
+    setUploadingSig(true);
+    try {
+      const res = await uploadToCloudinary(file, { folder: 'staff-signatures' });
+      setSignatureUrl(res.secure_url);
+      toast.success(bn ? 'স্বাক্ষর আপলোড হয়েছে' : 'Signature uploaded successfully');
+    } catch (cErr) {
+      console.warn('Cloudinary upload failed, falling back to Supabase:', cErr);
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
+      const path = `signatures/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase.storage.from('photos').upload(path, file, { upsert: false });
+      if (error) { toast.error(error.message); return; }
+      setSignatureUrl(`photos/${path}`);
+      toast.success(bn ? 'স্বাক্ষর আপলোড হয়েছে' : 'Signature uploaded successfully');
+    } finally {
+      setUploadingSig(false);
+      if (sigInputRef.current) sigInputRef.current.value = '';
+    }
+  };
 
   const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -339,6 +370,7 @@ const StaffApplicationPage = () => {
           nid: relIdNid, address: relIdAddr,
         },
         application_no: appNo,
+        signature_url: signatureUrl,
         documents,
       };
 
@@ -389,6 +421,10 @@ const StaffApplicationPage = () => {
       }
     }
 
+    if (!declarationAgreed) {
+      toast.error(bn ? 'দয়া করে ঘোষণাপত্রে সম্মতি দিন' : 'Please agree to the declaration');
+      return;
+    }
     saveMutation.mutate();
   };
 
@@ -464,6 +500,8 @@ const StaffApplicationPage = () => {
     setRelIdNidError('');
     setRelIdAddr(emptyAddress);
     setDocuments([]);
+    setSignatureUrl(null);
+    setDeclarationAgreed(true);
     setFieldErrors({});
   };
 
@@ -1058,90 +1096,173 @@ const StaffApplicationPage = () => {
     }
 
     if (currentStepId === 'documents') {
+      return (
+        <div className="space-y-6">
+          {/* Document Upload */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-border">
+              <FileText className="w-5 h-5 text-emerald-600" />
+              <h3 className="font-bold text-base text-foreground">
+                {bn ? 'প্রয়োজনীয় কাগজপত্র আপলোড (ঐচ্ছিক)' : 'Upload Documents (Optional)'}
+              </h3>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Select value={docType} onValueChange={setDocType}>
+                <SelectTrigger className="bg-background w-full sm:w-64">
+                  <SelectValue placeholder={bn ? 'ডকুমেন্টের ধরন নির্বাচন' : 'Select type'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {DOC_TYPES.map(d => <SelectItem key={d.value} value={d.value}>{bn ? d.bn : d.en}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              {docType === 'other' && (
+                <Input className="bg-background sm:w-48" placeholder={bn ? 'ধরনের নাম লিখুন' : 'Type name'} value={customDocType} onChange={e => setCustomDocType(e.target.value)} />
+              )}
+              <input ref={fileInputRef} type="file" className="hidden" accept=".jpg,.jpeg,.png,.webp,.pdf" onChange={handleDocUpload} />
+              <Button type="button" variant="outline" onClick={() => { if (!docType) { toast.error(bn ? 'ধরন নির্বাচন করুন' : 'Select type first'); return; } fileInputRef.current?.click(); }} className="gap-2 shrink-0">
+                <Upload className="w-4 h-4" /> {bn ? 'ফাইল বাছাই করুন' : 'Choose File'}
+              </Button>
+            </div>
+
+            {documents.length > 0 ? (
+              <div className="border border-border rounded-xl overflow-hidden shadow-xs">
+                <table className="w-full text-xs sm:text-sm">
+                  <thead className="bg-muted/60">
+                    <tr>
+                      <th className="text-left px-3.5 py-2.5 font-semibold text-muted-foreground">#</th>
+                      <th className="text-left px-3.5 py-2.5 font-semibold text-muted-foreground">{bn ? 'ধরন' : 'Type'}</th>
+                      <th className="text-left px-3.5 py-2.5 font-semibold text-muted-foreground">{bn ? 'ফাইল নাম' : 'File Name'}</th>
+                      <th className="text-right px-3.5 py-2.5 font-semibold text-muted-foreground">{bn ? 'অ্যাকশন' : 'Action'}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {documents.map((doc, i) => (
+                      <tr key={doc.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-3.5 py-2.5">{i + 1}</td>
+                        <td className="px-3.5 py-2.5 font-medium">{doc.type}</td>
+                        <td className="px-3.5 py-2.5 text-muted-foreground truncate max-w-[180px]">{doc.name}</td>
+                        <td className="px-3.5 py-2.5 text-right">
+                          <div className="flex gap-1 justify-end">
+                            <button type="button" onClick={() => setPreviewDoc(doc)} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground" title={bn ? 'প্রিভিউ দেখুন' : 'Preview'}><Eye className="w-4 h-4" /></button>
+                            <button type="button" onClick={() => setDocuments(prev => prev.filter(d => d.id !== doc.id))} className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive" title={bn ? 'মুছে ফেলুন' : 'Delete'}><Trash2 className="w-4 h-4" /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground text-center py-6 bg-muted/20 rounded-xl border border-dashed border-border">
+                {bn ? 'এখনো কোনো ফাইল আপলোড করা হয়নি (প্রয়োজনে NID, শিক্ষাগত সনদ যোগ করতে পারেন)' : 'No documents uploaded yet'}
+              </p>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (currentStepId === 'review_submit') {
       const desigObj = designationsList.find(d => d.id === designation);
       const desigLabel = desigObj ? (bn ? desigObj.name_bn : desigObj.name) : designation;
 
       return (
         <div className="space-y-6">
-          {/* Document Upload */}
-          {isVisible('section_documents') && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 pb-2 border-b border-border">
-                <FileText className="w-5 h-5 text-emerald-600" />
-                <h3 className="font-bold text-base text-foreground">
-                  {bn ? 'প্রয়োজনীয় কাগজপত্র আপলোড (ঐচ্ছিক)' : 'Upload Documents (Optional)'}
-                </h3>
-              </div>
+          <div className="rounded-2xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 p-5 space-y-4">
+            <h4 className="font-bold text-base text-emerald-900 dark:text-emerald-300 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-emerald-600" />
+              {bn ? 'আবেদন তথ্য চূড়ান্ত পর্যালোচনা' : 'Final Review of Application Information'}
+            </h4>
+            <p className="text-xs text-muted-foreground">
+              {bn ? 'দয়া করে আপনার প্রদত্ত সকল তথ্য সতর্কতার সাথে যাচাই করুন। কোনো তথ্য সংশোধন করতে সংশ্লিষ্ট ধাপে ক্লিক করে পরিবর্তন করতে পারেন।' : 'Please review your details carefully before final submission.'}
+            </p>
 
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Select value={docType} onValueChange={setDocType}>
-                  <SelectTrigger className="bg-background w-full sm:w-64">
-                    <SelectValue placeholder={bn ? 'ডকুমেন্টের ধরন নির্বাচন' : 'Select type'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DOC_TYPES.map(d => <SelectItem key={d.value} value={d.value}>{bn ? d.bn : d.en}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                {docType === 'other' && (
-                  <Input className="bg-background sm:w-48" placeholder={bn ? 'ধরনের নাম লিখুন' : 'Type name'} value={customDocType} onChange={e => setCustomDocType(e.target.value)} />
-                )}
-                <input ref={fileInputRef} type="file" className="hidden" accept=".jpg,.jpeg,.png,.webp,.pdf" onChange={handleDocUpload} />
-                <Button type="button" variant="outline" onClick={() => { if (!docType) { toast.error(bn ? 'ধরন নির্বাচন করুন' : 'Select type first'); return; } fileInputRef.current?.click(); }} className="gap-2 shrink-0">
-                  <Upload className="w-4 h-4" /> {bn ? 'ফাইল বাছাই করুন' : 'Choose File'}
-                </Button>
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs bg-white dark:bg-card p-4 rounded-xl border border-emerald-200/80 dark:border-emerald-800/60 shadow-xs">
+              <div><span className="text-muted-foreground">{bn ? 'প্রার্থীর নাম (বাংলা): ' : 'Name (Bangla): '}</span><span className="font-bold text-foreground">{firstName || '—'}</span></div>
+              <div><span className="text-muted-foreground">{bn ? 'নাম (ইংরেজি): ' : 'Name (English): '}</span><span className="font-semibold text-foreground">{lastName || '—'}</span></div>
+              <div><span className="text-muted-foreground">{bn ? 'আবেদনকৃত পদবী: ' : 'Designation: '}</span><span className="font-bold text-emerald-600 dark:text-emerald-400">{desigLabel || '—'}</span></div>
+              <div><span className="text-muted-foreground">{bn ? 'চাকরির ধরন: ' : 'Employment: '}</span><span className="font-medium text-foreground">{employmentType === 'full_time' ? (bn ? 'পূর্ণকালীন' : 'Full Time') : (bn ? 'খণ্ডকালীন' : 'Part Time')}</span></div>
+              <div><span className="text-muted-foreground">{bn ? 'বৈবাহিক অবস্থা: ' : 'Marital Status: '}</span><span className="font-semibold text-foreground">{MARITAL_STATUSES.find(m => m.value === maritalStatus)?.[bn ? 'bn' : 'en'] || maritalStatus}</span></div>
+              <div><span className="text-muted-foreground">{bn ? 'মোবাইল নম্বর: ' : 'Mobile: '}</span><span className="font-mono font-medium text-foreground">{mobile ? `${mobileCode} ${mobile}` : '—'}</span></div>
+              <div><span className="text-muted-foreground">{bn ? 'জাতীয় পরিচয়পত্র (NID): ' : 'NID: '}</span><span className="font-mono text-foreground">{nid || '—'}</span></div>
+              <div><span className="text-muted-foreground">{bn ? 'জন্ম তারিখ: ' : 'Birth Date: '}</span><span className="font-medium text-foreground">{dob || '—'}</span></div>
+              <div><span className="text-muted-foreground">{bn ? 'শিক্ষাগত যোগ্যতা: ' : 'Education: '}</span><span className="font-medium text-foreground">{education || '—'}</span></div>
+              <div><span className="text-muted-foreground">{bn ? 'স্থায়ী ঠিকানা: ' : 'Permanent Address: '}</span><span className="font-medium text-foreground">{formatAddress(permanentAddr, bn) || '—'}</span></div>
+              <div><span className="text-muted-foreground">{bn ? 'পিতার নাম: ' : "Father's Name: "}</span><span className="font-medium text-foreground">{fatherName || '—'}</span></div>
+              <div><span className="text-muted-foreground">{bn ? 'মাতার নাম: ' : "Mother's Name: "}</span><span className="font-medium text-foreground">{motherName || '—'}</span></div>
+            </div>
+          </div>
 
-              {documents.length > 0 ? (
-                <div className="border border-border rounded-xl overflow-hidden shadow-xs">
-                  <table className="w-full text-xs sm:text-sm">
-                    <thead className="bg-muted/60">
-                      <tr>
-                        <th className="text-left px-3.5 py-2.5 font-semibold text-muted-foreground">#</th>
-                        <th className="text-left px-3.5 py-2.5 font-semibold text-muted-foreground">{bn ? 'ধরন' : 'Type'}</th>
-                        <th className="text-left px-3.5 py-2.5 font-semibold text-muted-foreground">{bn ? 'ফাইল নাম' : 'File Name'}</th>
-                        <th className="text-right px-3.5 py-2.5 font-semibold text-muted-foreground">{bn ? 'অ্যাকশন' : 'Action'}</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {documents.map((doc, i) => (
-                        <tr key={doc.id} className="hover:bg-muted/30 transition-colors">
-                          <td className="px-3.5 py-2.5">{i + 1}</td>
-                          <td className="px-3.5 py-2.5 font-medium">{doc.type}</td>
-                          <td className="px-3.5 py-2.5 text-muted-foreground truncate max-w-[180px]">{doc.name}</td>
-                          <td className="px-3.5 py-2.5 text-right">
-                            <div className="flex gap-1 justify-end">
-                              <button type="button" onClick={() => setPreviewDoc(doc)} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground" title={bn ? 'প্রিভিউ দেখুন' : 'Preview'}><Eye className="w-4 h-4" /></button>
-                              <button type="button" onClick={() => setDocuments(prev => prev.filter(d => d.id !== doc.id))} className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive" title={bn ? 'মুছে ফেলুন' : 'Delete'}><Trash2 className="w-4 h-4" /></button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+          {/* Applicant Signature Upload */}
+          <div className="rounded-2xl border border-slate-200 dark:border-border bg-white dark:bg-card p-5 space-y-4 shadow-xs">
+            <div className="flex items-center gap-2.5 pb-2 border-b border-border">
+              <ShieldCheck className="w-5 h-5 text-emerald-600" />
+              <div>
+                <h4 className="font-bold text-sm text-foreground">
+                  {bn ? 'আবেদনকারীর স্বাক্ষর আপলোড (Applicant Signature)' : 'Upload Applicant Signature'}
+                </h4>
+                <p className="text-[11px] text-muted-foreground">
+                  {bn ? 'আপনার হস্তলিখিত স্বাক্ষরের ছবি আপলোড করুন (এটি আবেদন স্লিপ ও PDF-এ যুক্ত হবে)' : 'Upload your handwritten signature (will appear on slip and PDF)'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-5">
+              <input
+                ref={sigInputRef}
+                type="file"
+                className="hidden"
+                accept=".jpg,.jpeg,.png,.webp"
+                onChange={handleSignatureUpload}
+              />
+
+              {signatureUrl ? (
+                <div className="flex items-center gap-4 p-3 bg-muted/40 rounded-xl border border-emerald-300 dark:border-emerald-800">
+                  <div className="w-36 h-16 bg-white dark:bg-card rounded-lg border flex items-center justify-center p-1 overflow-hidden">
+                    <img src={signatureUrl} alt="Signature" className="max-h-full max-w-full object-contain" />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
+                      <CheckCircle className="w-3.5 h-3.5" /> {bn ? 'স্বাক্ষর সংযুক্ত হয়েছে' : 'Signature Attached'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSignatureUrl(null)}
+                      className="text-xs text-destructive hover:underline block"
+                    >
+                      {bn ? 'স্বাক্ষর মুছুন / পরিবর্তন' : 'Remove / Change'}
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground text-center py-3 bg-muted/20 rounded-xl border border-dashed border-border">
-                  {bn ? 'এখনো কোনো ফাইল আপলোড করা হয়নি (প্রয়োজনে NID, শিক্ষাগত সনদ যোগ করতে পারেন)' : 'No documents uploaded yet'}
-                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={uploadingSig}
+                  onClick={() => sigInputRef.current?.click()}
+                  className="border-dashed border-2 px-6 py-6 gap-2 text-xs font-semibold hover:border-emerald-500 hover:bg-emerald-50/50"
+                >
+                  {uploadingSig ? <Loader2 className="w-4 h-4 animate-spin text-emerald-600" /> : <Upload className="w-4 h-4 text-emerald-600" />}
+                  {bn ? 'স্বাক্ষরের ছবি আপলোড করুন' : 'Upload Signature Image'}
+                </Button>
               )}
             </div>
-          )}
+          </div>
 
-          {/* Review Summary Box */}
-          <div className="rounded-2xl border border-emerald-200/90 dark:border-emerald-800/70 bg-emerald-50/40 dark:bg-emerald-950/20 p-5 space-y-3">
-            <h4 className="font-bold text-sm text-emerald-900 dark:text-emerald-300 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-emerald-600" />
-              {bn ? 'আবেদন তথ্য একনজরে' : 'Application Summary'}
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-              <div><span className="text-muted-foreground">{bn ? 'প্রার্থীর নাম (বাংলা): ' : 'Name (Bangla): '}</span><span className="font-semibold">{firstName || '—'}</span></div>
-              <div><span className="text-muted-foreground">{bn ? 'নাম (ইংরেজি): ' : 'Name (English): '}</span><span className="font-semibold">{lastName || '—'}</span></div>
-              <div><span className="text-muted-foreground">{bn ? 'পদবী: ' : 'Designation: '}</span><span className="font-semibold text-emerald-700 dark:text-emerald-400">{desigLabel || '—'}</span></div>
-              <div><span className="text-muted-foreground">{bn ? 'বৈবাহিক অবস্থা: ' : 'Marital Status: '}</span><span className="font-semibold">{MARITAL_STATUSES.find(m => m.value === maritalStatus)?.[bn ? 'bn' : 'en'] || maritalStatus}</span></div>
-              <div><span className="text-muted-foreground">{bn ? 'মোবাইল নম্বর: ' : 'Mobile: '}</span><span className="font-mono">{mobile ? `${mobileCode} ${mobile}` : '—'}</span></div>
-              <div><span className="text-muted-foreground">{bn ? 'পিতার নাম: ' : "Father's Name: "}</span><span className="font-medium">{fatherName || '—'}</span></div>
-              <div><span className="text-muted-foreground">{bn ? 'স্থায়ী জেলা: ' : 'District: '}</span><span className="font-medium">{permanentAddr?.district || '—'}</span></div>
-            </div>
+          {/* Declaration Checkbox */}
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-slate-50 dark:bg-muted/30 border border-slate-200 dark:border-border">
+            <Checkbox
+              id="staff-declaration"
+              checked={declarationAgreed}
+              onCheckedChange={(c) => setDeclarationAgreed(!!c)}
+              className="mt-0.5"
+            />
+            <Label htmlFor="staff-declaration" className="text-xs text-foreground leading-relaxed cursor-pointer font-medium">
+              {bn
+                ? 'আমি শপথপূর্বক ঘোষণা করছি যে, এই নিয়োগ আবেদনপত্রে প্রদত্ত সকল তথ্য সম্পূর্ণ সত্য, সঠিক ও নির্ভুল। কোনো তথ্য অসত্য বা গোপন প্রমাণিত হলে কর্তৃপক্ষ আইনানুগ ব্যবস্থা গ্রহণ করতে পারবে।'
+                : 'I solemnly declare that all information provided in this employment application is true, accurate and complete.'}
+            </Label>
           </div>
 
           {/* Footer Notice */}
@@ -1150,10 +1271,6 @@ const StaffApplicationPage = () => {
               {footerText}
             </div>
           )}
-
-          <p className="text-xs text-muted-foreground text-center">
-            {bn ? 'আবেদন জমা দেওয়ার পর আপনি একটি ইউনিক আবেদন নম্বর পাবেন, যা দিয়ে পরবর্তিতে স্লিপ ডাউনলোড ও অগ্রগতি জানা যাবে।' : 'After submitting, you will receive an Application ID to download the slip and track status.'}
-          </p>
         </div>
       );
     }
