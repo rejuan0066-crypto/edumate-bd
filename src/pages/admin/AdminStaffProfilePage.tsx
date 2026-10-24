@@ -72,7 +72,17 @@ const AdminStaffProfilePage = () => {
   const queryClient = useQueryClient();
   const { role } = useAuth();
   const isAdmin = isAdminRole(role);
-  const { isFeatureAllowed } = usePagePermissions('/admin/staff');
+  // Role permissions check based on staff category
+  const menuPath = (() => {
+    const p = window.location.pathname;
+    if (p.includes('/teachers')) return '/admin/teachers';
+    if (p.includes('/administrative-staff')) return '/admin/administrative-staff';
+    if (p.includes('/support-staff')) return '/admin/support-staff';
+    if (p.includes('/directors')) return '/admin/directors';
+    if (p.includes('/committee-members')) return '/admin/committee-members';
+    return '/admin/staff';
+  })();
+  const { canViewPage, canAddItem, canEditItem, canDeleteItem, canApproveItem, isFeatureAllowed } = usePagePermissions(menuPath);
 
   // Modals state
   const [monthlyAttendanceOpen, setMonthlyAttendanceOpen] = useState(false);
@@ -274,33 +284,37 @@ const AdminStaffProfilePage = () => {
 
           {staff && (
             <div className="flex items-center gap-2 self-end sm:self-auto">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => window.print()}
-                className="gap-1.5 rounded-xl font-bold text-xs shadow-xs"
-              >
-                <Printer className="w-3.5 h-3.5" />
-                <span>{bn ? 'প্রিন্ট' : 'Print'}</span>
-              </Button>
-              <Link to={getEditUrl()}>
+              {isFeatureAllowed('action_print') !== false && (
                 <Button
+                  variant="outline"
                   size="sm"
-                  className="gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs"
+                  onClick={() => window.print()}
+                  className="gap-1.5 rounded-xl font-bold text-xs shadow-xs"
                 >
-                  <Pencil className="w-3.5 h-3.5" />
-                  <span>{bn ? 'তথ্য এডিট' : 'Edit Profile'}</span>
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>{bn ? 'প্রিন্ট' : 'Print'}</span>
                 </Button>
-              </Link>
+              )}
+              {canEditItem && (
+                <Link to={getEditUrl()}>
+                  <Button
+                    size="sm"
+                    className="gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    <span>{bn ? 'তথ্য এডিট' : 'Edit Profile'}</span>
+                  </Button>
+                </Link>
+              )}
             </div>
           )}
         </div>
 
-        {/* ═══════════ COMPLETE PROFILE ACTIONS TOOLBAR ═══════════ */}
-        {staff && (
+        {/* ═══════════ COMPLETE PROFILE ACTIONS TOOLBAR (ROLE-PERMISSION AWARE) ═══════════ */}
+        {staff && (isAdmin || canEditItem || canDeleteItem || canApproveItem || isFeatureAllowed('action_print') !== false) && (
           <div className="flex flex-wrap items-center gap-2.5 p-3.5 bg-muted/30 rounded-2xl border border-border/60 shadow-xs">
-            {/* Account Creation / Linked Badge */}
-            {isAdmin && (
+            {/* Account Creation / Linked Badge (Admin or user management permission) */}
+            {(isAdmin || isFeatureAllowed('action_create_account') === true) && (
               staff.user_id ? (
                 <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs px-3 py-1 flex items-center gap-1.5 font-semibold rounded-xl">
                   <Check className="w-3.5 h-3.5" />
@@ -323,8 +337,8 @@ const AdminStaffProfilePage = () => {
               )
             )}
 
-            {/* Attendance & Duty Report */}
-            {isAdmin && (
+            {/* Attendance & Duty Report (Admin or canViewPage) */}
+            {(isAdmin || canViewPage) && isFeatureAllowed('attendance_report') !== false && (
               <Button
                 variant="outline"
                 size="sm"
@@ -336,8 +350,8 @@ const AdminStaffProfilePage = () => {
               </Button>
             )}
 
-            {/* Promotion / Salary Letter */}
-            {isAdmin && staff.status === 'active' && isFeatureAllowed('action_salary_view') !== false && (
+            {/* Promotion / Salary Letter (Admin or canEditItem, and salary view permission) */}
+            {staff.status === 'active' && (isAdmin || canEditItem) && isFeatureAllowed('action_salary_view') !== false && (
               <Button
                 variant="outline"
                 size="sm"
@@ -349,8 +363,8 @@ const AdminStaffProfilePage = () => {
               </Button>
             )}
 
-            {/* Personal Duty Time */}
-            {isAdmin && staff.status === 'active' && (
+            {/* Personal Duty Time (Admin or canEditItem) */}
+            {staff.status === 'active' && (isAdmin || canEditItem) && (
               <Button
                 variant="outline"
                 size="sm"
@@ -362,8 +376,8 @@ const AdminStaffProfilePage = () => {
               </Button>
             )}
 
-            {/* Pending Staff Approval / Rejection */}
-            {isAdmin && staff.status === 'pending' && (
+            {/* Pending Staff Approval / Rejection (Admin or canApproveItem) */}
+            {staff.status === 'pending' && (isAdmin || canApproveItem) && (
               <>
                 <Button
                   size="sm"
@@ -387,8 +401,8 @@ const AdminStaffProfilePage = () => {
               </>
             )}
 
-            {/* Active / Inactive Status Toggle */}
-            {isAdmin && staff.status !== 'pending' && (
+            {/* Active / Inactive Status Toggle (Admin or canEditItem) */}
+            {staff.status !== 'pending' && (isAdmin || canEditItem) && (
               <Button
                 variant="outline"
                 size="sm"
@@ -414,8 +428,8 @@ const AdminStaffProfilePage = () => {
               </Button>
             )}
 
-            {/* Delete Record */}
-            {isAdmin && isFeatureAllowed('action_delete_staff') !== false && (
+            {/* Delete Record (Strictly requires canDeleteItem and delete staff permission) */}
+            {canDeleteItem && isFeatureAllowed('action_delete_staff') !== false && (
               <Button
                 variant="outline"
                 size="sm"
