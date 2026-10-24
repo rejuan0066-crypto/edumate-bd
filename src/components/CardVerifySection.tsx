@@ -32,7 +32,7 @@ import { hasBangla, hasEnglish, cleanStaffName } from '@/lib/nameFormatter';
 interface CardVerifySectionProps {
   formType: 'student' | 'staff';
   isEnabled: boolean;
-  onDataReceived: (data: Record<string, string>) => void;
+  onDataReceived: (data: Record<string, any>) => void;
 }
 
 const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySectionProps) => {
@@ -61,6 +61,8 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
     fatherName: string;
     motherName: string;
     gender: string;
+    bloodGroup: string;
+    address: string;
     rawText: string;
   }>({
     documentNumber: '',
@@ -71,6 +73,8 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
     fatherName: '',
     motherName: '',
     gender: '',
+    bloodGroup: '',
+    address: '',
     rawText: '',
   });
 
@@ -135,6 +139,8 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
         fatherName: parsed.fatherName || '',
         motherName: parsed.motherName || '',
         gender: parsed.gender || '',
+        bloodGroup: parsed.bloodGroup || '',
+        address: parsed.address || '',
         rawText: parsed.rawText || '',
       });
 
@@ -226,45 +232,38 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
 
   // Apply OCR data to the main form
   const handleApplyExtractedData = () => {
-    const mapped: Record<string, string> = {};
+    const mapped: Record<string, any> = {
+      documentNumber: extractedData.documentNumber,
+      date_of_birth: extractedData.dateOfBirth,
+      father_name: extractedData.fatherName,
+      mother_name: extractedData.motherName,
+      gender: extractedData.gender,
+      blood_group: extractedData.bloodGroup,
+      address: extractedData.address,
+    };
+
+    const bnName = extractedData.fullNameBn || (hasBangla(extractedData.fullName) ? extractedData.fullName : '');
+    const enName = extractedData.fullNameEn || (hasEnglish(extractedData.fullName) ? extractedData.fullName : '');
+
+    mapped.name_bn = bnName || extractedData.fullName;
+    mapped.name_en = enName;
+    mapped.first_name = bnName || extractedData.fullName;
+    mapped.last_name = enName;
 
     if (formType === 'student') {
-      if (extractedData.fullName) {
-        const parts = extractedData.fullName.trim().split(/\s+/);
-        mapped.first_name = parts[0] || extractedData.fullName;
-        mapped.last_name = parts.slice(1).join(' ') || '';
-      }
-      if (extractedData.documentNumber) mapped.birth_reg_no = extractedData.documentNumber;
-      if (extractedData.dateOfBirth) mapped.date_of_birth = extractedData.dateOfBirth;
-      if (extractedData.fatherName) mapped.father_name = extractedData.fatherName;
-      if (extractedData.motherName) mapped.mother_name = extractedData.motherName;
-      if (extractedData.gender) mapped.gender = extractedData.gender;
+      mapped.birth_reg_no = extractedData.documentNumber;
+      mapped.nid = extractedData.documentNumber;
     } else {
-      // staff form
-      if (extractedData.fullNameBn) {
-        mapped.name_bn = extractedData.fullNameBn;
-      }
-      if (extractedData.fullNameEn) {
-        mapped.name_en = extractedData.fullNameEn;
-      }
-      if (!mapped.name_bn && !mapped.name_en && extractedData.fullName) {
-        if (hasBangla(extractedData.fullName) && !hasEnglish(extractedData.fullName)) {
-          mapped.name_bn = extractedData.fullName;
-          // Never assign Bengali to English field
-          mapped.name_en = '';
-        } else if (hasEnglish(extractedData.fullName) && !hasBangla(extractedData.fullName)) {
-          mapped.name_en = extractedData.fullName;
-          mapped.name_bn = '';
-        } else {
-          const cleaned = cleanStaffName(extractedData.fullName, null);
-          mapped.name_bn = cleaned.name_bn;
-          mapped.name_en = cleaned.has_distinct_english ? (cleaned.name_en || '') : '';
-        }
-      }
-      if (extractedData.documentNumber) mapped.nid = extractedData.documentNumber;
-      if (extractedData.dateOfBirth) mapped.date_of_birth = extractedData.dateOfBirth;
-      if (extractedData.fatherName) mapped.father_name = extractedData.fatherName;
-      if (extractedData.motherName) mapped.mother_name = extractedData.motherName;
+      mapped.nid = extractedData.documentNumber;
+    }
+
+    if (extractedData.address) {
+      mapped.permanentAddr = {
+        village: extractedData.address,
+      };
+      mapped.presentAddr = {
+        village: extractedData.address,
+      };
     }
 
     onDataReceived(mapped);
@@ -350,15 +349,20 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
               onChange={(e) => {
                 const converted = e.target.value
                   .replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)))
-                  .replace(/\D/g, '');
+                  .trim();
                 setCardNumber(converted);
                 setVerified(false);
               }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleVerify();
+                }
+              }}
               placeholder={formType === 'student'
-                ? (bn ? '১৭ ডিজিটের জন্ম নিবন্ধন নম্বর লিখুন (যেমন: 20121234567890123)...' : 'Enter 17-digit Birth Reg No (e.g. 2012...)...')
-                : (bn ? '১০ বা ১৭ ডিজিটের এনআইডি নম্বর লিখুন...' : 'Enter 10 or 17-digit NID Number...')}
+                ? (bn ? 'বারকোড স্ক্যানার দিয়ে স্ক্যান করুন অথবা ১৭ ডিজিট নম্বর / আইডি দিন...' : 'Scan barcode or enter 17-digit Birth Reg / Student ID...')
+                : (bn ? 'বারকোড স্ক্যানার দিয়ে স্ক্যান করুন অথবা এনআইডি / স্টাফ আইডি দিন...' : 'Scan barcode or enter NID / Staff ID...')}
               disabled={loading}
-              inputMode="numeric"
             />
           </div>
           <Button
@@ -490,11 +494,22 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
                     </div>
 
                     <div>
-                      <Label className="text-[11px] text-muted-foreground">{bn ? 'নাম' : 'Full Name'}</Label>
+                      <Label className="text-[11px] text-muted-foreground">{bn ? 'নাম (বাংলায়)' : 'Full Name (Bangla)'}</Label>
                       <Input
-                        value={extractedData.fullName}
-                        onChange={e => setExtractedData(p => ({ ...p, fullName: e.target.value }))}
+                        value={extractedData.fullNameBn || extractedData.fullName}
+                        onChange={e => setExtractedData(p => ({ ...p, fullNameBn: e.target.value, fullName: e.target.value }))}
                         className="h-8 text-xs mt-0.5 font-medium"
+                        placeholder={bn ? 'বাংলায় নাম' : 'Bangla Name'}
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-[11px] text-muted-foreground">{bn ? 'নাম (ইংরেজিতে)' : 'Full Name (English)'}</Label>
+                      <Input
+                        value={extractedData.fullNameEn}
+                        onChange={e => setExtractedData(p => ({ ...p, fullNameEn: e.target.value }))}
+                        className="h-8 text-xs mt-0.5 font-medium font-mono"
+                        placeholder={bn ? 'ইংরেজিতে নাম' : 'English Name'}
                       />
                     </div>
 
@@ -527,12 +542,32 @@ const CardVerifySection = ({ formType, isEnabled, onDataReceived }: CardVerifySe
                     </div>
 
                     <div>
-                      <Label className="text-[11px] text-muted-foreground">{bn ? 'জেন্ডার' : 'Gender'}</Label>
+                      <Label className="text-[11px] text-muted-foreground">{bn ? 'জেন্ডার / লিঙ্গ' : 'Gender'}</Label>
                       <Input
                         value={extractedData.gender}
                         onChange={e => setExtractedData(p => ({ ...p, gender: e.target.value }))}
                         className="h-8 text-xs mt-0.5"
                         placeholder="male / female"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-[11px] text-muted-foreground">{bn ? 'রক্তের গ্রুপ' : 'Blood Group'}</Label>
+                      <Input
+                        value={extractedData.bloodGroup}
+                        onChange={e => setExtractedData(p => ({ ...p, bloodGroup: e.target.value }))}
+                        className="h-8 text-xs mt-0.5 uppercase"
+                        placeholder="A+ / B+ / O+ / AB+"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <Label className="text-[11px] text-muted-foreground">{bn ? 'ঠিকানা (গ্রাম / রাস্তা / উপজেলা / জেলা)' : 'Address'}</Label>
+                      <Input
+                        value={extractedData.address}
+                        onChange={e => setExtractedData(p => ({ ...p, address: e.target.value }))}
+                        className="h-8 text-xs mt-0.5"
+                        placeholder={bn ? 'গ্রাম, ডাকঘর, উপজেলা, জেলা...' : 'Village, Post, Upazila, District...'}
                       />
                     </div>
                   </div>

@@ -1446,7 +1446,47 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
             formType="student"
             isEnabled={true}
             onDataReceived={(data) => {
-              setForm(prev => ({ ...prev, ...data }));
+              setForm(prev => ({
+                ...prev,
+                first_name: data.first_name || data.name_bn || prev.first_name,
+                last_name: data.last_name || data.name_en || prev.last_name,
+                birth_reg_no: data.birth_reg_no || data.documentNumber || prev.birth_reg_no,
+                date_of_birth: data.date_of_birth || prev.date_of_birth,
+                gender: data.gender || prev.gender,
+                religion: data.religion || prev.religion,
+                residence_type: data.residence_type || prev.residence_type,
+                student_category: data.student_category || prev.student_category,
+                father_name: data.father_name || prev.father_name,
+                father_name_en: data.father_name_en || prev.father_name_en,
+                father_nid: data.father_nid || prev.father_nid,
+                father_phone: data.father_phone || data.phone || data.mobile || prev.father_phone,
+                father_occupation: data.father_occupation || prev.father_occupation,
+                mother_name: data.mother_name || prev.mother_name,
+                mother_name_en: data.mother_name_en || prev.mother_name_en,
+                mother_nid: data.mother_nid || prev.mother_nid,
+                mother_phone: data.mother_phone || prev.mother_phone,
+                mother_occupation: data.mother_occupation || prev.mother_occupation,
+                guardian_name: data.guardian_name || prev.guardian_name,
+                guardian_phone: data.guardian_phone || prev.guardian_phone,
+                guardian_nid: data.guardian_nid || prev.guardian_nid,
+                guardian_relation: data.guardian_relation || prev.guardian_relation,
+                guardian_type: data.guardian_type || prev.guardian_type,
+                photo_url: data.photo_url || prev.photo_url,
+                roll_number: data.roll_number || prev.roll_number,
+                registration_no: data.registration_no || prev.registration_no,
+                previous_class: data.previous_class || prev.previous_class,
+                previous_institute: data.previous_institute || prev.previous_institute,
+              }));
+              if (data.permanentAddr) {
+                setPermanentAddr(prev => ({ ...prev, ...data.permanentAddr }));
+              }
+              if (data.presentAddr) {
+                setPresentAddr(prev => ({ ...prev, ...data.presentAddr }));
+              }
+              if (data.address && !data.permanentAddr) {
+                setPermanentAddr(prev => ({ ...prev, village: data.address }));
+                setPresentAddr(prev => ({ ...prev, village: data.address }));
+              }
             }}
           />
 
