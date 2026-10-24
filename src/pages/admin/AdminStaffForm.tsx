@@ -10,7 +10,6 @@ import AddressFields, { type AddressData } from '@/components/AddressFields';
 import PhoneInput from '@/components/PhoneInput';
 import PhotoUpload from '@/components/PhotoUpload';
 import { uploadToCloudinary } from '@/lib/cloudinary';
-import CardVerifySection from '@/components/CardVerifySection';
 import { useApiVerificationEnabled } from '@/hooks/useApiVerification';
 import { useState, useRef, useEffect } from 'react';
 import { Plus, AlertCircle, CheckCircle, Check, Loader2, Upload, Trash2, Eye, Printer, Download, FileText, X, CalendarIcon, Mail, ArrowLeft, ArrowRight, Clock } from 'lucide-react';
@@ -1490,68 +1489,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
         )}
 
         <form className="space-y-6" onSubmit={handleSubmit}>
-          {currentStepId === 'employee' && (
-            <CardVerifySection
-              formType="staff"
-              isEnabled={apiVerifyEnabled !== false}
-              onDataReceived={(data) => {
-                if (data.name_bn || data.first_name) setFirstName(deduplicateRepeatedWords(data.name_bn || data.first_name));
-                if (data.name_en || data.last_name) setLastName(deduplicateRepeatedWords(data.name_en || data.last_name));
-                if (data.father_name) setFatherName(data.father_name);
-                if (data.mother_name) setMotherName(data.mother_name);
-                if (data.date_of_birth) setDob(data.date_of_birth);
-                if (data.phone || data.mobile) {
-                  const p = cleanPhoneNumber(data.phone || data.mobile, mobileCode);
-                  if (p) { setMobile(p.number); setMobileCode(p.code); }
-                  else { setMobile(data.phone || data.mobile); }
-                }
-                if (data.father_phone || data.father_mobile) {
-                  const p = cleanPhoneNumber(data.father_phone || data.father_mobile, fatherMobileCode);
-                  if (p) { setFatherMobile(p.number); setFatherMobileCode(p.code); }
-                  else { setFatherMobile(data.father_phone || data.father_mobile); }
-                }
-                if (data.mother_phone || data.mother_mobile) {
-                  const p = cleanPhoneNumber(data.mother_phone || data.mother_mobile, motherMobileCode);
-                  if (p) { setMotherMobile(p.number); setMotherMobileCode(p.code); }
-                  else { setMotherMobile(data.mother_phone || data.mother_mobile); }
-                }
-                if (data.father_nid) setFatherNid(data.father_nid);
-                if (data.mother_nid) setMotherNid(data.mother_nid);
-                if (data.father_occupation) setFatherOccupation(data.father_occupation);
-                if (data.mother_occupation) setMotherOccupation(data.mother_occupation);
-                if (data.email) setStaffEmail(data.email);
-                if (data.nid) setNid(data.nid);
-                if (data.education) setEducation(data.education);
-                if (data.experience) setExperience(data.experience);
-                if (data.previous_institute) setPrevInstitute(data.previous_institute);
-                if (data.joining_date) setJoiningDate(data.joining_date);
-                if (data.salary) setSalary(String(data.salary));
-                if (data.photo_url) setPhotoUrl(data.photo_url);
-                if (data.religion) setReligion(data.religion);
-                if (data.residence_type) setResidenceType(data.residence_type);
-                if (data.employment_type) setEmploymentType(data.employment_type);
-                if (data.designation) {
-                  const desigMatch = designations.find(d => d.bn === data.designation || d.en === data.designation || d.value === data.designation);
-                  setDesignation(desigMatch?.value || data.designation);
-                }
-                if (data.guardian_type) setGuardianType(data.guardian_type);
-                if (data.guardian_name) setGuardianName(data.guardian_name);
-                if (data.guardian_relation) setGuardianRelation(data.guardian_relation);
-                if (data.guardian_phone || data.guardian_mobile) {
-                  const p = cleanPhoneNumber(data.guardian_phone || data.guardian_mobile, guardianMobileCode);
-                  if (p) { setGuardianMobile(p.number); setGuardianMobileCode(p.code); }
-                  else { setGuardianMobile(data.guardian_phone || data.guardian_mobile); }
-                }
-                if (data.guardian_nid) setGuardianNid(data.guardian_nid);
-                if (data.permanentAddr) setPermanentAddr(prev => ({ ...prev, ...data.permanentAddr }));
-                if (data.presentAddr) setPresentAddr(prev => ({ ...prev, ...data.presentAddr }));
-                if (data.address && !data.permanentAddr) {
-                  setPermanentAddr(prev => ({ ...prev, village: data.address }));
-                  setPresentAddr(prev => ({ ...prev, village: data.address }));
-                }
-              }}
-            />
-          )}
+          
 
           {/* ========== SECTION 1: Employee Details ========== */}
           {currentStepId === 'employee' && (
