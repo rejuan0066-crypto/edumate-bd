@@ -20,6 +20,8 @@ import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import PhotoUpload from '@/components/PhotoUpload';
 import { format } from 'date-fns';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
+import { useAuth } from '@/hooks/useAuth';
+import { isAdminRole } from '@/lib/roles';
 import { useConfirm } from "@/contexts/ConfirmContext";
 import PasswordStrengthMeter, { isPasswordStrongAgainst, firstFailedRuleMessage, usePasswordPolicy } from '@/components/PasswordStrengthMeter';
 import { isFutureJoiningDate } from '@/lib/joiningDate';
@@ -87,6 +89,8 @@ const AdminAdministrative = () => {
   const bn = language === 'bn';
   const qc = useQueryClient();
   const { canViewPage, canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/administrative');
+  const { role } = useAuth();
+  const isAdmin = isAdminRole(role);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [open, setOpen] = useState(false);
@@ -651,13 +655,12 @@ const AdminAdministrative = () => {
                           <Check className="w-3 h-3" /> {bn ? 'আইডি আছে' : 'Account linked'}
                         </span>
                       ) : (
-                        <button
+                        isAdmin ? <button
                           onClick={() => openAccountDialog(o)}
                           className="text-xs px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 inline-flex items-center gap-1"
                         >
                           <UserPlus className="w-3 h-3" /> {bn ? 'অ্যাকাউন্ট তৈরি' : 'Create Account'}
-                        </button>
-                      )}
+                        </button> : null)}
                     </div>
                     <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1 flex-wrap">
                       {o.designation && <span className="flex items-center gap-1"><Building2 className="w-3 h-3" />{o.designation}</span>}
@@ -1241,7 +1244,7 @@ const AdminAdministrative = () => {
       </Dialog>
 
       {/* Account Creation Dialog */}
-      <Dialog open={accountDialogOpen} onOpenChange={setAccountDialogOpen}>
+      {isAdmin && <Dialog open={accountDialogOpen} onOpenChange={setAccountDialogOpen}>
         <DialogContent className="sm:max-w-md rounded-[32px]">
           <DialogHeader>
             <DialogTitle>{bn ? 'অ্যাকাউন্ট তৈরি করুন' : 'Create Account'}</DialogTitle>
@@ -1282,7 +1285,7 @@ const AdminAdministrative = () => {
             </Button>
           </div>
         </DialogContent>
-      </Dialog>
+      </Dialog>}
     </AdminLayout>
   );
 };

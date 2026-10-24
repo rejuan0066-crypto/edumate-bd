@@ -175,6 +175,10 @@ const AdminStaffProfilePage = () => {
 
   // Account creation handler
   const handleCreateAccount = async () => {
+    if (!isAdmin) {
+      toast.error(bn ? 'শুধুমাত্র অ্যাডমিন অ্যাকাউন্ট তৈরি করতে পারবেন' : 'Only admins can create accounts');
+      return;
+    }
     if (!accEmail.trim() || !accPassword.trim()) {
       toast.error(bn ? 'ইমেইল ও পাসওয়ার্ড দিন' : 'Email and password required');
       return;
@@ -313,8 +317,8 @@ const AdminStaffProfilePage = () => {
         {/* ═══════════ COMPLETE PROFILE ACTIONS TOOLBAR (ROLE-PERMISSION AWARE) ═══════════ */}
         {staff && (isAdmin || canEditItem || canDeleteItem || canApproveItem || isFeatureAllowed('action_print') !== false) && (
           <div className="flex flex-wrap items-center gap-2.5 p-3.5 bg-muted/30 rounded-2xl border border-border/60 shadow-xs">
-            {/* Account Creation / Linked Badge (Admin or user management permission) */}
-            {(isAdmin || isFeatureAllowed('action_create_account') === true) && (
+            {/* Account Creation / Linked Badge (Strictly Admin only: super_admin or admin) */}
+            {isAdmin && (
               staff.user_id ? (
                 <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs px-3 py-1 flex items-center gap-1.5 font-semibold rounded-xl">
                   <Check className="w-3.5 h-3.5" />
@@ -477,76 +481,78 @@ const AdminStaffProfilePage = () => {
 
         {/* ═══════════ MOUNTED DIALOGS ═══════════ */}
 
-        {/* 1. Account Creation Dialog */}
-        <Dialog open={accountDialogOpen} onOpenChange={setAccountDialogOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>{bn ? 'অ্যাকাউন্ট তৈরি করুন' : 'Create Account'}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-2">
-              <p className="text-xs text-muted-foreground px-2 py-1 bg-muted/50 rounded italic border-l-2 border-primary/30">
-                {bn ? 'অ্যাকাউন্ট তৈরি করতে ইমেইল ও পাসওয়ার্ড দিন। পাসওয়ার্ড অবশ্যই ইংরেজি অক্ষরে হতে হবে এবং এতে কমপক্ষে ৬টি অক্ষর থাকতে হবে।' : 'Provide email and password to create an account.'}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {bn ? `কর্মী: ${displayNames?.primary || ''}` : `Staff: ${displayNames?.primary || ''}`}
-              </p>
-              <div className="space-y-2">
-                <Label>{bn ? 'ইমেইল' : 'Email'}</Label>
-                <Input type="email" value={accEmail} onChange={e => setAccEmail(e.target.value)} placeholder="email@example.com" />
-              </div>
-              <div className="space-y-2">
-                <Label>{bn ? 'পাসওয়ার্ড' : 'Password'}</Label>
-                <div className="relative">
-                  <Input 
-                    type={showPassword ? 'text' : 'password'} 
-                    value={accPassword} 
-                    onChange={e => setAccPassword(sanitizePasswordInput(e.target.value))} 
-                    placeholder={bn ? 'ইংরেজি অক্ষর, সংখ্যা ও চিহ্ন' : 'Password'} 
-                    className="pr-10" 
-                  />
-                  <button 
-                    type="button" 
-                    onClick={() => setShowPassword(!showPassword)} 
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+        {/* 1. Account Creation Dialog (Admin only) */}
+        {isAdmin && (
+          <Dialog open={accountDialogOpen} onOpenChange={setAccountDialogOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>{bn ? 'অ্যাকাউন্ট তৈরি করুন' : 'Create Account'}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-2">
+                <p className="text-xs text-muted-foreground px-2 py-1 bg-muted/50 rounded italic border-l-2 border-primary/30">
+                  {bn ? 'অ্যাকাউন্ট তৈরি করতে ইমেইল ও পাসওয়ার্ড দিন। পাসওয়ার্ড অবশ্যই ইংরেজি অক্ষরে হতে হবে এবং এতে কমপক্ষে ৬টি অক্ষর থাকতে হবে।' : 'Provide email and password to create an account.'}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {bn ? `কর্মী: ${displayNames?.primary || ''}` : `Staff: ${displayNames?.primary || ''}`}
+                </p>
+                <div className="space-y-2">
+                  <Label>{bn ? 'ইমেইল' : 'Email'}</Label>
+                  <Input type="email" value={accEmail} onChange={e => setAccEmail(e.target.value)} placeholder="email@example.com" />
                 </div>
-                <PasswordStrengthMeter password={accPassword} bn={bn} visible />
-              </div>
+                <div className="space-y-2">
+                  <Label>{bn ? 'পাসওয়ার্ড' : 'Password'}</Label>
+                  <div className="relative">
+                    <Input 
+                      type={showPassword ? 'text' : 'password'} 
+                      value={accPassword} 
+                      onChange={e => setAccPassword(sanitizePasswordInput(e.target.value))} 
+                      placeholder={bn ? 'ইংরেজি অক্ষর, সংখ্যা ও চিহ্ন' : 'Password'} 
+                      className="pr-10" 
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowPassword(!showPassword)} 
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <PasswordStrengthMeter password={accPassword} bn={bn} visible />
+                </div>
 
-              <div className="space-y-2">
-                <Label>{bn ? 'রোল' : 'Role'}</Label>
-                <Select value={accRole} onValueChange={setAccRole}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="teacher">{bn ? 'শিক্ষক' : 'Teacher'}</SelectItem>
-                    <SelectItem value="administrative">{bn ? 'প্রশাসনিক' : 'Administrative'}</SelectItem>
-                    <SelectItem value="support">{bn ? 'সাপোর্ট' : 'Support'}</SelectItem>
-                    <SelectItem value="general">{bn ? 'সহায়ক' : 'General'}</SelectItem>
-                    <SelectItem value="staff">{bn ? 'স্টাফ' : 'Staff'}</SelectItem>
-                    <SelectItem value="admin">{bn ? 'অ্যাডমিন' : 'Admin'}</SelectItem>
-                    {customRoles.length > 0 && (
-                      <>
-                        <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase">{bn ? 'কাস্টম রোল' : 'Custom Roles'}</div>
-                        {(customRoles as any[]).map((cr) => (
-                          <SelectItem key={cr.id} value={`custom:${cr.id}`}>
-                            {(bn ? cr.name_bn : cr.name) || cr.name} <span className="text-[10px] text-muted-foreground ml-1">({cr.base_role})</span>
-                          </SelectItem>
-                        ))}
-                      </>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
+                <div className="space-y-2">
+                  <Label>{bn ? 'রোল' : 'Role'}</Label>
+                  <Select value={accRole} onValueChange={setAccRole}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="teacher">{bn ? 'শিক্ষক' : 'Teacher'}</SelectItem>
+                      <SelectItem value="administrative">{bn ? 'প্রশাসনিক' : 'Administrative'}</SelectItem>
+                      <SelectItem value="support">{bn ? 'সাপোর্ট' : 'Support'}</SelectItem>
+                      <SelectItem value="general">{bn ? 'সহায়ক' : 'General'}</SelectItem>
+                      <SelectItem value="staff">{bn ? 'স্টাফ' : 'Staff'}</SelectItem>
+                      <SelectItem value="admin">{bn ? 'অ্যাডমিন' : 'Admin'}</SelectItem>
+                      {customRoles.length > 0 && (
+                        <>
+                          <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase">{bn ? 'কাস্টম রোল' : 'Custom Roles'}</div>
+                          {(customRoles as any[]).map((cr) => (
+                            <SelectItem key={cr.id} value={`custom:${cr.id}`}>
+                              {(bn ? cr.name_bn : cr.name) || cr.name} <span className="text-[10px] text-muted-foreground ml-1">({cr.base_role})</span>
+                            </SelectItem>
+                          ))}
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <Button onClick={handleCreateAccount} disabled={accCreating} className="w-full btn-primary-gradient">
-                {accCreating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                {bn ? 'অ্যাকাউন্ট তৈরি করুন' : 'Create Account'}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+                <Button onClick={handleCreateAccount} disabled={accCreating} className="w-full btn-primary-gradient">
+                  {accCreating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  {bn ? 'অ্যাকাউন্ট তৈরি করুন' : 'Create Account'}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
 
         {/* 2. Monthly Attendance & Duty Report Dialog */}
         <StaffMonthlyAttendanceDialog
