@@ -223,7 +223,7 @@ const AdminExpenses = () => {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleteConfirmType, setDeleteConfirmType] = useState<'expense' | 'deposit'>('expense');
   const [selectedInstitutionId, setSelectedInstitutionId] = useState<string>('');
-  const [selectedInstId, setSelectedInstId] = useState<string | null>(null);
+  const [selectedInstId, setSelectedInstId] = useState<string>('all');
   const [tableCategoryId, setTableCategoryId] = useState<string>('all');
   const [tableSearchText, setTableSearchText] = useState<string>('');
   const [expenseListTab, setExpenseListTab] = useState<'paid' | 'dues'>('paid');
@@ -763,17 +763,14 @@ const AdminExpenses = () => {
     }));
   }, [expenseInstitutions, institutions]);
 
-  // Auto-select default institution
+  // Auto-select default institution for fallback operations
   useEffect(() => {
     if (allInstitutions.length > 0 && !selectedInstitutionId) {
       const def = institutions.find((i: any) => i.is_default) || allInstitutions[0];
       const targetId = def?.id || allInstitutions[0]?.id;
       setSelectedInstitutionId(targetId);
-      if (!selectedInstId) {
-        setSelectedInstId(targetId);
-      }
     }
-  }, [allInstitutions, institutions, selectedInstitutionId, selectedInstId]);
+  }, [allInstitutions, institutions, selectedInstitutionId]);
 
   // Auto-align any salary/other expenses where payment date falls in this month but month_year was mismatched
   useEffect(() => {
@@ -1883,14 +1880,12 @@ const AdminExpenses = () => {
     }));
   }, [summaryData, headOfInstitute, accountantCashier]);
 
-  // Auto-select first institution
+  // Default institution filter stays 'all' (সকল প্রতিষ্ঠান একত্রিত)
   useEffect(() => {
-    if (allInstitutions.length > 0 && !selectedInstId) {
-      const def = institutions.find((i: any) => i.is_default) || allInstitutions[0];
-      const targetId = def?.id || allInstitutions[0]?.id;
-      setSelectedInstId(targetId);
+    if (!selectedInstId) {
+      setSelectedInstId('all');
     }
-  }, [allInstitutions, institutions, selectedInstId]);
+  }, [selectedInstId]);
 
   const handleSelectInstitution = (instId: string) => {
     setSelectedInstId(instId);
