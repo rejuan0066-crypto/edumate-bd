@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import PhotoUpload from '@/components/PhotoUpload';
+import ApplicationTrackingBox from '@/components/application/ApplicationTrackingBox';
 import AddressFields, { type AddressData } from '@/components/AddressFields';
 import PhoneInput from '@/components/PhoneInput';
 import {
@@ -40,6 +41,8 @@ const AdmissionPage = () => {
   const { fields: configFields, isLoaded, isFieldActive, getField, getFieldsBySection, getCustomFields, sections } = useAdmissionFormConfig();
 
   // Form state
+  const [pageMode, setPageMode] = useState<'apply' | 'track'>('apply');
+  const [classStepConfirmed, setClassStepConfirmed] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [form, setForm] = useState<Record<string, any>>({
     student_type: 'new', residence_type: 'non-resident',
@@ -215,8 +218,15 @@ const AdmissionPage = () => {
   // Auto-prefill from URL: ?class=<classId> → admission_class + division + running session/year
   const [searchParams] = useSearchParams();
   const urlClassId = searchParams.get('class');
+  const urlMode = searchParams.get('mode');
+
+  useEffect(() => {
+    if (urlMode === 'track') setPageMode('track');
+  }, [urlMode]);
+
   useEffect(() => {
     if (!urlClassId) return;
+    setClassStepConfirmed(true);
     if (classes.length === 0) return;
     const cls = classes.find((c: any) => c.id === urlClassId);
     if (!cls) return;
@@ -1728,33 +1738,201 @@ const AdmissionPage = () => {
   const activeSessionObj = academicSessions.find((s: any) => s.id === form.admission_session || s.name === form.admission_session);
   const sessionDisplayName = (bn ? (activeSessionObj?.name_bn || activeSessionObj?.name) : activeSessionObj?.name) || form.session_year || (bn ? 'চলতি' : 'Current');
 
+  const selectedDivObj = divisions.find((d: any) => d.id === selectedDivisionId);
+  const selectedClassObj = classes.find((c: any) => c.id === form.admission_class);
+
   return (
     <PublicLayout>
       <div className="container mx-auto px-4 py-8 sm:py-12 max-w-4xl">
-        {/* Already Applied Tracking Quick Banner */}
-        <div className="mb-4 flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50/50 to-white dark:from-emerald-950/40 dark:via-teal-950/20 dark:to-card border border-emerald-200/80 dark:border-emerald-800/60 shadow-xs">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+        {/* Mode Switcher Tabs */}
+        <div className="flex justify-center mb-6">
+          <div className="inline-flex p-1.5 rounded-2xl bg-muted/70 border border-border/80 shadow-xs">
+            <button
+              type="button"
+              onClick={() => setPageMode('apply')}
+              className={`px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 ${
+                pageMode === 'apply'
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/20'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <GraduationCap className="w-4 h-4" />
+              {bn ? 'নতুন ছাত্র আবেদন' : 'Student Application'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setPageMode('track')}
+              className={`px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 ${
+                pageMode === 'track'
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/20'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
               <Search className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-xs sm:text-sm font-semibold text-emerald-950 dark:text-emerald-200">
-                {bn ? 'ইতিমধ্যে আবেদন করেছেন? আবেদনের অবস্থা ট্র্যাক বা স্লিপ ডাউনলোড করুন' : 'Already applied? Track status or download slip'}
-              </p>
-              <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400">
-                {bn ? 'আপনার আবেদন নম্বর (Application ID) দিয়ে তাৎক্ষণিক অগ্রগতি যাচাই করুন।' : 'Check real-time application progress and download slip anytime.'}
-              </p>
-            </div>
+              {bn ? 'ছাত্র ট্র্যাকিং ও স্লিপ ডাউনলোড' : 'Track Application & Slip'}
+            </button>
           </div>
-          <Button asChild size="sm" variant="outline" className="h-8 px-3.5 text-xs font-bold rounded-full border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 bg-white dark:bg-card hover:bg-emerald-50 shrink-0">
-            <Link to="/application-tracking" className="flex items-center gap-1.5">
-              <span>{bn ? 'আবেদন ট্র্যাকিং ➔' : 'Track Application ➔'}</span>
-            </Link>
-          </Button>
         </div>
+
+        {/* TRACKING MODE */}
+        {pageMode === 'track' && (
+          <ApplicationTrackingBox targetType="student" onSwitchToApply={() => setPageMode('apply')} />
+        )}
+
+        {/* APPLY MODE */}
+        {pageMode === 'apply' && (
+          <>
+            {/* Step A: Division & Class Selection (If not confirmed yet) */}
+            {!classStepConfirmed && !submitted && (
+              <div className="border border-slate-200/90 dark:border-border rounded-3xl shadow-xl overflow-hidden bg-white dark:bg-card p-6 sm:p-8 space-y-6">
+                <div className="text-center space-y-2 pb-4 border-b border-border/70">
+                  <Badge variant="outline" className="px-3 py-0.5 text-xs border-emerald-500/30 text-emerald-700 dark:text-emerald-300 bg-emerald-500/5 font-semibold">
+                    {bn ? 'ধাপ ১: বিভাগ ও শ্রেণী নির্বাচন' : 'Step 1: Division & Class Selection'}
+                  </Badge>
+                  <h2 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
+                    {bn ? 'আপনার কাঙ্ক্ষিত বিভাগ ও শ্রেণী নির্বাচন করুন' : 'Select Desired Division & Class'}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-muted-foreground max-w-lg mx-auto">
+                    {bn
+                      ? 'প্রতিষ্ঠানটিতে যেসব বিভাগের ভর্তি আবেদন চালু রয়েছে, সেখান থেকে প্রথমে বিভাগ এবং পরবর্তীতে শ্রেণী নির্বাচন করে এগিয়ে যান।'
+                      : 'Choose an active division, then pick your class to proceed to the admission form.'}
+                  </p>
+                </div>
+
+                {/* Division Cards */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs font-bold flex items-center justify-center shrink-0">১</span>
+                    <h3 className="font-bold text-sm sm:text-base text-foreground">
+                      {bn ? 'বিভাগ নির্বাচন করুন' : 'Select Division'} <span className="text-destructive">*</span>
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {divisions.filter((d: any) => d.is_active).map((d: any) => {
+                      const isSelected = selectedDivisionId === d.id;
+                      const classesInDiv = classes.filter((c: any) => c.division_id === d.id && c.is_active);
+                      return (
+                        <div
+                          key={d.id}
+                          onClick={() => {
+                            setSelectedDivisionId(d.id);
+                            setForm(prev => ({ ...prev, admission_class: '' }));
+                          }}
+                          className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
+                            isSelected
+                              ? 'border-emerald-600 bg-emerald-50/60 dark:bg-emerald-950/30 shadow-md shadow-emerald-600/10'
+                              : 'border-border/80 bg-card hover:border-emerald-400 dark:hover:border-emerald-600 hover:bg-muted/30'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+                              <BookOpen className="w-5 h-5" />
+                            </div>
+                            {isSelected && (
+                              <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold">✓</span>
+                            )}
+                          </div>
+                          <div className="mt-3">
+                            <h4 className="font-bold text-sm sm:text-base text-foreground leading-snug">{d.name_bn || d.name}</h4>
+                            {d.name && d.name !== d.name_bn && <p className="text-xs text-muted-foreground mt-0.5">{d.name}</p>}
+                            <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium mt-2">
+                              {bn ? `${classesInDiv.length} টি শ্রেণী সচল` : `${classesInDiv.length} active classes`}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Class Selection Grid */}
+                {selectedDivisionId && (
+                  <div className="space-y-3 pt-4 border-t border-border/80 animate-in fade-in duration-200">
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs font-bold flex items-center justify-center shrink-0">২</span>
+                      <h3 className="font-bold text-sm sm:text-base text-foreground">
+                        {bn ? 'শ্রেণী নির্বাচন করুন' : 'Select Class'} <span className="text-destructive">*</span>
+                      </h3>
+                    </div>
+                    {filteredClasses.length === 0 ? (
+                      <p className="text-xs text-muted-foreground py-4 text-center">{bn ? 'এই বিভাগে কোনো সচল শ্রেণী পাওয়া যায়নি।' : 'No active classes found in this division.'}</p>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                        {filteredClasses.map((cls: any) => {
+                          const isSelected = form.admission_class === cls.id;
+                          return (
+                            <div
+                              key={cls.id}
+                              onClick={() => setForm(prev => ({ ...prev, admission_class: cls.id }))}
+                              className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer text-center ${
+                                isSelected
+                                  ? 'border-emerald-600 bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/20'
+                                  : 'border-border/80 bg-card hover:border-emerald-400 dark:hover:border-emerald-600 hover:bg-muted/30 text-foreground font-medium'
+                              }`}
+                            >
+                              <span className="text-xs sm:text-sm">{cls.name_bn || cls.name}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Step 3: Proceed Button */}
+                <div className="pt-4 border-t border-border/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <span className="text-xs text-muted-foreground text-center sm:text-left">
+                    {selectedDivisionId && form.admission_class
+                      ? (bn ? 'বিভাগ ও শ্রেণী নির্বাচিত হয়েছে। ফর্মে যেতে পরবর্তী বাটনে চাপুন।' : 'Division and Class selected. Click next to proceed.')
+                      : (bn ? 'অনুগ্রহ করে বিভাগ ও শ্রেণী নির্বাচন করুন।' : 'Please select a division and class.')}
+                  </span>
+                  <Button
+                    type="button"
+                    onClick={() => setClassStepConfirmed(true)}
+                    disabled={!selectedDivisionId || !form.admission_class}
+                    className="w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-xs btn-primary-gradient gap-1.5 shadow-md shadow-emerald-600/20 shrink-0"
+                  >
+                    <span>{bn ? 'পরবর্তী (ফরম পূরণ করুন)' : 'Proceed to Form'}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step B: Admission Form (When class is confirmed) */}
 
         <div className="border border-slate-200/90 dark:border-border rounded-3xl shadow-xl overflow-hidden bg-white dark:bg-card">
           
+          {(classStepConfirmed || submitted) && (
+            <>
+              {/* Selected Division & Class Floating Pill */}
+              {classStepConfirmed && !submitted && (
+                <div className="px-6 pt-4 pb-0">
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
+                        <CheckCircle className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-muted-foreground">{bn ? 'নির্বাচিত বিভাগ ও শ্রেণী:' : 'Selected Division & Class:'}</p>
+                        <p className="text-xs sm:text-sm font-bold text-emerald-900 dark:text-emerald-200">
+                          {selectedDivObj?.name_bn || selectedDivObj?.name} ➔ {selectedClassObj?.name_bn || selectedClassObj?.name}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setClassStepConfirmed(false)}
+                      className="h-7 text-[11px] font-semibold rounded-xl border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100/50"
+                    >
+                      {bn ? 'বিভাগ/শ্রেণী পরিবর্তন' : 'Change'}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
           {/* Top Header (1:1 Mockup Match) */}
           <div className="px-6 py-5 bg-gradient-to-r from-emerald-50/70 via-white to-teal-50/50 dark:from-emerald-950/30 dark:via-background dark:to-teal-950/20 border-b border-slate-200/80 dark:border-border/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
@@ -1969,7 +2147,11 @@ const AdmissionPage = () => {
               </div>
             )}
           </div>
+            </>
+          )}
         </div>
+          </>
+        )}
       </div>
     </PublicLayout>
   );

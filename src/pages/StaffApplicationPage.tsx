@@ -18,7 +18,8 @@ import {
   FileText, MapPin, Search
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import ApplicationTrackingBox from '@/components/application/ApplicationTrackingBox';
 import { generateStaffApplicationNo } from '@/lib/applicationIdGenerator';
 import { buildStaffApplicationHTML, downloadHTMLAsPDF, printHTML } from '@/lib/applicationSlipGenerator';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -74,6 +75,12 @@ const ALL_STEPS: StepDef[] = [
 const StaffApplicationPage = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
+  const [searchParams] = useSearchParams();
+  const urlMode = searchParams.get('mode');
+  const urlDesignation = searchParams.get('designation');
+
+  const [pageMode, setPageMode] = useState<'apply' | 'track'>('apply');
+  const [designationConfirmed, setDesignationConfirmed] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
@@ -112,6 +119,17 @@ const StaffApplicationPage = () => {
       return data || [];
     },
   });
+
+  // Sync mode & designation from URL
+  useEffect(() => {
+    if (urlMode === 'track') setPageMode('track');
+  }, [urlMode]);
+
+  useEffect(() => {
+    if (!urlDesignation) return;
+    setDesignation(urlDesignation);
+    setDesignationConfirmed(true);
+  }, [urlDesignation]);
 
   // Load footer text
   const { data: footerText } = useQuery({
@@ -463,6 +481,7 @@ const StaffApplicationPage = () => {
     setStaffEmail('');
     setEmploymentType('full_time');
     setDesignation('');
+    setDesignationConfirmed(false);
     setResidenceType('non_residential');
     setMaritalStatus('unmarried');
     setDob('');
@@ -1276,32 +1295,181 @@ const StaffApplicationPage = () => {
     return null;
   };
 
+  const selectedDesigObj = designationsList.find((d: any) => d.id === designation);
+
   return (
     <PublicLayout>
       <div className="container mx-auto px-4 py-8 sm:py-12 max-w-4xl">
-        {/* Already Applied Tracking Quick Banner */}
-        <div className="mb-4 flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50/50 to-white dark:from-emerald-950/40 dark:via-teal-950/20 dark:to-card border border-emerald-200/80 dark:border-emerald-800/60 shadow-xs">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+        {/* Mode Switcher Tabs */}
+        <div className="flex justify-center mb-6">
+          <div className="inline-flex p-1.5 rounded-2xl bg-muted/70 border border-border/80 shadow-xs">
+            <button
+              type="button"
+              onClick={() => setPageMode('apply')}
+              className={`px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 ${
+                pageMode === 'apply'
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/20'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Briefcase className="w-4 h-4" />
+              {bn ? 'নতুন স্টাফ আবেদন' : 'Staff Application'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setPageMode('track')}
+              className={`px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 ${
+                pageMode === 'track'
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/20'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
               <Search className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-xs sm:text-sm font-semibold text-emerald-950 dark:text-emerald-200">
-                {bn ? 'ইতিমধ্যে আবেদন করেছেন? নিয়োগ আবেদনের অবস্থা ট্র্যাক বা স্লিপ ডাউনলোড করুন' : 'Already applied? Track status or download slip'}
-              </p>
-              <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400">
-                {bn ? 'আপনার আবেদন নম্বর (Application ID) দিয়ে তাৎক্ষণিক অগ্রগতি যাচাই করুন।' : 'Check real-time application progress and download slip anytime.'}
-              </p>
-            </div>
+              {bn ? 'স্টাফ ট্র্যাকিং ও স্লিপ ডাউনলোড' : 'Staff Tracking & Slip'}
+            </button>
           </div>
-          <Button asChild size="sm" variant="outline" className="h-8 px-3.5 text-xs font-bold rounded-full border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 bg-white dark:bg-card hover:bg-emerald-50 shrink-0">
-            <Link to="/application-tracking" className="flex items-center gap-1.5">
-              <span>{bn ? 'আবেদন ট্র্যাকিং ➔' : 'Track Application ➔'}</span>
-            </Link>
-          </Button>
         </div>
 
-        <div className="border border-slate-200/90 dark:border-border rounded-3xl shadow-xl overflow-hidden bg-white dark:bg-card">
+        {pageMode === 'track' ? (
+          <ApplicationTrackingBox
+            targetType="staff"
+            onSwitchToApply={() => setPageMode('apply')}
+          />
+        ) : (
+          <>
+            {/* Step 1: Active Designation Cards Selection (When designation not yet confirmed) */}
+            {!designationConfirmed && (
+              <div className="card-elevated p-6 sm:p-8 space-y-6 mb-6">
+                <div>
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+                      <Briefcase className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg sm:text-xl font-bold text-foreground">
+                        {bn ? 'নিয়োগ বিজ্ঞপ্তি ও পদবী নির্বাচন করুন' : 'Select Position for Application'}
+                      </h2>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {bn ? 'যে পদে আবেদন করতে চান তা নির্বাচন করে পরবর্তী ধাপে এগিয়ে যান।' : 'Choose the designation you wish to apply for.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Designation Cards Grid */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs font-bold flex items-center justify-center shrink-0">১</span>
+                    <h3 className="font-bold text-sm sm:text-base text-foreground">
+                      {bn ? 'আবেদনকৃত পদবী নির্বাচন' : 'Select Applied Designation'} <span className="text-destructive">*</span>
+                    </h3>
+                  </div>
+
+                  {designationsList.length === 0 ? (
+                    <div className="text-center py-12 border rounded-2xl bg-muted/20">
+                      <p className="text-sm text-muted-foreground">
+                        {bn ? 'বর্তমানে কোনো পদে সচল নিয়োগ বিজ্ঞপ্তি পাওয়া যায়নি।' : 'No active designations available for application.'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                      {designationsList.map((d: any) => {
+                        const isSelected = designation === d.id;
+                        return (
+                          <div
+                            key={d.id}
+                            onClick={() => {
+                              handleFieldChange('designation', d.id, setDesignation);
+                            }}
+                            className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
+                              isSelected
+                                ? 'border-emerald-600 bg-emerald-50/60 dark:bg-emerald-950/30 shadow-md shadow-emerald-600/10'
+                                : 'border-border/80 bg-card hover:border-emerald-400 dark:hover:border-emerald-600 hover:bg-muted/30'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+                                <Briefcase className="w-5 h-5" />
+                              </div>
+                              {isSelected && (
+                                <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold">✓</span>
+                              )}
+                            </div>
+                            <div className="mt-3">
+                              <h4 className="font-bold text-sm sm:text-base text-foreground leading-snug">{bn ? d.name_bn : (d.name || d.name_bn)}</h4>
+                              {d.name && d.name !== d.name_bn && (
+                                <p className="text-xs text-muted-foreground mt-0.5">{d.name}</p>
+                              )}
+                              <div className="mt-2 flex items-center gap-1.5">
+                                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+                                <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
+                                  {bn ? 'আবেদন চলছে' : 'Accepting Applications'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Step 2: Proceed Button */}
+                <div className="pt-4 border-t border-border/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <span className="text-xs text-muted-foreground text-center sm:text-left">
+                    {designation
+                      ? (bn ? 'পদবী নির্বাচিত হয়েছে। ফর্মে যেতে পরবর্তী বাটনে চাপুন।' : 'Position selected. Click next to proceed.')
+                      : (bn ? 'অনুগ্রহ করে আবেদন করার জন্য একটি পদবী নির্বাচন করুন।' : 'Please select a position to proceed.')}
+                  </span>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      if (!designation) {
+                        toast.error(bn ? 'দয়া করে একটি পদবী নির্বাচন করুন' : 'Please select a designation');
+                        return;
+                      }
+                      setDesignationConfirmed(true);
+                      window.scrollTo({ top: 120, behavior: 'smooth' });
+                    }}
+                    disabled={!designation}
+                    className="w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-xs btn-primary-gradient gap-1.5 shadow-md shadow-emerald-600/20 shrink-0"
+                  >
+                    <span>{bn ? 'পরবর্তী (ফরম পূরণ করুন)' : 'Proceed to Form'}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Main Staff Form (Visible when designation is confirmed) */}
+            {designationConfirmed && (
+              <div className="border border-slate-200/90 dark:border-border rounded-3xl shadow-xl overflow-hidden bg-white dark:bg-card">
+                
+                {/* Selected Designation Floating Banner */}
+                <div className="px-6 pt-4 pb-0">
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
+                        <CheckCircle className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-muted-foreground">{bn ? 'আবেদনকৃত পদবী:' : 'Applied Designation:'}</p>
+                        <p className="text-xs sm:text-sm font-bold text-emerald-900 dark:text-emerald-200">
+                          {selectedDesigObj ? (bn ? selectedDesigObj.name_bn : (selectedDesigObj.name || selectedDesigObj.name_bn)) : designation}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDesignationConfirmed(false)}
+                      className="h-7 text-[11px] font-semibold rounded-xl border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100/50"
+                    >
+                      {bn ? 'পদবী পরিবর্তন' : 'Change'}
+                    </Button>
+                  </div>
+                </div>
           
           {/* Top Header */}
           <div className="px-6 py-5 bg-gradient-to-r from-emerald-50/70 via-white to-teal-50/50 dark:from-emerald-950/30 dark:via-background dark:to-teal-950/20 border-b border-slate-200/80 dark:border-border/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1459,6 +1627,9 @@ const StaffApplicationPage = () => {
             )}
           </div>
         </div>
+            )}
+          </>
+        )}
 
         <DocumentPreviewModal
           open={!!previewDoc}
