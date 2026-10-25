@@ -402,26 +402,58 @@ export const HostelBoardingStockTab: React.FC = () => {
     return map;
   }, [orderedFoodItems]);
 
+  // 3. Tab-specific items belonging to current active category
+  const currentTabItems = useMemo(() => {
+    if (activeCategoryTab === 'all') {
+      return orderedFoodItems;
+    }
+    return orderedFoodItems.filter(item => getFoodItemCategory(item) === activeCategoryTab);
+  }, [orderedFoodItems, activeCategoryTab]);
+
+  // 4. Tab-specific clean sequential serial 1 to K for each category
+  const currentTabSerialMap = useMemo(() => {
+    const map = new Map<string, number>();
+    currentTabItems.forEach((item, index) => {
+      map.set(item.id, index + 1);
+    });
+    return map;
+  }, [currentTabItems]);
+
   // Reorder items by moving an item from its current index to a new target position (1-based)
+  // Supports reordering within specific category tab or across all items
   const reorderItemPosition = async (itemId: string, newTargetPosition: number) => {
-    const currentOrdered = [...orderedFoodItems];
-    const currentIndex = currentOrdered.findIndex(i => i.id === itemId);
+    const tabItems = [...currentTabItems];
+    const currentIndex = tabItems.findIndex(i => i.id === itemId);
     if (currentIndex === -1) return;
 
-    const clampedPos = Math.max(1, Math.min(newTargetPosition, currentOrdered.length));
+    const clampedPos = Math.max(1, Math.min(newTargetPosition, tabItems.length));
     const targetIndex = clampedPos - 1;
 
     if (currentIndex === targetIndex) return;
 
-    // Remove from current position and insert at target position
-    const [movedItem] = currentOrdered.splice(currentIndex, 1);
-    currentOrdered.splice(targetIndex, 0, movedItem);
+    // Remove from current position and insert at target position inside current tab
+    const [movedItem] = tabItems.splice(currentIndex, 1);
+    tabItems.splice(targetIndex, 0, movedItem);
+
+    // Map reordered items back to global ordered food items
+    let newFullOrdered: InventoryItem[];
+    if (activeCategoryTab === 'all') {
+      newFullOrdered = tabItems;
+    } else {
+      let pointer = 0;
+      newFullOrdered = orderedFoodItems.map(item => {
+        if (getFoodItemCategory(item) === activeCategoryTab) {
+          return tabItems[pointer++];
+        }
+        return item;
+      });
+    }
 
     // Re-assign strictly unique sequential serial numbers 1 to N
     const newSerialMap: Record<string, number> = {};
     const updates: { id: string; sort_order: number }[] = [];
 
-    currentOrdered.forEach((item, idx) => {
+    newFullOrdered.forEach((item, idx) => {
       const serial = idx + 1;
       newSerialMap[item.id] = serial;
       updates.push({ id: item.id, sort_order: serial });
@@ -450,15 +482,15 @@ export const HostelBoardingStockTab: React.FC = () => {
   };
 
   const handleMoveUp = (item: InventoryItem) => {
-    const currentPos = itemSerialMap.get(item.id) || 1;
+    const currentPos = currentTabSerialMap.get(item.id) || 1;
     if (currentPos > 1) {
       reorderItemPosition(item.id, currentPos - 1);
     }
   };
 
   const handleMoveDown = (item: InventoryItem) => {
-    const currentPos = itemSerialMap.get(item.id) || 1;
-    if (currentPos < orderedFoodItems.length) {
+    const currentPos = currentTabSerialMap.get(item.id) || 1;
+    if (currentPos < currentTabItems.length) {
       reorderItemPosition(item.id, currentPos + 1);
     }
   };
@@ -1277,7 +1309,7 @@ export const HostelBoardingStockTab: React.FC = () => {
 
   // Open Edit Item
   const handleEditItem = (item: InventoryItem) => {
-    const effectiveSerial = itemSerialMap.get(item.id) || 1;
+    const effectiveSerial = currentTabSerialMap.get(item.id) || itemSerialMap.get(item.id) || 1;
     setEditingItem(item);
     setItemForm({
       name_bn: item.name_bn || '',
@@ -1320,8 +1352,12 @@ export const HostelBoardingStockTab: React.FC = () => {
 
   // Export Monthly Food Stock Ledger to Excel
   const handleExportMonthlyStock = () => {
-    const rows = monthlyStockLedger.map((row) => ({
-      'ক্রমিক': row.serial,
+    const listToExport = filteredFoodItems;
+    const rows = listToExport.map((row) => ({
+      'ক্রমিক': currentTabSerialMap.get(row.item.id) || row.serial,
+      'শ্রেণি / ক্যাটাগরি': bn 
+        ? (getFoodItemCategory(row.item) === 'meat' ? 'মাংস ও ডিম' : getFoodItemCategory(row.item) === 'fish' ? 'মাছ' : getFoodItemCategory(row.item) === 'vegetables' ? 'কাঁচা মাল ও শাকসবজি' : 'মুদি ও শুকনা খাদ্য')
+        : getFoodItemCategory(row.item),
       'খাদ্য সামগ্রীর নাম': row.item.name_bn,
       'ইংরেজি নাম': row.item.name_en || '-',
       'সর্বশেষ মজুদের তারিখ': formatStockDate(row.lastStockInDate),
@@ -1335,8 +1371,9 @@ export const HostelBoardingStockTab: React.FC = () => {
 
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Monthly_Stock_Ledger');
-    XLSX.writeFile(wb, `Hostel_Stock_Ledger_${MONTHS[selectedMonth]}_${selectedYear}.xlsx`);
+    const sheetName = activeCategoryTab === 'all' ? 'All_Items' : activeCategoryTab;
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    XLSX.writeFile(wb, `Hostel_Stock_Ledger_${activeCategoryTab}_${MONTHS[selectedMonth]}_${selectedYear}.xlsx`);
     toast({ title: bn ? 'মাসিক খাদ্য মজুদ রেজিস্টার ডাউনলোড হয়েছে' : 'Monthly stock excel downloaded' });
   };
 
@@ -1866,7 +1903,7 @@ export const HostelBoardingStockTab: React.FC = () => {
                         const { item, serial, lastStockInDate, openingStock, monthInQty, monthOutQty, closingStock, unitPrice, closingValue } = row;
                         const min = Number(item.min_stock_level) || 5;
                         const isLow = closingStock <= min;
-                        const itemSerial = itemSerialMap.get(item.id) || serial || (idx + 1);
+                        const itemSerial = currentTabSerialMap.get(item.id) || (idx + 1);
 
                         return (
                           <TableRow key={item.id} className="hover:bg-muted/30">
