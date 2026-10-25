@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { DatePicker } from '@/components/ui/date-picker';
 import { toast } from '@/hooks/use-toast';
@@ -30,6 +30,7 @@ import {
   Utensils,
   Package,
   PackageCheck,
+  PackagePlus,
   Plus,
   Search,
   AlertTriangle,
@@ -44,7 +45,10 @@ import {
   ShoppingBag,
   ExternalLink,
   Users,
-  Sparkles
+  Sparkles,
+  Calendar,
+  ArrowDownToLine,
+  ArrowUpRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -72,6 +76,8 @@ interface InventoryLog {
   reason: string | null;
   performed_by: string | null;
   expense_id: string | null;
+  unit_price?: number | null;
+  total_price?: number | null;
   created_at: string | null;
 }
 
@@ -152,6 +158,7 @@ export const HostelBoardingStockTab: React.FC = () => {
 
   // Modals
   const [consumeDialog, setConsumeDialog] = useState(false);
+  const [stockInDialog, setStockInDialog] = useState(false);
   const [itemDialog, setItemDialog] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [deletingItem, setDeletingItem] = useState<InventoryItem | null>(null);
@@ -163,6 +170,16 @@ export const HostelBoardingStockTab: React.FC = () => {
     quantity: '',
     meal_slot: 'lunch',
     consumption_date: new Date().toISOString().split('T')[0],
+    notes: '',
+  });
+
+  // Stock In (নতুন মজুদ জমা / ক্রয়) Form
+  const [stockInForm, setStockInForm] = useState({
+    item_id: '',
+    quantity: '',
+    unit_price: '',
+    stock_date: new Date().toISOString().split('T')[0],
+    voucher_no: '',
     notes: '',
   });
 
@@ -246,16 +263,17 @@ export const HostelBoardingStockTab: React.FC = () => {
       const { data, error } = await supabase
         .from('inventory_logs')
         .select('*')
-        .order('created_at', { ascending: false })
-        .limit(300);
+        .order('created_at', { ascending: false });
       if (error) throw error;
       return (data || []) as InventoryLog[];
     },
   });
 
   // 3. Fetch Meal Attendance for the selected month to calculate meal count & per-student cost
-  const startOfMonth = new Date(selectedYear, selectedMonth, 1).toISOString().split('T')[0];
-  const endOfMonth = new Date(selectedYear, selectedMonth + 1, 0).toISOString().split('T')[0];
+  const monthStartDate = useMemo(() => new Date(selectedYear, selectedMonth, 1, 0, 0, 0, 0), [selectedYear, selectedMonth]);
+  const monthEndDate = useMemo(() => new Date(selectedYear, selectedMonth + 1, 0, 23, 59, 59, 999), [selectedYear, selectedMonth]);
+  const startOfMonth = monthStartDate.toISOString().split('T')[0];
+  const endOfMonth = monthEndDate.toISOString().split('T')[0];
 
   const { data: monthAttendance = [] } = useQuery({
     queryKey: ['hostel-month-attendance', startOfMonth, endOfMonth],
@@ -402,19 +420,145 @@ export const HostelBoardingStockTab: React.FC = () => {
     }
   };
 
+  // Helper to format stock in dates
+  const formatStockDate = (isoDate: string | null) => {
+    if (!isoDate) return '-';
+    try {
+      const d = new Date(isoDate);
+      if (isNaN(d.getTime())) return '-';
+      return d.toLocaleDateString(bn ? 'bn-BD' : 'en-US', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    } catch {
+      return '-';
+    }
+  };
+
+  // Monthly Stock Ledger calculation per item for the selected month
+  // Automatic carryover: Closing Stock of month M === Opening Stock of month M+1
+  const monthlyStockLedger = useMemo(() => {
+    const startTime = monthStartDate.getTime();
+    const endTime = monthEndDate.getTime();
+
+    return orderedFoodItems.map((item, idx) => {
+      const serial = itemSerialMap.get(item.id) || (idx + 1);
+      const itemLogs = boardingLogs.filter(l => l.item_id === item.id);
+
+      let lastStockInTime: number | null = null;
+      let lastStockInDateStr: string | null = null;
+
+      let sumAllLogs = 0;
+      let openingStockLogs = 0;
+      let monthInQty = 0;
+      let monthInCost = 0;
+      let monthOutQty = 0;
+      let monthOutCost = 0;
+
+      itemLogs.forEach(l => {
+        const logTime = l.created_at ? new Date(l.created_at).getTime() : 0;
+        const amt = Number(l.change_amount) || 0;
+        sumAllLogs += amt;
+
+        const isPositive = l.type === 'in' || l.type === 'initial' || amt > 0;
+
+        if (isPositive && logTime > 0) {
+          if (!lastStockInTime || logTime > lastStockInTime) {
+            lastStockInTime = logTime;
+            lastStockInDateStr = l.created_at;
+          }
+        }
+
+        if (logTime < startTime) {
+          openingStockLogs += amt;
+        } else if (logTime <= endTime) {
+          if (isPositive) {
+            const inAmt = Math.abs(amt);
+            monthInQty += inAmt;
+            const cost = l.total_price || (inAmt * (l.unit_price || item.buying_price || 0));
+            monthInCost += cost;
+          } else {
+            const outAmt = Math.abs(amt);
+            monthOutQty += outAmt;
+            const cost = outAmt * (item.buying_price || 0);
+            monthOutCost += cost;
+          }
+        }
+      });
+
+      // Baseline reconciles items created with initial stock prior to log history
+      const currentStockNum = Number(item.current_stock) || 0;
+      const baseline = Math.max(0, currentStockNum - sumAllLogs);
+      const openingStock = Math.max(0, Number((baseline + openingStockLogs).toFixed(2)));
+      const closingStock = Math.max(0, Number((openingStock + monthInQty - monthOutQty).toFixed(2)));
+      const unitPrice = Number(item.buying_price) || 0;
+      const closingValue = Number((closingStock * unitPrice).toFixed(2));
+      const openingValue = Number((openingStock * unitPrice).toFixed(2));
+
+      // Fallback for lastStockInDate if no explicit log
+      if (!lastStockInDateStr && (currentStockNum > 0 || item.created_at)) {
+        lastStockInDateStr = item.created_at || null;
+      }
+
+      return {
+        item,
+        serial,
+        lastStockInDate: lastStockInDateStr,
+        openingStock,
+        openingValue,
+        monthInQty: Number(monthInQty.toFixed(2)),
+        monthInCost: Number(monthInCost.toFixed(2)),
+        monthOutQty: Number(monthOutQty.toFixed(2)),
+        monthOutCost: Number(monthOutCost.toFixed(2)),
+        closingStock,
+        unitPrice,
+        closingValue,
+      };
+    });
+  }, [orderedFoodItems, boardingLogs, monthStartDate, monthEndDate, itemSerialMap]);
+
+  // Aggregate monthly ledger totals
+  const monthlySummary = useMemo(() => {
+    let totalOpeningVal = 0;
+    let totalMonthInCost = 0;
+    let totalMonthInQty = 0;
+    let totalMonthOutCost = 0;
+    let totalMonthOutQty = 0;
+    let totalClosingVal = 0;
+
+    monthlyStockLedger.forEach(row => {
+      totalOpeningVal += row.openingValue;
+      totalMonthInCost += row.monthInCost;
+      totalMonthInQty += row.monthInQty;
+      totalMonthOutCost += row.monthOutCost;
+      totalMonthOutQty += row.monthOutQty;
+      totalClosingVal += row.closingValue;
+    });
+
+    return {
+      totalOpeningVal,
+      totalMonthInCost,
+      totalMonthInQty,
+      totalMonthOutCost,
+      totalMonthOutQty,
+      totalClosingVal,
+    };
+  }, [monthlyStockLedger]);
+
   // Filtered Food Items based on search and stock status while strictly preserving unique serial order
   const filteredFoodItems = useMemo(() => {
-    return orderedFoodItems.filter(item => {
+    return monthlyStockLedger.filter(({ item, closingStock }) => {
       const matchSearch = searchQuery.trim() === '' ||
         item.name_bn.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (item.name_en && item.name_en.toLowerCase().includes(searchQuery.toLowerCase()));
 
-      const isLow = Number(item.current_stock) <= Number(item.min_stock_level || 5);
+      const isLow = closingStock <= Number(item.min_stock_level || 5);
       if (stockStatusFilter === 'low') return matchSearch && isLow;
       if (stockStatusFilter === 'available') return matchSearch && !isLow;
       return matchSearch;
     });
-  }, [orderedFoodItems, searchQuery, stockStatusFilter]);
+  }, [monthlyStockLedger, searchQuery, stockStatusFilter]);
 
   // Duplicate item name validation
   const isDuplicateItemName = useMemo(() => {
@@ -446,28 +590,13 @@ export const HostelBoardingStockTab: React.FC = () => {
       }
     });
 
-    // Consumption this month
-    let thisMonthConsumptionCost = 0;
-    boardingLogs.forEach(log => {
-      if (!log.created_at) return;
-      const d = new Date(log.created_at);
-      if (d.getMonth() === selectedMonth && d.getFullYear() === selectedYear) {
-        if (log.type === 'consumption' || log.type === 'out' || log.change_amount < 0) {
-          const item = itemsMap.get(log.item_id);
-          const unitPrice = item?.buying_price || 0;
-          const consumedQty = Math.abs(log.change_amount);
-          thisMonthConsumptionCost += (consumedQty * unitPrice);
-        }
-      }
-    });
-
     return {
       totalItems,
       totalStockValue,
       lowStockCount,
-      thisMonthConsumptionCost,
+      thisMonthConsumptionCost: monthlySummary.totalMonthOutCost,
     };
-  }, [foodItems, boardingLogs, itemsMap, selectedMonth, selectedYear]);
+  }, [foodItems, monthlySummary.totalMonthOutCost]);
 
   // Total meals calculation for the month
   const mealMetrics = useMemo(() => {
@@ -538,6 +667,12 @@ export const HostelBoardingStockTab: React.FC = () => {
 
       const reasonText = `বোর্ডিং রান্না: ${mealName} (${consumeForm.consumption_date})${consumeForm.notes ? ` - ${consumeForm.notes}` : ''}`;
 
+      // Set timestamp accurately according to selected date
+      const consDateObj = new Date(consumeForm.consumption_date);
+      const consNow = new Date();
+      consDateObj.setHours(consNow.getHours(), consNow.getMinutes(), consNow.getSeconds());
+      const consCreatedAtIso = consDateObj.toISOString();
+
       // Insert log
       const { error: logErr } = await supabase.from('inventory_logs').insert({
         item_id: item.id,
@@ -545,7 +680,8 @@ export const HostelBoardingStockTab: React.FC = () => {
         change_amount: -qty,
         reason: reasonText,
         performed_by: userName,
-      });
+        created_at: consCreatedAtIso,
+      } as any);
       if (logErr) throw logErr;
 
       // Update current_stock in inventory_items
@@ -575,6 +711,88 @@ export const HostelBoardingStockTab: React.FC = () => {
       toast({
         title: bn ? 'রান্নায় ব্যবহার সফল হয়েছে' : 'Consumption recorded',
         description: bn ? 'স্টক থেকে স্বয়ংক্রিয়ভাবে কর্তন করা হয়েছে।' : 'Stock updated successfully.',
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: bn ? 'ব্যর্থ হয়েছে' : 'Failed',
+        description: err.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // 1.1 Stock In (নতুন মজুদ জমা / ক্রয়) Mutation
+  const stockInMutation = useMutation({
+    mutationFn: async () => {
+      const qty = parseFloat(stockInForm.quantity);
+      if (isNaN(qty) || qty <= 0) {
+        throw new Error(bn ? 'সঠিক পরিমাণ প্রদান করুন' : 'Please enter a valid quantity');
+      }
+      const item = itemsMap.get(stockInForm.item_id);
+      if (!item) {
+        throw new Error(bn ? 'আইটেম খুঁজে পাওয়া যায়নি' : 'Item not found');
+      }
+      const price = parseFloat(stockInForm.unit_price) || 0;
+      const totalPrice = Number((qty * price).toFixed(2));
+      const userName = user?.email || 'হিসাব শাখা';
+
+      const voucherPart = stockInForm.voucher_no ? `ভাউচার/মেমো: ${stockInForm.voucher_no}` : '';
+      const notePart = stockInForm.notes ? ` - ${stockInForm.notes}` : '';
+      const reasonText = `খাদ্য মজুদ জমা / ক্রয় (${stockInForm.stock_date})${voucherPart ? ` [${voucherPart}]` : ''}${notePart}`;
+
+      // Set timestamp accurately according to selected date
+      const stockDateObj = new Date(stockInForm.stock_date);
+      const stockNow = new Date();
+      stockDateObj.setHours(stockNow.getHours(), stockNow.getMinutes(), stockNow.getSeconds());
+      const stockCreatedAtIso = stockDateObj.toISOString();
+
+      // Insert log
+      const { error: logErr } = await supabase.from('inventory_logs').insert({
+        item_id: item.id,
+        type: 'in',
+        change_amount: qty,
+        reason: reasonText,
+        performed_by: userName,
+        created_at: stockCreatedAtIso,
+        unit_price: price > 0 ? price : null,
+        total_price: totalPrice > 0 ? totalPrice : null,
+      } as any);
+      if (logErr) throw logErr;
+
+      // Update current_stock in inventory_items & unit buying_price if supplied
+      const newStock = Number((Number(item.current_stock || 0) + qty).toFixed(2));
+      const updatePayload: Record<string, any> = {
+        current_stock: newStock,
+        updated_at: new Date().toISOString(),
+      };
+      if (price > 0) {
+        updatePayload.buying_price = price;
+      }
+
+      const { error: updateErr } = await supabase
+        .from('inventory_items')
+        .update(updatePayload as any)
+        .eq('id', item.id);
+      if (updateErr) throw updateErr;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['hostel-boarding-stock'] });
+      qc.invalidateQueries({ queryKey: ['hostel-boarding-logs'] });
+      qc.invalidateQueries({ queryKey: ['inventory-items'] });
+      qc.invalidateQueries({ queryKey: ['inventory-items-for-expense'] });
+      setStockInDialog(false);
+      setStockInForm({
+        item_id: '',
+        quantity: '',
+        unit_price: '',
+        stock_date: new Date().toISOString().split('T')[0],
+        voucher_no: '',
+        notes: '',
+      });
+      toast({
+        title: bn ? 'খাদ্য মজুদ সফলভাবে যোগ হয়েছে' : 'Stock In recorded',
+        description: bn ? 'স্টকে নতুন খাদ্য সামগ্রী ও তারিখ সংরক্ষিত হয়েছে।' : 'Stock quantity updated successfully.',
       });
     },
     onError: (err: any) => {
@@ -935,14 +1153,24 @@ export const HostelBoardingStockTab: React.FC = () => {
     },
   });
 
-  // 6. Delete Cooking Log Mutation (Reverses stock consumption)
+  // 6. Delete Cooking / Stock Log Mutation (Reverses stock consumption / addition)
   const deleteLogMutation = useMutation({
     mutationFn: async (log: InventoryLog) => {
-      // If it was cooking consumption, restore stock quantity
+      // If it was cooking consumption, restore stock quantity (add back)
       if (log.change_amount < 0 && log.item_id) {
         const item = itemsMap.get(log.item_id);
         if (item) {
           const restoredStock = Number((Number(item.current_stock || 0) + Math.abs(log.change_amount)).toFixed(2));
+          await supabase
+            .from('inventory_items')
+            .update({ current_stock: restoredStock })
+            .eq('id', item.id);
+        }
+      } else if (log.change_amount > 0 && log.item_id) {
+        // If it was stock addition, deduct back
+        const item = itemsMap.get(log.item_id);
+        if (item) {
+          const restoredStock = Math.max(0, Number((Number(item.current_stock || 0) - log.change_amount).toFixed(2)));
           await supabase
             .from('inventory_items')
             .update({ current_stock: restoredStock })
@@ -962,8 +1190,8 @@ export const HostelBoardingStockTab: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['inventory-items'] });
       setDeletingLog(null);
       toast({
-        title: bn ? 'রান্নার রেকর্ড মুছে ফেলা হয়েছে' : 'Cooking record deleted',
-        description: bn ? 'রেকর্ডটি মুছে ফেলা হয়েছে এবং ব্যবহৃত পরিমাণ স্টকে ফেরত দেওয়া হয়েছে।' : 'Log deleted and stock restored.',
+        title: bn ? 'লগ রেকর্ড মুছে ফেলা হয়েছে' : 'Log deleted',
+        description: bn ? 'রেকর্ডটি মুছে ফেলা হয়েছে এবং মজুত পরিমাণ সমন্বয় করা হয়েছে।' : 'Log deleted and stock adjusted.',
       });
     },
     onError: (err: any) => {
@@ -1004,6 +1232,42 @@ export const HostelBoardingStockTab: React.FC = () => {
     setConsumeDialog(true);
   };
 
+  // Open Stock In Dialog (নতুন খাদ্য মজুদ জমা / ক্রয়)
+  const handleOpenStockIn = (item?: InventoryItem) => {
+    const defaultItem = item || foodItems[0];
+    setStockInForm({
+      item_id: defaultItem?.id || '',
+      quantity: '',
+      unit_price: defaultItem?.buying_price ? String(defaultItem.buying_price) : '',
+      stock_date: new Date().toISOString().split('T')[0],
+      voucher_no: '',
+      notes: '',
+    });
+    setStockInDialog(true);
+  };
+
+  // Export Monthly Food Stock Ledger to Excel
+  const handleExportMonthlyStock = () => {
+    const rows = monthlyStockLedger.map((row) => ({
+      'ক্রমিক': row.serial,
+      'খাদ্য সামগ্রীর নাম': row.item.name_bn,
+      'ইংরেজি নাম': row.item.name_en || '-',
+      'সর্বশেষ মজুদের তারিখ': formatStockDate(row.lastStockInDate),
+      'প্রারম্ভিক জের (গত মাস হতে)': `${row.openingStock} ${row.item.unit}`,
+      'চলতি মাসে ক্রয়/জমা (+)': `${row.monthInQty} ${row.item.unit}`,
+      'চলতি মাসে রান্নায় খরচ (-)': `${row.monthOutQty} ${row.item.unit}`,
+      'মাস শেষে সমাপনী মজুদ (=)': `${row.closingStock} ${row.item.unit}`,
+      'একক দর (৳)': row.unitPrice > 0 ? row.unitPrice : 0,
+      'সমাপনী মজুদ মূল্য (৳)': Math.round(row.closingValue),
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Monthly_Stock_Ledger');
+    XLSX.writeFile(wb, `Hostel_Stock_Ledger_${MONTHS[selectedMonth]}_${selectedYear}.xlsx`);
+    toast({ title: bn ? 'মাসিক খাদ্য মজুদ রেজিস্টার ডাউনলোড হয়েছে' : 'Monthly stock excel downloaded' });
+  };
+
   // Export Per-Student Meal Cost to Excel
   const handleExportAnalysis = () => {
     const rows: any[] = [];
@@ -1038,6 +1302,10 @@ export const HostelBoardingStockTab: React.FC = () => {
   };
 
   const selectedConsumeItem = itemsMap.get(consumeForm.item_id);
+  const selectedStockInItem = itemsMap.get(stockInForm.item_id);
+  const stockInQtyNum = parseFloat(stockInForm.quantity) || 0;
+  const stockInPriceNum = parseFloat(stockInForm.unit_price) || 0;
+  const stockInTotal = Number((stockInQtyNum * stockInPriceNum).toFixed(2));
 
   return (
     <div className="space-y-6">
@@ -1064,8 +1332,17 @@ export const HostelBoardingStockTab: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <Button
             type="button"
+            onClick={() => handleOpenStockIn()}
+            className="flex-1 sm:flex-none gap-2 bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm"
+          >
+            <PackagePlus className="w-4 h-4" />
+            <span>{bn ? 'খাদ্য মজুদ / ক্রয় যোগ' : 'Stock In'}</span>
+          </Button>
+
+          <Button
+            type="button"
             onClick={() => handleOpenConsume()}
-            className="flex-1 sm:flex-none gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+            className="flex-1 sm:flex-none gap-2 bg-orange-600 hover:bg-orange-700 text-white shadow-sm"
           >
             <Flame className="w-4 h-4" />
             <span>{bn ? 'রান্নায় ব্যবহার এন্ট্রি' : 'Log Daily Cooking'}</span>
@@ -1262,6 +1539,17 @@ export const HostelBoardingStockTab: React.FC = () => {
                 <Button
                   size="sm"
                   variant="outline"
+                  onClick={handleExportMonthlyStock}
+                  className="h-9 gap-1.5 text-xs border-border bg-card hover:bg-muted"
+                  title={bn ? 'চলতি মাসের পূর্ণাঙ্গ খাদ্য মজুদ খতিয়ান এক্সেল ডাউনলোড করুন' : 'Export monthly inventory register'}
+                >
+                  <Download className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>{bn ? 'স্টক এক্সেল' : 'Export Excel'}</span>
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="outline"
                   onClick={() => seedStandardItemsMutation.mutate()}
                   disabled={seedStandardItemsMutation.isPending || isAutoSeeding}
                   className="h-9 gap-1.5 text-xs border-emerald-300 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100"
@@ -1271,6 +1559,61 @@ export const HostelBoardingStockTab: React.FC = () => {
                 </Button>
               </div>
             </CardHeader>
+
+            {/* Monthly Balance & Automatic Carryover Ribbon */}
+            <div className="mx-6 mb-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="p-3.5 rounded-xl bg-slate-500/5 border border-slate-500/20 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-muted-foreground">{bn ? '১. প্রারম্ভিক জের (গত মাস হতে)' : '1. Opening Stock'}</span>
+                  <ArrowDownToLine className="w-3.5 h-3.5 text-slate-500" />
+                </div>
+                <div className="text-lg font-bold text-foreground">
+                  ৳ {Math.round(monthlySummary.totalOpeningVal).toLocaleString()}
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  {bn ? `${MONTHS_BN[(selectedMonth + 11) % 12]} মাসের সমাপনী জের` : 'Carried from previous month'}
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">{bn ? '২. চলতি মাসে ক্রয়/জমা (+)' : '2. Month Inflow (+)'}</span>
+                  <PackagePlus className="w-3.5 h-3.5 text-emerald-600" />
+                </div>
+                <div className="text-lg font-bold text-emerald-700 dark:text-emerald-400">
+                  +৳ {Math.round(monthlySummary.totalMonthInCost).toLocaleString()}
+                </div>
+                <p className="text-[10px] text-emerald-600/80">
+                  {bn ? `${monthlySummary.totalMonthInQty} মোট পরিমাণ নতুন জমা` : `${monthlySummary.totalMonthInQty} total items added`}
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-orange-500/10 border border-orange-500/20 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-orange-700 dark:text-orange-400">{bn ? '৩. চলতি মাসে রান্নায় খরচ (-)' : '3. Month Cooking (-)'}</span>
+                  <Flame className="w-3.5 h-3.5 text-orange-600" />
+                </div>
+                <div className="text-lg font-bold text-orange-700 dark:text-orange-400">
+                  -৳ {Math.round(monthlySummary.totalMonthOutCost).toLocaleString()}
+                </div>
+                <p className="text-[10px] text-orange-600/80">
+                  {bn ? `${monthlySummary.totalMonthOutQty} মোট পরিমাণ রান্নায় ব্যবহার` : `${monthlySummary.totalMonthOutQty} total items consumed`}
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-teal-500/10 border border-teal-500/30 shadow-xs space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-teal-800 dark:text-teal-300">{bn ? '৪. মাস শেষে সমাপনী মজুদ (=)' : '4. Month-End Closing (=)'}</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 text-teal-600" />
+                </div>
+                <div className="text-lg font-bold text-teal-800 dark:text-teal-300">
+                  ৳ {Math.round(monthlySummary.totalClosingVal).toLocaleString()}
+                </div>
+                <p className="text-[10px] text-teal-700 dark:text-teal-400 font-medium">
+                  {bn ? `পরবর্তি মাসে (${MONTHS_BN[(selectedMonth + 1) % 12]}) স্বয়ংক্রিয় প্রারম্ভিক জের` : 'Auto carryover to next month'}
+                </p>
+              </div>
+            </div>
 
             {foodItems.length < 15 && (
               <div className="mx-6 mb-4 p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -1343,22 +1686,22 @@ export const HostelBoardingStockTab: React.FC = () => {
                       <TableRow>
                         <TableHead className="w-[85px]">{bn ? 'ক্রমিক' : 'Serial #'}</TableHead>
                         <TableHead>{bn ? 'খাদ্য সামগ্রীর নাম' : 'Item Name'}</TableHead>
-                        <TableHead>{bn ? 'বর্তমান মজুত' : 'Current Stock'}</TableHead>
-                        <TableHead>{bn ? 'গড় একক মূল্য' : 'Avg Unit Price'}</TableHead>
-                        <TableHead>{bn ? 'মোট মজুত মূল্য' : 'Total Value'}</TableHead>
-                        <TableHead>{bn ? 'সর্বনিম্ন সীমা' : 'Min Alert'}</TableHead>
-                        <TableHead>{bn ? 'স্ট্যাটাস' : 'Status'}</TableHead>
-                        <TableHead className="text-right">{bn ? 'পদক্ষেপ' : 'Actions'}</TableHead>
+                        <TableHead className="text-center min-w-[130px]">{bn ? 'সর্বশেষ মজুদের তারিখ' : 'Last Stock Date'}</TableHead>
+                        <TableHead className="text-right min-w-[100px]">{bn ? 'প্রারম্ভিক জের' : 'Opening'}</TableHead>
+                        <TableHead className="text-right min-w-[100px]">{bn ? 'মাসে ক্রয় (+)' : 'Inflow (+)'}</TableHead>
+                        <TableHead className="text-right min-w-[100px]">{bn ? 'রান্নায় খরচ (-)' : 'Used (-)'}</TableHead>
+                        <TableHead className="text-right min-w-[115px]">{bn ? 'সমাপনী মজুদ (=)' : 'Closing'}</TableHead>
+                        <TableHead className="text-right min-w-[90px]">{bn ? 'একক দর' : 'Unit Price'}</TableHead>
+                        <TableHead className="text-right min-w-[110px]">{bn ? 'সমাপনী মূল্য' : 'Total Value'}</TableHead>
+                        <TableHead className="text-right min-w-[140px]">{bn ? 'পদক্ষেপ' : 'Actions'}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredFoodItems.map((item, idx) => {
-                        const stock = Number(item.current_stock) || 0;
+                      {filteredFoodItems.map((row, idx) => {
+                        const { item, serial, lastStockInDate, openingStock, monthInQty, monthOutQty, closingStock, unitPrice, closingValue } = row;
                         const min = Number(item.min_stock_level) || 5;
-                        const price = Number(item.buying_price) || 0;
-                        const totalVal = stock * price;
-                        const isLow = stock <= min;
-                        const itemSerial = itemSerialMap.get(item.id) || (idx + 1);
+                        const isLow = closingStock <= min;
+                        const itemSerial = itemSerialMap.get(item.id) || serial || (idx + 1);
 
                         return (
                           <TableRow key={item.id} className="hover:bg-muted/30">
@@ -1416,61 +1759,90 @@ export const HostelBoardingStockTab: React.FC = () => {
                                 <div className="text-[11px] text-muted-foreground">{item.name_en}</div>
                               )}
                             </TableCell>
-                            <TableCell>
-                              <div className="font-bold text-sm text-foreground">
-                                {stock} <span className="text-xs font-normal text-muted-foreground">{item.unit}</span>
-                              </div>
+                            <TableCell className="text-center">
+                              {lastStockInDate ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-muted/70 text-foreground border border-border/60">
+                                  <Calendar className="w-3 h-3 text-emerald-600 shrink-0" />
+                                  {formatStockDate(lastStockInDate)}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">-</span>
+                              )}
                             </TableCell>
-                            <TableCell className="text-sm font-medium">
-                              {price > 0 ? `৳ ${price.toLocaleString()}` : '-'}
+                            <TableCell className="text-right text-xs font-semibold text-muted-foreground">
+                              {openingStock} <span className="text-[10px] font-normal">{item.unit}</span>
                             </TableCell>
-                            <TableCell className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
-                              ৳ {Math.round(totalVal).toLocaleString()}
-                            </TableCell>
-                            <TableCell className="text-xs text-muted-foreground">
-                              {min} {item.unit}
-                            </TableCell>
-                            <TableCell>
-                              {isLow ? (
-                                <Badge variant="destructive" className="gap-1 text-[11px] bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/20">
-                                  <AlertTriangle className="w-3 h-3" />
-                                  {bn ? 'স্বল্প মজুত' : 'Low Stock'}
+                            <TableCell className="text-right">
+                              {monthInQty > 0 ? (
+                                <Badge variant="outline" className="text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 text-xs font-semibold">
+                                  +{monthInQty} {item.unit}
                                 </Badge>
                               ) : (
-                                <Badge variant="secondary" className="gap-1 text-[11px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
-                                  {bn ? 'পর্যাপ্ত' : 'Adequate'}
-                                </Badge>
+                                <span className="text-xs text-muted-foreground">-</span>
                               )}
                             </TableCell>
                             <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-1.5">
+                              {monthOutQty > 0 ? (
+                                <Badge variant="outline" className="text-orange-600 border-orange-300 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/20 text-xs font-semibold">
+                                  -{monthOutQty} {item.unit}
+                                </Badge>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="font-bold text-sm text-foreground">
+                                {closingStock} <span className="text-xs font-normal text-muted-foreground">{item.unit}</span>
+                              </div>
+                              {isLow && (
+                                <span className="text-[10px] text-amber-600 font-semibold block">{bn ? 'স্বল্প মজুত' : 'Low Stock'}</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right text-xs font-medium">
+                              {unitPrice > 0 ? `৳ ${unitPrice.toLocaleString()}` : '-'}
+                            </TableCell>
+                            <TableCell className="text-right text-sm font-bold text-emerald-700 dark:text-emerald-400">
+                              ৳ {Math.round(closingValue).toLocaleString()}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleOpenStockIn(item)}
+                                  className="h-7 px-2 text-xs text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 gap-1 shadow-none"
+                                  title={bn ? 'এই আইটেমে নতুন মজুদ জমা / ক্রয়' : 'Add Stock'}
+                                >
+                                  <PackagePlus className="w-3 h-3" />
+                                  <span>{bn ? '+মজুদ' : '+In'}</span>
+                                </Button>
                                 <Button
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => handleOpenConsume(item)}
-                                  className="h-8 px-2.5 text-xs text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 gap-1"
+                                  className="h-7 px-2 text-xs text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/40 gap-1"
                                   title={bn ? 'রান্নায় ব্যবহার' : 'Consume'}
                                 >
-                                  <Flame className="w-3.5 h-3.5" />
+                                  <Flame className="w-3 h-3" />
                                   <span>{bn ? 'ব্যবহার' : 'Use'}</span>
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => handleEditItem(item)}
-                                  className="h-8 w-8 p-0 text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                                  className="h-7 w-7 p-0 text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
                                   title={bn ? 'সম্পাদনা করুন' : 'Edit item'}
                                 >
-                                  <Pencil className="w-3.5 h-3.5" />
+                                  <Pencil className="w-3 h-3" />
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => setDeletingItem(item)}
-                                  className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
+                                  className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
                                   title={bn ? 'মুছে ফেলুন' : 'Delete item'}
                                 >
-                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <Trash2 className="w-3 h-3" />
                                 </Button>
                               </div>
                             </TableCell>
@@ -1478,6 +1850,29 @@ export const HostelBoardingStockTab: React.FC = () => {
                         );
                       })}
                     </TableBody>
+                    <TableFooter className="bg-muted/70 font-semibold border-t-2 border-border/80">
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-left font-bold text-xs py-3">
+                          {bn ? `মোট সারাংশ (${MONTHS_BN[selectedMonth]} ${selectedYear}):` : 'Monthly Totals:'}
+                        </TableCell>
+                        <TableCell className="text-right text-xs font-bold text-slate-700 dark:text-slate-300">
+                          ৳ {Math.round(monthlySummary.totalOpeningVal).toLocaleString()}
+                        </TableCell>
+                        <TableCell className="text-right text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                          +৳ {Math.round(monthlySummary.totalMonthInCost).toLocaleString()}
+                        </TableCell>
+                        <TableCell className="text-right text-xs font-bold text-orange-700 dark:text-orange-400">
+                          -৳ {Math.round(monthlySummary.totalMonthOutCost).toLocaleString()}
+                        </TableCell>
+                        <TableCell colSpan={2} className="text-right text-xs font-semibold text-muted-foreground">
+                          {bn ? 'সমাপনী মূল্যায়ন:' : 'Valuation:'}
+                        </TableCell>
+                        <TableCell className="text-right text-sm font-extrabold text-teal-800 dark:text-teal-300">
+                          ৳ {Math.round(monthlySummary.totalClosingVal).toLocaleString()}
+                        </TableCell>
+                        <TableCell></TableCell>
+                      </TableRow>
+                    </TableFooter>
                   </Table>
                 </div>
               )}
@@ -2049,6 +2444,147 @@ export const HostelBoardingStockTab: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* MODAL: STOCK IN (নতুন খাদ্য মজুদ জমা / ক্রয়) */}
+      <Dialog open={stockInDialog} onOpenChange={setStockInDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-foreground">
+              <PackagePlus className="w-5 h-5 text-emerald-600" />
+              <span>{bn ? 'নতুন খাদ্য মজুদ জমা / ক্রয় এন্ট্রি' : 'Stock In Entry'}</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              {bn
+                ? 'কোন তারিখে কতটুকু খাদ্য সামগ্রী মজুদ বা ক্রয় করা হয়েছে তা এন্ট্রি করুন। সমাপনী ব্যালেন্স ও আগামী মাসের প্রারম্ভিক মজুদ স্বয়ংক্রিয়ভাবে আপডেট হবে।'
+                : 'Record date and quantity of newly purchased or received stock.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form
+            onSubmit={e => {
+              e.preventDefault();
+              stockInMutation.mutate();
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <Label className="text-xs font-semibold">{bn ? 'মজুদের তারিখ' : 'Stock In Date'} *</Label>
+              <DatePicker
+                bengali={bn}
+                value={stockInForm.stock_date}
+                onChange={v => setStockInForm(f => ({ ...f, stock_date: v }))}
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                {bn ? 'যে তারিখে খাদ্য সামগ্রীটি গোডাউনে বা বোর্ডিংয়ে মজুদ হয়েছে' : 'The date when item was received into stock'}
+              </p>
+            </div>
+
+            <div>
+              <Label className="text-xs font-semibold">{bn ? 'খাদ্য সামগ্রী বাছাই করুন' : 'Select Food Item'} *</Label>
+              <Select
+                value={stockInForm.item_id || undefined}
+                onValueChange={val => {
+                  const itm = itemsMap.get(val);
+                  setStockInForm(f => ({
+                    ...f,
+                    item_id: val,
+                    unit_price: itm?.buying_price ? String(itm.buying_price) : f.unit_price,
+                  }));
+                }}
+              >
+                <SelectTrigger className="mt-1 text-xs">
+                  <SelectValue placeholder={bn ? 'আইটেম বেছে নিন...' : 'Select item...'} />
+                </SelectTrigger>
+                <SelectContent className="max-h-56">
+                  {foodItems.map(item => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.name_bn} — {bn ? 'বর্তমান মজুত:' : 'Current:'} {item.current_stock} {item.unit}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedStockInItem && (
+                <div className="mt-1 text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
+                  {bn ? `বর্তমান মজুত: ${selectedStockInItem.current_stock} ${selectedStockInItem.unit}` : `In Stock: ${selectedStockInItem.current_stock} ${selectedStockInItem.unit}`}
+                  {selectedStockInItem.buying_price ? ` | প্রচলিত একক দর: ৳ ${selectedStockInItem.buying_price}` : ''}
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs font-semibold">
+                  {bn ? `জমা / ক্রয় পরিমাণ (${selectedStockInItem?.unit || 'একক'})` : `Quantity (${selectedStockInItem?.unit || 'unit'})`} *
+                </Label>
+                <Input
+                  type="number"
+                  step="any"
+                  min="0.01"
+                  placeholder={bn ? 'যেমন: ৫০' : 'e.g. 50'}
+                  value={stockInForm.quantity}
+                  onChange={e => setStockInForm(f => ({ ...f, quantity: e.target.value }))}
+                  className="mt-1 text-sm font-semibold"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs font-semibold">{bn ? 'একক ক্রয় দর (৳)' : 'Unit Price (BDT)'}</Label>
+                <Input
+                  type="number"
+                  step="any"
+                  min="0"
+                  placeholder={bn ? 'যেমন: ৬৫' : 'e.g. 65'}
+                  value={stockInForm.unit_price}
+                  onChange={e => setStockInForm(f => ({ ...f, unit_price: e.target.value }))}
+                  className="mt-1 text-sm"
+                />
+              </div>
+            </div>
+
+            {stockInTotal > 0 && (
+              <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 flex items-center justify-between text-xs">
+                <span className="text-muted-foreground font-medium">{bn ? 'মোট ক্রয়মূল্য হিসাব:' : 'Computed Total Cost:'}</span>
+                <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
+                  ৳ {stockInTotal.toLocaleString()}
+                </span>
+              </div>
+            )}
+
+            <div>
+              <Label className="text-xs font-semibold">{bn ? 'ভাউচার / মেমো নং বা সরবরাহকারী (ঐচ্ছিক)' : 'Voucher / Memo No (Optional)'}</Label>
+              <Input
+                placeholder={bn ? 'যেমন: মেমো #৪১২ / কাওরান বাজার' : 'e.g. Memo #412 / Local Market'}
+                value={stockInForm.voucher_no}
+                onChange={e => setStockInForm(f => ({ ...f, voucher_no: e.target.value }))}
+                className="mt-1 text-xs"
+              />
+            </div>
+
+            <div>
+              <Label className="text-xs font-semibold">{bn ? 'বিবরণ / নোট (ঐচ্ছিক)' : 'Notes / Remarks (Optional)'}</Label>
+              <Input
+                placeholder={bn ? 'যেমন: ২ বস্তা মিনিকেট চাল ক্রয়' : 'e.g. 2 bags of Miniket rice'}
+                value={stockInForm.notes}
+                onChange={e => setStockInForm(f => ({ ...f, notes: e.target.value }))}
+                className="mt-1 text-xs"
+              />
+            </div>
+
+            <DialogFooter className="pt-2">
+              <Button type="button" variant="outline" onClick={() => setStockInDialog(false)}>
+                {bn ? 'বাতিল' : 'Cancel'}
+              </Button>
+              <Button
+                type="submit"
+                disabled={stockInMutation.isPending || !stockInForm.item_id || !stockInForm.quantity}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                {stockInMutation.isPending ? (bn ? 'সংরক্ষণ হচ্ছে...' : 'Saving...') : (bn ? 'মজুদ জমা নিশ্চিত করুন' : 'Confirm Stock In')}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
