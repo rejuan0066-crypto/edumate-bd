@@ -16,6 +16,7 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Plus, Trash2, Edit, Copy, Eye, Clock, BookOpen, ArrowLeft, CalendarDays } from 'lucide-react';
 import { useConfirm } from "@/contexts/ConfirmContext";
+import { to12HourFormat } from '@/hooks/useTimeFormat';
 
 const AdminExamRoutine = () => {
   const confirm = useConfirm();
@@ -515,7 +516,7 @@ const AdminExamRoutine = () => {
                           {cls ? (bn ? `${div?.name_bn || ''} - ${cls.name_bn}` : `${div?.name || ''} - ${cls.name}`) : (bn ? 'সকল' : 'All')}
                         </TableCell>
                         <TableCell className="text-xs whitespace-nowrap">
-                          {e.start_time?.slice(0, 5)} - {e.end_time?.slice(0, 5)}
+                          {to12HourFormat(e.start_time, bn)} - {to12HourFormat(e.end_time, bn)}
                         </TableCell>
                         <TableCell className="text-xs">{e.room || '-'}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">{bn ? e.notes_bn : e.notes || '-'}</TableCell>

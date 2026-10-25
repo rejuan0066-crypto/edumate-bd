@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Printer, Plus, Minus, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { to12HourFormat } from '@/hooks/useTimeFormat';
 
 const DAYS = [
   { value: 0, label_bn: 'শনিবার', label_en: 'Saturday', short_bn: 'শনি', short_en: 'Sat' },
@@ -25,16 +26,7 @@ const PERIOD_LABELS_BN = ['১ম', '২য়', '৩য়', '৪র্থ', '�
 
 const toBn = (n: number | string) => String(n).replace(/\d/g, (d: string) => '০১২৩৪৫৬৭৮৯'[Number(d)]);
 
-const fmtTime = (t: string, bn: boolean) => {
-  if (!t) return '';
-  const parts = t.slice(0, 5).split(':');
-  let h = parseInt(parts[0]);
-  const m = parts[1];
-  if (h > 12) h -= 12;
-  if (h === 0) h = 12;
-  const timeStr = `${String(h).padStart(2, '0')}:${m}`;
-  return bn ? toBn(timeStr) : timeStr;
-};
+const fmtTime = (t: string, bn: boolean) => to12HourFormat(t, bn);
 
 /* ─── Cell Editor Popover ─── */
 interface CellEditorProps {

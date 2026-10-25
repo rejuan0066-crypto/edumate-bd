@@ -4082,7 +4082,7 @@ const AdminSalary = () => {
                                    : (bn ? 'এই মাসে কোনো উপস্থিতি রেকর্ড নেই' : 'No attendance records this month');
                                  const upShort = lastUpd
                                    ? formatDateInTz(lastUpd, appTz, { day: '2-digit', month: '2-digit' }) + ' ' +
-                                       formatTimeInTz(lastUpd, appTz, { hour: '2-digit', minute: '2-digit', hour12: false })
+                                       formatTimeInTz(lastUpd, appTz, { hour: '2-digit', minute: '2-digit', hour12: true })
                                    : '';
                                  return (
                                    <div className="flex flex-col items-center gap-0.5">

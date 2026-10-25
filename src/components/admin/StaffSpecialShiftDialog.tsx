@@ -14,6 +14,7 @@ import { TimePicker } from '@/components/ui/time-picker';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { to12HourFormat } from '@/hooks/useTimeFormat';
 import {
   Clock,
   Calendar,
@@ -395,7 +396,7 @@ export const StaffSpecialShiftDialog: React.FC<StaffSpecialShiftDialogProps> = (
 
                           {s.duty_start_time && s.duty_end_time && (
                             <Badge variant="outline" className="text-[10px] text-amber-600 bg-amber-500/10 shrink-0">
-                              {s.duty_start_time} - {s.duty_end_time}
+                              {to12HourFormat(s.duty_start_time, bn)} - {to12HourFormat(s.duty_end_time, bn)}
                             </Badge>
                           )}
                         </div>
@@ -585,7 +586,7 @@ export const StaffSpecialShiftDialog: React.FC<StaffSpecialShiftDialogProps> = (
                           <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                             <div className="flex items-center gap-1 font-semibold text-foreground">
                               <Clock className="w-3.5 h-3.5 text-primary" />
-                              <span>{shift.duty_start_time} - {shift.duty_end_time}</span>
+                              <span>{to12HourFormat(shift.duty_start_time, bn)} - {to12HourFormat(shift.duty_end_time, bn)}</span>
                             </div>
                             <span>•</span>
                             <div className="flex items-center gap-1">

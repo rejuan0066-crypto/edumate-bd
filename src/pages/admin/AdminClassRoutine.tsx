@@ -18,6 +18,7 @@ import { Plus, Trash2, Edit, Copy, Eye, Clock, BookOpen, Printer, LayoutGrid, Li
 import MasterRoutineView from '@/components/routine/MasterRoutineView';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { useConfirm } from "@/contexts/ConfirmContext";
+import { to12HourFormat } from '@/hooks/useTimeFormat';
 
 const DAYS = [
   { value: 0, label_bn: 'শনিবার', label_en: 'Saturday' },
@@ -425,13 +426,8 @@ const AdminClassRoutine = () => {
   }
 
   // Helper: format time to bn
-  const fmtTime = (t: string) => {
-    if (!t) return '';
-    const s = t.slice(0, 5);
-    if (!bn) return s;
-    return s.replace(/\d/g, (d: string) => '০১২৩৪৫৬৭৮৯'[Number(d)]);
-  };
-
+  const fmtTime = (t: string) => to12HourFormat(t, bn);
+  
   const toBnNum = (n: number) => bn ? String(n).replace(/\d/g, (d: string) => '০১২৩৪৫৬৭৮৯'[Number(d)]) : String(n);
 
   const PERIOD_LABELS_BN = ['১ম', '২য়', '৩য়', '৪র্থ', '৫ম', '৬ষ্ঠ', '৭ম', '৮ম', '৯ম', '১০ম'];

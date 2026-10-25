@@ -34,7 +34,7 @@ export default function StaffDutyTimeDialog({ open, onOpenChange, staff, bn = tr
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [existingShiftId, setExistingShiftId] = useState<string | null>(null);
-  const [fmt, setFmt] = useState<'12' | '24'>(() => (localStorage.getItem('dutyTimeFmt') as '12' | '24') || '24');
+  const [fmt, setFmt] = useState<'12' | '24'>(() => (localStorage.getItem('dutyTimeFmt') as '12' | '24') || '12');
   const qc = useQueryClient();
 
   useEffect(() => { localStorage.setItem('dutyTimeFmt', fmt); }, [fmt]);

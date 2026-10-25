@@ -495,7 +495,7 @@ const IslamicCalendarWidget = () => {
       {/* Dev-only debug panel: device TZ vs configured app TZ, time & weekday */}
       {import.meta.env.DEV && (() => {
         const deviceTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'unknown';
-        const deviceTime = now.toLocaleTimeString('en-US', { hour12: false });
+        const deviceTime = now.toLocaleTimeString('en-US', { hour12: true });
         const deviceWeekday = EN_DAYS[now.getDay()];
         const debug = {
           deviceTz,

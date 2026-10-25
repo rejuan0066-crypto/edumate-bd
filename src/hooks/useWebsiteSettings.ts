@@ -533,11 +533,16 @@ export const useWebsiteSettings = () => {
         if (!instData) return withPrincipal;
         return {
           ...withPrincipal,
+          institution_name: pick((instData as any)?.name, parsed.institution_name),
+          institution_name_en: pick((instData as any)?.name_en, parsed.institution_name_en),
+          address: pick((instData as any)?.address, parsed.address),
+          phone: pick((instData as any)?.phone, parsed.phone),
+          email: pick((instData as any)?.email, parsed.email),
           accountant_name: pick(parsed.accountant_name, (instData as any)?.accountant_name),
           verifier_name: pick(parsed.verifier_name, (instData as any)?.verifier_name),
-          logo_url: pick(parsed.logo_url, (instData as any)?.logo_url),
-          registration_number: pick(parsed.registration_number, (instData as any)?.registration_number),
-          established_year: pick(parsed.established_year, (instData as any)?.established_year),
+          logo_url: pick((instData as any)?.logo_url, parsed.logo_url),
+          registration_number: pick((instData as any)?.registration_number, (instData as any)?.eiin, parsed.registration_number),
+          established_year: pick((instData as any)?.established_year, parsed.established_year),
         } as WebsiteSettings;
       };
 

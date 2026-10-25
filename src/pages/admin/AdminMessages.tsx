@@ -266,7 +266,7 @@ const AdminMessages = () => {
                         </span>
                         <span className="flex flex-col items-end gap-1">
                           <span className="text-[10px] text-muted-foreground">
-                            {format(new Date(c.last_message_at), "dd/MM HH:mm")}
+                            {format(new Date(c.last_message_at), "dd/MM hh:mm a")}
                           </span>
                           {c.unreadCount > 0 && (
                             <Badge className="rounded-full px-2 py-0 text-[10px]">{c.unreadCount}</Badge>
@@ -351,7 +351,7 @@ const AdminMessages = () => {
                                 <div className="mb-1 flex items-center gap-2">
                                   <span className="text-[11px] font-medium opacity-80">{senderName}</span>
                                   <span className="text-[10px] opacity-60">
-                                    {format(new Date(m.created_at), "dd/MM/yyyy HH:mm")}
+                                    {format(new Date(m.created_at), "dd/MM/yyyy hh:mm a")}
                                   </span>
                                   {(mine || isAdmin) && !m.deleted_at && (
                                     <button

@@ -108,19 +108,33 @@ const DashboardInstitutionCard = () => {
         const { error } = await supabase.from('institutions').insert({ ...form, is_default: true });
         if (error) throw error;
       }
-      // Save principal info + global footer to website_settings
+      // Sync institution info, principal info + global footer to website_settings
       const updates = [
+        { key: 'institution_name', value: form.name },
+        { key: 'institution_name_en', value: form.name_en },
+        { key: 'address', value: form.address },
+        { key: 'phone', value: form.phone },
+        { key: 'email', value: form.email },
+        { key: 'logo_url', value: form.logo_url },
+        { key: 'established_year', value: form.established_year },
         ...Object.entries(principalForm).map(([key, value]) => ({ key, value: value as any })),
         ...Object.entries(footerForm).map(([key, value]) => ({ key, value: value as any })),
       ];
       await updateMultiple.mutateAsync(updates);
     },
     onSuccess: () => {
+      try {
+        localStorage.removeItem('institution-info-cache');
+        localStorage.removeItem('website-settings-cache');
+        localStorage.removeItem('website-settings-cache-time');
+      } catch {}
       queryClient.invalidateQueries({ queryKey: ['institution-default'] });
+      queryClient.invalidateQueries({ queryKey: ['institutions'] });
       queryClient.invalidateQueries({ queryKey: ['institution-info'] });
       queryClient.invalidateQueries({ queryKey: ['institution-info-merged'] });
       queryClient.invalidateQueries({ queryKey: ['website-settings'] });
       window.dispatchEvent(new CustomEvent('institution-info-updated'));
+      window.dispatchEvent(new CustomEvent('website-settings-updated'));
       setEditing(false);
       toast.success(language === 'bn' ? 'তথ্য সংরক্ষিত' : 'Info saved');
     },

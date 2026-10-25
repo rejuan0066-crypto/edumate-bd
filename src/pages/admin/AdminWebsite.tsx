@@ -308,11 +308,17 @@ const AdminWebsite = () => {
           console.warn('Sync to institutions table error:', e);
         }
 
+        try {
+          localStorage.removeItem('institution-info-cache');
+          localStorage.removeItem('website-settings-cache');
+          localStorage.removeItem('website-settings-cache-time');
+        } catch {}
         await queryClient.invalidateQueries({ queryKey: ['institution-default'] });
         await queryClient.invalidateQueries({ queryKey: ['institution-info-merged'] });
         await queryClient.invalidateQueries({ queryKey: ['institution-info'] });
         await queryClient.invalidateQueries({ queryKey: ['institutions'] });
         window.dispatchEvent(new CustomEvent('institution-info-updated'));
+        window.dispatchEvent(new CustomEvent('website-settings-updated'));
       }
 
       toast.success(language === 'bn' ? 'সংরক্ষিত!' : 'Saved!');

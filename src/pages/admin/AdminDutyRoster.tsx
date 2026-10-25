@@ -508,7 +508,7 @@ export default function AdminDutyRoster() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs text-muted-foreground hidden sm:inline mr-1">
-              শেষ আপডেট: {dataUpdatedAt ? format(new Date(dataUpdatedAt), 'HH:mm:ss') : '—'}
+              শেষ আপডেট: {dataUpdatedAt ? format(new Date(dataUpdatedAt), 'hh:mm:ss a') : '—'}
             </span>
             <Button
               variant="outline"
