@@ -159,11 +159,11 @@ const StaffApplicationPage = () => {
   const [mobile, setMobile] = useState('');
   const [mobileCode, setMobileCode] = useState('+880');
   const [staffEmail, setStaffEmail] = useState('');
-  const [employmentType, setEmploymentType] = useState('full_time');
+  const [employmentType, setEmploymentType] = useState('');
   const [designation, setDesignation] = useState('');
   const [residenceType, setResidenceType] = useState('non_residential');
   const [dob, setDob] = useState('');
-  const [maritalStatus, setMaritalStatus] = useState('unmarried');
+  const [maritalStatus, setMaritalStatus] = useState('');
   const [religion, setReligion] = useState('islam');
   const [customReligion, setCustomReligion] = useState('');
   const [nid, setNid] = useState('');
@@ -305,6 +305,7 @@ const StaffApplicationPage = () => {
       if (!lastName.trim()) errors['last_name'] = bn ? 'সম্পূর্ণ নাম (ইংরেজি) আবশ্যক' : 'Full Name (English) is required';
       if (!mobile.trim()) errors['mobile'] = bn ? 'মোবাইল নম্বর আবশ্যক' : 'Mobile is required';
       if (isVisible('staff_employment_type') && !employmentType) errors['employment_type'] = bn ? 'চাকরির ধরন নির্বাচন করুন' : 'Select employment type';
+      if (isVisible('staff_marital_status') && !maritalStatus) errors['marital_status'] = bn ? 'বৈবাহিক অবস্থা নির্বাচন করুন' : 'Select marital status';
       if (isVisible('staff_designation') && !designation) errors['designation'] = bn ? 'পদবী নির্বাচন করুন' : 'Select designation';
       if (isVisible('staff_dob') && !dob) errors['dob'] = bn ? 'জন্ম তারিখ আবশ্যক' : 'Date of birth is required';
       if (nidError) errors['nid'] = nidError;
@@ -479,11 +480,11 @@ const StaffApplicationPage = () => {
     setLastName('');
     setMobile('');
     setStaffEmail('');
-    setEmploymentType('full_time');
+    setEmploymentType('');
     setDesignation('');
     setDesignationConfirmed(false);
     setResidenceType('non_residential');
-    setMaritalStatus('unmarried');
+    setMaritalStatus('');
     setDob('');
     setReligion('islam');
     setCustomReligion('');
@@ -802,25 +803,11 @@ const StaffApplicationPage = () => {
                 </div>
               )}
 
-              {isVisible('staff_residence_type') && (
-                <div>
-                  <Label>{bn ? 'আবাসিক ধরন' : 'Residential Status'}</Label>
-                  <Select value={residenceType} onValueChange={setResidenceType}>
-                    <SelectTrigger className="bg-background mt-1">
-                      <SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="non_residential">{bn ? 'অনাবাসিক' : 'Non-Residential'}</SelectItem>
-                      <SelectItem value="residential">{bn ? 'আবাসিক' : 'Residential'}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
               {isVisible('staff_marital_status') && (
                 <div>
-                  <Label>{bn ? 'বৈবাহিক অবস্থা' : 'Marital Status'}</Label>
-                  <Select value={maritalStatus} onValueChange={setMaritalStatus}>
-                    <SelectTrigger className="bg-background mt-1">
+                  <Label>{bn ? 'বৈবাহিক অবস্থা' : 'Marital Status'} <span className="text-destructive">*</span></Label>
+                  <Select value={maritalStatus} onValueChange={v => handleFieldChange('marital_status', v, setMaritalStatus)}>
+                    <SelectTrigger className={`bg-background mt-1 ${fieldErrors['marital_status'] ? 'border-destructive' : ''}`}>
                       <SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} />
                     </SelectTrigger>
                     <SelectContent>
@@ -829,6 +816,7 @@ const StaffApplicationPage = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                  <FieldError field="marital_status" />
                 </div>
               )}
 

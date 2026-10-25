@@ -59,6 +59,7 @@ import {
   ExternalLink,
   Filter,
   Coins,
+  Home,
   PlusCircle,
   Edit,
   Trash2,
@@ -200,6 +201,7 @@ const AdminApprovals = () => {
   // Staff Approval Modal States (review, salary, signatures, approver)
   const [staffApprovalModal, setStaffApprovalModal] = useState<any | null>(null);
   const [staffSalary, setStaffSalary] = useState('');
+  const [staffResidenceType, setStaffResidenceType] = useState<string>('non_residential');
   const [principalName, setPrincipalName] = useState('');
   const [principalPosition, setPrincipalPosition] = useState(bn ? 'অধ্যক্ষ' : 'Principal');
   const [otherSignName, setOtherSignName] = useState('');
@@ -768,6 +770,7 @@ const AdminApprovals = () => {
     const sigs = sd.signatures || {};
     const app = sd.approver || {};
     setStaffSalary(s.salary ? String(s.salary) : '');
+    setStaffResidenceType(s.residence_type || (s.staff_data as any)?.residence_type || 'non_residential');
     setPrincipalName(sigs.principal?.name || institution?.name || '');
     setPrincipalPosition(sigs.principal?.position || (bn ? 'অধ্যক্ষ' : 'Principal'));
     setOtherSignName(sigs.other?.name || '');
@@ -819,6 +822,7 @@ const AdminApprovals = () => {
       const currentSd = (staffApprovalModal.staff_data as any) || {};
       const updatedStaffData = {
         ...currentSd,
+        residence_type: staffResidenceType,
         signatures: {
           principal: { name: principalName, position: principalPosition },
           other: { name: otherSignName, position: otherSignPosition },
@@ -834,6 +838,7 @@ const AdminApprovals = () => {
       const updatePayload: any = {
         status: 'active',
         salary: staffSalary ? parseFloat(staffSalary) : (staffApprovalModal.salary || 0),
+        residence_type: staffResidenceType,
         staff_data: updatedStaffData,
       };
 
@@ -2727,26 +2732,49 @@ const AdminApprovals = () => {
                   </Button>
                 </div>
 
-                {/* 2. Salary Assignment */}
-                <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label className="font-bold text-sm text-foreground flex items-center gap-1.5">
-                      <Coins className="w-4 h-4 text-emerald-600" />
-                      {bn ? 'বেতন নির্ধারণ (টাকা)' : 'Salary (BDT)'} <span className="text-destructive">*</span>
-                    </Label>
-                    <span className="text-[11px] text-muted-foreground">
-                      {bn ? 'অনুমোদনের সাথে সাথে এটি কর্মীর মাসিক মূল বেতন হিসেবে কার্যকর হবে' : 'Will be set as active monthly salary'}
-                    </span>
+                {/* 2. Salary & Residential Status Assignment */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="font-bold text-sm text-foreground flex items-center gap-1.5">
+                        <Coins className="w-4 h-4 text-emerald-600" />
+                        {bn ? 'বেতন নির্ধারণ (টাকা)' : 'Salary (BDT)'} <span className="text-destructive">*</span>
+                      </Label>
+                    </div>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">৳</span>
+                      <Input
+                        type="number"
+                        className="bg-background pl-8 text-base font-bold font-mono"
+                        placeholder={bn ? 'যেমন: ১৫০০০' : 'e.g. 15000'}
+                        value={staffSalary}
+                        onChange={(e) => setStaffSalary(e.target.value)}
+                      />
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      {bn ? 'কর্মীর মাসিক মূল বেতন হিসেবে কার্যকর হবে' : 'Active monthly salary'}
+                    </p>
                   </div>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">৳</span>
-                    <Input
-                      type="number"
-                      className="bg-background pl-8 text-base font-bold font-mono"
-                      placeholder={bn ? 'যেমন: ১৫০০০' : 'e.g. 15000'}
-                      value={staffSalary}
-                      onChange={(e) => setStaffSalary(e.target.value)}
-                    />
+
+                  <div className="p-4 rounded-xl border border-blue-500/30 bg-blue-500/5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="font-bold text-sm text-foreground flex items-center gap-1.5">
+                        <Home className="w-4 h-4 text-blue-600" />
+                        {bn ? 'আবাসিক ধরন নির্ধারণ' : 'Residential Status'} <span className="text-destructive">*</span>
+                      </Label>
+                    </div>
+                    <Select value={staffResidenceType} onValueChange={setStaffResidenceType}>
+                      <SelectTrigger className="bg-background text-sm font-semibold">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="non_residential">{bn ? 'অনাবাসিক (Non-Residential)' : 'Non-Residential'}</SelectItem>
+                        <SelectItem value="residential">{bn ? 'আবাসিক (Residential)' : 'Residential'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[11px] text-muted-foreground">
+                      {bn ? 'অনুমোদনের পর কর্মীর আবাসন স্ট্যাটাস' : 'Residential status upon approval'}
+                    </p>
                   </div>
                 </div>
 
