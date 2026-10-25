@@ -9,7 +9,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Pencil, Trash2, Loader2, Search, Tag, FolderOpen, Upload, Download, FileSpreadsheet } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, Search, Tag, FolderOpen, Upload, Download, FileSpreadsheet, SlidersHorizontal, Briefcase } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -228,6 +228,73 @@ const AdminDesignations = () => {
     onError: (e: any) => toast.error(e.message || 'Error'),
   });
 
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase.from('designations').update({ is_active }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['designations'] });
+      queryClient.invalidateQueries({ queryKey: ['designations-all'] });
+      queryClient.invalidateQueries({ queryKey: ['designations-public'] });
+      queryClient.invalidateQueries({ queryKey: ['designations-for-form-all'] });
+      toast.success(bn ? 'পদবির স্ট্যাটাস আপডেট হয়েছে' : 'Designation status updated');
+    },
+    onError: (e: any) => toast.error(e.message || 'Error'),
+  });
+
+  const { data: staffOpenDesignations = null } = useQuery<string[] | null>({
+    queryKey: ['staff-open-designations'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('website_settings')
+        .select('value')
+        .eq('key', 'staff_open_designations')
+        .maybeSingle();
+      if (data?.value && Array.isArray(data.value)) return data.value as string[];
+      return null;
+    },
+  });
+
+  const toggleApplicationOpenMutation = useMutation({
+    mutationFn: async ({ id, open }: { id: string; open: boolean }) => {
+      const currentList: string[] = staffOpenDesignations !== null
+        ? [...staffOpenDesignations]
+        : (designations as any[]).filter(d => d.is_active).map(d => d.id);
+
+      let nextList: string[];
+      if (open) {
+        nextList = Array.from(new Set([...currentList, id]));
+      } else {
+        nextList = currentList.filter(dId => dId !== id);
+      }
+
+      const { data: existing } = await supabase
+        .from('website_settings')
+        .select('id')
+        .eq('key', 'staff_open_designations')
+        .maybeSingle();
+
+      if (existing) {
+        await supabase
+          .from('website_settings')
+          .update({ value: nextList as any, updated_at: new Date().toISOString() })
+          .eq('key', 'staff_open_designations');
+      } else {
+        await supabase
+          .from('website_settings')
+          .insert({ key: 'staff_open_designations', value: nextList as any });
+      }
+      return nextList;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['staff-open-designations'] });
+      queryClient.invalidateQueries({ queryKey: ['designations-public'] });
+      toast.success(bn ? 'নিয়োগ আবেদন স্ট্যাটাস আপডেট হয়েছে' : 'Job application status updated');
+    },
+    onError: (e: any) => toast.error(e.message || 'Error'),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { const { error } = await supabase.from('designations').delete().eq('id', id); if (error) throw error; },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['designations'] }); queryClient.invalidateQueries({ queryKey: ['designations-all'] }); queryClient.invalidateQueries({ queryKey: ['designations-for-form-all'] }); toast.success(bn ? 'পদবি মুছে ফেলা হয়েছে' : 'Designation deleted'); setDeleteId(null); },
@@ -360,6 +427,34 @@ const AdminDesignations = () => {
           <p className="text-sm text-muted-foreground">{bn ? 'পদবি ও স্টাফ ডিপার্টমেন্ট পরিচালনা করুন' : 'Manage designations and staff departments'}</p>
         </div>
 
+        {/* Online Job Application Designation Control Banner */}
+        <div className="bg-emerald-500/10 border border-emerald-500/25 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
+              <Briefcase className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-foreground">
+                {bn ? 'অনলাইন নিয়োগ আবেদন পদবি নিয়ন্ত্রণ' : 'Online Job Application Designation Control'}
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                {bn
+                  ? 'চাকরির আবেদন ফর্মে প্রার্থীরা কোন কোন পদবিতে আবেদন করতে পারবেন তা নিচের "নিয়োগে উন্মুক্ত" সুইচ দিয়ে বা ওয়েবসাইট আবেদন সেটিংস থেকে নিয়ন্ত্রণ করতে পারেন।'
+                  : 'Control which designations are available for public job applications using the "Job Open" switch below or via website application settings.'}
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.location.href = '/admin/website?tab=form-settings'}
+            className="shrink-0 text-xs font-semibold border-emerald-400/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 gap-1.5 shadow-sm"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            {bn ? 'অনলাইন আবেদন সেটিংস' : 'Application Settings'}
+          </Button>
+        </div>
+
         <Tabs defaultValue="designations" className="space-y-4">
           <TabsList className="grid grid-cols-3 max-w-xl">
             <TabsTrigger value="designations" className="flex items-center gap-1.5"><Tag className="w-4 h-4" /> {bn ? 'পদবি' : 'Designations'}</TabsTrigger>
@@ -414,41 +509,67 @@ const AdminDesignations = () => {
                         <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'পদবি (বাংলা)' : 'Name (BN)'}</th>
                         <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'পদবি (ইংরেজি)' : 'Name (EN)'}</th>
                         <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'ডিপার্টমেন্ট' : 'Department'}</th>
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'স্ট্যাটাস' : 'Status'}</th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'সিস্টেম স্ট্যাটাস' : 'System Status'}</th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'নিয়োগে উন্মুক্ত' : 'Job Open'}</th>
                         <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'অ্যাকশন' : 'Action'}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                      {filtered.map((d: any, i: number) => (
-                        <tr key={d.id} className="hover:bg-secondary/30 transition-colors">
-                          <td className="px-4 py-3 text-sm text-muted-foreground">{i + 1}</td>
-                          <td className="px-4 py-3 text-sm font-medium text-foreground">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span>{d.name_bn}</span>
-                              {getDesignationAuthorityRole(d) && (
-                                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 border-emerald-400/40 text-[11px] gap-1 py-0 font-normal">
-                                  <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                                  {CORE_SIGNATORY_ROLES.find(r => r.key === getDesignationAuthorityRole(d))?.label_bn || getDesignationAuthorityRole(d)}
-                                </Badge>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-muted-foreground">{d.name}</td>
-                          <td className="px-4 py-3"><Badge variant="outline" className={getCategoryColor(d.staff_category)}>{getCategoryLabel(d.staff_category)}</Badge></td>
-                          <td className="px-4 py-3">
-                            <Badge variant="outline" className={d.is_active ? 'bg-success/10 text-success border-success/30' : 'bg-destructive/10 text-destructive border-destructive/30'}>
-                              {d.is_active ? (bn ? 'সক্রিয়' : 'Active') : (bn ? 'নিষ্ক্রিয়' : 'Inactive')}
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              {canEditItem && <button onClick={() => openEdit(d)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary"><Pencil className="w-4 h-4" /></button>}
-                              {canDeleteItem && <button onClick={() => setDeleteId(d.id)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-destructive"><Trash2 className="w-4 h-4" /></button>}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                      {filtered.length === 0 && <tr><td colSpan={6} className="text-center py-8 text-sm text-muted-foreground">{bn ? 'কোনো পদবি পাওয়া যায়নি' : 'No designations found'}</td></tr>}
+                      {filtered.map((d: any, i: number) => {
+                        const isJobOpen = staffOpenDesignations !== null
+                          ? staffOpenDesignations.includes(d.id)
+                          : d.is_active;
+
+                        return (
+                          <tr key={d.id} className="hover:bg-secondary/30 transition-colors">
+                            <td className="px-4 py-3 text-sm text-muted-foreground">{i + 1}</td>
+                            <td className="px-4 py-3 text-sm font-medium text-foreground">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span>{d.name_bn}</span>
+                                {getDesignationAuthorityRole(d) && (
+                                  <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 border-emerald-400/40 text-[11px] gap-1 py-0 font-normal">
+                                    <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                                    {CORE_SIGNATORY_ROLES.find(r => r.key === getDesignationAuthorityRole(d))?.label_bn || getDesignationAuthorityRole(d)}
+                                  </Badge>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-muted-foreground">{d.name}</td>
+                            <td className="px-4 py-3"><Badge variant="outline" className={getCategoryColor(d.staff_category)}>{getCategoryLabel(d.staff_category)}</Badge></td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  checked={!!d.is_active}
+                                  disabled={!canEditItem || toggleActiveMutation.isPending}
+                                  onCheckedChange={(val) => toggleActiveMutation.mutate({ id: d.id, is_active: val })}
+                                />
+                                <span className={`text-xs font-medium ${d.is_active ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`}>
+                                  {d.is_active ? (bn ? 'সক্রিয়' : 'Active') : (bn ? 'নিষ্ক্রিয়' : 'Inactive')}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  checked={!!isJobOpen && !!d.is_active}
+                                  disabled={!canEditItem || !d.is_active || toggleApplicationOpenMutation.isPending}
+                                  onCheckedChange={(val) => toggleApplicationOpenMutation.mutate({ id: d.id, open: val })}
+                                />
+                                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isJobOpen && d.is_active ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
+                                  {isJobOpen && d.is_active ? (bn ? 'উন্মুক্ত' : 'Open') : (bn ? 'বন্ধ' : 'Closed')}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                {canEditItem && <button onClick={() => openEdit(d)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary"><Pencil className="w-4 h-4" /></button>}
+                                {canDeleteItem && <button onClick={() => setDeleteId(d.id)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-destructive"><Trash2 className="w-4 h-4" /></button>}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {filtered.length === 0 && <tr><td colSpan={7} className="text-center py-8 text-sm text-muted-foreground">{bn ? 'কোনো পদবি পাওয়া যায়নি' : 'No designations found'}</td></tr>}
                     </tbody>
                   </table>
                 </div>

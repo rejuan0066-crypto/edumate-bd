@@ -120,6 +120,26 @@ const StaffApplicationPage = () => {
     },
   });
 
+  const { data: openDesignationIds = null } = useQuery<string[] | null>({
+    queryKey: ['staff-open-designations'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('website_settings')
+        .select('value')
+        .eq('key', 'staff_open_designations')
+        .maybeSingle();
+      if (data?.value && Array.isArray(data.value)) {
+        return data.value as string[];
+      }
+      return null;
+    },
+  });
+
+  const filteredDesignationsList = useMemo(() => {
+    if (!openDesignationIds) return designationsList;
+    return designationsList.filter((d: any) => openDesignationIds.includes(d.id));
+  }, [designationsList, openDesignationIds]);
+
   // Sync mode & designation from URL
   useEffect(() => {
     if (urlMode === 'track') setPageMode('track');
@@ -778,7 +798,7 @@ const StaffApplicationPage = () => {
                       <SelectValue placeholder={bn ? 'পদবী নির্বাচন করুন' : 'Select Designation'} />
                     </SelectTrigger>
                     <SelectContent>
-                      {designationsList.map(d => (
+                      {filteredDesignationsList.map(d => (
                         <SelectItem key={d.id} value={d.id}>{bn ? d.name_bn : d.name}</SelectItem>
                       ))}
                     </SelectContent>

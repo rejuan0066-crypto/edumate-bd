@@ -146,7 +146,7 @@ const AdmissionPage = () => {
       const { data, error } = await supabase
         .from('website_settings')
         .select('key, value')
-        .in('key', ['show_roll_no', 'show_session', 'admission_footer_text', 'admission_form_public', 'global_footer_text_bn', 'global_footer_text_en', 'global_footer_spacing_top', 'global_footer_spacing_bottom', 'global_footer_font_size']);
+        .in('key', ['show_roll_no', 'show_session', 'admission_footer_text', 'admission_form_public', 'admission_open_divisions', 'admission_open_classes', 'global_footer_text_bn', 'global_footer_text_en', 'global_footer_spacing_top', 'global_footer_spacing_bottom', 'global_footer_font_size']);
       if (error) throw error;
       const result: Record<string, any> = {};
       data?.forEach(row => { result[row.key] = row.value; });
@@ -176,9 +176,29 @@ const AdmissionPage = () => {
   const footerSpacingBottom = Number(websiteAdmissionSettings?.global_footer_spacing_bottom ?? 6);
   const footerFontSize = Number(websiteAdmissionSettings?.global_footer_font_size ?? 10);
 
+  const openDivIds = (Array.isArray(websiteAdmissionSettings?.admission_open_divisions)
+    ? websiteAdmissionSettings.admission_open_divisions
+    : null) as string[] | null;
+
+  const openClassIds = (Array.isArray(websiteAdmissionSettings?.admission_open_classes)
+    ? websiteAdmissionSettings.admission_open_classes
+    : null) as string[] | null;
+
+  const availableDivisions = useMemo(() => {
+    const active = divisions.filter((d: any) => d.is_active);
+    if (!openDivIds) return active;
+    return active.filter((d: any) => openDivIds.includes(d.id));
+  }, [divisions, openDivIds]);
+
+  const availableClasses = useMemo(() => {
+    const active = classes.filter((c: any) => c.is_active);
+    if (!openClassIds) return active;
+    return active.filter((c: any) => openClassIds.includes(c.id));
+  }, [classes, openClassIds]);
+
   const filteredClasses = selectedDivisionId
-    ? classes.filter((c: any) => c.division_id === selectedDivisionId)
-    : classes;
+    ? availableClasses.filter((c: any) => c.division_id === selectedDivisionId)
+    : availableClasses;
 
   const bnToEn = (str: any) => String(str || '').replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
 
@@ -1807,10 +1827,17 @@ const AdmissionPage = () => {
                       {bn ? 'বিভাগ নির্বাচন করুন' : 'Select Division'} <span className="text-destructive">*</span>
                     </h3>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                    {divisions.filter((d: any) => d.is_active).map((d: any) => {
-                      const isSelected = selectedDivisionId === d.id;
-                      const classesInDiv = classes.filter((c: any) => c.division_id === d.id && c.is_active);
+                  {availableDivisions.length === 0 ? (
+                    <div className="text-center py-10 px-4 rounded-2xl border border-dashed border-border bg-muted/20">
+                      <p className="text-sm text-muted-foreground">
+                        {bn ? 'বর্তমানে কোনো বিভাগে নতুন ভর্তি আবেদন উন্মুক্ত নেই।' : 'No divisions currently open for admission.'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                      {availableDivisions.map((d: any) => {
+                        const isSelected = selectedDivisionId === d.id;
+                        const classesInDiv = availableClasses.filter((c: any) => c.division_id === d.id);
                       return (
                         <div
                           key={d.id}
@@ -1843,6 +1870,7 @@ const AdmissionPage = () => {
                       );
                     })}
                   </div>
+                  )}
                 </div>
 
                 {/* Class Selection Grid */}

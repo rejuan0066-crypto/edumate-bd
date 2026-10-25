@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -2215,6 +2216,12 @@ const FormSettingsTab = ({ language }: { language: string }) => {
           </div>
         </div>
       </div>
+
+      {/* Online Admission Divisions & Classes Scope Control */}
+      <AdmissionDivisionsControl language={language} />
+
+      {/* Online Staff Job Application Designations Scope Control */}
+      <StaffDesignationsControl language={language} />
 
       {/* Staff Form Field Visibility */}
       <StaffFormFieldsControl language={language} />

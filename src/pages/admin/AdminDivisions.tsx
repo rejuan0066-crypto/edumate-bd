@@ -3,7 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, ChevronRight, Layers, Loader2, BookOpen, GraduationCap, Edit2, Check, X, ArrowUp, ArrowDown, Power } from 'lucide-react';
+import { Plus, Trash2, ChevronRight, Layers, Loader2, BookOpen, GraduationCap, Edit2, Check, X, ArrowUp, ArrowDown, Power, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -323,9 +323,42 @@ const AdminDivisions = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <h1 className="text-2xl font-display font-bold text-foreground">
-          {language === 'bn' ? 'বিভাগ ও শ্রেণী ব্যবস্থাপনা' : 'Division & Class Management'}
-        </h1>
+        <div>
+          <h1 className="text-2xl font-display font-bold text-foreground">
+            {language === 'bn' ? 'বিভাগ ও শ্রেণী ব্যবস্থাপনা' : 'Division & Class Management'}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {language === 'bn' ? 'মাদ্রাসার প্রাতিষ্ঠানিক বিভাগ ও শ্রেণী পরিচালনা করুন' : 'Manage madrasa institutional divisions and classes'}
+          </p>
+        </div>
+
+        {/* Online Admission Division & Class Scope Banner */}
+        <div className="bg-emerald-500/10 border border-emerald-500/25 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
+              <GraduationCap className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-foreground">
+                {language === 'bn' ? 'অনলাইন ভর্তি আবেদনের বিভাগ ও জামাত নিয়ন্ত্রণ' : 'Online Admission Division & Class Control'}
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                {language === 'bn'
+                  ? 'পাবলিক ভর্তি ফরমে কোন কোন বিভাগ ও ক্লাস উন্মুক্ত থাকবে তা বর্তমান শিক্ষার্থীদের কোনো ক্ষতি না করে আলাদাভাবে অন/অফ করতে অনলাইন আবেদন কন্ট্রোলে যান।'
+                  : 'Configure which divisions & classes are open for online admission without affecting existing enrolled students.'}
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.location.href = '/admin/website?tab=form-settings'}
+            className="shrink-0 text-xs font-semibold border-emerald-400/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 gap-1.5 shadow-sm"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            {language === 'bn' ? 'ভর্তি আবেদন কন্ট্রোল খুলুন' : 'Open Admission Control'}
+          </Button>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Divisions */}
