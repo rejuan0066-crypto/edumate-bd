@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -192,6 +192,21 @@ const AdminInventory = () => {
     },
   });
 
+  // Duplicate item name validation
+  const isDuplicateItemName = useMemo(() => {
+    const rawBn = itemForm.name_bn?.trim().toLowerCase();
+    const rawEn = itemForm.name_en?.trim().toLowerCase();
+    if (!rawBn && !rawEn) return false;
+    return items.some((i: any) => {
+      if (editItem && i.id === editItem.id) return false;
+      const iBn = i.name_bn?.trim().toLowerCase();
+      const iEn = i.name_en?.trim().toLowerCase();
+      if (rawBn && iBn === rawBn) return true;
+      if (rawEn && iEn && iEn === rawEn) return true;
+      return false;
+    });
+  }, [items, itemForm.name_bn, itemForm.name_en, editItem]);
+
   const { data: assets = [], isLoading: assetsLoading } = useQuery({
     queryKey: ['fixed-assets'],
     queryFn: async () => {
@@ -219,14 +234,38 @@ const AdminInventory = () => {
   // Item Mutations
   const saveItem = useMutation({
     mutationFn: async (form: any) => {
+      const trimmedBn = (form.name_bn || '').trim();
+      const trimmedEn = (form.name_en || '').trim();
+      if (!trimmedBn) {
+        throw new Error(bn ? 'আইটেমের বাংলা নাম আবশ্যক' : 'Bangla name is required');
+      }
+
+      // Check duplicate name
+      const existingDup = items.find((i: any) => {
+        if (editItem && i.id === editItem.id) return false;
+        const iBn = i.name_bn?.trim().toLowerCase();
+        const iEn = i.name_en?.trim().toLowerCase();
+        if (trimmedBn && iBn === trimmedBn.toLowerCase()) return true;
+        if (trimmedEn && iEn && iEn === trimmedEn.toLowerCase()) return true;
+        return false;
+      });
+
+      if (existingDup) {
+        throw new Error(
+          bn 
+            ? `"${existingDup.name_bn}" নামের একটি আইটেম ইতোমধ্যে ইনভেন্টরিতে বিদ্যমান রয়েছে! একই নামে ডুপ্লিকেট আইটেম তৈরি করা যাবে না।`
+            : `An item named "${existingDup.name_bn}" already exists in inventory!`
+        );
+      }
+
       const curStock = Number(form.current_stock) || 0;
       const totalPurchased = form.total_purchased !== undefined && form.total_purchased !== '' 
         ? Number(form.total_purchased) 
         : (editItem ? Number(editItem.total_purchased ?? curStock) : curStock);
 
       const payload: Record<string, any> = {
-        name_bn: form.name_bn,
-        name_en: form.name_en || null,
+        name_bn: trimmedBn,
+        name_en: trimmedEn || null,
         category: form.category,
         current_stock: curStock,
         total_purchased: totalPurchased,
@@ -1330,6 +1369,12 @@ const AdminInventory = () => {
                 onChange={e => setItemForm(f => ({ ...f, name_bn: e.target.value }))}
                 className="mt-1 rounded-xl"
               />
+              {isDuplicateItemName && (
+                <p className="text-xs text-destructive flex items-center gap-1 mt-1.5 font-medium">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                  {bn ? 'এই নামের একটি আইটেম ইতোমধ্যে ইনভেন্টরিতে বিদ্যমান রয়েছে! ডুপ্লিকেট নাম পরিহার করুন।' : 'An item with this name already exists in inventory!'}
+                </p>
+              )}
             </div>
             <div>
               <Label className="text-xs font-semibold">{bn ? 'আইটেমের নাম (ইংরেজিতে)' : 'Name (English)'}</Label>
@@ -1420,7 +1465,7 @@ const AdminInventory = () => {
             <Button variant="outline" onClick={() => setItemOpen(false)} className="rounded-xl">
               {bn ? 'বাতিল' : 'Cancel'}
             </Button>
-            <Button onClick={() => saveItem.mutate(itemForm)} disabled={!itemForm.name_bn || saveItem.isPending} className="rounded-xl font-bold">
+            <Button onClick={() => saveItem.mutate(itemForm)} disabled={!itemForm.name_bn?.trim() || isDuplicateItemName || saveItem.isPending} className="rounded-xl font-bold">
               {saveItem.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
               {bn ? 'সংরক্ষণ করুন' : 'Save Item'}
             </Button>

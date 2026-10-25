@@ -1406,36 +1406,63 @@ const AdminExpenses = () => {
                 const itemName = (expenseForm.inventory_new_name || expenseForm.description || payload.description || (isHostelStock ? 'নতুন খাদ্য সামগ্রী' : 'নতুন সামগ্রী')).trim();
                 const unitPrice = effectiveQty > 0 ? Math.round((parsedAmount / effectiveQty) * 100) / 100 : parsedAmount;
 
-                const newPayload: Record<string, any> = {
-                  name_bn: itemName,
-                  category: targetCategory,
-                  current_stock: effectiveQty,
-                  total_purchased: effectiveQty,
-                  total_consumed: 0,
-                  unit: (expenseForm.quantity_unit && expenseForm.quantity_unit !== 'none') ? expenseForm.quantity_unit : (isHostelStock ? 'কেজি' : 'pcs'),
-                  buying_price: unitPrice,
-                  min_stock_level: isHostelStock ? 10 : 5,
-                  notes: isHostelStock
-                    ? `হোস্টেল বোর্ডিং খাদ্য ক্রয় - খরচ ভাউচার #${insertedExpense.voucher_no || insertedExpense.id?.slice(0, 8)}`
-                    : `খরচ ভাউচার #${insertedExpense.voucher_no || insertedExpense.id?.slice(0, 8)} হতে এন্ট্রি`,
-                  is_active: true,
-                };
+                // Check for existing item with same name to prevent duplicates
+                const existingSameNameItem = inventoryItems.find((i: any) => 
+                  i.name_bn && i.name_bn.trim().toLowerCase() === itemName.toLowerCase()
+                );
 
-                let { data: createdItem, error: createErr } = await supabase
-                  .from('inventory_items')
-                  .insert(newPayload)
-                  .select('id')
-                  .single();
+                if (existingSameNameItem) {
+                  // Prevent duplicate! Automatically route to existing item and increment stock
+                  targetItemId = existingSameNameItem.id;
+                  const curStock = Number(existingSameNameItem.current_stock || 0);
+                  const curPurchased = Number(existingSameNameItem.total_purchased ?? existingSameNameItem.current_stock ?? 0);
+                  const newStock = curStock + effectiveQty;
+                  const newPurchased = curPurchased + effectiveQty;
 
-                if (createErr && (createErr.message?.includes('column') || createErr.code === '42703')) {
-                  delete newPayload.total_purchased;
-                  delete newPayload.total_consumed;
-                  const retry = await supabase.from('inventory_items').insert(newPayload).select('id').single();
-                  createdItem = retry.data;
-                }
+                  const { error: stockError } = await supabase.rpc('increment_inventory_stock' as any, {
+                    p_item_id: targetItemId,
+                    p_amount: effectiveQty
+                  });
 
-                if (createdItem) {
-                  targetItemId = createdItem.id;
+                  const updatePayload: Record<string, any> = {
+                    total_purchased: newPurchased,
+                  };
+                  if (unitPrice > 0) updatePayload.buying_price = Math.round(unitPrice * 100) / 100;
+                  if (stockError || !existingSameNameItem) updatePayload.current_stock = newStock;
+
+                  await supabase.from('inventory_items').update(updatePayload).eq('id', targetItemId);
+                } else {
+                  const newPayload: Record<string, any> = {
+                    name_bn: itemName,
+                    category: targetCategory,
+                    current_stock: effectiveQty,
+                    total_purchased: effectiveQty,
+                    total_consumed: 0,
+                    unit: (expenseForm.quantity_unit && expenseForm.quantity_unit !== 'none') ? expenseForm.quantity_unit : (isHostelStock ? 'কেজি' : 'pcs'),
+                    buying_price: unitPrice,
+                    min_stock_level: isHostelStock ? 10 : 5,
+                    notes: isHostelStock
+                      ? `হোস্টেল বোর্ডিং খাদ্য ক্রয় - খরচ ভাউচার #${insertedExpense.voucher_no || insertedExpense.id?.slice(0, 8)}`
+                      : `খরচ ভাউচার #${insertedExpense.voucher_no || insertedExpense.id?.slice(0, 8)} হতে এন্ট্রি`,
+                    is_active: true,
+                  };
+
+                  let { data: createdItem, error: createErr } = await supabase
+                    .from('inventory_items')
+                    .insert(newPayload)
+                    .select('id')
+                    .single();
+
+                  if (createErr && (createErr.message?.includes('column') || createErr.code === '42703')) {
+                    delete newPayload.total_purchased;
+                    delete newPayload.total_consumed;
+                    const retry = await supabase.from('inventory_items').insert(newPayload).select('id').single();
+                    createdItem = retry.data;
+                  }
+
+                  if (createdItem) {
+                    targetItemId = createdItem.id;
+                  }
                 }
               } else if (targetItemId) {
                 // Update existing item
@@ -5411,6 +5438,12 @@ const AdminExpenses = () => {
                               />
                             </div>
                           </div>
+                          {inventoryItems.some((i: any) => (expenseForm.inventory_new_name || expenseForm.description) && i.name_bn && i.name_bn.trim().toLowerCase() === (expenseForm.inventory_new_name || expenseForm.description || '').trim().toLowerCase()) && (
+                            <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1 font-medium">
+                              <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                              {bn ? 'এই নামের একটি আইটেম ইতোমধ্যে আছে। ডুপ্লিকেট রোধে স্বয়ংক্রিয়ভাবে বিদ্যমান আইটেমের স্টকে যুক্ত হবে।' : 'Item already exists. Stock will be added to the existing item.'}
+                            </p>
+                          )}
                           <p className="text-[11px] text-emerald-700 dark:text-emerald-300">
                             ✓ {bn ? `নাম: "${expenseForm.inventory_new_name || expenseForm.description || 'বিবরণ'}", পরিমাণ: ${expenseForm.quantity || 1} ${expenseForm.quantity_unit || 'একক'} নিয়ে সরাসরি ইনভেন্টরিতে নতুন আইটেম খুলবে।` : `Will create new item with quantity ${expenseForm.quantity || 1}.`}
                           </p>
@@ -5505,6 +5538,12 @@ const AdminExpenses = () => {
                               </Select>
                             </div>
                           </div>
+                          {inventoryItems.some((i: any) => (expenseForm.inventory_new_name || expenseForm.description) && i.name_bn && i.name_bn.trim().toLowerCase() === (expenseForm.inventory_new_name || expenseForm.description || '').trim().toLowerCase()) && (
+                            <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1 font-medium">
+                              <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                              {bn ? 'এই নামের একটি খাদ্য আইটেম ইতোমধ্যে আছে। ডুপ্লিকেট রোধে স্বয়ংক্রিয়ভাবে বিদ্যমান আইটেমের স্টকে যুক্ত হবে।' : 'Item already exists. Stock will be added to the existing item.'}
+                            </p>
+                          )}
                           <p className="text-[11px] text-emerald-700 dark:text-emerald-300">
                             ✓ {bn ? `এই খরচটি সংরক্ষিত হলে এটি হোস্টেল ব্যবস্থাপনা > "বোর্ডিং স্টক ও খরচ" ট্যাবে স্বয়ংক্রিয়ভাবে নতুন খাদ্য আইটেম হিসেবে মজুদে যোগ হবে।` : 'Item will be automatically added to hostel boarding stock.'}
                           </p>

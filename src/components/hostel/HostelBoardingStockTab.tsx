@@ -222,6 +222,21 @@ export const HostelBoardingStockTab: React.FC = () => {
     });
   }, [foodItems, searchQuery, stockStatusFilter]);
 
+  // Duplicate item name validation
+  const isDuplicateItemName = useMemo(() => {
+    const rawBn = itemForm.name_bn?.trim().toLowerCase();
+    const rawEn = itemForm.name_en?.trim().toLowerCase();
+    if (!rawBn && !rawEn) return false;
+    return foodItems.some(i => {
+      if (editingItem && i.id === editingItem.id) return false;
+      const iBn = i.name_bn?.trim().toLowerCase();
+      const iEn = i.name_en?.trim().toLowerCase();
+      if (rawBn && iBn === rawBn) return true;
+      if (rawEn && iEn && iEn === rawEn) return true;
+      return false;
+    });
+  }, [foodItems, itemForm.name_bn, itemForm.name_en, editingItem]);
+
   // Key Statistics
   const stats = useMemo(() => {
     const totalItems = foodItems.length;
@@ -380,16 +395,36 @@ export const HostelBoardingStockTab: React.FC = () => {
   // 2. Create / Update Item Mutation
   const itemMutation = useMutation({
     mutationFn: async () => {
-      if (!itemForm.name_bn.trim()) {
+      const trimmedBn = itemForm.name_bn.trim();
+      const trimmedEn = itemForm.name_en.trim();
+      if (!trimmedBn) {
         throw new Error(bn ? 'আইটেমের বাংলা নাম আবশ্যক' : 'Bangla name is required');
       }
+
+      const existing = foodItems.find(i => {
+        if (editingItem && i.id === editingItem.id) return false;
+        const iBn = i.name_bn?.trim().toLowerCase();
+        const iEn = i.name_en?.trim().toLowerCase();
+        if (trimmedBn && iBn === trimmedBn.toLowerCase()) return true;
+        if (trimmedEn && iEn && iEn === trimmedEn.toLowerCase()) return true;
+        return false;
+      });
+
+      if (existing) {
+        throw new Error(
+          bn 
+            ? `"${existing.name_bn}" নামের খাদ্য সামগ্রী ইতোমধ্যে তালিকায় বিদ্যমান আছে! একই নামে ডুপ্লিকেট আইটেম তৈরি করা যাবে না।`
+            : `An item named "${existing.name_bn}" already exists in the food list!`
+        );
+      }
+
       const stock = parseFloat(itemForm.current_stock) || 0;
       const price = parseFloat(itemForm.buying_price) || 0;
       const minStock = parseFloat(itemForm.min_stock_level) || 5;
 
       const payload = {
-        name_bn: itemForm.name_bn.trim(),
-        name_en: itemForm.name_en.trim() || null,
+        name_bn: trimmedBn,
+        name_en: trimmedEn || null,
         category: 'hostel_boarding',
         current_stock: stock,
         unit: itemForm.unit,
@@ -1235,6 +1270,12 @@ export const HostelBoardingStockTab: React.FC = () => {
                 className="mt-1 text-sm font-medium"
                 required
               />
+              {isDuplicateItemName && (
+                <p className="text-xs text-destructive flex items-center gap-1 mt-1.5 font-medium">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                  {bn ? 'এই নামের খাদ্য সামগ্রী ইতোমধ্যে তালিকায় বিদ্যমান আছে! ডুপ্লিকেট নাম পরিহার করুন।' : 'An item with this name already exists in the food list!'}
+                </p>
+              )}
             </div>
 
             <div>
@@ -1323,7 +1364,7 @@ export const HostelBoardingStockTab: React.FC = () => {
               </Button>
               <Button
                 type="submit"
-                disabled={itemMutation.isPending || !itemForm.name_bn.trim()}
+                disabled={itemMutation.isPending || !itemForm.name_bn.trim() || isDuplicateItemName}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white"
               >
                 {itemMutation.isPending ? (bn ? 'সংরক্ষণ হচ্ছে...' : 'Saving...') : (bn ? 'সংরক্ষণ করুন' : 'Save Item')}
