@@ -202,6 +202,14 @@ export const HostelBoardingStockTab: React.FC = () => {
     }
   };
 
+  const saveAllLocalSerials = (serialMap: Record<string, number>) => {
+    try {
+      localStorage.setItem('hostel_boarding_item_serials', JSON.stringify(serialMap));
+    } catch (e) {
+      console.warn('Could not save all local serials:', e);
+    }
+  };
+
   // 1. Fetch Boarding Food Items (category === 'hostel_boarding')
   const { data: foodItems = [], isLoading: loadingItems } = useQuery({
     queryKey: ['hostel-boarding-stock'],
@@ -300,25 +308,103 @@ export const HostelBoardingStockTab: React.FC = () => {
     });
   }, [rawLogs, itemsMap]);
 
-  // Helper to determine effective serial number
-  const getItemEffectiveSerial = (item: InventoryItem, fallbackIdx: number): number => {
+  // 1. Full food items sorted strictly by custom serial order without duplicates
+  const orderedFoodItems = useMemo(() => {
     const localMap = getLocalSerialMap();
-    if (localMap[item.id] !== undefined && localMap[item.id] !== null) {
-      return Number(localMap[item.id]);
+
+    return [...foodItems].sort((a, b) => {
+      const getPriority = (item: InventoryItem) => {
+        if (localMap[item.id] !== undefined && localMap[item.id] !== null) {
+          return Number(localMap[item.id]);
+        }
+        if (item.sort_order && Number(item.sort_order) > 0) {
+          return Number(item.sort_order);
+        }
+        if (item.name_bn?.includes('চাউল')) return 1;
+        if (item.name_bn?.includes('ডাল') && !item.name_bn?.includes('মুগ')) return 2;
+        return 9999;
+      };
+
+      const pA = getPriority(a);
+      const pB = getPriority(b);
+      if (pA !== pB) return pA - pB;
+      return a.name_bn.localeCompare(b.name_bn, 'bn');
+    });
+  }, [foodItems, serialVersion]);
+
+  // 2. Strict unique 1-to-N serial mapping guaranteed to never duplicate
+  const itemSerialMap = useMemo(() => {
+    const map = new Map<string, number>();
+    orderedFoodItems.forEach((item, index) => {
+      map.set(item.id, index + 1);
+    });
+    return map;
+  }, [orderedFoodItems]);
+
+  // Reorder items by moving an item from its current index to a new target position (1-based)
+  const reorderItemPosition = async (itemId: string, newTargetPosition: number) => {
+    const currentOrdered = [...orderedFoodItems];
+    const currentIndex = currentOrdered.findIndex(i => i.id === itemId);
+    if (currentIndex === -1) return;
+
+    const clampedPos = Math.max(1, Math.min(newTargetPosition, currentOrdered.length));
+    const targetIndex = clampedPos - 1;
+
+    if (currentIndex === targetIndex) return;
+
+    // Remove from current position and insert at target position
+    const [movedItem] = currentOrdered.splice(currentIndex, 1);
+    currentOrdered.splice(targetIndex, 0, movedItem);
+
+    // Re-assign strictly unique sequential serial numbers 1 to N
+    const newSerialMap: Record<string, number> = {};
+    const updates: { id: string; sort_order: number }[] = [];
+
+    currentOrdered.forEach((item, idx) => {
+      const serial = idx + 1;
+      newSerialMap[item.id] = serial;
+      updates.push({ id: item.id, sort_order: serial });
+    });
+
+    saveAllLocalSerials(newSerialMap);
+    setSerialVersion(v => v + 1);
+
+    // Persist to Supabase in background
+    try {
+      for (const u of updates) {
+        await supabase
+          .from('inventory_items')
+          .update({ sort_order: u.sort_order } as any)
+          .eq('id', u.id);
+      }
+    } catch (e) {
+      console.warn('Background sort_order update failed:', e);
     }
-    if (item.sort_order !== undefined && item.sort_order !== null && Number(item.sort_order) > 0) {
-      return Number(item.sort_order);
-    }
-    if (item.name_bn?.includes('চাউল')) return 1;
-    if (item.name_bn?.includes('ডাল') && !item.name_bn?.includes('মুগ')) return 2;
-    return fallbackIdx;
+
+    qc.invalidateQueries({ queryKey: ['hostel-boarding-stock'] });
+    toast({
+      title: bn ? 'সিরিয়াল নাম্বার পরিবর্তন হয়েছে' : 'Item re-ordered',
+      description: bn ? `"${movedItem.name_bn}" কে ${clampedPos} নং ক্রমিকে সাজানো হয়েছে।` : `Moved to position ${clampedPos}`,
+    });
   };
 
-  // Filtered Food Items based on search, stock status and serial order
-  const filteredFoodItems = useMemo(() => {
-    const localMap = getLocalSerialMap();
+  const handleMoveUp = (item: InventoryItem) => {
+    const currentPos = itemSerialMap.get(item.id) || 1;
+    if (currentPos > 1) {
+      reorderItemPosition(item.id, currentPos - 1);
+    }
+  };
 
-    const list = foodItems.filter(item => {
+  const handleMoveDown = (item: InventoryItem) => {
+    const currentPos = itemSerialMap.get(item.id) || 1;
+    if (currentPos < orderedFoodItems.length) {
+      reorderItemPosition(item.id, currentPos + 1);
+    }
+  };
+
+  // Filtered Food Items based on search and stock status while strictly preserving unique serial order
+  const filteredFoodItems = useMemo(() => {
+    return orderedFoodItems.filter(item => {
       const matchSearch = searchQuery.trim() === '' ||
         item.name_bn.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (item.name_en && item.name_en.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -328,14 +414,7 @@ export const HostelBoardingStockTab: React.FC = () => {
       if (stockStatusFilter === 'available') return matchSearch && !isLow;
       return matchSearch;
     });
-
-    return [...list].sort((a, b) => {
-      const aSerial = localMap[a.id] ?? (a.sort_order && Number(a.sort_order) > 0 ? Number(a.sort_order) : 9999);
-      const bSerial = localMap[b.id] ?? (b.sort_order && Number(b.sort_order) > 0 ? Number(b.sort_order) : 9999);
-      if (aSerial !== bSerial) return aSerial - bSerial;
-      return a.name_bn.localeCompare(b.name_bn, 'bn');
-    });
-  }, [foodItems, searchQuery, stockStatusFilter, serialVersion]);
+  }, [orderedFoodItems, searchQuery, stockStatusFilter]);
 
   // Duplicate item name validation
   const isDuplicateItemName = useMemo(() => {
@@ -556,7 +635,7 @@ export const HostelBoardingStockTab: React.FC = () => {
         const diffStock = Number((stock - oldStock).toFixed(2));
 
         if (sortOrder > 0) {
-          saveLocalSerial(editingItem.id, sortOrder);
+          await reorderItemPosition(editingItem.id, sortOrder);
         }
 
         const { error } = await supabase
@@ -625,7 +704,7 @@ export const HostelBoardingStockTab: React.FC = () => {
           if (fbErr) throw fbErr;
 
           if (fbCreated && sortOrder > 0) {
-            saveLocalSerial(fbCreated.id, sortOrder);
+            await reorderItemPosition(fbCreated.id, sortOrder);
           }
 
           if (stock > 0 && fbCreated) {
@@ -639,7 +718,7 @@ export const HostelBoardingStockTab: React.FC = () => {
           }
         } else {
           if (created && sortOrder > 0) {
-            saveLocalSerial(created.id, sortOrder);
+            await reorderItemPosition(created.id, sortOrder);
           }
 
           // Log initial stock if > 0
@@ -896,36 +975,9 @@ export const HostelBoardingStockTab: React.FC = () => {
     },
   });
 
-  // 7. Update Single Item Serial Number Mutation (Inline or with Up/Down buttons)
-  const updateItemSerialMutation = useMutation({
-    mutationFn: async ({ id, serial }: { id: string; serial: number }) => {
-      saveLocalSerial(id, serial);
-      setSerialVersion(v => v + 1);
-
-      // Persist to Supabase
-      try {
-        await supabase
-          .from('inventory_items')
-          .update({ sort_order: serial } as any)
-          .eq('id', id);
-      } catch (e) {
-        console.warn('Could not update sort_order on remote:', e);
-      }
-      return serial;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['hostel-boarding-stock'] });
-      toast({
-        title: bn ? 'সিরিয়াল নাম্বার পরিবর্তিত হয়েছে' : 'Serial number updated',
-        description: bn ? 'খাদ্য তালিকা নতুন সিরিয়াল অনুযায়ী সাজানো হয়েছে।' : 'List re-ordered according to serial number.',
-      });
-    },
-  });
-
   // Open Edit Item
-  const handleEditItem = (item: InventoryItem, fallbackIdx?: number) => {
-    const localMap = getLocalSerialMap();
-    const effectiveSerial = localMap[item.id] ?? (item.sort_order && Number(item.sort_order) > 0 ? Number(item.sort_order) : (fallbackIdx !== undefined ? fallbackIdx : ''));
+  const handleEditItem = (item: InventoryItem) => {
+    const effectiveSerial = itemSerialMap.get(item.id) || 1;
     setEditingItem(item);
     setItemForm({
       name_bn: item.name_bn || '',
@@ -935,7 +987,7 @@ export const HostelBoardingStockTab: React.FC = () => {
       buying_price: String(item.buying_price || ''),
       min_stock_level: String(item.min_stock_level || 10),
       notes: item.notes || '',
-      sort_order: String(effectiveSerial || ''),
+      sort_order: String(effectiveSerial),
     });
     setItemDialog(true);
   };
@@ -1306,7 +1358,7 @@ export const HostelBoardingStockTab: React.FC = () => {
                         const price = Number(item.buying_price) || 0;
                         const totalVal = stock * price;
                         const isLow = stock <= min;
-                        const itemSerial = getItemEffectiveSerial(item, idx + 1);
+                        const itemSerial = itemSerialMap.get(item.id) || (idx + 1);
 
                         return (
                           <TableRow key={item.id} className="hover:bg-muted/30">
@@ -1325,7 +1377,7 @@ export const HostelBoardingStockTab: React.FC = () => {
                                     if (editingSerialId === item.id) {
                                       const val = parseInt(editingSerialVal);
                                       if (!isNaN(val) && val > 0 && val !== itemSerial) {
-                                        updateItemSerialMutation.mutate({ id: item.id, serial: val });
+                                        reorderItemPosition(item.id, val);
                                       }
                                       setEditingSerialId(null);
                                     }
@@ -1341,12 +1393,7 @@ export const HostelBoardingStockTab: React.FC = () => {
                                 <div className="flex flex-col gap-0.5">
                                   <button
                                     type="button"
-                                    onClick={() => {
-                                      const newSerial = Math.max(1, itemSerial - 1);
-                                      if (newSerial !== itemSerial) {
-                                        updateItemSerialMutation.mutate({ id: item.id, serial: newSerial });
-                                      }
-                                    }}
+                                    onClick={() => handleMoveUp(item)}
                                     className="w-4 h-3 flex items-center justify-center text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded text-[9px] leading-none"
                                     title={bn ? 'উপরে নিন (সিরিয়াল ১ কমান)' : 'Move up'}
                                   >
@@ -1354,10 +1401,7 @@ export const HostelBoardingStockTab: React.FC = () => {
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={() => {
-                                      const newSerial = itemSerial + 1;
-                                      updateItemSerialMutation.mutate({ id: item.id, serial: newSerial });
-                                    }}
+                                    onClick={() => handleMoveDown(item)}
                                     className="w-4 h-3 flex items-center justify-center text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded text-[9px] leading-none"
                                     title={bn ? 'নিচে নিন (সিরিয়াল ১ বাড়ান)' : 'Move down'}
                                   >
@@ -1413,7 +1457,7 @@ export const HostelBoardingStockTab: React.FC = () => {
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  onClick={() => handleEditItem(item, itemSerial)}
+                                  onClick={() => handleEditItem(item)}
                                   className="h-8 w-8 p-0 text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
                                   title={bn ? 'সম্পাদনা করুন' : 'Edit item'}
                                 >
