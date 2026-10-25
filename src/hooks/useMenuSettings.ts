@@ -182,7 +182,6 @@ const DEFAULT_PUBLIC: MenuItemConfig[] = [
   { id: 'about', path: '/about', label_bn: 'আমাদের সম্পর্কে', label_en: 'About', icon: '', visible: true, sort_order: 1 },
   { id: 'gallery', path: '/gallery', label_bn: 'গ্যালারি', label_en: 'Gallery', icon: '', visible: true, sort_order: 2 },
   { id: 'admission', path: '/admission', label_bn: 'ভর্তি', label_en: 'Admission', icon: '', visible: true, sort_order: 3 },
-  { id: 'application-tracking', path: '/application-tracking', label_bn: 'আবেদন ট্র্যাকিং', label_en: 'Track Application', icon: '', visible: true, sort_order: 3.2 },
   { id: 'staff-application', path: '/staff-application', label_bn: 'শিক্ষক/স্টাফ আবেদন', label_en: 'Staff Application', icon: '', visible: true, sort_order: 3.3 },
   { id: 'admission-tests-public', path: '/admission-tests', label_bn: 'ভর্তি পরীক্ষা', label_en: 'Admission Tests', icon: '', visible: true, sort_order: 3.5 },
   { id: 'result', path: '/result', label_bn: 'ফলাফল', label_en: 'Result', icon: '', visible: true, sort_order: 4 },
@@ -219,7 +218,7 @@ const collectAllIds = (items: MenuItemConfig[]): Set<string> => {
 // Merge saved menu with defaults so newly added default items appear automatically
 const mergeWithDefaults = (saved: MenuItemConfig[], defaults: MenuItemConfig[]): MenuItemConfig[] => {
   // Auto-fix known path corrections and updated labels
-  saved = saved.map(item => {
+  saved = saved.filter(item => item.id !== 'application-tracking' && item.path !== '/application-tracking').map(item => {
     if (item.id === 'fees' && item.path === '/admin/fees') {
       return { ...item, path: '/admin/students-fees' };
     }
@@ -264,18 +263,28 @@ const mergeWithDefaults = (saved: MenuItemConfig[], defaults: MenuItemConfig[]):
 
 const sanitizeConfig = (config: MenuConfig): MenuConfig => {
   if (!config) return config;
-  const fixItems = (items: MenuItemConfig[] = []) =>
-    items.map(item => {
-      if (item.id === 'staff' || item.path === '/admin/staff') {
-        return { ...item, label_bn: 'স্টাফ ব্যবস্থাপনা', label_en: 'Staff Management' };
-      }
-      return item;
-    });
+  const fixItems = (items: MenuItemConfig[] = [], isPublic = false) =>
+    items
+      .filter(item => {
+        if (isPublic && (item.id === 'application-tracking' || item.path === '/application-tracking')) {
+          return false;
+        }
+        return true;
+      })
+      .map(item => {
+        if (item.id === 'staff' || item.path === '/admin/staff') {
+          return { ...item, label_bn: 'স্টাফ ব্যবস্থাপনা', label_en: 'Staff Management' };
+        }
+        if (item.children) {
+          item.children = item.children.filter(child => child.id !== 'application-tracking' && child.path !== '/application-tracking');
+        }
+        return item;
+      });
 
   return {
     ...config,
-    sidebar: fixItems(config.sidebar),
-    public: fixItems(config.public),
+    sidebar: fixItems(config.sidebar, false),
+    public: fixItems(config.public, true),
   };
 };
 
@@ -310,8 +319,9 @@ export const useMenuSettings = () => {
           result.public = mergeWithDefaults(row.value as unknown as MenuItemConfig[], DEFAULT_PUBLIC);
         }
       });
-      try { localStorage.setItem(MENU_CACHE_KEY, JSON.stringify(result)); } catch {}
-      return result;
+      const sanitized = sanitizeConfig(result);
+      try { localStorage.setItem(MENU_CACHE_KEY, JSON.stringify(sanitized)); } catch {}
+      return sanitized;
     },
     initialData: readMenuCache,
     staleTime: 10 * 60 * 1000,
