@@ -11,6 +11,16 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -143,6 +153,8 @@ export const HostelBoardingStockTab: React.FC = () => {
   const [consumeDialog, setConsumeDialog] = useState(false);
   const [itemDialog, setItemDialog] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
+  const [deletingItem, setDeletingItem] = useState<InventoryItem | null>(null);
+  const [deletingLog, setDeletingLog] = useState<InventoryLog | null>(null);
 
   // Quick Consume Form
   const [consumeForm, setConsumeForm] = useState({
@@ -475,28 +487,94 @@ export const HostelBoardingStockTab: React.FC = () => {
       };
 
       if (editingItem) {
+        const oldStock = Number(editingItem.current_stock) || 0;
+        const diffStock = Number((stock - oldStock).toFixed(2));
+
         const { error } = await supabase
           .from('inventory_items')
           .update(payload)
           .eq('id', editingItem.id);
-        if (error) throw error;
+        if (error) {
+          // Fallback if advanced columns don't exist
+          const fallbackPayload = {
+            name_bn: trimmedBn,
+            name_en: trimmedEn || null,
+            category: 'hostel_boarding',
+            current_stock: stock,
+            unit: itemForm.unit,
+            buying_price: price,
+            min_stock_level: minStock,
+            notes: itemForm.notes.trim() || null,
+            is_active: true,
+          };
+          const { error: fbErr } = await supabase
+            .from('inventory_items')
+            .update(fallbackPayload)
+            .eq('id', editingItem.id);
+          if (fbErr) throw fbErr;
+        }
+
+        // If stock was adjusted directly during edit, log the adjustment
+        if (diffStock !== 0) {
+          try {
+            await supabase.from('inventory_logs').insert({
+              item_id: editingItem.id,
+              type: diffStock > 0 ? 'in' : 'adjustment',
+              change_amount: diffStock,
+              reason: bn 
+                ? `স্টক সংশোধন/সম্পাদনা (${oldStock} ${itemForm.unit} থেকে ${stock} ${itemForm.unit})` 
+                : `Stock adjusted during edit (${oldStock} to ${stock})`,
+              performed_by: user?.email || 'ম্যানেজার',
+            });
+          } catch (logErr) {
+            console.warn('Edit stock log error:', logErr);
+          }
+        }
       } else {
         const { data: created, error } = await supabase
           .from('inventory_items')
           .insert(payload)
           .select('id')
           .single();
-        if (error) throw error;
+        if (error) {
+          const fallbackPayload = {
+            name_bn: trimmedBn,
+            name_en: trimmedEn || null,
+            category: 'hostel_boarding',
+            current_stock: stock,
+            unit: itemForm.unit,
+            buying_price: price,
+            min_stock_level: minStock,
+            notes: itemForm.notes.trim() || null,
+            is_active: true,
+          };
+          const { data: fbCreated, error: fbErr } = await supabase
+            .from('inventory_items')
+            .insert(fallbackPayload)
+            .select('id')
+            .single();
+          if (fbErr) throw fbErr;
 
-        // Log initial stock if > 0
-        if (stock > 0 && created) {
-          await supabase.from('inventory_logs').insert({
-            item_id: created.id,
-            type: 'in',
-            change_amount: stock,
-            reason: 'হোস্টেল বোর্ডিংয়ে প্রাথমিক খাদ্য স্টক অন্তর্ভুক্তি',
-            performed_by: user?.email || 'ম্যানেজার',
-          });
+          if (stock > 0 && fbCreated) {
+            await supabase.from('inventory_logs').insert({
+              item_id: fbCreated.id,
+              type: 'in',
+              change_amount: stock,
+              reason: 'হোস্টেল বোর্ডিংয়ে প্রাথমিক খাদ্য স্টক অন্তর্ভুক্তি',
+              performed_by: user?.email || 'ম্যানেজার',
+            });
+          }
+        } else {
+          // Log initial stock if > 0
+          if (stock > 0 && created) {
+            await supabase.from('inventory_logs').insert({
+              item_id: created.id,
+              type: 'in',
+              change_amount: stock,
+              reason: 'হোস্টেল বোর্ডিংয়ে প্রাথমিক খাদ্য স্টক অন্তর্ভুক্তি',
+              performed_by: user?.email || 'ম্যানেজার',
+            });
+          }
         }
       }
     },
@@ -505,6 +583,8 @@ export const HostelBoardingStockTab: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['hostel-boarding-logs'] });
       qc.invalidateQueries({ queryKey: ['inventory-items'] });
       qc.invalidateQueries({ queryKey: ['inventory-items-for-expense'] });
+      const wasEditing = !!editingItem;
+      const itemName = itemForm.name_bn;
       setItemDialog(false);
       setEditingItem(null);
       setItemForm({
@@ -517,7 +597,8 @@ export const HostelBoardingStockTab: React.FC = () => {
         notes: '',
       });
       toast({
-        title: editingItem ? (bn ? 'আইটেম আপডেট হয়েছে' : 'Updated') : (bn ? 'নতুন খাদ্য আইটেম যুক্ত হয়েছে' : 'Added'),
+        title: wasEditing ? (bn ? 'আইটেম আপডেট সফল হয়েছে' : 'Item updated successfully') : (bn ? 'নতুন খাদ্য আইটেম যুক্ত হয়েছে' : 'Added'),
+        description: bn ? `"${itemName}" এর তথ্য সংরক্ষিত হয়েছে।` : undefined,
       });
     },
     onError: (err: any) => {
@@ -658,18 +739,81 @@ export const HostelBoardingStockTab: React.FC = () => {
       });
     },
   });
+  // 5. Delete Food Item Mutation (Soft delete with hard delete fallback)
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      // First try soft delete (is_active: false)
+      const { error: softErr } = await supabase
         .from('inventory_items')
         .update({ is_active: false })
         .eq('id', id);
-      if (error) throw error;
+
+      if (softErr) {
+        // Fallback to hard delete
+        const { error: hardErr } = await supabase
+          .from('inventory_items')
+          .delete()
+          .eq('id', id);
+        if (hardErr) throw hardErr;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['hostel-boarding-stock'] });
       qc.invalidateQueries({ queryKey: ['inventory-items'] });
-      toast({ title: bn ? 'আইটেম নিষ্ক্রিয় করা হয়েছে' : 'Item removed' });
+      qc.invalidateQueries({ queryKey: ['inventory-items-for-expense'] });
+      const deletedName = deletingItem?.name_bn;
+      setDeletingItem(null);
+      toast({
+        title: bn ? 'খাদ্য সামগ্রী মুছে ফেলা হয়েছে' : 'Item deleted',
+        description: deletedName ? (bn ? `"${deletedName}" সফলভাবে তালিকা থেকে অপসারিত হয়েছে।` : `"${deletedName}" removed from stock list.`) : undefined,
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: bn ? 'মুছতে ব্যর্থ হয়েছে' : 'Failed to delete',
+        description: err.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // 6. Delete Cooking Log Mutation (Reverses stock consumption)
+  const deleteLogMutation = useMutation({
+    mutationFn: async (log: InventoryLog) => {
+      // If it was cooking consumption, restore stock quantity
+      if (log.change_amount < 0 && log.item_id) {
+        const item = itemsMap.get(log.item_id);
+        if (item) {
+          const restoredStock = Number((Number(item.current_stock || 0) + Math.abs(log.change_amount)).toFixed(2));
+          await supabase
+            .from('inventory_items')
+            .update({ current_stock: restoredStock })
+            .eq('id', item.id);
+        }
+      }
+
+      const { error } = await supabase
+        .from('inventory_logs')
+        .delete()
+        .eq('id', log.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['hostel-boarding-stock'] });
+      qc.invalidateQueries({ queryKey: ['hostel-boarding-logs'] });
+      qc.invalidateQueries({ queryKey: ['inventory-items'] });
+      setDeletingLog(null);
+      toast({
+        title: bn ? 'রান্নার রেকর্ড মুছে ফেলা হয়েছে' : 'Cooking record deleted',
+        description: bn ? 'রেকর্ডটি মুছে ফেলা হয়েছে এবং ব্যবহৃত পরিমাণ স্টকে ফেরত দেওয়া হয়েছে।' : 'Log deleted and stock restored.',
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: bn ? 'মুছতে ব্যর্থ হয়েছে' : 'Failed to delete log',
+        description: err.message,
+        variant: 'destructive',
+      });
     },
   });
 
@@ -1104,21 +1248,17 @@ export const HostelBoardingStockTab: React.FC = () => {
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => handleEditItem(item)}
-                                  className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-                                  title={bn ? 'সম্পাদনা' : 'Edit'}
+                                  className="h-8 w-8 p-0 text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                                  title={bn ? 'সম্পাদনা করুন' : 'Edit item'}
                                 >
                                   <Pencil className="w-3.5 h-3.5" />
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  onClick={() => {
-                                    if (confirm(bn ? 'আপনি কি এই আইটেমটি নিষ্ক্রিয় করতে চান?' : 'Deactivate item?')) {
-                                      deleteMutation.mutate(item.id);
-                                    }
-                                  }}
+                                  onClick={() => setDeletingItem(item)}
                                   className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
-                                  title={bn ? 'মুছুন' : 'Delete'}
+                                  title={bn ? 'মুছে ফেলুন' : 'Delete item'}
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </Button>
@@ -1179,6 +1319,7 @@ export const HostelBoardingStockTab: React.FC = () => {
                         <TableHead>{bn ? 'আনুমানিক মূল্য' : 'Estimated Cost'}</TableHead>
                         <TableHead>{bn ? 'বিবরণ / উপলক্ষ্য' : 'Reason / Slot'}</TableHead>
                         <TableHead>{bn ? 'দায়িত্বপ্রাপ্ত' : 'Performed By'}</TableHead>
+                        <TableHead className="text-right">{bn ? 'পদক্ষেপ' : 'Actions'}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1219,6 +1360,17 @@ export const HostelBoardingStockTab: React.FC = () => {
                             </TableCell>
                             <TableCell className="text-xs text-muted-foreground">
                               {log.performed_by || '-'}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setDeletingLog(log)}
+                                className="h-8 w-8 p-0 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                                title={bn ? 'রেকর্ডটি মুছুন ও স্টক ফেরত দিন' : 'Delete log & restore stock'}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
                             </TableCell>
                           </TableRow>
                         );
@@ -1593,6 +1745,85 @@ export const HostelBoardingStockTab: React.FC = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* CONFIRMATION MODAL: DELETE FOOD ITEM */}
+      <AlertDialog open={!!deletingItem} onOpenChange={open => { if (!open) setDeletingItem(null); }}>
+        <AlertDialogContent className="rounded-2xl max-w-md p-6">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base font-bold text-destructive flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />
+              <span>{bn ? 'খাদ্য সামগ্রী মুছে ফেলার নিশ্চিতকরণ' : 'Confirm Delete Food Item'}</span>
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm mt-2 text-foreground/80 leading-relaxed">
+              {bn ? (
+                <>
+                  আপনি কি নিশ্চিতভাবে <strong className="text-foreground font-semibold">"{deletingItem?.name_bn}"</strong> আইটেমটি খাদ্য তালিকা থেকে মুছে ফেলতে চান?
+                  <br />
+                  <span className="text-xs text-muted-foreground mt-2 block bg-muted/40 p-2 rounded-lg border border-border/50">
+                    বর্তমান মজুত: <strong className="text-foreground">{deletingItem?.current_stock} {deletingItem?.unit}</strong>
+                    {deletingItem?.buying_price ? ` | গড় ক্রয়মূল্য: ৳${deletingItem.buying_price}` : ''}
+                  </span>
+                </>
+              ) : (
+                `Are you sure you want to delete "${deletingItem?.name_bn}"? This action will remove it from the active pantry list.`
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-5 gap-2">
+            <AlertDialogCancel className="rounded-xl">{bn ? 'বাতিল' : 'Cancel'}</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteMutation.isPending}
+              className="rounded-xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deletingItem) {
+                  deleteMutation.mutate(deletingItem.id);
+                }
+              }}
+            >
+              {deleteMutation.isPending ? (bn ? 'মুছে ফেলা হচ্ছে...' : 'Deleting...') : (bn ? 'হ্যাঁ, মুছে ফেলুন' : 'Yes, Delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* CONFIRMATION MODAL: DELETE COOKING LOG (RESTORE STOCK) */}
+      <AlertDialog open={!!deletingLog} onOpenChange={open => { if (!open) setDeletingLog(null); }}>
+        <AlertDialogContent className="rounded-2xl max-w-md p-6">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base font-bold text-destructive flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />
+              <span>{bn ? 'রান্নার ব্যবহার রেকর্ড মুছে ফেলার নিশ্চিতকরণ' : 'Confirm Delete Cooking Log'}</span>
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm mt-2 text-foreground/80 leading-relaxed">
+              {bn ? (
+                <>
+                  আপনি কি নিশ্চিতভাবে এই রান্নার রেকর্ডটি মুছে ফেলতে চান?
+                  <br />
+                  <span className="text-xs text-emerald-700 dark:text-emerald-400 mt-2 block bg-emerald-50 dark:bg-emerald-950/40 p-2 rounded-lg border border-emerald-300 dark:border-emerald-800 font-medium">
+                    (রেকর্ডটি মুছে ফেললে ব্যবহৃত পরিমাণ <strong>{Math.abs(deletingLog?.change_amount || 0)} {itemsMap.get(deletingLog?.item_id || '')?.unit}</strong> স্বয়ংক্রিয়ভাবে বর্তমান খাদ্য মজুতে পুনরায় ফেরত (Restored) যোগ করা হবে)
+                  </span>
+                </>
+              ) : (
+                `Are you sure you want to delete this cooking log? The consumed quantity will be restored to current stock.`
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-5 gap-2">
+            <AlertDialogCancel className="rounded-xl">{bn ? 'বাতিল' : 'Cancel'}</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteLogMutation.isPending}
+              className="rounded-xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deletingLog) {
+                  deleteLogMutation.mutate(deletingLog);
+                }
+              }}
+            >
+              {deleteLogMutation.isPending ? (bn ? 'মুছে ফেলা হচ্ছে...' : 'Deleting...') : (bn ? 'হ্যাঁ, মুছে ফেরত দিন' : 'Yes, Delete & Restore')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
