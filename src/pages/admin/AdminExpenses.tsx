@@ -19,7 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Plus, Trash2, Edit2, DollarSign, TrendingDown, TrendingUp, Wallet, Printer, FolderPlus, TagIcon, Upload, Download, Eye, ScanLine, Building2, Package, AlertTriangle, FileText, FileBarChart, CheckCircle2, Clock, Coins, Check, ExternalLink } from 'lucide-react';
+import { Plus, Trash2, Edit2, DollarSign, TrendingDown, TrendingUp, Wallet, Printer, FolderPlus, TagIcon, Upload, Download, Eye, ScanLine, Building2, Package, AlertTriangle, FileText, FileBarChart, CheckCircle2, Clock, Coins, Check, ExternalLink, Utensils } from 'lucide-react';
 import ExpenseVoucherPrint from '@/components/expenses/ExpenseVoucherPrint';
 import ExpenseHierarchyReport from '@/components/expenses/ExpenseHierarchyReport';
 import LedgerReport from '@/components/expenses/LedgerReport';
@@ -271,7 +271,7 @@ const AdminExpenses = () => {
     remarks: '',
     is_due: false,
     add_to_inventory: false,
-    inventory_dest_type: 'inventory' as 'inventory' | 'asset',
+    inventory_dest_type: 'inventory' as 'inventory' | 'asset' | 'hostel_stock',
     inventory_mode: 'existing' as 'existing' | 'new',
     inventory_item_id: '',
     inventory_new_name: '',
@@ -1401,19 +1401,23 @@ const AdminExpenses = () => {
 
               if (isNew) {
                 // Auto create new item using expense description & quantity
-                const itemName = (expenseForm.inventory_new_name || expenseForm.description || payload.description || 'নতুন সামগ্রী').trim();
+                const isHostelStock = destType === 'hostel_stock';
+                const targetCategory = isHostelStock ? 'hostel_boarding' : (expenseForm.inventory_category || 'construction');
+                const itemName = (expenseForm.inventory_new_name || expenseForm.description || payload.description || (isHostelStock ? 'নতুন খাদ্য সামগ্রী' : 'নতুন সামগ্রী')).trim();
                 const unitPrice = effectiveQty > 0 ? Math.round((parsedAmount / effectiveQty) * 100) / 100 : parsedAmount;
 
                 const newPayload: Record<string, any> = {
                   name_bn: itemName,
-                  category: expenseForm.inventory_category || 'construction',
+                  category: targetCategory,
                   current_stock: effectiveQty,
                   total_purchased: effectiveQty,
                   total_consumed: 0,
-                  unit: (expenseForm.quantity_unit && expenseForm.quantity_unit !== 'none') ? expenseForm.quantity_unit : 'pcs',
+                  unit: (expenseForm.quantity_unit && expenseForm.quantity_unit !== 'none') ? expenseForm.quantity_unit : (isHostelStock ? 'কেজি' : 'pcs'),
                   buying_price: unitPrice,
-                  min_stock_level: 5,
-                  notes: `খরচ ভাউচার #${insertedExpense.voucher_no || insertedExpense.id?.slice(0, 8)} হতে এন্ট্রি`,
+                  min_stock_level: isHostelStock ? 10 : 5,
+                  notes: isHostelStock
+                    ? `হোস্টেল বোর্ডিং খাদ্য ক্রয় - খরচ ভাউচার #${insertedExpense.voucher_no || insertedExpense.id?.slice(0, 8)}`
+                    : `খরচ ভাউচার #${insertedExpense.voucher_no || insertedExpense.id?.slice(0, 8)} হতে এন্ট্রি`,
                   is_active: true,
                 };
 
@@ -1493,6 +1497,8 @@ const AdminExpenses = () => {
         qc.invalidateQueries({ queryKey: ['inventory-items'] });
         qc.invalidateQueries({ queryKey: ['inventory-logs'] });
         qc.invalidateQueries({ queryKey: ['fixed-assets'] });
+        qc.invalidateQueries({ queryKey: ['hostel-boarding-stock'] });
+        qc.invalidateQueries({ queryKey: ['hostel-boarding-logs'] });
       }
       
       const isEdit = !!editingExpenseId;
@@ -4855,13 +4861,16 @@ const AdminExpenses = () => {
                     const cat = categories.find((c: any) => c.id === value);
                     const catName = (cat?.name || '').toLowerCase();
                     const catNameBn = cat?.name_bn || '';
-                    const isInventoryCategory = catName.includes('grocery') || catName.includes('stationar') || catNameBn.includes('খাদ্য') || catNameBn.includes('স্টেশনার') || catNameBn.includes('মুদি');
+                    const isHostelCategory = catName.includes('hostel') || catName.includes('boarding') || catName.includes('mess') || catNameBn.includes('হোস্টেল') || catNameBn.includes('বোর্ডিং') || catNameBn.includes('মেস');
+                    const isInventoryCategory = catName.includes('grocery') || catName.includes('stationar') || catNameBn.includes('খাদ্য') || catNameBn.includes('স্টেশনার') || catNameBn.includes('মুদি') || isHostelCategory;
                     const isSalaryCategory = catName.includes('salary') || catNameBn.includes('বেতন') || catNameBn.includes('সম্মানী');
                     setExpenseForm(f => ({ 
                       ...f, 
                       category_id: value, 
                       add_to_inventory: isInventoryCategory ? true : f.add_to_inventory,
-                      quantity_unit: isSalaryCategory ? (f.quantity_unit === 'পিস' ? 'জন' : f.quantity_unit) : f.quantity_unit
+                      inventory_dest_type: isHostelCategory ? 'hostel_stock' : (isInventoryCategory && f.inventory_dest_type === 'asset' ? 'inventory' : f.inventory_dest_type),
+                      inventory_category: isHostelCategory ? 'hostel_boarding' : f.inventory_category,
+                      quantity_unit: isSalaryCategory ? (f.quantity_unit === 'পিস' ? 'জন' : f.quantity_unit) : (isHostelCategory && (f.quantity_unit === 'none' || f.quantity_unit === 'পিস') ? 'কেজি' : f.quantity_unit)
                     }));
                   }}
                 >
@@ -5269,31 +5278,48 @@ const AdminExpenses = () => {
 
               {expenseForm.add_to_inventory && (
                 <div className="space-y-3 pt-2 border-t border-emerald-200/50 dark:border-emerald-800/40">
-                  {/* Select Destination: Inventory goods VS Fixed Asset */}
-                  <div className="grid grid-cols-2 gap-2">
+                  {/* Select Destination: Inventory goods VS Hostel Boarding Stock VS Fixed Asset */}
+                  <div className="grid grid-cols-3 gap-2">
                     <button
                       type="button"
                       onClick={() => setExpenseForm(f => ({ ...f, inventory_dest_type: 'inventory' }))}
-                      className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border transition-all cursor-pointer ${
+                      className={`px-2.5 py-2 rounded-xl text-[11px] md:text-xs font-semibold flex items-center justify-center gap-1.5 border transition-all cursor-pointer ${
                         expenseForm.inventory_dest_type === 'inventory'
                           ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
                           : 'bg-white dark:bg-neutral-900 text-foreground border-border hover:bg-emerald-50 dark:hover:bg-neutral-800'
                       }`}
                     >
-                      <Package className="w-3.5 h-3.5" />
-                      <span>{bn ? '📦 ইনভেন্টরি সামগ্রী' : '📦 Inventory Item'}</span>
+                      <Package className="w-3.5 h-3.5 shrink-0" />
+                      <span>{bn ? 'সাধারণ মালামাল' : 'Inventory'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExpenseForm(f => ({
+                        ...f,
+                        inventory_dest_type: 'hostel_stock',
+                        inventory_category: 'hostel_boarding',
+                        quantity_unit: f.quantity_unit === 'none' ? 'কেজি' : f.quantity_unit
+                      }))}
+                      className={`px-2.5 py-2 rounded-xl text-[11px] md:text-xs font-semibold flex items-center justify-center gap-1.5 border transition-all cursor-pointer ${
+                        expenseForm.inventory_dest_type === 'hostel_stock'
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                          : 'bg-white dark:bg-neutral-900 text-foreground border-border hover:bg-emerald-50 dark:hover:bg-neutral-800'
+                      }`}
+                    >
+                      <Utensils className="w-3.5 h-3.5 shrink-0" />
+                      <span>{bn ? 'হোস্টেল খাদ্য স্টক' : 'Hostel Stock'}</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setExpenseForm(f => ({ ...f, inventory_dest_type: 'asset' }))}
-                      className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border transition-all cursor-pointer ${
+                      className={`px-2.5 py-2 rounded-xl text-[11px] md:text-xs font-semibold flex items-center justify-center gap-1.5 border transition-all cursor-pointer ${
                         expenseForm.inventory_dest_type === 'asset'
                           ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
                           : 'bg-white dark:bg-neutral-900 text-foreground border-border hover:bg-emerald-50 dark:hover:bg-neutral-800'
                       }`}
                     >
-                      <Building2 className="w-3.5 h-3.5" />
-                      <span>{bn ? '🪑 স্থায়ী সম্পদ (Asset)' : '🪑 Fixed Asset'}</span>
+                      <Building2 className="w-3.5 h-3.5 shrink-0" />
+                      <span>{bn ? 'স্থায়ী সম্পদ' : 'Fixed Asset'}</span>
                     </button>
                   </div>
 
@@ -5369,6 +5395,7 @@ const AdminExpenses = () => {
                                   <SelectItem value="electronics">{bn ? 'ইলেকট্রনিক্স ও প্রযুক্তি' : 'Electronics'}</SelectItem>
                                   <SelectItem value="stationery">{bn ? 'স্টেশনারি ও অফিস' : 'Stationery'}</SelectItem>
                                   <SelectItem value="food">{bn ? 'মুদি ও খাদ্য সামগ্রী' : 'Food & Groceries'}</SelectItem>
+                                  <SelectItem value="hostel_boarding">{bn ? 'হোস্টেল ও বোর্ডিং খাবার' : 'Hostel & Boarding Food'}</SelectItem>
                                   <SelectItem value="sound_system">{bn ? 'সাউন্ড সিস্টেম' : 'Sound System'}</SelectItem>
                                   <SelectItem value="other">{bn ? 'অন্যান্য' : 'Other'}</SelectItem>
                                 </SelectContent>
@@ -5386,6 +5413,100 @@ const AdminExpenses = () => {
                           </div>
                           <p className="text-[11px] text-emerald-700 dark:text-emerald-300">
                             ✓ {bn ? `নাম: "${expenseForm.inventory_new_name || expenseForm.description || 'বিবরণ'}", পরিমাণ: ${expenseForm.quantity || 1} ${expenseForm.quantity_unit || 'একক'} নিয়ে সরাসরি ইনভেন্টরিতে নতুন আইটেম খুলবে।` : `Will create new item with quantity ${expenseForm.quantity || 1}.`}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Destination 2: HOSTEL BOARDING FOOD STOCK */}
+                  {expenseForm.inventory_dest_type === 'hostel_stock' && (
+                    <div className="space-y-2.5 bg-emerald-50/60 dark:bg-emerald-950/20 p-3 rounded-xl border border-emerald-300 dark:border-emerald-800">
+                      {/* Mode selection: Existing vs New */}
+                      <div className="flex items-center gap-4 text-xs font-medium">
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="hostel_inv_mode"
+                            checked={expenseForm.inventory_mode === 'existing'}
+                            onChange={() => setExpenseForm(f => ({ ...f, inventory_mode: 'existing' }))}
+                            className="text-emerald-600 focus:ring-emerald-500"
+                          />
+                          <span>{bn ? 'বিদ্যমান খাদ্য আইটেমে স্টক বৃদ্ধি' : 'Add to Existing Food Item'}</span>
+                        </label>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="hostel_inv_mode"
+                            checked={expenseForm.inventory_mode === 'new'}
+                            onChange={() => setExpenseForm(f => ({ ...f, inventory_mode: 'new' }))}
+                            className="text-emerald-600 focus:ring-emerald-500"
+                          />
+                          <span>{bn ? 'নতুন খাদ্য আইটেম তৈরি' : 'Create New Food Item'}</span>
+                        </label>
+                      </div>
+
+                      {expenseForm.inventory_mode === 'existing' ? (
+                        <div>
+                          <Label className="text-xs">{bn ? 'খাদ্য সামগ্রী বাছাই করুন *' : 'Select Food Item *'}</Label>
+                          <Select
+                            value={expenseForm.inventory_item_id || undefined}
+                            onValueChange={v => setExpenseForm(f => ({ ...f, inventory_item_id: v }))}
+                          >
+                            <SelectTrigger className="mt-1 bg-white dark:bg-neutral-900">
+                              <SelectValue placeholder={bn ? 'চাল, ডাল, তেল বা অন্যান্য আইটেম বাছুন...' : 'Select food item...'} />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-60">
+                              {inventoryItems.filter((i: any) => i.category === 'hostel_boarding').map((item: any) => (
+                                <SelectItem key={item.id} value={item.id}>
+                                  🍲 {bn ? item.name_bn : (item.name_en || item.name_bn)} — {bn ? 'মজুত:' : 'Stock:'} {item.current_stock} {item.unit}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {inventoryItems.filter((i: any) => i.category === 'hostel_boarding').length === 0 ? (
+                            <p className="text-[11px] text-amber-600 mt-1">
+                              {bn ? 'এখনো কোনো হোস্টেল খাদ্য আইটেম তৈরি নেই। উপরের "নতুন খাদ্য আইটেম তৈরি" নির্বাচন করুন।' : 'No boarding food items found. Select Create New Food Item.'}
+                            </p>
+                          ) : (
+                            <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80 mt-1">
+                              ✓ {bn ? `ক্রয়কৃত পরিমাণ (${expenseForm.quantity || 1} ${expenseForm.quantity_unit || 'কেজি'}) সরাসরি হোস্টেল বোর্ডিং স্টকে যোগ হবে।` : 'Quantity will be added to hostel stock.'}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <Label className="text-xs font-semibold">{bn ? 'খাদ্য আইটেমের নাম' : 'Food Item Name'}</Label>
+                              <Input
+                                value={expenseForm.inventory_new_name || expenseForm.description || ''}
+                                onChange={e => setExpenseForm(f => ({ ...f, inventory_new_name: e.target.value }))}
+                                placeholder={expenseForm.description || (bn ? 'যেমন: মিনিকেট চাল' : 'e.g. Rice')}
+                                className="mt-1 text-xs"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs font-semibold">{bn ? 'পরিমাপের একক' : 'Unit'}</Label>
+                              <Select
+                                value={expenseForm.quantity_unit && expenseForm.quantity_unit !== 'none' ? expenseForm.quantity_unit : 'কেজি'}
+                                onValueChange={v => setExpenseForm(f => ({ ...f, quantity_unit: v }))}
+                              >
+                                <SelectTrigger className="mt-1 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent className="max-h-56">
+                                  <SelectItem value="কেজি">{bn ? 'কেজি (Kg)' : 'Kg'}</SelectItem>
+                                  <SelectItem value="লিটার">{bn ? 'লিটার (Liter)' : 'Liter'}</SelectItem>
+                                  <SelectItem value="বস্তা">{bn ? 'বস্তা (Bag)' : 'Bag'}</SelectItem>
+                                  <SelectItem value="প্যাকেট">{bn ? 'প্যাকেট (Packet)' : 'Packet'}</SelectItem>
+                                  <SelectItem value="পিস">{bn ? 'পিস (Pcs)' : 'Pcs'}</SelectItem>
+                                  <SelectItem value="ডজন">{bn ? 'ডজন (Dozen)' : 'Dozen'}</SelectItem>
+                                  <SelectItem value="গ্রাম">{bn ? 'গ্রাম (Gram)' : 'Gram'}</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <p className="text-[11px] text-emerald-700 dark:text-emerald-300">
+                            ✓ {bn ? `এই খরচটি সংরক্ষিত হলে এটি হোস্টেল ব্যবস্থাপনা > "বোর্ডিং স্টক ও খরচ" ট্যাবে স্বয়ংক্রিয়ভাবে নতুন খাদ্য আইটেম হিসেবে মজুদে যোগ হবে।` : 'Item will be automatically added to hostel boarding stock.'}
                           </p>
                         </div>
                       )}

@@ -15,7 +15,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Building2, BedDouble, Users, UtensilsCrossed, Plus, Pencil, Trash2, CalendarCheck, Lock, Clock, Save, Download, X, Printer } from 'lucide-react';
+import { Building2, BedDouble, Users, UtensilsCrossed, Plus, Pencil, Trash2, CalendarCheck, Lock, Clock, Save, Download, X, Printer, PackageCheck } from 'lucide-react';
+import HostelBoardingStockTab from '@/components/hostel/HostelBoardingStockTab';
 import * as XLSX from 'xlsx-js-style';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
@@ -928,13 +929,14 @@ const AdminHostel = () => {
       <Tabs defaultValue="hostels" className="space-y-4">
         <div className="relative -mx-2 px-2">
           <div className="overflow-x-auto scrollbar-none snap-x snap-mandatory [mask-image:linear-gradient(to_right,transparent,black_16px,black_calc(100%-16px),transparent)] md:[mask-image:none]">
-            <TabsList className="inline-flex w-auto min-w-full md:grid md:grid-cols-5 md:max-w-4xl gap-1.5 bg-gradient-to-b from-muted/70 to-muted/40 backdrop-blur-xl p-1.5 rounded-2xl border border-border/50 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] h-auto">
+            <TabsList className="inline-flex w-auto min-w-full md:grid md:grid-cols-6 md:max-w-5xl gap-1.5 bg-gradient-to-b from-muted/70 to-muted/40 backdrop-blur-xl p-1.5 rounded-2xl border border-border/50 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] h-auto">
               {[
                 { v: 'hostels', bn: 'হোস্টেল', en: 'Hostels', Icon: Building2 },
                 { v: 'rooms', bn: 'রুম', en: 'Rooms', Icon: BedDouble },
                 { v: 'allocations', bn: 'বরাদ্দ', en: 'Allocations', Icon: Users },
                 { v: 'meals', bn: 'খাবার মেনু', en: 'Meal Menu', Icon: UtensilsCrossed },
                 { v: 'meal-attendance', bn: 'খাবার হাজিরা', en: 'Meal Attendance', Icon: CalendarCheck },
+                { v: 'boarding-stock', bn: 'বোর্ডিং স্টক ও খরচ', en: 'Boarding Stock', Icon: PackageCheck },
               ].map(({ v, bn: bnL, en, Icon }) => (
                 <TabsTrigger
                   key={v}
@@ -1522,6 +1524,11 @@ const AdminHostel = () => {
 
 
           </Card>
+        </TabsContent>
+
+        {/* BOARDING STOCK & EXPENSES TAB */}
+        <TabsContent value="boarding-stock">
+          <HostelBoardingStockTab />
         </TabsContent>
       </Tabs>
 
