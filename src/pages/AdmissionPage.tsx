@@ -162,9 +162,34 @@ const AdmissionPage = () => {
     },
   });
 
+  // Fetch per-division form settings & custom fields
+  const { data: divisionFormSettings = {} } = useQuery<Record<string, any>>({
+    queryKey: ['division-form-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('website_settings')
+        .select('value')
+        .eq('key', 'division_form_settings')
+        .maybeSingle();
+      if (!error && data?.value && typeof data.value === 'object') {
+        return data.value as Record<string, any>;
+      }
+      return {};
+    },
+  });
+
+  const activeDivSettings = selectedDivisionId ? divisionFormSettings[selectedDivisionId] : null;
+  const activeDivCustomFields: any[] = activeDivSettings?.custom_fields || [];
+  const activeDivObj = divisions.find((d: any) => d.id === selectedDivisionId);
+
   const isAdmissionOpen = websiteAdmissionSettings?.admission_form_public === true || websiteAdmissionSettings?.admission_form_public === 'true';
 
   const isFormFieldVisible = (fieldName: string) => {
+    // 1. Check division-specific override
+    if (activeDivSettings?.field_visibility && activeDivSettings.field_visibility[fieldName] !== undefined) {
+      return !!activeDivSettings.field_visibility[fieldName];
+    }
+    // 2. Fallback to global form_settings
     const setting = formSettings.find(s => s.field_name === fieldName);
     return setting ? setting.is_visible : true;
   };
@@ -903,6 +928,109 @@ const AdmissionPage = () => {
     );
   };
 
+  // ===== RENDER DIVISION SPECIFIC CUSTOM FIELDS =====
+  const renderDivisionCustomFields = (targetSection: string) => {
+    const fields = activeDivCustomFields.filter((f: any) => (f.section || 'academic_info') === targetSection);
+    if (fields.length === 0) return null;
+
+    return (
+      <div className="space-y-3 pt-3 border-t border-border/70 mt-3 animate-in fade-in duration-200">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>{bn ? `${activeDivObj?.name_bn || 'বিভাগীয়'} অতিরিক্ত তথ্য:` : 'Division Specific Information:'}</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {fields.map((f: any) => {
+            const label = bn ? f.label_bn : (f.label_en || f.label_bn);
+            const required = !!f.is_required;
+            const val = customFieldValues[f.id] ?? '';
+            const opts: string[] = Array.isArray(f.options) ? f.options : [];
+            const update = (v: any) => {
+              setCustomFieldValues(prev => ({ ...prev, [f.id]: v, [f.label_bn]: v }));
+              if (fieldErrors[f.id]) {
+                setFieldErrors(prev => { const n = { ...prev }; delete n[f.id]; return n; });
+              }
+            };
+
+            return (
+              <div key={f.id} className="space-y-1">
+                <Label className="text-xs font-medium text-foreground">
+                  {label} {required && <span className="text-destructive">*</span>}
+                </Label>
+                {f.field_type === 'text' && (
+                  <Input
+                    className="bg-background mt-1 text-xs"
+                    value={val}
+                    onChange={e => update(e.target.value)}
+                    placeholder={f.placeholder || ''}
+                  />
+                )}
+                {f.field_type === 'number' && (
+                  <Input
+                    type="number"
+                    className="bg-background mt-1 text-xs"
+                    value={val}
+                    onChange={e => update(e.target.value)}
+                    placeholder={f.placeholder || ''}
+                  />
+                )}
+                {f.field_type === 'textarea' && (
+                  <Textarea
+                    className="bg-background mt-1 text-xs"
+                    rows={2}
+                    value={val}
+                    onChange={e => update(e.target.value)}
+                    placeholder={f.placeholder || ''}
+                  />
+                )}
+                {f.field_type === 'date' && (
+                  <DatePicker
+                    bengali={bn}
+                    className="mt-1"
+                    value={val}
+                    onChange={v => update(v)}
+                  />
+                )}
+                {f.field_type === 'select' && (
+                  <Select value={val} onValueChange={update}>
+                    <SelectTrigger className="bg-background mt-1 text-xs">
+                      <SelectValue placeholder={f.placeholder || (bn ? 'নির্বাচন করুন' : 'Select')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {opts.map((o, i) => (
+                        <SelectItem key={i} value={o} className="text-xs">{o}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {f.field_type === 'radio' && (
+                  <div className="flex flex-wrap gap-3 mt-1.5">
+                    {opts.map((o, i) => (
+                      <label key={i} className="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
+                        <input
+                          type="radio"
+                          name={f.id}
+                          value={o}
+                          checked={val === o}
+                          onChange={() => update(o)}
+                          className="accent-primary"
+                        />
+                        <span>{o}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+                {fieldErrors[f.id] && (
+                  <p className="text-[11px] text-destructive font-medium mt-1">{fieldErrors[f.id]}</p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   const SYSTEM_KEYS = [
     'photo_url', 'student_type', 'residence_type', 'admission_session', 'roll_number',
     'registration_no', 'admission_date', 'session_year', 'admission_division', 'admission_class',
@@ -1076,6 +1204,7 @@ const AdmissionPage = () => {
               return <div key={f.id} data-field={key}>{renderCustomField(f)}</div>;
             })}
           </div>
+          {renderDivisionCustomFields('student_details')}
         </div>
       );
     }
@@ -1234,6 +1363,7 @@ const AdmissionPage = () => {
             return <div key={f.id} data-field={key}>{renderCustomField(f)}</div>;
           })}
         </div>
+        {renderDivisionCustomFields(sectionKey)}
       </div>
     );
   };
@@ -1322,6 +1452,18 @@ const AdmissionPage = () => {
         }
       }
     });
+
+    // Validate division-specific custom fields for this section
+    if (activeDivCustomFields && activeDivCustomFields.length > 0) {
+      activeDivCustomFields
+        .filter((f: any) => f.is_required && (f.section || 'academic_info') === stepKey)
+        .forEach((f: any) => {
+          const val = customFieldValues[f.id] ?? customFieldValues[f.label_bn];
+          if (!val || String(val).trim() === '') {
+            errors[f.id] = bn ? `${f.label_bn} আবশ্যক` : `${f.label_en || f.label_bn} is required`;
+          }
+        });
+    }
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(prev => ({ ...prev, ...errors }));
@@ -1910,6 +2052,24 @@ const AdmissionPage = () => {
                             </div>
                           );
                         })}
+                      </div>
+                    )}
+
+                    {/* Division Academic Custom Fields */}
+                    {renderDivisionCustomFields('academic_info')}
+
+                    {/* Division Special Guidelines Note */}
+                    {activeDivSettings?.division_note && (
+                      <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-950 dark:text-amber-100 text-xs flex items-start gap-2.5 mt-3">
+                        <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                        <div>
+                          <span className="font-bold block text-amber-900 dark:text-amber-200">
+                            {bn ? `${activeDivObj?.name_bn || 'বিভাগীয়'} ভর্তি নির্দেশিকা ও বিশেষ শর্তাবলী:` : 'Division Guidelines:'}
+                          </span>
+                          <p className="mt-0.5 text-xs text-muted-foreground whitespace-pre-line leading-relaxed">
+                            {activeDivSettings.division_note}
+                          </p>
+                        </div>
                       </div>
                     )}
                   </div>

@@ -3110,6 +3110,24 @@ const AdminApprovals = () => {
                   </div>
                 </div>
 
+                {/* Division Specific Custom Fields */}
+                {studentApprovalModal.admission_data?.custom_fields && Object.keys(studentApprovalModal.admission_data.custom_fields).length > 0 && (
+                  <div className="p-4 rounded-xl border bg-card space-y-3">
+                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 border-b pb-2">
+                      <Sparkles className="w-4 h-4 text-emerald-600" />
+                      {bn ? 'বিভাগভিত্তিক অতিরিক্ত তথ্য (Custom Fields)' : 'Division Specific Information'}
+                    </h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                      {Object.entries(studentApprovalModal.admission_data.custom_fields).map(([k, v]) => (
+                        <div key={k} className="p-2 rounded-lg bg-muted/30">
+                          <span className="text-[11px] text-muted-foreground block">{k}</span>
+                          <span className="font-semibold text-foreground text-xs mt-0.5 block">{String(v || '—')}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* 3. Office Assignment & Approval Card (রোল ও রেজিস্ট্রেশন বরাদ্দ) */}
                 <div className="p-5 rounded-2xl border-2 border-primary/30 bg-primary/5 space-y-4">
                   <div className="flex items-center justify-between border-b border-primary/20 pb-3">

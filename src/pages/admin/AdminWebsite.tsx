@@ -14,6 +14,7 @@ import { Globe, Save, Image, Type, Layout, BarChart3, Plus, Trash2, Eye, ImageIc
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import WebsitePageBuilder from '@/components/admin/WebsitePageBuilder';
+import DivisionFormSettingsControl from '@/components/admin/DivisionFormSettingsControl';
 import { toast } from 'sonner';
 import { useWebsiteSettings, WebsiteSettings, InfoLink } from '@/hooks/useWebsiteSettings';
 import { useMenuSettings, MenuItemConfig } from '@/hooks/useMenuSettings';
@@ -2703,6 +2704,9 @@ const FormSettingsTab = ({ language }: { language: string }) => {
 
       {/* Online Admission Divisions & Classes Scope Control */}
       <AdmissionDivisionsControl language={language} />
+
+      {/* Per-Division Admission Form Settings & Custom Fields Control */}
+      <DivisionFormSettingsControl language={language} />
 
       {/* Online Staff Job Application Designations Scope Control */}
       <StaffDesignationsControl language={language} />
