@@ -64,7 +64,7 @@ interface StepDef {
 }
 
 const ALL_STEPS: StepDef[] = [
-  { id: 'personal', bn: 'পদবী ও মৌলিক তথ্য', en: 'Basic & Designation', icon: User },
+  { id: 'personal', bn: 'মৌলিক তথ্য', en: 'Basic Info', icon: User },
   { id: 'education_address', bn: 'যোগ্যতা ও ঠিকানা', en: 'Education & Address', icon: GraduationCap },
   { id: 'parents', bn: 'পিতা-মাতার তথ্য', en: 'Parents Info', icon: Users },
   { id: 'references', bn: 'পরিচয়কারী ও শনাক্তকারী', en: 'References', icon: ShieldCheck },
@@ -1482,13 +1482,7 @@ const StaffApplicationPage = () => {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
-              <Button asChild variant="outline" size="sm" className="rounded-full text-xs font-semibold bg-white dark:bg-card border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 shadow-xs h-8 px-3">
-                <Link to="/application-tracking" className="flex items-center gap-1.5">
-                  <Search className="w-3.5 h-3.5" />
-                  <span>{bn ? 'আবেদন ট্র্যাক' : 'Track Status'}</span>
-                </Link>
-              </Button>
+            <div className="flex items-center gap-2 self-start sm:self-center">
               <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white dark:bg-card border border-slate-200 dark:border-border shadow-sm">
                 <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
                 <span className="text-xs font-bold text-slate-700 dark:text-foreground">
