@@ -33,7 +33,8 @@ import {
   TrendingDown,
   ShoppingBag,
   ExternalLink,
-  Users
+  Users,
+  Sparkles
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -84,6 +85,38 @@ const MEAL_SLOTS = [
   { value: 'dinner', label_bn: 'রাতের খাবার', label_en: 'Dinner' },
   { value: 'special', label_bn: 'বিশেষ আয়োজন / মেহমানদারি', label_en: 'Special Feast' },
   { value: 'other', label_bn: 'সাধারণ রান্না / অন্যান্য', label_en: 'General Cooking' },
+];
+
+export const STANDARD_FOOD_ITEMS = [
+  { name_bn: 'সয়াবিন তেল', name_en: 'Soybean Oil', unit: 'লিটার', min_stock_level: 15 },
+  { name_bn: 'সরিষার তেল', name_en: 'Mustard Oil', unit: 'লিটার', min_stock_level: 5 },
+  { name_bn: 'আলু', name_en: 'Potato', unit: 'কেজি', min_stock_level: 25 },
+  { name_bn: 'পেঁয়াজ', name_en: 'Onion', unit: 'কেজি', min_stock_level: 15 },
+  { name_bn: 'রসুন', name_en: 'Garlic', unit: 'কেজি', min_stock_level: 5 },
+  { name_bn: 'আদা', name_en: 'Ginger', unit: 'কেজি', min_stock_level: 5 },
+  { name_bn: 'লবণ', name_en: 'Salt', unit: 'কেজি', min_stock_level: 10 },
+  { name_bn: 'হলুদ গুঁড়া', name_en: 'Turmeric Powder', unit: 'কেজি', min_stock_level: 5 },
+  { name_bn: 'মরিচ গুঁড়া', name_en: 'Chili Powder', unit: 'কেজি', min_stock_level: 5 },
+  { name_bn: 'ধনিয়া গুঁড়া', name_en: 'Coriander Powder', unit: 'কেজি', min_stock_level: 5 },
+  { name_bn: 'জিরা গুঁড়া', name_en: 'Cumin Powder', unit: 'কেজি', min_stock_level: 3 },
+  { name_bn: 'গরম মসলা (এলাচ, দারুচিনি, লবঙ্গ)', name_en: 'Garam Masala', unit: 'প্যাকেট', min_stock_level: 5 },
+  { name_bn: 'তেজপাতা', name_en: 'Bay Leaves', unit: 'প্যাকেট', min_stock_level: 5 },
+  { name_bn: 'চিনি', name_en: 'Sugar', unit: 'কেজি', min_stock_level: 10 },
+  { name_bn: 'চা পাতা', name_en: 'Tea Leaves', unit: 'কেজি', min_stock_level: 5 },
+  { name_bn: 'ডিম', name_en: 'Eggs', unit: 'পিস', min_stock_level: 50 },
+  { name_bn: 'ব্রয়লার / সোনালী মুরগি', name_en: 'Chicken', unit: 'কেজি', min_stock_level: 20 },
+  { name_bn: 'গরু / খাসির মাংস', name_en: 'Beef / Mutton', unit: 'কেজি', min_stock_level: 15 },
+  { name_bn: 'মাছ (রুই / কাতলা / তেলাপিয়া)', name_en: 'Fish', unit: 'কেজি', min_stock_level: 15 },
+  { name_bn: 'গ্যাস সিলিন্ডার', name_en: 'LP Gas Cylinder', unit: 'পিস', min_stock_level: 2 },
+  { name_bn: 'কাঁচা মরিচ', name_en: 'Green Chili', unit: 'কেজি', min_stock_level: 5 },
+  { name_bn: 'শুকনা মরিচ', name_en: 'Dry Red Chili', unit: 'কেজি', min_stock_level: 3 },
+  { name_bn: 'মুগ ডাল', name_en: 'Moong Dal', unit: 'কেজি', min_stock_level: 10 },
+  { name_bn: 'ছোলা / বুট', name_en: 'Chickpeas', unit: 'কেজি', min_stock_level: 10 },
+  { name_bn: 'আটা / ময়দা', name_en: 'Flour / Atta', unit: 'কেজি', min_stock_level: 20 },
+  { name_bn: 'সুজি', name_en: 'Semolina (Suji)', unit: 'কেজি', min_stock_level: 5 },
+  { name_bn: 'গুঁড়া দুধ', name_en: 'Milk Powder', unit: 'কেজি', min_stock_level: 5 },
+  { name_bn: 'কালোজিরা', name_en: 'Black Cumin', unit: 'প্যাকেট', min_stock_level: 2 },
+  { name_bn: 'সিরকা / ভিনেগার', name_en: 'Vinegar', unit: 'বোতল', min_stock_level: 2 }
 ];
 
 export const HostelBoardingStockTab: React.FC = () => {
@@ -489,7 +522,49 @@ export const HostelBoardingStockTab: React.FC = () => {
     },
   });
 
-  // 3. Delete / Inactivate Item Mutation
+  // 4. Seed Standard Food Items Mutation
+  const seedStandardItemsMutation = useMutation({
+    mutationFn: async () => {
+      const existingNames = new Set(foodItems.map(i => (i.name_bn || '').trim().toLowerCase()));
+      const toInsert = STANDARD_FOOD_ITEMS
+        .filter(item => !existingNames.has(item.name_bn.trim().toLowerCase()))
+        .map(item => ({
+          name_bn: item.name_bn,
+          name_en: item.name_en,
+          category: 'hostel_boarding',
+          current_stock: 0,
+          unit: item.unit,
+          buying_price: 0,
+          min_stock_level: item.min_stock_level,
+          notes: 'রান্নায় ব্যবহৃত স্ট্যান্ডার্ড বোর্ডিং খাদ্য সামগ্রী',
+          is_active: true,
+        }));
+
+      if (toInsert.length === 0) {
+        throw new Error(bn ? 'সকল প্রয়োজনীয় খাদ্য সামগ্রী ইতোমধ্যে তালিকায় বিদ্যমান আছে!' : 'All standard food items already exist!');
+      }
+
+      const { error } = await supabase.from('inventory_items').insert(toInsert);
+      if (error) throw error;
+      return toInsert.length;
+    },
+    onSuccess: (count) => {
+      qc.invalidateQueries({ queryKey: ['hostel-boarding-stock'] });
+      qc.invalidateQueries({ queryKey: ['inventory-items'] });
+      qc.invalidateQueries({ queryKey: ['inventory-items-for-expense'] });
+      toast({
+        title: bn ? 'খাদ্য সামগ্রী সফলভাবে যুক্ত হয়েছে' : 'Food items added',
+        description: bn ? `${count} টি নতুন খাদ্য সামগ্রী তালিকায় যুক্ত করা হয়েছে।` : `${count} new items added to stock list.`,
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: bn ? 'নোটিশ' : 'Notice',
+        description: err.message,
+        variant: 'destructive',
+      });
+    },
+  });
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
@@ -597,6 +672,18 @@ export const HostelBoardingStockTab: React.FC = () => {
           >
             <Flame className="w-4 h-4" />
             <span>{bn ? 'রান্নায় ব্যবহার এন্ট্রি' : 'Log Daily Cooking'}</span>
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => seedStandardItemsMutation.mutate()}
+            disabled={seedStandardItemsMutation.isPending}
+            className="flex-1 sm:flex-none gap-2 border-emerald-400/80 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100"
+            title={bn ? 'তেল, আলু, পেঁয়াজ, রসুন, মসলা, চিনি, ডিম, মাংস ইত্যাদি রান্নার সকল সামগ্রী যোগ করুন' : 'Add all standard cooking food items'}
+          >
+            <Sparkles className="w-4 h-4 text-emerald-600" />
+            <span>{seedStandardItemsMutation.isPending ? (bn ? 'যোগ হচ্ছে...' : 'Adding...') : (bn ? 'সব রান্নার সামগ্রী যোগ' : 'Add Cooking Items')}</span>
           </Button>
 
           <Button
@@ -773,8 +860,46 @@ export const HostelBoardingStockTab: React.FC = () => {
                     <SelectItem value="low">{bn ? 'সতর্কতামূলক কম মজুদ' : 'Low Stock'}</SelectItem>
                   </SelectContent>
                 </Select>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => seedStandardItemsMutation.mutate()}
+                  disabled={seedStandardItemsMutation.isPending}
+                  className="h-9 gap-1.5 text-xs border-emerald-300 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>{seedStandardItemsMutation.isPending ? (bn ? 'যোগ হচ্ছে...' : 'Adding...') : (bn ? 'বাকি রান্নার সামগ্রী যোগ' : 'Add Cooking Items')}</span>
+                </Button>
               </div>
             </CardHeader>
+
+            {foodItems.length < 15 && (
+              <div className="mx-6 mb-4 p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-foreground">
+                      {bn ? 'বোর্ডিং রান্নায় ব্যবহৃত বাকি সকল খাদ্য সামগ্রী যোগ করতে চান?' : 'Add all other cooking pantry items?'}
+                    </h4>
+                    <p className="text-[11px] text-muted-foreground">
+                      {bn ? 'তেল, আলু, পেঁয়াজ, রসুন, আদা, লবণ, হলুদ, মরিচ, গরম মসলা, চিনি, চা পাতা, ডিম, মাংস, মাছ, গ্যাস সিলিন্ডার ইত্যাদি' : 'Oil, potato, onion, spices, sugar, eggs, chicken, meat, fish, gas etc.'}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => seedStandardItemsMutation.mutate()}
+                  disabled={seedStandardItemsMutation.isPending}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs shrink-0 gap-1.5 shadow-sm"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>{seedStandardItemsMutation.isPending ? (bn ? 'যুক্ত হচ্ছে...' : 'Adding...') : (bn ? 'এক ক্লিকে সকল সামগ্রী যোগ করুন' : 'Add All Items')}</span>
+                </Button>
+              </div>
+            )}
 
             <CardContent className="p-0">
               {loadingItems ? (
