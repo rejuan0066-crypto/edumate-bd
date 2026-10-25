@@ -10,7 +10,7 @@ import AddressFields, { type AddressData } from '@/components/AddressFields';
 import PhoneInput from '@/components/PhoneInput';
 import PhotoUpload from '@/components/PhotoUpload';
 import DocumentPreviewModal from '@/components/DocumentPreviewModal';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import {
   AlertCircle, CheckCircle, Loader2, Upload, Trash2, Eye,
   Copy, Download, Printer, ArrowLeft, ArrowRight, RotateCcw,
