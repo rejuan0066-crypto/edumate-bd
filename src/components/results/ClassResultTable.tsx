@@ -655,7 +655,7 @@ const ClassResultTable = ({
         onOpenChange={(v) => { if (!v) setExplainStudent(null); }}
         student={explainStudent}
         subjects={subjects}
-        marksMap={marksMap}
+        marksMap={marksMap as any}
       />
 
       <style>{`

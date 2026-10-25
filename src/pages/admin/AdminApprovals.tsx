@@ -24,11 +24,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { uploadToCloudinary } from '@/lib/cloudinary';
@@ -3409,7 +3410,7 @@ const AdminApprovals = () => {
                   onClick={() => {
                     const firstStudent = students[0];
                     if (firstStudent) {
-                      const id = firstStudent.application_no || firstStudent.student_id || firstStudent.roll_number || '';
+                      const id = (firstStudent as any).application_no || firstStudent.student_id || firstStudent.roll_number || '';
                       setTrackerQuery(id);
                       handleTrackerSearch(id);
                     }
@@ -3423,7 +3424,7 @@ const AdminApprovals = () => {
                   onClick={() => {
                     const firstStaff = staffList[0];
                     if (firstStaff) {
-                      const id = firstStaff.application_no || (firstStaff.staff_data as any)?.application_no || firstStaff.staff_id || '';
+                      const id = (firstStaff as any).application_no || (firstStaff.staff_data as any)?.application_no || firstStaff.staff_id || '';
                       setTrackerQuery(id);
                       handleTrackerSearch(id);
                     }

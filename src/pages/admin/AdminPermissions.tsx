@@ -129,7 +129,8 @@ const DEFAULT_SYSTEM_ROLES: CustomRole[] = [
 const AdminPermissions = () => {
   const { role } = useAuth();
   const isAdmin = isAdminRole(role);
-  // language declared above
+  const { language } = useLanguage();
+  const bn = language === 'bn';
 
   if (!isAdmin) {
     return (
@@ -144,8 +145,6 @@ const AdminPermissions = () => {
       </AdminLayout>
     );
   }
-  const { language } = useLanguage();
-  const bn = language === 'bn';
   const confirm = useConfirm();
   const queryClient = useQueryClient();
   const { menuConfig } = useMenuSettings();

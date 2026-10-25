@@ -9,6 +9,7 @@ import { useAdmissionFormConfig, SECTION_INFO, type AdmissionFieldConfig } from 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,10 +18,11 @@ import PhotoUpload from '@/components/PhotoUpload';
 import ApplicationTrackingBox from '@/components/application/ApplicationTrackingBox';
 import AddressFields, { type AddressData } from '@/components/AddressFields';
 import PhoneInput from '@/components/PhoneInput';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 import {
   Search, Loader2, AlertCircle, CheckCircle, Plus,
   Printer, Download, RotateCcw, ArrowLeft, ArrowRight,
-  GraduationCap, User, UserCheck, Heart, MapPin, ShieldCheck, Sparkles
+  GraduationCap, User, UserCheck, Heart, MapPin, ShieldCheck, Sparkles, BookOpen
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
@@ -71,6 +73,12 @@ const AdmissionPage = () => {
   const [guardianSameAddr, setGuardianSameAddr] = useState(false);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
   const [submittedData, setSubmittedData] = useState<Record<string, any> | null>(null);
+  const submitted = !!submittedData;
+  const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
+  const [uploadingSig, setUploadingSig] = useState(false);
+  const sigInputRef = React.useRef<HTMLInputElement>(null);
+  const [declarationAgreed, setDeclarationAgreed] = useState(true);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Old student search
   const [oldRoll, setOldRoll] = useState('');

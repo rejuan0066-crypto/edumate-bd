@@ -878,7 +878,7 @@ const AdminResults = () => {
   // 1. From official Signatory Authorities (institution_signatories / institutions: head_of_institute)
   // 2. Fallback to active staff, strictly excluding assistant/vice roles
   const detectedMuhtamim = useMemo(() => {
-    const officialHead = signatoryAuthorities.find((a: any) => a.role_key === 'head_of_institute');
+    const officialHead = Array.isArray(signatoryAuthorities) ? signatoryAuthorities.find((a: any) => a.role_key === 'head_of_institute') : null;
     if (officialHead?.person_name_bn) {
       return {
         name_bn: officialHead.person_name_bn,
@@ -1928,7 +1928,7 @@ const AdminResults = () => {
               <ClassResultTable
                 students={students}
                 subjects={subjects}
-                marksMap={marksMap}
+                marksMap={marksMap as any}
                 onMarksChange={(key, value) => setMarksMap(prev => ({ ...prev, [key]: value }))}
                 onSave={() => saveMutation.mutate()}
                 isSaving={saveMutation.isPending}
@@ -2041,7 +2041,7 @@ const AdminResults = () => {
               <ClassResultTable
                 students={students}
                 subjects={subjects}
-                marksMap={marksMap}
+                marksMap={marksMap as any}
                 onMarksChange={(key, value) => setMarksMap(prev => ({ ...prev, [key]: value }))}
                 onSave={() => saveMutation.mutate()}
                 isSaving={saveMutation.isPending}
@@ -2146,7 +2146,7 @@ const AdminResults = () => {
                 <IndividualMarksheet
                   student={viewingStudent}
                   subjects={subjects}
-                  marksMap={marksMap}
+                  marksMap={marksMap as any}
                   examTitle={getExamTitle()}
                   examName={bn ? examSessions.find((es: any) => es.id === examSessionId)?.name_bn : examSessions.find((es: any) => es.id === examSessionId)?.name}
                   className={bn ? examClasses.find((c: any) => c.id === selectedClass)?.name_bn : examClasses.find((c: any) => c.id === selectedClass)?.name}
@@ -2195,7 +2195,7 @@ const AdminResults = () => {
               <ResultAnalyticsView
                 students={students}
                 subjects={subjects}
-                marksMap={marksMap}
+                marksMap={marksMap as any}
                 className={bn ? examClasses.find((c: any) => c.id === selectedClass)?.name_bn : examClasses.find((c: any) => c.id === selectedClass)?.name}
                 examName={bn ? examSessions.find((es: any) => es.id === examSessionId)?.name_bn : examSessions.find((es: any) => es.id === examSessionId)?.name}
                 sessionName={(() => { const y = academicSessions.find((s: any) => s.id === examYear); return bn ? (y?.name_bn || y?.name) : y?.name; })()}

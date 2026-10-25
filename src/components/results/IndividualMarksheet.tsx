@@ -124,12 +124,12 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack, r
         ? "মাশাআল্লাহ, সার্বিক ফলাফল চমৎকার ও অনুকরণীয়। এই কৃতিত্ব বজায় রাখার শুভকামনা রইল।"
         : "MashaAllah, outstanding and commendable result. Best wishes to maintain this success.";
     }
-    if (finalGPA >= 4.0) {
+    if (Number(finalGPA) >= 4.0) {
       return bn 
         ? "মাশাআল্লাহ, ফলাফল প্রশংসনীয়। নিয়মিত পড়াশোনায় আরও একাগ্র হলে ভবিষ্যতে আরও ভালো ফল অর্জন সম্ভব।"
         : "Commendable result. With continued dedication and effort, even higher success is achievable.";
     }
-    if (finalGPA >= 3.0) {
+    if (Number(finalGPA) >= 3.0) {
       return bn 
         ? "সার্বিক ফলাফল সন্তোষজনক। দুর্বল বিষয়গুলোতে বিশেষ যত্ন ও ক্লাসে নিয়মিত উপস্থিতি আবশ্যক।"
         : "Satisfactory performance. More focus on weaker subjects and regular attendance is recommended.";
