@@ -926,24 +926,24 @@ const AdminHostel = () => {
         <Card><CardContent className="p-4 flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center"><UtensilsCrossed className="w-6 h-6 text-orange-600" /></div><div><p className="text-xs text-muted-foreground">{bn ? 'অকুপেন্সি' : 'Occupancy'}</p><p className="text-2xl font-bold">{occupancyRate}%</p></div></CardContent></Card>
       </div>
 
-      <Tabs defaultValue="hostels" className="space-y-4">
+      <Tabs defaultValue="boarding-stock" className="space-y-4">
         <div className="relative -mx-2 px-2">
           <div className="overflow-x-auto scrollbar-none snap-x snap-mandatory [mask-image:linear-gradient(to_right,transparent,black_16px,black_calc(100%-16px),transparent)] md:[mask-image:none]">
-            <TabsList className="inline-flex w-auto min-w-full md:grid md:grid-cols-6 md:max-w-5xl gap-1.5 bg-gradient-to-b from-muted/70 to-muted/40 backdrop-blur-xl p-1.5 rounded-2xl border border-border/50 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)] h-auto">
+            <TabsList className="inline-flex w-auto min-w-full md:grid md:grid-cols-6 md:max-w-5xl gap-1.5 bg-muted/50 p-1.5 rounded-2xl border border-border/60 shadow-sm h-auto">
               {[
+                { v: 'boarding-stock', bn: 'বোর্ডিং স্টক ও খরচ', en: 'Boarding Stock', Icon: PackageCheck },
                 { v: 'hostels', bn: 'হোস্টেল', en: 'Hostels', Icon: Building2 },
                 { v: 'rooms', bn: 'রুম', en: 'Rooms', Icon: BedDouble },
                 { v: 'allocations', bn: 'বরাদ্দ', en: 'Allocations', Icon: Users },
                 { v: 'meals', bn: 'খাবার মেনু', en: 'Meal Menu', Icon: UtensilsCrossed },
                 { v: 'meal-attendance', bn: 'খাবার হাজিরা', en: 'Meal Attendance', Icon: CalendarCheck },
-                { v: 'boarding-stock', bn: 'বোর্ডিং স্টক ও খরচ', en: 'Boarding Stock', Icon: PackageCheck },
               ].map(({ v, bn: bnL, en, Icon }) => (
                 <TabsTrigger
                   key={v}
                   value={v}
-                  className="group relative snap-start flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 rounded-xl px-2.5 md:px-4 py-2 md:py-2.5 min-w-[76px] md:min-w-0 text-[11px] md:text-sm leading-tight font-medium tracking-tight bg-background/70 border border-border/60 text-foreground/75 shadow-sm transition-all duration-200 hover:bg-background hover:text-foreground hover:border-border hover:-translate-y-[1px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow-[0_6px_16px_-6px_hsl(var(--primary)/0.55)] data-[state=active]:font-semibold"
+                  className="group relative snap-start flex flex-col md:flex-row items-center justify-center gap-1.5 md:gap-2 rounded-xl px-2.5 md:px-3.5 py-2.5 md:py-2.5 min-w-[85px] md:min-w-0 text-[11px] md:text-sm leading-tight font-medium tracking-tight bg-background border border-border/70 text-foreground shadow-xs transition-all duration-200 hover:bg-muted/60 hover:text-foreground data-[state=active]:!bg-emerald-600 data-[state=active]:!text-white data-[state=active]:!border-emerald-600 data-[state=active]:shadow-md data-[state=active]:font-bold"
                 >
-                  <Icon className="w-4 h-4 shrink-0 opacity-80 group-data-[state=active]:opacity-100" />
+                  <Icon className="w-4 h-4 shrink-0 transition-transform group-hover:scale-105" />
                   <span className="whitespace-nowrap">{bn ? bnL : en}</span>
                 </TabsTrigger>
               ))}
@@ -952,8 +952,10 @@ const AdminHostel = () => {
           </div>
         </div>
 
-
-
+        {/* BOARDING STOCK & EXPENSES TAB (FIRST TAB) */}
+        <TabsContent value="boarding-stock">
+          <HostelBoardingStockTab />
+        </TabsContent>
 
         {/* HOSTELS TAB */}
         <TabsContent value="hostels">
@@ -1524,11 +1526,6 @@ const AdminHostel = () => {
 
 
           </Card>
-        </TabsContent>
-
-        {/* BOARDING STOCK & EXPENSES TAB */}
-        <TabsContent value="boarding-stock">
-          <HostelBoardingStockTab />
         </TabsContent>
       </Tabs>
 

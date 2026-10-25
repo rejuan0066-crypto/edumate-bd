@@ -695,16 +695,16 @@ export const HostelBoardingStockTab: React.FC = () => {
       {/* Main Inner Tabs: Stock List | Consumption History | Cost Analysis */}
       <Tabs defaultValue="stock-list" className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/60 pb-3">
-          <TabsList className="bg-muted/60 p-1 rounded-xl">
-            <TabsTrigger value="stock-list" className="rounded-lg gap-2 text-xs md:text-sm font-medium">
+          <TabsList className="bg-muted/70 p-1.5 rounded-xl border border-border/60">
+            <TabsTrigger value="stock-list" className="rounded-lg gap-2 text-xs md:text-sm font-semibold data-[state=active]:!bg-emerald-600 data-[state=active]:!text-white shadow-xs">
               <PackageCheck className="w-4 h-4" />
               <span>{bn ? 'খাদ্য সামগ্রী মজুদ' : 'Current Stock'}</span>
             </TabsTrigger>
-            <TabsTrigger value="cooking-logs" className="rounded-lg gap-2 text-xs md:text-sm font-medium">
+            <TabsTrigger value="cooking-logs" className="rounded-lg gap-2 text-xs md:text-sm font-semibold data-[state=active]:!bg-emerald-600 data-[state=active]:!text-white shadow-xs">
               <History className="w-4 h-4" />
               <span>{bn ? 'রান্না ও খরচের ইতিহাস' : 'Cooking Logs'}</span>
             </TabsTrigger>
-            <TabsTrigger value="cost-analysis" className="rounded-lg gap-2 text-xs md:text-sm font-medium">
+            <TabsTrigger value="cost-analysis" className="rounded-lg gap-2 text-xs md:text-sm font-semibold data-[state=active]:!bg-emerald-600 data-[state=active]:!text-white shadow-xs">
               <Users className="w-4 h-4" />
               <span>{bn ? 'মিল ও শিক্ষার্থী খরচ হিসাব' : 'Per-Student Meal Analysis'}</span>
             </TabsTrigger>
