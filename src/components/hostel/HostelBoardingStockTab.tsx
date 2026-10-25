@@ -104,6 +104,48 @@ const MEAL_SLOTS = [
   { value: 'other', label_bn: 'সাধারণ রান্না / অন্যান্য', label_en: 'General Cooking' },
 ];
 
+export type FoodCategory = 'all' | 'vegetables' | 'meat' | 'fish' | 'grocery';
+
+export const getFoodItemCategory = (item: { name_bn?: string; name_en?: string | null }): 'vegetables' | 'meat' | 'fish' | 'grocery' => {
+  const bn = (item.name_bn || '').toLowerCase();
+  const en = (item.name_en || '').toLowerCase();
+
+  // 1. Meat & Eggs (মাংস ও ডিম)
+  if (
+    bn.includes('মাংস') || bn.includes('মুরগি') || bn.includes('ডিম') || bn.includes('গরু') || 
+    bn.includes('খাসি') || bn.includes('হাঁস') || bn.includes('ব্রয়লার') || bn.includes('সোনালী') ||
+    en.includes('meat') || en.includes('chicken') || en.includes('beef') || en.includes('mutton') || en.includes('egg')
+  ) {
+    return 'meat';
+  }
+
+  // 2. Fish (মাছ)
+  if (
+    bn.includes('মাছ') || bn.includes('রুই') || bn.includes('কাতলা') || bn.includes('কাতল') || 
+    bn.includes('তেলাপিয়া') || bn.includes('পাঙ্গাশ') || bn.includes('পাঙ্গাস') || bn.includes('ইলিশ') || 
+    bn.includes('শিং') || bn.includes('মাগুর') || bn.includes('কই') || bn.includes('চিংড়ি') ||
+    en.includes('fish') || en.includes('prawn') || en.includes('shrimp')
+  ) {
+    return 'fish';
+  }
+
+  // 3. Vegetables / Raw Produce (কাঁচা মাল ও শাকসবজি)
+  if (
+    bn.includes('আলু') || bn.includes('পেঁয়াজ') || bn.includes('রসুন') || bn.includes('আদা') || 
+    bn.includes('মরিচ') || bn.includes('টমেটো') || bn.includes('শাক') || bn.includes('সবজি') || 
+    bn.includes('লেবু') || bn.includes('ধনেপাতা') || bn.includes('লাউ') || bn.includes('বেগুন') ||
+    bn.includes('পটল') || bn.includes('কাঁচা') || bn.includes('শসা') || bn.includes('গাজর') || 
+    bn.includes('পেঁপে') || bn.includes('ঝিঙে') || bn.includes('করলা') || bn.includes('কপি') ||
+    en.includes('potato') || en.includes('onion') || en.includes('garlic') || en.includes('ginger') || 
+    en.includes('chili') || en.includes('tomato') || en.includes('vegetable')
+  ) {
+    return 'vegetables';
+  }
+
+  // 4. Default: Dry Grocery & Spices (মুদি ও শুকনা সামগ্রী)
+  return 'grocery';
+};
+
 export const STANDARD_FOOD_ITEMS = [
   { name_bn: 'সয়াবিন তেল', name_en: 'Soybean Oil', unit: 'লিটার', min_stock_level: 15 },
   { name_bn: 'সরিষার তেল', name_en: 'Mustard Oil', unit: 'লিটার', min_stock_level: 5 },
@@ -155,6 +197,7 @@ export const HostelBoardingStockTab: React.FC = () => {
   const [selectedYear, setSelectedYear] = useState<number>(now.getFullYear());
   const [searchQuery, setSearchQuery] = useState('');
   const [stockStatusFilter, setStockStatusFilter] = useState<'all' | 'low' | 'available'>('all');
+  const [activeCategoryTab, setActiveCategoryTab] = useState<FoodCategory>('all');
 
   // Modals
   const [consumeDialog, setConsumeDialog] = useState(false);
@@ -546,19 +589,46 @@ export const HostelBoardingStockTab: React.FC = () => {
     };
   }, [monthlyStockLedger]);
 
-  // Filtered Food Items based on search and stock status while strictly preserving unique serial order
+  // Counts per food category (কাঁচা মাল, মাংস, মাছ, মুদি সামগ্রী)
+  const categoryCounts = useMemo(() => {
+    let all = monthlyStockLedger.length;
+    let vegetables = 0;
+    let meat = 0;
+    let fish = 0;
+    let grocery = 0;
+
+    monthlyStockLedger.forEach(row => {
+      const cat = getFoodItemCategory(row.item);
+      if (cat === 'vegetables') vegetables++;
+      else if (cat === 'meat') meat++;
+      else if (cat === 'fish') fish++;
+      else grocery++;
+    });
+
+    return { all, vegetables, meat, fish, grocery };
+  }, [monthlyStockLedger]);
+
+  // Filtered Food Items based on category tab, search and stock status while strictly preserving unique serial order
   const filteredFoodItems = useMemo(() => {
     return monthlyStockLedger.filter(({ item, closingStock }) => {
+      // 1. Food Category Filter (কাঁচা মাল, মাংস, মাছ, মুদি)
+      if (activeCategoryTab !== 'all') {
+        const cat = getFoodItemCategory(item);
+        if (cat !== activeCategoryTab) return false;
+      }
+
+      // 2. Search query filter
       const matchSearch = searchQuery.trim() === '' ||
         item.name_bn.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (item.name_en && item.name_en.toLowerCase().includes(searchQuery.toLowerCase()));
 
+      // 3. Stock status filter
       const isLow = closingStock <= Number(item.min_stock_level || 5);
       if (stockStatusFilter === 'low') return matchSearch && isLow;
       if (stockStatusFilter === 'available') return matchSearch && !isLow;
       return matchSearch;
     });
-  }, [monthlyStockLedger, searchQuery, stockStatusFilter]);
+  }, [monthlyStockLedger, activeCategoryTab, searchQuery, stockStatusFilter]);
 
   // Duplicate item name validation
   const isDuplicateItemName = useMemo(() => {
@@ -957,6 +1027,8 @@ export const HostelBoardingStockTab: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['hostel-boarding-logs'] });
       qc.invalidateQueries({ queryKey: ['inventory-items'] });
       qc.invalidateQueries({ queryKey: ['inventory-items-for-expense'] });
+      qc.refetchQueries({ queryKey: ['hostel-boarding-stock'] });
+      qc.refetchQueries({ queryKey: ['hostel-boarding-logs'] });
       setSerialVersion(v => v + 1);
       const wasEditing = !!editingItem;
       const itemName = itemForm.name_bn;
@@ -1559,6 +1631,99 @@ export const HostelBoardingStockTab: React.FC = () => {
                 </Button>
               </div>
             </CardHeader>
+
+            {/* Category Filter Tabs: কাঁচা মাল, মাংস, মাছ, মুদি */}
+            <div className="px-6 pb-3 pt-1 flex flex-wrap items-center gap-2 border-b border-border/50">
+              <button
+                type="button"
+                onClick={() => setActiveCategoryTab('all')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  activeCategoryTab === 'all'
+                    ? 'bg-emerald-600 text-white shadow-xs ring-1 ring-emerald-600'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/70 bg-muted/40 border border-border/60'
+                }`}
+              >
+                <span>🍱</span>
+                <span>{bn ? 'সকল সামগ্রী' : 'All Items'}</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                  activeCategoryTab === 'all' ? 'bg-white/20 text-white' : 'bg-muted text-foreground'
+                }`}>
+                  {categoryCounts.all}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveCategoryTab('vegetables')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  activeCategoryTab === 'vegetables'
+                    ? 'bg-emerald-600 text-white shadow-xs ring-1 ring-emerald-600'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/70 bg-muted/40 border border-border/60'
+                }`}
+              >
+                <span>🥬</span>
+                <span>{bn ? 'কাঁচা মাল ও শাকসবজি' : 'Vegetables & Produce'}</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                  activeCategoryTab === 'vegetables' ? 'bg-white/20 text-white' : 'bg-muted text-foreground'
+                }`}>
+                  {categoryCounts.vegetables}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveCategoryTab('meat')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  activeCategoryTab === 'meat'
+                    ? 'bg-emerald-600 text-white shadow-xs ring-1 ring-emerald-600'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/70 bg-muted/40 border border-border/60'
+                }`}
+              >
+                <span>🥩</span>
+                <span>{bn ? 'মাংস ও ডিম' : 'Meat & Eggs'}</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                  activeCategoryTab === 'meat' ? 'bg-white/20 text-white' : 'bg-muted text-foreground'
+                }`}>
+                  {categoryCounts.meat}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveCategoryTab('fish')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  activeCategoryTab === 'fish'
+                    ? 'bg-emerald-600 text-white shadow-xs ring-1 ring-emerald-600'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/70 bg-muted/40 border border-border/60'
+                }`}
+              >
+                <span>🐟</span>
+                <span>{bn ? 'মাছ' : 'Fish'}</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                  activeCategoryTab === 'fish' ? 'bg-white/20 text-white' : 'bg-muted text-foreground'
+                }`}>
+                  {categoryCounts.fish}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveCategoryTab('grocery')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  activeCategoryTab === 'grocery'
+                    ? 'bg-emerald-600 text-white shadow-xs ring-1 ring-emerald-600'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/70 bg-muted/40 border border-border/60'
+                }`}
+              >
+                <span>🌾</span>
+                <span>{bn ? 'মুদি ও শুকনা খাদ্য' : 'Grocery & Spices'}</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                  activeCategoryTab === 'grocery' ? 'bg-white/20 text-white' : 'bg-muted text-foreground'
+                }`}>
+                  {categoryCounts.grocery}
+                </span>
+              </button>
+            </div>
 
             {/* Monthly Balance & Automatic Carryover Ribbon */}
             <div className="mx-6 mb-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
