@@ -1143,48 +1143,7 @@ export const HostelBoardingStockTab: React.FC = () => {
     return successCount;
   };
 
-  // Auto-seed missing standard cooking items on mount
-  const hasAutoSeededRef = useRef(false);
-  const [isAutoSeeding, setIsAutoSeeding] = useState(false);
-
-  useEffect(() => {
-    if (loadingItems || hasAutoSeededRef.current) return;
-
-    const existingNames = new Set(
-      foodItems.map(i => (i.name_bn || '').trim().toLowerCase())
-    );
-
-    const missing = STANDARD_FOOD_ITEMS.filter(
-      item => !existingNames.has(item.name_bn.trim().toLowerCase())
-    );
-
-    if (missing.length > 0) {
-      hasAutoSeededRef.current = true;
-      setIsAutoSeeding(true);
-
-      insertMissingFoodItems(missing)
-        .then((count) => {
-          if (count > 0) {
-            qc.invalidateQueries({ queryKey: ['hostel-boarding-stock'] });
-            qc.invalidateQueries({ queryKey: ['inventory-items'] });
-            qc.invalidateQueries({ queryKey: ['inventory-items-for-expense'] });
-            toast({
-              title: bn ? 'রান্নার খাদ্য সামগ্রী যুক্ত হয়েছে' : 'Food items loaded',
-              description: bn 
-                ? `${count} টি রান্নার খাদ্য সামগ্রী স্বয়ংক্রিয়ভাবে তালিকায় যুক্ত করা হয়েছে।` 
-                : `${count} standard cooking food items added to stock list.`,
-            });
-          }
-        })
-        .finally(() => {
-          setIsAutoSeeding(false);
-        });
-    } else {
-      hasAutoSeededRef.current = true;
-    }
-  }, [loadingItems, foodItems, bn, qc]);
-
-  // 4. Seed Standard Food Items Mutation (Manual Button)
+  // 4. Seed Standard Food Items Mutation (Manual Button only - NO auto-seeding on mount so deleted items stay deleted permanently)
   const seedStandardItemsMutation = useMutation({
     mutationFn: async () => {
       const existingNames = new Set(foodItems.map(i => (i.name_bn || '').trim().toLowerCase()));
@@ -1219,32 +1178,65 @@ export const HostelBoardingStockTab: React.FC = () => {
       });
     },
   });
-  // 5. Delete Food Item Mutation (Soft delete with hard delete fallback)
+
+  // 5. Delete Food Item Mutation (Hard delete with cascade or clean soft delete, and clean serial storage)
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      // First try soft delete (is_active: false)
-      const { error: softErr } = await supabase
+      // 1. Delete associated inventory logs for this item to ensure clean deletion
+      const { error: logsErr } = await supabase
+        .from('inventory_logs')
+        .delete()
+        .eq('item_id', id);
+      if (logsErr) {
+        console.warn('Could not delete related inventory_logs:', logsErr);
+      }
+
+      // 2. Perform delete from inventory_items
+      const { error: deleteErr } = await supabase
         .from('inventory_items')
-        .update({ is_active: false })
+        .delete()
         .eq('id', id);
 
-      if (softErr) {
-        // Fallback to hard delete
-        const { error: hardErr } = await supabase
+      if (deleteErr) {
+        console.warn('Hard delete failed, falling back to soft delete:', deleteErr);
+        // Fallback to soft delete
+        const { error: softErr } = await supabase
           .from('inventory_items')
-          .delete()
+          .update({ is_active: false, deleted_at: new Date().toISOString() })
           .eq('id', id);
-        if (hardErr) throw hardErr;
+        if (softErr) {
+          // If deleted_at column is missing
+          const { error: simpleSoftErr } = await supabase
+            .from('inventory_items')
+            .update({ is_active: false })
+            .eq('id', id);
+          if (simpleSoftErr) throw simpleSoftErr;
+        }
+      }
+
+      // 3. Clean up localStorage serial order for this item
+      try {
+        const localMap = getLocalSerialMap();
+        if (localMap[id] !== undefined) {
+          delete localMap[id];
+          localStorage.setItem('hostel_boarding_item_serials', JSON.stringify(localMap));
+        }
+      } catch (e) {
+        console.warn('Could not clean local serial for deleted item:', e);
       }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['hostel-boarding-stock'] });
+      qc.invalidateQueries({ queryKey: ['hostel-boarding-logs'] });
       qc.invalidateQueries({ queryKey: ['inventory-items'] });
       qc.invalidateQueries({ queryKey: ['inventory-items-for-expense'] });
+      qc.refetchQueries({ queryKey: ['hostel-boarding-stock'] });
+      qc.refetchQueries({ queryKey: ['hostel-boarding-logs'] });
+      setSerialVersion(v => v + 1);
       const deletedName = deletingItem?.name_bn;
       setDeletingItem(null);
       toast({
-        title: bn ? 'খাদ্য সামগ্রী মুছে ফেলা হয়েছে' : 'Item deleted',
+        title: bn ? 'খাদ্য সামগ্রী সফলভাবে মুছে ফেলা হয়েছে' : 'Item deleted',
         description: deletedName ? (bn ? `"${deletedName}" সফলভাবে তালিকা থেকে অপসারিত হয়েছে।` : `"${deletedName}" removed from stock list.`) : undefined,
       });
     },
@@ -1461,12 +1453,12 @@ export const HostelBoardingStockTab: React.FC = () => {
             type="button"
             variant="outline"
             onClick={() => seedStandardItemsMutation.mutate()}
-            disabled={seedStandardItemsMutation.isPending || isAutoSeeding}
+            disabled={seedStandardItemsMutation.isPending}
             className="flex-1 sm:flex-none gap-2 border-emerald-400/80 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100"
             title={bn ? 'তেল, আলু, পেঁয়াজ, রসুন, মসলা, চিনি, ডিম, মাংস ইত্যাদি রান্নার সকল সামগ্রী যোগ করুন' : 'Add all standard cooking food items'}
           >
-            <Sparkles className={`w-4 h-4 text-emerald-600 ${(seedStandardItemsMutation.isPending || isAutoSeeding) ? 'animate-spin' : ''}`} />
-            <span>{(seedStandardItemsMutation.isPending || isAutoSeeding) ? (bn ? 'যোগ হচ্ছে...' : 'Adding...') : (bn ? 'সব রান্নার সামগ্রী যোগ' : 'Add Cooking Items')}</span>
+            <Sparkles className={`w-4 h-4 text-emerald-600 ${seedStandardItemsMutation.isPending ? 'animate-spin' : ''}`} />
+            <span>{seedStandardItemsMutation.isPending ? (bn ? 'যোগ হচ্ছে...' : 'Adding...') : (bn ? 'সব রান্নার সামগ্রী যোগ' : 'Add Cooking Items')}</span>
           </Button>
 
           <Button
@@ -1660,11 +1652,11 @@ export const HostelBoardingStockTab: React.FC = () => {
                   size="sm"
                   variant="outline"
                   onClick={() => seedStandardItemsMutation.mutate()}
-                  disabled={seedStandardItemsMutation.isPending || isAutoSeeding}
+                  disabled={seedStandardItemsMutation.isPending}
                   className="h-9 gap-1.5 text-xs border-emerald-300 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100"
                 >
-                  <Sparkles className={`w-3.5 h-3.5 ${(seedStandardItemsMutation.isPending || isAutoSeeding) ? 'animate-spin' : ''}`} />
-                  <span>{(seedStandardItemsMutation.isPending || isAutoSeeding) ? (bn ? 'যোগ হচ্ছে...' : 'Adding...') : (bn ? 'বাকি রান্নার সামগ্রী যোগ' : 'Add Cooking Items')}</span>
+                  <Sparkles className={`w-3.5 h-3.5 ${seedStandardItemsMutation.isPending ? 'animate-spin' : ''}`} />
+                  <span>{seedStandardItemsMutation.isPending ? (bn ? 'যোগ হচ্ছে...' : 'Adding...') : (bn ? 'বাকি রান্নার সামগ্রী যোগ' : 'Add Cooking Items')}</span>
                 </Button>
               </div>
             </CardHeader>
@@ -1821,12 +1813,12 @@ export const HostelBoardingStockTab: React.FC = () => {
               <div className="mx-6 mb-4 p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-                    <Sparkles className={`w-4 h-4 ${(seedStandardItemsMutation.isPending || isAutoSeeding) ? 'animate-spin' : ''}`} />
+                    <Sparkles className={`w-4 h-4 ${seedStandardItemsMutation.isPending ? 'animate-spin' : ''}`} />
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-foreground">
-                      {isAutoSeeding 
-                        ? (bn ? 'রান্নার খাদ্য সামগ্রী স্বয়ংক্রিয়ভাবে তালিকায় প্রস্তুত করা হচ্ছে...' : 'Automatically loading cooking ingredients...')
+                      {seedStandardItemsMutation.isPending 
+                        ? (bn ? 'রান্নার খাদ্য সামগ্রী যুক্ত করা হচ্ছে...' : 'Loading cooking ingredients...')
                         : (bn ? 'বোর্ডিং রান্নায় ব্যবহৃত বাকি সকল খাদ্য সামগ্রী যোগ করতে চান?' : 'Add all other cooking pantry items?')}
                     </h4>
                     <p className="text-[11px] text-muted-foreground">
@@ -1837,11 +1829,11 @@ export const HostelBoardingStockTab: React.FC = () => {
                 <Button
                   size="sm"
                   onClick={() => seedStandardItemsMutation.mutate()}
-                  disabled={seedStandardItemsMutation.isPending || isAutoSeeding}
+                  disabled={seedStandardItemsMutation.isPending}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs shrink-0 gap-1.5 shadow-sm"
                 >
-                  <Sparkles className={`w-3.5 h-3.5 ${(seedStandardItemsMutation.isPending || isAutoSeeding) ? 'animate-spin' : ''}`} />
-                  <span>{(seedStandardItemsMutation.isPending || isAutoSeeding) ? (bn ? 'যুক্ত হচ্ছে...' : 'Adding...') : (bn ? 'এক ক্লিকে সকল সামগ্রী যোগ করুন' : 'Add All Items')}</span>
+                  <Sparkles className={`w-3.5 h-3.5 ${seedStandardItemsMutation.isPending ? 'animate-spin' : ''}`} />
+                  <span>{seedStandardItemsMutation.isPending ? (bn ? 'যুক্ত হচ্ছে...' : 'Adding...') : (bn ? 'এক ক্লিকে সকল সামগ্রী যোগ করুন' : 'Add All Items')}</span>
                 </Button>
               </div>
             )}
