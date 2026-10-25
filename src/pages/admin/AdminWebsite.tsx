@@ -2046,6 +2046,490 @@ type FormSettingRow = {
   updated_at: string | null;
 };
 
+// ═══════════════════════════════════════════════════════════════════════
+// 🏛️ Admission Divisions & Classes Control Component
+// ═══════════════════════════════════════════════════════════════════════
+const AdmissionDivisionsControl = ({ language }: { language: string }) => {
+  const queryClient = useQueryClient();
+  const bn = language === 'bn';
+
+  const { data: divisions = [], isLoading: divLoading } = useQuery({
+    queryKey: ['divisions-for-website-control'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('divisions').select('*').order('sort_order', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const { data: classes = [], isLoading: classLoading } = useQuery({
+    queryKey: ['classes-for-website-control'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('classes').select('*').order('sort_order', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const { data: openSettings, isLoading: settingsLoading } = useQuery({
+    queryKey: ['website-admission-open-scope'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('website_settings')
+        .select('key, value')
+        .in('key', ['admission_open_divisions', 'admission_open_classes']);
+      const map: { admission_open_divisions?: string[]; admission_open_classes?: string[] } = {};
+      data?.forEach((r) => {
+        if (r.key === 'admission_open_divisions' && Array.isArray(r.value)) {
+          map.admission_open_divisions = r.value as string[];
+        }
+        if (r.key === 'admission_open_classes' && Array.isArray(r.value)) {
+          map.admission_open_classes = r.value as string[];
+        }
+      });
+      return map;
+    },
+  });
+
+  const [openDivisions, setOpenDivisions] = useState<string[]>([]);
+  const [openClasses, setOpenClasses] = useState<string[]>([]);
+  const [initialized, setInitialized] = useState(false);
+
+  useEffect(() => {
+    if (!divLoading && !classLoading && !settingsLoading && !initialized) {
+      const allActiveDivIds = divisions.filter((d: any) => d.is_active).map((d: any) => d.id);
+      const allActiveClsIds = classes.filter((c: any) => c.is_active).map((c: any) => c.id);
+
+      const savedDivs = openSettings?.admission_open_divisions;
+      const savedCls = openSettings?.admission_open_classes;
+
+      setOpenDivisions(savedDivs !== undefined ? savedDivs : allActiveDivIds);
+      setOpenClasses(savedCls !== undefined ? savedCls : allActiveClsIds);
+      setInitialized(true);
+    }
+  }, [divisions, classes, openSettings, divLoading, classLoading, settingsLoading, initialized]);
+
+  const saveSettings = async (nextDivs: string[], nextCls: string[]) => {
+    setOpenDivisions(nextDivs);
+    setOpenClasses(nextCls);
+
+    try {
+      await Promise.all([
+        supabase.from('website_settings').upsert({
+          key: 'admission_open_divisions',
+          value: nextDivs,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'key' }),
+        supabase.from('website_settings').upsert({
+          key: 'admission_open_classes',
+          value: nextCls,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'key' }),
+      ]);
+      queryClient.invalidateQueries({ queryKey: ['website-admission-open-scope'] });
+      queryClient.invalidateQueries({ queryKey: ['website-admission-settings'] });
+      toast.success(bn ? 'ভর্তি আবেদনের বিভাগ ও শ্রেণী সেটিংস সংরক্ষিত' : 'Admission divisions & classes saved');
+    } catch (e: any) {
+      toast.error(e.message || (bn ? 'সংরক্ষণে ত্রুটি' : 'Save failed'));
+    }
+  };
+
+  const toggleDivision = (divId: string) => {
+    const isCurrentlyOpen = openDivisions.includes(divId);
+    let nextDivs: string[];
+    let nextCls: string[];
+
+    if (isCurrentlyOpen) {
+      nextDivs = openDivisions.filter(id => id !== divId);
+      const divClassIds = classes.filter((c: any) => c.division_id === divId).map((c: any) => c.id);
+      nextCls = openClasses.filter(id => !divClassIds.includes(id));
+    } else {
+      nextDivs = [...openDivisions, divId];
+      const divClassIds = classes.filter((c: any) => c.division_id === divId && c.is_active).map((c: any) => c.id);
+      nextCls = Array.from(new Set([...openClasses, ...divClassIds]));
+    }
+
+    saveSettings(nextDivs, nextCls);
+  };
+
+  const toggleClass = (clsId: string, parentDivId: string) => {
+    const isCurrentlyOpen = openClasses.includes(clsId);
+    let nextCls: string[];
+    let nextDivs = [...openDivisions];
+
+    if (isCurrentlyOpen) {
+      nextCls = openClasses.filter(id => id !== clsId);
+    } else {
+      nextCls = [...openClasses, clsId];
+      if (!nextDivs.includes(parentDivId)) {
+        nextDivs.push(parentDivId);
+      }
+    }
+
+    saveSettings(nextDivs, nextCls);
+  };
+
+  const enableAll = () => {
+    const allDivs = divisions.filter((d: any) => d.is_active).map((d: any) => d.id);
+    const allCls = classes.filter((c: any) => c.is_active).map((c: any) => c.id);
+    saveSettings(allDivs, allCls);
+  };
+
+  const disableAll = () => {
+    saveSettings([], []);
+  };
+
+  if (divLoading || classLoading || settingsLoading) {
+    return <Skeleton className="h-40 w-full" />;
+  }
+
+  return (
+    <div className="card-elevated p-5 space-y-4" id="admission-control">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-border/80">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+            <GraduationCap className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-display font-bold text-foreground flex items-center gap-2">
+              {bn ? 'ভর্তি আবেদনের সচল বিভাগ ও শ্রেণী নিয়ন্ত্রণ' : 'Admission Open Divisions & Classes'}
+              <Badge variant="outline" className="text-[11px] font-normal py-0">
+                {openDivisions.length}/{divisions.length} {bn ? 'বিভাগ সচল' : 'Divisions Active'}
+              </Badge>
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {bn
+                ? 'পাবলিক ভর্তি ফর্মটিতে কোন কোন বিভাগ ও শ্রেণী আবেদনে দেখানো হবে তা এখান থেকে নিয়ন্ত্রণ করুন।'
+                : 'Control which divisions and classes appear on the public student admission form.'}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          <Button variant="outline" size="sm" onClick={enableAll} className="text-xs h-8">
+            {bn ? 'সবগুলো চালু করুন' : 'Enable All'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={disableAll} className="text-xs h-8 text-destructive hover:text-destructive">
+            {bn ? 'সব বন্ধ করুন' : 'Disable All'}
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {divisions.map((div: any) => {
+          const isDivOpen = openDivisions.includes(div.id);
+          const divClasses = classes.filter((c: any) => c.division_id === div.id);
+          const openClassesInDiv = divClasses.filter((c: any) => openClasses.includes(c.id));
+
+          return (
+            <div
+              key={div.id}
+              className={`rounded-2xl border transition-all p-4 ${
+                isDivOpen
+                  ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/20 dark:bg-emerald-950/10'
+                  : 'border-border/60 bg-muted/20 opacity-80'
+              }`}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/50">
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${isDivOpen ? 'bg-emerald-600 text-white' : 'bg-muted text-muted-foreground'}`}>
+                    <BookOpen className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-bold text-sm text-foreground">{div.name_bn || div.name}</h4>
+                      {div.prefix && (
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground uppercase">
+                          {div.prefix}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      {isDivOpen
+                        ? (bn ? `${openClassesInDiv.length}/${divClasses.length} টি জামাত/শ্রেণী আবেদনে উন্মুক্ত` : `${openClassesInDiv.length}/${divClasses.length} classes open`)
+                        : (bn ? 'এই বিভাগের ভর্তি আবেদন সম্পূর্ণ বন্ধ' : 'Admission closed for this division')}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isDivOpen ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-400'}`}>
+                    {isDivOpen ? (bn ? '🟢 সচল' : '🟢 Active') : (bn ? '🔴 বন্ধ' : '🔴 Closed')}
+                  </span>
+                  <Switch
+                    checked={isDivOpen}
+                    onCheckedChange={() => toggleDivision(div.id)}
+                  />
+                </div>
+              </div>
+
+              {/* Class Sub-toggles */}
+              {divClasses.length === 0 ? (
+                <p className="text-xs text-muted-foreground pt-3 italic">
+                  {bn ? 'এই বিভাগে কোনো শ্রেণী যুক্ত নেই।' : 'No classes configured under this division.'}
+                </p>
+              ) : (
+                <div className="pt-3">
+                  <p className="text-[11px] font-semibold text-muted-foreground mb-2">
+                    {bn ? 'উন্মুক্ত শ্রেণীসমূহ (যেগুলো আবেদনে সিলেক্ট করা যাবে):' : 'Open Classes:'}
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    {divClasses.map((cls: any) => {
+                      const isClsOpen = openClasses.includes(cls.id);
+                      return (
+                        <div
+                          key={cls.id}
+                          onClick={() => toggleClass(cls.id, div.id)}
+                          className={`flex items-center justify-between p-2.5 rounded-xl border text-xs cursor-pointer transition-colors ${
+                            isClsOpen && isDivOpen
+                              ? 'bg-white dark:bg-card border-emerald-300 dark:border-emerald-700 text-foreground font-medium shadow-sm'
+                              : 'bg-muted/40 border-transparent text-muted-foreground hover:bg-muted/70'
+                          }`}
+                        >
+                          <span className="truncate pr-2">{cls.name_bn || cls.name}</span>
+                          <Switch
+                            checked={isClsOpen && isDivOpen}
+                            onCheckedChange={() => toggleClass(cls.id, div.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="scale-75"
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// 💼 Staff Job Application Open Designations Control Component
+// ═══════════════════════════════════════════════════════════════════════
+const StaffDesignationsControl = ({ language }: { language: string }) => {
+  const queryClient = useQueryClient();
+  const bn = language === 'bn';
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['staff_categories'],
+    queryFn: async () => {
+      const { data } = await supabase.from('staff_categories').select('*').order('sort_order', { ascending: true });
+      return data || [];
+    },
+  });
+
+  const { data: designations = [], isLoading: desigLoading } = useQuery({
+    queryKey: ['designations-all'],
+    queryFn: async () => {
+      const { data } = await supabase.from('designations').select('*').order('sort_order', { ascending: true });
+      return data || [];
+    },
+  });
+
+  const { data: savedOpen = null, isLoading: settingsLoading } = useQuery<string[] | null>({
+    queryKey: ['staff-open-designations'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('website_settings')
+        .select('value')
+        .eq('key', 'staff_open_designations')
+        .maybeSingle();
+      if (data?.value && Array.isArray(data.value)) {
+        return data.value as string[];
+      }
+      return null;
+    },
+  });
+
+  const [openDesignations, setOpenDesignations] = useState<string[]>([]);
+  const [initialized, setInitialized] = useState(false);
+
+  useEffect(() => {
+    if (!desigLoading && !settingsLoading && !initialized) {
+      if (savedOpen !== null) {
+        setOpenDesignations(savedOpen);
+      } else {
+        const allActive = designations.filter((d: any) => d.is_active).map((d: any) => d.id);
+        setOpenDesignations(allActive);
+      }
+      setInitialized(true);
+    }
+  }, [designations, savedOpen, desigLoading, settingsLoading, initialized]);
+
+  const saveOpenDesignations = async (nextList: string[]) => {
+    setOpenDesignations(nextList);
+    try {
+      await supabase.from('website_settings').upsert({
+        key: 'staff_open_designations',
+        value: nextList,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'key' });
+      queryClient.invalidateQueries({ queryKey: ['staff-open-designations'] });
+      queryClient.invalidateQueries({ queryKey: ['designations-public'] });
+      toast.success(bn ? 'নিয়োগ আবেদনের পদবি তালিকা সংরক্ষিত' : 'Application designations saved');
+    } catch (e: any) {
+      toast.error(e.message || (bn ? 'ত্রুটি' : 'Error'));
+    }
+  };
+
+  const toggleDesignation = (id: string) => {
+    const isCurrentlyOpen = openDesignations.includes(id);
+    const nextList = isCurrentlyOpen
+      ? openDesignations.filter(dId => dId !== id)
+      : [...openDesignations, id];
+    saveOpenDesignations(nextList);
+  };
+
+  const enableAll = () => {
+    const all = designations.filter((d: any) => d.is_active).map((d: any) => d.id);
+    saveOpenDesignations(all);
+  };
+
+  const disableAll = () => {
+    saveOpenDesignations([]);
+  };
+
+  if (desigLoading || settingsLoading) {
+    return <Skeleton className="h-40 w-full" />;
+  }
+
+  const filtered = designations.filter((d: any) => {
+    if (selectedCategory !== 'all' && d.staff_category !== selectedCategory) return false;
+    if (!searchTerm.trim()) return true;
+    const q = searchTerm.toLowerCase();
+    return d.name_bn?.toLowerCase().includes(q) || d.name?.toLowerCase().includes(q);
+  });
+
+  const getCategoryLabel = (key: string) => {
+    const c = categories.find((cat: any) => cat.key === key);
+    return c ? (bn ? c.name_bn : c.name) : key;
+  };
+
+  return (
+    <div className="card-elevated p-5 space-y-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-border/80">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <Briefcase className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-display font-bold text-foreground flex items-center gap-2">
+              {bn ? 'নিয়োগ আবেদনের উন্মুক্ত পদবীসমূহ নিয়ন্ত্রণ' : 'Job Application Open Designations'}
+              <Badge variant="outline" className="text-[11px] font-normal py-0">
+                {openDesignations.length}/{designations.length} {bn ? 'পদবি উন্মুক্ত' : 'Designations Open'}
+              </Badge>
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {bn
+                ? 'চাকরির আবেদন ফর্মে প্রার্থীরা কোন কোন পদবিতে আবেদন করতে পারবে তা এখান থেকে নির্ধারণ করুন।'
+                : 'Select which designations are accepting public job applications.'}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          <Button variant="outline" size="sm" onClick={enableAll} className="text-xs h-8">
+            {bn ? 'সবগুলো উন্মুক্ত করুন' : 'Enable All'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={disableAll} className="text-xs h-8 text-destructive hover:text-destructive">
+            {bn ? 'সব বন্ধ করুন' : 'Disable All'}
+          </Button>
+        </div>
+      </div>
+
+      {/* Filter and Search Bar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder={bn ? 'পদবির নাম দিয়ে খুঁজুন...' : 'Search designation...'}
+            className="pl-9 h-9 text-xs bg-background"
+          />
+        </div>
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+          <Button
+            type="button"
+            variant={selectedCategory === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedCategory('all')}
+            className="text-xs h-8 shrink-0"
+          >
+            {bn ? 'সকল বিভাগ' : 'All'}
+          </Button>
+          {categories.map((cat: any) => (
+            <Button
+              key={cat.id}
+              type="button"
+              variant={selectedCategory === cat.key ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedCategory(cat.key)}
+              className="text-xs h-8 shrink-0"
+            >
+              {bn ? cat.name_bn : cat.name}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {/* Designation Cards Grid */}
+      {filtered.length === 0 ? (
+        <p className="text-xs text-muted-foreground py-6 text-center">
+          {bn ? 'কোনো পদবি পাওয়া যায়নি।' : 'No designations found.'}
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+          {filtered.map((d: any) => {
+            const isOpen = openDesignations.includes(d.id);
+            return (
+              <div
+                key={d.id}
+                onClick={() => toggleDesignation(d.id)}
+                className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                  isOpen
+                    ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/30 dark:bg-emerald-950/20'
+                    : 'border-border/60 bg-muted/20 opacity-70'
+                }`}
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs font-bold text-foreground truncate">{d.name_bn || d.name}</p>
+                    {d.staff_category && (
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-muted text-muted-foreground shrink-0">
+                        {getCategoryLabel(d.staff_category)}
+                      </span>
+                    )}
+                  </div>
+                  {d.name && d.name !== d.name_bn && (
+                    <p className="text-[11px] text-muted-foreground truncate">{d.name}</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${isOpen ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400'}`}>
+                    {isOpen ? (bn ? 'উন্মুক্ত' : 'Open') : (bn ? 'বন্ধ' : 'Closed')}
+                  </span>
+                  <Switch
+                    checked={isOpen}
+                    onCheckedChange={() => toggleDesignation(d.id)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="scale-90"
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+
 const FormSettingsTab = ({ language }: { language: string }) => {
   const queryClient = useQueryClient();
   const [localSettings, setLocalSettings] = useState<FormSettingRow[]>([]);
