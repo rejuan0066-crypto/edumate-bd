@@ -918,14 +918,6 @@ const AdminHostel = () => {
         <p className="text-muted-foreground">{bn ? 'হোস্টেল, রুম, বরাদ্দ ও খাবার মেনু পরিচালনা করুন' : 'Manage hostels, rooms, allocations and meal menus'}</p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card><CardContent className="p-4 flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center"><Building2 className="w-6 h-6 text-primary" /></div><div><p className="text-xs text-muted-foreground">{bn ? 'মোট হোস্টেল' : 'Total Hostels'}</p><p className="text-2xl font-bold">{hostels.length}</p></div></CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center"><BedDouble className="w-6 h-6 text-blue-600" /></div><div><p className="text-xs text-muted-foreground">{bn ? 'মোট বেড' : 'Total Beds'}</p><p className="text-2xl font-bold">{totalBeds}</p></div></CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center"><Users className="w-6 h-6 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">{bn ? 'বরাদ্দকৃত' : 'Occupied'}</p><p className="text-2xl font-bold">{occupied}</p></div></CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center"><UtensilsCrossed className="w-6 h-6 text-orange-600" /></div><div><p className="text-xs text-muted-foreground">{bn ? 'অকুপেন্সি' : 'Occupancy'}</p><p className="text-2xl font-bold">{occupancyRate}%</p></div></CardContent></Card>
-      </div>
-
       <Tabs defaultValue="boarding-stock" className="space-y-4">
         <div className="relative -mx-2 px-2">
           <div className="overflow-x-auto scrollbar-none snap-x snap-mandatory [mask-image:linear-gradient(to_right,transparent,black_16px,black_calc(100%-16px),transparent)] md:[mask-image:none]">
@@ -958,7 +950,14 @@ const AdminHostel = () => {
         </TabsContent>
 
         {/* HOSTELS TAB */}
-        <TabsContent value="hostels">
+        <TabsContent value="hostels" className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card><CardContent className="p-4 flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center"><Building2 className="w-6 h-6 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground font-medium">{bn ? 'মোট হোস্টেল' : 'Total Hostels'}</p><p className="text-2xl font-bold mt-0.5">{hostels.length}</p><p className="text-[11px] text-emerald-600 font-medium">{bn ? 'সক্রিয় শাখা' : 'Active branches'}</p></div></CardContent></Card>
+            <Card><CardContent className="p-4 flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center"><Users className="w-6 h-6 text-blue-600" /></div><div><p className="text-xs text-muted-foreground font-medium">{bn ? 'মোট ধারণক্ষমতা' : 'Total Capacity'}</p><p className="text-2xl font-bold mt-0.5">{hostels.reduce((sum, h) => sum + (Number(h.total_capacity) || 0), 0)}</p><p className="text-[11px] text-blue-600 font-medium">{bn ? 'মোট ছাত্র/ছাত্রী সিট' : 'Total student beds'}</p></div></CardContent></Card>
+            <Card><CardContent className="p-4 flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center"><Building2 className="w-6 h-6 text-indigo-600" /></div><div><p className="text-xs text-muted-foreground font-medium">{bn ? 'বালক হোস্টেল' : 'Boys Hostels'}</p><p className="text-2xl font-bold mt-0.5">{hostels.filter(h => h.hostel_type === 'boys').length}</p><p className="text-[11px] text-indigo-600 font-medium">{bn ? 'ছাত্রাবাস' : 'Boys dorms'}</p></div></CardContent></Card>
+            <Card><CardContent className="p-4 flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-pink-500/10 flex items-center justify-center"><Building2 className="w-6 h-6 text-pink-600" /></div><div><p className="text-xs text-muted-foreground font-medium">{bn ? 'বালিকা হোস্টেল' : 'Girls Hostels'}</p><p className="text-2xl font-bold mt-0.5">{hostels.filter(h => h.hostel_type === 'girls').length}</p><p className="text-[11px] text-pink-600 font-medium">{bn ? 'ছাত্রীনিবাস' : 'Girls dorms'}</p></div></CardContent></Card>
+          </div>
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>{bn ? 'হোস্টেল তালিকা' : 'Hostels'}</CardTitle>
@@ -1006,7 +1005,14 @@ const AdminHostel = () => {
         </TabsContent>
 
         {/* ROOMS TAB */}
-        <TabsContent value="rooms">
+        <TabsContent value="rooms" className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card><CardContent className="p-4 flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center"><BedDouble className="w-6 h-6 text-primary" /></div><div><p className="text-xs text-muted-foreground font-medium">{bn ? 'মোট রুম' : 'Total Rooms'}</p><p className="text-2xl font-bold mt-0.5">{rooms.length}</p><p className="text-[11px] text-muted-foreground">{bn ? 'সব হোস্টেল মিলিয়ে' : 'Across all dorms'}</p></div></CardContent></Card>
+            <Card><CardContent className="p-4 flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center"><BedDouble className="w-6 h-6 text-blue-600" /></div><div><p className="text-xs text-muted-foreground font-medium">{bn ? 'মোট বেড' : 'Total Beds'}</p><p className="text-2xl font-bold mt-0.5">{totalBeds}</p><p className="text-[11px] text-blue-600 font-medium">{bn ? 'সর্বমোট ধারণক্ষমতা' : 'Total Capacity'}</p></div></CardContent></Card>
+            <Card><CardContent className="p-4 flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center"><BedDouble className="w-6 h-6 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground font-medium">{bn ? 'খালি বেড' : 'Available Beds'}</p><p className="text-2xl font-bold mt-0.5">{Math.max(0, totalBeds - occupied)}</p><p className="text-[11px] text-emerald-600 font-medium">{bn ? 'বরাদ্দযোগ্য সিট' : 'Ready for allocation'}</p></div></CardContent></Card>
+            <Card><CardContent className="p-4 flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center"><Users className="w-6 h-6 text-orange-600" /></div><div><p className="text-xs text-muted-foreground font-medium">{bn ? 'অকুপেন্সি হার' : 'Occupancy Rate'}</p><p className="text-2xl font-bold mt-0.5">{occupancyRate}%</p><p className="text-[11px] text-orange-600 font-medium">{bn ? `${occupied} জন শিক্ষার্থী বরাদ্দ` : `${occupied} students allocated`}</p></div></CardContent></Card>
+          </div>
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>{bn ? 'রুম তালিকা' : 'Rooms'}</CardTitle>
@@ -1052,7 +1058,14 @@ const AdminHostel = () => {
         </TabsContent>
 
         {/* ALLOCATIONS TAB */}
-        <TabsContent value="allocations">
+        <TabsContent value="allocations" className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card><CardContent className="p-4 flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center"><Users className="w-6 h-6 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground font-medium">{bn ? 'বরাদ্দকৃত সিট' : 'Allocated Beds'}</p><p className="text-2xl font-bold mt-0.5">{occupied}</p><p className="text-[11px] text-emerald-600 font-medium">{bn ? 'মোট দখলকৃত সিট' : 'Total occupied'}</p></div></CardContent></Card>
+            <Card><CardContent className="p-4 flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center"><Users className="w-6 h-6 text-blue-600" /></div><div><p className="text-xs text-muted-foreground font-medium">{bn ? 'সক্রিয় বোর্ডার' : 'Active Boarders'}</p><p className="text-2xl font-bold mt-0.5">{allocations.filter(a => a.status === 'active').length}</p><p className="text-[11px] text-blue-600 font-medium">{bn ? 'বর্তমান নিয়মিত ছাত্র' : 'Currently residing'}</p></div></CardContent></Card>
+            <Card><CardContent className="p-4 flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-teal-500/10 flex items-center justify-center"><BedDouble className="w-6 h-6 text-teal-600" /></div><div><p className="text-xs text-muted-foreground font-medium">{bn ? 'খালি সিট' : 'Vacant Seats'}</p><p className="text-2xl font-bold mt-0.5">{Math.max(0, totalBeds - occupied)}</p><p className="text-[11px] text-teal-600 font-medium">{bn ? 'নতুন বরাদ্দ সম্ভব' : 'Available for new'}</p></div></CardContent></Card>
+            <Card><CardContent className="p-4 flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center"><Users className="w-6 h-6 text-amber-600" /></div><div><p className="text-xs text-muted-foreground font-medium">{bn ? 'ফ্রি / ছাড়প্রাপ্ত' : 'Free / Scholarship'}</p><p className="text-2xl font-bold mt-0.5">{allocations.filter(a => a.fee_mode === 'free' || a.fee_mode === 'discount').length}</p><p className="text-[11px] text-amber-600 font-medium">{bn ? 'বিশেষ ছাড়ের শিক্ষার্থী' : 'Discounted occupants'}</p></div></CardContent></Card>
+          </div>
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>{bn ? 'রুম বরাদ্দ' : 'Allocations'}</CardTitle>
@@ -1121,7 +1134,14 @@ const AdminHostel = () => {
         </TabsContent>
 
         {/* MEALS TAB */}
-        <TabsContent value="meals">
+        <TabsContent value="meals" className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card><CardContent className="p-4 flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center"><UtensilsCrossed className="w-6 h-6 text-orange-600" /></div><div><p className="text-xs text-muted-foreground font-medium">{bn ? 'সাপ্তাহিক মেনু আইটেম' : 'Total Menu Items'}</p><p className="text-2xl font-bold mt-0.5">{meals.length}</p><p className="text-[11px] text-orange-600 font-medium">{bn ? '৭ দিনের রুটিন' : '7-day schedule'}</p></div></CardContent></Card>
+            <Card><CardContent className="p-4 flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center"><UtensilsCrossed className="w-6 h-6 text-amber-600" /></div><div><p className="text-xs text-muted-foreground font-medium">{bn ? 'সকালের নাস্তা' : 'Breakfast Items'}</p><p className="text-2xl font-bold mt-0.5">{meals.filter(m => m.meal_type === 'breakfast').length}</p><p className="text-[11px] text-amber-600 font-medium">{bn ? 'নাস্তার আইটেম' : 'Morning items'}</p></div></CardContent></Card>
+            <Card><CardContent className="p-4 flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center"><UtensilsCrossed className="w-6 h-6 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground font-medium">{bn ? 'দুপুরের খাবার' : 'Lunch Items'}</p><p className="text-2xl font-bold mt-0.5">{meals.filter(m => m.meal_type === 'lunch').length}</p><p className="text-[11px] text-emerald-600 font-medium">{bn ? 'দুপুরের আইটেম' : 'Noon items'}</p></div></CardContent></Card>
+            <Card><CardContent className="p-4 flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center"><UtensilsCrossed className="w-6 h-6 text-blue-600" /></div><div><p className="text-xs text-muted-foreground font-medium">{bn ? 'রাতের খাবার' : 'Dinner Items'}</p><p className="text-2xl font-bold mt-0.5">{meals.filter(m => m.meal_type === 'dinner').length}</p><p className="text-[11px] text-blue-600 font-medium">{bn ? 'রাতের আইটেম' : 'Night items'}</p></div></CardContent></Card>
+          </div>
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>{bn ? 'সাপ্তাহিক খাবার মেনু' : 'Weekly Meal Menu'}</CardTitle>
@@ -1169,7 +1189,14 @@ const AdminHostel = () => {
         </TabsContent>
 
         {/* MEAL ATTENDANCE TAB */}
-        <TabsContent value="meal-attendance">
+        <TabsContent value="meal-attendance" className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card><CardContent className="p-4 flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center"><CalendarCheck className="w-6 h-6 text-primary" /></div><div><p className="text-xs text-muted-foreground font-medium">{bn ? 'নির্বাচিত দিনের মোট মিল' : 'Total Meals'}</p><p className="text-2xl font-bold mt-0.5">{(mealAttendance as MealAttendance[]).reduce((sum, a) => sum + (a.breakfast ? 1 : 0) + (a.lunch ? 1 : 0) + (a.dinner ? 1 : 0), 0)}</p><p className="text-[11px] text-primary font-medium">{bn ? 'নাস্তা + দুপুর + রাত' : 'B + L + D'}</p></div></CardContent></Card>
+            <Card><CardContent className="p-4 flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center"><UtensilsCrossed className="w-6 h-6 text-amber-600" /></div><div><p className="text-xs text-muted-foreground font-medium">{bn ? 'সকালের নাস্তা' : 'Breakfast'}</p><p className="text-2xl font-bold mt-0.5">{(mealAttendance as MealAttendance[]).filter(a => a.breakfast).length}</p><p className="text-[11px] text-amber-600 font-medium">{bn ? 'উপস্থিত বোর্ডার' : 'Present count'}</p></div></CardContent></Card>
+            <Card><CardContent className="p-4 flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center"><UtensilsCrossed className="w-6 h-6 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground font-medium">{bn ? 'দুপুরের খাবার' : 'Lunch'}</p><p className="text-2xl font-bold mt-0.5">{(mealAttendance as MealAttendance[]).filter(a => a.lunch).length}</p><p className="text-[11px] text-emerald-600 font-medium">{bn ? 'উপস্থিত বোর্ডার' : 'Present count'}</p></div></CardContent></Card>
+            <Card><CardContent className="p-4 flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center"><UtensilsCrossed className="w-6 h-6 text-blue-600" /></div><div><p className="text-xs text-muted-foreground font-medium">{bn ? 'রাতের খাবার' : 'Dinner'}</p><p className="text-2xl font-bold mt-0.5">{(mealAttendance as MealAttendance[]).filter(a => a.dinner).length}</p><p className="text-[11px] text-blue-600 font-medium">{bn ? 'উপস্থিত বোর্ডার' : 'Present count'}</p></div></CardContent></Card>
+          </div>
+
           <Card>
             <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <CardTitle className="flex items-center gap-2"><CalendarCheck className="w-5 h-5" />{bn ? '৩ বেলা খাবারের হাজিরা' : '3-Meal Attendance'}</CardTitle>
