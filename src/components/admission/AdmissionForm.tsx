@@ -2086,20 +2086,23 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
 
         {/* Modern Sticky Bottom Navigation Bar (Exact 1:1 Mockup Match) */}
         <div className="px-6 py-4 bg-white dark:bg-card border-t border-slate-200 dark:border-border flex flex-col sm:flex-row items-center justify-between gap-3 shadow-inner sticky bottom-0 z-20">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              setCurrentStep(prev => Math.max(0, prev - 1));
-              const dialogContent = document.querySelector('[role="dialog"]');
-              if (dialogContent) dialogContent.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            disabled={safeCurrentStep === 0}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-300 dark:border-border bg-white dark:bg-card text-xs font-semibold text-slate-600 dark:text-muted-foreground hover:text-slate-900 dark:hover:text-foreground hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-xs"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            {bn ? 'পূর্ববর্তী ধাপ' : 'Previous Step'}
-          </Button>
+          {safeCurrentStep > 0 ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setCurrentStep(prev => Math.max(0, prev - 1));
+                const dialogContent = document.querySelector('[role="dialog"]');
+                if (dialogContent) dialogContent.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-300 dark:border-border bg-white dark:bg-card text-xs font-semibold text-slate-600 dark:text-muted-foreground hover:text-slate-900 dark:hover:text-foreground hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-xs"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              {bn ? 'পূর্ববর্তী ধাপ' : 'Previous Step'}
+            </Button>
+          ) : (
+            <div className="hidden sm:block w-[120px]" />
+          )}
 
           <div className="text-xs text-slate-600 dark:text-muted-foreground font-medium order-first sm:order-none flex items-center gap-2 bg-slate-100 dark:bg-muted/70 px-4 py-1.5 rounded-full border border-slate-200 dark:border-border">
             <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
