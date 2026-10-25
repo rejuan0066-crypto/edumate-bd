@@ -58,6 +58,7 @@ interface InventoryItem {
   buying_price: number | null;
   min_stock_level: number;
   notes: string | null;
+  sort_order?: number | null;
   is_active: boolean | null;
   created_at: string | null;
   updated_at: string | null;
@@ -174,7 +175,32 @@ export const HostelBoardingStockTab: React.FC = () => {
     buying_price: '',
     min_stock_level: '10',
     notes: '',
+    sort_order: '',
   });
+
+  // Serial number management state
+  const [serialVersion, setSerialVersion] = useState(0);
+  const [editingSerialId, setEditingSerialId] = useState<string | null>(null);
+  const [editingSerialVal, setEditingSerialVal] = useState<string>('');
+
+  const getLocalSerialMap = (): Record<string, number> => {
+    try {
+      const raw = localStorage.getItem('hostel_boarding_item_serials');
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  };
+
+  const saveLocalSerial = (id: string, serial: number) => {
+    try {
+      const current = getLocalSerialMap();
+      current[id] = serial;
+      localStorage.setItem('hostel_boarding_item_serials', JSON.stringify(current));
+    } catch (e) {
+      console.warn('Could not save local serial:', e);
+    }
+  };
 
   // 1. Fetch Boarding Food Items (category === 'hostel_boarding')
   const { data: foodItems = [], isLoading: loadingItems } = useQuery({
@@ -185,8 +211,22 @@ export const HostelBoardingStockTab: React.FC = () => {
         .select('*')
         .eq('category', 'hostel_boarding')
         .eq('is_active', true)
+        .order('sort_order', { ascending: true, nullsFirst: false })
         .order('name_bn');
-      if (error) throw error;
+
+      if (error) {
+        if (error.code === '42703' || error.message?.includes('sort_order')) {
+          const { data: fbData, error: fbErr } = await supabase
+            .from('inventory_items')
+            .select('*')
+            .eq('category', 'hostel_boarding')
+            .eq('is_active', true)
+            .order('name_bn');
+          if (fbErr) throw fbErr;
+          return (fbData || []) as InventoryItem[];
+        }
+        throw error;
+      }
       return (data || []) as InventoryItem[];
     },
   });
@@ -260,9 +300,25 @@ export const HostelBoardingStockTab: React.FC = () => {
     });
   }, [rawLogs, itemsMap]);
 
-  // Filtered Food Items based on search and stock status
+  // Helper to determine effective serial number
+  const getItemEffectiveSerial = (item: InventoryItem, fallbackIdx: number): number => {
+    const localMap = getLocalSerialMap();
+    if (localMap[item.id] !== undefined && localMap[item.id] !== null) {
+      return Number(localMap[item.id]);
+    }
+    if (item.sort_order !== undefined && item.sort_order !== null && Number(item.sort_order) > 0) {
+      return Number(item.sort_order);
+    }
+    if (item.name_bn?.includes('চাউল')) return 1;
+    if (item.name_bn?.includes('ডাল') && !item.name_bn?.includes('মুগ')) return 2;
+    return fallbackIdx;
+  };
+
+  // Filtered Food Items based on search, stock status and serial order
   const filteredFoodItems = useMemo(() => {
-    return foodItems.filter(item => {
+    const localMap = getLocalSerialMap();
+
+    const list = foodItems.filter(item => {
       const matchSearch = searchQuery.trim() === '' ||
         item.name_bn.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (item.name_en && item.name_en.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -272,7 +328,14 @@ export const HostelBoardingStockTab: React.FC = () => {
       if (stockStatusFilter === 'available') return matchSearch && !isLow;
       return matchSearch;
     });
-  }, [foodItems, searchQuery, stockStatusFilter]);
+
+    return [...list].sort((a, b) => {
+      const aSerial = localMap[a.id] ?? (a.sort_order && Number(a.sort_order) > 0 ? Number(a.sort_order) : 9999);
+      const bSerial = localMap[b.id] ?? (b.sort_order && Number(b.sort_order) > 0 ? Number(b.sort_order) : 9999);
+      if (aSerial !== bSerial) return aSerial - bSerial;
+      return a.name_bn.localeCompare(b.name_bn, 'bn');
+    });
+  }, [foodItems, searchQuery, stockStatusFilter, serialVersion]);
 
   // Duplicate item name validation
   const isDuplicateItemName = useMemo(() => {
@@ -473,8 +536,9 @@ export const HostelBoardingStockTab: React.FC = () => {
       const stock = parseFloat(itemForm.current_stock) || 0;
       const price = parseFloat(itemForm.buying_price) || 0;
       const minStock = parseFloat(itemForm.min_stock_level) || 5;
+      const sortOrder = parseInt(itemForm.sort_order) || 0;
 
-      const payload = {
+      const payload: Record<string, any> = {
         name_bn: trimmedBn,
         name_en: trimmedEn || null,
         category: 'hostel_boarding',
@@ -483,6 +547,7 @@ export const HostelBoardingStockTab: React.FC = () => {
         buying_price: price,
         min_stock_level: minStock,
         notes: itemForm.notes.trim() || null,
+        sort_order: sortOrder > 0 ? sortOrder : 0,
         is_active: true,
       };
 
@@ -490,9 +555,13 @@ export const HostelBoardingStockTab: React.FC = () => {
         const oldStock = Number(editingItem.current_stock) || 0;
         const diffStock = Number((stock - oldStock).toFixed(2));
 
+        if (sortOrder > 0) {
+          saveLocalSerial(editingItem.id, sortOrder);
+        }
+
         const { error } = await supabase
           .from('inventory_items')
-          .update(payload)
+          .update(payload as any)
           .eq('id', editingItem.id);
         if (error) {
           // Fallback if advanced columns don't exist
@@ -533,7 +602,7 @@ export const HostelBoardingStockTab: React.FC = () => {
       } else {
         const { data: created, error } = await supabase
           .from('inventory_items')
-          .insert(payload)
+          .insert(payload as any)
           .select('id')
           .single();
         if (error) {
@@ -555,6 +624,10 @@ export const HostelBoardingStockTab: React.FC = () => {
             .single();
           if (fbErr) throw fbErr;
 
+          if (fbCreated && sortOrder > 0) {
+            saveLocalSerial(fbCreated.id, sortOrder);
+          }
+
           if (stock > 0 && fbCreated) {
             await supabase.from('inventory_logs').insert({
               item_id: fbCreated.id,
@@ -565,6 +638,10 @@ export const HostelBoardingStockTab: React.FC = () => {
             });
           }
         } else {
+          if (created && sortOrder > 0) {
+            saveLocalSerial(created.id, sortOrder);
+          }
+
           // Log initial stock if > 0
           if (stock > 0 && created) {
             await supabase.from('inventory_logs').insert({
@@ -583,6 +660,7 @@ export const HostelBoardingStockTab: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['hostel-boarding-logs'] });
       qc.invalidateQueries({ queryKey: ['inventory-items'] });
       qc.invalidateQueries({ queryKey: ['inventory-items-for-expense'] });
+      setSerialVersion(v => v + 1);
       const wasEditing = !!editingItem;
       const itemName = itemForm.name_bn;
       setItemDialog(false);
@@ -595,6 +673,7 @@ export const HostelBoardingStockTab: React.FC = () => {
         buying_price: '',
         min_stock_level: '10',
         notes: '',
+        sort_order: '',
       });
       toast({
         title: wasEditing ? (bn ? 'আইটেম আপডেট সফল হয়েছে' : 'Item updated successfully') : (bn ? 'নতুন খাদ্য আইটেম যুক্ত হয়েছে' : 'Added'),
@@ -817,8 +896,36 @@ export const HostelBoardingStockTab: React.FC = () => {
     },
   });
 
+  // 7. Update Single Item Serial Number Mutation (Inline or with Up/Down buttons)
+  const updateItemSerialMutation = useMutation({
+    mutationFn: async ({ id, serial }: { id: string; serial: number }) => {
+      saveLocalSerial(id, serial);
+      setSerialVersion(v => v + 1);
+
+      // Persist to Supabase
+      try {
+        await supabase
+          .from('inventory_items')
+          .update({ sort_order: serial } as any)
+          .eq('id', id);
+      } catch (e) {
+        console.warn('Could not update sort_order on remote:', e);
+      }
+      return serial;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['hostel-boarding-stock'] });
+      toast({
+        title: bn ? 'সিরিয়াল নাম্বার পরিবর্তিত হয়েছে' : 'Serial number updated',
+        description: bn ? 'খাদ্য তালিকা নতুন সিরিয়াল অনুযায়ী সাজানো হয়েছে।' : 'List re-ordered according to serial number.',
+      });
+    },
+  });
+
   // Open Edit Item
-  const handleEditItem = (item: InventoryItem) => {
+  const handleEditItem = (item: InventoryItem, fallbackIdx?: number) => {
+    const localMap = getLocalSerialMap();
+    const effectiveSerial = localMap[item.id] ?? (item.sort_order && Number(item.sort_order) > 0 ? Number(item.sort_order) : (fallbackIdx !== undefined ? fallbackIdx : ''));
     setEditingItem(item);
     setItemForm({
       name_bn: item.name_bn || '',
@@ -828,6 +935,7 @@ export const HostelBoardingStockTab: React.FC = () => {
       buying_price: String(item.buying_price || ''),
       min_stock_level: String(item.min_stock_level || 10),
       notes: item.notes || '',
+      sort_order: String(effectiveSerial || ''),
     });
     setItemDialog(true);
   };
@@ -936,6 +1044,7 @@ export const HostelBoardingStockTab: React.FC = () => {
                 buying_price: '',
                 min_stock_level: '10',
                 notes: '',
+                sort_order: String(foodItems.length + 1),
               });
               setItemDialog(true);
             }}
@@ -1164,6 +1273,7 @@ export const HostelBoardingStockTab: React.FC = () => {
                           buying_price: '',
                           min_stock_level: '10',
                           notes: '',
+                          sort_order: String(foodItems.length + 1),
                         });
                         setItemDialog(true);
                       }}
@@ -1179,7 +1289,7 @@ export const HostelBoardingStockTab: React.FC = () => {
                   <Table>
                     <TableHeader className="bg-muted/40">
                       <TableRow>
-                        <TableHead className="w-[40px]">#</TableHead>
+                        <TableHead className="w-[85px]">{bn ? 'ক্রমিক' : 'Serial #'}</TableHead>
                         <TableHead>{bn ? 'খাদ্য সামগ্রীর নাম' : 'Item Name'}</TableHead>
                         <TableHead>{bn ? 'বর্তমান মজুত' : 'Current Stock'}</TableHead>
                         <TableHead>{bn ? 'গড় একক মূল্য' : 'Avg Unit Price'}</TableHead>
@@ -1196,10 +1306,66 @@ export const HostelBoardingStockTab: React.FC = () => {
                         const price = Number(item.buying_price) || 0;
                         const totalVal = stock * price;
                         const isLow = stock <= min;
+                        const itemSerial = getItemEffectiveSerial(item, idx + 1);
 
                         return (
                           <TableRow key={item.id} className="hover:bg-muted/30">
-                            <TableCell className="text-xs text-muted-foreground font-mono">{idx + 1}</TableCell>
+                            <TableCell className="w-[85px] py-1.5">
+                              <div className="flex items-center gap-1">
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={editingSerialId === item.id ? editingSerialVal : itemSerial}
+                                  onFocus={() => {
+                                    setEditingSerialId(item.id);
+                                    setEditingSerialVal(String(itemSerial));
+                                  }}
+                                  onChange={(e) => setEditingSerialVal(e.target.value)}
+                                  onBlur={() => {
+                                    if (editingSerialId === item.id) {
+                                      const val = parseInt(editingSerialVal);
+                                      if (!isNaN(val) && val > 0 && val !== itemSerial) {
+                                        updateItemSerialMutation.mutate({ id: item.id, serial: val });
+                                      }
+                                      setEditingSerialId(null);
+                                    }
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      (e.target as HTMLInputElement).blur();
+                                    }
+                                  }}
+                                  className="w-11 h-7 px-1 text-center font-bold text-xs bg-background/90 border-border focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 rounded-md shadow-none"
+                                  title={bn ? 'সিরিয়াল নাম্বার পরিবর্তন করতে সংখ্যাটি পরিবর্তন করে এন্টার দিন বা বাইরে ক্লিক করুন' : 'Edit serial number and press enter'}
+                                />
+                                <div className="flex flex-col gap-0.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newSerial = Math.max(1, itemSerial - 1);
+                                      if (newSerial !== itemSerial) {
+                                        updateItemSerialMutation.mutate({ id: item.id, serial: newSerial });
+                                      }
+                                    }}
+                                    className="w-4 h-3 flex items-center justify-center text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded text-[9px] leading-none"
+                                    title={bn ? 'উপরে নিন (সিরিয়াল ১ কমান)' : 'Move up'}
+                                  >
+                                    ▲
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newSerial = itemSerial + 1;
+                                      updateItemSerialMutation.mutate({ id: item.id, serial: newSerial });
+                                    }}
+                                    className="w-4 h-3 flex items-center justify-center text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded text-[9px] leading-none"
+                                    title={bn ? 'নিচে নিন (সিরিয়াল ১ বাড়ান)' : 'Move down'}
+                                  >
+                                    ▼
+                                  </button>
+                                </div>
+                              </div>
+                            </TableCell>
                             <TableCell>
                               <div className="font-semibold text-foreground text-sm">{item.name_bn}</div>
                               {item.name_en && (
@@ -1247,7 +1413,7 @@ export const HostelBoardingStockTab: React.FC = () => {
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  onClick={() => handleEditItem(item)}
+                                  onClick={() => handleEditItem(item, itemSerial)}
                                   className="h-8 w-8 p-0 text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
                                   title={bn ? 'সম্পাদনা করুন' : 'Edit item'}
                                 >
@@ -1658,6 +1824,21 @@ export const HostelBoardingStockTab: React.FC = () => {
                 onChange={e => setItemForm(f => ({ ...f, name_en: e.target.value }))}
                 className="mt-1 text-xs"
               />
+            </div>
+
+            <div>
+              <Label className="text-xs font-semibold">{bn ? 'ক্রমিক / সিরিয়াল নাম্বার' : 'Serial / Order Number'}</Label>
+              <Input
+                type="number"
+                min="1"
+                placeholder="1"
+                value={itemForm.sort_order}
+                onChange={e => setItemForm(f => ({ ...f, sort_order: e.target.value }))}
+                className="mt-1 text-xs font-bold"
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                {bn ? 'তালিকায় যে ক্রমানুসারে দেখতে চান (যেমন: ১, ২, ৩...)' : 'Order in which item should appear in table'}
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
