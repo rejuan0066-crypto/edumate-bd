@@ -221,15 +221,105 @@ const StudentProfileModal = ({
     return { total, present, absent, late, percentage, last7 };
   }, [attendanceRecords]);
 
-  const totalPaid = feePayments.filter((p: any) => p.status === 'paid').reduce((s: number, p: any) => s + (p.paid_amount || p.amount || 0), 0);
-  const totalApplicable = applicableFeeTypes.reduce((sum: number, ft: any) => {
-    const waiver = feeWaivers.find((w: any) => w.fee_type_id === ft.id);
-    const isFreeMonthly = student.is_free && ft.fee_category === 'monthly';
-    const waiverPercent = isFreeMonthly ? 100 : (waiver ? waiver.waiver_percent : 0);
-    const netAmount = ft.amount - Math.round(ft.amount * waiverPercent / 100);
-    return sum + netAmount;
-  }, 0);
-  const totalDue = Math.max(0, totalApplicable - totalPaid);
+  // Dynamic financial calculation across the selected session window (months * monthly fees + one-time fees)
+  const sessionFinancials = useMemo(() => {
+    const session = allSessions.find((s: any) => s.id === duesSessionId);
+    const MONTHS_M = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const MONTHS_BN_M = ['জানু','ফেব্রু','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্ট','অক্টো','নভে','ডিসে'];
+    
+    // 1. Months timeline for the selected session window
+    const monthsTimeline: { name: string; year: number; label: string }[] = [];
+    if (session?.start_date && session?.end_date) {
+      const start = new Date(session.start_date);
+      const end = new Date(session.end_date);
+      const cur = new Date(start.getFullYear(), start.getMonth(), 1);
+      while (cur <= end) {
+        monthsTimeline.push({
+          name: MONTHS_M[cur.getMonth()],
+          year: cur.getFullYear(),
+          label: bn ? `${MONTHS_BN_M[cur.getMonth()]} ${cur.getFullYear()}` : `${MONTHS_M[cur.getMonth()].slice(0,3)} ${cur.getFullYear()}`
+        });
+        cur.setMonth(cur.getMonth() + 1);
+      }
+    }
+
+    // 2. Monthly Fee Types applicable to student for this session
+    const monthlyFeeTypes = (applicableFeeTypes as any[]).filter(
+      (ft: any) => ft.payment_frequency === 'monthly' && (!ft.session_id || ft.session_id === duesSessionId)
+    );
+
+    const studentWaivers = (feeWaivers as any[]);
+    const paidLookup = new Set(
+      (feePayments as any[]).filter((p: any) => p.status === 'paid').map((p: any) => `${p.month}|${p.year}|${p.fee_type_id}`)
+    );
+
+    let monthlyDue = 0;
+    let monthlyPaid = 0;
+
+    monthsTimeline.forEach(m => {
+      monthlyFeeTypes.forEach((ft: any) => {
+        const months = Array.isArray(ft.applicable_months) ? ft.applicable_months : [];
+        const applicable = months.length === 0 || months.includes(m.name);
+        if (!applicable) return;
+
+        const isFreeMonthly = student.is_free && ft.fee_category === 'monthly';
+        const waiver = studentWaivers.find((w: any) => w.fee_type_id === ft.id);
+        const waiverPct = isFreeMonthly ? 100 : (waiver?.waiver_percent || 0);
+        const net = ft.amount * (1 - waiverPct / 100);
+
+        const isPaid = paidLookup.has(`${m.name}|${m.year}|${ft.id}`);
+        if (isPaid) {
+          monthlyPaid += net;
+        } else if (waiverPct < 100) {
+          monthlyDue += net;
+        }
+      });
+    });
+
+    // 3. One-Time / Term / Annual Fee Types for this session
+    const oneTimeFeeTypes = (applicableFeeTypes as any[]).filter(
+      (ft: any) => ft.payment_frequency !== 'monthly' && (!ft.session_id || ft.session_id === duesSessionId)
+    );
+
+    let oneTimeDue = 0;
+    let oneTimePaid = 0;
+
+    oneTimeFeeTypes.forEach((ft: any) => {
+      const waiver = studentWaivers.find((w: any) => w.fee_type_id === ft.id);
+      const waiverPercent = waiver ? waiver.waiver_percent : 0;
+      const netAmount = ft.amount - Math.round(ft.amount * waiverPercent / 100);
+
+      const paidPayments = (feePayments as any[]).filter((p: any) => p.fee_type_id === ft.id && p.status === 'paid');
+      const totalPaidForThis = paidPayments.reduce((s: number, p: any) => s + (p.paid_amount || p.amount || 0), 0);
+
+      oneTimePaid += totalPaidForThis;
+      const remaining = Math.max(0, netAmount - totalPaidForThis);
+      if (waiverPercent < 100) {
+        oneTimeDue += remaining;
+      }
+    });
+
+    const totalDue = monthlyDue + oneTimeDue;
+    const totalPaid = monthlyPaid + oneTimePaid;
+
+    return {
+      session,
+      monthsTimeline,
+      monthlyFeeTypes,
+      oneTimeFeeTypes,
+      monthlyDue,
+      monthlyPaid,
+      oneTimeDue,
+      oneTimePaid,
+      totalDue,
+      totalPaid,
+      paidLookup,
+      studentWaivers,
+    };
+  }, [allSessions, duesSessionId, applicableFeeTypes, feeWaivers, feePayments, student.is_free, bn]);
+
+  const totalPaid = sessionFinancials.totalPaid;
+  const totalDue = sessionFinancials.totalDue;
 
   const addWaiverMutation = useMutation({
     mutationFn: async () => {
@@ -469,19 +559,53 @@ const StudentProfileModal = ({
       {/* ═══════════ FINANCE TAB ═══════════ */}
       {activeTab === 'finance' && (
         <div className="space-y-4">
-          {/* Summary Cards */}
+          {/* Session Switcher Toolbar */}
+          <div className="flex items-center justify-between flex-wrap gap-2 px-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{bn ? 'সেশন নির্বাচন:' : 'Select Session:'}</span>
+              <Select value={duesSessionId} onValueChange={setDuesSessionId}>
+                <SelectTrigger className="h-8 text-xs w-auto min-w-[170px] rounded-full border-primary/30">
+                  <SelectValue placeholder={bn ? 'সেশন বাছুন' : 'Select Session'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {allSessions.map((s: any) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {bn ? s.name_bn : s.name}{s.is_active && (bn ? ' (চলমান)' : ' (Active)')}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {sessionFinancials.monthsTimeline.length > 0 && (
+              <Badge variant="outline" className="text-[11px] font-medium border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300">
+                {bn ? `${sessionFinancials.monthsTimeline.length} টি মাস` : `${sessionFinancials.monthsTimeline.length} Months`}
+              </Badge>
+            )}
+          </div>
+
+          {/* Dynamic Summary Cards */}
           <div className="grid grid-cols-2 gap-3">
             <div className="relative overflow-hidden rounded-[18px] bg-gradient-to-br from-emerald-500/15 via-emerald-500/8 to-teal-500/5 border border-emerald-500/15 p-4 text-center">
               <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-xl" />
               <Banknote className="w-5 h-5 text-emerald-600 mx-auto mb-1.5" />
               <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700/60">{bn ? 'মোট পরিশোধিত' : 'Total Paid'}</p>
-              <p className="text-2xl font-black text-emerald-600 mt-1">৳{formatDigits(totalPaid.toLocaleString(), bn)}</p>
+              <p className="text-2xl font-black text-emerald-600 mt-1">৳{formatDigits(sessionFinancials.totalPaid.toLocaleString(), bn)}</p>
+              {sessionFinancials.totalPaid > 0 && (
+                <p className="text-[10px] text-emerald-700/80 mt-1">
+                  {bn ? `মাসিক: ৳${sessionFinancials.monthlyPaid} • অন্যান্য: ৳${sessionFinancials.oneTimePaid}` : `Monthly: ৳${sessionFinancials.monthlyPaid} • Other: ৳${sessionFinancials.oneTimePaid}`}
+                </p>
+              )}
             </div>
             <div className="relative overflow-hidden rounded-[18px] bg-gradient-to-br from-rose-500/15 via-rose-500/8 to-orange-500/5 border border-rose-500/15 p-4 text-center">
               <div className="absolute top-0 right-0 w-20 h-20 bg-rose-500/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-xl" />
               <CreditCard className="w-5 h-5 text-rose-600 mx-auto mb-1.5" />
               <p className="text-[10px] font-bold uppercase tracking-widest text-rose-700/60">{bn ? 'মোট বকেয়া' : 'Total Due'}</p>
-              <p className="text-2xl font-black text-rose-600 mt-1">৳{formatDigits(totalDue.toLocaleString(), bn)}</p>
+              <p className="text-2xl font-black text-rose-600 mt-1">৳{formatDigits(sessionFinancials.totalDue.toLocaleString(), bn)}</p>
+              {sessionFinancials.oneTimeDue > 0 && (
+                <p className="text-[10px] text-rose-700/80 dark:text-rose-400/80 mt-1 font-medium">
+                  {bn ? `মাসিক: ৳${sessionFinancials.monthlyDue} • এককালীন/অন্যান্য: ৳${sessionFinancials.oneTimeDue}` : `Monthly: ৳${sessionFinancials.monthlyDue} • Other: ৳${sessionFinancials.oneTimeDue}`}
+                </p>
+              )}
             </div>
           </div>
 
@@ -595,34 +719,57 @@ const StudentProfileModal = ({
               ) : (
                 <div className="space-y-2 max-h-56 overflow-y-auto pr-1 scrollbar-thin">
                   {applicableFeeTypes.map((ft: any) => {
+                    const isMonthly = ft.payment_frequency === 'monthly';
+                    const monthsCount = isMonthly ? (sessionFinancials.monthsTimeline.length || 1) : 1;
+                    const baseTotal = ft.amount * monthsCount;
+
                     const waiver = feeWaivers.find((w: any) => w.fee_type_id === ft.id);
                     const isFreeMonthly = student.is_free && ft.fee_category === 'monthly';
                     const waiverPercent = isFreeMonthly ? 100 : (waiver ? waiver.waiver_percent : 0);
-                    const discountAmount = Math.round(ft.amount * waiverPercent / 100);
-                    const netAmount = ft.amount - discountAmount;
-                    const paidPayments = feePayments.filter((p: any) => p.fee_type_id === ft.id && p.status === 'paid');
+                    const discountAmount = Math.round(baseTotal * waiverPercent / 100);
+                    const netAmount = baseTotal - discountAmount;
+
+                    // Compute paid payments for this fee type
+                    let totalPaidForThis = 0;
+                    if (isMonthly) {
+                      // Sum payments for this fee type in the selected session months
+                      (feePayments as any[]).filter((p: any) => p.fee_type_id === ft.id && p.status === 'paid').forEach((p: any) => {
+                        const inTimeline = sessionFinancials.monthsTimeline.some(m => m.name === p.month && m.year === p.year);
+                        if (inTimeline || !p.month) {
+                          totalPaidForThis += Number(p.paid_amount || p.amount || 0);
+                        }
+                      });
+                    } else {
+                      totalPaidForThis = (feePayments as any[])
+                        .filter((p: any) => p.fee_type_id === ft.id && p.status === 'paid')
+                        .reduce((s: number, p: any) => s + (p.paid_amount || p.amount || 0), 0);
+                    }
+
                     const pendingPayment = feePayments.find((p: any) => p.fee_type_id === ft.id && p.status === 'pending');
-                    const totalPaidForThis = paidPayments.reduce((s: number, p: any) => s + (p.paid_amount || p.amount || 0), 0);
                     const remaining = Math.max(0, netAmount - totalPaidForThis);
-                    const isFullyPaid = remaining === 0 && totalPaidForThis >= netAmount;
+                    const isFullyPaid = remaining === 0 && totalPaidForThis >= netAmount && netAmount > 0;
                     const isPartialPaid = totalPaidForThis > 0 && remaining > 0;
-                    const categoryLabel = ft.fee_category === 'monthly' ? (bn ? 'মাসিক' : 'Monthly') : ft.fee_category === 'admission' ? (bn ? 'ভর্তি' : 'Admission') : ft.fee_category === 'exam' ? (bn ? 'পরীক্ষা' : 'Exam') : ft.fee_category;
+                    const categoryLabel = ft.fee_category === 'monthly' ? (bn ? 'মাসিক ফি' : 'Monthly Fee') : ft.fee_category === 'admission' ? (bn ? 'ভর্তি ফি' : 'Admission Fee') : ft.fee_category === 'exam' ? (bn ? 'পরীক্ষা ফি' : 'Exam Fee') : ft.fee_category;
 
                     return (
                       <div key={ft.id} className="p-3 rounded-xl bg-muted/20 border border-border/15 hover:bg-muted/30 transition-colors">
                         <div className="flex items-center justify-between">
                           <div className="flex-1 min-w-0">
                             <p className="font-bold text-sm truncate">{bn ? ft.name_bn : ft.name}</p>
-                            <p className="text-[10px] text-muted-foreground/60">{categoryLabel}{ft.classes?.name_bn && ` • ${ft.classes.name_bn}`}</p>
+                            <p className="text-[10px] text-muted-foreground/70">
+                              {categoryLabel}
+                              {isMonthly && (bn ? ` • ৳${ft.amount}/মাস × ${monthsCount} মাস` : ` • ৳${ft.amount}/mo × ${monthsCount} mo`)}
+                              {ft.classes?.name_bn && ` • ${ft.classes.name_bn}`}
+                            </p>
                           </div>
                           <div className="text-right ml-2 shrink-0">
                             {waiverPercent > 0 ? (
                               <div>
-                                <p className="text-[10px] line-through text-muted-foreground/40">৳{ft.amount}</p>
+                                <p className="text-[10px] line-through text-muted-foreground/40">৳{baseTotal}</p>
                                 <p className="font-black text-emerald-600 text-sm">৳{netAmount}</p>
                               </div>
                             ) : (
-                              <p className="font-black text-foreground text-sm">৳{ft.amount}</p>
+                              <p className="font-black text-foreground text-sm">৳{baseTotal}</p>
                             )}
                           </div>
                         </div>
