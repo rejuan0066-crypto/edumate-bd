@@ -65,7 +65,17 @@ import {
   ChevronDown,
   ChevronUp,
   Upload,
+  Copy,
+  Printer,
+  Download,
+  Phone,
 } from 'lucide-react';
+import {
+  buildStudentApplicationHTML,
+  buildStaffApplicationHTML,
+  downloadHTMLAsPDF,
+  printHTML,
+} from '@/lib/applicationSlipGenerator';
 import { toast } from 'sonner';
 import { invalidateAllStudentQueries } from '@/lib/studentQueryInvalidator';
 
@@ -149,6 +159,17 @@ const AdminApprovals = () => {
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<string>('students');
+
+  // Quick Application Tracker States
+  const [showQuickTrackerModal, setShowQuickTrackerModal] = useState(false);
+  const [trackerQuery, setTrackerQuery] = useState('');
+  const [isSearchingTracker, setIsSearchingTracker] = useState(false);
+  const [trackerHasSearched, setTrackerHasSearched] = useState(false);
+  const [trackerResult, setTrackerResult] = useState<{
+    type: 'student' | 'staff';
+    data: any;
+  } | null>(null);
+  const [isDownloadingTrackerSlip, setIsDownloadingTrackerSlip] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
 
@@ -454,6 +475,113 @@ const AdminApprovals = () => {
     },
     onError: (e: any) => toast.error(e.message || (bn ? 'সমস্যা হয়েছে' : 'Error occurred')),
   });
+
+  // ─── Quick Application Tracker Lookup ───
+  const handleTrackerSearch = async (targetId?: string) => {
+    const raw = (targetId !== undefined ? targetId : trackerQuery).trim();
+    if (!raw) {
+      toast.error(bn ? 'আবেদন নম্বর, রোল বা মোবাইল নম্বর দিন' : 'Please enter Application ID, Roll or Mobile');
+      return;
+    }
+    const cleanQ = raw.replace(/[-\s]/g, '').toUpperCase();
+    setIsSearchingTracker(true);
+    setTrackerHasSearched(true);
+    setTrackerResult(null);
+
+    try {
+      // 1. Staff lookup if starts with STF
+      if (cleanQ.startsWith('STF')) {
+        const { data: stfList } = await supabase
+          .from('staff')
+          .select('*')
+          .or(`staff_id.ilike.%${cleanQ}%,application_no.ilike.%${cleanQ}%,staff_data->>application_no.ilike.%${cleanQ}%`)
+          .limit(1);
+
+        if (stfList && stfList.length > 0) {
+          setTrackerResult({ type: 'staff', data: stfList[0] });
+          setIsSearchingTracker(false);
+          return;
+        }
+      }
+
+      // 2. Student lookup
+      const { data: stdList } = await supabase
+        .from('students')
+        .select(`
+          *,
+          classes:class_id(id, name, name_bn, division_id, sort_order, divisions(id, name, name_bn, prefix))
+        `)
+        .or(`student_id.ilike.%${cleanQ}%,application_no.ilike.%${cleanQ}%,registration_no.ilike.%${cleanQ}%,roll_number.ilike.%${cleanQ}%,phone.ilike.%${cleanQ}%,father_phone.ilike.%${cleanQ}%`)
+        .limit(1);
+
+      if (stdList && stdList.length > 0) {
+        setTrackerResult({ type: 'student', data: stdList[0] });
+        setIsSearchingTracker(false);
+        return;
+      }
+
+      // 3. Fallback Staff lookup
+      const { data: fallbackStaff } = await supabase
+        .from('staff')
+        .select('*')
+        .or(`phone.ilike.%${cleanQ}%,mobile.ilike.%${cleanQ}%,staff_id.ilike.%${cleanQ}%,application_no.ilike.%${cleanQ}%,staff_data->>application_no.ilike.%${cleanQ}%`)
+        .limit(1);
+
+      if (fallbackStaff && fallbackStaff.length > 0) {
+        setTrackerResult({ type: 'staff', data: fallbackStaff[0] });
+        setIsSearchingTracker(false);
+        return;
+      }
+
+      setTrackerResult(null);
+      toast.info(bn ? 'কোনো আবেদন পাওয়া যায়নি' : 'No application record found');
+    } catch (err: any) {
+      console.error('Tracker search error:', err);
+      toast.error(err.message || (bn ? 'অনুসন্ধানে ত্রুটি হয়েছে' : 'Search error'));
+    } finally {
+      setIsSearchingTracker(false);
+    }
+  };
+
+  const handleDownloadTrackerSlip = async () => {
+    if (!trackerResult) return;
+    setIsDownloadingTrackerSlip(true);
+    try {
+      const inst = institution || await fetchInstitutionInfo();
+      if (trackerResult.type === 'student') {
+        const html = buildStudentApplicationHTML(trackerResult.data, inst);
+        const appNo = trackerResult.data.application_no || trackerResult.data.student_id || trackerResult.data.roll_number || 'admission_slip';
+        await downloadHTMLAsPDF(html, `admission_slip_${appNo}.pdf`);
+      } else {
+        const html = buildStaffApplicationHTML(trackerResult.data, inst);
+        const appNo = trackerResult.data.application_no || trackerResult.data.staff_id || 'staff_slip';
+        await downloadHTMLAsPDF(html, `staff_application_${appNo}.pdf`);
+      }
+      toast.success(bn ? 'স্লিপ PDF সফলভাবে ডাউনলোড হয়েছে' : 'Slip PDF downloaded');
+    } catch (e: any) {
+      console.error(e);
+      toast.error(bn ? 'PDF তৈরি করতে সমস্যা হয়েছে' : 'Failed to generate PDF');
+    } finally {
+      setIsDownloadingTrackerSlip(false);
+    }
+  };
+
+  const handlePrintTrackerSlip = async () => {
+    if (!trackerResult) return;
+    try {
+      const inst = institution || await fetchInstitutionInfo();
+      if (trackerResult.type === 'student') {
+        const html = buildStudentApplicationHTML(trackerResult.data, inst);
+        printHTML(html);
+      } else {
+        const html = buildStaffApplicationHTML(trackerResult.data, inst);
+        printHTML(html);
+      }
+    } catch (e: any) {
+      console.error(e);
+      toast.error(bn ? 'প্রিন্ট করতে সমস্যা হয়েছে' : 'Failed to print');
+    }
+  };
 
   // ─── Student Admission Approval Handlers ───
   const openStudentApprovalModal = async (s: any) => {
@@ -964,7 +1092,7 @@ const AdminApprovals = () => {
       (s.phone || '').includes(q) ||
       (s.roll_number || '').includes(q) ||
       (s.student_id || '').toLowerCase().replace(/[-\s]/g, '').includes(cleanQ) ||
-      ((s.admission_data as any)?.application_no || '').toLowerCase().replace(/[-\s]/g, '').includes(cleanQ)
+      (s.application_no || '').toLowerCase().replace(/[-\s]/g, '').includes(cleanQ) || ((s.admission_data as any)?.application_no || '').toLowerCase().replace(/[-\s]/g, '').includes(cleanQ) || (s.father_phone || '').includes(q)
     );
   }, [students, searchQuery]);
 
@@ -980,7 +1108,7 @@ const AdminApprovals = () => {
       (s.designation || '').toLowerCase().includes(q) ||
       (s.phone || '').includes(q) ||
       (s.mobile || '').includes(q) ||
-      (s.staff_id || '').toLowerCase().replace(/[-\s]/g, '').includes(cleanQ) ||
+      (s.staff_id || '').toLowerCase().replace(/[-\s]/g, '').includes(cleanQ) || (s.application_no || '').toLowerCase().replace(/[-\s]/g, '').includes(cleanQ) ||
       ((s.staff_data as any)?.application_no || '').toLowerCase().replace(/[-\s]/g, '').includes(cleanQ) ||
       (s.nid || '').includes(q) ||
       String(s.salary || '').includes(q)
@@ -1081,7 +1209,19 @@ const AdminApprovals = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setShowQuickTrackerModal(true);
+                setTrackerHasSearched(false);
+              }}
+              className="h-9 rounded-xl font-medium gap-2 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 bg-white dark:bg-card hover:bg-emerald-50 dark:hover:bg-emerald-950/40 shadow-xs"
+            >
+              <Search className="w-4 h-4 text-emerald-600" />
+              <span>{bn ? 'আবেদন অনুসন্ধান ও ট্র্যাকিং' : 'Application Quick Tracker'}</span>
+            </Button>
             <Button variant="outline" size="sm" onClick={refetchAll} className="h-9 rounded-xl font-medium gap-2">
               <RefreshCw className="w-4 h-4" />
               {bn ? 'রিফ্রেশ' : 'Refresh'}
@@ -3186,6 +3326,342 @@ const AdminApprovals = () => {
             editStudent={editStudentForModal}
           />
         )}
+
+        {/* ══════════════ QUICK APPLICATION TRACKER MODAL ══════════════ */}
+        <Dialog open={showQuickTrackerModal} onOpenChange={setShowQuickTrackerModal}>
+          <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2.5 text-base sm:text-lg font-bold">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+                  <Search className="w-4 h-4" />
+                </div>
+                <span>{bn ? 'আবেদন অনুসন্ধান ও ট্র্যাকিং (Quick Tracker)' : 'Application Quick Tracker'}</span>
+              </DialogTitle>
+              <DialogDescription className="text-xs">
+                {bn
+                  ? 'ছাত্র ভর্তি আবেদন বা শিক্ষক নিয়োগ আবেদন নম্বর (ADM... / STF...), রোল বা মোবাইল নম্বর দিয়ে সরাসরি অনুসন্ধান করুন।'
+                  : 'Search student admissions or staff applications by Application ID, Roll or Mobile.'}
+              </DialogDescription>
+            </DialogHeader>
+
+            {/* Search Input Bar */}
+            <div className="space-y-2 pt-1">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleTrackerSearch();
+                }}
+                className="flex items-center gap-2"
+              >
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder={bn ? 'আবেদন নং (যেমন ADM20260001 / STF20260001), মোবাইল বা রোল...' : 'Application ID (e.g. ADM20260001 / STF20260001), Phone or Roll...'}
+                    value={trackerQuery}
+                    onChange={(e) => setTrackerQuery(e.target.value)}
+                    className="pl-9 h-10 font-mono text-sm"
+                    autoFocus
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={isSearchingTracker}
+                  className="h-10 px-4 btn-primary-gradient shrink-0"
+                >
+                  {isSearchingTracker ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Search className="w-4 h-4 mr-1" />}
+                  <span>{bn ? 'অনুসন্ধান' : 'Search'}</span>
+                </Button>
+              </form>
+
+              {/* Quick Preset Buttons */}
+              <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                <span className="font-semibold text-foreground/80">{bn ? 'দ্রুত ফিল্টার:' : 'Quick:'}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const firstStudent = students[0];
+                    if (firstStudent) {
+                      const id = firstStudent.application_no || firstStudent.student_id || firstStudent.roll_number || '';
+                      setTrackerQuery(id);
+                      handleTrackerSearch(id);
+                    }
+                  }}
+                  className="px-2 py-0.5 rounded-md bg-muted hover:bg-muted/80 text-foreground transition-colors"
+                >
+                  {bn ? 'সর্বশেষ ভর্তি আবেদন' : 'Latest Student'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const firstStaff = staffList[0];
+                    if (firstStaff) {
+                      const id = firstStaff.application_no || (firstStaff.staff_data as any)?.application_no || firstStaff.staff_id || '';
+                      setTrackerQuery(id);
+                      handleTrackerSearch(id);
+                    }
+                  }}
+                  className="px-2 py-0.5 rounded-md bg-muted hover:bg-muted/80 text-foreground transition-colors"
+                >
+                  {bn ? 'সর্বশেষ শিক্ষক আবেদন' : 'Latest Staff'}
+                </button>
+              </div>
+            </div>
+
+            {/* Results Display */}
+            {isSearchingTracker && (
+              <div className="py-12 text-center space-y-2">
+                <Loader2 className="w-7 h-7 animate-spin mx-auto text-emerald-600" />
+                <p className="text-xs text-muted-foreground">{bn ? 'রেকর্ড খোঁজা হচ্ছে...' : 'Searching database...'}</p>
+              </div>
+            )}
+
+            {!isSearchingTracker && trackerHasSearched && !trackerResult && (
+              <div className="py-10 text-center space-y-3 bg-muted/20 border border-dashed rounded-2xl">
+                <AlertCircle className="w-8 h-8 text-muted-foreground mx-auto" />
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-foreground">{bn ? 'কোনো আবেদন পাওয়া যায়নি' : 'No Application Found'}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {bn ? 'প্রদত্ত নম্বরে কোনো ভর্তি বা নিয়োগ আবেদন রেকর্ড পাওয়া যায়নি।' : 'No records matching the provided ID or number.'}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {!isSearchingTracker && trackerResult && (() => {
+              const r = trackerResult;
+              const isStudent = r.type === 'student';
+              const d = r.data;
+              const isApproved = d.status === 'active' || d.approval_status === 'approved';
+              const isRejected = d.approval_status === 'rejected' || d.status === 'inactive';
+              const isPending = !isApproved && !isRejected;
+
+              const appNo = isStudent
+                ? (d.application_no || d.student_id || d.id?.slice(0, 8))
+                : (d.application_no || (d.staff_data as any)?.application_no || d.staff_id || d.id?.slice(0, 8));
+
+              const nameBn = d.name_bn || (d.first_name ? `${d.first_name} ${d.last_name || ''}` : '') || d.name_en;
+              const nameEn = d.name_en || '';
+              const roleOrClass = isStudent
+                ? (d.classes?.name_bn || d.classes?.name || d.admission_class || '—')
+                : (d.designation || '—');
+
+              const phone = d.phone || d.mobile || d.father_phone || '—';
+              const applyDate = d.admission_date || d.joining_date || d.created_at?.split('T')[0] || '—';
+
+              return (
+                <div className="space-y-4 pt-2 border-t border-border">
+                  {/* Status Banner */}
+                  <div
+                    className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 ${
+                      isApproved
+                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300'
+                        : isRejected
+                        ? 'bg-rose-500/10 border-rose-500/30 text-rose-800 dark:text-rose-300'
+                        : 'bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      {isApproved ? (
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                      ) : isRejected ? (
+                        <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+                      ) : (
+                        <Clock className="w-5 h-5 text-amber-600 shrink-0" />
+                      )}
+                      <div>
+                        <div className="text-xs font-bold">
+                          {isApproved
+                            ? (bn ? 'অনুমোদিত ও সক্রিয়' : 'Approved & Active')
+                            : isRejected
+                            ? (bn ? 'আবেদন গৃহীত হয়নি (বাতিল)' : 'Application Rejected')
+                            : (bn ? 'অপেক্ষমাণ / অনুমোদন প্রযোজ্য' : 'Pending Administrative Review')}
+                        </div>
+                        <div className="text-[11px] opacity-85">
+                          {isStudent ? (bn ? 'ছাত্র ভর্তি আবেদন' : 'Student Admission') : (bn ? 'শিক্ষক / স্টাফ নিয়োগ আবেদন' : 'Staff Application')}
+                        </div>
+                      </div>
+                    </div>
+
+                    <Badge
+                      className={`text-xs px-2.5 py-0.5 font-semibold ${
+                        isApproved
+                          ? 'bg-emerald-600 text-white'
+                          : isRejected
+                          ? 'bg-rose-600 text-white'
+                          : 'bg-amber-600 text-white'
+                      }`}
+                    >
+                      {isApproved ? (bn ? 'অনুমোদিত' : 'Approved') : isRejected ? (bn ? 'বাতিল' : 'Rejected') : (bn ? 'পেন্ডিং' : 'Pending')}
+                    </Badge>
+                  </div>
+
+                  {/* Profile Header Card */}
+                  <div className="p-4 rounded-xl border bg-muted/30 flex flex-col sm:flex-row items-center sm:items-start gap-3.5">
+                    {d.photo_url ? (
+                      <img src={d.photo_url} alt="" className="w-16 h-16 rounded-xl object-cover border shadow-xs shrink-0" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-2xl border shrink-0">
+                        {(nameBn || 'A')[0]}
+                      </div>
+                    )}
+
+                    <div className="flex-1 text-center sm:text-left space-y-1">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <h4 className="text-base font-bold text-foreground">{nameBn}</h4>
+                        {nameEn && nameBn !== nameEn && (
+                          <span className="text-xs text-muted-foreground">({nameEn})</span>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-0.5">
+                        <Badge variant="outline" className="font-mono text-xs gap-1 border-primary/30 text-primary bg-primary/5">
+                          {bn ? 'আইডি:' : 'ID:'} {appNo}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(appNo);
+                              toast.success(bn ? 'আইডি কপি হয়েছে' : 'ID copied');
+                            }}
+                            className="ml-1 text-primary hover:text-primary/70"
+                          >
+                            <Copy className="w-3 h-3 inline" />
+                          </button>
+                        </Badge>
+
+                        <Badge variant="secondary" className="text-xs">
+                          {isStudent ? (bn ? `শ্রেণি: ${roleOrClass}` : `Class: ${roleOrClass}`) : (bn ? `পদবী: ${roleOrClass}` : `Post: ${roleOrClass}`)}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Details Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 rounded-xl border bg-card text-xs">
+                    <div>
+                      <span className="text-muted-foreground block text-[11px]">{isStudent ? (bn ? 'শ্রেণি' : 'Class') : (bn ? 'পদবী' : 'Designation')}</span>
+                      <span className="font-bold text-foreground">{roleOrClass}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block text-[11px]">{bn ? 'মোবাইল' : 'Phone'}</span>
+                      <span className="font-bold text-foreground font-mono">{phone}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block text-[11px]">{isStudent ? (bn ? 'রোল নম্বর' : 'Roll') : (bn ? 'স্টাফ আইডি' : 'Staff ID')}</span>
+                      <span className="font-bold text-foreground font-mono">
+                        {isStudent ? (d.roll_number || (bn ? 'অনুমোদনের পর' : 'Pending')) : (d.staff_id || '—')}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block text-[11px]">{bn ? 'আবেদনের তারিখ' : 'Apply Date'}</span>
+                      <span className="font-bold text-foreground font-mono">{applyDate}</span>
+                    </div>
+                    {isStudent && (
+                      <>
+                        <div>
+                          <span className="text-muted-foreground block text-[11px]">{bn ? 'পিতার নাম' : 'Father'}</span>
+                          <span className="font-medium text-foreground">{d.father_name || '—'}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block text-[11px]">{bn ? 'মাতার নাম' : 'Mother'}</span>
+                          <span className="font-medium text-foreground">{d.mother_name || '—'}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block text-[11px]">{bn ? 'অভিভাবক ফোন' : 'Guardian Phone'}</span>
+                          <span className="font-medium text-foreground font-mono">{d.guardian_phone || d.father_phone || '—'}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block text-[11px]">{bn ? 'রেজিস্ট্রেশন' : 'Reg No'}</span>
+                          <span className="font-medium text-foreground font-mono">{d.registration_no || '—'}</span>
+                        </div>
+                      </>
+                    )}
+                    {!isStudent && (
+                      <>
+                        <div>
+                          <span className="text-muted-foreground block text-[11px]">{bn ? 'জাতীয় পরিচয়পত্র' : 'NID'}</span>
+                          <span className="font-medium text-foreground font-mono">{d.nid || '—'}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block text-[11px]">{bn ? 'শিক্ষাগত যোগ্যতা' : 'Education'}</span>
+                          <span className="font-medium text-foreground">{d.qualification || (d.staff_data as any)?.personal?.qualification || '—'}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block text-[11px]">{bn ? 'বেতন' : 'Salary'}</span>
+                          <span className="font-medium text-foreground font-mono">{d.salary ? `৳${d.salary}` : '—'}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block text-[11px]">{bn ? 'বৈবাহিক অবস্থা' : 'Marital Status'}</span>
+                          <span className="font-medium text-foreground">{translateMaritalStatus(d.marital_status || (d.staff_data as any)?.personal?.marital_status, bn)}</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Actions Toolbar */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={handleDownloadTrackerSlip}
+                        disabled={isDownloadingTrackerSlip}
+                        className="h-8 text-xs font-semibold gap-1.5"
+                      >
+                        {isDownloadingTrackerSlip ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                        <span>{bn ? 'স্লিপ PDF' : 'Download Slip'}</span>
+                      </Button>
+
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={handlePrintTrackerSlip}
+                        className="h-8 text-xs font-semibold gap-1.5"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                        <span>{bn ? 'প্রিন্ট' : 'Print'}</span>
+                      </Button>
+
+                      <Button
+                        asChild
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 text-xs font-semibold gap-1.5 text-muted-foreground hover:text-foreground"
+                      >
+                        <a href={`/application-tracking?id=${appNo}`} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          <span>{bn ? 'পাবলিক পেজ' : 'Public Link'}</span>
+                        </a>
+                      </Button>
+                    </div>
+
+                    {/* Approve Action Button if pending */}
+                    {isPending && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                          setShowQuickTrackerModal(false);
+                          if (isStudent) {
+                            openStudentApprovalModal(d);
+                          } else {
+                            openStaffApprovalModal(d);
+                          }
+                        }}
+                        className="h-8 px-3 text-xs font-bold btn-primary-gradient gap-1.5"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>{bn ? 'অনুমোদন প্রক্রিয়া শুরু করুন' : 'Review & Approve'}</span>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+          </DialogContent>
+        </Dialog>
 
         {/* ══════════════ REJECTION REASON MODAL ══════════════ */}
         <Dialog open={!!rejectionModal} onOpenChange={(open) => { if (!open) setRejectionModal(null); }}>

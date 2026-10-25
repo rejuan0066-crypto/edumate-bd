@@ -15,7 +15,7 @@ import {
   AlertCircle, CheckCircle, Loader2, Upload, Trash2, Eye,
   Copy, Download, Printer, ArrowLeft, ArrowRight, RotateCcw,
   Sparkles, Briefcase, User, GraduationCap, Users, ShieldCheck,
-  FileText, MapPin
+  FileText, MapPin, Search
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
@@ -1279,6 +1279,28 @@ const StaffApplicationPage = () => {
   return (
     <PublicLayout>
       <div className="container mx-auto px-4 py-8 sm:py-12 max-w-4xl">
+        {/* Already Applied Tracking Quick Banner */}
+        <div className="mb-4 flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50/50 to-white dark:from-emerald-950/40 dark:via-teal-950/20 dark:to-card border border-emerald-200/80 dark:border-emerald-800/60 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+              <Search className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs sm:text-sm font-semibold text-emerald-950 dark:text-emerald-200">
+                {bn ? 'ইতিমধ্যে আবেদন করেছেন? নিয়োগ আবেদনের অবস্থা ট্র্যাক বা স্লিপ ডাউনলোড করুন' : 'Already applied? Track status or download slip'}
+              </p>
+              <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400">
+                {bn ? 'আপনার আবেদন নম্বর (Application ID) দিয়ে তাৎক্ষণিক অগ্রগতি যাচাই করুন।' : 'Check real-time application progress and download slip anytime.'}
+              </p>
+            </div>
+          </div>
+          <Button asChild size="sm" variant="outline" className="h-8 px-3.5 text-xs font-bold rounded-full border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 bg-white dark:bg-card hover:bg-emerald-50 shrink-0">
+            <Link to="/application-tracking" className="flex items-center gap-1.5">
+              <span>{bn ? 'আবেদন ট্র্যাকিং ➔' : 'Track Application ➔'}</span>
+            </Link>
+          </Button>
+        </div>
+
         <div className="border border-slate-200/90 dark:border-border rounded-3xl shadow-xl overflow-hidden bg-white dark:bg-card">
           
           {/* Top Header */}
@@ -1304,7 +1326,13 @@ const StaffApplicationPage = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 self-start sm:self-center">
+            <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
+              <Button asChild variant="outline" size="sm" className="rounded-full text-xs font-semibold bg-white dark:bg-card border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 shadow-xs h-8 px-3">
+                <Link to="/application-tracking" className="flex items-center gap-1.5">
+                  <Search className="w-3.5 h-3.5" />
+                  <span>{bn ? 'আবেদন ট্র্যাক' : 'Track Status'}</span>
+                </Link>
+              </Button>
               <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white dark:bg-card border border-slate-200 dark:border-border shadow-sm">
                 <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
                 <span className="text-xs font-bold text-slate-700 dark:text-foreground">

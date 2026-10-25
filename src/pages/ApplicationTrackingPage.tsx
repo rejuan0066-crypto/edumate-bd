@@ -75,7 +75,7 @@ const ApplicationTrackingPage: React.FC = () => {
         const { data: staffList, error: stfErr } = await supabase
           .from('staff')
           .select('*')
-          .or(`staff_id.ilike.%${cleanQ}%,staff_data->>application_no.ilike.%${cleanQ}%`)
+          .or(`staff_id.ilike.%${cleanQ}%,application_no.ilike.%${cleanQ}%,staff_data->>application_no.ilike.%${cleanQ}%`)
           .limit(1);
 
         if (!stfErr && staffList && staffList.length > 0) {
@@ -85,8 +85,26 @@ const ApplicationTrackingPage: React.FC = () => {
         }
       }
 
-      // 2. Try Student lookup from students_public (or students)
-      const { data: studentsList, error: stuErr } = await supabase
+      // 2. Try Student lookup directly from students table
+      const { data: studentList, error: stuErr } = await supabase
+        .from('students')
+        .select(`
+          *,
+          classes:class_id(id, name, name_bn),
+          divisions:division_id(id, name, name_bn),
+          academic_sessions:session_id(id, name)
+        `)
+        .or(`student_id.ilike.%${cleanQ}%,application_no.ilike.%${cleanQ}%,registration_no.ilike.%${cleanQ}%,roll_number.ilike.%${cleanQ}%,phone.ilike.%${cleanQ}%,father_phone.ilike.%${cleanQ}%`)
+        .limit(1);
+
+      if (!stuErr && studentList && studentList.length > 0) {
+        setResult({ type: 'student', data: studentList[0] });
+        setIsSearching(false);
+        return;
+      }
+
+      // 3. Fallback: Try students_public view
+      const { data: publicStudents } = await supabase
         .from('students_public')
         .select(`
           *,
@@ -97,17 +115,17 @@ const ApplicationTrackingPage: React.FC = () => {
         .or(`student_id.ilike.%${cleanQ}%,registration_no.ilike.%${cleanQ}%`)
         .limit(1);
 
-      if (!stuErr && studentsList && studentsList.length > 0) {
-        setResult({ type: 'student', data: studentsList[0] });
+      if (publicStudents && publicStudents.length > 0) {
+        setResult({ type: 'student', data: publicStudents[0] });
         setIsSearching(false);
         return;
       }
 
-      // 3. Fallback: Search staff by phone or ID
+      // 4. Fallback: Search staff by phone, mobile, ID or application_no
       const { data: fallbackStaff } = await supabase
         .from('staff')
         .select('*')
-        .or(`phone.ilike.%${cleanQ}%,mobile.ilike.%${cleanQ}%,staff_id.ilike.%${cleanQ}%`)
+        .or(`phone.ilike.%${cleanQ}%,mobile.ilike.%${cleanQ}%,staff_id.ilike.%${cleanQ}%,application_no.ilike.%${cleanQ}%,staff_data->>application_no.ilike.%${cleanQ}%`)
         .limit(1);
 
       if (fallbackStaff && fallbackStaff.length > 0) {
@@ -272,7 +290,7 @@ const ApplicationTrackingPage: React.FC = () => {
               const isRejected = s.approval_status === 'rejected' || s.status === 'inactive';
               const isPending = !isApproved && !isRejected;
 
-              const appNo = s.student_id || s.id?.slice(0, 8);
+              const appNo = s.application_no || s.student_id || s.id?.slice(0, 8);
               const className = s.classes?.name_bn || s.classes?.name || s.admission_class || '—';
               const divName = s.divisions?.name_bn || s.divisions?.name || '—';
 

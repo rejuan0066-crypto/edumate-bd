@@ -182,6 +182,8 @@ const DEFAULT_PUBLIC: MenuItemConfig[] = [
   { id: 'about', path: '/about', label_bn: 'আমাদের সম্পর্কে', label_en: 'About', icon: '', visible: true, sort_order: 1 },
   { id: 'gallery', path: '/gallery', label_bn: 'গ্যালারি', label_en: 'Gallery', icon: '', visible: true, sort_order: 2 },
   { id: 'admission', path: '/admission', label_bn: 'ভর্তি', label_en: 'Admission', icon: '', visible: true, sort_order: 3 },
+  { id: 'application-tracking', path: '/application-tracking', label_bn: 'আবেদন ট্র্যাকিং', label_en: 'Track Application', icon: '', visible: true, sort_order: 3.2 },
+  { id: 'staff-application', path: '/staff-application', label_bn: 'শিক্ষক/স্টাফ আবেদন', label_en: 'Staff Application', icon: '', visible: true, sort_order: 3.3 },
   { id: 'admission-tests-public', path: '/admission-tests', label_bn: 'ভর্তি পরীক্ষা', label_en: 'Admission Tests', icon: '', visible: true, sort_order: 3.5 },
   { id: 'result', path: '/result', label_bn: 'ফলাফল', label_en: 'Result', icon: '', visible: true, sort_order: 4 },
   { id: 'student-info', path: '/student-info', label_bn: 'শিক্ষার্থী তথ্য', label_en: 'Student Info', icon: '', visible: true, sort_order: 5 },

@@ -816,8 +816,18 @@ const AdminExpenses = () => {
   const instOther = selectedInstitution?.other_info || '';
   const instLogo = selectedInstitution?.logo_url || '';
 
+  const currentInstObj = (allInstitutions || []).find((i: any) => i.id === selectedInstId);
+  const currentInstName = currentInstObj ? getInstName(currentInstObj, bn) : '';
+  const selectedInstNamePrefix = selectedInstId && selectedInstId !== 'all' && currentInstName ? `${currentInstName} - ` : '';
+
   // Stats
-  const paidExpenses = useMemo(() => (expenses || []).filter((e: any) => !isUnpaidDue(e.description)), [expenses]);
+  const paidExpenses = useMemo(() => (expenses || []).filter((e: any) => {
+    if (isUnpaidDue(e.description)) return false;
+    if (selectedInstId && selectedInstId !== 'all') {
+      return e.institution_id === selectedInstId;
+    }
+    return true;
+  }), [expenses, selectedInstId]);
   const monthlyTotalExpense = useMemo(() => paidExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0), [paidExpenses]);
   const monthlyTotalDeposit = useMemo(() => (deposits || []).reduce((s: number, d: any) => s + Number(d.amount || 0), 0), [deposits]);
   const previousArrears = Number(summaryData?.previous_arrears || 0);
@@ -875,7 +885,14 @@ const AdminExpenses = () => {
     return true; // monthly mode - show all for "total" row
   };
 
-  const filteredExpenses = useMemo(() => (allExpenses || []).filter((e: any) => matchesFilter(e.month_year) && !isUnpaidDue(e.description)), [allExpenses, filterMode, selectedYear, selectedSessionId, academicSessions]);
+  const filteredExpenses = useMemo(() => (allExpenses || []).filter((e: any) => {
+    if (!matchesFilter(e.month_year) || isUnpaidDue(e.description)) return false;
+    if (selectedInstId && selectedInstId !== 'all') {
+      return e.institution_id === selectedInstId;
+    }
+    return true;
+  }), [allExpenses, filterMode, selectedYear, selectedSessionId, academicSessions, selectedInstId]);
+
   const filteredDeposits = useMemo(() => (allDeposits || []).filter((d: any) => matchesFilter(d.month_year)), [allDeposits, filterMode, selectedYear, selectedSessionId, academicSessions]);
 
   const totalExpenseAll = useMemo(() => filteredExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0), [filteredExpenses]);
@@ -885,10 +902,14 @@ const AdminExpenses = () => {
   const totalArrearsAll = rawCashAll < 0 ? Math.abs(rawCashAll) : 0;
 
   const filterLabel = filterMode === 'yearly' 
-    ? (bn ? `${selectedYear} সাল` : `Year ${selectedYear}`)
+    ? (bn ? `${toBnDigits(selectedYear)} সাল` : `Year ${selectedYear}`)
     : filterMode === 'session'
     ? (bn ? (academicSessions.find((s: any) => s.id === selectedSessionId)?.name_bn || 'সেশন') : (academicSessions.find((s: any) => s.id === selectedSessionId)?.name || 'Session'))
     : (bn ? 'সর্বমোট' : 'Grand Total');
+
+  const displayFilterLabel = selectedInstId && selectedInstId !== 'all' && currentInstName
+    ? `${currentInstName} (${filterLabel})`
+    : filterLabel;
 
   // Institution-wise breakdown
   const institutionBreakdown = useMemo(() => {
@@ -2816,24 +2837,47 @@ const AdminExpenses = () => {
             <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">{bn ? 'প্রতিষ্ঠানের আর্থিক লেনদেন, ব্যয় ও ক্যাশ হিসাব' : 'Manage financial transactions'}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {/* 1. Mode Selector: Monthly / Yearly / Session */}
             <Select value={filterMode} onValueChange={(v: any) => setFilterMode(v)}>
-              <SelectTrigger className="w-[130px] h-9 rounded-xl border border-border/70 bg-card text-xs sm:text-sm font-medium"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-[125px] h-9 rounded-xl border border-border/70 bg-card text-xs sm:text-sm font-medium"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="monthly">{bn ? 'মাসিক' : 'Monthly'}</SelectItem>
                 <SelectItem value="yearly">{bn ? 'বাৎসরিক' : 'Yearly'}</SelectItem>
                 <SelectItem value="session">{bn ? 'সেশন ইয়ার' : 'Session Year'}</SelectItem>
               </SelectContent>
             </Select>
+
+            {/* 2. Institution Selector: All or Specific Institution */}
+            <Select value={selectedInstId || 'all'} onValueChange={handleSelectInstitution}>
+              <SelectTrigger className="w-[170px] sm:w-[210px] h-9 rounded-xl border border-border/70 bg-card text-xs sm:text-sm font-medium">
+                <Building2 className="w-3.5 h-3.5 mr-1.5 text-emerald-600 shrink-0" />
+                <SelectValue placeholder={bn ? 'প্রতিষ্ঠান বাছুন' : 'Select Institution'} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="font-semibold text-emerald-700 dark:text-emerald-300">
+                  {bn ? 'সকল প্রতিষ্ঠান (একত্রিত)' : 'All Institutions (Consolidated)'}
+                </SelectItem>
+                {allInstitutions.map((inst: any) => (
+                  <SelectItem key={inst.id} value={inst.id}>
+                    {getInstName(inst, bn)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* 3. Year Selector (Only in Yearly mode) */}
             {filterMode === 'yearly' && (
               <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
                 <SelectTrigger className="w-[110px] h-9 rounded-xl border border-border/70 bg-card text-xs sm:text-sm font-medium"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {years.map(y => (
-                    <SelectItem key={y} value={String(y)}>{bn ? toBnDigits(y) : y}</SelectItem>
+                    <SelectItem key={y} value={String(y)}>{bn ? `${toBnDigits(y)} সাল` : y}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             )}
+
+            {/* 4. Session Selector (Only in Session mode) */}
             {filterMode === 'session' && (
               <Select value={selectedSessionId} onValueChange={setSelectedSessionId}>
                 <SelectTrigger className="w-[150px] h-9 rounded-xl border border-border/70 bg-card text-xs sm:text-sm font-medium"><SelectValue placeholder={bn ? 'সেশন বাছুন' : 'Select Session'} /></SelectTrigger>
@@ -2844,100 +2888,144 @@ const AdminExpenses = () => {
                 </SelectContent>
               </Select>
             )}
-            <Select value={selectedMonthYear} onValueChange={setSelectedMonthYear}>
-              <SelectTrigger className="w-[180px] h-9 rounded-xl border border-border/70 bg-card text-xs sm:text-sm font-medium"><SelectValue /></SelectTrigger>
-              <SelectContent className="max-h-60">
-                {(() => {
-                  if (filterMode === 'yearly') {
-                    return MONTHS.map((m, i) => (
-                      <SelectItem key={`${m}-${selectedYear}`} value={`${m}-${selectedYear}`}>
-                        {bn ? `${MONTHS_BN[i]} ${toBnDigits(selectedYear)}` : `${m} ${selectedYear}`}
-                      </SelectItem>
-                    ));
-                  }
-                  if (filterMode === 'session') {
-                    const session = academicSessions.find((s: any) => s.id === selectedSessionId);
-                    if (session?.start_date && session?.end_date) {
-                      const start = new Date(session.start_date);
-                      const end = new Date(session.end_date);
-                      const opts: { key: string; label: string }[] = [];
-                      const cur = new Date(start.getFullYear(), start.getMonth(), 1);
-                      while (cur <= end) {
-                        const mi = cur.getMonth();
-                        const yr = cur.getFullYear();
-                        const val = `${MONTHS[mi]}-${yr}`;
-                        opts.push({ key: val, label: bn ? `${MONTHS_BN[mi]} ${toBnDigits(yr)}` : `${MONTHS[mi]} ${yr}` });
-                        cur.setMonth(cur.getMonth() + 1);
-                      }
-                      return opts.map(o => (
-                        <SelectItem key={o.key} value={o.key}>{o.label}</SelectItem>
-                      ));
-                    }
-                    return <SelectItem value="" disabled>{bn ? 'সেশন বাছুন' : 'Select session first'}</SelectItem>;
-                  }
-                  return years.map(y => MONTHS.map((m, i) => (
+
+            {/* 5. Month Selector (Only in Monthly mode) */}
+            {filterMode === 'monthly' && (
+              <Select value={selectedMonthYear} onValueChange={setSelectedMonthYear}>
+                <SelectTrigger className="w-[160px] sm:w-[180px] h-9 rounded-xl border border-border/70 bg-card text-xs sm:text-sm font-medium"><SelectValue /></SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {years.map(y => MONTHS.map((m, i) => (
                     <SelectItem key={`${m}-${y}`} value={`${m}-${y}`}>
                       {bn ? `${MONTHS_BN[i]} ${toBnDigits(y)}` : `${m} ${y}`}
                     </SelectItem>
-                  )));
-                })()}
-              </SelectContent>
-            </Select>
+                  )))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </div>
 
-        {/* ── KPI Stat Cards - Monthly ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {[
-            { label: bn ? `${selectedMonthName} হিসাব` : `${selectedMonthName} Expense`, val: monthlyTotalExpense, iconBg: 'bg-rose-500/10 text-rose-600 dark:text-rose-400', icon: TrendingDown, color: 'text-rose-600 dark:text-rose-400', sparkColor: '#f43f5e', sparkData: [3,5,4,7,6,8,monthlyTotalExpense > 0 ? 10 : 0] },
-            { label: bn ? `${selectedMonthName} টাকা আয়/উত্তোলন` : `${selectedMonthName} Deposit`, val: monthlyTotalDeposit, iconBg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400', icon: TrendingUp, color: 'text-emerald-600 dark:text-emerald-400', sparkColor: '#10b981', sparkData: [2,4,3,6,5,7,monthlyTotalDeposit > 0 ? 10 : 0] },
-            { label: bn ? `${selectedMonthName} ক্যাশ` : `${selectedMonthName} Cash`, val: monthlyCash, iconBg: monthlyCash >= 0 ? 'bg-primary/10 text-primary' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400', icon: Wallet, color: monthlyCash >= 0 ? 'text-primary' : 'text-amber-600 dark:text-amber-400', sparkColor: monthlyCash >= 0 ? '#3b82f6' : '#f97316', sparkData: [5,4,6,3,7,5,8] },
-            { label: bn ? 'বকেয়া' : 'Arrears', val: totalArrears, iconBg: totalArrears > 0 ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-muted text-muted-foreground', icon: DollarSign, color: totalArrears > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground', sparkColor: '#f59e0b', sparkData: [2,3,2,4,3,5,totalArrears > 0 ? 6 : 0] },
-          ].map((s, i) => (
-            <div
-              key={i}
-              className="rounded-xl border border-border/70 bg-card p-4 sm:p-5 shadow-xs transition-all hover:border-border"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-lg ${s.iconBg} flex items-center justify-center shrink-0`}>
-                    <s.icon className="w-5 h-5" />
+        {/* ── KPI Stat Cards - Monthly (ONLY rendered in Monthly Mode) ── */}
+        {filterMode === 'monthly' && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {[
+              { label: `${selectedInstNamePrefix}${selectedMonthName} ${bn ? 'হিসাব' : 'Expense'}`, val: monthlyTotalExpense, iconBg: 'bg-rose-500/10 text-rose-600 dark:text-rose-400', icon: TrendingDown, color: 'text-rose-600 dark:text-rose-400', sparkColor: '#f43f5e', sparkData: [3,5,4,7,6,8,monthlyTotalExpense > 0 ? 10 : 0] },
+              { label: `${selectedInstNamePrefix}${selectedMonthName} ${bn ? 'টাকা আয়/উত্তোলন' : 'Deposit'}`, val: monthlyTotalDeposit, iconBg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400', icon: TrendingUp, color: 'text-emerald-600 dark:text-emerald-400', sparkColor: '#10b981', sparkData: [2,4,3,6,5,7,monthlyTotalDeposit > 0 ? 10 : 0] },
+              { label: `${selectedInstNamePrefix}${selectedMonthName} ${bn ? 'ক্যাশ' : 'Cash'}`, val: monthlyCash, iconBg: monthlyCash >= 0 ? 'bg-primary/10 text-primary' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400', icon: Wallet, color: monthlyCash >= 0 ? 'text-primary' : 'text-amber-600 dark:text-amber-400', sparkColor: monthlyCash >= 0 ? '#3b82f6' : '#f97316', sparkData: [5,4,6,3,7,5,8] },
+              { label: `${selectedInstNamePrefix}${bn ? 'বকেয়া' : 'Arrears'}`, val: totalArrears, iconBg: totalArrears > 0 ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-muted text-muted-foreground', icon: DollarSign, color: totalArrears > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground', sparkColor: '#f59e0b', sparkData: [2,3,2,4,3,5,totalArrears > 0 ? 6 : 0] },
+            ].map((s, i) => (
+              <div
+                key={i}
+                className="rounded-xl border border-border/70 bg-card p-4 sm:p-5 shadow-xs transition-all hover:border-border"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-lg ${s.iconBg} flex items-center justify-center shrink-0`}>
+                      <s.icon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <AnimatedCounter value={s.val} className={`text-xl font-bold tabular-nums ${s.color}`} />
+                      <p className="text-[11px] text-muted-foreground mt-0.5 font-medium">{s.label}</p>
+                    </div>
                   </div>
-                  <div>
-                    <AnimatedCounter value={s.val} className={`text-xl font-bold tabular-nums ${s.color}`} />
-                    <p className="text-[11px] text-muted-foreground mt-0.5 font-medium">{s.label}</p>
-                  </div>
+                  <MiniSparkline data={s.sparkData} color={s.sparkColor} />
                 </div>
-                <MiniSparkline data={s.sparkData} color={s.sparkColor} />
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
-        {/* ── Overall / Filtered Stats ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {[
-            { label: `${filterLabel} ${bn ? 'হিসাব' : 'Expense'}`, val: totalExpenseAll, iconBg: 'bg-rose-500/10 text-rose-600 dark:text-rose-400', icon: TrendingDown, color: 'text-rose-600 dark:text-rose-400' },
-            { label: `${filterLabel} ${bn ? 'টাকা আয়/উত্তোলন' : 'Deposit'}`, val: totalDepositAll, iconBg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400', icon: TrendingUp, color: 'text-emerald-600 dark:text-emerald-400' },
-            { label: `${filterLabel} ${bn ? 'ক্যাশ' : 'Cash'}`, val: totalCashAll, iconBg: totalCashAll >= 0 ? 'bg-primary/10 text-primary' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400', icon: Wallet, color: totalCashAll >= 0 ? 'text-primary' : 'text-amber-600 dark:text-orange-400' },
-            { label: `${filterLabel} ${bn ? 'বকেয়া' : 'Arrears'}`, val: totalArrearsAll, iconBg: totalArrearsAll > 0 ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-muted text-muted-foreground', icon: DollarSign, color: totalArrearsAll > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground' },
-          ].map((s, i) => (
-            <div
-              key={`all-${i}`}
-              className="rounded-xl border border-border/70 bg-card p-4 sm:p-5 shadow-xs transition-all hover:border-border"
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-lg ${s.iconBg} flex items-center justify-center shrink-0`}>
-                  <s.icon className="w-5 h-5" />
+        {/* ── Yearly / Session Stats (ONLY rendered in Yearly or Session Mode) ── */}
+        {(filterMode === 'yearly' || filterMode === 'session') && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              {[
+                { label: `${displayFilterLabel} ${bn ? 'হিসাব' : 'Expense'}`, val: totalExpenseAll, iconBg: 'bg-rose-500/10 text-rose-600 dark:text-rose-400', icon: TrendingDown, color: 'text-rose-600 dark:text-rose-400' },
+                { label: `${displayFilterLabel} ${bn ? 'টাকা আয়/উত্তোলন' : 'Deposit'}`, val: totalDepositAll, iconBg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400', icon: TrendingUp, color: 'text-emerald-600 dark:text-emerald-400' },
+                { label: `${displayFilterLabel} ${bn ? 'ক্যাশ' : 'Cash'}`, val: totalCashAll, iconBg: totalCashAll >= 0 ? 'bg-primary/10 text-primary' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400', icon: Wallet, color: totalCashAll >= 0 ? 'text-primary' : 'text-amber-600 dark:text-orange-400' },
+                { label: `${displayFilterLabel} ${bn ? 'বকেয়া' : 'Arrears'}`, val: totalArrearsAll, iconBg: totalArrearsAll > 0 ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-muted text-muted-foreground', icon: DollarSign, color: totalArrearsAll > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground' },
+              ].map((s, i) => (
+                <div
+                  key={`all-${i}`}
+                  className="rounded-xl border border-border/70 bg-card p-4 sm:p-5 shadow-xs transition-all hover:border-border"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-lg ${s.iconBg} flex items-center justify-center shrink-0`}>
+                      <s.icon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <AnimatedCounter value={s.val} className={`text-lg font-bold tabular-nums ${s.color}`} />
+                      <p className="text-[11px] text-muted-foreground mt-0.5 font-medium">{s.label}</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <AnimatedCounter value={s.val} className={`text-lg font-bold tabular-nums ${s.color}`} />
-                  <p className="text-[11px] text-muted-foreground mt-0.5 font-medium">{s.label}</p>
+              ))}
+            </div>
+
+            {/* Institution-wise Breakdown Grid (When 'all' is selected in Yearly/Session mode) */}
+            {(selectedInstId === 'all' || !selectedInstId) && allInstitutions.length > 1 && (
+              <div className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-border/60">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-emerald-600" />
+                    <h3 className="text-xs sm:text-sm font-bold text-foreground">
+                      {bn ? `প্রতিষ্ঠান ভিত্তিক ${filterLabel} হিসাব সারসংক্ষেপ` : `Institution-wise ${filterLabel} Summary`}
+                    </h3>
+                  </div>
+                  <Badge variant="outline" className="text-[11px] font-medium border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300">
+                    {allInstitutions.length} {bn ? 'টি প্রতিষ্ঠান' : 'Institutions'}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {allInstitutions.map((inst: any) => {
+                    const instExpenses = (allExpenses || []).filter((e: any) => matchesFilter(e.month_year) && !isUnpaidDue(e.description) && e.institution_id === inst.id);
+                    const instExpTotal = instExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+                    const instDues = (allExpenses || []).filter((e: any) => matchesFilter(e.month_year) && isUnpaidDue(e.description) && e.institution_id === inst.id);
+                    const instDueTotal = instDues.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+                    const percentage = totalExpenseAll > 0 ? Math.round((instExpTotal / totalExpenseAll) * 100) : 0;
+
+                    return (
+                      <div
+                        key={inst.id}
+                        onClick={() => handleSelectInstitution(inst.id)}
+                        className="p-3.5 rounded-xl border border-border/70 hover:border-emerald-400 dark:hover:border-emerald-600 bg-muted/20 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/20 transition-all cursor-pointer group flex flex-col justify-between"
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-semibold text-xs sm:text-sm text-foreground group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors">
+                              {getInstName(inst, bn)}
+                            </span>
+                            <span className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                              {percentage}%
+                            </span>
+                          </div>
+                          <div className="mt-2.5 flex items-baseline justify-between">
+                            <span className="text-[11px] text-muted-foreground">{bn ? 'মোট খরচ:' : 'Total Exp:'}</span>
+                            <span className="text-sm font-bold text-rose-600 dark:text-rose-400 font-mono">
+                              ৳{formatNum(instExpTotal)}
+                            </span>
+                          </div>
+                          {instDueTotal > 0 && (
+                            <div className="mt-1 flex items-baseline justify-between text-[11px]">
+                              <span className="text-muted-foreground">{bn ? 'বকেয়া দায়:' : 'Dues:'}</span>
+                              <span className="font-semibold text-amber-600 font-mono">
+                                ৳{formatNum(instDueTotal)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-2.5 pt-2 border-t border-border/40 flex items-center justify-end text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                          <span>{bn ? 'এই প্রতিষ্ঠানের হিসাব দেখুন ➔' : 'View Institution ➔'}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            )}
+          </div>
+        )}
 
         {/* Main Navigation Tabs */}
         {(() => {
