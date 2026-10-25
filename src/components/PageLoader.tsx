@@ -54,12 +54,13 @@ const PageLoader = () => {
   }, [isLoading, uploadedLogo, uploadedShape]);
 
   const DEFAULT_LOADER_LOGO = '/loader-logo.png';
-  const displayLogo = imgFailed ? DEFAULT_LOADER_LOGO : (uploadedLogo || cachedLogo || DEFAULT_LOADER_LOGO);
+  const rawLogo = uploadedLogo || cachedLogo || DEFAULT_LOADER_LOGO;
+  const displayLogo = (imgFailed || rawLogo.includes('wwhunyzobtuibhvkipwk')) ? DEFAULT_LOADER_LOGO : rawLogo;
   const displayShape = (uploadedLogo ? uploadedShape : cachedShape) || 'circle';
 
   const institutionName = language === 'bn'
-    ? (settings.institution_name || 'আল-আরাবিয়া সুবহানিয়া হাফিজিয়া মাদ্রাসা')
-    : (settings.institution_name_en || settings.institution_name || 'Al-Arabia Subhania Hafizia Madrasah');
+    ? (settings.institution_name || 'আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানা')
+    : (settings.institution_name_en || settings.institution_name || 'Al-Arabia Subhania Madrasah & Eyateem Khana');
 
   return (
     <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background select-none">

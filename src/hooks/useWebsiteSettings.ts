@@ -1,3 +1,4 @@
+export const FALLBACK_LOGO_URL = 'https://res.cloudinary.com/fjiynfbg/image/upload/v1792938944/edumate-bd/logo/bxgqbyrf36whwyclmm4t.png';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
@@ -286,16 +287,16 @@ export interface WebsiteSettings {
 }
 
 const DEFAULT_SETTINGS: WebsiteSettings = {
-  institution_name: '',
-  institution_name_en: '',
+  institution_name: 'আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানা',
+  institution_name_en: 'Al-Arabia Subhania Madrasah & Eyateem Khana',
   address: '',
   phone: '',
   email: '',
   registration_number: '',
   established_year: '',
-  logo_url: 'https://wwhunyzobtuibhvkipwk.supabase.co/storage/v1/object/public/website-assets/logo/1775846482322-vlfwr.png',
-  favicon_url: 'https://wwhunyzobtuibhvkipwk.supabase.co/storage/v1/object/public/website-assets/logo/1775846492642-xzn09h.png',
-  loader_logo_url: 'https://wwhunyzobtuibhvkipwk.supabase.co/storage/v1/object/public/website-assets/logo/1775846506746-pou769.png',
+  logo_url: 'https://res.cloudinary.com/fjiynfbg/image/upload/v1792938944/edumate-bd/logo/bxgqbyrf36whwyclmm4t.png',
+  favicon_url: 'https://res.cloudinary.com/fjiynfbg/image/upload/v1792938944/edumate-bd/logo/bxgqbyrf36whwyclmm4t.png',
+  loader_logo_url: 'https://res.cloudinary.com/fjiynfbg/image/upload/v1792938944/edumate-bd/logo/bxgqbyrf36whwyclmm4t.png',
   hero_title_bn: '',
   hero_title_en: '',
   hero_subtitle_bn: '',
@@ -453,14 +454,22 @@ const parseSettingsData = (data: any[] | null): WebsiteSettings => {
   return result;
 };
 
-const CACHE_KEY = 'website-settings-cache';
-const CACHE_TIME_KEY = 'website-settings-cache-time';
+const CACHE_KEY = 'website-settings-cache-v5';
+const CACHE_TIME_KEY = 'website-settings-cache-time-v5';
 
 const readCache = (): WebsiteSettings | null => {
   try {
+    // Purge legacy caches with stale dead domains
+    if (localStorage.getItem('website-settings-cache')) localStorage.removeItem('website-settings-cache');
+    if (localStorage.getItem('website-settings-cache-time')) localStorage.removeItem('website-settings-cache-time');
+    if (localStorage.getItem('institution-info-cache')) localStorage.removeItem('institution-info-cache');
+
     const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
+    if (parsed.logo_url && parsed.logo_url.includes('wwhunyzobtuibhvkipwk')) {
+      parsed.logo_url = FALLBACK_LOGO_URL;
+    }
     return { ...DEFAULT_SETTINGS, ...parsed };
   } catch {
     return null;
@@ -517,7 +526,7 @@ export const useWebsiteSettings = () => {
         const pick = (...vals: any[]) => {
           for (const v of vals) {
             const s = v != null ? String(v).trim() : '';
-            if (s) return s;
+            if (s && !s.includes('wwhunyzobtuibhvkipwk')) return s;
           }
           return '';
         };
@@ -533,14 +542,14 @@ export const useWebsiteSettings = () => {
         if (!instData) return withPrincipal;
         return {
           ...withPrincipal,
-          institution_name: pick((instData as any)?.name, parsed.institution_name),
-          institution_name_en: pick((instData as any)?.name_en, parsed.institution_name_en),
+          institution_name: pick((instData as any)?.name, parsed.institution_name) || 'আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানা',
+          institution_name_en: pick((instData as any)?.name_en, parsed.institution_name_en) || 'Al-Arabia Subhania Madrasah & Eyateem Khana',
           address: pick((instData as any)?.address, parsed.address),
           phone: pick((instData as any)?.phone, parsed.phone),
           email: pick((instData as any)?.email, parsed.email),
           accountant_name: pick(parsed.accountant_name, (instData as any)?.accountant_name),
           verifier_name: pick(parsed.verifier_name, (instData as any)?.verifier_name),
-          logo_url: pick((instData as any)?.logo_url, parsed.logo_url),
+          logo_url: pick((instData as any)?.logo_url, parsed.logo_url) || FALLBACK_LOGO_URL,
           registration_number: pick((instData as any)?.registration_number, (instData as any)?.eiin, parsed.registration_number),
           established_year: pick((instData as any)?.established_year, parsed.established_year),
         } as WebsiteSettings;
@@ -574,9 +583,9 @@ export const useWebsiteSettings = () => {
     },
     initialData: () => readCache() ?? undefined,
     initialDataUpdatedAt: () => readCacheTime(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 10 * 1000,
     gcTime: 30 * 60 * 1000,
-    refetchOnMount: false,
+    refetchOnMount: true,
     retry: (failureCount, error) => {
       if (error?.message?.includes('JWT') || error?.message?.includes('401')) return failureCount < 3;
       return failureCount < 2;

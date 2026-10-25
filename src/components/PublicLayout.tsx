@@ -194,11 +194,24 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
             <div className="relative flex items-center justify-center gap-2">
               <Link to="/" className="flex items-center gap-3 min-w-0 max-w-full">
                 {settings.logo_url ? (
-                  <img src={settings.logo_url} alt={`${settings.institution_name} logo`} className={`${logoSize} shrink-0 ${settings.logo_shape === 'circle' ? 'rounded-full' : settings.logo_shape === 'rounded' ? 'rounded-xl' : 'rounded-none'} object-cover`} />
+                  <img
+                    src={settings.logo_url}
+                    alt={`${settings.institution_name} logo`}
+                    onError={(e) => {
+                      const img = e.currentTarget;
+                      if (!img.dataset.fallback) {
+                        img.dataset.fallback = 'true';
+                        img.src = '/loader-logo.png';
+                      }
+                    }}
+                    className={`${logoSize} shrink-0 ${settings.logo_shape === 'circle' ? 'rounded-full' : settings.logo_shape === 'rounded' ? 'rounded-xl' : 'rounded-none'} object-cover`}
+                  />
                 ) : (
-                  <div className={`${logoSize} shrink-0 ${settings.logo_shape === 'circle' ? 'rounded-full' : settings.logo_shape === 'rounded' ? 'rounded-xl' : 'rounded-none'} bg-primary flex items-center justify-center`}>
-                    <GraduationCap className="w-7 h-7 text-primary-foreground" />
-                  </div>
+                  <img
+                    src="/loader-logo.png"
+                    alt={`${settings.institution_name} logo`}
+                    className={`${logoSize} shrink-0 ${settings.logo_shape === 'circle' ? 'rounded-full' : settings.logo_shape === 'rounded' ? 'rounded-xl' : 'rounded-none'} object-cover`}
+                  />
                 )}
                 <div className="min-w-0 overflow-hidden text-center">
                   {(hs?.show_institution_name !== false) && (

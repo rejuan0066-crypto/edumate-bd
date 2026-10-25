@@ -263,7 +263,18 @@ const Login = () => {
         <div className="text-center mb-8">
           {showLogo && (
             loginLogo ? (
-              <img src={loginLogo} alt="Logo" className={`w-16 h-16 ${faviconShapeClass} object-cover mx-auto mb-4 border-2 border-primary/20`} />
+              <img
+                src={loginLogo}
+                alt="Logo"
+                onError={(e) => {
+                  const img = e.currentTarget;
+                  if (!img.dataset.fallback) {
+                    img.dataset.fallback = 'true';
+                    img.src = '/loader-logo.png';
+                  }
+                }}
+                className={`w-16 h-16 ${faviconShapeClass} object-cover mx-auto mb-4 border-2 border-primary/20`}
+              />
             ) : (
               <div className={`w-16 h-16 ${faviconShapeClass} bg-primary mx-auto mb-4 flex items-center justify-center`}>
                 <GraduationCap className="w-9 h-9 text-primary-foreground" />

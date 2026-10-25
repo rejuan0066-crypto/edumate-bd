@@ -396,7 +396,18 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
         <div className="px-4 py-5 flex items-center gap-3 border-b border-sidebar-border/30 shrink-0">
           <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center shrink-0 shadow-lg shadow-sidebar-primary/25 overflow-hidden">
             {(websiteSettings.favicon_url || websiteSettings.logo_url) ? (
-              <img src={websiteSettings.favicon_url || websiteSettings.logo_url} alt="Logo" className="w-full h-full object-cover" />
+              <img
+                src={websiteSettings.favicon_url || websiteSettings.logo_url}
+                alt="Logo"
+                onError={(e) => {
+                  const img = e.currentTarget;
+                  if (!img.dataset.fallback) {
+                    img.dataset.fallback = 'true';
+                    img.src = '/loader-logo.png';
+                  }
+                }}
+                className="w-full h-full object-cover"
+              />
             ) : (
               <span className="text-sm font-bold text-sidebar-primary-foreground">
                 {(language === 'bn' ? websiteSettings.institution_name : (websiteSettings.institution_name_en || websiteSettings.institution_name))?.charAt(0) || 'E'}

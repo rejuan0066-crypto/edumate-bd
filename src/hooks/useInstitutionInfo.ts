@@ -1,3 +1,4 @@
+import { FALLBACK_LOGO_URL } from '@/hooks/useWebsiteSettings';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -94,7 +95,7 @@ export async function fetchInstitutionInfo(): Promise<InstitutionInfo> {
     address_en: pick(i.address_en, ws.address_en),
     phone: pick(i.phone, ws.phone),
     email: pick(i.email, ws.email),
-    logo_url: pick(i.logo_url, ws.logo_url),
+    logo_url: pick(i.logo_url, ws.logo_url) || FALLBACK_LOGO_URL,
     established_year: pick(i.established_year, ws.established_year),
     registration_number: pick(i.registration_number, ws.registration_number),
     principal_name: pick(sigHead?.person_name_bn, principalOfficer?.name_bn, i.principal_name, ws.principal_name),
@@ -109,7 +110,7 @@ export async function fetchInstitutionInfo(): Promise<InstitutionInfo> {
   return result;
 }
 
-const INST_CACHE_KEY = 'institution-info-cache';
+const INST_CACHE_KEY = 'institution-info-cache-v5';
 const readInstCache = (): InstitutionInfo | undefined => {
   try {
     const raw = localStorage.getItem(INST_CACHE_KEY);

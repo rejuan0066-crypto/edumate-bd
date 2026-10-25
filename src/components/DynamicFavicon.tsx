@@ -17,7 +17,7 @@ const DynamicFavicon = () => {
   // app un-installable on Android Chrome.
   useEffect(() => {
     const cached = localStorage.getItem(CACHE_KEY);
-    if (cached && !applied) {
+    if (cached && !applied && !cached.includes('wwhunyzobtuibhvkipwk')) {
       applyFavicon(cached);
       applyAppleTouchIcon(cached);
     }
