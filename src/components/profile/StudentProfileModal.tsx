@@ -12,9 +12,12 @@ import {
   BadgePercent, FileText, Pencil, CheckCircle, XCircle, Clock, Loader2,
   Plus, Trash2, GraduationCap, Users, Home, CreditCard, ClipboardList,
   Fingerprint, School, Building2, Library, CalendarCheck, BarChart3, Award, TrendingUp,
-  Printer, Eye, AlertCircle, CheckCircle2, ArrowRight
+  Printer, Eye, AlertCircle, CheckCircle2, ArrowRight, CheckSquare, Square, Tag, ExternalLink, Percent
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useApprovalCheck } from '@/hooks/useApprovalCheck';
+import { Checkbox } from '@/components/ui/checkbox';
 import ProfileInfoItem from './ProfileInfoItem';
 import ProfileSectionCard from './ProfileSectionCard';
 import DocumentPreviewModal from '@/components/DocumentPreviewModal';
@@ -100,6 +103,8 @@ const StudentProfileModal = ({
   const [duesSessionId, setDuesSessionId] = useState<string>('');
   const { data: institution } = useInstitutionInfo();
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { checkApproval } = useApprovalCheck('/admin/students-fees', 'fee_payments');
 
   // Payment states for quick fee payment
   const [payDialogOpen, setPayDialogOpen] = useState(false);
@@ -109,6 +114,16 @@ const StudentProfileModal = ({
   const [payDate, setPayDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [payRemarks, setPayRemarks] = useState<string>('');
   const [isPaying, setIsPaying] = useState(false);
+
+  // Multi-select state for dues
+  const [selectedDueIds, setSelectedDueIds] = useState<string[]>([]);
+
+  // Bulk / Item Discount Dialog state
+  const [discountDialogOpen, setDiscountDialogOpen] = useState(false);
+  const [discountType, setDiscountType] = useState<'full' | 'amount' | 'percent'>('full');
+  const [discountValue, setDiscountValue] = useState<string>('');
+  const [discountReason, setDiscountReason] = useState<string>('');
+  const [isApplyingDiscount, setIsApplyingDiscount] = useState(false);
 
   const { data: currentProfile } = useQuery({
     queryKey: ['current-profile', user?.id],
@@ -271,8 +286,9 @@ const StudentProfileModal = ({
     );
 
     const studentWaivers = (feeWaivers as any[]);
-    const paidLookup = new Set(
-      (feePayments as any[]).filter((p: any) => p.status === 'paid').map((p: any) => `${p.month}|${p.year}|${p.fee_type_id}`)
+    const paidRecords = (feePayments as any[]).filter((p: any) => p.status === 'paid' || p.status === 'waived');
+    const paidLookup = new Map<string, any>(
+      paidRecords.map((p: any) => [`${p.month}|${p.year}|${p.fee_type_id}`, p])
     );
 
     let monthlyDue = 0;
@@ -304,9 +320,14 @@ const StudentProfileModal = ({
         const waiverPct = isFreeMonthly ? 100 : (waiver?.waiver_percent || 0);
         const net = Math.round(ft.amount * (1 - waiverPct / 100));
 
-        const isPaid = paidLookup.has(`${m.name}|${m.year}|${ft.id}`);
-        if (isPaid) {
-          monthlyPaid += net;
+        const paymentRec = paidLookup.get(`${m.name}|${m.year}|${ft.id}`);
+        const isWaivedRecord = paymentRec && (paymentRec.status === 'waived' || paymentRec.paid_amount === 0);
+        const isPaid = !!paymentRec && !isWaivedRecord;
+
+        if (isWaivedRecord) {
+          // Waived, no dues added
+        } else if (isPaid) {
+          monthlyPaid += (paymentRec.paid_amount ?? net);
         } else if (waiverPct < 100 && net > 0) {
           monthlyDue += net;
           dueList.push({
@@ -388,10 +409,43 @@ const StudentProfileModal = ({
   const totalPaid = sessionFinancials.totalPaid;
   const totalDue = sessionFinancials.totalDue;
 
+  // Multi-select helpers for dues
+  const handleToggleSelectDue = (id: string) => {
+    setSelectedDueIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllDues = (checked: boolean) => {
+    if (checked) {
+      setSelectedDueIds(sessionFinancials.dueList.map(d => d.id));
+    } else {
+      setSelectedDueIds([]);
+    }
+  };
+
+  const selectedDueItems = useMemo(() => {
+    return sessionFinancials.dueList.filter(d => selectedDueIds.includes(d.id));
+  }, [sessionFinancials.dueList, selectedDueIds]);
+
+  const selectedDueTotal = useMemo(() => {
+    return selectedDueItems.reduce((sum, d) => sum + d.dueAmount, 0);
+  }, [selectedDueItems]);
+
   // Handlers for quick payment
   const handleOpenPaySingle = (item: any) => {
     setPayingItems([item]);
     setPayAmount(String(item.dueAmount));
+    setPayMethod('cash');
+    setPayDate(new Date().toISOString().split('T')[0]);
+    setPayRemarks('');
+    setPayDialogOpen(true);
+  };
+
+  const handleOpenPaySelected = () => {
+    if (selectedDueItems.length === 0) return;
+    setPayingItems(selectedDueItems);
+    setPayAmount(String(selectedDueTotal));
     setPayMethod('cash');
     setPayDate(new Date().toISOString().split('T')[0]);
     setPayRemarks('');
@@ -406,6 +460,34 @@ const StudentProfileModal = ({
     setPayDate(new Date().toISOString().split('T')[0]);
     setPayRemarks('');
     setPayDialogOpen(true);
+  };
+
+  const handleOpenDiscountForSelected = () => {
+    if (selectedDueItems.length === 0) {
+      toast.warning(bn ? 'প্রথমে অন্তত একটি ফি নির্বাচন করুন' : 'Select at least one fee first');
+      return;
+    }
+    setDiscountType('full');
+    setDiscountValue('');
+    setDiscountReason('');
+    setDiscountDialogOpen(true);
+  };
+
+  const handleOpenDiscountSingle = (item: any) => {
+    setSelectedDueIds([item.id]);
+    setDiscountType('full');
+    setDiscountValue('');
+    setDiscountReason('');
+    setDiscountDialogOpen(true);
+  };
+
+  const handleNavigateToPaymentPage = (feeTypeId?: string) => {
+    setShowDetail?.(null);
+    let url = `/admin/students-fees?tab=collection&studentId=${student.id}`;
+    if (feeTypeId) {
+      url += `&feeType=${feeTypeId}`;
+    }
+    navigate(url);
   };
 
   const handleOpenPayFromMatrix = (ft: any, m: any) => {
@@ -459,6 +541,121 @@ const StudentProfileModal = ({
     }
   };
 
+  const executeApplyDiscount = async () => {
+    if (selectedDueItems.length === 0) return;
+    setIsApplyingDiscount(true);
+    try {
+      if (discountType === 'full') {
+        const monthlyItems = selectedDueItems.filter(itm => itm.isMonthly);
+        if (monthlyItems.length > 0) {
+          const records = monthlyItems.map(itm => ({
+            student_id: student.id,
+            fee_type_id: itm.fee_type_id,
+            amount: itm.originalAmount,
+            paid_amount: 0,
+            month: itm.month,
+            year: itm.year,
+            status: 'waived',
+            paid_at: new Date().toISOString(),
+            receipt_number: `WAIVE-${Date.now().toString().slice(-6)}`,
+            collected_by: collectorName,
+            approved_by: collectorName,
+          }));
+          const { error } = await supabase.from('fee_payments').insert(records);
+          if (error) throw error;
+        }
+
+        const oneTimeItems = selectedDueItems.filter(itm => !itm.isMonthly);
+        for (const itm of oneTimeItems) {
+          const existingWaiver = sessionFinancials.studentWaivers.find((w: any) => w.fee_type_id === itm.fee_type_id);
+          if (existingWaiver) {
+            await supabase.from('fee_waivers').update({
+              waiver_percent: 100,
+              reason: discountReason || 'সম্পূর্ণ মওকুফ',
+              is_active: true,
+            }).eq('id', existingWaiver.id);
+          } else {
+            await supabase.from('fee_waivers').insert({
+              student_id: student.id,
+              fee_type_id: itm.fee_type_id,
+              waiver_percent: 100,
+              reason: discountReason || 'সম্পূর্ণ মওকুফ',
+              is_active: true,
+            });
+          }
+        }
+      } else if (discountType === 'percent') {
+        const pct = Math.min(100, Math.max(1, parseInt(discountValue) || 0));
+        if (pct <= 0) {
+          toast.error(bn ? 'সঠিক শতকরা হার লিখুন' : 'Enter valid percentage');
+          return;
+        }
+        const uniqueFeeTypeIds = Array.from(new Set(selectedDueItems.map(itm => itm.fee_type_id)));
+        for (const ftId of uniqueFeeTypeIds) {
+          const existingWaiver = sessionFinancials.studentWaivers.find((w: any) => w.fee_type_id === ftId);
+          if (existingWaiver) {
+            await supabase.from('fee_waivers').update({
+              waiver_percent: pct,
+              reason: discountReason || `${pct}% ছাড়`,
+              is_active: true,
+            }).eq('id', existingWaiver.id);
+          } else {
+            await supabase.from('fee_waivers').insert({
+              student_id: student.id,
+              fee_type_id: ftId,
+              waiver_percent: pct,
+              reason: discountReason || `${pct}% ছাড়`,
+              is_active: true,
+            });
+          }
+        }
+      } else if (discountType === 'amount') {
+        const amt = parseFloat(discountValue) || 0;
+        if (amt <= 0) {
+          toast.error(bn ? 'সঠিক টাকার পরিমাণ লিখুন' : 'Enter valid amount');
+          return;
+        }
+        const uniqueFeeTypeIds = Array.from(new Set(selectedDueItems.map(itm => itm.fee_type_id)));
+        for (const ftId of uniqueFeeTypeIds) {
+          const itemsOfThisType = selectedDueItems.filter(itm => itm.fee_type_id === ftId);
+          const totalOriginal = itemsOfThisType.reduce((s, itm) => s + itm.originalAmount, 0);
+          const pct = totalOriginal > 0 ? Math.min(100, Math.round((amt / totalOriginal) * 100)) : 100;
+          const existingWaiver = sessionFinancials.studentWaivers.find((w: any) => w.fee_type_id === ftId);
+          if (existingWaiver) {
+            await supabase.from('fee_waivers').update({
+              waiver_percent: pct,
+              reason: discountReason || `৳${amt} ছাড়`,
+              is_active: true,
+            }).eq('id', existingWaiver.id);
+          } else {
+            await supabase.from('fee_waivers').insert({
+              student_id: student.id,
+              fee_type_id: ftId,
+              waiver_percent: pct,
+              reason: discountReason || `৳${amt} ছাড়`,
+              is_active: true,
+            });
+          }
+        }
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['student-fee-payments', student.id] });
+      queryClient.invalidateQueries({ queryKey: ['student-fee-waivers', student.id] });
+      queryClient.invalidateQueries({ queryKey: ['student-applicable-fee-types'] });
+      queryClient.invalidateQueries({ queryKey: ['fee_payments'] });
+      queryClient.invalidateQueries({ queryKey: ['student_fee_payments_status'] });
+      queryClient.invalidateQueries({ queryKey: ['dues-fee-payments'] });
+
+      toast.success(bn ? 'ফি ছাড় / মওকুফ সফলভাবে কার্যকর হয়েছে' : 'Discount / waiver applied successfully');
+      setSelectedDueIds([]);
+      setDiscountDialogOpen(false);
+    } catch (err: any) {
+      toast.error(err.message || (bn ? 'ছাড় কার্যকর করা সম্ভব হয়নি' : 'Failed to apply discount'));
+    } finally {
+      setIsApplyingDiscount(false);
+    }
+  };
+
   const executePayment = async () => {
     if (payingItems.length === 0) return;
     const enteredAmount = parseFloat(payAmount);
@@ -481,6 +678,28 @@ const StudentProfileModal = ({
       }
 
       const isoPaidAt = payDate ? new Date(payDate).toISOString() : new Date().toISOString();
+
+      // Check role & approval workflow for fee payment
+      const description = payingItems.length === 1
+        ? `${bn ? 'ফি পরিশোধ' : 'Fee Payment'}: ৳${enteredAmount} - ${student.name_bn || student.name_en} (${payingItems[0].name_bn || payingItems[0].name})`
+        : `${bn ? 'বকেয়া ফি পরিশোধ' : 'Bulk Fee Payment'}: ৳${enteredAmount} - ${student.name_bn || student.name_en} (${payingItems.length} টি ফি)`;
+
+      const approvalPayload = {
+        student_id: student.id,
+        amount: enteredAmount,
+        paying_items: payingItems,
+        payment_method: payMethod,
+        date: isoPaidAt,
+        receipt_number: serialNumber,
+        collected_by: collectorName,
+        notes: payRemarks || `সরাসরি পরিশোধ (${payMethod})`,
+      };
+
+      if (await checkApproval('add', approvalPayload, undefined, description)) {
+        setPayDialogOpen(false);
+        setIsPaying(false);
+        return;
+      }
 
       if (payingItems.length === 1) {
         const item = payingItems[0];
@@ -565,6 +784,7 @@ const StudentProfileModal = ({
           ? `৳${formatDigits(enteredAmount.toLocaleString(), true)} ফি সফলভাবে পরিশোধ হয়েছে (রসিদ নং: ${serialNumber})`
           : `৳${enteredAmount.toLocaleString()} fee paid successfully (Receipt: ${serialNumber})`
       );
+      setSelectedDueIds([]);
       setPayDialogOpen(false);
     } catch (err: any) {
       toast.error(err.message || (bn ? 'পরিশোধ সম্পন্ন করা সম্ভব হয়নি' : 'Failed to complete payment'));
@@ -867,9 +1087,9 @@ const StudentProfileModal = ({
             icon={AlertCircle}
           >
             <div className="col-span-full space-y-3">
-              {/* Banner: Total Due & Pay All */}
+              {/* Banner: Total Due, Site Page Link & Pay All */}
               <div className={cn(
-                "rounded-2xl p-4 border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all",
+                "rounded-2xl p-4 border flex flex-col md:flex-row md:items-center justify-between gap-3 transition-all",
                 sessionFinancials.totalDue > 0
                   ? "bg-gradient-to-r from-rose-500/10 via-amber-500/5 to-rose-500/5 border-rose-500/20"
                   : "bg-gradient-to-r from-emerald-500/10 to-teal-500/5 border-emerald-500/20"
@@ -901,20 +1121,75 @@ const StudentProfileModal = ({
                   </div>
                 </div>
 
-                {sessionFinancials.dueList.length > 0 ? (
+                <div className="flex items-center gap-2 flex-wrap">
                   <Button
-                    onClick={handleOpenPayAll}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-10 px-4 rounded-xl shadow-md flex items-center justify-center gap-2 shrink-0 transition-transform active:scale-95"
+                    variant="outline"
+                    onClick={() => handleNavigateToPaymentPage()}
+                    className="h-10 px-3 rounded-xl border-primary/30 text-primary hover:bg-primary/10 font-bold text-xs shadow-xs flex items-center gap-1.5"
+                    title={bn ? 'সাইটের মূল ফি কালেকশন পেজে গিয়ে পরিশোধ করুন' : 'Open in official fees collection page'}
                   >
-                    <CreditCard className="w-4 h-4" />
-                    <span>{bn ? `সকল বকেয়া একসাথে পরিশোধ করুন (৳${formatDigits(sessionFinancials.totalDue.toLocaleString(), bn)})` : `Pay All Dues (৳${sessionFinancials.totalDue.toLocaleString()})`}</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>{bn ? 'সাইটের পেমেন্ট পেজে যান' : 'Go to Payment Page'}</span>
                   </Button>
-                ) : (
-                  <Badge className="bg-emerald-600 text-white px-3 py-1 text-xs self-start sm:self-center font-bold">
-                    {bn ? '✓ সমস্ত ফি পরিশোধিত' : '✓ All Fees Paid'}
-                  </Badge>
-                )}
+
+                  {sessionFinancials.dueList.length > 0 ? (
+                    <Button
+                      onClick={handleOpenPayAll}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-10 px-4 rounded-xl shadow-md flex items-center justify-center gap-1.5 shrink-0 transition-transform active:scale-95 text-xs"
+                    >
+                      <CreditCard className="w-4 h-4" />
+                      <span>{bn ? `সকল বকেয়া একসাথে পরিশোধ (৳${formatDigits(sessionFinancials.totalDue.toLocaleString(), bn)})` : `Pay All Dues (৳${sessionFinancials.totalDue.toLocaleString()})`}</span>
+                    </Button>
+                  ) : (
+                    <Badge className="bg-emerald-600 text-white px-3 py-1.5 text-xs self-start sm:self-center font-bold">
+                      {bn ? '✓ সমস্ত ফি পরিশোধিত' : '✓ All Fees Paid'}
+                    </Badge>
+                  )}
+                </div>
               </div>
+
+              {/* Multi-select and Bulk Action Toolbar */}
+              {sessionFinancials.dueList.length > 0 && (
+                <div className="flex items-center justify-between flex-wrap gap-2 px-3 py-2 rounded-xl bg-muted/40 border border-border/30">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="select-all-dues-cb"
+                      checked={selectedDueIds.length === sessionFinancials.dueList.length && sessionFinancials.dueList.length > 0}
+                      onCheckedChange={(checked) => handleSelectAllDues(!!checked)}
+                    />
+                    <label htmlFor="select-all-dues-cb" className="text-xs font-bold cursor-pointer select-none">
+                      {bn ? 'সবগুলো নির্বাচন করুন' : 'Select All'}
+                    </label>
+                    {selectedDueIds.length > 0 && (
+                      <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px] font-bold">
+                        {bn ? `${selectedDueIds.length} টি ফি নির্বাচিত • মোট ৳${formatDigits(selectedDueTotal.toLocaleString(), bn)}` : `${selectedDueIds.length} selected • ৳${selectedDueTotal.toLocaleString()}`}
+                      </Badge>
+                    )}
+                  </div>
+
+                  {selectedDueIds.length > 0 && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleOpenDiscountForSelected}
+                        className="h-7 text-xs rounded-lg border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10 font-bold"
+                      >
+                        <Tag className="w-3.5 h-3.5 mr-1" />
+                        {bn ? 'নির্বাচিত ফি-তে ছাড় দিন' : 'Discount Selected'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={handleOpenPaySelected}
+                        className="h-7 text-xs rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-xs"
+                      >
+                        <Banknote className="w-3.5 h-3.5 mr-1" />
+                        {bn ? `নির্বাচিত ফি পরিশোধ (৳${formatDigits(selectedDueTotal.toLocaleString(), bn)})` : `Pay Selected (৳${selectedDueTotal.toLocaleString()})`}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Itemized dues list */}
               {sessionFinancials.dueList.length === 0 ? (
@@ -929,53 +1204,77 @@ const StudentProfileModal = ({
                 </div>
               ) : (
                 <div className="space-y-2 max-h-72 overflow-y-auto pr-1 scrollbar-thin">
-                  {sessionFinancials.dueList.map((item: any) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between p-3 rounded-xl bg-muted/20 border border-rose-500/15 hover:border-rose-500/30 hover:bg-muted/30 transition-all shadow-2xs"
-                    >
-                      <div className="flex-1 min-w-0 pr-3">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-bold text-sm text-foreground truncate">{bn ? item.name_bn : item.name}</span>
-                          <Badge variant="outline" className="text-[10px] px-2 py-0 border-primary/20 text-primary">
-                            {item.categoryLabel}
-                          </Badge>
-                          {item.monthLabel && (
-                            <Badge className="bg-rose-500/10 text-rose-700 dark:text-rose-300 border-none text-[10px] px-2 py-0 font-medium">
-                              {item.monthLabel}
-                            </Badge>
-                          )}
+                  {sessionFinancials.dueList.map((item: any) => {
+                    const isSelected = selectedDueIds.includes(item.id);
+                    return (
+                      <div
+                        key={item.id}
+                        className={cn(
+                          "flex items-center justify-between p-3 rounded-xl border transition-all shadow-2xs",
+                          isSelected
+                            ? "bg-primary/5 border-primary/40 ring-1 ring-primary/20"
+                            : "bg-muted/20 border-rose-500/15 hover:border-rose-500/30 hover:bg-muted/30"
+                        )}
+                      >
+                        <div className="flex items-center gap-2.5 flex-1 min-w-0 pr-2">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => handleToggleSelectDue(item.id)}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-bold text-sm text-foreground truncate">{bn ? item.name_bn : item.name}</span>
+                              <Badge variant="outline" className="text-[10px] px-2 py-0 border-primary/20 text-primary">
+                                {item.categoryLabel}
+                              </Badge>
+                              {item.monthLabel && (
+                                <Badge className="bg-rose-500/10 text-rose-700 dark:text-rose-300 border-none text-[10px] px-2 py-0 font-medium">
+                                  {item.monthLabel}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-1">
+                              {item.waiverPercent > 0 ? (
+                                <span>
+                                  {bn ? 'মূল ফি:' : 'Base:'} <span className="line-through">৳{item.originalAmount}</span> • {bn ? 'ছাড়:' : 'Discount:'} {item.waiverPercent}%
+                                </span>
+                              ) : (
+                                <span>{bn ? `মূল ফি: ৳${item.originalAmount}` : `Fee: ৳${item.originalAmount}`}</span>
+                              )}
+                              {item.isMonthly && <span>• {bn ? 'মাসিক বরাদ্দ' : 'Monthly'}</span>}
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-1">
-                          {item.waiverPercent > 0 ? (
-                            <span>
-                              {bn ? 'মূল ফি:' : 'Base:'} <span className="line-through">৳{item.originalAmount}</span> • {bn ? 'ছাড়:' : 'Discount:'} {item.waiverPercent}%
-                            </span>
-                          ) : (
-                            <span>{bn ? `মূল ফি: ৳${item.originalAmount}` : `Fee: ৳${item.originalAmount}`}</span>
-                          )}
-                          {item.isMonthly && <span>• {bn ? 'মাসিক বরাদ্দ' : 'Monthly'}</span>}
-                        </div>
-                      </div>
 
-                      <div className="flex items-center gap-3 shrink-0">
-                        <div className="text-right">
-                          <p className="text-[10px] uppercase font-bold text-rose-600/70">{bn ? 'বকেয়া' : 'Due'}</p>
-                          <p className="text-base font-black text-rose-600 dark:text-rose-400">
-                            ৳{formatDigits(item.dueAmount.toLocaleString(), bn)}
-                          </p>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <div className="text-right mr-1">
+                            <p className="text-[10px] uppercase font-bold text-rose-600/70">{bn ? 'বকেয়া' : 'Due'}</p>
+                            <p className="text-base font-black text-rose-600 dark:text-rose-400">
+                              ৳{formatDigits(item.dueAmount.toLocaleString(), bn)}
+                            </p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleOpenDiscountSingle(item)}
+                            className="h-8 text-xs rounded-lg border-amber-500/30 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10 font-bold px-2.5"
+                            title={bn ? 'এই ফি-তে ছাড় দিন' : 'Discount this fee'}
+                          >
+                            <Tag className="w-3.5 h-3.5 mr-1" />
+                            {bn ? 'ছাড়' : 'Discount'}
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleOpenPaySingle(item)}
+                            className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-xs flex items-center gap-1 font-bold active:scale-95 transition-transform px-3"
+                          >
+                            <Banknote className="w-3.5 h-3.5" />
+                            <span>{bn ? 'পরিশোধ' : 'Pay'}</span>
+                          </Button>
                         </div>
-                        <Button
-                          size="sm"
-                          onClick={() => handleOpenPaySingle(item)}
-                          className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-xs flex items-center gap-1 font-bold active:scale-95 transition-transform"
-                        >
-                          <Banknote className="w-3.5 h-3.5" />
-                          <span>{bn ? 'পরিশোধ করুন' : 'Pay'}</span>
-                        </Button>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -1017,7 +1316,10 @@ const StudentProfileModal = ({
                   return <p className="text-xs text-muted-foreground/60 text-center py-3">{bn ? 'এই সেশনে কোনো মাসিক ফি নেই' : 'No monthly fees for this session'}</p>;
                 }
                 const studentWaivers = (feeWaivers as any[]);
-                const paidLookup = new Set((feePayments as any[]).filter((p: any) => p.status === 'paid').map((p: any) => `${p.month}|${p.year}|${p.fee_type_id}`));
+                const paidRecords = (feePayments as any[]).filter((p: any) => p.status === 'paid' || p.status === 'waived');
+                const paidLookup = new Map<string, any>(
+                  paidRecords.map((p: any) => [`${p.month}|${p.year}|${p.fee_type_id}`, p])
+                );
                 let grandDue = 0;
                 let grandPaid = 0;
                 return (
@@ -1042,10 +1344,16 @@ const StudentProfileModal = ({
                             const isFreeMonthly = student.is_free && ft.fee_category === 'monthly';
                             const waiver = studentWaivers.find((w: any) => w.fee_type_id === ft.id);
                             const waiverPct = isFreeMonthly ? 100 : (waiver?.waiver_percent || 0);
-                            const net = ft.amount * (1 - waiverPct / 100);
-                            const paid = paidLookup.has(`${m.name}|${m.year}|${ft.id}`);
-                            if (paid) { grandPaid += net; return { ft, kind: 'paid' as const, amount: net }; }
-                            if (waiverPct >= 100) return { ft, kind: 'waived' as const };
+                            const net = Math.round(ft.amount * (1 - waiverPct / 100));
+
+                            const paymentRec = paidLookup.get(`${m.name}|${m.year}|${ft.id}`);
+                            const isWaivedRecord = paymentRec && (paymentRec.status === 'waived' || paymentRec.paid_amount === 0);
+                            if (isWaivedRecord || waiverPct >= 100) return { ft, kind: 'waived' as const };
+                            if (paymentRec) {
+                              const amt = paymentRec.paid_amount ?? net;
+                              grandPaid += amt;
+                              return { ft, kind: 'paid' as const, amount: amt };
+                            }
                             rowTotal += net;
                             grandDue += net;
                             return { ft, kind: 'due' as const, amount: net };
@@ -1512,6 +1820,124 @@ const StudentProfileModal = ({
             <Button onClick={() => addWaiverMutation.mutate()} disabled={addWaiverMutation.isPending || !waiverForm.fee_type_id} className="btn-primary-gradient">
               {addWaiverMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
               {bn ? 'সেভ' : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ═══════════ BULK / SINGLE FEE DISCOUNT & WAIVER DIALOG ═══════════ */}
+      <Dialog open={discountDialogOpen} onOpenChange={setDiscountDialogOpen}>
+        <DialogContent className="max-w-md sm:max-w-lg p-5 sm:p-6 rounded-2xl">
+          <DialogHeader className="space-y-1">
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg font-bold">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
+                <Tag className="h-4 w-4" />
+              </div>
+              <span>{bn ? 'ফি ছাড় / ডিসকাউন্ট ও মওকুফ' : 'Fee Discount & Waiver'}</span>
+            </DialogTitle>
+            <p className="text-xs text-muted-foreground">
+              {student.name_bn || student.name_en} • {resolveClassName(student.class_id)} {student.roll_number ? `• রোল: ${formatDigits(student.roll_number, bn)}` : ''}
+            </p>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2 text-xs">
+            {/* Selected items to discount */}
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 space-y-2">
+              <div className="flex items-center justify-between text-[11px] font-bold text-amber-800 dark:text-amber-300">
+                <span>{bn ? 'নির্বাচিত ফি তালিকা:' : 'Selected Fees:'}</span>
+                <span>{bn ? `${selectedDueItems.length} টি ফি • মোট ৳${formatDigits(selectedDueTotal.toLocaleString(), bn)}` : `${selectedDueItems.length} fees • ৳${selectedDueTotal.toLocaleString()}`}</span>
+              </div>
+              <div className="max-h-32 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin">
+                {selectedDueItems.map((itm: any) => (
+                  <div key={itm.id} className="flex items-center justify-between py-1 border-b border-border/10 last:border-none text-xs">
+                    <span className="font-semibold truncate pr-2">{bn ? itm.name_bn : itm.name} {itm.monthLabel ? `(${itm.monthLabel})` : ''}</span>
+                    <span className="font-bold text-rose-600 shrink-0">৳{formatDigits(itm.dueAmount.toLocaleString(), bn)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Discount Type Options */}
+            <div className="space-y-1.5">
+              <label className="font-bold text-muted-foreground text-[11px]">{bn ? 'ছাড়ের ধরন:' : 'Discount Type:'}</label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: 'full', label: bn ? 'সম্পূর্ণ মওকুফ' : '100% Waiver', sub: '১০০% ছাড়' },
+                  { id: 'percent', label: bn ? 'শতকরা ছাড়' : 'Percentage', sub: '% হার' },
+                  { id: 'amount', label: bn ? 'টাকায় ছাড়' : 'Fixed Amount', sub: 'নির্দিষ্ট ৳' },
+                ].map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setDiscountType(t.id as any)}
+                    className={cn(
+                      'py-2 px-2 text-center rounded-xl border text-xs font-bold transition-all flex flex-col items-center gap-0.5',
+                      discountType === t.id
+                        ? 'border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-300 shadow-xs ring-1 ring-amber-500/30'
+                        : 'border-border/40 hover:bg-muted/30 text-muted-foreground'
+                    )}
+                  >
+                    <span>{t.label}</span>
+                    <span className="text-[10px] font-normal opacity-70">{t.sub}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Dynamic input based on discount type */}
+            {discountType === 'percent' && (
+              <div className="space-y-1.5">
+                <label className="font-bold text-muted-foreground text-[11px]">{bn ? 'ছাড়ের শতকরা হার (%):' : 'Discount Percentage (%):'} *</label>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={discountValue}
+                    onChange={(e) => setDiscountValue(e.target.value)}
+                    className="pr-8 font-bold text-base h-10 rounded-xl"
+                    placeholder="যেমন: ৫০"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-muted-foreground text-sm">%</span>
+                </div>
+              </div>
+            )}
+
+            {discountType === 'amount' && (
+              <div className="space-y-1.5">
+                <label className="font-bold text-muted-foreground text-[11px]">{bn ? 'ছাড়ের পরিমাণ (টাকা):' : 'Discount Amount (BDT):'} *</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-muted-foreground text-sm">৳</span>
+                  <Input
+                    type="number"
+                    value={discountValue}
+                    onChange={(e) => setDiscountValue(e.target.value)}
+                    className="pl-7 font-bold text-base h-10 rounded-xl"
+                    placeholder="যেমন: ১০০"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Reason */}
+            <div className="space-y-1.5">
+              <label className="font-bold text-muted-foreground text-[11px]">{bn ? 'ছাড়ের কারণ বা রেফারেন্স:' : 'Reason / Note:'}</label>
+              <Input
+                value={discountReason}
+                onChange={(e) => setDiscountReason(e.target.value)}
+                placeholder={bn ? 'উদা: এতিম / দরিদ্র তহবিল / বিশেষ বিবেচনা' : 'e.g. Orphan / Special concession...'}
+                className="h-9 rounded-xl text-xs"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0 pt-2">
+            <Button variant="outline" size="sm" onClick={() => setDiscountDialogOpen(false)} disabled={isApplyingDiscount} className="rounded-xl">
+              {bn ? 'বাতিল' : 'Cancel'}
+            </Button>
+            <Button size="sm" onClick={executeApplyDiscount} disabled={isApplyingDiscount} className="bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold">
+              {isApplyingDiscount ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Tag className="w-4 h-4 mr-1.5" />}
+              {bn ? 'ছাড় নিশ্চিত করুন' : 'Confirm Discount'}
             </Button>
           </DialogFooter>
         </DialogContent>
