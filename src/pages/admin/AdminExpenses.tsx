@@ -139,6 +139,7 @@ const getMemo = (desc: string, isBn: boolean = false) => {
   return isBn ? toBnDigits(memo) : memo;
 };
 const getRemarks = (desc: string) => desc?.match(/\[remarks:(.*?)\]/)?.[1] || '-';
+export const getSubCategory = (desc: string) => (desc || '').match(/\[sub:(.*?)\]/)?.[1]?.trim() || '';
 const isUnpaidDue = (desc: string) => (desc || '').includes('[due:unpaid]');
 const isPaidDue = (desc: string) => (desc || '').includes('[due:paid]');
 const cleanDesc = (desc: string) => (desc || '')
@@ -152,6 +153,7 @@ const cleanDesc = (desc: string) => (desc || '')
   .replace(/\[salary_bulk_total\]/g, '')
   .replace(/\[salary_month:.*?\]/g, '')
   .replace(/\[staff_id:.*?\]/g, '')
+  .replace(/\[sub:.*?\]/g, '')
   .trim() || '-';
 
 const MONTHS = [
@@ -259,6 +261,7 @@ const AdminExpenses = () => {
   const defaultExpenseForm = {
     institution_id: '',
     category_id: '',
+    sub_category: '',
     expense_date: new Date().toISOString().split('T')[0],
     description: '',
     quantity: '',
@@ -636,6 +639,85 @@ const AdminExpenses = () => {
       toast.error(err?.message || (bn ? 'উৎস সংরক্ষণ ব্যর্থ হয়েছে' : 'Failed to save source'));
     }
   });
+
+  const DEFAULT_SUB_CATEGORIES_PRESETS: Record<string, string[]> = {
+    'boarding': ['চাল, ডাল ও কাঁচাবাজার', 'মাছ ও মাংস', 'তেল, মসলা ও রান্নার উপকরণ', 'গ্যাস ও জ্বালানি'],
+    'বডিং': ['চাল, ডাল ও কাঁচাবাজার', 'মাছ ও মাংস', 'তেল, মসলা ও রান্নার উপকরণ', 'গ্যাস ও জ্বালানি'],
+    'বোর্ডিং': ['চাল, ডাল ও কাঁচাবাজার', 'মাছ ও মাংস', 'তেল, মসলা ও রান্নার উপকরণ', 'গ্যাস ও জ্বালানি'],
+    'academic': ['কিতাব ও পাঠ্যবই', 'পরীক্ষার কাগজ ও প্রশ্নপত্র', 'হোয়াইটবোর্ড মার্কার ও চক', 'পুরস্কার ও শিক্ষামূলক উপকরণ'],
+    'শিক্ষা': ['কিতাব ও পাঠ্যবই', 'পরীক্ষার কাগজ ও প্রশ্নপত্র', 'হোয়াইটবোর্ড মার্কার ও চক', 'পুরস্কার ও শিক্ষামূলক উপকরণ'],
+    'ঘর তৈরি': ['রড ও সিমেন্ট', 'ইট ও বালু', 'রাজমিস্ত্রি ও লেবার খরচ', 'ইলেকট্রিক ও প্লাম্বিং'],
+    'হসপিটাল': ['ওষুধ ও স্যালাইন', 'চিকিৎসা সরঞ্জাম', 'ডাক্তার ফি ও ল্যাব টেস্ট'],
+    'মাদরাসা': ['মেরামত ও রক্ষণাবেক্ষণ', 'বিদ্যুৎ ও পানির বিল', 'আপ্যায়ন ও মেহমানদারি'],
+  };
+
+  const expenseSubCategories = useMemo<Record<string, string[]>>(() => {
+    const row = (websiteSettings as any[]).find((s: any) => s.key === 'expense_sub_categories');
+    const custom = (row && row.value && typeof row.value === 'object') ? (row.value as Record<string, string[]>) : {};
+    return custom;
+  }, [websiteSettings]);
+
+  const getSubCategoriesForCategory = useCallback((catId: string, catName?: string, catNameBn?: string): string[] => {
+    if (!catId) return [];
+    if (expenseSubCategories[catId] && expenseSubCategories[catId].length > 0) {
+      return expenseSubCategories[catId];
+    }
+    const combined = `${catName || ''} ${catNameBn || ''}`.toLowerCase();
+    for (const [key, preset] of Object.entries(DEFAULT_SUB_CATEGORIES_PRESETS)) {
+      if (combined.includes(key.toLowerCase())) {
+        return preset;
+      }
+    }
+    return [];
+  }, [expenseSubCategories]);
+
+  const saveSubCategoriesMutation = useMutation({
+    mutationFn: async (updatedMap: Record<string, string[]>) => {
+      const { error } = await supabase.from('website_settings').upsert(
+        { key: 'expense_sub_categories', value: updatedMap },
+        { onConflict: 'key' }
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['website_settings'] });
+      toast.success(bn ? 'সাব-খাত সংরক্ষিত হয়েছে' : 'Sub-category saved');
+    },
+    onError: (err: any) => {
+      console.error('Failed to save sub-categories:', err);
+      toast.error(err?.message || (bn ? 'সাব-খাত সংরক্ষণ ব্যর্থ হয়েছে' : 'Failed to save sub-category'));
+    }
+  });
+
+  const [subCatDialog, setSubCatDialog] = useState<{ open: boolean; catId: string; catName: string }>({ open: false, catId: '', catName: '' });
+  const [newSubCatInput, setNewSubCatInput] = useState('');
+
+  const handleAddSubCategory = async (catId: string, newSubName: string) => {
+    if (!catId || !newSubName || !newSubName.trim()) return;
+    const cat = categories.find((c: any) => c.id === catId);
+    const existing = getSubCategoriesForCategory(catId, cat?.name, cat?.name_bn);
+    const trimmed = newSubName.trim();
+    if (existing.includes(trimmed)) {
+      toast.info(bn ? 'এই সাব-খাতটি ইতিমধ্যে রয়েছে' : 'Sub-category already exists');
+      return;
+    }
+    const updated = {
+      ...expenseSubCategories,
+      [catId]: [...existing, trimmed]
+    };
+    await saveSubCategoriesMutation.mutateAsync(updated);
+    setNewSubCatInput('');
+  };
+
+  const handleRemoveSubCategory = async (catId: string, subName: string) => {
+    const cat = categories.find((c: any) => c.id === catId);
+    const existing = getSubCategoriesForCategory(catId, cat?.name, cat?.name_bn);
+    const updated = {
+      ...expenseSubCategories,
+      [catId]: existing.filter(s => s !== subName)
+    };
+    await saveSubCategoriesMutation.mutateAsync(updated);
+  };
 
   const handleQuickAddSource = async () => {
     const trimmed = newSourceInput.trim();
@@ -1226,9 +1308,10 @@ const AdminExpenses = () => {
         }
         descWithTags += `[memo:${cleanMemo}]`;
       }
-      // Smart Duplicate Detection: Check for duplicate amount + category + date
+      // Smart Duplicate Detection: Check for duplicate amount + category + date + sub_category
       if (!editingExpenseId) {
         const cleanFormDesc = (expenseForm.description || '').trim().toLowerCase();
+        const formSub = (expenseForm.sub_category || '').trim().toLowerCase();
         const duplicateExpense = (allExpenses || expenses || []).find((e: any) => {
           if (e.id === editingExpenseId) return false;
           const isSameDate = e.expense_date === expenseForm.expense_date;
@@ -1236,17 +1319,21 @@ const AdminExpenses = () => {
           const isSameInst = !expenseForm.institution_id || e.institution_id === expenseForm.institution_id;
           const isSameAmount = Math.abs(Number(e.amount) - parsedAmount) < 0.01;
           const oldDesc = (e.description || '').replace(/\[.*?\]/g, '').trim().toLowerCase();
+          const oldSub = getSubCategory(e.description || '').trim().toLowerCase();
+          const isSameSub = oldSub === formSub;
           const isSameDesc = cleanFormDesc && oldDesc === cleanFormDesc;
 
-          return isSameDate && isSameCat && isSameInst && isSameAmount && (isSameDesc || !cleanFormDesc || oldDesc.includes(cleanFormDesc) || cleanFormDesc.includes(oldDesc));
+          return isSameDate && isSameCat && isSameInst && isSameAmount && isSameSub && (isSameDesc || !cleanFormDesc || oldDesc.includes(cleanFormDesc) || cleanFormDesc.includes(oldDesc));
         });
 
         if (duplicateExpense) {
           const catName = categories.find((c: any) => c.id === expenseForm.category_id)?.name || '';
           const existingDesc = (duplicateExpense.description || '').replace(/\[.*?\]/g, '').trim();
+          const existingSub = getSubCategory(duplicateExpense.description || '');
+          const extraDetails = [existingSub ? `সাব-খাত: ${existingSub}` : '', existingDesc ? `বিবরণ: ${existingDesc}` : ''].filter(Boolean).join(', ');
           const confirmDuplicate = window.confirm(
             bn
-              ? `⚠️ সম্ভাব্য ডুপ্লিকেট হিসাব সতর্কতা!\n\nআজকের তারিখে (${expenseForm.expense_date}) "${catName}" খাতে ঠিক একই পরিমাণ (৳ ${parsedAmount}) এর একটি খরচ ইতিমধ্যে সংরক্ষিত রয়েছে${existingDesc ? ` (বিবরণ: ${existingDesc})` : ''}।\n\nআপনি কি নিশ্চিত এটি নতুন কোনো পৃথক খরচ, নাকি ভুলবশত ডাবল এন্ট্রি হচ্ছে?\n\n[Cancel = বাতিল করুন | OK = হ্যাঁ, নতুন খরচ হিসেবে সংরক্ষণ করুন]`
+              ? `⚠️ সম্ভাব্য ডুপ্লিকেট হিসাব সতর্কতা!\n\nআজকের তারিখে (${expenseForm.expense_date}) "${catName}" খাতে ঠিক একই পরিমাণ (৳ ${parsedAmount}) এর একটি খরচ ইতিমধ্যে সংরক্ষিত রয়েছে${extraDetails ? ` (${extraDetails})` : ''}।\n\nআপনি কি নিশ্চিত এটি নতুন কোনো পৃথক খরচ, নাকি ভুলবশত ডাবল এন্ট্রি হচ্ছে?\n\n[Cancel = বাতিল করুন | OK = হ্যাঁ, নতুন খরচ হিসেবে সংরক্ষণ করুন]`
               : `⚠️ Potential Duplicate Expense Warning!\n\nAn expense of identical amount (৳ ${parsedAmount}) in "${catName}" already exists on ${expenseForm.expense_date}.\n\nDo you want to proceed and save as a separate entry?`
           );
           if (!confirmDuplicate) {
@@ -1255,6 +1342,7 @@ const AdminExpenses = () => {
         }
       }
 
+      if (expenseForm.sub_category && expenseForm.sub_category.trim()) descWithTags += `[sub:${expenseForm.sub_category.trim()}]`;
       if (expenseForm.remarks && expenseForm.remarks.trim()) descWithTags += `[remarks:${expenseForm.remarks.trim()}]`;
       if (expenseForm.is_due) descWithTags += `[due:unpaid]`;
 
@@ -2054,6 +2142,7 @@ const AdminExpenses = () => {
     setExpenseForm({
       institution_id: e.institution_id,
       category_id: e.category_id,
+      sub_category: getSubCategory(e.description),
       expense_date: e.expense_date,
       description: cleanedDesc,
       quantity: (e.quantity !== null && e.quantity !== undefined && e.quantity !== '') ? String(e.quantity) : '',
@@ -3481,9 +3570,16 @@ const AdminExpenses = () => {
                                         </td>
                                       )}
                                       <td className="border border-slate-200 dark:border-slate-800 px-3 py-2 text-left" style={{ borderRadius: 0 }}>
-                                        <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 truncate max-w-[140px]">
-                                          {catLabel}
-                                        </span>
+                                        <div className="flex flex-col gap-0.5">
+                                          <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 truncate max-w-[140px]">
+                                            {catLabel}
+                                          </span>
+                                          {getSubCategory(e.description) && (
+                                            <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-800 dark:text-emerald-300 font-semibold pl-1">
+                                              ↳ {getSubCategory(e.description)}
+                                            </span>
+                                          )}
+                                        </div>
                                       </td>
                                       <td className="border border-slate-200 dark:border-slate-800 px-3 py-2 text-left" style={{ borderRadius: 0 }}>
                                         <span className="font-medium text-foreground">{cleanDesc(e.description)}</span>
@@ -3648,9 +3744,16 @@ const AdminExpenses = () => {
                                           </td>
                                         )}
                                         <td className="border border-amber-200/80 dark:border-amber-800/30 px-3 py-2 text-left" style={{ borderRadius: 0 }}>
-                                          <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-amber-100/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200">
-                                            {catLabel}
-                                          </span>
+                                          <div className="flex flex-col gap-0.5">
+                                            <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-amber-100/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200">
+                                              {catLabel}
+                                            </span>
+                                            {getSubCategory(due.description) && (
+                                              <span className="inline-flex items-center gap-0.5 text-[10px] text-amber-950 dark:text-amber-100 font-semibold pl-1">
+                                                ↳ {getSubCategory(due.description)}
+                                              </span>
+                                            )}
+                                          </div>
                                         </td>
                                         <td className="border border-amber-200/80 dark:border-amber-800/30 px-3 py-2 text-left" style={{ borderRadius: 0 }}>
                                           <span className="font-medium text-foreground">{cleanDesc(due.description)}</span>
@@ -4295,31 +4398,69 @@ const AdminExpenses = () => {
                     <ul className="space-y-2 max-h-[480px] overflow-y-auto pr-1">
                       {categories.map((c: any) => {
                         const catInst = allInstitutions.find((i: any) => i.id === (c as any).institution_id);
+                        const subCats = getSubCategoriesForCategory(c.id, c.name, c.name_bn);
                         return (
-                          <li key={c.id} className="flex items-center justify-between p-2 rounded-lg bg-secondary/30">
-                            <div>
-                              <span className="text-sm font-medium">{getCatName(c, bn)}</span>
-                              {catInst && <span className="text-xs text-primary ml-1.5 font-normal">({getInstName(catInst, bn)})</span>}
+                          <li key={c.id} className="p-2.5 rounded-lg bg-secondary/30 space-y-2 border border-border/40">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <span className="text-sm font-bold text-foreground">{getCatName(c, bn)}</span>
+                                {catInst && <span className="text-xs text-primary ml-1.5 font-normal">({getInstName(catInst, bn)})</span>}
+                                {subCats.length > 0 && (
+                                  <span className="text-[11px] ml-2 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-medium">
+                                    {bn ? `${toBnDigits(subCats.length)}টি সাব-খাত` : `${subCats.length} sub-categories`}
+                                  </span>
+                                )}
+                              </div>
+                              {canManageCategories && (
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-7 px-2 text-xs text-emerald-700 border-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/50"
+                                    onClick={() => setSubCatDialog({ open: true, catId: c.id, catName: getCatName(c, bn) })}
+                                    title={bn ? 'সাব-খাত পরিচালনা করুন' : 'Manage Sub-Categories'}
+                                  >
+                                    <Plus className="w-3 h-3 mr-0.5" />
+                                    {bn ? 'সাব-খাত' : 'Sub-Category'}
+                                  </Button>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7 text-emerald-600 hover:bg-emerald-50" onClick={() => openEditCategory(c)} title={bn ? 'সম্পাদনা' : 'Edit'}>
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-600 hover:bg-rose-50" onClick={async () => {
+                                    const expCount = allExpenses.filter((e: any) => e.category_id === c.id).length;
+                                    let desc = bn ? `"${getCatName(c, bn)}" ব্যয় খাতটি মুছে ফেলতে চান?` : `Delete expense head "${getCatName(c, bn)}"?`;
+                                    if (expCount > 0) {
+                                      desc += bn
+                                        ? `\n\nসতর্কতা: এই ব্যয় খাতে ${expCount}টি খরচের এন্ট্রি রয়েছে। ব্যয় খাত মুছে ফেললে সংশ্লিষ্ট খরচও মুছে যাবে।`
+                                        : `\n\nWarning: Contains ${expCount} expenses that will also be removed.`;
+                                    }
+                                    if (await confirm({ title: bn ? 'ব্যয় খাত মুছে ফেলুন' : 'Delete Expense Head', description: desc, variant: 'destructive' })) {
+                                      deleteCategory.mutate(c.id);
+                                    }
+                                  }} title={bn ? 'মুছে ফেলুন' : 'Delete'}>
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
+                                </div>
+                              )}
                             </div>
-                            {canManageCategories && (
-                              <div className="flex gap-1">
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600 hover:bg-emerald-50" onClick={() => openEditCategory(c)} title={bn ? 'সম্পাদনা' : 'Edit'}>
-                                  <Edit2 className="w-3.5 h-3.5" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-rose-600 hover:bg-rose-50" onClick={async () => {
-                                  const expCount = allExpenses.filter((e: any) => e.category_id === c.id).length;
-                                  let desc = bn ? `"${getCatName(c, bn)}" ব্যয় খাতটি মুছে ফেলতে চান?` : `Delete expense head "${getCatName(c, bn)}"?`;
-                                  if (expCount > 0) {
-                                    desc += bn
-                                      ? `\n\nসতর্কতা: এই ব্যয় খাতে ${expCount}টি খরচের এন্ট্রি রয়েছে। ব্যয় খাত মুছে ফেললে সংশ্লিষ্ট খরচও মুছে যাবে।`
-                                      : `\n\nWarning: Contains ${expCount} expenses that will also be removed.`;
-                                  }
-                                  if (await confirm({ title: bn ? 'ব্যয় খাত মুছে ফেলুন' : 'Delete Expense Head', description: desc, variant: 'destructive' })) {
-                                    deleteCategory.mutate(c.id);
-                                  }
-                                }} title={bn ? 'মুছে ফেলুন' : 'Delete'}>
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </Button>
+                            {/* Render sub-categories pills */}
+                            {subCats.length > 0 && (
+                              <div className="flex flex-wrap gap-1 pl-2 pt-1 border-t border-border/30">
+                                {subCats.map(sub => (
+                                  <span key={sub} className="inline-flex items-center gap-1 text-[11px] bg-background/80 text-foreground border border-border px-2 py-0.5 rounded-md font-medium">
+                                    <span className="text-emerald-600">↳</span> {sub}
+                                    {canManageCategories && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveSubCategory(c.id, sub)}
+                                        className="text-muted-foreground hover:text-rose-600 ml-0.5 font-bold"
+                                        title={bn ? 'মুছে ফেলুন' : 'Remove'}
+                                      >
+                                        ✕
+                                      </button>
+                                    )}
+                                  </span>
+                                ))}
                               </div>
                             )}
                           </li>
@@ -4329,6 +4470,123 @@ const AdminExpenses = () => {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Sub-Category Management Dialog */}
+              <Dialog
+                open={subCatDialog.open}
+                onOpenChange={(open) => {
+                  if (!open) {
+                    setSubCatDialog({ open: false, catId: '', catName: '' });
+                    setNewSubCatInput('');
+                  }
+                }}
+              >
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <FolderPlus className="w-5 h-5 text-emerald-600" />
+                      <span>
+                        {bn ? 'সাব-খাত পরিচালনা' : 'Manage Sub-Categories'}
+                        {subCatDialog.catName ? ` - ${subCatDialog.catName}` : ''}
+                      </span>
+                    </DialogTitle>
+                  </DialogHeader>
+
+                  <div className="space-y-4 pt-2">
+                    {/* Add new sub-category input */}
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder={bn ? 'নতুন সাব-খাতের নাম লিখুন (যেমন: মাছ ও মাংস)' : 'New sub-category name'}
+                        value={newSubCatInput}
+                        onChange={(e) => setNewSubCatInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (newSubCatInput.trim()) {
+                              const trimmed = newSubCatInput.trim();
+                              handleAddSubCategory(subCatDialog.catId, trimmed);
+                              if (expenseForm.category_id === subCatDialog.catId) {
+                                setExpenseForm(f => ({ ...f, sub_category: trimmed }));
+                              }
+                            }
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                          if (newSubCatInput.trim()) {
+                            const trimmed = newSubCatInput.trim();
+                            handleAddSubCategory(subCatDialog.catId, trimmed);
+                            if (expenseForm.category_id === subCatDialog.catId) {
+                              setExpenseForm(f => ({ ...f, sub_category: trimmed }));
+                            }
+                          }
+                        }}
+                        disabled={saveSubCategoriesMutation.isPending || !newSubCatInput.trim()}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0 cursor-pointer"
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
+                        {bn ? 'যোগ' : 'Add'}
+                      </Button>
+                    </div>
+
+                    {/* List of current sub-categories */}
+                    <div>
+                      <Label className="text-xs font-semibold text-muted-foreground block mb-2">
+                        {bn ? 'বর্তমান সাব-খাতসমূহ:' : 'Current Sub-Categories:'}
+                      </Label>
+                      {(() => {
+                        const targetCat = categories.find((c: any) => c.id === subCatDialog.catId);
+                        const currentSubs = subCatDialog.catId
+                          ? getSubCategoriesForCategory(subCatDialog.catId, targetCat?.name, targetCat?.name_bn)
+                          : [];
+                        if (currentSubs.length === 0) {
+                          return (
+                            <div className="p-4 text-center text-xs text-muted-foreground bg-muted/30 rounded-lg border border-dashed">
+                              {bn ? 'কোনো সাব-খাত নেই। উপরের বক্সে লিখে যোগ করুন।' : 'No sub-categories yet. Add one above.'}
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1">
+                            {currentSubs.map((sub: string) => (
+                              <span
+                                key={sub}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800 shadow-sm"
+                              >
+                                <span className="text-emerald-600">↳</span>
+                                <span>{sub}</span>
+                                {canManageCategories && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveSubCategory(subCatDialog.catId, sub)}
+                                    className="text-muted-foreground hover:text-rose-600 ml-1 rounded-full hover:bg-rose-50 dark:hover:bg-rose-950 p-0.5"
+                                    title={bn ? 'মুছে ফেলুন' : 'Remove'}
+                                  >
+                                    ✕
+                                  </button>
+                                )}
+                              </span>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    <div className="flex justify-end pt-2 border-t">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSubCatDialog({ open: false, catId: '', catName: '' })}
+                      >
+                        {bn ? 'সম্পন্ন' : 'Done'}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
 
               {/* Deposit Sources Management Card */}
               <Card>
@@ -4865,13 +5123,13 @@ const AdminExpenses = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3.5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <Label>{bn ? 'প্রতিষ্ঠান' : 'Institution'} *</Label>
                 <Select
                   value={expenseForm.institution_id || undefined}
                   onValueChange={value => {
-                    setExpenseForm(f => ({ ...f, institution_id: value, category_id: '' }));
+                    setExpenseForm(f => ({ ...f, institution_id: value, category_id: '', sub_category: '' }));
                   }}
                 >
                   <SelectTrigger className="mt-1"><SelectValue placeholder={bn ? 'প্রতিষ্ঠান নির্বাচন করুন' : 'Select institution'} /></SelectTrigger>
@@ -4898,6 +5156,7 @@ const AdminExpenses = () => {
                     setExpenseForm(f => ({ 
                       ...f, 
                       category_id: value, 
+                      sub_category: '',
                       add_to_inventory: isInventoryCategory ? true : f.add_to_inventory,
                       inventory_dest_type: isHostelCategory ? 'hostel_stock' : (isInventoryCategory && f.inventory_dest_type === 'asset' ? 'inventory' : f.inventory_dest_type),
                       inventory_category: isHostelCategory ? 'hostel_boarding' : f.inventory_category,
@@ -4917,6 +5176,44 @@ const AdminExpenses = () => {
                 {selectedExpenseProject && !selectedExpenseCategory && (
                   <p className="mt-1 text-xs text-muted-foreground">{bn ? 'এই প্রতিষ্ঠানের জন্য একটি ব্যয় খাত নির্বাচন করুন' : 'Select an expense head for this institution'}</p>
                 )}
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <Label>{bn ? 'সাব-ব্যয় খাত (ঐচ্ছিক)' : 'Sub-Category'}</Label>
+                  {expenseForm.category_id && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const targetCat = categories.find((c: any) => c.id === expenseForm.category_id);
+                        setSubCatDialog({ open: true, catId: expenseForm.category_id, catName: getCatName(targetCat, bn) });
+                      }}
+                      className="text-[11px] text-emerald-600 hover:text-emerald-700 font-semibold hover:underline"
+                    >
+                      + নতুন
+                    </button>
+                  )}
+                </div>
+                {(() => {
+                  const targetCat = categories.find((c: any) => c.id === expenseForm.category_id);
+                  const subOptions = targetCat ? getSubCategoriesForCategory(targetCat.id, targetCat.name, targetCat.name_bn) : [];
+                  return (
+                    <Select
+                      value={expenseForm.sub_category || '_none_'}
+                      onValueChange={v => setExpenseForm(f => ({ ...f, sub_category: v === '_none_' ? '' : v }))}
+                      disabled={!expenseForm.category_id}
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder={bn ? '-- কোনো সাব-খাত নেই --' : '-- No Sub-Category --'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="_none_">{bn ? '-- কোনো সাব-খাত নেই --' : '-- No Sub-Category --'}</SelectItem>
+                        {subOptions.map((s: string) => (
+                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  );
+                })()}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">

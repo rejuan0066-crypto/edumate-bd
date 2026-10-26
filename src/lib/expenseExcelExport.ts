@@ -172,6 +172,19 @@ const STYLES = {
     fill: { fgColor: { rgb: 'E2E8F0' } },
     border: borderThin,
   },
+  grandTotalLabel: {
+    font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: '0F172A' } },
+    alignment: { horizontal: 'right', vertical: 'center' },
+    fill: { fgColor: { rgb: 'E2E8F0' } },
+    border: borderMedium,
+  },
+  grandTotalNumber: {
+    font: { name: 'Calibri', sz: 12, bold: true, color: { rgb: '047857' } },
+    alignment: { horizontal: 'right', vertical: 'center' },
+    fill: { fgColor: { rgb: 'E2E8F0' } },
+    border: borderMedium,
+    numFmt: '#,##0',
+  },
 };
 
 /**
@@ -220,8 +233,14 @@ function createStyledSheet(
   return ws;
 }
 
+export const getSubCategory = (desc?: string | null): string => {
+  if (!desc) return '';
+  const match = desc.match(/\[sub:(.*?)\]/);
+  return match ? match[1].trim() : '';
+};
+
 /**
- * Helper to build an Expense / Category Worksheet exactly as shown in Screenshots 1-7
+ * Helper to build an Expense / Category Worksheet supporting multi-section sub-categories
  */
 function buildExpenseCategorySheet(
   instName: string,
@@ -234,91 +253,208 @@ function buildExpenseCategorySheet(
   getMemo: (d: string) => string,
   getRemarks: (d: string) => string,
   bn: boolean,
-  tabColor: string = '107C41'
+  tabColor: string = '107C41',
+  catBaseName?: string,
+  reportPeriod?: string
 ) {
-  const rows: any[][] = [];
-
-  // Row 1: Institution Name (Merged A1:G1)
-  rows.push([
-    { v: instName, s: STYLES.sheetTitle },
-    '', '', '', '', '', '',
-  ]);
-
-  // Row 2: Subtitle (Merged A2:G2)
-  rows.push([
-    { v: subTitle, s: STYLES.sheetSubtitle },
-    '', '', '', '', '', '',
-  ]);
-
-  // Row 3: Table Headers (7 Columns matching screenshot)
-  rows.push([
-    { v: bn ? 'তারিখ' : 'Date', s: STYLES.tableHeader },
-    { v: bn ? 'ব্যয়ের বিবরণ' : 'Description', s: STYLES.tableHeader },
-    { v: bn ? 'পরিমাণ' : 'Quantity', s: STYLES.tableHeader },
-    { v: bn ? 'ব্যয়ের মাধ্যম' : 'Method', s: STYLES.tableHeader },
-    { v: bn ? 'মেমো / রশিদ' : 'Memo / Receipt', s: STYLES.tableHeader },
-    { v: bn ? 'ব্যয় টাকা (৳)' : 'Amount (৳)', s: STYLES.tableHeader },
-    { v: bn ? 'মন্তব্য' : 'Remarks', s: STYLES.tableHeader },
-  ]);
-
-  let totalAmount = 0;
-
-  // Data Rows
+  // Extract all sub-categories present in this category's items
+  const uniqueSubCats: string[] = [];
   items.forEach(item => {
-    const amt = Number(item.amount || 0);
-    totalAmount += amt;
-
-    const hasItemQty = item.quantity !== null && item.quantity !== undefined && item.quantity !== '';
-    const rawQty = hasItemQty ? (bn ? toBnDigit(item.quantity) : String(item.quantity)) : '';
-    const unit = getUnit(item.description || '');
-    const displayQty = hasItemQty ? (unit ? `${rawQty} ${unit !== 'পিস' ? unit : (bn ? 'টি' : 'pcs')}` : `${rawQty}`) : (unit ? `${unit}` : '-');
-    const memoVal = getMemo(item.description || '');
-    const displayMemo = memoVal === '-' ? '-' : (bn ? toBnDigit(memoVal) : memoVal);
-    const methodVal = getMethodLabel(getMethod(item.description || ''), bn);
-
-    rows.push([
-      { v: formatShortDate(item.expense_date, bn), s: STYLES.cellCenter },
-      { v: cleanDesc(item.description || ''), s: STYLES.cellText },
-      { v: displayQty, s: STYLES.cellCenter },
-      { v: methodVal, s: STYLES.cellCenter },
-      { v: displayMemo, s: STYLES.cellCenter },
-      { v: amt, s: bn ? { ...STYLES.cellNumber, numFmt: '[$-bn-BD,100]#,##0' } : STYLES.cellNumber },
-      { v: getRemarks(item.description || ''), s: STYLES.cellText },
-    ]);
+    const sub = getSubCategory(item.description);
+    if (sub && !uniqueSubCats.includes(sub)) {
+      uniqueSubCats.push(sub);
+    }
   });
 
-  // Pad empty bordered rows up to row 32 to replicate the exact template seen in screenshot
-  const targetRowCount = Math.max(30, items.length + 5);
-  while (rows.length < targetRowCount) {
+  // If there are NO sub-categories in items, render single clean table as before
+  if (uniqueSubCats.length === 0) {
+    const rows: any[][] = [];
+    rows.push([ { v: instName, s: STYLES.sheetTitle }, '', '', '', '', '', '' ]);
+    rows.push([ { v: subTitle, s: STYLES.sheetSubtitle }, '', '', '', '', '', '' ]);
+    rows.push([
+      { v: bn ? 'তারিখ' : 'Date', s: STYLES.tableHeader },
+      { v: bn ? 'ব্যয়ের বিবরণ' : 'Description', s: STYLES.tableHeader },
+      { v: bn ? 'পরিমাণ' : 'Quantity', s: STYLES.tableHeader },
+      { v: bn ? 'ব্যয়ের মাধ্যম' : 'Method', s: STYLES.tableHeader },
+      { v: bn ? 'মেমো / রশিদ' : 'Memo / Receipt', s: STYLES.tableHeader },
+      { v: bn ? 'ব্যয় টাকা (৳)' : 'Amount (৳)', s: STYLES.tableHeader },
+      { v: bn ? 'মন্তব্য' : 'Remarks', s: STYLES.tableHeader },
+    ]);
+
+    let totalAmount = 0;
+    items.forEach(item => {
+      const amt = Number(item.amount || 0);
+      totalAmount += amt;
+
+      const hasItemQty = item.quantity !== null && item.quantity !== undefined && item.quantity !== '';
+      const rawQty = hasItemQty ? (bn ? toBnDigit(item.quantity) : String(item.quantity)) : '';
+      const unit = getUnit(item.description || '');
+      const displayQty = hasItemQty ? (unit ? `${rawQty} ${unit !== 'পিস' ? unit : (bn ? 'টি' : 'pcs')}` : `${rawQty}`) : (unit ? `${unit}` : '-');
+      const memoVal = getMemo(item.description || '');
+      const displayMemo = memoVal === '-' ? '-' : (bn ? toBnDigit(memoVal) : memoVal);
+      const methodVal = getMethodLabel(getMethod(item.description || ''), bn);
+
+      rows.push([
+        { v: formatShortDate(item.expense_date, bn), s: STYLES.cellCenter },
+        { v: cleanDesc(item.description || ''), s: STYLES.cellText },
+        { v: displayQty, s: STYLES.cellCenter },
+        { v: methodVal, s: STYLES.cellCenter },
+        { v: displayMemo, s: STYLES.cellCenter },
+        { v: amt, s: bn ? { ...STYLES.cellNumber, numFmt: '[$-bn-BD,100]#,##0' } : STYLES.cellNumber },
+        { v: getRemarks(item.description || ''), s: STYLES.cellText },
+      ]);
+    });
+
+    const targetRowCount = Math.max(30, items.length + 5);
+    while (rows.length < targetRowCount) {
+      rows.push([
+        { v: '', s: STYLES.cellEmpty }, { v: '', s: STYLES.cellEmpty }, { v: '', s: STYLES.cellEmpty },
+        { v: '', s: STYLES.cellEmpty }, { v: '', s: STYLES.cellEmpty }, { v: '', s: STYLES.cellEmpty },
+        { v: '', s: STYLES.cellEmpty },
+      ]);
+    }
+
+    rows.push([
+      { v: '', s: STYLES.cellEmpty }, { v: '', s: STYLES.cellEmpty }, { v: '', s: STYLES.cellEmpty },
+      { v: '', s: STYLES.cellEmpty }, { v: totalLabel, s: STYLES.totalLabel },
+      { v: totalAmount, s: bn ? { ...STYLES.totalNumber, numFmt: '[$-bn-BD,100]#,##0' } : STYLES.totalNumber },
+      { v: '', s: STYLES.cellEmpty },
+    ]);
+
+    const merges: XLSX.Range[] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
+    ];
+    const colWidths = [12, 32, 14, 15, 15, 16, 20];
+    return createStyledSheet(rows, colWidths, merges, tabColor);
+  }
+
+  // MULTI-SECTION TABLE (SECTION-WISE BY SUB-CATEGORY)
+  const rows: any[][] = [];
+  const merges: XLSX.Range[] = [];
+  const colWidths = [12, 32, 14, 15, 15, 16, 20];
+  let grandTotal = 0;
+
+  // Build list of sections
+  const mainItems = items.filter(i => !getSubCategory(i.description));
+  interface TableSection {
+    subtitleText: string;
+    sectionItems: ExpenseItem[];
+    subtotalText: string;
+  }
+  const sectionsList: TableSection[] = [];
+  const periodStr = reportPeriod ? ` - ${reportPeriod}` : '';
+  const baseName = catBaseName || instName;
+
+  // 1. Unassigned / direct expenses in main category
+  if (mainItems.length > 0) {
+    sectionsList.push({
+      subtitleText: `${bn ? 'হিসাব সংক্ষেপ' : 'Expense Summary'} - ${baseName}${periodStr}`,
+      sectionItems: mainItems,
+      subtotalText: bn ? 'মোট ব্যয়' : 'Total Expense',
+    });
+  }
+
+  // 2. Each Sub-category section
+  uniqueSubCats.forEach(subName => {
+    const subItems = items.filter(i => getSubCategory(i.description) === subName);
+    sectionsList.push({
+      subtitleText: `${bn ? 'হিসাব সংক্ষেপ' : 'Expense Summary'} - ${subName}${periodStr}`,
+      sectionItems: subItems,
+      subtotalText: `${bn ? 'মোট' : 'Total'} ${subName}`,
+    });
+  });
+
+  // Render each section
+  sectionsList.forEach(sec => {
+    const secStartRow = rows.length;
+
+    // Row 1: Title (Merged A:G)
+    rows.push([
+      { v: instName, s: STYLES.sheetTitle },
+      '', '', '', '', '', '',
+    ]);
+    merges.push({ s: { r: secStartRow, c: 0 }, e: { r: secStartRow, c: 6 } });
+
+    // Row 2: Subtitle (Merged A:G)
+    rows.push([
+      { v: sec.subtitleText, s: STYLES.sheetSubtitle },
+      '', '', '', '', '', '',
+    ]);
+    merges.push({ s: { r: secStartRow + 1, c: 0 }, e: { r: secStartRow + 1, c: 6 } });
+
+    // Row 3: Headers
+    rows.push([
+      { v: bn ? 'তারিখ' : 'Date', s: STYLES.tableHeader },
+      { v: bn ? 'ব্যয়ের বিবরণ' : 'Description', s: STYLES.tableHeader },
+      { v: bn ? 'পরিমাণ' : 'Quantity', s: STYLES.tableHeader },
+      { v: bn ? 'ব্যয়ের মাধ্যম' : 'Method', s: STYLES.tableHeader },
+      { v: bn ? 'মেমো / রশিদ' : 'Memo / Receipt', s: STYLES.tableHeader },
+      { v: bn ? 'ব্যয় টাকা (৳)' : 'Amount (৳)', s: STYLES.tableHeader },
+      { v: bn ? 'মন্তব্য' : 'Remarks', s: STYLES.tableHeader },
+    ]);
+
+    let secTotal = 0;
+    sec.sectionItems.forEach(item => {
+      const amt = Number(item.amount || 0);
+      secTotal += amt;
+      grandTotal += amt;
+
+      const hasItemQty = item.quantity !== null && item.quantity !== undefined && item.quantity !== '';
+      const rawQty = hasItemQty ? (bn ? toBnDigit(item.quantity) : String(item.quantity)) : '';
+      const unit = getUnit(item.description || '');
+      const displayQty = hasItemQty ? (unit ? `${rawQty} ${unit !== 'পিস' ? unit : (bn ? 'টি' : 'pcs')}` : `${rawQty}`) : (unit ? `${unit}` : '-');
+      const memoVal = getMemo(item.description || '');
+      const displayMemo = memoVal === '-' ? '-' : (bn ? toBnDigit(memoVal) : memoVal);
+      const methodVal = getMethodLabel(getMethod(item.description || ''), bn);
+
+      rows.push([
+        { v: formatShortDate(item.expense_date, bn), s: STYLES.cellCenter },
+        { v: cleanDesc(item.description || ''), s: STYLES.cellText },
+        { v: displayQty, s: STYLES.cellCenter },
+        { v: methodVal, s: STYLES.cellCenter },
+        { v: displayMemo, s: STYLES.cellCenter },
+        { v: amt, s: bn ? { ...STYLES.cellNumber, numFmt: '[$-bn-BD,100]#,##0' } : STYLES.cellNumber },
+        { v: getRemarks(item.description || ''), s: STYLES.cellText },
+      ]);
+    });
+
+    // Pad empty rows for ledger look
+    const minRows = Math.max(6, sec.sectionItems.length + 2);
+    for (let p = sec.sectionItems.length; p < minRows; p++) {
+      rows.push([
+        { v: '', s: STYLES.cellEmpty }, { v: '', s: STYLES.cellEmpty }, { v: '', s: STYLES.cellEmpty },
+        { v: '', s: STYLES.cellEmpty }, { v: '', s: STYLES.cellEmpty }, { v: '', s: STYLES.cellEmpty },
+        { v: '', s: STYLES.cellEmpty },
+      ]);
+    }
+
+    // Section Subtotal Row
     rows.push([
       { v: '', s: STYLES.cellEmpty },
       { v: '', s: STYLES.cellEmpty },
       { v: '', s: STYLES.cellEmpty },
       { v: '', s: STYLES.cellEmpty },
-      { v: '', s: STYLES.cellEmpty },
-      { v: '', s: STYLES.cellEmpty },
+      { v: sec.subtotalText, s: STYLES.totalLabel },
+      { v: secTotal, s: bn ? { ...STYLES.totalNumber, numFmt: '[$-bn-BD,100]#,##0' } : STYLES.totalNumber },
       { v: '', s: STYLES.cellEmpty },
     ]);
-  }
 
-  // Summary Row: Col E: মোট ব্যয় / মোট বকেয়া, Col F: totalAmount
+    // 2 blank separator rows
+    rows.push(['', '', '', '', '', '', '']);
+    rows.push(['', '', '', '', '', '', '']);
+  });
+
+  // GRAND TOTAL SUMMARY AT THE END
+  const grandRowIdx = rows.length;
+  const grandTotalText = bn ? `${baseName} খাতের সর্বমোট ব্যয়` : `Grand Total for ${baseName}`;
   rows.push([
-    { v: '', s: STYLES.cellEmpty },
-    { v: '', s: STYLES.cellEmpty },
-    { v: '', s: STYLES.cellEmpty },
-    { v: '', s: STYLES.cellEmpty },
-    { v: totalLabel, s: STYLES.totalLabel },
-    { v: totalAmount, s: bn ? { ...STYLES.totalNumber, numFmt: '[$-bn-BD,100]#,##0' } : STYLES.totalNumber },
-    { v: '', s: STYLES.cellEmpty },
+    { v: grandTotalText, s: STYLES.grandTotalLabel },
+    '', '', '', '',
+    { v: grandTotal, s: bn ? { ...STYLES.grandTotalNumber, numFmt: '[$-bn-BD,100]#,##0' } : STYLES.grandTotalNumber },
+    { v: '', s: STYLES.grandTotalLabel },
   ]);
-
-  const merges: XLSX.Range[] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, // A1:G1
-    { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }, // A2:G2
-  ];
-
-  // Column widths matching layout
-  const colWidths = [12, 32, 14, 15, 15, 16, 20];
+  merges.push({ s: { r: grandRowIdx, c: 0 }, e: { r: grandRowIdx, c: 4 } });
 
   return createStyledSheet(rows, colWidths, merges, tabColor);
 }
@@ -624,7 +760,9 @@ export function exportExpensesMultiTabExcel(params: ExportExcelParams) {
         getMemo,
         getRemarks,
         bn,
-        color
+        color,
+        catName,
+        params.reportPeriod
       );
 
       XLSX.utils.book_append_sheet(wb, ws, tabName);
@@ -734,7 +872,9 @@ export function exportSingleInstitutionExcel(params: ExportExcelParams & { selec
       getMemo,
       getRemarks,
       bn,
-      '107C41'
+      '107C41',
+      catName,
+      params.reportPeriod
     );
 
     XLSX.utils.book_append_sheet(wb, ws, tabName);
