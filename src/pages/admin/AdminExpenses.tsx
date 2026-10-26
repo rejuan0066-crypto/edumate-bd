@@ -912,9 +912,16 @@ const AdminExpenses = () => {
     return true;
   }), [expenses, selectedInstId]);
   const monthlyTotalExpense = useMemo(() => paidExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0), [paidExpenses]);
+
+  // All paid expenses across all institutions for the month
+  const allPaidExpenses = useMemo(() => (expenses || []).filter((e: any) => !isUnpaidDue(e.description)), [expenses]);
+  const allInstitutionsTotalExpense = useMemo(() => allPaidExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0), [allPaidExpenses]);
+
   const monthlyTotalDeposit = useMemo(() => (deposits || []).reduce((s: number, d: any) => s + Number(d.amount || 0), 0), [deposits]);
   const previousArrears = Number(summaryData?.previous_arrears || 0);
-  const rawCash = monthlyTotalDeposit - monthlyTotalExpense - previousArrears;
+
+  // Cash in hand (নগদ অবশিষ্ট টাকা) is calculated after deducting expenses of ALL institutions (সব প্রতিষ্ঠানের সব খরচ বাদে)
+  const rawCash = monthlyTotalDeposit - allInstitutionsTotalExpense - previousArrears;
   const monthlyCash = rawCash >= 0 ? rawCash : 0;
   const currentArrears = rawCash < 0 ? Math.abs(rawCash) : 0;
   const totalArrears = previousArrears + currentArrears;
@@ -1913,7 +1920,7 @@ const AdminExpenses = () => {
     mutationFn: async () => {
       const payload = {
         month_year: selectedMonthYear,
-        total_expense: monthlyTotalExpense,
+        total_expense: allInstitutionsTotalExpense,
         total_deposit: monthlyTotalDeposit,
         previous_arrears: Number(bnToEnDigit(summaryForm.previous_arrears || '0')) || 0,
         cash_amount: monthlyCash,
@@ -2585,7 +2592,7 @@ const AdminExpenses = () => {
       categories,
       expenses,
       unpaidDues: allExpenses.filter((e: any) => isUnpaidDue(e.description)),
-      monthlyTotalExpense,
+      monthlyTotalExpense: allInstitutionsTotalExpense,
       monthlyTotalDeposit,
       previousArrears,
       previousMonthCash,
@@ -2655,7 +2662,7 @@ const AdminExpenses = () => {
       categories,
       expenses,
       unpaidDues: allExpenses.filter((e: any) => isUnpaidDue(e.description)),
-      monthlyTotalExpense,
+      monthlyTotalExpense: allInstitutionsTotalExpense,
       monthlyTotalDeposit,
       previousArrears,
       previousMonthCash,
@@ -3031,8 +3038,18 @@ const AdminExpenses = () => {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {[
               { label: `${selectedInstNamePrefix}${selectedMonthName} ${bn ? 'হিসাব' : 'Expense'}`, val: monthlyTotalExpense, iconBg: 'bg-rose-500/10 text-rose-600 dark:text-rose-400', icon: TrendingDown, color: 'text-rose-600 dark:text-rose-400', sparkColor: '#f43f5e', sparkData: [3,5,4,7,6,8,monthlyTotalExpense > 0 ? 10 : 0] },
-              { label: `${selectedInstNamePrefix}${selectedMonthName} ${bn ? 'টাকা আয়/উত্তোলন' : 'Deposit'}`, val: monthlyTotalDeposit, iconBg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400', icon: TrendingUp, color: 'text-emerald-600 dark:text-emerald-400', sparkColor: '#10b981', sparkData: [2,4,3,6,5,7,monthlyTotalDeposit > 0 ? 10 : 0] },
-              { label: `${selectedInstNamePrefix}${selectedMonthName} ${bn ? 'ক্যাশ' : 'Cash'}`, val: monthlyCash, iconBg: monthlyCash >= 0 ? 'bg-primary/10 text-primary' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400', icon: Wallet, color: monthlyCash >= 0 ? 'text-primary' : 'text-amber-600 dark:text-amber-400', sparkColor: monthlyCash >= 0 ? '#3b82f6' : '#f97316', sparkData: [5,4,6,3,7,5,8] },
+              { label: `${selectedMonthName} ${bn ? 'টাকা আয়/উত্তোলন' : 'Deposit'}`, val: monthlyTotalDeposit, iconBg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400', icon: TrendingUp, color: 'text-emerald-600 dark:text-emerald-400', sparkColor: '#10b981', sparkData: [2,4,3,6,5,7,monthlyTotalDeposit > 0 ? 10 : 0] },
+              {
+                label: selectedInstId && selectedInstId !== 'all'
+                  ? `${selectedMonthName} ${bn ? 'নগদ অবশিষ্ট (সব খরচ বাদে)' : 'Cash in Hand (Net)'}`
+                  : `${selectedMonthName} ${bn ? 'নগদ অবশিষ্ট / ক্যাশ' : 'Cash in Hand'}`,
+                val: monthlyCash,
+                iconBg: monthlyCash >= 0 ? 'bg-primary/10 text-primary' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+                icon: Wallet,
+                color: monthlyCash >= 0 ? 'text-primary' : 'text-amber-600 dark:text-amber-400',
+                sparkColor: monthlyCash >= 0 ? '#3b82f6' : '#f97316',
+                sparkData: [5,4,6,3,7,5,8]
+              },
               { label: `${selectedInstNamePrefix}${bn ? 'বকেয়া' : 'Arrears'}`, val: totalArrears, iconBg: totalArrears > 0 ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-muted text-muted-foreground', icon: DollarSign, color: totalArrears > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground', sparkColor: '#f59e0b', sparkData: [2,3,2,4,3,5,totalArrears > 0 ? 6 : 0] },
             ].map((s, i) => (
               <div
@@ -3205,7 +3222,7 @@ const AdminExpenses = () => {
                     >
                       <Building2 className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
                       {bn ? 'সকল প্রতিষ্ঠান' : 'All Institutions'}
-                      <span className="ml-2 text-[11px] opacity-80">৳{formatNum(monthlyTotalExpense)}</span>
+                      <span className="ml-2 text-[11px] opacity-80">৳{formatNum(allInstitutionsTotalExpense)}</span>
                     </button>
                     {allInstitutions.map((p: any) => {
                       const instMonthly = getInstMonthly(p.id);
