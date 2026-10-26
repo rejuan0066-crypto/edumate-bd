@@ -127,15 +127,21 @@ const ExpenseVoucherPrint = ({ expense, open, onClose }: ExpenseVoucherPrintProp
     .replace(/\[unit:.*?\]/g, '')
     .replace(/\[method:.*?\]/g, '')
     .replace(/\[memo:.*?\]/g, '')
+    .replace(/\[due_memo:.*?\]/g, '')
+    .replace(/\[due_receipt_url:.*?\]/g, '')
+    .replace(/\[pay_receipt_url:.*?\]/g, '')
     .replace(/\[remarks:.*?\]/g, '')
     .replace(/\[due:.*?\]/g, '')
     .replace(/\[paid_date:.*?\]/g, '')
+    .replace(/\[original_due_id:.*?\]/g, '')
     .replace(/\[salary_bulk_total\]/g, '')
     .replace(/\[salary_month:.*?\]/g, '')
     .replace(/\[staff_id:.*?\]/g, '')
+    .replace(/\[sub:.*?\]/g, '')
     .trim() || '-';
 
   const memo = expense.description?.match(/\[memo:(.*?)\]/)?.[1]?.trim();
+  const dueMemo = expense.description?.match(/\[due_memo:(.*?)\]/)?.[1]?.trim();
   const remarks = expense.description?.match(/\[remarks:(.*?)\]/)?.[1]?.trim();
 
   const getUnit = (desc: string) => {
@@ -315,12 +321,18 @@ const ExpenseVoucherPrint = ({ expense, open, onClose }: ExpenseVoucherPrintProp
           </table>
 
           {/* Memo & Remarks (if present) */}
-          {(memo || remarks) && (
+          {(memo || dueMemo || remarks) && (
             <div className="text-xs text-gray-600 mb-3 space-y-0.5 bg-gray-50 p-2 rounded border border-gray-200">
               {memo && (
                 <div>
-                  <span className="font-semibold text-gray-500">{bn ? 'মেমো / বিল নং:' : 'Memo / Bill #:'}</span>{' '}
+                  <span className="font-semibold text-gray-500">{dueMemo ? (bn ? 'পরিশোধ মেমো নং:' : 'Payment Memo #:') : (bn ? 'মেমো / বিল নং:' : 'Memo / Bill #:')}</span>{' '}
                   {bn ? toBnDigits(memo) : memo}
+                </div>
+              )}
+              {dueMemo && (
+                <div>
+                  <span className="font-semibold text-amber-700">{bn ? 'মূল বকেয়া মেমো নং:' : 'Original Due Memo #:'}</span>{' '}
+                  {bn ? toBnDigits(dueMemo) : dueMemo}
                 </div>
               )}
               {remarks && (

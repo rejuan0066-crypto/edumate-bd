@@ -138,6 +138,14 @@ const getMemo = (desc: string, isBn: boolean = false) => {
   if (memo === '-') return '-';
   return isBn ? toBnDigits(memo) : memo;
 };
+const getDueMemo = (desc: string, isBn: boolean = false) => {
+  const memo = desc?.match(/\[due_memo:(.*?)\]/)?.[1];
+  if (!memo) return null;
+  return isBn ? toBnDigits(memo) : memo;
+};
+const getDueReceiptUrl = (desc: string) => desc?.match(/\[due_receipt_url:(.*?)\]/)?.[1] || null;
+const getPayReceiptUrl = (desc: string) => desc?.match(/\[pay_receipt_url:(.*?)\]/)?.[1] || null;
+
 const getRemarks = (desc: string) => desc?.match(/\[remarks:(.*?)\]/)?.[1] || '-';
 export const getSubCategory = (desc: string) => (desc || '').match(/\[sub:(.*?)\]/)?.[1]?.trim() || '';
 const isUnpaidDue = (desc: string) => (desc || '').includes('[due:unpaid]');
@@ -146,6 +154,9 @@ const cleanDesc = (desc: string) => (desc || '')
   .replace(/\[unit:.*?\]/g, '')
   .replace(/\[method:.*?\]/g, '')
   .replace(/\[memo:.*?\]/g, '')
+  .replace(/\[due_memo:.*?\]/g, '')
+  .replace(/\[due_receipt_url:.*?\]/g, '')
+  .replace(/\[pay_receipt_url:.*?\]/g, '')
   .replace(/\[remarks:.*?\]/g, '')
   .replace(/\[due:.*?\]/g, '')
   .replace(/\[paid_date:.*?\]/g, '')
@@ -306,6 +317,8 @@ const AdminExpenses = () => {
 
   // Due settlement state
   const [payDueExpense, setPayDueExpense] = useState<any>(null);
+  const [payDueReceiptFile, setPayDueReceiptFile] = useState<File | null>(null);
+  const [payDueUploading, setPayDueUploading] = useState(false);
   const [payDueForm, setPayDueForm] = useState({
     payment_date: new Date().toISOString().split('T')[0],
     payment_method: 'ক্যাশ',
@@ -1669,6 +1682,9 @@ const AdminExpenses = () => {
 
       // 1. Mark original expense as paid
       const originalDesc = payDueExpense.description || '';
+      const originalMemo = getMemo(originalDesc, false);
+      const originalReceiptUrl = payDueExpense.receipt_url || null;
+
       const updatedOriginalDesc = originalDesc
         .replace(/\[due:unpaid\]/g, `[due:paid][paid_date:${payDueForm.payment_date}]`);
 
@@ -1678,12 +1694,43 @@ const AdminExpenses = () => {
         .eq('id', payDueExpense.id);
       if (updateError) throw updateError;
 
+      // Upload payment receipt / voucher if user attached one
+      let payReceiptUrl: string | null = null;
+      if (payDueReceiptFile) {
+        setPayDueUploading(true);
+        try {
+          const res = await uploadToCloudinary(payDueReceiptFile, { folder: 'receipts' });
+          payReceiptUrl = res.secure_url;
+        } catch (cErr) {
+          console.warn('Cloudinary upload failed, falling back to Supabase:', cErr);
+          try {
+            const fileExt = payDueReceiptFile.name.split('.').pop();
+            const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+            const { data: uploadData, error: uploadError } = await supabase.storage
+              .from('receipts')
+              .upload(fileName, payDueReceiptFile);
+            if (uploadError) throw uploadError;
+            payReceiptUrl = `receipts/${uploadData.path}`;
+          } catch (sbErr) {
+            console.error('All receipt upload methods failed:', sbErr);
+          }
+        } finally {
+          setPayDueUploading(false);
+        }
+      }
+
       // 2. Insert new cash outflow expense in the month of payment
       let paidDesc = `[বকেয়া পরিশোধ] ${cleanDesc(originalDesc)}`;
       if (payDueForm.remarks.trim()) paidDesc += `[remarks:${payDueForm.remarks.trim()}]`;
       if (payDueForm.memo_no.trim()) paidDesc += `[memo:${payDueForm.memo_no.trim()}]`;
+      if (originalMemo && originalMemo !== '-') paidDesc += `[due_memo:${originalMemo}]`;
+      if (originalReceiptUrl) paidDesc += `[due_receipt_url:${originalReceiptUrl}]`;
+      if (payReceiptUrl) paidDesc += `[pay_receipt_url:${payReceiptUrl}]`;
       if (finalMethod) paidDesc += `[method:${finalMethod}]`;
       paidDesc += `[original_due_id:${payDueExpense.id}]`;
+
+      const finalReceiptUrl = payReceiptUrl || originalReceiptUrl || null;
+      const hasReceipt = Boolean(payReceiptUrl || originalReceiptUrl);
 
       const { error: insertError } = await supabase.from('expenses').insert({
         month_year: pMonthYear,
@@ -1693,8 +1740,8 @@ const AdminExpenses = () => {
         description: paidDesc,
         quantity: payDueExpense.quantity || 1,
         amount: Number(payDueExpense.amount),
-        has_receipt: payDueExpense.has_receipt,
-        receipt_url: payDueExpense.receipt_url,
+        has_receipt: hasReceipt,
+        receipt_url: finalReceiptUrl,
       });
       if (insertError) throw insertError;
 
@@ -1719,6 +1766,7 @@ const AdminExpenses = () => {
       qc.invalidateQueries({ queryKey: ['all_expenses'] });
       qc.invalidateQueries({ queryKey: ['accounts-audit-logs'] });
       setPayDueExpense(null);
+      setPayDueReceiptFile(null);
       setPayDueForm({
         payment_date: new Date().toISOString().split('T')[0],
         payment_method: 'ক্যাশ',
@@ -3614,22 +3662,70 @@ const AdminExpenses = () => {
                                         </span>
                                       </td>
                                       <td className="border border-slate-200 dark:border-slate-800 px-3 py-2 text-center text-xs" style={{ borderRadius: 0 }}>
-                                        <div className="flex items-center justify-center gap-1.5">
-                                          <span className="text-slate-600 dark:text-slate-400 font-mono text-[11px]">
-                                            {memoStr !== '-' ? memoStr : '-'}
-                                          </span>
-                                          {e.has_receipt && e.receipt_url && (
-                                            <Button
-                                              variant="ghost"
-                                              size="icon"
-                                              className="h-6 w-6 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                                              onClick={() => setReceiptPreview(e.receipt_url)}
-                                              title={bn ? 'রসিদ দেখুন' : 'View receipt'}
-                                            >
-                                              <Eye className="w-3.5 h-3.5" />
-                                            </Button>
-                                          )}
-                                        </div>
+                                        {(() => {
+                                          const dueMemo = getDueMemo(e.description, bn);
+                                          const dueRecUrl = getDueReceiptUrl(e.description);
+                                          const payRecUrl = getPayReceiptUrl(e.description) || (e.receipt_url && e.receipt_url !== dueRecUrl ? e.receipt_url : null);
+                                          const isSettleRow = (e.description || '').includes('[বকেয়া পরিশোধ]');
+
+                                          if (isSettleRow && (dueMemo || dueRecUrl)) {
+                                            return (
+                                              <div className="flex flex-col items-center justify-center gap-1 py-0.5">
+                                                {/* Due Memo */}
+                                                <div className="flex items-center gap-1 text-[11px] bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-200/60 dark:border-amber-800/40" title={bn ? 'বকেয়া মেমো' : 'Due Memo'}>
+                                                  <span className="text-amber-800 dark:text-amber-300 font-semibold">{bn ? 'বকেয়া:' : 'Due:'}</span>
+                                                  <span className="font-mono text-slate-700 dark:text-slate-300">{dueMemo || '-'}</span>
+                                                  {dueRecUrl && (
+                                                    <Button
+                                                      variant="ghost"
+                                                      size="icon"
+                                                      className="h-4 w-4 text-amber-700 hover:text-amber-900 hover:bg-amber-100 p-0 cursor-pointer"
+                                                      onClick={() => setReceiptPreview(dueRecUrl)}
+                                                      title={bn ? 'বকেয়া মেমো দেখুন' : 'View due memo'}
+                                                    >
+                                                      <Eye className="w-3 h-3" />
+                                                    </Button>
+                                                  )}
+                                                </div>
+                                                {/* Payment Memo */}
+                                                <div className="flex items-center gap-1 text-[11px] bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-200/60 dark:border-emerald-800/40" title={bn ? 'পরিশোধ মেমো' : 'Paid Memo'}>
+                                                  <span className="text-emerald-800 dark:text-emerald-300 font-semibold">{bn ? 'পরিশোধ:' : 'Paid:'}</span>
+                                                  <span className="font-mono text-slate-700 dark:text-slate-300">{memoStr !== '-' ? memoStr : '-'}</span>
+                                                  {payRecUrl && (
+                                                    <Button
+                                                      variant="ghost"
+                                                      size="icon"
+                                                      className="h-4 w-4 text-emerald-700 hover:text-emerald-900 hover:bg-emerald-100 p-0 cursor-pointer"
+                                                      onClick={() => setReceiptPreview(payRecUrl)}
+                                                      title={bn ? 'পরিশোধ মেমো দেখুন' : 'View payment memo'}
+                                                    >
+                                                      <Eye className="w-3 h-3" />
+                                                    </Button>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            );
+                                          }
+
+                                          return (
+                                            <div className="flex items-center justify-center gap-1.5">
+                                              <span className="text-slate-600 dark:text-slate-400 font-mono text-[11px]">
+                                                {memoStr !== '-' ? memoStr : '-'}
+                                              </span>
+                                              {e.has_receipt && e.receipt_url && (
+                                                <Button
+                                                  variant="ghost"
+                                                  size="icon"
+                                                  className="h-6 w-6 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 cursor-pointer"
+                                                  onClick={() => setReceiptPreview(e.receipt_url)}
+                                                  title={bn ? 'রসিদ দেখুন' : 'View receipt'}
+                                                >
+                                                  <Eye className="w-3.5 h-3.5" />
+                                                </Button>
+                                              )}
+                                            </div>
+                                          );
+                                        })()}
                                       </td>
                                       <td className="border border-slate-200 dark:border-slate-800 px-3 py-2 text-right tabular-nums font-bold text-foreground" style={{ borderRadius: 0 }}>
                                         ৳{formatNum(Number(e.amount))}
@@ -3782,8 +3878,23 @@ const AdminExpenses = () => {
                                         <td className="border border-amber-200/80 dark:border-amber-800/30 px-3 py-2 text-center tabular-nums text-slate-700 dark:text-slate-300" style={{ borderRadius: 0 }}>
                                           {displayQty}
                                         </td>
-                                        <td className="border border-amber-200/80 dark:border-amber-800/30 px-3 py-2 text-center font-mono text-[11px] text-slate-600 dark:text-slate-400" style={{ borderRadius: 0 }}>
-                                          {memoStr !== '-' ? memoStr : '-'}
+                                        <td className="border border-amber-200/80 dark:border-amber-800/30 px-3 py-2 text-center text-xs" style={{ borderRadius: 0 }}>
+                                          <div className="flex items-center justify-center gap-1.5">
+                                            <span className="font-mono text-[11px] text-slate-700 dark:text-slate-300">
+                                              {memoStr !== '-' ? memoStr : '-'}
+                                            </span>
+                                            {due.has_receipt && due.receipt_url && (
+                                              <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6 text-amber-700 hover:text-amber-800 hover:bg-amber-100/70 dark:text-amber-300 dark:hover:bg-amber-900/40 cursor-pointer"
+                                                onClick={() => setReceiptPreview(due.receipt_url)}
+                                                title={bn ? 'বকেয়া মেমো/রশিদ দেখুন' : 'View due memo/receipt'}
+                                              >
+                                                <Eye className="w-3.5 h-3.5" />
+                                              </Button>
+                                            )}
+                                          </div>
                                         </td>
                                         <td className="border border-amber-200/80 dark:border-amber-800/30 px-3 py-2 text-right tabular-nums font-bold text-amber-700 dark:text-amber-300" style={{ borderRadius: 0 }}>
                                           ৳{formatNum(Number(due.amount))}
@@ -5941,7 +6052,7 @@ const AdminExpenses = () => {
       <ExpenseVoucherPrint expense={voucherExpense} open={!!voucherExpense} onClose={() => setVoucherExpense(null)} />
 
       {/* Pay Due Dialog */}
-      <Dialog open={!!payDueExpense} onOpenChange={(open) => { if (!open) setPayDueExpense(null); }}>
+      <Dialog open={!!payDueExpense} onOpenChange={(open) => { if (!open) { setPayDueExpense(null); setPayDueReceiptFile(null); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-emerald-600">
@@ -5964,6 +6075,26 @@ const AdminExpenses = () => {
                   <span>{bn ? 'বকেয়া পরিমাণ:' : 'Due Amount:'}</span>
                   <span>৳{formatNum(Number(payDueExpense.amount))}</span>
                 </div>
+                {(getMemo(payDueExpense.description, bn) !== '-' || (payDueExpense.has_receipt && payDueExpense.receipt_url)) && (
+                  <div className="flex justify-between items-center pt-1 border-t border-amber-200/60 dark:border-amber-800/40">
+                    <span className="text-muted-foreground">{bn ? 'মূল বকেয়ার মেমো:' : 'Due Memo:'}</span>
+                    <div className="flex items-center gap-1.5 font-mono">
+                      <span className="font-semibold text-foreground">{getMemo(payDueExpense.description, bn)}</span>
+                      {payDueExpense.has_receipt && payDueExpense.receipt_url && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 px-1.5 text-[10px] text-amber-800 bg-amber-200/70 hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-200 cursor-pointer"
+                          onClick={() => setReceiptPreview(payDueExpense.receipt_url)}
+                        >
+                          <Eye className="w-3 h-3 mr-1" />
+                          {bn ? 'বকেয়া মেমো দেখুন' : 'View'}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-3">
@@ -6018,6 +6149,47 @@ const AdminExpenses = () => {
                 </div>
 
                 <div>
+                  <Label className="flex items-center justify-between">
+                    <span>{bn ? 'পরিশোধের রসিদ / মেমো / ভাউচার ফাইল' : 'Payment Receipt / Voucher File'}</span>
+                    <span className="text-[10px] text-muted-foreground font-normal">{bn ? '(ঐচ্ছিক)' : '(Optional)'}</span>
+                  </Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <label className="flex-1 cursor-pointer">
+                      <div className="flex items-center justify-center gap-2 px-3 py-2 border-2 border-dashed border-border hover:border-emerald-500 rounded-lg transition-colors text-xs text-muted-foreground bg-muted/20 hover:bg-muted/40">
+                        <Upload className="h-4 w-4 text-emerald-600" />
+                        <span className="truncate max-w-[240px]">
+                          {payDueReceiptFile ? payDueReceiptFile.name : (bn ? 'পরিশোধের মেমো/ভাউচার আপলোড করুন' : 'Upload payment memo/voucher')}
+                        </span>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*,application/pdf"
+                        className="hidden"
+                        onChange={e => {
+                          const file = e.target.files?.[0];
+                          if (file) setPayDueReceiptFile(file);
+                        }}
+                      />
+                    </label>
+                    {payDueReceiptFile && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                        onClick={() => setPayDueReceiptFile(null)}
+                        title={bn ? 'ফাইল মুছুন' : 'Remove file'}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    {bn ? '💡 পরিশোধ মেমো আপলোড করলে ক্যাশ খরচের তালিকায় বকেয়া মেমো ও পরিশোধ মেমো উভয়টিই আলাদা প্রিভিউ সহ দেখতে পাবেন।' : 'Both due and payment receipts will be preserved and previewable.'}
+                  </p>
+                </div>
+
+                <div>
                   <Label>{bn ? 'মন্তব্য' : 'Remarks'}</Label>
                   <Input
                     name="paydue_remarks"
@@ -6030,15 +6202,15 @@ const AdminExpenses = () => {
               </div>
 
               <div className="flex gap-2 pt-2">
-                <Button variant="outline" className="flex-1" onClick={() => setPayDueExpense(null)}>
+                <Button variant="outline" className="flex-1" onClick={() => { setPayDueExpense(null); setPayDueReceiptFile(null); }}>
                   {bn ? 'বাতিল' : 'Cancel'}
                 </Button>
                 <Button
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
                   onClick={() => payDueMutation.mutate()}
-                  disabled={payDueMutation.isPending}
+                  disabled={payDueMutation.isPending || payDueUploading}
                 >
-                  {payDueMutation.isPending ? (bn ? 'পরিশোধ হচ্ছে...' : 'Processing...') : (bn ? 'পরিশোধ নিশ্চিত করুন' : 'Confirm Payment')}
+                  {payDueMutation.isPending || payDueUploading ? (bn ? 'পরিশোধ ও আপলোড হচ্ছে...' : 'Processing & Uploading...') : (bn ? 'পরিশোধ নিশ্চিত করুন' : 'Confirm Payment')}
                 </Button>
               </div>
             </div>
