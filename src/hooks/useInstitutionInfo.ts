@@ -45,7 +45,7 @@ const trimStr = (v: any) => (v == null ? '' : String(v).trim());
 const pick = (...vals: any[]) => {
   for (const v of vals) {
     const s = trimStr(v);
-    if (s) return s;
+    if (s && !s.includes('wwhunyzobtuibhvkipwk')) return s;
   }
   return '';
 };

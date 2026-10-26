@@ -435,7 +435,10 @@ const parseSettingsData = (data: any[] | null): WebsiteSettings => {
     const key = row.key as keyof WebsiteSettings;
     if (key in result) {
       const defaultVal = DEFAULT_SETTINGS[key];
-      const dbVal = row.value;
+      let dbVal = row.value;
+      if (typeof dbVal === 'string' && dbVal.includes('wwhunyzobtuibhvkipwk')) {
+        dbVal = FALLBACK_LOGO_URL;
+      }
       if (defaultVal && typeof defaultVal === 'object' && !Array.isArray(defaultVal) && dbVal && typeof dbVal === 'object' && !Array.isArray(dbVal)) {
         (result as any)[key] = { ...defaultVal, ...(dbVal as any) };
       } else {
@@ -469,6 +472,12 @@ const readCache = (): WebsiteSettings | null => {
     const parsed = JSON.parse(raw);
     if (parsed.logo_url && parsed.logo_url.includes('wwhunyzobtuibhvkipwk')) {
       parsed.logo_url = FALLBACK_LOGO_URL;
+    }
+    if (parsed.favicon_url && parsed.favicon_url.includes('wwhunyzobtuibhvkipwk')) {
+      parsed.favicon_url = FALLBACK_LOGO_URL;
+    }
+    if (parsed.loader_logo_url && parsed.loader_logo_url.includes('wwhunyzobtuibhvkipwk')) {
+      parsed.loader_logo_url = FALLBACK_LOGO_URL;
     }
     return { ...DEFAULT_SETTINGS, ...parsed };
   } catch {
@@ -550,6 +559,8 @@ export const useWebsiteSettings = () => {
           accountant_name: pick(parsed.accountant_name, (instData as any)?.accountant_name),
           verifier_name: pick(parsed.verifier_name, (instData as any)?.verifier_name),
           logo_url: pick((instData as any)?.logo_url, parsed.logo_url) || FALLBACK_LOGO_URL,
+          favicon_url: pick(parsed.favicon_url, (instData as any)?.logo_url) || FALLBACK_LOGO_URL,
+          loader_logo_url: pick(parsed.loader_logo_url, (instData as any)?.logo_url) || FALLBACK_LOGO_URL,
           registration_number: pick((instData as any)?.registration_number, (instData as any)?.eiin, parsed.registration_number),
           established_year: pick((instData as any)?.established_year, parsed.established_year),
         } as WebsiteSettings;

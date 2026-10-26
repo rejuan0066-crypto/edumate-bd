@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { isAdminRole } from '@/lib/roles';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
+import { useWebsiteSettings, FALLBACK_LOGO_URL } from '@/hooks/useWebsiteSettings';
 import { usePrincipalOfficer } from '@/hooks/usePrincipalOfficer';
 import { GraduationCap, Edit2, Save, X, Upload, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -53,8 +53,37 @@ const DashboardInstitutionCard = () => {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Auto-heal broken legacy Supabase URLs in DB when admin loads the dashboard
+  useEffect(() => {
+    if (!isAdmin || !institution) return;
+    const isBroken = institution.logo_url && institution.logo_url.includes('wwhunyzobtuibhvkipwk');
+    if (isBroken) {
+      const validLogo = settings.logo_url && !settings.logo_url.includes('wwhunyzobtuibhvkipwk')
+        ? settings.logo_url
+        : FALLBACK_LOGO_URL;
+
+      supabase
+        .from('institutions')
+        .update({ logo_url: validLogo })
+        .eq('id', institution.id)
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: ['institution-default'] });
+        });
+
+      updateMultiple.mutateAsync([
+        { key: 'logo_url', value: validLogo },
+        { key: 'favicon_url', value: validLogo },
+        { key: 'loader_logo_url', value: validLogo },
+      ]).catch(() => {});
+    }
+  }, [isAdmin, institution, settings.logo_url, queryClient, updateMultiple]);
+
   useEffect(() => {
     if (institution) {
+      const cleanLogo = (institution.logo_url && !institution.logo_url.includes('wwhunyzobtuibhvkipwk'))
+        ? institution.logo_url
+        : (settings.logo_url && !settings.logo_url.includes('wwhunyzobtuibhvkipwk') ? settings.logo_url : FALLBACK_LOGO_URL);
+
       setForm({
         name: institution.name || '',
         name_en: institution.name_en || '',
@@ -65,14 +94,14 @@ const DashboardInstitutionCard = () => {
         email: institution.email || '',
         other_info: institution.other_info || '',
         other_info_en: (institution as any).other_info_en || '',
-        logo_url: institution.logo_url || '',
+        logo_url: cleanLogo,
         established_year: (institution as any).established_year || '',
         established_year_en: (institution as any).established_year_en || '',
         registration_number: (institution as any).registration_number || '',
         registration_number_en: (institution as any).registration_number_en || '',
       });
     }
-  }, [institution]);
+  }, [institution, settings.logo_url]);
 
   useEffect(() => {
     if (settings) {
@@ -245,7 +274,20 @@ const DashboardInstitutionCard = () => {
             <div>
               <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'লোগো' : 'Logo'}</label>
               <div className="flex items-center gap-2 mt-1">
-                {form.logo_url && <img src={form.logo_url} alt="Logo" className="w-10 h-10 rounded object-cover" />}
+                {form.logo_url && (
+                  <img
+                    src={form.logo_url}
+                    alt="Logo"
+                    onError={(e) => {
+                      const img = e.currentTarget;
+                      if (!img.dataset.fallback) {
+                        img.dataset.fallback = 'true';
+                        img.src = '/loader-logo.png';
+                      }
+                    }}
+                    className="w-10 h-10 rounded object-cover"
+                  />
+                )}
                 <label className="cursor-pointer px-3 py-2 rounded-md border border-input bg-background text-sm hover:bg-secondary flex items-center gap-1">
                   <Upload className="w-4 h-4" /> {language === 'bn' ? 'আপলোড' : 'Upload'}
                   <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
@@ -423,6 +465,11 @@ const DashboardInstitutionCard = () => {
       </div>
     );
   }
+
+  const rawInstLogo = institution?.logo_url || settings.logo_url;
+  const displayLogo = (!rawInstLogo || rawInstLogo.includes('wwhunyzobtuibhvkipwk'))
+    ? (settings.logo_url && !settings.logo_url.includes('wwhunyzobtuibhvkipwk') ? settings.logo_url : FALLBACK_LOGO_URL)
+    : rawInstLogo;
 
   const displayName = (language === 'bn' ? institution?.name : (institution?.name_en || institution?.name)) || '';
   const hasName = !!displayName;

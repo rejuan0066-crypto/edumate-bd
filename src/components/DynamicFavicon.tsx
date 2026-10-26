@@ -16,17 +16,24 @@ const DynamicFavicon = () => {
   // same-origin /manifest.json — replacing it with a data:/blob: URL makes the
   // app un-installable on Android Chrome.
   useEffect(() => {
+    ['cached_favicon_url', 'cached_loader_logo', 'cached_icon_192', 'cached_icon_512'].forEach(k => {
+      const v = localStorage.getItem(k);
+      if (v && v.includes('wwhunyzobtuibhvkipwk')) localStorage.removeItem(k);
+    });
+
     const cached = localStorage.getItem(CACHE_KEY);
-    if (cached && !applied && !cached.includes('wwhunyzobtuibhvkipwk')) {
-      applyFavicon(cached);
-      applyAppleTouchIcon(cached);
+    const initial = (cached && !cached.includes('wwhunyzobtuibhvkipwk')) ? cached : '/loader-logo.png';
+    if (!applied) {
+      applyFavicon(initial);
+      applyAppleTouchIcon(initial);
     }
     localStorage.removeItem(MANIFEST_CACHE_KEY);
   }, []);
 
-
-  const faviconSrc = settings.favicon_url || settings.logo_url;
-  const appIconSrc = settings.logo_url || settings.favicon_url;
+  const rawFavicon = settings.favicon_url || settings.logo_url;
+  const faviconSrc = (rawFavicon && !rawFavicon.includes('wwhunyzobtuibhvkipwk')) ? rawFavicon : '/loader-logo.png';
+  const rawAppIcon = settings.logo_url || settings.favicon_url;
+  const appIconSrc = (rawAppIcon && !rawAppIcon.includes('wwhunyzobtuibhvkipwk')) ? rawAppIcon : '/loader-logo.png';
   const rawName = settings.institution_name_en || settings.institution_name || 'Madrasah';
   const appName = trimWordAware(rawName, 30);
   const shortName = trimWordAware(rawName, 12);
