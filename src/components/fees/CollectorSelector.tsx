@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { UserCheck, User } from 'lucide-react';
+import { UserCheck, ShieldCheck } from 'lucide-react';
 import { cleanRoleSuffix } from '@/lib/paymentUtils';
+import { useSignatoryAuthorities } from '@/hooks/useSignatoryAuthorities';
 
 interface CollectorSelectorProps {
   value: string;
@@ -14,6 +15,13 @@ interface CollectorSelectorProps {
   defaultCollectorName?: string;
   label?: string;
   className?: string;
+}
+
+export interface CollectorOption {
+  id: string;
+  name: string;
+  label: string;
+  category: 'signatory' | 'staff' | 'custom_fixed';
 }
 
 export default function CollectorSelector({
@@ -31,6 +39,13 @@ export default function CollectorSelector({
 
   const cleanDefault = cleanRoleSuffix(defaultCollectorName);
 
+  // Fetch signatory authorities and authorized collectors config
+  const {
+    authorities = [],
+    allRoles = [],
+    authorizedCollectors = { mode: 'selected', role_keys: ['accountant_cashier'], staff_ids: [], custom_names: [] },
+  } = useSignatoryAuthorities();
+
   // Fetch active staff/teachers
   const { data: staffList = [] } = useQuery({
     queryKey: ['active_staff_collectors'],
@@ -46,6 +61,85 @@ export default function CollectorSelector({
     staleTime: 5 * 60 * 1000,
   });
 
+  // Build the list of collectors based on Signatory Authorities configuration
+  const collectorOptions = useMemo<CollectorOption[]>(() => {
+    const list: CollectorOption[] = [];
+    const seenNames = new Set<string>();
+
+    const isSelectedMode = authorizedCollectors?.mode !== 'all';
+    const allowedRoleKeys = authorizedCollectors?.role_keys || ['accountant_cashier'];
+    const allowedStaffIds = authorizedCollectors?.staff_ids || [];
+    const customFixedNames = authorizedCollectors?.custom_names || [];
+
+    // 1. Authorized Signatories
+    allRoles.forEach((roleDef) => {
+      if (!isSelectedMode || allowedRoleKeys.includes(roleDef.key)) {
+        const authItem = authorities.find((a) => a.role_key === roleDef.key);
+        const name = (authItem?.person_name_bn || authItem?.person_name_en || '').trim();
+        if (name && !seenNames.has(name)) {
+          seenNames.add(name);
+          list.push({
+            id: `sig_${roleDef.key}`,
+            name,
+            label: `${name} (${bn ? roleDef.label_bn : roleDef.label_en})`,
+            category: 'signatory',
+          });
+        }
+      }
+    });
+
+    // 2. Authorized Staff
+    staffList.forEach((st: any) => {
+      const isAllowed = !isSelectedMode || allowedStaffIds.includes(st.id);
+      if (isAllowed) {
+        const name = (st.name_bn || st.name_en || '').trim();
+        if (name && !seenNames.has(name)) {
+          seenNames.add(name);
+          const des = st.designation ? ` (${st.designation})` : '';
+          list.push({
+            id: `staff_${st.id}`,
+            name,
+            label: `${name}${des}`,
+            category: 'staff',
+          });
+        }
+      }
+    });
+
+    // 3. Custom pre-configured collector names
+    customFixedNames.forEach((cName) => {
+      const trimmed = (cName || '').trim();
+      if (trimmed && !seenNames.has(trimmed)) {
+        seenNames.add(trimmed);
+        list.push({
+          id: `custom_fixed_${trimmed}`,
+          name: trimmed,
+          label: trimmed,
+          category: 'custom_fixed',
+        });
+      }
+    });
+
+    // Fallback: If in selected mode but list is completely empty, include all staff
+    if (list.length === 0 && staffList.length > 0) {
+      staffList.forEach((st: any) => {
+        const name = (st.name_bn || st.name_en || '').trim();
+        if (name && !seenNames.has(name)) {
+          seenNames.add(name);
+          const des = st.designation ? ` (${st.designation})` : '';
+          list.push({
+            id: `staff_${st.id}`,
+            name,
+            label: `${name}${des}`,
+            category: 'staff',
+          });
+        }
+      });
+    }
+
+    return list;
+  }, [authorities, allRoles, authorizedCollectors, staffList, bn]);
+
   // Sync initial state
   useEffect(() => {
     if (!value && cleanDefault) {
@@ -55,8 +149,11 @@ export default function CollectorSelector({
       if (cleanRoleSuffix(value) === cleanDefault) {
         setSelectedOption('default');
       } else {
-        const found = staffList.find(
-          (s: any) => s.name_bn === value || s.name_en === value || `${s.name_bn || s.name_en} (${s.designation || ''})`.trim() === value
+        const found = collectorOptions.find(
+          (opt) =>
+            cleanRoleSuffix(opt.name) === cleanRoleSuffix(value) ||
+            opt.name === value ||
+            opt.label === value
         );
         if (found) {
           setSelectedOption(found.id);
@@ -66,7 +163,7 @@ export default function CollectorSelector({
         }
       }
     }
-  }, [value, cleanDefault, staffList]);
+  }, [value, cleanDefault, collectorOptions]);
 
   const handleSelect = (val: string) => {
     setSelectedOption(val);
@@ -75,8 +172,8 @@ export default function CollectorSelector({
     } else if (val === 'custom') {
       onChange(customName.trim());
     } else {
-      const staff = staffList.find((s: any) => s.id === val);
-      const name = staff ? (staff.name_bn || staff.name_en || '') : '';
+      const opt = collectorOptions.find((o) => o.id === val);
+      const name = opt ? opt.name : '';
       onChange(cleanRoleSuffix(name));
     }
   };
@@ -88,30 +185,44 @@ export default function CollectorSelector({
 
   return (
     <div className={`space-y-1.5 ${className}`}>
-      <Label className="text-xs font-medium text-foreground flex items-center gap-1.5">
-        <UserCheck className="w-3.5 h-3.5 text-primary" />
-        {label || (bn ? 'আদায়কারী (টাকা গ্রহণকারী)' : 'Collector / Received By')}
+      <Label className="text-xs font-semibold text-foreground flex items-center justify-between">
+        <span className="flex items-center gap-1.5">
+          <UserCheck className="w-3.5 h-3.5 text-primary" />
+          {label || (bn ? 'আদায়কারী (টাকা গ্রহণকারী)' : 'Collector / Received By')}
+        </span>
+        {authorizedCollectors?.mode === 'selected' && collectorOptions.length > 0 && (
+          <span className="text-[10px] text-muted-foreground flex items-center gap-1 font-normal">
+            <ShieldCheck className="w-3 h-3 text-emerald-600" />
+            {bn ? 'অনুমোদিত তালিকা' : 'Authorized'}
+          </span>
+        )}
       </Label>
+
       <Select value={selectedOption} onValueChange={handleSelect}>
-        <SelectTrigger className="w-full bg-background text-xs">
+        <SelectTrigger className="w-full bg-background text-xs h-9">
           <SelectValue placeholder={bn ? 'আদায়কারী নির্বাচন করুন...' : 'Select collector...'} />
         </SelectTrigger>
-        <SelectContent className="max-h-60">
+        <SelectContent className="max-h-64">
           {cleanDefault && (
             <SelectItem value="default" className="text-xs font-semibold text-primary">
               {cleanDefault} ({bn ? 'বর্তমান ইউজার / আপনি' : 'Current User / You'})
             </SelectItem>
           )}
-          {staffList.map((st: any) => {
-            const displayName = st.name_bn || st.name_en;
-            const extra = st.designation ? ` (${st.designation})` : '';
-            return (
-              <SelectItem key={st.id} value={st.id} className="text-xs">
-                {displayName}{extra}
-              </SelectItem>
-            );
-          })}
-          <SelectItem value="custom" className="text-xs text-muted-foreground font-medium">
+
+          {collectorOptions.map((opt) => (
+            <SelectItem key={opt.id} value={opt.id} className="text-xs">
+              <div className="flex items-center justify-between gap-2 w-full">
+                <span>{opt.label}</span>
+                {opt.category === 'signatory' && (
+                  <span className="text-[10px] text-emerald-600 bg-emerald-500/10 px-1.5 py-0.2 rounded font-medium">
+                    {bn ? 'কর্তৃপক্ষ' : 'Signatory'}
+                  </span>
+                )}
+              </div>
+            </SelectItem>
+          ))}
+
+          <SelectItem value="custom" className="text-xs text-muted-foreground font-medium border-t mt-1">
             ➕ {bn ? 'অন্যান্য / কাস্টম নাম লিখুন...' : 'Other / Type custom name...'}
           </SelectItem>
         </SelectContent>

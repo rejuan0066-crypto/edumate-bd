@@ -47,6 +47,20 @@ export interface DocumentScopeItem {
   category: 'academic' | 'financial' | 'general';
 }
 
+export interface AuthorizedCollectorsConfig {
+  mode: 'selected' | 'all';
+  role_keys: string[];
+  staff_ids: string[];
+  custom_names: string[];
+}
+
+export const DEFAULT_AUTHORIZED_COLLECTORS: AuthorizedCollectorsConfig = {
+  mode: 'selected',
+  role_keys: ['accountant_cashier'],
+  staff_ids: [],
+  custom_names: [],
+};
+
 export const DOCUMENT_SCOPES: DocumentScopeItem[] = [
   { id: 'certificate', label_bn: 'প্রত্যয়ন ও প্রশংসাপত্র', label_en: 'Certificates & Testimonials', desc_bn: 'শিক্ষার্থীদের চারিত্রিক সনদ, প্রশংসাপত্র ও প্রত্যয়নপত্র', icon: '📜', category: 'academic' },
   { id: 'result_card', label_bn: 'মার্কশিট ও রেজাল্ট কার্ড', label_en: 'Marksheet & Result Card', desc_bn: 'পরীক্ষার মার্কশিট, গ্রেড শিট ও ফলাফল বিবরণী', icon: '📊', category: 'academic' },
@@ -111,12 +125,14 @@ export interface SignatoryAuthoritiesData {
   allRoles: SignatoryRoleDef[];
   customRoles: SignatoryRoleDef[];
   documentScopes: Record<string, string[]>;
+  authorizedCollectors: AuthorizedCollectorsConfig;
 }
 
 export async function fetchSignatoryAuthoritiesData(): Promise<SignatoryAuthoritiesData> {
-  // 1. Fetch custom roles & document scopes from website_settings
+  // 1. Fetch custom roles, document scopes & authorized collectors from website_settings
   let customRoles: SignatoryRoleDef[] = [];
   let documentScopes: Record<string, string[]> = { ...DEFAULT_ROLE_SCOPES };
+  let authorizedCollectors: AuthorizedCollectorsConfig = { ...DEFAULT_AUTHORIZED_COLLECTORS };
 
   try {
     const { data: wsData } = await supabase
@@ -141,10 +157,23 @@ export async function fetchSignatoryAuthoritiesData(): Promise<SignatoryAuthorit
             }
           } catch {}
         }
+        if (row.key === 'authorized_fee_collectors' && row.value) {
+          try {
+            const parsed = typeof row.value === 'string' ? JSON.parse(row.value) : row.value;
+            if (parsed && typeof parsed === 'object') {
+              authorizedCollectors = {
+                mode: parsed.mode || 'selected',
+                role_keys: Array.isArray(parsed.role_keys) ? parsed.role_keys : ['accountant_cashier'],
+                staff_ids: Array.isArray(parsed.staff_ids) ? parsed.staff_ids : [],
+                custom_names: Array.isArray(parsed.custom_names) ? parsed.custom_names : [],
+              };
+            }
+          } catch {}
+        }
       }
     }
   } catch (err) {
-    console.warn('Could not fetch custom roles or document scopes from website_settings:', err);
+    console.warn('Could not fetch custom roles, scopes, or collectors from website_settings:', err);
   }
 
   const allRoles: SignatoryRoleDef[] = [
@@ -229,6 +258,7 @@ export async function fetchSignatoryAuthoritiesData(): Promise<SignatoryAuthorit
     allRoles,
     customRoles,
     documentScopes,
+    authorizedCollectors,
   };
 }
 
@@ -252,6 +282,7 @@ export function useSignatoryAuthorities() {
     allRoles: CORE_SIGNATORY_ROLES,
     customRoles: [],
     documentScopes: { ...DEFAULT_ROLE_SCOPES },
+    authorizedCollectors: { ...DEFAULT_AUTHORIZED_COLLECTORS },
   };
 
   // ─── 1. Update Authority Assignment ───
@@ -480,6 +511,29 @@ export function useSignatoryAuthorities() {
     },
   });
 
+  // ─── 5. Update Authorized Fee Collectors ───
+  const updateAuthorizedCollectors = useMutation({
+    mutationFn: async (config: AuthorizedCollectorsConfig) => {
+      const { error } = await supabase.from('website_settings').upsert({
+        key: 'authorized_fee_collectors',
+        value: JSON.stringify(config),
+      });
+
+      if (error) throw error;
+      return config;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['signatory-authorities-data'] });
+      qc.invalidateQueries({ queryKey: ['active_staff_collectors'] });
+      qc.invalidateQueries({ queryKey: ['website_settings'] });
+      toast.success('ফি আদায়কারী তালিকা সফলভাবে সংরক্ষিত হয়েছে');
+    },
+    onError: (err: any) => {
+      console.error('Update authorized collectors error:', err);
+      toast.error(err?.message || 'সংরক্ষণ ব্যর্থ হয়েছে');
+    },
+  });
+
   // ─── Helper: Get Signatories Configured for a Specific Document ───
   const getSignatoriesForDocument = (docId: string): Array<{
     role: SignatoryRoleDef;
@@ -513,12 +567,14 @@ export function useSignatoryAuthorities() {
     allRoles: data.allRoles,
     customRoles: data.customRoles,
     documentScopes: data.documentScopes,
+    authorizedCollectors: data.authorizedCollectors,
     headOfInstitute,
     accountantCashier,
     verifierAuditor,
     examController,
     updateAuthority,
     updateRoleScopes,
+    updateAuthorizedCollectors,
     addCustomRole,
     deleteCustomRole,
     getSignatoriesForDocument,

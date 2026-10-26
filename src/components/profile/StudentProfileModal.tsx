@@ -23,6 +23,8 @@ import ProfileSectionCard from './ProfileSectionCard';
 import DocumentPreviewModal from '@/components/DocumentPreviewModal';
 import { toast } from 'sonner';
 import { cn, formatDigits } from '@/lib/utils';
+import { cleanRoleSuffix } from '@/lib/paymentUtils';
+import CollectorSelector from '@/components/fees/CollectorSelector';
 import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { printStudentProfile } from '@/lib/studentProfilePrint';
 import { formatAddress } from '@/lib/banglaAddressHelper';
@@ -113,6 +115,7 @@ const StudentProfileModal = ({
   const [payMethod, setPayMethod] = useState<string>('cash');
   const [payDate, setPayDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [payRemarks, setPayRemarks] = useState<string>('');
+  const [customCollector, setCustomCollector] = useState<string>('');
   const [isPaying, setIsPaying] = useState(false);
 
   // Multi-select state for dues
@@ -444,6 +447,7 @@ const StudentProfileModal = ({
     setPayMethod('cash');
     setPayDate(new Date().toISOString().split('T')[0]);
     setPayRemarks('');
+    if (!customCollector) setCustomCollector(collectorName);
     setPayDialogOpen(true);
   };
 
@@ -454,6 +458,7 @@ const StudentProfileModal = ({
     setPayMethod('cash');
     setPayDate(new Date().toISOString().split('T')[0]);
     setPayRemarks('');
+    if (!customCollector) setCustomCollector(collectorName);
     setPayDialogOpen(true);
   };
 
@@ -464,6 +469,7 @@ const StudentProfileModal = ({
     setPayMethod('cash');
     setPayDate(new Date().toISOString().split('T')[0]);
     setPayRemarks('');
+    if (!customCollector) setCustomCollector(collectorName);
     setPayDialogOpen(true);
   };
 
@@ -683,6 +689,7 @@ const StudentProfileModal = ({
       }
 
       const isoPaidAt = payDate ? new Date(payDate).toISOString() : new Date().toISOString();
+      const finalCollector = cleanRoleSuffix(customCollector || collectorName);
 
       // Check role & approval workflow for fee payment
       const description = payingItems.length === 1
@@ -696,7 +703,7 @@ const StudentProfileModal = ({
         payment_method: payMethod,
         date: isoPaidAt,
         receipt_number: serialNumber,
-        collected_by: collectorName,
+        collected_by: finalCollector,
         notes: payRemarks || `সরাসরি পরিশোধ (${payMethod})`,
       };
 
@@ -718,8 +725,8 @@ const StudentProfileModal = ({
           status: 'paid',
           paid_at: isoPaidAt,
           receipt_number: serialNumber,
-          collected_by: collectorName,
-          approved_by: collectorName,
+          collected_by: finalCollector,
+          approved_by: finalCollector,
         };
         const { error: feeErr } = await supabase.from('fee_payments').insert(record);
         if (feeErr) throw feeErr;
@@ -734,7 +741,7 @@ const StudentProfileModal = ({
             year: item.year || new Date().getFullYear(),
             status: 'completed',
             receipt_number: serialNumber,
-            collected_by: collectorName,
+            collected_by: finalCollector,
             notes: payRemarks || `সরাসরি পরিশোধ (${payMethod})`,
           } as any);
         } catch (e) {
@@ -754,8 +761,8 @@ const StudentProfileModal = ({
           status: 'paid',
           paid_at: isoPaidAt,
           receipt_number: serialNumber,
-          collected_by: collectorName,
-          approved_by: collectorName,
+          collected_by: finalCollector,
+          approved_by: finalCollector,
         }));
 
         const { error: feeErr } = await supabase.from('fee_payments').insert(records);
@@ -770,7 +777,7 @@ const StudentProfileModal = ({
             year: new Date().getFullYear(),
             status: 'completed',
             receipt_number: serialNumber,
-            collected_by: collectorName,
+            collected_by: finalCollector,
             notes: payRemarks || `একসাথে সকল বকেয়া পরিশোধ (${payingItems.length} টি আইটেম, ${payMethod})`,
           } as any);
         } catch (e) {
@@ -2084,6 +2091,15 @@ const StudentProfileModal = ({
                   placeholder="0"
                 />
               </div>
+            </div>
+
+            {/* Collector Selector */}
+            <div className="bg-emerald-500/5 dark:bg-emerald-950/20 border border-emerald-500/20 rounded-xl p-3">
+              <CollectorSelector
+                value={customCollector}
+                onChange={setCustomCollector}
+                defaultCollectorName={collectorName}
+              />
             </div>
 
             {/* Payment method selector */}

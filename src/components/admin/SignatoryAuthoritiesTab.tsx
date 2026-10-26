@@ -1,5 +1,5 @@
 // @ts-nocheck -- generated DB types are stricter than these legacy dynamic shapes
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,8 @@ import {
   GraduationCap,
   DollarSign,
   Globe,
+  Banknote,
+  UserCheck,
 } from 'lucide-react';
 import {
   useSignatoryAuthorities,
@@ -38,9 +40,11 @@ import {
   type SignatoryRoleDef,
   type SignatoryRoleItem,
   type DocumentScopeItem,
+  type AuthorizedCollectorsConfig,
 } from '@/hooks/useSignatoryAuthorities';
 import { useStaffDirectory, type DirectoryPerson } from '@/hooks/useStaffDirectory';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface SignatoryAuthoritiesTabProps {
   canEdit?: boolean;
@@ -57,15 +61,87 @@ export default function SignatoryAuthoritiesTab({ canEdit = true }: SignatoryAut
     allRoles,
     customRoles,
     documentScopes,
+    authorizedCollectors,
     isLoading: authLoading,
     updateAuthority,
     updateRoleScopes,
+    updateAuthorizedCollectors,
     addCustomRole,
     deleteCustomRole,
     refetch,
   } = useSignatoryAuthorities();
 
   const { data: personnel = [], isLoading: dirLoading } = useStaffDirectory({ status: 'active' });
+
+  // ─── Local state for Authorized Fee Collectors ───
+  const [collectorDraft, setCollectorDraft] = useState<AuthorizedCollectorsConfig>({
+    mode: 'selected',
+    role_keys: ['accountant_cashier'],
+    staff_ids: [],
+    custom_names: [],
+  });
+
+  useEffect(() => {
+    if (authorizedCollectors) {
+      setCollectorDraft({
+        mode: authorizedCollectors.mode || 'selected',
+        role_keys: Array.isArray(authorizedCollectors.role_keys) ? authorizedCollectors.role_keys : ['accountant_cashier'],
+        staff_ids: Array.isArray(authorizedCollectors.staff_ids) ? authorizedCollectors.staff_ids : [],
+        custom_names: Array.isArray(authorizedCollectors.custom_names) ? authorizedCollectors.custom_names : [],
+      });
+    }
+  }, [authorizedCollectors]);
+
+  const handleToggleRoleInDraft = (roleKey: string) => {
+    setCollectorDraft((prev) => {
+      const exists = prev.role_keys.includes(roleKey);
+      const nextRoles = exists ? prev.role_keys.filter((k) => k !== roleKey) : [...prev.role_keys, roleKey];
+      return { ...prev, role_keys: nextRoles };
+    });
+  };
+
+  const handleToggleRoleInDraftAndSave = async (roleKey: string) => {
+    const exists = collectorDraft.role_keys.includes(roleKey);
+    const nextRoles = exists ? collectorDraft.role_keys.filter((k) => k !== roleKey) : [...collectorDraft.role_keys, roleKey];
+    const updated = { ...collectorDraft, role_keys: nextRoles };
+    setCollectorDraft(updated);
+    await updateAuthorizedCollectors.mutateAsync(updated);
+  };
+
+  const handleAddStaffToDraft = (staffId: string) => {
+    if (!staffId) return;
+    setCollectorDraft((prev) => {
+      if (prev.staff_ids.includes(staffId)) return prev;
+      return { ...prev, staff_ids: [...prev.staff_ids, staffId] };
+    });
+  };
+
+  const handleRemoveStaffFromDraft = (staffId: string) => {
+    setCollectorDraft((prev) => ({
+      ...prev,
+      staff_ids: prev.staff_ids.filter((id) => id !== staffId),
+    }));
+  };
+
+  const handleSaveCollectorConfig = async () => {
+    await updateAuthorizedCollectors.mutateAsync(collectorDraft);
+  };
+
+  const availableStaffToAdd = useMemo(() => {
+    return personnel.filter((p) => !collectorDraft.staff_ids.includes(p.id));
+  }, [personnel, collectorDraft.staff_ids]);
+
+  const activeCollectorsCount = useMemo(() => {
+    if (collectorDraft.mode === 'all') return personnel.length;
+    let count = collectorDraft.staff_ids.length;
+    collectorDraft.role_keys.forEach((rKey) => {
+      const authItem = authorities.find((a) => a.role_key === rKey);
+      if (authItem?.person_name_bn || authItem?.person_name_en) {
+        count++;
+      }
+    });
+    return count;
+  }, [collectorDraft, authorities, personnel]);
 
   // ─── Local draft states per role_key ───
   const [draftSelections, setDraftSelections] = useState<Record<string, {
@@ -324,6 +400,241 @@ export default function SignatoryAuthoritiesTab({ canEdit = true }: SignatoryAut
         </div>
       </div>
 
+      {/* ═══════════ Fee Collector Selection Configuration Card ═══════════ */}
+      <Card className="border-2 border-emerald-500/20 bg-card rounded-2xl shadow-sm overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-emerald-500/10 via-primary/5 to-transparent pb-3.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 bg-emerald-600/15 text-emerald-600 dark:text-emerald-400 rounded-xl shrink-0 mt-0.5 sm:mt-0">
+                <Banknote className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <CardTitle className="text-base font-bold text-foreground">
+                    {bn ? 'ফি আদায়কারী নির্বাচন কনফিগারেশন' : 'Fee Collector Selection Setup'}
+                  </CardTitle>
+                  <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 border-emerald-400/30 text-xs">
+                    {activeCollectorsCount > 0
+                      ? bn ? `${activeCollectorsCount} জন অনুমোদিত আদায়কারী সক্রিয়` : `${activeCollectorsCount} active collectors`
+                      : bn ? 'সব সক্রিয় স্টাফ সক্রিয়' : 'All active staff'}
+                  </Badge>
+                </div>
+                <CardDescription className="text-xs text-muted-foreground mt-0.5">
+                  {bn
+                    ? 'শিক্ষার্থীদের ফি পরিশোধ ও রসিদ তৈরির সময় ড্রপডাউনে কে কে আদায়কারী (টাকা গ্রহণকারী) হিসেবে প্রদর্শিত হবে তা এখানে নির্বাচন করুন।'
+                    : 'Configure which signatories and staff members appear in the fee collector dropdown when collecting fees.'}
+                </CardDescription>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+              {/* Mode switch: Selected vs All */}
+              <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border text-xs">
+                <button
+                  type="button"
+                  onClick={() => setCollectorDraft(prev => ({ ...prev, mode: 'selected' }))}
+                  className={cn(
+                    'px-2.5 py-1 rounded-lg font-semibold transition-all',
+                    collectorDraft.mode === 'selected'
+                      ? 'bg-background shadow-xs text-primary'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {bn ? 'নির্দিষ্ট অনুমোদিত' : 'Selected Only'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCollectorDraft(prev => ({ ...prev, mode: 'all' }))}
+                  className={cn(
+                    'px-2.5 py-1 rounded-lg font-semibold transition-all',
+                    collectorDraft.mode === 'all'
+                      ? 'bg-background shadow-xs text-primary'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {bn ? 'সকল স্টাফ' : 'All Staff'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+
+        {collectorDraft.mode === 'selected' ? (
+          <CardContent className="p-4 sm:p-5 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Section 1: Signatory Authorities */}
+              <div className="rounded-xl border bg-muted/20 p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-primary" />
+                    <span>{bn ? 'স্বাক্ষরকারী কর্তৃপক্ষ থেকে আদায়কারী:' : 'From Signatory Authorities:'}</span>
+                  </h4>
+                  <span className="text-[11px] text-muted-foreground">
+                    {collectorDraft.role_keys.length} {bn ? 'টি পদবি নির্বাচিত' : 'roles selected'}
+                  </span>
+                </div>
+                <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1 scrollbar-thin">
+                  {allRoles.map((role) => {
+                    const isChecked = collectorDraft.role_keys.includes(role.key);
+                    const authItem = authorities.find((a) => a.role_key === role.key);
+                    const personName = authItem?.person_name_bn || authItem?.person_name_en;
+                    return (
+                      <div
+                        key={role.key}
+                        onClick={() => handleToggleRoleInDraft(role.key)}
+                        className={cn(
+                          'flex items-center justify-between p-2 rounded-lg border text-xs cursor-pointer transition-all',
+                          isChecked
+                            ? 'bg-emerald-500/10 border-emerald-500/40'
+                            : 'bg-background/80 border-border hover:bg-muted/40'
+                        )}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Checkbox
+                            checked={isChecked}
+                            onCheckedChange={() => handleToggleRoleInDraft(role.key)}
+                          />
+                          <span className="text-base">{role.icon}</span>
+                          <div className="min-w-0">
+                            <p className="font-bold truncate">{bn ? role.label_bn : role.label_en}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">
+                              {personName ? `👤 ${personName}` : bn ? '(ব্যক্তি এখনও নির্ধারিত হয়নি)' : '(Unassigned)'}
+                            </p>
+                          </div>
+                        </div>
+                        {isChecked && (
+                          <Badge variant="outline" className="bg-emerald-500/20 text-emerald-700 border-emerald-400 text-[10px] px-1.5 py-0 shrink-0">
+                            {bn ? 'আদায়কারী' : 'Collector'}
+                          </Badge>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Section 2: Additional Staff Members */}
+              <div className="rounded-xl border bg-muted/20 p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <UserCheck className="w-4 h-4 text-emerald-600" />
+                    <span>{bn ? 'অতিরিক্ত শিক্ষক ও স্টাফ সদস্য:' : 'Additional Staff Members:'}</span>
+                  </h4>
+                  <span className="text-[11px] text-muted-foreground">
+                    {collectorDraft.staff_ids.length} {bn ? 'জন নির্বাচিত' : 'selected'}
+                  </span>
+                </div>
+
+                {/* Staff selector dropdown to add */}
+                <Select onValueChange={handleAddStaffToDraft} value="">
+                  <SelectTrigger className="bg-background text-xs h-8">
+                    <SelectValue placeholder={bn ? '➕ স্টাফ বা শিক্ষক যোগ করুন...' : '➕ Add staff/teacher...'} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-56">
+                    {availableStaffToAdd.map((st: any) => (
+                      <SelectItem key={st.id} value={st.id} className="text-xs">
+                        {st.name_bn || st.name_en} {st.designation ? `(${st.designation})` : ''}
+                      </SelectItem>
+                    ))}
+                    {availableStaffToAdd.length === 0 && (
+                      <div className="p-2 text-xs text-muted-foreground text-center">
+                        {bn ? 'কোনো নতুন স্টাফ বাকি নেই' : 'No more staff available'}
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
+
+                {/* Selected staff chips */}
+                <div className="flex flex-wrap gap-1.5 min-h-[40px] max-h-40 overflow-y-auto p-1">
+                  {collectorDraft.staff_ids.map((sId) => {
+                    const st = personnel.find((p) => p.id === sId);
+                    if (!st) return null;
+                    return (
+                      <Badge
+                        key={sId}
+                        variant="secondary"
+                        className="bg-background border text-xs gap-1.5 pr-1 py-1 font-medium"
+                      >
+                        <span>{st.name_bn || st.name_en}</span>
+                        {st.designation && <span className="text-[10px] text-muted-foreground">({st.designation})</span>}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveStaffFromDraft(sId);
+                          }}
+                          className="hover:bg-destructive/10 hover:text-destructive rounded-full p-0.5 text-muted-foreground"
+                        >
+                          <XCircle className="w-3.5 h-3.5" />
+                        </button>
+                      </Badge>
+                    );
+                  })}
+                  {collectorDraft.staff_ids.length === 0 && (
+                    <p className="text-[11px] text-muted-foreground italic py-1">
+                      {bn ? 'অতিরিক্ত কোনো স্টাফ নির্বাচন করা হয়নি (শুধু উপরোক্ত কর্তৃপক্ষ ফি গ্রহণ করবেন)' : 'No additional staff added.'}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Save Action */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Sparkles className="w-4 h-4 text-primary shrink-0" />
+                <span>
+                  {bn
+                    ? 'সংরক্ষণ করলে তাৎক্ষণিকভাবে ফি কালেকশন পেজ এবং স্টুডেন্ট প্রোফাইল পেমেন্ট মডালে আপডেট হবে।'
+                    : 'Changes immediately apply to the Fee Collection and Student Payment dialogs.'}
+                </span>
+              </div>
+
+              {canEdit && (
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleSaveCollectorConfig}
+                  disabled={updateAuthorizedCollectors.isPending}
+                  className="btn-primary-gradient text-xs gap-1.5 shadow-sm h-8 shrink-0"
+                >
+                  {updateAuthorizedCollectors.isPending ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Save className="w-3.5 h-3.5" />
+                  )}
+                  {bn ? 'আদায়কারী তালিকা সংরক্ষণ করুন' : 'Save Collectors Setup'}
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        ) : (
+          <CardContent className="p-4 text-xs text-muted-foreground bg-muted/10 border-t flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <p>
+              {bn
+                ? 'ℹ️ বর্তমানে "সকল স্টাফ" মোড সক্রিয় আছে। প্রতিষ্ঠানের সকল সক্রিয় স্টাফ এবং স্বাক্ষরকারী কর্তৃপক্ষ আদায়কারী তালিকায় প্রদর্শিত হবে।'
+                : 'All active staff and signatories are currently allowed to be selected in the fee collector dropdown.'}
+            </p>
+            {canEdit && (
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleSaveCollectorConfig}
+                disabled={updateAuthorizedCollectors.isPending}
+                className="btn-primary-gradient text-xs gap-1.5 h-8 shrink-0"
+              >
+                {updateAuthorizedCollectors.isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Save className="w-3.5 h-3.5" />
+                )}
+                {bn ? 'সংরক্ষণ করুন' : 'Save'}
+              </Button>
+            )}
+          </CardContent>
+        )}
+      </Card>
+
       {/* Role Cards Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {allRoles.map((roleDef) => {
@@ -456,6 +767,19 @@ export default function SignatoryAuthoritiesTab({ canEdit = true }: SignatoryAut
                       </span>
                     )}
                   </div>
+                </div>
+
+                {/* Fee Collector quick toggle for this role */}
+                <div className="mt-2.5 pt-2 border-t border-border/50 flex items-center justify-between bg-muted/20 px-2.5 py-1.5 rounded-lg">
+                  <div className="flex items-center gap-1.5 text-xs text-foreground font-medium">
+                    <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>{bn ? 'ফি আদায়কারী ড্রপডাউনে অন্তর্ভুক্ত' : 'Include in Fee Collector dropdown'}</span>
+                  </div>
+                  <Checkbox
+                    checked={collectorDraft.role_keys.includes(roleDef.key)}
+                    disabled={!canEdit || updateAuthorizedCollectors.isPending}
+                    onCheckedChange={() => handleToggleRoleInDraftAndSave(roleDef.key)}
+                  />
                 </div>
               </CardHeader>
 
