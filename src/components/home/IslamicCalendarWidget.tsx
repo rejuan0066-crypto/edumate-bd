@@ -261,7 +261,7 @@ const IslamicCalendarWidget = () => {
       <div className="bg-gradient-to-r from-primary to-primary/80 p-3 text-primary-foreground text-center">
         <div className="flex items-center justify-center gap-1.5 mb-1">
           <Clock className="w-3.5 h-3.5" />
-          <span className="text-[10px] uppercase tracking-wider opacity-80">{dayName}</span>
+          <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-white/95">{dayName}</span>
           <TooltipProvider delayDuration={150}>
             <Tooltip>
               <TooltipTrigger asChild>

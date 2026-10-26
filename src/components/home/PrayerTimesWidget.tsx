@@ -441,12 +441,12 @@ const PrayerTimesWidget = () => {
           <span>{bn ? 'অবস্থান নির্বাচন' : 'Select Location'}</span>
         </div>
         <Select value={effectiveCountry} onValueChange={(v) => { setCountry(v); if (v !== 'BD') { setDivision(''); setCity(''); } else { setDivision(config.default_division); setCity(config.default_city); } }}>
-          <SelectTrigger className="h-7 text-xs">
+          <SelectTrigger className="h-9 text-xs sm:text-sm font-medium">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {COUNTRIES.map(c => (
-              <SelectItem key={c.code} value={c.code} className="text-xs">{bn ? c.bn : c.en}</SelectItem>
+              <SelectItem key={c.code} value={c.code} className="text-xs sm:text-sm">{bn ? c.bn : c.en}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -454,29 +454,29 @@ const PrayerTimesWidget = () => {
           <>
             <div className="grid grid-cols-2 gap-2">
               <Select value={effectiveDivision} onValueChange={(v) => { setDivision(v); setCity(BD_DIVISIONS[v].cities[0].en); setUpazila(''); }}>
-                <SelectTrigger className="h-7 text-xs"><SelectValue placeholder={bn ? 'বিভাগ' : 'Division'} /></SelectTrigger>
+                <SelectTrigger className="h-9 text-xs sm:text-sm font-medium"><SelectValue placeholder={bn ? 'বিভাগ' : 'Division'} /></SelectTrigger>
                 <SelectContent>
                   {Object.entries(BD_DIVISIONS).map(([k, v]) => (
-                    <SelectItem key={k} value={k} className="text-xs">{bn ? v.bn : v.en}</SelectItem>
+                    <SelectItem key={k} value={k} className="text-xs sm:text-sm">{bn ? v.bn : v.en}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <Select value={effectiveCity} onValueChange={v => { setCity(v); setUpazila(''); }}>
-                <SelectTrigger className="h-7 text-xs"><SelectValue placeholder={bn ? 'জেলা' : 'District'} /></SelectTrigger>
+                <SelectTrigger className="h-9 text-xs sm:text-sm font-medium"><SelectValue placeholder={bn ? 'জেলা' : 'District'} /></SelectTrigger>
                 <SelectContent>
                   {effectiveDivision && BD_DIVISIONS[effectiveDivision]?.cities.map(c => (
-                    <SelectItem key={c.en} value={c.en} className="text-xs">{bn ? c.bn : c.en}</SelectItem>
+                    <SelectItem key={c.en} value={c.en} className="text-xs sm:text-sm">{bn ? c.bn : c.en}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             {cityObj?.upazilas && cityObj.upazilas.length > 0 && (
               <Select value={upazila || '__district__'} onValueChange={v => setUpazila(v === '__district__' ? '' : v)}>
-                <SelectTrigger className="h-7 text-xs"><SelectValue placeholder={bn ? 'উপজেলা' : 'Upazila'} /></SelectTrigger>
+                <SelectTrigger className="h-9 text-xs sm:text-sm font-medium"><SelectValue placeholder={bn ? 'উপজেলা' : 'Upazila'} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__district__" className="text-xs">{bn ? `— সদর (${cityObj.bn}) —` : `— District HQ (${cityObj.en}) —`}</SelectItem>
+                  <SelectItem value="__district__" className="text-xs sm:text-sm">{bn ? `— সদর (${cityObj.bn}) —` : `— District HQ (${cityObj.en}) —`}</SelectItem>
                   {cityObj.upazilas.map(u => (
-                    <SelectItem key={u.en} value={u.en} className="text-xs">{bn ? u.bn : u.en}</SelectItem>
+                    <SelectItem key={u.en} value={u.en} className="text-xs sm:text-sm">{bn ? u.bn : u.en}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -485,27 +485,27 @@ const PrayerTimesWidget = () => {
         )}
         <div className="grid grid-cols-2 gap-2">
           <Select value={effectiveTimeFormat} onValueChange={(value: '24h' | '12h') => setTimeFormat(value)}>
-            <SelectTrigger className="h-7 text-xs">
+            <SelectTrigger className="h-9 text-xs sm:text-sm font-medium">
               <SelectValue placeholder={bn ? 'টাইম ফরমেট' : 'Time format'} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="24h" className="text-xs">24 Hour</SelectItem>
-              <SelectItem value="12h" className="text-xs">12 Hour (AM/PM)</SelectItem>
+              <SelectItem value="24h" className="text-xs sm:text-sm">24 Hour</SelectItem>
+              <SelectItem value="12h" className="text-xs sm:text-sm">12 Hour (AM/PM)</SelectItem>
             </SelectContent>
           </Select>
           <Select value={String(effectiveMethod)} onValueChange={(v) => setMethodOverride(Number(v))}>
-            <SelectTrigger className="h-7 text-xs">
+            <SelectTrigger className="h-9 text-xs sm:text-sm font-medium">
               <SelectValue placeholder={bn ? 'হিসাব পদ্ধতি' : 'Method'} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="1" className="text-xs">{bn ? 'করাচী (হানাফী)' : 'Karachi (Hanafi)'}</SelectItem>
-              <SelectItem value="2" className="text-xs">{bn ? 'ISNA (উত্তর আমেরিকা)' : 'ISNA (N. America)'}</SelectItem>
-              <SelectItem value="3" className="text-xs">{bn ? 'বিশ্ব মুসলিম লীগ' : 'Muslim World League'}</SelectItem>
-              <SelectItem value="4" className="text-xs">{bn ? 'উম্মুল কুরা মক্কা' : 'Umm al-Qura, Makkah'}</SelectItem>
-              <SelectItem value="5" className="text-xs">{bn ? 'মিশর' : 'Egyptian'}</SelectItem>
-              <SelectItem value="8" className="text-xs">{bn ? 'গালফ অঞ্চল' : 'Gulf Region'}</SelectItem>
-              <SelectItem value="13" className="text-xs">{bn ? 'তুরস্ক (Diyanet)' : 'Diyanet (Turkey)'}</SelectItem>
-              <SelectItem value="15" className="text-xs">{bn ? 'মুনলাইটিং সাইটিং কাউন্সিল' : 'Moonsighting Committee'}</SelectItem>
+              <SelectItem value="1" className="text-xs sm:text-sm">{bn ? 'করাচী (হানাফী)' : 'Karachi (Hanafi)'}</SelectItem>
+              <SelectItem value="2" className="text-xs sm:text-sm">{bn ? 'ISNA (উত্তর আমেরিকা)' : 'ISNA (N. America)'}</SelectItem>
+              <SelectItem value="3" className="text-xs sm:text-sm">{bn ? 'বিশ্ব মুসলিম লীগ' : 'Muslim World League'}</SelectItem>
+              <SelectItem value="4" className="text-xs sm:text-sm">{bn ? 'উম্মুল কুরা মক্কা' : 'Umm al-Qura, Makkah'}</SelectItem>
+              <SelectItem value="5" className="text-xs sm:text-sm">{bn ? 'মিশর' : 'Egyptian'}</SelectItem>
+              <SelectItem value="8" className="text-xs sm:text-sm">{bn ? 'গালফ অঞ্চল' : 'Gulf Region'}</SelectItem>
+              <SelectItem value="13" className="text-xs sm:text-sm">{bn ? 'তুরস্ক (Diyanet)' : 'Diyanet (Turkey)'}</SelectItem>
+              <SelectItem value="15" className="text-xs sm:text-sm">{bn ? 'মুনলাইটিং সাইটিং কাউন্সিল' : 'Moonsighting Committee'}</SelectItem>
             </SelectContent>
           </Select>
         </div>
