@@ -172,8 +172,13 @@ const StudentProfileModal = ({
   const { data: feePayments = [], isLoading: feeLoading } = useQuery({
     queryKey: ['student-fee-payments', student.id],
     queryFn: async () => {
-      const { data } = await supabase.from('fee_payments').select('*, fee_types(name, name_bn, amount)').eq('student_id', student.id).order('created_at', { ascending: false });
-      return data || [];
+      const { data } = await supabase
+        .from('fee_payments')
+        .select('*, fee_types(name, name_bn, amount)')
+        .eq('student_id', student.id)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false });
+      return (data || []).filter((p: any) => p.status !== 'unpaid');
     },
   });
 
@@ -792,6 +797,54 @@ const StudentProfileModal = ({
       setIsPaying(false);
     }
   };
+
+  const deletePaymentMutation = useMutation({
+    mutationFn: async (paymentId: string) => {
+      const { error } = await supabase.from('fee_payments').delete().eq('id', paymentId);
+      if (error) {
+        const { error: updErr } = await supabase.from('fee_payments').update({
+          status: 'unpaid',
+          paid_amount: 0,
+          deleted_at: new Date().toISOString(),
+        }).eq('id', paymentId);
+        if (updErr) throw updErr;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['student-fee-payments', student.id] });
+      queryClient.invalidateQueries({ queryKey: ['student-applicable-fee-types'] });
+      queryClient.invalidateQueries({ queryKey: ['fee_payments'] });
+      queryClient.invalidateQueries({ queryKey: ['student_fee_payments_status'] });
+      queryClient.invalidateQueries({ queryKey: ['dues-fee-payments'] });
+      toast.success(bn ? 'পেমেন্ট আনপেইড করা হয়েছে ও পুনরায় বকেয়া হিসেবে ফেরত এসেছে' : 'Payment marked as unpaid and restored to dues');
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteAllPaymentsMutation = useMutation({
+    mutationFn: async () => {
+      const ids = feePayments.map((p: any) => p.id);
+      if (ids.length === 0) return;
+      const { error } = await supabase.from('fee_payments').delete().in('id', ids);
+      if (error) {
+        const { error: updErr } = await supabase.from('fee_payments').update({
+          status: 'unpaid',
+          paid_amount: 0,
+          deleted_at: new Date().toISOString(),
+        }).in('id', ids);
+        if (updErr) throw updErr;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['student-fee-payments', student.id] });
+      queryClient.invalidateQueries({ queryKey: ['student-applicable-fee-types'] });
+      queryClient.invalidateQueries({ queryKey: ['fee_payments'] });
+      queryClient.invalidateQueries({ queryKey: ['student_fee_payments_status'] });
+      queryClient.invalidateQueries({ queryKey: ['dues-fee-payments'] });
+      toast.success(bn ? 'সকল পেমেন্ট আনপেইড করা হয়েছে ও বকেয়ায় ফিরে এসেছে' : 'All payments marked as unpaid and restored to dues');
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
 
   const addWaiverMutation = useMutation({
     mutationFn: async () => {
@@ -1524,17 +1577,54 @@ const StudentProfileModal = ({
               ) : feePayments.length === 0 ? (
                 <p className="text-xs text-muted-foreground/50 text-center py-4">{bn ? 'কোনো ফি পেমেন্ট রেকর্ড নেই' : 'No payment records'}</p>
               ) : (
-                <div className="space-y-2 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-1 scrollbar-thin">
+                  {canDeleteItem && feePayments.some((p: any) => p.status === 'paid' || p.status === 'waived') && (
+                    <div className="flex justify-end pb-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          if (confirm(bn ? 'আপনি কি সমস্ত পরিশোধিত রেকর্ড আনপেইড/মুছে ফেলতে চান? সমস্ত ফি পুনরায় বকেয়া তালিকায় ফিরে যাবে।' : 'Reset and mark all payments unpaid? All fees will return to dues.')) {
+                            deleteAllPaymentsMutation.mutate();
+                          }
+                        }}
+                        disabled={deleteAllPaymentsMutation.isPending}
+                        className="h-6 text-[10px] text-destructive border-destructive/20 hover:bg-destructive/10 rounded-md font-bold"
+                      >
+                        <Trash2 className="w-3 h-3 mr-1" />
+                        {bn ? 'সকল পেমেন্ট আনপেইড করুন' : 'Unpay All'}
+                      </Button>
+                    </div>
+                  )}
                   {feePayments.map((p: any) => (
                     <div key={p.id} className="flex items-center justify-between p-2.5 rounded-xl bg-muted/20 border border-border/15 hover:bg-muted/30 transition-colors">
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm truncate">{bn ? (p.fee_types?.name_bn || p.fee_types?.name) : p.fee_types?.name || '-'}</p>
                         <p className="text-[10px] text-muted-foreground/60">
                           ৳{(p.paid_amount || p.amount || 0).toLocaleString()}
+                          {p.month && ` • ${p.month} ${p.year || ''}`}
                           {p.receipt_number && <> • {bn ? 'রসিদ: ' : '#'}{p.receipt_number}</>}
                         </p>
                       </div>
-                      <div className="ml-2 shrink-0">{getFeeStatusBadge(p.status)}</div>
+                      <div className="ml-2 shrink-0 flex items-center gap-1.5">
+                        {getFeeStatusBadge(p.status)}
+                        {canDeleteItem && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              if (confirm(bn ? 'এই পেমেন্টটি আনপেইড করতে চান? এটি পুনরায় বকেয়া হবে।' : 'Mark this payment unpaid? It will return to dues.')) {
+                                deletePaymentMutation.mutate(p.id);
+                              }
+                            }}
+                            disabled={deletePaymentMutation.isPending}
+                            className="h-7 w-7 text-destructive hover:bg-destructive/10 rounded-full"
+                            title={bn ? 'আনপেইড করুন' : 'Mark Unpaid'}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
