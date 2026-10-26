@@ -12,8 +12,9 @@ import {
   BadgePercent, FileText, Pencil, CheckCircle, XCircle, Clock, Loader2,
   Plus, Trash2, GraduationCap, Users, Home, CreditCard, ClipboardList,
   Fingerprint, School, Building2, Library, CalendarCheck, BarChart3, Award, TrendingUp,
-  Printer, Eye
+  Printer, Eye, AlertCircle, CheckCircle2, ArrowRight
 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 import ProfileInfoItem from './ProfileInfoItem';
 import ProfileSectionCard from './ProfileSectionCard';
 import DocumentPreviewModal from '@/components/DocumentPreviewModal';
@@ -98,6 +99,27 @@ const StudentProfileModal = ({
   const [waiverForm, setWaiverForm] = useState({ fee_type_id: '', waiver_amount: '', reason: '' });
   const [duesSessionId, setDuesSessionId] = useState<string>('');
   const { data: institution } = useInstitutionInfo();
+  const { user } = useAuth();
+
+  // Payment states for quick fee payment
+  const [payDialogOpen, setPayDialogOpen] = useState(false);
+  const [payingItems, setPayingItems] = useState<any[]>([]);
+  const [payAmount, setPayAmount] = useState<string>('');
+  const [payMethod, setPayMethod] = useState<string>('cash');
+  const [payDate, setPayDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [payRemarks, setPayRemarks] = useState<string>('');
+  const [isPaying, setIsPaying] = useState(false);
+
+  const { data: currentProfile } = useQuery({
+    queryKey: ['current-profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+  const collectorName = currentProfile?.full_name || user?.user_metadata?.full_name || user?.email || 'Admin';
 
   const handlePrintProfile = () => {
     printStudentProfile({
@@ -255,6 +277,21 @@ const StudentProfileModal = ({
 
     let monthlyDue = 0;
     let monthlyPaid = 0;
+    const dueList: Array<{
+      id: string;
+      fee_type_id: string;
+      name: string;
+      name_bn: string;
+      category: string;
+      categoryLabel: string;
+      month?: string;
+      monthLabel?: string;
+      year: number;
+      originalAmount: number;
+      dueAmount: number;
+      waiverPercent: number;
+      isMonthly: boolean;
+    }> = [];
 
     monthsTimeline.forEach(m => {
       monthlyFeeTypes.forEach((ft: any) => {
@@ -265,13 +302,28 @@ const StudentProfileModal = ({
         const isFreeMonthly = student.is_free && ft.fee_category === 'monthly';
         const waiver = studentWaivers.find((w: any) => w.fee_type_id === ft.id);
         const waiverPct = isFreeMonthly ? 100 : (waiver?.waiver_percent || 0);
-        const net = ft.amount * (1 - waiverPct / 100);
+        const net = Math.round(ft.amount * (1 - waiverPct / 100));
 
         const isPaid = paidLookup.has(`${m.name}|${m.year}|${ft.id}`);
         if (isPaid) {
           monthlyPaid += net;
-        } else if (waiverPct < 100) {
+        } else if (waiverPct < 100 && net > 0) {
           monthlyDue += net;
+          dueList.push({
+            id: `monthly-${ft.id}-${m.name}-${m.year}`,
+            fee_type_id: ft.id,
+            name: ft.name,
+            name_bn: ft.name_bn,
+            category: ft.fee_category,
+            categoryLabel: ft.fee_category === 'monthly' ? (bn ? 'মাসিক ফি' : 'Monthly Fee') : ft.fee_category,
+            month: m.name,
+            monthLabel: m.label,
+            year: m.year,
+            originalAmount: ft.amount,
+            dueAmount: net,
+            waiverPercent: waiverPct,
+            isMonthly: true,
+          });
         }
       });
     });
@@ -294,8 +346,22 @@ const StudentProfileModal = ({
 
       oneTimePaid += totalPaidForThis;
       const remaining = Math.max(0, netAmount - totalPaidForThis);
-      if (waiverPercent < 100) {
+      if (waiverPercent < 100 && remaining > 0) {
         oneTimeDue += remaining;
+        const categoryLabel = ft.fee_category === 'admission' ? (bn ? 'ভর্তি ফি' : 'Admission Fee') : ft.fee_category === 'exam' ? (bn ? 'পরীক্ষা ফি' : 'Exam Fee') : (bn ? 'অন্যান্য ফি' : 'Other Fee');
+        dueList.push({
+          id: `onetime-${ft.id}`,
+          fee_type_id: ft.id,
+          name: ft.name,
+          name_bn: ft.name_bn,
+          category: ft.fee_category,
+          categoryLabel,
+          year: session?.start_date ? new Date(session.start_date).getFullYear() : new Date().getFullYear(),
+          originalAmount: ft.amount,
+          dueAmount: remaining,
+          waiverPercent: waiverPercent,
+          isMonthly: false,
+        });
       }
     });
 
@@ -313,6 +379,7 @@ const StudentProfileModal = ({
       oneTimePaid,
       totalDue,
       totalPaid,
+      dueList,
       paidLookup,
       studentWaivers,
     };
@@ -320,6 +387,191 @@ const StudentProfileModal = ({
 
   const totalPaid = sessionFinancials.totalPaid;
   const totalDue = sessionFinancials.totalDue;
+
+  // Handlers for quick payment
+  const handleOpenPaySingle = (item: any) => {
+    setPayingItems([item]);
+    setPayAmount(String(item.dueAmount));
+    setPayMethod('cash');
+    setPayDate(new Date().toISOString().split('T')[0]);
+    setPayRemarks('');
+    setPayDialogOpen(true);
+  };
+
+  const handleOpenPayAll = () => {
+    if (sessionFinancials.dueList.length === 0) return;
+    setPayingItems(sessionFinancials.dueList);
+    setPayAmount(String(sessionFinancials.totalDue));
+    setPayMethod('cash');
+    setPayDate(new Date().toISOString().split('T')[0]);
+    setPayRemarks('');
+    setPayDialogOpen(true);
+  };
+
+  const handleOpenPayFromMatrix = (ft: any, m: any) => {
+    const isFreeMonthly = student.is_free && ft.fee_category === 'monthly';
+    const waiver = sessionFinancials.studentWaivers.find((w: any) => w.fee_type_id === ft.id);
+    const waiverPct = isFreeMonthly ? 100 : (waiver?.waiver_percent || 0);
+    const net = Math.round(ft.amount * (1 - waiverPct / 100));
+
+    handleOpenPaySingle({
+      id: `monthly-${ft.id}-${m.name}-${m.year}`,
+      fee_type_id: ft.id,
+      name: ft.name,
+      name_bn: ft.name_bn,
+      category: ft.fee_category,
+      categoryLabel: bn ? 'মাসিক ফি' : 'Monthly Fee',
+      month: m.name,
+      monthLabel: m.label,
+      year: m.year,
+      originalAmount: ft.amount,
+      dueAmount: net,
+      waiverPercent: waiverPct,
+      isMonthly: true,
+    });
+  };
+
+  const handleOpenPayFromFeeType = (ft: any, remaining: number) => {
+    const isMonthly = ft.payment_frequency === 'monthly';
+    if (isMonthly) {
+      const pendingMonth = sessionFinancials.dueList.find((d: any) => d.fee_type_id === ft.id);
+      if (pendingMonth) {
+        handleOpenPaySingle(pendingMonth);
+      } else {
+        handleOpenPayAll();
+      }
+    } else {
+      const waiver = sessionFinancials.studentWaivers.find((w: any) => w.fee_type_id === ft.id);
+      const categoryLabel = ft.fee_category === 'admission' ? (bn ? 'ভর্তি ফি' : 'Admission Fee') : ft.fee_category === 'exam' ? (bn ? 'পরীক্ষা ফি' : 'Exam Fee') : (bn ? 'অন্যান্য ফি' : 'Other Fee');
+      handleOpenPaySingle({
+        id: `onetime-${ft.id}`,
+        fee_type_id: ft.id,
+        name: ft.name,
+        name_bn: ft.name_bn,
+        category: ft.fee_category,
+        categoryLabel,
+        year: sessionFinancials.session?.start_date ? new Date(sessionFinancials.session.start_date).getFullYear() : new Date().getFullYear(),
+        originalAmount: ft.amount,
+        dueAmount: remaining,
+        waiverPercent: waiver?.waiver_percent || 0,
+        isMonthly: false,
+      });
+    }
+  };
+
+  const executePayment = async () => {
+    if (payingItems.length === 0) return;
+    const enteredAmount = parseFloat(payAmount);
+    if (isNaN(enteredAmount) || enteredAmount <= 0) {
+      toast.error(bn ? 'সঠিক পরিশোধের পরিমাণ লিখুন' : 'Enter a valid payment amount');
+      return;
+    }
+
+    setIsPaying(true);
+    try {
+      let serialNumber: string | null = null;
+      try {
+        const { data: sNum } = await supabase.rpc('get_next_receipt_serial');
+        if (sNum) serialNumber = sNum;
+      } catch (e) {
+        console.warn('Receipt serial generation fallback:', e);
+      }
+      if (!serialNumber) {
+        serialNumber = `REC-${Date.now().toString().slice(-6)}`;
+      }
+
+      const isoPaidAt = payDate ? new Date(payDate).toISOString() : new Date().toISOString();
+
+      if (payingItems.length === 1) {
+        const item = payingItems[0];
+        const record = {
+          student_id: student.id,
+          fee_type_id: item.fee_type_id,
+          amount: item.originalAmount,
+          paid_amount: enteredAmount,
+          month: item.isMonthly ? item.month : null,
+          year: item.year || new Date().getFullYear(),
+          status: 'paid',
+          paid_at: isoPaidAt,
+          receipt_number: serialNumber,
+          collected_by: collectorName,
+          approved_by: collectorName,
+        };
+        const { error: feeErr } = await supabase.from('fee_payments').insert(record);
+        if (feeErr) throw feeErr;
+
+        try {
+          await supabase.from('payments').insert({
+            student_id: student.id,
+            fee_type_id: item.fee_type_id,
+            amount: enteredAmount,
+            payment_method: payMethod,
+            month: item.isMonthly ? item.month : null,
+            year: item.year || new Date().getFullYear(),
+            status: 'completed',
+            receipt_number: serialNumber,
+            collected_by: collectorName,
+            notes: payRemarks || `সরাসরি পরিশোধ (${payMethod})`,
+          } as any);
+        } catch (e) {
+          console.warn('Optional payments table insert:', e);
+        }
+      } else {
+        const totalTarget = payingItems.reduce((s: number, itm: any) => s + itm.dueAmount, 0);
+        const ratio = totalTarget > 0 ? enteredAmount / totalTarget : 1;
+
+        const records = payingItems.map((itm: any) => ({
+          student_id: student.id,
+          fee_type_id: itm.fee_type_id,
+          amount: itm.originalAmount,
+          paid_amount: Math.round(itm.dueAmount * ratio),
+          month: itm.isMonthly ? itm.month : null,
+          year: itm.year || new Date().getFullYear(),
+          status: 'paid',
+          paid_at: isoPaidAt,
+          receipt_number: serialNumber,
+          collected_by: collectorName,
+          approved_by: collectorName,
+        }));
+
+        const { error: feeErr } = await supabase.from('fee_payments').insert(records);
+        if (feeErr) throw feeErr;
+
+        try {
+          await supabase.from('payments').insert({
+            student_id: student.id,
+            fee_type_id: payingItems[0].fee_type_id,
+            amount: enteredAmount,
+            payment_method: payMethod,
+            year: new Date().getFullYear(),
+            status: 'completed',
+            receipt_number: serialNumber,
+            collected_by: collectorName,
+            notes: payRemarks || `একসাথে সকল বকেয়া পরিশোধ (${payingItems.length} টি আইটেম, ${payMethod})`,
+          } as any);
+        } catch (e) {
+          console.warn('Optional payments table insert:', e);
+        }
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['student-fee-payments', student.id] });
+      queryClient.invalidateQueries({ queryKey: ['student-applicable-fee-types'] });
+      queryClient.invalidateQueries({ queryKey: ['fee_payments'] });
+      queryClient.invalidateQueries({ queryKey: ['student_fee_payments_status'] });
+      queryClient.invalidateQueries({ queryKey: ['dues-fee-payments'] });
+
+      toast.success(
+        bn
+          ? `৳${formatDigits(enteredAmount.toLocaleString(), true)} ফি সফলভাবে পরিশোধ হয়েছে (রসিদ নং: ${serialNumber})`
+          : `৳${enteredAmount.toLocaleString()} fee paid successfully (Receipt: ${serialNumber})`
+      );
+      setPayDialogOpen(false);
+    } catch (err: any) {
+      toast.error(err.message || (bn ? 'পরিশোধ সম্পন্ন করা সম্ভব হয়নি' : 'Failed to complete payment'));
+    } finally {
+      setIsPaying(false);
+    }
+  };
 
   const addWaiverMutation = useMutation({
     mutationFn: async () => {
@@ -609,6 +861,126 @@ const StudentProfileModal = ({
             </div>
           </div>
 
+          {/* ═══ 1. বকেয়া ফি তালিকা ও সরাসরি পরিশোধ (Unified Dues & Quick Pay) ═══ */}
+          <ProfileSectionCard
+            title={bn ? 'বকেয়া ফি তালিকা ও সরাসরি পরিশোধ' : 'Outstanding Dues & Direct Payment'}
+            icon={AlertCircle}
+          >
+            <div className="col-span-full space-y-3">
+              {/* Banner: Total Due & Pay All */}
+              <div className={cn(
+                "rounded-2xl p-4 border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all",
+                sessionFinancials.totalDue > 0
+                  ? "bg-gradient-to-r from-rose-500/10 via-amber-500/5 to-rose-500/5 border-rose-500/20"
+                  : "bg-gradient-to-r from-emerald-500/10 to-teal-500/5 border-emerald-500/20"
+              )}>
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-xs",
+                    sessionFinancials.totalDue > 0 ? "bg-rose-500/15 text-rose-600" : "bg-emerald-500/15 text-emerald-600"
+                  )}>
+                    {sessionFinancials.totalDue > 0 ? <AlertCircle className="w-6 h-6 animate-pulse" /> : <CheckCircle2 className="w-6 h-6" />}
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                      {bn ? 'মোট অপরিশোধিত বকেয়া' : 'Total Outstanding Dues'}
+                    </p>
+                    <div className="flex items-baseline gap-2 mt-0.5">
+                      <span className={cn(
+                        "text-2xl sm:text-3xl font-black tracking-tight",
+                        sessionFinancials.totalDue > 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"
+                      )}>
+                        ৳{formatDigits(sessionFinancials.totalDue.toLocaleString(), bn)}
+                      </span>
+                      {sessionFinancials.dueList.length > 0 && (
+                        <Badge variant="outline" className="text-[10px] border-rose-300 text-rose-700 dark:border-rose-800 dark:text-rose-300 font-semibold">
+                          {bn ? `${sessionFinancials.dueList.length} টি ফি বকেয়া` : `${sessionFinancials.dueList.length} dues pending`}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {sessionFinancials.dueList.length > 0 ? (
+                  <Button
+                    onClick={handleOpenPayAll}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-10 px-4 rounded-xl shadow-md flex items-center justify-center gap-2 shrink-0 transition-transform active:scale-95"
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    <span>{bn ? `সকল বকেয়া একসাথে পরিশোধ করুন (৳${formatDigits(sessionFinancials.totalDue.toLocaleString(), bn)})` : `Pay All Dues (৳${sessionFinancials.totalDue.toLocaleString()})`}</span>
+                  </Button>
+                ) : (
+                  <Badge className="bg-emerald-600 text-white px-3 py-1 text-xs self-start sm:self-center font-bold">
+                    {bn ? '✓ সমস্ত ফি পরিশোধিত' : '✓ All Fees Paid'}
+                  </Badge>
+                )}
+              </div>
+
+              {/* Itemized dues list */}
+              {sessionFinancials.dueList.length === 0 ? (
+                <div className="text-center py-6 border border-dashed border-emerald-500/30 rounded-2xl bg-emerald-500/5">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto mb-1.5 opacity-80" />
+                  <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
+                    {bn ? 'আলহামদুলিল্লাহ! এই সেশনে শিক্ষার্থীর কোনো বকেয়া ফি নেই।' : 'No outstanding fees found for this session.'}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {bn ? 'পূর্বের সমস্ত প্রযোজ্য ফি যথাযথভাবে পরিশোধ করা হয়েছে।' : 'All applicable fee obligations have been met.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-72 overflow-y-auto pr-1 scrollbar-thin">
+                  {sessionFinancials.dueList.map((item: any) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between p-3 rounded-xl bg-muted/20 border border-rose-500/15 hover:border-rose-500/30 hover:bg-muted/30 transition-all shadow-2xs"
+                    >
+                      <div className="flex-1 min-w-0 pr-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-sm text-foreground truncate">{bn ? item.name_bn : item.name}</span>
+                          <Badge variant="outline" className="text-[10px] px-2 py-0 border-primary/20 text-primary">
+                            {item.categoryLabel}
+                          </Badge>
+                          {item.monthLabel && (
+                            <Badge className="bg-rose-500/10 text-rose-700 dark:text-rose-300 border-none text-[10px] px-2 py-0 font-medium">
+                              {item.monthLabel}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-1">
+                          {item.waiverPercent > 0 ? (
+                            <span>
+                              {bn ? 'মূল ফি:' : 'Base:'} <span className="line-through">৳{item.originalAmount}</span> • {bn ? 'ছাড়:' : 'Discount:'} {item.waiverPercent}%
+                            </span>
+                          ) : (
+                            <span>{bn ? `মূল ফি: ৳${item.originalAmount}` : `Fee: ৳${item.originalAmount}`}</span>
+                          )}
+                          {item.isMonthly && <span>• {bn ? 'মাসিক বরাদ্দ' : 'Monthly'}</span>}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 shrink-0">
+                        <div className="text-right">
+                          <p className="text-[10px] uppercase font-bold text-rose-600/70">{bn ? 'বকেয়া' : 'Due'}</p>
+                          <p className="text-base font-black text-rose-600 dark:text-rose-400">
+                            ৳{formatDigits(item.dueAmount.toLocaleString(), bn)}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => handleOpenPaySingle(item)}
+                          className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-xs flex items-center gap-1 font-bold active:scale-95 transition-transform"
+                        >
+                          <Banknote className="w-3.5 h-3.5" />
+                          <span>{bn ? 'পরিশোধ করুন' : 'Pay'}</span>
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </ProfileSectionCard>
+
           {/* Session-based Dues Matrix (Month × Fee Type) */}
           <ProfileSectionCard title={bn ? 'সেশন বকেয়া ম্যাট্রিক্স' : 'Session Dues Matrix'} icon={ClipboardList}>
             <div className="col-span-full space-y-3">
@@ -686,7 +1058,16 @@ const StudentProfileModal = ({
                                   {c.kind === 'na' && <span className="text-muted-foreground/30">—</span>}
                                   {c.kind === 'paid' && <span className="text-emerald-600 font-semibold">✓ ৳{c.amount}</span>}
                                   {c.kind === 'waived' && <span className="text-amber-600 text-[10px] font-semibold">{bn ? 'মওকুফ' : 'Waived'}</span>}
-                                  {c.kind === 'due' && <span className="text-rose-600 font-bold">৳{c.amount}</span>}
+                                  {c.kind === 'due' && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenPayFromMatrix(c.ft, m)}
+                                      className="inline-flex items-center gap-1 text-rose-600 hover:text-white hover:bg-rose-600 px-2 py-0.5 rounded text-xs font-bold transition-all border border-rose-300 dark:border-rose-800"
+                                      title={bn ? 'পরিশোধ করতে ক্লিক করুন' : 'Click to pay'}
+                                    >
+                                      ৳{c.amount}
+                                    </button>
+                                  )}
                                 </td>
                               ))}
                               <td className="text-right px-2.5 py-2 font-bold text-rose-700">{rowTotal > 0 ? `৳${rowTotal}` : '—'}</td>
@@ -700,7 +1081,21 @@ const StudentProfileModal = ({
                           <td colSpan={monthlyFeeTypes.length} className="px-2.5 py-2 text-right">
                             <span className="text-emerald-600 font-bold mr-3">{bn ? 'পরিশোধিত' : 'Paid'}: ৳{grandPaid.toLocaleString()}</span>
                           </td>
-                          <td className="text-right px-2.5 py-2 font-black text-rose-700">৳{grandDue.toLocaleString()}</td>
+                          <td className="text-right px-2.5 py-2 font-black text-rose-700">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <span>৳{grandDue.toLocaleString()}</span>
+                              {grandDue > 0 && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={handleOpenPayAll}
+                                  className="h-6 text-[10px] px-2 text-rose-600 border-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md font-bold"
+                                >
+                                  {bn ? 'পরিশোধ' : 'Pay'}
+                                </Button>
+                              )}
+                            </div>
+                          </td>
                         </tr>
                       </tfoot>
                     </table>
@@ -780,11 +1175,29 @@ const StudentProfileModal = ({
                             <>
                               <Badge className="bg-amber-500/10 text-amber-600 rounded-full text-[9px] px-2.5">{bn ? `আংশিক ৳${totalPaidForThis}` : `Partial ৳${totalPaidForThis}`}</Badge>
                               <Badge className="bg-destructive/10 text-destructive rounded-full text-[9px] px-2.5">{bn ? `বকেয়া ৳${remaining}` : `Due ৳${remaining}`}</Badge>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-5 text-[9px] px-2 text-emerald-700 dark:text-emerald-300 border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-full font-bold ml-auto"
+                                onClick={() => handleOpenPayFromFeeType(ft, remaining)}
+                              >
+                                <Banknote className="w-2.5 h-2.5 mr-1" /> {bn ? 'বকেয়া পরিশোধ' : 'Pay Due'}
+                              </Button>
                             </>
                           ) : pendingPayment ? (
                             <Badge className="bg-amber-500/10 text-amber-600 rounded-full text-[9px] px-2.5">{bn ? '⏳ পেন্ডিং' : '⏳ Pending'}</Badge>
                           ) : (
-                            <Badge className="bg-destructive/10 text-destructive rounded-full text-[9px] px-2.5">{bn ? `বকেয়া ৳${netAmount}` : `Due ৳${netAmount}`}</Badge>
+                            <>
+                              <Badge className="bg-destructive/10 text-destructive rounded-full text-[9px] px-2.5">{bn ? `বকেয়া ৳${netAmount}` : `Due ৳${netAmount}`}</Badge>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-5 text-[9px] px-2 text-emerald-700 dark:text-emerald-300 border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-full font-bold ml-auto"
+                                onClick={() => handleOpenPayFromFeeType(ft, netAmount)}
+                              >
+                                <Banknote className="w-2.5 h-2.5 mr-1" /> {bn ? 'বকেয়া পরিশোধ' : 'Pay Due'}
+                              </Button>
+                            </>
                           )}
                         </div>
                       </div>
@@ -1099,6 +1512,123 @@ const StudentProfileModal = ({
             <Button onClick={() => addWaiverMutation.mutate()} disabled={addWaiverMutation.isPending || !waiverForm.fee_type_id} className="btn-primary-gradient">
               {addWaiverMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
               {bn ? 'সেভ' : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ═══════════ DIRECT FEE PAYMENT DIALOG ═══════════ */}
+      <Dialog open={payDialogOpen} onOpenChange={setPayDialogOpen}>
+        <DialogContent className="max-w-md sm:max-w-lg p-5 sm:p-6 rounded-2xl">
+          <DialogHeader className="space-y-1">
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg font-bold">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600">
+                <Banknote className="h-4 w-4" />
+              </div>
+              <span>{bn ? 'সরাসরি ফি পরিশোধ' : 'Direct Fee Payment'}</span>
+            </DialogTitle>
+            <p className="text-xs text-muted-foreground">
+              {student.name_bn || student.name_en} • {resolveClassName(student.class_id)} {student.roll_number ? `• রোল: ${formatDigits(student.roll_number, bn)}` : ''}
+            </p>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2 text-xs">
+            {/* Items being paid */}
+            <div className="rounded-xl border border-border/40 bg-muted/20 p-3 space-y-2">
+              <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground">
+                <span>{bn ? 'পরিশোধিতব্য ফি তালিকা:' : 'Fee Items:'}</span>
+                <span className="text-foreground font-semibold">{bn ? `${payingItems.length} টি আইটেম` : `${payingItems.length} items`}</span>
+              </div>
+              <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin">
+                {payingItems.map((itm: any) => (
+                  <div key={itm.id} className="flex items-center justify-between py-1 border-b border-border/10 last:border-none text-xs">
+                    <div className="min-w-0 pr-2">
+                      <p className="font-semibold truncate">{bn ? itm.name_bn : itm.name}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {itm.monthLabel || itm.categoryLabel}
+                        {itm.waiverPercent > 0 && ` (${bn ? 'ছাড়' : 'Discount'} ${itm.waiverPercent}%)`}
+                      </p>
+                    </div>
+                    <span className="font-bold text-rose-600 shrink-0">৳{formatDigits(itm.dueAmount.toLocaleString(), bn)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Amount input */}
+            <div className="space-y-1.5">
+              <label className="font-bold text-muted-foreground text-[11px]">{bn ? 'পরিশোধের পরিমাণ (টাকা):' : 'Payment Amount (BDT):'} *</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-muted-foreground text-sm">৳</span>
+                <Input
+                  type="number"
+                  value={payAmount}
+                  onChange={(e) => setPayAmount(e.target.value)}
+                  className="pl-7 font-bold text-base h-10 rounded-xl"
+                  placeholder="0"
+                />
+              </div>
+            </div>
+
+            {/* Payment method selector */}
+            <div className="space-y-1.5">
+              <label className="font-bold text-muted-foreground text-[11px]">{bn ? 'পরিশোধের মাধ্যম:' : 'Payment Method:'}</label>
+              <div className="grid grid-cols-5 gap-1.5">
+                {[
+                  { id: 'cash', label: 'ক্যাশ', icon: Banknote },
+                  { id: 'bkash', label: 'বিকাশ', icon: CreditCard },
+                  { id: 'nagad', label: 'নগদ', icon: CreditCard },
+                  { id: 'rocket', label: 'রকেট', icon: CreditCard },
+                  { id: 'bank', label: 'ব্যাংক', icon: Building2 },
+                ].map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setPayMethod(m.id)}
+                    className={cn(
+                      'py-2 px-1 text-center rounded-xl border text-[11px] font-bold transition-all flex flex-col items-center gap-1',
+                      payMethod === m.id
+                        ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 shadow-xs'
+                        : 'border-border/40 hover:bg-muted/30 text-muted-foreground'
+                    )}
+                  >
+                    <m.icon className="w-3.5 h-3.5" />
+                    <span>{m.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Date */}
+            <div className="space-y-1.5">
+              <label className="font-bold text-muted-foreground text-[11px]">{bn ? 'পরিশোধের তারিখ:' : 'Payment Date:'}</label>
+              <Input
+                type="date"
+                value={payDate}
+                onChange={(e) => setPayDate(e.target.value)}
+                className="h-9 rounded-xl text-xs"
+              />
+            </div>
+
+            {/* Remarks */}
+            <div className="space-y-1.5">
+              <label className="font-bold text-muted-foreground text-[11px]">{bn ? 'মন্তব্য বা ট্রানজেকশন আইডি (ঐচ্ছিক):' : 'Remarks / TrxID (Optional):'}</label>
+              <Input
+                value={payRemarks}
+                onChange={(e) => setPayRemarks(e.target.value)}
+                placeholder={bn ? 'উদা: ক্যাশ জমা নেওয়া হয়েছে / TxID: 9X7...' : 'e.g. Cash collected / TxID...'}
+                className="h-9 rounded-xl text-xs"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0 pt-2">
+            <Button variant="outline" size="sm" onClick={() => setPayDialogOpen(false)} disabled={isPaying} className="rounded-xl">
+              {bn ? 'বাতিল' : 'Cancel'}
+            </Button>
+            <Button size="sm" onClick={executePayment} disabled={isPaying} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold">
+              {isPaying ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <CheckCircle2 className="w-4 h-4 mr-1.5" />}
+              {bn ? 'পরিশোধ নিশ্চিত করুন' : 'Confirm Payment'}
             </Button>
           </DialogFooter>
         </DialogContent>
