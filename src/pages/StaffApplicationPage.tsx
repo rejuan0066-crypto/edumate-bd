@@ -120,7 +120,7 @@ const StaffApplicationPage = () => {
     },
   });
 
-  const { data: openDesignationIds = null } = useQuery<string[] | null>({
+  const { data: openDesignationIds = null, isLoading: loadingOpenDesigs } = useQuery<string[] | null>({
     queryKey: ['staff-open-designations'],
     queryFn: async () => {
       const { data } = await supabase
@@ -136,9 +136,33 @@ const StaffApplicationPage = () => {
   });
 
   const filteredDesignationsList = useMemo(() => {
-    if (!openDesignationIds) return designationsList;
-    return designationsList.filter((d: any) => openDesignationIds.includes(d.id));
+    // Exclude system administrative roles that should NEVER be public job applications
+    const publicEligible = designationsList.filter((d: any) => {
+      const nameLower = (d.name || '').toLowerCase();
+      const nameBn = (d.name_bn || '');
+      const isSystemAdminRole = nameLower.includes('super admin') || 
+                                nameLower === 'admin' || 
+                                nameBn.includes('সুপার এডমিন') ||
+                                (d.authority_role && d.authority_role !== 'none');
+      return !isSystemAdminRole;
+    });
+
+    if (openDesignationIds === null) {
+      return publicEligible;
+    }
+    return publicEligible.filter((d: any) => openDesignationIds.includes(d.id));
   }, [designationsList, openDesignationIds]);
+
+  // Reset designation if it becomes disabled/closed while user is viewing
+  useEffect(() => {
+    if (designation && filteredDesignationsList.length > 0) {
+      const exists = filteredDesignationsList.some((d: any) => d.id === designation);
+      if (!exists) {
+        setDesignation('');
+        setDesignationConfirmed(false);
+      }
+    }
+  }, [filteredDesignationsList, designation]);
 
   // Sync mode & designation from URL
   useEffect(() => {
@@ -146,10 +170,13 @@ const StaffApplicationPage = () => {
   }, [urlMode]);
 
   useEffect(() => {
-    if (!urlDesignation) return;
-    setDesignation(urlDesignation);
-    setDesignationConfirmed(true);
-  }, [urlDesignation]);
+    if (!urlDesignation || filteredDesignationsList.length === 0) return;
+    const isAllowed = filteredDesignationsList.some((d: any) => d.id === urlDesignation || d.name_bn === urlDesignation || d.name === urlDesignation);
+    if (isAllowed) {
+      setDesignation(urlDesignation);
+      setDesignationConfirmed(true);
+    }
+  }, [urlDesignation, filteredDesignationsList]);
 
   // Load footer text
   const { data: footerText } = useQuery({
@@ -1373,7 +1400,14 @@ const StaffApplicationPage = () => {
                     </h3>
                   </div>
 
-                  {designationsList.length === 0 ? (
+                  {loadingOpenDesigs ? (
+                    <div className="text-center py-12 border rounded-2xl bg-muted/20">
+                      <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                      <p className="text-xs text-muted-foreground">
+                        {bn ? 'নিয়োগ বিজ্ঞপ্তির পদবি তালিকা লোড হচ্ছে...' : 'Loading open designations...'}
+                      </p>
+                    </div>
+                  ) : filteredDesignationsList.length === 0 ? (
                     <div className="text-center py-12 border rounded-2xl bg-muted/20">
                       <p className="text-sm text-muted-foreground">
                         {bn ? 'বর্তমানে কোনো পদে সচল নিয়োগ বিজ্ঞপ্তি পাওয়া যায়নি।' : 'No active designations available for application.'}
@@ -1381,7 +1415,7 @@ const StaffApplicationPage = () => {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                      {designationsList.map((d: any) => {
+                      {filteredDesignationsList.map((d: any) => {
                         const isSelected = designation === d.id;
                         return (
                           <div
