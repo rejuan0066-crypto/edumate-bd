@@ -18,11 +18,13 @@ const DynamicFavicon = () => {
   useEffect(() => {
     ['cached_favicon_url', 'cached_loader_logo', 'cached_icon_192', 'cached_icon_512'].forEach(k => {
       const v = localStorage.getItem(k);
-      if (v && v.includes('wwhunyzobtuibhvkipwk')) localStorage.removeItem(k);
+      if (v && (v.includes('wwhunyzobtuibhvkipwk') || v.includes('cloudinary.com'))) localStorage.removeItem(k);
     });
 
     const cached = localStorage.getItem(CACHE_KEY);
-    const initial = (cached && !cached.includes('wwhunyzobtuibhvkipwk')) ? cached : '/loader-logo.png';
+    const initial = (cached && !cached.includes('wwhunyzobtuibhvkipwk') && !cached.includes('cloudinary.com'))
+      ? cached
+      : '/loader-logo.png';
     if (!applied) {
       applyFavicon(initial);
       applyAppleTouchIcon(initial);
@@ -96,7 +98,7 @@ const DynamicFavicon = () => {
 let lastAppliedFaviconSrc = '';
 
 function applyFavicon(src: string) {
-  if (!src || src === lastAppliedFaviconSrc) return;
+  if (!src) return;
   lastAppliedFaviconSrc = src;
 
   let link = document.getElementById('dynamic-favicon') as HTMLLinkElement | null;
@@ -111,6 +113,13 @@ function applyFavicon(src: string) {
 
   link.type = mime;
   link.href = src;
+
+  // Also sync any other favicon links in <head>
+  const otherIcons = document.querySelectorAll<HTMLLinkElement>('link[rel*="icon"]:not(#dynamic-favicon)');
+  otherIcons.forEach((el) => {
+    el.href = src;
+    el.type = mime;
+  });
 }
 
 function guessMime(src: string): string {

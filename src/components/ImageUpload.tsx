@@ -119,7 +119,17 @@ const ImageUpload = ({ value, onChange, folder = 'general', label, className = '
       <div className={`relative inline-block ${aspectRatio}`}>
         {value ? (
           <div className="relative group h-full w-full">
-            <img src={value} alt="" className="h-full w-full object-cover rounded-lg border border-border" />
+            <img
+              src={value}
+              alt=""
+              className="h-full w-full object-cover rounded-lg border border-border"
+              onError={(e) => {
+                const t = e.currentTarget;
+                if (!t.src.includes('loader-logo.png')) {
+                  t.src = '/loader-logo.png';
+                }
+              }}
+            />
             <button
               onClick={() => onChange('')}
               className="absolute top-1 right-1 p-1 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"

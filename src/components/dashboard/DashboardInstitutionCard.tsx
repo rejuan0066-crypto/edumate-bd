@@ -145,6 +145,8 @@ const DashboardInstitutionCard = () => {
         { key: 'phone', value: form.phone },
         { key: 'email', value: form.email },
         { key: 'logo_url', value: form.logo_url },
+        { key: 'favicon_url', value: form.logo_url },
+        { key: 'loader_logo_url', value: form.logo_url },
         { key: 'established_year', value: form.established_year },
         ...Object.entries(principalForm).map(([key, value]) => ({ key, value: value as any })),
         ...Object.entries(footerForm).map(([key, value]) => ({ key, value: value as any })),
@@ -492,9 +494,19 @@ const DashboardInstitutionCard = () => {
         </Button>
       )}
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-5 lg:gap-6 pr-10 sm:pr-24">
-        <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
-          {institution?.logo_url ? (
-            <img src={institution.logo_url} alt="Logo" className="w-full h-full object-contain" />
+        <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-white/5 border border-border/40">
+          {displayLogo ? (
+            <img
+              src={displayLogo}
+              alt={displayName || "Logo"}
+              className="w-full h-full object-contain"
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (!target.src.includes('loader-logo.png')) {
+                  target.src = '/loader-logo.png';
+                }
+              }}
+            />
           ) : (
             <div className="w-full h-full rounded-xl bg-primary flex items-center justify-center">
               <GraduationCap className="w-9 h-9 lg:w-12 lg:h-12 text-primary-foreground" />

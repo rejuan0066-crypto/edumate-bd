@@ -1,4 +1,4 @@
-export const FALLBACK_LOGO_URL = 'https://res.cloudinary.com/fjiynfbg/image/upload/v1792938944/edumate-bd/logo/bxgqbyrf36whwyclmm4t.png';
+export const FALLBACK_LOGO_URL = 'https://lwlqmvjdiqpstgbdsmxj.supabase.co/storage/v1/object/public/institution-logos/logos/1792938793636.jpeg';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
@@ -294,9 +294,9 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   email: '',
   registration_number: '',
   established_year: '',
-  logo_url: 'https://res.cloudinary.com/fjiynfbg/image/upload/v1792938944/edumate-bd/logo/bxgqbyrf36whwyclmm4t.png',
-  favicon_url: 'https://res.cloudinary.com/fjiynfbg/image/upload/v1792938944/edumate-bd/logo/bxgqbyrf36whwyclmm4t.png',
-  loader_logo_url: 'https://res.cloudinary.com/fjiynfbg/image/upload/v1792938944/edumate-bd/logo/bxgqbyrf36whwyclmm4t.png',
+  logo_url: FALLBACK_LOGO_URL,
+  favicon_url: FALLBACK_LOGO_URL,
+  loader_logo_url: FALLBACK_LOGO_URL,
   hero_title_bn: '',
   hero_title_en: '',
   hero_subtitle_bn: '',
@@ -457,14 +457,16 @@ const parseSettingsData = (data: any[] | null): WebsiteSettings => {
   return result;
 };
 
-const CACHE_KEY = 'website-settings-cache-v5';
-const CACHE_TIME_KEY = 'website-settings-cache-time-v5';
+const CACHE_KEY = 'website-settings-cache-v6';
+const CACHE_TIME_KEY = 'website-settings-cache-time-v6';
 
 const readCache = (): WebsiteSettings | null => {
   try {
     // Purge legacy caches with stale dead domains
     if (localStorage.getItem('website-settings-cache')) localStorage.removeItem('website-settings-cache');
     if (localStorage.getItem('website-settings-cache-time')) localStorage.removeItem('website-settings-cache-time');
+    if (localStorage.getItem('website-settings-cache-v5')) localStorage.removeItem('website-settings-cache-v5');
+    if (localStorage.getItem('website-settings-cache-time-v5')) localStorage.removeItem('website-settings-cache-time-v5');
     if (localStorage.getItem('institution-info-cache')) localStorage.removeItem('institution-info-cache');
 
     const raw = localStorage.getItem(CACHE_KEY);
