@@ -80,6 +80,7 @@ const StaffApplicationPage = () => {
   const urlDesignation = searchParams.get('designation');
 
   const [pageMode, setPageMode] = useState<'apply' | 'track'>('apply');
+  const [designation, setDesignation] = useState('');
   const [designationConfirmed, setDesignationConfirmed] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
@@ -207,7 +208,6 @@ const StaffApplicationPage = () => {
   const [mobileCode, setMobileCode] = useState('+880');
   const [staffEmail, setStaffEmail] = useState('');
   const [employmentType, setEmploymentType] = useState('');
-  const [designation, setDesignation] = useState('');
   const [residenceType, setResidenceType] = useState('non_residential');
   const [dob, setDob] = useState('');
   const [maritalStatus, setMaritalStatus] = useState('');
