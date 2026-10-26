@@ -37,7 +37,27 @@ export interface ExportExcelParams {
   getMemo: (d: string) => string;
   getRemarks: (d: string) => string;
   formatNum: (n: number) => string;
+  subCategoriesMap?: Record<string, string[]>;
+  getSubCategories?: (catId: string, name?: string, nameBn?: string) => string[];
 }
+
+export const DEFAULT_SUB_CATEGORIES_PRESETS: Record<string, string[]> = {
+  'boarding': ['চাল, ডাল ও কাঁচাবাজার', 'মাছ ও মাংস', 'তেল, মসলা ও রান্নার উপকরণ', 'গ্যাস ও জ্বালানি'],
+  'বডিং': ['চাল, ডাল ও কাঁচাবাজার', 'মাছ ও মাংস', 'তেল, মসলা ও রান্নার উপকরণ', 'গ্যাস ও জ্বালানি'],
+  'বোর্ডিং': ['চাল, ডাল ও কাঁচাবাজার', 'মাছ ও মাংস', 'তেল, মসলা ও রান্নার উপকরণ', 'গ্যাস ও জ্বালানি'],
+  'খাবার': ['চাল, ডাল ও কাঁচাবাজার', 'মাছ ও মাংস', 'তেল, মসলা ও রান্নার উপকরণ', 'গ্যাস ও জ্বালানি'],
+  'খাদ্য': ['চাল, ডাল ও কাঁচাবাজার', 'মাছ ও মাংস', 'তেল, মসলা ও রান্নার উপকরণ', 'গ্যাস ও জ্বালানি'],
+  'academic': ['কিতাব ও পাঠ্যবই', 'পরীক্ষার কাগজ ও প্রশ্নপত্র', 'হোয়াইটবোর্ড মার্কার ও চক', 'পুরস্কার ও শিক্ষামূলক উপকরণ'],
+  'শিক্ষা': ['কিতাব ও পাঠ্যবই', 'পরীক্ষার কাগজ ও প্রশ্নপত্র', 'হোয়াইটবোর্ড মার্কার ও চক', 'পুরস্কার ও শিক্ষামূলক উপকরণ'],
+  'ঘর তৈরি': ['রড ও সিমেন্ট', 'ইট ও বালু', 'রাজমিস্ত্রি ও লেবার খরচ', 'ইলেকট্রিক ও প্লাম্বিং'],
+  'নির্মাণ': ['রড ও সিমেন্ট', 'ইট ও বালু', 'রাজমিস্ত্রি ও লেবার খরচ', 'ইলেকট্রিক ও প্লাম্বিং'],
+  'মেরামত': ['রড ও সিমেন্ট', 'ইট ও বালু', 'রাজমিস্ত্রি ও লেবার খরচ', 'ইলেকট্রিক ও প্লাম্বিং'],
+  'হসপিটাল': ['ওষুধ ও স্যালাইন', 'চিকিৎসা সরঞ্জাম', 'ডাক্তার ফি ও ল্যাব টেস্ট'],
+  'চিকিৎসা': ['ওষুধ ও স্যালাইন', 'চিকিৎসা সরঞ্জাম', 'ডাক্তার ফি ও ল্যাব টেস্ট'],
+  'দাপ্তরিক': ['স্টেশনারি ও খাতা-কলম', 'প্রিন্টিং ও ফটোকপি', 'ইন্টারনেট ও বিল', 'আপ্যায়ন ও মেহমানদারি'],
+  'অফিস': ['স্টেশনারি ও খাতা-কলম', 'প্রিন্টিং ও ফটোকপি', 'ইন্টারনেট ও বিল', 'আপ্যায়ন ও মেহমানদারি'],
+  'মাদরাসা': ['মেরামত ও রক্ষণাবেক্ষণ', 'বিদ্যুৎ ও পানির বিল', 'আপ্যায়ন ও মেহমানদারি'],
+};
 
 // Convert numbers or digits to Bengali if required
 const toBnDigit = (num: any): string => {
@@ -255,22 +275,66 @@ function buildExpenseCategorySheet(
   bn: boolean,
   tabColor: string = '107C41',
   catBaseName?: string,
-  reportPeriod?: string
+  reportPeriod?: string,
+  configuredSubCategories?: string[]
 ) {
-  // Extract all sub-categories present in this category's items
-  const uniqueSubCats: string[] = [];
-  items.forEach(item => {
-    const sub = getSubCategory(item.description);
-    if (sub && !uniqueSubCats.includes(sub)) {
-      uniqueSubCats.push(sub);
+  const baseName = catBaseName || '';
+  const periodStr = reportPeriod ? ` - ${reportPeriod}` : '';
+
+  // 1. Collect candidate sub-categories:
+  const candidateSubs: string[] = [];
+
+  // a) From configured sub-categories passed in
+  if (configuredSubCategories && Array.isArray(configuredSubCategories)) {
+    configuredSubCategories.forEach(s => {
+      const trimmed = s?.trim();
+      if (trimmed && !candidateSubs.includes(trimmed)) candidateSubs.push(trimmed);
+    });
+  }
+
+  // b) Fallback to presets based on baseName
+  if (candidateSubs.length === 0 && baseName) {
+    const combinedCat = baseName.toLowerCase();
+    for (const [key, preset] of Object.entries(DEFAULT_SUB_CATEGORIES_PRESETS)) {
+      if (combinedCat.includes(key.toLowerCase())) {
+        preset.forEach(s => {
+          if (!candidateSubs.includes(s)) candidateSubs.push(s);
+        });
+        break;
+      }
     }
+  }
+
+  // c) Add any explicit sub-categories from items
+  items.forEach(item => {
+    const s = getSubCategory(item.description);
+    if (s && !candidateSubs.includes(s)) candidateSubs.push(s);
   });
 
-  // If there are NO sub-categories in items, render single clean table as before
-  if (uniqueSubCats.length === 0) {
+  // Helper: Match item to a sub-category (explicit tag OR smart keyword matching)
+  const getItemSubCat = (item: ExpenseItem): string => {
+    const explicit = getSubCategory(item.description);
+    if (explicit) return explicit;
+    if (candidateSubs.length === 0) return '';
+
+    const desc = (item.description || '').toLowerCase();
+    for (const sub of candidateSubs) {
+      const words = sub.split(/[,&/।\s]+/).filter(w => w.length > 1 && !['ও', 'এবং', 'and', 'খরচ', 'সামগ্রী', 'উপকরণ', 'অন্যান্য'].includes(w));
+      if (words.some(w => desc.includes(w.toLowerCase()))) {
+        return sub;
+      }
+    }
+    return '';
+  };
+
+  // If there are NO sub-categories at all, render single clean table
+  if (candidateSubs.length === 0) {
     const rows: any[][] = [];
     rows.push([ { v: instName, s: STYLES.sheetTitle }, '', '', '', '', '', '' ]);
-    rows.push([ { v: subTitle, s: STYLES.sheetSubtitle }, '', '', '', '', '', '' ]);
+    const effectiveSubTitle = baseName
+      ? `${bn ? 'হিসাব সংক্ষেপ' : 'Expense Summary'} - ${baseName}${periodStr}`
+      : subTitle;
+    rows.push([ { v: effectiveSubTitle, s: STYLES.sheetSubtitle }, '', '', '', '', '', '' ]);
     rows.push([
       { v: bn ? 'তারিখ' : 'Date', s: STYLES.tableHeader },
       { v: bn ? 'ব্যয়ের বিবরণ' : 'Description', s: STYLES.tableHeader },
@@ -316,7 +380,7 @@ function buildExpenseCategorySheet(
 
     rows.push([
       { v: '', s: STYLES.cellEmpty }, { v: '', s: STYLES.cellEmpty }, { v: '', s: STYLES.cellEmpty },
-      { v: '', s: STYLES.cellEmpty }, { v: totalLabel, s: STYLES.totalLabel },
+      { v: '', s: STYLES.cellEmpty }, { v: `${bn ? 'মোট' : 'Total'} ${baseName || (bn ? 'ব্যয়' : 'Expense')}`, s: STYLES.totalLabel },
       { v: totalAmount, s: bn ? { ...STYLES.totalNumber, numFmt: '[$-bn-BD,100]#,##0' } : STYLES.totalNumber },
       { v: '', s: STYLES.cellEmpty },
     ]);
@@ -336,17 +400,15 @@ function buildExpenseCategorySheet(
   let grandTotal = 0;
 
   // Build list of sections
-  const mainItems = items.filter(i => !getSubCategory(i.description));
+  const mainItems = items.filter(i => !getItemSubCat(i));
   interface TableSection {
     subtitleText: string;
     sectionItems: ExpenseItem[];
     subtotalText: string;
   }
   const sectionsList: TableSection[] = [];
-  const periodStr = reportPeriod ? ` - ${reportPeriod}` : '';
-  const baseName = catBaseName || instName;
 
-  // 1. Unassigned / direct expenses in main category
+  // 1. Direct / unassigned expenses in main category (NO "মেইন" word!)
   if (mainItems.length > 0) {
     sectionsList.push({
       subtitleText: `${bn ? 'হিসাব সংক্ষেপ' : 'Expense Summary'} - ${baseName}${periodStr}`,
@@ -356,10 +418,10 @@ function buildExpenseCategorySheet(
   }
 
   // 2. Each Sub-category section
-  uniqueSubCats.forEach(subName => {
-    const subItems = items.filter(i => getSubCategory(i.description) === subName);
+  candidateSubs.forEach(subName => {
+    const subItems = items.filter(i => getItemSubCat(i) === subName);
     sectionsList.push({
-      subtitleText: `${bn ? 'হিসাব সংক্ষেপ' : 'Expense Summary'} - ${subName}${periodStr}`,
+      subtitleText: `${bn ? 'হিসাব সংক্ষেপ' : 'Expense Summary'} - ${baseName} - ${subName}${periodStr}`,
       sectionItems: subItems,
       subtotalText: `${bn ? 'মোট' : 'Total'} ${subName}`,
     });
@@ -747,7 +809,11 @@ export function exportExpensesMultiTabExcel(params: ExportExcelParams) {
 
       // Tab name e.g. "মাদরাসা - শিক্ষা বিভাগ", "এম.এইচ সেন্টার - হসপিটাল"
       const tabName = sanitizeSheetName(`${shortInst} - ${catName}`, usedSheetNames);
-      const subTitle = `${bn ? 'হিসাব সারসংক্ষেপ' : 'Expense Summary'} - ${params.reportPeriod}`;
+      const subTitle = `${bn ? 'হিসাব সংক্ষেপ' : 'Expense Summary'} - ${catName} - ${params.reportPeriod}`;
+
+      const catSubs = params.getSubCategories
+        ? params.getSubCategories(cat.id, cat.name, cat.name_bn)
+        : (params.subCategoriesMap?.[cat.id] || []);
 
       const ws = buildExpenseCategorySheet(
         instFullName,
@@ -762,7 +828,8 @@ export function exportExpensesMultiTabExcel(params: ExportExcelParams) {
         bn,
         color,
         catName,
-        params.reportPeriod
+        params.reportPeriod,
+        catSubs
       );
 
       XLSX.utils.book_append_sheet(wb, ws, tabName);
@@ -859,7 +926,11 @@ export function exportSingleInstitutionExcel(params: ExportExcelParams & { selec
     const catName = bn ? cat.name_bn || cat.name : cat.name;
 
     const tabName = sanitizeSheetName(`${shortInst} - ${catName}`, usedSheetNames);
-    const subTitle = `${bn ? 'হিসাব সারসংক্ষেপ' : 'Expense Summary'} - ${params.reportPeriod}`;
+    const subTitle = `${bn ? 'হিসাব সংক্ষেপ' : 'Expense Summary'} - ${catName} - ${params.reportPeriod}`;
+
+    const catSubs = params.getSubCategories
+      ? params.getSubCategories(cat.id, cat.name, cat.name_bn)
+      : (params.subCategoriesMap?.[cat.id] || []);
 
     const ws = buildExpenseCategorySheet(
       instFullName,
@@ -874,7 +945,8 @@ export function exportSingleInstitutionExcel(params: ExportExcelParams & { selec
       bn,
       '107C41',
       catName,
-      params.reportPeriod
+      params.reportPeriod,
+      catSubs
     );
 
     XLSX.utils.book_append_sheet(wb, ws, tabName);

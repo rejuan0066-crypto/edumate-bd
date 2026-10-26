@@ -2606,6 +2606,8 @@ const AdminExpenses = () => {
       getMemo,
       getRemarks,
       formatNum,
+      subCategoriesMap: expenseSubCategories,
+      getSubCategories: getSubCategoriesForCategory,
     });
     toast.success(bn ? 'সকল প্রতিষ্ঠানের মাল্টি-ট্যাব এক্সেল ডাউনলোড হয়েছে' : 'Multi-tab Excel downloaded successfully');
   };
@@ -2676,6 +2678,8 @@ const AdminExpenses = () => {
       getMemo,
       getRemarks,
       formatNum,
+      subCategoriesMap: expenseSubCategories,
+      getSubCategories: getSubCategoriesForCategory,
     });
     toast.success(bn ? 'প্রতিষ্ঠানের এক্সেল ফাইল ডাউনলোড হয়েছে' : 'Institution Excel downloaded');
   };
