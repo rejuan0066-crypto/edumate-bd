@@ -653,10 +653,10 @@ const CropControls = ({ language, cropW, cropH, canCrop, onCrop, hasResult, onRe
 
 // ─── BG Remove Controls ───
 const BG_MODES = [
-  { key: 'auto', labelBn: 'অটো', labelEn: 'Auto', descBn: 'AI স্বয়ংক্রিয়ভাবে চিনবে', descEn: 'AI auto-detects subject' },
-  { key: 'person', labelBn: 'ব্যক্তি', labelEn: 'Person', descBn: 'মানুষের ছবি থেকে BG রিমুভ', descEn: 'Person/portrait cutout' },
-  { key: 'object', labelBn: 'অবজেক্ট', labelEn: 'Object', descBn: 'পণ্য/বস্তু থেকে BG রিমুভ', descEn: 'Product/object cutout' },
-  { key: 'design', labelBn: 'ডিজাইন', labelEn: 'Design', descBn: 'ব্যানার/গ্রাফিক্সের BG রিমুভ', descEn: 'Banner/graphic BG remove' },
+  { key: 'auto', labelBn: 'অটো AI', labelEn: 'Auto AI', descBn: 'AI স্বয়ংক্রিয়ভাবে চিনবে', descEn: 'AI auto-detects subject' },
+  { key: 'white', labelBn: 'সাদা ব্যাকগ্রাউন্ড', labelEn: 'White BG', descBn: '১ সেকেন্ডে ইনস্ট্যান্ট স্বচ্ছ (লোগোর জন্য সেরা)', descEn: 'Instant clear white background' },
+  { key: 'person', labelBn: 'ব্যক্তি (AI)', labelEn: 'Person (AI)', descBn: 'মানুষের ছবি থেকে BG রিমুভ', descEn: 'Person/portrait cutout' },
+  { key: 'design', labelBn: 'ডিজাইন (AI)', labelEn: 'Design (AI)', descBn: 'ব্যানার/গ্রাফিক্সের BG রিমুভ', descEn: 'Banner/graphic BG remove' },
 ];
 
 const BgRemoveControls = ({ language, processing, onRemove, downloadFormat, onFormatChange, bgResult, onDownload, mode, onModeChange }: {
@@ -1111,24 +1111,106 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
     img.src = preview;
   };
 
-  // ── BG Remove logic (preserved) ──
+  // ── BG Remove logic ──
   const removeBg = async () => {
     setProcessing(true);
     try {
-      // Convert blob URL to base64 for the edge function
-      const resp = await fetch(preview);
-      const blob = await resp.blob();
-      const base64 = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(blob);
+      if (bgMode === 'white') {
+        const img = new window.Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          const c = document.createElement('canvas');
+          c.width = img.naturalWidth || img.width;
+          c.height = img.naturalHeight || img.height;
+          const ctx = c.getContext('2d')!;
+          ctx.drawImage(img, 0, 0);
+          const imgData = ctx.getImageData(0, 0, c.width, c.height);
+          const d = imgData.data;
+          for (let i = 0; i < d.length; i += 4) {
+            const r = d[i], g = d[i + 1], b = d[i + 2];
+            // Remove pure and near-white pixels
+            if (r > 235 && g > 235 && b > 235) {
+              const minVal = Math.min(r, g, b);
+              if (minVal >= 250) {
+                d[i + 3] = 0;
+              } else {
+                d[i + 3] = Math.round(d[i + 3] * ((255 - minVal) / 20));
+              }
+            }
+          }
+          ctx.putImageData(imgData, 0, 0);
+          const outUrl = c.toDataURL('image/png');
+          setBgResult(outUrl);
+          toast.success(language === 'bn' ? 'সাদা ব্যাকগ্রাউন্ড ইনস্ট্যান্ট রিমুভ সফল!' : 'White background removed!');
+          setProcessing(false);
+        };
+        img.onerror = () => {
+          toast.error(language === 'bn' ? 'ছবি লোড ব্যর্থ' : 'Image load failed');
+          setProcessing(false);
+        };
+        img.src = previewObjUrl || preview;
+        return;
+      }
+
+      // Prepare scaled down base64 (max 1024px) for faster, reliable AI transport
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const img = new window.Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          const maxDim = 1024;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+          const c = document.createElement('canvas');
+          c.width = w;
+          c.height = h;
+          const ctx = c.getContext('2d')!;
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(c.toDataURL('image/png'));
+        };
+        img.onerror = reject;
+        img.src = previewObjUrl || preview;
       });
-      const { data, error } = await supabase.functions.invoke('remove-bg', { body: { image_base64: base64, mode: bgMode } });
-      if (error) throw error;
-      if (data?.error) { toast.error(data.error); setProcessing(false); return; }
-      if (data?.image) { setBgResult(data.image); toast.success(language === 'bn' ? 'ব্যাকগ্রাউন্ড রিমুভ সফল!' : 'Background removed!'); }
-    } catch (err: any) { toast.error(err.message || 'Failed'); }
-    setProcessing(false);
+
+      const { data, error } = await supabase.functions.invoke('remove-bg', {
+        body: { image_base64: base64, mode: bgMode },
+      });
+
+      if (error) {
+        let msg = error.message;
+        try {
+          const ctx = (error as any).context;
+          if (ctx) {
+            const errBody = await ctx.json();
+            if (errBody?.error) msg = errBody.error;
+          }
+        } catch {}
+        toast.error(language === 'bn' ? `AI প্রসেসিং ব্যর্থ: ${msg}` : `AI processing failed: ${msg}`);
+        setProcessing(false);
+        return;
+      }
+      if (data?.error) {
+        toast.error(language === 'bn' ? `AI ত্রুটি: ${data.error}` : `AI Error: ${data.error}`);
+        setProcessing(false);
+        return;
+      }
+      if (data?.image) {
+        setBgResult(data.image);
+        toast.success(language === 'bn' ? 'ব্যাকগ্রাউন্ড রিমুভ সফল!' : 'Background removed!');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const downloadBgResult = () => {
