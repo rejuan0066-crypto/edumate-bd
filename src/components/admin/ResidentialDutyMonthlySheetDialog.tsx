@@ -554,6 +554,12 @@ export default function ResidentialDutyMonthlySheetDialog({
   // ── HTML generator for Print & PDF ──
   const generatePrintAndPdfHtml = () => {
     const institutionName = instInfo?.name || 'মাদরাসা / প্রতিষ্ঠান';
+    const instNameEn = instInfo?.name_en || '';
+    const instAddress = instInfo?.address || '';
+    const instPhone = instInfo?.phone || '';
+    const instEmail = instInfo?.email || '';
+    const logoUrl = instInfo?.logo_url || '';
+    const estYear = instInfo?.established_year ? (bn ? toBnDigits(instInfo.established_year) : instInfo.established_year) : '';
     const shiftLabel = shiftFilter === 'morning' ? ` (${bn ? 'সকাল শিফট' : 'Morning Shift'})` : shiftFilter === 'evening' ? ` (${bn ? 'সন্ধ্যা শিফট' : 'Evening Shift'})` : '';
     const title = `${bn ? 'আবাসিক ডিউটি মাসিক হাজিরা শিট' : 'Residential Duty Monthly Attendance Sheet'} — ${currentMonthLabel} ${selectedYear}${shiftLabel}`;
 
@@ -676,13 +682,19 @@ export default function ResidentialDutyMonthlySheetDialog({
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          .header { text-align: center; margin-bottom: 8px; border-bottom: 2px solid #059669; padding-bottom: 4px; }
-          .header h1 { margin: 0; font-size: 17px; color: #0f172a; }
-          .header h2 { margin: 2px 0 0 0; font-size: 12.5px; color: #059669; }
+          .header { text-align: center; margin-bottom: 6px; border-bottom: 2px solid #059669; padding-bottom: 4px; }
+          .header-main { display: flex; align-items: center; justify-content: center; gap: 12px; }
+          .logo-box { width: 48px; height: 48px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+          .logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+          .header-titles { flex: 1; text-align: center; }
+          .inst-name { margin: 0; font-size: 16px; font-weight: 700; color: #0f172a; line-height: 1.2; }
+          .inst-en { font-size: 10.5px; font-weight: 600; color: #475569; margin-top: 1px; }
+          .inst-details { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; font-size: 9px; color: #475569; margin: 2px 0; }
+          .sheet-title { margin: 2px 0 0 0; font-size: 11.5px; font-weight: 700; color: #059669; line-height: 1.2; }
           table { width: 100%; border-collapse: collapse; margin-top: 6px; }
-          .legend { display: flex; gap: 14px; margin-top: 6px; font-size: 9.5px; justify-content: center; font-weight: 500; }
-          .footer-signs { display: flex; justify-content: space-between; margin-top: 24px; padding: 0 40px; page-break-inside: avoid; break-inside: avoid; }
-          .sign-box { text-align: center; border-top: 1px dashed #64748b; padding-top: 4px; width: 160px; font-size: 10.5px; font-weight: 600; color: #334155; }
+          .legend { display: flex; gap: 14px; margin-top: 6px; font-size: 9px; justify-content: center; font-weight: 500; padding: 2px 0; }
+          .footer-signs { display: flex; justify-content: space-between; margin-top: 18px; padding: 0 40px; page-break-inside: avoid; break-inside: avoid; }
+          .sign-box { text-align: center; border-top: 1px dashed #64748b; padding-top: 3px; width: 160px; font-size: 10px; font-weight: 600; color: #334155; }
           @media print {
             body { padding:0 !important; background: #fff !important; }
             .footer-signs { page-break-inside: avoid; break-inside: avoid; }
@@ -691,8 +703,21 @@ export default function ResidentialDutyMonthlySheetDialog({
       </head>
       <body>
         <div class="header">
-          <h1>${institutionName}</h1>
-          <h2>${title}</h2>
+          <div class="header-main">
+            ${logoUrl ? `<div class="logo-box"><img src="${logoUrl}" alt="Logo" /></div>` : ''}
+            <div class="header-titles">
+              <h1 class="inst-name">${institutionName}</h1>
+              ${instNameEn ? `<div class="inst-en">${instNameEn}</div>` : ''}
+              <div class="inst-details">
+                ${instAddress ? `<span>📍 ${instAddress}</span>` : ''}
+                ${instPhone ? `<span>📞 ${bn ? toBnDigits(instPhone) : instPhone}</span>` : ''}
+                ${instEmail ? `<span>✉️ ${instEmail}</span>` : ''}
+                ${estYear ? `<span>স্থাপিত: ${estYear} খ্রিঃ</span>` : ''}
+              </div>
+              <h2 class="sheet-title">${title}</h2>
+            </div>
+            ${logoUrl ? `<div class="logo-box" style="visibility:hidden;" aria-hidden="true"></div>` : ''}
+          </div>
         </div>
         <div class="legend">
           <span><strong style="color:#16a34a;">P</strong> = উপস্থিত (Present)</span>

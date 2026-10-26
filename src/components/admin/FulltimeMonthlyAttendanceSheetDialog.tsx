@@ -416,13 +416,28 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
   // ── HTML generator for Print & PDF ──
   const generatePrintAndPdfHtml = (forPdf = false) => {
     const institutionName = instInfo?.name || 'মাদরাসা / প্রতিষ্ঠান';
+    const instNameEn = instInfo?.name_en || '';
+    const instAddress = instInfo?.address || '';
+    const instPhone = instInfo?.phone || '';
+    const instEmail = instInfo?.email || '';
+    const logoUrl = instInfo?.logo_url || '';
+    const estYear = instInfo?.established_year ? (bn ? toBnDigits(instInfo.established_year) : instInfo.established_year) : '';
     const title = `${bn ? 'ফুল টাইম মাসিক স্টাফ হাজিরা শিট' : 'Full-Time Monthly Staff Attendance Sheet'} — ${currentMonthLabel} ${selectedYear}`;
     const subtitle = `${currentDeptLabel} • ${bn ? `মোট স্টাফ: ${toBnDigits(filteredStaff.length)} জন` : `Total Staff: ${filteredStaff.length}`}`;
 
-    // Chunk staff into pages (14 staff per page fits comfortably within A4 landscape with header and signatures)
-    const pageSize = 14;
+    // Smart pagination: If <= 22 staff (e.g. 17 staff), keep all on ONE single page!
+    // If > 22 staff, evenly split across pages so no page is left with just 1-3 rows.
+    const totalStaff = filteredStaff.length;
+    let pageSize = 20;
+    if (totalStaff <= 22) {
+      pageSize = Math.max(1, totalStaff);
+    } else {
+      const numPages = Math.ceil(totalStaff / 20);
+      pageSize = Math.ceil(totalStaff / numPages);
+    }
+
     const pages: any[][] = [];
-    for (let i = 0; i < filteredStaff.length; i += pageSize) {
+    for (let i = 0; i < totalStaff; i += pageSize) {
       pages.push(filteredStaff.slice(i, i + pageSize));
     }
     if (pages.length === 0) pages.push([]);
@@ -440,11 +455,11 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
         const deptName = deptObj ? (bn ? deptObj.name_bn || deptObj.name : deptObj.name) : (st.department || '-');
 
         tableRowsHtml += `<tr>
-          <td style="border:1px solid #cbd5e1;padding:2.5px 2px;text-align:center;font-size:9px;width:24px;">${globalIdx}</td>
-          <td style="border:1px solid #cbd5e1;padding:2.5px 4px;font-weight:600;font-size:9.5px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-size:9px;width:24px;">${bn ? toBnDigits(globalIdx) : globalIdx}</td>
+          <td style="border:1px solid #cbd5e1;padding:2px 4px;font-weight:600;font-size:9.5px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:130px;">
             ${formatStaffName(st.name_bn, st.name_en, bn)}
           </td>
-          <td style="border:1px solid #cbd5e1;padding:2.5px 4px;font-size:8.5px;color:#475569;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          <td style="border:1px solid #cbd5e1;padding:2px 4px;font-size:8.5px;color:#475569;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:95px;">
             ${st.designation || '-'}
           </td>
         `;
@@ -488,19 +503,19 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
           }
 
           tableRowsHtml += `
-            <td style="border:1px solid #cbd5e1;padding:2px 1px;text-align:center;font-size:9px;background:${bg};">
+            <td style="border:1px solid #cbd5e1;padding:2px 0px;text-align:center;font-size:9px;background:${bg};width:21px;">
               ${badge}
             </td>
           `;
         });
 
         tableRowsHtml += `
-          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-weight:bold;color:#16a34a;font-size:9px;">${stats?.present || 0}</td>
-          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-weight:bold;color:#d97706;font-size:9px;">${stats?.late || 0}</td>
-          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-weight:bold;color:#ea580c;font-size:9px;">${stats?.halfDay || 0}</td>
-          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-weight:bold;color:#2563eb;font-size:9px;">${stats?.leave || 0}</td>
-          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-weight:bold;color:#dc2626;font-size:9px;">${stats?.absent || 0}</td>
-          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-weight:extrabold;color:#0f172a;font-size:9.5px;background:#f8fafc;">${stats?.effectivePresent || 0}</td>
+          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-weight:bold;color:#16a34a;font-size:9px;width:24px;">${bn ? toBnDigits(stats?.present || 0) : (stats?.present || 0)}</td>
+          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-weight:bold;color:#d97706;font-size:9px;width:22px;">${bn ? toBnDigits(stats?.late || 0) : (stats?.late || 0)}</td>
+          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-weight:bold;color:#ea580c;font-size:9px;width:22px;">${bn ? toBnDigits(stats?.halfDay || 0) : (stats?.halfDay || 0)}</td>
+          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-weight:bold;color:#2563eb;font-size:9px;width:24px;">${bn ? toBnDigits(stats?.leave || 0) : (stats?.leave || 0)}</td>
+          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-weight:bold;color:#dc2626;font-size:9px;width:22px;">${bn ? toBnDigits(stats?.absent || 0) : (stats?.absent || 0)}</td>
+          <td style="border:1px solid #cbd5e1;padding:2px;text-align:center;font-weight:extrabold;color:#0f172a;font-size:9.5px;background:#f8fafc;width:32px;">${bn ? toBnDigits(stats?.effectivePresent || 0) : (stats?.effectivePresent || 0)}</td>
         </tr>`;
       });
 
@@ -508,25 +523,25 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
       let tableHeadersHtml = `
         <tr>
           <th style="border:1px solid #94a3b8;padding:3px 2px;background:#f1f5f9;font-size:9px;width:24px;">#</th>
-          <th style="border:1px solid #94a3b8;padding:3px 4px;background:#f1f5f9;font-size:9.5px;width:115px;text-align:left;">${bn ? 'শিক্ষক/স্টাফের নাম' : 'Name'}</th>
-          <th style="border:1px solid #94a3b8;padding:3px 4px;background:#f1f5f9;font-size:9px;width:80px;text-align:left;">${bn ? 'পদবী' : 'Designation'}</th>
+          <th style="border:1px solid #94a3b8;padding:3px 4px;background:#f1f5f9;font-size:9.5px;width:130px;text-align:left;">${bn ? 'শিক্ষক/স্টাফের নাম' : 'Name'}</th>
+          <th style="border:1px solid #94a3b8;padding:3px 4px;background:#f1f5f9;font-size:9px;width:95px;text-align:left;">${bn ? 'পদবী' : 'Designation'}</th>
       `;
 
       daysList.forEach(day => {
         tableHeadersHtml += `
-          <th style="border:1px solid #94a3b8;padding:2px 1px;background:${day.isFriday ? '#fee2e2' : '#f8fafc'};font-size:8.5px;text-align:center;min-width:18px;">
-            ${day.dayNum}<br/><span style="font-size:7px;color:#64748b;">${day.weekdayBn}</span>
+          <th style="border:1px solid #94a3b8;padding:2px 0px;background:${day.isFriday ? '#fee2e2' : '#f8fafc'};font-size:8.5px;text-align:center;width:21px;">
+            ${bn ? toBnDigits(day.dayNum) : day.dayNum}<br/><span style="font-size:7px;color:#64748b;">${day.weekdayBn}</span>
           </th>
         `;
       });
 
       tableHeadersHtml += `
           <th style="border:1px solid #94a3b8;padding:2px;background:#f1f5f9;font-size:8.5px;color:#16a34a;width:24px;" title="উপস্থিত">P</th>
-          <th style="border:1px solid #94a3b8;padding:2px;background:#f1f5f9;font-size:8.5px;color:#d97706;width:24px;" title="বিলম্ব">L</th>
-          <th style="border:1px solid #94a3b8;padding:2px;background:#f1f5f9;font-size:8.5px;color:#ea580c;width:24px;" title="অর্ধদিন">H</th>
+          <th style="border:1px solid #94a3b8;padding:2px;background:#f1f5f9;font-size:8.5px;color:#d97706;width:22px;" title="বিলম্ব">L</th>
+          <th style="border:1px solid #94a3b8;padding:2px;background:#f1f5f9;font-size:8.5px;color:#ea580c;width:22px;" title="অর্ধদিন">H</th>
           <th style="border:1px solid #94a3b8;padding:2px;background:#f1f5f9;font-size:8.5px;color:#2563eb;width:24px;" title="ছুটি">Lv</th>
-          <th style="border:1px solid #94a3b8;padding:2px;background:#f1f5f9;font-size:8.5px;color:#dc2626;width:24px;" title="অনুপস্থিত">A</th>
-          <th style="border:1px solid #94a3b8;padding:2px;background:#e2e8f0;font-size:9px;font-weight:bold;width:30px;" title="মোট উপস্থিতি">মোট</th>
+          <th style="border:1px solid #94a3b8;padding:2px;background:#f1f5f9;font-size:8.5px;color:#dc2626;width:22px;" title="অনুপস্থিত">A</th>
+          <th style="border:1px solid #94a3b8;padding:2px;background:#e2e8f0;font-size:9px;font-weight:bold;width:32px;" title="মোট উপস্থিতি">মোট</th>
         </tr>
       `;
 
@@ -534,11 +549,24 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
         <div class="attendance-page" style="page-break-after: ${pageIdx < totalPages - 1 ? 'always' : 'auto'}; break-after: ${pageIdx < totalPages - 1 ? 'page' : 'auto'};">
           <div class="page-inner">
             <div class="header">
-              <h1>${institutionName}</h1>
-              <h2>${title}</h2>
+              <div class="header-main">
+                ${logoUrl ? `<div class="logo-box"><img src="${logoUrl}" alt="Logo" /></div>` : ''}
+                <div class="header-titles">
+                  <h1 class="inst-name">${institutionName}</h1>
+                  ${instNameEn ? `<div class="inst-en">${instNameEn}</div>` : ''}
+                  <div class="inst-details">
+                    ${instAddress ? `<span>📍 ${instAddress}</span>` : ''}
+                    ${instPhone ? `<span>📞 ${bn ? toBnDigits(instPhone) : instPhone}</span>` : ''}
+                    ${instEmail ? `<span>✉️ ${instEmail}</span>` : ''}
+                    ${estYear ? `<span>স্থাপিত: ${estYear} খ্রিঃ</span>` : ''}
+                  </div>
+                  <h2 class="sheet-title">${title}</h2>
+                </div>
+                ${logoUrl ? `<div class="logo-box" style="visibility:hidden;" aria-hidden="true"></div>` : ''}
+              </div>
               <div class="meta-sub">
-                <span>${subtitle}</span>
-                <span class="page-num">পৃষ্ঠা ${toBnDigits(pageIdx + 1)} / ${toBnDigits(totalPages)}</span>
+                <span><strong>${currentDeptLabel}</strong> • ${bn ? `মোট স্টাফ: ${toBnDigits(filteredStaff.length)} জন` : `Total Staff: ${filteredStaff.length}`}</span>
+                <span class="page-num">${totalPages > 1 ? `পৃষ্ঠা ${toBnDigits(pageIdx + 1)} / ${toBnDigits(totalPages)}` : ''}</span>
               </div>
             </div>
 
@@ -584,7 +612,7 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
             font-display: block;
           }
           * { margin:0; padding:0; box-sizing:border-box; }
-          @page { size: A4 landscape; margin: 6mm 8mm; }
+          @page { size: A4 landscape; margin: 4mm 6mm; }
           html, body {
             font-family: 'Kalpurush', 'SolaimanLipi', 'Hind Siliguri', 'Noto Sans Bengali', sans-serif !important;
             background: #ffffff;
@@ -598,7 +626,7 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
             width: 100%;
             box-sizing: border-box;
             background: #ffffff;
-            padding: 0;
+            padding: 6px 8px;
             page-break-after: always;
             break-after: page;
             page-break-inside: avoid;
@@ -616,18 +644,57 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
             text-align: center;
             border-bottom: 2px solid #059669;
             padding-bottom: 3px;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
           }
-          .header h1 {
+          .header-main {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            position: relative;
+          }
+          .logo-box {
+            width: 48px;
+            height: 48px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .logo-box img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+          }
+          .header-titles {
+            flex: 1;
+            text-align: center;
+          }
+          .inst-name {
             font-size: 16px;
             font-weight: 700;
             color: #0f172a;
             margin: 0;
             line-height: 1.2;
           }
-          .header h2 {
-            font-size: 12px;
+          .inst-en {
+            font-size: 10.5px;
             font-weight: 600;
+            color: #475569;
+            margin-top: 1px;
+          }
+          .inst-details {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            font-size: 9px;
+            color: #475569;
+            margin: 1.5px 0;
+          }
+          .sheet-title {
+            font-size: 11.5px;
+            font-weight: 700;
             color: #059669;
             margin: 2px 0 0 0;
             line-height: 1.2;
@@ -636,7 +703,7 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 9.5px;
+            font-size: 9px;
             color: #475569;
             margin-top: 2px;
             padding: 0 4px;
@@ -654,12 +721,12 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
           }
           .legend {
             display: flex;
-            gap: 14px;
-            margin-top: 6px;
-            font-size: 9px;
+            gap: 12px;
+            margin-top: 4px;
+            font-size: 8.5px;
             justify-content: center;
             font-weight: 500;
-            padding: 3px 0;
+            padding: 2.5px 0;
             border-top: 1px dashed #cbd5e1;
             page-break-inside: avoid;
             break-inside: avoid;
@@ -667,24 +734,24 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
           .footer-signs {
             display: flex;
             justify-content: space-between;
-            margin-top: 16px;
-            margin-bottom: 4px;
-            padding: 0 48px;
+            margin-top: 10px;
+            margin-bottom: 2px;
+            padding: 0 40px;
             page-break-inside: avoid;
             break-inside: avoid;
           }
           .sign-box {
             text-align: center;
             border-top: 1px dashed #64748b;
-            padding-top: 4px;
-            width: 170px;
-            font-size: 10.5px;
+            padding-top: 3px;
+            width: 160px;
+            font-size: 10px;
             font-weight: 600;
             color: #334155;
           }
           @media print {
             body { padding: 0 !important; background: #fff !important; }
-            .attendance-page { padding: 0 !important; page-break-after: always; break-after: page; page-break-inside: avoid; break-inside: avoid; }
+            .attendance-page { padding: 2mm 4mm !important; page-break-after: always; break-after: page; page-break-inside: avoid; break-inside: avoid; }
             .attendance-page:last-child { page-break-after: auto; break-after: auto; }
             .footer-signs { page-break-inside: avoid; break-inside: avoid; }
           }
