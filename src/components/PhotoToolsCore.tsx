@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, Download, Loader2, RotateCw, Trash2, Crop, Eraser, Maximize, Lock, Unlock, RulerIcon, MoveVertical, MoveHorizontal, ImageIcon, RefreshCw, Sparkles, Eye, EyeOff } from 'lucide-react';
+import { Upload, Download, Loader2, RotateCw, Trash2, Crop, Eraser, Maximize, Minimize2, Lock, Unlock, RulerIcon, MoveVertical, MoveHorizontal, ImageIcon, RefreshCw, Sparkles, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -101,11 +101,12 @@ const SegmentedTab = ({ active, icon: Icon, label, onClick }: { active: boolean;
 );
 
 // ─── Resize Controls ───
-const ResizeControls = ({ originalInfo, language, onProcess, processing }: {
+const ResizeControls = ({ originalInfo, language, onProcess, processing, onSwitchToCompress }: {
   originalInfo: { width: number; height: number; size: number };
   language: string;
   onProcess: (w: number, h: number, q: number, fmt: 'jpeg' | 'png' | 'webp') => void;
   processing: boolean;
+  onSwitchToCompress?: () => void;
 }) => {
   const [unit, setUnit] = useState<'px' | 'inch' | 'cm'>('px');
   const [dpi, setDpi] = useState(72);
@@ -276,6 +277,19 @@ const ResizeControls = ({ originalInfo, language, onProcess, processing }: {
           <span className="text-sm font-bold text-primary tabular-nums">{quality}%</span>
         </div>
         <Slider value={[quality]} min={10} max={100} step={5} onValueChange={([v]) => setQuality(v)} className="[&_[role=slider]]:h-5 [&_[role=slider]]:w-5" />
+        {onSwitchToCompress && (
+          <div className="mt-2.5 pt-2 border-t border-border/40 flex items-center justify-between text-[11px]">
+            <span className="text-muted-foreground">{language === 'bn' ? 'রেজোলিউশন ঠিক রেখে সাইজ কমাতে চান?' : 'Keep resolution & reduce MB?'}</span>
+            <button
+              type="button"
+              onClick={onSwitchToCompress}
+              className="text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+            >
+              <Minimize2 className="w-3 h-3" />
+              {language === 'bn' ? 'সরাসরি কম্প্রেস করুন ➔' : 'Compress directly ➔'}
+            </button>
+          </div>
+        )}
       </GlassPanel>
 
       {/* Format */}
@@ -297,6 +311,297 @@ const ResizeControls = ({ originalInfo, language, onProcess, processing }: {
       <Button className="w-full h-10 text-sm font-semibold rounded-xl bg-primary hover:bg-primary/90 shadow-md shadow-primary/20 transition-all duration-200" onClick={() => onProcess(width, height, quality, format)} disabled={processing}>
         {processing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RotateCw className="w-4 h-4 mr-2" />}
         {language === 'bn' ? 'প্রসেস করুন' : 'Process Image'}
+      </Button>
+    </div>
+  );
+};
+
+// ─── Compress Controls (Direct Size / MB Reduction with Visual Quality Preserved) ───
+const CompressControls = ({
+  originalInfo,
+  language,
+  onCompress,
+  processing,
+}: {
+  originalInfo: { width: number; height: number; size: number };
+  language: string;
+  onCompress: (options: {
+    mode: 'auto' | 'target' | 'quality';
+    targetKb?: number;
+    qualityPercent?: number;
+    format: 'webp' | 'jpeg' | 'png';
+  }) => void;
+  processing: boolean;
+}) => {
+  const [compressMode, setCompressMode] = useState<'auto' | 'target' | 'quality'>('auto');
+  const [targetKb, setTargetKb] = useState<number>(() => {
+    const origKb = Math.round(originalInfo.size / 1024);
+    if (origKb > 1000) return 300;
+    if (origKb > 500) return 200;
+    return Math.max(50, Math.round(origKb * 0.4));
+  });
+  const [targetUnit, setTargetUnit] = useState<'kb' | 'mb'>('kb');
+  const [quality, setQuality] = useState(85);
+  const [format, setFormat] = useState<'webp' | 'jpeg' | 'png'>('webp');
+
+  const origKb = Math.round(originalInfo.size / 1024);
+
+  const quickKbPresets = [
+    { label: '১০০ KB', kb: 100 },
+    { label: '২০০ KB', kb: 200 },
+    { label: '৩০০ KB', kb: 300 },
+    { label: '৫০০ KB', kb: 500 },
+    { label: '১ MB', kb: 1024 },
+  ];
+
+  const quickReductionPresets = [
+    { label: '৫০% কমান', pct: 0.5 },
+    { label: '৭০% কমান', pct: 0.3 },
+    { label: '৮৫% কমান', pct: 0.15 },
+  ];
+
+  const handleApply = () => {
+    onCompress({
+      mode: compressMode,
+      targetKb: targetUnit === 'mb' ? Math.round(targetKb * 1024) : targetKb,
+      qualityPercent: quality,
+      format,
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Original Image Info Banner */}
+      <div className="p-3.5 rounded-2xl border border-border/70 bg-muted/20 space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground font-medium">
+            {language === 'bn' ? 'মূল ফাইলের সাইজ:' : 'Original File Size:'}
+          </span>
+          <span className="text-xs font-bold font-mono px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+            {formatSize(originalInfo.size)}
+          </span>
+        </div>
+        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+          <span>{language === 'bn' ? 'রেজোলিউশন:' : 'Resolution:'} {originalInfo.width}×{originalInfo.height} px</span>
+          <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+            <Sparkles className="w-3 h-3" />
+            {language === 'bn' ? '১০০% ডাইমেনশন অক্ষুণ্ণ থাকবে' : '100% Dimensions Intact'}
+          </span>
+        </div>
+      </div>
+
+      {/* Mode Selection Tabs */}
+      <GlassPanel>
+        <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2 block">
+          {language === 'bn' ? 'কম্প্রেশন পদ্ধতি নির্বাচন করুন' : 'Compression Method'}
+        </Label>
+        <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-muted/40">
+          <button
+            type="button"
+            onClick={() => setCompressMode('auto')}
+            className={`py-1.5 px-2 text-xs font-medium rounded-lg transition-all cursor-pointer ${
+              compressMode === 'auto'
+                ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
+                : 'text-muted-foreground hover:bg-muted/70'
+            }`}
+          >
+            {language === 'bn' ? 'স্মার্ট অটো' : 'Smart Auto'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setCompressMode('target')}
+            className={`py-1.5 px-2 text-xs font-medium rounded-lg transition-all cursor-pointer ${
+              compressMode === 'target'
+                ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
+                : 'text-muted-foreground hover:bg-muted/70'
+            }`}
+          >
+            {language === 'bn' ? 'টার্গেট সাইজ' : 'Target Size'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setCompressMode('quality')}
+            className={`py-1.5 px-2 text-xs font-medium rounded-lg transition-all cursor-pointer ${
+              compressMode === 'quality'
+                ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
+                : 'text-muted-foreground hover:bg-muted/70'
+            }`}
+          >
+            {language === 'bn' ? 'কোয়ালিটি %' : 'Quality %'}
+          </button>
+        </div>
+
+        {/* Mode Descriptions */}
+        <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
+          {compressMode === 'auto' && (language === 'bn'
+            ? '✨ কোয়ালিটি ও রেজোলিউশন পুরোপুরি অক্ষুণ্ণ রেখে কোনো দৃশ্যমান ক্ষতি ছাড়া সর্বোচ্চ মেগাবাইট কমিয়ে দেবে।'
+            : '✨ Maximum file size reduction while preserving 100% pixel sharpness and visual fidelity.')}
+          {compressMode === 'target' && (language === 'bn'
+            ? '🎯 আপনি যত মেগাবাইট বা কিলোবাইট চান ঠিক সেই সাইজে নামিয়ে আনা হবে।'
+            : '🎯 Set an exact target file size in KB or MB.')}
+          {compressMode === 'quality' && (language === 'bn'
+            ? '⚙️ নিজের পছন্দমতো কোয়ালিটি শতাংশ নির্ধারণ করে মেগাবাইট কমান।'
+            : '⚙️ Fine-tune the quality percentage manually.')}
+        </p>
+      </GlassPanel>
+
+      {/* Target Size Controls (When mode === 'target') */}
+      {compressMode === 'target' && (
+        <GlassPanel className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+              {language === 'bn' ? 'টার্গেট ফাইল সাইজ' : 'Target File Size'}
+            </Label>
+            <div className="flex gap-1 text-[11px]">
+              <button
+                type="button"
+                onClick={() => setTargetUnit('kb')}
+                className={`px-2 py-0.5 rounded font-bold transition-all cursor-pointer ${targetUnit === 'kb' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+              >
+                KB
+              </button>
+              <button
+                type="button"
+                onClick={() => setTargetUnit('mb')}
+                className={`px-2 py-0.5 rounded font-bold transition-all cursor-pointer ${targetUnit === 'mb' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+              >
+                MB
+              </button>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Input
+              type="number"
+              min={10}
+              step={targetUnit === 'mb' ? 0.1 : 10}
+              value={targetKb}
+              onChange={e => setTargetKb(Math.max(1, Number(e.target.value)))}
+              className="text-base font-bold font-mono text-primary bg-background/50 h-10"
+              placeholder={targetUnit === 'mb' ? '0.5' : '300'}
+            />
+            <span className="flex items-center px-3 font-bold text-xs uppercase bg-muted/40 rounded-xl border border-border/40 text-muted-foreground">
+              {targetUnit.toUpperCase()}
+            </span>
+          </div>
+
+          {/* Quick presets */}
+          <div>
+            <span className="text-[10px] text-muted-foreground block mb-1.5 font-medium">
+              {language === 'bn' ? 'দ্রুত নির্বাচন করুন:' : 'Quick Select:'}
+            </span>
+            <div className="grid grid-cols-5 gap-1 mb-2">
+              {quickKbPresets.map(p => (
+                <button
+                  key={p.kb}
+                  type="button"
+                  onClick={() => {
+                    setTargetUnit('kb');
+                    setTargetKb(p.kb);
+                  }}
+                  className={`py-1 text-[11px] rounded-lg border font-mono transition-all cursor-pointer ${
+                    targetUnit === 'kb' && targetKb === p.kb
+                      ? 'border-primary bg-primary/10 text-primary font-bold'
+                      : 'border-border/60 bg-muted/20 hover:bg-muted/50 text-muted-foreground'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-3 gap-1">
+              {quickReductionPresets.map(p => {
+                const targetCalc = Math.max(30, Math.round(origKb * p.pct));
+                return (
+                  <button
+                    key={p.label}
+                    type="button"
+                    onClick={() => {
+                      setTargetUnit('kb');
+                      setTargetKb(targetCalc);
+                    }}
+                    className="py-1 text-[11px] rounded-lg border border-border/60 bg-muted/20 hover:bg-muted/50 text-muted-foreground font-medium transition-all cursor-pointer"
+                  >
+                    {p.label} (~{targetCalc} KB)
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </GlassPanel>
+      )}
+
+      {/* Quality Slider (When mode === 'quality') */}
+      {compressMode === 'quality' && (
+        <GlassPanel>
+          <div className="flex items-center justify-between mb-3">
+            <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+              {language === 'bn' ? 'কোয়ালিটি শতাংশ' : 'Quality Percentage'}
+            </Label>
+            <span className="text-sm font-bold text-primary tabular-nums">{quality}%</span>
+          </div>
+          <Slider
+            value={[quality]}
+            min={10}
+            max={98}
+            step={2}
+            onValueChange={([v]) => setQuality(v)}
+            className="[&_[role=slider]]:h-5 [&_[role=slider]]:w-5"
+          />
+          <div className="flex justify-between text-[10px] text-muted-foreground mt-2">
+            <span>{language === 'bn' ? 'কম সাইজ' : 'Smaller Size'}</span>
+            <span className="text-primary font-medium">{language === 'bn' ? '৮০-৯০% সেরা ব্যালেন্স' : '80-90% Ideal'}</span>
+            <span>{language === 'bn' ? 'সর্বোচ্চ কোয়ালিটি' : 'Max Quality'}</span>
+          </div>
+        </GlassPanel>
+      )}
+
+      {/* Output Format */}
+      <GlassPanel>
+        <div className="flex items-center justify-between mb-2">
+          <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+            {language === 'bn' ? 'আউটপুট ফরম্যাট' : 'Output Format'}
+          </Label>
+          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+            {format === 'webp' ? (language === 'bn' ? '⭐ সেরা সাইজ ও স্বচ্ছ ব্যাকগ্রাউন্ড' : '⭐ Best Size & Alpha') : ''}
+          </span>
+        </div>
+        <Select value={format} onValueChange={v => setFormat(v as any)}>
+          <SelectTrigger className="h-9 text-sm bg-background/50">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="webp">
+              WebP ({language === 'bn' ? 'সবচেয়ে কম সাইজ + স্বচ্ছ ব্যাকগ্রাউন্ড অক্ষুণ্ণ' : 'Smallest size + Transparent'})
+            </SelectItem>
+            <SelectItem value="jpeg">
+              JPEG ({language === 'bn' ? 'সাধারণ ফটো' : 'Standard Photo'})
+            </SelectItem>
+            <SelectItem value="png">
+              PNG ({language === 'bn' ? 'লোগো ও গ্রাফিক্স' : 'Lossless Logo'})
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </GlassPanel>
+
+      {/* Process Button */}
+      <Button
+        className="w-full h-11 text-sm font-bold rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg shadow-emerald-600/25 transition-all duration-200 cursor-pointer"
+        onClick={handleApply}
+        disabled={processing}
+      >
+        {processing ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            {language === 'bn' ? 'মেগাবাইট কমানো হচ্ছে...' : 'Compressing...'}
+          </>
+        ) : (
+          <>
+            <Sparkles className="w-4 h-4 mr-2" />
+            {language === 'bn' ? 'কোয়ালিটি ঠিক রেখে সাইজ কমান' : 'Compress & Reduce Size'}
+          </>
+        )}
       </Button>
     </div>
   );
@@ -549,7 +854,7 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
   const [preview, setPreview] = useState('');
   const [previewObjUrl, setPreviewObjUrl] = useState('');
   const [originalInfo, setOriginalInfo] = useState({ width: 0, height: 0, size: 0 });
-  const [activeTab, setActiveTab] = useState<'resize' | 'crop' | 'bg-remove'>('resize');
+  const [activeTab, setActiveTab] = useState<'resize' | 'compress' | 'crop' | 'bg-remove'>('resize');
   const [processing, setProcessing] = useState(false);
   const [result, setResult] = useState<{ url: string; size: number; w: number; h: number; format?: 'jpeg' | 'png' | 'webp' } | null>(null);
   const [bgResult, setBgResult] = useState<string | null>(null);
@@ -650,6 +955,134 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
     img.src = previewObjUrl || preview;
   };
 
+  // ── Compress logic (Direct Size/MB reduction with quality preserved at full resolution) ──
+  const processCompress = async (options: {
+    mode: 'auto' | 'target' | 'quality';
+    targetKb?: number;
+    qualityPercent?: number;
+    format: 'webp' | 'jpeg' | 'png';
+  }) => {
+    setProcessing(true);
+    const img = new window.Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = async () => {
+      try {
+        const width = originalInfo.width || img.width;
+        const height = originalInfo.height || img.height;
+        const c = document.createElement('canvas');
+        c.width = width;
+        c.height = height;
+        const ctx = c.getContext('2d')!;
+
+        // Handle transparency: if converting to jpeg, fill canvas with white so transparent background doesn't turn black
+        if (options.format === 'jpeg') {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, width, height);
+        } else {
+          ctx.clearRect(0, 0, width, height);
+        }
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const mime = `image/${options.format}`;
+        const makeBlob = (q?: number) =>
+          new Promise<Blob | null>((resolve) => {
+            if (options.format === 'png') {
+              c.toBlob(resolve, mime);
+            } else {
+              c.toBlob(resolve, mime, q);
+            }
+          });
+
+        let finalBlob: Blob | null = null;
+
+        if (options.mode === 'auto') {
+          // Smart Auto: Preserve 100% resolution, try optimal quality for maximum visual fidelity & compact size
+          if (options.format === 'png') {
+            finalBlob = await makeBlob();
+          } else {
+            // Test 88% down to 78% for visually lossless output
+            let q = 0.88;
+            finalBlob = await makeBlob(q);
+            if (finalBlob && finalBlob.size >= originalInfo.size) {
+              q = 0.78;
+              finalBlob = await makeBlob(q);
+            }
+          }
+        } else if (options.mode === 'target' && options.targetKb) {
+          const targetBytes = options.targetKb * 1024;
+          if (options.format === 'png') {
+            finalBlob = await makeBlob();
+          } else {
+            // Binary search to find highest possible quality under targetBytes
+            let low = 0.05;
+            let high = 0.98;
+            let bestBlob: Blob | null = null;
+
+            for (let i = 0; i < 7; i++) {
+              const mid = (low + high) / 2;
+              const b = await makeBlob(mid);
+              if (!b) break;
+              if (b.size <= targetBytes) {
+                bestBlob = b;
+                low = mid; // Try higher quality
+              } else {
+                high = mid; // Lower quality needed
+              }
+            }
+
+            finalBlob = bestBlob || (await makeBlob(low));
+          }
+        } else if (options.mode === 'quality' && options.qualityPercent) {
+          const q = Math.max(0.05, Math.min(1, options.qualityPercent / 100));
+          finalBlob = await makeBlob(q);
+        } else {
+          finalBlob = await makeBlob(0.85);
+        }
+
+        if (finalBlob) {
+          setResult({
+            url: URL.createObjectURL(finalBlob),
+            size: finalBlob.size,
+            w: width,
+            h: height,
+            format: options.format,
+          });
+          setShowOriginal(false);
+          const saved = originalInfo.size - finalBlob.size;
+          const pct = Math.round((1 - finalBlob.size / originalInfo.size) * 100);
+          if (saved > 0) {
+            toast.success(
+              language === 'bn'
+                ? `✅ ${formatSize(originalInfo.size)} → ${formatSize(finalBlob.size)} (${pct}% মেগাবাইট কমেছে)`
+                : `✅ ${formatSize(originalInfo.size)} → ${formatSize(finalBlob.size)} (${pct}% reduced)`
+            );
+          } else {
+            toast.info(
+              language === 'bn'
+                ? `আউটপুট: ${formatSize(finalBlob.size)}`
+                : `Output: ${formatSize(finalBlob.size)}`
+            );
+          }
+        } else {
+          toast.error(language === 'bn' ? 'কম্প্রেশন ব্যর্থ হয়েছে' : 'Compression failed');
+        }
+      } catch (err) {
+        console.error('Compression error:', err);
+        toast.error(language === 'bn' ? 'কম্প্রেশন ব্যর্থ হয়েছে' : 'Compression failed');
+      } finally {
+        setProcessing(false);
+      }
+    };
+    img.onerror = () => {
+      toast.error(language === 'bn' ? 'ছবি লোড ব্যর্থ' : 'Image load failed');
+      setProcessing(false);
+    };
+    img.src = previewObjUrl || preview;
+  };
+
   // ── Crop logic (preserved) ──
   const doCrop = () => {
     if (!cropData || cropData.w < 5 || cropData.h < 5) {
@@ -741,6 +1174,8 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
     a.href = url;
     a.download = activeTab === 'crop'
       ? 'cropped.png'
+      : activeTab === 'compress'
+      ? `compressed_${Date.now()}.${result?.format || 'webp'}`
       : `resized.${result?.format || 'jpg'}`;
     a.click();
   };
@@ -830,8 +1265,9 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
         </div>
 
         {/* Segmented Tabs */}
-        <div className="flex gap-1 p-1 rounded-2xl bg-muted/40 backdrop-blur-sm border border-border/20">
+        <div className="grid grid-cols-4 gap-1 p-1 rounded-2xl bg-muted/40 backdrop-blur-sm border border-border/20">
           <SegmentedTab active={activeTab === 'resize'} icon={Maximize} label={language === 'bn' ? 'রিসাইজ' : 'Resize'} onClick={() => setActiveTab('resize')} />
+          <SegmentedTab active={activeTab === 'compress'} icon={Minimize2} label={language === 'bn' ? 'কম্প্রেস' : 'Compress'} onClick={() => setActiveTab('compress')} />
           <SegmentedTab active={activeTab === 'crop'} icon={Crop} label={language === 'bn' ? 'ক্রপ' : 'Crop'} onClick={() => setActiveTab('crop')} />
           <SegmentedTab active={activeTab === 'bg-remove'} icon={Eraser} label={language === 'bn' ? 'ব্যাকগ্রাউন্ড' : 'BG Remove'} onClick={() => setActiveTab('bg-remove')} />
         </div>
@@ -839,7 +1275,21 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
         {/* Controls (scrollable on desktop) */}
         <div className="flex-1 overflow-y-auto lg:max-h-[calc(60vh-60px)] pr-0.5 custom-scrollbar">
           {activeTab === 'resize' && (
-            <ResizeControls originalInfo={originalInfo} language={language} onProcess={processResize} processing={processing} />
+            <ResizeControls
+              originalInfo={originalInfo}
+              language={language}
+              onProcess={processResize}
+              processing={processing}
+              onSwitchToCompress={() => setActiveTab('compress')}
+            />
+          )}
+          {activeTab === 'compress' && (
+            <CompressControls
+              originalInfo={originalInfo}
+              language={language}
+              onCompress={processCompress}
+              processing={processing}
+            />
           )}
           {activeTab === 'crop' && (
             <CropControls language={language} cropW={cropW} cropH={cropH} canCrop={!!(cropData && cropData.w >= 5)} onCrop={doCrop} hasResult={!!result} onRecrop={() => { setResult(null); setCropData(null); setCropW(0); setCropH(0); setShowOriginal(false); }} />
