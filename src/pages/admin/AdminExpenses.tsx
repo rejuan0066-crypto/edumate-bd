@@ -38,6 +38,7 @@ import { exportExpensesMultiTabExcel, exportSingleInstitutionExcel, getInstShort
 import { toBnDigits } from '@/lib/digits';
 import { useSignatoryAuthorities } from '@/hooks/useSignatoryAuthorities';
 import { uploadToCloudinary } from '@/lib/cloudinary';
+import { FALLBACK_LOGO_URL } from '@/hooks/useWebsiteSettings';
 
 export const DEFAULT_QUANTITY_UNITS = [
   'পিস',
@@ -742,7 +743,10 @@ const AdminExpenses = () => {
           phone: (ei as any).phone || instMatch?.phone || '',
           email: (ei as any).email || instMatch?.email || '',
           other_info: (ei as any).other_info || instMatch?.other_info || '',
-          logo_url: (ei as any).logo_url || instMatch?.logo_url || '',
+          logo_url: (() => {
+            const raw = (ei as any).logo_url || instMatch?.logo_url || '';
+            return (raw && !raw.includes('wwhunyzobtuibhvkipwk')) ? raw : FALLBACK_LOGO_URL;
+          })(),
           is_default: instMatch?.is_default || false,
           source: 'expense_institutions'
         };
@@ -757,7 +761,7 @@ const AdminExpenses = () => {
       phone: i.phone || '',
       email: i.email || '',
       other_info: i.other_info || '',
-      logo_url: i.logo_url || '',
+      logo_url: (i.logo_url && !i.logo_url.includes('wwhunyzobtuibhvkipwk')) ? i.logo_url : FALLBACK_LOGO_URL,
       is_default: i.is_default,
       source: 'institutions'
     }));
