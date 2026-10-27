@@ -9,7 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Heart, Loader2, CheckCircle, Clock, Printer, Trash2, Banknote, Globe } from 'lucide-react';
+import { Heart, Loader2, CheckCircle, Clock, Printer, Trash2, Banknote, Globe, MessageCircle } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { sendDonorPaymentNotification, buildDonorReceiptMessage, buildWaDirectLink } from '@/lib/paymentNotificationService';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import { toast } from 'sonner';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
@@ -24,6 +26,7 @@ const AdminDonors = () => {
 
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'online'>('cash');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [sendWhatsApp, setSendWhatsApp] = useState(true);
   const [form, setForm] = useState({
     donorName: '',
     donorPhone: '',
@@ -66,15 +69,32 @@ const AdminDonors = () => {
         notes: paymentMethod === 'online' ? `TrxID: ${form.transactionId}${form.paymentGateway ? ` | Gateway: ${form.paymentGateway}` : ''}` : `পদ্ধতি: ক্যাশ`,
       };
 
-      if (await checkApproval('add', payload, undefined, `দান: ৳${form.donationAmount}`)) return;
+      if (await checkApproval('add', payload, undefined, `দান: ৳${form.donationAmount}`)) return null;
 
       const { error } = await supabase.from('donors').insert(payload);
       if (error) throw error;
+      return {
+        donorName: form.donorName,
+        phone: form.donorPhone,
+        amount: form.donationAmount,
+        purpose: form.purpose,
+        donationDate: form.donationDate,
+        paymentMethod,
+        transactionId: form.transactionId,
+      };
     },
-    onSuccess: () => {
+    onSuccess: (savedDetails) => {
       queryClient.invalidateQueries({ queryKey: ['donors'] });
       setForm({ donorName: '', donorPhone: '', donorAddress: '', donationAmount: '', donationType: '', purpose: '', donationDate: '', transactionId: '', paymentGateway: '' });
       toast.success(bn ? 'দান রেকর্ড সফল' : 'Donation recorded');
+
+      if (sendWhatsApp && savedDetails?.phone?.trim()) {
+        sendDonorPaymentNotification(savedDetails).then(res => {
+          if (res.success) {
+            toast.success(bn ? 'দাতার WhatsApp-এ সফলভাবে শুকরিয়া বার্তা পাঠানো হয়েছে' : 'WhatsApp receipt sent to donor');
+          }
+        });
+      }
     },
     onError: (e: any) => toast.error(e.message || 'Error'),
   });
@@ -173,6 +193,20 @@ const AdminDonors = () => {
               </>
             )}
           </div>
+
+          {/* WhatsApp Auto-receipt Checkbox */}
+          <div className="flex items-center space-x-2 mt-4 pt-2 border-t border-border/50">
+            <Checkbox
+              id="send-wa-donor"
+              checked={sendWhatsApp}
+              onCheckedChange={(c) => setSendWhatsApp(!!c)}
+            />
+            <Label htmlFor="send-wa-donor" className="text-xs cursor-pointer flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-medium">
+              <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+              {bn ? 'দাতার নম্বরে স্বয়ংক্রিয় WhatsApp রসিদ ও শুকরিয়া বার্তা পাঠান' : 'Send automatic WhatsApp receipt & gratitude message to donor'}
+            </Label>
+          </div>
+
           <Button onClick={() => payMutation.mutate()} className="btn-primary-gradient mt-4" disabled={payMutation.isPending}>
             {payMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
             {paymentMethod === 'cash' ? (bn ? 'ক্যাশ রেকর্ড করুন' : 'Record Cash') : (bn ? 'অনলাইন রেকর্ড করুন' : 'Record Online')}
@@ -226,12 +260,36 @@ const AdminDonors = () => {
                       <td className="px-4 py-3 text-muted-foreground">{d.purpose || '-'}</td>
                       <td className="px-4 py-3 font-bold text-foreground">৳ {d.donation_amount || 0}</td>
                       <td className="px-4 py-3 text-muted-foreground">{d.donation_date || '-'}</td>
-                      <td className="px-4 py-3">
-                        {canDeleteItem && (
-                          <Button variant="ghost" size="sm" onClick={() => setDeleteId(d.id)}>
-                            <Trash2 className="w-3 h-3 text-destructive" />
-                          </Button>
-                        )}
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {d.phone && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 p-1.5 h-8 w-8"
+                              title={bn ? 'দাতার WhatsApp-এ রসিদ পাঠান' : 'Send receipt via WhatsApp'}
+                              onClick={() => {
+                                const waUrl = buildWaDirectLink(d.phone, buildDonorReceiptMessage({
+                                  donorName: d.name_bn,
+                                  phone: d.phone,
+                                  amount: d.donation_amount,
+                                  purpose: d.purpose,
+                                  donationDate: d.donation_date,
+                                  paymentMethod: d.notes?.includes('TrxID') ? 'online' : 'cash',
+                                  transactionId: d.notes?.match(/TrxID:\s*([^\s|]+)/)?.[1] || null,
+                                }));
+                                window.open(waUrl, '_blank');
+                              }}
+                            >
+                              <MessageCircle className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {canDeleteItem && (
+                            <Button variant="ghost" size="sm" onClick={() => setDeleteId(d.id)} className="p-1.5 h-8 w-8">
+                              <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                            </Button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

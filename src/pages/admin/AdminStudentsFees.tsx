@@ -3,11 +3,14 @@ import TabContainer from '@/components/TabContainer';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Suspense, useState, useEffect, useRef, useCallback } from 'react';
 import { lazyWithRetry as lazy } from '@/lib/lazyWithRetry';
-import { CreditCard, Loader2, CheckCircle, CheckCircle2, ArrowRight, ExternalLink, Search, User, Banknote, Globe, AlertCircle, Settings, BarChart3, Users, Clock, X, Receipt, AlertTriangle, Calendar, GraduationCap, RefreshCw, MessageSquare } from 'lucide-react';
+import { CreditCard, Loader2, CheckCircle, CheckCircle2, ArrowRight, ExternalLink, Search, User, Banknote, Globe, AlertCircle, Settings, BarChart3, Users, Clock, X, Receipt, AlertTriangle, Calendar, GraduationCap, RefreshCw, MessageSquare, MessageCircle } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { sendStudentFeePaymentNotification, buildStudentFeeReceiptMessage, buildWaDirectLink } from '@/lib/paymentNotificationService';
 import DuesManagement from '@/components/fees/DuesManagement';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -59,6 +62,7 @@ const AdminStudentsFees = () => {
   const [selectedMonths, setSelectedMonths] = useState<SelectedMonthItem[]>([]);
   const [transactionId, setTransactionId] = useState('');
   const [customCollector, setCustomCollector] = useState<string>('');
+  const [sendWhatsAppReceipt, setSendWhatsAppReceipt] = useState(true);
 
   // Student search (Session Year, Class, Roll / Reg)
   const [searchSessionId, setSearchSessionId] = useState('');
@@ -583,6 +587,28 @@ const AdminStudentsFees = () => {
         } catch (e: any) {
           toast.error(bn ? 'গেটওয়ে ত্রুটি, পেমেন্ট পেন্ডিং আছে' : 'Gateway error, payment is pending');
         }
+      }
+
+      // Send WhatsApp fee receipt to guardian if enabled
+      if (sendWhatsAppReceipt && (foundStudent?.guardian_phone || foundStudent?.phone)) {
+        sendStudentFeePaymentNotification({
+          studentName: foundStudent.name_bn || foundStudent.name_en,
+          guardianPhone: foundStudent.guardian_phone || foundStudent.phone,
+          studentPhone: foundStudent.phone,
+          rollNumber: foundStudent.roll_number,
+          studentId: foundStudent.student_id || foundStudent.registration_no,
+          feeTypeName: selectedFeeTypeObj ? (bn ? selectedFeeTypeObj.name_bn : selectedFeeTypeObj.name) : feeType,
+          month: selectedMonths.length > 0 ? selectedMonths.map(m => m.month).join(', ') : (paymentMonth || ''),
+          year: paymentYear,
+          amount,
+          receiptNumber: txnId,
+          collectorName: cleanRoleSuffix(customCollector || collectorName),
+          paymentMethod,
+        }).then(res => {
+          if (res.success) {
+            toast.success(bn ? 'অভিভাবকের WhatsApp-এ ফি রসিদ পাঠানো হয়েছে' : 'WhatsApp fee receipt sent to guardian');
+          }
+        });
       }
     },
     onError: (e: any) => toast.error(e.message || 'Error saving payment'),
@@ -1424,6 +1450,21 @@ const AdminStudentsFees = () => {
                 <span className="text-sm font-medium text-foreground">{bn ? 'মোট পরিমাণ' : 'Total Amount'}</span>
                 <span className="text-xl font-bold text-primary">৳ {parseFloat(amount).toFixed(2)}</span>
               </div>
+
+              {/* WhatsApp Fee Receipt Toggle */}
+              {(foundStudent?.guardian_phone || foundStudent?.phone) && (
+                <div className="flex items-center space-x-2 py-2 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 my-2">
+                  <Checkbox
+                    id="send-wa-student"
+                    checked={sendWhatsAppReceipt}
+                    onCheckedChange={(c) => setSendWhatsAppReceipt(!!c)}
+                  />
+                  <Label htmlFor="send-wa-student" className="text-xs cursor-pointer flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 font-medium">
+                    <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                    {bn ? `অভিভাবকের নম্বরে (${foundStudent.guardian_phone || foundStudent.phone}) স্বয়ংক্রিয় WhatsApp রসিদ পাঠান` : `Send automatic WhatsApp fee receipt to guardian (${foundStudent.guardian_phone || foundStudent.phone})`}
+                  </Label>
+                </div>
+              )}
             </div>
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setStep('form')} className="flex-1">
@@ -1465,9 +1506,38 @@ const AdminStudentsFees = () => {
                 <ExternalLink className="w-3 h-3 inline ml-1" />
               </p>
             )}
-            <Button variant="outline" onClick={handleReset} className="mt-4">
-              {bn ? 'নতুন পেমেন্ট' : 'New Payment'}
-            </Button>
+            <div className="flex justify-center items-center gap-3 mt-4 flex-wrap">
+              {(foundStudent?.guardian_phone || foundStudent?.phone) && (
+                <Button
+                  variant="outline"
+                  className="border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 gap-1.5"
+                  onClick={() => {
+                    const phone = foundStudent.guardian_phone || foundStudent.phone;
+                    const waUrl = buildWaDirectLink(phone, buildStudentFeeReceiptMessage({
+                      studentName: foundStudent.name_bn || foundStudent.name_en,
+                      guardianPhone: foundStudent.guardian_phone || foundStudent.phone,
+                      studentPhone: foundStudent.phone,
+                      rollNumber: foundStudent.roll_number,
+                      studentId: foundStudent.student_id || foundStudent.registration_no,
+                      feeTypeName: selectedFeeTypeObj ? (bn ? selectedFeeTypeObj.name_bn : selectedFeeTypeObj.name) : feeType,
+                      month: selectedMonths.length > 0 ? selectedMonths.map((m: any) => m.month).join(', ') : (paymentMonth || ''),
+                      year: paymentYear,
+                      amount,
+                      receiptNumber: transactionId,
+                      collectorName: cleanRoleSuffix(customCollector || collectorName),
+                      paymentMethod,
+                    }));
+                    window.open(waUrl, '_blank');
+                  }}
+                >
+                  <MessageCircle className="w-4 h-4 text-emerald-600" />
+                  {bn ? 'WhatsApp-এ রসিদ পাঠান' : 'Send Receipt via WhatsApp'}
+                </Button>
+              )}
+              <Button variant="outline" onClick={handleReset}>
+                {bn ? 'নতুন পেমেন্ট' : 'New Payment'}
+              </Button>
+            </div>
           </div>
         )}
 
