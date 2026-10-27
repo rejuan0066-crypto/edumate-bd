@@ -2135,17 +2135,17 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                   <div className="border rounded-xl p-4 sm:p-5 space-y-4 border-primary/30 bg-primary/5 shadow-sm">
                     <h3 className="text-md font-display font-semibold text-foreground border-b border-primary/20 pb-2 flex items-center gap-2 text-lg">
                       <UserCheck className="w-5 h-5 text-primary" />
-                      {bn ? '১. কোন শিক্ষক ভর্তি করিয়েছেন? (ভর্তিকারী / যাচাইকারী শিক্ষক)' : '1. Admitted By / Verified By Teacher'}
+                      {bn ? '১. যাচাইকারী' : '1. Verifier'}
                     </h3>
                     <p className="text-xs text-muted-foreground italic">
-                      {bn ? 'যে শিক্ষক ছাত্রটিকে মাদরাসায় ভর্তি করিয়েছেন বা ভর্তি ফরম যাচাই করেছেন তাঁকে নির্বাচন করুন' : 'Select the teacher who admitted or verified this student admission'}
+                      {bn ? 'যে শিক্ষক বা কর্মকর্তা ভর্তি ফরম যাচাই করেছেন তাঁর শিক্ষা বিভাগ ও নাম নির্বাচন করুন' : 'Select the academic division and teacher who verified this admission form'}
                     </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label>{bn ? 'ভর্তির বিভাগ / মাধ্যম' : 'Admission Department / Mode'}</Label>
+                        <Label>{bn ? 'শিক্ষা বিভাগ' : 'Academic Division'}</Label>
                         <Select
-                          value={form.admitted_by_type || 'none'}
+                          value={form.admitted_by_type?.startsWith('div_') ? form.admitted_by_type : ''}
                           onValueChange={(val: string) => {
                             setForm(prev => ({
                               ...prev,
@@ -2155,11 +2155,9 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                           }}
                         >
                           <SelectTrigger className="bg-background mt-1">
-                            <SelectValue placeholder={bn ? 'মাদরাসার বিভাগ নির্বাচন করুন' : 'Select Madrasa Department'} />
+                            <SelectValue placeholder={bn ? 'শিক্ষা বিভাগ নির্বাচন করুন' : 'Select Academic Division'} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="none">{bn ? 'সরাসরি ভর্তি (মাদরাসা অফিস)' : 'Direct (Madrasa Office)'}</SelectItem>
-                            <SelectItem value="staff">{bn ? 'মাদরাসার শিক্ষক (সার্বিক)' : 'Madrasa Teacher (All)'}</SelectItem>
                             {divisions.map((d: any) => (
                               <SelectItem key={d.id} value={`div_${d.id}`}>
                                 {d.name_bn || d.name}
@@ -2169,7 +2167,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                         </Select>
                       </div>
 
-                      {form.admitted_by_type !== 'none' ? (
+                      true ? (
                         <div>
                           <Label>
                             {(() => {
@@ -2178,7 +2176,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                                 const matchedDiv = divisions.find((d: any) => d.id === divId);
                                 return matchedDiv ? (bn ? `${matchedDiv.name_bn || matchedDiv.name}-এর শিক্ষক নির্বাচন` : `Teacher (${matchedDiv.name})`) : (bn ? 'ভর্তিকারী শিক্ষক নির্বাচন' : 'Select Admitting Teacher');
                               }
-                              return bn ? 'ভর্তিকারী শিক্ষক নির্বাচন' : 'Select Admitting Teacher';
+                              return bn ? 'যাচাইকারী শিক্ষক নির্বাচন' : 'Select Verifier';
                             })()}
                           </Label>
                           <Select
@@ -2213,19 +2211,19 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                         </div>
                       ) : null}
 
-                      {form.admitted_by_type !== 'none' && (
+                      true && (
                         <>
                           <div>
-                            <Label>{bn ? 'শিক্ষকের নাম' : 'Teacher Name'}</Label>
+                            <Label>{bn ? 'যাচাইকারীর নাম' : 'Verifier Name'}</Label>
                             <Input
                               className="bg-background mt-1"
                               value={form.admitted_by_name || ''}
                               onChange={e => setForm(prev => ({ ...prev, admitted_by_name: e.target.value }))}
-                              placeholder={bn ? 'শিক্ষকের নাম লিখুন' : 'Enter teacher name'}
+                              placeholder={bn ? 'যাচাইকারীর নাম লিখুন' : 'Enter verifier name'}
                             />
                           </div>
                           <div>
-                            <Label>{bn ? 'শিক্ষকের পদবি' : 'Teacher Designation'}</Label>
+                            <Label>{bn ? 'যাচাইকারীর পদবি' : 'Verifier Designation'}</Label>
                             <Input
                               className="bg-background mt-1"
                               value={form.admitted_by_designation || ''}
@@ -2234,7 +2232,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                             />
                           </div>
                           <div className="md:col-span-2">
-                            <Label>{bn ? 'শিক্ষকের মোবাইল নম্বর' : 'Teacher Phone'}</Label>
+                            <Label>{bn ? 'যাচাইকারীর মোবাইল নম্বর' : 'Verifier Phone'}</Label>
                             <Input
                               className="bg-background mt-1 font-mono"
                               value={form.admitted_by_phone || ''}

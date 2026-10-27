@@ -3390,14 +3390,14 @@ const AdminApprovals = () => {
                     <div className="rounded-xl border border-border/80 bg-muted/30 p-3 space-y-3">
                       <div className="flex items-center gap-1.5 font-semibold text-xs text-foreground">
                         <UserCheck className="w-3.5 h-3.5 text-primary" />
-                        <span>{bn ? 'কোন শিক্ষক ভর্তি করিয়েছেন? (ভর্তিকারী শিক্ষক)' : 'Admitted by Teacher'}</span>
+                        <span>{bn ? '১. যাচাইকারী' : '1. Verifier'}</span>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         <div className="space-y-1">
-                          <Label className="text-[11px] font-medium text-muted-foreground">{bn ? 'ভর্তির বিভাগ / মাধ্যম' : 'Admission Department / Mode'}</Label>
+                          <Label className="text-[11px] font-medium text-muted-foreground">{bn ? 'শিক্ষা বিভাগ' : 'Academic Division'}</Label>
                           <Select
-                            value={studentReferralType}
+                            value={studentReferralType?.startsWith('div_') ? studentReferralType : ''}
                             onValueChange={(val: string) => {
                               setStudentReferralType(val);
                               if (val === 'none') {
@@ -3408,11 +3408,9 @@ const AdminApprovals = () => {
                             }}
                           >
                             <SelectTrigger className="h-8 text-xs bg-background">
-                              <SelectValue placeholder={bn ? 'মাদরাসার বিভাগ নির্বাচন করুন' : 'Select Madrasa Department'} />
+                              <SelectValue placeholder={bn ? 'শিক্ষা বিভাগ নির্বাচন করুন' : 'Select Academic Division'} />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="none">{bn ? 'সরাসরি ভর্তি (মাদরাসা অফিস)' : 'Direct (Madrasa Office)'}</SelectItem>
-                              <SelectItem value="staff">{bn ? 'মাদরাসার শিক্ষক (সকল বিভাগ)' : 'Madrasa Teacher (All)'}</SelectItem>
                               {allDivisions.map((d: any) => (
                                 <SelectItem key={d.id} value={`div_${d.id}`}>
                                   {d.name_bn || d.name}
@@ -3422,7 +3420,7 @@ const AdminApprovals = () => {
                           </Select>
                         </div>
 
-                        {studentReferralType !== 'none' ? (
+                        true ? (
                           <div className="space-y-1">
                             <Label className="text-[11px] font-medium text-muted-foreground">
                               {(() => {
@@ -3431,7 +3429,7 @@ const AdminApprovals = () => {
                                   const matchedDiv = allDivisions.find((d: any) => d.id === divId);
                                   return matchedDiv ? (bn ? `${matchedDiv.name_bn || matchedDiv.name}-এর শিক্ষক নির্বাচন` : `Teacher (${matchedDiv.name})`) : (bn ? 'ভর্তিকারী শিক্ষক নির্বাচন' : 'Select Teacher');
                                 }
-                                return bn ? 'ভর্তিকারী শিক্ষক নির্বাচন' : 'Select Admitting Teacher';
+                                return bn ? 'যাচাইকারী শিক্ষক নির্বাচন' : 'Select Verifier';
                               })()}
                             </Label>
                             <Select
@@ -3464,7 +3462,7 @@ const AdminApprovals = () => {
                         ) : null}
                       </div>
 
-                      {studentReferralType !== 'none' && (
+                      true && (
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 border-t border-border/40">
                           <div className="space-y-1">
                             <Label className="text-[11px] font-medium text-muted-foreground">

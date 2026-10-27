@@ -1278,7 +1278,7 @@ const StudentProfileModal = ({
           </ProfileSectionCard>
 
           {/* Admission Approval & Admitting Teacher Details */}
-          <ProfileSectionCard title={bn ? 'ভর্তি অনুমোদন ও ভর্তিকারী শিক্ষক' : 'Admission Approval & Admitting Teacher'} icon={ShieldCheck}>
+          <ProfileSectionCard title={bn ? 'ভর্তি অনুমোদন ও যাচাইকারী' : 'Admission Approval & Verifier'} icon={ShieldCheck}>
             <ProfileInfoItem
               icon={UserCheck}
               label={bn ? 'অনুমোদনকারী' : 'Approved By'}
@@ -1296,7 +1296,7 @@ const StudentProfileModal = ({
             />
             <ProfileInfoItem
               icon={Users}
-              label={bn ? 'ভর্তি করিয়েছেন যে শিক্ষক' : 'Admitted by Teacher'}
+              label={bn ? 'যাচাইকারী শিক্ষক' : 'Verifier Teacher'}
               value={
                 student.extra_fields?.referral_info?.name
                   ? `${student.extra_fields.referral_info.name} ${student.extra_fields.referral_info.designation ? `(${student.extra_fields.referral_info.designation})` : ''}`
