@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search, Bell, AlertTriangle, Download, CalendarRange, CreditCard, Banknote, CheckCircle2, Calendar } from 'lucide-react';
+import { Search, Bell, AlertTriangle, Download, CalendarRange, CreditCard, Banknote, CheckCircle2, Calendar, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 
@@ -324,7 +324,19 @@ const DuesManagement = () => {
   }, [dueStudents, applicableFeeTypesForMonth, computeBreakdown]);
 
   const handleSendReminder = (student: any) => {
-    toast.info(bn ? `${student.name_bn} এর জন্য রিমাইন্ডার পাঠানো হবে (এসএমএস এপিআই যুক্ত হলে)` : `Reminder will be sent to ${student.name_en || student.name_bn} (when SMS API is connected)`);
+    const dueAmt = computeStudentDue(student);
+    const phone = student.guardian_phone || student.phone;
+    if (!phone) {
+      toast.error(bn ? 'অভিভাবকের ফোন নম্বর নেই' : 'No phone number found');
+      return;
+    }
+    let clean = phone.replace(/\D/g, '');
+    if (clean.length === 11 && clean.startsWith('01')) clean = '88' + clean;
+
+    const msg = `আসসালামু আলাইকুম, অভিভাবক মহোদয়। আল আরাবিয়া সুবহানিয়া মাদ্রাসায় আপনার সন্তান ${student.name_bn || student.name_en}-এর মোট বকেয়া ফি ৳${dueAmt.toLocaleString('en-IN')}। অনুগ্রহ করে দ্রুত পরিশোধের জন্য বিনীত অনুরোধ করা হচ্ছে।`;
+    const waUrl = `https://wa.me/${clean}?text=${encodeURIComponent(msg)}`;
+    window.open(waUrl, '_blank');
+    toast.success(bn ? `${student.name_bn}-এর WhatsApp মেসেজ ওপেন হয়েছে` : `Opened WhatsApp for ${student.name_en || student.name_bn}`);
   };
 
   const handlePay = (student: any) => {
@@ -527,12 +539,22 @@ const DuesManagement = () => {
             </button>
           </div>
 
-          {isFeatureAllowed('action_export_dues') !== false && (
-            <Button variant="outline" size="sm" onClick={handleExportCSV} className="gap-2 text-xs">
-              <Download className="w-3.5 h-3.5" />
-              {bn ? 'এক্সপোর্ট CSV' : 'Export CSV'}
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              onClick={() => navigate('/admin/guardian-notify')}
+              className="gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              {bn ? 'বকেয়াদের বাল্ক WhatsApp' : 'Bulk WhatsApp Dues'}
             </Button>
-          )}
+            {isFeatureAllowed('action_export_dues') !== false && (
+              <Button variant="outline" size="sm" onClick={handleExportCSV} className="gap-2 text-xs">
+                <Download className="w-3.5 h-3.5" />
+                {bn ? 'এক্সপোর্ট CSV' : 'Export CSV'}
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Filters Grid */}

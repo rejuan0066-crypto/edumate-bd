@@ -1,17 +1,22 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, MessageCircle, Save, ExternalLink, Phone, Send, CheckCircle2, XCircle } from 'lucide-react';
+import {
+  Loader2, MessageCircle, Save, ExternalLink, Phone, Send, CheckCircle2,
+  XCircle, QrCode, RefreshCw, Sparkles, HelpCircle, ShieldCheck, Zap
+} from 'lucide-react';
 import { buildWhatsAppUrl } from '@/hooks/useWhatsAppConfig';
+import { QRCodeSVG } from 'qrcode.react';
 
 const WhatsAppSettings = () => {
   const { language } = useLanguage();
@@ -41,51 +46,61 @@ const WhatsAppSettings = () => {
     route_mode: 'deny' as 'deny' | 'allow',
     route_patterns: [] as string[],
   });
+
+  // Free Gateway Settings (stored in app_settings table)
+  const [freeGateway, setFreeGateway] = useState({
+    is_enabled: true,
+    provider: 'evolution', // 'evolution' | 'baileys' | 'wppconnect' | 'android'
+    server_url: '',
+    instance_name: 'madrasa_main',
+    api_key: '',
+  });
+
   const [routePatternsText, setRoutePatternsText] = useState('');
   const [saving, setSaving] = useState(false);
+  const [checkingStatus, setCheckingStatus] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'connected' | 'disconnected' | 'error'>('idle');
+  const [statusMessage, setStatusMessage] = useState('');
+
+  // QR Modal
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [qrCodeData, setQrCodeData] = useState<string | null>(null);
+  const [loadingQr, setLoadingQr] = useState(false);
+
+  // Test sender
   const [testPhone, setTestPhone] = useState('');
   const [testMessage, setTestMessage] = useState(
-    bn ? 'এটি একটি টেস্ট মেসেজ। WhatsApp Cloud API সঠিকভাবে কনফিগার করা হয়েছে।' : 'This is a test message. WhatsApp Cloud API is correctly configured.'
+    bn ? 'আসসালামু আলাইকুম, এটি আল আরাবিয়া সুবহানিয়া মাদ্রাসার টেস্ট WhatsApp মেসেজ।' : 'This is a test WhatsApp message from Al-Arabia Subhania Madrasa.'
   );
   const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<{ success: boolean; messageId?: string; error?: string; sentAt?: string } | null>(null);
+  const [testResult, setTestResult] = useState<{ success: boolean; messageId?: string; error?: string; sentAt?: string; method?: string } | null>(null);
 
-  const handleTest = async () => {
-    if (!testPhone.trim()) {
-      toast({ title: bn ? 'ফোন নম্বর দিন' : 'Enter a phone number', variant: 'destructive' });
-      return;
+  // Load free gateway from app_settings
+  useEffect(() => {
+    async function loadGatewayConfig() {
+      try {
+        const { data } = await supabase
+          .from('app_settings')
+          .select('value')
+          .eq('key', 'whatsapp_gateway_config')
+          .maybeSingle();
+
+        if (data?.value && typeof data.value === 'object') {
+          const val = data.value as any;
+          setFreeGateway({
+            is_enabled: val.is_enabled ?? true,
+            provider: val.provider || 'evolution',
+            server_url: val.server_url || '',
+            instance_name: val.instance_name || 'madrasa_main',
+            api_key: val.api_key || '',
+          });
+        }
+      } catch (err) {
+        console.error('Error loading gateway config:', err);
+      }
     }
-    if (!testMessage.trim()) {
-      toast({ title: bn ? 'মেসেজ দিন' : 'Enter a message', variant: 'destructive' });
-      return;
-    }
-    setTesting(true);
-    setTestResult(null);
-    try {
-      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
-        body: { recipients: [testPhone.trim()], message: testMessage.trim() },
-      });
-      if (error) throw error;
-      const result = data?.results?.[0];
-      const ok = !!result?.success;
-      setTestResult({
-        success: ok,
-        messageId: result?.messageId,
-        error: result?.error || (ok ? undefined : data?.error),
-        sentAt: new Date().toLocaleString(bn ? 'bn-BD' : 'en-US'),
-      });
-      toast({
-        title: ok ? (bn ? 'মেসেজ পাঠানো হয়েছে' : 'Message sent') : (bn ? 'পাঠানো ব্যর্থ' : 'Send failed'),
-        description: ok ? (bn ? 'WhatsApp এ চেক করুন' : 'Check WhatsApp inbox') : (result?.error || data?.error),
-        variant: ok ? 'default' : 'destructive',
-      });
-    } catch (err: any) {
-      setTestResult({ success: false, error: err.message, sentAt: new Date().toLocaleString(bn ? 'bn-BD' : 'en-US') });
-      toast({ title: bn ? 'ত্রুটি' : 'Error', description: err.message, variant: 'destructive' });
-    } finally {
-      setTesting(false);
-    }
-  };
+    loadGatewayConfig();
+  }, []);
 
   useEffect(() => {
     if (config) {
@@ -110,7 +125,7 @@ const WhatsAppSettings = () => {
     }
   }, [config]);
 
-  // Phone validation: accept either local BD 11-digit (01XXXXXXXXX) or international E.164 (+ then 10-15 digits)
+  // Phone validation
   const validatePhone = (raw: string): string | null => {
     const v = (raw || '').trim();
     if (!v) return bn ? 'ফোন নম্বর দিন' : 'Phone number is required';
@@ -122,7 +137,6 @@ const WhatsAppSettings = () => {
         return bn ? 'ইন্টারন্যাশনাল ফরম্যাট ভুল (১০–১৫ ডিজিট হতে হবে)' : 'Invalid international format (must be 10–15 digits)';
       }
     } else {
-      // Local: must be exactly 11 digits and start with 01 (BD mobile)
       if (digits.length !== 11 || !digits.startsWith('01')) {
         return bn
           ? 'লোকাল নম্বর ১১ ডিজিটের হতে হবে এবং ০১ দিয়ে শুরু (অথবা +কান্ট্রি কোডসহ দিন)'
@@ -147,6 +161,7 @@ const WhatsAppSettings = () => {
         .map((s) => s.trim())
         .filter((s) => s.length > 0 && s.startsWith('/'));
       const payload: any = { ...form, route_patterns: parsedPatterns };
+
       if (config?.id) {
         const { error } = await supabase.from('whatsapp_config').update(payload).eq('id', config.id);
         if (error) throw error;
@@ -154,9 +169,20 @@ const WhatsAppSettings = () => {
         const { error } = await supabase.from('whatsapp_config').insert(payload);
         if (error) throw error;
       }
+
+      // Save Free Gateway Settings in app_settings
+      const { error: gwErr } = await supabase.from('app_settings').upsert({
+        key: 'whatsapp_gateway_config',
+        value: freeGateway,
+        description: 'Free WhatsApp Gateway settings (Evolution API / Baileys)',
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'key' });
+
+      if (gwErr) console.warn('Could not save gateway config to app_settings:', gwErr);
+
       qc.invalidateQueries({ queryKey: ['whatsapp-config'] });
       qc.invalidateQueries({ queryKey: ['whatsapp-config-admin'] });
-      toast({ title: bn ? 'সংরক্ষিত হয়েছে' : 'Saved' });
+      toast({ title: bn ? 'সেটিংস সংরক্ষিত হয়েছে' : 'Settings saved successfully' });
     } catch (err: any) {
       toast({ title: bn ? 'ত্রুটি' : 'Error', description: err.message, variant: 'destructive' });
     } finally {
@@ -164,28 +190,244 @@ const WhatsAppSettings = () => {
     }
   };
 
-  if (isLoading) {
-    return <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
-  }
+  // Check Free Gateway Connection Status
+  const handleCheckConnection = async () => {
+    if (!freeGateway.server_url.trim()) {
+      toast({ title: bn ? 'গেটওয়ে সার্ভার URL দিন' : 'Enter Gateway Server URL', variant: 'destructive' });
+      return;
+    }
+    setCheckingStatus(true);
+    setStatusMessage('');
+    try {
+      const sUrl = freeGateway.server_url.replace(/\/+$/, '');
+      const instance = freeGateway.instance_name.trim() || 'madrasa_main';
+      const headers: Record<string, string> = {};
+      if (freeGateway.api_key) headers['apikey'] = freeGateway.api_key;
 
-  const previewUrl = form.phone_number ? buildWhatsAppUrl(form.phone_number, form.welcome_message) : '';
+      const resp = await fetch(`${sUrl}/instance/connectionState/${encodeURIComponent(instance)}`, { headers });
+      const data = await resp.json().catch(() => ({}));
+      
+      const state = data?.instance?.state || data?.state;
+      if (state === 'open' || state === 'connected') {
+        setConnectionStatus('connected');
+        setStatusMessage(bn ? '✅ সংযুক্ত (Connected)! নম্বরটি সক্রিয় আছে।' : 'Connected! Number is active.');
+      } else {
+        setConnectionStatus('disconnected');
+        setStatusMessage(bn ? '⚠️ সংযোগ বিচ্ছিন্ন (Disconnected) অথবা QR কোড স্ক্যান প্রয়োজন।' : 'Disconnected. QR scan needed.');
+      }
+    } catch (e: any) {
+      setConnectionStatus('error');
+      setStatusMessage(bn ? `সার্ভারে সংযোগ ব্যর্থ: ${e.message}` : `Connection failed: ${e.message}`);
+    } finally {
+      setCheckingStatus(false);
+    }
+  };
+
+  // Open QR Connect Dialog
+  const handleOpenQrModal = async () => {
+    setQrModalOpen(true);
+    if (!freeGateway.server_url.trim()) return;
+
+    setLoadingQr(true);
+    setQrCodeData(null);
+    try {
+      const sUrl = freeGateway.server_url.replace(/\/+$/, '');
+      const instance = freeGateway.instance_name.trim() || 'madrasa_main';
+      const headers: Record<string, string> = {};
+      if (freeGateway.api_key) headers['apikey'] = freeGateway.api_key;
+
+      const resp = await fetch(`${sUrl}/instance/connect/${encodeURIComponent(instance)}`, { headers });
+      const data = await resp.json().catch(() => ({}));
+      
+      if (data?.base64) {
+        setQrCodeData(data.base64);
+      } else if (data?.code) {
+        setQrCodeData(data.code);
+      } else if (data?.pairingCode) {
+        setQrCodeData(data.pairingCode);
+      }
+    } catch (err) {
+      console.error('Error fetching QR:', err);
+    } finally {
+      setLoadingQr(false);
+    }
+  };
+
+  // Test WhatsApp message
+  const handleTest = async () => {
+    if (!testPhone.trim()) {
+      toast({ title: bn ? 'ফোন নম্বর দিন' : 'Enter a phone number', variant: 'destructive' });
+      return;
+    }
+    if (!testMessage.trim()) {
+      toast({ title: bn ? 'মেসেজ দিন' : 'Enter a message', variant: 'destructive' });
+      return;
+    }
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+        body: { recipients: [testPhone.trim()], message: testMessage.trim() },
+      });
+      if (error) throw error;
+      const result = data?.results?.[0];
+      const ok = !!result?.success;
+      setTestResult({
+        success: ok,
+        messageId: result?.messageId,
+        error: result?.error || (ok ? undefined : data?.error),
+        sentAt: new Date().toLocaleString(bn ? 'bn-BD' : 'en-US'),
+        method: data?.method,
+      });
+      toast({
+        title: ok ? (bn ? 'মেসেজ পাঠানো হয়েছে' : 'Message sent') : (bn ? 'পাঠানো ব্যর্থ' : 'Send failed'),
+        description: ok ? (bn ? 'WhatsApp এ চেক করুন' : 'Check WhatsApp inbox') : (result?.error || data?.error),
+        variant: ok ? 'default' : 'destructive',
+      });
+    } catch (err: any) {
+      setTestResult({ success: false, error: err.message, sentAt: new Date().toLocaleString(bn ? 'bn-BD' : 'en-US') });
+      toast({ title: bn ? 'ত্রুটি' : 'Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  const previewUrl = buildWhatsAppUrl(form.phone_number, form.welcome_message);
 
   return (
-    <div className="space-y-4">
-      {/* Click-to-Chat */}
+    <div className="space-y-6">
+      {/* 1. Free WhatsApp Gateway Card */}
+      <Card className="border-emerald-500/30 bg-emerald-500/5">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <CardTitle className="text-base flex items-center gap-2 text-foreground font-bold">
+                <Sparkles className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                {bn ? 'ফ্রি WhatsApp গেটওয়ে (Evolution API / QR Code সেশন)' : 'Free WhatsApp Gateway (Evolution API / Baileys)'}
+                <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-semibold">
+                  ১০০% ফ্রি (০ টাকা খরচ)
+                </span>
+              </CardTitle>
+              <CardDescription className="text-xs">
+                {bn
+                  ? 'কোনো থার্ড-পার্টি বা মেটা এপিআই ফি ছাড়া মাদ্রাসার সাধারণ WhatsApp নম্বর দিয়ে আনলিমিটেড OTP, নোটিশ ও ফি রিমাইন্ডার পাঠান।'
+                  : 'Send unlimited free OTP, notices and fee reminders using your madrasa WhatsApp number.'}
+              </CardDescription>
+            </div>
+            <Switch
+              checked={freeGateway.is_enabled}
+              onCheckedChange={(v) => setFreeGateway({ ...freeGateway, is_enabled: v })}
+            />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <Label className="text-xs">{bn ? 'প্রোভাইডার ইঞ্জিন' : 'Provider Engine'}</Label>
+              <Select
+                value={freeGateway.provider}
+                onValueChange={(v) => setFreeGateway({ ...freeGateway, provider: v })}
+              >
+                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="evolution">Evolution API (পরামর্শিত)</SelectItem>
+                  <SelectItem value="baileys">Baileys / Custom Webhook</SelectItem>
+                  <SelectItem value="wppconnect">WPPConnect Server</SelectItem>
+                  <SelectItem value="android">Android Gateway (TextBee/App)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">{bn ? 'গেটওয়ে সার্ভার URL' : 'Gateway Server URL'}</Label>
+              <Input
+                value={freeGateway.server_url}
+                onChange={(e) => setFreeGateway({ ...freeGateway, server_url: e.target.value })}
+                placeholder="https://your-evolution-api.up.railway.app"
+                className="h-9 font-mono text-xs"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">{bn ? 'সেশন / ইনস্ট্যান্স নাম' : 'Instance Name'}</Label>
+              <Input
+                value={freeGateway.instance_name}
+                onChange={(e) => setFreeGateway({ ...freeGateway, instance_name: e.target.value })}
+                placeholder="madrasa_main"
+                className="h-9 font-mono text-xs"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+            <div>
+              <Label className="text-xs">{bn ? 'এপিআই সিক্রেট / গ্লোবাল টোকেন (API Key)' : 'API Key / Global Token'}</Label>
+              <Input
+                type="password"
+                value={freeGateway.api_key}
+                onChange={(e) => setFreeGateway({ ...freeGateway, api_key: e.target.value })}
+                placeholder="your-secret-api-token"
+                className="h-9 font-mono text-xs"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleCheckConnection}
+                disabled={checkingStatus || !freeGateway.server_url.trim()}
+                className="h-9 flex-1 gap-1.5"
+              >
+                {checkingStatus ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                {bn ? 'স্ট্যাটাস চেক' : 'Check Status'}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleOpenQrModal}
+                className="h-9 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                <QrCode className="w-3.5 h-3.5" />
+                {bn ? 'QR কোড স্ক্যান' : 'Scan QR'}
+              </Button>
+            </div>
+          </div>
+
+          {statusMessage && (
+            <div className={`p-2.5 rounded-lg text-xs font-medium flex items-center gap-2 ${
+              connectionStatus === 'connected' ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' :
+              connectionStatus === 'disconnected' ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300' :
+              'bg-destructive/15 text-destructive'
+            }`}>
+              {statusMessage}
+            </div>
+          )}
+
+          <div className="p-3 rounded-lg bg-background/80 border text-xs text-muted-foreground space-y-1">
+            <p className="font-semibold text-foreground flex items-center gap-1.5">
+              <Zap className="w-3.5 h-3.5 text-amber-500" />
+              {bn ? 'কীভাবে ২ মিনিটে ফ্রি গেটওয়ে চালু করবেন?' : 'How to deploy free gateway in 2 mins?'}
+            </p>
+            <p>{bn
+              ? 'Render.com বা Railway.app-এ গিয়ে "Evolution API" এর ফ্রি ডকার ইমেজটি এক ক্লিকে ডিপ্লয় করুন। এরপর পাওয়া সার্ভার লিংকটি ও ইনস্ট্যান্স নাম এখানে পেস্ট করে "QR কোড স্ক্যান" বাটনে চাপুন।'
+              : 'Deploy Evolution API Docker template on Render.com or Railway.app for free. Paste the URL here and click Scan QR to link your number.'}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 2. Floating Chat Button */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <MessageCircle className="w-5 h-5 text-[#25D366]" />
-            {bn ? 'WhatsApp ফ্লোটিং বাটন (Click-to-Chat)' : 'WhatsApp Floating Button'}
+          <CardTitle className="text-base">
+            {bn ? 'ওয়েবসাইট ফ্লোটিং চ্যাট বাটন' : 'Website Floating Chat Button'}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
             <div>
-              <Label>{bn ? 'ফ্লোটিং বাটন দেখান' : 'Show floating button'}</Label>
+              <Label>{bn ? 'ফ্লোটিং বাটন চালু' : 'Enable floating button'}</Label>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {bn ? 'ওয়েবসাইটের সব পেজে নিচে WhatsApp আইকন দেখাবে' : 'Show WhatsApp icon on all public pages'}
+                {bn ? 'ওয়েবসাইটের নিচে ডান/বাম কোনায় WhatsApp আইকন দেখাবে' : 'Shows a WhatsApp icon at the bottom corner'}
               </p>
             </div>
             <Switch
@@ -196,7 +438,7 @@ const WhatsAppSettings = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <Label className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" />{bn ? 'WhatsApp নম্বর' : 'WhatsApp number'} *</Label>
+              <Label>{bn ? 'মাদ্রাসার WhatsApp নম্বর' : 'Madrasa WhatsApp Number'} *</Label>
               <Input
                 value={form.phone_number}
                 onChange={(e) => setForm({ ...form, phone_number: e.target.value })}
@@ -229,74 +471,8 @@ const WhatsAppSettings = () => {
               value={form.welcome_message}
               onChange={(e) => setForm({ ...form, welcome_message: e.target.value })}
               rows={3}
-              placeholder={bn ? 'আসসালামু আলাইকুম, আমি জানতে চাই...' : 'Hello, I would like to know...'}
+              placeholder={bn ? 'আসসালামু আলাইকুম, আমি মাদ্রাসার বিষয়ে জানতে চাই...' : 'Hello, I would like to know...'}
             />
-            <p className="text-xs text-muted-foreground mt-1">
-              {bn ? 'ব্যবহারকারীর WhatsApp এ এই বার্তাটি অটো-ফিল হয়ে যাবে' : "This message will be auto-filled in user's WhatsApp"}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <Label>{bn ? 'বাটন লেবেল' : 'Button label'}</Label>
-              <Input
-                value={form.button_label}
-                onChange={(e) => setForm({ ...form, button_label: e.target.value })}
-                placeholder={bn ? 'WhatsApp এ চ্যাট' : 'Chat on WhatsApp'}
-              />
-            </div>
-            <div>
-              <Label>{bn ? 'অফিস টাইম (ঐচ্ছিক)' : 'Business hours (optional)'}</Label>
-              <Input
-                value={form.business_hours}
-                onChange={(e) => setForm({ ...form, business_hours: e.target.value })}
-                placeholder={bn ? 'সকাল ৯টা - সন্ধ্যা ৬টা' : '9 AM - 6 PM'}
-              />
-            </div>
-          </div>
-
-          {/* Route allow/deny list */}
-          <div className="rounded-xl border border-border/60 p-3 space-y-3 bg-muted/30">
-            <div>
-              <Label className="text-sm font-semibold">
-                {bn ? 'রুট ফিল্টার (কোন পেজে দেখাবে)' : 'Route filter (which pages show the button)'}
-              </Label>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {bn
-                  ? 'প্রতি লাইনে একটি রুট-প্রিফিক্স লিখুন (যেমন /admin, /parent-portal)। প্রিফিক্স ম্যাচ করে।'
-                  : 'One route prefix per line (e.g. /admin, /parent-portal). Matched as path prefix.'}
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <Label className="text-xs">{bn ? 'মোড' : 'Mode'}</Label>
-                <Select
-                  value={form.route_mode}
-                  onValueChange={(v: any) => setForm({ ...form, route_mode: v })}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="deny">{bn ? 'Deny — তালিকার পেজে লুকান' : 'Deny — hide on listed pages'}</SelectItem>
-                    <SelectItem value="allow">{bn ? 'Allow — শুধু তালিকার পেজে দেখান' : 'Allow — show only on listed pages'}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="sm:col-span-2">
-                <Label className="text-xs">{bn ? 'রুট প্যাটার্ন (প্রতি লাইনে একটি)' : 'Route patterns (one per line)'}</Label>
-                <Textarea
-                  value={routePatternsText}
-                  onChange={(e) => setRoutePatternsText(e.target.value)}
-                  rows={5}
-                  placeholder={'/admin\n/student-portal\n/parent-portal\n/auth'}
-                  className="font-mono text-xs"
-                />
-              </div>
-            </div>
-            <p className="text-[11px] text-muted-foreground">
-              {bn
-                ? 'খালি রাখলে ডিফল্ট: /admin, /student-portal, /student-info, /parent-portal, /auth, /login লুকানো থাকবে।'
-                : 'If empty, defaults to hiding: /admin, /student-portal, /student-info, /parent-portal, /auth, /login.'}
-            </p>
           </div>
 
           {previewUrl && (
@@ -315,25 +491,20 @@ const WhatsAppSettings = () => {
         </CardContent>
       </Card>
 
-      {/* Cloud API */}
-      <Card>
+      {/* 3. Meta Cloud API (Optional Paid) */}
+      <Card className="opacity-90">
         <CardHeader>
-          <CardTitle className="text-base">
-            {bn ? 'Meta WhatsApp Cloud API (Bulk মেসেজিং)' : 'Meta WhatsApp Cloud API (Bulk Messaging)'}
+          <CardTitle className="text-base flex items-center justify-between">
+            <span>{bn ? 'Meta WhatsApp Cloud API (বিকল্প অফিশিয়াল পেইড)' : 'Meta WhatsApp Cloud API (Official Paid Option)'}</span>
+            <span className="text-xs font-normal text-muted-foreground">{bn ? 'মেটার পেইড একাউন্ট' : 'Paid Meta Account'}</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="p-3 rounded-xl bg-warning/10 border border-warning/20 text-xs text-muted-foreground">
-            <p>{bn
-              ? 'Bulk মেসেজ পাঠাতে Meta Business Suite এ গিয়ে WhatsApp Business Account তৈরি করতে হবে। এরপর Phone Number ID ও Access Token সংগ্রহ করে এখানে যোগ করুন। Access Token আলাদাভাবে সিকিউর সিক্রেট হিসেবে স্টোর করতে হবে।'
-              : 'To send bulk messages, create a WhatsApp Business Account in Meta Business Suite. Get the Phone Number ID and Access Token, then add them here. The Access Token must be stored as a secure secret.'}</p>
-          </div>
-
           <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
             <div>
-              <Label>{bn ? 'Cloud API চালু' : 'Enable Cloud API'}</Label>
+              <Label>{bn ? 'Meta Cloud API চালু' : 'Enable Meta Cloud API'}</Label>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {bn ? 'গার্ডিয়ান নোটিফিকেশনে WhatsApp চ্যানেল ব্যবহার করতে পারবেন' : 'Use WhatsApp channel in Guardian Notifications'}
+                {bn ? 'ফ্রি গেটওয়ের বদলে মেটার অফিশিয়াল এপিআই ব্যবহার করতে চাইলে চালু করুন' : 'Enable to use Meta Official Cloud API'}
               </p>
             </div>
             <Switch
@@ -342,40 +513,30 @@ const WhatsAppSettings = () => {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <Label>Phone Number ID</Label>
-              <Input
-                value={form.phone_number_id}
-                onChange={(e) => setForm({ ...form, phone_number_id: e.target.value })}
-                placeholder="123456789012345"
-              />
+          {form.cloud_api_enabled && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label>Phone Number ID</Label>
+                <Input
+                  value={form.phone_number_id}
+                  onChange={(e) => setForm({ ...form, phone_number_id: e.target.value })}
+                  placeholder="123456789012345"
+                />
+              </div>
+              <div>
+                <Label>Business Account ID</Label>
+                <Input
+                  value={form.business_account_id}
+                  onChange={(e) => setForm({ ...form, business_account_id: e.target.value })}
+                  placeholder="987654321098765"
+                />
+              </div>
             </div>
-            <div>
-              <Label>Business Account ID</Label>
-              <Input
-                value={form.business_account_id}
-                onChange={(e) => setForm({ ...form, business_account_id: e.target.value })}
-                placeholder="987654321098765"
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label>{bn ? 'ডিফল্ট ভাষা' : 'Default language'}</Label>
-            <Select value={form.default_language} onValueChange={(v) => setForm({ ...form, default_language: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="bn">বাংলা</SelectItem>
-                <SelectItem value="en">English</SelectItem>
-                <SelectItem value="en_US">English (US)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Test WhatsApp */}
+      {/* 4. Test WhatsApp */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -384,12 +545,6 @@ const WhatsAppSettings = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="p-3 rounded-xl bg-muted/50 text-xs text-muted-foreground">
-            {bn
-              ? 'যেকোনো গার্ডিয়ান বা স্টাফের নম্বরে টেস্ট মেসেজ পাঠিয়ে Cloud API কনফিগারেশন যাচাই করুন। নম্বরটি অবশ্যই কান্ট্রি কোডসহ E.164 ফরম্যাটে দিতে হবে (যেমন: +8801XXXXXXXXX)।'
-              : 'Verify your Cloud API setup by sending a test message to any guardian or staff number. Use E.164 format with country code (e.g., +8801XXXXXXXXX).'}
-          </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label className="flex items-center gap-1.5">
@@ -406,7 +561,7 @@ const WhatsAppSettings = () => {
             <div className="flex items-end">
               <Button
                 onClick={handleTest}
-                disabled={testing || !form.cloud_api_enabled || !form.phone_number_id}
+                disabled={testing || (!freeGateway.is_enabled && !form.cloud_api_enabled)}
                 className="w-full gap-2 bg-[#25D366] hover:bg-[#25D366]/90 text-white"
               >
                 {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
@@ -420,18 +575,10 @@ const WhatsAppSettings = () => {
             <Textarea
               value={testMessage}
               onChange={(e) => setTestMessage(e.target.value)}
-              rows={3}
+              rows={2}
               disabled={testing}
             />
           </div>
-
-          {(!form.cloud_api_enabled || !form.phone_number_id) && (
-            <div className="p-3 rounded-xl bg-warning/10 border border-warning/20 text-xs text-muted-foreground">
-              {bn
-                ? '⚠️ টেস্ট পাঠানোর আগে Cloud API চালু করুন এবং Phone Number ID যোগ করে সংরক্ষণ করুন।'
-                : '⚠️ Enable Cloud API and save a Phone Number ID before testing.'}
-            </div>
-          )}
 
           {testResult && (
             <div
@@ -447,35 +594,16 @@ const WhatsAppSettings = () => {
                 ) : (
                   <XCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
                 )}
-                <div className="flex-1 space-y-1.5 text-xs">
+                <div className="flex-1 space-y-1 text-xs">
                   <p className="font-semibold text-sm text-foreground">
-                    {testResult.success
-                      ? bn ? 'সফলভাবে পাঠানো হয়েছে' : 'Successfully delivered to Meta'
-                      : bn ? 'মেসেজ পাঠানো ব্যর্থ' : 'Message delivery failed'}
+                    {testResult.success ? (bn ? 'মেসেজ সফলভাবে পৌঁছেছে!' : 'Successfully delivered!') : (bn ? 'পাঠানো ব্যর্থ' : 'Delivery failed')}
                   </p>
-                  {testResult.sentAt && (
+                  {testResult.method && (
                     <p className="text-muted-foreground">
-                      <span className="font-medium">{bn ? 'সময়:' : 'Time:'}</span> {testResult.sentAt}
+                      <span className="font-medium">{bn ? 'পদ্ধতি:' : 'Method:'}</span> {testResult.method === 'free_gateway' ? 'ফ্রি WhatsApp গেটওয়ে 🟢' : 'Meta Cloud API'}
                     </p>
                   )}
-                  {testResult.messageId && (
-                    <p className="text-muted-foreground break-all">
-                      <span className="font-medium">{bn ? 'মেসেজ আইডি:' : 'Message ID:'}</span>{' '}
-                      <code className="text-[10px] bg-background/50 px-1.5 py-0.5 rounded">{testResult.messageId}</code>
-                    </p>
-                  )}
-                  {testResult.error && (
-                    <p className="text-destructive">
-                      <span className="font-medium">{bn ? 'ত্রুটি:' : 'Error:'}</span> {testResult.error}
-                    </p>
-                  )}
-                  {testResult.success && (
-                    <p className="text-muted-foreground italic mt-2">
-                      {bn
-                        ? 'প্রাপকের WhatsApp ইনবক্সে মেসেজ চেক করুন। ২৪ ঘণ্টার সেশন উইন্ডোর বাইরে শুধু approved টেমপ্লেট মেসেজ পাঠানো যাবে।'
-                        : 'Check the recipient\'s WhatsApp inbox. Outside the 24-hour session window, only approved template messages can be delivered.'}
-                    </p>
-                  )}
+                  {testResult.error && <p className="text-destructive">{testResult.error}</p>}
                 </div>
               </div>
             </div>
@@ -484,11 +612,80 @@ const WhatsAppSettings = () => {
       </Card>
 
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saving} className="gap-2">
+        <Button onClick={handleSave} disabled={saving} className="gap-2 bg-primary">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          {bn ? 'সংরক্ষণ করুন' : 'Save Settings'}
+          {bn ? 'সকল সেটিংস সংরক্ষণ করুন' : 'Save All Settings'}
         </Button>
       </div>
+
+      {/* QR Connect Dialog */}
+      <Dialog open={qrModalOpen} onOpenChange={setQrModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="w-5 h-5 text-emerald-600" />
+              {bn ? 'WhatsApp নম্বর লিঙ্ক করুন' : 'Link WhatsApp Number'}
+            </DialogTitle>
+            <DialogDescription>
+              {bn
+                ? 'মাদ্রাসার WhatsApp নম্বরটি যুক্ত করতে নিচের QR কোডটি স্ক্যান করুন।'
+                : 'Scan the QR code to link your Madrasa WhatsApp account.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col items-center justify-center p-4 space-y-4">
+            {loadingQr ? (
+              <div className="py-12 flex flex-col items-center gap-2 text-muted-foreground">
+                <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+                <p className="text-xs">{bn ? 'QR কোড লোড হচ্ছে...' : 'Loading QR Code...'}</p>
+              </div>
+            ) : qrCodeData ? (
+              <div className="p-4 bg-white rounded-xl shadow-inner border flex flex-col items-center">
+                {qrCodeData.startsWith('data:image') ? (
+                  <img src={qrCodeData} alt="WhatsApp QR" className="w-52 h-52 object-contain" />
+                ) : (
+                  <QRCodeSVG value={qrCodeData} size={208} />
+                )}
+                <p className="text-xs text-muted-foreground mt-2 font-mono">
+                  {bn ? 'স্ক্যানের জন্য প্রস্তুত' : 'Ready to scan'}
+                </p>
+              </div>
+            ) : (
+              <div className="py-8 text-center space-y-2 text-xs text-muted-foreground">
+                <p className="font-medium text-foreground">{bn ? 'সার্ভার সংযোগ প্রয়োজন' : 'Server Connection Needed'}</p>
+                <p>{bn
+                  ? 'আপনার গেটওয়ে সার্ভার URL এবং ইনস্ট্যান্স নাম কনফিগার করে স্ট্যাটাস চেক করুন। সার্ভার রেডি থাকলে এখানে সরাসরি কিউআর কোড দেখা যাবে।'
+                  : 'Configure gateway server URL and instance name first.'}
+                </p>
+              </div>
+            )}
+
+            <div className="w-full p-3 rounded-lg bg-muted text-xs space-y-1.5 text-muted-foreground">
+              <p className="font-semibold text-foreground">{bn ? 'কীভাবে স্ক্যান করবেন:' : 'How to scan:'}</p>
+              <ol className="list-decimal list-inside space-y-0.5">
+                <li>{bn ? 'ফোনে WhatsApp ওপেন করুন।' : 'Open WhatsApp on your phone.'}</li>
+                <li>{bn ? 'উপরে ডানপাশের ৩-ডট (বা Settings) চাপুন।' : 'Tap Menu (3 dots) or Settings.'}</li>
+                <li>{bn ? '"Linked devices" ➔ "Link a device" চাপুন।' : 'Select "Linked devices" > "Link a device".'}</li>
+                <li>{bn ? 'এই QR কোডটি স্ক্যান করলেই সংযোগ সম্পন্ন হবে।' : 'Point camera to this QR code.'}</li>
+              </ol>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setQrModalOpen(false)}>
+              {bn ? 'বন্ধ করুন' : 'Close'}
+            </Button>
+            <Button
+              onClick={handleOpenQrModal}
+              disabled={loadingQr || !freeGateway.server_url.trim()}
+              className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              <RefreshCw className="w-4 h-4" />
+              {bn ? 'রিফ্রেশ QR' : 'Refresh QR'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
