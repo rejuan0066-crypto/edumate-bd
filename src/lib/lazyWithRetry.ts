@@ -22,13 +22,22 @@ export function lazyWithRetry<T extends ComponentType<unknown>>(
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const mod = await factory();
-        if (!mod || (typeof (mod as any).default === 'undefined' && typeof mod !== 'function')) {
+        const defaultExport = (mod as any)?.default;
+        const fallbackExport =
+          typeof mod === 'function'
+            ? mod
+            : mod && typeof mod === 'object'
+              ? Object.values(mod).find((v) => typeof v === 'function')
+              : null;
+        const resolvedComponent = defaultExport || fallbackExport;
+
+        if (!resolvedComponent) {
           throw new Error('Module has no default export or returned undefined');
         }
-        const resolvedMod = (mod as any).default ? mod : { default: mod as any };
+
         // Success: clear reload key so subsequent deployments can reload smoothly
         try { sessionStorage.removeItem(reloadKey); } catch { /* ignore */ }
-        return resolvedMod;
+        return { default: resolvedComponent as T };
       } catch (err) {
         const isLast = attempt === retries;
         if (!isLast) {
@@ -36,14 +45,16 @@ export function lazyWithRetry<T extends ComponentType<unknown>>(
           continue;
         }
 
-        // Final failure — try a reload to pick up fresh chunks (guarded against tight loops)
+        // Final failure — try a cache-busting reload to pick up fresh chunks (guarded against tight loops)
         let lastReload = 0;
         try { lastReload = Number(sessionStorage.getItem(reloadKey) || '0'); } catch { /* ignore */ }
         const now = Date.now();
 
-        if (now - lastReload > 12000) {
+        if (now - lastReload > 8000) {
           try { sessionStorage.setItem(reloadKey, String(now)); } catch { /* ignore */ }
-          window.location.reload();
+          const url = new URL(window.location.href);
+          url.searchParams.set('_upd', Date.now().toString());
+          window.location.replace(url.toString());
           // Return a never-resolving promise so React keeps the Suspense
           // fallback visible while the reload happens (no error flash).
           return new Promise<{ default: T }>(() => {});

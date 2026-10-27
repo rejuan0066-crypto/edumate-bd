@@ -22,7 +22,11 @@ const isChunkLoadError = (error: Error | null): boolean => {
     msg.includes('error loading dynamically imported module') ||
     msg.includes("cannot read properties of undefined (reading 'default')") ||
     msg.includes("reading 'default'") ||
+    msg.includes('module has no default export') ||
+    msg.includes('no default export') ||
+    msg.includes('returned undefined') ||
     msg.includes('chunkloaderror') ||
+    msg.includes('lazywithretry') ||
     name.includes('chunkloaderror')
   );
 };
@@ -55,20 +59,24 @@ class ErrorBoundary extends Component<Props, State> {
       }
       const now = Date.now();
 
-      if (now - lastReload > 12000) {
+      if (now - lastReload > 8000) {
         try {
           sessionStorage.setItem(reloadKey, String(now));
         } catch {
           /* ignore */
         }
-        window.location.reload();
+        const url = new URL(window.location.href);
+        url.searchParams.set('_upd', Date.now().toString());
+        window.location.replace(url.toString());
       }
     }
   }
 
   handleRetry = () => {
     if (this.state.isChunkError || isChunkLoadError(this.state.error)) {
-      window.location.reload();
+      const url = new URL(window.location.href);
+      url.searchParams.set('_r', Date.now().toString());
+      window.location.replace(url.toString());
       return;
     }
     this.setState({ hasError: false, error: null, isChunkError: false });

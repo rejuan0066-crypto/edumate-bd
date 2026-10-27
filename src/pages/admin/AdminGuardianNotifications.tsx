@@ -21,7 +21,6 @@ import {
   CheckCircle2, XCircle, Clock, Filter, AlertCircle, Upload,
   Sparkles, ExternalLink, ShieldCheck, Briefcase, Megaphone, UserCheck
 } from 'lucide-react';
-import XLSX from 'xlsx-js-style';
 
 type TargetAudience = 'guardians' | 'staff' | 'custom';
 
@@ -199,9 +198,11 @@ const AdminGuardianNotifications = () => {
     setUploadedFileName(file.name);
 
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       try {
         const bstr = evt.target?.result;
+        const XLSXModule = await import('xlsx-js-style');
+        const XLSX = (XLSXModule as any).default || XLSXModule;
         const wb = XLSX.read(bstr, { type: 'binary' });
         const wsname = wb.SheetNames[0];
         const ws = wb.Sheets[wsname];

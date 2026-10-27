@@ -16,7 +16,6 @@ import {
   XCircle, QrCode, RefreshCw, Sparkles, HelpCircle, ShieldCheck, Zap
 } from 'lucide-react';
 import { buildWhatsAppUrl } from '@/hooks/useWhatsAppConfig';
-import QRCode from 'qrcode';
 
 const WhatsAppSettings = () => {
   const { language } = useLanguage();
@@ -242,6 +241,8 @@ const WhatsAppSettings = () => {
       if (data?.base64) {
         setQrCodeData(data.base64);
       } else if (data?.code) {
+        const QRCodeModule = await import('qrcode');
+        const QRCode = (QRCodeModule as any).default || QRCodeModule;
         const url = await QRCode.toDataURL(data.code, { width: 220, margin: 1 });
         setQrCodeData(url);
       } else if (data?.pairingCode) {
