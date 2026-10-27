@@ -147,11 +147,40 @@ const WhatsAppSettings = () => {
 
   const phoneError = validatePhone(form.phone_number);
 
-  const handleSave = async () => {
-    const err = validatePhone(form.phone_number);
-    if (err) {
-      toast({ title: bn ? 'ফোন নম্বর ভুল' : 'Invalid phone number', description: err, variant: 'destructive' });
+  const [savingGateway, setSavingGateway] = useState(false);
+  const [qrErrorMessage, setQrErrorMessage] = useState<string | null>(null);
+
+  // Dedicated save for Free Gateway config
+  const handleSaveGateway = async () => {
+    if (!freeGateway.server_url.trim()) {
+      toast({ title: bn ? 'গেটওয়ে সার্ভার URL দিন' : 'Enter Gateway Server URL', variant: 'destructive' });
       return;
+    }
+    setSavingGateway(true);
+    try {
+      const { error: gwErr } = await supabase.from('app_settings').upsert({
+        key: 'whatsapp_gateway_config',
+        value: freeGateway,
+        description: 'Free WhatsApp Gateway settings (Evolution API / Baileys)',
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'key' });
+
+      if (gwErr) throw gwErr;
+      toast({ title: bn ? '✅ গেটওয়ে সেটিংস সফলভাবে সংরক্ষিত হয়েছে' : 'Gateway settings saved successfully' });
+    } catch (e: any) {
+      toast({ title: bn ? 'সংরক্ষণ ব্যর্থ' : 'Save failed', description: e.message, variant: 'destructive' });
+    } finally {
+      setSavingGateway(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (form.show_floating_button && form.phone_number?.trim()) {
+      const err = validatePhone(form.phone_number);
+      if (err) {
+        toast({ title: bn ? 'ফোন নম্বর ভুল' : 'Invalid phone number', description: err, variant: 'destructive' });
+        return;
+      }
     }
     setSaving(true);
     try {
@@ -225,7 +254,11 @@ const WhatsAppSettings = () => {
   // Open QR Connect Dialog
   const handleOpenQrModal = async () => {
     setQrModalOpen(true);
-    if (!freeGateway.server_url.trim()) return;
+    setQrErrorMessage(null);
+    if (!freeGateway.server_url.trim()) {
+      setQrErrorMessage(bn ? 'সার্ভার URL দেওয়া নেই' : 'No Server URL configured');
+      return;
+    }
 
     setLoadingQr(true);
     setQrCodeData(null);
@@ -273,9 +306,13 @@ const WhatsAppSettings = () => {
         setQrCodeData(url);
       } else if (data?.pairingCode) {
         setQrCodeData(data.pairingCode);
+      } else {
+        const errMsg = data?.response?.message?.[0] || data?.message || data?.error || (data?.status ? `HTTP ${data.status}` : null);
+        setQrErrorMessage(errMsg || (bn ? 'সার্ভার থেকে কোনো QR ডেটা আসেনি।' : 'No QR data returned from server.'));
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching QR:', err);
+      setQrErrorMessage(err.message || (bn ? 'সার্ভারে সংযোগ ব্যর্থ হয়েছে।' : 'Failed to connect to server.'));
     } finally {
       setLoadingQr(false);
     }
@@ -396,7 +433,17 @@ const WhatsAppSettings = () => {
                 className="h-9 font-mono text-xs"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleSaveGateway}
+                disabled={savingGateway || !freeGateway.server_url.trim()}
+                className="h-9 gap-1.5 bg-primary text-primary-foreground"
+              >
+                {savingGateway ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                {bn ? 'গেটওয়ে সংরক্ষণ' : 'Save Gateway'}
+              </Button>
               <Button
                 type="button"
                 variant="outline"
@@ -681,12 +728,21 @@ const WhatsAppSettings = () => {
                 </p>
               </div>
             ) : (
-              <div className="py-8 text-center space-y-2 text-xs text-muted-foreground">
-                <p className="font-medium text-foreground">{bn ? 'সার্ভার সংযোগ প্রয়োজন' : 'Server Connection Needed'}</p>
-                <p>{bn
-                  ? 'আপনার গেটওয়ে সার্ভার URL এবং ইনস্ট্যান্স নাম কনফিগার করে স্ট্যাটাস চেক করুন। সার্ভার রেডি থাকলে এখানে সরাসরি কিউআর কোড দেখা যাবে।'
-                  : 'Configure gateway server URL and instance name first.'}
-                </p>
+              <div className="py-8 text-center space-y-2 text-xs">
+                {qrErrorMessage ? (
+                  <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-center">
+                    <p className="font-semibold">{bn ? '⚠️ সংযোগ সমস্যা' : 'Connection Problem'}</p>
+                    <p className="mt-1 font-mono text-[11px]">{qrErrorMessage}</p>
+                  </div>
+                ) : (
+                  <div className="text-muted-foreground space-y-1">
+                    <p className="font-medium text-foreground">{bn ? 'সার্ভার সংযোগ প্রয়োজন' : 'Server Connection Needed'}</p>
+                    <p>{bn
+                      ? 'আপনার গেটওয়ে সার্ভার URL এবং ইনস্ট্যান্স নাম কনফিগার করে স্ট্যাটাস চেক করুন। সার্ভার রেডি থাকলে এখানে সরাসরি কিউআর কোড দেখা যাবে।'
+                      : 'Configure gateway server URL and instance name first.'}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
