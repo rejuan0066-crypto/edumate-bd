@@ -13,7 +13,7 @@ import {
   Plus, Trash2, GraduationCap, Users, Home, CreditCard, ClipboardList,
   Fingerprint, School, Building2, Library, CalendarCheck, BarChart3, Award, TrendingUp,
   Printer, Eye, AlertCircle, CheckCircle2, ArrowRight, CheckSquare, Square, Tag, ExternalLink, Percent, MessageSquare,
-  RotateCcw, ChevronLeft, ChevronRight
+  RotateCcw, ChevronLeft, ChevronRight, ShieldCheck, UserCheck
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -1237,6 +1237,53 @@ const StudentProfileModal = ({
             <ProfileInfoItem icon={Calendar} label={bn ? 'ভর্তির তারিখ' : 'Admission Date'} value={student.admission_date ? formatDigits(student.admission_date, bn) : undefined} />
             <ProfileInfoItem icon={School} label={bn ? 'পূর্বের শ্রেণী' : 'Previous Class'} value={student.previous_class} />
             <ProfileInfoItem icon={School} label={bn ? 'পূর্বের প্রতিষ্ঠান' : 'Previous Institute'} value={student.previous_institute} fullWidth />
+          </ProfileSectionCard>
+
+          {/* Admission Approval & Reference Details */}
+          <ProfileSectionCard title={bn ? 'ভর্তি অনুমোদন ও রেফারেন্স বিবরণ' : 'Admission Approval & Referral'} icon={ShieldCheck}>
+            <ProfileInfoItem
+              icon={UserCheck}
+              label={bn ? 'অনুমোদনকারী' : 'Approved By'}
+              value={student.extra_fields?.approver_info?.name || student.approved_by || (student.approval_status === 'approved' ? (bn ? 'অধ্যক্ষ / প্রশাসন' : 'Principal') : '-')}
+            />
+            <ProfileInfoItem
+              icon={Building2}
+              label={bn ? 'অনুমোদনকারীর পদবি' : 'Approver Designation'}
+              value={student.extra_fields?.approver_info?.designation || '-'}
+            />
+            <ProfileInfoItem
+              icon={Calendar}
+              label={bn ? 'অনুমোদনের তারিখ' : 'Approval Date'}
+              value={student.extra_fields?.approver_info?.date ? formatDigits(student.extra_fields.approver_info.date, bn) : undefined}
+            />
+            <ProfileInfoItem
+              icon={Users}
+              label={bn ? 'কার মাধ্যমে ভর্তি (রেফারেন্স)' : 'Referred By'}
+              value={
+                student.extra_fields?.referral_info?.name
+                  ? `${student.extra_fields.referral_info.name} ${student.extra_fields.referral_info.designation ? `(${student.extra_fields.referral_info.designation})` : ''}`
+                  : (student.referred_by || (bn ? 'সরাসরি ভর্তি' : 'Direct Admission'))
+              }
+            />
+            {student.extra_fields?.referral_info?.phone && (
+              <ProfileInfoItem
+                icon={Phone}
+                label={bn ? 'রেফারেন্সকারীর মোবাইল' : 'Referrer Phone'}
+                value={formatPhoneNumber(student.extra_fields.referral_info.phone, undefined, bn)}
+              />
+            )}
+            {student.extra_fields?.referral_info?.type && (
+              <ProfileInfoItem
+                icon={Fingerprint}
+                label={bn ? 'রেফারেন্সের ধরন' : 'Referral Type'}
+                value={
+                  student.extra_fields.referral_info.type === 'staff' ? (bn ? 'শিক্ষক / স্টাফ' : 'Staff') :
+                  student.extra_fields.referral_info.type === 'committee' ? (bn ? 'কমিটি সদস্য' : 'Committee Member') :
+                  student.extra_fields.referral_info.type === 'guardian' ? (bn ? 'অভিভাবক' : 'Guardian') :
+                  student.extra_fields.referral_info.type === 'other' ? (bn ? 'অন্যান্য' : 'Other') : (bn ? 'সরাসরি' : 'Direct')
+                }
+              />
+            )}
           </ProfileSectionCard>
         </div>
       )}

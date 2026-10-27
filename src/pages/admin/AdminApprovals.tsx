@@ -198,6 +198,10 @@ const AdminApprovals = () => {
   const [showEditAdmissionForm, setShowEditAdmissionForm] = useState(false);
   const [assignedCategory, setAssignedCategory] = useState('general');
   const [assignedIsFree, setAssignedIsFree] = useState(false);
+  const [studentReferralType, setStudentReferralType] = useState<string>('none');
+  const [studentReferralName, setStudentReferralName] = useState('');
+  const [studentReferralPhone, setStudentReferralPhone] = useState('');
+  const [studentReferralDesignation, setStudentReferralDesignation] = useState('');
 
   // Staff Approval Modal States (review, salary, signatures, approver)
   const [staffApprovalModal, setStaffApprovalModal] = useState<any | null>(null);
@@ -245,6 +249,14 @@ const AdminApprovals = () => {
     queryKey: ['all-divisions-approvals'],
     queryFn: async () => {
       const { data } = await supabase.from('divisions').select('id, name, name_bn, prefix');
+      return data || [];
+    },
+  });
+
+  const { data: allActiveStaff = [] } = useQuery({
+    queryKey: ['active-staff-for-approvals'],
+    queryFn: async () => {
+      const { data } = await supabase.from('staff').select('id, name_bn, name_en, phone, designation').eq('status', 'active');
       return data || [];
     },
   });
@@ -595,6 +607,12 @@ const AdminApprovals = () => {
     setAssignedCategory(s.student_category || (s.is_poor ? 'poor' : s.is_orphan ? 'orphan' : 'general'));
     setAssignedIsFree(!!s.is_free);
 
+    const existingRef = s.extra_fields?.referral_info || {};
+    setStudentReferralType(existingRef.type || (s.referred_by ? 'other' : 'none'));
+    setStudentReferralName(existingRef.name || s.referred_by || '');
+    setStudentReferralPhone(existingRef.phone || '');
+    setStudentReferralDesignation(existingRef.designation || '');
+
     let roll = s.roll_number ? String(s.roll_number) : '';
     let reg = s.registration_no || s.student_id || '';
 
@@ -695,6 +713,12 @@ const AdminApprovals = () => {
           designation: studentApproverDesignation,
           date: studentApproverDate,
         },
+        referral_info: {
+          type: studentReferralType,
+          name: studentReferralName,
+          phone: studentReferralPhone,
+          designation: studentReferralDesignation,
+        },
       };
 
       const updatePayload: any = {
@@ -707,6 +731,7 @@ const AdminApprovals = () => {
         is_free: assignedIsFree,
         is_orphan: assignedCategory === 'orphan',
         is_poor: assignedCategory === 'poor' || assignedCategory === 'insolvent',
+        referred_by: studentReferralName || null,
         extra_fields: updatedExtra,
       };
 
@@ -3262,6 +3287,101 @@ const AdminApprovals = () => {
                       <p className="text-[11px] text-muted-foreground">
                         {bn ? '💡 সক্রিয় করলে শিক্ষার্থীর মাসিক ফি ফ্রি প্রযোজ্য হবে।' : 'No monthly fee charged if active.'}
                       </p>
+                    </div>
+
+                    {/* 👤 ভর্তির মাধ্যম / রেফারেন্স (Referred By) */}
+                    <div className="rounded-xl border border-border/80 bg-muted/30 p-3 space-y-3">
+                      <div className="flex items-center gap-1.5 font-semibold text-xs text-foreground">
+                        <Users className="w-3.5 h-3.5 text-primary" />
+                        <span>{bn ? 'ভর্তির মাধ্যম / রেফারেন্স (Referred By)' : 'Referred By / Reference'}</span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div className="space-y-1">
+                          <Label className="text-[11px] font-medium text-muted-foreground">{bn ? 'রেফারেন্সের ধরন' : 'Referral Type'}</Label>
+                          <Select
+                            value={studentReferralType}
+                            onValueChange={(val: string) => {
+                              setStudentReferralType(val);
+                              if (val === 'none') {
+                                setStudentReferralName('');
+                                setStudentReferralPhone('');
+                                setStudentReferralDesignation('');
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="h-8 text-xs bg-background">
+                              <SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">{bn ? 'সরাসরি ভর্তি (রেফারেন্স নেই)' : 'Direct (No Reference)'}</SelectItem>
+                              <SelectItem value="staff">{bn ? 'মাদরাসার শিক্ষক / স্টাফ' : 'Madrasa Teacher / Staff'}</SelectItem>
+                              <SelectItem value="committee">{bn ? 'পরিচালনা কমিটির সদস্য' : 'Managing Committee'}</SelectItem>
+                              <SelectItem value="guardian">{bn ? 'অভিভাবক / পুরাতন ছাত্র' : 'Guardian / Alumni'}</SelectItem>
+                              <SelectItem value="other">{bn ? 'অন্যান্য শুভাকাঙ্ক্ষী' : 'Other'}</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {studentReferralType === 'staff' ? (
+                          <div className="space-y-1">
+                            <Label className="text-[11px] font-medium text-muted-foreground">{bn ? 'শিক্ষক / স্টাফ নির্বাচন' : 'Select Staff'}</Label>
+                            <Select
+                              value={studentReferralName}
+                              onValueChange={(val) => {
+                                const selectedStaff = allActiveStaff.find((st: any) => (st.name_bn || st.name_en) === val);
+                                setStudentReferralName(val);
+                                if (selectedStaff?.phone) setStudentReferralPhone(selectedStaff.phone);
+                                if (selectedStaff?.designation) setStudentReferralDesignation(selectedStaff.designation);
+                              }}
+                            >
+                              <SelectTrigger className="h-8 text-xs bg-background">
+                                <SelectValue placeholder={bn ? 'শিক্ষক নির্বাচন করুন' : 'Select Teacher'} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {allActiveStaff.map((st: any) => (
+                                  <SelectItem key={st.id} value={st.name_bn || st.name_en}>
+                                    {st.name_bn || st.name_en} {st.designation ? `(${st.designation})` : ''}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        ) : studentReferralType !== 'none' ? (
+                          <div className="space-y-1">
+                            <Label className="text-[11px] font-medium text-muted-foreground">{bn ? 'রেফারেন্সকারীর নাম' : 'Referrer Name'}</Label>
+                            <Input
+                              value={studentReferralName}
+                              onChange={(e) => setStudentReferralName(e.target.value)}
+                              placeholder={bn ? 'ব্যক্তির নাম লিখুন' : 'Enter name'}
+                              className="h-8 text-xs bg-background"
+                            />
+                          </div>
+                        ) : null}
+                      </div>
+
+                      {studentReferralType !== 'none' && (
+                        <div className="grid grid-cols-2 gap-2.5 pt-1 border-t border-border/40">
+                          <div className="space-y-1">
+                            <Label className="text-[11px] font-medium text-muted-foreground">{bn ? 'মোবাইল নম্বর' : 'Phone Number'}</Label>
+                            <Input
+                              value={studentReferralPhone}
+                              onChange={(e) => setStudentReferralPhone(e.target.value)}
+                              placeholder="017XXXXXXXX"
+                              className="h-8 text-xs bg-background font-mono"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-[11px] font-medium text-muted-foreground">{bn ? 'পদবি / সম্পর্ক' : 'Designation / Relation'}</Label>
+                            <Input
+                              value={studentReferralDesignation}
+                              onChange={(e) => setStudentReferralDesignation(e.target.value)}
+                              placeholder={bn ? 'যেমন: সদস্য / প্রতিবেশী' : 'e.g. Member'}
+                              className="h-8 text-xs bg-background"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Approver Name */}
