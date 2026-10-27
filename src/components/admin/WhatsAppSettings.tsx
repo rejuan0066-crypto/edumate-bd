@@ -238,12 +238,38 @@ const WhatsAppSettings = () => {
       const resp = await fetch(`${sUrl}/instance/connect/${encodeURIComponent(instance)}`, { headers });
       const data = await resp.json().catch(() => ({}));
       
-      if (data?.base64) {
-        setQrCodeData(data.base64);
-      } else if (data?.code) {
+      let b64 = data?.base64 || data?.qrcode?.base64;
+      let code = data?.code || data?.qrcode?.code;
+
+      // If instance doesn't exist yet, auto-create it
+      if (!b64 && !code) {
+        const createResp = await fetch(`${sUrl}/instance/create`, {
+          method: 'POST',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            instanceName: instance,
+            qrcode: true,
+            integration: 'WHATSAPP-BAILEYS',
+          }),
+        });
+        const createData = await createResp.json().catch(() => ({}));
+        b64 = createData?.qrcode?.base64 || createData?.base64;
+        code = createData?.qrcode?.code || createData?.code;
+
+        if (!b64 && !code) {
+          const retryResp = await fetch(`${sUrl}/instance/connect/${encodeURIComponent(instance)}`, { headers });
+          const retryData = await retryResp.json().catch(() => ({}));
+          b64 = retryData?.base64 || retryData?.qrcode?.base64;
+          code = retryData?.code || retryData?.qrcode?.code;
+        }
+      }
+
+      if (b64) {
+        setQrCodeData(b64.startsWith('data:') ? b64 : `data:image/png;base64,${b64}`);
+      } else if (code) {
         const QRCodeModule = await import('qrcode');
         const QRCode = (QRCodeModule as any).default || QRCodeModule;
-        const url = await QRCode.toDataURL(data.code, { width: 220, margin: 1 });
+        const url = await QRCode.toDataURL(code, { width: 220, margin: 1 });
         setQrCodeData(url);
       } else if (data?.pairingCode) {
         setQrCodeData(data.pairingCode);
