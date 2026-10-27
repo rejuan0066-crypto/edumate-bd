@@ -25,35 +25,136 @@ import {
 type TargetAudience = 'guardians' | 'staff' | 'custom';
 
 const PRESET_TEMPLATES: Record<string, { bn: string; en: string; body_bn: string; body_en: string }> = {
+  // --- অভিভাবক ও ছাত্র (Guardians & Students) ---
   fee_reminder: {
     bn: 'বকেয়া ফি রিমাইন্ডার',
     en: 'Fee Due Reminder',
-    body_bn: 'আসসালামু আলাইকুম, অভিভাবক মহোদয়। আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানায় আপনার সন্তান {{name}}-এর বকেয়া ফি বাবদ {{amount}} টাকা আগামী ৫ তারিখের মধ্যে পরিশোধ করার জন্য বিনীত অনুরোধ করা হচ্ছে।',
-    body_en: 'Assalamu Alaikum. This is a reminder from Al-Arabia Subhania Madrasah & Eyateem Khana that {{name}} has an outstanding fee of {{amount}} BDT. Please settle it soon.',
+    body_bn: 'আসসালামু আলাইকুম, সম্মানিত অভিভাবক। আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানায় আপনার সন্তান {{name}}-এর বকেয়া ফি বাবদ {{amount}} টাকা আগামী ৫ তারিখের মধ্যে পরিশোধ করার জন্য বিনীত অনুরোধ করা হচ্ছে।',
+    body_en: 'Assalamu Alaikum, Respected Guardian. This is a reminder from Al-Arabia Subhania Madrasah & Eyateem Khana that {{name}} has an outstanding fee of {{amount}} BDT. Please settle it by the 5th of this month.',
+  },
+  exam_routine: {
+    bn: 'পরীক্ষার সময়সূচি ও প্রবেশপত্র',
+    en: 'Exam Routine & Admit Card',
+    body_bn: 'আসসালামু আলাইকুম, সম্মানিত অভিভাবক। আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানার আগামী সাময়িক/বার্ষিক পরীক্ষার সময়সূচি প্রকাশিত হয়েছে। আপনার সন্তান {{name}}-এর পরীক্ষার প্রবেশপত্র (Admit Card) মাদরাসা অফিস থেকে সংগ্রহ করার জন্য অনুরোধ করা হচ্ছে। নিয়মিত ক্লাসে উপস্থিতি ও পরীক্ষার প্রস্তুতি নিশ্চিত করুন।',
+    body_en: 'Assalamu Alaikum. The exam schedule has been published at Al-Arabia Subhania Madrasah & Eyateem Khana. Please collect the admit card for {{name}} from the madrasah office.',
+  },
+  exam_result: {
+    bn: 'পরীক্ষার ফলাফল প্রকাশ নোটিশ',
+    en: 'Exam Results Announcement',
+    body_bn: 'আসসালামু আলাইকুম। অত্যন্ত আনন্দের সাথে জানানো যাচ্ছে যে, আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানার সাম্প্রতিক পরীক্ষার ফলাফল প্রকাশিত হয়েছে। আপনার সন্তান {{name}}-এর সার্বিক ফলাফল ও প্রগ্রেস রিপোর্ট দেখতে মাদরাসা অফিসে যোগাযোগ করার জন্য অনুরোধ করা হচ্ছে।',
+    body_en: 'Assalamu Alaikum. Exam results have been published at Al-Arabia Subhania Madrasah & Eyateem Khana. Please visit the madrasah office to collect the progress report of {{name}}.',
+  },
+  absence_alert: {
+    bn: 'ছাত্র অনুপস্থিতির জরুরি নোটিশ',
+    en: 'Student Absence Alert',
+    body_bn: 'আসসালামু আলাইকুম, সম্মানিত অভিভাবক। আপনার সন্তান {{name}} আজ মাদরাসায় উপস্থিত হয়নি। কোনো জরুরি কারণ বা অসুস্থতা থাকলে অনুগ্রহ করে মাদরাসা অফিসে অথবা শ্রেণি শিক্ষকের নম্বরে অবহিত করুন।',
+    body_en: 'Assalamu Alaikum. Respected Guardian, {{name}} is absent today at Al-Arabia Subhania Madrasah & Eyateem Khana. If there is any illness or emergency, please inform the office or class teacher.',
+  },
+  guardian_meeting: {
+    bn: 'অভিভাবক সম্মেলন ও মতবিনিময় সভা',
+    en: 'Guardian-Teacher Meeting',
+    body_bn: 'আসসালামু আলাইকুম। আগামী শুক্রবার সকাল ১০:০০ ঘটিকায় আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানার মিলনায়তনে এক গুরুত্বপূর্ণ অভিভাবক সম্মেলন অনুষ্ঠিত হবে। আপনার সন্তান {{name}}-এর দ্বীনি ও সাধারণ শিক্ষার মানোন্নয়নে আপনার উপস্থিতি একান্ত কাম্য।',
+    body_en: 'Assalamu Alaikum. A guardian conference is scheduled this Friday at 10:00 AM at Al-Arabia Subhania Madrasah & Eyateem Khana. Your presence is cordially requested.',
   },
   holiday: {
-    bn: 'ছুটির নোটিশ',
+    bn: 'সাধারণ ছুটির নোটিশ',
     en: 'Holiday Notice',
-    body_bn: 'আসসালামু আলাইকুম। আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানার সকল ছাত্র ও অভিভাবকদের জানানো যাচ্ছে যে, আগামীকাল থেকে মাদরাসা সাময়িক বন্ধ থাকবে। বিস্তারিত জানতে মাদরাসা অফিসে যোগাযোগ করুন।',
-    body_en: 'Assalamu Alaikum. Notice from Al-Arabia Subhania Madrasah & Eyateem Khana: The madrasah will remain closed from tomorrow. Thank you.',
+    body_bn: 'আসসালামু আলাইকুম। আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানার সকল ছাত্র ও অভিভাবকদের জানানো যাচ্ছে যে, আগামীকাল থেকে মাদরাসার শ্রেণি কার্যক্রম সাময়িক বন্ধ থাকবে। যথাসময়ে মাদরাসা খোলার তারিখ নোটিশের মাধ্যমে জানানো হবে।',
+    body_en: 'Assalamu Alaikum. Notice from Al-Arabia Subhania Madrasah & Eyateem Khana: Classes will remain closed from tomorrow. Reopening dates will be announced soon.',
   },
+  eid_holiday: {
+    bn: 'রমজান ও ঈদের বিশেষ ছুটি',
+    en: 'Ramadan & Eid Holiday Notice',
+    body_bn: 'আসসালামু আলাইকুম। পবিত্র মাহে রমজান ও পবিত্র ঈদ উপলক্ষে আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানার শিক্ষা কার্যক্রম আগামী ... তারিখ থেকে ... তারিখ পর্যন্ত বন্ধ থাকবে। ছুটির পর নির্ধারিত তারিখে যথাসময়ে ছাত্রকে মাদরাসায় উপস্থিত করার জন্য অনুরোধ করা হচ্ছে।',
+    body_en: 'Assalamu Alaikum. On the occasion of Ramadan and Eid, academic activities at Al-Arabia Subhania Madrasah & Eyateem Khana will remain closed from ... to ...',
+  },
+  hifz_completion: {
+    bn: 'হিফজ সমাপনী ও পাগড়ি মাহফিল আমন্ত্রণ',
+    en: 'Hifz Completion & Dastarbadi Invitation',
+    body_bn: 'আসসালামু আলাইকুম। আলহামদুলিল্লাহ! আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানার সম্মানিত হিফজ শিক্ষার্থীদের কুরআন সমাপনী ও ঐতিহাসিক পাগড়ি প্রদান মাহফিল আগামী ... তারিখে অনুষ্ঠিত হতে যাচ্ছে। এতে আপনার আন্তরিক উপস্থিতি ও নেক দোয়ার দরখাস্ত রইল।',
+    body_en: 'Assalamu Alaikum. Alhamdulillah, the Hifz Completion and Dastarbadi Mahfil of Al-Arabia Subhania Madrasah & Eyateem Khana will be held on ... You are cordially invited.',
+  },
+  general: {
+    bn: 'সাধারণ নোটিশ / বিজ্ঞপ্তি',
+    en: 'General Announcement',
+    body_bn: 'আসসালামু আলাইকুম। আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানা থেকে জরুরি নোটিশ: ...',
+    body_en: 'Assalamu Alaikum. Important notice from Al-Arabia Subhania Madrasah & Eyateem Khana: ...',
+  },
+
+  // --- শিক্ষক ও স্টাফ (Teachers & Staff) ---
   staff_meeting: {
     bn: 'শিক্ষক ও স্টাফ জরুরি মিটিং',
     en: 'Staff Meeting Notice',
-    body_bn: 'আসসালামু আলাইকুম সম্মানিত শিক্ষক/স্টাফ {{name}}। আগামী কাল বাদ আসর মাদরাসার অফিস কক্ষে একটি জরুরি পর্যালোচনা মিটিং অনুষ্ঠিত হবে। আপনার উপস্থিতি একান্ত কাম্য।',
-    body_en: 'Assalamu Alaikum respected {{name}}. An urgent staff meeting is scheduled tomorrow after Asr prayer at the madrasah office. Your presence is requested.',
+    body_bn: 'আসসালামু আলাইকুম মুহতারাম {{name}}। আগামী কাল বাদ আসর মাদরাসার অফিস কক্ষে এক জরুরি একাডেমিক ও প্রশাসনিক পর্যালোচনা সভা অনুষ্ঠিত হবে। যথাসময়ে আপনার উপস্থিতি একান্ত কাম্য।',
+    body_en: 'Assalamu Alaikum respected {{name}}. An urgent academic and administrative meeting is scheduled tomorrow after Asr prayer at the madrasah office. Your presence is requested.',
   },
+  salary_disbursed: {
+    bn: 'মাসিক বেতন ও ভাতা প্রদান নোটিশ',
+    en: 'Salary & Allowance Disbursed',
+    body_bn: 'আসসালামু আলাইকুম মুহতারাম {{name}}। আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানা থেকে চলতি মাসের বেতন ও ভাতা পরিশোধ করা হয়েছে। অফিস থেকে আপনার পে-স্লিপ বুঝে নেওয়ার জন্য অনুরোধ করা যাচ্ছে। জাযাকাল্লাহু খাইরান।',
+    body_en: 'Assalamu Alaikum respected {{name}}. Your monthly salary from Al-Arabia Subhania Madrasah & Eyateem Khana has been disbursed. Please collect your pay slip from the office.',
+  },
+  exam_duty: {
+    bn: 'পরীক্ষার ডিউটি ও প্রশ্নপত্র প্রণয়ন',
+    en: 'Exam Duty & Question Paper Notice',
+    body_bn: 'আসসালামু আলাইকুম মুহতারাম {{name}}। আসন্ন পরীক্ষার প্রশ্নপত্র প্রণয়ন এবং পরীক্ষার ডিউটি রোস্টার মাদরাসা বোর্ডে টানানো হয়েছে। আগামী ৩ দিনের মধ্যে নিজ নিজ বিষয়ের প্রশ্নপত্র প্রধান শিক্ষক বরাবর জমা দেওয়ার জন্য বিনীত অনুরোধ রইল।',
+    body_en: 'Assalamu Alaikum respected {{name}}. Please submit your finalized examination question papers to the headmaster within 3 days.',
+  },
+  leave_approved: {
+    bn: 'ছুটি অনুমোদন ও অবগতকরণ নোটিশ',
+    en: 'Leave Approval Notice',
+    body_bn: 'আসসালামু আলাইকুম মুহতারাম {{name}}। আল আরাবিয়া ছোবহানিয়া মাদরাসা কর্তৃপক্ষের নিকট আপনার প্রেরিত ছুটির আবেদন পর্যালোচনাপূর্বক অনুমোদন করা হয়েছে।',
+    body_en: 'Assalamu Alaikum respected {{name}}. Your leave application submitted to Al-Arabia Subhania Madrasah & Eyateem Khana has been approved.',
+  },
+  holiday_staff: {
+    bn: 'শিক্ষকদের প্রাতিষ্ঠানিক ছুটির নোটিশ',
+    en: 'Staff Institutional Holiday',
+    body_bn: 'আসসালামু আলাইকুম সম্মানিত আসাতায়ে কেরাম ও স্টাফবৃন্দ। আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানার শিক্ষা কার্যক্রম আগামী ... তারিখ পর্যন্ত স্থগিত থাকবে। ছুটি পরবর্তী নির্ধারিত তারিখে যথাসময়ে উপস্থিত থাকার জন্য অনুরোধ রইল।',
+    body_en: 'Assalamu Alaikum. Academic activities at Al-Arabia Subhania Madrasah & Eyateem Khana will remain closed until ... Please be present promptly on reopening.',
+  },
+  general_staff: {
+    bn: 'শিক্ষক-স্টাফ সাধারণ নির্দেশনা',
+    en: 'Staff General Directive',
+    body_bn: 'আসসালামু আলাইকুম সম্মানিত আসাতায়ে কেরাম ও প্রিয় স্টাফবৃন্দ। আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানার পক্ষ থেকে বিশেষ নির্দেশনা: ...',
+    body_en: 'Assalamu Alaikum. Special directive from the administration of Al-Arabia Subhania Madrasah & Eyateem Khana: ...',
+  },
+
+  // --- কাস্টম, বিজ্ঞাপন ও দাতা (Custom Numbers & Donors) ---
   admission_promo: {
-    bn: 'নতুন ভর্তি প্রচারণা ও বিজ্ঞাপন',
-    en: 'Admission Promotion',
-    body_bn: 'আসসালামু আলাইকুম। আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানায় নতুন শিক্ষাবর্ষে নূরানী, নাজেরা ও হিফজ বিভাগে নতুন ভর্তি চলছে! আসন সংখ্যা সীমিত। বিস্তারিত ও ভর্তির জন্য যোগাযোগ করুন: ০১৭১১-XXXXXX।',
-    body_en: 'Assalamu Alaikum. Admissions are now open for the new session at Al-Arabia Subhania Madrasah & Eyateem Khana! Limited seats. Contact: 01711-XXXXXX.',
+    bn: 'নূরানী ও নাজেরা নতুন ভর্তি প্রচারণা',
+    en: 'Noorani & Nazera Admission Promo',
+    body_bn: 'আসসালামু আলাইকুম। দ্বীনি ও আধুনিক শিক্ষার সমন্বয়ে পরিচালিত ঐতিহ্যবাহী আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানায় নতুন শিক্ষাবর্ষে নূরানী ও নাজেরা বিভাগে ভর্তি চলছে! আসন সংখ্যা সীমিত। বিস্তারিত ও দ্রুত ভর্তির জন্য যোগাযোগ: ০১৭১১-XXXXXX।',
+    body_en: 'Assalamu Alaikum. Admissions are now open for Noorani and Nazera sections at Al-Arabia Subhania Madrasah & Eyateem Khana! Limited seats. Contact: 01711-XXXXXX.',
   },
-  general: {
-    bn: 'সাধারণ বিজ্ঞপ্তি',
-    en: 'General Announcement',
-    body_bn: 'আসসালামু আলাইকুম। আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানা থেকে বিশেষ বিজ্ঞপ্তি: ...',
-    body_en: 'Assalamu Alaikum. Announcement from Al-Arabia Subhania Madrasah & Eyateem Khana: ...',
+  hifz_admission: {
+    bn: 'হিফজুল কুরআন বিভাগে ভর্তি আহ্বান',
+    en: 'Tahfeez-ul-Quran Admission Promo',
+    body_bn: 'আসসালামু আলাইকুম। আপনার সন্তানকে কি হাফেজে কুরআন বানাতে চান? আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানার আন্তর্জাতিক মানসম্পন্ন অভিজ্ঞ হাফেজ শিক্ষকদের তত্ত্বাবধানে হিফজ বিভাগে নতুন ছাত্র ভর্তি চলছে। যোগাযোগ করুন: ০১৭১১-XXXXXX।',
+    body_en: 'Assalamu Alaikum. Admissions are now open for the Tahfeez-ul-Quran division at Al-Arabia Subhania Madrasah & Eyateem Khana. Contact: 01711-XXXXXX.',
+  },
+  orphan_meal_sponsor: {
+    bn: 'এতিমখানা এক বেলার খানা / ইফতার স্পনসর',
+    en: 'Orphan Meal & Iftar Sponsorship',
+    body_bn: 'আসসালামু আলাইকুম। আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানার অসহায় এতিম ও কুরআনের পাখিদের এক বেলার খানা কিংবা রমজানের ইফতার স্পনসর করে অফুরন্ত সওয়াবের অংশীদার হোন। আপনার সদকা ও অনুদান পাঠাতে যোগাযোগ: ০১৭১১-XXXXXX।',
+    body_en: 'Assalamu Alaikum. Sponsor a meal or Ramadan Iftar for orphans and students of the Quran at Al-Arabia Subhania Madrasah & Eyateem Khana. Contact: 01711-XXXXXX.',
+  },
+  donation_acknowledgment: {
+    bn: 'অনুদান প্রাপ্তি ও শুকরিয়া জ্ঞাপন',
+    en: 'Donation Acknowledgment & Gratitude',
+    body_bn: 'আসসালামু আলাইকুম মুহতারাম। আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানায় আপনার পাঠানো দান ও অনুদান আলহামদুলিল্লাহ সঠিকভাবে গৃহীত হয়েছে। আল্লাহ তাআলা আপনার এই দানকে কবুল করুন এবং ইহকাল ও পরকালে উত্তম প্রতিদান দান করুন। আমীন।',
+    body_en: 'Assalamu Alaikum. Your generous donation to Al-Arabia Subhania Madrasah & Eyateem Khana has been successfully received. May Allah reward you abundantly. Ameen.',
+  },
+  eid_greetings: {
+    bn: 'ঈদের শুভেচ্ছা ও দোয়া বার্তা',
+    en: 'Eid Mubarak Greetings',
+    body_bn: 'আসসালামু আলাইকুম। আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানার পক্ষ থেকে আপনাকে ও আপনার পরিবারবর্গকে জানাই পবিত্র ঈদুল ফিতর/ঈদুল আজহার আন্তরিক শুভেচ্ছা ও মুবারকবাদ। তাকাব্বালাল্লাহু মিন্না ওয়া মিনকুম।',
+    body_en: 'Assalamu Alaikum. Eid Mubarak to you and your family from Al-Arabia Subhania Madrasah & Eyateem Khana. Taqabbal Allahu Minna wa Minkum.',
+  },
+  general_custom: {
+    bn: 'সাধারণ বিজ্ঞপ্তি ও প্রচার বার্তা',
+    en: 'General Promotional Announcement',
+    body_bn: 'আসসালামু আলাইকুম। আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানা থেকে সাধারণ বিজ্ঞপ্তি: ...',
+    body_en: 'Assalamu Alaikum. Notice from Al-Arabia Subhania Madrasah & Eyateem Khana: ...',
   },
 };
 
@@ -675,22 +776,35 @@ const AdminGuardianNotifications = () => {
                           <SelectContent>
                             {audience === 'guardians' && (
                               <>
-                                <SelectItem value="fee_reminder">{bn ? 'বকেয়া ফি রিমাইন্ডার' : 'Fee Reminder'}</SelectItem>
-                                <SelectItem value="holiday">{bn ? 'ছুটির নোটিশ' : 'Holiday Notice'}</SelectItem>
-                                <SelectItem value="general">{bn ? 'সাধারণ বিজ্ঞপ্তি' : 'General Notice'}</SelectItem>
+                                <SelectItem value="fee_reminder">{bn ? '💰 বকেয়া ফি রিমাইন্ডার' : 'Fee Reminder'}</SelectItem>
+                                <SelectItem value="exam_routine">{bn ? '📝 পরীক্ষার সময়সূচি ও প্রবেশপত্র' : 'Exam Schedule & Admit'}</SelectItem>
+                                <SelectItem value="exam_result">{bn ? '📊 পরীক্ষার ফলাফল প্রকাশ নোটিশ' : 'Exam Results'}</SelectItem>
+                                <SelectItem value="absence_alert">{bn ? '⚠️ ছাত্র অনুপস্থিতির নোটিশ' : 'Absence Alert'}</SelectItem>
+                                <SelectItem value="guardian_meeting">{bn ? '👥 অভিভাবক সম্মেলন / মতবিনিময়' : 'Guardian Meeting'}</SelectItem>
+                                <SelectItem value="holiday">{bn ? '🏖️ সাধারণ ছুটির নোটিশ' : 'Holiday Notice'}</SelectItem>
+                                <SelectItem value="eid_holiday">{bn ? '🌙 রমজান ও ঈদের বিশেষ ছুটি' : 'Ramadan & Eid Holiday'}</SelectItem>
+                                <SelectItem value="hifz_completion">{bn ? '🎓 হিফজ সমাপনী ও পাগড়ি মাহফিল' : 'Hifz Completion'}</SelectItem>
+                                <SelectItem value="general">{bn ? '📢 সাধারণ নোটিশ / ঘোষণা' : 'General Notice'}</SelectItem>
                               </>
                             )}
                             {audience === 'staff' && (
                               <>
-                                <SelectItem value="staff_meeting">{bn ? 'শিক্ষক ও স্টাফ জরুরি মিটিং' : 'Staff Meeting'}</SelectItem>
-                                <SelectItem value="holiday">{bn ? 'ছুটির নোটিশ' : 'Holiday Notice'}</SelectItem>
-                                <SelectItem value="general">{bn ? 'সাধারণ বিজ্ঞপ্তি' : 'General Notice'}</SelectItem>
+                                <SelectItem value="staff_meeting">{bn ? '👥 শিক্ষক ও স্টাফ জরুরি মিটিং' : 'Staff Meeting'}</SelectItem>
+                                <SelectItem value="salary_disbursed">{bn ? '💵 মাসিক বেতন ও ভাতা প্রদান' : 'Salary Disbursed'}</SelectItem>
+                                <SelectItem value="exam_duty">{bn ? '📝 পরীক্ষার ডিউটি ও প্রশ্নপত্র নোটিশ' : 'Exam Duty & Questions'}</SelectItem>
+                                <SelectItem value="leave_approved">{bn ? '✅ ছুটি অনুমোদন নোটিশ' : 'Leave Approved'}</SelectItem>
+                                <SelectItem value="holiday_staff">{bn ? '🏖️ শিক্ষকদের প্রাতিষ্ঠানিক ছুটি' : 'Staff Holiday'}</SelectItem>
+                                <SelectItem value="general_staff">{bn ? '📢 শিক্ষক-স্টাফ সাধারণ নির্দেশনা' : 'Staff Directive'}</SelectItem>
                               </>
                             )}
                             {audience === 'custom' && (
                               <>
-                                <SelectItem value="admission_promo">{bn ? 'নতুন ভর্তি প্রচারণা ও বিজ্ঞাপন' : 'Admission Promo'}</SelectItem>
-                                <SelectItem value="general">{bn ? 'সাধারণ বিজ্ঞপ্তি' : 'General Notice'}</SelectItem>
+                                <SelectItem value="admission_promo">{bn ? '📢 নূরানী ও নাজেরা ভর্তি প্রচারণা' : 'Admission Promo'}</SelectItem>
+                                <SelectItem value="hifz_admission">{bn ? '📖 হিফজ বিভাগে নতুন ভর্তি আহ্বান' : 'Hifz Admission Promo'}</SelectItem>
+                                <SelectItem value="orphan_meal_sponsor">{bn ? '🍲 এতিমখানা এক বেলার খানা/ইফতার স্পনসর' : 'Orphan Meal Sponsor'}</SelectItem>
+                                <SelectItem value="donation_acknowledgment">{bn ? '🤲 অনুদান প্রাপ্তি ও শুকরিয়া জ্ঞাপন' : 'Donation Acknowledgment'}</SelectItem>
+                                <SelectItem value="eid_greetings">{bn ? '🌙 ঈদের শুভেচ্ছা ও দোয়া বার্তা' : 'Eid Mubarak Greetings'}</SelectItem>
+                                <SelectItem value="general_custom">{bn ? '📢 সাধারণ বিজ্ঞপ্তি ও প্রচার বার্তা' : 'General Promo Notice'}</SelectItem>
                               </>
                             )}
                           </SelectContent>
@@ -705,7 +819,7 @@ const AdminGuardianNotifications = () => {
                         <Input
                           value={subject}
                           onChange={(e) => setSubject(e.target.value)}
-                          placeholder={bn ? 'আল আরাবিয়া সুবহানিয়া মাদ্রাসার জরুরি বিজ্ঞপ্তি' : 'Madrasa Notice'}
+                          placeholder={bn ? 'আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানার জরুরি বিজ্ঞপ্তি' : 'Madrasa Notice'}
                           className="h-9 mt-1"
                         />
                       </div>
@@ -721,6 +835,7 @@ const AdminGuardianNotifications = () => {
                             { tag: '{{name}}', label: 'নাম' },
                             { tag: '{{amount}}', label: 'টাকা' },
                             { tag: '{{month}}', label: 'মাস' },
+                            { tag: '{{date}}', label: 'তারিখ' },
                           ].map(t => (
                             <button
                               key={t.tag}
