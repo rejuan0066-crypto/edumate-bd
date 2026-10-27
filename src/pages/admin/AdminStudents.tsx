@@ -4,7 +4,14 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Plus, Trash2, Loader2, CheckCircle, Eye, XCircle, Clock, Pencil, Filter, UserX, UserCheck, Printer, History } from 'lucide-react';
+import { Search, Plus, Trash2, Loader2, CheckCircle, Eye, XCircle, Clock, Pencil, Filter, UserX, UserCheck, Printer, History, Download, BarChart3, Layers, MoreHorizontal } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import StudentProfileModal from '@/components/profile/StudentProfileModal';
 import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { printStudentProfile } from '@/lib/studentProfilePrint';
@@ -42,6 +49,8 @@ const AdminStudents = () => {
   const [filterClassId, setFilterClassId] = useState('all');
   const [filterApproval, setFilterApproval] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [sortKey, setSortKey] = useState<'roll' | 'name' | 'student_id'>('roll');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [typeChangeFor, setTypeChangeFor] = useState<any>(null);
   const [typeChangeReason, setTypeChangeReason] = useState('');
@@ -304,7 +313,7 @@ const AdminStudents = () => {
     return cls && cls.is_active === false;
   }, [classes, getEffectiveClassId]);
 
-  const filtered = useMemo(() => {
+  const baseFiltered = useMemo(() => {
     return students.filter((s: any) => {
       // Division filter
       if (filterDivisionId !== 'all') {
@@ -328,17 +337,6 @@ const AdminStudents = () => {
       if (filterClassId !== 'all') {
         const effectiveCId = getEffectiveClassId(s);
         if (effectiveCId !== filterClassId) return false;
-      }
-      // Approval status filter
-      if (filterApproval !== 'all') {
-        const status = s.approval_status || 'pending';
-        if (status !== filterApproval) return false;
-      }
-      // Active/Inactive status filter (sync with class is_active)
-      if (filterStatus !== 'all') {
-        const isInactive = isStudentEffectivelyInactive(s);
-        const st = isInactive ? 'inactive' : 'active';
-        if (st !== filterStatus) return false;
       }
       // Text search
       if (search) {
@@ -366,20 +364,122 @@ const AdminStudents = () => {
           String(s.name_bn || '').toLowerCase().includes(q) ||
           String(s.name_en || '').toLowerCase().includes(q) ||
           String(s.student_id || '').toLowerCase().includes(q) ||
-          String(s.registration_no || '').toLowerCase().includes(q)
+          String(s.registration_no || '').toLowerCase().includes(q) ||
+          String(s.phone || '').toLowerCase().includes(q) ||
+          String(s.guardian_phone || '').toLowerCase().includes(q)
         );
       }
       return true;
     });
-  }, [students, filterDivisionId, filterSessionId, academicSessions, filterClassId, getEffectiveClassId, filterApproval, filterStatus, search, isStudentEffectivelyInactive]);
+  }, [students, filterDivisionId, filterSessionId, academicSessions, filterClassId, getEffectiveClassId, search]);
+
+  const allCount = baseFiltered.length;
+  const activeCount = useMemo(() => baseFiltered.filter((s: any) => !isStudentEffectivelyInactive(s) && (s.approval_status === 'approved' || !s.approval_status)).length, [baseFiltered, isStudentEffectivelyInactive]);
+  const pendingCount = useMemo(() => baseFiltered.filter((s: any) => (s.approval_status || 'pending') === 'pending').length, [baseFiltered]);
+  const oldCount = useMemo(() => baseFiltered.filter((s: any) => s.student_type === 'old').length, [baseFiltered]);
+  const newCount = useMemo(() => baseFiltered.filter((s: any) => s.student_type !== 'old').length, [baseFiltered]);
+  const inactiveCount = useMemo(() => baseFiltered.filter((s: any) => isStudentEffectivelyInactive(s) || s.approval_status === 'rejected').length, [baseFiltered, isStudentEffectivelyInactive]);
+
+  const filtered = useMemo(() => {
+    return baseFiltered.filter((s: any) => {
+      if (filterStatus === 'active') {
+        return !isStudentEffectivelyInactive(s) && (s.approval_status === 'approved' || !s.approval_status);
+      }
+      if (filterStatus === 'pending') {
+        return (s.approval_status || 'pending') === 'pending';
+      }
+      if (filterStatus === 'old') {
+        return s.student_type === 'old';
+      }
+      if (filterStatus === 'new') {
+        return s.student_type !== 'old';
+      }
+      if (filterStatus === 'inactive') {
+        return isStudentEffectivelyInactive(s) || s.approval_status === 'rejected';
+      }
+      return true;
+    });
+  }, [baseFiltered, filterStatus, isStudentEffectivelyInactive]);
+
+  const toggleSort = (key: typeof sortKey) => {
+    if (sortKey === key) setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+    else { setSortKey(key); setSortDir('asc'); }
+  };
+  const sortIcon = (key: typeof sortKey) => sortKey !== key ? '↕' : (sortDir === 'asc' ? '↑' : '↓');
 
   const sortedFiltered = useMemo(() => {
     return [...filtered].sort((a: any, b: any) => {
-      const rollDiff = parseRollNumber(a.roll_number) - parseRollNumber(b.roll_number);
-      if (rollDiff !== 0) return rollDiff;
+      let cmp = 0;
+      if (sortKey === 'roll') {
+        cmp = parseRollNumber(a.roll_number) - parseRollNumber(b.roll_number);
+      } else if (sortKey === 'name') {
+        const nameA = a.name_bn || a.name_en || '';
+        const nameB = b.name_bn || b.name_en || '';
+        cmp = nameA.localeCompare(nameB, 'bn');
+      } else if (sortKey === 'student_id') {
+        const idA = a.registration_no || a.student_id || '';
+        const idB = b.registration_no || b.student_id || '';
+        cmp = String(idA).localeCompare(String(idB));
+      }
+      if (cmp !== 0) return sortDir === 'asc' ? cmp : -cmp;
       return String(a.created_at || '').localeCompare(String(b.created_at || ''));
     });
-  }, [filtered, parseRollNumber]);
+  }, [filtered, sortKey, sortDir, parseRollNumber]);
+
+  const handleExportStudents = () => {
+    if (!sortedFiltered || sortedFiltered.length === 0) {
+      toast.info(bn ? 'এক্সপোর্ট করার মতো কোনো শিক্ষার্থী নেই' : 'No students to export');
+      return;
+    }
+    const headers = [
+      bn ? 'ক্রমিক' : 'Serial',
+      bn ? 'রোল' : 'Roll',
+      bn ? 'রেজি/আইডি' : 'Student ID',
+      bn ? 'নাম (বাংলা)' : 'Name (Bangla)',
+      bn ? 'নাম (ইংরেজি)' : 'Name (English)',
+      bn ? 'শ্রেণী' : 'Class',
+      bn ? 'বিভাগ' : 'Division',
+      bn ? 'সেশন' : 'Session',
+      bn ? 'ছাত্রের ধরন' : 'Student Type',
+      bn ? 'অনুমোদন' : 'Approval',
+      bn ? 'স্ট্যাটাস' : 'Status',
+      bn ? 'মোবাইল' : 'Mobile',
+      bn ? 'পিতার নাম' : 'Father Name',
+    ];
+    const rows = sortedFiltered.map((s: any, idx: number) => {
+      const clsName = getClassName(getEffectiveClassId(s));
+      const divName = bn ? s.divisions?.name_bn : (s.divisions?.name || '-');
+      const sessName = getSessionName(s.session_id, s.admission_session || s.session_year);
+      const isInactive = isStudentEffectivelyInactive(s);
+      return [
+        idx + 1,
+        s.roll_number || '-',
+        s.registration_no || s.student_id || '-',
+        `"${(s.name_bn || '').replace(/"/g, '""')}"`,
+        `"${(s.name_en || '').replace(/"/g, '""')}"`,
+        `"${clsName.replace(/"/g, '""')}"`,
+        `"${divName.replace(/"/g, '""')}"`,
+        `"${sessName.replace(/"/g, '""')}"`,
+        s.student_type === 'old' ? (bn ? 'পুরাতন' : 'Old') : (bn ? 'নতুন' : 'New'),
+        s.approval_status === 'approved' ? (bn ? 'অনুমোদিত' : 'Approved') : (bn ? 'অপেক্ষমাণ' : 'Pending'),
+        !isInactive ? (bn ? 'সক্রিয়' : 'Active') : (bn ? 'নিষ্ক্রিয়' : 'Inactive'),
+        s.phone || s.guardian_phone || '-',
+        `"${(s.father_name || '').replace(/"/g, '""')}"`,
+      ];
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `students_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(bn ? 'শিক্ষার্থী তালিকা সফলভাবে এক্সপোর্ট হয়েছে' : 'Students list exported successfully');
+  };
 
   const getApprovalBadge = (status: string) => {
     switch (status) {
@@ -460,25 +560,59 @@ const AdminStudents = () => {
               {bn ? 'শিক্ষার্থী ব্যবস্থাপনা' : 'Student Management'}
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-              {bn ? `মোট ${formatDigits(filtered.length, true)} জন ছাত্র` : `Total ${filtered.length} students`}
+              {bn ? `মোট ${formatDigits(sortedFiltered.length, true)} জন শিক্ষার্থী` : `Total ${sortedFiltered.length} students`}
             </p>
           </div>
-          {canAddItem && isFeatureAllowed('tab_admission') !== false && (
-            <Button onClick={() => setShowAdd(true)} className="btn-primary-gradient h-8 text-xs flex items-center gap-1.5 shadow-sm rounded-xl px-4">
-              <Plus className="w-3.5 h-3.5 mr-1" /> {bn ? 'নতুন ভর্তি' : 'New Admission'}
+          <div className="flex gap-2 items-center flex-wrap w-full sm:w-auto justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/admin/reports')}
+              className="h-8 text-xs flex items-center gap-1.5"
+            >
+              <BarChart3 className="w-3.5 h-3.5 text-primary" />
+              {bn ? 'রিপোর্ট' : 'Reports'}
             </Button>
-          )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/admin/classes')}
+              className="h-8 text-xs flex items-center gap-1.5"
+            >
+              <Layers className="w-3.5 h-3.5 text-primary" />
+              {bn ? 'শ্রেণী ও বিভাগ' : 'Classes'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportStudents}
+              className="h-8 text-xs flex items-center gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5 text-primary" />
+              {bn ? 'এক্সপোর্ট' : 'Export'}
+            </Button>
+            {canAddItem && isFeatureAllowed('tab_admission') !== false && (
+              <Button onClick={() => setShowAdd(true)} className="btn-primary-gradient h-8 text-xs flex items-center gap-1.5 shadow-sm rounded-xl px-4">
+                <Plus className="w-3.5 h-3.5 mr-1" /> {bn ? 'নতুন ভর্তি' : 'New Admission'}
+              </Button>
+            )}
+          </div>
         </div>
 
-        {/* Filter Bar */}
-        <div className="rounded-xl border border-border/70 bg-card p-3 sm:p-4 shadow-xs">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <div className="relative flex-1 min-w-[180px] max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder={bn ? 'নাম, আইডি বা রোল দিয়ে খুঁজুন...' : 'Search by name, ID or roll...'} className="pl-9 h-8 sm:h-9 rounded-xl border-border/70 bg-background text-xs sm:text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
+        {/* Filter Bar (Matching Staff Style) */}
+        <div className="card-elevated p-2.5 sm:p-4 space-y-2 lg:space-y-0 flex flex-col lg:flex-row gap-2 lg:gap-3 items-stretch lg:items-center">
+          <div className="flex flex-col sm:flex-row gap-2 flex-1">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder={bn ? 'নাম, আইডি, রোল, ফোন দিয়ে খুঁজুন...' : 'Search by name, ID, roll, phone...'}
+                className="pl-8 h-8 sm:h-9 text-xs sm:text-sm bg-background"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
             </div>
             <Select value={filterDivisionId} onValueChange={(v) => { setFilterDivisionId(v); setFilterClassId('all'); }}>
-              <SelectTrigger className="h-8 sm:h-9 rounded-xl border-border/70 bg-background text-xs sm:text-sm w-auto min-w-[110px]">
+              <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm w-full sm:w-[130px] shrink-0">
                 <SelectValue placeholder={bn ? 'বিভাগ' : 'Division'} />
               </SelectTrigger>
               <SelectContent>
@@ -489,7 +623,7 @@ const AdminStudents = () => {
               </SelectContent>
             </Select>
             <Select value={filterSessionId} onValueChange={setFilterSessionId}>
-              <SelectTrigger className="h-8 sm:h-9 rounded-xl border-border/70 bg-background text-xs sm:text-sm w-auto min-w-[100px]">
+              <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm w-full sm:w-[120px] shrink-0">
                 <SelectValue placeholder={bn ? 'সেশন' : 'Session'} />
               </SelectTrigger>
               <SelectContent>
@@ -500,187 +634,163 @@ const AdminStudents = () => {
               </SelectContent>
             </Select>
             <Select value={filterClassId} onValueChange={setFilterClassId}>
-              <SelectTrigger className="h-8 sm:h-9 rounded-xl border-border/70 bg-background text-xs sm:text-sm w-auto min-w-[100px]">
+              <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm w-full sm:w-[130px] shrink-0">
                 <SelectValue placeholder={bn ? 'শ্রেণী' : 'Class'} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{bn ? 'সকল শ্রেণী' : 'All Classes'}</SelectItem>
                 {filteredClasses.map((c: any) => (
-                  <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}{c.divisions ? ` (${bn ? c.divisions.name_bn : c.divisions.name})` : ''}</SelectItem>
+                  <SelectItem key={c.id} value={c.id}>
+                    {bn ? c.name_bn : c.name}{c.divisions ? ` (${bn ? c.divisions.name_bn : c.divisions.name})` : ''}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Select value={filterApproval} onValueChange={setFilterApproval}>
-              <SelectTrigger className="h-8 sm:h-9 rounded-xl border-border/70 bg-background text-xs sm:text-sm w-auto min-w-[100px]">
-                <SelectValue placeholder={bn ? 'অনুমোদন' : 'Approval'} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{bn ? 'সকল স্ট্যাটাস' : 'All Status'}</SelectItem>
-                <SelectItem value="pending">{bn ? 'অপেক্ষমাণ' : 'Pending'}</SelectItem>
-                <SelectItem value="approved">{bn ? 'অনুমোদিত' : 'Approved'}</SelectItem>
-                <SelectItem value="rejected">{bn ? 'প্রত্যাখ্যাত' : 'Rejected'}</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="h-8 sm:h-9 rounded-xl border-border/70 bg-background text-xs sm:text-sm w-auto min-w-[100px]">
-                <SelectValue placeholder={bn ? 'স্ট্যাটাস' : 'Status'} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{bn ? 'সকল' : 'All'}</SelectItem>
-                <SelectItem value="active">{bn ? 'সক্রিয়' : 'Active'}</SelectItem>
-                <SelectItem value="inactive">{bn ? 'নিষ্ক্রিয়' : 'Inactive'}</SelectItem>
-              </SelectContent>
-            </Select>
+          </div>
+
+          {/* Scrollable Compact Filter Chips on Mobile & Desktop */}
+          <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar shrink-0">
+            <button
+              type="button"
+              onClick={() => setFilterStatus('all')}
+              className={`h-7 px-2.5 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
+                filterStatus === 'all' ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-muted/60 text-muted-foreground hover:bg-muted'
+              }`}
+            >
+              {bn ? 'সবগুলো' : 'All'} ({allCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterStatus('active')}
+              className={`h-7 px-2.5 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
+                filterStatus === 'active' ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-muted/60 text-muted-foreground hover:bg-muted'
+              }`}
+            >
+              {bn ? 'সক্রিয়' : 'Active'} ({activeCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterStatus('pending')}
+              className={`h-7 px-2.5 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
+                filterStatus === 'pending' ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-muted/60 text-muted-foreground hover:bg-muted'
+              }`}
+            >
+              {bn ? 'অপেক্ষমাণ' : 'Pending'} ({pendingCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterStatus('old')}
+              className={`h-7 px-2.5 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
+                filterStatus === 'old' ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-muted/60 text-muted-foreground hover:bg-muted'
+              }`}
+            >
+              {bn ? 'পুরাতন' : 'Old'} ({oldCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterStatus('new')}
+              className={`h-7 px-2.5 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
+                filterStatus === 'new' ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-muted/60 text-muted-foreground hover:bg-muted'
+              }`}
+            >
+              {bn ? 'নতুন' : 'New'} ({newCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterStatus('inactive')}
+              className={`h-7 px-2.5 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
+                filterStatus === 'inactive' ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-muted/60 text-muted-foreground hover:bg-muted'
+              }`}
+            >
+              {bn ? 'নিষ্ক্রিয়' : 'Inactive'} ({inactiveCount})
+            </button>
           </div>
         </div>
 
         {/* Student List Card */}
-        <div className="rounded-2xl sm:rounded-3xl border border-border/60 bg-card/95 backdrop-blur-md shadow-sm overflow-hidden">
+        <div className="card-elevated overflow-hidden">
           {isLoading ? (
             <div className="flex items-center justify-center py-20"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>
           ) : (
             <>
-              {/* Mobile Card List View (< md) */}
-              <div className="md:hidden divide-y divide-border/20">
+              {/* Mobile Card View (< md) */}
+              <div className="md:hidden divide-y divide-border/60">
                 {sortedFiltered.map((s: any) => {
                   const effectiveClass = getClassName(getEffectiveClassId(s));
-                  const sessionStr = getSessionName(s.session_id, s.admission_session || s.session_year);
-                  const divName = bn ? s.divisions?.name_bn : (s.divisions?.name || '-');
-                  const isOld = s.student_type === 'old';
-                  const isApproved = s.approval_status === 'approved';
-                  const isRowPending = studentTypeMutation.isPending && studentTypeMutation.variables?.id === s.id;
-                  const pendingApproval = isRecordPending(s.id);
+                  const isInactive = isStudentEffectivelyInactive(s);
+                  const isPending = (s.approval_status || 'pending') === 'pending';
                   const classSerial = getClassSerial(s);
-
                   return (
-                    <div key={s.id} className="p-3 space-y-2 hover:bg-muted/10 transition-colors">
-                      {/* Top row: Avatar, Name, Badges */}
-                      <div className="flex items-start justify-between gap-2.5">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          {s.photo_url ? (
-                            <img src={s.photo_url} className="w-10 h-10 rounded-xl object-cover shrink-0 ring-1 ring-border/40" alt="" />
-                          ) : (
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center text-emerald-700 dark:text-emerald-400 font-bold text-sm shrink-0">
-                              {s.name_bn?.[0] || '?'}
-                            </div>
+                    <div 
+                      key={s.id} 
+                      className="p-3.5 bg-card/60 hover:bg-card transition-colors flex items-center justify-between gap-3 cursor-pointer"
+                      onClick={() => navigate(`/admin/students/profile/${s.id}`)}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        {s.photo_url ? (
+                          <img src={s.photo_url} alt="" className="w-11 h-11 rounded-full object-cover shrink-0 ring-1 ring-border shadow-xs" />
+                        ) : (
+                          <div className="w-11 h-11 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-base shrink-0 ring-1 ring-primary/20">
+                            {s.name_bn?.[0] || s.name_en?.[0] || '?'}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h4 className="font-semibold text-foreground text-sm truncate leading-tight">
+                              {s.name_bn || s.name_en || '-'}
+                            </h4>
+                            {s.is_free && (
+                              <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-semibold bg-emerald-500/15 text-emerald-600 border border-emerald-500/20">
+                                {bn ? 'বিনা বেতন' : 'Free'}
+                              </span>
+                            )}
+                          </div>
+                          {s.name_en && s.name_bn && (
+                            <p className="text-[11px] text-muted-foreground truncate">{s.name_en}</p>
                           )}
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-semibold text-foreground text-sm truncate">{s.name_bn || s.name_en}</span>
-                              {s.is_free && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-success/15 text-success border border-success/20">
-                                  {bn ? 'বিনা বেতন' : 'Free'}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2 text-[11px] text-muted-foreground/80 mt-0.5">
-                              {classSerial !== '-' && (
-                                <span className="font-semibold text-primary/90">#{formatDigits(classSerial, bn)}</span>
-                              )}
-                              <span>রোল: {s.roll_number ? formatDigits(s.roll_number, bn) : '—'}</span>
-                              <span>আইডি: {formatDigits(s.registration_no || s.student_id, bn)}</span>
-                            </div>
+                          <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                            <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0 h-4.5 bg-primary/5 text-primary border-primary/20">
+                              {formatDigits(s.registration_no || s.student_id, bn)}
+                            </Badge>
+                            {s.roll_number && (
+                              <span className="text-[10px] text-muted-foreground font-mono font-medium">
+                                • রোল: {formatDigits(s.roll_number, bn)}
+                              </span>
+                            )}
+                            {effectiveClass !== '-' && (
+                              <span className="text-[10px] text-muted-foreground truncate">
+                                • {effectiveClass}
+                              </span>
+                            )}
+                            {isPending ? (
+                              <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/15 text-amber-600 font-medium">
+                                {bn ? 'অপেক্ষমাণ' : 'Pending'}
+                              </span>
+                            ) : isInactive ? (
+                              <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-rose-500/15 text-rose-600 font-medium">
+                                {bn ? 'নিষ্ক্রিয়' : 'Inactive'}
+                              </span>
+                            ) : null}
                           </div>
                         </div>
-
-                        <div className="flex flex-col items-end gap-1 shrink-0">
-                          {getApprovalBadge(s.approval_status || 'pending')}
-                          {(() => {
-                            const isInactive = isStudentEffectivelyInactive(s);
-                            const isClassInactive = s.status !== 'inactive' && isInactive;
-                            return (
-                              <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full ${!isInactive ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-destructive/10 text-destructive'}`}>
-                                <span className={`w-1 h-1 rounded-full ${!isInactive ? 'bg-emerald-500' : 'bg-destructive'}`} />
-                                {!isInactive ? (bn ? 'সক্রিয়' : 'Active') : (isClassInactive ? (bn ? 'নিষ্ক্রিয় (শ্রেণী)' : 'Inactive (Class)') : (bn ? 'নিষ্ক্রিয়' : 'Inactive'))}
-                              </span>
-                            );
-                          })()}
-                        </div>
                       </div>
 
-                      {/* Middle row: Class, Division, Session, Type badges */}
-                      <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground pt-0.5">
-                        {effectiveClass !== '-' && (
-                          <span className="bg-muted/50 px-2 py-0.5 rounded-md text-foreground/80 font-medium">{effectiveClass}</span>
-                        )}
-                        {divName !== '-' && (
-                          <span className="bg-muted/40 px-2 py-0.5 rounded-md">{divName}</span>
-                        )}
-                        {sessionStr !== '-' && (
-                          <span className="bg-muted/40 px-2 py-0.5 rounded-md">{sessionStr}</span>
-                        )}
-                        {canApproveItem && (
-                          <button
-                            disabled={!isApproved || isRowPending}
-                            onClick={() => { if (isApproved) { setTypeChangeFor(s); setTypeChangeReason(''); } }}
-                            className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${isOld ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20' : 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20'}`}
-                          >
-                            <span className={`w-1 h-1 rounded-full ${isOld ? 'bg-violet-500' : 'bg-sky-500'}`} />
-                            {isOld ? (bn ? 'পুরাতন' : 'Old') : (bn ? 'নতুন' : 'New')}
-                          </button>
-                        )}
-                        {pendingApproval && (
-                          <span className="text-[10px] text-amber-600 bg-amber-500/10 px-1.5 py-0.5 rounded-md border border-amber-500/20 animate-pulse">
-                            {bn ? 'অপেক্ষমাণ' : 'Pending'}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Action buttons row */}
-                      <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-border/10">
-                        <button onClick={() => navigate(`/admin/students/profile/${s.id}`)} className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-800/30 flex items-center justify-center text-blue-600 dark:text-blue-400 active:scale-95" title={bn ? 'দেখুন' : 'View'}>
-                          <Eye className="w-3.5 h-3.5" />
-                        </button>
-                        {isFeatureAllowed('action_print_profile') !== false && (
-                          <button onClick={() => printStudentProfile({ student: s, bn, institution: institution || {}, className: getClassName(getEffectiveClassId(s)), sessionName: getSessionName(s.session_id, s.admission_session || s.session_year) })} className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200/50 dark:border-indigo-800/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 active:scale-95" title={bn ? 'প্রিন্ট' : 'Print'}>
-                            <Printer className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        {canEditItem && (
-                          <button 
-                            disabled={pendingApproval}
-                            onClick={() => { setEditStudent(s); setShowAdd(true); }} 
-                            className={`w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/50 dark:border-emerald-800/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 active:scale-95 ${pendingApproval ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            title={bn ? 'সম্পাদনা' : 'Edit'}
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        {(canEditItem || canApproveItem) && (s.approval_status !== 'approved') && (
-                          <button onClick={() => statusMutation.mutate({ id: s.id, status: 'approved' })} className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/50 dark:border-emerald-800/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 active:scale-95" title={bn ? 'অনুমোদন' : 'Approve'}>
-                            <CheckCircle className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        {(canEditItem || canApproveItem) && (s.approval_status !== 'rejected') && (
-                          <button onClick={() => statusMutation.mutate({ id: s.id, status: 'rejected' })} className="w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200/50 dark:border-rose-800/30 flex items-center justify-center text-rose-600 dark:text-rose-400 active:scale-95" title={bn ? 'প্রত্যাখ্যান' : 'Reject'}>
-                            <XCircle className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        {canEditItem && isFeatureAllowed('action_status_change') !== false && (
-                          <button
-                            onClick={async () => { const cur = s.status || 'active'; const next = cur === 'active' ? 'inactive' : 'active'; const ok = await confirm({ title: bn ? (next === 'active' ? 'ছাত্র সক্রিয় করবেন?' : 'ছাত্র নিষ্ক্রিয় করবেন?') : (next === 'active' ? 'Activate student?' : 'Deactivate student?'), description: bn ? `"${s.name_bn || s.name_en}" কে ${next === 'active' ? 'সক্রিয়' : 'নিষ্ক্রিয়'} করতে চান?` : `Are you sure you want to ${next === 'active' ? 'activate' : 'deactivate'} "${s.name_en || s.name_bn}"?`, confirmText: bn ? 'হ্যাঁ' : 'Yes', cancelText: bn ? 'বাতিল' : 'Cancel', variant: next === 'active' ? 'default' : 'warning' }); if (!ok) return; toggleActiveMutation.mutate({ id: s.id, currentStatus: cur }); }}
-                            className={`w-7 h-7 rounded-lg border flex items-center justify-center active:scale-95 ${(s.status || 'active') === 'active' ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200/50 text-amber-600' : 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200/50 text-emerald-600'}`}
-                            title={(s.status || 'active') === 'active' ? (bn ? 'নিষ্ক্রিয় করুন' : 'Deactivate') : (bn ? 'সক্রিয় করুন' : 'Activate')}
-                          >
-                            {(s.status || 'active') === 'active' ? <UserX className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
-                          </button>
-                        )}
-                        {canDeleteItem && isFeatureAllowed('action_delete_student') !== false && (
-                          <button 
-                            disabled={pendingApproval}
-                            onClick={() => setDeleteId(s.id)} 
-                            className={`w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200/50 dark:border-rose-800/30 flex items-center justify-center text-rose-600 dark:text-rose-400 active:scale-95 ${pendingApproval ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            title={bn ? 'মুছুন' : 'Delete'}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                      <div onClick={(e) => e.stopPropagation()} className="shrink-0 flex items-center gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/admin/students/profile/${s.id}`)}
+                          className="gap-1.5 text-xs font-semibold rounded-xl shadow-xs"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-primary" />
+                          <span>{bn ? 'প্রোফাইল' : 'Profile'}</span>
+                        </Button>
                       </div>
                     </div>
                   );
                 })}
                 {sortedFiltered.length === 0 && (
-                  <div className="text-center py-12 text-sm text-muted-foreground/60">{bn ? 'কোনো ছাত্র পাওয়া যায়নি' : 'No students found'}</div>
+                  <div className="text-center py-8 text-sm text-muted-foreground">{bn ? 'কোনো শিক্ষার্থী পাওয়া যায়নি' : 'No students found'}</div>
                 )}
               </div>
 
@@ -689,166 +799,198 @@ const AdminStudents = () => {
                 <table className="w-full">
                   <thead className="bg-muted/40 border-b border-border/60">
                     <tr>
-                      <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'সি.' : '#'}</th>
-                      <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'নাম' : 'Name'}</th>
-                      <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'রেজি / আইডি' : 'Reg / ID'}</th>
-                      <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'রোল' : 'Roll'}</th>
-                      <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'বিভাগ' : 'Division'}</th>
-                      <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'সেশন' : 'Session'}</th>
-                      <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'শ্রেণী' : 'Class'}</th>
-                      <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'অনুমোদন' : 'Approval'}</th>
-                      <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'পেন্ডিং অবস্থা' : 'Pending Status'}</th>
-                      {canApproveItem && <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'ধরন' : 'Type'}</th>}
-                      <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'স্ট্যাটাস' : 'Status'}</th>
-                      <th className="text-right px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'অ্যাকশন' : 'Action'}</th>
+                      <th className="text-center w-14 px-4 py-3.5 text-xs font-semibold text-muted-foreground uppercase cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('roll')}>
+                        {bn ? 'রোল' : 'Roll'} <span className="ml-1 opacity-60">{sortIcon('roll')}</span>
+                      </th>
+                      <th className="text-left px-5 py-3.5 text-xs font-semibold text-muted-foreground uppercase cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('name')}>
+                        {bn ? 'শিক্ষার্থীর নাম' : 'Student Name'} <span className="ml-1 opacity-60">{sortIcon('name')}</span>
+                      </th>
+                      <th className="text-left px-5 py-3.5 text-xs font-semibold text-muted-foreground uppercase cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('student_id')}>
+                        {bn ? 'রেজি / আইডি' : 'Reg / ID'} <span className="ml-1 opacity-60">{sortIcon('student_id')}</span>
+                      </th>
+                      <th className="text-left px-5 py-3.5 text-xs font-semibold text-muted-foreground uppercase">
+                        {bn ? 'শ্রেণী ও বিভাগ' : 'Class & Division'}
+                      </th>
+                      <th className="text-left px-5 py-3.5 text-xs font-semibold text-muted-foreground uppercase">
+                        {bn ? 'সেশন' : 'Session'}
+                      </th>
+                      <th className="text-center px-4 py-3.5 text-xs font-semibold text-muted-foreground uppercase">
+                        {bn ? 'ধরন' : 'Type'}
+                      </th>
+                      <th className="text-center px-4 py-3.5 text-xs font-semibold text-muted-foreground uppercase">
+                        {bn ? 'স্ট্যাটাস' : 'Status'}
+                      </th>
+                      <th className="text-right px-6 py-3.5 text-xs font-semibold text-muted-foreground uppercase">
+                        {bn ? 'প্রোফাইল' : 'Profile'}
+                      </th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {sortedFiltered.map((s: any, idx: number) => (
-                      <tr key={s.id} className="group border-b border-border/15 last:border-b-0 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/10 transition-all duration-200 hover:scale-[1.005] origin-center">
-                        <td className="px-5 py-4 text-sm font-mono font-bold text-primary/80">{getClassSerial(s) !== '-' ? formatDigits(getClassSerial(s), bn) : '-'}</td>
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-3.5">
-                            {s.photo_url ? (
-                              <img src={s.photo_url} className="w-10 h-10 rounded-2xl object-cover ring-2 ring-border/30 shadow-sm" alt="" />
-                            ) : (
-                              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center text-emerald-700 dark:text-emerald-400 font-bold text-sm shadow-sm">
-                                {s.name_bn?.[0] || '?'}
+                  <tbody className="divide-y divide-border/30">
+                    {sortedFiltered.map((s: any) => {
+                      const effectiveClass = getClassName(getEffectiveClassId(s));
+                      const divName = bn ? s.divisions?.name_bn : (s.divisions?.name || '-');
+                      const isOld = s.student_type === 'old';
+                      const isApproved = s.approval_status === 'approved';
+                      const isInactive = isStudentEffectivelyInactive(s);
+                      const isPending = (s.approval_status || 'pending') === 'pending';
+                      const isRowPending = studentTypeMutation.isPending && studentTypeMutation.variables?.id === s.id;
+
+                      return (
+                        <tr
+                          key={s.id}
+                          className="group border-b border-border/40 last:border-b-0 hover:bg-muted/40 transition-colors cursor-pointer"
+                          onClick={() => navigate(`/admin/students/profile/${s.id}`)}
+                        >
+                          <td className="text-center px-4 py-3.5 text-xs font-mono font-bold text-primary/80">
+                            {s.roll_number ? formatDigits(s.roll_number, bn) : <span className="text-muted-foreground/40">—</span>}
+                          </td>
+                          <td className="px-5 py-3.5">
+                            <div className="flex items-center gap-3">
+                              {s.photo_url ? (
+                                <img src={s.photo_url} className="w-10 h-10 rounded-full object-cover shrink-0 ring-1 ring-border shadow-xs" alt="" />
+                              ) : (
+                                <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0 ring-1 ring-primary/20">
+                                  {s.name_bn?.[0] || s.name_en?.[0] || '?'}
+                                </div>
+                              )}
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-semibold text-foreground text-sm block truncate">
+                                    {s.name_bn || s.name_en || '-'}
+                                  </span>
+                                  {s.is_free && (
+                                    <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-semibold bg-emerald-500/15 text-emerald-600 border border-emerald-500/20">
+                                      {bn ? 'বিনা বেতন' : 'Free'}
+                                    </span>
+                                  )}
+                                </div>
+                                {s.name_en && s.name_bn && (
+                                  <span className="text-xs text-muted-foreground truncate block">{s.name_en}</span>
+                                )}
                               </div>
-                            )}
-                            <div className="min-w-0">
-                              <span className="font-semibold text-foreground text-sm block truncate">
-                                {s.name_bn}
-                                {s.is_free && <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-success/15 text-success border border-success/20">{bn ? 'বিনা বেতন' : 'Free'}</span>}
-                              </span>
-                              {s.name_en && <span className="text-xs text-muted-foreground/60 block truncate">{s.name_en}</span>}
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-5 py-4 text-sm font-mono text-muted-foreground">{formatDigits(s.registration_no || s.student_id, bn)}</td>
-                        <td className="px-5 py-4 text-sm font-mono font-medium text-foreground/80">{s.roll_number ? formatDigits(s.roll_number, bn) : <span className="text-muted-foreground/30">—</span>}</td>
-                        <td className="px-5 py-4 text-sm text-muted-foreground">{bn ? s.divisions?.name_bn : s.divisions?.name || '-'}</td>
-                        <td className="px-5 py-4 text-sm text-muted-foreground">{getSessionName(s.session_id, s.admission_session || s.session_year)}</td>
-                        <td className="px-5 py-4 text-sm text-muted-foreground">{getClassName(getEffectiveClassId(s))}</td>
-                        <td className="px-5 py-4">{getApprovalBadge(s.approval_status || 'pending')}</td>
-                        <td className="px-5 py-4">
-                          {isRecordPending(s.id) && (
-                            <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse text-[10px]">
-                              <Clock className="w-3 h-3 mr-1" />
-                              {bn ? 'অ্যাডমিন অনুমোদনের অপেক্ষায়' : 'Awaiting Admin Approval'}
+                          </td>
+                          <td className="px-5 py-3.5 text-xs font-mono text-muted-foreground">
+                            <Badge variant="outline" className="font-mono text-[11px] px-2 py-0.5 bg-primary/5 text-primary border-primary/20">
+                              {formatDigits(s.registration_no || s.student_id, bn)}
                             </Badge>
-                          )}
-                        </td>
-                        {canApproveItem && <td className="px-5 py-4">
-                          {(() => {
-                            const t = (s.student_type === 'old') ? 'old' : 'new';
-                            const isOld = t === 'old';
-                            const label = isOld ? (bn ? 'পুরাতন' : 'Old') : (bn ? 'নতুন' : 'New');
-                            const cls = isOld
-                              ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20'
-                              : 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20';
-                            const isApproved = s.approval_status === 'approved';
-                            const isRowPending = studentTypeMutation.isPending && studentTypeMutation.variables?.id === s.id;
-                            const badge = (
-                              <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${cls} ${isRowPending ? 'animate-pulse' : ''}`}>
-                                {isRowPending ? (
-                                  <Loader2 className="w-2.5 h-2.5 animate-spin" />
-                                ) : (
-                                  <span className={`w-1.5 h-1.5 rounded-full ${isOld ? 'bg-violet-500' : 'bg-sky-500'}`} />
-                                )}
-                                {label}
-                              </span>
-                            );
-                            return (
-                              <div className={`flex items-center gap-1.5 ${isRowPending ? 'opacity-70 pointer-events-none' : ''}`}>
-                                {isApproved ? (
-                                  <button
-                                    disabled={isRowPending}
-                                    onClick={() => { setTypeChangeFor(s); setTypeChangeReason(''); }}
-                                    title={bn ? 'ক্লিক করে পরিবর্তন করুন' : 'Click to change'}
-                                    className="hover:scale-105 transition-transform disabled:cursor-not-allowed"
-                                  >{badge}</button>
-                                ) : (
-                                  <span title={bn ? 'অনুমোদনের পরই পরিবর্তন করা যাবে' : 'Editable only after approval'} className="opacity-70">{badge}</span>
-                                )}
-                                <button
-                                  disabled={isRowPending}
-                                  onClick={() => setTypeHistoryFor(s)}
-                                  title={bn ? 'হিস্টোরি' : 'History'}
-                                  className="w-6 h-6 rounded-full bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors disabled:opacity-50"
-                                >
-                                  <History className="w-3 h-3" strokeWidth={2} />
-                                </button>
-                              </div>
-                            );
-                          })()}
-                        </td>}
-                        <td className="px-5 py-4">
-                          {(() => {
-                            const isInactive = isStudentEffectivelyInactive(s);
-                            const isClassInactive = s.status !== 'inactive' && isInactive;
-                            return (
-                              <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full ${!isInactive ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-destructive/10 text-destructive'}`}>
-                                <span className={`w-1.5 h-1.5 rounded-full ${!isInactive ? 'bg-emerald-500' : 'bg-destructive'}`} />
-                                {!isInactive
-                                  ? (bn ? 'সক্রিয়' : 'Active')
-                                  : (isClassInactive
-                                      ? (bn ? 'নিষ্ক্রিয় (শ্রেণী নিষ্ক্রিয়)' : 'Inactive (Class Inactive)')
-                                      : (bn ? 'নিষ্ক্রিয়' : 'Inactive'))}
-                              </span>
-                            );
-                          })()}
-                        </td>
-                        <td className="px-5 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2 flex-nowrap">
-                            <button onClick={() => navigate(`/admin/students/profile/${s.id}`)} className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/30 shadow-sm border border-blue-200/50 dark:border-blue-800/30 flex items-center justify-center text-blue-600 dark:text-blue-400 hover:shadow-md hover:scale-110 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all duration-200" title={bn ? 'দেখুন' : 'View'}><Eye className="w-4 h-4" strokeWidth={1.75} /></button>
-                            {isFeatureAllowed('action_print_profile') !== false && (
-                              <button onClick={() => printStudentProfile({ student: s, bn, institution: institution || {}, className: getClassName(getEffectiveClassId(s)), sessionName: getSessionName(s.session_id, s.admission_session || s.session_year) })} className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/30 shadow-sm border border-indigo-200/50 dark:border-indigo-800/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 hover:shadow-md hover:scale-110 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all duration-200" title={bn ? 'প্রোফাইল প্রিন্ট' : 'Print Profile'}><Printer className="w-4 h-4" strokeWidth={1.75} /></button>
-                            )}
-                            {canEditItem && (
-                              <button 
-                                disabled={isRecordPending(s.id)}
-                                onClick={() => { setEditStudent(s); setShowAdd(true); }} 
-                                className={`w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/30 shadow-sm border border-emerald-200/50 dark:border-emerald-800/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 hover:shadow-md hover:scale-110 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all duration-200 ${isRecordPending(s.id) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`} 
-                                title={bn ? 'সম্পাদনা' : 'Edit'}
-                              >
-                                <Pencil className="w-4 h-4" strokeWidth={1.75} />
-                              </button>
-                            )}
-                            {(canEditItem || canApproveItem) && (s.approval_status !== 'approved') && (
-                              <button onClick={() => statusMutation.mutate({ id: s.id, status: 'approved' })} className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/30 shadow-sm border border-emerald-200/50 dark:border-emerald-800/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 hover:shadow-md hover:scale-110 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all duration-200" title={bn ? 'অনুমোদন' : 'Approve'}><CheckCircle className="w-4 h-4" strokeWidth={1.75} /></button>
-                            )}
-                            {(canEditItem || canApproveItem) && (s.approval_status !== 'rejected') && (
-                              <button onClick={() => statusMutation.mutate({ id: s.id, status: 'rejected' })} className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/30 shadow-sm border border-rose-200/50 dark:border-rose-800/30 flex items-center justify-center text-rose-600 dark:text-rose-400 hover:shadow-md hover:scale-110 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-all duration-200" title={bn ? 'প্রত্যাখ্যান' : 'Reject'}><XCircle className="w-4 h-4" strokeWidth={1.75} /></button>
-                            )}
-                            {(canEditItem || canApproveItem) && (s.approval_status === 'rejected') && (
-                              <button onClick={() => statusMutation.mutate({ id: s.id, status: 'pending' })} className="w-8 h-8 rounded-full bg-amber-50 dark:bg-amber-950/30 shadow-sm border border-amber-200/50 dark:border-amber-800/30 flex items-center justify-center text-amber-600 dark:text-amber-400 hover:shadow-md hover:scale-110 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all duration-200" title={bn ? 'অপেক্ষমাণে ফেরত' : 'Back to Pending'}><Clock className="w-4 h-4" strokeWidth={1.75} /></button>
-                            )}
-                            {canEditItem && isFeatureAllowed('action_status_change') !== false && (
+                          </td>
+                          <td className="px-5 py-3.5 text-xs">
+                            <div className="font-medium text-foreground">{effectiveClass}</div>
+                            {divName !== '-' && <div className="text-[11px] text-muted-foreground">{divName}</div>}
+                          </td>
+                          <td className="px-5 py-3.5 text-xs text-muted-foreground">
+                            {getSessionName(s.session_id, s.admission_session || s.session_year)}
+                          </td>
+                          <td className="text-center px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
+                            {canApproveItem ? (
                               <button
-                                onClick={async () => { const cur = s.status || 'active'; const next = cur === 'active' ? 'inactive' : 'active'; const ok = await confirm({ title: bn ? (next === 'active' ? 'ছাত্র সক্রিয় করবেন?' : 'ছাত্র নিষ্ক্রিয় করবেন?') : (next === 'active' ? 'Activate student?' : 'Deactivate student?'), description: bn ? `"${s.name_bn || s.name_en}" কে ${next === 'active' ? 'সক্রিয়' : 'নিষ্ক্রিয়'} করতে চান?` : `Are you sure you want to ${next === 'active' ? 'activate' : 'deactivate'} "${s.name_en || s.name_bn}"?`, confirmText: bn ? 'হ্যাঁ' : 'Yes', cancelText: bn ? 'বাতিল' : 'Cancel', variant: next === 'active' ? 'default' : 'warning' }); if (!ok) return; toggleActiveMutation.mutate({ id: s.id, currentStatus: cur }); }}
-                                className={`w-8 h-8 rounded-full shadow-sm border flex items-center justify-center transition-all duration-200 hover:shadow-md hover:scale-110 ${(s.status || 'active') === 'active' ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200/50 dark:border-amber-800/30 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40' : 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200/50 dark:border-emerald-800/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'}`}
-                                title={(s.status || 'active') === 'active' ? (bn ? 'ডিএক্টিভ করুন' : 'Deactivate') : (bn ? 'এক্টিভ করুন' : 'Activate')}
+                                disabled={!isApproved || isRowPending}
+                                onClick={() => { if (isApproved) { setTypeChangeFor(s); setTypeChangeReason(''); } }}
+                                className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border transition-all cursor-pointer ${
+                                  isOld ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20 hover:bg-violet-500/20' : 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20 hover:bg-sky-500/20'
+                                }`}
+                                title={bn ? 'ধরন পরিবর্তন করতে ক্লিক করুন' : 'Click to change type'}
                               >
-                                {(s.status || 'active') === 'active' ? <UserX className="w-4 h-4" strokeWidth={1.75} /> : <UserCheck className="w-4 h-4" strokeWidth={1.75} />}
+                                <span className={`w-1.5 h-1.5 rounded-full ${isOld ? 'bg-violet-500' : 'bg-sky-500'}`} />
+                                {isOld ? (bn ? 'পুরাতন' : 'Old') : (bn ? 'নতুন' : 'New')}
                               </button>
+                            ) : (
+                              <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${isOld ? 'bg-violet-500/10 text-violet-600 border-violet-500/20' : 'bg-sky-500/10 text-sky-600 border-sky-500/20'}`}>
+                                {isOld ? (bn ? 'পুরাতন' : 'Old') : (bn ? 'নতুন' : 'New')}
+                              </span>
                             )}
-                             {canDeleteItem && isFeatureAllowed('action_delete_student') !== false && (
-                              <button 
-                                disabled={isRecordPending(s.id)}
-                                onClick={() => setDeleteId(s.id)} 
-                                className={`w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/30 shadow-sm border border-rose-200/50 dark:border-rose-800/30 flex items-center justify-center text-rose-600 dark:text-rose-400 hover:shadow-md hover:scale-110 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-all duration-200 ${isRecordPending(s.id) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`} 
-                                title={bn ? 'মুছুন' : 'Delete'}
+                          </td>
+                          <td className="text-center px-4 py-3.5">
+                            <div className="flex flex-col items-center gap-1">
+                              {getApprovalBadge(s.approval_status || 'pending')}
+                              {isInactive && (
+                                <span className="text-[10px] text-destructive font-medium">({bn ? 'নিষ্ক্রিয়' : 'Inactive'})</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="text-right px-6 py-3.5" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-end gap-1.5">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => navigate(`/admin/students/profile/${s.id}`)}
+                                className="gap-1.5 text-xs font-semibold rounded-xl shadow-xs hover:bg-primary/10 hover:text-primary transition-colors h-8"
                               >
-                                <Trash2 className="w-4 h-4" strokeWidth={1.75} />
-                              </button>
-                            )}
-                          </div>
+                                <Eye className="w-3.5 h-3.5 text-primary" />
+                                <span>{bn ? 'প্রোফাইল' : 'Profile'}</span>
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-xl cursor-pointer">
+                                    <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-44 rounded-xl">
+                                  {canEditItem && (
+                                    <DropdownMenuItem onClick={() => { setEditStudent(s); setShowAdd(true); }} className="gap-2 cursor-pointer text-xs">
+                                      <Pencil className="w-3.5 h-3.5 text-emerald-600" />
+                                      <span>{bn ? 'তথ্য সম্পাদনা' : 'Edit Info'}</span>
+                                    </DropdownMenuItem>
+                                  )}
+                                  {isFeatureAllowed('action_print_profile') !== false && (
+                                    <DropdownMenuItem onClick={() => printStudentProfile({ student: s, bn, institution: institution || {}, className: getClassName(getEffectiveClassId(s)), sessionName: getSessionName(s.session_id, s.admission_session || s.session_year) })} className="gap-2 cursor-pointer text-xs">
+                                      <Printer className="w-3.5 h-3.5 text-blue-600" />
+                                      <span>{bn ? 'প্রোফাইল প্রিন্ট' : 'Print Profile'}</span>
+                                    </DropdownMenuItem>
+                                  )}
+                                  {canEditItem && isFeatureAllowed('action_status_change') !== false && (
+                                    <DropdownMenuItem
+                                      onClick={async () => {
+                                        const cur = s.status || 'active';
+                                        const next = cur === 'active' ? 'inactive' : 'active';
+                                        const ok = await confirm({
+                                          title: bn ? (next === 'active' ? 'ছাত্র সক্রিয় করবেন?' : 'ছাত্র নিষ্ক্রিয় করবেন?') : (next === 'active' ? 'Activate student?' : 'Deactivate student?'),
+                                          description: bn ? `"${s.name_bn || s.name_en}" কে ${next === 'active' ? 'সক্রিয়' : 'নিষ্ক্রিয়'} করতে চান?` : `Are you sure you want to ${next === 'active' ? 'activate' : 'deactivate'} "${s.name_en || s.name_bn}"?`,
+                                          confirmText: bn ? 'হ্যাঁ' : 'Yes',
+                                          cancelText: bn ? 'বাতিল' : 'Cancel',
+                                          variant: next === 'active' ? 'default' : 'warning'
+                                        });
+                                        if (!ok) return;
+                                        toggleActiveMutation.mutate({ id: s.id, currentStatus: cur });
+                                      }}
+                                      className="gap-2 cursor-pointer text-xs"
+                                    >
+                                      {(s.status || 'active') === 'active' ? (
+                                        <>
+                                          <UserX className="w-3.5 h-3.5 text-amber-600" />
+                                          <span>{bn ? 'নিষ্ক্রিয় করুন' : 'Deactivate'}</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                                          <span>{bn ? 'সক্রিয় করুন' : 'Activate'}</span>
+                                        </>
+                                      )}
+                                    </DropdownMenuItem>
+                                  )}
+                                  {canDeleteItem && isFeatureAllowed('action_delete_student') !== false && (
+                                    <>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem onClick={() => setDeleteId(s.id)} className="gap-2 cursor-pointer text-xs text-destructive focus:text-destructive">
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                        <span>{bn ? 'মুছে ফেলুন' : 'Delete'}</span>
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {sortedFiltered.length === 0 && (
+                      <tr>
+                        <td colSpan={8} className="text-center py-16 text-sm text-muted-foreground">
+                          {bn ? 'কোনো শিক্ষার্থী পাওয়া যায়নি' : 'No students found'}
                         </td>
                       </tr>
-                    ))}
-                    {sortedFiltered.length === 0 && (
-                      <tr><td colSpan={canApproveItem ? 11 : 10} className="text-center py-16 text-sm text-muted-foreground/60">{bn ? 'কোনো ছাত্র পাওয়া যায়নি' : 'No students found'}</td></tr>
                     )}
                   </tbody>
                 </table>

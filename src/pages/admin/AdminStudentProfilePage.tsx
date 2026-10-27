@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -5,9 +6,31 @@ import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
+import { useConfirm } from '@/contexts/ConfirmContext';
 import StudentProfileModal from '@/components/profile/StudentProfileModal';
+import StudentIdCard from '@/components/idcard/StudentIdCard';
+import AdmissionForm from '@/components/admission/AdmissionForm';
+import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, UserX, Printer, GraduationCap, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  ArrowLeft,
+  Loader2,
+  UserX,
+  Printer,
+  GraduationCap,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Pencil,
+  CreditCard,
+  Banknote,
+  ClipboardList,
+  Award,
+  Power,
+  PowerOff,
+  Trash2,
+} from 'lucide-react';
 import { printStudentProfile } from '@/lib/studentProfilePrint';
 import { toast } from 'sonner';
 
@@ -18,7 +41,12 @@ const AdminStudentProfilePage = () => {
   const bn = language === 'bn';
   const queryClient = useQueryClient();
   const { data: institution } = useInstitutionInfo();
-  const { canEditItem, canApproveItem } = usePagePermissions('/admin/students');
+  const { canEditItem, canApproveItem, canDeleteItem, isFeatureAllowed } = usePagePermissions('/admin/students');
+  const confirm = useConfirm();
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [idCardOpen, setIdCardOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const { data: student, isLoading, error } = useQuery({
     queryKey: ['student_profile_page', id],
@@ -62,12 +90,43 @@ const AdminStudentProfilePage = () => {
     },
   });
 
+  const toggleActiveMutation = useMutation({
+    mutationFn: async (newStatus: 'active' | 'inactive') => {
+      if (!id) return;
+      const { error } = await supabase.from('students').update({ status: newStatus } as any).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, newStatus) => {
+      queryClient.invalidateQueries({ queryKey: ['student_profile_page', id] });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      toast.success(newStatus === 'active' ? (bn ? 'শিক্ষার্থী সক্রিয় করা হয়েছে' : 'Student activated') : (bn ? 'শিক্ষার্থী নিষ্ক্রিয় করা হয়েছে' : 'Student inactivated'));
+    },
+    onError: () => toast.error('Error'),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!id) return;
+      const { error: hardErr } = await supabase.from('students').delete().eq('id', id);
+      if (hardErr) {
+        const { error: softErr } = await supabase.from('students').update({ deleted_at: new Date().toISOString(), status: 'inactive' } as any).eq('id', id);
+        if (softErr) throw softErr;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      toast.success(bn ? 'শিক্ষার্থী সফলভাবে মুছে ফেলা হয়েছে' : 'Student deleted successfully');
+      navigate('/admin/students');
+    },
+    onError: () => toast.error('Error deleting student'),
+  });
+
   const canApprove = canEditItem || canApproveItem;
   const studentName = student ? (bn ? student.name_bn || student.name_en : student.name_en || student.name_bn) : '';
 
   return (
     <AdminLayout>
-      <div className="space-y-6 max-w-5xl mx-auto px-2 sm:px-4 py-4 sm:py-6">
+      <div className="space-y-5 max-w-5xl mx-auto px-2 sm:px-4 py-4 sm:py-6">
         {/* Top Navigation & Action Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border/60">
           <div className="flex items-center gap-3">
@@ -95,43 +154,6 @@ const AdminStudentProfilePage = () => {
 
           {student && (
             <div className="flex items-center gap-2 flex-wrap self-end sm:self-auto">
-              {/* Approval Actions */}
-              {canApprove && student.approval_status !== 'approved' && (
-                <Button
-                  size="sm"
-                  onClick={() => statusMutation.mutate({ id: student.id, status: 'approved' })}
-                  disabled={statusMutation.isPending}
-                  className="gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  <span>{bn ? 'অনুমোদন করুন' : 'Approve'}</span>
-                </Button>
-              )}
-              {canApprove && student.approval_status !== 'rejected' && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => statusMutation.mutate({ id: student.id, status: 'rejected' })}
-                  disabled={statusMutation.isPending}
-                  className="gap-1.5 rounded-xl border-rose-300 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 font-bold text-xs shadow-xs"
-                >
-                  <XCircle className="w-4 h-4" />
-                  <span>{bn ? 'প্রত্যাখ্যান' : 'Reject'}</span>
-                </Button>
-              )}
-              {canApprove && student.approval_status === 'rejected' && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => statusMutation.mutate({ id: student.id, status: 'pending' })}
-                  disabled={statusMutation.isPending}
-                  className="gap-1.5 rounded-xl border-amber-300 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 font-bold text-xs shadow-xs"
-                >
-                  <Clock className="w-4 h-4" />
-                  <span>{bn ? 'অপেক্ষমাণ' : 'Pending'}</span>
-                </Button>
-              )}
-
               <Button
                 variant="outline"
                 size="sm"
@@ -141,9 +163,147 @@ const AdminStudentProfilePage = () => {
                 <Printer className="w-3.5 h-3.5" />
                 <span>{bn ? 'প্রোফাইল প্রিন্ট' : 'Print Profile'}</span>
               </Button>
+              {canEditItem && (
+                <Button
+                  size="sm"
+                  onClick={() => setEditOpen(true)}
+                  className="gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  <span>{bn ? 'তথ্য এডিট' : 'Edit Profile'}</span>
+                </Button>
+              )}
             </div>
           )}
         </div>
+
+        {/* ═══════════ COMPLETE PROFILE ACTIONS TOOLBAR (MATCHING STAFF SYSTEM) ═══════════ */}
+        {student && (
+          <div className="flex flex-wrap items-center gap-2.5 p-3.5 bg-muted/30 rounded-2xl border border-border/60 shadow-xs">
+            {/* ID Card Dialog button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIdCardOpen(true)}
+              className="gap-1.5 rounded-xl text-xs font-semibold hover:bg-primary/10 hover:text-primary shadow-xs"
+            >
+              <CreditCard className="w-3.5 h-3.5 text-primary" />
+              <span>{bn ? 'আইডি কার্ড' : 'ID Card'}</span>
+            </Button>
+
+            {/* Fee Collection shortcut */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/admin/students/fees?search=${encodeURIComponent(student.student_id || student.registration_no || '')}`)}
+              className="gap-1.5 rounded-xl text-xs font-semibold hover:bg-emerald-500/10 hover:text-emerald-600 shadow-xs"
+            >
+              <Banknote className="w-3.5 h-3.5 text-emerald-600" />
+              <span>{bn ? 'ফি ও বকেয়া' : 'Fees & Dues'}</span>
+            </Button>
+
+            {/* Attendance shortcut */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/admin/students/attendance')}
+              className="gap-1.5 rounded-xl text-xs font-semibold hover:bg-blue-500/10 hover:text-blue-600 shadow-xs"
+            >
+              <ClipboardList className="w-3.5 h-3.5 text-blue-600" />
+              <span>{bn ? 'হাজিরা রিপোর্ট' : 'Attendance'}</span>
+            </Button>
+
+            {/* Certificates shortcut */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/admin/certificates')}
+              className="gap-1.5 rounded-xl text-xs font-semibold hover:bg-amber-500/10 hover:text-amber-600 shadow-xs"
+            >
+              <Award className="w-3.5 h-3.5 text-amber-500" />
+              <span>{bn ? 'সনদ ও প্রশংসাপত্র' : 'Certificates'}</span>
+            </Button>
+
+            {/* Pending Student Approval (canApprove) */}
+            {canApprove && student.approval_status !== 'approved' && (
+              <Button
+                size="sm"
+                onClick={() => statusMutation.mutate({ id: student.id, status: 'approved' })}
+                disabled={statusMutation.isPending}
+                className="gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs"
+              >
+                <CheckCircle className="w-3.5 h-3.5" />
+                <span>{bn ? 'অনুমোদন করুন' : 'Approve'}</span>
+              </Button>
+            )}
+
+            {/* Pending Student Rejection (canApprove) */}
+            {canApprove && student.approval_status !== 'rejected' && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => statusMutation.mutate({ id: student.id, status: 'rejected' })}
+                disabled={statusMutation.isPending}
+                className="gap-1.5 rounded-xl border-rose-300 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 font-semibold text-xs shadow-xs"
+              >
+                <XCircle className="w-3.5 h-3.5" />
+                <span>{bn ? 'প্রত্যাখ্যান' : 'Reject'}</span>
+              </Button>
+            )}
+
+            {/* Active / Inactive Status Toggle */}
+            {canEditItem && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  const cur = student.status || 'active';
+                  const next = cur === 'active' ? 'inactive' : 'active';
+                  const ok = await confirm({
+                    title: bn ? (next === 'active' ? 'শিক্ষার্থী সক্রিয় করবেন?' : 'শিক্ষার্থী নিষ্ক্রিয় করবেন?') : (next === 'active' ? 'Activate student?' : 'Inactivate student?'),
+                    description: bn ? `"${studentName}" কে ${next === 'active' ? 'সক্রিয়' : 'নিষ্ক্রিয়'} করতে চান?` : `Are you sure you want to ${next === 'active' ? 'activate' : 'inactivate'} "${studentName}"?`,
+                    confirmText: bn ? 'হ্যাঁ' : 'Yes',
+                    cancelText: bn ? 'বাতিল' : 'Cancel',
+                    variant: next === 'active' ? 'default' : 'warning',
+                  });
+                  if (!ok) return;
+                  toggleActiveMutation.mutate(next);
+                }}
+                disabled={toggleActiveMutation.isPending}
+                className={`gap-1.5 rounded-xl text-xs font-semibold shadow-xs ${
+                  student.status === 'active'
+                    ? 'text-orange-600 border-orange-500/30 hover:bg-orange-500/10'
+                    : 'text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10'
+                }`}
+              >
+                {student.status === 'active' ? (
+                  <>
+                    <PowerOff className="w-3.5 h-3.5" />
+                    <span>{bn ? 'নিষ্ক্রিয় করুন' : 'Inactivate'}</span>
+                  </>
+                ) : (
+                  <>
+                    <Power className="w-3.5 h-3.5" />
+                    <span>{bn ? 'সক্রিয় করুন' : 'Activate'}</span>
+                  </>
+                )}
+              </Button>
+            )}
+
+            {/* Delete Student */}
+            {canDeleteItem && isFeatureAllowed('action_delete_student') !== false && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setDeleteConfirmOpen(true)}
+                className="gap-1.5 rounded-xl text-xs font-semibold text-rose-600 border-rose-500/30 hover:bg-rose-500/10 shadow-xs ml-auto"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{bn ? 'মুছে ফেলুন' : 'Delete'}</span>
+              </Button>
+            )}
+          </div>
+        )}
 
         {/* Content Body */}
         {isLoading ? (
@@ -176,6 +336,69 @@ const AdminStudentProfilePage = () => {
             />
           </div>
         )}
+
+        {/* Edit Student Modal */}
+        <AdmissionForm
+          open={editOpen}
+          onOpenChange={(open) => {
+            setEditOpen(open);
+            if (!open) {
+              queryClient.invalidateQueries({ queryKey: ['student_profile_page', id] });
+              queryClient.invalidateQueries({ queryKey: ['students'] });
+            }
+          }}
+          editStudent={student}
+        />
+
+        {/* ID Card Modal */}
+        <Dialog open={idCardOpen} onOpenChange={setIdCardOpen}>
+          <DialogContent className="max-w-md p-4 sm:p-6 rounded-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-center font-bold">{bn ? 'শিক্ষার্থী আইডি কার্ড' : 'Student ID Card'}</DialogTitle>
+            </DialogHeader>
+            {student && (
+              <div className="flex flex-col items-center gap-4 py-2">
+                <StudentIdCard
+                  student={{
+                    name_bn: student.name_bn,
+                    name_en: student.name_en,
+                    student_id: student.registration_no || student.student_id,
+                    roll_number: student.roll_number,
+                    photo_url: student.photo_url,
+                    blood_group: student.blood_group,
+                    class_name: student.classes?.name_bn || student.classes?.name,
+                    class_name_en: student.classes?.name,
+                    division_name: student.divisions?.name_bn || student.divisions?.name,
+                    father_name: student.father_name,
+                    mother_name: student.mother_name,
+                    phone: student.phone || student.guardian_phone,
+                    session_year: student.academic_sessions?.name || student.session_year,
+                    session_year_bn: student.academic_sessions?.name_bn || student.session_year,
+                  }}
+                  institution={institution || {}}
+                  lang={bn ? 'bn' : 'en'}
+                />
+                <Button
+                  onClick={() => window.print()}
+                  className="w-full gap-2 rounded-xl font-semibold text-xs mt-2"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>{bn ? 'প্রিন্ট করুন' : 'Print Card'}</span>
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation */}
+        <DeleteConfirmDialog
+          open={deleteConfirmOpen}
+          onOpenChange={setDeleteConfirmOpen}
+          onConfirm={() => deleteMutation.mutate()}
+          title={bn ? 'শিক্ষার্থী মুছে ফেলবেন?' : 'Delete student?'}
+          description={bn ? `আপনি কি নিশ্চিত যে "${studentName}" এর সকল তথ্য স্থায়ীভাবে মুছে ফেলতে চান?` : `Are you sure you want to delete "${studentName}"?`}
+          loading={deleteMutation.isPending}
+        />
       </div>
     </AdminLayout>
   );
