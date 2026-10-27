@@ -102,6 +102,15 @@ const AdminGuardianNotifications = () => {
     },
   });
 
+  // Fetch Free WhatsApp Gateway config
+  const { data: gatewayConfig } = useQuery({
+    queryKey: ['whatsapp-gateway-config-notify'],
+    queryFn: async () => {
+      const { data } = await supabase.from('app_settings').select('value').eq('key', 'whatsapp_gateway_config').maybeSingle();
+      return (data?.value as any) || null;
+    },
+  });
+
   // Fetch divisions
   const { data: divisions = [] } = useQuery({
     queryKey: ['divisions-for-notify'],
@@ -325,16 +334,29 @@ const AdminGuardianNotifications = () => {
 
         if (channel === 'whatsapp') {
           try {
-            const { data, error } = await supabase.functions.invoke('send-whatsapp', {
-              body: { recipients: [recipient.phone], message: personalized },
-            });
-            if (error) throw error;
-            if (data?.results?.[0]?.success || data?.success) {
-              isSuccess = true;
+            if (gatewayConfig?.is_enabled && gatewayConfig?.server_url?.trim()) {
+              const sUrl = gatewayConfig.server_url.replace(/\/+$/, '');
+              const inst = (gatewayConfig.instance_name || 'madrasa_main').trim();
+              let to = recipient.phone.replace(/\D/g, '');
+              if (to.length === 11 && to.startsWith('01')) to = '88' + to;
+              const h: Record<string, string> = { 'Content-Type': 'application/json' };
+              if (gatewayConfig.api_key) h['apikey'] = gatewayConfig.api_key;
+
+              const resp = await fetch(`${sUrl}/message/sendText/${encodeURIComponent(inst)}`, {
+                method: 'POST',
+                headers: h,
+                body: JSON.stringify({ number: to, text: personalized, delay: 1000 }),
+              });
+              const resData = await resp.json().catch(() => ({}));
+              isSuccess = resp.ok && !!(resData?.key?.id || resData?.status === 'PENDING' || resData?.message);
             } else {
-              isSuccess = false;
+              const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+                body: { recipients: [recipient.phone], message: personalized },
+              });
+              if (error) throw error;
+              isSuccess = !!(data?.results?.[0]?.success || data?.success);
             }
-          } catch (e) {
+          } catch {
             isSuccess = false;
           }
         } else if (channel === 'sms') {

@@ -331,6 +331,41 @@ const WhatsAppSettings = () => {
     setTesting(true);
     setTestResult(null);
     try {
+      // If Free Gateway is enabled and configured, send directly to the Evolution API instance
+      if (freeGateway.is_enabled && freeGateway.server_url.trim()) {
+        const sUrl = freeGateway.server_url.replace(/\/+$/, '');
+        const inst = freeGateway.instance_name.trim() || 'madrasa_main';
+        let to = testPhone.trim().replace(/\D/g, '');
+        if (to.length === 11 && to.startsWith('01')) to = '88' + to;
+        const h: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (freeGateway.api_key) h['apikey'] = freeGateway.api_key;
+
+        const resp = await fetch(`${sUrl}/message/sendText/${encodeURIComponent(inst)}`, {
+          method: 'POST',
+          headers: h,
+          body: JSON.stringify({ number: to, text: testMessage.trim(), delay: 1000 }),
+        });
+        const resData = await resp.json().catch(() => ({}));
+
+        if (resp.ok && (resData?.key?.id || resData?.status === 'PENDING' || resData?.message)) {
+          setTestResult({
+            success: true,
+            messageId: resData?.key?.id || 'sent',
+            sentAt: new Date().toLocaleString(bn ? 'bn-BD' : 'en-US'),
+            method: 'free_gateway',
+          });
+          toast({
+            title: bn ? 'মেসেজ পাঠানো হয়েছে' : 'Message sent',
+            description: bn ? 'WhatsApp এ চেক করুন' : 'Check WhatsApp inbox',
+          });
+          return;
+        } else {
+          const errMsg = resData?.response?.message?.[0] || resData?.message || resData?.error || (bn ? 'মেসেজ পাঠানো সম্ভব হয়নি' : 'Failed to send message');
+          throw new Error(errMsg);
+        }
+      }
+
+      // Fallback: Send via Supabase Edge Function
       const { data, error } = await supabase.functions.invoke('send-whatsapp', {
         body: { recipients: [testPhone.trim()], message: testMessage.trim() },
       });
