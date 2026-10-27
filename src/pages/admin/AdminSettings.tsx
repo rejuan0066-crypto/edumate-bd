@@ -27,7 +27,6 @@ import ReceiptQrSettings from '@/components/admin/ReceiptQrSettings';
 import QuranDefaultsSettings from '@/components/admin/QuranDefaultsSettings';
 import AttendanceDuplicateSettings from '@/components/admin/AttendanceDuplicateSettings';
 import RateLimitSettings from '@/components/admin/RateLimitSettings';
-import ApprovalWorkflowSettings from '@/components/admin/ApprovalWorkflowSettings';
 import { SecurityBackupPanel } from '@/components/admin/SecurityBackupPanel';
 import BackgroundSettings from '@/components/admin/BackgroundSettings';
 import DeletionSecurityPanel from '@/components/settings/DeletionSecurityPanel';
@@ -36,7 +35,7 @@ import { useConfirm } from "@/contexts/ConfirmContext";
 
 const VALID_SETTINGS_TABS = [
   'email', 'payment', 'sms', 'whatsapp', 'security', 'general',
-  'salary_workflow', 'timezone', 'receipt_qr', 'approvals', 'quran',
+  'salary_workflow', 'timezone', 'receipt_qr', 'quran',
   'attendance_dup'
 ] as const;
 type SettingsTab = typeof VALID_SETTINGS_TABS[number];
@@ -770,9 +769,6 @@ const AdminSettings = () => {
             </TabsTrigger>
             <TabsTrigger value="receipt_qr" className="gap-1.5">
               <Clock className="w-4 h-4" /> {bn ? 'রিসিট QR' : 'Receipt QR'}
-            </TabsTrigger>
-            <TabsTrigger value="approvals" className="gap-1.5">
-              <Shield className="w-4 h-4" /> {bn ? 'অনুমোদন' : 'Approvals'}
             </TabsTrigger>
             <TabsTrigger value="quran" className="gap-1.5">
               <Mail className="w-4 h-4" /> {bn ? 'কুরআন' : 'Quran'}
@@ -1560,10 +1556,6 @@ const AdminSettings = () => {
 
           <TabsContent value="receipt_qr" className="mt-6">
             <ReceiptQrSettings />
-          </TabsContent>
-
-          <TabsContent value="approvals" className="mt-6">
-            <ApprovalWorkflowSettings />
           </TabsContent>
 
           <TabsContent value="quran" className="mt-6">
