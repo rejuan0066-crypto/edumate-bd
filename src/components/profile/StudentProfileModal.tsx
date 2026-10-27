@@ -133,6 +133,7 @@ const StudentProfileModal = ({
 
   // Multi-select state for dues
   const [selectedDueIds, setSelectedDueIds] = useState<string[]>([]);
+  const [showUpcoming, setShowUpcoming] = useState(false);
 
   // Bulk / Item Discount Dialog state
   const [discountDialogOpen, setDiscountDialogOpen] = useState(false);
@@ -312,6 +313,9 @@ const StudentProfileModal = ({
       paidRecords.map((p: any) => [`${p.month}|${p.year}|${p.fee_type_id}`, p])
     );
 
+    const now = new Date();
+    const currentMonthCursor = new Date(now.getFullYear(), now.getMonth(), 1);
+
     let monthlyDue = 0;
     let monthlyPaid = 0;
     const dueList: Array<{
@@ -328,9 +332,33 @@ const StudentProfileModal = ({
       dueAmount: number;
       waiverPercent: number;
       isMonthly: boolean;
+      timingStatus?: 'past' | 'current' | 'upcoming';
+    }> = [];
+
+    const upcomingList: Array<{
+      id: string;
+      fee_type_id: string;
+      name: string;
+      name_bn: string;
+      category: string;
+      categoryLabel: string;
+      month?: string;
+      monthLabel?: string;
+      year: number;
+      originalAmount: number;
+      dueAmount: number;
+      waiverPercent: number;
+      isMonthly: boolean;
+      timingStatus?: 'past' | 'current' | 'upcoming';
     }> = [];
 
     monthsTimeline.forEach(m => {
+      const mIdx = MONTHS_M.indexOf(m.name);
+      const mDate = new Date(m.year, mIdx, 1);
+      const isPast = mDate < currentMonthCursor;
+      const isCurrent = mDate.getTime() === currentMonthCursor.getTime();
+      const isUpcoming = mDate > currentMonthCursor;
+
       monthlyFeeTypes.forEach((ft: any) => {
         const months = Array.isArray(ft.applicable_months) ? ft.applicable_months : [];
         const applicable = months.length === 0 || months.includes(m.name);
@@ -350,8 +378,7 @@ const StudentProfileModal = ({
         } else if (isPaid) {
           monthlyPaid += (paymentRec.paid_amount ?? net);
         } else if (waiverPct < 100 && net > 0) {
-          monthlyDue += net;
-          dueList.push({
+          const item = {
             id: `monthly-${ft.id}-${m.name}-${m.year}`,
             fee_type_id: ft.id,
             name: ft.name,
@@ -365,7 +392,17 @@ const StudentProfileModal = ({
             dueAmount: net,
             waiverPercent: waiverPct,
             isMonthly: true,
-          });
+            timingStatus: (isPast ? 'past' : isCurrent ? 'current' : 'upcoming') as 'past' | 'current' | 'upcoming',
+          };
+
+          if (isUpcoming) {
+            // Future months are upcoming/advance, NOT past dues
+            upcomingList.push(item);
+          } else {
+            // Past & Current months are actual dues
+            monthlyDue += net;
+            dueList.push(item);
+          }
         }
       });
     });
@@ -422,6 +459,7 @@ const StudentProfileModal = ({
       totalDue,
       totalPaid,
       dueList,
+      upcomingList,
       paidLookup,
       studentWaivers,
     };
@@ -1539,6 +1577,7 @@ const StudentProfileModal = ({
                 <div className="space-y-2 max-h-72 overflow-y-auto pr-1 scrollbar-thin">
                   {sessionFinancials.dueList.map((item: any) => {
                     const isSelected = selectedDueIds.includes(item.id);
+                    const isCurrentMonth = item.timingStatus === 'current';
                     return (
                       <div
                         key={item.id}
@@ -1546,6 +1585,8 @@ const StudentProfileModal = ({
                           "flex items-center justify-between p-3 rounded-xl border transition-all shadow-2xs",
                           isSelected
                             ? "bg-primary/5 border-primary/40 ring-1 ring-primary/20"
+                            : isCurrentMonth
+                            ? "bg-amber-500/5 border-amber-500/25 hover:border-amber-500/40 hover:bg-amber-500/10"
                             : "bg-muted/20 border-rose-500/15 hover:border-rose-500/30 hover:bg-muted/30"
                         )}
                       >
@@ -1561,8 +1602,14 @@ const StudentProfileModal = ({
                                 {item.categoryLabel}
                               </Badge>
                               {item.monthLabel && (
-                                <Badge className="bg-rose-500/10 text-rose-700 dark:text-rose-300 border-none text-[10px] px-2 py-0 font-medium">
+                                <Badge className={cn(
+                                  "border-none text-[10px] px-2 py-0 font-medium",
+                                  isCurrentMonth
+                                    ? "bg-amber-500/15 text-amber-800 dark:text-amber-300 font-bold"
+                                    : "bg-rose-500/10 text-rose-700 dark:text-rose-300"
+                                )}>
                                   {item.monthLabel}
+                                  {isCurrentMonth ? (bn ? ' (চলতি মাস)' : ' (Current)') : ''}
                                 </Badge>
                               )}
                             </div>
@@ -1581,8 +1628,16 @@ const StudentProfileModal = ({
 
                         <div className="flex items-center gap-2 shrink-0">
                           <div className="text-right mr-1">
-                            <p className="text-[10px] uppercase font-bold text-rose-600/70">{bn ? 'বকেয়া' : 'Due'}</p>
-                            <p className="text-base font-black text-rose-600 dark:text-rose-400">
+                            <p className={cn(
+                              "text-[10px] uppercase font-bold",
+                              isCurrentMonth ? "text-amber-700/80" : "text-rose-600/70"
+                            )}>
+                              {isCurrentMonth ? (bn ? 'চলতি প্রদেয়' : 'Current Due') : (bn ? 'বকেয়া' : 'Due')}
+                            </p>
+                            <p className={cn(
+                              "text-base font-black",
+                              isCurrentMonth ? "text-amber-700 dark:text-amber-300" : "text-rose-600 dark:text-rose-400"
+                            )}>
                               ৳{formatDigits(item.dueAmount.toLocaleString(), bn)}
                             </p>
                           </div>
@@ -1620,6 +1675,67 @@ const StudentProfileModal = ({
                       </div>
                     );
                   })}
+                </div>
+              )}
+
+              {/* Upcoming / Advance Payment Section */}
+              {sessionFinancials.upcomingList && sessionFinancials.upcomingList.length > 0 && (
+                <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-3 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-blue-600 shrink-0" />
+                      <div>
+                        <p className="text-xs font-bold text-foreground">
+                          {bn ? `আসন্ন / অগ্রিম মাসসমূহ (${sessionFinancials.upcomingList.length} টি মাস)` : `Upcoming / Advance Months (${sessionFinancials.upcomingList.length})`}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {bn ? 'এই মাসগুলো এখনো আসেনি (বকেয়া নয়)। অভিভাবক চাইলে অগ্রিম পরিশোধ করতে পারেন।' : 'These months have not arrived yet (not past dues). Can be paid in advance.'}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setShowUpcoming(!showUpcoming)}
+                      className="h-7 text-xs text-blue-700 hover:bg-blue-500/10 font-bold"
+                    >
+                      {showUpcoming ? (bn ? 'লুকান ▲' : 'Hide ▲') : (bn ? 'অগ্রিম ফি দেখুন ▼' : 'View Advance ▼')}
+                    </Button>
+                  </div>
+
+                  {showUpcoming && (
+                    <div className="space-y-2 pt-1 border-t border-blue-500/20 max-h-60 overflow-y-auto pr-1 scrollbar-thin">
+                      {sessionFinancials.upcomingList.map((item: any) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between p-2.5 rounded-lg border border-blue-500/15 bg-background/80 hover:bg-background transition-colors"
+                        >
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <div>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-bold text-xs text-foreground">{bn ? item.name_bn : item.name}</span>
+                                <Badge className="bg-blue-500/15 text-blue-700 dark:text-blue-300 border-none text-[10px] px-1.5 py-0">
+                                  {item.monthLabel} • {bn ? 'আসন্ন মাস' : 'Upcoming'}
+                                </Badge>
+                              </div>
+                              <p className="text-[11px] text-muted-foreground mt-0.5">
+                                {bn ? `ফি: ৳${item.dueAmount}` : `Fee: ৳${item.dueAmount}`}
+                              </p>
+                            </div>
+                          </div>
+
+                          <Button
+                            size="sm"
+                            onClick={() => handleOpenPaySingle(item)}
+                            className="h-7 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-xs font-bold px-3 flex items-center gap-1"
+                          >
+                            <Banknote className="w-3.5 h-3.5" />
+                            <span>{bn ? 'অগ্রিম পরিশোধ ↗' : 'Pay in Advance ↗'}</span>
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
