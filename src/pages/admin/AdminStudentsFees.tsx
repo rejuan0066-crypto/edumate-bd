@@ -998,56 +998,71 @@ const AdminStudentsFees = () => {
                 </Select>
 
                 {/* Month selector for monthly fee types or one-time fees with applicable months */}
-                {((selectedFeeTypeObj?.payment_frequency === 'monthly') || (Array.isArray(selectedFeeTypeObj?.applicable_months) && selectedFeeTypeObj.applicable_months.length > 0)) && foundStudent && (
+                {selectedFeeTypeObj?.payment_frequency === 'monthly' && foundStudent && (
+                  <div className="mt-3">
+                    {paymentMonth ? (
+                      <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-emerald-600" />
+                          <span className="font-bold text-emerald-800 dark:text-emerald-300">
+                            ✓ {bn ? `${MONTHS_BN[MONTHS_EN.indexOf(paymentMonth)] || paymentMonth} ${paymentYear} মাসের ফি পরিশোধ হবে` : `Paying for ${paymentMonth} ${paymentYear}`}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-muted-foreground hidden sm:inline">
+                          {bn ? '(মাস পরিবর্তন করতে উপরের চার্ট থেকে মাসে ক্লিক করুন)' : '(Click any month above to change)'}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-800 dark:text-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <span className="font-semibold">
+                          👆 {bn ? 'উপরের চার্ট থেকে যে মাসের ফি পরিশোধ করবেন সেটি সিলেক্ট করুন' : 'Please select the month from the list above'}
+                        </span>
+                        <Select value="" onValueChange={(val) => {
+                          const [m, y] = val.split('-');
+                          setPaymentMonth(m);
+                          setPaymentYear(parseInt(y));
+                          const waiver = studentWaivers.find((w: any) => w.fee_type_id === selectedFeeTypeObj.id);
+                          const waiverPct = (foundStudent.is_free && selectedFeeTypeObj.fee_category === 'monthly') ? 100 : (waiver?.waiver_percent || 0);
+                          const net = Math.round(selectedFeeTypeObj.amount * (1 - waiverPct / 100));
+                          setAmount(String(net));
+                        }}>
+                          <SelectTrigger className="w-full sm:w-44 h-8 bg-background text-xs">
+                            <SelectValue placeholder={bn ? 'মাস বেছে নিন...' : 'Choose month...'} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getMonthlyStatuses(feeType).filter(s => s.status !== 'na').map(s => (
+                              <SelectItem key={`${s.month}-${s.year}`} value={`${s.month}-${s.year}`} disabled={s.status === 'paid'}>
+                                {s.monthBn} {s.year} {s.status === 'paid' ? `(${bn ? 'পরিশোধিত' : 'Paid'})` : s.status === 'due' ? `(${bn ? 'বকেয়া' : 'Due'})` : ''}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {selectedFeeTypeObj?.payment_frequency !== 'monthly' && Array.isArray(selectedFeeTypeObj?.applicable_months) && selectedFeeTypeObj.applicable_months.length > 0 && foundStudent && (
                   <div className="mt-3">
                     <label className="text-sm font-medium text-foreground mb-1 block">
                       {bn ? 'মাস নির্বাচন করুন' : 'Select Month'} <span className="text-destructive">*</span>
                     </label>
-                    <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-                      {getMonthlyStatuses(feeType).map(s => {
-                        const monthKey = `${s.month}-${s.year}`;
-                        if (s.status === 'na') return (
-                          <div key={monthKey} className="text-center rounded-lg px-2 py-2 text-xs font-medium border bg-muted/10 border-border/50 text-muted-foreground/30 line-through">
-                            <div className="truncate">{bn ? s.monthBn : s.month.slice(0, 3)}</div>
-                            <div className="text-[10px] mt-0.5">—</div>
-                          </div>
-                        );
-                        const canPay = s.status === 'due' || s.status === 'unpaid';
-                        return (
-                          <button
-                            key={monthKey}
-                            type="button"
-                            disabled={!canPay}
-                            onClick={() => {
-                              if (!canPay) return;
-                              setPaymentMonth(s.month);
-                              setPaymentYear(s.year);
-                              const waiver = studentWaivers.find((w: any) => w.fee_type_id === selectedFeeTypeObj.id);
-                              const waiverPct = (foundStudent.is_free && selectedFeeTypeObj.fee_category === 'monthly') ? 100 : (waiver?.waiver_percent || 0);
-                              const net = Math.round(selectedFeeTypeObj.amount * (1 - waiverPct / 100));
-                              setAmount(String(net));
-                            }}
-                            className={`text-center rounded-lg px-2 py-2 text-xs font-medium border transition-all ${
-                              s.status === 'paid' ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-400 cursor-default' :
-                              s.status === 'due' ? 'bg-red-50 border-red-200 text-red-700 dark:bg-red-950/30 dark:border-red-800 dark:text-red-400 cursor-pointer hover:ring-2 hover:ring-red-400' :
-                              s.status === 'unpaid' ? 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-400 cursor-pointer hover:ring-2 hover:ring-amber-400' :
-                              'bg-muted/30 border-border text-muted-foreground opacity-60 cursor-default'
-                            } ${paymentMonth === s.month && paymentYear === s.year ? 'ring-2 ring-primary shadow-md scale-105' : ''}`}
-                          >
-                            <div className="truncate">{bn ? s.monthBn : s.month.slice(0, 3)}</div>
-                            <div className="text-[10px] mt-0.5">
-                              {s.status === 'paid' ? '✓' : s.status === 'due' ? '⚠' : s.status === 'unpaid' ? '○' : '—'}
-                            </div>
-                            <div className="text-[9px] text-muted-foreground/70">{s.year}</div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {paymentMonth && (
-                      <p className="text-xs mt-2 px-3 py-1.5 rounded-lg bg-primary/5 text-primary font-medium">
-                        ✓ {bn ? `${MONTHS_BN[MONTHS_EN.indexOf(paymentMonth)]} ${paymentYear} মাসের ফি পরিশোধ হবে` : `Paying for ${paymentMonth} ${paymentYear}`}
-                      </p>
-                    )}
+                    <Select value={paymentMonth} onValueChange={(v) => setPaymentMonth(v)}>
+                      <SelectTrigger className="bg-background">
+                        <SelectValue placeholder={bn ? 'মাস নির্বাচন করুন' : 'Select Month'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {selectedFeeTypeObj.applicable_months.map((m: string) => {
+                          const base = m.split('-')[0];
+                          const idx = MONTHS_EN.indexOf(base);
+                          return (
+                            <SelectItem key={m} value={base}>
+                              {bn && idx >= 0 ? MONTHS_BN[idx] : base}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
                   </div>
                 )}
 
