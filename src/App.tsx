@@ -22,6 +22,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import DynamicFavicon from "@/components/DynamicFavicon";
 import UpdatePrompt from "@/components/UpdatePrompt";
 import SessionTimeoutManager from "@/components/security/SessionTimeoutManager";
+import AuthCallbackListener from "@/components/auth/AuthCallbackListener";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
@@ -357,6 +358,7 @@ const App = () => (
               <DynamicFavicon />
               <UpdatePrompt />
               <BrowserRouter>
+                <AuthCallbackListener />
                 <VisitorTracker />
                 <SessionTimeoutManager />
                 <RoutePrefetcher />

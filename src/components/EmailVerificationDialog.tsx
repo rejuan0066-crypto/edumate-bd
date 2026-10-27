@@ -97,31 +97,31 @@ const EmailVerificationDialog = ({
     let errorMessage = '';
 
     try {
-      // 1. Try Supabase Auth native OTP (uses Supabase email provider)
-      const { error: sbError } = await supabase.auth.signInWithOtp({
-        email: cleanEmail,
-        options: { shouldCreateUser: false },
-      });
+      // 1. Primary: Send via app's custom OTP service (uses Brevo SMTP / EmailJS with custom beautiful HTML template)
+      const edgeRes = await otpService.sendOtp(
+        cleanEmail,
+        'email_verification',
+        undefined,
+        undefined,
+        { toastOnError: false }
+      );
 
-      if (!sbError) {
+      if (edgeRes.success) {
         success = true;
       } else {
-        errorMessage = sbError.message;
-      }
+        errorMessage = edgeRes.message || '';
+        // 2. Fallback: Try Supabase Auth native OTP if custom service fails
+        const { error: sbError } = await supabase.auth.signInWithOtp({
+          email: cleanEmail,
+          options: { shouldCreateUser: false },
+        });
 
-      // 2. Also dispatch via app's OTP service in parallel
-      try {
-        const edgeRes = await otpService.sendOtp(
-          cleanEmail,
-          'email_verification',
-          undefined,
-          undefined,
-          { toastOnError: false }
-        );
-        if (edgeRes.success) {
+        if (!sbError) {
           success = true;
+        } else {
+          errorMessage = sbError.message || errorMessage;
         }
-      } catch (_) {}
+      }
 
       if (success) {
         setOtpSent(true);
@@ -155,28 +155,29 @@ const EmailVerificationDialog = ({
     let verified = false;
 
     try {
-      // 1. Try Supabase verifyOtp as 'email'
-      const { error: errEmail } = await supabase.auth.verifyOtp({
-        email: cleanEmail,
-        token: otpCode.trim(),
-        type: 'email',
-      });
-
-      if (!errEmail) {
+      // 1. Primary: Try custom edge function verifyOtp first
+      // (This verifies the code AND automatically sets email_confirm: true on the user in Supabase Auth)
+      const edgeRes = await otpService.verifyOtp(cleanEmail, otpCode.trim(), 'email_verification');
+      if (edgeRes.valid) {
         verified = true;
       } else {
-        // 2. Try Supabase verifyOtp as 'signup'
-        const { error: errSignup } = await supabase.auth.verifyOtp({
+        // 2. Fallback: Try Supabase verifyOtp as 'email'
+        const { error: errEmail } = await supabase.auth.verifyOtp({
           email: cleanEmail,
           token: otpCode.trim(),
-          type: 'signup',
+          type: 'email',
         });
-        if (!errSignup) {
+
+        if (!errEmail) {
           verified = true;
         } else {
-          // 3. Try custom edge function verifyOtp
-          const edgeRes = await otpService.verifyOtp(cleanEmail, otpCode.trim(), 'email_verification');
-          if (edgeRes.valid) {
+          // 3. Fallback: Try Supabase verifyOtp as 'signup'
+          const { error: errSignup } = await supabase.auth.verifyOtp({
+            email: cleanEmail,
+            token: otpCode.trim(),
+            type: 'signup',
+          });
+          if (!errSignup) {
             verified = true;
           }
         }
@@ -185,8 +186,8 @@ const EmailVerificationDialog = ({
       if (verified) {
         toast.success(
           bn
-            ? 'অভিনন্দন! আপনার ইমেইল সফলভাবে ভেরিফাই হয়েছে।'
-            : 'Congratulations! Your email has been verified successfully.'
+            ? 'অভিনন্দন! আপনার ইমেইল সফলভাবে ভেরিফাই হয়েছে। এখন লগইন করতে পারেন।'
+            : 'Congratulations! Your email has been verified successfully. You can now log in.'
         );
         onOpenChange(false);
         setOtpCode('');
