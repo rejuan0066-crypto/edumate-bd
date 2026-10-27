@@ -307,6 +307,7 @@ const AdminExpenses = () => {
   const [showDescSuggestions, setShowDescSuggestions] = useState(false);
   const [descActiveIndex, setDescActiveIndex] = useState(-1);
   const [depositForm, setDepositForm] = useState(defaultDepositForm);
+  const [depositError, setDepositError] = useState('');
   const [isAddingNewSource, setIsAddingNewSource] = useState(false);
   const [newSourceInput, setNewSourceInput] = useState('');
   const [settingNewSourceInput, setSettingNewSourceInput] = useState('');
@@ -1048,8 +1049,9 @@ const AdminExpenses = () => {
       const nameBn = (expInstForm.name_bn || '').trim();
       const nameEn = (expInstForm.name || '').trim() || nameBn;
       if (!nameBn) {
-        toast.error(bn ? 'প্রতিষ্ঠানের নাম লিখুন' : 'Please enter institution name');
-        return;
+        const msg = bn ? 'প্রতিষ্ঠানের নাম লিখুন' : 'Please enter institution name';
+        toast.error(msg);
+        throw new Error(msg);
       }
 
       let finalLogoUrl = expInstForm.logo_url || '';
@@ -1158,8 +1160,9 @@ const AdminExpenses = () => {
       const nameBn = (categoryForm.name_bn || '').trim();
       const nameEn = (categoryForm.name || '').trim() || nameBn;
       if (!categoryForm.institution_id || !nameBn) {
-        toast.error(bn ? 'প্রতিষ্ঠান এবং ব্যয় খাতের নাম দিন' : 'Institution and Expense Head name are required');
-        return;
+        const msg = bn ? 'প্রতিষ্ঠান এবং ব্যয় খাতের নাম দিন' : 'Institution and Expense Head name are required';
+        toast.error(msg);
+        throw new Error(msg);
       }
       const payload = {
         institution_id: categoryForm.institution_id,
@@ -1323,7 +1326,7 @@ const AdminExpenses = () => {
           );
           if (!proceed) {
             setIsSaving(false);
-            return;
+            throw new Error(bn ? 'মেমো ডুপ্লিকেট থাকায় সংরক্ষণ বাতিল করা হয়েছে' : 'Duplicate memo entry cancelled');
           }
         }
         descWithTags += `[memo:${cleanMemo}]`;
@@ -1357,7 +1360,7 @@ const AdminExpenses = () => {
               : `⚠️ Potential Duplicate Expense Warning!\n\nAn expense of identical amount (৳ ${parsedAmount}) in "${catName}" already exists on ${expenseForm.expense_date}.\n\nDo you want to proceed and save as a separate entry?`
           );
           if (!confirmDuplicate) {
-            return;
+            throw new Error(bn ? 'সম্ভাব্য ডুপ্লিকেট এন্ট্রি বাতিল করা হয়েছে' : 'Duplicate expense entry cancelled');
           }
         }
       }
@@ -1674,7 +1677,12 @@ const AdminExpenses = () => {
 
   const payDueMutation = useMutation({
     mutationFn: async () => {
-      if (!payDueExpense) return;
+      if (!payDueExpense) {
+        throw new Error(bn ? 'বকেয়া হিসাব পাওয়া যায়নি' : 'No expense selected');
+      }
+      if (!payDueForm.payment_date) {
+        throw new Error(bn ? 'পরিশোধের তারিখ নির্বাচন করুন' : 'Select payment date');
+      }
       const pDate = new Date(payDueForm.payment_date);
       const pMonthYear = `${MONTHS[pDate.getMonth()]}-${pDate.getFullYear()}`;
       const rawPayMethod = (payDueForm.payment_method || '').trim() || 'ক্যাশ';
@@ -1776,20 +1784,30 @@ const AdminExpenses = () => {
       });
       toast.success(bn ? 'বকেয়া পরিশোধ সম্পন্ন হয়েছে এবং চলতি মাসের ক্যাশ খরচে যুক্ত হয়েছে' : 'Due paid and recorded in payment month cash outflow');
     },
-    onError: () => toast.error(bn ? 'ত্রুটি হয়েছে' : 'Error occurred')
+    onError: (err: any) => toast.error(err?.message || (bn ? 'ত্রুটি হয়েছে' : 'Error occurred'))
   });
 
   const addDeposit = useMutation({
     mutationFn: async () => {
-      if (!depositForm.amount) { toast.error(bn ? 'পরিমাণ দিন' : 'Enter amount'); return; }
-      const parsedAmount = Number(bnToEnDigit(depositForm.amount));
-      if (isNaN(parsedAmount) || parsedAmount <= 0) {
-        toast.error(bn ? 'সঠিক টাকার পরিমাণ প্রদান করুন' : 'Enter a valid amount');
-        return;
-      }
       if (!depositForm.deposit_date) {
-        toast.error(bn ? 'তারিখ নির্বাচন করুন' : 'Select date');
-        return;
+        const msg = bn ? 'তারিখ নির্বাচন করা আবশ্যক' : 'Date is required';
+        setDepositError(msg);
+        toast.error(msg);
+        throw new Error(msg);
+      }
+      const amtStr = (depositForm.amount || '').trim();
+      if (!amtStr) {
+        const msg = bn ? 'টাকার পরিমাণ আবশ্যক' : 'Amount is required';
+        setDepositError(msg);
+        toast.error(msg);
+        throw new Error(msg);
+      }
+      const parsedAmount = Number(bnToEnDigit(amtStr));
+      if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        const msg = bn ? 'সঠিক টাকার পরিমাণ প্রদান করুন (০ এর বেশি হতে হবে)' : 'Enter a valid amount greater than 0';
+        setDepositError(msg);
+        toast.error(msg);
+        throw new Error(msg);
       }
 
       // Calculate month_year based on deposit_date or fallback to selectedMonthYear
@@ -1856,6 +1874,7 @@ const AdminExpenses = () => {
       setEditingDepositId(null);
       setIsAddingNewSource(false);
       setNewSourceInput('');
+      setDepositError('');
       setDepositDialog(false);
       toast.success(bn ? 'টাকা আয়/উত্তোলন সফলভাবে সংরক্ষিত হয়েছে' : 'Deposit saved successfully');
     },
@@ -1984,7 +2003,11 @@ const AdminExpenses = () => {
 
   const saveInstitution = useMutation({
     mutationFn: async () => {
-      if (!institutionForm.name) { toast.error(bn ? 'প্রতিষ্ঠানের নাম দিন' : 'Enter institution name'); return; }
+      if (!institutionForm.name) {
+        const msg = bn ? 'প্রতিষ্ঠানের নাম দিন' : 'Enter institution name';
+        toast.error(msg);
+        throw new Error(msg);
+      }
       let logoUrl = institutionForm.logo_url || null;
       if (logoFile) {
         setLogoUploading(true);
@@ -2217,6 +2240,7 @@ const AdminExpenses = () => {
   };
   const openEditDeposit = (d: any) => {
     setEditingDepositId(d.id);
+    setDepositError('');
     setDepositForm({ deposit_date: d.deposit_date, bank_details: d.bank_details || '', other_details: d.other_details || '', amount: String(d.amount), source: d.source || 'manual' });
     setIsAddingNewSource(false);
     setNewSourceInput('');
@@ -2777,6 +2801,7 @@ const AdminExpenses = () => {
       setDepositForm(defaultDepositForm);
       setIsAddingNewSource(false);
       setNewSourceInput('');
+      setDepositError('');
     }
     setDepositDialog(open);
   };
@@ -4017,8 +4042,21 @@ const AdminExpenses = () => {
                       </DialogHeader>
                     <div className="space-y-3 pt-2">
                       <div>
-                        <Label>{bn ? 'তারিখ' : 'Date'} *</Label>
-                        <DatePicker bengali={bn} value={depositForm.deposit_date} onChange={v => setDepositForm(f => ({ ...f, deposit_date: v }))} />
+                        <Label className={depositError && !depositForm.deposit_date ? "text-destructive font-semibold" : ""}>{bn ? 'তারিখ' : 'Date'} *</Label>
+                        <DatePicker
+                          bengali={bn}
+                          value={depositForm.deposit_date}
+                          className={depositError && !depositForm.deposit_date ? "border-destructive focus:ring-destructive" : ""}
+                          onChange={v => {
+                            setDepositError('');
+                            setDepositForm(f => ({ ...f, deposit_date: v }));
+                          }}
+                        />
+                        {depositError && !depositForm.deposit_date && (
+                          <p className="text-xs text-destructive mt-1 font-medium">
+                            {bn ? 'তারিখ নির্বাচন করা আবশ্যক' : 'Date is required'}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <Label>{bn ? 'ব্যাংক বিবরণ' : 'Bank Details'}</Label>
@@ -4151,16 +4189,48 @@ const AdminExpenses = () => {
                         )}
                       </div>
                       <div>
-                        <Label>{bn ? 'পরিমাণ (টাকা)' : 'Amount (BDT)'} *</Label>
+                        <Label className={depositError && (!depositForm.amount || Number(bnToEnDigit(depositForm.amount)) <= 0) ? "text-destructive font-semibold" : ""}>
+                          {bn ? 'পরিমাণ (টাকা)' : 'Amount (BDT)'} *
+                        </Label>
                         <Input
                           type="text"
                           inputMode="decimal"
                           placeholder="0"
                           value={depositForm.amount}
-                          onChange={e => setDepositForm(f => ({ ...f, amount: onlyNumbers(e.target.value) }))}
+                          onChange={e => {
+                            setDepositError('');
+                            setDepositForm(f => ({ ...f, amount: onlyNumbers(e.target.value) }));
+                          }}
+                          className={depositError && (!depositForm.amount || Number(bnToEnDigit(depositForm.amount)) <= 0) ? "border-destructive focus-visible:ring-destructive" : ""}
                         />
+                        {depositError && (!depositForm.amount || Number(bnToEnDigit(depositForm.amount)) <= 0) && (
+                          <p className="text-xs text-destructive mt-1 font-medium">
+                            {bn ? 'সঠিক টাকার পরিমাণ আবশ্যক (০ এর বেশি হতে হবে)' : 'Valid amount greater than 0 is required'}
+                          </p>
+                        )}
                       </div>
-                      <Button className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-medium cursor-pointer" onClick={() => addDeposit.mutate()} disabled={addDeposit.isPending}>
+                      <Button
+                        className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-medium cursor-pointer"
+                        onClick={() => {
+                          const amtStr = (depositForm.amount || '').trim();
+                          const parsed = Number(bnToEnDigit(amtStr));
+                          if (!depositForm.deposit_date) {
+                            const msg = bn ? 'তারিখ নির্বাচন করা আবশ্যক' : 'Date is required';
+                            setDepositError(msg);
+                            toast.error(msg);
+                            return;
+                          }
+                          if (!amtStr || isNaN(parsed) || parsed <= 0) {
+                            const msg = bn ? 'সঠিক টাকার পরিমাণ আবশ্যক (০ এর বেশি হতে হবে)' : 'Valid amount greater than 0 is required';
+                            setDepositError(msg);
+                            toast.error(msg);
+                            return;
+                          }
+                          setDepositError('');
+                          addDeposit.mutate();
+                        }}
+                        disabled={addDeposit.isPending}
+                      >
                         {addDeposit.isPending ? (bn ? 'সংরক্ষণ হচ্ছে...' : 'Saving...') : (bn ? 'সংরক্ষণ করুন' : 'Save')}
                       </Button>
                     </div>
