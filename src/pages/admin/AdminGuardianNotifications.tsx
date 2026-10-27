@@ -165,6 +165,21 @@ const AdminGuardianNotifications = () => {
     },
   });
 
+  // Handle audience tab change and auto-switch appropriate message template
+  const handleAudienceChange = (newAudience: TargetAudience) => {
+    setAudience(newAudience);
+    if (newAudience === 'staff') {
+      setTemplateType('staff_meeting');
+      setMessage(bn ? PRESET_TEMPLATES.staff_meeting.body_bn : PRESET_TEMPLATES.staff_meeting.body_en);
+    } else if (newAudience === 'custom') {
+      setTemplateType('admission_promo');
+      setMessage(bn ? PRESET_TEMPLATES.admission_promo.body_bn : PRESET_TEMPLATES.admission_promo.body_en);
+    } else {
+      setTemplateType('fee_reminder');
+      setMessage(bn ? PRESET_TEMPLATES.fee_reminder.body_bn : PRESET_TEMPLATES.fee_reminder.body_en);
+    }
+  };
+
   // Handle template selection
   const handleTemplateSelect = (key: string) => {
     setTemplateType(key);
@@ -484,7 +499,7 @@ const AdminGuardianNotifications = () => {
                         type="button"
                         variant={audience === 'guardians' ? 'default' : 'outline'}
                         className={`h-11 flex-col gap-0.5 ${audience === 'guardians' ? 'bg-primary text-primary-foreground' : ''}`}
-                        onClick={() => setAudience('guardians')}
+                        onClick={() => handleAudienceChange('guardians')}
                       >
                         <span className="text-xs font-semibold flex items-center gap-1.5">
                           <Users className="w-3.5 h-3.5" />
@@ -497,7 +512,7 @@ const AdminGuardianNotifications = () => {
                         type="button"
                         variant={audience === 'staff' ? 'default' : 'outline'}
                         className={`h-11 flex-col gap-0.5 ${audience === 'staff' ? 'bg-primary text-primary-foreground' : ''}`}
-                        onClick={() => setAudience('staff')}
+                        onClick={() => handleAudienceChange('staff')}
                       >
                         <span className="text-xs font-semibold flex items-center gap-1.5">
                           <Briefcase className="w-3.5 h-3.5" />
@@ -510,7 +525,7 @@ const AdminGuardianNotifications = () => {
                         type="button"
                         variant={audience === 'custom' ? 'default' : 'outline'}
                         className={`h-11 flex-col gap-0.5 ${audience === 'custom' ? 'bg-primary text-primary-foreground' : ''}`}
-                        onClick={() => setAudience('custom')}
+                        onClick={() => handleAudienceChange('custom')}
                       >
                         <span className="text-xs font-semibold flex items-center gap-1.5">
                           <Megaphone className="w-3.5 h-3.5" />
@@ -658,11 +673,26 @@ const AdminGuardianNotifications = () => {
                         <Select value={templateType} onValueChange={handleTemplateSelect}>
                           <SelectTrigger className="h-9 mt-1"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="fee_reminder">{bn ? 'বকেয়া ফি রিমাইন্ডার' : 'Fee Reminder'}</SelectItem>
-                            <SelectItem value="holiday">{bn ? 'ছুটির নোটিশ' : 'Holiday Notice'}</SelectItem>
-                            <SelectItem value="staff_meeting">{bn ? 'শিক্ষক/স্টাফ মিটিং' : 'Staff Meeting'}</SelectItem>
-                            <SelectItem value="admission_promo">{bn ? 'ভর্তি প্রচারণা / বিজ্ঞাপন' : 'Admission Promo'}</SelectItem>
-                            <SelectItem value="general">{bn ? 'সাধারণ বিজ্ঞপ্তি' : 'General Notice'}</SelectItem>
+                            {audience === 'guardians' && (
+                              <>
+                                <SelectItem value="fee_reminder">{bn ? 'বকেয়া ফি রিমাইন্ডার' : 'Fee Reminder'}</SelectItem>
+                                <SelectItem value="holiday">{bn ? 'ছুটির নোটিশ' : 'Holiday Notice'}</SelectItem>
+                                <SelectItem value="general">{bn ? 'সাধারণ বিজ্ঞপ্তি' : 'General Notice'}</SelectItem>
+                              </>
+                            )}
+                            {audience === 'staff' && (
+                              <>
+                                <SelectItem value="staff_meeting">{bn ? 'শিক্ষক ও স্টাফ জরুরি মিটিং' : 'Staff Meeting'}</SelectItem>
+                                <SelectItem value="holiday">{bn ? 'ছুটির নোটিশ' : 'Holiday Notice'}</SelectItem>
+                                <SelectItem value="general">{bn ? 'সাধারণ বিজ্ঞপ্তি' : 'General Notice'}</SelectItem>
+                              </>
+                            )}
+                            {audience === 'custom' && (
+                              <>
+                                <SelectItem value="admission_promo">{bn ? 'নতুন ভর্তি প্রচারণা ও বিজ্ঞাপন' : 'Admission Promo'}</SelectItem>
+                                <SelectItem value="general">{bn ? 'সাধারণ বিজ্ঞপ্তি' : 'General Notice'}</SelectItem>
+                              </>
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
