@@ -203,8 +203,45 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     return canView(basePath);
   }, [isAdmin, canView]);
 
-  const toggleGroup = (key: string) => {
-    setOpenMenuId(prev => (prev === key ? null : key));
+  const scrollGroupIntoView = (groupEl: HTMLElement | null) => {
+    if (!groupEl) return;
+    const nav = groupEl.closest('nav');
+    if (!nav) return;
+
+    const adjustScroll = () => {
+      const navRect = nav.getBoundingClientRect();
+      const groupRect = groupEl.getBoundingClientRect();
+      const overflowBottom = groupRect.bottom - navRect.bottom;
+
+      if (overflowBottom > 0) {
+        // Leave at least 12px padding between the top of the nav and the parent button
+        const maxScroll = Math.max(0, groupRect.top - navRect.top - 12);
+        const scrollAmount = Math.min(overflowBottom + 24, maxScroll);
+        if (scrollAmount > 0) {
+          nav.scrollBy({
+            top: scrollAmount,
+            behavior: 'smooth',
+          });
+        }
+      }
+    };
+
+    // Trigger progressive smooth adjustments as the accordion animates open (300ms transition)
+    requestAnimationFrame(() => {
+      setTimeout(adjustScroll, 60);
+      setTimeout(adjustScroll, 180);
+      setTimeout(adjustScroll, 320);
+    });
+  };
+
+  const toggleGroup = (key: string, groupElement?: HTMLElement | null) => {
+    setOpenMenuId(prev => {
+      const isOpening = prev !== key;
+      if (isOpening && groupElement) {
+        scrollGroupIntoView(groupElement);
+      }
+      return isOpening ? key : null;
+    });
   };
 
   const persistMenuScroll = (mobile: boolean, scrollTop: number) => {
@@ -340,6 +377,12 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     );
     if (activeParent?.path) {
       setOpenMenuId(activeParent.path);
+      setTimeout(() => {
+        const activeSub = document.querySelector('.sidebar-sub-item.active');
+        if (activeSub) {
+          scrollGroupIntoView(activeSub.closest('div') as HTMLElement);
+        }
+      }, 150);
     }
   }, [location.pathname, location.search, menuItems]);
 
@@ -478,9 +521,10 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
                     <>
                       <button
                         type="button"
-                        onClick={() => {
+                        onClick={(e) => {
                           if (sidebarOpen || mobile) {
-                            toggleGroup(item.path);
+                            const groupContainer = e.currentTarget.parentElement;
+                            toggleGroup(item.path, groupContainer);
                           } else {
                             // collapsed sidebar: navigate to parent page
                             if (mobile) setMobileSidebarOpen(false);
