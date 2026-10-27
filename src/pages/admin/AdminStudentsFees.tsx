@@ -253,6 +253,21 @@ const AdminStudentsFees = () => {
       })
     : dbFeeTypes;
 
+  // Fetch active waivers for the found student
+  const { data: studentWaivers = [] } = useQuery({
+    queryKey: ['student_fee_waivers', foundStudent?.id],
+    queryFn: async () => {
+      if (!foundStudent?.id) return [];
+      const { data } = await supabase
+        .from('fee_waivers')
+        .select('*')
+        .eq('student_id', foundStudent.id)
+        .eq('is_active', true);
+      return data || [];
+    },
+    enabled: !!foundStudent?.id,
+  });
+
   // Check for existing pending/approved payment for selected student + fee type + month
   const { data: existingPayment, isLoading: checkingExisting } = useQuery({
     queryKey: ['existing_payment_check', foundStudent?.id, feeType, selectedFeeTypeObj?.name_bn, paymentMonth, paymentYear],
@@ -396,10 +411,16 @@ const AdminStudentsFees = () => {
     }
   };
 
-  // Auto-load student when redirected from Dues list with ?studentId=...
+  // Auto-load student and pre-select fee when redirected from Student Profile or Dues list with ?studentId=...
   useEffect(() => {
     const sid = searchParams.get('studentId');
     if (!sid) return;
+    const targetFeeTypeId = searchParams.get('feeTypeId');
+    const targetMonth = searchParams.get('month');
+    const targetYear = searchParams.get('year');
+    const targetAmount = searchParams.get('amount');
+    const targetCollector = searchParams.get('collector');
+
     let cancelled = false;
     (async () => {
       const { data } = await supabase
@@ -413,15 +434,41 @@ const AdminStudentsFees = () => {
       setSearchIdentifier(data.registration_no || data.roll_number || '');
       if (data.session_id) setSearchSessionId(data.session_id);
       if (data.class_id) setSearchClassId(data.class_id);
-      // Clean the param so refresh doesn't re-trigger
+
+      if (targetFeeTypeId) {
+        setFeeType(targetFeeTypeId);
+        const ftObj = dbFeeTypes.find((ft: any) => ft.id === targetFeeTypeId);
+        if (ftObj) setSelectedFeeTypeObj(ftObj);
+      }
+      if (targetMonth) setPaymentMonth(targetMonth);
+      if (targetYear) setPaymentYear(parseInt(targetYear) || new Date().getFullYear());
+      if (targetAmount) setAmount(targetAmount);
+      if (targetCollector) setCustomCollector(targetCollector);
+
+      // Clean the params so refresh doesn't re-trigger
       const next = new URLSearchParams(searchParams);
       next.delete('studentId');
+      next.delete('feeTypeId');
+      next.delete('month');
+      next.delete('year');
+      next.delete('amount');
+      next.delete('collector');
       setSearchParams(next, { replace: true });
-      toast.success(bn ? 'ছাত্র লোড হয়েছে' : 'Student loaded');
+      toast.success(bn ? 'ছাত্র ও ফি তথ্য সফলভাবে লোড হয়েছে' : 'Student & Fee loaded successfully');
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams.get('studentId')]);
+
+  // Sync selected fee type object when feeType changes or dbFeeTypes loads
+  useEffect(() => {
+    if (feeType && dbFeeTypes.length > 0) {
+      const ft = dbFeeTypes.find((f: any) => f.id === feeType);
+      if (ft && (!selectedFeeTypeObj || selectedFeeTypeObj.id !== feeType)) {
+        setSelectedFeeTypeObj(ft);
+      }
+    }
+  }, [feeType, dbFeeTypes, selectedFeeTypeObj]);
 
   const payMutation = useMutation({
     mutationFn: async () => {
@@ -807,9 +854,12 @@ const AdminStudentsFees = () => {
                                 </span>
                               ) : (
                                 <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => {
+                                  const waiver = studentWaivers.find((w: any) => w.fee_type_id === ft.id);
+                                  const waiverPct = (foundStudent.is_free && ft.fee_category === 'monthly') ? 100 : (waiver?.waiver_percent || 0);
+                                  const net = Math.round(ft.amount * (1 - waiverPct / 100));
                                   setFeeType(ft.id);
                                   setSelectedFeeTypeObj(ft);
-                                  setAmount(String(ft.amount));
+                                  setAmount(String(net));
                                   if (Array.isArray(ft.applicable_months) && ft.applicable_months.length > 0) {
                                     const firstMonth = ft.applicable_months[0].split('-')[0];
                                     setPaymentMonth(firstMonth);
@@ -859,9 +909,12 @@ const AdminStudentsFees = () => {
                               disabled={!canPay}
                               onClick={() => {
                                 if (!canPay) return;
+                                const waiver = studentWaivers.find((w: any) => w.fee_type_id === ft.id);
+                                const waiverPct = (foundStudent.is_free && ft.fee_category === 'monthly') ? 100 : (waiver?.waiver_percent || 0);
+                                const net = Math.round(ft.amount * (1 - waiverPct / 100));
                                 setFeeType(ft.id);
                                 setSelectedFeeTypeObj(ft);
-                                setAmount(String(ft.amount));
+                                setAmount(String(net));
                                 setPaymentMonth(s.month);
                                 setPaymentYear(s.year);
                                 toast.info(bn ? `${s.monthBn} ${s.year} মাস সিলেক্ট করা হয়েছে` : `${s.month} ${s.year} selected`);
@@ -882,15 +935,20 @@ const AdminStudentsFees = () => {
                           );
                         })}
                       </div>
-                      {dueCount > 0 && (
-                        <Button size="sm" className="btn-primary-gradient w-full" onClick={() => {
-                          setFeeType(ft.id);
-                          setSelectedFeeTypeObj(ft);
-                          setAmount(String(ft.amount * dueCount));
-                        }}>
-                          {bn ? `৳${ft.amount * dueCount} বকেয়া পরিশোধ করুন` : `Pay ৳${ft.amount * dueCount} Due`}
-                        </Button>
-                      )}
+                      {dueCount > 0 && (() => {
+                        const waiver = studentWaivers.find((w: any) => w.fee_type_id === ft.id);
+                        const waiverPct = (foundStudent.is_free && ft.fee_category === 'monthly') ? 100 : (waiver?.waiver_percent || 0);
+                        const net = Math.round(ft.amount * (1 - waiverPct / 100));
+                        return (
+                          <Button size="sm" className="btn-primary-gradient w-full" onClick={() => {
+                            setFeeType(ft.id);
+                            setSelectedFeeTypeObj(ft);
+                            setAmount(String(net * dueCount));
+                          }}>
+                            {bn ? `৳${net * dueCount} বকেয়া পরিশোধ করুন` : `Pay ৳${net * dueCount} Due`}
+                          </Button>
+                        );
+                      })()}
                     </div>
                   );
                 })}
@@ -906,7 +964,12 @@ const AdminStudentsFees = () => {
                   setFeeType(v);
                   const ftObj = applicableFeeTypes.find((ft: any) => ft.id === v);
                   setSelectedFeeTypeObj(ftObj || null);
-                  if (ftObj) setAmount(String(ftObj.amount || ''));
+                  if (ftObj) {
+                    const waiver = studentWaivers.find((w: any) => w.fee_type_id === ftObj.id);
+                    const waiverPct = (foundStudent.is_free && ftObj.fee_category === 'monthly') ? 100 : (waiver?.waiver_percent || 0);
+                    const net = Math.round(ftObj.amount * (1 - waiverPct / 100));
+                    setAmount(String(net));
+                  }
                   setPaymentMonth(''); // reset month on fee type change
                 }}>
                   <SelectTrigger className="bg-background">
@@ -959,7 +1022,10 @@ const AdminStudentsFees = () => {
                               if (!canPay) return;
                               setPaymentMonth(s.month);
                               setPaymentYear(s.year);
-                              setAmount(String(selectedFeeTypeObj.amount));
+                              const waiver = studentWaivers.find((w: any) => w.fee_type_id === selectedFeeTypeObj.id);
+                              const waiverPct = (foundStudent.is_free && selectedFeeTypeObj.fee_category === 'monthly') ? 100 : (waiver?.waiver_percent || 0);
+                              const net = Math.round(selectedFeeTypeObj.amount * (1 - waiverPct / 100));
+                              setAmount(String(net));
                             }}
                             className={`text-center rounded-lg px-2 py-2 text-xs font-medium border transition-all ${
                               s.status === 'paid' ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-400 cursor-default' :

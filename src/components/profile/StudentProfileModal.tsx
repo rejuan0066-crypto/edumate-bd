@@ -441,37 +441,54 @@ const StudentProfileModal = ({
     return selectedDueItems.reduce((sum, d) => sum + d.dueAmount, 0);
   }, [selectedDueItems]);
 
-  // Handlers for quick payment
+  const handleNavigateToPaymentPage = (feeTypeId?: string, month?: string, year?: number, amount?: number) => {
+    setShowDetail?.(null);
+    const params = new URLSearchParams();
+    params.set('tab', 'collection');
+    params.set('studentId', student.id);
+    if (feeTypeId) {
+      params.set('feeTypeId', feeTypeId);
+      params.set('feeType', feeTypeId);
+    }
+    if (month) params.set('month', month);
+    if (year) params.set('year', String(year));
+    if (amount !== undefined && amount !== null) params.set('amount', String(amount));
+    if (collectorName) params.set('collector', cleanRoleSuffix(collectorName));
+    navigate(`/admin/students-fees?${params.toString()}`);
+  };
+
+  // Handlers for payments linking directly to fee collection page
   const handleOpenPaySingle = (item: any) => {
-    setPayingItems([item]);
-    setPayAmount(String(item.dueAmount));
-    setPayMethod('cash');
-    setPayDate(new Date().toISOString().split('T')[0]);
-    setPayRemarks('');
-    if (!customCollector) setCustomCollector(collectorName);
-    setPayDialogOpen(true);
+    handleNavigateToPaymentPage(
+      item.fee_type_id,
+      item.month,
+      item.year || new Date().getFullYear(),
+      item.dueAmount
+    );
   };
 
   const handleOpenPaySelected = () => {
     if (selectedDueItems.length === 0) return;
-    setPayingItems(selectedDueItems);
-    setPayAmount(String(selectedDueTotal));
-    setPayMethod('cash');
-    setPayDate(new Date().toISOString().split('T')[0]);
-    setPayRemarks('');
-    if (!customCollector) setCustomCollector(collectorName);
-    setPayDialogOpen(true);
+    if (selectedDueItems.length === 1) {
+      handleOpenPaySingle(selectedDueItems[0]);
+    } else {
+      handleNavigateToPaymentPage(
+        selectedDueItems[0].fee_type_id,
+        undefined,
+        undefined,
+        selectedDueTotal
+      );
+    }
   };
 
   const handleOpenPayAll = () => {
     if (sessionFinancials.dueList.length === 0) return;
-    setPayingItems(sessionFinancials.dueList);
-    setPayAmount(String(sessionFinancials.totalDue));
-    setPayMethod('cash');
-    setPayDate(new Date().toISOString().split('T')[0]);
-    setPayRemarks('');
-    if (!customCollector) setCustomCollector(collectorName);
-    setPayDialogOpen(true);
+    handleNavigateToPaymentPage(
+      undefined,
+      undefined,
+      undefined,
+      sessionFinancials.totalDue
+    );
   };
 
   const handleOpenDiscountForSelected = () => {
@@ -493,13 +510,59 @@ const StudentProfileModal = ({
     setDiscountDialogOpen(true);
   };
 
-  const handleNavigateToPaymentPage = (feeTypeId?: string) => {
-    setShowDetail?.(null);
-    let url = `/admin/students-fees?tab=collection&studentId=${student.id}`;
-    if (feeTypeId) {
-      url += `&feeType=${feeTypeId}`;
+  const handleCancelDiscount = async (feeTypeIds: string[], months?: string[]) => {
+    if (feeTypeIds.length === 0) return;
+    setIsApplyingDiscount(true);
+    try {
+      for (const ftId of feeTypeIds) {
+        const { error: delErr } = await supabase
+          .from('fee_waivers')
+          .delete()
+          .eq('student_id', student.id)
+          .eq('fee_type_id', ftId);
+        if (delErr) {
+          await supabase
+            .from('fee_waivers')
+            .update({ is_active: false, waiver_percent: 0 })
+            .eq('student_id', student.id)
+            .eq('fee_type_id', ftId);
+        }
+      }
+
+      let q = supabase
+        .from('fee_payments')
+        .delete()
+        .eq('student_id', student.id)
+        .eq('status', 'waived')
+        .in('fee_type_id', feeTypeIds);
+      if (months && months.length > 0) {
+        q = q.in('month', months);
+      }
+      const { error: pDelErr } = await q;
+      if (pDelErr) {
+        await supabase
+          .from('fee_payments')
+          .update({ status: 'unpaid', paid_at: null, paid_amount: 0 })
+          .eq('student_id', student.id)
+          .eq('status', 'waived')
+          .in('fee_type_id', feeTypeIds);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['student-fee-payments', student.id] });
+      queryClient.invalidateQueries({ queryKey: ['student-fee-waivers', student.id] });
+      queryClient.invalidateQueries({ queryKey: ['student-applicable-fee-types'] });
+      queryClient.invalidateQueries({ queryKey: ['fee_payments'] });
+      queryClient.invalidateQueries({ queryKey: ['student_fee_payments_status'] });
+      queryClient.invalidateQueries({ queryKey: ['dues-fee-payments'] });
+
+      toast.success(bn ? 'ছাড় বাতিল করে মূল ফি বহাল করা হয়েছে' : 'Discount cancelled and original fee restored');
+      setSelectedDueIds([]);
+      setDiscountDialogOpen(false);
+    } catch (err: any) {
+      toast.error(err.message || (bn ? 'ছাড় বাতিল করা সম্ভব হয়নি' : 'Failed to cancel discount'));
+    } finally {
+      setIsApplyingDiscount(false);
     }
-    navigate(url);
   };
 
   const handleOpenPayFromFeeType = (ft: any, remaining: number) => {
@@ -1203,7 +1266,7 @@ const StudentProfileModal = ({
                       className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-10 px-4 rounded-xl shadow-md flex items-center justify-center gap-1.5 shrink-0 transition-transform active:scale-95 text-xs"
                     >
                       <CreditCard className="w-4 h-4" />
-                      <span>{bn ? `সকল বকেয়া একসাথে পরিশোধ (৳${formatDigits(sessionFinancials.totalDue.toLocaleString(), bn)})` : `Pay All Dues (৳${sessionFinancials.totalDue.toLocaleString()})`}</span>
+                      <span>{bn ? `সকল বকেয়া একসাথে পরিশোধ ↗ (৳${formatDigits(sessionFinancials.totalDue.toLocaleString(), bn)})` : `Pay All Dues ↗ (৳${sessionFinancials.totalDue.toLocaleString()})`}</span>
                     </Button>
                   ) : (
                     <Badge className="bg-emerald-600 text-white px-3 py-1.5 text-xs self-start sm:self-center font-bold">
@@ -1243,13 +1306,27 @@ const StudentProfileModal = ({
                         <Tag className="w-3.5 h-3.5 mr-1" />
                         {bn ? 'নির্বাচিত ফি-তে ছাড় দিন' : 'Discount Selected'}
                       </Button>
+                      {selectedDueItems.some(i => i.waiverPercent > 0) && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleCancelDiscount(
+                            selectedDueItems.map(i => i.fee_type_id),
+                            selectedDueItems.filter(i => i.month).map(i => i.month)
+                          )}
+                          className="h-7 text-xs rounded-lg border-rose-500/40 text-rose-700 dark:text-rose-300 hover:bg-rose-500/10 font-bold"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                          {bn ? 'ছাড় বাতিল' : 'Cancel Discount'}
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         onClick={handleOpenPaySelected}
                         className="h-7 text-xs rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-xs"
                       >
                         <Banknote className="w-3.5 h-3.5 mr-1" />
-                        {bn ? `নির্বাচিত ফি পরিশোধ (৳${formatDigits(selectedDueTotal.toLocaleString(), bn)})` : `Pay Selected (৳${selectedDueTotal.toLocaleString()})`}
+                        {bn ? `নির্বাচিত ফি পরিশোধ ↗ (৳${formatDigits(selectedDueTotal.toLocaleString(), bn)})` : `Pay Selected ↗ (৳${selectedDueTotal.toLocaleString()})`}
                       </Button>
                     </div>
                   )}
@@ -1318,6 +1395,18 @@ const StudentProfileModal = ({
                               ৳{formatDigits(item.dueAmount.toLocaleString(), bn)}
                             </p>
                           </div>
+                          {item.waiverPercent > 0 && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleCancelDiscount([item.fee_type_id], item.month ? [item.month] : undefined)}
+                              className="h-8 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg px-2 font-medium"
+                              title={bn ? 'ছাড় বাতিল করে মূল ফি বহাল করুন' : 'Cancel discount'}
+                            >
+                              <RotateCcw className="w-3.5 h-3.5 mr-1 text-rose-500" />
+                              <span className="hidden sm:inline">{bn ? 'ছাড় বাতিল' : 'Cancel Waiver'}</span>
+                            </Button>
+                          )}
                           <Button
                             size="sm"
                             variant="outline"
@@ -1334,7 +1423,7 @@ const StudentProfileModal = ({
                             className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-xs flex items-center gap-1 font-bold active:scale-95 transition-transform px-3"
                           >
                             <Banknote className="w-3.5 h-3.5" />
-                            <span>{bn ? 'পরিশোধ' : 'Pay'}</span>
+                            <span>{bn ? 'পরিশোধ ↗' : 'Pay ↗'}</span>
                           </Button>
                         </div>
                       </div>
@@ -1900,14 +1989,31 @@ const StudentProfileModal = ({
             </div>
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0 pt-2">
-            <Button variant="outline" size="sm" onClick={() => setDiscountDialogOpen(false)} disabled={isApplyingDiscount} className="rounded-xl">
-              {bn ? 'বাতিল' : 'Cancel'}
-            </Button>
-            <Button size="sm" onClick={executeApplyDiscount} disabled={isApplyingDiscount} className="bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold">
-              {isApplyingDiscount ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Tag className="w-4 h-4 mr-1.5" />}
-              {bn ? 'ছাড় নিশ্চিত করুন' : 'Confirm Discount'}
-            </Button>
+          <DialogFooter className="gap-2 sm:gap-0 pt-2 flex items-center justify-between">
+            {selectedDueItems.some(itm => itm.waiverPercent > 0) && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => handleCancelDiscount(
+                  selectedDueItems.map(i => i.fee_type_id),
+                  selectedDueItems.filter(i => i.month).map(i => i.month)
+                )}
+                disabled={isApplyingDiscount}
+                className="rounded-xl font-bold mr-auto"
+              >
+                <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                {bn ? 'ছাড় বাতিল করে মূল ফি বহাল করুন' : 'Cancel Discount & Restore'}
+              </Button>
+            )}
+            <div className="flex items-center gap-2 ml-auto">
+              <Button variant="outline" size="sm" onClick={() => setDiscountDialogOpen(false)} disabled={isApplyingDiscount} className="rounded-xl">
+                {bn ? 'বাতিল' : 'Cancel'}
+              </Button>
+              <Button size="sm" onClick={executeApplyDiscount} disabled={isApplyingDiscount} className="bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold">
+                {isApplyingDiscount ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Tag className="w-4 h-4 mr-1.5" />}
+                {bn ? 'ছাড় নিশ্চিত করুন' : 'Confirm Discount'}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
