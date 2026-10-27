@@ -12,7 +12,7 @@ import {
   BadgePercent, FileText, Pencil, CheckCircle, XCircle, Clock, Loader2,
   Plus, Trash2, GraduationCap, Users, Home, CreditCard, ClipboardList,
   Fingerprint, School, Building2, Library, CalendarCheck, BarChart3, Award, TrendingUp,
-  Printer, Eye, AlertCircle, CheckCircle2, ArrowRight, CheckSquare, Square, Tag, ExternalLink, Percent,
+  Printer, Eye, AlertCircle, CheckCircle2, ArrowRight, CheckSquare, Square, Tag, ExternalLink, Percent, MessageSquare,
   RotateCcw, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -1380,13 +1380,36 @@ const StudentProfileModal = ({
                   </Button>
 
                   {sessionFinancials.dueList.length > 0 ? (
-                    <Button
-                      onClick={handleOpenPayAll}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-10 px-4 rounded-xl shadow-md flex items-center justify-center gap-1.5 shrink-0 transition-transform active:scale-95 text-xs"
-                    >
-                      <CreditCard className="w-4 h-4" />
-                      <span>{bn ? `সকল বকেয়া একসাথে পরিশোধ (৳${formatDigits(sessionFinancials.totalDue.toLocaleString(), bn)})` : `Pay All Dues (৳${sessionFinancials.totalDue.toLocaleString()})`}</span>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={handleOpenPayAll}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-10 px-4 rounded-xl shadow-md flex items-center justify-center gap-1.5 shrink-0 transition-transform active:scale-95 text-xs"
+                      >
+                        <CreditCard className="w-4 h-4" />
+                        <span>{bn ? `সকল বকেয়া একসাথে পরিশোধ (৳${formatDigits(sessionFinancials.totalDue.toLocaleString(), bn)})` : `Pay All Dues (৳${sessionFinancials.totalDue.toLocaleString()})`}</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          const phone = student.guardian_phone || student.phone;
+                          if (!phone) {
+                            toast.error(bn ? 'অভিভাবকের ফোন নম্বর পাওয়া যায়নি' : 'No phone found');
+                            return;
+                          }
+                          let clean = phone.replace(/\D/g, '');
+                          if (clean.length === 11 && clean.startsWith('01')) clean = '88' + clean;
+                          const sName = student.name_bn || student.name_en || 'শিক্ষার্থী';
+                          const msg = `আসসালামু আলাইকুম, অভিভাবক মহোদয়। আল আরাবিয়া সুবহানিয়া মাদ্রাসায় আপনার সন্তান ${sName}-এর মোট বকেয়া ফি ৳${sessionFinancials.totalDue.toLocaleString()}। অনুগ্রহ করে দ্রুত পরিশোধের অনুরোধ করা হচ্ছে।`;
+                          window.open(`https://wa.me/${clean}?text=${encodeURIComponent(msg)}`, '_blank');
+                        }}
+                        className="border-emerald-500/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 font-bold h-10 px-3 rounded-xl flex items-center justify-center gap-1.5 shrink-0 text-xs"
+                        title={bn ? 'অভিভাবকের WhatsApp এ বকেয়া ফি রিমাইন্ডার পাঠান' : 'Send WhatsApp Reminder'}
+                      >
+                        <MessageSquare className="w-4 h-4 text-emerald-600" />
+                        <span className="hidden sm:inline">{bn ? 'WhatsApp রিমাইন্ডার' : 'WhatsApp'}</span>
+                      </Button>
+                    </div>
                   ) : (
                     <Badge className="bg-emerald-600 text-white px-3 py-1.5 text-xs self-start sm:self-center font-bold">
                       {bn ? '✓ সমস্ত ফি পরিশোধিত' : '✓ All Fees Paid'}

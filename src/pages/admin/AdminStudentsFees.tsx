@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Suspense, useState, useEffect, useRef, useCallback } from 'react';
 import { lazyWithRetry as lazy } from '@/lib/lazyWithRetry';
-import { CreditCard, Loader2, CheckCircle, CheckCircle2, ArrowRight, ExternalLink, Search, User, Banknote, Globe, AlertCircle, Settings, BarChart3, Users, Clock, X, Receipt, AlertTriangle, Calendar, GraduationCap, RefreshCw } from 'lucide-react';
+import { CreditCard, Loader2, CheckCircle, CheckCircle2, ArrowRight, ExternalLink, Search, User, Banknote, Globe, AlertCircle, Settings, BarChart3, Users, Clock, X, Receipt, AlertTriangle, Calendar, GraduationCap, RefreshCw, MessageSquare } from 'lucide-react';
 import DuesManagement from '@/components/fees/DuesManagement';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -1019,6 +1019,30 @@ const AdminStudentsFees = () => {
                                 {bn ? `পূর্বের বকেয়া (৳${pastTotal})` : `Past Due (৳${pastTotal})`}
                               </Button>
                             )}
+
+                            {/* Button 3: WhatsApp এ অভিভাবককে বকেয়া রিমাইন্ডার পাঠানো */}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="border-emerald-500/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 font-bold text-xs h-9 shrink-0 gap-1.5 cursor-pointer"
+                              onClick={() => {
+                                const phone = foundStudent.guardian_phone || foundStudent.phone;
+                                if (!phone) {
+                                  toast.error(bn ? 'অভিভাবকের ফোন নম্বর পাওয়া যায়নি' : 'No guardian phone found');
+                                  return;
+                                }
+                                let clean = phone.replace(/\D/g, '');
+                                if (clean.length === 11 && clean.startsWith('01')) clean = '88' + clean;
+                                const studentName = foundStudent.name_bn || foundStudent.name_en || 'শিক্ষার্থী';
+                                const msg = `আসসালামু আলাইকুম, অভিভাবক মহোদয়। আল আরাবিয়া সুবহানিয়া মাদ্রাসায় আপনার সন্তান ${studentName}-এর ${totalUnpaidCount}টি মাসের বকেয়া ফি বাবদ মোট ৳${allTotal} বকেয়া রয়েছে। অনুগ্রহ করে দ্রুত পরিশোধের জন্য বিনীত অনুরোধ করা হচ্ছে।`;
+                                window.open(`https://wa.me/${clean}?text=${encodeURIComponent(msg)}`, '_blank');
+                                toast.success(bn ? `${studentName}-এর অভিভাবকের WhatsApp খোলা হয়েছে` : 'Opened WhatsApp chat');
+                              }}
+                            >
+                              <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                              {bn ? 'WhatsApp রিমাইন্ডার' : 'WhatsApp Remind'}
+                            </Button>
                           </div>
                         );
                       })()}
