@@ -29,7 +29,9 @@ interface OtpVerificationDialogProps {
   description?: string;
   /** Fine-grained flow scope so the dialog can honour the admin's per-flow OTP toggle.
    *  When the admin has disabled OTP for this scope, the dialog auto-passes (no email sent). */
-  scope?: 'login' | 'password_reset' | 'email_change' | 'password_change';
+  scope?: 'login' | 'password_reset' | 'email_change' | 'password_change' | 'deletion_auth';
+  /** When true, skips checking global OTP toggles and always requires/sends the code */
+  skipRequirementCheck?: boolean;
   /** Target user's role — enables per-role OTP overrides set in admin settings.
    *  Falls back to the global per-flow flag when not provided. */
   role?: OtpRoleScope;
@@ -59,6 +61,7 @@ const OtpVerificationDialog = ({
   title,
   description,
   scope,
+  skipRequirementCheck = false,
   role,
 }: OtpVerificationDialogProps) => {
   const { language } = useLanguage();
@@ -98,16 +101,18 @@ const OtpVerificationDialog = ({
       void (async () => {
         // Honour admin per-flow OTP toggle. If disabled for this scope, skip the
         // entire OTP exchange and call onVerified() so the calling flow proceeds.
-        const effectiveScope = scope ?? (purpose === 'password_reset' ? 'password_reset' : 'email_change');
-        try {
-          const reqs = await fetchOtpRequirements();
-          if (!isOtpRequiredFor(reqs, effectiveScope, role)) {
-            onOpenChange(false);
-            onVerified();
-            return;
+        if (!skipRequirementCheck && scope !== 'deletion_auth') {
+          const effectiveScope = scope ?? (purpose === 'password_reset' ? 'password_reset' : 'email_change');
+          try {
+            const reqs = await fetchOtpRequirements();
+            if (!isOtpRequiredFor(reqs, effectiveScope as any, role)) {
+              onOpenChange(false);
+              onVerified();
+              return;
+            }
+          } catch {
+            // If we cannot determine, fall through to normal OTP flow (safer default)
           }
-        } catch {
-          // If we cannot determine, fall through to normal OTP flow (safer default)
         }
         void handleInitialSend();
       })();

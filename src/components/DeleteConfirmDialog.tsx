@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Trash2, KeyRound, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
@@ -9,8 +9,8 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogCancel,
-  AlertDialogAction,
 } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -21,6 +21,7 @@ import {
 } from '@/hooks/useDeletionSecuritySettings';
 import { supabase } from '@/integrations/supabase/client';
 import OtpVerificationDialog from '@/components/OtpVerificationDialog';
+import { toast } from 'sonner';
 
 interface DeleteConfirmDialogProps {
   open: boolean;
@@ -62,11 +63,13 @@ const DeleteConfirmDialog = ({
   const [typedInput, setTypedInput] = useState('');
   const [otpOpen, setOtpOpen] = useState(false);
   const [adminEmail, setAdminEmail] = useState('');
+  const isOtpPendingRef = useRef(false);
 
   useEffect(() => {
     if (open) {
       setTypedInput('');
       setOtpOpen(false);
+      isOtpPendingRef.current = false;
     }
   }, [open]);
 
@@ -84,15 +87,39 @@ const DeleteConfirmDialog = ({
 
     if (resolvedLevel === 'otp') {
       try {
-        const { data } = await supabase.auth.getUser();
-        const email = data.user?.email;
-        if (email) {
-          setAdminEmail(email);
+        const delSettings = getCachedDeletionSettings();
+        let targetEmail = '';
+
+        if (delSettings.otp_target_type === 'custom' && delSettings.otp_custom_email?.trim()) {
+          targetEmail = delSettings.otp_custom_email.trim();
+        } else if (delSettings.otp_target_type === 'site_email') {
+          try {
+            const { data: inst } = await supabase.from('institutions').select('email').limit(1).maybeSingle();
+            if (inst?.email?.trim()) targetEmail = inst.email.trim();
+          } catch {}
+        }
+
+        if (!targetEmail) {
+          const { data } = await supabase.auth.getUser();
+          targetEmail = data.user?.email || '';
+        }
+
+        if (targetEmail) {
+          isOtpPendingRef.current = true;
+          setAdminEmail(targetEmail);
+          onOpenChange(false);
           setOtpOpen(true);
+          return;
+        } else {
+          toast.error(bn ? 'OTP পাঠানোর জন্য কোনো ইমেইল পাওয়া যায়নি।' : 'No recipient email found for OTP.');
+          onOpenChange(false);
           return;
         }
       } catch (e) {
         console.warn('OTP user fetch fallback:', e);
+        toast.error(bn ? 'OTP প্রক্রিয়া শুরু করা যায়নি।' : 'Could not initiate OTP.');
+        onOpenChange(false);
+        return;
       }
     }
     onConfirm();
@@ -100,7 +127,13 @@ const DeleteConfirmDialog = ({
 
   return (
     <>
-      <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialog
+        open={open}
+        onOpenChange={(isOpen) => {
+          if (!isOpen && isOtpPendingRef.current) return;
+          onOpenChange(isOpen);
+        }}
+      >
         <AlertDialogContent className="rounded-3xl bg-background border border-border/80 text-foreground shadow-2xl max-w-md p-6">
           <AlertDialogHeader className="space-y-2">
             <div className="flex items-center gap-3">
@@ -202,11 +235,9 @@ const DeleteConfirmDialog = ({
             >
               {bn ? 'না, থাক' : 'Cancel'}
             </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                handleConfirmClick();
-              }}
+            <Button
+              type="button"
+              onClick={handleConfirmClick}
               disabled={isPending || !isTypeMatched}
               className={cn(
                 'rounded-full px-6 h-9 text-xs font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm transition-all',
@@ -214,7 +245,7 @@ const DeleteConfirmDialog = ({
               )}
             >
               {confirmLabel || (resolvedLevel === 'otp' ? (bn ? 'OTP পাঠিয়ে ডিলিট' : 'Send OTP & Delete') : (bn ? 'হ্যাঁ, ডিলিট করুন' : 'Yes, Delete'))}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -226,18 +257,21 @@ const DeleteConfirmDialog = ({
           onOpenChange={(open) => {
             setOtpOpen(open);
             if (!open) {
+              isOtpPendingRef.current = false;
               onOpenChange(false);
             }
           }}
           email={adminEmail}
           purpose="email_verification"
-          scope="login"
+          scope="deletion_auth"
+          skipRequirementCheck={true}
           onVerified={() => {
+            isOtpPendingRef.current = false;
             setOtpOpen(false);
             onConfirm();
           }}
           title={bn ? 'ডিলিট অনুমোদন ওটিপি (Email OTP)' : 'Delete Authorization OTP'}
-          description={bn ? 'সংবেদনশীল রেকর্ড মুছে ফেলার অনুমতি দিতে আপনার ইমেইলে প্রেরিত ৬ সংখ্যার কোড দিন।' : 'Enter the 6-digit code sent to your email to authorize permanent deletion.'}
+          description={bn ? `সংবেদনশীল রেকর্ড মুছে ফেলার অনুমতি দিতে (${adminEmail}) ইমেইলে প্রেরিত ৬ সংখ্যার কোড দিন।` : `Enter the 6-digit code sent to (${adminEmail}) to authorize permanent deletion.`}
         />
       )}
     </>

@@ -9,6 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Trash2, Info, HelpCircle, ShieldAlert, KeyRound, CheckCircle2 } from "lucide-react";
@@ -20,6 +21,7 @@ import {
 } from "@/hooks/useDeletionSecuritySettings";
 import { supabase } from "@/integrations/supabase/client";
 import OtpVerificationDialog from "@/components/OtpVerificationDialog";
+import { toast } from "sonner";
 
 export type ConfirmVariant = "default" | "destructive" | "warning" | "info";
 
@@ -90,8 +92,10 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
   const [otpOpen, setOtpOpen] = useState(false);
   const [adminEmail, setAdminEmail] = useState("");
   const resolverRef = useRef<((v: boolean) => void) | null>(null);
+  const isOtpPendingRef = useRef(false);
 
   const confirm = useCallback<ConfirmFn>((opts) => {
+    isOtpPendingRef.current = false;
     const normalized: ConfirmOptions =
       typeof opts === "string" ? { description: opts } : opts ?? {};
     setTypedInput("");
@@ -102,6 +106,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const handle = (result: boolean) => {
+    isOtpPendingRef.current = false;
     resolverRef.current?.(result);
     resolverRef.current = null;
     setState((s) => ({ ...s, open: false }));
@@ -146,12 +151,21 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
         }
 
         if (targetEmail) {
+          isOtpPendingRef.current = true;
           setAdminEmail(targetEmail);
+          setState((s) => ({ ...s, open: false }));
           setOtpOpen(true);
+          return;
+        } else {
+          toast.error("OTP পাঠানোর জন্য কোনো ইমেইল ঠিকানা পাওয়া যায়নি। অনুগ্রহ করে নিরাপত্তা সেটিংসে ইমেইল সেট করুন।");
+          handle(false);
           return;
         }
       } catch (e) {
         console.warn("OTP user fetch fallback:", e);
+        toast.error("OTP প্রক্রিয়া শুরু করা যায়নি।");
+        handle(false);
+        return;
       }
     }
     handle(true);
@@ -163,7 +177,10 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
       <AlertDialog
         open={state.open}
         onOpenChange={(o) => {
-          if (!o) handle(false);
+          if (!o) {
+            if (isOtpPendingRef.current) return;
+            handle(false);
+          }
         }}
       >
         <AlertDialogContent className="rounded-[32px] border-border/80 bg-background/95 backdrop-blur-xl shadow-2xl max-w-md p-6">
@@ -268,12 +285,10 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             >
               {state.cancelText ?? "বাতিল"}
             </AlertDialogCancel>
-            <AlertDialogAction
+            <Button
+              type="button"
               disabled={!isTypeMatched}
-              onClick={(e) => {
-                e.preventDefault();
-                onConfirmClick();
-              }}
+              onClick={onConfirmClick}
               className={cn(
                 "rounded-full px-6 h-9 text-xs font-bold transition-all shadow-xs",
                 v.btn,
@@ -281,7 +296,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
               )}
             >
               {state.confirmText ?? (resolvedLevel === "otp" ? "OTP পাঠিয়ে নিশ্চিত করুন" : "মুছে ফেলুন")}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -293,18 +308,21 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
           onOpenChange={(open) => {
             setOtpOpen(open);
             if (!open) {
+              isOtpPendingRef.current = false;
               handle(false);
             }
           }}
           email={adminEmail}
           purpose="email_verification"
-          scope="login"
+          scope="deletion_auth"
+          skipRequirementCheck={true}
           onVerified={() => {
+            isOtpPendingRef.current = false;
             setOtpOpen(false);
             handle(true);
           }}
           title="ডিলিট অনুমোদন ওটিপি (Email OTP)"
-          description="সংবেদনশীল রেকর্ড মুছে ফেলার অনুমতি দিতে আপনার ইমেইলে প্রেরিত ৬ সংখ্যার কোড দিন।"
+          description={`সংবেদনশীল রেকর্ড মুছে ফেলার অনুমতি দিতে (${adminEmail}) ইমেইলে প্রেরিত ৬ সংখ্যার কোড দিন।`}
         />
       )}
     </ConfirmContext.Provider>
