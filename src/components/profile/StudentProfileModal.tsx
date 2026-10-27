@@ -12,7 +12,8 @@ import {
   BadgePercent, FileText, Pencil, CheckCircle, XCircle, Clock, Loader2,
   Plus, Trash2, GraduationCap, Users, Home, CreditCard, ClipboardList,
   Fingerprint, School, Building2, Library, CalendarCheck, BarChart3, Award, TrendingUp,
-  Printer, Eye, AlertCircle, CheckCircle2, ArrowRight, CheckSquare, Square, Tag, ExternalLink, Percent
+  Printer, Eye, AlertCircle, CheckCircle2, ArrowRight, CheckSquare, Square, Tag, ExternalLink, Percent,
+  RotateCcw
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -501,29 +502,6 @@ const StudentProfileModal = ({
     navigate(url);
   };
 
-  const handleOpenPayFromMatrix = (ft: any, m: any) => {
-    const isFreeMonthly = student.is_free && ft.fee_category === 'monthly';
-    const waiver = sessionFinancials.studentWaivers.find((w: any) => w.fee_type_id === ft.id);
-    const waiverPct = isFreeMonthly ? 100 : (waiver?.waiver_percent || 0);
-    const net = Math.round(ft.amount * (1 - waiverPct / 100));
-
-    handleOpenPaySingle({
-      id: `monthly-${ft.id}-${m.name}-${m.year}`,
-      fee_type_id: ft.id,
-      name: ft.name,
-      name_bn: ft.name_bn,
-      category: ft.fee_category,
-      categoryLabel: bn ? 'মাসিক ফি' : 'Monthly Fee',
-      month: m.name,
-      monthLabel: m.label,
-      year: m.year,
-      originalAmount: ft.amount,
-      dueAmount: net,
-      waiverPercent: waiverPct,
-      isMonthly: true,
-    });
-  };
-
   const handleOpenPayFromFeeType = (ft: any, remaining: number) => {
     const isMonthly = ft.payment_frequency === 'monthly';
     if (isMonthly) {
@@ -807,11 +785,12 @@ const StudentProfileModal = ({
 
   const deletePaymentMutation = useMutation({
     mutationFn: async (paymentId: string) => {
-      const { error } = await supabase.from('fee_payments').delete().eq('id', paymentId);
-      if (error) {
+      const { error, data } = await supabase.from('fee_payments').delete().eq('id', paymentId).select();
+      if (error || !data || data.length === 0) {
         const { error: updErr } = await supabase.from('fee_payments').update({
           status: 'unpaid',
           paid_amount: 0,
+          paid_at: null,
           deleted_at: new Date().toISOString(),
         }).eq('id', paymentId);
         if (updErr) throw updErr;
@@ -830,16 +809,20 @@ const StudentProfileModal = ({
 
   const deleteAllPaymentsMutation = useMutation({
     mutationFn: async () => {
-      const ids = feePayments.map((p: any) => p.id);
-      if (ids.length === 0) return;
-      const { error } = await supabase.from('fee_payments').delete().in('id', ids);
-      if (error) {
+      const { error, data } = await supabase.from('fee_payments').delete().eq('student_id', student.id).select();
+      if (error || !data || data.length === 0) {
         const { error: updErr } = await supabase.from('fee_payments').update({
           status: 'unpaid',
           paid_amount: 0,
+          paid_at: null,
           deleted_at: new Date().toISOString(),
-        }).in('id', ids);
+        }).eq('student_id', student.id);
         if (updErr) throw updErr;
+      }
+      try {
+        await supabase.from('payments').delete().eq('student_id', student.id);
+      } catch (e) {
+        console.warn('Optional payments table cleanup:', e);
       }
     },
     onSuccess: () => {
@@ -1127,6 +1110,28 @@ const StudentProfileModal = ({
                   {bn ? `মাসিক: ৳${sessionFinancials.monthlyPaid} • অন্যান্য: ৳${sessionFinancials.oneTimePaid}` : `Monthly: ৳${sessionFinancials.monthlyPaid} • Other: ৳${sessionFinancials.oneTimePaid}`}
                 </p>
               )}
+              {canDeleteItem && sessionFinancials.totalPaid > 0 && (
+                <div className="pt-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      if (confirm(bn ? 'আপনি কি এই শিক্ষার্থীর সকল পরিশোধিত ফি অপরিশোধিত (Unpaid) করতে চান? সমস্ত ফি পুনরায় বকেয়া তালিকায় ফিরে যাবে।' : 'Reset all paid fees for this student to unpaid?')) {
+                        deleteAllPaymentsMutation.mutate();
+                      }
+                    }}
+                    disabled={deleteAllPaymentsMutation.isPending}
+                    className="h-6 text-[10px] text-rose-600 dark:text-rose-400 border-rose-300 dark:border-rose-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-full font-bold px-2.5 shadow-xs"
+                  >
+                    {deleteAllPaymentsMutation.isPending ? (
+                      <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                    ) : (
+                      <RotateCcw className="w-3 h-3 mr-1" />
+                    )}
+                    {bn ? 'সকল পরিশোধ আনপেইড করুন' : 'Unpay All'}
+                  </Button>
+                </div>
+              )}
             </div>
             <div className="relative overflow-hidden rounded-[18px] bg-gradient-to-br from-rose-500/15 via-rose-500/8 to-orange-500/5 border border-rose-500/15 p-4 text-center">
               <div className="absolute top-0 right-0 w-20 h-20 bg-rose-500/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-xl" />
@@ -1337,139 +1342,6 @@ const StudentProfileModal = ({
                   })}
                 </div>
               )}
-            </div>
-          </ProfileSectionCard>
-
-          {/* Session-based Dues Matrix (Month × Fee Type) */}
-          <ProfileSectionCard title={bn ? 'সেশন বকেয়া ম্যাট্রিক্স' : 'Session Dues Matrix'} icon={ClipboardList}>
-            <div className="col-span-full space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{bn ? 'সেশন:' : 'Session:'}</span>
-                <Select value={duesSessionId} onValueChange={setDuesSessionId}>
-                  <SelectTrigger className="h-8 text-xs w-auto min-w-[160px] rounded-full"><SelectValue placeholder={bn ? 'সেশন' : 'Session'} /></SelectTrigger>
-                  <SelectContent>
-                    {allSessions.map((s: any) => (
-                      <SelectItem key={s.id} value={s.id}>{bn ? s.name_bn : s.name}{s.is_active && (bn ? ' (চলমান)' : ' (Active)')}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {(() => {
-                const MONTHS_M = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-                const MONTHS_BN_M = ['জানু','ফেব্রু','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্ট','অক্টো','নভে','ডিসে'];
-                const session = allSessions.find((s: any) => s.id === duesSessionId);
-                if (!session) return <p className="text-xs text-muted-foreground/60 text-center py-3">{bn ? 'সেশন নির্বাচন করুন' : 'Select a session'}</p>;
-                // Build month timeline from session window
-                const monthsTimeline: { name: string; year: number; label: string }[] = [];
-                if (session.start_date && session.end_date) {
-                  const start = new Date(session.start_date);
-                  const end = new Date(session.end_date);
-                  const cur = new Date(start.getFullYear(), start.getMonth(), 1);
-                  while (cur <= end) {
-                    monthsTimeline.push({ name: MONTHS_M[cur.getMonth()], year: cur.getFullYear(), label: bn ? `${MONTHS_BN_M[cur.getMonth()]} ${cur.getFullYear()}` : `${MONTHS_M[cur.getMonth()].slice(0,3)} ${cur.getFullYear()}` });
-                    cur.setMonth(cur.getMonth() + 1);
-                  }
-                }
-                // Monthly fee types applicable to student in this session
-                const monthlyFeeTypes = (applicableFeeTypes as any[]).filter((ft: any) => ft.payment_frequency === 'monthly' && (!ft.session_id || ft.session_id === duesSessionId));
-                if (monthsTimeline.length === 0 || monthlyFeeTypes.length === 0) {
-                  return <p className="text-xs text-muted-foreground/60 text-center py-3">{bn ? 'এই সেশনে কোনো মাসিক ফি নেই' : 'No monthly fees for this session'}</p>;
-                }
-                const studentWaivers = (feeWaivers as any[]);
-                const paidRecords = (feePayments as any[]).filter((p: any) => p.status === 'paid' || p.status === 'waived');
-                const paidLookup = new Map<string, any>(
-                  paidRecords.map((p: any) => [`${p.month}|${p.year}|${p.fee_type_id}`, p])
-                );
-                let grandDue = 0;
-                let grandPaid = 0;
-                return (
-                  <div className="overflow-x-auto rounded-xl border border-border/20">
-                    <table className="w-full text-xs">
-                      <thead className="bg-muted/30">
-                        <tr>
-                          <th className="text-left px-2.5 py-2 font-bold sticky left-0 bg-muted/30">{bn ? 'মাস' : 'Month'}</th>
-                          {monthlyFeeTypes.map((ft: any) => (
-                            <th key={ft.id} className="text-right px-2.5 py-2 font-bold whitespace-nowrap">{bn ? ft.name_bn : ft.name}</th>
-                          ))}
-                          <th className="text-right px-2.5 py-2 font-bold">{bn ? 'মোট' : 'Total'}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {monthsTimeline.map(m => {
-                          let rowTotal = 0;
-                          const cells = monthlyFeeTypes.map((ft: any) => {
-                            const months = Array.isArray(ft.applicable_months) ? ft.applicable_months : [];
-                            const applicable = months.length === 0 || months.includes(m.name);
-                            if (!applicable) return { ft, kind: 'na' as const };
-                            const isFreeMonthly = student.is_free && ft.fee_category === 'monthly';
-                            const waiver = studentWaivers.find((w: any) => w.fee_type_id === ft.id);
-                            const waiverPct = isFreeMonthly ? 100 : (waiver?.waiver_percent || 0);
-                            const net = Math.round(ft.amount * (1 - waiverPct / 100));
-
-                            const paymentRec = paidLookup.get(`${m.name}|${m.year}|${ft.id}`);
-                            const isWaivedRecord = paymentRec && (paymentRec.status === 'waived' || paymentRec.paid_amount === 0);
-                            if (isWaivedRecord || waiverPct >= 100) return { ft, kind: 'waived' as const };
-                            if (paymentRec) {
-                              const amt = paymentRec.paid_amount ?? net;
-                              grandPaid += amt;
-                              return { ft, kind: 'paid' as const, amount: amt };
-                            }
-                            rowTotal += net;
-                            grandDue += net;
-                            return { ft, kind: 'due' as const, amount: net };
-                          });
-                          return (
-                            <tr key={`${m.name}-${m.year}`} className="border-t border-border/10 hover:bg-muted/20">
-                              <td className="px-2.5 py-2 font-semibold sticky left-0 bg-card">{m.label}</td>
-                              {cells.map((c, idx) => (
-                                <td key={idx} className="text-right px-2.5 py-2">
-                                  {c.kind === 'na' && <span className="text-muted-foreground/30">—</span>}
-                                  {c.kind === 'paid' && <span className="text-emerald-600 font-semibold">✓ ৳{c.amount}</span>}
-                                  {c.kind === 'waived' && <span className="text-amber-600 text-[10px] font-semibold">{bn ? 'মওকুফ' : 'Waived'}</span>}
-                                  {c.kind === 'due' && (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleOpenPayFromMatrix(c.ft, m)}
-                                      className="inline-flex items-center gap-1 text-rose-600 hover:text-white hover:bg-rose-600 px-2 py-0.5 rounded text-xs font-bold transition-all border border-rose-300 dark:border-rose-800"
-                                      title={bn ? 'পরিশোধ করতে ক্লিক করুন' : 'Click to pay'}
-                                    >
-                                      ৳{c.amount}
-                                    </button>
-                                  )}
-                                </td>
-                              ))}
-                              <td className="text-right px-2.5 py-2 font-bold text-rose-700">{rowTotal > 0 ? `৳${rowTotal}` : '—'}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                      <tfoot className="bg-muted/40 border-t border-border/30">
-                        <tr>
-                          <td className="px-2.5 py-2 font-black sticky left-0 bg-muted/40">{bn ? 'সারাংশ' : 'Summary'}</td>
-                          <td colSpan={monthlyFeeTypes.length} className="px-2.5 py-2 text-right">
-                            <span className="text-emerald-600 font-bold mr-3">{bn ? 'পরিশোধিত' : 'Paid'}: ৳{grandPaid.toLocaleString()}</span>
-                          </td>
-                          <td className="text-right px-2.5 py-2 font-black text-rose-700">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <span>৳{grandDue.toLocaleString()}</span>
-                              {grandDue > 0 && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={handleOpenPayAll}
-                                  className="h-6 text-[10px] px-2 text-rose-600 border-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md font-bold"
-                                >
-                                  {bn ? 'পরিশোধ' : 'Pay'}
-                                </Button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
-                );
-              })()}
             </div>
           </ProfileSectionCard>
 
