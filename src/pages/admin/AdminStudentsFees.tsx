@@ -55,6 +55,8 @@ const AdminStudentsFees = () => {
   const [step, setStep] = useState<'form' | 'summary' | 'done'>('form');
   const [paymentMonth, setPaymentMonth] = useState('');
   const [paymentYear, setPaymentYear] = useState<number>(new Date().getFullYear());
+  type SelectedMonthItem = { month: string; monthBn: string; year: number };
+  const [selectedMonths, setSelectedMonths] = useState<SelectedMonthItem[]>([]);
   const [transactionId, setTransactionId] = useState('');
   const [customCollector, setCustomCollector] = useState<string>('');
 
@@ -499,7 +501,7 @@ const AdminStudentsFees = () => {
         student_id: foundStudent.id,
         payer_name: foundStudent.name_bn,
         payment_method: isCash ? 'cash' : 'online',
-        notes: `${bn ? 'আদায়কারী' : 'Collector'}: ${finalCollector} | Reg: ${foundStudent.registration_no || ''}, Roll: ${foundStudent.roll_number || ''}${isCash ? ' | Cash Payment' : ''}${serialNumber ? ` | Serial: ${serialNumber}` : ''}`,
+        notes: `${bn ? 'আদায়কারী' : 'Collector'}: ${finalCollector} | Reg: ${foundStudent.registration_no || ''}, Roll: ${foundStudent.roll_number || ''}${selectedMonths.length > 1 ? ` | ${selectedMonths.length} Months (${selectedMonths[0].month} - ${selectedMonths[selectedMonths.length - 1].month})` : ''}${isCash ? ' | Cash Payment' : ''}${serialNumber ? ` | Serial: ${serialNumber}` : ''}`,
         collected_by: finalCollector,
         created_by: user?.id || null,
       };
@@ -513,20 +515,37 @@ const AdminStudentsFees = () => {
       if (error) throw error;
 
       // Also insert into fee_payments for student profile tracking
-      const feePaymentPayload = {
-        fee_type_id: feeType,
-        student_id: foundStudent.id,
-        amount: parseFloat(amount),
-        paid_amount: isAutoApproved ? parseFloat(amount) : 0,
-        status: isAutoApproved ? 'paid' : 'pending',
-        receipt_number: serialNumber || undefined,
-        paid_at: isAutoApproved ? new Date().toISOString() : null,
-        month: paymentMonth || new Date().toLocaleString('default', { month: 'long' }),
-        year: paymentYear,
-        collected_by: finalCollector || '',
-        approved_by: isAutoApproved ? (finalCollector || '') : null,
-      };
-      await supabase.from('fee_payments').insert(feePaymentPayload);
+      if (selectedMonths.length > 1) {
+        const feePaymentRecords = selectedMonths.map(sm => ({
+          fee_type_id: feeType,
+          student_id: foundStudent.id,
+          amount: Math.round(parseFloat(amount) / selectedMonths.length),
+          paid_amount: isAutoApproved ? Math.round(parseFloat(amount) / selectedMonths.length) : 0,
+          status: isAutoApproved ? 'paid' : 'pending',
+          receipt_number: serialNumber || undefined,
+          paid_at: isAutoApproved ? new Date().toISOString() : null,
+          month: sm.month,
+          year: sm.year,
+          collected_by: finalCollector || '',
+          approved_by: isAutoApproved ? (finalCollector || '') : null,
+        }));
+        await supabase.from('fee_payments').insert(feePaymentRecords);
+      } else {
+        const feePaymentPayload = {
+          fee_type_id: feeType,
+          student_id: foundStudent.id,
+          amount: parseFloat(amount),
+          paid_amount: isAutoApproved ? parseFloat(amount) : 0,
+          status: isAutoApproved ? 'paid' : 'pending',
+          receipt_number: serialNumber || undefined,
+          paid_at: isAutoApproved ? new Date().toISOString() : null,
+          month: selectedMonths[0]?.month || paymentMonth || new Date().toLocaleString('default', { month: 'long' }),
+          year: selectedMonths[0]?.year || paymentYear,
+          collected_by: finalCollector || '',
+          approved_by: isAutoApproved ? (finalCollector || '') : null,
+        };
+        await supabase.from('fee_payments').insert(feePaymentPayload);
+      }
 
       return txnId;
     },
@@ -572,7 +591,7 @@ const AdminStudentsFees = () => {
   const handleProceed = () => {
     if (!feeType) { toast.error(bn ? 'ফি ধরন নির্বাচন করুন' : 'Select fee type'); return; }
     if (!foundStudent) { toast.error(bn ? 'প্রথমে ছাত্র খুঁজুন' : 'Search student first'); return; }
-    if (selectedFeeTypeObj?.payment_frequency === 'monthly' && !paymentMonth) { toast.error(bn ? 'মাস নির্বাচন করুন' : 'Select a month'); return; }
+    if (selectedFeeTypeObj?.payment_frequency === 'monthly' && !paymentMonth && selectedMonths.length === 0) { toast.error(bn ? 'মাস নির্বাচন করুন' : 'Select a month'); return; }
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) { toast.error(bn ? 'সঠিক পরিমাণ দিন' : 'Enter valid amount'); return; }
     // Enforce exact fee amount — no partial or excess payments allowed
     if (selectedFeeTypeObj?.amount != null) {
@@ -881,14 +900,19 @@ const AdminStudentsFees = () => {
                 {/* Monthly fees with month grid */}
                 {applicableFeeTypes.filter((ft: any) => ft.payment_frequency === 'monthly').map((ft: any) => {
                   const statuses = getMonthlyStatuses(ft.id);
-                  const dueCount = statuses.filter(s => s.status === 'due').length;
+                  const pastDueMonths = statuses.filter(s => s.status === 'due');
+                  const currentUnpaidMonths = statuses.filter(s => s.status === 'unpaid');
+                  const allUnpaidMonths = statuses.filter(s => s.status === 'due' || s.status === 'unpaid');
+                  const dueCount = pastDueMonths.length;
+                  const totalUnpaidCount = allUnpaidMonths.length;
+
                   return (
                     <div key={ft.id} className="border border-border rounded-xl p-4 space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="font-semibold text-foreground text-sm">🔄 {bn ? ft.name_bn : ft.name} — ৳{ft.amount}/{bn ? 'মাস' : 'mo'}</span>
-                        {dueCount > 0 && (
+                        {totalUnpaidCount > 0 && (
                           <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-destructive/10 text-destructive">
-                            {dueCount} {bn ? 'বকেয়া' : 'Due'}
+                            {totalUnpaidCount} {bn ? (currentUnpaidMonths.length > 0 && dueCount > 0 ? `বকেয়া (${dueCount} পূর্বের + চলতি মাস)` : 'বকেয়া') : 'Due'}
                           </span>
                         )}
                       </div>
@@ -902,6 +926,8 @@ const AdminStudentsFees = () => {
                               <div className="text-[10px] mt-0.5">—</div>
                             </div>
                           );
+                          const isMonthSelected = (selectedMonths.some(m => m.month === s.month && m.year === s.year) && feeType === ft.id) || (paymentMonth === s.month && paymentYear === s.year && feeType === ft.id);
+
                           return (
                             <button
                               key={monthKey}
@@ -917,6 +943,7 @@ const AdminStudentsFees = () => {
                                 setAmount(String(net));
                                 setPaymentMonth(s.month);
                                 setPaymentYear(s.year);
+                                setSelectedMonths([{ month: s.month, monthBn: s.monthBn, year: s.year }]);
                                 toast.info(bn ? `${s.monthBn} ${s.year} মাস সিলেক্ট করা হয়েছে` : `${s.month} ${s.year} selected`);
                               }}
                               className={`text-center rounded-lg px-2 py-2 text-xs font-medium border transition-all ${
@@ -924,7 +951,7 @@ const AdminStudentsFees = () => {
                                 s.status === 'due' ? 'bg-red-50 border-red-200 text-red-700 dark:bg-red-950/30 dark:border-red-800 dark:text-red-400 cursor-pointer hover:ring-2 hover:ring-red-400' :
                                 s.status === 'unpaid' ? 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-400 cursor-pointer hover:ring-2 hover:ring-amber-400' :
                                 'bg-muted/30 border-border text-muted-foreground opacity-60 cursor-default'
-                              } ${paymentMonth === s.month && paymentYear === s.year && feeType === ft.id ? 'ring-2 ring-primary shadow-md scale-105' : ''}`}
+                              } ${isMonthSelected ? 'ring-2 ring-primary shadow-md scale-105 border-primary font-bold' : ''}`}
                             >
                               <div className="truncate">{bn ? s.monthBn : s.month.slice(0, 3)}</div>
                               <div className="text-[10px] mt-0.5">
@@ -935,18 +962,64 @@ const AdminStudentsFees = () => {
                           );
                         })}
                       </div>
-                      {dueCount > 0 && (() => {
+
+                      {totalUnpaidCount > 0 && (() => {
                         const waiver = studentWaivers.find((w: any) => w.fee_type_id === ft.id);
                         const waiverPct = (foundStudent.is_free && ft.fee_category === 'monthly') ? 100 : (waiver?.waiver_percent || 0);
                         const net = Math.round(ft.amount * (1 - waiverPct / 100));
+                        const allTotal = net * totalUnpaidCount;
+                        const pastTotal = net * dueCount;
+
                         return (
-                          <Button size="sm" className="btn-primary-gradient w-full" onClick={() => {
-                            setFeeType(ft.id);
-                            setSelectedFeeTypeObj(ft);
-                            setAmount(String(net * dueCount));
-                          }}>
-                            {bn ? `৳${net * dueCount} বকেয়া পরিশোধ করুন` : `Pay ৳${net * dueCount} Due`}
-                          </Button>
+                          <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                            {/* Button 1: চলতি মাস সহ সব বকেয়া পরিশোধ */}
+                            <Button
+                              type="button"
+                              size="sm"
+                              className="btn-primary-gradient flex-1 font-bold text-xs shadow-sm h-9 cursor-pointer"
+                              onClick={() => {
+                                setFeeType(ft.id);
+                                setSelectedFeeTypeObj(ft);
+                                setAmount(String(allTotal));
+                                setSelectedMonths(allUnpaidMonths.map(s => ({ month: s.month, monthBn: s.monthBn, year: s.year })));
+                                setPaymentMonth(allUnpaidMonths.length === 1 ? allUnpaidMonths[0].month : 'ALL_DUE');
+                                setPaymentYear(allUnpaidMonths[0].year);
+                                toast.success(
+                                  bn
+                                    ? `চলতি মাস সহ সকল বকেয়া (${totalUnpaidCount}টি মাস) নির্বাচন করা হয়েছে • মোট: ৳${allTotal}`
+                                    : `Selected all dues including current month (${totalUnpaidCount} months) • Total: ৳${allTotal}`
+                                );
+                              }}
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+                              {bn ? `চলতি মাস সহ সব বকেয়া পরিশোধ (৳${allTotal})` : `Pay All Dues Incl. Current (৳${allTotal})`}
+                            </Button>
+
+                            {/* Button 2: শুধুমাত্র পূর্বের বকেয়া পরিশোধ (যদি চলতি মাস ছাড়াও পূর্বের বকেয়া থাকে) */}
+                            {dueCount > 0 && currentUnpaidMonths.length > 0 && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="border-destructive/30 text-destructive hover:bg-destructive/10 font-bold text-xs h-9 shrink-0 cursor-pointer"
+                                onClick={() => {
+                                  setFeeType(ft.id);
+                                  setSelectedFeeTypeObj(ft);
+                                  setAmount(String(pastTotal));
+                                  setSelectedMonths(pastDueMonths.map(s => ({ month: s.month, monthBn: s.monthBn, year: s.year })));
+                                  setPaymentMonth(pastDueMonths.length === 1 ? pastDueMonths[0].month : 'ALL_PAST_DUE');
+                                  setPaymentYear(pastDueMonths[0].year);
+                                  toast.info(
+                                    bn
+                                      ? `শুধুমাত্র পূর্বের ${dueCount}টি বকেয়া মাস নির্বাচন করা হয়েছে • মোট: ৳${pastTotal}`
+                                      : `Selected ${dueCount} past due months • Total: ৳${pastTotal}`
+                                  );
+                                }}
+                              >
+                                {bn ? `পূর্বের বকেয়া (৳${pastTotal})` : `Past Due (৳${pastTotal})`}
+                              </Button>
+                            )}
+                          </div>
                         );
                       })()}
                     </div>
@@ -1000,12 +1073,35 @@ const AdminStudentsFees = () => {
                 {/* Month selector for monthly fee types or one-time fees with applicable months */}
                 {selectedFeeTypeObj?.payment_frequency === 'monthly' && foundStudent && (
                   <div className="mt-3">
-                    {paymentMonth ? (
+                    {selectedMonths.length > 1 ? (
+                      <div className="flex items-center justify-between p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-xs">
+                        <div className="flex items-center gap-2.5">
+                          <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <div>
+                            <span className="font-bold text-emerald-800 dark:text-emerald-300">
+                              ✓ {bn ? `একসাথে ${selectedMonths.length}টি মাসের ফি পরিশোধ হবে (${selectedMonths[0].monthBn} ${selectedMonths[0].year} হতে ${selectedMonths[selectedMonths.length - 1].monthBn} ${selectedMonths[selectedMonths.length - 1].year})` : `Paying for ${selectedMonths.length} months (${selectedMonths[0].month} ${selectedMonths[0].year} to ${selectedMonths[selectedMonths.length - 1].month} ${selectedMonths[selectedMonths.length - 1].year})`}
+                            </span>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">
+                              {selectedMonths.map(m => bn ? m.monthBn : m.month).join(', ')}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => { setSelectedMonths([]); setPaymentMonth(''); }}
+                          className="text-xs text-muted-foreground hover:text-foreground h-7 px-2 shrink-0 cursor-pointer"
+                        >
+                          {bn ? 'রিসেট' : 'Reset'}
+                        </Button>
+                      </div>
+                    ) : (selectedMonths.length === 1 || paymentMonth) ? (
                       <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs">
                         <div className="flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 text-emerald-600" />
+                          <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
                           <span className="font-bold text-emerald-800 dark:text-emerald-300">
-                            ✓ {bn ? `${MONTHS_BN[MONTHS_EN.indexOf(paymentMonth)] || paymentMonth} ${paymentYear} মাসের ফি পরিশোধ হবে` : `Paying for ${paymentMonth} ${paymentYear}`}
+                            ✓ {bn ? `${selectedMonths[0]?.monthBn || MONTHS_BN[MONTHS_EN.indexOf(paymentMonth)] || paymentMonth} ${selectedMonths[0]?.year || paymentYear} মাসের ফি পরিশোধ হবে` : `Paying for ${selectedMonths[0]?.month || paymentMonth} ${selectedMonths[0]?.year || paymentYear}`}
                           </span>
                         </div>
                         <span className="text-[11px] text-muted-foreground hidden sm:inline">
@@ -1018,23 +1114,66 @@ const AdminStudentsFees = () => {
                           👆 {bn ? 'উপরের চার্ট থেকে যে মাসের ফি পরিশোধ করবেন সেটি সিলেক্ট করুন' : 'Please select the month from the list above'}
                         </span>
                         <Select value="" onValueChange={(val) => {
-                          const [m, y] = val.split('-');
-                          setPaymentMonth(m);
-                          setPaymentYear(parseInt(y));
+                          const ftStatuses = getMonthlyStatuses(feeType);
                           const waiver = studentWaivers.find((w: any) => w.fee_type_id === selectedFeeTypeObj.id);
                           const waiverPct = (foundStudent.is_free && selectedFeeTypeObj.fee_category === 'monthly') ? 100 : (waiver?.waiver_percent || 0);
                           const net = Math.round(selectedFeeTypeObj.amount * (1 - waiverPct / 100));
+
+                          if (val === 'ALL_DUE') {
+                            const allUnpaid = ftStatuses.filter(s => s.status === 'due' || s.status === 'unpaid');
+                            setSelectedMonths(allUnpaid.map(s => ({ month: s.month, monthBn: s.monthBn, year: s.year })));
+                            setPaymentMonth(allUnpaid.length === 1 ? allUnpaid[0].month : 'ALL_DUE');
+                            setPaymentYear(allUnpaid[0]?.year || new Date().getFullYear());
+                            setAmount(String(net * allUnpaid.length));
+                            return;
+                          }
+
+                          if (val === 'PAST_DUE') {
+                            const pastDue = ftStatuses.filter(s => s.status === 'due');
+                            setSelectedMonths(pastDue.map(s => ({ month: s.month, monthBn: s.monthBn, year: s.year })));
+                            setPaymentMonth(pastDue.length === 1 ? pastDue[0].month : 'PAST_DUE');
+                            setPaymentYear(pastDue[0]?.year || new Date().getFullYear());
+                            setAmount(String(net * pastDue.length));
+                            return;
+                          }
+
+                          const [m, y] = val.split('-');
+                          const idx = MONTHS_EN.indexOf(m);
+                          setPaymentMonth(m);
+                          setPaymentYear(parseInt(y));
+                          setSelectedMonths([{ month: m, monthBn: idx >= 0 ? MONTHS_BN[idx] : m, year: parseInt(y) }]);
                           setAmount(String(net));
                         }}>
-                          <SelectTrigger className="w-full sm:w-44 h-8 bg-background text-xs">
+                          <SelectTrigger className="w-full sm:w-56 h-8 bg-background text-xs">
                             <SelectValue placeholder={bn ? 'মাস বেছে নিন...' : 'Choose month...'} />
                           </SelectTrigger>
                           <SelectContent>
-                            {getMonthlyStatuses(feeType).filter(s => s.status !== 'na').map(s => (
-                              <SelectItem key={`${s.month}-${s.year}`} value={`${s.month}-${s.year}`} disabled={s.status === 'paid'}>
-                                {s.monthBn} {s.year} {s.status === 'paid' ? `(${bn ? 'পরিশোধিত' : 'Paid'})` : s.status === 'due' ? `(${bn ? 'বকেয়া' : 'Due'})` : ''}
-                              </SelectItem>
-                            ))}
+                            {(() => {
+                              const ftStatuses = getMonthlyStatuses(feeType);
+                              const pastDue = ftStatuses.filter(s => s.status === 'due');
+                              const currentUnpaid = ftStatuses.filter(s => s.status === 'unpaid');
+                              const allUnpaid = ftStatuses.filter(s => s.status === 'due' || s.status === 'unpaid');
+
+                              return (
+                                <>
+                                  {allUnpaid.length > 1 && (
+                                    <SelectItem value="ALL_DUE" className="font-bold text-emerald-600">
+                                      ★ {bn ? `চলতি মাস সহ সকল বকেয়া (${allUnpaid.length}টি মাস)` : `All Dues Incl. Current (${allUnpaid.length} mo)`}
+                                    </SelectItem>
+                                  )}
+                                  {pastDue.length > 1 && currentUnpaid.length > 0 && (
+                                    <SelectItem value="PAST_DUE" className="font-bold text-amber-600">
+                                      ★ {bn ? `শুধুমাত্র পূর্বের বকেয়া (${pastDue.length}টি মাস)` : `Past Due Only (${pastDue.length} mo)`}
+                                    </SelectItem>
+                                  )}
+                                  {ftStatuses.filter(s => s.status !== 'na').map(s => (
+                                    <SelectItem key={`${s.month}-${s.year}`} value={`${s.month}-${s.year}`} disabled={s.status === 'paid'}>
+                                      {s.monthBn} {s.year} {s.status === 'paid' ? `(${bn ? 'পরিশোধিত' : 'Paid'})` : s.status === 'due' ? `(${bn ? 'বকেয়া' : 'Due'})` : s.status === 'unpaid' ? `(${bn ? 'চলতি মাস' : 'Current'})` : ''}
+                                    </SelectItem>
+                                  ))}
+                                </>
+                              );
+                            })()}
                           </SelectContent>
                         </Select>
                       </div>

@@ -469,38 +469,28 @@ const StudentProfileModal = ({
     navigate(`/admin/students-fees?${params.toString()}`);
   };
 
-  // Handlers for payments linking directly to fee collection page
+  // Handlers for payments opening directly in the profile quick-pay dialog
   const handleOpenPaySingle = (item: any) => {
-    handleNavigateToPaymentPage(
-      item.fee_type_id,
-      item.month,
-      item.year || new Date().getFullYear(),
-      item.dueAmount
-    );
+    setPayingItems([item]);
+    setPayAmount(String(item.dueAmount));
+    setPayRemarks('');
+    setPayDialogOpen(true);
   };
 
   const handleOpenPaySelected = () => {
     if (selectedDueItems.length === 0) return;
-    if (selectedDueItems.length === 1) {
-      handleOpenPaySingle(selectedDueItems[0]);
-    } else {
-      handleNavigateToPaymentPage(
-        selectedDueItems[0].fee_type_id,
-        undefined,
-        undefined,
-        selectedDueTotal
-      );
-    }
+    setPayingItems(selectedDueItems);
+    setPayAmount(String(selectedDueTotal));
+    setPayRemarks('');
+    setPayDialogOpen(true);
   };
 
   const handleOpenPayAll = () => {
     if (sessionFinancials.dueList.length === 0) return;
-    handleNavigateToPaymentPage(
-      undefined,
-      undefined,
-      undefined,
-      sessionFinancials.totalDue
-    );
+    setPayingItems(sessionFinancials.dueList);
+    setPayAmount(String(sessionFinancials.totalDue));
+    setPayRemarks('');
+    setPayDialogOpen(true);
   };
 
   const handleOpenDiscountForSelected = () => {
@@ -1395,7 +1385,7 @@ const StudentProfileModal = ({
                       className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-10 px-4 rounded-xl shadow-md flex items-center justify-center gap-1.5 shrink-0 transition-transform active:scale-95 text-xs"
                     >
                       <CreditCard className="w-4 h-4" />
-                      <span>{bn ? `সকল বকেয়া একসাথে পরিশোধ ↗ (৳${formatDigits(sessionFinancials.totalDue.toLocaleString(), bn)})` : `Pay All Dues ↗ (৳${sessionFinancials.totalDue.toLocaleString()})`}</span>
+                      <span>{bn ? `সকল বকেয়া একসাথে পরিশোধ (৳${formatDigits(sessionFinancials.totalDue.toLocaleString(), bn)})` : `Pay All Dues (৳${sessionFinancials.totalDue.toLocaleString()})`}</span>
                     </Button>
                   ) : (
                     <Badge className="bg-emerald-600 text-white px-3 py-1.5 text-xs self-start sm:self-center font-bold">
