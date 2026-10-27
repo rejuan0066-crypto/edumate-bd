@@ -256,8 +256,83 @@ const AdminApprovals = () => {
   const { data: allActiveStaff = [] } = useQuery({
     queryKey: ['active-staff-for-approvals'],
     queryFn: async () => {
-      const { data } = await supabase.from('staff').select('id, name_bn, name_en, phone, designation').eq('status', 'active');
+      const { data } = await supabase
+        .from('staff')
+        .select('id, name_bn, name_en, phone, designation, department, staff_category')
+        .is('deleted_at', null)
+        .or('status.eq.active,status.is.null')
+        .order('name_bn');
       return data || [];
+    },
+  });
+
+  // Administrative Officers & Staff (Administrative Department) for approver selection
+  const { data: administrativeOfficers = [] } = useQuery({
+    queryKey: ['administrative-officers-approver-list-approvals', bn],
+    queryFn: async () => {
+      // 1. Fetch from administrative_officers table
+      const { data: officers } = await supabase
+        .from('administrative_officers' as any)
+        .select('id, name_bn, name_en, designation, phone, photo_url, department')
+        .is('deleted_at', null)
+        .or('status.eq.active,status.is.null')
+        .order('name_bn');
+
+      // 2. Fetch staff categorized as administrative or director or department contains প্রশাসন
+      const { data: adminStaff } = await supabase
+        .from('staff')
+        .select('id, name_bn, name_en, designation, phone, photo_url, department, staff_category')
+        .or('staff_category.eq.administrative,staff_category.eq.director,department.ilike.%প্রশাসন%,department.ilike.%administrative%')
+        .is('deleted_at', null)
+        .or('status.eq.active,status.is.null')
+        .order('name_bn');
+
+      const map = new Map<string, { id: string; name: string; position: string; phone?: string; photo_url?: string | null }>();
+
+      (officers || []).forEach((o: any) => {
+        const primary = (bn ? (o.name_bn || o.name_en) : (o.name_en || o.name_bn)) || '';
+        if (primary && primary.trim()) {
+          map.set(primary.trim().toLowerCase(), {
+            id: `off_${o.id}`,
+            name: primary.trim(),
+            position: (o.designation || (bn ? 'প্রশাসনিক কর্মকর্তা' : 'Administrative Officer')).trim(),
+            phone: o.phone || '',
+            photo_url: o.photo_url || null,
+          });
+        }
+      });
+
+      (adminStaff || []).forEach((s: any) => {
+        const primary = (bn ? (s.name_bn || s.name_en) : (s.name_en || s.name_bn)) || '';
+        if (primary && primary.trim() && !map.has(primary.trim().toLowerCase())) {
+          map.set(primary.trim().toLowerCase(), {
+            id: `st_${s.id}`,
+            name: primary.trim(),
+            position: (s.designation || (bn ? 'প্রশাসনিক কর্মকর্তা' : 'Administrative Officer')).trim(),
+            phone: s.phone || '',
+            photo_url: s.photo_url || null,
+          });
+        }
+      });
+
+      // Also include any staff with principal / superintendent / director / administrative in designation
+      (allActiveStaff || []).forEach((s: any) => {
+        const desig = s.designation || '';
+        if (/মুহতামিম|অধ্যক্ষ|প্রিন্সিপাল|উপাধ্যক্ষ|নায়েবে|পরিচালক|সুপার|প্রশাসনিক|admin|principal|director/i.test(desig)) {
+          const primary = (bn ? (s.name_bn || s.name_en) : (s.name_en || s.name_bn)) || '';
+          if (primary && primary.trim() && !map.has(primary.trim().toLowerCase())) {
+            map.set(primary.trim().toLowerCase(), {
+              id: `st_desig_${s.id}`,
+              name: primary.trim(),
+              position: desig.trim(),
+              phone: s.phone || '',
+              photo_url: null,
+            });
+          }
+        }
+      });
+
+      return Array.from(map.values());
     },
   });
 
@@ -601,9 +676,14 @@ const AdminApprovals = () => {
   // ─── Student Admission Approval Handlers ───
   const openStudentApprovalModal = async (s: any) => {
     setStudentApprovalModal(s);
-    setStudentApproverName(currentProfile?.full_name || institution?.name || (bn ? 'অধ্যক্ষ' : 'Principal'));
-    setStudentApproverDesignation(bn ? 'অধ্যক্ষ / ভর্তি পরিচালক' : 'Principal / Admission Incharge');
-    setStudentApproverDate(new Date().toISOString().split('T')[0]);
+    const existingApprover = s.extra_fields?.approver_info || s.admission_data?.approver_info || {};
+    const defaultApproverName = existingApprover.name || s.admission_data?.approver_name || s.approved_by || currentProfile?.full_name || institution?.principal_name || '';
+    const defaultApproverDesignation = existingApprover.designation || s.admission_data?.approver_designation || (bn ? 'মুহতামিম / অধ্যক্ষ' : 'Principal');
+    const defaultApproverDate = existingApprover.date || s.admission_data?.approver_date || new Date().toISOString().split('T')[0];
+
+    setStudentApproverName(defaultApproverName);
+    setStudentApproverDesignation(defaultApproverDesignation);
+    setStudentApproverDate(defaultApproverDate);
     setAssignedCategory(s.student_category || (s.is_poor ? 'poor' : s.is_orphan ? 'orphan' : 'general'));
     setAssignedIsFree(!!s.is_free);
 
@@ -3388,42 +3468,105 @@ const AdminApprovals = () => {
                       )}
                     </div>
 
-                    {/* Approver Name */}
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-foreground">
-                        {bn ? 'অনুমোদনকারীর নাম' : 'Approver Name'}
-                      </Label>
-                      <Input
-                        value={studentApproverName}
-                        onChange={(e) => setStudentApproverName(e.target.value)}
-                        placeholder={bn ? 'অনুমোদনকারীর নাম' : 'Approver Name'}
-                        className="h-9 text-xs bg-background"
-                      />
-                    </div>
-
-                    {/* Approver Designation & Date */}
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-medium text-foreground">
-                          {bn ? 'পদবি' : 'Designation'}
-                        </Label>
-                        <Input
-                          value={studentApproverDesignation}
-                          onChange={(e) => setStudentApproverDesignation(e.target.value)}
-                          placeholder={bn ? 'যেমন: অধ্যক্ষ' : 'e.g. Principal'}
-                          className="h-9 text-xs bg-background"
-                        />
+                    {/* 🛡️ অফিস অনুমোদন (প্রশাসনিক বিভাগ) */}
+                    <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/5 p-3 space-y-3">
+                      <div className="flex items-center justify-between gap-1.5 font-semibold text-xs text-foreground">
+                        <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          <span>{bn ? 'অফিস অনুমোদন (প্রশাসনিক বিভাগ)' : 'Office Approval (Administrative Dept)'}</span>
+                        </div>
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300/40">
+                          {bn ? 'প্রশাসনিক বিভাগ' : 'Administrative Department'}
+                        </span>
                       </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-medium text-foreground">
-                          {bn ? 'অনুমোদনের তারিখ' : 'Approval Date'}
-                        </Label>
-                        <Input
-                          type="date"
-                          value={studentApproverDate}
-                          onChange={(e) => setStudentApproverDate(e.target.value)}
-                          className="h-9 text-xs bg-background font-mono"
-                        />
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {/* Select Administrative Officer */}
+                        <div className="space-y-1 sm:col-span-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-[11px] font-medium text-muted-foreground">
+                              {bn ? 'অনুমোদনকারী নির্বাচন (প্রশাসনিক কর্মকর্তা / মুহতামিম)' : 'Select Approver (Administrative Dept)'}
+                            </Label>
+                            {studentApproverName && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setStudentApproverName('');
+                                  setStudentApproverDesignation('');
+                                }}
+                                className="text-[10px] text-destructive hover:underline font-medium"
+                              >
+                                {bn ? 'মুছুন / রিসেট' : 'Clear'}
+                              </button>
+                            )}
+                          </div>
+                          <Select
+                            value={studentApproverName || ''}
+                            onValueChange={(val) => {
+                              const selectedOfficer = administrativeOfficers.find((o: any) => o.name === val);
+                              setStudentApproverName(val);
+                              if (selectedOfficer?.position) {
+                                setStudentApproverDesignation(selectedOfficer.position);
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="h-8 text-xs bg-background">
+                              <SelectValue placeholder={bn ? '-- প্রশাসনিক কর্মকর্তা তালিকা থেকে বাছাই করুন --' : '-- Choose from administrative officers --'} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {administrativeOfficers.length === 0 ? (
+                                <SelectItem value="none" disabled>
+                                  {bn ? 'কোনো প্রশাসনিক কর্মকর্তা পাওয়া যায়নি' : 'No administrative officers found'}
+                                </SelectItem>
+                              ) : (
+                                administrativeOfficers.map((officer: any) => (
+                                  <SelectItem key={officer.id} value={officer.name}>
+                                    {officer.name} {officer.position ? `(${officer.position})` : ''}
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Approver Name */}
+                        <div className="space-y-1">
+                          <Label className="text-[11px] font-medium text-muted-foreground">
+                            {bn ? 'অনুমোদনকারীর নাম' : 'Approver Name'}
+                          </Label>
+                          <Input
+                            value={studentApproverName}
+                            onChange={(e) => setStudentApproverName(e.target.value)}
+                            placeholder={bn ? 'অনুমোদনকারীর নাম' : 'Approver Name'}
+                            className="h-8 text-xs bg-background"
+                          />
+                        </div>
+
+                        {/* Approver Designation */}
+                        <div className="space-y-1">
+                          <Label className="text-[11px] font-medium text-muted-foreground">
+                            {bn ? 'প্রশাসনিক পদবি' : 'Administrative Designation'}
+                          </Label>
+                          <Input
+                            value={studentApproverDesignation}
+                            onChange={(e) => setStudentApproverDesignation(e.target.value)}
+                            placeholder={bn ? 'যেমন: মুহতামিম / অধ্যক্ষ' : 'e.g. Principal'}
+                            className="h-8 text-xs bg-background"
+                          />
+                        </div>
+
+                        {/* Approver Date */}
+                        <div className="space-y-1 sm:col-span-2">
+                          <Label className="text-[11px] font-medium text-muted-foreground">
+                            {bn ? 'অনুমোদনের তারিখ' : 'Approval Date'}
+                          </Label>
+                          <Input
+                            type="date"
+                            value={studentApproverDate}
+                            onChange={(e) => setStudentApproverDate(e.target.value)}
+                            className="h-8 text-xs bg-background font-mono"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
