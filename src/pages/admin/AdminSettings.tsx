@@ -1459,8 +1459,19 @@ const AdminSettings = () => {
 
           <TabsContent value="security" className="mt-6">
             <div className="space-y-6 max-w-5xl">
+              {/* 1. Session Timeout & Auto Logout */}
+              <div className="max-w-none">
+                <SessionTimeoutSettingsPanel bn={bn} />
+              </div>
+
+              {/* 2. Deletion Security Policies */}
+              <div className="max-w-none">
+                <DeletionSecurityPanel bn={bn} />
+              </div>
+
+              {/* 3. 2FA OTP Verification */}
               <div className="card-elevated p-5">
-                <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2"><Shield className="w-5 h-5 text-primary" /> {bn ? 'নিরাপত্তা' : 'Security'}</h3>
+                <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2"><Shield className="w-5 h-5 text-primary" /> {bn ? 'টু-ফ্যাক্টর নিরাপত্তা' : '2FA Security'}</h3>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
                     <div>
@@ -1481,6 +1492,8 @@ const AdminSettings = () => {
                   </div>
                 </div>
               </div>
+
+              {/* 4. Notification Settings */}
               <div className="card-elevated p-5">
                 <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2"><Bell className="w-5 h-5 text-primary" /> {bn ? 'নোটিফিকেশন' : 'Notifications'}</h3>
                 <div className="space-y-4">
@@ -1494,15 +1507,13 @@ const AdminSettings = () => {
                   </div>
                 </div>
               </div>
+
+              {/* 5. Rate Limits */}
               <div className="max-w-none">
                 <RateLimitSettings />
               </div>
-              <div className="max-w-none">
-                <SessionTimeoutSettingsPanel bn={bn} />
-              </div>
-              <div className="max-w-none">
-                <DeletionSecurityPanel bn={bn} />
-              </div>
+
+              {/* 6. Database Backups */}
               <div className="max-w-none">
                 <SecurityBackupPanel bn={bn} />
               </div>
