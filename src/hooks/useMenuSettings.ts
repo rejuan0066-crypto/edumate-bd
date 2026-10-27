@@ -94,7 +94,7 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
   { id: 'communication', path: '/admin/notices', label_bn: 'যোগাযোগ', label_en: 'Communication', icon: 'Bell', visible: true, sort_order: 7, children: [
     { id: 'notices', path: '/admin/notices', label_bn: 'নোটিশ', label_en: 'Notices', icon: 'Bell', visible: true, sort_order: 0 },
     { id: 'posts', path: '/admin/posts', label_bn: 'পোস্ট', label_en: 'Posts', icon: 'FileText', visible: true, sort_order: 1 },
-    { id: 'guardian-notify', path: '/admin/guardian-notify', label_bn: 'অভিভাবক নোটিফিকেশন', label_en: 'Guardian Notify', icon: 'MessageSquare', visible: true, sort_order: 2 },
+    { id: 'guardian-notify', path: '/admin/guardian-notify', label_bn: 'বাল্ক মেসেজ ও নোটিফিকেশন', label_en: 'Bulk Messaging & Notice', icon: 'Megaphone', visible: true, sort_order: 2 },
     { id: 'whatsapp-queue', path: '/admin/whatsapp-queue', label_bn: 'WhatsApp কিউ', label_en: 'WhatsApp Queue', icon: 'MessageCircle', visible: true, sort_order: 3 },
     { id: 'complaints', path: '/admin/complaints', label_bn: 'অভিযোগ বক্স', label_en: 'Complaint Box', icon: 'Inbox', visible: true, sort_order: 4 },
   ]},

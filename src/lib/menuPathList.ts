@@ -100,7 +100,7 @@ export const DEFAULT_MENU_PATHS: MenuPathItem[] = [
 
   // ===== যোগাযোগ ও নোটিফিকেশন =====
   { path: '/admin/notices', label_bn: 'নোটিশ বোর্ড ও প্রজ্ঞাপন', label_en: 'Notices Board', group_bn: 'যোগাযোগ ও বার্তা', group_en: 'Communication & Notices' },
-  { path: '/admin/guardian-notify', label_bn: 'অভিভাবক নোটিফিকেশন ও SMS', label_en: 'Guardian SMS Notification', group_bn: 'যোগাযোগ ও বার্তা', group_en: 'Communication & Notices' },
+  { path: '/admin/guardian-notify', label_bn: 'বাল্ক মেসেজ ও নোটিফিকেশন সেন্টার', label_en: 'Bulk Messaging & Notification Center', group_bn: 'যোগাযোগ ও বার্তা', group_en: 'Communication & Notices' },
   { path: '/admin/messages', label_bn: 'ইনবক্স ও অভ্যন্তরীণ বার্তা', label_en: 'Internal Messages', group_bn: 'যোগাযোগ ও বার্তা', group_en: 'Communication & Notices' },
   { path: '/admin/parent-messages', label_bn: 'অভিভাবক মেসেজ ইনবক্স', label_en: 'Parent Messages Inbox', group_bn: 'যোগাযোগ ও বার্তা', group_en: 'Communication & Notices' },
   { path: '/admin/push-notifications', label_bn: 'পুশ নোটিফিকেশন ব্রডকাস্ট', label_en: 'Push Notifications', group_bn: 'যোগাযোগ ও বার্তা', group_en: 'Communication & Notices' },
