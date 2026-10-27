@@ -57,6 +57,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     mother_name: '', mother_name_en: '', mother_occupation: '', mother_nid: '', mother_phone: '', mother_phone_code: '+880',
     guardian_type: '', guardian_name: '', guardian_relation: '', guardian_phone: '', guardian_phone_code: '+880', guardian_nid: '',
     approver_name: '', approver_designation: '', approver_date: '', approver_signature: '',
+    admitted_by_type: 'staff', admitted_by_name: '', admitted_by_phone: '', admitted_by_designation: '',
   });
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -142,6 +143,19 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       const { data, error } = await supabase.from('academic_sessions').select('*').eq('is_active', true).order('name', { ascending: false });
       if (error) throw error;
       return data;
+    },
+  });
+
+  const { data: allActiveStaff = [] } = useQuery({
+    queryKey: ['active-staff-for-admission-form'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('staff')
+        .select('id, name_bn, name_en, designation, phone')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      if (error) throw error;
+      return data || [];
     },
   });
 
@@ -249,10 +263,14 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
         guardian_phone: admData.guardian_phone || '',
         guardian_phone_code: admData.guardian_phone_code || '+880',
         guardian_nid: admData.guardian_nid || '',
-        approver_name: admData.approver_name || '',
-        approver_designation: admData.approver_designation || '',
-        approver_date: admData.approver_date || '',
+        approver_name: admData.approver_name || s.extra_fields?.approver_info?.name || s.approved_by || '',
+        approver_designation: admData.approver_designation || s.extra_fields?.approver_info?.designation || '',
+        approver_date: admData.approver_date || s.extra_fields?.approver_info?.date || '',
         approver_signature: admData.approver_signature || '',
+        admitted_by_type: s.extra_fields?.referral_info?.type || (s.referred_by ? 'staff' : 'staff'),
+        admitted_by_name: s.extra_fields?.referral_info?.name || s.referred_by || admData.admitted_by_name || '',
+        admitted_by_phone: s.extra_fields?.referral_info?.phone || admData.admitted_by_phone || '',
+        admitted_by_designation: s.extra_fields?.referral_info?.designation || admData.admitted_by_designation || '',
       });
       if (studentDivisionId) setSelectedDivisionId(studentDivisionId);
       if (admData.permanentAddr) setPermanentAddr(admData.permanentAddr);
@@ -542,6 +560,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       mother_name: '', mother_name_en: '', mother_occupation: '', mother_nid: '', mother_phone: '', mother_phone_code: '+880',
       guardian_type: '', guardian_name: '', guardian_relation: '', guardian_phone: '', guardian_phone_code: '+880', guardian_nid: '',
       approver_name: '', approver_designation: '', approver_date: '', approver_signature: '',
+      admitted_by_type: 'staff', admitted_by_name: '', admitted_by_phone: '', admitted_by_designation: '',
     });
     setFieldErrors({});
     setCustomFieldValues({});
@@ -581,6 +600,10 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     approver_designation: form.approver_designation,
     approver_date: form.approver_date,
     approver_signature: form.approver_signature,
+    admitted_by_type: form.admitted_by_type,
+    admitted_by_name: form.admitted_by_name,
+    admitted_by_phone: form.admitted_by_phone,
+    admitted_by_designation: form.admitted_by_designation,
   });
 
   const buildStudentPayload = () => {
@@ -632,6 +655,22 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       mother_phone: form.mother_phone || null,
       is_orphan: form.is_orphan,
       is_poor: form.is_poor,
+      referred_by: form.admitted_by_name || null,
+      approved_by: form.approver_name || null,
+      extra_fields: {
+        ...(editStudent?.extra_fields || {}),
+        referral_info: {
+          type: form.admitted_by_type || 'staff',
+          name: form.admitted_by_name || '',
+          phone: form.admitted_by_phone || '',
+          designation: form.admitted_by_designation || '',
+        },
+        approver_info: {
+          name: form.approver_name || '',
+          designation: form.approver_designation || '',
+          date: form.approver_date || '',
+        },
+      },
       admission_data: admissionData,
     };
   };
@@ -2001,51 +2040,173 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
             <div className="transition-all duration-200">
               {allStepKeys[safeCurrentStep] === 'approver' ? (
                 /* Approver Section - Only in edit/approve mode */
-                <div className="border rounded-lg p-4 sm:p-5 space-y-4 border-primary/30 bg-primary/5 shadow-sm">
-                  <h3 className="text-md font-display font-semibold text-foreground border-b pb-2 flex items-center gap-2 text-xl">
-                    <CheckCircle className="w-5 h-5 text-primary" />
-                    {bn ? '৪. অফিস কর্তৃক পূরণীয়' : '4. To be filled by Office'}
-                  </h3>
-                  <p className="text-xs text-muted-foreground italic">
-                    {bn ? 'এই অংশ শুধুমাত্র অনুমোদন ও প্রিন্টের সময় দেখা যাবে' : 'This section is only visible during approval and printing'}
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label>{bn ? 'অনুমোদনকারীর নাম' : 'Approver Name'}</Label>
-                      <Input className="bg-background mt-1" value={form.approver_name || ''}
-                        onChange={e => setForm(prev => ({ ...prev, approver_name: e.target.value }))}
-                        placeholder={bn ? 'নাম লিখুন' : 'Enter name'} />
+                <div className="space-y-5">
+                  {/* ১. কোন শিক্ষক ভর্তি করিয়েছেন / যাচাইকারী শিক্ষক */}
+                  <div className="border rounded-xl p-4 sm:p-5 space-y-4 border-primary/30 bg-primary/5 shadow-sm">
+                    <h3 className="text-md font-display font-semibold text-foreground border-b border-primary/20 pb-2 flex items-center gap-2 text-lg">
+                      <UserCheck className="w-5 h-5 text-primary" />
+                      {bn ? '১. কোন শিক্ষক ভর্তি করিয়েছেন? (ভর্তিকারী / যাচাইকারী শিক্ষক)' : '1. Admitted By / Verified By Teacher'}
+                    </h3>
+                    <p className="text-xs text-muted-foreground italic">
+                      {bn ? 'যে শিক্ষক ছাত্রটিকে মাদরাসায় ভর্তি করিয়েছেন বা ভর্তি ফরম যাচাই করেছেন তাঁকে নির্বাচন করুন' : 'Select the teacher who admitted or verified this student admission'}
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label>{bn ? 'ভর্তির মাধ্যম' : 'Admission Mode'}</Label>
+                        <Select
+                          value={form.admitted_by_type || 'staff'}
+                          onValueChange={(val: string) => {
+                            setForm(prev => ({
+                              ...prev,
+                              admitted_by_type: val,
+                              ...(val === 'none' ? { admitted_by_name: '', admitted_by_phone: '', admitted_by_designation: '' } : {})
+                            }));
+                          }}
+                        >
+                          <SelectTrigger className="bg-background mt-1">
+                            <SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="staff">{bn ? 'মাদরাসার শিক্ষক / স্টাফ' : 'Madrasa Teacher / Staff'}</SelectItem>
+                            <SelectItem value="none">{bn ? 'সরাসরি ভর্তি (মাদরাসা অফিস)' : 'Direct (Madrasa Office)'}</SelectItem>
+                            <SelectItem value="committee">{bn ? 'পরিচালনা কমিটির সদস্য' : 'Managing Committee'}</SelectItem>
+                            <SelectItem value="guardian">{bn ? 'অভিভাবক / প্রাক্তন ছাত্র' : 'Guardian / Alumni'}</SelectItem>
+                            <SelectItem value="other">{bn ? 'অন্যান্য শুভাকাঙ্ক্ষী' : 'Other'}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {form.admitted_by_type === 'staff' ? (
+                        <div>
+                          <Label>{bn ? 'ভর্তি করিয়েছেন যে শিক্ষক' : 'Select Admitting Teacher'}</Label>
+                          <Select
+                            value={form.admitted_by_name || ''}
+                            onValueChange={(val) => {
+                              const selectedStaff = allActiveStaff.find((st: any) => (st.name_bn || st.name_en) === val);
+                              setForm(prev => ({
+                                ...prev,
+                                admitted_by_name: val,
+                                admitted_by_phone: selectedStaff?.phone || prev.admitted_by_phone || '',
+                                admitted_by_designation: selectedStaff?.designation || prev.admitted_by_designation || '',
+                              }));
+                            }}
+                          >
+                            <SelectTrigger className="bg-background mt-1">
+                              <SelectValue placeholder={bn ? 'শিক্ষক নির্বাচন করুন' : 'Select Teacher'} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {allActiveStaff.map((st: any) => (
+                                <SelectItem key={st.id} value={st.name_bn || st.name_en}>
+                                  {st.name_bn || st.name_en} {st.designation ? `(${st.designation})` : ''}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      ) : form.admitted_by_type !== 'none' ? (
+                        <div>
+                          <Label>{bn ? 'ব্যক্তি / রেফারেন্সকারীর নাম' : 'Person Name'}</Label>
+                          <Input
+                            className="bg-background mt-1"
+                            value={form.admitted_by_name || ''}
+                            onChange={e => setForm(prev => ({ ...prev, admitted_by_name: e.target.value }))}
+                            placeholder={bn ? 'ব্যক্তির নাম লিখুন' : 'Enter name'}
+                          />
+                        </div>
+                      ) : null}
+
+                      {form.admitted_by_type !== 'none' && (
+                        <>
+                          <div>
+                            <Label>{form.admitted_by_type === 'staff' ? (bn ? 'শিক্ষকের মোবাইল নম্বর' : 'Teacher Phone') : (bn ? 'মোবাইল নম্বর' : 'Phone Number')}</Label>
+                            <Input
+                              className="bg-background mt-1 font-mono"
+                              value={form.admitted_by_phone || ''}
+                              onChange={e => setForm(prev => ({ ...prev, admitted_by_phone: e.target.value }))}
+                              placeholder="017XXXXXXXX"
+                            />
+                          </div>
+                          <div>
+                            <Label>{form.admitted_by_type === 'staff' ? (bn ? 'শিক্ষকের পদবি' : 'Teacher Designation') : (bn ? 'পদবি / সম্পর্ক' : 'Designation / Relation')}</Label>
+                            <Input
+                              className="bg-background mt-1"
+                              value={form.admitted_by_designation || ''}
+                              onChange={e => setForm(prev => ({ ...prev, admitted_by_designation: e.target.value }))}
+                              placeholder={bn ? 'পদবি লিখুন' : 'Enter designation'}
+                            />
+                          </div>
+                        </>
+                      )}
                     </div>
-                    <div>
-                      <Label>{bn ? 'পদবী' : 'Designation'}</Label>
-                      <Select value={form.approver_designation || ''} onValueChange={v => setForm(prev => ({ ...prev, approver_designation: v }))}>
-                        <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={bn ? 'পদবী নির্বাচন করুন' : 'Select Designation'} /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="principal">{bn ? 'প্রিন্সিপাল' : 'Principal'}</SelectItem>
-                          <SelectItem value="vice_principal">{bn ? 'ভাইস প্রিন্সিপাল' : 'Vice Principal'}</SelectItem>
-                          <SelectItem value="head_teacher">{bn ? 'প্রধান শিক্ষক' : 'Head Teacher'}</SelectItem>
-                          <SelectItem value="teacher">{bn ? 'শিক্ষক' : 'Teacher'}</SelectItem>
-                          <SelectItem value="office_staff">{bn ? 'অফিস স্টাফ' : 'Office Staff'}</SelectItem>
-                          <SelectItem value="other">{bn ? 'অন্যান্য' : 'Other'}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>{bn ? 'অনুমোদনের তারিখ' : 'Approval Date'}</Label>
-                      <DatePicker bengali={bn} className="mt-1" value={form.approver_date || ''}
-                        onChange={v => setForm(prev => ({ ...prev, approver_date: v }))} />
-                    </div>
-                    <div>
-                      <Label>{bn ? 'স্বাক্ষর' : 'Signature'}</Label>
-                      <div className="mt-1">
-                        <PhotoUpload
-                          value={form.approver_signature || null}
-                          onChange={(url) => setForm(prev => ({ ...prev, approver_signature: url || '' }))}
-                          folder="students"
-                        />
-                        <p className="text-xs text-muted-foreground mt-1 italic">
-                          {bn ? 'স্বাক্ষর আপলোড করুন অথবা প্রিন্টের পর বক্সে স্বাক্ষর করুন' : 'Upload signature or sign in box after print'}
-                        </p>
+                  </div>
+
+                  {/* ২. অফিস কর্তৃপক্ষ ও চূড়ান্ত অনুমোদন */}
+                  <div className="border rounded-xl p-4 sm:p-5 space-y-4 border-emerald-500/30 bg-emerald-500/5 shadow-sm">
+                    <h3 className="text-md font-display font-semibold text-foreground border-b border-emerald-500/20 pb-2 flex items-center gap-2 text-lg">
+                      <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                      {bn ? '২. অফিস অনুমোদন ও অনুমোদনকারী' : '2. Office Approval & Approver'}
+                    </h3>
+                    <p className="text-xs text-muted-foreground italic">
+                      {bn ? 'যে কর্তৃপক্ষ বা অধ্যক্ষ অনুমোদন প্রদান করছেন তাঁর তথ্য' : 'Approver details and signature'}
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label>{bn ? 'অনুমোদনকারী শিক্ষক/কর্তৃপক্ষ নির্বাচন' : 'Select Approver Staff'}</Label>
+                        <Select
+                          value={form.approver_name || ''}
+                          onValueChange={(val) => {
+                            const selectedStaff = allActiveStaff.find((st: any) => (st.name_bn || st.name_en) === val);
+                            setForm(prev => ({
+                              ...prev,
+                              approver_name: val,
+                              approver_designation: selectedStaff?.designation || prev.approver_designation || (bn ? 'অধ্যক্ষ' : 'Principal'),
+                            }));
+                          }}
+                        >
+                          <SelectTrigger className="bg-background mt-1">
+                            <SelectValue placeholder={bn ? 'স্টাফ থেকে নির্বাচন করুন' : 'Select from Staff'} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {allActiveStaff.map((st: any) => (
+                              <SelectItem key={st.id} value={st.name_bn || st.name_en}>
+                                {st.name_bn || st.name_en} {st.designation ? `(${st.designation})` : ''}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label>{bn ? 'অনুমোদনকারীর নাম' : 'Approver Name'}</Label>
+                        <Input className="bg-background mt-1" value={form.approver_name || ''}
+                          onChange={e => setForm(prev => ({ ...prev, approver_name: e.target.value }))}
+                          placeholder={bn ? 'নাম লিখুন' : 'Enter name'} />
+                      </div>
+                      <div>
+                        <Label>{bn ? 'পদবী' : 'Designation'}</Label>
+                        <Input className="bg-background mt-1" value={form.approver_designation || ''}
+                          onChange={e => setForm(prev => ({ ...prev, approver_designation: e.target.value }))}
+                          placeholder={bn ? 'যেমন: অধ্যক্ষ / মুহতামিম' : 'e.g. Principal'} />
+                      </div>
+                      <div>
+                        <Label>{bn ? 'অনুমোদনের তারিখ' : 'Approval Date'}</Label>
+                        <DatePicker bengali={bn} className="mt-1" value={form.approver_date || ''}
+                          onChange={v => setForm(prev => ({ ...prev, approver_date: v }))} />
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label>{bn ? 'স্বাক্ষর' : 'Signature'}</Label>
+                        <div className="mt-1">
+                          <PhotoUpload
+                            value={form.approver_signature || null}
+                            onChange={(url) => setForm(prev => ({ ...prev, approver_signature: url || '' }))}
+                            folder="students"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1 italic">
+                            {bn ? 'স্বাক্ষর আপলোড করুন অথবা প্রিন্টের পর বক্সে স্বাক্ষর করুন' : 'Upload signature or sign in box after print'}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
