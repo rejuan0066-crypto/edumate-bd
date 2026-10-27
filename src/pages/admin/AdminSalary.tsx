@@ -57,8 +57,13 @@ import {
   CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Edit2, Eye,
   Calculator, Plus, Trash2, DollarSign, FileText, FolderOpen,
   PiggyBank, Landmark, RefreshCw, Minus, Share2, Camera, FileCheck2, Upload,
-  History, UserMinus, Building2, Layers, Loader2
+  History, UserMinus, Building2, Layers, Loader2, MessageCircle
 } from 'lucide-react';
+import {
+  sendStaffSalaryPaymentNotification,
+  buildStaffSalaryPaymentMessage,
+  buildWaDirectLink
+} from '@/lib/paymentNotificationService';
 import {
   useSignedSalaryDocs,
   SignedSalaryDocsHubDialog,
@@ -277,6 +282,7 @@ const AdminSalary = () => {
   const [directViewStaff, setDirectViewStaff] = useState<any | null>(null);
   const [selectedLedgerStaffId, setSelectedLedgerStaffId] = useState<string | null>(null);
   const [payAddToExpense, setPayAddToExpense] = useState(true);
+  const [paySendWhatsApp, setPaySendWhatsApp] = useState(true);
   const [expenseSyncModalOpen, setExpenseSyncModalOpen] = useState(false);
 
   // Pre-fetch default institution for instant synchronous salary slip printing
@@ -2255,11 +2261,12 @@ const AdminSalary = () => {
     },
   });
 
-  // Mark as paid + optional expense creation
+  // Mark as paid + optional expense creation + WhatsApp notification (amount hidden)
   const markPaidMutation = useMutation({
-    mutationFn: async (arg: string | { id: string; addToExpense?: boolean }) => {
+    mutationFn: async (arg: string | { id: string; addToExpense?: boolean; sendWhatsApp?: boolean }) => {
       const id = typeof arg === 'string' ? arg : arg.id;
       const addToExpense = typeof arg === 'object' && arg.addToExpense !== undefined ? arg.addToExpense : true;
+      const shouldSendWhatsApp = typeof arg === 'object' && arg.sendWhatsApp !== undefined ? arg.sendWhatsApp : paySendWhatsApp;
       const record = salaryRecords.find((r: any) => r.id === id);
       if (!record) throw new Error('Record not found');
       const staffMember = staff.find((s: any) => s.id === record.staff_id);
@@ -2361,6 +2368,22 @@ const AdminSalary = () => {
             }
           }
         }
+      }
+
+      // Send WhatsApp salary disbursement notification to staff (strictly omitting amount)
+      if (shouldSendWhatsApp && staffMember?.phone?.trim()) {
+        const monthNameObj = MONTHS.find(m => m.value === selectedMonth);
+        const monthLabel = bn ? (monthNameObj?.bn || selectedMonth) : (monthNameObj?.en || selectedMonth);
+        sendStaffSalaryPaymentNotification({
+          staffName: staffMember.name_bn || staffMember.name_en || 'Staff',
+          phone: staffMember.phone,
+          monthName: monthLabel,
+          year: selectedYear,
+        }).then(res => {
+          if (res.success) {
+            toast.success(bn ? `${staffMember.name_bn || staffMember.name_en}-এর WhatsApp-এ বেতন নোটিফিকেশন পাঠানো হয়েছে` : 'Salary notification sent to staff WhatsApp');
+          }
+        });
       }
     },
     onSuccess: (_, arg) => {
@@ -4425,6 +4448,27 @@ const AdminSalary = () => {
                                         <CheckCircle2 className="h-3.5 w-3.5" />
                                       </Button>
                                     )}
+                                    {rec.status === 'paid' && s.phone && (
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-6 w-6 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100/60 dark:hover:bg-emerald-950/30"
+                                        title={bn ? 'কর্মীর WhatsApp-এ বেতন নোটিফিকেশন পাঠান' : 'Send salary notification via WhatsApp'}
+                                        onClick={() => {
+                                          const monthNameObj = MONTHS.find(m => m.value === selectedMonth);
+                                          const monthLabel = bn ? (monthNameObj?.bn || selectedMonth) : (monthNameObj?.en || selectedMonth);
+                                          const waUrl = buildWaDirectLink(s.phone, buildStaffSalaryPaymentMessage({
+                                            staffName: s.name_bn || s.name_en || 'Staff',
+                                            phone: s.phone,
+                                            monthName: monthLabel,
+                                            year: selectedYear,
+                                          }));
+                                          window.open(waUrl, '_blank');
+                                        }}
+                                      >
+                                        <MessageCircle className="h-3 w-3" />
+                                      </Button>
+                                    )}
                                     {rec.status === 'paid' && (() => {
                                       const staffExpense = getStaffExpense(s.id, s.name_bn || s.name_en);
                                       if (staffExpense) {
@@ -5865,6 +5909,29 @@ const AdminSalary = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* WhatsApp Notification Toggle (Amount Hidden) */}
+                  <div className="rounded-lg border border-emerald-200 bg-emerald-50/70 dark:bg-emerald-950/40 dark:border-emerald-800/60 p-3.5 space-y-2">
+                    <div className="flex items-start space-x-2.5">
+                      <Checkbox
+                        id="paySendWhatsAppCheck"
+                        checked={paySendWhatsApp}
+                        onCheckedChange={(checked) => setPaySendWhatsApp(!!checked)}
+                        className="mt-0.5"
+                      />
+                      <div className="space-y-1 leading-none cursor-pointer" onClick={() => setPaySendWhatsApp(!paySendWhatsApp)}>
+                        <label htmlFor="paySendWhatsAppCheck" className="text-sm font-semibold cursor-pointer select-none text-foreground flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300">
+                          <MessageCircle className="h-4 w-4 text-emerald-600" />
+                          {bn ? 'কর্মীর মোবাইলে WhatsApp বেতন নোটিফিকেশন পাঠান' : 'Send WhatsApp Salary Notice to Staff'}
+                        </label>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {bn
+                            ? '✓ বেতনের টাকার পরিমাণ সম্পূর্ণ গোপন থাকবে। শুধুমাত্র যে মাসের বেতন দেওয়া হয়েছে তা এবং অফিস থেকে পে-স্লিপ নেওয়ার নির্দেশনা পাঠানো হবে।'
+                            : '✓ Salary amount is strictly hidden. Only specifies the paid month and instruction to collect the pay slip.'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               );
             })()}
@@ -5881,7 +5948,7 @@ const AdminSalary = () => {
                 className="bg-emerald-600 hover:bg-emerald-700 text-white"
                 onClick={() => {
                   if (paidConfirmId) {
-                    markPaidMutation.mutate({ id: paidConfirmId, addToExpense: payAddToExpense });
+                    markPaidMutation.mutate({ id: paidConfirmId, addToExpense: payAddToExpense, sendWhatsApp: paySendWhatsApp });
                     setPaidConfirmId(null);
                   }
                 }}

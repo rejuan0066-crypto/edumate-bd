@@ -191,3 +191,37 @@ export async function sendStudentFeePaymentNotification(details: StudentFeePayme
   const res = await sendDirectWhatsAppMessage(phone, message);
   return res;
 }
+
+// ================= Staff Salary Notification (Amount Hidden) =================
+export interface StaffSalaryPaymentDetails {
+  staffName: string;
+  phone?: string | null;
+  monthName: string;
+  year?: string | number;
+  institutionName?: string;
+}
+
+/**
+ * Notice: As requested, the salary amount is strictly omitted from the message.
+ * Only the paid month, year, and instruction to collect the pay slip from the office are included.
+ */
+export function buildStaffSalaryPaymentMessage(details: StaffSalaryPaymentDetails): string {
+  const instName = details.institutionName || 'আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানা';
+  const period = `${details.monthName} ${details.year || ''}`.trim();
+
+  return `আসসালামু আলাইকুম মুহতারাম ${details.staffName}।
+${instName} থেকে আপনার ${period} মাসের মাসিক বেতন ও ভাতা পরিশোধ করা হয়েছে।
+
+অনুগ্রহ করে মাদরাসা অফিস থেকে আপনার পে-স্লিপ বুঝে নেওয়ার জন্য বিনীত অনুরোধ করা যাচ্ছে।
+
+দ্বীনি শিক্ষা বিস্তারে আপনার নিষ্ঠাপূর্ণ সেবার জন্য জাযাকাল্লাহু খাইরান।
+
+— ${instName}`;
+}
+
+export async function sendStaffSalaryPaymentNotification(details: StaffSalaryPaymentDetails): Promise<{ success: boolean; error?: string }> {
+  if (!details.phone) return { success: false, error: 'No phone number for staff' };
+  const message = buildStaffSalaryPaymentMessage(details);
+  const res = await sendDirectWhatsAppMessage(details.phone, message);
+  return res;
+}
