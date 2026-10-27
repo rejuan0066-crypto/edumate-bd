@@ -365,7 +365,7 @@ const AdminStudentProfilePage = () => {
                     student_id: student.registration_no || student.student_id,
                     roll_number: student.roll_number,
                     photo_url: student.photo_url,
-                    blood_group: student.blood_group,
+                    blood_group: (student as any).blood_group,
                     class_name: student.classes?.name_bn || student.classes?.name,
                     class_name_en: student.classes?.name,
                     division_name: student.divisions?.name_bn || student.divisions?.name,
@@ -397,7 +397,7 @@ const AdminStudentProfilePage = () => {
           onConfirm={() => deleteMutation.mutate()}
           title={bn ? 'শিক্ষার্থী মুছে ফেলবেন?' : 'Delete student?'}
           description={bn ? `আপনি কি নিশ্চিত যে "${studentName}" এর সকল তথ্য স্থায়ীভাবে মুছে ফেলতে চান?` : `Are you sure you want to delete "${studentName}"?`}
-          loading={deleteMutation.isPending}
+          isPending={deleteMutation.isPending}
         />
       </div>
     </AdminLayout>

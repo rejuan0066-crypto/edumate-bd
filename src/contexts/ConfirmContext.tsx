@@ -120,7 +120,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
   // Resolve protection level: explicit option or lookup from deletion settings
   const resolvedLevel: DeletionProtectionLevel =
     state.protectionLevel ||
-    (state.moduleKey ? getCachedDeletionSettings()[state.moduleKey] : "confirm");
+    (state.moduleKey ? (getCachedDeletionSettings()[state.moduleKey] as DeletionProtectionLevel) : "confirm");
 
   // Determine what user is expected to type (item name, or DELETE)
   const rawExpected = state.expectedInput || state.itemName || "DELETE";

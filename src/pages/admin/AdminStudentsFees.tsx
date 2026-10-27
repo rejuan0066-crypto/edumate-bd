@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Suspense, useState, useEffect, useRef, useCallback } from 'react';
 import { lazyWithRetry as lazy } from '@/lib/lazyWithRetry';
-import { CreditCard, Loader2, CheckCircle, ArrowRight, ExternalLink, Search, User, Banknote, Globe, AlertCircle, Settings, BarChart3, Users, Clock, X, Receipt, AlertTriangle, Calendar, GraduationCap, RefreshCw } from 'lucide-react';
+import { CreditCard, Loader2, CheckCircle, CheckCircle2, ArrowRight, ExternalLink, Search, User, Banknote, Globe, AlertCircle, Settings, BarChart3, Users, Clock, X, Receipt, AlertTriangle, Calendar, GraduationCap, RefreshCw } from 'lucide-react';
 import DuesManagement from '@/components/fees/DuesManagement';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';

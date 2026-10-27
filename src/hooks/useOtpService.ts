@@ -42,7 +42,7 @@ export interface VerifyOtpResult {
 }
 
 export type OtpPurpose = 'email_verification' | 'password_reset';
-export type OtpScope = 'login' | 'password_reset' | 'email_change' | 'password_change';
+export type OtpScope = 'login' | 'password_reset' | 'email_change' | 'password_change' | 'deletion_auth';
 
 const FUNCTIONS_BASE = `${(import.meta.env.VITE_SUPABASE_URL || '').replace(/^["']|["']$/g, '').trim()}/functions/v1`;
 const ANON_KEY = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '').replace(/^["']|["']$/g, '').trim();

@@ -117,7 +117,7 @@ const AdminGuardianNotifications = () => {
   const { data: designations = [] } = useQuery({
     queryKey: ['designations-for-notify'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('designations').select('id, title_bn, title_en').eq('is_active', true);
+      const { data, error } = await supabase.from('designations').select('id, name, name_bn').eq('is_active', true);
       if (error) return [];
       return data || [];
     },
@@ -533,7 +533,7 @@ const AdminGuardianNotifications = () => {
                           <SelectContent>
                             <SelectItem value="all">{bn ? 'সকল শিক্ষক ও স্টাফ' : 'All Staff & Teachers'}</SelectItem>
                             {designations.map(d => (
-                              <SelectItem key={d.id} value={d.title_bn}>{bn ? d.title_bn : d.title_en}</SelectItem>
+                              <SelectItem key={d.id} value={d.name_bn || d.name}>{bn ? d.name_bn : d.name}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>

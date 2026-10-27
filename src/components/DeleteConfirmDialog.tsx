@@ -75,7 +75,7 @@ const DeleteConfirmDialog = ({
 
   // Determine policy level
   const resolvedLevel: DeletionProtectionLevel =
-    protectionLevel || (moduleKey ? getCachedDeletionSettings()[moduleKey] : 'confirm');
+    protectionLevel || (moduleKey ? (getCachedDeletionSettings()[moduleKey] as DeletionProtectionLevel) : 'confirm');
 
   const rawExpected = expectedInput || itemName || 'DELETE';
   const expectedText = rawExpected.trim();

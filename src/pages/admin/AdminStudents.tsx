@@ -1061,7 +1061,7 @@ const AdminStudents = () => {
         const s = students.find((st: any) => st.id === deleteId);
         if (!s) return [];
         return [
-          { label: bn ? 'শ্রেণি' : 'Class', value: s.classes?.name_bn || s.classes?.name || '-' },
+          { label: bn ? 'শ্রেণি' : 'Class', value: (s as any)?.classes?.name_bn || (s as any)?.classes?.name || '-' },
           { label: bn ? 'অভিভাবকের মোবাইল' : 'Guardian Phone', value: s.father_phone || s.phone || '-' },
         ];
       })()}
