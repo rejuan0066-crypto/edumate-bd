@@ -13,7 +13,7 @@ import {
   Plus, Trash2, GraduationCap, Users, Home, CreditCard, ClipboardList,
   Fingerprint, School, Building2, Library, CalendarCheck, BarChart3, Award, TrendingUp,
   Printer, Eye, AlertCircle, CheckCircle2, ArrowRight, CheckSquare, Square, Tag, ExternalLink, Percent,
-  RotateCcw
+  RotateCcw, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -31,6 +31,16 @@ import { printStudentProfile } from '@/lib/studentProfilePrint';
 import { formatAddress } from '@/lib/banglaAddressHelper';
 import { formatPhoneNumber } from '@/lib/phoneUtils';
 import { useConfirm } from '@/contexts/ConfirmContext';
+
+export type StudentProfileStepId =
+  | 'basic'
+  | 'address'
+  | 'parents'
+  | 'academic'
+  | 'finance'
+  | 'attendance'
+  | 'documents'
+  | 'others';
 
 interface StudentProfileModalProps {
   student: any;
@@ -68,7 +78,7 @@ const StudentProfileModal = ({
       {st === 'approved' ? (bn ? 'অনুমোদিত' : 'Approved') : st === 'rejected' ? (bn ? 'প্রত্যাখ্যাত' : 'Rejected') : (bn ? 'অপেক্ষমাণ' : 'Pending')}
     </Badge>
   ));
-  const [activeTab, setActiveTab] = useState<'profile' | 'finance' | 'academic' | 'others'>('profile');
+  const [activeStep, setActiveStep] = useState<StudentProfileStepId>('basic');
   const [previewDoc, setPreviewDoc] = useState<{ url: string; name?: string } | null>(null);
 
   const studentDocs = useMemo(() => {
@@ -954,12 +964,35 @@ const StudentProfileModal = ({
     }
   };
 
-  const tabs = [
-    { id: 'profile' as const, label: bn ? 'প্রোফাইল' : 'Profile', icon: User },
-    { id: 'finance' as const, label: bn ? 'আর্থিক' : 'Finance', icon: Banknote },
-    { id: 'academic' as const, label: bn ? 'শিক্ষা ও উপস্থিতি' : 'Academic', icon: GraduationCap },
-    { id: 'others' as const, label: bn ? 'অন্যান্য' : 'Others', icon: ClipboardList },
+  const adm = student.admission_data || {};
+  const presentAddr = adm.present_address || student.present_address || {};
+  const permanentAddr = adm.permanent_address || student.permanent_address || {};
+  const guardianData = adm.guardian || student.guardian || {};
+
+  const steps: { id: StudentProfileStepId; stepNumber: number; bn: string; en: string; icon: any; count?: number }[] = [
+    { id: 'basic', stepNumber: 1, bn: 'মৌলিক তথ্য', en: 'Basic Info', icon: User },
+    { id: 'address', stepNumber: 2, bn: 'ঠিকানা', en: 'Address', icon: MapPin },
+    { id: 'parents', stepNumber: 3, bn: 'পিতা-মাতা', en: 'Parents', icon: Users },
+    { id: 'academic', stepNumber: 4, bn: 'একাডেমিক তথ্য', en: 'Academic Info', icon: GraduationCap },
+    { id: 'finance', stepNumber: 5, bn: 'আর্থিক বিবরণ', en: 'Finance & Fees', icon: Banknote },
+    { id: 'attendance', stepNumber: 6, bn: 'শিক্ষা ও উপস্থিতি', en: 'Attendance & Exams', icon: CalendarCheck },
+    { id: 'documents', stepNumber: 7, bn: 'ডকুমেন্টস', en: 'Documents', icon: FileText, count: studentDocs.length },
+    { id: 'others', stepNumber: 8, bn: 'অন্যান্য ও স্ট্যাটাস', en: 'Others & Status', icon: ClipboardList },
   ];
+
+  const currentStepIndex = steps.findIndex(s => s.id === activeStep);
+
+  const goToNextStep = () => {
+    if (currentStepIndex < steps.length - 1) {
+      setActiveStep(steps[currentStepIndex + 1].id);
+    }
+  };
+
+  const goToPrevStep = () => {
+    if (currentStepIndex > 0) {
+      setActiveStep(steps[currentStepIndex - 1].id);
+    }
+  };
 
   const translateGender = (val: string) => {
     if (!val) return '-';
@@ -1066,46 +1099,122 @@ const StudentProfileModal = ({
         </div>
       </div>
 
-      {/* ═══════════ TABS ═══════════ */}
-      <div className="flex gap-1 p-1 rounded-xl bg-muted border border-border">
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={cn(
-              'flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all duration-150',
-              activeTab === tab.id
-                ? 'bg-card text-foreground shadow-xs border border-border'
-                : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
-            )}
-          >
-            <tab.icon className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{tab.label}</span>
-          </button>
-        ))}
+      {/* ═══════════ STEPPER NAVIGATION (8-STEP STRUCTURE) ═══════════ */}
+      <div className="bg-card border border-border/80 rounded-2xl p-4 sm:p-5 shadow-xs">
+        <div className="overflow-x-auto pb-1 scrollbar-none">
+          <div className="min-w-[700px] sm:min-w-full flex items-center justify-between relative px-2 sm:px-4">
+            {/* Horizontal Line behind badges */}
+            <div className="absolute top-[18px] left-[35px] right-[35px] h-[3px] bg-muted -z-0" />
+
+            {steps.map((step, idx) => {
+              const isActive = activeStep === step.id;
+              const isPast = currentStepIndex > idx;
+
+              return (
+                <button
+                  key={step.id}
+                  type="button"
+                  onClick={() => setActiveStep(step.id)}
+                  className="flex flex-col items-center group relative z-10 focus:outline-none transition-all px-1 cursor-pointer"
+                >
+                  <div
+                    className={cn(
+                      'w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200 border-2',
+                      isActive
+                        ? 'bg-emerald-800 text-white border-emerald-700 ring-4 ring-emerald-600/20 shadow-md scale-110'
+                        : isPast
+                        ? 'bg-emerald-600 text-white border-emerald-600'
+                        : 'bg-background text-muted-foreground border-border hover:border-emerald-600/50 hover:text-foreground'
+                    )}
+                  >
+                    {step.stepNumber}
+                  </div>
+                  <span
+                    className={cn(
+                      'text-xs mt-2 font-medium tracking-tight whitespace-nowrap transition-colors text-center leading-tight max-w-[85px] sm:max-w-[100px] truncate',
+                      isActive
+                        ? 'text-emerald-800 dark:text-emerald-400 font-bold border-b-2 border-emerald-700 pb-0.5'
+                        : 'text-muted-foreground group-hover:text-foreground'
+                    )}
+                  >
+                    {bn ? step.bn : step.en}
+                    {typeof step.count === 'number' && step.count > 0 && (
+                      <span className="ml-1 text-[10px] px-1 rounded-full bg-emerald-500/15 text-emerald-700 font-bold">
+                        {step.count}
+                      </span>
+                    )}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
-      {/* ═══════════ PROFILE TAB ═══════════ */}
-      {activeTab === 'profile' && (
-        <div className="space-y-4">
-          <ProfileSectionCard title={bn ? 'মৌলিক তথ্য' : 'Basic Info'} icon={User}>
+      {/* ═══════════ STEP 1: মৌলিক তথ্য (Basic Info) ═══════════ */}
+      {activeStep === 'basic' && (
+        <div className="space-y-4 animate-in fade-in-50 duration-200">
+          <ProfileSectionCard title={bn ? '১. মৌলিক তথ্য' : '1. Basic Info'} icon={User}>
             <ProfileInfoItem icon={Fingerprint} label={bn ? 'রেজিস্ট্রেশন নং' : 'Reg No'} value={formatDigits(student.registration_no || student.student_id, bn)} />
             <ProfileInfoItem icon={Calendar} label={bn ? 'জন্ম তারিখ' : 'Date of Birth'} value={student.date_of_birth ? formatDigits(student.date_of_birth, bn) : undefined} />
             <ProfileInfoItem icon={User} label={bn ? 'লিঙ্গ' : 'Gender'} value={translateGender(student.gender)} />
             <ProfileInfoItem icon={Heart} label={bn ? 'ধর্ম' : 'Religion'} value={translateReligion(student.religion)} />
             <ProfileInfoItem icon={CreditCard} label={bn ? 'জন্ম নিবন্ধন' : 'Birth Reg'} value={student.birth_reg_no ? formatDigits(student.birth_reg_no, bn) : undefined} />
+            {student.blood_group && <ProfileInfoItem icon={Heart} label={bn ? 'রক্তের গ্রুপ' : 'Blood Group'} value={student.blood_group} />}
             <ProfileInfoItem icon={Mail} label={bn ? 'ইমেইল' : 'Email'} value={student.email} />
-            <ProfileInfoItem icon={Phone} label={bn ? 'ফোন' : 'Phone'} value={formatPhoneNumber(student.phone, undefined, bn)} />
+            <ProfileInfoItem icon={Phone} label={bn ? 'ব্যক্তিগত ফোন' : 'Personal Phone'} value={formatPhoneNumber(student.phone, undefined, bn)} />
             <ProfileInfoItem icon={Phone} label={bn ? 'অভিভাবক ফোন' : 'Guardian Phone'} value={formatPhoneNumber(student.guardian_phone, undefined, bn)} />
           </ProfileSectionCard>
+        </div>
+      )}
 
-          <ProfileSectionCard title={bn ? 'অভিভাবক তথ্য' : 'Parents Info'} icon={Users}>
+      {/* ═══════════ STEP 2: ঠিকানা (Address) ═══════════ */}
+      {activeStep === 'address' && (
+        <div className="space-y-4 animate-in fade-in-50 duration-200">
+          <ProfileSectionCard title={bn ? '২. বর্তমান ঠিকানা' : '2. Present Address'} icon={MapPin} columns={2}>
+            {presentAddr.division && <ProfileInfoItem icon={MapPin} label={bn ? 'বিভাগ' : 'Division'} value={presentAddr.division} />}
+            {presentAddr.district && <ProfileInfoItem icon={MapPin} label={bn ? 'জেলা' : 'District'} value={presentAddr.district} />}
+            {presentAddr.upazila && <ProfileInfoItem icon={MapPin} label={bn ? 'উপজেলা/থানা' : 'Upazila'} value={presentAddr.upazila} />}
+            {presentAddr.union && <ProfileInfoItem icon={MapPin} label={bn ? 'ইউনিয়ন' : 'Union'} value={presentAddr.union} />}
+            {presentAddr.postOffice && <ProfileInfoItem icon={MapPin} label={bn ? 'ডাকঘর' : 'Post Office'} value={presentAddr.postOffice} />}
+            {presentAddr.village && <ProfileInfoItem icon={MapPin} label={bn ? 'গ্রাম/মহল্লা' : 'Village'} value={presentAddr.village} />}
+            <ProfileInfoItem
+              icon={MapPin}
+              label={bn ? 'পূর্ণ বর্তমান ঠিকানা' : 'Full Present Address'}
+              value={formatAddress(presentAddr, bn) || formatAddress(student.address, bn) || '-'}
+              fullWidth
+            />
+          </ProfileSectionCard>
+
+          <ProfileSectionCard title={bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'} icon={Home} columns={2}>
+            {permanentAddr.division && <ProfileInfoItem icon={Home} label={bn ? 'বিভাগ' : 'Division'} value={permanentAddr.division} />}
+            {permanentAddr.district && <ProfileInfoItem icon={Home} label={bn ? 'জেলা' : 'District'} value={permanentAddr.district} />}
+            {permanentAddr.upazila && <ProfileInfoItem icon={Home} label={bn ? 'উপজেলা/থানা' : 'Upazila'} value={permanentAddr.upazila} />}
+            {permanentAddr.union && <ProfileInfoItem icon={Home} label={bn ? 'ইউনিয়ন' : 'Union'} value={permanentAddr.union} />}
+            {permanentAddr.postOffice && <ProfileInfoItem icon={Home} label={bn ? 'ডাকঘর' : 'Post Office'} value={permanentAddr.postOffice} />}
+            {permanentAddr.village && <ProfileInfoItem icon={Home} label={bn ? 'গ্রাম/মহল্লা' : 'Village'} value={permanentAddr.village} />}
+            <ProfileInfoItem
+              icon={Home}
+              label={bn ? 'পূর্ণ স্থায়ী ঠিকানা' : 'Full Permanent Address'}
+              value={formatAddress(permanentAddr, bn) || formatAddress(student.address, bn) || '-'}
+              fullWidth
+            />
+          </ProfileSectionCard>
+        </div>
+      )}
+
+      {/* ═══════════ STEP 3: পিতা-মাতা ও অভিভাবক (Parents & Guardian) ═══════════ */}
+      {activeStep === 'parents' && (
+        <div className="space-y-4 animate-in fade-in-50 duration-200">
+          <ProfileSectionCard title={bn ? '৩. পিতার বিবরণ' : "3. Father's Details"} icon={Users}>
             <ProfileInfoItem icon={User} label={bn ? 'পিতা (বাংলা)' : 'Father (BN)'} value={student.father_name} />
             <ProfileInfoItem icon={User} label={bn ? 'পিতা (ইংরেজি)' : 'Father (EN)'} value={student.father_name_en} />
             <ProfileInfoItem icon={ClipboardList} label={bn ? 'পিতার পেশা' : 'Father Occupation'} value={student.father_occupation} />
             <ProfileInfoItem icon={CreditCard} label={bn ? 'পিতার NID' : 'Father NID'} value={student.father_nid ? formatDigits(student.father_nid, bn) : undefined} />
             <ProfileInfoItem icon={Phone} label={bn ? 'পিতার ফোন' : 'Father Phone'} value={formatPhoneNumber(student.father_phone, undefined, bn)} />
-            <div className="col-span-full border-t border-border/15 my-1" />
+          </ProfileSectionCard>
+
+          <ProfileSectionCard title={bn ? 'মাতার বিবরণ' : "Mother's Details"} icon={Heart}>
             <ProfileInfoItem icon={User} label={bn ? 'মাতা (বাংলা)' : 'Mother (BN)'} value={student.mother_name} />
             <ProfileInfoItem icon={User} label={bn ? 'মাতা (ইংরেজি)' : 'Mother (EN)'} value={student.mother_name_en} />
             <ProfileInfoItem icon={ClipboardList} label={bn ? 'মাতার পেশা' : 'Mother Occupation'} value={student.mother_occupation} />
@@ -1113,32 +1222,36 @@ const StudentProfileModal = ({
             <ProfileInfoItem icon={Phone} label={bn ? 'মাতার ফোন' : 'Mother Phone'} value={formatPhoneNumber(student.mother_phone, undefined, bn)} />
           </ProfileSectionCard>
 
-          <ProfileSectionCard title={bn ? 'একাডেমিক তথ্য' : 'Academic Info'} icon={GraduationCap}>
+          {(student.guardian_name || student.guardian_phone || student.guardian_nid || student.guardian_relation || guardianData.name) && (
+            <ProfileSectionCard title={bn ? 'স্থানীয় / আইনি অভিভাবক' : 'Local / Legal Guardian'} icon={User}>
+              <ProfileInfoItem icon={User} label={bn ? 'অভিভাবকের নাম' : 'Guardian Name'} value={student.guardian_name || guardianData.name} />
+              <ProfileInfoItem icon={Users} label={bn ? 'সম্পর্ক' : 'Relation'} value={student.guardian_relation || guardianData.relation} />
+              <ProfileInfoItem icon={Phone} label={bn ? 'অভিভাবকের ফোন' : 'Guardian Phone'} value={formatPhoneNumber(student.guardian_phone || guardianData.phone || guardianData.mobile, undefined, bn)} />
+              <ProfileInfoItem icon={CreditCard} label={bn ? 'অভিভাবকের NID' : 'Guardian NID'} value={student.guardian_nid || guardianData.nid ? formatDigits(student.guardian_nid || guardianData.nid, bn) : undefined} />
+            </ProfileSectionCard>
+          )}
+        </div>
+      )}
+
+      {/* ═══════════ STEP 4: একাডেমিক তথ্য (Academic Info) ═══════════ */}
+      {activeStep === 'academic' && (
+        <div className="space-y-4 animate-in fade-in-50 duration-200">
+          <ProfileSectionCard title={bn ? '৪. একাডেমিক বিবরণ' : '4. Academic Details'} icon={GraduationCap}>
             <ProfileInfoItem icon={Building2} label={bn ? 'বিভাগ' : 'Division'} value={bn ? student.divisions?.name_bn : student.divisions?.name} />
             <ProfileInfoItem icon={School} label={bn ? 'শ্রেণী' : 'Class'} value={resolveClassName(student.class_id)} />
             <ProfileInfoItem icon={CalendarCheck} label={bn ? 'সেশন' : 'Session'} value={resolveSessionName(student.session_id, student.admission_session)} />
             <ProfileInfoItem icon={Calendar} label={bn ? 'সেশন বছর' : 'Session Year'} value={student.session_year ? formatDigits(student.session_year, bn) : undefined} />
+            <ProfileInfoItem icon={Hash} label={bn ? 'শ্রেণী রোল' : 'Class Roll'} value={student.roll_number ? formatDigits(student.roll_number, bn) : undefined} />
             <ProfileInfoItem icon={Calendar} label={bn ? 'ভর্তির তারিখ' : 'Admission Date'} value={student.admission_date ? formatDigits(student.admission_date, bn) : undefined} />
             <ProfileInfoItem icon={School} label={bn ? 'পূর্বের শ্রেণী' : 'Previous Class'} value={student.previous_class} />
             <ProfileInfoItem icon={School} label={bn ? 'পূর্বের প্রতিষ্ঠান' : 'Previous Institute'} value={student.previous_institute} fullWidth />
           </ProfileSectionCard>
-
-          <ProfileSectionCard title={bn ? 'অন্যান্য তথ্য' : 'Other Info'} icon={ClipboardList}>
-            <ProfileInfoItem icon={Home} label={bn ? 'আবাসিক' : 'Residence'} value={translateResidence(student.residence_type)} />
-            <ProfileInfoItem icon={Users} label={bn ? 'ক্যাটাগরি' : 'Category'} value={
-              student.student_category === 'orphan' ? (bn ? 'এতিম' : 'Orphan') :
-              student.student_category === 'poor' ? (bn ? 'গরীব' : 'Poor') :
-              student.student_category === 'teacher_child' ? (bn ? 'শিক্ষক সন্তান' : "Teacher's Child") :
-              (bn ? 'সাধারণ' : 'General')
-            } />
-            <ProfileInfoItem icon={MapPin} label={bn ? 'ঠিকানা' : 'Address'} value={formatAddress(student.address, bn)} fullWidth />
-          </ProfileSectionCard>
         </div>
       )}
 
-      {/* ═══════════ FINANCE TAB ═══════════ */}
-      {activeTab === 'finance' && (
-        <div className="space-y-4">
+      {/* ═══════════ STEP 5: আর্থিক বিবরণ (Finance & Fees) ═══════════ */}
+      {activeStep === 'finance' && (
+        <div className="space-y-4 animate-in fade-in-50 duration-200">
           {/* Session Switcher Toolbar */}
           <div className="flex items-center justify-between flex-wrap gap-2 px-1">
             <div className="flex items-center gap-2">
@@ -1670,9 +1783,9 @@ const StudentProfileModal = ({
         </div>
       )}
 
-      {/* ═══════════ ACADEMIC TAB ═══════════ */}
-      {activeTab === 'academic' && (
-        <div className="space-y-4">
+      {/* ═══════════ STEP 6: শিক্ষা ও উপস্থিতি (Attendance & Exams) ═══════════ */}
+      {activeStep === 'attendance' && (
+        <div className="space-y-4 animate-in fade-in-50 duration-200">
           {/* Attendance Circular Gauge + Stats */}
           <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
             <div className="flex items-center gap-2.5 mb-4">
@@ -1816,11 +1929,11 @@ const StudentProfileModal = ({
         </div>
       )}
 
-      {/* ═══════════ OTHERS TAB ═══════════ */}
-      {activeTab === 'others' && (
-        <div className="space-y-4">
-          {studentDocs.length > 0 && (
-            <ProfileSectionCard title={bn ? 'সংযুক্ত ডকুমেন্টস ও ফাইল' : 'Attached Documents & Files'} icon={FileText}>
+      {/* ═══════════ STEP 7: ডকুমেন্টস ও ফাইল (Documents) ═══════════ */}
+      {activeStep === 'documents' && (
+        <div className="space-y-4 animate-in fade-in-50 duration-200">
+          {studentDocs.length > 0 ? (
+            <ProfileSectionCard title={bn ? '৭. সংযুক্ত ডকুমেন্টস ও ফাইল' : '7. Attached Documents & Files'} icon={FileText}>
               <div className="col-span-full space-y-2">
                 {studentDocs.map((doc, idx) => (
                   <div key={doc.id || idx} className="flex items-center justify-between p-3 rounded-xl bg-muted/20 border border-border/15 hover:bg-muted/30 transition-colors">
@@ -1844,6 +1957,13 @@ const StudentProfileModal = ({
                 ))}
               </div>
             </ProfileSectionCard>
+          ) : (
+            <div className="text-center py-12 rounded-2xl border border-dashed border-border/80 bg-muted/15">
+              <FileText className="w-12 h-12 text-muted-foreground/35 mx-auto mb-2" />
+              <p className="text-sm font-semibold text-muted-foreground">
+                {bn ? 'কোনো সংযুক্ত ডকুমেন্ট সংরক্ষিত নেই' : 'No attached documents available'}
+              </p>
+            </div>
           )}
 
           <ProfileSectionCard title={bn ? 'লাইব্রেরি বই ইতিহাস' : 'Library Book History'} icon={Library}>
@@ -1869,6 +1989,37 @@ const StudentProfileModal = ({
                 </div>
               )}
             </div>
+          </ProfileSectionCard>
+        </div>
+      )}
+
+      {/* ═══════════ STEP 8: অন্যান্য ও স্ট্যাটাস (Others & Status) ═══════════ */}
+      {activeStep === 'others' && (
+        <div className="space-y-4 animate-in fade-in-50 duration-200">
+          <ProfileSectionCard title={bn ? '৮. অন্যান্য বিবরণ ও স্ট্যাটাস' : '8. Other Info & Status'} icon={ClipboardList}>
+            <ProfileInfoItem icon={Home} label={bn ? 'আবাসিক অবস্থা' : 'Residence Type'} value={translateResidence(student.residence_type)} />
+            <ProfileInfoItem icon={Users} label={bn ? 'ক্যাটাগরি' : 'Category'} value={
+              student.student_category === 'orphan' ? (bn ? 'এতিম' : 'Orphan') :
+              student.student_category === 'poor' ? (bn ? 'গরীব' : 'Poor') :
+              student.student_category === 'teacher_child' ? (bn ? 'শিক্ষক সন্তান' : "Teacher's Child") :
+              (bn ? 'সাধারণ' : 'General')
+            } />
+            <ProfileInfoItem icon={CheckCircle2} label={bn ? 'অনুমোদন স্ট্যাটাস' : 'Approval Status'} value={
+              student.approval_status === 'approved' ? (bn ? 'অনুমোদিত' : 'Approved') :
+              student.approval_status === 'rejected' ? (bn ? 'প্রত্যাখ্যাত' : 'Rejected') :
+              (bn ? 'অপেক্ষমাণ' : 'Pending')
+            } />
+            {student.status && (
+              <ProfileInfoItem icon={CheckCircle} label={bn ? 'ছাত্র স্ট্যাটাস' : 'Student Status'} value={
+                student.status === 'active' ? (bn ? 'সক্রিয়' : 'Active') : (bn ? 'নিষ্ক্রিয়' : 'Inactive')
+              } />
+            )}
+            {student.is_free && (
+              <ProfileInfoItem icon={Tag} label={bn ? 'বিশেষ সুবিধা' : 'Special Status'} value={bn ? 'বিনা বেতন সুবিধা প্রাপ্ত' : 'Free Tuition'} />
+            )}
+            {student.remarks && (
+              <ProfileInfoItem icon={ClipboardList} label={bn ? 'মন্তব্য/নোট' : 'Remarks'} value={student.remarks} fullWidth />
+            )}
           </ProfileSectionCard>
         </div>
       )}
@@ -2174,6 +2325,37 @@ const StudentProfileModal = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ═══════════ FOOTER STEP CONTROLS ═══════════ */}
+      <div className="flex items-center justify-between pt-4 pb-2 border-t border-border/80">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={goToPrevStep}
+          disabled={currentStepIndex === 0}
+          className="gap-2 rounded-xl text-xs font-semibold cursor-pointer"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span>{bn ? 'পূর্ববর্তী ধাপ' : 'Previous Step'}</span>
+        </Button>
+
+        <span className="text-xs font-semibold text-muted-foreground">
+          {bn ? `ধাপ ${currentStepIndex + 1} / ${steps.length} : ${steps[currentStepIndex].bn}` : `Step ${currentStepIndex + 1} of ${steps.length} : ${steps[currentStepIndex].en}`}
+        </span>
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={goToNextStep}
+          disabled={currentStepIndex === steps.length - 1}
+          className="gap-2 rounded-xl text-xs font-semibold cursor-pointer"
+        >
+          <span>{bn ? 'পরবর্তী ধাপ' : 'Next Step'}</span>
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+      </div>
 
       {/* ═══════════ BOTTOM ACTIONS (Ghost Buttons) ═══════════ */}
       <div className="flex flex-wrap gap-2 pt-4 border-t border-border/20">
