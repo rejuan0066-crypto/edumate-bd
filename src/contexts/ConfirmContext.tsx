@@ -128,10 +128,25 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
 
     if (resolvedLevel === "otp") {
       try {
-        const { data } = await supabase.auth.getUser();
-        const email = data.user?.email;
-        if (email) {
-          setAdminEmail(email);
+        const delSettings = getCachedDeletionSettings();
+        let targetEmail = "";
+
+        if (delSettings.otp_target_type === "custom" && delSettings.otp_custom_email?.trim()) {
+          targetEmail = delSettings.otp_custom_email.trim();
+        } else if (delSettings.otp_target_type === "site_email") {
+          try {
+            const { data: inst } = await supabase.from('institutions').select('email').limit(1).maybeSingle();
+            if (inst?.email?.trim()) targetEmail = inst.email.trim();
+          } catch {}
+        }
+
+        if (!targetEmail) {
+          const { data } = await supabase.auth.getUser();
+          targetEmail = data.user?.email || "";
+        }
+
+        if (targetEmail) {
+          setAdminEmail(targetEmail);
           setOtpOpen(true);
           return;
         }
