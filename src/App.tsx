@@ -21,6 +21,7 @@ import { VisitorTracker } from "@/hooks/useVisitorTracker";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DynamicFavicon from "@/components/DynamicFavicon";
 import UpdatePrompt from "@/components/UpdatePrompt";
+import SessionTimeoutManager from "@/components/security/SessionTimeoutManager";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
@@ -357,6 +358,7 @@ const App = () => (
               <UpdatePrompt />
               <BrowserRouter>
                 <VisitorTracker />
+                <SessionTimeoutManager />
                 <RoutePrefetcher />
                 {/* Global so the "/user/..." address stays masked on every
                     route, including not-found pages. */}
