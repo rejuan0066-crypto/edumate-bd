@@ -334,7 +334,14 @@ const WhatsAppSettings = () => {
       const { data, error } = await supabase.functions.invoke('send-whatsapp', {
         body: { recipients: [testPhone.trim()], message: testMessage.trim() },
       });
-      if (error) throw error;
+      if (error) {
+        let msg = error.message;
+        try {
+          const errBody = await (error as any)?.context?.json();
+          if (errBody?.error) msg = errBody.error;
+        } catch { /* ignore */ }
+        throw new Error(msg);
+      }
       const result = data?.results?.[0];
       const ok = !!result?.success;
       setTestResult({
