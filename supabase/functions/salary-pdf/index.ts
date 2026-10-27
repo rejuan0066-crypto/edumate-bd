@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
       const hasSalaryView = !permErr && hasPerm === true;
 
       if (!isAdmin && !hasSalaryView) {
-        console.warn(`salary-pdf: forbidden access by user=${user.id} email=${user.email} roles=${JSON.stringify(roles)}`);
+        console.warn(`salary-pdf: forbidden access by user=${user.id}`);
         return new Response(
           JSON.stringify({ error: "Forbidden", message: "Only administrators may generate salary PDFs." }),
           { status: 403, headers: corsHeaders }

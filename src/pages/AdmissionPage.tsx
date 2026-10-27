@@ -1492,7 +1492,8 @@ const AdmissionPage = () => {
       toast.success(bn ? 'স্বাক্ষর আপলোড হয়েছে' : 'Signature uploaded successfully');
     } catch (cErr) {
       console.warn('Cloudinary upload failed, falling back to Supabase:', cErr);
-      const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
+      const safeFileName = file.name.replace(/[<>'"&]/g, '_');
+      const ext = safeFileName.split('.').pop()?.toLowerCase() || 'png';
       const path = `signatures/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
       const { error } = await supabase.storage.from('photos').upload(path, file, { upsert: false });
       if (error) { toast.error(error.message); return; }
@@ -1532,12 +1533,16 @@ const AdmissionPage = () => {
   };
 
   const buildFormHTML = (blank = false) => {
+    const escapeHtml = (val: any) => String(val ?? '').replace(/[&<>"']/g, (m) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[m] || m));
+
     const d = blank ? {} as any : submittedData;
-    const instName = institution?.name || '';
-    const instNameEn = institution?.name_en || '';
-    const instAddr = institution?.address || '';
-    const instLogo = institution?.logo_url || '';
-    const className = !blank && d?.class_id ? (classes.find((c: any) => c.id === d.class_id) as any)?.name_bn || '' : '';
+    const instName = escapeHtml(institution?.name || '');
+    const instNameEn = escapeHtml(institution?.name_en || '');
+    const instAddr = escapeHtml(institution?.address || '');
+    const instLogo = institution?.logo_url ? escapeHtml(institution.logo_url) : '';
+    const className = !blank && d?.class_id ? escapeHtml((classes.find((c: any) => c.id === d.class_id) as any)?.name_bn || '') : '';
     const blankVal = blank ? '&nbsp;' : '';
 
     return `<!DOCTYPE html><html><head>
@@ -1578,8 +1583,8 @@ const AdmissionPage = () => {
       <div class="section">
         <div class="section-title">১. শিক্ষার্থীর তথ্য</div>
         <div class="field-grid">
-          <div class="field"><span class="field-label">নাম (বাংলা):</span><span class="field-value">${blank ? blankVal : (d.name_bn || '-')}</span></div>
-          <div class="field"><span class="field-label">নাম (ইংরেজি):</span><span class="field-value">${blank ? blankVal : (d.name_en || '-')}</span></div>
+          <div class="field"><span class="field-label">নাম (বাংলা):</span><span class="field-value">${blank ? blankVal : escapeHtml(d.name_bn || '-')}</span></div>
+          <div class="field"><span class="field-label">নাম (ইংরেজি):</span><span class="field-value">${blank ? blankVal : escapeHtml(d.name_en || '-')}</span></div>
           <div class="field"><span class="field-label">রোল নম্বর:</span><span class="field-value">${blank ? blankVal : (d.roll_number || '-')}</span></div>
           <div class="field"><span class="field-label">রেজিস্ট্রেশন নং:</span><span class="field-value">${blank ? blankVal : (d.registration_no || '-')}</span></div>
           <div class="field"><span class="field-label">ভর্তি সেশন:</span><span class="field-value">${blank ? blankVal : (d.admission_session || '-')}</span></div>
@@ -1596,8 +1601,8 @@ const AdmissionPage = () => {
       <div class="section">
         <div class="section-title">২. পিতা-মাতার তথ্য</div>
         <div class="field-grid">
-          <div class="field"><span class="field-label">পিতার নাম (বাংলা):</span><span class="field-value">${blank ? blankVal : (d.father_name || '-')}</span></div>
-          <div class="field"><span class="field-label">পিতার নাম (ইংরেজি):</span><span class="field-value">${blank ? blankVal : (d.father_name_en || '-')}</span></div>
+          <div class="field"><span class="field-label">পিতার নাম (বাংলা):</span><span class="field-value">${blank ? blankVal : escapeHtml(d.father_name || '-')}</span></div>
+          <div class="field"><span class="field-label">পিতার নাম (ইংরেজি):</span><span class="field-value">${blank ? blankVal : escapeHtml(d.father_name_en || '-')}</span></div>
           <div class="field"><span class="field-label">পিতার পেশা:</span><span class="field-value">${blank ? blankVal : (d.father_occupation || '-')}</span></div>
           <div class="field"><span class="field-label">পিতার ফোন:</span><span class="field-value">${blank ? blankVal : (d.father_phone || '-')}</span></div>
           <div class="field"><span class="field-label">পিতার NID:</span><span class="field-value">${blank ? blankVal : (d.father_nid || '-')}</span></div>

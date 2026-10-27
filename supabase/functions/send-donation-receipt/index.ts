@@ -128,13 +128,18 @@ Deno.serve(async (req) => {
       }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // Escape HTML in user-controllable donor fields to prevent markup injection
+    const escapeHtml = (str: any) => String(str || '').replace(/[&<>"']/g, (m) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[m] || m));
+
     // ---- Render donation_receipt template ----
     const amount = Number(donation.donation_amount || 0);
     const vars: Record<string, string | number> = {
-      donorName: donation.name_bn || donation.name_en || "দাতা",
-      donorPhone: donation.phone || "",
-      donorEmail: donation.email || "",
-      donorAddress: donation.address || "",
+      donorName: escapeHtml(donation.name_bn || donation.name_en || "দাতা"),
+      donorPhone: escapeHtml(donation.phone || ""),
+      donorEmail: escapeHtml(donation.email || ""),
+      donorAddress: escapeHtml(donation.address || ""),
       amount: bnDigits(amount.toLocaleString("en-IN")),
       amountInWords: "", // computed client-side; left blank if not supplied
       receiptNumber: donation.receipt_number || "",

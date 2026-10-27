@@ -74,8 +74,31 @@ Deno.serve(async (req) => {
     }
 
     if (!trusted) {
-      // Strip privileged content for anonymous callers (public admission form path).
-      // They still get the welcome email, just without a server-rendered password or role injection.
+      // Untrusted callers are only permitted for genuine recent admissions
+      if (kind !== 'student' || !student_id) {
+        await logDelivery('failed', 'Unauthorized email dispatch attempt from untrusted caller', { code: 'FORBIDDEN' });
+        return new Response(JSON.stringify({ error: "Unauthorized email dispatch" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Verify matching student was recently submitted
+      const fifteenMinAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+      const { data: stuRecord } = await supabase
+        .from('students')
+        .select('id, email, student_id')
+        .eq('student_id', student_id)
+        .gte('created_at', fifteenMinAgo)
+        .maybeSingle();
+
+      if (!stuRecord || (stuRecord.email && stuRecord.email.toLowerCase() !== email.toLowerCase())) {
+        await logDelivery('failed', 'No matching recent admission record for student email', { code: 'FORBIDDEN' });
+        return new Response(JSON.stringify({ error: "No matching admission record" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Strip privileged fields
       password = undefined;
       role = undefined;
     }

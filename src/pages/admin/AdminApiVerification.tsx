@@ -21,7 +21,7 @@ const AdminApiVerification = () => {
   const queryClient = useQueryClient();
   const { canEditItem } = usePagePermissions('/admin/api-verification');
   const navigate = useNavigate();
-  const { data: config, isLoading } = useApiVerificationConfig();
+  const { data: config, isLoading } = useApiVerificationConfig(unlocked);
 
   // Password gate
   const [unlocked, setUnlocked] = useState(false);

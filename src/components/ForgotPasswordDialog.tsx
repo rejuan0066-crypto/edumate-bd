@@ -104,7 +104,7 @@ const ForgotPasswordDialog = ({ open, onOpenChange }: ForgotPasswordDialogProps)
     // Sign in with OTP-verified email, then update password
     // Since OTP is already verified, we use admin-level password update via edge function
     const { error } = await supabase.functions.invoke('reset-password', {
-      body: { email: email.trim(), new_password: newPassword },
+      body: { email: email.trim(), new_password: newPassword, code: otpValue },
     });
 
     setResetting(false);

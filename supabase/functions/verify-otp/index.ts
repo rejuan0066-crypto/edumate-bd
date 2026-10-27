@@ -279,7 +279,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ ok: true, valid: true, message: "OTP verified successfully" }),
+      JSON.stringify({ ok: true, valid: true, reset_token: otpRecord.id, message: "OTP verified successfully" }),
       {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

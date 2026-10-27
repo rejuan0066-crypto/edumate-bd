@@ -276,7 +276,8 @@ const StaffApplicationPage = () => {
       toast.success(bn ? 'স্বাক্ষর আপলোড হয়েছে' : 'Signature uploaded successfully');
     } catch (cErr) {
       console.warn('Cloudinary upload failed, falling back to Supabase:', cErr);
-      const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
+      const safeName = file.name.replace(/[<>'"&]/g, '_');
+      const ext = safeName.split('.').pop()?.toLowerCase() || 'png';
       const path = `signatures/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
       const { error } = await supabase.storage.from('photos').upload(path, file, { upsert: false });
       if (error) { toast.error(error.message); return; }
@@ -302,7 +303,8 @@ const StaffApplicationPage = () => {
     }
     try {
       const res = await uploadToCloudinary(file, { folder: 'staff-docs' });
-      setDocuments(prev => [...prev, { id: crypto.randomUUID(), type: selectedType, name: file.name, url: res.secure_url }]);
+      const safeDocName = file.name.replace(/[<>'"&]/g, '_');
+      setDocuments(prev => [...prev, { id: crypto.randomUUID(), type: selectedType, name: safeDocName, url: res.secure_url }]);
       setDocType('');
       setCustomDocType('');
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -316,7 +318,8 @@ const StaffApplicationPage = () => {
       const path = `${userPrefix}/staff-docs/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
       const { error } = await supabase.storage.from('photos').upload(path, file, { upsert: false });
       if (error) { toast.error(error.message); return; }
-      setDocuments(prev => [...prev, { id: crypto.randomUUID(), type: selectedType, name: file.name, url: `photos/${path}` }]);
+      const safeDocName = file.name.replace(/[<>'"&]/g, '_');
+      setDocuments(prev => [...prev, { id: crypto.randomUUID(), type: selectedType, name: safeDocName, url: `photos/${path}` }]);
       setDocType('');
       setCustomDocType('');
       if (fileInputRef.current) fileInputRef.current.value = '';

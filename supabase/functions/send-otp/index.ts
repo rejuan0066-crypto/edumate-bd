@@ -292,7 +292,9 @@ Deno.serve(async (req) => {
     }
 
     // Generate 6-digit code
-    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const randomBuffer = new Uint32Array(1);
+    crypto.getRandomValues(randomBuffer);
+    const code = String(100000 + (randomBuffer[0] % 900000));
 
     // Resolve SMTP profile by purpose (otp -> fallback to 'all')
     const smtpConfig = await resolveSmtpProfile(supabase, "otp");

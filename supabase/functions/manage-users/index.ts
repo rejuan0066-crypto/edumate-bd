@@ -120,8 +120,15 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Try matching by email and auto-link
+      // Try matching by email and auto-link (strictly require email to be confirmed)
       const { data: { user: authUser } } = await supabaseAdmin.auth.admin.getUserById(userId);
+      const isEmailVerified = !!(authUser?.email_confirmed_at || authUser?.confirmed_at);
+      if (!isEmailVerified) {
+        return new Response(JSON.stringify({ success: false, error: "Email must be verified before claiming staff account" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       const userEmail = authUser?.email;
 
       if (userEmail) {

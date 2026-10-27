@@ -72,10 +72,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Handle callback/IPN verification
+    // Handle callback/IPN verification (do not expose configured provider name to anonymous callers)
     if (action === "verify_callback") {
       return new Response(
-        JSON.stringify({ success: true, provider: config.provider, message: "Callback received" }),
+        JSON.stringify({ success: true, message: "Callback received" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -109,6 +109,34 @@ Deno.serve(async (req) => {
           JSON.stringify({ error: "Invalid amount" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
+      }
+
+      // If fee assignments are specified, verify that the requested amount matches actual due balance
+      if (Array.isArray(fee_assignment_ids) && fee_assignment_ids.length > 0) {
+        const { data: assignments, error: assignErr } = await supabase
+          .from("student_fee_assignments")
+          .select("id, student_id, due_amount, amount")
+          .in("id", fee_assignment_ids);
+
+        if (assignErr || !assignments || assignments.length === 0) {
+          return new Response(JSON.stringify({ error: "Invalid fee assignment IDs" }), {
+            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Verify that assignments all belong to the student
+        if (student_id && assignments.some((a: any) => a.student_id !== student_id)) {
+          return new Response(JSON.stringify({ error: "Fee assignments do not belong to the specified student" }), {
+            status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const expectedTotal = assignments.reduce((sum: number, a: any) => sum + Number(a.due_amount ?? a.amount ?? 0), 0);
+        if (Math.abs(expectedTotal - Number(amount)) > 0.05) {
+          return new Response(JSON.stringify({ error: "Payment amount does not match the assigned fee dues" }), {
+            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
       }
 
       const transactionId = `TXN-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;

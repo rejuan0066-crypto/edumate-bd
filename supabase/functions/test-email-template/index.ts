@@ -76,10 +76,23 @@ Deno.serve(async (req) => {
     const userId = claimsData.claims.sub as string;
 
     const { data: hasAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
-    if (!hasAdmin) {
+    const { data: isSuperAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "super_admin" });
+    if (!hasAdmin && !isSuperAdmin) {
       return new Response(JSON.stringify({ error: "Forbidden — admin role required" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Security: non-super_admin admins can only send test emails to their own email address
+    if (!isSuperAdmin) {
+      const { data: callerUser } = await supabase.auth.admin.getUserById(userId);
+      const callerEmail = callerUser?.user?.email?.toLowerCase()?.trim();
+      if (callerEmail && to.toLowerCase().trim() !== callerEmail) {
+        return new Response(JSON.stringify({
+          error: "FORBIDDEN_RECIPIENT",
+          message: "Test emails can only be sent to your own administrator email address.",
+        }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
     }
 
     const body = await req.json().catch(() => ({}));

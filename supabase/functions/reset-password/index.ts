@@ -8,13 +8,21 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { email, new_password } = await req.json();
+    const { email, new_password, reset_token, code } = await req.json();
 
     if (!email || !new_password) {
       return otpErrorResponse({
         status: 400,
         code: "INVALID_REQUEST",
         message: "Email and new password are required",
+      });
+    }
+
+    if (!reset_token && !code) {
+      return otpErrorResponse({
+        status: 400,
+        code: "VERIFICATION_TOKEN_REQUIRED",
+        message: "Verification code or reset token is required to reset password.",
       });
     }
 
@@ -28,16 +36,21 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify(pwCheck.body), { status: pwCheck.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-
-
-
-    // Verify that an OTP was recently verified for this email + password_reset
-    const { data: otpRecord } = await supabase
+    // Verify that the specific OTP record exists, belongs to this email, and was verified
+    let otpQuery = supabase
       .from("otp_codes")
       .select("*")
       .eq("email", email)
       .eq("purpose", "password_reset")
-      .eq("is_used", true)
+      .eq("is_used", true);
+
+    if (reset_token) {
+      otpQuery = otpQuery.eq("id", reset_token);
+    } else if (code) {
+      otpQuery = otpQuery.eq("code", String(code).trim());
+    }
+
+    const { data: otpRecord } = await otpQuery
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();

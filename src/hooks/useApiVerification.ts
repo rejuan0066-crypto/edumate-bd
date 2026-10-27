@@ -10,18 +10,33 @@ export interface ApiVerificationConfig {
   field_mappings: Record<string, Record<string, string>>;
 }
 
-// For admin - full config
-export const useApiVerificationConfig = () => {
+// For admin - full config (protects api_key until master password unlocked)
+export const useApiVerificationConfig = (isUnlocked: boolean = false) => {
   return useQuery({
-    queryKey: ['api-verification-config'],
+    queryKey: ['api-verification-config', isUnlocked],
     queryFn: async () => {
+      if (isUnlocked) {
+        const { data, error } = await supabase
+          .from('api_verification_config')
+          .select('*')
+          .limit(1)
+          .maybeSingle();
+        if (error) throw error;
+        return data as ApiVerificationConfig | null;
+      }
+
+      // When locked, do not select or expose api_key to unauthorized callers
       const { data, error } = await supabase
         .from('api_verification_config')
-        .select('*')
+        .select('id, api_url, is_enabled, master_password, field_mappings')
         .limit(1)
         .maybeSingle();
       if (error) throw error;
-      return data as ApiVerificationConfig | null;
+      if (!data) return null;
+      return {
+        ...data,
+        api_key: '', // Protected until unlocked
+      } as ApiVerificationConfig;
     },
     staleTime: 60 * 1000,
   });

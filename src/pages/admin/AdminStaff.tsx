@@ -1,3 +1,4 @@
+import { sanitizeCsvCell } from '@/lib/sanitizeFormula';
 import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
@@ -622,7 +623,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
         s.phone || '',
         s.joining_date || '',
         s.status || ''
-      ].map(val => `"${String(val).replace(/"/g, '""')}"`).join(',');
+      ].map(val => sanitizeCsvCell(val)).join(',');
     });
     const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

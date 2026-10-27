@@ -14,16 +14,9 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  // Auth check: allow if request comes from our project client (with valid apikey) or has valid admin token
-  const apikey = req.headers.get("apikey") || req.headers.get("x-api-key");
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const isProjectKey = !!apikey && (apikey === anonKey || apikey === serviceKey);
-
-  if (!isProjectKey) {
-    const guard = await requireAuth(req, { roles: ['admin', 'super_admin'] });
-    if (!guard.ok) return unauthorized(guard.status, guard.error, corsHeaders);
-  }
+  // Auth check: strictly require admin or super_admin authentication (no anon key bypass)
+  const guard = await requireAuth(req, { roles: ['admin', 'super_admin'] });
+  if (!guard.ok) return unauthorized(guard.status, guard.error, corsHeaders);
 
   try {
     const body = await req.json();
@@ -43,6 +36,22 @@ Deno.serve(async (req) => {
         JSON.stringify({ success: false, error: "Missing required SMTP fields (host, username, password, from_email)" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
+    }
+
+    // SSRF protection: reject private/local IP addresses
+    const hostLower = smtp_host.toLowerCase().trim();
+    if (
+      hostLower === 'localhost' ||
+      hostLower.startsWith('127.') ||
+      hostLower.startsWith('10.') ||
+      hostLower.startsWith('192.168.') ||
+      hostLower.startsWith('169.254.') ||
+      hostLower.startsWith('0.0.0.0') ||
+      hostLower === '::1'
+    ) {
+      return new Response(JSON.stringify({ success: false, error: "Private or loopback SMTP hosts are not permitted" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Step 1: Plain TCP reachability check (catches "host unreachable" / wrong port quickly)

@@ -23454,23 +23454,47 @@ DROP POLICY IF EXISTS "staff_letters_delete" ON storage.objects;
 CREATE POLICY "staff_letters_select"
 ON storage.objects FOR SELECT
 TO authenticated
-USING (bucket_id = 'staff-letters');
+USING (
+  bucket_id = 'staff-letters'
+  AND (
+    public.has_role(auth.uid(), 'admin')
+    OR public.has_role(auth.uid(), 'super_admin')
+    OR auth.uid()::text = (storage.foldername(name))[1]
+  )
+);
 
 CREATE POLICY "staff_letters_insert"
 ON storage.objects FOR INSERT
 TO authenticated
-WITH CHECK (bucket_id = 'staff-letters');
+WITH CHECK (
+  bucket_id = 'staff-letters'
+  AND (
+    public.has_role(auth.uid(), 'admin')
+    OR public.has_role(auth.uid(), 'super_admin')
+  )
+);
 
 CREATE POLICY "staff_letters_update"
 ON storage.objects FOR UPDATE
 TO authenticated
-USING (bucket_id = 'staff-letters')
-WITH CHECK (bucket_id = 'staff-letters');
+USING (
+  bucket_id = 'staff-letters'
+  AND (
+    public.has_role(auth.uid(), 'admin')
+    OR public.has_role(auth.uid(), 'super_admin')
+  )
+);
 
 CREATE POLICY "staff_letters_delete"
 ON storage.objects FOR DELETE
 TO authenticated
-USING (bucket_id = 'staff-letters');
+USING (
+  bucket_id = 'staff-letters'
+  AND (
+    public.has_role(auth.uid(), 'admin')
+    OR public.has_role(auth.uid(), 'super_admin')
+  )
+);
 
 -- 5. Update public.can_access_storage_object function to grant photo access to all authenticated users
 CREATE OR REPLACE FUNCTION public.can_access_storage_object(_user_id uuid, _bucket text, _object_path text)

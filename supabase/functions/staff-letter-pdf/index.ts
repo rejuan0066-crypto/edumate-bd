@@ -25,6 +25,29 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
     }
 
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const adminClient = createClient(supabaseUrl, serviceKey!);
+    const { data: hasAdmin } = await adminClient.rpc("has_role", { _user_id: user.id, _role: "admin" });
+    const { data: hasSuperAdmin } = await adminClient.rpc("has_role", { _user_id: user.id, _role: "super_admin" });
+    const isStaffAdmin = hasAdmin === true || hasSuperAdmin === true;
+
+    // Access control: non-admins can only view their own staff letters
+    if (!isStaffAdmin) {
+      const requestedStaffId = (await req.clone().json().catch(() => ({})))?.staff?.staff_id;
+      const { data: staffRow } = await adminClient
+        .from("staff")
+        .select("user_id, staff_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!staffRow || (requestedStaffId && staffRow.staff_id !== requestedStaffId)) {
+        return new Response(JSON.stringify({ error: "Forbidden: You can only generate or view your own staff letters" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     const body = await req.json();
     const {
       type, // 'promotion' | 'salary_change'

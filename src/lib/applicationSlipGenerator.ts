@@ -5,18 +5,39 @@ export interface InstitutionInfo {
   logo_url?: string;
 }
 
+export function escapeHtml(val: any): string {
+  if (val === null || val === undefined) return '';
+  return String(val)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function sanitizeUrl(url: any): string {
+  if (!url || typeof url !== 'string') return '';
+  const clean = url.trim();
+  if (/^(https?:\/\/|\/|data:image\/)/i.test(clean)) {
+    return escapeHtml(clean);
+  }
+  return '';
+}
+
 export function buildStudentApplicationHTML(student: any, institution?: InstitutionInfo): string {
-  const instName = institution?.name || '';
-  const instNameEn = institution?.name_en || '';
-  const instAddr = institution?.address || '';
-  const instLogo = institution?.logo_url || '';
+  const instName = escapeHtml(institution?.name || '');
+  const instNameEn = escapeHtml(institution?.name_en || '');
+  const instAddr = escapeHtml(institution?.address || '');
+  const instLogo = sanitizeUrl(institution?.logo_url);
 
-  const appNo = student?.admission_data?.application_no || student?.student_id || student?.id?.slice(0, 8) || '';
-  const className = student?.classes?.name_bn || student?.classes?.name || student?.admission_class || '';
-  const divName = student?.classes?.divisions?.name_bn || student?.classes?.divisions?.name || student?.admission_division || '';
-  const applyDate = student?.admission_date || (student?.created_at ? new Date(student.created_at).toLocaleDateString('bn-BD') : '');
+  const rawAppNo = student?.admission_data?.application_no || student?.student_id || student?.id?.slice(0, 8) || '';
+  const appNo = escapeHtml(rawAppNo);
+  const className = escapeHtml(student?.classes?.name_bn || student?.classes?.name || student?.admission_class || '');
+  const divName = escapeHtml(student?.classes?.divisions?.name_bn || student?.classes?.divisions?.name || student?.admission_division || '');
+  const applyDate = escapeHtml(student?.admission_date || (student?.created_at ? new Date(student.created_at).toLocaleDateString('bn-BD') : ''));
 
-  const applicantSignature = student?.admission_data?.signature_url || student?.signature_url || '';
+  const applicantSignature = sanitizeUrl(student?.admission_data?.signature_url || student?.signature_url);
+  const photoUrl = sanitizeUrl(student?.photo_url);
 
   const statusLabel = student?.approval_status === 'approved'
     ? 'অনুমোদিত (Approved)'
@@ -30,8 +51,8 @@ export function buildStudentApplicationHTML(student: any, institution?: Institut
     ? '#dc2626'
     : '#d97706';
 
-  const presentAddr = [student?.present_village, student?.present_post, student?.present_thana, student?.present_district].filter(Boolean).join(', ') || student?.address || '—';
-  const permAddr = [student?.permanent_village, student?.permanent_post, student?.permanent_thana, student?.permanent_district].filter(Boolean).join(', ') || student?.address || '—';
+  const presentAddr = escapeHtml([student?.present_village, student?.present_post, student?.present_thana, student?.present_district].filter(Boolean).join(', ') || student?.address || '—');
+  const permAddr = escapeHtml([student?.permanent_village, student?.permanent_post, student?.permanent_thana, student?.permanent_district].filter(Boolean).join(', ') || student?.address || '—');
 
   return `<!DOCTYPE html>
 <html>
@@ -83,34 +104,34 @@ export function buildStudentApplicationHTML(student: any, institution?: Institut
     <div style="flex: 1;">
       <div class="section-title">১. মৌলিক তথ্য ও স্ট্যাটাস</div>
       <div class="grid-2">
-        <div class="field"><span class="label">শিক্ষার্থীর নাম (বাংলা):</span><span class="value">${student?.name_bn || '—'}</span></div>
-        <div class="field"><span class="label">নাম (ইংরেজি):</span><span class="value">${student?.name_en || '—'}</span></div>
-        <div class="field"><span class="label">ভর্তি শ্রেণি:</span><span class="value">${className || '—'}</span></div>
-        <div class="field"><span class="label">বিভাগ:</span><span class="value">${divName || '—'}</span></div>
-        <div class="field"><span class="label">ভর্তি শিক্ষাবর্ষ:</span><span class="value">${student?.admission_session || '—'}</span></div>
-        <div class="field"><span class="label">আবেদনের তারিখ:</span><span class="value">${applyDate || '—'}</span></div>
-        <div class="field"><span class="label">আবেদনের স্ট্যাটাস:</span><span class="value" style="font-weight: 700; color: ${statusColor};">${statusLabel}</span></div>
-        ${student?.roll_number ? `<div class="field"><span class="label">বরাদ্দকৃত রোল:</span><span class="value" style="font-weight: 700;">${student.roll_number}</span></div>` : ''}
+        <div class="field"><span class="label">শিক্ষার্থীর নাম (বাংলা):</span><span class="value">${escapeHtml(student?.name_bn || '—')}</span></div>
+        <div class="field"><span class="label">নাম (ইংরেজি):</span><span class="value">${escapeHtml(student?.name_en || '—')}</span></div>
+        <div class="field"><span class="label">ভর্তি শ্রেণি:</span><span class="value">${className}</span></div>
+        <div class="field"><span class="label">বিভাগ:</span><span class="value">${divName}</span></div>
+        <div class="field"><span class="label">ভর্তি শিক্ষাবর্ষ:</span><span class="value">${escapeHtml(student?.admission_session || '—')}</span></div>
+        <div class="field"><span class="label">আবেদনের তারিখ:</span><span class="value">${applyDate}</span></div>
+        <div class="field"><span class="label">আবেদনের স্ট্যাটাস:</span><span class="value" style="font-weight: 700; color: ${statusColor};">${escapeHtml(statusLabel)}</span></div>
+        ${student?.roll_number ? `<div class="field"><span class="label">বরাদ্দকৃত রোল:</span><span class="value" style="font-weight: 700;">${escapeHtml(student.roll_number)}</span></div>` : ''}
       </div>
     </div>
     <div class="photo-box">
-      ${student?.photo_url ? `<img src="${student.photo_url}" alt="Photo" crossorigin="anonymous">` : 'ছবি'}
+      ${photoUrl ? `<img src="${photoUrl}" alt="Photo" crossorigin="anonymous">` : 'ছবি'}
     </div>
   </div>
 
   <div class="section">
     <div class="section-title">২. ব্যক্তিগত ও পারিবারিক তথ্য</div>
     <div class="grid-2">
-      <div class="field"><span class="label">জন্ম তারিখ:</span><span class="value">${student?.date_of_birth || '—'}</span></div>
-      <div class="field"><span class="label">জন্ম নিবন্ধন / NID:</span><span class="value">${student?.birth_certificate_no || student?.birth_reg_no || student?.nid || '—'}</span></div>
-      <div class="field"><span class="label">লিঙ্গ:</span><span class="value">${student?.gender === 'female' ? 'মহিলা' : 'পুরুষ'}</span></div>
-      <div class="field"><span class="label">ধর্ম:</span><span class="value">${student?.religion || 'ইসলাম'}</span></div>
-      <div class="field"><span class="label">পিতার নাম:</span><span class="value">${student?.father_name || '—'}</span></div>
-      <div class="field"><span class="label">পিতার মোবাইল:</span><span class="value">${student?.father_phone || '—'}</span></div>
-      <div class="field"><span class="label">মাতার নাম:</span><span class="value">${student?.mother_name || '—'}</span></div>
-      <div class="field"><span class="label">মাতার মোবাইল:</span><span class="value">${student?.mother_phone || '—'}</span></div>
-      <div class="field"><span class="label">অভিভাবকের নাম:</span><span class="value">${student?.guardian_name || student?.father_name || '—'} (${student?.guardian_relation || 'অভিভাবক'})</span></div>
-      <div class="field"><span class="label">অভিভাবকের ফোন:</span><span class="value">${student?.guardian_phone || student?.father_phone || '—'}</span></div>
+      <div class="field"><span class="label">জন্ম তারিখ:</span><span class="value">${escapeHtml(student?.date_of_birth || '—')}</span></div>
+      <div class="field"><span class="label">জন্ম নিবন্ধন / NID:</span><span class="value">${escapeHtml(student?.birth_certificate_no || student?.birth_reg_no || student?.nid || '—')}</span></div>
+      <div class="field"><span class="label">লিঙ্গ:</span><span class="value">${escapeHtml(student?.gender === 'female' ? 'মহিলা' : 'পুরুষ')}</span></div>
+      <div class="field"><span class="label">ধর্ম:</span><span class="value">${escapeHtml(student?.religion || 'ইসলাম')}</span></div>
+      <div class="field"><span class="label">পিতার নাম:</span><span class="value">${escapeHtml(student?.father_name || '—')}</span></div>
+      <div class="field"><span class="label">পিতার মোবাইল:</span><span class="value">${escapeHtml(student?.father_phone || '—')}</span></div>
+      <div class="field"><span class="label">মাতার নাম:</span><span class="value">${escapeHtml(student?.mother_name || '—')}</span></div>
+      <div class="field"><span class="label">মাতার মোবাইল:</span><span class="value">${escapeHtml(student?.mother_phone || '—')}</span></div>
+      <div class="field"><span class="label">অভিভাবকের নাম:</span><span class="value">${escapeHtml(student?.guardian_name || student?.father_name || '—')} (${escapeHtml(student?.guardian_relation || 'অভিভাবক')})</span></div>
+      <div class="field"><span class="label">অভিভাবকের ফোন:</span><span class="value">${escapeHtml(student?.guardian_phone || student?.father_phone || '—')}</span></div>
     </div>
   </div>
 
@@ -128,16 +149,16 @@ export function buildStudentApplicationHTML(student: any, institution?: Institut
 
   <div class="signatures">
     <div class="sign-box">
-      <div style="height: 38px;"></div>
-      <div>অভিভাবকের স্বাক্ষর</div>
-    </div>
-    <div class="sign-box">
       ${applicantSignature ? `<img src="${applicantSignature}" alt="Signature" class="sign-img" crossorigin="anonymous">` : '<div style="height: 38px;"></div>'}
-      <div>আবেদনকারীর স্বাক্ষর</div>
+      <div>শিক্ষার্থী / অভিভাবকের স্বাক্ষর</div>
     </div>
     <div class="sign-box">
       <div style="height: 38px;"></div>
-      <div>অধ্যক্ষ / ভর্তি পরিচালকের স্বাক্ষর</div>
+      <div>যাচাইকারী কর্মকর্তার স্বাক্ষর</div>
+    </div>
+    <div class="sign-box">
+      <div style="height: 38px;"></div>
+      <div>মুহতামিম / অধ্যক্ষের স্বাক্ষর</div>
     </div>
   </div>
 </body>
@@ -145,22 +166,26 @@ export function buildStudentApplicationHTML(student: any, institution?: Institut
 }
 
 export function buildStaffApplicationHTML(staff: any, institution?: InstitutionInfo): string {
-  const instName = institution?.name || '';
-  const instNameEn = institution?.name_en || '';
-  const instAddr = institution?.address || '';
-  const instLogo = institution?.logo_url || '';
+  const instName = escapeHtml(institution?.name || '');
+  const instNameEn = escapeHtml(institution?.name_en || '');
+  const instAddr = escapeHtml(institution?.address || '');
+  const instLogo = sanitizeUrl(institution?.logo_url);
 
-  const appNo = staff?.staff_data?.application_no || staff?.staff_id || staff?.id?.slice(0, 8) || '';
-  const applyDate = staff?.joining_date || (staff?.created_at ? new Date(staff.created_at).toLocaleDateString('bn-BD') : '');
+  const rawAppNo = staff?.staff_data?.application_no || staff?.staff_id || staff?.id?.slice(0, 8) || '';
+  const appNo = escapeHtml(rawAppNo);
+  const applyDate = escapeHtml(staff?.joining_date || (staff?.created_at ? new Date(staff.created_at).toLocaleDateString('bn-BD') : ''));
 
-  const applicantSignature = staff?.staff_data?.signature_url || staff?.signature_url || '';
+  const applicantSignature = sanitizeUrl(staff?.staff_data?.signature_url || staff?.signature_url);
+  const photoUrl = sanitizeUrl(staff?.photo_url);
 
   const maritalRaw = staff?.staff_data?.marital_status || staff?.marital_status;
-  const maritalLabel = maritalRaw === 'married' ? 'বিবাহিত'
+  const maritalLabel = escapeHtml(
+    maritalRaw === 'married' ? 'বিবাহিত'
     : maritalRaw === 'unmarried' || maritalRaw === 'single' ? 'অবিবাহিত'
     : maritalRaw === 'widowed' || maritalRaw === 'widow' ? 'বিধবা / বিপত্নীক'
     : maritalRaw === 'divorced' ? 'তালাকপ্রাপ্ত'
-    : (maritalRaw || '—');
+    : (maritalRaw || '—')
+  );
 
   const statusLabel = staff?.status === 'active'
     ? 'অনুমোদিত ও সক্রিয় (Approved)'
@@ -222,40 +247,42 @@ export function buildStaffApplicationHTML(staff: any, institution?: InstitutionI
 
   <div style="display: flex; gap: 16px; margin-bottom: 8px;">
     <div style="flex: 1;">
-      <div class="section-title">১. মৌলিক তথ্য ও পদবি</div>
+      <div class="section-title">১. মৌলিক তথ্য ও পদবী</div>
       <div class="grid-2">
-        <div class="field"><span class="label">প্রার্থীর নাম (বাংলা):</span><span class="value">${staff?.name_bn || '—'}</span></div>
-        <div class="field"><span class="label">নাম (ইংরেজি):</span><span class="value">${staff?.name_en || '—'}</span></div>
-        <div class="field"><span class="label">আবেদনকৃত পদবি:</span><span class="value" style="font-weight: 700;">${staff?.designation || '—'}</span></div>
-        <div class="field"><span class="label">বিভাগ:</span><span class="value">${staff?.department || '—'}</span></div>
-        <div class="field"><span class="label">চাকরির ধরন:</span><span class="value">${staff?.employment_type === 'full_time' ? 'পূর্ণকালীন' : (staff?.employment_type === 'part_time' ? 'খণ্ডকালীন' : staff?.employment_type || '—')}</span></div>
-        <div class="field"><span class="label">আবেদনের তারিখ:</span><span class="value">${applyDate || '—'}</span></div>
-        <div class="field"><span class="label">আবেদনের স্ট্যাটাস:</span><span class="value" style="font-weight: 700; color: ${statusColor};">${statusLabel}</span></div>
-        <div class="field"><span class="label">যোগাযোগ মোবাইল:</span><span class="value font-mono">${staff?.phone || staff?.mobile || '—'}</span></div>
+        <div class="field"><span class="label">প্রার্থীর নাম (বাংলা):</span><span class="value">${escapeHtml(staff?.name_bn || '—')}</span></div>
+        <div class="field"><span class="label">নাম (ইংরেজি):</span><span class="value">${escapeHtml(staff?.name_en || '—')}</span></div>
+        <div class="field"><span class="label">আবেদনের পদবী:</span><span class="value">${escapeHtml(staff?.designation || '—')}</span></div>
+        <div class="field"><span class="label">বিভাগ / শাখা:</span><span class="value">${escapeHtml(staff?.department || '—')}</span></div>
+        <div class="field"><span class="label">চাকরির ধরন:</span><span class="value">${escapeHtml(staff?.employment_type || 'পূর্ণকালীন')}</span></div>
+        <div class="field"><span class="label">আবেদনের তারিখ:</span><span class="value">${applyDate}</span></div>
+        <div class="field"><span class="label">আবেদনের স্ট্যাটাস:</span><span class="value" style="font-weight: 700; color: ${statusColor};">${escapeHtml(statusLabel)}</span></div>
+        <div class="field"><span class="label">আইডি:</span><span class="value" style="font-weight: 700;">${appNo}</span></div>
       </div>
     </div>
     <div class="photo-box">
-      ${staff?.photo_url ? `<img src="${staff.photo_url}" alt="Photo" crossorigin="anonymous">` : 'ছবি'}
+      ${photoUrl ? `<img src="${photoUrl}" alt="Photo" crossorigin="anonymous">` : 'ছবি'}
     </div>
   </div>
 
   <div class="section">
-    <div class="section-title">২. ব্যক্তিগত ও শিক্ষাগত যোগ্যতা</div>
+    <div class="section-title">২. ব্যক্তিগত ও পারিবারিক তথ্য</div>
     <div class="grid-2">
-      <div class="field"><span class="label">জন্ম তারিখ:</span><span class="value">${staff?.date_of_birth || '—'}</span></div>
-      <div class="field"><span class="label">জাতীয় পরিচয়পত্র (NID):</span><span class="value">${staff?.nid || '—'}</span></div>
-      <div class="field"><span class="label">ইমেইল:</span><span class="value">${staff?.email || '—'}</span></div>
-      <div class="field"><span class="label">ধর্ম:</span><span class="value">${staff?.religion || 'ইসলাম'}</span></div>
+      <div class="field"><span class="label">মোবাইল নম্বর:</span><span class="value">${escapeHtml(staff?.phone || staff?.mobile || '—')}</span></div>
+      <div class="field"><span class="label">ইমেইল:</span><span class="value">${escapeHtml(staff?.email || '—')}</span></div>
+      <div class="field"><span class="label">জাতীয় পরিচয়পত্র (NID):</span><span class="value">${escapeHtml(staff?.nid || '—')}</span></div>
+      <div class="field"><span class="label">জন্ম তারিখ:</span><span class="value">${escapeHtml(staff?.date_of_birth || '—')}</span></div>
+      <div class="field"><span class="label">লিঙ্গ:</span><span class="value">${escapeHtml(staff?.gender === 'female' ? 'মহিলা' : 'পুরুষ')}</span></div>
+      <div class="field"><span class="label">ধর্ম:</span><span class="value">${escapeHtml(staff?.religion || 'ইসলাম')}</span></div>
       <div class="field"><span class="label">বৈবাহিক অবস্থা:</span><span class="value">${maritalLabel}</span></div>
-      <div class="field"><span class="label">শিক্ষাগত যোগ্যতা:</span><span class="value">${staff?.education || '—'}</span></div>
-      <div class="field"><span class="label">কাজের অভিজ্ঞতা:</span><span class="value">${staff?.experience || '—'}</span></div>
-      <div class="field" style="grid-column: span 2;"><span class="label">পূর্ববর্তী প্রতিষ্ঠান:</span><span class="value">${staff?.previous_institute || '—'}</span></div>
-      <div class="field" style="grid-column: span 2;"><span class="label">ঠিকানা:</span><span class="value">${staff?.address || '—'}</span></div>
+      <div class="field"><span class="label">শিক্ষাগত যোগ্যতা:</span><span class="value">${escapeHtml(staff?.education || '—')}</span></div>
+      <div class="field"><span class="label">কাজের অভিজ্ঞতা:</span><span class="value">${escapeHtml(staff?.experience || '—')}</span></div>
+      <div class="field" style="grid-column: span 2;"><span class="label">পূর্ববর্তী প্রতিষ্ঠান:</span><span class="value">${escapeHtml(staff?.previous_institute || '—')}</span></div>
+      <div class="field" style="grid-column: span 2;"><span class="label">ঠিকানা:</span><span class="value">${escapeHtml(staff?.address || '—')}</span></div>
     </div>
   </div>
 
   <div class="notice">
-    <strong>নির্দেশনা:</strong> এই আবেদনপত্রটি প্রাতিষ্ঠানিক নিয়োগ পর্যালোচনার জন্য জমা নেওয়া হয়েছে। কর্তৃপক্ষ যাচাই-বাছাই শেষে পরবর্তী প্রক্রিয়ার জন্য যোগাযোগ করবে। আবেদন নম্বর (${appNo}) সংরক্ষণ করুন।
+    <strong>নির্দেশনা:</strong> এই আবেদনপত্রটি প্রতিষ্ঠানের ডিজিটাল আর্কাইভে সংরক্ষিত হয়েছে। মৌখিক পরীক্ষা বা নিয়োগ প্রক্রিয়া সংক্রান্ত তথ্যের জন্য আপনার আবেদন নম্বর (${appNo}) উল্লেখ করুন।
   </div>
 
   <div class="signatures">
@@ -269,7 +296,7 @@ export function buildStaffApplicationHTML(staff: any, institution?: InstitutionI
     </div>
     <div class="sign-box">
       <div style="height: 38px;"></div>
-      <div>অধ্যক্ষ / নিয়োগ বোর্ডের স্বাক্ষর</div>
+      <div>অধ্যক্ষ / নিয়োগ কমিটির স্বাক্ষর</div>
     </div>
   </div>
 </body>

@@ -49,20 +49,6 @@ export async function requireAuth(
         userId = adminUserData.user.id;
         email = adminUserData.user.email || '';
         claims = { sub: adminUserData.user.id, email: adminUserData.user.email, ...(adminUserData.user.user_metadata || {}) };
-      } else {
-        // 3. Try parsing JWT payload directly
-        try {
-          const parts = token.split('.');
-          if (parts.length === 3) {
-            const raw = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
-            const payload = JSON.parse(raw);
-            if (payload?.sub) {
-              userId = payload.sub;
-              email = payload.email || '';
-              claims = payload;
-            }
-          }
-        } catch (_) {}
       }
     }
   } catch (err: any) {

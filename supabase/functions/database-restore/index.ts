@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
       .from('user_roles')
       .select('role')
       .eq('user_id', userId)
-      .in('role', ['admin', 'super_admin'])
+      .eq('role', 'super_admin')
       .maybeSingle();
 
     if (!roleData) {
@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
           
           // Remove auto-generated timestamps for clean insert
           const cleanBatch = batch.map((row: any) => {
-            const { created_at, updated_at, ...rest } = row;
+            const { created_at, updated_at, is_super_admin, role, ...rest } = row;
             return rest;
           });
 

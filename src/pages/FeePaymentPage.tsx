@@ -748,6 +748,10 @@ const FeePaymentPage = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
+    const escapeHtml = (val: any) => String(val ?? '').replace(/[&<>"']/g, (m) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[m] || m));
+
     const html = `
     <!DOCTYPE html>
     <html><head>
@@ -792,19 +796,19 @@ const FeePaymentPage = () => {
           <div class="receipt-label">${bn ? 'মানি রিসিট' : 'Money Receipt'}</div>
         </div>
         <div class="section">
-          <div class="row"><span class="label">${bn ? 'রসিদ নং' : 'Receipt No'}</span><span class="value">${receipt.receipt_number}</span></div>
+          <div class="row"><span class="label">${bn ? 'রসিদ নং' : 'Receipt No'}</span><span class="value">${escapeHtml(receipt.receipt_number)}</span></div>
           <div class="row"><span class="label">${bn ? 'তারিখ' : 'Date'}</span><span class="value">${receipt.paid_at ? new Date(receipt.paid_at).toLocaleDateString('bn-BD') : '-'}</span></div>
           <div class="row"><span class="label">${bn ? 'স্ট্যাটাস' : 'Status'}</span><span class="status-badge">${bn ? 'পরিশোধিত' : 'Paid'}</span></div>
         </div>
         <div class="section">
-          <div class="row"><span class="label">${bn ? 'ছাত্রের নাম' : 'Student'}</span><span class="value">${receipt.student_name}</span></div>
-          ${receipt.father_name ? `<div class="row"><span class="label">${bn ? 'পিতার নাম' : "Father's Name"}</span><span class="value">${receipt.father_name}</span></div>` : ''}
+          <div class="row"><span class="label">${bn ? 'ছাত্রের নাম' : 'Student'}</span><span class="value">${escapeHtml(receipt.student_name)}</span></div>
+          ${receipt.father_name ? `<div class="row"><span class="label">${bn ? 'পিতার নাম' : "Father's Name"}</span><span class="value">${escapeHtml(receipt.father_name)}</span></div>` : ''}
           <div class="row"><span class="label">${bn ? 'আইডি' : 'ID'}</span><span class="value">${bn && receipt.student_id ? toBanglaDigits(receipt.student_id) : receipt.student_id}</span></div>
-          <div class="row"><span class="label">${bn ? 'শ্রেণী' : 'Class'}</span><span class="value">${receipt.class_name}</span></div>
+          <div class="row"><span class="label">${bn ? 'শ্রেণী' : 'Class'}</span><span class="value">${escapeHtml(receipt.class_name)}</span></div>
           <div class="row"><span class="label">${bn ? 'রোল' : 'Roll'}</span><span class="value">${bn && receipt.roll ? toBanglaDigits(receipt.roll) : receipt.roll}</span></div>
         </div>
         <div class="section">
-          <div class="row"><span class="label">${bn ? 'ফি এর ধরন' : 'Fee Type'}</span><span class="value">${receipt.fee_type}</span></div>
+          <div class="row"><span class="label">${bn ? 'ফি এর ধরন' : 'Fee Type'}</span><span class="value">${escapeHtml(receipt.fee_type)}</span></div>
           <div class="row"><span class="label">${bn ? 'মাস' : 'Month'}</span><span class="value">${bn ? toBanglaMonth(receipt.month) : (receipt.month || '-')}</span></div>
           <div class="row"><span class="label">${bn ? 'বছর' : 'Year'}</span><span class="value">${bn && receipt.year ? toBanglaDigits(receipt.year) : (receipt.year || '-')}</span></div>
         </div>
