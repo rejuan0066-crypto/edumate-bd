@@ -1239,8 +1239,8 @@ const StudentProfileModal = ({
             <ProfileInfoItem icon={School} label={bn ? 'পূর্বের প্রতিষ্ঠান' : 'Previous Institute'} value={student.previous_institute} fullWidth />
           </ProfileSectionCard>
 
-          {/* Admission Approval & Reference Details */}
-          <ProfileSectionCard title={bn ? 'ভর্তি অনুমোদন ও রেফারেন্স বিবরণ' : 'Admission Approval & Referral'} icon={ShieldCheck}>
+          {/* Admission Approval & Admitting Teacher Details */}
+          <ProfileSectionCard title={bn ? 'ভর্তি অনুমোদন ও ভর্তিকারী শিক্ষক' : 'Admission Approval & Admitting Teacher'} icon={ShieldCheck}>
             <ProfileInfoItem
               icon={UserCheck}
               label={bn ? 'অনুমোদনকারী' : 'Approved By'}
@@ -1258,29 +1258,29 @@ const StudentProfileModal = ({
             />
             <ProfileInfoItem
               icon={Users}
-              label={bn ? 'কার মাধ্যমে ভর্তি (রেফারেন্স)' : 'Referred By'}
+              label={bn ? 'ভর্তি করিয়েছেন যে শিক্ষক' : 'Admitted by Teacher'}
               value={
                 student.extra_fields?.referral_info?.name
                   ? `${student.extra_fields.referral_info.name} ${student.extra_fields.referral_info.designation ? `(${student.extra_fields.referral_info.designation})` : ''}`
-                  : (student.referred_by || (bn ? 'সরাসরি ভর্তি' : 'Direct Admission'))
+                  : (student.referred_by || (bn ? 'সরাসরি মাদরাসা অফিসে ভর্তি' : 'Direct Admission'))
               }
             />
             {student.extra_fields?.referral_info?.phone && (
               <ProfileInfoItem
                 icon={Phone}
-                label={bn ? 'রেফারেন্সকারীর মোবাইল' : 'Referrer Phone'}
+                label={student.extra_fields?.referral_info?.type === 'staff' ? (bn ? 'শিক্ষকের মোবাইল' : 'Teacher Phone') : (bn ? 'মোবাইল নম্বর' : 'Phone Number')}
                 value={formatPhoneNumber(student.extra_fields.referral_info.phone, undefined, bn)}
               />
             )}
             {student.extra_fields?.referral_info?.type && (
               <ProfileInfoItem
                 icon={Fingerprint}
-                label={bn ? 'রেফারেন্সের ধরন' : 'Referral Type'}
+                label={bn ? 'ভর্তির মাধ্যম' : 'Admission Mode'}
                 value={
-                  student.extra_fields.referral_info.type === 'staff' ? (bn ? 'শিক্ষক / স্টাফ' : 'Staff') :
+                  student.extra_fields.referral_info.type === 'staff' ? (bn ? 'শিক্ষক কর্তৃক ভর্তি' : 'By Teacher') :
                   student.extra_fields.referral_info.type === 'committee' ? (bn ? 'কমিটি সদস্য' : 'Committee Member') :
                   student.extra_fields.referral_info.type === 'guardian' ? (bn ? 'অভিভাবক' : 'Guardian') :
-                  student.extra_fields.referral_info.type === 'other' ? (bn ? 'অন্যান্য' : 'Other') : (bn ? 'সরাসরি' : 'Direct')
+                  student.extra_fields.referral_info.type === 'other' ? (bn ? 'অন্যান্য' : 'Other') : (bn ? 'সরাসরি ভর্তি' : 'Direct')
                 }
               />
             )}
