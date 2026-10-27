@@ -16,7 +16,7 @@ import {
   XCircle, QrCode, RefreshCw, Sparkles, HelpCircle, ShieldCheck, Zap
 } from 'lucide-react';
 import { buildWhatsAppUrl } from '@/hooks/useWhatsAppConfig';
-import { QRCodeSVG } from 'qrcode.react';
+import QRCode from 'qrcode';
 
 const WhatsAppSettings = () => {
   const { language } = useLanguage();
@@ -242,7 +242,8 @@ const WhatsAppSettings = () => {
       if (data?.base64) {
         setQrCodeData(data.base64);
       } else if (data?.code) {
-        setQrCodeData(data.code);
+        const url = await QRCode.toDataURL(data.code, { width: 220, margin: 1 });
+        setQrCodeData(url);
       } else if (data?.pairingCode) {
         setQrCodeData(data.pairingCode);
       }
@@ -641,10 +642,12 @@ const WhatsAppSettings = () => {
               </div>
             ) : qrCodeData ? (
               <div className="p-4 bg-white rounded-xl shadow-inner border flex flex-col items-center">
-                {qrCodeData.startsWith('data:image') ? (
+                {qrCodeData.startsWith('data:image') || qrCodeData.startsWith('http') ? (
                   <img src={qrCodeData} alt="WhatsApp QR" className="w-52 h-52 object-contain" />
                 ) : (
-                  <QRCodeSVG value={qrCodeData} size={208} />
+                  <div className="p-4 text-center font-mono text-lg font-bold tracking-widest bg-muted text-foreground rounded-lg">
+                    {qrCodeData}
+                  </div>
                 )}
                 <p className="text-xs text-muted-foreground mt-2 font-mono">
                   {bn ? 'স্ক্যানের জন্য প্রস্তুত' : 'Ready to scan'}
