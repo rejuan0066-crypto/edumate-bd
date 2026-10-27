@@ -30,6 +30,7 @@ import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { printStudentProfile } from '@/lib/studentProfilePrint';
 import { formatAddress } from '@/lib/banglaAddressHelper';
 import { formatPhoneNumber } from '@/lib/phoneUtils';
+import { useConfirm } from '@/contexts/ConfirmContext';
 
 interface StudentProfileModalProps {
   student: any;
@@ -107,6 +108,7 @@ const StudentProfileModal = ({
   const { data: institution } = useInstitutionInfo();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const { checkApproval } = useApprovalCheck('/admin/students-fees', 'fee_payments');
 
   // Payment states for quick fee payment
@@ -1178,8 +1180,22 @@ const StudentProfileModal = ({
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => {
-                      if (confirm(bn ? 'আপনি কি এই শিক্ষার্থীর সকল পরিশোধিত ফি অপরিশোধিত (Unpaid) করতে চান? সমস্ত ফি পুনরায় বকেয়া তালিকায় ফিরে যাবে।' : 'Reset all paid fees for this student to unpaid?')) {
+                    onClick={async () => {
+                      const ok = await confirm({
+                        title: bn ? 'সকল পরিশোধ আনপেইড করতে চান?' : 'Unpay All Paid Fees?',
+                        description: bn
+                          ? 'আপনি কি এই শিক্ষার্থীর সমস্ত পরিশোধিত ফি রেকর্ড অপরিশোধিত করতে চান? সমস্ত ফি পুনরায় বকেয়া তালিকায় ফিরে আসবে।'
+                          : 'Are you sure you want to mark all paid fee records as unpaid? All items will return to dues.',
+                        itemName: student.name_bn || student.name_en,
+                        itemIdentifier: student.roll_number ? `${bn ? 'রোল:' : 'Roll:'} ${formatDigits(student.roll_number, bn)}` : (student.student_id || student.registration_no),
+                        itemDetails: [
+                          { label: bn ? 'মোট পরিশোধিত' : 'Total Paid', value: `৳${formatDigits(sessionFinancials.totalPaid.toLocaleString(), bn)}` },
+                        ],
+                        moduleKey: 'fee_payment',
+                        variant: 'destructive',
+                        confirmText: bn ? 'হ্যাঁ, সকল ফি আনপেইড করুন' : 'Confirm Unpay All',
+                      });
+                      if (ok) {
                         deleteAllPaymentsMutation.mutate();
                       }
                     }}
@@ -1580,8 +1596,23 @@ const StudentProfileModal = ({
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => {
-                              if (confirm(bn ? 'এই পেমেন্টটি আনপেইড করতে চান? এটি পুনরায় বকেয়া হবে।' : 'Mark this payment unpaid? It will return to dues.')) {
+                            onClick={async () => {
+                              const ok = await confirm({
+                                title: bn ? 'পেমেন্ট আনপেইড করতে চান?' : 'Mark Payment Unpaid?',
+                                description: bn
+                                  ? 'এই ফি পেমেন্টটি অপরিশোধিত করা হবে এবং শিক্ষার্থীর বকেয়া তালিকায় পুনরায় ফিরে আসবে।'
+                                  : 'This payment will be marked as unpaid and restored to dues.',
+                                itemName: p.fee_types?.name_bn || p.fee_types?.name || (bn ? 'ফি পরিশোধ' : 'Fee Payment'),
+                                itemIdentifier: p.receipt_number ? `${bn ? 'রসিদ:' : 'Receipt:'} ${p.receipt_number}` : undefined,
+                                itemDetails: [
+                                  { label: bn ? 'পরিশোধের পরিমাণ' : 'Paid Amount', value: `৳${formatDigits((p.paid_amount || p.amount || 0).toLocaleString(), bn)}` },
+                                  ...(p.month ? [{ label: bn ? 'মাস' : 'Month', value: `${p.month} ${p.year || ''}` }] : []),
+                                ],
+                                moduleKey: 'fee_payment',
+                                variant: 'destructive',
+                                confirmText: bn ? 'হ্যাঁ, আনপেইড করুন' : 'Confirm Unpay',
+                              });
+                              if (ok) {
                                 deletePaymentMutation.mutate(p.id);
                               }
                             }}

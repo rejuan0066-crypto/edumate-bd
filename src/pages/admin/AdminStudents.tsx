@@ -907,6 +907,25 @@ const AdminStudents = () => {
       onOpenChange={(o) => { if (!o) setDeleteId(null); }}
       onConfirm={() => { if (deleteId) { deleteMutation.mutate(deleteId); setDeleteId(null); } }}
       isPending={deleteMutation.isPending}
+      itemName={(() => {
+        const s = students.find((st: any) => st.id === deleteId);
+        return s?.name_bn || s?.name_en;
+      })()}
+      itemIdentifier={(() => {
+        const s = students.find((st: any) => st.id === deleteId);
+        return s?.roll_number ? `${bn ? 'রোল:' : 'Roll:'} ${formatDigits(s.roll_number, bn)}` : (s?.student_id || s?.registration_no);
+      })()}
+      itemDetails={(() => {
+        const s = students.find((st: any) => st.id === deleteId);
+        if (!s) return [];
+        return [
+          { label: bn ? 'শ্রেণি' : 'Class', value: s.classes?.name_bn || s.classes?.name || '-' },
+          { label: bn ? 'অভিভাবকের মোবাইল' : 'Guardian Phone', value: s.father_phone || s.phone || '-' },
+        ];
+      })()}
+      moduleKey="student"
+      title={bn ? 'শিক্ষার্থী প্রোফাইল মুছে ফেলতে চান?' : 'Delete Student Profile?'}
+      description={bn ? 'এই শিক্ষার্থীর ভর্তি, ফলাফল, হাজিরা এবং বিগত ফি সংক্রান্ত যাবতীয় রেকর্ড অপসারিত হবে।' : 'All admission, results, attendance, and fee history for this student will be removed.'}
     />
 
     {/* Student Type Change Dialog */}

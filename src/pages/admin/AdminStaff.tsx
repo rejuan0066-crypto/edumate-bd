@@ -30,6 +30,7 @@ import { sanitizePasswordInput } from '@/lib/passwordInput';
 import { parseEdgeError } from '@/lib/edgeError';
 import { invalidateAllStaffQueries } from '@/lib/staffQueryInvalidator';
 import { sortStaffByDepartment } from '@/lib/staffOrderHelper';
+import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import { getStaffDisplayNames } from '@/lib/nameFormatter';
 import { runStaffDeduplicationSync } from '@/lib/staffDeduplicationSync';
 
@@ -936,25 +937,31 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
     )}
 
         {/* Delete confirmation */}
-        <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{bn ? 'আপনি কি নিশ্চিত?' : 'Are you sure?'}</AlertDialogTitle>
-              <AlertDialogDescription>
-                {bn ? 'এই কর্মী/শিক্ষকের তথ্য স্থায়ীভাবে মুছে ফেলা হবে। এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।' : 'This staff record will be permanently deleted. This action cannot be undone.'}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>{bn ? 'বাতিল' : 'Cancel'}</AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                onClick={() => { if (deleteId) { deleteMutation.mutate(deleteId); setDeleteId(null); } }}
-              >
-                {bn ? 'মুছে ফেলুন' : 'Delete'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <DeleteConfirmDialog
+          open={!!deleteId}
+          onOpenChange={(open) => !open && setDeleteId(null)}
+          onConfirm={() => { if (deleteId) { deleteMutation.mutate(deleteId); setDeleteId(null); } }}
+          isPending={deleteMutation.isPending}
+          itemName={(() => {
+            const st = staffList.find((s: any) => s.id === deleteId);
+            return st?.name_bn || st?.name_en;
+          })()}
+          itemIdentifier={(() => {
+            const st = staffList.find((s: any) => s.id === deleteId);
+            return st?.employee_id ? `${bn ? 'আইডি:' : 'ID:'} ${st.employee_id}` : undefined;
+          })()}
+          itemDetails={(() => {
+            const st = staffList.find((s: any) => s.id === deleteId);
+            if (!st) return [];
+            return [
+              { label: bn ? 'পদবী' : 'Designation', value: st.designation || '-' },
+              { label: bn ? 'মোবাইল' : 'Phone', value: st.phone || '-' },
+            ];
+          })()}
+          moduleKey="staff"
+          title={bn ? 'শিক্ষক/স্টাফ প্রোফাইল মুছে ফেলতে চান?' : 'Delete Staff Profile?'}
+          description={bn ? 'এই কর্মী/শিক্ষকের বায়োডাটা, হাজিরা ও বেতন সংক্রান্ত সমস্ত তথ্য স্থায়ীভাবে মুছে ফেলা হবে।' : 'This staff record, salary, and attendance data will be permanently deleted.'}
+        />
 
 
         {/* Account Creation Dialog */}

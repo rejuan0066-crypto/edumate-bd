@@ -30,6 +30,7 @@ import RateLimitSettings from '@/components/admin/RateLimitSettings';
 import ApprovalWorkflowSettings from '@/components/admin/ApprovalWorkflowSettings';
 import { SecurityBackupPanel } from '@/components/admin/SecurityBackupPanel';
 import BackgroundSettings from '@/components/admin/BackgroundSettings';
+import DeletionSecurityPanel from '@/components/settings/DeletionSecurityPanel';
 import { useConfirm } from "@/contexts/ConfirmContext";
 
 const VALID_SETTINGS_TABS = [
@@ -1498,6 +1499,9 @@ const AdminSettings = () => {
               </div>
               <div className="max-w-none">
                 <RateLimitSettings />
+              </div>
+              <div className="max-w-none">
+                <DeletionSecurityPanel bn={bn} />
               </div>
               <div className="max-w-none">
                 <SecurityBackupPanel bn={bn} />
