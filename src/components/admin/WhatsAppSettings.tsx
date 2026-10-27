@@ -16,11 +16,17 @@ import {
   XCircle, QrCode, RefreshCw, Sparkles, HelpCircle, ShieldCheck, Zap
 } from 'lucide-react';
 import { buildWhatsAppUrl } from '@/hooks/useWhatsAppConfig';
+import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 
 const WhatsAppSettings = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const qc = useQueryClient();
+  const { settings: websiteSettings } = useWebsiteSettings();
+
+  const instName = bn
+    ? (websiteSettings.institution_name || 'আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানা')
+    : (websiteSettings.institution_name_en || 'Al-Arabia Subhania Madrasah & Eyateem Khana');
 
   const { data: config, isLoading } = useQuery({
     queryKey: ['whatsapp-config-admin'],
@@ -69,8 +75,20 @@ const WhatsAppSettings = () => {
   // Test sender
   const [testPhone, setTestPhone] = useState('');
   const [testMessage, setTestMessage] = useState(
-    bn ? 'আসসালামু আলাইকুম, এটি আল আরাবিয়া সুবহানিয়া মাদ্রাসার টেস্ট WhatsApp মেসেজ।' : 'This is a test WhatsApp message from Al-Arabia Subhania Madrasa.'
+    bn
+      ? `আসসালামু আলাইকুম, এটি ${instName}-এর অফিসিয়াল টেস্ট WhatsApp মেসেজ।`
+      : `This is an official test WhatsApp message from ${instName}.`
   );
+
+  useEffect(() => {
+    if (instName) {
+      setTestMessage(
+        bn
+          ? `আসসালামু আলাইকুম, এটি ${instName}-এর অফিসিয়াল টেস্ট WhatsApp মেসেজ।`
+          : `This is an official test WhatsApp message from ${instName}.`
+      );
+    }
+  }, [instName, bn]);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; messageId?: string; error?: string; sentAt?: string; method?: string } | null>(null);
 

@@ -28,32 +28,32 @@ const PRESET_TEMPLATES: Record<string, { bn: string; en: string; body_bn: string
   fee_reminder: {
     bn: 'বকেয়া ফি রিমাইন্ডার',
     en: 'Fee Due Reminder',
-    body_bn: 'আসসালামু আলাইকুম, অভিভাবক মহোদয়। আল আরাবিয়া সুবহানিয়া মাদ্রাসায় আপনার সন্তান {{name}}-এর বকেয়া ফি বাবদ {{amount}} টাকা আগামী ৫ তারিখের মধ্যে পরিশোধ করার জন্য বিনীত অনুরোধ করা হচ্ছে।',
-    body_en: 'Assalamu Alaikum. This is a reminder from Al-Arabia Subhania Madrasa that {{name}} has an outstanding fee of {{amount}} BDT. Please settle it soon.',
+    body_bn: 'আসসালামু আলাইকুম, অভিভাবক মহোদয়। আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানায় আপনার সন্তান {{name}}-এর বকেয়া ফি বাবদ {{amount}} টাকা আগামী ৫ তারিখের মধ্যে পরিশোধ করার জন্য বিনীত অনুরোধ করা হচ্ছে।',
+    body_en: 'Assalamu Alaikum. This is a reminder from Al-Arabia Subhania Madrasah & Eyateem Khana that {{name}} has an outstanding fee of {{amount}} BDT. Please settle it soon.',
   },
   holiday: {
     bn: 'ছুটির নোটিশ',
     en: 'Holiday Notice',
-    body_bn: 'আসসালামু আলাইকুম। আল আরাবিয়া সুবহানিয়া মাদ্রাসার সকল ছাত্র ও অভিভাবকদের জানানো যাচ্ছে যে, আগামীকাল থেকে মাদ্রাসা সাময়িক বন্ধ থাকবে। বিস্তারিত জানতে মাদ্রাসা অফিসে যোগাযোগ করুন।',
-    body_en: 'Assalamu Alaikum. Notice from Al-Arabia Subhania Madrasa: The madrasa will remain closed from tomorrow. Thank you.',
+    body_bn: 'আসসালামু আলাইকুম। আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানার সকল ছাত্র ও অভিভাবকদের জানানো যাচ্ছে যে, আগামীকাল থেকে মাদরাসা সাময়িক বন্ধ থাকবে। বিস্তারিত জানতে মাদরাসা অফিসে যোগাযোগ করুন।',
+    body_en: 'Assalamu Alaikum. Notice from Al-Arabia Subhania Madrasah & Eyateem Khana: The madrasah will remain closed from tomorrow. Thank you.',
   },
   staff_meeting: {
     bn: 'শিক্ষক ও স্টাফ জরুরি মিটিং',
     en: 'Staff Meeting Notice',
-    body_bn: 'আসসালামু আলাইকুম সম্মানিত শিক্ষক/স্টাফ {{name}}। আগামী কাল বাদ আসর মাদ্রাসার অফিস কক্ষে একটি জরুরি পর্যালোচনা মিটিং অনুষ্ঠিত হবে। আপনার উপস্থিতি একান্ত কাম্য।',
-    body_en: 'Assalamu Alaikum respected {{name}}. An urgent staff meeting is scheduled tomorrow after Asr prayer at the madrasa office. Your presence is requested.',
+    body_bn: 'আসসালামু আলাইকুম সম্মানিত শিক্ষক/স্টাফ {{name}}। আগামী কাল বাদ আসর মাদরাসার অফিস কক্ষে একটি জরুরি পর্যালোচনা মিটিং অনুষ্ঠিত হবে। আপনার উপস্থিতি একান্ত কাম্য।',
+    body_en: 'Assalamu Alaikum respected {{name}}. An urgent staff meeting is scheduled tomorrow after Asr prayer at the madrasah office. Your presence is requested.',
   },
   admission_promo: {
     bn: 'নতুন ভর্তি প্রচারণা ও বিজ্ঞাপন',
     en: 'Admission Promotion',
-    body_bn: 'আসসালামু আলাইকুম। আল আরাবিয়া সুবহানিয়া মাদ্রাসায় নতুন শিক্ষাবর্ষে নূরানী, নাজেরা ও হিফজ বিভাগে নতুন ভর্তি চলছে! আসন সংখ্যা সীমিত। বিস্তারিত ও ভর্তির জন্য যোগাযোগ করুন: ০১৭১১-XXXXXX।',
-    body_en: 'Assalamu Alaikum. Admissions are now open for the new session at Al-Arabia Subhania Madrasa! Limited seats. Contact: 01711-XXXXXX.',
+    body_bn: 'আসসালামু আলাইকুম। আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানায় নতুন শিক্ষাবর্ষে নূরানী, নাজেরা ও হিফজ বিভাগে নতুন ভর্তি চলছে! আসন সংখ্যা সীমিত। বিস্তারিত ও ভর্তির জন্য যোগাযোগ করুন: ০১৭১১-XXXXXX।',
+    body_en: 'Assalamu Alaikum. Admissions are now open for the new session at Al-Arabia Subhania Madrasah & Eyateem Khana! Limited seats. Contact: 01711-XXXXXX.',
   },
   general: {
     bn: 'সাধারণ বিজ্ঞপ্তি',
     en: 'General Announcement',
-    body_bn: 'আসসালামু আলাইকুম। আল আরাবিয়া সুবহানিয়া মাদ্রাসা থেকে বিশেষ বিজ্ঞপ্তি: ...',
-    body_en: 'Assalamu Alaikum. Announcement from Al-Arabia Subhania Madrasa: ...',
+    body_bn: 'আসসালামু আলাইকুম। আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানা থেকে বিশেষ বিজ্ঞপ্তি: ...',
+    body_en: 'Assalamu Alaikum. Announcement from Al-Arabia Subhania Madrasah & Eyateem Khana: ...',
   },
 };
 
