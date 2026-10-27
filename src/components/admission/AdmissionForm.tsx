@@ -57,7 +57,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     mother_name: '', mother_name_en: '', mother_occupation: '', mother_nid: '', mother_phone: '', mother_phone_code: '+880',
     guardian_type: '', guardian_name: '', guardian_relation: '', guardian_phone: '', guardian_phone_code: '+880', guardian_nid: '',
     approver_name: '', approver_designation: '', approver_date: '', approver_signature: '',
-    admitted_by_type: 'staff', admitted_by_name: '', admitted_by_phone: '', admitted_by_designation: '',
+    admitted_by_type: 'none', admitted_by_name: '', admitted_by_phone: '', admitted_by_designation: '',
   });
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -341,7 +341,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
         approver_designation: admData.approver_designation || s.extra_fields?.approver_info?.designation || '',
         approver_date: admData.approver_date || s.extra_fields?.approver_info?.date || '',
         approver_signature: admData.approver_signature || '',
-        admitted_by_type: s.extra_fields?.referral_info?.type || (s.referred_by ? 'staff' : 'staff'),
+        admitted_by_type: s.extra_fields?.referral_info?.division_id ? `div_${s.extra_fields.referral_info.division_id}` : (s.extra_fields?.referral_info?.type || (s.referred_by ? 'staff' : 'none')),
         admitted_by_name: s.extra_fields?.referral_info?.name || s.referred_by || admData.admitted_by_name || '',
         admitted_by_phone: s.extra_fields?.referral_info?.phone || admData.admitted_by_phone || '',
         admitted_by_designation: s.extra_fields?.referral_info?.designation || admData.admitted_by_designation || '',
@@ -729,12 +729,28 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       mother_phone: form.mother_phone || null,
       is_orphan: form.is_orphan,
       is_poor: form.is_poor,
-      referred_by: form.admitted_by_name || null,
+      referred_by: form.admitted_by_name || (() => {
+        if (form.admitted_by_type?.startsWith('div_')) {
+          const divId = form.admitted_by_type.replace('div_', '');
+          const matchedDiv = divisions.find((d: any) => d.id === divId);
+          return matchedDiv ? (matchedDiv.name_bn || matchedDiv.name) : null;
+        }
+        return null;
+      })(),
       approved_by: form.approver_name || null,
       extra_fields: {
         ...(editStudent?.extra_fields || {}),
         referral_info: {
-          type: form.admitted_by_type || 'staff',
+          type: form.admitted_by_type || 'none',
+          division_id: form.admitted_by_type?.startsWith('div_') ? form.admitted_by_type.replace('div_', '') : null,
+          division_name: (() => {
+            if (form.admitted_by_type?.startsWith('div_')) {
+              const divId = form.admitted_by_type.replace('div_', '');
+              const matchedDiv = divisions.find((d: any) => d.id === divId);
+              return matchedDiv ? (matchedDiv.name_bn || matchedDiv.name) : null;
+            }
+            return null;
+          })(),
           name: form.admitted_by_name || '',
           phone: form.admitted_by_phone || '',
           designation: form.admitted_by_designation || '',
@@ -2127,9 +2143,9 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label>{bn ? 'ভর্তির মাধ্যম' : 'Admission Mode'}</Label>
+                        <Label>{bn ? 'ভর্তির বিভাগ / মাধ্যম' : 'Admission Department / Mode'}</Label>
                         <Select
-                          value={form.admitted_by_type || 'staff'}
+                          value={form.admitted_by_type || 'none'}
                           onValueChange={(val: string) => {
                             setForm(prev => ({
                               ...prev,
@@ -2139,21 +2155,32 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                           }}
                         >
                           <SelectTrigger className="bg-background mt-1">
-                            <SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} />
+                            <SelectValue placeholder={bn ? 'মাদরাসার বিভাগ নির্বাচন করুন' : 'Select Madrasa Department'} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="staff">{bn ? 'মাদরাসার শিক্ষক / স্টাফ' : 'Madrasa Teacher / Staff'}</SelectItem>
                             <SelectItem value="none">{bn ? 'সরাসরি ভর্তি (মাদরাসা অফিস)' : 'Direct (Madrasa Office)'}</SelectItem>
-                            <SelectItem value="committee">{bn ? 'পরিচালনা কমিটির সদস্য' : 'Managing Committee'}</SelectItem>
-                            <SelectItem value="guardian">{bn ? 'অভিভাবক / প্রাক্তন ছাত্র' : 'Guardian / Alumni'}</SelectItem>
-                            <SelectItem value="other">{bn ? 'অন্যান্য শুভাকাঙ্ক্ষী' : 'Other'}</SelectItem>
+                            <SelectItem value="staff">{bn ? 'মাদরাসার শিক্ষক (সার্বিক)' : 'Madrasa Teacher (All)'}</SelectItem>
+                            {divisions.map((d: any) => (
+                              <SelectItem key={d.id} value={`div_${d.id}`}>
+                                {d.name_bn || d.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
 
-                      {form.admitted_by_type === 'staff' ? (
+                      {form.admitted_by_type !== 'none' ? (
                         <div>
-                          <Label>{bn ? 'ভর্তি করিয়েছেন যে শিক্ষক' : 'Select Admitting Teacher'}</Label>
+                          <Label>
+                            {(() => {
+                              if (form.admitted_by_type?.startsWith('div_')) {
+                                const divId = form.admitted_by_type.replace('div_', '');
+                                const matchedDiv = divisions.find((d: any) => d.id === divId);
+                                return matchedDiv ? (bn ? `${matchedDiv.name_bn || matchedDiv.name}-এর শিক্ষক নির্বাচন` : `Teacher (${matchedDiv.name})`) : (bn ? 'ভর্তিকারী শিক্ষক নির্বাচন' : 'Select Admitting Teacher');
+                              }
+                              return bn ? 'ভর্তিকারী শিক্ষক নির্বাচন' : 'Select Admitting Teacher';
+                            })()}
+                          </Label>
                           <Select
                             value={form.admitted_by_name || ''}
                             onValueChange={(val) => {
@@ -2167,47 +2194,52 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                             }}
                           >
                             <SelectTrigger className="bg-background mt-1">
-                              <SelectValue placeholder={bn ? 'শিক্ষক নির্বাচন করুন' : 'Select Teacher'} />
+                              <SelectValue placeholder={bn ? 'শিক্ষক তালিকা থেকে নির্বাচন করুন' : 'Select Teacher'} />
                             </SelectTrigger>
                             <SelectContent>
-                              {allActiveStaff.map((st: any) => (
-                                <SelectItem key={st.id} value={st.name_bn || st.name_en}>
-                                  {st.name_bn || st.name_en} {st.designation ? `(${st.designation})` : ''}
+                              {allActiveStaff.length === 0 ? (
+                                <SelectItem value="none" disabled>
+                                  {bn ? 'কোনো শিক্ষক তালিকা পাওয়া যায়নি' : 'No staff found'}
                                 </SelectItem>
-                              ))}
+                              ) : (
+                                allActiveStaff.map((st: any) => (
+                                  <SelectItem key={st.id} value={st.name_bn || st.name_en}>
+                                    {st.name_bn || st.name_en} {st.designation ? `(${st.designation})` : ''}
+                                  </SelectItem>
+                                ))
+                              )}
                             </SelectContent>
                           </Select>
-                        </div>
-                      ) : form.admitted_by_type !== 'none' ? (
-                        <div>
-                          <Label>{bn ? 'ব্যক্তি / রেফারেন্সকারীর নাম' : 'Person Name'}</Label>
-                          <Input
-                            className="bg-background mt-1"
-                            value={form.admitted_by_name || ''}
-                            onChange={e => setForm(prev => ({ ...prev, admitted_by_name: e.target.value }))}
-                            placeholder={bn ? 'ব্যক্তির নাম লিখুন' : 'Enter name'}
-                          />
                         </div>
                       ) : null}
 
                       {form.admitted_by_type !== 'none' && (
                         <>
                           <div>
-                            <Label>{form.admitted_by_type === 'staff' ? (bn ? 'শিক্ষকের মোবাইল নম্বর' : 'Teacher Phone') : (bn ? 'মোবাইল নম্বর' : 'Phone Number')}</Label>
+                            <Label>{bn ? 'শিক্ষকের নাম' : 'Teacher Name'}</Label>
+                            <Input
+                              className="bg-background mt-1"
+                              value={form.admitted_by_name || ''}
+                              onChange={e => setForm(prev => ({ ...prev, admitted_by_name: e.target.value }))}
+                              placeholder={bn ? 'শিক্ষকের নাম লিখুন' : 'Enter teacher name'}
+                            />
+                          </div>
+                          <div>
+                            <Label>{bn ? 'শিক্ষকের পদবি' : 'Teacher Designation'}</Label>
+                            <Input
+                              className="bg-background mt-1"
+                              value={form.admitted_by_designation || ''}
+                              onChange={e => setForm(prev => ({ ...prev, admitted_by_designation: e.target.value }))}
+                              placeholder={bn ? 'যেমন: হিফজ শিক্ষক / সহকারী শিক্ষক' : 'e.g. Teacher'}
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <Label>{bn ? 'শিক্ষকের মোবাইল নম্বর' : 'Teacher Phone'}</Label>
                             <Input
                               className="bg-background mt-1 font-mono"
                               value={form.admitted_by_phone || ''}
                               onChange={e => setForm(prev => ({ ...prev, admitted_by_phone: e.target.value }))}
                               placeholder="017XXXXXXXX"
-                            />
-                          </div>
-                          <div>
-                            <Label>{form.admitted_by_type === 'staff' ? (bn ? 'শিক্ষকের পদবি' : 'Teacher Designation') : (bn ? 'পদবি / সম্পর্ক' : 'Designation / Relation')}</Label>
-                            <Input
-                              className="bg-background mt-1"
-                              value={form.admitted_by_designation || ''}
-                              onChange={e => setForm(prev => ({ ...prev, admitted_by_designation: e.target.value }))}
-                              placeholder={bn ? 'পদবি লিখুন' : 'Enter designation'}
                             />
                           </div>
                         </>

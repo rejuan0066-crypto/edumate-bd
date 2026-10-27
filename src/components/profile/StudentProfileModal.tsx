@@ -1310,15 +1310,16 @@ const StudentProfileModal = ({
                 value={formatPhoneNumber(student.extra_fields.referral_info.phone, undefined, bn)}
               />
             )}
-            {student.extra_fields?.referral_info?.type && (
+            {(student.extra_fields?.referral_info?.division_name || student.extra_fields?.referral_info?.type) && (
               <ProfileInfoItem
                 icon={Fingerprint}
-                label={bn ? 'ভর্তির মাধ্যম' : 'Admission Mode'}
+                label={bn ? 'ভর্তির বিভাগ / মাধ্যম' : 'Admission Division / Mode'}
                 value={
-                  student.extra_fields.referral_info.type === 'staff' ? (bn ? 'শিক্ষক কর্তৃক ভর্তি' : 'By Teacher') :
-                  student.extra_fields.referral_info.type === 'committee' ? (bn ? 'কমিটি সদস্য' : 'Committee Member') :
-                  student.extra_fields.referral_info.type === 'guardian' ? (bn ? 'অভিভাবক' : 'Guardian') :
-                  student.extra_fields.referral_info.type === 'other' ? (bn ? 'অন্যান্য' : 'Other') : (bn ? 'সরাসরি ভর্তি' : 'Direct')
+                  student.extra_fields?.referral_info?.division_name
+                    ? student.extra_fields.referral_info.division_name
+                    : student.extra_fields?.referral_info?.type === 'staff'
+                    ? (bn ? 'মাদরাসার শিক্ষক (সার্বিক)' : 'Madrasa Teacher')
+                    : (bn ? 'সরাসরি ভর্তি (মাদরাসা অফিস)' : 'Direct Admission')
                 }
               />
             )}

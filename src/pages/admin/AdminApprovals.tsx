@@ -688,7 +688,8 @@ const AdminApprovals = () => {
     setAssignedIsFree(!!s.is_free);
 
     const existingRef = s.extra_fields?.referral_info || {};
-    setStudentReferralType(existingRef.type || 'staff');
+    const refType = existingRef.division_id ? `div_${existingRef.division_id}` : (existingRef.type || (s.referred_by ? 'staff' : 'none'));
+    setStudentReferralType(refType);
     setStudentReferralName(existingRef.name || s.referred_by || '');
     setStudentReferralPhone(existingRef.phone || '');
     setStudentReferralDesignation(existingRef.designation || '');
@@ -795,6 +796,15 @@ const AdminApprovals = () => {
         },
         referral_info: {
           type: studentReferralType,
+          division_id: studentReferralType?.startsWith('div_') ? studentReferralType.replace('div_', '') : null,
+          division_name: (() => {
+            if (studentReferralType?.startsWith('div_')) {
+              const divId = studentReferralType.replace('div_', '');
+              const matchedDiv = allDivisions.find((d: any) => d.id === divId);
+              return matchedDiv ? (matchedDiv.name_bn || matchedDiv.name) : null;
+            }
+            return null;
+          })(),
           name: studentReferralName,
           phone: studentReferralPhone,
           designation: studentReferralDesignation,
@@ -811,7 +821,14 @@ const AdminApprovals = () => {
         is_free: assignedIsFree,
         is_orphan: assignedCategory === 'orphan',
         is_poor: assignedCategory === 'poor' || assignedCategory === 'insolvent',
-        referred_by: studentReferralName || null,
+        referred_by: studentReferralName || (() => {
+          if (studentReferralType?.startsWith('div_')) {
+            const divId = studentReferralType.replace('div_', '');
+            const matchedDiv = allDivisions.find((d: any) => d.id === divId);
+            return matchedDiv ? (matchedDiv.name_bn || matchedDiv.name) : null;
+          }
+          return null;
+        })(),
         extra_fields: updatedExtra,
       };
 
@@ -3378,7 +3395,7 @@ const AdminApprovals = () => {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         <div className="space-y-1">
-                          <Label className="text-[11px] font-medium text-muted-foreground">{bn ? 'ভর্তির মাধ্যম' : 'Admission Mode'}</Label>
+                          <Label className="text-[11px] font-medium text-muted-foreground">{bn ? 'ভর্তির বিভাগ / মাধ্যম' : 'Admission Department / Mode'}</Label>
                           <Select
                             value={studentReferralType}
                             onValueChange={(val: string) => {
@@ -3391,21 +3408,32 @@ const AdminApprovals = () => {
                             }}
                           >
                             <SelectTrigger className="h-8 text-xs bg-background">
-                              <SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} />
+                              <SelectValue placeholder={bn ? 'মাদরাসার বিভাগ নির্বাচন করুন' : 'Select Madrasa Department'} />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="staff">{bn ? 'মাদরাসার শিক্ষক / স্টাফ' : 'Madrasa Teacher / Staff'}</SelectItem>
                               <SelectItem value="none">{bn ? 'সরাসরি ভর্তি (মাদরাসা অফিস)' : 'Direct (Madrasa Office)'}</SelectItem>
-                              <SelectItem value="committee">{bn ? 'পরিচালনা কমিটির সদস্য' : 'Managing Committee'}</SelectItem>
-                              <SelectItem value="guardian">{bn ? 'অভিভাবক / প্রাক্তন ছাত্র' : 'Guardian / Alumni'}</SelectItem>
-                              <SelectItem value="other">{bn ? 'অন্যান্য শুভাকাঙ্ক্ষী' : 'Other'}</SelectItem>
+                              <SelectItem value="staff">{bn ? 'মাদরাসার শিক্ষক (সকল বিভাগ)' : 'Madrasa Teacher (All)'}</SelectItem>
+                              {allDivisions.map((d: any) => (
+                                <SelectItem key={d.id} value={`div_${d.id}`}>
+                                  {d.name_bn || d.name}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>
 
-                        {studentReferralType === 'staff' ? (
+                        {studentReferralType !== 'none' ? (
                           <div className="space-y-1">
-                            <Label className="text-[11px] font-medium text-muted-foreground">{bn ? 'ভর্তি করিয়েছেন যে শিক্ষক' : 'Select Admitting Teacher'}</Label>
+                            <Label className="text-[11px] font-medium text-muted-foreground">
+                              {(() => {
+                                if (studentReferralType?.startsWith('div_')) {
+                                  const divId = studentReferralType.replace('div_', '');
+                                  const matchedDiv = allDivisions.find((d: any) => d.id === divId);
+                                  return matchedDiv ? (bn ? `${matchedDiv.name_bn || matchedDiv.name}-এর শিক্ষক নির্বাচন` : `Teacher (${matchedDiv.name})`) : (bn ? 'ভর্তিকারী শিক্ষক নির্বাচন' : 'Select Teacher');
+                                }
+                                return bn ? 'ভর্তিকারী শিক্ষক নির্বাচন' : 'Select Admitting Teacher';
+                              })()}
+                            </Label>
                             <Select
                               value={studentReferralName}
                               onValueChange={(val) => {
@@ -3416,52 +3444,59 @@ const AdminApprovals = () => {
                               }}
                             >
                               <SelectTrigger className="h-8 text-xs bg-background">
-                                <SelectValue placeholder={bn ? 'শিক্ষক নির্বাচন করুন' : 'Select Teacher'} />
+                                <SelectValue placeholder={bn ? 'শিক্ষক তালিকা থেকে নির্বাচন করুন' : 'Select Teacher'} />
                               </SelectTrigger>
                               <SelectContent>
-                                {allActiveStaff.map((st: any) => (
-                                  <SelectItem key={st.id} value={st.name_bn || st.name_en}>
-                                    {st.name_bn || st.name_en} {st.designation ? `(${st.designation})` : ''}
+                                {allActiveStaff.length === 0 ? (
+                                  <SelectItem value="none" disabled>
+                                    {bn ? 'কোনো শিক্ষক তালিকা পাওয়া যায়নি' : 'No staff found'}
                                   </SelectItem>
-                                ))}
+                                ) : (
+                                  allActiveStaff.map((st: any) => (
+                                    <SelectItem key={st.id} value={st.name_bn || st.name_en}>
+                                      {st.name_bn || st.name_en} {st.designation ? `(${st.designation})` : ''}
+                                    </SelectItem>
+                                  ))
+                                )}
                               </SelectContent>
                             </Select>
-                          </div>
-                        ) : studentReferralType !== 'none' ? (
-                          <div className="space-y-1">
-                            <Label className="text-[11px] font-medium text-muted-foreground">{bn ? 'ব্যক্তি / রেফারেন্সকারীর নাম' : 'Person Name'}</Label>
-                            <Input
-                              value={studentReferralName}
-                              onChange={(e) => setStudentReferralName(e.target.value)}
-                              placeholder={bn ? 'ব্যক্তির নাম লিখুন' : 'Enter name'}
-                              className="h-8 text-xs bg-background"
-                            />
                           </div>
                         ) : null}
                       </div>
 
                       {studentReferralType !== 'none' && (
-                        <div className="grid grid-cols-2 gap-2.5 pt-1 border-t border-border/40">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 border-t border-border/40">
                           <div className="space-y-1">
                             <Label className="text-[11px] font-medium text-muted-foreground">
-                              {studentReferralType === 'staff' ? (bn ? 'শিক্ষকের মোবাইল নম্বর' : 'Teacher Phone') : (bn ? 'মোবাইল নম্বর' : 'Phone Number')}
+                              {bn ? 'শিক্ষকের নাম' : 'Teacher Name'}
+                            </Label>
+                            <Input
+                              value={studentReferralName}
+                              onChange={(e) => setStudentReferralName(e.target.value)}
+                              placeholder={bn ? 'শিক্ষকের নাম' : 'Enter name'}
+                              className="h-8 text-xs bg-background"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-[11px] font-medium text-muted-foreground">
+                              {bn ? 'শিক্ষকের পদবি' : 'Teacher Designation'}
+                            </Label>
+                            <Input
+                              value={studentReferralDesignation}
+                              onChange={(e) => setStudentReferralDesignation(e.target.value)}
+                              placeholder={bn ? 'যেমন: হিফজ শিক্ষক' : 'Designation'}
+                              className="h-8 text-xs bg-background"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-[11px] font-medium text-muted-foreground">
+                              {bn ? 'শিক্ষকের মোবাইল নম্বর' : 'Teacher Phone'}
                             </Label>
                             <Input
                               value={studentReferralPhone}
                               onChange={(e) => setStudentReferralPhone(e.target.value)}
                               placeholder="017XXXXXXXX"
                               className="h-8 text-xs bg-background font-mono"
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-[11px] font-medium text-muted-foreground">
-                              {studentReferralType === 'staff' ? (bn ? 'শিক্ষকের পদবি' : 'Teacher Designation') : (bn ? 'পদবি / সম্পর্ক' : 'Designation / Relation')}
-                            </Label>
-                            <Input
-                              value={studentReferralDesignation}
-                              onChange={(e) => setStudentReferralDesignation(e.target.value)}
-                              placeholder={bn ? 'পদবি' : 'Designation'}
-                              className="h-8 text-xs bg-background"
                             />
                           </div>
                         </div>
