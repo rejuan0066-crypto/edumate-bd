@@ -964,10 +964,10 @@ const StudentProfileModal = ({
     { id: 'address', stepNumber: 2, bn: 'ঠিকানা', en: 'Address', icon: MapPin },
     { id: 'parents', stepNumber: 3, bn: 'পিতা-মাতা', en: 'Parents', icon: Users },
     { id: 'academic', stepNumber: 4, bn: 'একাডেমিক তথ্য', en: 'Academic Info', icon: GraduationCap },
-    { id: 'finance', stepNumber: 5, bn: 'আর্থিক বিবরণ', en: 'Finance & Fees', icon: Banknote },
-    { id: 'attendance', stepNumber: 6, bn: 'শিক্ষা ও উপস্থিতি', en: 'Attendance & Exams', icon: CalendarCheck },
-    { id: 'documents', stepNumber: 7, bn: 'ডকুমেন্টস', en: 'Documents', icon: FileText, count: studentDocs.length },
-    { id: 'others', stepNumber: 8, bn: 'অন্যান্য ও স্ট্যাটাস', en: 'Others & Status', icon: ClipboardList },
+    { id: 'documents', stepNumber: 5, bn: 'ডকুমেন্টস', en: 'Documents', icon: FileText, count: studentDocs.length },
+    { id: 'others', stepNumber: 6, bn: 'অন্যান্য ও স্ট্যাটাস', en: 'Others & Status', icon: ClipboardList },
+    { id: 'attendance', stepNumber: 7, bn: 'শিক্ষা ও উপস্থিতি', en: 'Attendance & Exams', icon: CalendarCheck },
+    { id: 'finance', stepNumber: 8, bn: 'আর্থিক বিবরণ', en: 'Finance & Fees', icon: Banknote },
   ];
 
   const currentStepIndex = steps.findIndex(s => s.id === activeStep);
@@ -1076,7 +1076,9 @@ const StudentProfileModal = ({
         <div className="relative grid grid-cols-3 border-t border-white/20">
           <div className="px-4 py-3.5 text-center border-r border-white/20">
             <p className="text-[10px] font-bold uppercase tracking-wider text-white/70">{bn ? 'উপস্থিতি' : 'Attendance'}</p>
-            <p className="text-xl font-black text-white">{formatDigits(attendanceStats.percentage, bn)}%</p>
+            <p className="text-xl font-black text-white">
+              {attendanceStats.total === 0 ? (bn ? 'রেকর্ড নেই' : 'N/A') : `${formatDigits(attendanceStats.percentage, bn)}%`}
+            </p>
           </div>
           <div className="px-4 py-3.5 text-center border-r border-white/20">
             <p className="text-[10px] font-bold uppercase tracking-wider text-white/70">{bn ? 'পরিশোধিত' : 'Paid'}</p>
@@ -1239,7 +1241,7 @@ const StudentProfileModal = ({
         </div>
       )}
 
-      {/* ═══════════ STEP 5: আর্থিক বিবরণ (Finance & Fees) ═══════════ */}
+      {/* ═══════════ STEP 8: আর্থিক বিবরণ (Finance & Fees) ═══════════ */}
       {activeStep === 'finance' && (
         <div className="space-y-4 animate-in fade-in-50 duration-200">
           {/* Session Switcher Toolbar */}
@@ -1796,7 +1798,7 @@ const StudentProfileModal = ({
         </div>
       )}
 
-      {/* ═══════════ STEP 6: শিক্ষা ও উপস্থিতি (Attendance & Exams) ═══════════ */}
+      {/* ═══════════ STEP 7: শিক্ষা ও উপস্থিতি (Attendance & Exams) ═══════════ */}
       {activeStep === 'attendance' && (
         <div className="space-y-4 animate-in fade-in-50 duration-200">
           {/* Attendance Circular Gauge + Stats */}
@@ -1825,7 +1827,9 @@ const StudentProfileModal = ({
                   </defs>
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-2xl font-black text-emerald-600">{attendanceStats.percentage}%</span>
+                  <span className="text-2xl font-black text-emerald-600">
+                    {attendanceStats.total === 0 ? '০%' : `${attendanceStats.percentage}%`}
+                  </span>
                   <span className="text-[9px] font-semibold uppercase text-muted-foreground/60">{bn ? 'উপস্থিতি' : 'Rate'}</span>
                 </div>
               </div>
@@ -1847,8 +1851,12 @@ const StudentProfileModal = ({
               </div>
             </div>
 
-            {/* Calendar Dots - Last 10 days */}
-            {attendanceStats.last7.length > 0 && (
+            {/* Empty state or Calendar Dots - Last 10 days */}
+            {attendanceStats.total === 0 ? (
+              <div className="mt-4 pt-3 border-t border-border/15 text-center">
+                <p className="text-xs text-muted-foreground">{bn ? 'এখনো কোনো উপস্থিতি নথিভুক্ত করা হয়নি।' : 'No attendance entries recorded yet.'}</p>
+              </div>
+            ) : attendanceStats.last7.length > 0 && (
               <div className="mt-5 pt-4 border-t border-border/15">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50 mb-3">{bn ? 'সাম্প্রতিক (শেষ ১০ দিন)' : 'Recent (Last 10 Days)'}</p>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -1942,11 +1950,11 @@ const StudentProfileModal = ({
         </div>
       )}
 
-      {/* ═══════════ STEP 7: ডকুমেন্টস ও ফাইল (Documents) ═══════════ */}
+      {/* ═══════════ STEP 5: ডকুমেন্টস ও ফাইল (Documents) ═══════════ */}
       {activeStep === 'documents' && (
         <div className="space-y-4 animate-in fade-in-50 duration-200">
           {studentDocs.length > 0 ? (
-            <ProfileSectionCard title={bn ? '৭. সংযুক্ত ডকুমেন্টস ও ফাইল' : '7. Attached Documents & Files'} icon={FileText}>
+            <ProfileSectionCard title={bn ? '৫. সংযুক্ত ডকুমেন্টস ও ফাইল' : '5. Attached Documents & Files'} icon={FileText}>
               <div className="col-span-full space-y-2">
                 {studentDocs.map((doc, idx) => (
                   <div key={doc.id || idx} className="flex items-center justify-between p-3 rounded-xl bg-muted/20 border border-border/15 hover:bg-muted/30 transition-colors">
@@ -2006,10 +2014,10 @@ const StudentProfileModal = ({
         </div>
       )}
 
-      {/* ═══════════ STEP 8: অন্যান্য ও স্ট্যাটাস (Others & Status) ═══════════ */}
+      {/* ═══════════ STEP 6: অন্যান্য ও স্ট্যাটাস (Others & Status) ═══════════ */}
       {activeStep === 'others' && (
         <div className="space-y-4 animate-in fade-in-50 duration-200">
-          <ProfileSectionCard title={bn ? '৮. অন্যান্য বিবরণ ও স্ট্যাটাস' : '8. Other Info & Status'} icon={ClipboardList}>
+          <ProfileSectionCard title={bn ? '৬. অন্যান্য বিবরণ ও স্ট্যাটাস' : '6. Other Info & Status'} icon={ClipboardList}>
             <ProfileInfoItem icon={Home} label={bn ? 'আবাসিক অবস্থা' : 'Residence Type'} value={translateResidence(student.residence_type)} />
             <ProfileInfoItem icon={Users} label={bn ? 'ক্যাটাগরি' : 'Category'} value={
               student.student_category === 'orphan' ? (bn ? 'এতিম' : 'Orphan') :
