@@ -1119,6 +1119,12 @@ const AdminSalary = () => {
     },
   });
 
+  // Helper to strip non-DB calculated fields before saving to salary_records table
+  const stripNonDbSalaryFields = <T extends Record<string, any>>(obj: T): any => {
+    const { pre_join_deduction, post_resign_deduction, pre_join_days, post_resign_days, ...rest } = obj;
+    return rest;
+  };
+
   // Recalculate ALL existing salary records using latest settings (only pending ones, paid stays untouched)
   const recalculateAllMutation = useMutation({
     mutationFn: async () => {
@@ -1141,7 +1147,7 @@ const AdminSalary = () => {
           advance_deduction: existing.advance_deduction,
           savings_deduction: savingsDed,
         }) - keptOther);
-        const { error } = await supabase.from('salary_records').update({
+        const { error } = await supabase.from('salary_records').update(stripNonDbSalaryFields({
           ...calc,
           bonus: Number(existing.bonus || 0),
           other_allowance: Number(existing.other_allowance || 0),
@@ -1156,7 +1162,7 @@ const AdminSalary = () => {
           net_salary: netSalary,
           manual_override: false,
           updated_at: new Date().toISOString(),
-        }).eq('id', existing.id);
+        })).eq('id', existing.id);
         if (error) throw error;
         updated++;
       }
@@ -1171,12 +1177,6 @@ const AdminSalary = () => {
     },
     onError: (e: any) => toast.error(e?.message || (bn ? 'রিক্যালকুলেট সমস্যা' : 'Recalculate failed')),
   });
-
-  // Helper to strip non-DB calculated fields before saving to salary_records table
-  const stripNonDbSalaryFields = <T extends Record<string, any>>(obj: T): any => {
-    const { pre_join_deduction, post_resign_deduction, pre_join_days, post_resign_days, ...rest } = obj;
-    return rest;
-  };
 
   // Recalculate a SINGLE existing pending salary record (e.g. after editing joining/date info)
   const recalculateSingleMutation = useMutation({
@@ -2208,17 +2208,17 @@ const AdminSalary = () => {
 
         if (existing) {
           if (existing.status === 'pending') {
-            updateRecords.push({
+            updateRecords.push(stripNonDbSalaryFields({
               id: existing.id,
               ...calc,
               bonus: Number(existing.bonus || 0),
               other_allowance: Number(existing.other_allowance || 0),
               advance_deduction: Number(existing.advance_deduction || 0),
               remarks: existing.remarks,
-            });
+            }));
           }
         } else {
-          newRecords.push({ staff_id: s.id, month_year: monthYear, ...calc, status: 'pending' });
+          newRecords.push(stripNonDbSalaryFields({ staff_id: s.id, month_year: monthYear, ...calc, status: 'pending' }));
         }
       }
 
