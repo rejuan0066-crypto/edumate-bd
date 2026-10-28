@@ -3427,45 +3427,47 @@ const AdminSalary = () => {
       .logo-wrap img{width:100%;height:100%;object-fit:contain}
       .logo-fallback{font-size:28px;font-weight:800}
       .inst-info{flex:1}
-      .inst-name{font-size:22px;font-weight:800;letter-spacing:.3px;margin-bottom:2px}
-      .inst-meta{font-size:11.5px;opacity:.92;line-height:1.55}
+      .inst-name{font-size:23px;font-weight:800;letter-spacing:.3px;margin-bottom:2px}
+      .inst-meta{font-size:12px;opacity:.92;line-height:1.5}
       .slip-tag{position:absolute;right:28px;top:22px;z-index:2;text-align:right}
-      .slip-tag .badge{background:rgba(255,255,255,.95);color:#0f766e;font-weight:700;padding:5px 14px;border-radius:999px;font-size:11px;letter-spacing:1.5px;display:inline-block}
-      .slip-tag .id{color:#fff;font-size:10.5px;margin-top:6px;opacity:.92;font-family:monospace}
-      .month-bar{background:linear-gradient(90deg,#f0fdfa 0%,#ccfbf1 50%,#f0fdfa 100%);padding:12px 28px;border-bottom:1px solid #ccfbf1;display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:#0f766e;font-weight:600;position:relative;z-index:1}
-      .month-bar .month{font-size:15px;font-weight:800;color:#115e59}
+      .slip-tag .badge{background:rgba(255,255,255,.95);color:#0f766e;font-weight:800;padding:5px 14px;border-radius:999px;font-size:11.5px;letter-spacing:1.5px;display:inline-block}
+      .slip-tag .id{color:#fff;font-size:11px;margin-top:6px;opacity:.92;font-family:monospace}
+      .month-bar{background:linear-gradient(90deg,#f0fdfa 0%,#ccfbf1 50%,#f0fdfa 100%);padding:12px 28px;border-bottom:1px solid #ccfbf1;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#0f766e;font-weight:600;position:relative;z-index:1}
+      .month-bar .month{font-size:16px;font-weight:800;color:#115e59}
       .body{padding:22px 28px;position:relative;z-index:1}
-      .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;background:#f8fafc;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;margin-bottom:18px}
-      .info-cell{padding:10px 14px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;font-size:12.5px}
+      .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;background:#f8fafc;border-radius:12px;overflow:hidden;border:1px solid #cbd5e1;margin-bottom:16px}
+      .info-cell{padding:9px 14px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;font-size:13px}
       .info-cell:last-child{border-bottom:none}
       .info-cell:nth-child(odd){border-right:1px solid #e2e8f0}
-      .info-cell .lbl{color:#64748b;font-weight:500}
+      .info-cell .lbl{color:#475569;font-weight:600}
       .info-cell .val{color:#0f172a;font-weight:700}
       .columns,.single-col{display:block;margin-bottom:14px}
-      .col{border:1px solid #e2e8f0;border-radius:12px;overflow:hidden}
-      .col-head{padding:10px 14px;font-size:12px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#fff}
+      .col{border:1px solid #cbd5e1;border-radius:12px;overflow:hidden}
+      .col-head{padding:10px 14px;font-size:13px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#fff}
       .col.earn .col-head{background:linear-gradient(90deg,#10b981,#059669)}
       .col.ded .col-head{background:linear-gradient(90deg,#f59e0b,#d97706)}
       .col-body{padding:0}
-      .ln{display:flex;justify-content:space-between;padding:9px 14px;font-size:12.5px;border-bottom:1px dashed #e2e8f0}
+      .ln{display:flex;justify-content:space-between;padding:8.5px 14px;font-size:13px;border-bottom:1px dashed #e2e8f0}
       .ln:last-child{border-bottom:none}
-      .ln .l{color:#475569}
-      .ln .v{color:#0f172a;font-weight:600;font-variant-numeric:tabular-nums}
+      .ln .l{color:#334155}
+      .ln .v{color:#0f172a;font-weight:700;font-variant-numeric:tabular-nums}
       .ln.savings{background:#eff6ff;color:#1e40af}
       .ln.savings .l,.ln.savings .v{color:#1e40af}
       .col-foot{display:none}
-      .net-box{background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;border-radius:14px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin-top:6px;box-shadow:0 8px 24px -8px rgba(13,148,136,.45)}
-      .net-box .lbl{font-size:13px;font-weight:600;opacity:.95;letter-spacing:.4px;text-transform:uppercase}
+      .net-box{background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;border-radius:14px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin-top:8px;box-shadow:0 8px 24px -8px rgba(13,148,136,.45)}
+      .net-box .lbl{font-size:14px;font-weight:700;opacity:.95;letter-spacing:.4px;text-transform:uppercase}
       .net-box .amt{font-size:26px;font-weight:900;font-variant-numeric:tabular-nums}
-      .words{margin-top:10px;padding:9px 14px;background:#f8fafc;border-left:3px solid #0d9488;border-radius:6px;font-size:12px;color:#334155;font-style:italic}
-      .words strong{color:#0f766e;font-style:normal;font-weight:700}
-      .signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-top:45px;padding:0 8px}
-      .sig{text-align:center;font-size:11.5px;color:#475569}
-      .sig .line{border-top:1.5px solid #94a3b8;margin:0 6px;height:0}
-      .sig .sig-name{font-size:12px;font-weight:700;color:#0f172a;padding-top:6px;min-height:18px}
-      .sig .role{font-weight:600;color:#475569;font-size:11px;margin-top:2px}
-      .footer{background:#f1f5f9;padding:10px 28px;text-align:center;font-size:10.5px;color:#64748b;border-top:1px solid #e2e8f0;margin-top:25px}
-      .footer .gen{color:#94a3b8;font-size:9.5px;margin-top:3px}
+      .words{margin-top:10px;padding:10px 14px;background:#f8fafc;border-left:3.5px solid #0d9488;border-radius:6px;font-size:13px;color:#1e293b;font-style:italic}
+      .words strong{color:#0f766e;font-style:normal;font-weight:800}
+      .signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-top:35px;padding:0 8px}
+      .sig{text-align:center;font-size:12px;color:#475569}
+      .sig-space{height:52px;min-height:52px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px}
+      .sig-space img{max-height:46px;max-width:100%;object-fit:contain}
+      .sig .line{border-top:1.5px solid #64748b;margin:0 6px;height:0}
+      .sig .sig-name{font-size:13px;font-weight:700;color:#0f172a;padding-top:6px;min-height:18px}
+      .sig .role{font-weight:600;color:#475569;font-size:12px;margin-top:2px}
+      .footer{background:#f1f5f9;padding:12px 28px;text-align:center;font-size:11px;color:#475569;border-top:1px solid #e2e8f0;margin-top:24px}
+      .footer .gen{color:#64748b;font-size:10px;margin-top:3px}
       @page{size:A4 portrait;margin:0}
       @media print{
         *,*::before,*::after{
@@ -3492,7 +3494,7 @@ const AdminSalary = () => {
           min-width:210mm !important;
           max-width:210mm !important;
           margin:0 auto !important;
-          padding:8mm 10mm !important;
+          padding:6mm 10mm !important;
           overflow:visible !important;
           height:auto !important;
           max-height:none !important;
@@ -3504,35 +3506,43 @@ const AdminSalary = () => {
         .watermark{display:none !important}
         .print-actions-bar,.no-print{display:none !important;visibility:hidden !important}
 
-        /* Compact for single-page A4 */
-        .header{padding:10px 18px !important;width:100% !important;box-sizing:border-box !important}
-        .logo-wrap{width:44px !important;height:44px !important;border-radius:8px !important}
-        .logo-fallback{font-size:20px !important}
-        .inst-name{font-size:17px !important}
-        .inst-meta{font-size:10px !important;line-height:1.35 !important}
-        .slip-tag{right:18px !important;top:10px !important}
-        .slip-tag .badge{padding:3px 8px !important;font-size:9px !important}
-        .slip-tag .id{font-size:8.5px !important;margin-top:2px !important}
-        .month-bar{padding:6px 18px !important;font-size:11px !important;width:100% !important;box-sizing:border-box !important}
-        .month-bar .month{font-size:12.5px !important}
-        .body{padding:10px 18px !important;width:100% !important;box-sizing:border-box !important}
-        .info-grid{margin-bottom:6px !important;border-radius:8px !important;width:100% !important;box-sizing:border-box !important}
-        .info-cell{padding:4px 8px !important;font-size:10px !important}
-        .columns,.single-col{margin-bottom:6px !important;width:100% !important;box-sizing:border-box !important}
-        .col{border-radius:8px !important;width:100% !important;box-sizing:border-box !important}
-        .col-head{padding:5px 10px !important;font-size:10.5px !important}
-        .ln{padding:3.5px 10px !important;font-size:10px !important}
+        /* Prominent & clear single-page A4 typography */
+        .header{padding:14px 22px !important;width:100% !important;box-sizing:border-box !important}
+        .logo-wrap{width:50px !important;height:50px !important;border-radius:10px !important}
+        .logo-fallback{font-size:22px !important}
+        .inst-name{font-size:20px !important;font-weight:800 !important}
+        .inst-meta{font-size:11px !important;line-height:1.45 !important}
+        .slip-tag{right:22px !important;top:14px !important}
+        .slip-tag .badge{padding:4px 12px !important;font-size:11px !important;font-weight:800 !important}
+        .slip-tag .id{font-size:10px !important;margin-top:3px !important}
+        .month-bar{padding:8px 22px !important;font-size:12px !important;width:100% !important;box-sizing:border-box !important}
+        .month-bar .month{font-size:14.5px !important;font-weight:800 !important}
+        .body{padding:14px 22px !important;width:100% !important;box-sizing:border-box !important}
+        .info-grid{margin-bottom:10px !important;border-radius:10px !important;border:1px solid #cbd5e1 !important;width:100% !important;box-sizing:border-box !important}
+        .info-cell{padding:6px 12px !important;font-size:12px !important}
+        .info-cell .lbl{font-weight:600 !important;color:#475569 !important}
+        .info-cell .val{font-weight:700 !important;color:#0f172a !important}
+        .columns,.single-col{margin-bottom:10px !important;width:100% !important;box-sizing:border-box !important}
+        .col{border-radius:10px !important;border:1px solid #cbd5e1 !important;width:100% !important;box-sizing:border-box !important}
+        .col-head{padding:7px 14px !important;font-size:12.5px !important;font-weight:800 !important}
+        .ln{padding:5.5px 14px !important;font-size:12px !important}
+        .ln .l{color:#334155 !important}
+        .ln .v{font-weight:700 !important}
         .col-foot{display:none !important}
-        .net-box{padding:7px 12px !important;border-radius:8px !important;margin-top:4px !important;width:100% !important;box-sizing:border-box !important}
-        .net-box .lbl{font-size:10.5px !important}
-        .net-box .amt{font-size:17px !important}
-        .words{margin-top:4px !important;padding:4px 10px !important;font-size:10px !important;width:100% !important;box-sizing:border-box !important}
-        .signatures{margin-top:22px !important;gap:14px !important;padding:0 4px !important;width:100% !important;box-sizing:border-box !important}
-        .sig{font-size:9.5px !important}
-        .sig .sig-name{font-size:10px !important;font-weight:700 !important;padding-top:3px !important;min-height:14px !important}
-        .sig .role{font-size:9px !important}
-        .footer{padding:5px 18px !important;margin-top:10px !important;font-size:9px !important;width:100% !important;box-sizing:border-box !important}
-        .footer .gen{font-size:8px !important;margin-top:1px !important}
+        .net-box{padding:10px 16px !important;border-radius:10px !important;margin-top:6px !important;width:100% !important;box-sizing:border-box !important}
+        .net-box .lbl{font-size:12.5px !important;font-weight:700 !important}
+        .net-box .amt{font-size:22px !important;font-weight:900 !important}
+        .words{margin-top:6px !important;padding:6px 12px !important;font-size:12px !important;width:100% !important;box-sizing:border-box !important}
+        .words strong{font-weight:800 !important}
+        .signatures{margin-top:32px !important;gap:20px !important;padding:0 8px !important;width:100% !important;box-sizing:border-box !important}
+        .sig{font-size:11.5px !important}
+        .sig-space{height:52px !important;min-height:52px !important;display:flex !important;align-items:flex-end !important;justify-content:center !important;padding-bottom:4px !important}
+        .sig-space img{max-height:46px !important;object-fit:contain !important}
+        .sig .line{border-top:1.5px solid #64748b !important;margin:0 6px !important}
+        .sig .sig-name{font-size:12px !important;font-weight:700 !important;color:#0f172a !important;padding-top:4px !important;min-height:18px !important}
+        .sig .role{font-size:11px !important;font-weight:600 !important;color:#475569 !important}
+        .footer{padding:8px 22px !important;margin-top:14px !important;font-size:10px !important;width:100% !important;box-sizing:border-box !important}
+        .footer .gen{font-size:9px !important;margin-top:2px !important}
       }
     </style></head><body>
     <div class="slip">
@@ -3624,16 +3634,19 @@ const AdminSalary = () => {
 
         <div class="signatures">
           <div class="sig">
+            <div class="sig-space"></div>
             <div class="line"></div>
             <div class="sig-name">${recipientName}</div>
             <div class="role">${recipientRole}</div>
           </div>
           <div class="sig">
+            <div class="sig-space"></div>
             <div class="line"></div>
             <div class="sig-name">${accountantName || '&nbsp;'}</div>
             <div class="role">${accountantRole}</div>
           </div>
           <div class="sig">
+            <div class="sig-space"></div>
             <div class="line"></div>
             <div class="sig-name">${approverName}</div>
             <div class="role">${approverRole}</div>
