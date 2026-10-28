@@ -23,7 +23,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
-import { numberToBanglaWords } from '@/lib/amountInWords';
+import { numberToBanglaWords, toBanglaDigits } from '@/lib/amountInWords';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
@@ -57,12 +57,13 @@ import {
   CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Edit2, Eye,
   Calculator, Plus, Trash2, DollarSign, FileText, FolderOpen,
   PiggyBank, Landmark, RefreshCw, Minus, Share2, Camera, FileCheck2, Upload,
-  History, UserMinus, Building2, Layers, Loader2, MessageCircle, Calendar
+  History, UserMinus, Building2, Layers, Loader2, MessageCircle, Calendar, Edit3, RotateCcw
 } from 'lucide-react';
 import {
   sendStaffSalaryPaymentNotification,
   buildStaffSalaryPaymentMessage,
-  buildWaDirectLink
+  buildWaDirectLink,
+  DEFAULT_SALARY_TEMPLATES
 } from '@/lib/paymentNotificationService';
 import {
   useSignedSalaryDocs,
@@ -283,6 +284,10 @@ const AdminSalary = () => {
   const [selectedLedgerStaffId, setSelectedLedgerStaffId] = useState<string | null>(null);
   const [payAddToExpense, setPayAddToExpense] = useState(true);
   const [paySendWhatsApp, setPaySendWhatsApp] = useState(true);
+  const [payCustomMessage, setPayCustomMessage] = useState<string>('');
+  const [showPayMsgEdit, setShowPayMsgEdit] = useState(false);
+  const [editingTemplateDept, setEditingTemplateDept] = useState<string>('general');
+  const [editingTemplateText, setEditingTemplateText] = useState<string>('');
   const [expenseSyncModalOpen, setExpenseSyncModalOpen] = useState(false);
 
   // Pre-fetch default institution for instant synchronous salary slip printing
@@ -1548,6 +1553,42 @@ const AdminSalary = () => {
     return s?.setting_value as any || {};
   };
 
+  // WhatsApp salary message departments
+  const SALARY_DEPARTMENTS: Array<{ key: string; label: string; shortLabel: string; desc: string }> = [
+    { key: 'general', label: bn ? 'সাধারণ / ডিফল্ট (সকলের জন্য)' : 'General / Default', shortLabel: bn ? 'ডিফল্ট' : 'Default', desc: bn ? 'যেসব কর্মীর নির্দিষ্ট কোনো বিভাগ নেই তাদের জন্য' : 'For general staff' },
+    { key: 'hifz', label: bn ? 'হিফজ বিভাগ (হিফজ শিক্ষক ও খাদেম)' : 'Hifz Department', shortLabel: bn ? 'হিফজ' : 'Hifz', desc: bn ? 'হিফজ শিক্ষক ও সংশ্লিষ্ট খাদেমদের জন্য' : 'For Hifz teachers' },
+    { key: 'noorani', label: bn ? 'নূরানী ও নাজেরা বিভাগ' : 'Noorani & Nazera Dept', shortLabel: bn ? 'নূরানী' : 'Noorani', desc: bn ? 'নূরানী ও নাজেরা শিক্ষক ও শিক্ষিকাদের জন্য' : 'For Noorani teachers' },
+    { key: 'kitab', label: bn ? 'কিতাব বিভাগ (মুহাদ্দিস ও কিতাব শিক্ষক)' : 'Kitab Department', shortLabel: bn ? 'কিতাব' : 'Kitab', desc: bn ? 'কিতাব বিভাগের উস্তাদ ও শিক্ষকদের জন্য' : 'For Kitab teachers' },
+    { key: 'administrative', label: bn ? 'প্রশাসন ও পরিচালনা (মুহতামিম, নাজিম, প্রিন্সিপাল)' : 'Administration', shortLabel: bn ? 'প্রশাসন' : 'Admin', desc: bn ? 'মুহতামিম, প্রিন্সিপাল ও প্রশাসনিক কর্মকর্তাদের জন্য' : 'For administrative staff' },
+    { key: 'support', label: bn ? 'অফিস ও হিসাব বিভাগ' : 'Office & Accounts', shortLabel: bn ? 'হিসাব/অফিস' : 'Office', desc: bn ? 'হিসাবরক্ষক ও অফিস সহকারীদের জন্য' : 'For office & accounts staff' },
+    { key: 'general_staff', label: bn ? 'সাধারণ স্টাফ (বাবুর্চি, গার্ড, পরিচ্ছন্নতা)' : 'General Support Staff', shortLabel: bn ? 'স্টাফ/সহায়ক' : 'Support', desc: bn ? 'বাবুর্চি, নিরাপত্তা প্রহরী ও পরিচ্ছন্নতাকর্মীদের জন্য' : 'For support staff' },
+  ];
+
+  const resolveStaffDeptKey = (staffMember: any): string => {
+    if (!staffMember) return 'general';
+    const text = `${staffMember.department || ''} ${staffMember.designation || ''} ${staffMember.category || ''} ${staffMember.role || ''}`.toLowerCase();
+
+    if (text.includes('হিফজ') || text.includes('হিফয') || text.includes('কোরআন') || text.includes('কুরআন') || text.includes('hifz')) {
+      return 'hifz';
+    }
+    if (text.includes('নূরানী') || text.includes('নুরানী') || text.includes('নাজেরা') || text.includes('নাযেরা') || text.includes('noorani')) {
+      return 'noorani';
+    }
+    if (text.includes('মুহতামিম') || text.includes('নাজিম') || text.includes('প্রিন্সিপাল') || text.includes('অধ্যক্ষ') || text.includes('পরিচালক') || text.includes('admin') || staffMember.category === 'administrative') {
+      return 'administrative';
+    }
+    if (text.includes('হিসাব') || text.includes('অফিস') || text.includes('কম্পিউটার') || text.includes('সহকারী') || text.includes('clerk') || text.includes('account') || staffMember.category === 'support') {
+      return 'support';
+    }
+    if (text.includes('বাবুর্চি') || text.includes('বাবুর্চী') || text.includes('কুক') || text.includes('গার্ড') || text.includes('নিরাপত্তা') || text.includes('খাদেম') || text.includes('পরিচ্ছন্ন') || staffMember.category === 'general') {
+      return 'general_staff';
+    }
+    if (text.includes('কিতাব') || text.includes('মুহাদ্দিস') || text.includes('মুফতি') || text.includes('মুফতী') || text.includes('মাওলানা') || text.includes('উস্তাদ') || text.includes('শিক্ষক') || staffMember.category === 'teacher') {
+      return 'kitab';
+    }
+    return 'general';
+  };
+
   // Days in month calculation basis helper:
   // Supports global default and per-month overrides.
   // 'actual_calendar_days': divides by 31 in 31-day months, 30 in 30-day, 28/29 in Feb.
@@ -2410,10 +2451,12 @@ const AdminSalary = () => {
 
   // Mark as paid + optional expense creation + WhatsApp notification (amount hidden)
   const markPaidMutation = useMutation({
-    mutationFn: async (arg: string | { id: string; addToExpense?: boolean; sendWhatsApp?: boolean }) => {
+    mutationFn: async (arg: string | { id: string; addToExpense?: boolean; sendWhatsApp?: boolean; customMessage?: string; paymentDate?: string }) => {
       const id = typeof arg === 'string' ? arg : arg.id;
       const addToExpense = typeof arg === 'object' && arg.addToExpense !== undefined ? arg.addToExpense : true;
       const shouldSendWhatsApp = typeof arg === 'object' && arg.sendWhatsApp !== undefined ? arg.sendWhatsApp : paySendWhatsApp;
+      const customMessage = typeof arg === 'object' ? arg.customMessage : undefined;
+      const paymentDateStr = typeof arg === 'object' ? arg.paymentDate : undefined;
       const record = salaryRecords.find((r: any) => r.id === id);
       if (!record) throw new Error('Record not found');
       const staffMember = staff.find((s: any) => s.id === record.staff_id);
@@ -2521,11 +2564,19 @@ const AdminSalary = () => {
       if (shouldSendWhatsApp && staffMember?.phone?.trim()) {
         const monthNameObj = MONTHS.find(m => m.value === selectedMonth);
         const monthLabel = bn ? (monthNameObj?.bn || selectedMonth) : (monthNameObj?.en || selectedMonth);
+        const deptKey = resolveStaffDeptKey(staffMember);
+        const savedTemplates = getSetting('salary_whatsapp_templates') || {};
+        const templateText = savedTemplates[deptKey] || DEFAULT_SALARY_TEMPLATES[deptKey];
+        const dateFormatted = paymentDateStr || toBanglaDigits(new Date().toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' }));
         sendStaffSalaryPaymentNotification({
           staffName: staffMember.name_bn || staffMember.name_en || 'Staff',
           phone: staffMember.phone,
           monthName: monthLabel,
           year: selectedYear,
+          paymentDate: dateFormatted,
+          departmentKey: deptKey,
+          templateText,
+          customMessage: customMessage?.trim() || undefined,
         }).then(res => {
           if (res.success) {
             toast.success(bn ? `${staffMember.name_bn || staffMember.name_en}-এর WhatsApp-এ বেতন নোটিফিকেশন পাঠানো হয়েছে` : 'Salary notification sent to staff WhatsApp');
@@ -4698,6 +4749,8 @@ const AdminSalary = () => {
                                         onClick={() => {
                                           setPaidConfirmId(rec.id);
                                           setPayAddToExpense(getSetting('expense_location')?.auto_add_to_expenses !== false);
+                                          setPayCustomMessage('');
+                                          setShowPayMsgEdit(false);
                                         }}
                                       >
                                         <Clock className="h-3.5 w-3.5" />
@@ -4723,11 +4776,18 @@ const AdminSalary = () => {
                                         onClick={() => {
                                           const monthNameObj = MONTHS.find(m => m.value === selectedMonth);
                                           const monthLabel = bn ? (monthNameObj?.bn || selectedMonth) : (monthNameObj?.en || selectedMonth);
+                                          const deptKey = resolveStaffDeptKey(s);
+                                          const savedTemplates = getSetting('salary_whatsapp_templates') || {};
+                                          const templateText = savedTemplates[deptKey] || DEFAULT_SALARY_TEMPLATES[deptKey];
+                                          const paymentDateStr = rec.paid_at ? toBanglaDigits(new Date(rec.paid_at).toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' })) : toBanglaDigits(new Date().toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' }));
                                           const waUrl = buildWaDirectLink(s.phone, buildStaffSalaryPaymentMessage({
                                             staffName: s.name_bn || s.name_en || 'Staff',
                                             phone: s.phone,
                                             monthName: monthLabel,
                                             year: selectedYear,
+                                            paymentDate: paymentDateStr,
+                                            departmentKey: deptKey,
+                                            templateText,
                                           }));
                                           window.open(waUrl, '_blank');
                                         }}
@@ -5779,10 +5839,11 @@ const AdminSalary = () => {
               <DialogTitle><Settings2 className="inline h-5 w-5 mr-2" />{bn ? 'বেতন সেটিংস' : 'Salary Settings'}</DialogTitle>
             </DialogHeader>
             <Tabs value={settingsTab} onValueChange={setSettingsTab}>
-              <TabsList className="w-full">
-                <TabsTrigger value="general" className="flex-1">{bn ? 'সাধারণ' : 'General'}</TabsTrigger>
-                <TabsTrigger value="expense" className="flex-1">{bn ? 'হিসাব সংযোগ' : 'Expense Link'}</TabsTrigger>
-                <TabsTrigger value="formula" className="flex-1">{bn ? 'ফর্মুলা' : 'Formula'}</TabsTrigger>
+              <TabsList className="w-full grid grid-cols-4">
+                <TabsTrigger value="general" className="text-xs">{bn ? 'সাধারণ' : 'General'}</TabsTrigger>
+                <TabsTrigger value="expense" className="text-xs">{bn ? 'হিসাব সংযোগ' : 'Expense Link'}</TabsTrigger>
+                <TabsTrigger value="formula" className="text-xs">{bn ? 'ফর্মুলা' : 'Formula'}</TabsTrigger>
+                <TabsTrigger value="whatsapp_template" className="text-xs">{bn ? 'WhatsApp নোটিশ' : 'WhatsApp Notice'}</TabsTrigger>
               </TabsList>
               <TabsContent value="general" className="space-y-4 mt-4">
                 <div>
@@ -6018,6 +6079,128 @@ const AdminSalary = () => {
                   ))}
                 </div>
               </TabsContent>
+
+              {/* WhatsApp Notice Template Tab */}
+              <TabsContent value="whatsapp_template" className="space-y-4 mt-4">
+                <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 rounded-lg text-sm space-y-1">
+                  <div className="flex items-center gap-1.5 font-semibold text-emerald-800 dark:text-emerald-300">
+                    <MessageCircle className="h-4 w-4" />
+                    <span>{bn ? 'বিভাগভিত্তিক WhatsApp বেতন নোটিফিকেশন' : 'Department-wise WhatsApp Salary Notice'}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {bn
+                      ? 'বেতন পরিশোধের সময় কর্মীদের WhatsApp-এ এই বার্তা যাবে। এখানে টাকার পরিমাণ সম্পূর্ণ গোপন থাকবে। এডমিন যখন পে-স্লিপ প্রিন্ট করবেন তখন সব হিসাব শতভাগ দৃশ্যমান থাকবে।'
+                      : 'Notification sent to staff via WhatsApp upon salary disbursement. Salary amount is strictly hidden, while printed pay slips retain 100% visibility.'}
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">{bn ? 'বিভাগ নির্বাচন করুন:' : 'Select Department:'}</Label>
+                  <Select
+                    value={editingTemplateDept}
+                    onValueChange={(val) => {
+                      setEditingTemplateDept(val);
+                      const saved = getSetting('salary_whatsapp_templates') || {};
+                      setEditingTemplateText(saved[val] || DEFAULT_SALARY_TEMPLATES[val] || DEFAULT_SALARY_TEMPLATES.general);
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder={bn ? 'বিভাগ বাছাই করুন' : 'Select Department'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SALARY_DEPARTMENTS.map((dept) => (
+                        <SelectItem key={dept.key} value={dept.key}>
+                          {dept.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold">{bn ? 'বার্তা টেমপ্লেট:' : 'Message Template:'}</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+                      onClick={() => {
+                        const def = DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general;
+                        setEditingTemplateText(def);
+                        toast.info(bn ? 'ডিফল্ট টেমপ্লেট লোড করা হয়েছে' : 'Loaded default template');
+                      }}
+                    >
+                      <RotateCcw className="h-3 w-3 mr-1" />
+                      {bn ? 'ডিফল্ট বার্তা লোড' : 'Reset to Default'}
+                    </Button>
+                  </div>
+                  <Textarea
+                    value={editingTemplateText !== '' ? editingTemplateText : (getSetting('salary_whatsapp_templates')?.[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general)}
+                    onChange={(e) => setEditingTemplateText(e.target.value)}
+                    rows={8}
+                    className="text-xs font-sans leading-relaxed bg-white dark:bg-background"
+                  />
+                  <div className="space-y-1 pt-1">
+                    <span className="text-[11px] text-muted-foreground font-medium">{bn ? 'ব্যবহারযোগ্য টোকেন (ক্লিক করে যুক্ত করুন):' : 'Available Tokens:'}</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      <Badge
+                        variant="secondary"
+                        className="text-[10px] font-mono cursor-pointer hover:bg-muted"
+                        onClick={() => setEditingTemplateText(prev => `${prev || (getSetting('salary_whatsapp_templates')?.[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general)} {{name}}`)}
+                      >
+                        {'{{name}}'} : {bn ? 'কর্মীর নাম' : 'Name'}
+                      </Badge>
+                      <Badge
+                        variant="secondary"
+                        className="text-[10px] font-mono cursor-pointer hover:bg-muted"
+                        onClick={() => setEditingTemplateText(prev => `${prev || (getSetting('salary_whatsapp_templates')?.[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general)} {{month}}`)}
+                      >
+                        {'{{month}}'} : {bn ? 'মাস ও বছর' : 'Month & Year'}
+                      </Badge>
+                      <Badge
+                        variant="secondary"
+                        className="text-[10px] font-mono cursor-pointer hover:bg-muted"
+                        onClick={() => setEditingTemplateText(prev => `${prev || (getSetting('salary_whatsapp_templates')?.[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general)} {{date}}`)}
+                      >
+                        {'{{date}}'} : {bn ? 'পরিশোধের তারিখ' : 'Payment Date'}
+                      </Badge>
+                      <Badge
+                        variant="secondary"
+                        className="text-[10px] font-mono cursor-pointer hover:bg-muted"
+                        onClick={() => setEditingTemplateText(prev => `${prev || (getSetting('salary_whatsapp_templates')?.[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general)} {{institution}}`)}
+                      >
+                        {'{{institution}}'} : {bn ? 'প্রতিষ্ঠানের নাম' : 'Institution'}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex justify-end">
+                  <Button
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    onClick={() => {
+                      const cur = getSetting('salary_whatsapp_templates') || {};
+                      const valToSave = (editingTemplateText !== '' ? editingTemplateText : (cur[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general)).trim();
+                      saveSettingMutation.mutate({
+                        key: 'salary_whatsapp_templates',
+                        value: {
+                          ...cur,
+                          [editingTemplateDept]: valToSave,
+                        },
+                      });
+                    }}
+                    disabled={saveSettingMutation.isPending}
+                  >
+                    {saveSettingMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="h-4 w-4 mr-1" />
+                    )}
+                    {bn ? 'টেমপ্লেট সংরক্ষণ করুন' : 'Save Template'}
+                  </Button>
+                </div>
+              </TabsContent>
             </Tabs>
           </DialogContent>
         </Dialog>
@@ -6244,6 +6427,21 @@ const AdminSalary = () => {
               const payableSnapshot = paidStaff && paidRecord ? getSalaryDisplaySnapshot(paidStaff, paidRecord).record : paidRecord;
               const payableNet = payableSnapshot ? Number(payableSnapshot.net_salary || 0) : 0;
               const monthNameObj = MONTHS.find(m => m.value === selectedMonth);
+              const monthLabel = bn ? (monthNameObj?.bn || selectedMonth) : (monthNameObj?.en || selectedMonth);
+              const deptKey = resolveStaffDeptKey(paidStaff);
+              const deptInfo = SALARY_DEPARTMENTS.find(d => d.key === deptKey);
+              const paymentDateFormatted = toBanglaDigits(new Date().toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' }));
+              const savedTemplates = getSetting('salary_whatsapp_templates') || {};
+              const templateText = savedTemplates[deptKey] || DEFAULT_SALARY_TEMPLATES[deptKey] || DEFAULT_SALARY_TEMPLATES.general;
+              const defaultRenderedMsg = buildStaffSalaryPaymentMessage({
+                staffName: paidStaff?.name_bn || paidStaff?.name_en || 'Staff',
+                monthName: monthLabel,
+                year: selectedYear,
+                paymentDate: paymentDateFormatted,
+                departmentKey: deptKey,
+                templateText,
+              });
+              const currentMsgToShow = payCustomMessage || defaultRenderedMsg;
 
               return (
                 <div className="space-y-4 py-2">
@@ -6307,11 +6505,75 @@ const AdminSalary = () => {
                         </label>
                         <p className="text-xs text-muted-foreground leading-relaxed">
                           {bn
-                            ? '✓ বেতনের টাকার পরিমাণ সম্পূর্ণ গোপন থাকবে। শুধুমাত্র যে মাসের বেতন দেওয়া হয়েছে তা এবং অফিস থেকে পে-স্লিপ নেওয়ার নির্দেশনা পাঠানো হবে।'
-                            : '✓ Salary amount is strictly hidden. Only specifies the paid month and instruction to collect the pay slip.'}
+                            ? '✓ বেতনের টাকার পরিমাণ সম্পূর্ণ গোপন থাকবে। শুধুমাত্র যে মাসের বেতন দেওয়া হয়েছে, পরিশোধের তারিখ ও দায়িত্ব পালনের আহ্বান থাকবে।'
+                            : '✓ Salary amount is strictly hidden. Only specifies month, payment date, and dedication reminder.'}
                         </p>
                       </div>
                     </div>
+
+                    {paySendWhatsApp && (
+                      <div className="mt-3 pt-2.5 border-t border-emerald-200/80 dark:border-emerald-800/50 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <Badge variant="outline" className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200 text-[11px] border-emerald-300">
+                              বিভাগ: {deptInfo?.label || 'সাধারণ'}
+                            </Badge>
+                            {paidStaff?.phone ? (
+                              <span className="text-[11px] text-muted-foreground font-mono">📱 {paidStaff.phone}</span>
+                            ) : (
+                              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">⚠️ কোনো মোবাইল নম্বর নেই</span>
+                            )}
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs text-emerald-700 hover:text-emerald-800 hover:bg-emerald-100/70"
+                            onClick={() => {
+                              if (!showPayMsgEdit) {
+                                setPayCustomMessage(payCustomMessage || defaultRenderedMsg);
+                              }
+                              setShowPayMsgEdit(!showPayMsgEdit);
+                            }}
+                          >
+                            <Edit3 className="h-3 w-3 mr-1" />
+                            {showPayMsgEdit ? (bn ? 'প্রিভিউ দেখুন' : 'Preview') : (bn ? 'মেসেজ এডিট' : 'Edit')}
+                          </Button>
+                        </div>
+
+                        {showPayMsgEdit ? (
+                          <div className="space-y-1.5">
+                            <Label className="text-[11px] font-medium text-emerald-900 dark:text-emerald-200">
+                              {bn ? 'এই কর্মীকে পাঠানোর জন্য বার্তাটি কাস্টমাইজ করুন:' : 'Customize message for this staff:'}
+                            </Label>
+                            <Textarea
+                              value={payCustomMessage || defaultRenderedMsg}
+                              onChange={(e) => setPayCustomMessage(e.target.value)}
+                              rows={6}
+                              className="text-xs font-sans leading-relaxed bg-white dark:bg-background border-emerald-300 focus-visible:ring-emerald-500"
+                            />
+                            <div className="flex justify-between items-center text-[10px] text-muted-foreground">
+                              <span className="text-emerald-700 dark:text-emerald-300 font-medium">🔒 বেতনের অংক গোপন থাকবে</span>
+                              <button
+                                type="button"
+                                className="text-emerald-600 hover:underline"
+                                onClick={() => setPayCustomMessage(defaultRenderedMsg)}
+                              >
+                                {bn ? 'ডিফল্ট বার্তা রিসেট' : 'Reset to default'}
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="bg-white/90 dark:bg-background/90 rounded-md p-2.5 border border-emerald-200 dark:border-emerald-800/80 text-xs whitespace-pre-wrap leading-relaxed text-muted-foreground max-h-36 overflow-y-auto font-sans select-text">
+                            {currentMsgToShow}
+                          </div>
+                        )}
+
+                        <div className="text-[10px] text-muted-foreground/90 bg-muted/30 rounded p-1.5 border border-border/50">
+                          💡 <strong>{bn ? 'অফিস প্রিন্ট পে-স্লিপ:' : 'Office Pay Slip:'}</strong> {bn ? 'এডমিন যখন পে-স্লিপ প্রিন্ট করবেন তখন মূল বেতন, কর্তন, ভাতা ও নিট বেতন শতভাগ দৃশ্যমান থাকবে।' : 'Full salary figures will remain 100% visible when admin prints the pay slip.'}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -6329,7 +6591,30 @@ const AdminSalary = () => {
                 className="bg-emerald-600 hover:bg-emerald-700 text-white"
                 onClick={() => {
                   if (paidConfirmId) {
-                    markPaidMutation.mutate({ id: paidConfirmId, addToExpense: payAddToExpense, sendWhatsApp: paySendWhatsApp });
+                    const rec = salaryRecords.find((r: any) => r.id === paidConfirmId);
+                    const st = staff.find((s: any) => s.id === rec?.staff_id);
+                    const dKey = resolveStaffDeptKey(st);
+                    const sTemplates = getSetting('salary_whatsapp_templates') || {};
+                    const tText = sTemplates[dKey] || DEFAULT_SALARY_TEMPLATES[dKey] || DEFAULT_SALARY_TEMPLATES.general;
+                    const mObj = MONTHS.find(m => m.value === selectedMonth);
+                    const mLabel = bn ? (mObj?.bn || selectedMonth) : (mObj?.en || selectedMonth);
+                    const pDate = toBanglaDigits(new Date().toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' }));
+                    const renderedDefault = buildStaffSalaryPaymentMessage({
+                      staffName: st?.name_bn || st?.name_en || 'Staff',
+                      monthName: mLabel,
+                      year: selectedYear,
+                      paymentDate: pDate,
+                      departmentKey: dKey,
+                      templateText: tText,
+                    });
+
+                    markPaidMutation.mutate({
+                      id: paidConfirmId,
+                      addToExpense: payAddToExpense,
+                      sendWhatsApp: paySendWhatsApp,
+                      customMessage: payCustomMessage.trim() ? payCustomMessage.trim() : renderedDefault,
+                      paymentDate: pDate,
+                    });
                     setPaidConfirmId(null);
                   }
                 }}

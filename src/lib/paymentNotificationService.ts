@@ -198,25 +198,113 @@ export interface StaffSalaryPaymentDetails {
   phone?: string | null;
   monthName: string;
   year?: string | number;
+  paymentDate?: string;
+  departmentKey?: string;
+  templateText?: string;
+  customMessage?: string;
   institutionName?: string;
 }
 
+export const DEFAULT_SALARY_TEMPLATES: Record<string, string> = {
+  general: `আসসালামু আলাইকুম মুহতারাম {{name}}।
+{{institution}} থেকে আপনার {{month}} মাসের মাসিক বেতন পরিশোধ করা হয়েছে।
+
+• পরিশোধের তারিখ: {{date}}
+
+দ্বীনি শিক্ষা বিস্তার ও শিক্ষার্থীদের কুরআন-সুন্নাহর আলোকে গড়ে তুলতে আপনার নিষ্ঠাপূর্ণ সেবার জন্য জাযাকাল্লাহু খাইরান।
+
+ভবিষ্যতে মাদরাসার শিক্ষা কার্যক্রমে সময়নিষ্ঠা, সর্বোচ্চ আন্তরিকতা ও আমানতদারিতার সাথে অর্পিত দায়িত্ব পালনে আপনার অগ্রণী ভূমিকা মাদরাসা কর্তৃপক্ষ একান্তভাবে প্রত্যাশা করে। আল্লাহ তাআলা আপনার মেহনত কবুল করুন।
+
+— {{institution}}`,
+
+  hifz: `আসসালামু আলাইকুম মুহতারাম {{name}}।
+{{institution}} থেকে আপনার {{month}} মাসের মাসিক বেতন পরিশোধ করা হয়েছে।
+
+• পরিশোধের তারিখ: {{date}}
+
+আল্লাহর মহাগ্রন্থ আল-কুরআনের নূর শিক্ষার্থীদের অন্তরে ধারণ করানো এবং প্রিয় ছাত্রদের সবক, সবকী ও আমোখতার নিবিড় যত্নে আপনার নিষ্ঠাপূর্ণ মেহনতের জন্য জাযাকাল্লাহু খাইরান।
+
+ভবিষ্যতে হিফজ শিক্ষার্থীদের তাজবীদ, সহীহ তিলাওয়াত ও সার্বক্ষণিক আদব-আখলাক রক্ষায় আপনার সর্বোচ্চ সময়নিষ্ঠা, আন্তরিকতা ও আমানতদারিতা মাদরাসা কর্তৃপক্ষ একান্তভাবে প্রত্যাশা করে। আল্লাহ আপনার খিদমত কবুল করুন।
+
+— {{institution}}`,
+
+  noorani: `আসসালামু আলাইকুম মুহতারাম {{name}}।
+{{institution}} থেকে আপনার {{month}} মাসের মাসিক বেতন পরিশোধ করা হয়েছে।
+
+• পরিশোধের তারিখ: {{date}}
+
+ছোট ছোট কোমলমতি শিশুদের দ্বীনের বুনিয়াদী শিক্ষা, সহীহ মাখরাজ ও আদব-কায়েদা শেখাতে আপনার ধৈর্য ও নিষ্ঠাপূর্ণ সেবার জন্য জাযাকাল্লাহু খাইরান।
+
+প্রতিটি শিশুর প্রতি পিতৃসুলভ স্নেহ, শতভাগ ক্লাসে উপস্থিতি ও যত্নশীল পাঠদানের মাধ্যমে তাদের ভবিষ্যৎ দ্বীনি ভিত্তি মজবুত করতে আপনার দায়িত্বশীল ভূমিকা সবসময় অব্যাহত থাকবে—এটাই মাদরাসা কর্তৃপক্ষের প্রত্যাশা।
+
+— {{institution}}`,
+
+  kitab: `আসসালামু আলাইকুম মুহতারাম {{name}}।
+{{institution}} থেকে আপনার {{month}} মাসের মাসিক বেতন পরিশোধ করা হয়েছে।
+
+• পরিশোধের তারিখ: {{date}}
+
+ইলমে দ্বীনের গভীর পাঠদান, সিলেবাস বাস্তবায়ন ও ছাত্রদের নৈতিক মানোন্নয়নে আপনার একনিষ্ঠ শিক্ষকতার জন্য জাযাকাল্লাহু খাইরান।
+
+ক্লাসের নির্ধারিত সময়সূচি যথাযথভাবে বজায় রাখা, মানসম্মত পাঠদান এবং ছাত্রদের ইলমি ও আমলি দিকনির্দেশনায় আপনার অগ্রণী ভূমিকা মাদরাসার সার্বিক অগ্রগতিতে গুরুত্বপূর্ণ অবদান রাখবে বলে আমরা বিশ্বাস করি।
+
+— {{institution}}`,
+
+  administrative: `আসসালামু আলাইকুম মুহতারাম {{name}}।
+{{institution}} থেকে আপনার {{month}} মাসের মাসিক সম্মানী/ভাতা পরিশোধ করা হয়েছে।
+
+• পরিশোধের তারিখ: {{date}}
+
+মাদরাসার সার্বিক শৃঙ্খলা, সুষ্ঠু শিক্ষা ব্যবস্থাপনা ও প্রশাসনিক তদারকিতে আপনার বলিষ্ঠ নেতৃত্ব ও দায়িত্বশীলতার জন্য আন্তরিক শুকরিয়া ও জাযাকাল্লাহু খাইরান।
+
+প্রতিষ্ঠানের লক্ষ্য অর্জন ও শিক্ষা কার্যক্রমকে অনন্য উচ্চতায় নিয়ে যেতে আপনার দিকনির্দেশনা ও আমানতদারী সবসময় পথপ্রদর্শক হয়ে থাকবে।
+
+— {{institution}}`,
+
+  support: `আসসালামু আলাইকুম {{name}}।
+{{institution}} থেকে আপনার {{month}} মাসের মাসিক বেতন পরিশোধ করা হয়েছে।
+
+• পরিশোধের তারিখ: {{date}}
+
+মাদরাসার হিসাবরক্ষণ, অফিসিয়াল নথিপত্র সংরক্ষণ এবং দাপ্তরিক কাজে আপনার একনিষ্ঠ দায়িত্ব পালনের জন্য ধন্যবাদ ও জাযাকাল্লাহু খাইরান।
+
+ভবিষ্যতেও প্রাতিষ্ঠানিক আমানত রক্ষা, সঠিক হিসাব ব্যবস্থাপনা ও দাপ্তরিক শৃঙ্খলা রক্ষায় আপনার নিষ্ঠা ও সতর্কতা অব্যাহত থাকবে বলে কর্তৃপক্ষ প্রত্যাশা করে।
+
+— {{institution}}`,
+
+  general_staff: `আসসালামু আলাইকুম {{name}}।
+{{institution}} থেকে আপনার {{month}} মাসের মাসিক বেতন পরিশোধ করা হয়েছে।
+
+• পরিশোধের তারিখ: {{date}}
+
+মাদরাসার ছাত্র ও এতিম শিশুদের আন্তরিক সেবা, পরিষ্কার-পরিচ্ছন্নতা, নিরাপত্তা ও সুষ্ঠু পরিবেশ বজায় রাখতে আপনার নিষ্ঠাপূর্ণ শ্রমের জন্য জাযাকাল্লাহু খাইরান।
+
+মাদরাসাকে নিজের পরিবার মনে করে প্রতিষ্ঠানের সম্পদ সুরক্ষা, সময়মতো দায়িত্ব পালন ও ছাত্রদের প্রতি সদয় আচরণ সবসময় বজায় রাখার জন্য অনুরোধ রইল। আল্লাহ আপনাকে উত্তম প্রতিদান দিন।
+
+— {{institution}}`,
+};
+
 /**
- * Notice: As requested, the salary amount is strictly omitted from the message.
- * Only the paid month, year, and instruction to collect the pay slip from the office are included.
+ * Notice: The salary amount is strictly omitted from the message.
+ * Includes payment date, department-specific dedication reminder, and gratitude.
  */
 export function buildStaffSalaryPaymentMessage(details: StaffSalaryPaymentDetails): string {
+  if (details.customMessage?.trim()) {
+    return details.customMessage.trim();
+  }
+
   const instName = details.institutionName || 'আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানা';
   const period = `${details.monthName} ${details.year || ''}`.trim();
+  const dateStr = details.paymentDate || new Date().toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' });
 
-  return `আসসালামু আলাইকুম মুহতারাম ${details.staffName}।
-${instName} থেকে আপনার ${period} মাসের মাসিক বেতন ও ভাতা পরিশোধ করা হয়েছে।
+  const deptKey = details.departmentKey || 'general';
+  const rawTemplate = details.templateText?.trim() || DEFAULT_SALARY_TEMPLATES[deptKey] || DEFAULT_SALARY_TEMPLATES.general;
 
-অনুগ্রহ করে মাদরাসা অফিস থেকে আপনার পে-স্লিপ বুঝে নেওয়ার জন্য বিনীত অনুরোধ করা যাচ্ছে।
-
-দ্বীনি শিক্ষা বিস্তারে আপনার নিষ্ঠাপূর্ণ সেবার জন্য জাযাকাল্লাহু খাইরান।
-
-— ${instName}`;
+  return rawTemplate
+    .replace(/\{\{name\}\}/gi, details.staffName)
+    .replace(/\{\{month\}\}/gi, period)
+    .replace(/\{\{date\}\}/gi, dateStr)
+    .replace(/\{\{institution\}\}/gi, instName);
 }
 
 export async function sendStaffSalaryPaymentNotification(details: StaffSalaryPaymentDetails): Promise<{ success: boolean; error?: string }> {
