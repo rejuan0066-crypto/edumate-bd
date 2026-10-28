@@ -23,6 +23,7 @@ import { Plus, Search, Loader2, AlertCircle, CheckCircle, Save, ArrowLeft, Arrow
 import { toast } from 'sonner';
 import { invalidateAllStudentQueries } from '@/lib/studentQueryInvalidator';
 import { formatAddress as formatAddressBn } from '@/lib/banglaAddressHelper';
+import { getStaffCategoryKey } from '@/lib/staffOrderHelper';
 
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 
@@ -162,6 +163,32 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       return data || [];
     },
   });
+
+  // Filter staff belonging to Education Department (শিক্ষা বিভাগ)
+  const educationStaff = useMemo(() => {
+    const filtered = (allActiveStaff || []).filter((st: any) => {
+      const cat = getStaffCategoryKey(st);
+      const dept = (st.department || '').trim();
+      const desig = (st.designation || '').trim();
+      return (
+        cat === 'teacher' ||
+        st.staff_category === 'teacher' ||
+        dept === 'শিক্ষা বিভাগ' ||
+        dept.includes('শিক্ষা') ||
+        dept.toLowerCase().includes('education') ||
+        desig.includes('শিক্ষক') ||
+        desig.toLowerCase().includes('teacher') ||
+        desig.includes('মুয়াল্লিম') ||
+        desig.includes('মুআল্লিম') ||
+        desig.includes('উস্তাদ') ||
+        desig.includes('হাফেজ') ||
+        desig.includes('কারী') ||
+        desig.includes('মুহাদ্দিস') ||
+        desig.includes('মুফতি')
+      );
+    });
+    return filtered.length > 0 ? filtered : allActiveStaff;
+  }, [allActiveStaff]);
 
   // Query administrative officers & staff (Administrative Department) for approver selection
   const { data: administrativeOfficers = [] } = useQuery({
@@ -729,28 +756,14 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       mother_phone: form.mother_phone || null,
       is_orphan: form.is_orphan,
       is_poor: form.is_poor,
-      referred_by: form.admitted_by_name || (() => {
-        if (form.admitted_by_type?.startsWith('div_')) {
-          const divId = form.admitted_by_type.replace('div_', '');
-          const matchedDiv = divisions.find((d: any) => d.id === divId);
-          return matchedDiv ? (matchedDiv.name_bn || matchedDiv.name) : null;
-        }
-        return null;
-      })(),
+      referred_by: form.admitted_by_name || 'শিক্ষা বিভাগ',
       approved_by: form.approver_name || null,
       extra_fields: {
         ...(editStudent?.extra_fields || {}),
         referral_info: {
-          type: form.admitted_by_type || 'none',
-          division_id: form.admitted_by_type?.startsWith('div_') ? form.admitted_by_type.replace('div_', '') : null,
-          division_name: (() => {
-            if (form.admitted_by_type?.startsWith('div_')) {
-              const divId = form.admitted_by_type.replace('div_', '');
-              const matchedDiv = divisions.find((d: any) => d.id === divId);
-              return matchedDiv ? (matchedDiv.name_bn || matchedDiv.name) : null;
-            }
-            return null;
-          })(),
+          type: form.admitted_by_type || 'education',
+          division_id: null,
+          division_name: 'শিক্ষা বিভাগ',
           name: form.admitted_by_name || '',
           phone: form.admitted_by_phone || '',
           designation: form.admitted_by_designation || '',
@@ -2143,45 +2156,33 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label>{bn ? 'শিক্ষা বিভাগ' : 'Academic Division'}</Label>
+                        <Label>{bn ? 'বিভাগ নির্বাচন' : 'Department Selection'}</Label>
                         <Select
-                          value={form.admitted_by_type?.startsWith('div_') ? form.admitted_by_type : ''}
+                          value={form.admitted_by_type || 'education'}
                           onValueChange={(val: string) => {
                             setForm(prev => ({
                               ...prev,
                               admitted_by_type: val,
-                              ...(val === 'none' ? { admitted_by_name: '', admitted_by_phone: '', admitted_by_designation: '' } : {})
                             }));
                           }}
                         >
                           <SelectTrigger className="bg-background mt-1">
-                            <SelectValue placeholder={bn ? 'শিক্ষা বিভাগ নির্বাচন করুন' : 'Select Academic Division'} />
+                            <SelectValue placeholder={bn ? 'বিভাগ নির্বাচন করুন' : 'Select Department'} />
                           </SelectTrigger>
                           <SelectContent>
-                            {divisions.map((d: any) => (
-                              <SelectItem key={d.id} value={`div_${d.id}`}>
-                                {d.name_bn || d.name}
-                              </SelectItem>
-                            ))}
+                            <SelectItem value="education">
+                              {bn ? 'শিক্ষা বিভাগ' : 'Education Department'}
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
 
                       <div>
-                        <Label>
-                          {(() => {
-                            if (form.admitted_by_type?.startsWith('div_')) {
-                              const divId = form.admitted_by_type.replace('div_', '');
-                              const matchedDiv = divisions.find((d: any) => d.id === divId);
-                              return matchedDiv ? (bn ? `${matchedDiv.name_bn || matchedDiv.name}-এর শিক্ষক নির্বাচন` : `Teacher (${matchedDiv.name})`) : (bn ? 'যাচাইকারী শিক্ষক নির্বাচন' : 'Select Verifier');
-                            }
-                            return bn ? 'যাচাইকারী শিক্ষক নির্বাচন' : 'Select Verifier';
-                          })()}
-                        </Label>
+                        <Label>{bn ? 'যাচাইকারী শিক্ষক নির্বাচন' : 'Select Verifier Teacher'}</Label>
                         <Select
                           value={form.admitted_by_name || ''}
                           onValueChange={(val) => {
-                            const selectedStaff = allActiveStaff.find((st: any) => (st.name_bn || st.name_en) === val);
+                            const selectedStaff = educationStaff.find((st: any) => (st.name_bn || st.name_en) === val) || allActiveStaff.find((st: any) => (st.name_bn || st.name_en) === val);
                             setForm(prev => ({
                               ...prev,
                               admitted_by_name: val,
@@ -2194,12 +2195,12 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                             <SelectValue placeholder={bn ? 'শিক্ষক তালিকা থেকে নির্বাচন করুন' : 'Select Teacher'} />
                           </SelectTrigger>
                           <SelectContent>
-                            {allActiveStaff.length === 0 ? (
+                            {educationStaff.length === 0 ? (
                               <SelectItem value="none" disabled>
-                                {bn ? 'কোনো শিক্ষক তালিকা পাওয়া যায়নি' : 'No staff found'}
+                                {bn ? 'কোনো শিক্ষক তালিকা পাওয়া যায়নি' : 'No teachers found'}
                               </SelectItem>
                             ) : (
-                              allActiveStaff.map((st: any) => (
+                              educationStaff.map((st: any) => (
                                 <SelectItem key={st.id} value={st.name_bn || st.name_en}>
                                   {st.name_bn || st.name_en} {st.designation ? `(${st.designation})` : ''}
                                 </SelectItem>

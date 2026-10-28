@@ -35,6 +35,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { getStaffDisplayNames } from '@/lib/nameFormatter';
+import { getStaffCategoryKey } from '@/lib/staffOrderHelper';
 import {
   ClipboardCheck,
   Check,
@@ -265,6 +266,32 @@ const AdminApprovals = () => {
       return data || [];
     },
   });
+
+  // Staff belonging to Education Department (শিক্ষা বিভাগ)
+  const educationStaff = useMemo(() => {
+    const filtered = (allActiveStaff || []).filter((st: any) => {
+      const cat = getStaffCategoryKey(st);
+      const dept = (st.department || '').trim();
+      const desig = (st.designation || '').trim();
+      return (
+        cat === 'teacher' ||
+        st.staff_category === 'teacher' ||
+        dept === 'শিক্ষা বিভাগ' ||
+        dept.includes('শিক্ষা') ||
+        dept.toLowerCase().includes('education') ||
+        desig.includes('শিক্ষক') ||
+        desig.toLowerCase().includes('teacher') ||
+        desig.includes('মুয়াল্লিম') ||
+        desig.includes('মুআল্লিম') ||
+        desig.includes('উস্তাদ') ||
+        desig.includes('হাফেজ') ||
+        desig.includes('কারী') ||
+        desig.includes('মুহাদ্দিস') ||
+        desig.includes('মুফতি')
+      );
+    });
+    return filtered.length > 0 ? filtered : allActiveStaff;
+  }, [allActiveStaff]);
 
   // Administrative Officers & Staff (Administrative Department) for approver selection
   const { data: administrativeOfficers = [] } = useQuery({
@@ -3395,46 +3422,32 @@ const AdminApprovals = () => {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         <div className="space-y-1">
-                          <Label className="text-[11px] font-medium text-muted-foreground">{bn ? 'শিক্ষা বিভাগ' : 'Academic Division'}</Label>
+                          <Label className="text-[11px] font-medium text-muted-foreground">{bn ? 'বিভাগ নির্বাচন' : 'Department Selection'}</Label>
                           <Select
-                            value={studentReferralType?.startsWith('div_') ? studentReferralType : ''}
+                            value={studentReferralType || 'education'}
                             onValueChange={(val: string) => {
                               setStudentReferralType(val);
-                              if (val === 'none') {
-                                setStudentReferralName('');
-                                setStudentReferralPhone('');
-                                setStudentReferralDesignation('');
-                              }
                             }}
                           >
                             <SelectTrigger className="h-8 text-xs bg-background">
-                              <SelectValue placeholder={bn ? 'শিক্ষা বিভাগ নির্বাচন করুন' : 'Select Academic Division'} />
+                              <SelectValue placeholder={bn ? 'বিভাগ নির্বাচন করুন' : 'Select Department'} />
                             </SelectTrigger>
                             <SelectContent>
-                              {allDivisions.map((d: any) => (
-                                <SelectItem key={d.id} value={`div_${d.id}`}>
-                                  {d.name_bn || d.name}
-                                </SelectItem>
-                              ))}
+                              <SelectItem value="education">
+                                {bn ? 'শিক্ষা বিভাগ' : 'Education Department'}
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
 
                         <div className="space-y-1">
                           <Label className="text-[11px] font-medium text-muted-foreground">
-                            {(() => {
-                              if (studentReferralType?.startsWith('div_')) {
-                                const divId = studentReferralType.replace('div_', '');
-                                const matchedDiv = allDivisions.find((d: any) => d.id === divId);
-                                return matchedDiv ? (bn ? `${matchedDiv.name_bn || matchedDiv.name}-এর শিক্ষক নির্বাচন` : `Teacher (${matchedDiv.name})`) : (bn ? 'যাচাইকারী শিক্ষক নির্বাচন' : 'Select Verifier');
-                              }
-                              return bn ? 'যাচাইকারী শিক্ষক নির্বাচন' : 'Select Verifier';
-                            })()}
+                            {bn ? 'যাচাইকারী শিক্ষক নির্বাচন' : 'Select Verifier Teacher'}
                           </Label>
                           <Select
                             value={studentReferralName}
                             onValueChange={(val) => {
-                              const selectedStaff = allActiveStaff.find((st: any) => (st.name_bn || st.name_en) === val);
+                              const selectedStaff = educationStaff.find((st: any) => (st.name_bn || st.name_en) === val) || allActiveStaff.find((st: any) => (st.name_bn || st.name_en) === val);
                               setStudentReferralName(val);
                               if (selectedStaff?.phone) setStudentReferralPhone(selectedStaff.phone);
                               if (selectedStaff?.designation) setStudentReferralDesignation(selectedStaff.designation);
@@ -3444,12 +3457,12 @@ const AdminApprovals = () => {
                               <SelectValue placeholder={bn ? 'শিক্ষক তালিকা থেকে নির্বাচন করুন' : 'Select Teacher'} />
                             </SelectTrigger>
                             <SelectContent>
-                              {allActiveStaff.length === 0 ? (
+                              {educationStaff.length === 0 ? (
                                 <SelectItem value="none" disabled>
-                                  {bn ? 'কোনো শিক্ষক তালিকা পাওয়া যায়নি' : 'No staff found'}
+                                  {bn ? 'কোনো শিক্ষক তালিকা পাওয়া যায়নি' : 'No teachers found'}
                                 </SelectItem>
                               ) : (
-                                allActiveStaff.map((st: any) => (
+                                educationStaff.map((st: any) => (
                                   <SelectItem key={st.id} value={st.name_bn || st.name_en}>
                                     {st.name_bn || st.name_en} {st.designation ? `(${st.designation})` : ''}
                                   </SelectItem>
