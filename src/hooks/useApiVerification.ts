@@ -10,33 +10,39 @@ export interface ApiVerificationConfig {
   field_mappings: Record<string, Record<string, string>>;
 }
 
-// For admin - full config (protects api_key until master password unlocked)
-export const useApiVerificationConfig = (isUnlocked: boolean = false) => {
-  return useQuery({
-    queryKey: ['api-verification-config', isUnlocked],
-    queryFn: async () => {
-      if (isUnlocked) {
-        const { data, error } = await supabase
-          .from('api_verification_config')
-          .select('*')
-          .limit(1)
-          .maybeSingle();
-        if (error) throw error;
-        return data as ApiVerificationConfig | null;
-      }
+// For admin - safe config; api_key and master_password are only returned by the
+// server after the master password is verified (unlockPassword !== null).
+export const MASKED_MASTER_PASSWORD = '********';
 
-      // When locked, do not select or expose api_key to unauthorized callers
+export const unlockApiVerification = async (password: string) => {
+  const { data, error } = await supabase.rpc('api_verification_unlock' as any, { p_password: password });
+  if (error) throw error;
+  return (data as { api_key: string; master_password: string } | null) ?? null;
+};
+
+export const useApiVerificationConfig = (unlockPassword: string | null = null) => {
+  return useQuery({
+    queryKey: ['api-verification-config', unlockPassword !== null],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('api_verification_config')
-        .select('id, api_url, is_enabled, master_password, field_mappings')
+        .select('id, api_url, is_enabled, field_mappings')
         .limit(1)
         .maybeSingle();
       if (error) throw error;
       if (!data) return null;
-      return {
-        ...data,
-        api_key: '', // Protected until unlocked
-      } as ApiVerificationConfig;
+
+      let api_key = '';
+      let master_password = '';
+      if (unlockPassword !== null) {
+        const secrets = await unlockApiVerification(unlockPassword);
+        api_key = secrets?.api_key ?? '';
+        master_password = secrets?.master_password ?? '';
+      } else {
+        const { data: hasPw } = await supabase.rpc('api_verification_has_master_password' as any);
+        master_password = hasPw ? MASKED_MASTER_PASSWORD : '';
+      }
+      return { ...(data as any), api_key, master_password } as ApiVerificationConfig;
     },
     staleTime: 60 * 1000,
   });
