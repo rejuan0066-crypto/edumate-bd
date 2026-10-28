@@ -13,7 +13,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from '@/hooks/use-toast';
 import {
   Loader2, MessageCircle, Save, ExternalLink, Phone, Send, CheckCircle2,
-  XCircle, QrCode, RefreshCw, Sparkles, HelpCircle, ShieldCheck, Zap
+  XCircle, QrCode, RefreshCw, Sparkles, HelpCircle, ShieldCheck, Zap,
+  LogOut, AlertCircle
 } from 'lucide-react';
 import { buildWhatsAppUrl } from '@/hooks/useWhatsAppConfig';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
