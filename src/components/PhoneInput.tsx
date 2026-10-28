@@ -5,17 +5,17 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const countryCodes = [
-  { code: '+880', country: '🇧🇩 BD', name: 'Bangladesh' },
-  { code: '+91', country: '🇮🇳 IN', name: 'India' },
-  { code: '+966', country: '🇸🇦 SA', name: 'Saudi Arabia' },
-  { code: '+971', country: '🇦🇪 AE', name: 'UAE' },
-  { code: '+974', country: '🇶🇦 QA', name: 'Qatar' },
-  { code: '+965', country: '🇰🇼 KW', name: 'Kuwait' },
-  { code: '+968', country: '🇴🇲 OM', name: 'Oman' },
-  { code: '+973', country: '🇧🇭 BH', name: 'Bahrain' },
-  { code: '+60', country: '🇲🇾 MY', name: 'Malaysia' },
-  { code: '+44', country: '🇬🇧 UK', name: 'United Kingdom' },
-  { code: '+1', country: '🇺🇸 US', name: 'United States' },
+  { code: '+880', country: 'BD', name: 'Bangladesh' },
+  { code: '+91', country: 'IN', name: 'India' },
+  { code: '+966', country: 'SA', name: 'Saudi Arabia' },
+  { code: '+971', country: 'AE', name: 'UAE' },
+  { code: '+974', country: 'QA', name: 'Qatar' },
+  { code: '+965', country: 'KW', name: 'Kuwait' },
+  { code: '+968', country: 'OM', name: 'Oman' },
+  { code: '+973', country: 'BH', name: 'Bahrain' },
+  { code: '+60', country: 'MY', name: 'Malaysia' },
+  { code: '+44', country: 'UK', name: 'United Kingdom' },
+  { code: '+1', country: 'US', name: 'United States' },
 ];
 
 interface PhoneInputProps {
