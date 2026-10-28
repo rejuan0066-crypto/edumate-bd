@@ -392,6 +392,19 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
 
       const chatList: any[] = Array.isArray(rawChats) ? rawChats : (rawChats?.chats || []);
 
+      const isNumericOnly = (s?: string) => !!(s && /^\d+$/.test(s.trim()));
+      const isValidHumanName = (s?: string, jid?: string, digits?: string) => {
+        if (!s) return false;
+        const trimmed = s.trim();
+        if (!trimmed || trimmed === 'Você' || trimmed === 'You') return false;
+        if (trimmed === jid || trimmed === digits) return false;
+        if (isNumericOnly(trimmed)) return false;
+        return true;
+      };
+
+      // Numbers that need WhatsApp name lookup
+      const missingNameNumbers: string[] = [];
+
       // Parse & normalize chats
       const parsed: ChatItem[] = chatList
         .filter((c: any) => {
@@ -434,22 +447,36 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
           if (isGroup) {
             displayName = c.pushName || c.name || contact?.pushName || (bn ? 'হোয়াটসঅ্যাপ গ্রুপ' : 'WhatsApp Group');
           } else {
+            // Check valid human push name from contact or chat or message
             const candidatePush =
-              (contact?.pushName && contact.pushName !== jid && contact.pushName !== digits && contact.pushName !== 'Você') ? contact.pushName :
-              (contact?.name && contact.name !== jid && contact.name !== digits && contact.name !== 'Você') ? contact.name :
-              (c.pushName && c.pushName !== jid && c.pushName !== digits && c.pushName !== 'Você') ? c.pushName :
-              (c.name && c.name !== jid && c.name !== digits && c.name !== 'Você') ? c.name :
-              (c.lastMessage?.pushName && c.lastMessage.pushName !== jid && c.lastMessage.pushName !== digits && c.lastMessage.pushName !== 'Você') ? c.lastMessage.pushName :
+              isValidHumanName(contact?.pushName, jid, digits) ? contact.pushName :
+              isValidHumanName(contact?.name, jid, digits) ? contact.name :
+              isValidHumanName(c.pushName, jid, digits) ? c.pushName :
+              isValidHumanName(c.name, jid, digits) ? c.name :
+              isValidHumanName(c.lastMessage?.pushName, jid, digits) ? c.lastMessage.pushName :
               '';
+
+            // Check if from Facebook / Instagram Click-to-WhatsApp Ad
+            const isAdLead = c.lastMessage?.contextInfo?.sourceApp === 'facebook' ||
+                             !!c.lastMessage?.contextInfo?.ctwaClid ||
+                             !!c.lastMessage?.contextInfo?.conversionSource;
+            const adTitle = c.lastMessage?.contextInfo?.title;
 
             if (candidatePush) {
               displayName = candidatePush;
             } else if (formattedPhone) {
               displayName = formattedPhone;
+            } else if (isAdLead) {
+              displayName = adTitle ? `${adTitle} (ইনকোয়ারি)` : (bn ? `বিজ্ঞাপন ইনকোয়ারি (#${digits.slice(-4)})` : `Ad Lead (#${digits.slice(-4)})`);
             } else if (isLid) {
               displayName = bn ? `হোয়াটসঅ্যাপ (#${digits.slice(-4)})` : `WhatsApp (#${digits.slice(-4)})`;
             } else {
               displayName = bn ? 'হোয়াটসঅ্যাপ যোগাযোগ' : 'WhatsApp Contact';
+            }
+
+            // If still no real name and we have a valid 10-15 digit phone, queue for whatsappNumbers resolution
+            if (!candidatePush && rawPhone && rawPhone.length >= 10 && rawPhone.length <= 15) {
+              missingNameNumbers.push(rawPhone);
             }
           }
 
@@ -475,6 +502,51 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
 
       setChats(parsed);
       setGatewayOnline(true);
+
+      // Async batch resolution of missing WhatsApp names using whatsappNumbers
+      if (missingNameNumbers.length > 0) {
+        const uniqueNums = Array.from(new Set(missingNameNumbers)).slice(0, 30);
+        fetch(`${serverUrl}/chat/whatsappNumbers/${encodeURIComponent(instance)}`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ numbers: uniqueNums }),
+        })
+          .then(r => r.ok ? r.json() : [])
+          .then(res => {
+            if (Array.isArray(res) && res.length > 0) {
+              const nameMap: Record<string, string> = {};
+              res.forEach((item: any) => {
+                if (item?.name && typeof item.name === 'string' && isValidHumanName(item.name)) {
+                  const num = item.number || (item.jid ? item.jid.replace(/@.*$/, '') : '');
+                  if (num) {
+                    nameMap[num] = item.name;
+                    nameMap[`${num}@s.whatsapp.net`] = item.name;
+                  }
+                }
+              });
+
+              if (Object.keys(nameMap).length > 0) {
+                setChats(prev => prev.map(chat => {
+                  const resolvedName = nameMap[chat.phone] || nameMap[chat.remoteJid];
+                  if (resolvedName && (!chat.name || chat.name === formatPhoneNumber(chat.phone) || chat.name.includes('#'))) {
+                    return { ...chat, name: resolvedName, pushName: resolvedName };
+                  }
+                  return chat;
+                }));
+              }
+            }
+          })
+          .catch(() => {});
+      }
+
+      // Background profile picture pre-fetch for top 12 active chats without picture
+      const picQueue = parsed
+        .filter(c => !c.isGroup && !c.profilePicUrl && c.remoteJid && !profilePicCache[c.remoteJid])
+        .slice(0, 12);
+
+      if (picQueue.length > 0) {
+        Promise.all(picQueue.map(c => fetchLiveProfilePic(c.remoteJid, c.phone))).catch(() => {});
+      }
     } catch (err: any) {
       console.warn('Error fetching chats from Evolution API:', err);
     } finally {
