@@ -230,8 +230,9 @@ Deno.serve(async (req) => {
         .select('id, contact_verified, status')
         .ilike('contact', c)
         .maybeSingle();
-      const eligible = !!account && account.status !== 'rejected' && account.status !== 'suspended';
-      return json({ exists: eligible });
+      // Do not reveal whether the account exists; the OTP step handles unknown contacts.
+      void account;
+      return json({ exists: true });
     }
 
     if (body.action === 'reset_password') {
