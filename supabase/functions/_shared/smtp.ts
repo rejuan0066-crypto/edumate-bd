@@ -138,6 +138,13 @@ export function welcomeEmailHtml(opts: {
   kind: 'user' | 'student';
   studentId?: string;
 }) {
+  const esc = (v?: string) => v == null ? v : String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+  opts = {
+    ...opts,
+    fullName: esc(opts.fullName), role: esc(opts.role), email: esc(opts.email) as string,
+    password: esc(opts.password), brandName: esc(opts.brandName), studentId: esc(opts.studentId),
+    loginUrl: opts.loginUrl && /^https?:\/\//i.test(opts.loginUrl) ? esc(opts.loginUrl) : undefined,
+  };
   const brand = opts.brandName || 'School Management';
   const greetingName = opts.fullName || opts.email;
   const isStudent = opts.kind === 'student';
