@@ -507,28 +507,39 @@ const StudentProfileModal = ({
     navigate(`/admin/students-fees?${params.toString()}`);
   };
 
-  // Handlers for payments opening directly in the profile quick-pay dialog
+  // Handlers for payments linking directly to official fee collection page
   const handleOpenPaySingle = (item: any) => {
-    setPayingItems([item]);
-    setPayAmount(String(item.dueAmount));
-    setPayRemarks('');
-    setPayDialogOpen(true);
+    handleNavigateToPaymentPage(
+      item.fee_type_id,
+      item.month,
+      item.year || new Date().getFullYear(),
+      item.dueAmount
+    );
   };
 
   const handleOpenPaySelected = () => {
     if (selectedDueItems.length === 0) return;
-    setPayingItems(selectedDueItems);
-    setPayAmount(String(selectedDueTotal));
-    setPayRemarks('');
-    setPayDialogOpen(true);
+    if (selectedDueItems.length === 1) {
+      handleOpenPaySingle(selectedDueItems[0]);
+    } else {
+      handleNavigateToPaymentPage(
+        selectedDueItems[0].fee_type_id,
+        selectedDueItems[0].month,
+        selectedDueItems[0].year,
+        selectedDueTotal
+      );
+    }
   };
 
   const handleOpenPayAll = () => {
     if (sessionFinancials.dueList.length === 0) return;
-    setPayingItems(sessionFinancials.dueList);
-    setPayAmount(String(sessionFinancials.totalDue));
-    setPayRemarks('');
-    setPayDialogOpen(true);
+    const firstDue = sessionFinancials.dueList[0];
+    handleNavigateToPaymentPage(
+      firstDue.fee_type_id,
+      firstDue.month,
+      firstDue.year,
+      sessionFinancials.totalDue
+    );
   };
 
   const handleOpenDiscountForSelected = () => {
@@ -1474,7 +1485,7 @@ const StudentProfileModal = ({
                         className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-10 px-4 rounded-xl shadow-md flex items-center justify-center gap-1.5 shrink-0 transition-transform active:scale-95 text-xs"
                       >
                         <CreditCard className="w-4 h-4" />
-                        <span>{bn ? `সকল বকেয়া একসাথে পরিশোধ (৳${formatDigits(sessionFinancials.totalDue.toLocaleString(), bn)})` : `Pay All Dues (৳${sessionFinancials.totalDue.toLocaleString()})`}</span>
+                        <span>{bn ? `সকল বকেয়া একসাথে পরিশোধ ↗ (৳${formatDigits(sessionFinancials.totalDue.toLocaleString(), bn)})` : `Pay All Dues ↗ (৳${sessionFinancials.totalDue.toLocaleString()})`}</span>
                       </Button>
                       <Button
                         type="button"
@@ -1811,28 +1822,28 @@ const StudentProfileModal = ({
                           ) : isPartialPaid ? (
                             <>
                               <Badge className="bg-amber-500/10 text-amber-600 rounded-full text-[9px] px-2.5">{bn ? `আংশিক ৳${totalPaidForThis}` : `Partial ৳${totalPaidForThis}`}</Badge>
-                              <Badge className="bg-destructive/10 text-destructive rounded-full text-[9px] px-2.5">{bn ? `বকেয়া ৳${remaining}` : `Due ৳${remaining}`}</Badge>
+                              <Badge className="bg-amber-500/15 text-amber-800 dark:text-amber-300 rounded-full text-[9px] px-2.5">{bn ? `অবশিষ্ট প্রদেয় ৳${remaining}` : `Remaining ৳${remaining}`}</Badge>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="h-5 text-[9px] px-2 text-emerald-700 dark:text-emerald-300 border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-full font-bold ml-auto"
+                                className="h-6 text-[10px] px-2.5 text-emerald-700 dark:text-emerald-300 border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-full font-bold ml-auto"
                                 onClick={() => handleOpenPayFromFeeType(ft, remaining)}
                               >
-                                <Banknote className="w-2.5 h-2.5 mr-1" /> {bn ? 'বকেয়া পরিশোধ' : 'Pay Due'}
+                                <Banknote className="w-3 h-3 mr-1" /> {bn ? 'পরিশোধ ↗' : 'Pay ↗'}
                               </Button>
                             </>
                           ) : pendingPayment ? (
                             <Badge className="bg-amber-500/10 text-amber-600 rounded-full text-[9px] px-2.5">{bn ? '⏳ পেন্ডিং' : '⏳ Pending'}</Badge>
                           ) : (
                             <>
-                              <Badge className="bg-destructive/10 text-destructive rounded-full text-[9px] px-2.5">{bn ? `বকেয়া ৳${netAmount}` : `Due ৳${netAmount}`}</Badge>
+                              <Badge className="bg-primary/10 text-primary border border-primary/20 rounded-full text-[9px] px-2.5">{bn ? `প্রদেয় ৳${netAmount}` : `Payable ৳${netAmount}`}</Badge>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="h-5 text-[9px] px-2 text-emerald-700 dark:text-emerald-300 border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-full font-bold ml-auto"
+                                className="h-6 text-[10px] px-2.5 text-emerald-700 dark:text-emerald-300 border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-full font-bold ml-auto"
                                 onClick={() => handleOpenPayFromFeeType(ft, netAmount)}
                               >
-                                <Banknote className="w-2.5 h-2.5 mr-1" /> {bn ? 'বকেয়া পরিশোধ' : 'Pay Due'}
+                                <Banknote className="w-3 h-3 mr-1" /> {bn ? 'পরিশোধ ↗' : 'Pay ↗'}
                               </Button>
                             </>
                           )}

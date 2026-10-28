@@ -446,7 +446,13 @@ const AdminStudentsFees = () => {
         const ftObj = dbFeeTypes.find((ft: any) => ft.id === targetFeeTypeId);
         if (ftObj) setSelectedFeeTypeObj(ftObj);
       }
-      if (targetMonth) setPaymentMonth(targetMonth);
+      if (targetMonth) {
+        setPaymentMonth(targetMonth);
+        const y = parseInt(targetYear || String(new Date().getFullYear()));
+        const idx = MONTHS_EN.indexOf(targetMonth);
+        const bnMonth = idx >= 0 ? MONTHS_BN[idx] : targetMonth;
+        setSelectedMonths([{ month: targetMonth, monthBn: bnMonth, year: y }]);
+      }
       if (targetYear) setPaymentYear(parseInt(targetYear) || new Date().getFullYear());
       if (targetAmount) setAmount(targetAmount);
       if (targetCollector) setCustomCollector(targetCollector);
