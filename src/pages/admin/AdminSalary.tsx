@@ -57,7 +57,7 @@ import {
   CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Edit2, Eye,
   Calculator, Plus, Trash2, DollarSign, FileText, FolderOpen,
   PiggyBank, Landmark, RefreshCw, Minus, Share2, Camera, FileCheck2, Upload,
-  History, UserMinus, Building2, Layers, Loader2, MessageCircle
+  History, UserMinus, Building2, Layers, Loader2, MessageCircle, Calendar
 } from 'lucide-react';
 import {
   sendStaffSalaryPaymentNotification,
@@ -1548,6 +1548,23 @@ const AdminSalary = () => {
     return s?.setting_value as any || {};
   };
 
+  // Days in month calculation basis helper:
+  // Supports global default and per-month overrides.
+  // 'actual_calendar_days': divides by 31 in 31-day months, 30 in 30-day, 28/29 in Feb.
+  // 'max_30_days': standard 30-day cap.
+  const getDaysInMonthForSalary = useCallback((year: number, month: number, targetMonthYear?: string): number => {
+    const actualDays = new Date(year, month, 0).getDate();
+    const mKey = targetMonthYear || `${year}-${String(month).padStart(2, '0')}`;
+    const setting = getSetting('month_days_basis');
+    const monthOverride = setting?.month_overrides?.[mKey];
+    const mode = monthOverride || setting?.mode || setting?.default_mode || 'max_30_days';
+
+    if (mode === 'actual_calendar_days') {
+      return actualDays;
+    }
+    return Math.min(actualDays, 30);
+  }, [settings]);
+
   // উপস্থিতির "শেষ আপডেট" — এই স্টাফের চলতি মাসের রেকর্ডগুলোর সর্বশেষ updated_at/created_at।
   const getAttendanceLastUpdated = (staffMember: any): Date | null => {
     let latest: number | null = null;
@@ -1743,7 +1760,7 @@ const AdminSalary = () => {
     // ছুটি (leave) = পূর্ণ দিনের বেতন, তাই উপস্থিতের সাথে গণনা হয় (অর্থাৎ ফুল ডে/উপস্থিত)।
     // উপস্থিত দিন কখনো মাসের প্রকৃত দিনসংখ্যার বেশি গণনা হবে না (অতিরিক্ত দিন বাদ)।
     const [presYy, presMm] = monthYear.split('-').map(Number);
-    const daysInMonthForPresent = Math.min(new Date(presYy, presMm, 0).getDate(), 30);
+    const daysInMonthForPresent = getDaysInMonthForSalary(presYy, presMm, monthYear);
     let present = 0;
     const recordedAbsent = records.filter((r: any) => r.status === 'absent' && !paidHolidaySet.has(r.attendance_date)).length;
     let late = 0;
@@ -1784,7 +1801,7 @@ const AdminSalary = () => {
     // দৈনিক হার = মাসিক বেতন ÷ ৩০ (সর্বোচ্চ)। ৩১ দিনের মাস ৩০ দিন ধরা হয়;
     // ফেব্রুয়ারি (২৮/২৯) প্রকৃত দিনে থাকে যাতে পূর্ণ হাজিরায় পূর্ণ বেতন হয়।
     const [statYy, statMm] = monthYear.split('-').map(Number);
-    const daysInSelectedMonth = Math.min(new Date(statYy, statMm, 0).getDate(), 30);
+    const daysInSelectedMonth = getDaysInMonthForSalary(statYy, statMm, monthYear);
     const dailyRate = baseSalary / daysInSelectedMonth;
     const perMinuteRate = scheduledMinutesPerDay > 0 ? dailyRate / scheduledMinutesPerDay : 0;
 
@@ -1973,8 +1990,7 @@ const AdminSalary = () => {
     // Days BEFORE the staff's joining date are tracked separately (preJoinDays)
     // so pay is prorated from joining. For the CURRENT month only days up to today count.
     const [yy, mm] = monthYear.split('-').map(Number);
-    // ৩১ দিনের মাস ৩০ দিন ধরা হয় — ৩১তারিখ বেতন হিসাবের বাইরে।
-    const lastDay = Math.min(new Date(yy, mm, 0).getDate(), 30);
+    const lastDay = getDaysInMonthForSalary(yy, mm, monthYear);
     const now = new Date();
     const isCurrentMonth = now.getFullYear() === yy && (now.getMonth() + 1) === mm;
     const isFutureMonth = (yy > now.getFullYear()) || (yy === now.getFullYear() && mm > (now.getMonth() + 1));
@@ -2046,8 +2062,7 @@ const AdminSalary = () => {
 
     const year = Number(selectedYear);
     const month = Number(selectedMonth);
-    // কর্মদিবস সর্বোচ্চ ৩০ — ৩১ দিনের মাস ৩০ দিন ধরা হয়।
-    const daysInMonth = Math.min(new Date(year, month, 0).getDate(), 30);
+    const daysInMonth = getDaysInMonthForSalary(year, month, monthYear);
     // Pre-joining days are excluded from this month's working days so a mid-month
     // joiner is paid only from the joining date onward.
     const preJoinDays = attStats.preJoinDays || 0;
@@ -3916,6 +3931,77 @@ const AdminSalary = () => {
                 </Select>
                 <Input type="number" value={selectedYear || ''} onChange={e => setSelectedYear(e.target.value)}
                   className="w-20 h-8 text-sm" min="2020" max="2040" />
+
+                {/* Per-month days divisor basis selector */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="h-8 px-2.5 text-xs rounded-md border border-border/80 bg-background/80 hover:bg-muted/60 transition-colors flex items-center gap-1.5 font-medium text-muted-foreground hover:text-foreground shrink-0 shadow-xs"
+                      title={bn ? 'এই মাসের দিন গণনা পদ্ধতি নির্বাচন করুন' : 'Select month days calculation basis'}
+                    >
+                      <Calendar className="h-3.5 w-3.5 text-primary" />
+                      <span>
+                        {(() => {
+                          const eff = getDaysInMonthForSalary(Number(selectedYear), Number(selectedMonth), monthYear);
+                          return bn ? `${toBnDigits(eff)} দিন ভিত্তি` : `${eff}d basis`;
+                        })()}
+                      </span>
+                      <ChevronDown className="h-3 w-3 opacity-60" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-72 p-3 space-y-2 text-xs">
+                    <div className="font-semibold text-foreground flex items-center justify-between pb-1 border-b">
+                      <span>{bn ? 'মাসের দিন গণনা পদ্ধতি' : 'Month Days Basis'}</span>
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        {getMonthLabel(monthYear)} ({toBnDigits(new Date(Number(selectedYear), Number(selectedMonth), 0).getDate())} দিন)
+                      </span>
+                    </div>
+                    <div className="space-y-1.5 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const cur = getSetting('month_days_basis') || {};
+                          const overrides = { ...(cur.month_overrides || {}), [monthYear]: 'actual_calendar_days' };
+                          saveSettingMutation.mutate({ key: 'month_days_basis', value: { ...cur, month_overrides: overrides } });
+                        }}
+                        className={`w-full text-left p-2 rounded-lg border transition-colors ${
+                          (getSetting('month_days_basis')?.month_overrides?.[monthYear] || getSetting('month_days_basis')?.mode) === 'actual_calendar_days'
+                            ? 'border-primary bg-primary/10 text-primary font-semibold'
+                            : 'border-border hover:bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        <div className="font-medium text-xs">
+                          {bn ? `ক্যালেন্ডারের প্রকৃত দিন (${toBnDigits(new Date(Number(selectedYear), Number(selectedMonth), 0).getDate())} দিনে হিসাব)` : `Actual Calendar Days`}
+                        </div>
+                        <div className="text-[10px] opacity-75">
+                          {bn ? 'ক্যালেন্ডারের সম্পূর্ণ দিন দিয়ে দৈনিক হার ও কর্তন নির্ধারিত হবে' : 'Divides monthly salary by actual calendar days'}
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const cur = getSetting('month_days_basis') || {};
+                          const overrides = { ...(cur.month_overrides || {}), [monthYear]: 'max_30_days' };
+                          saveSettingMutation.mutate({ key: 'month_days_basis', value: { ...cur, month_overrides: overrides } });
+                        }}
+                        className={`w-full text-left p-2 rounded-lg border transition-colors ${
+                          (getSetting('month_days_basis')?.month_overrides?.[monthYear] || getSetting('month_days_basis')?.mode || 'max_30_days') === 'max_30_days'
+                            ? 'border-primary bg-primary/10 text-primary font-semibold'
+                            : 'border-border hover:bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        <div className="font-medium text-xs">
+                          {bn ? 'সর্বোচ্চ ৩০ দিন স্ট্যান্ডার্ড (ডিফল্ট)' : 'Max 30 Days Standard (Default)'}
+                        </div>
+                        <div className="text-[10px] opacity-75">
+                          {bn ? '৩১ দিনের মাস হলেও সর্বোচ্চ ৩০ দিন দিয়ে ভাগ হবে' : 'Caps monthly divisor at 30 days'}
+                        </div>
+                      </button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="relative flex-1 w-full">
@@ -5799,6 +5885,28 @@ const AdminSalary = () => {
                     {bn
                       ? 'কর্তনভিত্তিক: শুক্রবার/সরকারি ছুটি স্বয়ংক্রিয়ভাবে বেতনসহ। যোগভিত্তিক: প্রতিদিন উপস্থিতি রেকর্ড থাকতে হবে নাহলে সেদিনের বেতন হবে না।'
                       : 'Subtractive: weekend/holidays auto-paid. Additive: each day must have an attendance record to be paid.'}
+                  </p>
+                </div>
+
+                <div className="p-3 border rounded-lg space-y-2">
+                  <Label>{bn ? 'মাসের দিন গণনার ভিত্তি (৩১ দিনের মাস)' : 'Month Days Divisor Basis (31-Day Months)'}</Label>
+                  <Select
+                    value={getSetting('month_days_basis')?.mode || 'max_30_days'}
+                    onValueChange={v => {
+                      const cur = getSetting('month_days_basis') || {};
+                      saveSettingMutation.mutate({ key: 'month_days_basis', value: { ...cur, mode: v } });
+                    }}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="max_30_days">{bn ? 'সর্বোচ্চ ৩০ দিন স্ট্যান্ডার্ড (ডিফল্ট: ৩১ দিনের মাসেও ৩০ দিয়ে ভাগ)' : 'Max 30 Days Standard (Default: 30 days divisor)'}</SelectItem>
+                      <SelectItem value="actual_calendar_days">{bn ? 'ক্যালেন্ডারের প্রকৃত দিন (৩১ দিনে ৩১, ৩০ দিনে ৩০, ২৮/২৯ দিনে ২৮/২৯)' : 'Actual Calendar Days (31 for 31-day, 30 for 30-day, etc.)'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-muted-foreground">
+                    {bn
+                      ? 'ক্যালেন্ডারের প্রকৃত দিন সিলেক্ট করলে ৩১ দিনের মাসে ৩১ দিয়ে ভাগ হয়ে দৈনিক বেতন ও কর্তন হিসাব হবে। ৩০ দিন সিলেক্ট করলে বছরজুড়ে সর্বোচ্চ ৩০ দিনে হিসাব হবে।'
+                      : 'Actual Calendar Days divides by 31 in 31-day months. Max 30 Days caps divisor at 30.'}
                   </p>
                 </div>
               </TabsContent>
