@@ -21,11 +21,10 @@ const AdminApiVerification = () => {
   const queryClient = useQueryClient();
   const { canEditItem } = usePagePermissions('/admin/api-verification');
   const navigate = useNavigate();
-  const { data: config, isLoading } = useApiVerificationConfig(unlockPassword);
-
   // Password gate
   const [unlockPassword, setUnlockPassword] = useState<string | null>(null);
   const unlocked = unlockPassword !== null;
+  const { data: config, isLoading } = useApiVerificationConfig(unlockPassword);
   const [masterInput, setMasterInput] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
