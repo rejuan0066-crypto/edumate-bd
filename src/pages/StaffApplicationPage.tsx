@@ -64,8 +64,8 @@ interface StepDef {
 }
 
 const ALL_STEPS: StepDef[] = [
-  { id: 'personal', bn: 'মৌলিক তথ্য', en: 'Basic Info', icon: User },
-  { id: 'education_address', bn: 'যোগ্যতা ও ঠিকানা', en: 'Education & Address', icon: GraduationCap },
+  { id: 'personal', bn: 'মৌলিক ও যোগ্যতা', en: 'Basic & Qualification', icon: User },
+  { id: 'address', bn: 'ঠিকানা', en: 'Address', icon: MapPin },
   { id: 'parents', bn: 'পিতা-মাতার তথ্য', en: 'Parents Info', icon: Users },
   { id: 'references', bn: 'পরিচয়কারী ও শনাক্তকারী', en: 'References', icon: ShieldCheck },
   { id: 'documents', bn: 'কাগজপত্র', en: 'Documents', icon: FileText },
@@ -915,52 +915,61 @@ const StaffApplicationPage = () => {
               )}
             </div>
           </div>
+
+          {/* Educational Qualification & Experience Section */}
+          {(isVisible('staff_education') || isVisible('staff_experience') || isVisible('staff_prev_institute')) && (
+            <div className="border-t border-border/70 pt-5 space-y-4">
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <GraduationCap className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span>{bn ? 'শিক্ষাগত যোগ্যতা ও অভিজ্ঞতা' : 'Educational Qualification & Experience'}</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {isVisible('staff_education') && (
+                  <div className="sm:col-span-2">
+                    <Label>{bn ? 'শিক্ষাগত যোগ্যতা (ডিগ্রী, প্রতিষ্ঠান ও সন)' : 'Educational Qualification'}</Label>
+                    <Input
+                      className="bg-background mt-1"
+                      value={education}
+                      placeholder={bn ? 'যেমন: কামিল / দাওরায়ে হাদিস / স্নাতক / স্নাতকোত্তর' : 'e.g. Masters, Graduation, Kamil'}
+                      onChange={e => setEducation(e.target.value)}
+                    />
+                  </div>
+                )}
+
+                {isVisible('staff_experience') && (
+                  <div>
+                    <Label>{bn ? 'কাজের অভিজ্ঞতা (বছর / বিবরণ)' : 'Experience'}</Label>
+                    <Input
+                      className="bg-background mt-1"
+                      value={experience}
+                      placeholder={bn ? 'যেমন: ৩ বছর শিক্ষকতা' : 'e.g. 3 years teaching'}
+                      onChange={e => setExperience(e.target.value)}
+                    />
+                  </div>
+                )}
+
+                {isVisible('staff_prev_institute') && (
+                  <div>
+                    <Label>{bn ? 'পূর্ববর্তী কর্মস্থল / প্রতিষ্ঠান' : 'Previous Institute'}</Label>
+                    <Input
+                      className="bg-background mt-1"
+                      value={prevInstitute}
+                      placeholder={bn ? 'প্রতিষ্ঠানের নাম ও পদ' : 'Institute name'}
+                      onChange={e => setPrevInstitute(e.target.value)}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       );
     }
 
-    if (currentStepId === 'education_address') {
+    if (currentStepId === 'address' || currentStepId === 'education_address') {
       return (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {isVisible('staff_education') && (
-              <div className="sm:col-span-2">
-                <Label>{bn ? 'শিক্ষাগত যোগ্যতা (ডিগ্রী, প্রতিষ্ঠান ও সন)' : 'Educational Qualification'}</Label>
-                <Input
-                  className="bg-background mt-1"
-                  value={education}
-                  placeholder={bn ? 'যেমন: কামিল / দাওরায়ে হাদিস / স্নাতক / স্নাতকোত্তর' : 'e.g. Masters, Graduation, Kamil'}
-                  onChange={e => setEducation(e.target.value)}
-                />
-              </div>
-            )}
-
-            {isVisible('staff_experience') && (
-              <div>
-                <Label>{bn ? 'কাজের অভিজ্ঞতা (বছর / বিবরণ)' : 'Experience'}</Label>
-                <Input
-                  className="bg-background mt-1"
-                  value={experience}
-                  placeholder={bn ? 'যেমন: ৩ বছর শিক্ষকতা' : 'e.g. 3 years teaching'}
-                  onChange={e => setExperience(e.target.value)}
-                />
-              </div>
-            )}
-
-            {isVisible('staff_prev_institute') && (
-              <div>
-                <Label>{bn ? 'পূর্ববর্তী কর্মস্থল / প্রতিষ্ঠান' : 'Previous Institute'}</Label>
-                <Input
-                  className="bg-background mt-1"
-                  value={prevInstitute}
-                  placeholder={bn ? 'প্রতিষ্ঠানের নাম ও পদ' : 'Institute name'}
-                  onChange={e => setPrevInstitute(e.target.value)}
-                />
-              </div>
-            )}
-          </div>
-
-          <div className="border-t border-border/70 pt-5 space-y-4">
+          <div className="space-y-4">
             {isVisible('staff_permanent_addr') && (
               <AddressFields label={bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'} value={permanentAddr} onChange={setPermanentAddr} />
             )}
