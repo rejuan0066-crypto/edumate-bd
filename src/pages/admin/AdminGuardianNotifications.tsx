@@ -176,6 +176,7 @@ const INTERVAL_OPTIONS = [
   { value: '24h', label_bn: 'প্রতিদিন (২৪ ঘণ্টা পর পর)', label_en: 'Daily (Every 24 hours)', minutes: 1440 },
   { value: '7d', label_bn: 'প্রতি সপ্তাহে (৭ দিন পর পর)', label_en: 'Weekly (Every 7 days)', minutes: 10080 },
   { value: '30d', label_bn: 'প্রতি মাসে (৩০ দিন পর পর)', label_en: 'Monthly (Every 30 days)', minutes: 43200 },
+  { value: 'custom', label_bn: '⚙️ কাস্টম সময় (নিজে নির্ধারণ করুন)...', label_en: '⚙️ Custom Interval...', minutes: 0 },
 ];
 
 const REPEAT_COUNT_OPTIONS = [
@@ -188,12 +189,70 @@ const REPEAT_COUNT_OPTIONS = [
   { value: 'unlimited', label_bn: 'বিরতিহীন / বন্ধ না করা পর্যন্ত', label_en: 'Unlimited until stopped' },
 ];
 
-const getIntervalMinutes = (interval: string): number => {
+const computeCustomIntervalMinutes = (val: number, unit: string): number => {
+  const n = Math.max(1, Number(val) || 1);
+  if (unit === 'minutes') return n;
+  if (unit === 'hours') return n * 60;
+  if (unit === 'days') return n * 1440;
+  if (unit === 'weeks') return n * 10080;
+  if (unit === 'months') return n * 43200;
+  return n;
+};
+
+const getIntervalMinutes = (interval: string, customVal?: number, customUnit?: string): number => {
+  if (interval === 'custom') {
+    return computeCustomIntervalMinutes(customVal || 10, customUnit || 'minutes');
+  }
+  if (interval.startsWith('custom_')) {
+    const parts = interval.split('_');
+    const val = Number(parts[1]) || 1;
+    const unit = parts[2] || 'minutes';
+    return computeCustomIntervalMinutes(val, unit);
+  }
   const found = INTERVAL_OPTIONS.find(i => i.value === interval);
   return found ? found.minutes : 0;
 };
 
-const getIntervalLabel = (interval: string, bn: boolean): string => {
+const getIntervalLabel = (interval: string, bn: boolean, customVal?: number, customUnit?: string): string => {
+  if (interval === 'custom') {
+    const n = Math.max(1, Number(customVal) || 1);
+    const u = customUnit || 'minutes';
+    const unitMapBn: Record<string, string> = {
+      minutes: 'মিনিট',
+      hours: 'ঘণ্টা',
+      days: 'দিন',
+      weeks: 'সপ্তাহ',
+      months: 'মাস',
+    };
+    const unitMapEn: Record<string, string> = {
+      minutes: 'minutes',
+      hours: 'hours',
+      days: 'days',
+      weeks: 'weeks',
+      months: 'months',
+    };
+    return bn ? `প্রতি ${n} ${unitMapBn[u] || u} পর পর` : `Every ${n} ${unitMapEn[u] || u}`;
+  }
+  if (interval.startsWith('custom_')) {
+    const parts = interval.split('_');
+    const val = parts[1] || '1';
+    const unit = parts[2] || 'minutes';
+    const unitMapBn: Record<string, string> = {
+      minutes: 'মিনিট',
+      hours: 'ঘণ্টা',
+      days: 'দিন',
+      weeks: 'সপ্তাহ',
+      months: 'মাস',
+    };
+    const unitMapEn: Record<string, string> = {
+      minutes: 'minutes',
+      hours: 'hours',
+      days: 'days',
+      weeks: 'weeks',
+      months: 'months',
+    };
+    return bn ? `প্রতি ${val} ${unitMapBn[unit] || unit} পর পর` : `Every ${val} ${unitMapEn[unit] || unit}`;
+  }
   const found = INTERVAL_OPTIONS.find(i => i.value === interval);
   if (!found) return interval;
   return bn ? found.label_bn : found.label_en;
@@ -298,6 +357,8 @@ const AdminGuardianNotifications = () => {
     return getLocalDatetimeLocal(d);
   });
   const [repeatInterval, setRepeatInterval] = useState('once');
+  const [customIntervalValue, setCustomIntervalValue] = useState<number>(10);
+  const [customIntervalUnit, setCustomIntervalUnit] = useState<'minutes' | 'hours' | 'days' | 'weeks' | 'months'>('minutes');
   const [repeatCountType, setRepeatCountType] = useState('1');
   const [customRepeatCount, setCustomRepeatCount] = useState<number>(3);
 
@@ -795,7 +856,8 @@ const AdminGuardianNotifications = () => {
     }
 
     const totalRuns = repeatCountType === 'unlimited' ? 0 : (repeatCountType === 'custom' ? Number(customRepeatCount || 1) : Number(repeatCountType));
-    const intervalMinutes = getIntervalMinutes(repeatInterval);
+    const intervalMinutes = getIntervalMinutes(repeatInterval, customIntervalValue, customIntervalUnit);
+    const effectiveIntervalKey = repeatInterval === 'custom' ? `custom_${customIntervalValue}_${customIntervalUnit}` : repeatInterval;
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -808,7 +870,7 @@ const AdminGuardianNotifications = () => {
         schedule: {
           isScheduled: true,
           scheduledAt: scheduledDate.toISOString(),
-          interval: repeatInterval,
+          interval: effectiveIntervalKey,
           intervalMinutes,
           totalRuns,
           runsCompleted: 0,
@@ -1737,6 +1799,41 @@ const AdminGuardianNotifications = () => {
                             </div>
                           </div>
 
+                          {/* Custom interval input if custom is chosen */}
+                          {repeatInterval === 'custom' && (
+                            <div className="p-3 bg-muted/40 border border-emerald-500/30 rounded-lg flex flex-wrap items-center gap-3">
+                              <div className="space-y-1">
+                                <Label className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
+                                  {bn ? 'কাস্টম সময়ের ব্যবধান নির্ধারণ করুন:' : 'Set Custom Repeat Interval:'}
+                                </Label>
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    type="number"
+                                    min={1}
+                                    max={customIntervalUnit === 'minutes' ? 10000 : 365}
+                                    value={customIntervalValue}
+                                    onChange={(e) => setCustomIntervalValue(Math.max(1, Number(e.target.value)))}
+                                    className="w-24 h-8 text-xs bg-background"
+                                  />
+                                  <Select value={customIntervalUnit} onValueChange={(v: any) => setCustomIntervalUnit(v)}>
+                                    <SelectTrigger className="w-32 h-8 text-xs bg-background"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="minutes">{bn ? 'মিনিট' : 'Minutes'}</SelectItem>
+                                      <SelectItem value="hours">{bn ? 'ঘণ্টা' : 'Hours'}</SelectItem>
+                                      <SelectItem value="days">{bn ? 'দিন' : 'Days'}</SelectItem>
+                                      <SelectItem value="weeks">{bn ? 'সপ্তাহ' : 'Weeks'}</SelectItem>
+                                      <SelectItem value="months">{bn ? 'মাস' : 'Months'}</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <span className="text-xs text-muted-foreground font-medium">{bn ? 'পর পর' : 'interval'}</span>
+                                </div>
+                              </div>
+                              <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 mt-4 sm:mt-5">
+                                {getIntervalLabel(repeatInterval, bn, customIntervalValue, customIntervalUnit)}
+                              </Badge>
+                            </div>
+                          )}
+
                           {/* Custom count input if custom is chosen */}
                           {repeatCountType === 'custom' && (
                             <div className="w-48">
@@ -1760,11 +1857,11 @@ const AdminGuardianNotifications = () => {
                                 ? `📅 প্রথম মেসেজ যাবে: ${new Date(scheduledDateTime).toLocaleString('bn-BD', { dateStyle: 'medium', timeStyle: 'short' })}। ${
                                     repeatInterval === 'once'
                                       ? 'এটি শুধুমাত্র একবারই পাঠানো হবে।'
-                                      : `এরপর ${getIntervalLabel(repeatInterval, true)} মোট ${
+                                      : `এরপর ${getIntervalLabel(repeatInterval, true, customIntervalValue, customIntervalUnit)} মোট ${
                                           repeatCountType === 'unlimited' ? 'বিরতিহীনভাবে' : `${repeatCountType === 'custom' ? customRepeatCount : repeatCountType} বার`
                                         } পাঠানো হবে।`
                                   }`
-                                : `📅 Scheduled start: ${new Date(scheduledDateTime).toLocaleString()} • Interval: ${getIntervalLabel(repeatInterval, false)} • Repetitions: ${repeatCountType === 'unlimited' ? 'Unlimited' : repeatCountType}`}
+                                : `📅 Scheduled start: ${new Date(scheduledDateTime).toLocaleString()} • Interval: ${getIntervalLabel(repeatInterval, false, customIntervalValue, customIntervalUnit)} • Repetitions: ${repeatCountType === 'unlimited' ? 'Unlimited' : repeatCountType}`}
                             </span>
                           </div>
                         </div>
@@ -1869,7 +1966,7 @@ const AdminGuardianNotifications = () => {
                     {isScheduled && (
                       <div className="flex justify-between py-1 border-b text-primary">
                         <span className="text-muted-foreground">{bn ? 'পুনরাবৃত্তি:' : 'Recurrence:'}</span>
-                        <span className="font-semibold">{getIntervalLabel(repeatInterval, bn)}</span>
+                        <span className="font-semibold">{getIntervalLabel(repeatInterval, bn, customIntervalValue, customIntervalUnit)}</span>
                       </div>
                     )}
 
