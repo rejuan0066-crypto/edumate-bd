@@ -61,6 +61,9 @@ Deno.serve(async (req) => {
     const tableParam = url.searchParams.get('table');
     const format = url.searchParams.get('format') || 'json';
 
+    if (tableParam && !TABLES.includes(tableParam)) {
+      return new Response(JSON.stringify({ error: 'Table not allowed' }), { status: 400, headers: corsHeaders });
+    }
     const tablesToExport = tableParam ? [tableParam] : TABLES;
     const backup: Record<string, any> = {
       metadata: {
