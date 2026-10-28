@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { usePersistentTab } from '@/hooks/usePersistentTab';
 import { useTimeFormat, formatTimeDisplay } from '@/hooks/useTimeFormat';
-import { useResignedStaff } from '@/hooks/useResignedStaff';
+import { useResignedStaff, normalizeResignName } from '@/hooks/useResignedStaff';
 import { useAppTimezone } from '@/hooks/useAppTimezone';
 import { toIsoDateInTz, getDatePartsInTz, formatDateTimeInTz, formatDateInTz, formatTimeInTz } from '@/lib/timezone';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -1398,8 +1398,16 @@ const AdminSalary = () => {
       const ovOvertime = Number(record.overtime || 0);
       const ovSavings = Number(record.savings_deduction ?? savingsForNet);
       const ovDuty = Number(record.duty_deduction ?? liveCalc.duty_deduction ?? 0);
-      const ovPreJoin = Number(record.pre_join_deduction ?? liveCalc.pre_join_deduction ?? 0);
-      const ovPostResign = Number(record.post_resign_deduction ?? liveCalc.post_resign_deduction ?? 0);
+      let parsedPostResign = 0;
+      let parsedPreJoin = 0;
+      if (typeof record.remarks === 'string') {
+        const postMatch = record.remarks.match(/পদত্যাগ আনুপাতিক কর্তন: ৳(\d+)/);
+        if (postMatch) parsedPostResign = Number(postMatch[1]);
+        const preMatch = record.remarks.match(/যোগদান আনুপাতিক কর্তন: ৳(\d+)/);
+        if (preMatch) parsedPreJoin = Number(preMatch[1]);
+      }
+      const ovPreJoin = Number(record.pre_join_deduction ?? (parsedPreJoin || liveCalc.pre_join_deduction || 0));
+      const ovPostResign = Number(record.post_resign_deduction ?? (parsedPostResign || liveCalc.post_resign_deduction || 0));
       Object.assign(liveRecord, {
         manual_override: true,
         base_salary: ovBase,
@@ -1588,23 +1596,16 @@ const AdminSalary = () => {
       if (d && d !== '1970-01-01') return d;
     }
 
-    const norm = (sName || '')
-      .replace(/[:ঃ\.,\-\(\)]/g, ' ')
-      .replace(/\b(মাওলানা|মুয়াল্লিম|মুআল্লিম|হাফেজ|হাফিজ|মাষ্টার|মাস্টার|জনাব|মোঃ|মো|মুহাদ্দিস|মুফতি)\b/g, '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .toLowerCase();
+    const norm = normalizeResignName(sName);
+    const relatedStaffIds = new Set<string>();
+    if (s?.id) relatedStaffIds.add(s.id);
 
     if (norm && Array.isArray(staffRaw)) {
       for (const other of staffRaw) {
-        if (!other?.id || other.id === s.id) continue;
-        const oNorm = (other?.name_bn || other?.name_en || '')
-          .replace(/[:ঃ\.,\-\(\)]/g, ' ')
-          .replace(/\b(মাওলানা|মুয়াল্লিম|মুআল্লিম|হাফেজ|হাফিজ|মাষ্টার|মাস্টার|জনাব|মোঃ|মো|মুহাদ্দিস|মুফতি)\b/g, '')
-          .replace(/\s+/g, ' ')
-          .trim()
-          .toLowerCase();
+        if (!other?.id) continue;
+        const oNorm = normalizeResignName(other?.name_bn || other?.name_en);
         if (norm === oNorm) {
+          relatedStaffIds.add(other.id);
           const oDate = getResignDate(other.id, oNorm) || (other.staff_data as any)?.resign_date;
           if (oDate && oDate !== '1970-01-01') return String(oDate).slice(0, 10);
         }
@@ -1612,10 +1613,10 @@ const AdminSalary = () => {
     }
 
     // Attendance-based fallback: if staff is marked resigned or inactive, check their last attendance in this month
-    const isMarkedResigned = s?.status === 'resigned' || sd.status_reason === 'resigned' || s?.status === 'inactive';
+    const isMarkedResigned = s?.status === 'resigned' || sd.status_reason === 'resigned' || s?.status === 'inactive' || (s?.id && resignedStaffIds.has(s.id));
     if (isMarkedResigned && Array.isArray(attendanceData)) {
       const staffAtt = attendanceData
-        .filter((a: any) => (a.entity_id === s.id) && ['present', 'late', 'half_day'].includes(a.status))
+        .filter((a: any) => relatedStaffIds.has(a.entity_id) && ['present', 'late', 'half_day'].includes(a.status))
         .map((a: any) => String(a.attendance_date).slice(0, 10))
         .filter((d: string) => d.startsWith(monthYear))
         .sort();
@@ -1625,7 +1626,7 @@ const AdminSalary = () => {
     }
 
     return byId || null;
-  }, [getResignDate, staffRaw, attendanceData, monthYear]);
+  }, [getResignDate, staffRaw, attendanceData, monthYear, resignedStaffIds]);
 
   // salary record already exists, but never in future months after resignation.
   // In the month they resigned, they MUST appear so their final salary up to resign date can be processed.
@@ -4544,15 +4545,34 @@ const AdminSalary = () => {
                                         disabled={isRecordPending(rec.id)}
                                         onClick={() => {
                                           const live = calculateSalary(s);
+                                          const staffResignDate = getStaffResignDate(s);
+                                          const isResigned = s?.status === 'resigned' || s?.status === 'inactive' || (s?.staff_data as any)?.status_reason === 'resigned' || !!staffResignDate || isResignedInMonth(s.id, monthYear, s.name_bn) || resignedStaffIds.has(s.id);
+
+                                          // If displayRecord does not have a positive post-resign deduction, prefer live calculation
+                                          const postResignDed = Number(displayRecord.post_resign_deduction) > 0
+                                            ? Number(displayRecord.post_resign_deduction)
+                                            : Number(live.post_resign_deduction || 0);
+                                          const postResignDays = Number(displayRecord.post_resign_days) > 0
+                                            ? Number(displayRecord.post_resign_days)
+                                            : Number(live.post_resign_days || 0);
+
+                                          const preJoinDed = Number(displayRecord.pre_join_deduction) > 0
+                                            ? Number(displayRecord.pre_join_deduction)
+                                            : Number(live.pre_join_deduction || 0);
+                                          const preJoinDays = Number(displayRecord.pre_join_days) > 0
+                                            ? Number(displayRecord.pre_join_days)
+                                            : Number(live.pre_join_days || 0);
+
                                           setEditDialog({
                                             ...displayRecord,
                                             id: rec.id,
                                             staffName: s.name_bn,
                                             staffMember: s,
-                                            post_resign_deduction: displayRecord.post_resign_deduction ?? live.post_resign_deduction ?? 0,
-                                            post_resign_days: displayRecord.post_resign_days ?? live.post_resign_days ?? 0,
-                                            pre_join_deduction: displayRecord.pre_join_deduction ?? live.pre_join_deduction ?? 0,
-                                            pre_join_days: displayRecord.pre_join_days ?? live.pre_join_days ?? 0,
+                                            isStaffResigned: isResigned,
+                                            post_resign_deduction: postResignDed,
+                                            post_resign_days: postResignDays,
+                                            pre_join_deduction: preJoinDed,
+                                            pre_join_days: preJoinDays,
                                           });
                                         }}
                                       >
@@ -5526,7 +5546,7 @@ const AdminSalary = () => {
                       <NumberInput value={editDialog.other_deduction} onValueChange={n => setEditDialog({ ...editDialog, other_deduction: n })} />
                       <Input className="mt-1.5" type="text" placeholder={bn ? 'কর্তনের কারণ লিখুন' : 'Reason for deduction'} value={editDialog.other_deduction_note || ''} onChange={e => setEditDialog({ ...editDialog, other_deduction_note: e.target.value })} />
                     </div>
-                    {(Number(editDialog.post_resign_deduction) > 0 || (editDialog.post_resign_days || 0) > 0 || (editDialog.staffMember && isResignedInMonth(editDialog.staffMember.id, monthYear, editDialog.staffName))) && (
+                    {(editDialog.isStaffResigned || Number(editDialog.post_resign_deduction) > 0 || (editDialog.post_resign_days || 0) > 0 || (editDialog.staffMember && (editDialog.staffMember.status === 'inactive' || editDialog.staffMember.status === 'resigned' || isResignedInMonth(editDialog.staffMember.id, monthYear, editDialog.staffName)))) ? (
                       <div className="col-span-2 p-2.5 bg-amber-50/80 dark:bg-amber-950/25 border border-amber-300 dark:border-amber-800 rounded-lg">
                         <div className="flex justify-between items-center mb-1.5">
                           <Label className="text-xs font-bold text-amber-800 dark:text-amber-300">
@@ -5541,8 +5561,19 @@ const AdminSalary = () => {
                           onValueChange={n => setEditDialog({ ...editDialog, post_resign_deduction: n })}
                         />
                       </div>
+                    ) : (
+                      <div className="col-span-2 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => setEditDialog({ ...editDialog, isStaffResigned: true, post_resign_days: 0, post_resign_deduction: 0 })}
+                          className="text-[11px] text-amber-700 dark:text-amber-400 hover:underline flex items-center gap-1 font-medium"
+                        >
+                          <Plus className="h-3 w-3" />
+                          {bn ? 'পদত্যাগ কর্তন যোগ করুন' : 'Add Post-Resign Deduction'}
+                        </button>
+                      </div>
                     )}
-                    {(Number(editDialog.pre_join_deduction) > 0 || (editDialog.pre_join_days || 0) > 0) && (
+                    {(Number(editDialog.pre_join_deduction) > 0 || (editDialog.pre_join_days || 0) > 0 || editDialog.showPreJoin) ? (
                       <div className="col-span-2 p-2.5 bg-blue-50/80 dark:bg-blue-950/25 border border-blue-300 dark:border-blue-800 rounded-lg">
                         <div className="flex justify-between items-center mb-1.5">
                           <Label className="text-xs font-bold text-blue-800 dark:text-blue-300">
@@ -5556,6 +5587,17 @@ const AdminSalary = () => {
                           value={editDialog.pre_join_deduction}
                           onValueChange={n => setEditDialog({ ...editDialog, pre_join_deduction: n })}
                         />
+                      </div>
+                    ) : (
+                      <div className="col-span-2 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => setEditDialog({ ...editDialog, showPreJoin: true, pre_join_days: 0, pre_join_deduction: 0 })}
+                          className="text-[11px] text-blue-700 dark:text-blue-400 hover:underline flex items-center gap-1 font-medium"
+                        >
+                          <Plus className="h-3 w-3" />
+                          {bn ? 'যোগদান পূর্ববর্তী কর্তন যোগ করুন' : 'Add Pre-Join Deduction'}
+                        </button>
                       </div>
                     )}
                   </div>
