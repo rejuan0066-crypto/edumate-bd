@@ -1572,7 +1572,7 @@ const AdmissionPage = () => {
     </head><body>
       <div class="header">
         ${instLogo ? `<img src="${instLogo}" alt="Logo">` : ''}
-        <h1>${escapeHtml(instName)}</h1>
+        <h1>${instName}</h1>
         ${instNameEn ? `<p>${instNameEn}</p>` : ''}
         ${instAddr ? `<p>${instAddr}</p>` : ''}
       </div>
@@ -1636,7 +1636,7 @@ const AdmissionPage = () => {
       </div>` : ''}
 
       <div class="footer">
-        <p>${escapeHtml(instName)} — ভর্তি আবেদন ফর্ম</p>
+        <p>${instName} — ভর্তি আবেদন ফর্ম</p>
       </div>
     </body></html>`;
   };
