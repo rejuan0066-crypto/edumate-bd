@@ -1,3 +1,4 @@
+import { safeRows, csvCell, safeCell } from '@/lib/spreadsheetSafe';
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -153,7 +154,7 @@ const StudentReportSection = () => {
     wsData.push(headers);
     buildRows(filtered).forEach(r => wsData.push(r));
 
-    const sheet = XLSX.utils.aoa_to_sheet(wsData);
+    const sheet = XLSX.utils.aoa_to_sheet(safeRows(wsData));
     sheet['!cols'] = [{ wch: 6 }, { wch: 10 }, { wch: 18 }, { wch: 32 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 12 }];
 
     // Style header row (row 9 -> index 8)

@@ -1,3 +1,4 @@
+import { safeRows, csvCell, safeCell } from '@/lib/spreadsheetSafe';
 import { sanitizeCsvCell } from '@/lib/sanitizeFormula';
 import AdminLayout from '@/components/AdminLayout';
 import TabContainer from '@/components/TabContainer';
@@ -454,18 +455,18 @@ const AdminStudents = () => {
       const isInactive = isStudentEffectivelyInactive(s);
       return [
         idx + 1,
-        s.roll_number || '-',
-        s.registration_no || s.student_id || '-',
-        `"${(s.name_bn || '').replace(/"/g, '""')}"`,
-        `"${(s.name_en || '').replace(/"/g, '""')}"`,
-        `"${clsName.replace(/"/g, '""')}"`,
-        `"${divName.replace(/"/g, '""')}"`,
-        `"${sessName.replace(/"/g, '""')}"`,
+        csvCell(s.roll_number || '-'),
+        csvCell(s.registration_no || s.student_id || '-'),
+        csvCell(s.name_bn || ''),
+        csvCell(s.name_en || ''),
+        csvCell(clsName),
+        csvCell(divName),
+        csvCell(sessName),
         s.student_type === 'old' ? (bn ? 'পুরাতন' : 'Old') : (bn ? 'নতুন' : 'New'),
         s.approval_status === 'approved' ? (bn ? 'অনুমোদিত' : 'Approved') : (bn ? 'অপেক্ষমাণ' : 'Pending'),
         !isInactive ? (bn ? 'সক্রিয়' : 'Active') : (bn ? 'নিষ্ক্রিয়' : 'Inactive'),
-        s.phone || s.guardian_phone || '-',
-        `"${(s.father_name || '').replace(/"/g, '""')}"`,
+        csvCell(s.phone || s.guardian_phone || '-'),
+        csvCell(s.father_name || ''),
       ];
     });
 

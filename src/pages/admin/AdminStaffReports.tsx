@@ -1,3 +1,4 @@
+import { safeRows, csvCell, safeCell } from '@/lib/spreadsheetSafe';
 import { useState, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -541,7 +542,7 @@ const AdminStaffReports = () => {
         s.designation || '-', s.present, s.absent, s.late, s.total, s.rate,
       ]));
 
-      const sheet = XLSX.utils.aoa_to_sheet(wsData);
+      const sheet = XLSX.utils.aoa_to_sheet(safeRows(wsData));
       sheet['!cols'] = [{ wch: 6 }, { wch: 18 }, { wch: 28 }, { wch: 22 }, { wch: 10 }, { wch: 12 }, { wch: 8 }, { wch: 8 }, { wch: 10 }];
 
       const headerRowIdx = 8;
@@ -691,7 +692,7 @@ const AdminStaffReports = () => {
         d.notes || '-',
       ]));
 
-      const sheet = XLSX.utils.aoa_to_sheet(wsData);
+      const sheet = XLSX.utils.aoa_to_sheet(safeRows(wsData));
       sheet['!cols'] = [
         { wch: 6 },
         { wch: 14 },

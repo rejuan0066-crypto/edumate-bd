@@ -1,3 +1,4 @@
+import { safeRows, csvCell, safeCell } from '@/lib/spreadsheetSafe';
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -198,7 +199,7 @@ const AttendanceReportSection = () => {
     wsData.push(headers);
     buildRows().forEach(r => wsData.push(r));
 
-    const sheet = XLSX.utils.aoa_to_sheet(wsData);
+    const sheet = XLSX.utils.aoa_to_sheet(safeRows(wsData));
     sheet['!cols'] = [{ wch: 6 }, { wch: 10 }, { wch: 18 }, { wch: 28 }, { wch: 10 }, { wch: 12 }, { wch: 8 }, { wch: 8 }, { wch: 10 }];
 
     const headerRowIdx = 8;

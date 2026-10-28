@@ -1,3 +1,4 @@
+import { safeRows, csvCell, safeCell } from '@/lib/spreadsheetSafe';
 import { CANONICAL_BANGLA_LABELS as L } from './banglaCanonicalLabels';
 import { formatOrdinalRank, toBnDigits } from './digits';
 import { isAbsentMark } from './grading';
@@ -193,7 +194,7 @@ export const exportResultCSV = (params: ExportData) => {
     ];
   });
 
-  const csvContent = '\uFEFF' + [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+  const csvContent = '\uFEFF' + [headers, ...rows].map(r => r.map(c => csvCell(c)).join(',')).join('\n');
   const csvBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(csvBlob);
   const a = document.createElement('a');

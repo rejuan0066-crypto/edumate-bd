@@ -1,3 +1,4 @@
+import { safeRows, csvCell, safeCell } from '@/lib/spreadsheetSafe';
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -387,7 +388,7 @@ export default function FulltimeMonthlyAttendanceSheetDialog({
       );
       rows.push(summaryRow);
 
-      const ws = XLSX.utils.aoa_to_sheet(rows);
+      const ws = XLSX.utils.aoa_to_sheet(safeRows(rows));
 
       // Auto-fit column widths
       ws['!cols'] = [
