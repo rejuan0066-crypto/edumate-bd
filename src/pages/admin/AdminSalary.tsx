@@ -1591,6 +1591,28 @@ const AdminSalary = () => {
     return 'general';
   };
 
+  // Group staff by resolved department for notification templates & inspection
+  const staffByDept = useMemo(() => {
+    const groups: Record<string, any[]> = {
+      general: [],
+      hifz: [],
+      noorani: [],
+      kitab: [],
+      administrative: [],
+      support: [],
+      general_staff: [],
+    };
+    (staff || []).forEach((s: any) => {
+      const key = resolveStaffDeptKey(s);
+      if (groups[key]) {
+        groups[key].push(s);
+      } else {
+        groups.general.push(s);
+      }
+    });
+    return groups;
+  }, [staff]);
+
   // Days in month calculation basis helper:
   // Supports global default and per-month overrides.
   // 'actual_calendar_days': divides by 31 in 31-day months, 30 in 30-day, 28/29 in Feb.
@@ -4358,7 +4380,23 @@ const AdminSalary = () => {
                               <p className="font-medium">{bn ? s.name_bn : (s.name_en || s.name_bn)}</p>
                             </td>
                             <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{s.staff_id || '-'}</td>
-                            <td className="px-3 py-2 text-muted-foreground">{getDesignation(s.designation)}</td>
+                            <td className="px-3 py-2">
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-muted-foreground">{getDesignation(s.designation)}</span>
+                                {(() => {
+                                  const dKey = resolveStaffDeptKey(s);
+                                  const dInfo = SALARY_DEPARTMENTS.find(d => d.key === dKey);
+                                  return (
+                                    <span
+                                      className="inline-flex items-center text-[10px] text-emerald-700 dark:text-emerald-400 font-medium"
+                                      title={bn ? `নোটিফিকেশন বিভাগ: ${dInfo?.label || dKey}` : `Department: ${dInfo?.label || dKey}`}
+                                    >
+                                      🏷️ {dInfo?.shortLabel || dKey}
+                                    </span>
+                                  );
+                                })()}
+                              </div>
+                            </td>
                             <td className="px-3 py-2 text-center">
                               {(() => {
                                 const t = getDutyTimeWithSource(s);
@@ -4969,7 +5007,23 @@ const AdminSalary = () => {
                                 <tr key={s.id} className="border-b hover:bg-muted/30 transition-colors">
                                   <td className="px-3 py-2 text-muted-foreground">{bn ? toBnDigits(idx + 1) : idx + 1}</td>
                                   <td className="px-3 py-2 font-medium">{s.name_bn || s.name_en || '-'}</td>
-                                  <td className="px-3 py-2 text-muted-foreground">{getDesignation(s.designation)}</td>
+                                  <td className="px-3 py-2">
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-muted-foreground">{getDesignation(s.designation)}</span>
+                                {(() => {
+                                  const dKey = resolveStaffDeptKey(s);
+                                  const dInfo = SALARY_DEPARTMENTS.find(d => d.key === dKey);
+                                  return (
+                                    <span
+                                      className="inline-flex items-center text-[10px] text-emerald-700 dark:text-emerald-400 font-medium"
+                                      title={bn ? `নোটিফিকেশন বিভাগ: ${dInfo?.label || dKey}` : `Department: ${dInfo?.label || dKey}`}
+                                    >
+                                      🏷️ {dInfo?.shortLabel || dKey}
+                                    </span>
+                                  );
+                                })()}
+                              </div>
+                            </td>
                                   <td className="px-3 py-2 text-right">৳{fN(baseSalary)}</td>
                                   <td className="px-3 py-2 text-right text-blue-600">৳{fN(perMonthBonus)}</td>
                                   <td className="px-3 py-2 text-center">
@@ -6147,6 +6201,7 @@ const AdminSalary = () => {
                             const isCurrent = editingTemplateDept === dept.key;
                             const isDeptActive = !disabledDepts.includes(dept.key);
                             const hasCustom = !!savedTemplates[dept.key];
+                            const deptStaffCount = staffByDept[dept.key]?.length || 0;
 
                             return (
                               <button
@@ -6162,6 +6217,14 @@ const AdminSalary = () => {
                                 }`}
                               >
                                 <span>{dept.shortLabel}</span>
+                                <span
+                                  className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${
+                                    isCurrent ? 'bg-emerald-800 text-emerald-100 font-bold' : 'bg-muted text-muted-foreground'
+                                  }`}
+                                  title={bn ? `${dept.shortLabel} বিভাগের কর্মী সংখ্যা` : 'Staff count'}
+                                >
+                                  {bn ? toBnDigits(deptStaffCount) : deptStaffCount}
+                                </span>
                                 {hasCustom && (
                                   <span className={`text-[9px] px-1 py-0.2 rounded font-mono ${isCurrent ? 'bg-emerald-800 text-emerald-100' : 'bg-primary/10 text-primary'}`}>
                                     কাস্টম
@@ -6204,6 +6267,59 @@ const AdminSalary = () => {
                           />
                         </div>
                       </div>
+
+                      {/* Enrolled Staff in Active Department */}
+                      {(() => {
+                        const deptStaffList = staffByDept[editingTemplateDept] || [];
+                        return (
+                          <div className="p-3 rounded-xl border border-dashed border-emerald-300/80 dark:border-emerald-800/60 bg-emerald-50/40 dark:bg-emerald-950/20 space-y-2">
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                              <div className="flex items-center gap-1.5">
+                                <Users className="h-4 w-4 text-emerald-600 shrink-0" />
+                                <span className="text-xs font-bold text-foreground">
+                                  {bn
+                                    ? `এই বিভাগের আওতাভুক্ত কর্মী (${toBnDigits(deptStaffList.length)} জন):`
+                                    : `Staff belonging to this department (${deptStaffList.length}):`}
+                                </span>
+                              </div>
+                              <span className="text-[10px] text-muted-foreground">
+                                {bn ? '💡 পদবি/বিভাগ অনুযায়ী স্বয়ংক্রিয়ভাবে নির্ধারিত' : '💡 Mapped by designation/department'}
+                              </span>
+                            </div>
+
+                            {deptStaffList.length === 0 ? (
+                              <p className="text-xs text-muted-foreground italic py-0.5">
+                                {bn
+                                  ? 'এই বিভাগে বর্তমানে কোনো কর্মী তালিকাভুক্ত নেই (স্টাফ তালিকায় পদবি বা বিভাগ মিললে এখানে দেখাবে)।'
+                                  : 'No staff currently mapped to this department.'}
+                              </p>
+                            ) : (
+                              <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
+                                {deptStaffList.map((st: any) => (
+                                  <div
+                                    key={st.id}
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-background border border-border/80 text-xs shadow-xs"
+                                  >
+                                    <span className="font-semibold text-foreground">
+                                      {bn ? (st.name_bn || st.name_en) : (st.name_en || st.name_bn)}
+                                    </span>
+                                    {st.designation && (
+                                      <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 rounded bg-muted/60">
+                                        {getDesignation(st.designation)}
+                                      </span>
+                                    )}
+                                    {st.phone && (
+                                      <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-mono">
+                                        📱 {st.phone}
+                                      </span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
 
                       {/* Message Template Editor for Active Department */}
                       <div className="space-y-2 border rounded-xl p-3 bg-card">
