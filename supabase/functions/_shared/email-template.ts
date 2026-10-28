@@ -143,7 +143,7 @@ export async function renderEmailTemplate(
   if (fallback) {
     return {
       subject: substitute(fallback.subject, defaults),
-      html: substitute(fallback.html, defaults),
+      html: substitute(fallback.html, defaults, true),
       template_key: templateKey,
       used_db_template: false,
     };
