@@ -157,7 +157,7 @@ const AdmissionTestTake = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke('submit-admission-test', {
-        body: { attemptId, answers, durationSeconds },
+        body: { attemptId, answers, durationSeconds, applicantPhone: applicantPhone.trim() },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
