@@ -256,6 +256,7 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
 
   // Helper to format clean Bangladeshi / international phone number
   const formatPhoneNumber = (raw: string) => {
+    if (!raw) return '';
     const clean = raw.replace(/\D/g, '');
     if (clean.length === 11 && clean.startsWith('01')) {
       return `+880 ${clean.substring(1, 5)}-${clean.substring(5)}`;
@@ -263,10 +264,51 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
     if (clean.length === 13 && clean.startsWith('8801')) {
       return `+880 ${clean.substring(3, 7)}-${clean.substring(7)}`;
     }
-    if (clean.length > 6) {
+    // Only format real international phone numbers (length between 7 and 13 digits)
+    // Avoid formatting WhatsApp 14-16 digit internal LID identifiers as phone numbers
+    if (clean.length >= 7 && clean.length <= 13) {
       return `+${clean}`;
     }
-    return raw;
+    return '';
+  };
+
+  // Cached WhatsApp Address Book (from Evolution API findContacts)
+  const contactsMapRef = useRef<Map<string, any>>(new Map());
+
+  // Fetch full address book contacts from Evolution API
+  const fetchContacts = async (): Promise<Map<string, any>> => {
+    if (!serverUrl || !isEnabled) return contactsMapRef.current;
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (apiKey) headers['apikey'] = apiKey;
+
+      const resp = await fetch(`${serverUrl}/chat/findContacts/${encodeURIComponent(instance)}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({}),
+      });
+
+      if (resp.ok) {
+        const data = await resp.json();
+        const list = Array.isArray(data) ? data : [];
+        const newMap = new Map<string, any>();
+        list.forEach((c: any) => {
+          if (c.remoteJid) {
+            newMap.set(c.remoteJid, c);
+            const digits = c.remoteJid.replace(/@.*$/, '');
+            newMap.set(digits, c);
+            if (digits.startsWith('880')) {
+              newMap.set('0' + digits.substring(3), c);
+            }
+          }
+        });
+        contactsMapRef.current = newMap;
+        return newMap;
+      }
+    } catch (e) {
+      console.warn('Could not fetch address book contacts:', e);
+    }
+    return contactsMapRef.current;
   };
 
   // Fetch Chats from Evolution API
@@ -276,6 +318,12 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (apiKey) headers['apikey'] = apiKey;
+
+      // 1. Ensure address book contacts map is loaded
+      let cMap = contactsMapRef.current;
+      if (cMap.size === 0) {
+        cMap = await fetchContacts();
+      }
 
       let chatList: any[] = [];
       // Use POST /chat/findChats/:instance
@@ -302,16 +350,38 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
         } catch { /* ignore */ }
       }
 
-      // Parse & normalize chats using remoteJid
+      // Parse & normalize chats matching real mobile WhatsApp names
       const parsed: ChatItem[] = chatList
         .filter((c: any) => {
           const jid = c.remoteJid || c.id || '';
-          return jid && !jid.includes('status@broadcast');
+          return jid && !jid.includes('status@broadcast') && jid !== '0@s.whatsapp.net';
         })
         .map((c: any) => {
           const jid = c.remoteJid || c.id || '';
           const isGroup = jid.endsWith('@g.us');
-          const rawPhone = isGroup ? '' : jid.replace(/@.*$/, '');
+          const isLid = jid.endsWith('@lid');
+          const digits = jid.replace(/@.*$/, '');
+          const contact = cMap.get(jid) || cMap.get(digits);
+
+          const altJid = c.lastMessage?.key?.remoteJidAlt;
+          const rawPhone = isGroup ? '' : (isLid ? (altJid ? altJid.replace(/@.*$/, '') : '') : digits);
+
+          // Name resolution hierarchy:
+          // 1. Saved Contact / PushName from phone address book
+          // 2. Chat pushName or name
+          // 3. Last message pushName
+          // 4. Default: Group, formatted phone, or WhatsApp Contact
+          const candidatePush = 
+            (contact?.pushName && contact.pushName !== jid && contact.pushName !== digits) ? contact.pushName :
+            (contact?.name && contact.name !== jid && contact.name !== digits) ? contact.name :
+            (c.pushName && c.pushName !== jid && c.pushName !== digits) ? c.pushName :
+            (c.name && c.name !== jid && c.name !== digits) ? c.name :
+            (c.lastMessage?.pushName && c.lastMessage.pushName !== jid && c.lastMessage.pushName !== digits) ? c.lastMessage.pushName :
+            '';
+
+          const resolvedName = candidatePush || (isGroup ? (bn ? 'হোয়াটসঅ্যাপ গ্রুপ' : 'WhatsApp Group') : (rawPhone ? formatPhoneNumber(rawPhone) : 'WhatsApp Contact'));
+          const resolvedPic = c.profilePicUrl || contact?.profilePicUrl || undefined;
+
           const lastMsg = c.lastMessage || {};
           const ts = lastMsg.messageTimestamp ? Number(lastMsg.messageTimestamp) * 1000 : Date.now();
           const text = extractMessageText(lastMsg);
@@ -319,9 +389,9 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
           return {
             id: jid,
             remoteJid: jid,
-            name: c.pushName || c.name || '',
-            pushName: c.pushName || c.name || '',
-            profilePicUrl: c.profilePicUrl || undefined,
+            name: resolvedName,
+            pushName: candidatePush,
+            profilePicUrl: resolvedPic,
             unreadCount: c.unreadCount || 0,
             lastMessageText: text,
             lastMessageTime: ts,
@@ -343,7 +413,7 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
   // Initial load
   useEffect(() => {
     if (serverUrl && isEnabled) {
-      fetchChats();
+      fetchContacts().then(() => fetchChats());
     }
   }, [serverUrl, instance, apiKey, isEnabled]);
 
@@ -370,38 +440,24 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
 
       let msgList: any[] = [];
 
-      // POST /chat/findMessages/:instance with { where: { remoteJid }, limit: 100 }
-      try {
-        const resp = await fetch(`${serverUrl}/chat/findMessages/${encodeURIComponent(instance)}`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            where: { remoteJid },
-            limit: 100,
-          }),
-        });
-        if (resp.ok) {
-          const data = await resp.json();
-          msgList = Array.isArray(data) ? data : data?.messages?.records || data?.records || [];
-        }
-      } catch { /* ignore */ }
+      // Evolution API v2: MUST query { where: { key: { remoteJid } }, limit: 100 }
+      const resp = await fetch(`${serverUrl}/chat/findMessages/${encodeURIComponent(instance)}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          where: { key: { remoteJid } },
+          limit: 100,
+        }),
+      });
 
-      // Fallback: where.key.remoteJid
-      if (!msgList.length) {
-        try {
-          const resp = await fetch(`${serverUrl}/chat/findMessages/${encodeURIComponent(instance)}`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-              where: { key: { remoteJid } },
-              limit: 100,
-            }),
-          });
-          if (resp.ok) {
-            const data = await resp.json();
-            msgList = Array.isArray(data) ? data : data?.messages?.records || data?.records || [];
-          }
-        } catch { /* ignore */ }
+      if (resp.ok) {
+        const data = await resp.json();
+        const records = Array.isArray(data) ? data : data?.messages?.records || data?.records || [];
+        // Strict client-side filter to ensure ONLY messages belonging to this remoteJid are included!
+        msgList = records.filter((m: any) => {
+          const mJid = m.key?.remoteJid || m.remoteJid;
+          return mJid === remoteJid;
+        });
       }
 
       const parsed: ChatMessage[] = msgList.map((m: any) => {
@@ -449,7 +505,7 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
       setMessages(parsed);
       if (!silent) setTimeout(scrollToBottom, 100);
     } catch (err: any) {
-      console.warn('Error fetching messages:', err);
+      console.warn('Error fetching messages from Evolution API:', err);
     } finally {
       if (!silent) setLoadingMessages(false);
     }
@@ -459,6 +515,7 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
     setSelectedChat(chat);
     setSelectedFile(null);
     setFilePreviewUrl(null);
+    setMessages([]);
     fetchMessages(chat.remoteJid);
   };
 
@@ -500,7 +557,7 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
     setSending(true);
 
     try {
-      const recipientNumber = selectedChat.isGroup ? selectedChat.remoteJid : selectedChat.phone.replace(/\D/g, '');
+      const recipientNumber = selectedChat.remoteJid;
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (apiKey) headers['apikey'] = apiKey;
 
@@ -1006,8 +1063,14 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
                         <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 truncate">
                           {!isGrp ? (
                             <>
-                              <Phone className="w-3 h-3 text-emerald-600 shrink-0" />
-                              <span className="font-mono font-medium">{formatPhoneNumber(selectedChat.phone)}</span>
+                              {selectedChat.phone && formatPhoneNumber(selectedChat.phone) ? (
+                                <>
+                                  <Phone className="w-3 h-3 text-emerald-600 shrink-0" />
+                                  <span className="font-mono font-medium">{formatPhoneNumber(selectedChat.phone)}</span>
+                                </>
+                              ) : (
+                                <span className="text-muted-foreground">{bn ? 'হোয়াটসঅ্যাপ যোগাযোগ' : 'WhatsApp Contact'}</span>
+                              )}
                               {identity?.subtitle && <span className="text-emerald-700 font-medium truncate">({identity.subtitle})</span>}
                             </>
                           ) : (
@@ -1029,7 +1092,7 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
                         <span className="hidden md:inline">{bn ? 'প্রোফাইল' : 'Profile'}</span>
                       </Button>
 
-                      {!isGrp && (
+                      {!isGrp && selectedChat.phone && formatPhoneNumber(selectedChat.phone) && (
                         <Button
                           variant="outline"
                           size="sm"
@@ -1312,9 +1375,9 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
 
               <div>
                 <h5 className="font-bold text-sm text-foreground">
-                  {activeIdentity?.title || selectedChat.name || selectedChat.pushName || (selectedChat.isGroup ? (bn ? 'গ্রুপ চ্যাট' : 'Group') : formatPhoneNumber(selectedChat.phone))}
+                  {activeIdentity?.title || selectedChat.name || selectedChat.pushName || (selectedChat.isGroup ? (bn ? 'গ্রুপ চ্যাট' : 'Group') : (selectedChat.phone ? formatPhoneNumber(selectedChat.phone) : 'WhatsApp Contact'))}
                 </h5>
-                {!selectedChat.isGroup && (
+                {!selectedChat.isGroup && selectedChat.phone && formatPhoneNumber(selectedChat.phone) && (
                   <p className="font-mono text-xs text-muted-foreground mt-0.5">
                     {formatPhoneNumber(selectedChat.phone)}
                   </p>
