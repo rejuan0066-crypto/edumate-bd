@@ -68,10 +68,13 @@ const WhatsAppSettings = () => {
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'connected' | 'disconnected' | 'error'>('idle');
   const [statusMessage, setStatusMessage] = useState('');
 
-  // QR Modal
+  // QR Modal & Live Scan State
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [qrCodeData, setQrCodeData] = useState<string | null>(null);
   const [loadingQr, setLoadingQr] = useState(false);
+  const [scanStatus, setScanStatus] = useState<'idle' | 'waiting' | 'connecting' | 'success' | 'expired' | 'error'>('idle');
+  const [connectedPhone, setConnectedPhone] = useState<string | null>(null);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   // Test sender
   const [testPhone, setTestPhone] = useState('');
@@ -105,13 +108,17 @@ const WhatsAppSettings = () => {
 
         if (data?.value && typeof data.value === 'object') {
           const val = data.value as any;
-          setFreeGateway({
+          const gw = {
             is_enabled: val.is_enabled ?? true,
             provider: val.provider || 'evolution',
             server_url: val.server_url || '',
             instance_name: val.instance_name || 'madrasa_main',
             api_key: val.api_key || '',
-          });
+          };
+          setFreeGateway(gw);
+          if (gw.server_url) {
+            checkConnectionSilent(gw.server_url, gw.instance_name, gw.api_key);
+          }
         }
       } catch (err) {
         console.error('Error loading gateway config:', err);
@@ -119,6 +126,32 @@ const WhatsAppSettings = () => {
     }
     loadGatewayConfig();
   }, []);
+
+  // Silent background status checker on mount
+  const checkConnectionSilent = async (sUrlRaw: string, instRaw: string, apiKeyRaw: string) => {
+    try {
+      const sUrl = sUrlRaw.replace(/\/+$/, '');
+      const inst = instRaw.trim() || 'madrasa_main';
+      const headers: Record<string, string> = {};
+      if (apiKeyRaw) headers['apikey'] = apiKeyRaw;
+
+      const resp = await fetch(`${sUrl}/instance/connectionState/${encodeURIComponent(inst)}`, { headers });
+      const data = await resp.json().catch(() => ({}));
+      const state = (data?.instance?.state || data?.state || '').toLowerCase();
+      const owner = data?.instance?.owner || data?.owner;
+      if (owner) setConnectedPhone(String(owner).replace(/@.*$/, ''));
+
+      if (state === 'open' || state === 'connected') {
+        setConnectionStatus('connected');
+        setStatusMessage(bn ? '✅ সংযুক্ত (Connected)! নম্বরটি সক্রিয় আছে।' : 'Connected! Number is active.');
+      } else {
+        setConnectionStatus('disconnected');
+        setStatusMessage(bn ? '⚠️ সংযোগ বিচ্ছিন্ন (Disconnected) অথবা QR কোড স্ক্যান প্রয়োজন।' : 'Disconnected. QR scan needed.');
+      }
+    } catch {
+      // ignore background error
+    }
+  };
 
   useEffect(() => {
     if (config) {
@@ -237,6 +270,132 @@ const WhatsAppSettings = () => {
     }
   };
 
+  // Realtime Polling when QR Modal is Open
+  useEffect(() => {
+    if (!qrModalOpen || !freeGateway.server_url.trim() || scanStatus === 'success') return;
+
+    let isMounted = true;
+    let pollCount = 0;
+    const maxPolls = 60; // 60 * 2s = 120s max
+
+    const pollTimer = setInterval(async () => {
+      if (!isMounted) return;
+      pollCount++;
+
+      try {
+        const sUrl = freeGateway.server_url.replace(/\/+$/, '');
+        const instance = freeGateway.instance_name.trim() || 'madrasa_main';
+        const headers: Record<string, string> = {};
+        if (freeGateway.api_key) headers['apikey'] = freeGateway.api_key;
+
+        const resp = await fetch(`${sUrl}/instance/connectionState/${encodeURIComponent(instance)}`, { headers });
+        const data = await resp.json().catch(() => ({}));
+        const state = (data?.instance?.state || data?.state || '').toLowerCase();
+        const owner = data?.instance?.owner || data?.owner;
+
+        if (state === 'open' || state === 'connected') {
+          if (owner) setConnectedPhone(String(owner).replace(/@.*$/, ''));
+          setScanStatus('success');
+          setConnectionStatus('connected');
+          setStatusMessage(bn ? '✅ সংযুক্ত (Connected)! নম্বরটি সক্রিয় আছে।' : 'Connected! Number is active.');
+          toast({
+            title: bn ? '🎉 স্ক্যান সফল হয়েছে!' : 'Scan Successful!',
+            description: bn ? 'WhatsApp সফলভাবে লিঙ্ক সম্পন্ন হয়েছে।' : 'WhatsApp number linked successfully.',
+          });
+          clearInterval(pollTimer);
+          // Auto close modal after 3.2 seconds
+          setTimeout(() => {
+            if (isMounted) setQrModalOpen(false);
+          }, 3200);
+        } else if (state === 'connecting') {
+          setScanStatus('connecting');
+        } else if (pollCount >= maxPolls) {
+          setScanStatus('expired');
+          clearInterval(pollTimer);
+        }
+      } catch {
+        // network polling flukes ignored
+      }
+    }, 2000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(pollTimer);
+    };
+  }, [qrModalOpen, scanStatus, freeGateway.server_url, freeGateway.instance_name, freeGateway.api_key, bn]);
+
+  // Logout / Disconnect WhatsApp Session
+  const handleLogout = async () => {
+    if (!freeGateway.server_url.trim()) {
+      toast({ title: bn ? 'গেটওয়ে সার্ভার URL দিন' : 'Enter Gateway Server URL', variant: 'destructive' });
+      return;
+    }
+    const confirmMsg = bn
+      ? 'আপনি কি নিশ্চিত যে বর্তমান WhatsApp সেশনটি লগআউট / সংযোগ বিচ্ছিন্ন করতে চান?'
+      : 'Are you sure you want to log out / disconnect the current WhatsApp session?';
+    if (!window.confirm(confirmMsg)) return;
+
+    setLoggingOut(true);
+    try {
+      const sUrl = freeGateway.server_url.replace(/\/+$/, '');
+      const instance = freeGateway.instance_name.trim() || 'madrasa_main';
+      const headers: Record<string, string> = {};
+      if (freeGateway.api_key) headers['apikey'] = freeGateway.api_key;
+
+      let loggedOut = false;
+      // 1. DELETE /instance/logout/:instance
+      try {
+        const resp = await fetch(`${sUrl}/instance/logout/${encodeURIComponent(instance)}`, {
+          method: 'DELETE',
+          headers,
+        });
+        if (resp.ok) loggedOut = true;
+      } catch { /* ignore */ }
+
+      // 2. POST fallback
+      if (!loggedOut) {
+        try {
+          const resp = await fetch(`${sUrl}/instance/logout/${encodeURIComponent(instance)}`, {
+            method: 'POST',
+            headers,
+          });
+          if (resp.ok) loggedOut = true;
+        } catch { /* ignore */ }
+      }
+
+      // 3. WPPConnect fallback
+      if (!loggedOut && freeGateway.provider === 'wppconnect') {
+        try {
+          const resp = await fetch(`${sUrl}/api/${encodeURIComponent(instance)}/logout-session`, {
+            method: 'POST',
+            headers,
+          });
+          if (resp.ok) loggedOut = true;
+        } catch { /* ignore */ }
+      }
+
+      setConnectionStatus('disconnected');
+      setStatusMessage(bn ? '⚠️ WhatsApp সফলভাবে লগআউট / সংযোগ বিচ্ছিন্ন করা হয়েছে।' : 'WhatsApp logged out successfully.');
+      setConnectedPhone(null);
+      setQrCodeData(null);
+      setScanStatus('idle');
+      setQrModalOpen(false);
+
+      toast({
+        title: bn ? 'লগআউট সম্পন্ন' : 'Logged out',
+        description: bn ? 'WhatsApp সেশনটি ডিসকানেক্ট করা হয়েছে।' : 'WhatsApp session has been disconnected.',
+      });
+    } catch (e: any) {
+      toast({
+        title: bn ? 'লগআউট ব্যর্থ' : 'Logout failed',
+        description: e.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoggingOut(false);
+    }
+  };
+
   // Check Free Gateway Connection Status
   const handleCheckConnection = async () => {
     if (!freeGateway.server_url.trim()) {
@@ -255,6 +414,8 @@ const WhatsAppSettings = () => {
       const data = await resp.json().catch(() => ({}));
       
       const state = data?.instance?.state || data?.state;
+      const owner = data?.instance?.owner || data?.owner;
+      if (owner) setConnectedPhone(String(owner).replace(/@.*$/, ''));
       if (state === 'open' || state === 'connected') {
         setConnectionStatus('connected');
         setStatusMessage(bn ? '✅ সংযুক্ত (Connected)! নম্বরটি সক্রিয় আছে।' : 'Connected! Number is active.');
@@ -274,6 +435,7 @@ const WhatsAppSettings = () => {
   const handleOpenQrModal = async () => {
     setQrModalOpen(true);
     setQrErrorMessage(null);
+    setScanStatus('waiting');
     if (!freeGateway.server_url.trim()) {
       setQrErrorMessage(bn ? 'সার্ভার URL দেওয়া নেই' : 'No Server URL configured');
       return;
@@ -325,8 +487,13 @@ const WhatsAppSettings = () => {
           const stResp = await fetch(`${sUrl}/instance/connectionState/${encodeURIComponent(instance)}`, { headers });
           const st = await stResp.json().catch(() => ({}));
           const state = st?.instance?.state || st?.state;
-          if (state === 'open') {
-            setQrErrorMessage(bn ? 'এই WhatsApp নম্বরটি ইতিমধ্যে সংযুক্ত আছে। নতুন করে লিংক করতে আগে লগআউট করুন।' : 'This WhatsApp number is already connected. Log out first to re-link.');
+          if (state === 'open' || state === 'connected') {
+            const owner = st?.instance?.owner || st?.owner;
+            if (owner) setConnectedPhone(String(owner).replace(/@.*$/, ''));
+            setScanStatus('success');
+            setConnectionStatus('connected');
+            setStatusMessage(bn ? '✅ সংযুক্ত (Connected)! নম্বরটি সক্রিয় আছে।' : 'Connected! Number is active.');
+            setLoadingQr(false);
             return;
           }
         } catch { /* ignore */ }
@@ -541,16 +708,51 @@ const WhatsAppSettings = () => {
                 <QrCode className="w-3.5 h-3.5" />
                 {bn ? 'QR কোড স্ক্যান' : 'Scan QR'}
               </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleLogout}
+                disabled={loggingOut || !freeGateway.server_url.trim()}
+                className="h-9 gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              >
+                {loggingOut ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LogOut className="w-3.5 h-3.5" />}
+                {bn ? 'লগআউট' : 'Logout'}
+              </Button>
             </div>
           </div>
 
           {statusMessage && (
-            <div className={`p-2.5 rounded-lg text-xs font-medium flex items-center gap-2 ${
-              connectionStatus === 'connected' ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' :
-              connectionStatus === 'disconnected' ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300' :
-              'bg-destructive/15 text-destructive'
+            <div className={`p-3 rounded-xl text-xs font-medium flex flex-wrap items-center justify-between gap-2 border ${
+              connectionStatus === 'connected' ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/30' :
+              connectionStatus === 'disconnected' ? 'bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-500/30' :
+              'bg-destructive/15 text-destructive border-destructive/30'
             }`}>
-              {statusMessage}
+              <div className="flex items-center gap-2">
+                <span className={`w-2.5 h-2.5 rounded-full ${
+                  connectionStatus === 'connected' ? 'bg-emerald-500 animate-pulse' :
+                  connectionStatus === 'disconnected' ? 'bg-amber-500' : 'bg-destructive'
+                }`} />
+                <span>{statusMessage}</span>
+                {connectedPhone && (
+                  <span className="font-mono text-[11px] bg-emerald-500/20 text-emerald-900 dark:text-emerald-100 px-2 py-0.5 rounded-full font-bold">
+                    📱 {connectedPhone}
+                  </span>
+                )}
+              </div>
+              {connectionStatus === 'connected' && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLogout}
+                  disabled={loggingOut}
+                  className="h-7 px-2.5 text-xs text-destructive hover:bg-destructive/15 gap-1.5 rounded-lg"
+                >
+                  <LogOut className="w-3 h-3" />
+                  <span>{bn ? 'লগআউট করুন' : 'Log Out'}</span>
+                </Button>
+              )}
             </div>
           )}
 
@@ -786,30 +988,117 @@ const WhatsAppSettings = () => {
           </DialogHeader>
 
           <div className="flex flex-col items-center justify-center p-4 space-y-4">
-            {loadingQr ? (
+            {scanStatus === 'success' ? (
+              <div className="py-6 px-4 flex flex-col items-center justify-center text-center space-y-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/30 w-full animate-in fade-in zoom-in-95 duration-300">
+                <div className="w-16 h-16 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 animate-bounce">
+                  <CheckCircle2 className="w-10 h-10" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold text-emerald-800 dark:text-emerald-200">
+                    {bn ? '🎉 স্ক্যান সফল হয়েছে!' : 'Scan Successful!'}
+                  </h3>
+                  <p className="text-xs text-emerald-700 dark:text-emerald-300 leading-relaxed">
+                    {bn
+                      ? 'মাদ্রাসার WhatsApp সফলভাবে লিঙ্ক সম্পন্ন হয়েছে। এখন ওয়েবসাইট থেকে সরাসরি বার্তা ও নোটিফিকেশন যাবে।'
+                      : 'Madrasah WhatsApp account is successfully connected!'}
+                  </p>
+                  {connectedPhone && (
+                    <div className="inline-block mt-2 px-3 py-1 bg-emerald-500/20 text-emerald-900 dark:text-emerald-100 rounded-full font-mono text-xs font-semibold">
+                      📱 {connectedPhone}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 pt-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-6 text-xs"
+                    onClick={() => setQrModalOpen(false)}
+                  >
+                    {bn ? 'সম্পন্ন (বন্ধ করুন)' : 'Done (Close)'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleLogout}
+                    disabled={loggingOut}
+                    className="rounded-full px-4 text-xs border-destructive/40 text-destructive hover:bg-destructive/10"
+                  >
+                    <LogOut className="w-3.5 h-3.5 mr-1" />
+                    {bn ? 'লগআউট' : 'Logout'}
+                  </Button>
+                </div>
+              </div>
+            ) : scanStatus === 'expired' ? (
+              <div className="py-6 px-4 flex flex-col items-center justify-center text-center space-y-3 bg-amber-500/10 rounded-2xl border border-amber-500/30 w-full animate-in fade-in duration-200">
+                <AlertCircle className="w-12 h-12 text-amber-600 dark:text-amber-400" />
+                <div className="space-y-1">
+                  <h3 className="text-sm font-bold text-amber-900 dark:text-amber-100">
+                    {bn ? '⚠️ স্ক্যানের সময় পার হয়ে গেছে বা ব্যর্থ হয়েছে' : 'QR Code Expired or Scan Failed'}
+                  </h3>
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
+                    {bn
+                      ? 'নিরাপত্তার স্বার্থে WhatsApp কিউআর কোডের নির্দিষ্ট মেয়াদ থাকে। পুনরায় চেষ্টা করতে নিচের বাটনে চাপুন।'
+                      : 'WhatsApp QR codes expire after a short time. Please refresh to get a fresh QR.'}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleOpenQrModal}
+                  className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-5 text-xs mt-1"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  {bn ? 'নতুন QR কোড আনুন' : 'Refresh New QR'}
+                </Button>
+              </div>
+            ) : loadingQr ? (
               <div className="py-12 flex flex-col items-center gap-2 text-muted-foreground">
                 <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
-                <p className="text-xs">{bn ? 'QR কোড লোড হচ্ছে...' : 'Loading QR Code...'}</p>
+                <p className="text-xs">{bn ? 'QR কোড তৈরি হচ্ছে...' : 'Generating QR Code...'}</p>
               </div>
             ) : qrCodeData ? (
-              <div className="p-4 bg-white rounded-xl shadow-inner border flex flex-col items-center">
+              <div className="p-4 bg-white rounded-2xl shadow-inner border flex flex-col items-center relative">
+                {scanStatus === 'connecting' && (
+                  <div className="absolute inset-0 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center gap-2 z-10 animate-in fade-in">
+                    <Loader2 className="w-10 h-10 animate-spin text-emerald-600" />
+                    <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                      {bn ? 'স্ক্যান শনাক্ত হয়েছে! সংযোগ সম্পন্ন হচ্ছে...' : 'Scan detected! Connecting...'}
+                    </p>
+                  </div>
+                )}
                 {qrCodeData.startsWith('data:image') || qrCodeData.startsWith('http') ? (
-                  <img src={qrCodeData} alt="WhatsApp QR" className="w-52 h-52 object-contain" />
+                  <img src={qrCodeData} alt="WhatsApp QR" className="w-56 h-56 object-contain" />
                 ) : (
                   <div className="p-4 text-center font-mono text-lg font-bold tracking-widest bg-muted text-foreground rounded-lg">
                     {qrCodeData}
                   </div>
                 )}
-                <p className="text-xs text-muted-foreground mt-2 font-mono">
-                  {bn ? 'স্ক্যানের জন্য প্রস্তুত' : 'Ready to scan'}
-                </p>
+                <div className="mt-3 flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-xs font-medium">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                  <span>{bn ? 'লাইভ স্ক্যানের জন্য প্রস্তুত (অটো-ডিটেক্ট চালু)' : 'Ready to scan (Auto-detecting)'}</span>
+                </div>
               </div>
             ) : (
-              <div className="py-8 text-center space-y-2 text-xs">
+              <div className="py-8 text-center space-y-3 text-xs w-full">
                 {qrErrorMessage ? (
-                  <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-center">
+                  <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-center space-y-2">
                     <p className="font-semibold">{bn ? '⚠️ সংযোগ সমস্যা' : 'Connection Problem'}</p>
-                    <p className="mt-1 font-mono text-[11px]">{qrErrorMessage}</p>
+                    <p className="font-mono text-[11px]">{qrErrorMessage}</p>
+                    {qrErrorMessage.includes('ইতিমধ্যে সংযুক্ত') && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="destructive"
+                        onClick={handleLogout}
+                        disabled={loggingOut}
+                        className="rounded-full text-xs gap-1.5 mt-2"
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                        {bn ? 'বর্তমান সেশন লগআউট করুন' : 'Log Out Current Session'}
+                      </Button>
+                    )}
                   </div>
                 ) : (
                   <div className="text-muted-foreground space-y-1">
@@ -823,8 +1112,11 @@ const WhatsAppSettings = () => {
               </div>
             )}
 
-            <div className="w-full p-3 rounded-lg bg-muted text-xs space-y-1.5 text-muted-foreground">
-              <p className="font-semibold text-foreground">{bn ? 'কীভাবে স্ক্যান করবেন:' : 'How to scan:'}</p>
+            <div className="w-full p-3 rounded-xl bg-muted/70 border text-xs space-y-1.5 text-muted-foreground">
+              <p className="font-semibold text-foreground flex items-center justify-between">
+                <span>{bn ? 'কীভাবে স্ক্যান করবেন:' : 'How to scan:'}</span>
+                <span className="text-[10px] text-emerald-600 font-normal">{bn ? 'স্ক্যান করলেই স্বয়ংক্রিয়ভাবে শনাক্ত হবে' : 'Auto-detects upon scan'}</span>
+              </p>
               <ol className="list-decimal list-inside space-y-0.5">
                 <li>{bn ? 'ফোনে WhatsApp ওপেন করুন।' : 'Open WhatsApp on your phone.'}</li>
                 <li>{bn ? 'উপরে ডানপাশের ৩-ডট (বা Settings) চাপুন।' : 'Tap Menu (3 dots) or Settings.'}</li>
@@ -834,16 +1126,32 @@ const WhatsAppSettings = () => {
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setQrModalOpen(false)}>
-              {bn ? 'বন্ধ করুন' : 'Close'}
-            </Button>
+          <DialogFooter className="flex items-center justify-between sm:justify-between w-full">
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setQrModalOpen(false)} className="rounded-full text-xs">
+                {bn ? 'বন্ধ করুন' : 'Close'}
+              </Button>
+              {connectionStatus === 'connected' && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleLogout}
+                  disabled={loggingOut}
+                  className="rounded-full text-xs border-destructive/40 text-destructive hover:bg-destructive/10 gap-1"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  {bn ? 'লগআউট' : 'Logout'}
+                </Button>
+              )}
+            </div>
             <Button
+              size="sm"
               onClick={handleOpenQrModal}
               disabled={loadingQr || !freeGateway.server_url.trim()}
-              className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full text-xs"
             >
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw className="w-3.5 h-3.5" />
               {bn ? 'রিফ্রেশ QR' : 'Refresh QR'}
             </Button>
           </DialogFooter>
