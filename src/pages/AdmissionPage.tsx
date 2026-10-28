@@ -1585,16 +1585,16 @@ const AdmissionPage = () => {
         <div class="field-grid">
           <div class="field"><span class="field-label">নাম (বাংলা):</span><span class="field-value">${blank ? blankVal : escapeHtml(d.name_bn || '-')}</span></div>
           <div class="field"><span class="field-label">নাম (ইংরেজি):</span><span class="field-value">${blank ? blankVal : escapeHtml(d.name_en || '-')}</span></div>
-          <div class="field"><span class="field-label">রোল নম্বর:</span><span class="field-value">${blank ? blankVal : (d.roll_number || '-')}</span></div>
-          <div class="field"><span class="field-label">রেজিস্ট্রেশন নং:</span><span class="field-value">${blank ? blankVal : (d.registration_no || '-')}</span></div>
-          <div class="field"><span class="field-label">ভর্তি সেশন:</span><span class="field-value">${blank ? blankVal : (d.admission_session || '-')}</span></div>
+          <div class="field"><span class="field-label">রোল নম্বর:</span><span class="field-value">${blank ? blankVal : escapeHtml(d.roll_number || '-')}</span></div>
+          <div class="field"><span class="field-label">রেজিস্ট্রেশন নং:</span><span class="field-value">${blank ? blankVal : escapeHtml(d.registration_no || '-')}</span></div>
+          <div class="field"><span class="field-label">ভর্তি সেশন:</span><span class="field-value">${blank ? blankVal : escapeHtml(d.admission_session || '-')}</span></div>
           <div class="field"><span class="field-label">শ্রেণী:</span><span class="field-value">${blank ? blankVal : (className || '-')}</span></div>
           <div class="field"><span class="field-label">লিঙ্গ:</span><span class="field-value">${blank ? blankVal : (d.gender === 'male' ? 'পুরুষ' : d.gender === 'female' ? 'মহিলা' : d.gender || '-')}</span></div>
-          <div class="field"><span class="field-label">ধর্ম:</span><span class="field-value">${blank ? blankVal : (d.religion || '-')}</span></div>
-          <div class="field"><span class="field-label">জন্ম তারিখ:</span><span class="field-value">${blank ? blankVal : (d.date_of_birth || '-')}</span></div>
-          <div class="field"><span class="field-label">জন্ম নিবন্ধন:</span><span class="field-value">${blank ? blankVal : (d.birth_reg_no || '-')}</span></div>
-          <div class="field"><span class="field-label">ভর্তির তারিখ:</span><span class="field-value">${blank ? blankVal : (d.admission_date || '-')}</span></div>
-          <div class="field"><span class="field-label">আবাসিক ধরন:</span><span class="field-value">${blank ? blankVal : (d.residence_type || '-')}</span></div>
+          <div class="field"><span class="field-label">ধর্ম:</span><span class="field-value">${blank ? blankVal : escapeHtml(d.religion || '-')}</span></div>
+          <div class="field"><span class="field-label">জন্ম তারিখ:</span><span class="field-value">${blank ? blankVal : escapeHtml(d.date_of_birth || '-')}</span></div>
+          <div class="field"><span class="field-label">জন্ম নিবন্ধন:</span><span class="field-value">${blank ? blankVal : escapeHtml(d.birth_reg_no || '-')}</span></div>
+          <div class="field"><span class="field-label">ভর্তির তারিখ:</span><span class="field-value">${blank ? blankVal : escapeHtml(d.admission_date || '-')}</span></div>
+          <div class="field"><span class="field-label">আবাসিক ধরন:</span><span class="field-value">${blank ? blankVal : escapeHtml(d.residence_type || '-')}</span></div>
         </div>
       </div>
 
@@ -1603,21 +1603,21 @@ const AdmissionPage = () => {
         <div class="field-grid">
           <div class="field"><span class="field-label">পিতার নাম (বাংলা):</span><span class="field-value">${blank ? blankVal : escapeHtml(d.father_name || '-')}</span></div>
           <div class="field"><span class="field-label">পিতার নাম (ইংরেজি):</span><span class="field-value">${blank ? blankVal : escapeHtml(d.father_name_en || '-')}</span></div>
-          <div class="field"><span class="field-label">পিতার পেশা:</span><span class="field-value">${blank ? blankVal : (d.father_occupation || '-')}</span></div>
-          <div class="field"><span class="field-label">পিতার ফোন:</span><span class="field-value">${blank ? blankVal : (d.father_phone || '-')}</span></div>
-          <div class="field"><span class="field-label">পিতার NID:</span><span class="field-value">${blank ? blankVal : (d.father_nid || '-')}</span></div>
-          <div class="field"><span class="field-label">মাতার নাম (বাংলা):</span><span class="field-value">${blank ? blankVal : (d.mother_name || '-')}</span></div>
-          <div class="field"><span class="field-label">মাতার নাম (ইংরেজি):</span><span class="field-value">${blank ? blankVal : (d.mother_name_en || '-')}</span></div>
-          <div class="field"><span class="field-label">মাতার পেশা:</span><span class="field-value">${blank ? blankVal : (d.mother_occupation || '-')}</span></div>
-          <div class="field"><span class="field-label">মাতার ফোন:</span><span class="field-value">${blank ? blankVal : (d.mother_phone || '-')}</span></div>
-          <div class="field"><span class="field-label">মাতার NID:</span><span class="field-value">${blank ? blankVal : (d.mother_nid || '-')}</span></div>
+          <div class="field"><span class="field-label">পিতার পেশা:</span><span class="field-value">${blank ? blankVal : escapeHtml(d.father_occupation || '-')}</span></div>
+          <div class="field"><span class="field-label">পিতার ফোন:</span><span class="field-value">${blank ? blankVal : escapeHtml(d.father_phone || '-')}</span></div>
+          <div class="field"><span class="field-label">পিতার NID:</span><span class="field-value">${blank ? blankVal : escapeHtml(d.father_nid || '-')}</span></div>
+          <div class="field"><span class="field-label">মাতার নাম (বাংলা):</span><span class="field-value">${blank ? blankVal : escapeHtml(d.mother_name || '-')}</span></div>
+          <div class="field"><span class="field-label">মাতার নাম (ইংরেজি):</span><span class="field-value">${blank ? blankVal : escapeHtml(d.mother_name_en || '-')}</span></div>
+          <div class="field"><span class="field-label">মাতার পেশা:</span><span class="field-value">${blank ? blankVal : escapeHtml(d.mother_occupation || '-')}</span></div>
+          <div class="field"><span class="field-label">মাতার ফোন:</span><span class="field-value">${blank ? blankVal : escapeHtml(d.mother_phone || '-')}</span></div>
+          <div class="field"><span class="field-label">মাতার NID:</span><span class="field-value">${blank ? blankVal : escapeHtml(d.mother_nid || '-')}</span></div>
         </div>
       </div>
 
       <div class="section">
         <div class="section-title">৩. ঠিকানা</div>
         <div class="field-grid">
-          <div class="field"><span class="field-label">ঠিকানা:</span><span class="field-value">${blank ? blankVal : (d.address || '-')}</span></div>
+          <div class="field"><span class="field-label">ঠিকানা:</span><span class="field-value">${blank ? blankVal : escapeHtml(d.address || '-')}</span></div>
         </div>
       </div>
 
@@ -1636,7 +1636,7 @@ const AdmissionPage = () => {
       </div>` : ''}
 
       <div class="footer">
-        <p>${instName} — ভর্তি আবেদন ফর্ম</p>
+        <p>${escapeHtml(instName)} — ভর্তি আবেদন ফর্ম</p>
       </div>
     </body></html>`;
   };
