@@ -264,8 +264,9 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
     if (clean.length === 13 && clean.startsWith('8801')) {
       return `+880 ${clean.substring(3, 7)}-${clean.substring(7)}`;
     }
-    // Only format real international phone numbers (length between 7 and 13 digits)
-    // Avoid formatting WhatsApp 14-16 digit internal LID identifiers as phone numbers
+    if (clean.length === 10 && clean.startsWith('1')) {
+      return `+880 ${clean.substring(0, 4)}-${clean.substring(4)}`;
+    }
     if (clean.length >= 7 && clean.length <= 13) {
       return `+${clean}`;
     }
@@ -275,43 +276,7 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
   // Cached WhatsApp Address Book (from Evolution API findContacts)
   const contactsMapRef = useRef<Map<string, any>>(new Map());
 
-  // Fetch full address book contacts from Evolution API
-  const fetchContacts = async (): Promise<Map<string, any>> => {
-    if (!serverUrl || !isEnabled) return contactsMapRef.current;
-    try {
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (apiKey) headers['apikey'] = apiKey;
-
-      const resp = await fetch(`${serverUrl}/chat/findContacts/${encodeURIComponent(instance)}`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({}),
-      });
-
-      if (resp.ok) {
-        const data = await resp.json();
-        const list = Array.isArray(data) ? data : [];
-        const newMap = new Map<string, any>();
-        list.forEach((c: any) => {
-          if (c.remoteJid) {
-            newMap.set(c.remoteJid, c);
-            const digits = c.remoteJid.replace(/@.*$/, '');
-            newMap.set(digits, c);
-            if (digits.startsWith('880')) {
-              newMap.set('0' + digits.substring(3), c);
-            }
-          }
-        });
-        contactsMapRef.current = newMap;
-        return newMap;
-      }
-    } catch (e) {
-      console.warn('Could not fetch address book contacts:', e);
-    }
-    return contactsMapRef.current;
-  };
-
-  // Fetch Chats from Evolution API
+  // Fetch Chats and Contacts concurrently from Evolution API
   const fetchChats = async (silent = false) => {
     if (!serverUrl || !isEnabled) return;
     if (!silent) setLoadingChats(true);
@@ -319,38 +284,48 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (apiKey) headers['apikey'] = apiKey;
 
-      // 1. Ensure address book contacts map is loaded
       let cMap = contactsMapRef.current;
-      if (cMap.size === 0) {
-        cMap = await fetchContacts();
-      }
-
-      let chatList: any[] = [];
-      // Use POST /chat/findChats/:instance
-      try {
-        const resp = await fetch(`${serverUrl}/chat/findChats/${encodeURIComponent(instance)}`, {
+      const fetchList: Promise<any>[] = [
+        fetch(`${serverUrl}/chat/findChats/${encodeURIComponent(instance)}`, {
           method: 'POST',
           headers,
           body: JSON.stringify({}),
-        });
-        if (resp.ok) {
-          const data = await resp.json();
-          chatList = Array.isArray(data) ? data : data?.chats || [];
-        }
-      } catch { /* ignore */ }
+        }).then(r => r.ok ? r.json() : []).catch(() => []),
+      ];
 
-      // Fallback: GET /chat/findChats/:instance
-      if (!chatList.length) {
-        try {
-          const resp = await fetch(`${serverUrl}/chat/findChats/${encodeURIComponent(instance)}`, { headers });
-          if (resp.ok) {
-            const data = await resp.json();
-            chatList = Array.isArray(data) ? data : data?.chats || [];
-          }
-        } catch { /* ignore */ }
+      // If contacts not yet cached, fetch address book simultaneously
+      if (cMap.size === 0) {
+        fetchList.push(
+          fetch(`${serverUrl}/chat/findContacts/${encodeURIComponent(instance)}`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({}),
+          }).then(r => r.ok ? r.json() : []).catch(() => [])
+        );
       }
 
-      // Parse & normalize chats matching real mobile WhatsApp names
+      const [rawChats, rawContacts] = await Promise.all(fetchList);
+
+      if (rawContacts && Array.isArray(rawContacts) && rawContacts.length > 0) {
+        const newMap = new Map<string, any>();
+        rawContacts.forEach((c: any) => {
+          if (c.remoteJid) {
+            newMap.set(c.remoteJid, c);
+            const digits = c.remoteJid.replace(/@.*$/, '');
+            newMap.set(digits, c);
+            if (digits.startsWith('880')) {
+              newMap.set('0' + digits.substring(3), c);
+              newMap.set(digits.substring(3), c);
+            }
+          }
+        });
+        contactsMapRef.current = newMap;
+        cMap = newMap;
+      }
+
+      const chatList: any[] = Array.isArray(rawChats) ? rawChats : (rawChats?.chats || []);
+
+      // Parse & normalize chats matching real mobile WhatsApp names & phone numbers
       const parsed: ChatItem[] = chatList
         .filter((c: any) => {
           const jid = c.remoteJid || c.id || '';
@@ -363,25 +338,53 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
           const digits = jid.replace(/@.*$/, '');
           const contact = cMap.get(jid) || cMap.get(digits);
 
-          const altJid = c.lastMessage?.key?.remoteJidAlt;
-          const rawPhone = isGroup ? '' : (isLid ? (altJid ? altJid.replace(/@.*$/, '') : '') : digits);
+          // Extract real phone number
+          let rawPhone = '';
+          if (isGroup) {
+            rawPhone = '';
+          } else if (isLid) {
+            const altJid = c.lastMessage?.key?.remoteJidAlt || c.lastMessage?.key?.participantAlt;
+            if (altJid && altJid.includes('@s.whatsapp.net')) {
+              rawPhone = altJid.replace(/@.*$/, '');
+            } else if (c.lastMessage) {
+              const txt = extractMessageText(c.lastMessage);
+              const m = txt.match(/(?:\+?88)?01[3-9]\d{8}\b/);
+              if (m) rawPhone = m[0].replace(/\D/g, '');
+            }
+          } else {
+            rawPhone = digits;
+          }
+
+          const formattedPhone = rawPhone ? formatPhoneNumber(rawPhone) : '';
 
           // Name resolution hierarchy:
-          // 1. Saved Contact / PushName from phone address book
-          // 2. Chat pushName or name
-          // 3. Last message pushName
-          // 4. Default: Group, formatted phone, or WhatsApp Contact
-          const candidatePush = 
-            (contact?.pushName && contact.pushName !== jid && contact.pushName !== digits) ? contact.pushName :
-            (contact?.name && contact.name !== jid && contact.name !== digits) ? contact.name :
-            (c.pushName && c.pushName !== jid && c.pushName !== digits) ? c.pushName :
-            (c.name && c.name !== jid && c.name !== digits) ? c.name :
-            (c.lastMessage?.pushName && c.lastMessage.pushName !== jid && c.lastMessage.pushName !== digits) ? c.lastMessage.pushName :
-            '';
+          // 1. Group: group subject/pushName
+          // 2. Saved contact name from phone address book
+          // 3. WhatsApp profile pushName
+          // 4. Fallback: formatted real phone number
+          let displayName = '';
+          if (isGroup) {
+            displayName = c.pushName || c.name || contact?.pushName || (bn ? 'হোয়াটসঅ্যাপ গ্রুপ' : 'WhatsApp Group');
+          } else {
+            const candidatePush = 
+              (contact?.pushName && contact.pushName !== jid && contact.pushName !== digits && contact.pushName !== 'Você') ? contact.pushName :
+              (c.pushName && c.pushName !== jid && c.pushName !== digits && c.pushName !== 'Você') ? c.pushName :
+              (c.name && c.name !== jid && c.name !== digits && c.name !== 'Você') ? c.name :
+              (c.lastMessage?.pushName && c.lastMessage.pushName !== jid && c.lastMessage.pushName !== digits && c.lastMessage.pushName !== 'Você') ? c.lastMessage.pushName :
+              '';
 
-          const resolvedName = candidatePush || (isGroup ? (bn ? 'হোয়াটসঅ্যাপ গ্রুপ' : 'WhatsApp Group') : (rawPhone ? formatPhoneNumber(rawPhone) : 'WhatsApp Contact'));
+            if (candidatePush) {
+              displayName = candidatePush;
+            } else if (formattedPhone) {
+              displayName = formattedPhone;
+            } else if (isLid) {
+              displayName = bn ? `হোয়াটসঅ্যাপ (#${digits.slice(-4)})` : `WhatsApp (#${digits.slice(-4)})`;
+            } else {
+              displayName = bn ? 'হোয়াটসঅ্যাপ যোগাযোগ' : 'WhatsApp Contact';
+            }
+          }
+
           const resolvedPic = c.profilePicUrl || contact?.profilePicUrl || undefined;
-
           const lastMsg = c.lastMessage || {};
           const ts = lastMsg.messageTimestamp ? Number(lastMsg.messageTimestamp) * 1000 : Date.now();
           const text = extractMessageText(lastMsg);
@@ -389,8 +392,8 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
           return {
             id: jid,
             remoteJid: jid,
-            name: resolvedName,
-            pushName: candidatePush,
+            name: displayName,
+            pushName: displayName,
             profilePicUrl: resolvedPic,
             unreadCount: c.unreadCount || 0,
             lastMessageText: text,
@@ -413,7 +416,7 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
   // Initial load
   useEffect(() => {
     if (serverUrl && isEnabled) {
-      fetchContacts().then(() => fetchChats());
+      fetchChats();
     }
   }, [serverUrl, instance, apiKey, isEnabled]);
 
@@ -966,7 +969,7 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1 mb-0.5">
                         <p className="text-xs font-bold text-foreground truncate flex items-center gap-1.5">
-                          {c.isGroup && <Users className="w-3 h-3 text-purple-600 shrink-0" />}
+                          {c.isGroup && <Users className="w-3.5 h-3.5 text-purple-600 shrink-0" />}
                           <span className="truncate">{displayName}</span>
                         </p>
                         <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
@@ -974,20 +977,34 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
                         </span>
                       </div>
 
-                      {identity?.subtitle && (
-                        <p className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium truncate mb-0.5">
-                          {identity.subtitle}
-                        </p>
-                      )}
+                      {/* Phone number & Student / Staff / Group Badges */}
+                      <div className="flex items-center gap-1.5 text-[11px] mb-0.5 flex-wrap">
+                        {identity && (
+                          <Badge variant="outline" className={`text-[10px] py-0 px-1.5 shrink-0 ${
+                            identity.type === 'student'
+                              ? 'bg-blue-500/10 text-blue-700 border-blue-500/30'
+                              : 'bg-amber-500/10 text-amber-700 border-amber-500/30'
+                          }`}>
+                            {identity.subtitle}
+                          </Badge>
+                        )}
 
-                      {c.isGroup && (
-                        <p className="text-[10px] text-purple-700 dark:text-purple-400 font-medium truncate mb-0.5">
-                          {bn ? '👥 গ্রুপ বার্তা' : '👥 Group Chat'}
-                        </p>
-                      )}
+                        {!c.isGroup && c.phone && formatPhoneNumber(c.phone) && displayName !== formatPhoneNumber(c.phone) && (
+                          <span className="font-mono text-emerald-700 dark:text-emerald-400 font-medium text-[10px] shrink-0 flex items-center gap-1">
+                            <Phone className="w-2.5 h-2.5" />
+                            {formatPhoneNumber(c.phone)}
+                          </span>
+                        )}
+
+                        {c.isGroup && (
+                          <Badge variant="outline" className="text-[10px] py-0 px-1.5 bg-purple-500/10 text-purple-700 border-purple-500/30 shrink-0">
+                            {bn ? 'গ্রুপ' : 'Group'}
+                          </Badge>
+                        )}
+                      </div>
 
                       <p className="text-[11px] text-muted-foreground truncate">
-                        {c.lastMessageText || (c.isGroup ? (bn ? 'গ্রুপে কোনো বার্তা নেই' : 'No messages') : formatPhoneNumber(c.phone))}
+                        {c.lastMessageText || (c.isGroup ? (bn ? 'কোনো বার্তা নেই' : 'No messages') : '—')}
                       </p>
                     </div>
                   </button>
