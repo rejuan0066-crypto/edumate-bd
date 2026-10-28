@@ -1572,13 +1572,13 @@ const AdmissionPage = () => {
     </head><body>
       <div class="header">
         ${instLogo ? `<img src="${instLogo}" alt="Logo">` : ''}
-        <h1>${instName}</h1>
+        <h1>${escapeHtml(instName)}</h1>
         ${instNameEn ? `<p>${instNameEn}</p>` : ''}
         ${instAddr ? `<p>${instAddr}</p>` : ''}
       </div>
       <div class="form-title">ভর্তি আবেদন ফর্ম</div>
 
-      ${!blank && d?.photo_url ? `<div class="photo-section"><img src="${d.photo_url}" /></div>` : '<div class="photo-section">ছবি</div>'}
+      ${!blank && d?.photo_url ? `<div class="photo-section"><img src="${escapeHtml(d.photo_url)}" /></div>` : '<div class="photo-section">ছবি</div>'}
 
       <div class="section">
         <div class="section-title">১. শিক্ষার্থীর তথ্য</div>
@@ -1588,8 +1588,8 @@ const AdmissionPage = () => {
           <div class="field"><span class="field-label">রোল নম্বর:</span><span class="field-value">${blank ? blankVal : escapeHtml(d.roll_number || '-')}</span></div>
           <div class="field"><span class="field-label">রেজিস্ট্রেশন নং:</span><span class="field-value">${blank ? blankVal : escapeHtml(d.registration_no || '-')}</span></div>
           <div class="field"><span class="field-label">ভর্তি সেশন:</span><span class="field-value">${blank ? blankVal : escapeHtml(d.admission_session || '-')}</span></div>
-          <div class="field"><span class="field-label">শ্রেণী:</span><span class="field-value">${blank ? blankVal : (className || '-')}</span></div>
-          <div class="field"><span class="field-label">লিঙ্গ:</span><span class="field-value">${blank ? blankVal : (d.gender === 'male' ? 'পুরুষ' : d.gender === 'female' ? 'মহিলা' : d.gender || '-')}</span></div>
+          <div class="field"><span class="field-label">শ্রেণী:</span><span class="field-value">${blank ? blankVal : escapeHtml(className || '-')}</span></div>
+          <div class="field"><span class="field-label">লিঙ্গ:</span><span class="field-value">${blank ? blankVal : (d.gender === 'male' ? 'পুরুষ' : d.gender === 'female' ? 'মহিলা' : escapeHtml(d.gender || '-'))}</span></div>
           <div class="field"><span class="field-label">ধর্ম:</span><span class="field-value">${blank ? blankVal : escapeHtml(d.religion || '-')}</span></div>
           <div class="field"><span class="field-label">জন্ম তারিখ:</span><span class="field-value">${blank ? blankVal : escapeHtml(d.date_of_birth || '-')}</span></div>
           <div class="field"><span class="field-label">জন্ম নিবন্ধন:</span><span class="field-value">${blank ? blankVal : escapeHtml(d.birth_reg_no || '-')}</span></div>
