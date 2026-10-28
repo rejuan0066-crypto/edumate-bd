@@ -815,18 +815,51 @@ const AdminSalary = () => {
 
   // Fetch expenses for current salary month to track which salaries are linked to expenses
   const expenseMonthYear = getExpenseMonthYearFromSalaryMonth(monthYear);
-  const { data: monthSalaryExpenses = [] } = useQuery({
+  const currentMonthObj = MONTHS.find(m => m.value === selectedMonth);
+  const curMonthBn = currentMonthObj?.bn || '';
+  const curMonthEn = currentMonthObj?.en || '';
+
+  const { data: rawMonthSalaryExpenses = [] } = useQuery({
     queryKey: ['salary-expenses-for-month', expenseMonthYear, monthYear],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('expenses')
         .select('*')
         .is('deleted_at', null)
-        .or(`month_year.eq.${expenseMonthYear},description.like.%[salary_month:${monthYear}]%`);
+        .or(`description.like.%[salary_month:${monthYear}]%,month_year.eq.${expenseMonthYear},month_year.eq.${monthYear}`);
       if (error) throw error;
       return data || [];
     },
   });
+
+  // STRICT FILTER: Only expenses that belong to THIS salary month (monthYear).
+  // An expense from another salary month (e.g. September salary paid/recorded in October)
+  // must NEVER leak into October's salary expense link!
+  const monthSalaryExpenses = useMemo(() => {
+    return rawMonthSalaryExpenses.filter((e: any) => {
+      const desc = e.description || '';
+      // 1. Explicit salary_month tag takes top priority:
+      if (desc.includes('[salary_month:')) {
+        return desc.includes(`[salary_month:${monthYear}]`);
+      }
+
+      // 2. If it contains another month's tag or name, strictly exclude
+      const otherMonths = MONTHS.filter(m => m.value !== selectedMonth);
+      for (const om of otherMonths) {
+        if (desc.includes(`[salary_month:${selectedYear}-${om.value}]`)) return false;
+        if (om.bn && desc.includes(om.bn) && (!curMonthBn || !desc.includes(curMonthBn))) return false;
+        if (om.en && desc.toLowerCase().includes(om.en.toLowerCase()) && (!curMonthEn || !desc.toLowerCase().includes(curMonthEn.toLowerCase()))) return false;
+      }
+
+      // 3. If description mentions this month name and is salary:
+      if (curMonthBn && desc.includes(curMonthBn) && (desc.includes('বেতন') || desc.includes('Salary'))) return true;
+      if (curMonthEn && desc.toLowerCase().includes(curMonthEn.toLowerCase()) && (desc.includes('বেতন') || desc.includes('Salary'))) return true;
+
+      // 4. Default: matches expenseMonthYear AND is salary
+      const isCurrentExpenseMonth = e.month_year === expenseMonthYear || e.month_year === monthYear;
+      return isCurrentExpenseMonth && (desc.includes('বেতন') || desc.includes('Salary'));
+    });
+  }, [rawMonthSalaryExpenses, monthYear, selectedMonth, selectedYear, curMonthBn, curMonthEn, expenseMonthYear]);
 
   // Check if a staff member's salary is currently recorded in expenses
   const getStaffExpense = useCallback((staffId: string, staffName?: string) => {
@@ -839,13 +872,27 @@ const AdminSalary = () => {
 
   // Check if a consolidated monthly total exists in expenses
   const consolidatedExpense = useMemo(() => {
-    return monthSalaryExpenses.find((e: any) =>
-      e.description?.includes('[salary_bulk_total]') ||
-      e.description?.startsWith('মোট বেতন') ||
-      e.description?.startsWith('মোট শিক্ষক-স্টাফ বেতন') ||
-      e.description?.startsWith('Total Staff Salary')
-    );
-  }, [monthSalaryExpenses]);
+    return monthSalaryExpenses.find((e: any) => {
+      const desc = e.description || '';
+      const isConsolidated =
+        desc.includes('[salary_bulk_total]') ||
+        desc.startsWith('মোট বেতন') ||
+        desc.startsWith('মোট শিক্ষক-স্টাফ বেতন') ||
+        desc.startsWith('Total Staff Salary');
+      if (!isConsolidated) return false;
+      // Double safety: if it has salary_month tag, must match current monthYear
+      if (desc.includes('[salary_month:')) {
+        return desc.includes(`[salary_month:${monthYear}]`);
+      }
+      // If it mentions another month name, skip
+      const otherMonths = MONTHS.filter(m => m.value !== selectedMonth);
+      for (const om of otherMonths) {
+        if (om.bn && desc.includes(om.bn) && (!curMonthBn || !desc.includes(curMonthBn))) return false;
+        if (om.en && desc.toLowerCase().includes(om.en.toLowerCase()) && (!curMonthEn || !desc.toLowerCase().includes(curMonthEn.toLowerCase()))) return false;
+      }
+      return true;
+    });
+  }, [monthSalaryExpenses, monthYear, selectedMonth, curMonthBn, curMonthEn]);
 
   // Total salary expense currently in expenses table for this month
   const totalSalaryInExpenses = useMemo(() => {
@@ -1125,6 +1172,12 @@ const AdminSalary = () => {
     onError: (e: any) => toast.error(e?.message || (bn ? 'রিক্যালকুলেট সমস্যা' : 'Recalculate failed')),
   });
 
+  // Helper to strip non-DB calculated fields before saving to salary_records table
+  const stripNonDbSalaryFields = <T extends Record<string, any>>(obj: T): any => {
+    const { pre_join_deduction, post_resign_deduction, pre_join_days, post_resign_days, ...rest } = obj;
+    return rest;
+  };
+
   // Recalculate a SINGLE existing pending salary record (e.g. after editing joining/date info)
   const recalculateSingleMutation = useMutation({
     mutationFn: async (staffId: string) => {
@@ -1149,7 +1202,7 @@ const AdminSalary = () => {
         advance_deduction: existing.advance_deduction,
         savings_deduction: savingsDed,
       }) - keptOther);
-      const { error } = await supabase.from('salary_records').update({
+      const { error } = await supabase.from('salary_records').update(stripNonDbSalaryFields({
         ...calc,
         bonus: Number(existing.bonus || 0),
         other_allowance: Number(existing.other_allowance || 0),
@@ -1164,7 +1217,7 @@ const AdminSalary = () => {
         net_salary: netSalary,
         manual_override: false,
         updated_at: new Date().toISOString(),
-      }).eq('id', existing.id);
+      })).eq('id', existing.id);
       if (error) throw error;
       await logSalaryGeneration({
         staff_id: staffId, staff_name: sName, action: 'recalculate', source: 'manual',
@@ -1226,9 +1279,9 @@ const AdminSalary = () => {
         throw new Error(reason);
       }
       const calc = calculateSalary(s);
-      const { error } = await supabase.from('salary_records').insert({
+      const { error } = await supabase.from('salary_records').insert(stripNonDbSalaryFields({
         staff_id: s.id, month_year: monthYear, ...calc, status: 'pending',
-      });
+      }));
       if (error) {
         await logSalaryGeneration({ staff_id: s.id, staff_name: sName, action: 'generate', source: 'manual', success: false, reason: error.message });
         throw error;
@@ -1358,7 +1411,7 @@ const AdminSalary = () => {
         post_resign_deduction: ovPostResign,
         overtime: ovOvertime,
         overtime_for_net: ovOvertime,
-        earned_from_attendance: ovBase,
+        earned_from_attendance: Math.max(0, ovBase - ovPreJoin - ovPostResign),
         savings_deduction: ovSavings,
         net_salary: computeManualOverrideNet({
           base_salary: ovBase, bonus: manualBonus, overtime: ovOvertime, other_allowance: manualAllow,
@@ -1517,11 +1570,68 @@ const AdminSalary = () => {
     return jd <= monthEndDate;
   }, [monthEndDate]);
   // Inactive (resigned/left) staff should still appear in the months where a
+  // Comprehensive resign date resolver for a staff member (checks hook ID, staff_data, direct prop, name matching, related IDs, and attendance)
+  const getStaffResignDate = useCallback((s: any): string | null => {
+    if (!s) return null;
+    const sName = s?.name_bn || s?.name_en || '';
+    const byId = getResignDate(s?.id, sName);
+    if (byId && byId !== '1970-01-01') return byId;
+
+    const sd = (s?.staff_data as any) || {};
+    if (sd.resign_date) {
+      const d = String(sd.resign_date).slice(0, 10);
+      if (d && d !== '1970-01-01') return d;
+    }
+
+    if (s?.resign_date) {
+      const d = String(s.resign_date).slice(0, 10);
+      if (d && d !== '1970-01-01') return d;
+    }
+
+    const norm = (sName || '')
+      .replace(/[:ঃ\.,\-\(\)]/g, ' ')
+      .replace(/\b(মাওলানা|মুয়াল্লিম|মুআল্লিম|হাফেজ|হাফিজ|মাষ্টার|মাস্টার|জনাব|মোঃ|মো|মুহাদ্দিস|মুফতি)\b/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+
+    if (norm && Array.isArray(staffRaw)) {
+      for (const other of staffRaw) {
+        if (!other?.id || other.id === s.id) continue;
+        const oNorm = (other?.name_bn || other?.name_en || '')
+          .replace(/[:ঃ\.,\-\(\)]/g, ' ')
+          .replace(/\b(মাওলানা|মুয়াল্লিম|মুআল্লিম|হাফেজ|হাফিজ|মাষ্টার|মাস্টার|জনাব|মোঃ|মো|মুহাদ্দিস|মুফতি)\b/g, '')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .toLowerCase();
+        if (norm === oNorm) {
+          const oDate = getResignDate(other.id, oNorm) || (other.staff_data as any)?.resign_date;
+          if (oDate && oDate !== '1970-01-01') return String(oDate).slice(0, 10);
+        }
+      }
+    }
+
+    // Attendance-based fallback: if staff is marked resigned or inactive, check their last attendance in this month
+    const isMarkedResigned = s?.status === 'resigned' || sd.status_reason === 'resigned' || s?.status === 'inactive';
+    if (isMarkedResigned && Array.isArray(attendanceData)) {
+      const staffAtt = attendanceData
+        .filter((a: any) => (a.entity_id === s.id) && ['present', 'late', 'half_day'].includes(a.status))
+        .map((a: any) => String(a.attendance_date).slice(0, 10))
+        .filter((d: string) => d.startsWith(monthYear))
+        .sort();
+      if (staffAtt.length > 0) {
+        return staffAtt[staffAtt.length - 1];
+      }
+    }
+
+    return byId || null;
+  }, [getResignDate, staffRaw, attendanceData, monthYear]);
+
   // salary record already exists, but never in future months after resignation.
   // In the month they resigned, they MUST appear so their final salary up to resign date can be processed.
   const isInMonthRoster = useCallback((s: any): boolean => {
     if (!hasJoinedByMonth(s)) return false;
-    const rd = getResignDate(s?.id);
+    const rd = getStaffResignDate(s);
     if (rd) {
       const resignMonth = rd.slice(0, 7);
       // Strictly after the resign month: only show if salary record already exists (history)
@@ -1536,7 +1646,7 @@ const AdminSalary = () => {
       return salaryRecords.some((r: any) => r.staff_id === s.id);
     }
     return true;
-  }, [hasJoinedByMonth, getResignDate, monthYear, salaryRecords]);
+  }, [hasJoinedByMonth, getStaffResignDate, monthYear, salaryRecords]);
   // First day this staff is counted within the selected month (joining date if
   // they joined mid-month, otherwise the 1st).
   const joinedFromDay = (s: any): number => {
@@ -1550,7 +1660,7 @@ const AdminSalary = () => {
   // they resigned mid-month, otherwise the month's last counted day). Days
   // AFTER the resign date earn nothing — pay is prorated up to resign_date.
   const resignedUntilDay = (s: any): number => {
-    const rd = getResignDate(s?.id);
+    const rd = getStaffResignDate(s);
     if (!rd) return 32; // no resignation → counted through month end
     const resignMonth = rd.slice(0, 7);
     if (resignMonth < monthYear) return 0; // resigned before this month started
@@ -2239,6 +2349,13 @@ const AdminSalary = () => {
       });
       // Whitelist only real columns — the dialog can be seeded from a live
       // display snapshot that carries extra computed fields.
+      let remarksText = record.remarks || '';
+      if (postResignDed > 0 && !remarksText.includes('পদত্যাগ আনুপাতিক কর্তন')) {
+        remarksText = (remarksText ? remarksText + ' | ' : '') + `পদত্যাগ আনুপাতিক কর্তন: ৳${postResignDed}`;
+      }
+      if (preJoinDed > 0 && !remarksText.includes('যোগদান আনুপাতিক কর্তন')) {
+        remarksText = (remarksText ? remarksText + ' | ' : '') + `যোগদান আনুপাতিক কর্তন: ৳${preJoinDed}`;
+      }
       const payload: Record<string, any> = {
         base_salary: num(record.base_salary),
         bonus: num(record.bonus),
@@ -2259,7 +2376,7 @@ const AdminSalary = () => {
         present_days: record.present_days ?? null,
         absent_days: record.absent_days ?? null,
         late_days: record.late_days ?? null,
-        remarks: record.remarks ?? null,
+        remarks: remarksText || null,
         manual_override: true,
         net_salary: netSalary,
         updated_at: new Date().toISOString(),
@@ -2519,11 +2636,10 @@ const AdminSalary = () => {
         throw new Error(bn ? 'অনুগ্রহ করে বেতন সেটিংস ➔ হিসাব লিঙ্ক থেকে প্রতিষ্ঠান ও ব্যয় খাত নির্বাচন করুন' : 'Please select expense institution & expense head in salary settings');
       }
 
-      // First clean up all existing salary expenses for this month to guarantee clean sync
+      // First clean up all existing salary expenses strictly for THIS salary month to guarantee clean sync
       const { error: cleanErr } = await supabase.from('expenses')
         .update({ deleted_at: new Date().toISOString() })
-        .eq('month_year', expenseMonthYear)
-        .or(`description.like.%বেতন%,description.like.%Salary%`)
+        .or(`description.like.%[salary_month:${monthYear}]%,and(month_year.eq.${expenseMonthYear},description.like.%${curMonthBn}%)`)
         .is('deleted_at', null);
       if (cleanErr) throw cleanErr;
 
@@ -4426,7 +4542,19 @@ const AdminSalary = () => {
                                         variant="ghost" 
                                         className={`h-6 w-6 ${isRecordPending(rec.id) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`} 
                                         disabled={isRecordPending(rec.id)}
-                                        onClick={() => setEditDialog({ ...displayRecord, id: rec.id, staffName: s.name_bn })}
+                                        onClick={() => {
+                                          const live = calculateSalary(s);
+                                          setEditDialog({
+                                            ...displayRecord,
+                                            id: rec.id,
+                                            staffName: s.name_bn,
+                                            staffMember: s,
+                                            post_resign_deduction: displayRecord.post_resign_deduction ?? live.post_resign_deduction ?? 0,
+                                            post_resign_days: displayRecord.post_resign_days ?? live.post_resign_days ?? 0,
+                                            pre_join_deduction: displayRecord.pre_join_deduction ?? live.pre_join_deduction ?? 0,
+                                            pre_join_days: displayRecord.pre_join_days ?? live.pre_join_days ?? 0,
+                                          });
+                                        }}
                                       >
                                         <Edit2 className="h-3 w-3" />
                                       </Button>
@@ -5398,6 +5526,38 @@ const AdminSalary = () => {
                       <NumberInput value={editDialog.other_deduction} onValueChange={n => setEditDialog({ ...editDialog, other_deduction: n })} />
                       <Input className="mt-1.5" type="text" placeholder={bn ? 'কর্তনের কারণ লিখুন' : 'Reason for deduction'} value={editDialog.other_deduction_note || ''} onChange={e => setEditDialog({ ...editDialog, other_deduction_note: e.target.value })} />
                     </div>
+                    {(Number(editDialog.post_resign_deduction) > 0 || (editDialog.post_resign_days || 0) > 0 || (editDialog.staffMember && isResignedInMonth(editDialog.staffMember.id, monthYear, editDialog.staffName))) && (
+                      <div className="col-span-2 p-2.5 bg-amber-50/80 dark:bg-amber-950/25 border border-amber-300 dark:border-amber-800 rounded-lg">
+                        <div className="flex justify-between items-center mb-1.5">
+                          <Label className="text-xs font-bold text-amber-800 dark:text-amber-300">
+                            {bn ? `পদত্যাগ পরবর্তী কর্তন (${editDialog.post_resign_days || 0} দিন)` : `Post-Resign Ded. (${editDialog.post_resign_days || 0}d)`}
+                          </Label>
+                          <span className="text-[10px] text-amber-700 dark:text-amber-400 font-medium">
+                            {bn ? 'পদত্যাগ পরবর্তী কার্যদিবসের আনুপাতিক কর্তন' : 'Prorated pay deduction after resign'}
+                          </span>
+                        </div>
+                        <NumberInput
+                          value={editDialog.post_resign_deduction}
+                          onValueChange={n => setEditDialog({ ...editDialog, post_resign_deduction: n })}
+                        />
+                      </div>
+                    )}
+                    {(Number(editDialog.pre_join_deduction) > 0 || (editDialog.pre_join_days || 0) > 0) && (
+                      <div className="col-span-2 p-2.5 bg-blue-50/80 dark:bg-blue-950/25 border border-blue-300 dark:border-blue-800 rounded-lg">
+                        <div className="flex justify-between items-center mb-1.5">
+                          <Label className="text-xs font-bold text-blue-800 dark:text-blue-300">
+                            {bn ? `যোগদান পূর্ববর্তী কর্তন (${editDialog.pre_join_days || 0} দিন)` : `Pre-Join Ded. (${editDialog.pre_join_days || 0}d)`}
+                          </Label>
+                          <span className="text-[10px] text-blue-700 dark:text-blue-400 font-medium">
+                            {bn ? 'যোগদান পূর্ববর্তী কার্যদিবসের আনুপাতিক কর্তন' : 'Prorated pay deduction before join'}
+                          </span>
+                        </div>
+                        <NumberInput
+                          value={editDialog.pre_join_deduction}
+                          onValueChange={n => setEditDialog({ ...editDialog, pre_join_deduction: n })}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
 

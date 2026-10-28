@@ -4,11 +4,23 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface ResignInfo {
   staffId: string;
+  staffNameBn?: string;
+  staffNameEn?: string;
   resignDate: string;
   reason?: string;
   letterNumber?: string;
   source: 'letter' | 'staff_data' | 'inactive';
 }
+
+export const normalizeResignName = (name?: string | null): string => {
+  if (!name) return '';
+  return name
+    .replace(/[:ঃ\.,\-\(\)]/g, ' ')
+    .replace(/\b(মাওলানা|মুয়াল্লিম|মুআল্লিম|হাফেজ|হাফিজ|মাষ্টার|মাস্টার|জনাব|মোঃ|মো|মুহাদ্দিস|মুফতি)\b/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+};
 
 /**
  * Resignation-aware staff filtering.
@@ -33,36 +45,36 @@ export function useResignedStaff() {
       try {
         const { data: letters, error: lettersErr } = await supabase
           .from('resign_letters')
-          .select('staff_id, resign_date, status, reason, letter_number')
+          .select('staff_id, resign_date, status, reason, letter_number, staff_name, staff_name_bn')
           .neq('status', 'rejoined')
-          .not('staff_id', 'is', null)
           .not('resign_date', 'is', null);
 
         if (!lettersErr && Array.isArray(letters)) {
           for (const l of letters) {
             const sid = String(l.staff_id || '').trim();
             const d = String(l.resign_date || '').slice(0, 10);
-            if (!sid || !d) continue;
+            if (!d) continue;
             results.push({
               staffId: sid,
+              staffNameBn: l.staff_name_bn || undefined,
+              staffNameEn: l.staff_name || undefined,
               resignDate: d,
               reason: l.reason || undefined,
               letterNumber: l.letter_number || undefined,
               source: 'letter',
             });
-            seenStaffIds.add(sid);
+            if (sid) seenStaffIds.add(sid);
           }
         }
       } catch (err) {
         console.warn('Could not query resign_letters for resigned staff:', err);
       }
 
-      // 2. Fetch from staff table directly for inactive/resigned status or stored resign_date
+      // 2. Fetch from staff table directly: inspect all staff for stored resign_date or inactive/resigned status
       try {
         const { data: staffRows, error: staffErr } = await supabase
           .from('staff')
-          .select('id, status, staff_data')
-          .or('status.eq.inactive,status.eq.resigned');
+          .select('id, name_bn, name_en, status, staff_data');
 
         if (!staffErr && Array.isArray(staffRows)) {
           for (const s of staffRows) {
@@ -70,13 +82,18 @@ export function useResignedStaff() {
             if (!sid || seenStaffIds.has(sid)) continue;
             const sd = (s.staff_data as any) || {};
             const d = sd.resign_date ? String(sd.resign_date).slice(0, 10) : '';
-            results.push({
-              staffId: sid,
-              resignDate: d || '1970-01-01', // fallback if date unknown but inactive
-              reason: sd.resign_reason || undefined,
-              source: d ? 'staff_data' : 'inactive',
-            });
-            seenStaffIds.add(sid);
+            const isResignedStatus = s.status === 'resigned' || s.status === 'inactive' || sd.status_reason === 'resigned';
+            if (d || isResignedStatus) {
+              results.push({
+                staffId: sid,
+                staffNameBn: s.name_bn || undefined,
+                staffNameEn: s.name_en || undefined,
+                resignDate: d, // if no explicit date, leave empty
+                reason: sd.resign_reason || undefined,
+                source: d ? 'staff_data' : 'inactive',
+              });
+              seenStaffIds.add(sid);
+            }
           }
         }
       } catch (err) {
@@ -88,7 +105,7 @@ export function useResignedStaff() {
     staleTime: 30 * 1000, // 30s cache so updates reflect promptly
   });
 
-  // Earliest resign_date per staff
+  // Earliest resign_date per staff ID
   const resignDateByStaff = useMemo(() => {
     const map = new Map<string, string>();
     for (const r of resignInfoList) {
@@ -96,6 +113,25 @@ export function useResignedStaff() {
       const prev = map.get(r.staffId);
       if (!prev || r.resignDate < prev) {
         map.set(r.staffId, r.resignDate);
+      }
+    }
+    return map;
+  }, [resignInfoList]);
+
+  // Earliest resign_date by normalized staff name
+  const resignDateByName = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const r of resignInfoList) {
+      if (!r.resignDate) continue;
+      const bnNorm = normalizeResignName(r.staffNameBn);
+      const enNorm = normalizeResignName(r.staffNameEn);
+      if (bnNorm) {
+        const prev = map.get(bnNorm);
+        if (!prev || r.resignDate < prev) map.set(bnNorm, r.resignDate);
+      }
+      if (enNorm) {
+        const prev = map.get(enNorm);
+        if (!prev || r.resignDate < prev) map.set(enNorm, r.resignDate);
       }
     }
     return map;
@@ -112,26 +148,32 @@ export function useResignedStaff() {
   }, [resignInfoList]);
 
   const resignedStaffIds = useMemo(() => {
-    return new Set(resignInfoList.map((r) => r.staffId));
+    return new Set(resignInfoList.filter((r) => !!r.staffId).map((r) => r.staffId));
   }, [resignInfoList]);
 
-  /** Get exact resign date (YYYY-MM-DD) if available */
-  const getResignDate = (staffId: string | null | undefined): string | null => {
-    if (!staffId) return null;
-    return resignDateByStaff.get(staffId) || null;
+  /** Get exact resign date (YYYY-MM-DD) if available, with name fallback */
+  const getResignDate = (staffId: string | null | undefined, staffName?: string | null): string | null => {
+    if (staffId && resignDateByStaff.has(staffId)) {
+      return resignDateByStaff.get(staffId) || null;
+    }
+    if (staffName) {
+      const norm = normalizeResignName(staffName);
+      if (norm && resignDateByName.has(norm)) {
+        return resignDateByName.get(norm) || null;
+      }
+    }
+    return null;
   };
 
   /** True if staff resigned on or before dateStr (YYYY-MM-DD) */
-  const isResignedOnDate = (staffId: string | null | undefined, dateStr: string): boolean => {
-    if (!staffId) return false;
-    const d = resignDateByStaff.get(staffId);
+  const isResignedOnDate = (staffId: string | null | undefined, dateStr: string, staffName?: string | null): boolean => {
+    const d = getResignDate(staffId, staffName);
     return !!d && dateStr >= d;
   };
 
   /** True strictly AFTER the staff's resignation date (dateStr > resign_date) */
-  const isResignedAfterDate = (staffId: string | null | undefined, dateStr: string): boolean => {
-    if (!staffId) return false;
-    const d = resignDateByStaff.get(staffId);
+  const isResignedAfterDate = (staffId: string | null | undefined, dateStr: string, staffName?: string | null): boolean => {
+    const d = getResignDate(staffId, staffName);
     return !!d && dateStr > d;
   };
 
@@ -140,24 +182,23 @@ export function useResignedStaff() {
    * (e.g. resign month "YYYY-MM" < monthYear "YYYY-MM").
    * Mid-month resignations return false (they still belong to that month's sheet).
    */
-  const isResignedBeforeMonth = (staffId: string | null | undefined, monthYear: string): boolean => {
-    if (!staffId) return false;
-    const d = resignDateByStaff.get(staffId);
+  const isResignedBeforeMonth = (staffId: string | null | undefined, monthYear: string, staffName?: string | null): boolean => {
+    const d = getResignDate(staffId, staffName);
     if (!d) return false;
     const resignMonth = d.slice(0, 7);
     return resignMonth < monthYear;
   };
 
   /** True if staff resigned within this specific month (YYYY-MM) */
-  const isResignedInMonth = (staffId: string | null | undefined, monthYear: string): boolean => {
-    if (!staffId) return false;
-    const d = resignDateByStaff.get(staffId);
+  const isResignedInMonth = (staffId: string | null | undefined, monthYear: string, staffName?: string | null): boolean => {
+    const d = getResignDate(staffId, staffName);
     if (!d) return false;
     return d.slice(0, 7) === monthYear;
   };
 
   return {
     resignDateByStaff,
+    resignDateByName,
     resignDetailsByStaff,
     resignedStaffIds,
     getResignDate,
@@ -169,4 +210,3 @@ export function useResignedStaff() {
     isLoading,
   };
 }
-
