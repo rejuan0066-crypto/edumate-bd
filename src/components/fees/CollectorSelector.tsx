@@ -22,7 +22,17 @@ export interface CollectorOption {
   name: string;
   label: string;
   category: 'signatory' | 'staff' | 'custom_fixed';
+  isCurrentUser?: boolean;
 }
+
+const normalizePersonName = (n: string | null | undefined): string => {
+  if (!n) return '';
+  return cleanRoleSuffix(n)
+    .replace(/[ঃ:.]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+};
 
 export default function CollectorSelector({
   value,
@@ -65,6 +75,7 @@ export default function CollectorSelector({
   const collectorOptions = useMemo<CollectorOption[]>(() => {
     const list: CollectorOption[] = [];
     const seenNames = new Set<string>();
+    const normDefault = normalizePersonName(cleanDefault);
 
     const isSelectedMode = authorizedCollectors?.mode !== 'all';
     const allowedRoleKeys = authorizedCollectors?.role_keys || ['accountant_cashier'];
@@ -76,13 +87,18 @@ export default function CollectorSelector({
       if (!isSelectedMode || allowedRoleKeys.includes(roleDef.key)) {
         const authItem = authorities.find((a) => a.role_key === roleDef.key);
         const name = (authItem?.person_name_bn || authItem?.person_name_en || '').trim();
-        if (name && !seenNames.has(name)) {
-          seenNames.add(name);
+        const norm = normalizePersonName(name);
+        if (name && !seenNames.has(norm)) {
+          seenNames.add(norm);
+          const isUser = !!normDefault && norm === normDefault;
+          const roleLabel = bn ? roleDef.label_bn : roleDef.label_en;
+          const youTag = isUser ? ` — ${bn ? 'আপনি' : 'You'}` : '';
           list.push({
             id: `sig_${roleDef.key}`,
             name,
-            label: `${name} (${bn ? roleDef.label_bn : roleDef.label_en})`,
+            label: `${name} (${roleLabel}${youTag})`,
             category: 'signatory',
+            isCurrentUser: isUser,
           });
         }
       }
@@ -93,14 +109,18 @@ export default function CollectorSelector({
       const isAllowed = !isSelectedMode || allowedStaffIds.includes(st.id);
       if (isAllowed) {
         const name = (st.name_bn || st.name_en || '').trim();
-        if (name && !seenNames.has(name)) {
-          seenNames.add(name);
-          const des = st.designation ? ` (${st.designation})` : '';
+        const norm = normalizePersonName(name);
+        if (name && !seenNames.has(norm)) {
+          seenNames.add(norm);
+          const isUser = !!normDefault && norm === normDefault;
+          const youTag = isUser ? ` — ${bn ? 'আপনি' : 'You'}` : '';
+          const des = st.designation ? ` (${st.designation}${youTag})` : (isUser ? ` (${bn ? 'আপনি' : 'You'})` : '');
           list.push({
             id: `staff_${st.id}`,
             name,
             label: `${name}${des}`,
             category: 'staff',
+            isCurrentUser: isUser,
           });
         }
       }
@@ -109,13 +129,17 @@ export default function CollectorSelector({
     // 3. Custom pre-configured collector names
     customFixedNames.forEach((cName) => {
       const trimmed = (cName || '').trim();
-      if (trimmed && !seenNames.has(trimmed)) {
-        seenNames.add(trimmed);
+      const norm = normalizePersonName(trimmed);
+      if (trimmed && !seenNames.has(norm)) {
+        seenNames.add(norm);
+        const isUser = !!normDefault && norm === normDefault;
+        const youTag = isUser ? ` (${bn ? 'আপনি' : 'You'})` : '';
         list.push({
           id: `custom_fixed_${trimmed}`,
           name: trimmed,
-          label: trimmed,
+          label: `${trimmed}${youTag}`,
           category: 'custom_fixed',
+          isCurrentUser: isUser,
         });
       }
     });
@@ -124,33 +148,54 @@ export default function CollectorSelector({
     if (list.length === 0 && staffList.length > 0) {
       staffList.forEach((st: any) => {
         const name = (st.name_bn || st.name_en || '').trim();
-        if (name && !seenNames.has(name)) {
-          seenNames.add(name);
-          const des = st.designation ? ` (${st.designation})` : '';
+        const norm = normalizePersonName(name);
+        if (name && !seenNames.has(norm)) {
+          seenNames.add(norm);
+          const isUser = !!normDefault && norm === normDefault;
+          const youTag = isUser ? ` — ${bn ? 'আপনি' : 'You'}` : '';
+          const des = st.designation ? ` (${st.designation}${youTag})` : (isUser ? ` (${bn ? 'আপনি' : 'You'})` : '');
           list.push({
             id: `staff_${st.id}`,
             name,
             label: `${name}${des}`,
             category: 'staff',
+            isCurrentUser: isUser,
           });
         }
       });
     }
 
     return list;
-  }, [authorities, allRoles, authorizedCollectors, staffList, bn]);
+  }, [authorities, allRoles, authorizedCollectors, staffList, bn, cleanDefault]);
+
+  // Check if current user is already in the list
+  const matchedCurrentUserOption = useMemo(() => {
+    if (!cleanDefault) return undefined;
+    const normDefault = normalizePersonName(cleanDefault);
+    return collectorOptions.find(
+      (opt) =>
+        opt.isCurrentUser ||
+        normalizePersonName(opt.name) === normDefault ||
+        cleanRoleSuffix(opt.name) === cleanDefault
+    );
+  }, [collectorOptions, cleanDefault]);
 
   // Sync initial state
   useEffect(() => {
     if (!value && cleanDefault) {
+      const defaultId = matchedCurrentUserOption ? matchedCurrentUserOption.id : 'default';
       onChange(cleanDefault);
-      setSelectedOption('default');
+      setSelectedOption(defaultId);
     } else if (value) {
-      if (cleanRoleSuffix(value) === cleanDefault) {
-        setSelectedOption('default');
+      const normVal = normalizePersonName(value);
+      const normDefault = normalizePersonName(cleanDefault);
+
+      if (normVal === normDefault) {
+        setSelectedOption(matchedCurrentUserOption ? matchedCurrentUserOption.id : 'default');
       } else {
         const found = collectorOptions.find(
           (opt) =>
+            normalizePersonName(opt.name) === normVal ||
             cleanRoleSuffix(opt.name) === cleanRoleSuffix(value) ||
             opt.name === value ||
             opt.label === value
@@ -163,7 +208,7 @@ export default function CollectorSelector({
         }
       }
     }
-  }, [value, cleanDefault, collectorOptions]);
+  }, [value, cleanDefault, collectorOptions, matchedCurrentUserOption]);
 
   const handleSelect = (val: string) => {
     setSelectedOption(val);
@@ -203,7 +248,7 @@ export default function CollectorSelector({
           <SelectValue placeholder={bn ? 'আদায়কারী নির্বাচন করুন...' : 'Select collector...'} />
         </SelectTrigger>
         <SelectContent className="max-h-64">
-          {cleanDefault && (
+          {cleanDefault && !matchedCurrentUserOption && (
             <SelectItem value="default" className="text-xs font-semibold text-primary">
               {cleanDefault} ({bn ? 'বর্তমান ইউজার / আপনি' : 'Current User / You'})
             </SelectItem>
@@ -212,9 +257,11 @@ export default function CollectorSelector({
           {collectorOptions.map((opt) => (
             <SelectItem key={opt.id} value={opt.id} className="text-xs">
               <div className="flex items-center justify-between gap-2 w-full">
-                <span>{opt.label}</span>
+                <span className={opt.isCurrentUser ? 'font-semibold text-primary' : ''}>
+                  {opt.label}
+                </span>
                 {opt.category === 'signatory' && (
-                  <span className="text-[10px] text-emerald-600 bg-emerald-500/10 px-1.5 py-0.2 rounded font-medium">
+                  <span className="text-[10px] text-emerald-600 bg-emerald-500/10 px-1.5 py-0.2 rounded font-medium shrink-0">
                     {bn ? 'কর্তৃপক্ষ' : 'Signatory'}
                   </span>
                 )}
