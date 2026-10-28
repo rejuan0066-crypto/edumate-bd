@@ -173,6 +173,7 @@ const AdminApiVerification = () => {
       toast.error(saveError.message);
     } else {
       toast.success(bn ? 'সেটিংস সেভ হয়েছে' : 'Settings saved');
+      if (updateData.master_password) setUnlockPassword(updateData.master_password);
       setNewMasterPassword('');
       queryClient.invalidateQueries({ queryKey: ['api-verification-config'] });
       queryClient.invalidateQueries({ queryKey: ['api-verification-enabled'] });
