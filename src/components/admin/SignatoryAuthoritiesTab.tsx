@@ -33,14 +33,20 @@ import {
   Banknote,
   UserCheck,
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { getStaffCategoryKey } from '@/lib/staffOrderHelper';
 import {
   useSignatoryAuthorities,
+  useVerifierDepartments,
   DOCUMENT_SCOPES,
   DEFAULT_ROLE_SCOPES,
+  DEFAULT_VERIFIER_DEPARTMENTS,
   type SignatoryRoleDef,
   type SignatoryRoleItem,
   type DocumentScopeItem,
   type AuthorizedCollectorsConfig,
+  type VerifierDepartmentsConfig,
 } from '@/hooks/useSignatoryAuthorities';
 import { useStaffDirectory, type DirectoryPerson } from '@/hooks/useStaffDirectory';
 import { toast } from 'sonner';
@@ -142,6 +148,139 @@ export default function SignatoryAuthoritiesTab({ canEdit = true }: SignatoryAut
     });
     return count;
   }, [collectorDraft, authorities, personnel]);
+
+  // ─── Admission Verifier Departments Configuration ───
+  const { config: verifierDeptConfig, updateVerifierDepartments } = useVerifierDepartments();
+  const [verifierDeptDraft, setVerifierDeptDraft] = useState<VerifierDepartmentsConfig>(DEFAULT_VERIFIER_DEPARTMENTS);
+  const [customDeptBn, setCustomDeptBn] = useState('');
+  const [customDeptEn, setCustomDeptEn] = useState('');
+
+  // Fetch departments from staff_categories table
+  const { data: dbStaffCategories = [] } = useQuery({
+    queryKey: ['staff_categories_for_verifier_settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('staff_categories')
+        .select('*')
+        .order('sort_order', { ascending: true });
+      if (error) return [];
+      return data || [];
+    },
+  });
+
+  useEffect(() => {
+    if (verifierDeptConfig) {
+      setVerifierDeptDraft({
+        mode: verifierDeptConfig.mode || 'selected',
+        department_keys: Array.isArray(verifierDeptConfig.department_keys) && verifierDeptConfig.department_keys.length > 0
+          ? verifierDeptConfig.department_keys
+          : ['teacher', 'education'],
+        default_department: verifierDeptConfig.default_department || 'teacher',
+        custom_departments: Array.isArray(verifierDeptConfig.custom_departments)
+          ? verifierDeptConfig.custom_departments
+          : [],
+      });
+    }
+  }, [verifierDeptConfig]);
+
+  // Combine standard departments + DB staff_categories + custom_departments
+  const allDepartmentOptions = useMemo(() => {
+    const map = new Map<string, { key: string; name_bn: string; name_en: string; staffCount: number }>();
+
+    // Canonical baseline
+    map.set('teacher', { key: 'teacher', name_bn: 'শিক্ষা বিভাগ', name_en: 'Education Department', staffCount: 0 });
+    map.set('administrative', { key: 'administrative', name_bn: 'প্রশাসন বিভাগ', name_en: 'Administrative Department', staffCount: 0 });
+    map.set('support', { key: 'support', name_bn: 'অফিস বিভাগ', name_en: 'Office / Support Department', staffCount: 0 });
+    map.set('general', { key: 'general', name_bn: 'সাধারণ বিভাগ', name_en: 'General Department', staffCount: 0 });
+
+    // DB categories
+    (dbStaffCategories || []).forEach((c: any) => {
+      const k = c.key === 'teacher' || c.key === 'education' ? 'teacher' : c.key;
+      const prev = map.get(k);
+      map.set(k, {
+        key: k,
+        name_bn: c.name_bn || prev?.name_bn || c.name,
+        name_en: c.name || prev?.name_en || c.name_bn,
+        staffCount: 0,
+      });
+    });
+
+    // Custom departments from config
+    (verifierDeptDraft.custom_departments || []).forEach((cd) => {
+      if (!map.has(cd.key)) {
+        map.set(cd.key, {
+          key: cd.key,
+          name_bn: cd.name_bn,
+          name_en: cd.name_en || cd.name_bn,
+          staffCount: 0,
+        });
+      }
+    });
+
+    // Count active staff
+    (personnel || []).forEach((st: any) => {
+      const cat = getStaffCategoryKey(st);
+      const k = cat === 'education' ? 'teacher' : cat;
+      if (map.has(k)) {
+        map.get(k)!.staffCount += 1;
+      }
+    });
+
+    return Array.from(map.values());
+  }, [dbStaffCategories, verifierDeptDraft.custom_departments, personnel]);
+
+  const handleToggleDeptInDraft = (deptKey: string) => {
+    setVerifierDeptDraft((prev) => {
+      const isTeacher = deptKey === 'teacher' || deptKey === 'education';
+      const isSelected = prev.department_keys.includes(deptKey) ||
+        (isTeacher && prev.department_keys.includes('education')) ||
+        (isTeacher && prev.department_keys.includes('teacher'));
+
+      let nextKeys: string[];
+      if (isSelected) {
+        nextKeys = prev.department_keys.filter(k => k !== deptKey && (isTeacher ? k !== 'education' && k !== 'teacher' : true));
+        if (nextKeys.length === 0) {
+          toast.warning(bn ? 'কমপক্ষে একটি বিভাগ সক্রিয় থাকতে হবে' : 'At least one department must be active');
+          return prev;
+        }
+      } else {
+        nextKeys = [...prev.department_keys, deptKey];
+      }
+      return { ...prev, department_keys: nextKeys };
+    });
+  };
+
+  const handleAddCustomDept = () => {
+    if (!customDeptBn.trim()) {
+      toast.error(bn ? 'বিভাগের নাম লিখুন' : 'Please enter department name');
+      return;
+    }
+    const cleanBn = customDeptBn.trim();
+    const cleanEn = customDeptEn.trim() || cleanBn;
+    const key = 'dept_' + Date.now().toString(36);
+
+    setVerifierDeptDraft(prev => ({
+      ...prev,
+      department_keys: [...prev.department_keys, key],
+      custom_departments: [...(prev.custom_departments || []), { key, name_bn: cleanBn, name_en: cleanEn }],
+    }));
+
+    setCustomDeptBn('');
+    setCustomDeptEn('');
+    toast.success(bn ? `'${cleanBn}' বিভাগ যোগ করা হয়েছে` : `Department '${cleanBn}' added`);
+  };
+
+  const handleRemoveCustomDept = (key: string) => {
+    setVerifierDeptDraft(prev => ({
+      ...prev,
+      department_keys: prev.department_keys.filter(k => k !== key),
+      custom_departments: (prev.custom_departments || []).filter(d => d.key !== key),
+    }));
+  };
+
+  const handleSaveVerifierDepartments = async () => {
+    await updateVerifierDepartments.mutateAsync(verifierDeptDraft);
+  };
 
   // ─── Local draft states per role_key ───
   const [draftSelections, setDraftSelections] = useState<Record<string, {
@@ -624,6 +763,230 @@ export default function SignatoryAuthoritiesTab({ canEdit = true }: SignatoryAut
                 className="btn-primary-gradient text-xs gap-1.5 h-8 shrink-0"
               >
                 {updateAuthorizedCollectors.isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Save className="w-3.5 h-3.5" />
+                )}
+                {bn ? 'সংরক্ষণ করুন' : 'Save'}
+              </Button>
+            )}
+          </CardContent>
+        )}
+      </Card>
+
+      {/* ═══════════ Admission Verifier Department Configuration Card ═══════════ */}
+      <Card className="border-2 border-primary/25 bg-card rounded-2xl shadow-sm overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-primary/10 via-emerald-500/5 to-transparent pb-3.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 bg-primary/15 text-primary rounded-xl shrink-0 mt-0.5 sm:mt-0">
+                <GraduationCap className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <CardTitle className="text-base font-bold text-foreground">
+                    {bn ? 'ভর্তি ফরম ও আবেদন যাচাইকারী বিভাগসমূহ কনফিগারেশন' : 'Admission Verifier Department Setup'}
+                  </CardTitle>
+                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs">
+                    {verifierDeptDraft.mode === 'all'
+                      ? (bn ? 'সকল বিভাগ সক্রিয়' : 'All Departments Active')
+                      : (bn ? `${verifierDeptDraft.department_keys.length}টি বিভাগ অনুমোদিত` : `${verifierDeptDraft.department_keys.length} departments active`)}
+                  </Badge>
+                </div>
+                <CardDescription className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                  {bn
+                    ? 'ভর্তি ফরম পূরণ এবং আবেদন অনুমোদন করার সময় কোন কোন বিভাগ থেকে যাচাইকারী শিক্ষক বা কর্মকর্তা নির্বাচন করা যাবে তা এখানে নির্বাচন ও নতুন বিভাগ যোগ করুন।'
+                    : 'Configure which departments are available when selecting verifier teachers or officers in admission forms and approval workflows.'}
+                </CardDescription>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+              {/* Mode switch */}
+              <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border text-xs">
+                <button
+                  type="button"
+                  onClick={() => setVerifierDeptDraft(prev => ({ ...prev, mode: 'selected' }))}
+                  className={cn(
+                    'px-2.5 py-1 rounded-lg font-semibold transition-all',
+                    verifierDeptDraft.mode === 'selected'
+                      ? 'bg-background shadow-xs text-primary'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {bn ? 'নির্দিষ্ট অনুমোদিত বিভাগ' : 'Selected Only'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVerifierDeptDraft(prev => ({ ...prev, mode: 'all' }))}
+                  className={cn(
+                    'px-2.5 py-1 rounded-lg font-semibold transition-all',
+                    verifierDeptDraft.mode === 'all'
+                      ? 'bg-background shadow-xs text-primary'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {bn ? 'সকল বিভাগ' : 'All Departments'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+
+        {verifierDeptDraft.mode === 'selected' ? (
+          <CardContent className="p-4 sm:p-5 space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-primary" />
+                  <span>{bn ? 'অনুমোদিত বিভাগসমূহ নির্বাচন করুন:' : 'Select Allowed Departments:'}</span>
+                </h4>
+                <span className="text-[11px] text-muted-foreground">
+                  {bn ? 'ড্রপডাউনে নির্বাচিত বিভাগ ও সংশ্লিষ্ট শিক্ষক/কর্মকর্তা প্রদর্শিত হবে' : 'Selected departments will appear in form dropdown'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                {allDepartmentOptions.map((dept) => {
+                  const isTeacher = dept.key === 'teacher' || dept.key === 'education';
+                  const isChecked = verifierDeptDraft.department_keys.includes(dept.key) ||
+                    (isTeacher && verifierDeptDraft.department_keys.includes('education')) ||
+                    (isTeacher && verifierDeptDraft.department_keys.includes('teacher'));
+                  const isCustom = (verifierDeptDraft.custom_departments || []).some(cd => cd.key === dept.key);
+
+                  return (
+                    <div
+                      key={dept.key}
+                      onClick={() => handleToggleDeptInDraft(dept.key)}
+                      className={cn(
+                        'flex items-center justify-between p-3 rounded-xl border text-xs cursor-pointer transition-all',
+                        isChecked
+                          ? 'bg-primary/10 border-primary/40 shadow-xs'
+                          : 'bg-background/80 border-border hover:bg-muted/40 opacity-75'
+                      )}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Checkbox
+                          checked={isChecked}
+                          onCheckedChange={() => handleToggleDeptInDraft(dept.key)}
+                        />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <p className="font-bold text-foreground text-xs">{dept.name_bn}</p>
+                            {isTeacher && (
+                              <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-700 border-emerald-400/30 px-1 py-0">
+                                {bn ? 'প্রাথমিক ডিফল্ট' : 'Primary Default'}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            {dept.name_en} • <span className="text-foreground/80 font-medium">{dept.staffCount} {bn ? 'জন স্টাফ' : 'staff'}</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      {isCustom && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveCustomDept(dept.key);
+                          }}
+                          className="hover:bg-destructive/10 hover:text-destructive rounded-full p-1 text-muted-foreground shrink-0 ml-1"
+                          title={bn ? 'বিভাগটি মুছে ফেলুন' : 'Remove department'}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Custom Department Add Box */}
+            <div className="p-3.5 rounded-xl border border-dashed border-border/80 bg-muted/15 space-y-2.5">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                <Plus className="w-4 h-4 text-primary" />
+                <span>{bn ? 'নতুন বিভাগ যোগ করুন (ঐচ্ছিক):' : 'Add New Custom Department (Optional):'}</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+                <div className="sm:col-span-2">
+                  <Input
+                    placeholder={bn ? 'বিভাগের নাম (বাংলা) যেমন: হিফজ বিভাগ' : 'Department name (e.g. Hifz Dept)'}
+                    value={customDeptBn}
+                    onChange={(e) => setCustomDeptBn(e.target.value)}
+                    className="h-8 text-xs bg-background"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <Input
+                    placeholder={bn ? 'ইংরেজি নাম (ঐচ্ছিক)' : 'English name (optional)'}
+                    value={customDeptEn}
+                    onChange={(e) => setCustomDeptEn(e.target.value)}
+                    className="h-8 text-xs bg-background"
+                  />
+                </div>
+                <div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleAddCustomDept}
+                    className="h-8 text-xs w-full gap-1 border-primary/40 hover:bg-primary/10 text-primary"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    {bn ? 'যোগ করুন' : 'Add'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Save Action */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Sparkles className="w-4 h-4 text-primary shrink-0" />
+                <span>
+                  {bn
+                    ? 'সংরক্ষণ করলে তাৎক্ষণিকভাবে ভর্তি ফর্ম এবং অনুমোদন পেজের বিভাগ ড্রপডাউনে এই বিভাগগুলো যুক্ত হবে।'
+                    : 'Changes immediately apply to the admission form and approval modal dropdowns.'}
+                </span>
+              </div>
+
+              {canEdit && (
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleSaveVerifierDepartments}
+                  disabled={updateVerifierDepartments.isPending}
+                  className="btn-primary-gradient text-xs gap-1.5 shadow-sm h-8 shrink-0"
+                >
+                  {updateVerifierDepartments.isPending ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Save className="w-3.5 h-3.5" />
+                  )}
+                  {bn ? 'যাচাইকারী বিভাগ সংরক্ষণ করুন' : 'Save Verifier Departments'}
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        ) : (
+          <CardContent className="p-4 text-xs text-muted-foreground bg-muted/10 border-t flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <p>
+              {bn
+                ? 'ℹ️ বর্তমানে "সকল বিভাগ" মোড সক্রিয় আছে। প্রতিষ্ঠানের সকল সক্রিয় বিভাগ ভর্তি ফরমের যাচাইকারী ড্রপডাউনে প্রদর্শিত হবে।'
+                : 'All active departments are currently allowed to appear in the admission verifier dropdown.'}
+            </p>
+            {canEdit && (
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleSaveVerifierDepartments}
+                disabled={updateVerifierDepartments.isPending}
+                className="btn-primary-gradient text-xs gap-1.5 h-8 shrink-0"
+              >
+                {updateVerifierDepartments.isPending ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
                   <Save className="w-3.5 h-3.5" />

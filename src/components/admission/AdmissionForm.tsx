@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import { invalidateAllStudentQueries } from '@/lib/studentQueryInvalidator';
 import { formatAddress as formatAddressBn } from '@/lib/banglaAddressHelper';
 import { getStaffCategoryKey } from '@/lib/staffOrderHelper';
+import { useVerifierDepartments } from '@/hooks/useSignatoryAuthorities';
 
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 
@@ -164,31 +165,116 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     },
   });
 
-  // Filter staff belonging to Education Department (শিক্ষা বিভাগ)
-  const educationStaff = useMemo(() => {
-    const filtered = (allActiveStaff || []).filter((st: any) => {
+  // ─── Verifier Department Settings & Filtering ───
+  const { config: verifierDeptConfig } = useVerifierDepartments();
+
+  // Query staff categories from DB
+  const { data: dbStaffCategories = [] } = useQuery({
+    queryKey: ['staff_categories_for_admission_form'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('staff_categories')
+        .select('*')
+        .order('sort_order', { ascending: true });
+      return data || [];
+    },
+  });
+
+  // Calculate available departments based on verifierDeptConfig
+  const availableVerifierDepartments = useMemo(() => {
+    const baseMap = new Map<string, { key: string; name_bn: string; name_en: string }>();
+
+    baseMap.set('teacher', { key: 'teacher', name_bn: 'শিক্ষা বিভাগ', name_en: 'Education' });
+    baseMap.set('administrative', { key: 'administrative', name_bn: 'প্রশাসন বিভাগ', name_en: 'Administrative' });
+    baseMap.set('support', { key: 'support', name_bn: 'অফিস বিভাগ', name_en: 'Office / Support' });
+    baseMap.set('general', { key: 'general', name_bn: 'সাধারণ বিভাগ', name_en: 'General' });
+
+    (dbStaffCategories || []).forEach((c: any) => {
+      const key = c.key === 'teacher' || c.key === 'education' ? 'teacher' : c.key;
+      baseMap.set(key, {
+        key,
+        name_bn: c.name_bn || (key === 'teacher' ? 'শিক্ষা বিভাগ' : c.name),
+        name_en: c.name || c.name_bn,
+      });
+    });
+
+    (verifierDeptConfig.custom_departments || []).forEach((cd) => {
+      baseMap.set(cd.key, cd);
+    });
+
+    const allList = Array.from(baseMap.values());
+
+    if (verifierDeptConfig.mode === 'all') {
+      return allList;
+    }
+
+    const allowedKeys = new Set(verifierDeptConfig.department_keys || ['teacher', 'education']);
+    const filtered = allList.filter(d =>
+      allowedKeys.has(d.key) ||
+      (d.key === 'teacher' && allowedKeys.has('education')) ||
+      (d.key === 'education' && allowedKeys.has('teacher'))
+    );
+
+    if (filtered.length === 0) {
+      return [{ key: 'teacher', name_bn: 'শিক্ষা বিভাগ', name_en: 'Education' }];
+    }
+    return filtered;
+  }, [dbStaffCategories, verifierDeptConfig]);
+
+  // Dynamic filtered staff for current selected department
+  const verifierStaffList = useMemo(() => {
+    const currentDept = form.admitted_by_type || 'teacher';
+    const isEducation = currentDept === 'education' || currentDept === 'teacher';
+    const isAdministrative = currentDept === 'administrative' || currentDept === 'admin';
+
+    const list = (allActiveStaff || []).filter((st: any) => {
       const cat = getStaffCategoryKey(st);
       const dept = (st.department || '').trim();
       const desig = (st.designation || '').trim();
+
+      if (isEducation) {
+        return (
+          cat === 'teacher' ||
+          st.staff_category === 'teacher' ||
+          dept === 'শিক্ষা বিভাগ' ||
+          dept.includes('শিক্ষা') ||
+          dept.toLowerCase().includes('education') ||
+          desig.includes('শিক্ষক') ||
+          desig.toLowerCase().includes('teacher') ||
+          desig.includes('মুয়াল্লিম') ||
+          desig.includes('মুআল্লিম') ||
+          desig.includes('উস্তাদ') ||
+          desig.includes('হাফেজ') ||
+          desig.includes('কারী') ||
+          desig.includes('মুহাদ্দিস') ||
+          desig.includes('মুফতি')
+        );
+      }
+
+      if (isAdministrative) {
+        return (
+          cat === 'administrative' ||
+          st.staff_category === 'administrative' ||
+          dept.includes('প্রশাসন') ||
+          desig.includes('অধ্যক্ষ') ||
+          desig.includes('উপাধ্যক্ষ') ||
+          desig.includes('মুহতামিম') ||
+          desig.includes('পরিচালক') ||
+          desig.includes('সুপার') ||
+          desig.includes('ম্যানেজার')
+        );
+      }
+
       return (
-        cat === 'teacher' ||
-        st.staff_category === 'teacher' ||
-        dept === 'শিক্ষা বিভাগ' ||
-        dept.includes('শিক্ষা') ||
-        dept.toLowerCase().includes('education') ||
-        desig.includes('শিক্ষক') ||
-        desig.toLowerCase().includes('teacher') ||
-        desig.includes('মুয়াল্লিম') ||
-        desig.includes('মুআল্লিম') ||
-        desig.includes('উস্তাদ') ||
-        desig.includes('হাফেজ') ||
-        desig.includes('কারী') ||
-        desig.includes('মুহাদ্দিস') ||
-        desig.includes('মুফতি')
+        cat === currentDept ||
+        st.staff_category === currentDept ||
+        (dept && dept.toLowerCase().includes(currentDept.toLowerCase())) ||
+        (st.designation && st.designation.toLowerCase().includes(currentDept.toLowerCase()))
       );
     });
-    return filtered.length > 0 ? filtered : allActiveStaff;
-  }, [allActiveStaff]);
+
+    return list.length > 0 ? list : allActiveStaff;
+  }, [allActiveStaff, form.admitted_by_type]);
 
   // Query administrative officers & staff (Administrative Department) for approver selection
   const { data: administrativeOfficers = [] } = useQuery({
@@ -2158,7 +2244,13 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                       <div>
                         <Label>{bn ? 'বিভাগ নির্বাচন' : 'Department Selection'}</Label>
                         <Select
-                          value={form.admitted_by_type || 'education'}
+                          value={
+                            availableVerifierDepartments.some(d => d.key === form.admitted_by_type)
+                              ? form.admitted_by_type
+                              : (form.admitted_by_type === 'education' && availableVerifierDepartments.some(d => d.key === 'teacher')
+                                  ? 'teacher'
+                                  : (availableVerifierDepartments.some(d => d.key === 'teacher') ? 'teacher' : (availableVerifierDepartments[0]?.key || 'teacher')))
+                          }
                           onValueChange={(val: string) => {
                             setForm(prev => ({
                               ...prev,
@@ -2170,19 +2262,25 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                             <SelectValue placeholder={bn ? 'বিভাগ নির্বাচন করুন' : 'Select Department'} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="education">
-                              {bn ? 'শিক্ষা বিভাগ' : 'Education Department'}
-                            </SelectItem>
+                            {availableVerifierDepartments.map((dept) => (
+                              <SelectItem key={dept.key} value={dept.key}>
+                                {bn ? dept.name_bn : dept.name_en}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
 
                       <div>
-                        <Label>{bn ? 'যাচাইকারী শিক্ষক নির্বাচন' : 'Select Verifier Teacher'}</Label>
+                        <Label>
+                          {form.admitted_by_type === 'administrative' || form.admitted_by_type === 'admin'
+                            ? (bn ? 'যাচাইকারী কর্মকর্তা নির্বাচন' : 'Select Verifier Officer')
+                            : (bn ? 'যাচাইকারী শিক্ষক নির্বাচন' : 'Select Verifier Teacher')}
+                        </Label>
                         <Select
                           value={form.admitted_by_name || ''}
                           onValueChange={(val) => {
-                            const selectedStaff = educationStaff.find((st: any) => (st.name_bn || st.name_en) === val) || allActiveStaff.find((st: any) => (st.name_bn || st.name_en) === val);
+                            const selectedStaff = verifierStaffList.find((st: any) => (st.name_bn || st.name_en) === val) || allActiveStaff.find((st: any) => (st.name_bn || st.name_en) === val);
                             setForm(prev => ({
                               ...prev,
                               admitted_by_name: val,
@@ -2192,15 +2290,15 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                           }}
                         >
                           <SelectTrigger className="bg-background mt-1">
-                            <SelectValue placeholder={bn ? 'শিক্ষক তালিকা থেকে নির্বাচন করুন' : 'Select Teacher'} />
+                            <SelectValue placeholder={bn ? 'তালিকা থেকে নির্বাচন করুন' : 'Select from list'} />
                           </SelectTrigger>
                           <SelectContent>
-                            {educationStaff.length === 0 ? (
+                            {verifierStaffList.length === 0 ? (
                               <SelectItem value="none" disabled>
-                                {bn ? 'কোনো শিক্ষক তালিকা পাওয়া যায়নি' : 'No teachers found'}
+                                {bn ? 'এই বিভাগে কোনো শিক্ষক/কর্মকর্তা পাওয়া যায়নি' : 'No staff found in this department'}
                               </SelectItem>
                             ) : (
-                              educationStaff.map((st: any) => (
+                              verifierStaffList.map((st: any) => (
                                 <SelectItem key={st.id} value={st.name_bn || st.name_en}>
                                   {st.name_bn || st.name_en} {st.designation ? `(${st.designation})` : ''}
                                 </SelectItem>

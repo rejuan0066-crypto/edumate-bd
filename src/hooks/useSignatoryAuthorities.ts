@@ -61,6 +61,20 @@ export const DEFAULT_AUTHORIZED_COLLECTORS: AuthorizedCollectorsConfig = {
   custom_names: [],
 };
 
+export interface VerifierDepartmentsConfig {
+  mode: 'selected' | 'all';
+  department_keys: string[];
+  default_department?: string;
+  custom_departments?: Array<{ key: string; name_bn: string; name_en: string }>;
+}
+
+export const DEFAULT_VERIFIER_DEPARTMENTS: VerifierDepartmentsConfig = {
+  mode: 'selected',
+  department_keys: ['teacher', 'education'],
+  default_department: 'teacher',
+  custom_departments: [],
+};
+
 export const DOCUMENT_SCOPES: DocumentScopeItem[] = [
   { id: 'certificate', label_bn: 'প্রত্যয়ন ও প্রশংসাপত্র', label_en: 'Certificates & Testimonials', desc_bn: 'শিক্ষার্থীদের চারিত্রিক সনদ, প্রশংসাপত্র ও প্রত্যয়নপত্র', icon: '📜', category: 'academic' },
   { id: 'result_card', label_bn: 'মার্কশিট ও রেজাল্ট কার্ড', label_en: 'Marksheet & Result Card', desc_bn: 'পরীক্ষার মার্কশিট, গ্রেড শিট ও ফলাফল বিবরণী', icon: '📊', category: 'academic' },
@@ -126,13 +140,15 @@ export interface SignatoryAuthoritiesData {
   customRoles: SignatoryRoleDef[];
   documentScopes: Record<string, string[]>;
   authorizedCollectors: AuthorizedCollectorsConfig;
+  verifierDepartments: VerifierDepartmentsConfig;
 }
 
 export async function fetchSignatoryAuthoritiesData(): Promise<SignatoryAuthoritiesData> {
-  // 1. Fetch custom roles, document scopes & authorized collectors from website_settings
+  // 1. Fetch custom roles, document scopes, authorized collectors & verifier departments from website_settings
   let customRoles: SignatoryRoleDef[] = [];
   let documentScopes: Record<string, string[]> = { ...DEFAULT_ROLE_SCOPES };
   let authorizedCollectors: AuthorizedCollectorsConfig = { ...DEFAULT_AUTHORIZED_COLLECTORS };
+  let verifierDepartments: VerifierDepartmentsConfig = { ...DEFAULT_VERIFIER_DEPARTMENTS };
 
   try {
     const { data: wsData } = await supabase
@@ -170,10 +186,25 @@ export async function fetchSignatoryAuthoritiesData(): Promise<SignatoryAuthorit
             }
           } catch {}
         }
+        if (row.key === 'admission_verifier_departments' && row.value) {
+          try {
+            const parsed = typeof row.value === 'string' ? JSON.parse(row.value) : row.value;
+            if (parsed && typeof parsed === 'object') {
+              verifierDepartments = {
+                mode: parsed.mode || 'selected',
+                department_keys: Array.isArray(parsed.department_keys) && parsed.department_keys.length > 0
+                  ? parsed.department_keys
+                  : ['teacher', 'education'],
+                default_department: parsed.default_department || 'teacher',
+                custom_departments: Array.isArray(parsed.custom_departments) ? parsed.custom_departments : [],
+              };
+            }
+          } catch {}
+        }
       }
     }
   } catch (err) {
-    console.warn('Could not fetch custom roles, scopes, or collectors from website_settings:', err);
+    console.warn('Could not fetch custom roles, scopes, collectors, or verifier departments from website_settings:', err);
   }
 
   const allRoles: SignatoryRoleDef[] = [
@@ -259,6 +290,7 @@ export async function fetchSignatoryAuthoritiesData(): Promise<SignatoryAuthorit
     customRoles,
     documentScopes,
     authorizedCollectors,
+    verifierDepartments,
   };
 }
 
@@ -283,6 +315,7 @@ export function useSignatoryAuthorities() {
     customRoles: [],
     documentScopes: { ...DEFAULT_ROLE_SCOPES },
     authorizedCollectors: { ...DEFAULT_AUTHORIZED_COLLECTORS },
+    verifierDepartments: { ...DEFAULT_VERIFIER_DEPARTMENTS },
   };
 
   // ─── 1. Update Authority Assignment ───
@@ -534,6 +567,29 @@ export function useSignatoryAuthorities() {
     },
   });
 
+  // ─── 6. Update Admission Verifier Departments ───
+  const updateVerifierDepartments = useMutation({
+    mutationFn: async (config: VerifierDepartmentsConfig) => {
+      const { error } = await supabase.from('website_settings').upsert({
+        key: 'admission_verifier_departments',
+        value: JSON.stringify(config),
+      });
+
+      if (error) throw error;
+      return config;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['signatory-authorities-data'] });
+      qc.invalidateQueries({ queryKey: ['admission-verifier-departments'] });
+      qc.invalidateQueries({ queryKey: ['website_settings'] });
+      toast.success('ভর্তি ফরম যাচাইকারী বিভাগ সফলভাবে সংরক্ষিত হয়েছে');
+    },
+    onError: (err: any) => {
+      console.error('Update verifier departments error:', err);
+      toast.error(err?.message || 'সংরক্ষণ ব্যর্থ হয়েছে');
+    },
+  });
+
   // ─── Helper: Get Signatories Configured for a Specific Document ───
   const getSignatoriesForDocument = (docId: string): Array<{
     role: SignatoryRoleDef;
@@ -568,6 +624,7 @@ export function useSignatoryAuthorities() {
     customRoles: data.customRoles,
     documentScopes: data.documentScopes,
     authorizedCollectors: data.authorizedCollectors,
+    verifierDepartments: data.verifierDepartments,
     headOfInstitute,
     accountantCashier,
     verifierAuditor,
@@ -575,8 +632,73 @@ export function useSignatoryAuthorities() {
     updateAuthority,
     updateRoleScopes,
     updateAuthorizedCollectors,
+    updateVerifierDepartments,
     addCustomRole,
     deleteCustomRole,
     getSignatoriesForDocument,
+  };
+}
+
+/**
+ * Dedicated hook to consume and update admission verifier department configuration
+ */
+export function useVerifierDepartments() {
+  const qc = useQueryClient();
+
+  const query = useQuery<VerifierDepartmentsConfig>({
+    queryKey: ['admission-verifier-departments'],
+    queryFn: async () => {
+      try {
+        const { data } = await supabase
+          .from('website_settings')
+          .select('value')
+          .eq('key', 'admission_verifier_departments')
+          .maybeSingle();
+
+        if (data?.value) {
+          const parsed = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+          if (parsed && typeof parsed === 'object') {
+            return {
+              mode: parsed.mode || 'selected',
+              department_keys: Array.isArray(parsed.department_keys) && parsed.department_keys.length > 0
+                ? parsed.department_keys
+                : ['teacher', 'education'],
+              default_department: parsed.default_department || 'teacher',
+              custom_departments: Array.isArray(parsed.custom_departments) ? parsed.custom_departments : [],
+            };
+          }
+        }
+      } catch (err) {
+        console.warn('Error reading admission_verifier_departments:', err);
+      }
+      return DEFAULT_VERIFIER_DEPARTMENTS;
+    },
+    staleTime: 60 * 1000,
+  });
+
+  const mutation = useMutation({
+    mutationFn: async (config: VerifierDepartmentsConfig) => {
+      const { error } = await supabase.from('website_settings').upsert({
+        key: 'admission_verifier_departments',
+        value: JSON.stringify(config),
+      });
+      if (error) throw error;
+      return config;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admission-verifier-departments'] });
+      qc.invalidateQueries({ queryKey: ['signatory-authorities-data'] });
+      qc.invalidateQueries({ queryKey: ['website_settings'] });
+      toast.success('ভর্তি ফরম যাচাইকারী বিভাগ সফলভাবে সংরক্ষিত হয়েছে');
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'সংরক্ষণ ব্যর্থ হয়েছে');
+    },
+  });
+
+  return {
+    config: query.data || DEFAULT_VERIFIER_DEPARTMENTS,
+    isLoading: query.isLoading,
+    updateVerifierDepartments: mutation,
   };
 }
