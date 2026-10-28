@@ -24,7 +24,7 @@ import ProfileSectionCard from './ProfileSectionCard';
 import DocumentPreviewModal from '@/components/DocumentPreviewModal';
 import { toast } from 'sonner';
 import { cn, formatDigits } from '@/lib/utils';
-import { cleanRoleSuffix } from '@/lib/paymentUtils';
+import { cleanRoleSuffix, resolveUserCollectorIdentity } from '@/lib/paymentUtils';
 import CollectorSelector from '@/components/fees/CollectorSelector';
 import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { printStudentProfile } from '@/lib/studentProfilePrint';
@@ -151,7 +151,17 @@ const StudentProfileModal = ({
     },
     enabled: !!user?.id,
   });
-  const collectorName = currentProfile?.full_name || user?.user_metadata?.full_name || user?.email || 'Admin';
+  // 3-Tier collector resolution for student modal
+  const { data: collectorIdentity } = useQuery({
+    queryKey: ['student_modal_collector_identity', user?.id, bn],
+    queryFn: async () => {
+      if (!user?.id) return { cleanName: '', displayName: '', tier: 'user_id' as const };
+      return resolveUserCollectorIdentity(user.id, user, { bn, withDesignation: false });
+    },
+    enabled: !!user?.id,
+  });
+
+  const collectorName = collectorIdentity?.cleanName || (user?.email ? `User ID: ${user.email.split('@')[0]}` : 'Office');
 
   const handlePrintProfile = () => {
     printStudentProfile({

@@ -24,7 +24,7 @@ import FeeReceiptDownload from '@/components/fees/FeeReceiptDownload';
 import CollectorSelector from '@/components/fees/CollectorSelector';
 import { EmbeddedProvider } from '@/contexts/EmbeddedContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import { cleanRoleSuffix } from '@/lib/paymentUtils';
+import { cleanRoleSuffix, resolveUserCollectorIdentity } from '@/lib/paymentUtils';
 
 const LazyPaymentDashboard = lazy(() => import('@/pages/admin/AdminPayments'));
 
@@ -330,27 +330,17 @@ const AdminStudentsFees = () => {
   const isGatewayReady = !!gatewayConfig;
 
   // Get logged-in user's staff/profile name for collector
-  const { data: collectorName = '' } = useQuery({
-    queryKey: ['collector_name', user?.id],
+  // 3-Tier collector resolution (Staff Profile -> User Profile -> User ID)
+  const { data: collectorIdentity } = useQuery({
+    queryKey: ['collector_identity_3tier', user?.id, bn],
     queryFn: async () => {
-      if (!user?.id) return '';
-      // Try staff table first
-      const { data: staffData } = await supabase
-        .from('staff')
-        .select('name_bn, name_en')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      if (staffData) return cleanRoleSuffix(staffData.name_bn || staffData.name_en || '');
-      // Fallback to profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', user.id)
-        .maybeSingle();
-      return cleanRoleSuffix(profile?.full_name || user.email || '');
+      if (!user?.id) return { cleanName: '', displayName: '', tier: 'user_id' as const };
+      return resolveUserCollectorIdentity(user.id, user, { bn, withDesignation: false });
     },
     enabled: !!user?.id,
   });
+
+  const collectorName = collectorIdentity?.cleanName || '';
 
   const searchStudent = async () => {
     const rawVal = searchIdentifier.trim();

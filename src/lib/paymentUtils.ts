@@ -61,6 +61,150 @@ export function getRejectionReasonFromPayment(p: any): string {
 }
 
 /**
+ * 3-Tier User / Collector Identity Resolution:
+ * Tier 1: Staff / Teacher Profile (name_bn / name_en + designation)
+ * Tier 2: Standard User Profile (full_name)
+ * Tier 3: User ID / Username (strictly used when no profile exists)
+ */
+export async function resolveUserCollectorIdentity(
+  userId: string | null | undefined,
+  userAuth?: { email?: string | null; user_metadata?: any } | null,
+  options?: { bn?: boolean; withDesignation?: boolean }
+): Promise<{
+  displayName: string;
+  cleanName: string;
+  designation?: string;
+  tier: 'staff' | 'profile' | 'user_id';
+}> {
+  const bn = options?.bn ?? true;
+  if (!userId) {
+    const unknown = bn ? 'অজ্ঞাত ইউজার' : 'Unknown User';
+    return {
+      displayName: unknown,
+      cleanName: unknown,
+      tier: 'user_id',
+    };
+  }
+
+  // Tier 1: Staff / Teacher profile
+  try {
+    const { data: staffData } = await supabase
+      .from('staff')
+      .select('id, name_bn, name_en, designation, staff_id')
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (staffData) {
+      const rawName = (staffData.name_bn || staffData.name_en || '').trim();
+      if (rawName) {
+        const cleanName = cleanRoleSuffix(rawName);
+        const des = staffData.designation ? ` (${staffData.designation})` : '';
+        return {
+          displayName: options?.withDesignation !== false && des ? `${cleanName}${des}` : cleanName,
+          cleanName,
+          designation: staffData.designation || undefined,
+          tier: 'staff',
+        };
+      }
+    }
+  } catch (e) {
+    // Graceful fallback
+  }
+
+  // Tier 2: User profile (profiles table or user_metadata)
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', userId)
+      .maybeSingle();
+
+    const profileFullName = (profile?.full_name || userAuth?.user_metadata?.full_name || '').trim();
+    if (profileFullName) {
+      const cleanName = cleanRoleSuffix(profileFullName);
+      return {
+        displayName: cleanName,
+        cleanName,
+        tier: 'profile',
+      };
+    }
+  } catch (e) {
+    // Graceful fallback
+  }
+
+  // Tier 3: No profile exists -> Fall back to User ID / Username
+  const username =
+    userAuth?.user_metadata?.username ||
+    userAuth?.user_metadata?.user_name ||
+    (userAuth?.email ? userAuth.email.split('@')[0] : null) ||
+    `UID-${userId.slice(0, 8)}`;
+
+  const cleanName = `User ID: ${username}`;
+  const displayName = `${cleanName} (${bn ? 'প্রোফাইল নেই' : 'No Profile'})`;
+
+  return {
+    displayName,
+    cleanName,
+    tier: 'user_id',
+  };
+}
+
+/**
+ * Synchronously formats collector display using the 3-tier formula
+ */
+export function formatUserCollectorDisplay(params: {
+  staffName?: string | null;
+  staffDesignation?: string | null;
+  profileName?: string | null;
+  email?: string | null;
+  username?: string | null;
+  userId?: string | null;
+  bn?: boolean;
+  withDesignation?: boolean;
+}): {
+  displayName: string;
+  cleanName: string;
+  tier: 'staff' | 'profile' | 'user_id';
+} {
+  const bn = params.bn ?? true;
+
+  // Tier 1: Staff Profile
+  if (params.staffName && params.staffName.trim()) {
+    const clean = cleanRoleSuffix(params.staffName);
+    const des = params.staffDesignation ? ` (${params.staffDesignation})` : '';
+    return {
+      displayName: params.withDesignation !== false && des ? `${clean}${des}` : clean,
+      cleanName: clean,
+      tier: 'staff',
+    };
+  }
+
+  // Tier 2: User Profile
+  if (params.profileName && params.profileName.trim()) {
+    const clean = cleanRoleSuffix(params.profileName);
+    return {
+      displayName: clean,
+      cleanName: clean,
+      tier: 'profile',
+    };
+  }
+
+  // Tier 3: User ID / Username (No Profile)
+  const uid =
+    params.username ||
+    (params.email ? params.email.split('@')[0] : '') ||
+    (params.userId ? `UID-${params.userId.slice(0, 8)}` : (bn ? 'ইউজার' : 'User'));
+
+  const cleanName = `User ID: ${uid}`;
+  return {
+    displayName: `${cleanName} (${bn ? 'প্রোফাইল বিহীন' : 'No Profile'})`,
+    cleanName,
+    tier: 'user_id',
+  };
+}
+
+/**
  * Safely updates payment record, falling back to storing fields in `notes`
  * if the remote database does not yet have `collected_by` or `rejection_reason` columns.
  */

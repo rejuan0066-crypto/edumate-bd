@@ -108,7 +108,7 @@ export default function CollectorSelector({
     staffList.forEach((st: any) => {
       const isAllowed = !isSelectedMode || allowedStaffIds.includes(st.id);
       if (isAllowed) {
-        const name = (st.name_bn || st.name_en || '').trim();
+        const name = (st.name_bn || st.name_en || (st.staff_id ? `User ID: ${st.staff_id}` : '')).trim();
         const norm = normalizePersonName(name);
         if (name && !seenNames.has(norm)) {
           seenNames.add(norm);
@@ -250,7 +250,7 @@ export default function CollectorSelector({
         <SelectContent className="max-h-64">
           {cleanDefault && !matchedCurrentUserOption && (
             <SelectItem value="default" className="text-xs font-semibold text-primary">
-              {cleanDefault} ({bn ? 'বর্তমান ইউজার / আপনি' : 'Current User / You'})
+              {cleanDefault.startsWith('User ID:') ? `${cleanDefault} (${bn ? 'প্রোফাইল বিহীন — আপনি' : 'No Profile — You'})` : `${cleanDefault} (${bn ? 'বর্তমান ইউজার / আপনি' : 'Current User / You'})`}
             </SelectItem>
           )}
 
