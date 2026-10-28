@@ -30,8 +30,9 @@ export const useCurrentStaff = () => {
 
       if (byUserId.data) return byUserId.data;
 
-      // 2) Fallback by email in staff
-      if (user.email) {
+      // 2) Fallback by email in staff (only for confirmed email addresses)
+      const emailConfirmed = !!(user as any).email_confirmed_at;
+      if (user.email && emailConfirmed) {
         const byEmail = await supabase
           .from('staff')
           .select('*')
@@ -48,7 +49,7 @@ export const useCurrentStaff = () => {
             .eq('id', byEmail.data.id);
           return { ...byEmail.data, user_id: user.id };
         }
-        if (byEmail.data) return byEmail.data;
+        if (byEmail.data && byEmail.data.user_id === user.id) return byEmail.data;
       }
 
       // 3) Fallback to administrative_officers (by user_id, then email)
@@ -69,7 +70,7 @@ export const useCurrentStaff = () => {
 
       // Email-based auto-link via SECURITY DEFINER RPC
       // (RLS hides other users' rows, so direct .eq('email', …) wouldn't return).
-      if (user.email) {
+      if (user.email && emailConfirmed) {
         const { data: linked } = await supabase
           .rpc('link_administrative_officer_by_email' as any);
         if (linked) return mapAdmin(linked);
