@@ -7,13 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import {
   MessageCircle, Send, Search, RefreshCw, Loader2, User, Check,
   CheckCheck, Phone, Clock, ExternalLink, ShieldCheck, AlertCircle,
   Sparkles, MessageSquare, Plus, ArrowLeft, Paperclip, Image as ImageIcon,
-  FileText, Download, X, Eye, Info, Users, UserCheck, ChevronRight
+  FileText, Download, X, Eye, Info, Users, UserCheck, ChevronRight,
+  GraduationCap, Briefcase
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -85,41 +86,71 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
   const apiKey = (gatewayConfig?.api_key || '').trim();
   const isEnabled = gatewayConfig?.is_enabled !== false && !!serverUrl;
 
-  // 2. Load Student & Staff phone directory for identity lookup
-  const { data: students = [] } = useQuery({
+  // 2. Load Student & Staff phone directory from Supabase
+  const { data: students = [], isLoading: loadingStudents } = useQuery({
     queryKey: ['inbox_directory_students'],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('students')
         .select('id, name_bn, name_en, roll_number, student_id, phone, guardian_phone, father_name, father_phone, mother_name, mother_phone, address, photo_url, division_id, divisions(name, name_bn)')
         .eq('status', 'active')
-        .is('deleted_at', null);
+        .is('deleted_at', null)
+        .order('roll_number', { ascending: true });
+      if (error) {
+        console.warn('Error loading students for WhatsApp directory:', error);
+        return [];
+      }
       return data || [];
     },
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: staffList = [] } = useQuery({
+  const { data: staffList = [], isLoading: loadingStaff } = useQuery({
     queryKey: ['inbox_directory_staff'],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('staff')
         .select('id, name_bn, name_en, phone, photo_url, designation')
         .eq('status', 'active')
-        .is('deleted_at', null);
+        .is('deleted_at', null)
+        .order('name_bn', { ascending: true });
+      if (error) {
+        console.warn('Error loading staff for WhatsApp directory:', error);
+        return [];
+      }
       return data || [];
     },
     staleTime: 5 * 60 * 1000,
   });
 
-  // Map: 10-digit normalized phone number -> Full Identity object
+  // Helper to format clean Bangladeshi / international phone number
+  const formatPhoneNumber = (raw?: string) => {
+    if (!raw) return '';
+    const clean = raw.replace(/\D/g, '');
+    const clean10 = clean.slice(-10);
+    if (clean10.length === 10 && clean10.startsWith('1')) {
+      return `+880 ${clean10.substring(0, 4)}-${clean10.substring(4)}`;
+    }
+    if (clean.length >= 7 && clean.length <= 15) {
+      return `+${clean}`;
+    }
+    return raw;
+  };
+
+  // Helper to extract clean 10-digit local number
+  const normalizeTo10Digits = (raw?: string): string => {
+    if (!raw) return '';
+    return raw.replace(/\D/g, '').slice(-10);
+  };
+
+  // Map: multi-keyed phone number -> MatchedIdentity object
   const directoryMap = useMemo(() => {
     const map = new Map<string, MatchedIdentity>();
 
     students.forEach((s: any) => {
       const divName = bn ? (s.divisions?.name_bn || s.divisions?.name) : (s.divisions?.name || s.divisions?.name_bn);
-      const studentLabel = bn ? s.name_bn : (s.name_en || s.name_bn);
-      const sub = `${bn ? 'রোল:' : 'Roll:'} ${s.roll_number || '—'}${divName ? ` | ${divName}` : ''}`;
+      const studentLabel = (bn ? s.name_bn : (s.name_en || s.name_bn)) || (bn ? 'শিক্ষার্থী' : 'Student');
+      const sub = `${bn ? 'রোল:' : 'Roll:'} ${s.roll_number || '—'}${divName ? ` • ${divName}` : ''}`;
 
       const identityData: MatchedIdentity = {
         type: 'student',
@@ -136,41 +167,41 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
         recordId: s.id,
       };
 
-      if (s.guardian_phone) {
-        const clean = s.guardian_phone.replace(/\D/g, '').slice(-10);
-        map.set(clean, { ...identityData, title: `${studentLabel} (${bn ? 'অভিভাবক' : 'Guardian'})` });
-      }
-      if (s.father_phone) {
-        const clean = s.father_phone.replace(/\D/g, '').slice(-10);
-        if (!map.has(clean)) {
-          map.set(clean, { ...identityData, title: `${studentLabel} (${bn ? 'পিতা' : 'Father'})` });
+      const registerPhone = (rawPhone: string, roleTitle: string) => {
+        if (!rawPhone) return;
+        const clean10 = normalizeTo10Digits(rawPhone);
+        if (clean10.length === 10) {
+          const entry: MatchedIdentity = { ...identityData, title: `${studentLabel} (${roleTitle})` };
+          map.set(clean10, entry);
+          map.set(`0${clean10}`, entry);
+          map.set(`880${clean10}`, entry);
+          map.set(`880${clean10}@s.whatsapp.net`, entry);
         }
-      }
-      if (s.mother_phone) {
-        const clean = s.mother_phone.replace(/\D/g, '').slice(-10);
-        if (!map.has(clean)) {
-          map.set(clean, { ...identityData, title: `${studentLabel} (${bn ? 'মাতা' : 'Mother'})` });
-        }
-      }
-      if (s.phone) {
-        const clean = s.phone.replace(/\D/g, '').slice(-10);
-        if (!map.has(clean)) {
-          map.set(clean, { ...identityData, title: `${studentLabel} (${bn ? 'ছাত্র' : 'Student'})` });
-        }
-      }
+      };
+
+      registerPhone(s.guardian_phone, bn ? 'অভিভাবক' : 'Guardian');
+      registerPhone(s.father_phone, bn ? 'পিতা' : 'Father');
+      registerPhone(s.mother_phone, bn ? 'মাতা' : 'Mother');
+      registerPhone(s.phone, bn ? 'ছাত্র' : 'Student');
     });
 
     staffList.forEach((st: any) => {
       if (st.phone) {
-        const clean = st.phone.replace(/\D/g, '').slice(-10);
-        const name = bn ? st.name_bn : (st.name_en || st.name_bn);
-        map.set(clean, {
-          type: 'staff',
-          title: name,
-          subtitle: st.designation || (bn ? 'স্টাফ/শিক্ষক' : 'Staff'),
-          photoUrl: st.photo_url || undefined,
-          recordId: st.id,
-        });
+        const clean10 = normalizeTo10Digits(st.phone);
+        const name = (bn ? st.name_bn : (st.name_en || st.name_bn)) || (bn ? 'শিক্ষক' : 'Staff');
+        if (clean10.length === 10) {
+          const entry: MatchedIdentity = {
+            type: 'staff',
+            title: name,
+            subtitle: st.designation || (bn ? 'স্টাফ/শিক্ষক' : 'Staff'),
+            photoUrl: st.photo_url || undefined,
+            recordId: st.id,
+          };
+          map.set(clean10, entry);
+          map.set(`0${clean10}`, entry);
+          map.set(`880${clean10}`, entry);
+          map.set(`880${clean10}@s.whatsapp.net`, entry);
+        }
       }
     });
 
@@ -254,25 +285,6 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
     return m.text || '';
   };
 
-  // Helper to format clean Bangladeshi / international phone number
-  const formatPhoneNumber = (raw: string) => {
-    if (!raw) return '';
-    const clean = raw.replace(/\D/g, '');
-    if (clean.length === 11 && clean.startsWith('01')) {
-      return `+880 ${clean.substring(1, 5)}-${clean.substring(5)}`;
-    }
-    if (clean.length === 13 && clean.startsWith('8801')) {
-      return `+880 ${clean.substring(3, 7)}-${clean.substring(7)}`;
-    }
-    if (clean.length === 10 && clean.startsWith('1')) {
-      return `+880 ${clean.substring(0, 4)}-${clean.substring(4)}`;
-    }
-    if (clean.length >= 7 && clean.length <= 13) {
-      return `+${clean}`;
-    }
-    return '';
-  };
-
   // Cached WhatsApp Address Book (from Evolution API findContacts)
   const contactsMapRef = useRef<Map<string, any>>(new Map());
 
@@ -325,7 +337,7 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
 
       const chatList: any[] = Array.isArray(rawChats) ? rawChats : (rawChats?.chats || []);
 
-      // Parse & normalize chats matching real mobile WhatsApp names & phone numbers
+      // Parse & normalize chats
       const parsed: ChatItem[] = chatList
         .filter((c: any) => {
           const jid = c.remoteJid || c.id || '';
@@ -357,16 +369,11 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
 
           const formattedPhone = rawPhone ? formatPhoneNumber(rawPhone) : '';
 
-          // Name resolution hierarchy:
-          // 1. Group: group subject/pushName
-          // 2. Saved contact name from phone address book
-          // 3. WhatsApp profile pushName
-          // 4. Fallback: formatted real phone number
           let displayName = '';
           if (isGroup) {
             displayName = c.pushName || c.name || contact?.pushName || (bn ? 'হোয়াটসঅ্যাপ গ্রুপ' : 'WhatsApp Group');
           } else {
-            const candidatePush = 
+            const candidatePush =
               (contact?.pushName && contact.pushName !== jid && contact.pushName !== digits && contact.pushName !== 'Você') ? contact.pushName :
               (c.pushName && c.pushName !== jid && c.pushName !== digits && c.pushName !== 'Você') ? c.pushName :
               (c.name && c.name !== jid && c.name !== digits && c.name !== 'Você') ? c.name :
@@ -443,7 +450,7 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
 
       let msgList: any[] = [];
 
-      // Evolution API v2: MUST query { where: { key: { remoteJid } }, limit: 100 }
+      // Evolution API v2: query { where: { key: { remoteJid } }, limit: 100 }
       const resp = await fetch(`${serverUrl}/chat/findMessages/${encodeURIComponent(instance)}`, {
         method: 'POST',
         headers,
@@ -522,6 +529,95 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
     fetchMessages(chat.remoteJid);
   };
 
+  // Map 10-digit phone to existing active chat for fast lookup
+  const chatByPhone10 = useMemo(() => {
+    const map = new Map<string, ChatItem>();
+    chats.forEach(c => {
+      if (c.phone && !c.isGroup) {
+        const clean10 = normalizeTo10Digits(c.phone);
+        if (clean10.length === 10) {
+          map.set(clean10, c);
+        }
+      }
+    });
+    return map;
+  }, [chats]);
+
+  // One-click select / start chat with a Madrasa student
+  const handleSelectStudent = (student: any) => {
+    const primaryPhone = student.guardian_phone || student.father_phone || student.phone || student.mother_phone || '';
+    const clean10 = normalizeTo10Digits(primaryPhone);
+
+    if (clean10.length !== 10) {
+      toast.error(bn ? 'এই শিক্ষার্থীর কোনো বৈধ মোবাইল নম্বর পাওয়া যায়নি' : 'No valid mobile number for this student');
+      return;
+    }
+
+    const fullPhone = `880${clean10}`;
+    const jid = `${fullPhone}@s.whatsapp.net`;
+
+    const existingChat = chats.find(c => c.remoteJid === jid || (c.phone && normalizeTo10Digits(c.phone) === clean10));
+    const studentLabel = (bn ? student.name_bn : (student.name_en || student.name_bn)) || (bn ? 'শিক্ষার্থী' : 'Student');
+
+    const targetChat: ChatItem = existingChat ? {
+      ...existingChat,
+      phone: fullPhone,
+      name: `${studentLabel} (${bn ? 'অভিভাবক' : 'Guardian'})`,
+      pushName: studentLabel,
+      profilePicUrl: student.photo_url || existingChat.profilePicUrl,
+    } : {
+      id: jid,
+      remoteJid: jid,
+      phone: fullPhone,
+      name: `${studentLabel} (${bn ? 'অভিভাবক' : 'Guardian'})`,
+      pushName: studentLabel,
+      profilePicUrl: student.photo_url || undefined,
+      unreadCount: 0,
+      lastMessageText: '',
+      lastMessageTime: undefined,
+      isGroup: false,
+    };
+
+    handleSelectChat(targetChat);
+  };
+
+  // One-click select / start chat with Madrasa staff / teacher
+  const handleSelectStaff = (st: any) => {
+    const clean10 = normalizeTo10Digits(st.phone);
+
+    if (clean10.length !== 10) {
+      toast.error(bn ? 'এই শিক্ষকের কোনো বৈধ মোবাইল নম্বর পাওয়া যায়নি' : 'No valid mobile number for this staff');
+      return;
+    }
+
+    const fullPhone = `880${clean10}`;
+    const jid = `${fullPhone}@s.whatsapp.net`;
+
+    const existingChat = chats.find(c => c.remoteJid === jid || (c.phone && normalizeTo10Digits(c.phone) === clean10));
+    const staffName = (bn ? st.name_bn : (st.name_en || st.name_bn)) || (bn ? 'শিক্ষক' : 'Staff');
+
+    const targetChat: ChatItem = existingChat ? {
+      ...existingChat,
+      phone: fullPhone,
+      name: staffName,
+      pushName: staffName,
+      profilePicUrl: st.photo_url || existingChat.profilePicUrl,
+    } : {
+      id: jid,
+      remoteJid: jid,
+      phone: fullPhone,
+      name: staffName,
+      pushName: staffName,
+      profilePicUrl: st.photo_url || undefined,
+      unreadCount: 0,
+      lastMessageText: '',
+      lastMessageTime: undefined,
+      isGroup: false,
+    };
+
+    handleSelectChat(targetChat);
+  };
+
   // Handle file selection from paperclip
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -569,7 +665,6 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
         const isImg = selectedFile.type.startsWith('image/');
         const mediaType = isImg ? 'image' : 'document';
 
-        // Read file as Base64 Data URL
         const base64Data = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () => resolve(reader.result as string);
@@ -596,7 +691,6 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
           throw new Error(errData?.message || (bn ? 'ফাইল পাঠানো সম্ভব হয়নি' : 'Failed to send file'));
         }
 
-        // Optimistically append media message
         const newMsg: ChatMessage = {
           id: `opt-${Date.now()}`,
           fromMe: true,
@@ -630,7 +724,6 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
           throw new Error(errData?.message || (bn ? 'মেসেজ পাঠানো সম্ভব হয়নি' : 'Failed to send message'));
         }
 
-        // Optimistically append outgoing message
         const newMsg: ChatMessage = {
           id: `opt-${Date.now()}`,
           fromMe: true,
@@ -658,18 +751,22 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
   // Start new chat with custom phone
   const handleStartNewChat = () => {
     const raw = newChatPhone.trim().replace(/\D/g, '');
-    if (!raw || raw.length < 10) {
-      toast.error(bn ? 'সঠিক ফোন নম্বর দিন' : 'Enter a valid phone number');
+    const clean10 = raw.slice(-10);
+    if (!clean10 || clean10.length !== 10) {
+      toast.error(bn ? 'সঠিক ১১ বা ১০ ডিজিট ফোন নম্বর দিন (যেমন: 017XXXXXXXX)' : 'Enter a valid phone number');
       return;
     }
-    const fullPhone = raw.startsWith('88') ? raw : (raw.startsWith('01') ? '88' + raw : '880' + raw);
+    const fullPhone = `880${clean10}`;
     const jid = `${fullPhone}@s.whatsapp.net`;
 
+    const identity = directoryMap.get(clean10);
     const newChat: ChatItem = {
       id: jid,
       remoteJid: jid,
       phone: fullPhone,
-      name: formatPhoneNumber(fullPhone),
+      name: identity?.title || formatPhoneNumber(fullPhone),
+      pushName: identity?.title || formatPhoneNumber(fullPhone),
+      profilePicUrl: identity?.photoUrl,
       lastMessageText: '',
       lastMessageTime: Date.now(),
       isGroup: false,
@@ -681,16 +778,54 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
     setNewChatPhone('');
   };
 
-  // Filter chats by search and category filter
+  // Filter students by search
+  const filteredStudents = useMemo(() => {
+    if (!students || students.length === 0) return [];
+    if (!searchQuery.trim()) return students;
+    const q = searchQuery.toLowerCase().trim();
+    return students.filter((s: any) => {
+      const nameBn = (s.name_bn || '').toLowerCase();
+      const nameEn = (s.name_en || '').toLowerCase();
+      const roll = String(s.roll_number || '');
+      const sid = String(s.student_id || '').toLowerCase();
+      const phone = String(s.phone || '');
+      const gPhone = String(s.guardian_phone || '');
+      const fPhone = String(s.father_phone || '');
+      const fName = (s.father_name || '').toLowerCase();
+      const divName = (s.divisions?.name_bn || s.divisions?.name || '').toLowerCase();
+
+      return (
+        nameBn.includes(q) ||
+        nameEn.includes(q) ||
+        roll.includes(q) ||
+        sid.includes(q) ||
+        phone.includes(q) ||
+        gPhone.includes(q) ||
+        fPhone.includes(q) ||
+        fName.includes(q) ||
+        divName.includes(q)
+      );
+    });
+  }, [students, searchQuery]);
+
+  // Filter staff by search
+  const filteredStaff = useMemo(() => {
+    if (!staffList || staffList.length === 0) return [];
+    if (!searchQuery.trim()) return staffList;
+    const q = searchQuery.toLowerCase().trim();
+    return staffList.filter((st: any) => {
+      const nameBn = (st.name_bn || '').toLowerCase();
+      const nameEn = (st.name_en || '').toLowerCase();
+      const phone = String(st.phone || '');
+      const desig = (st.designation || '').toLowerCase();
+      return nameBn.includes(q) || nameEn.includes(q) || phone.includes(q) || desig.includes(q);
+    });
+  }, [staffList, searchQuery]);
+
+  // Filter WhatsApp chats
   const filteredChats = useMemo(() => {
     let list = chats;
-
-    // Filter tab
-    if (activeFilter === 'students') {
-      list = list.filter(c => !c.isGroup && directoryMap.get(c.phone.slice(-10))?.type === 'student');
-    } else if (activeFilter === 'staff') {
-      list = list.filter(c => !c.isGroup && directoryMap.get(c.phone.slice(-10))?.type === 'staff');
-    } else if (activeFilter === 'groups') {
+    if (activeFilter === 'groups') {
       list = list.filter(c => c.isGroup);
     }
 
@@ -700,11 +835,48 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
     return list.filter(c => {
       const matchPhone = c.phone.includes(q);
       const matchName = (c.name || '').toLowerCase().includes(q) || (c.pushName || '').toLowerCase().includes(q);
-      const identity = directoryMap.get(c.phone.slice(-10));
+      const clean10 = normalizeTo10Digits(c.phone);
+      const identity = clean10 ? directoryMap.get(clean10) : null;
       const matchIdentity = identity?.title.toLowerCase().includes(q) || identity?.subtitle.toLowerCase().includes(q) || (identity?.rollNumber || '').includes(q);
       return matchPhone || matchName || matchIdentity;
     });
   }, [chats, searchQuery, activeFilter, directoryMap]);
+
+  // Tab badge counts
+  const tabCounts = useMemo(() => ({
+    all: chats.length,
+    students: students.length,
+    staff: staffList.length,
+    groups: chats.filter(c => c.isGroup).length,
+  }), [chats, students, staffList]);
+
+  // Active selected recipient information
+  const currentRecipient = useMemo(() => {
+    if (!selectedChat) return null;
+    const clean10 = normalizeTo10Digits(selectedChat.phone);
+    const identity = (clean10 ? directoryMap.get(clean10) : null) || directoryMap.get(selectedChat.remoteJid) || null;
+    const isGrp = selectedChat.isGroup;
+
+    let headerName = selectedChat.name || selectedChat.pushName || '';
+    if (isGrp) {
+      headerName = selectedChat.pushName || selectedChat.name || (bn ? 'গ্রুপ চ্যাট' : 'Group Chat');
+    } else if (identity) {
+      headerName = identity.title;
+    } else if (!headerName && selectedChat.phone) {
+      headerName = formatPhoneNumber(selectedChat.phone);
+    }
+
+    const photoSrc = selectedChat.profilePicUrl || identity?.photoUrl;
+
+    return {
+      identity,
+      headerName,
+      isGrp,
+      photoSrc,
+      phone: selectedChat.phone,
+      formattedPhone: formatPhoneNumber(selectedChat.phone),
+    };
+  }, [selectedChat, directoryMap, bn]);
 
   // Canned quick replies
   const quickReplies = [
@@ -725,12 +897,6 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
     }
     return date.toLocaleDateString(bn ? 'bn-BD' : 'en-US', { month: 'short', day: 'numeric' });
   };
-
-  // Get active matched identity
-  const activeIdentity = useMemo(() => {
-    if (!selectedChat || selectedChat.isGroup) return null;
-    return directoryMap.get(selectedChat.phone.slice(-10)) || null;
-  }, [selectedChat, directoryMap]);
 
   if (loadingConfig) {
     return (
@@ -803,7 +969,7 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
               </Badge>
             </h3>
             <p className="text-[11px] text-muted-foreground">
-              {bn ? 'অভিভাবকদের ইনকামিং বার্তা, প্রোফাইল ও সরাসরি রিপ্লাই' : 'Live incoming messages from guardians & contacts'}
+              {bn ? 'মাদ্রাসার শিক্ষার্থী, অভিভাবক ও শিক্ষকদের সাথে সরাসরি নিরাপদ চ্যাট' : 'Direct live chat with verified students, guardians and staff'}
             </p>
           </div>
         </div>
@@ -830,16 +996,16 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
             className="h-8 gap-1.5 text-xs rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>{bn ? 'নতুন চ্যাট' : 'New Chat'}</span>
+            <span>{bn ? 'নম্বর লিখুন' : 'Enter Number'}</span>
           </Button>
         </div>
       </div>
 
-      {/* New Chat Input Bar */}
+      {/* New Chat Custom Phone Bar */}
       {showNewChatInput && (
         <div className="p-3 bg-emerald-500/10 border-b flex items-center gap-2 animate-in fade-in shrink-0">
           <Input
-            placeholder={bn ? 'নম্বর লিখুন (যেমন: 017XXXXXXXX বা 88017XXXXXXXX)' : 'Enter phone number'}
+            placeholder={bn ? 'মোবাইল নম্বর লিখুন (যেমন: 017XXXXXXXX বা 88017XXXXXXXX)' : 'Enter phone number'}
             value={newChatPhone}
             onChange={e => setNewChatPhone(e.target.value)}
             className="h-9 text-xs bg-background max-w-sm"
@@ -853,16 +1019,22 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
         </div>
       )}
 
-      {/* Main Inbox Layout: Left (Contacts) + Center (Chat Window) + Right (Profile Panel) */}
+      {/* Main Inbox Layout */}
       <div className="flex-1 flex overflow-hidden min-h-0 min-w-0">
-        {/* Left Sidebar: Contact list */}
+        {/* Left Sidebar */}
         <div className={`w-full sm:w-80 md:w-96 border-r flex flex-col bg-muted/20 shrink-0 ${selectedChat ? 'hidden sm:flex' : 'flex'}`}>
           {/* Search Box */}
-          <div className="p-2.5 border-b bg-background space-y-2">
+          <div className="p-2.5 border-b bg-background space-y-2 shrink-0">
             <div className="relative">
               <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-muted-foreground" />
               <Input
-                placeholder={bn ? 'নাম, রোল বা মোবাইল দিয়ে খুঁজুন...' : 'Search by name, roll, phone...'}
+                placeholder={
+                  activeFilter === 'students'
+                    ? (bn ? 'ছাত্রের নাম, রোল, বিভাগ বা ফোন নম্বর...' : 'Search student name, roll, phone...')
+                    : activeFilter === 'staff'
+                    ? (bn ? 'শিক্ষকের নাম, পদবী বা ফোন নম্বর...' : 'Search staff name or phone...')
+                    : (bn ? 'নাম, রোল বা মোবাইল দিয়ে খুঁজুন...' : 'Search name, roll, phone...')
+                }
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 className="h-8 pl-8 text-xs bg-muted/50 rounded-xl"
@@ -870,276 +1042,489 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
             </div>
 
             {/* Category Filter Chips */}
-            <div className="flex items-center gap-1 overflow-x-auto text-[10px] pb-0.5">
+            <div className="flex items-center gap-1 overflow-x-auto text-[10px] pb-0.5 scrollbar-none">
               {[
-                { key: 'all', label: bn ? 'সকল চ্যাট' : 'All' },
-                { key: 'students', label: bn ? 'ছাত্র ও অভিভাবক' : 'Students' },
-                { key: 'staff', label: bn ? 'স্টাফ' : 'Staff' },
-                { key: 'groups', label: bn ? 'গ্রুপ' : 'Groups' },
+                { key: 'all', label: bn ? 'সকল চ্যাট' : 'All', count: tabCounts.all },
+                { key: 'students', label: bn ? 'ছাত্র ও অভিভাবক' : 'Students', count: tabCounts.students },
+                { key: 'staff', label: bn ? 'শিক্ষক ও স্টাফ' : 'Staff', count: tabCounts.staff },
+                { key: 'groups', label: bn ? 'গ্রুপ' : 'Groups', count: tabCounts.groups },
               ].map(f => (
                 <button
                   key={f.key}
                   type="button"
                   onClick={() => setActiveFilter(f.key as any)}
-                  className={`px-2.5 py-1 rounded-full whitespace-nowrap transition-colors font-medium ${
+                  className={`px-2.5 py-1 rounded-full whitespace-nowrap transition-colors font-medium flex items-center gap-1.5 ${
                     activeFilter === f.key
                       ? 'bg-emerald-600 text-white shadow-xs'
                       : 'bg-muted hover:bg-muted/80 text-muted-foreground'
                   }`}
                 >
-                  {f.label}
+                  <span>{f.label}</span>
+                  {f.count > 0 && (
+                    <span className={`text-[9px] px-1 py-0.2 rounded-full font-mono ${
+                      activeFilter === f.key ? 'bg-white/20 text-white' : 'bg-muted-foreground/15 text-muted-foreground'
+                    }`}>
+                      {f.count}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Chats Scroll List */}
-          <div className="flex-1 overflow-y-auto divide-y divide-border/40">
-            {loadingChats && chats.length === 0 ? (
-              <div className="py-12 flex flex-col items-center gap-2 text-muted-foreground">
-                <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
-                <p className="text-xs">{bn ? 'চ্যাট তালিকা আসছে...' : 'Loading chats...'}</p>
-              </div>
-            ) : filteredChats.length === 0 ? (
-              <div className="py-12 text-center text-xs text-muted-foreground px-4 space-y-1">
-                <MessageSquare className="w-8 h-8 text-muted-foreground/40 mx-auto" />
-                <p className="font-semibold text-foreground">{bn ? 'কোনো চ্যাট পাওয়া যায়নি' : 'No chats found'}</p>
-                <p>{bn ? 'অভিভাবকদের পাঠানো মেসেজ ও রিপ্লাই এখানে প্রদর্শিত হবে।' : 'Messages will appear here.'}</p>
-              </div>
-            ) : (
-              filteredChats.map(c => {
-                const isSelected = selectedChat?.remoteJid === c.remoteJid;
-                const cleanLast10 = c.phone.slice(-10);
-                const identity = directoryMap.get(cleanLast10);
+          {/* 1. Students Directory Tab */}
+          {activeFilter === 'students' && (
+            <div className="flex-1 overflow-y-auto divide-y divide-border/40">
+              {loadingStudents && students.length === 0 ? (
+                <div className="py-12 flex flex-col items-center gap-2 text-muted-foreground">
+                  <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
+                  <p className="text-xs">{bn ? 'মাদ্রাসার শিক্ষার্থী তালিকা লোড হচ্ছে...' : 'Loading students...'}</p>
+                </div>
+              ) : filteredStudents.length === 0 ? (
+                <div className="py-12 text-center text-xs text-muted-foreground px-4 space-y-1">
+                  <GraduationCap className="w-8 h-8 text-muted-foreground/40 mx-auto" />
+                  <p className="font-semibold text-foreground">{bn ? 'কোনো শিক্ষার্থী পাওয়া যায়নি' : 'No students found'}</p>
+                  <p>{bn ? 'শিক্ষার্থীর নাম, রোল বা ফোন নম্বর দিয়ে অনুসন্ধান করুন।' : 'Search by name, roll, or phone.'}</p>
+                </div>
+              ) : (
+                filteredStudents.map((s: any) => {
+                  const studentName = (bn ? s.name_bn : (s.name_en || s.name_bn)) || (bn ? 'শিক্ষার্থী' : 'Student');
+                  const primaryPhone = s.guardian_phone || s.father_phone || s.phone || s.mother_phone || '';
+                  const clean10 = normalizeTo10Digits(primaryPhone);
+                  const existingChat = clean10 ? chatByPhone10.get(clean10) : null;
+                  const divName = bn ? (s.divisions?.name_bn || s.divisions?.name) : (s.divisions?.name || s.divisions?.name_bn);
+                  const isSelected = selectedChat && !selectedChat.isGroup && normalizeTo10Digits(selectedChat.phone) === clean10;
 
-                // Display name resolver
-                let displayName = c.name || c.pushName || '';
-                if (c.isGroup) {
-                  displayName = c.pushName || c.name || (bn ? 'গ্রুপ চ্যাট' : 'Group Chat');
-                } else if (identity) {
-                  displayName = identity.title;
-                } else if (!displayName && c.phone) {
-                  displayName = formatPhoneNumber(c.phone);
-                }
-
-                // Avatar photo priority
-                const photoSrc = c.profilePicUrl || identity?.photoUrl;
-
-                return (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => handleSelectChat(c)}
-                    className={`w-full text-left p-3 flex items-start gap-3 transition-colors hover:bg-muted/60 ${
-                      isSelected ? 'bg-emerald-500/10 dark:bg-emerald-950/30 border-l-4 border-emerald-500' : ''
-                    }`}
-                  >
-                    {/* Avatar */}
-                    <div className="relative shrink-0">
-                      {photoSrc ? (
-                        <img
-                          src={photoSrc}
-                          alt={displayName}
-                          className="w-10 h-10 rounded-full object-cover border border-border/60 shadow-xs"
-                          referrerPolicy="no-referrer"
-                          onError={(e) => {
-                            // Fallback to initial if image fails
-                            (e.target as HTMLElement).style.display = 'none';
-                          }}
-                        />
-                      ) : (
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs ${
-                          c.isGroup ? 'bg-purple-500/15 text-purple-700 dark:text-purple-300' :
-                          identity?.type === 'student' ? 'bg-blue-500/15 text-blue-700 dark:text-blue-300' :
-                          identity?.type === 'staff' ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300' :
-                          'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
-                        }`}>
-                          {c.isGroup ? <Users className="w-4 h-4" /> : displayName.charAt(0) || <User className="w-4 h-4" />}
-                        </div>
-                      )}
-
-                      {c.unreadCount ? (
-                        <span className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow-xs">
-                          {c.unreadCount}
-                        </span>
-                      ) : null}
-                    </div>
-
-                    {/* Chat Text Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-1 mb-0.5">
-                        <p className="text-xs font-bold text-foreground truncate flex items-center gap-1.5">
-                          {c.isGroup && <Users className="w-3.5 h-3.5 text-purple-600 shrink-0" />}
-                          <span className="truncate">{displayName}</span>
-                        </p>
-                        <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
-                          {formatTime(c.lastMessageTime)}
-                        </span>
-                      </div>
-
-                      {/* Phone number & Student / Staff / Group Badges */}
-                      <div className="flex items-center gap-1.5 text-[11px] mb-0.5 flex-wrap">
-                        {identity && (
-                          <Badge variant="outline" className={`text-[10px] py-0 px-1.5 shrink-0 ${
-                            identity.type === 'student'
-                              ? 'bg-blue-500/10 text-blue-700 border-blue-500/30'
-                              : 'bg-amber-500/10 text-amber-700 border-amber-500/30'
-                          }`}>
-                            {identity.subtitle}
-                          </Badge>
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => handleSelectStudent(s)}
+                      className={`w-full text-left p-3 flex items-start gap-3 transition-colors hover:bg-muted/60 ${
+                        isSelected ? 'bg-emerald-500/10 dark:bg-emerald-950/30 border-l-4 border-emerald-500' : ''
+                      }`}
+                    >
+                      {/* Avatar */}
+                      <div className="relative shrink-0">
+                        {s.photo_url ? (
+                          <img
+                            src={s.photo_url}
+                            alt={studentName}
+                            className="w-10 h-10 rounded-full object-cover border border-border/60 shadow-xs"
+                            onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-300 flex items-center justify-center font-bold text-xs">
+                            {studentName.charAt(0) || '🎓'}
+                          </div>
                         )}
-
-                        {!c.isGroup && c.phone && formatPhoneNumber(c.phone) && displayName !== formatPhoneNumber(c.phone) && (
-                          <span className="font-mono text-emerald-700 dark:text-emerald-400 font-medium text-[10px] shrink-0 flex items-center gap-1">
-                            <Phone className="w-2.5 h-2.5" />
-                            {formatPhoneNumber(c.phone)}
+                        {existingChat?.unreadCount ? (
+                          <span className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow-xs">
+                            {existingChat.unreadCount}
                           </span>
-                        )}
-
-                        {c.isGroup && (
-                          <Badge variant="outline" className="text-[10px] py-0 px-1.5 bg-purple-500/10 text-purple-700 border-purple-500/30 shrink-0">
-                            {bn ? 'গ্রুপ' : 'Group'}
-                          </Badge>
-                        )}
+                        ) : null}
                       </div>
 
-                      <p className="text-[11px] text-muted-foreground truncate">
-                        {c.lastMessageText || (c.isGroup ? (bn ? 'কোনো বার্তা নেই' : 'No messages') : '—')}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })
-            )}
-          </div>
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                          <p className="text-xs font-bold text-foreground truncate">
+                            {studentName}
+                          </p>
+                          {existingChat?.lastMessageTime ? (
+                            <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
+                              {formatTime(existingChat.lastMessageTime)}
+                            </span>
+                          ) : (
+                            <Badge variant="outline" className="text-[9px] py-0 px-1.5 bg-emerald-500/10 text-emerald-700 border-emerald-500/30">
+                              {bn ? 'চ্যাট করুন' : 'Chat'}
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* Phone + Roll / Division */}
+                        <div className="flex items-center gap-1.5 text-[11px] mb-0.5 flex-wrap">
+                          {primaryPhone ? (
+                            <span className="font-mono text-emerald-700 dark:text-emerald-400 font-bold text-[10px] shrink-0 flex items-center gap-0.5">
+                              <Phone className="w-2.5 h-2.5" />
+                              {formatPhoneNumber(primaryPhone)}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground text-[10px]">{bn ? 'ফোন নম্বর নেই' : 'No phone'}</span>
+                          )}
+
+                          <Badge variant="outline" className="text-[9px] py-0 px-1.5 bg-blue-500/10 text-blue-700 border-blue-500/30 shrink-0">
+                            {bn ? `রোল: ${s.roll_number || '—'}` : `Roll: ${s.roll_number || '—'}`}
+                            {divName ? ` • ${divName}` : ''}
+                          </Badge>
+                        </div>
+
+                        {/* Guardian / Father or Last message */}
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {existingChat?.lastMessageText ? (
+                            existingChat.lastMessageText
+                          ) : s.father_name ? (
+                            `${bn ? 'অভিভাবক:' : 'Guardian:'} ${s.father_name}`
+                          ) : (
+                            bn ? 'হোয়াটসঅ্যাপ বার্তা পাঠাতে ক্লিক করুন' : 'Click to send message'
+                          )}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          )}
+
+          {/* 2. Staff Directory Tab */}
+          {activeFilter === 'staff' && (
+            <div className="flex-1 overflow-y-auto divide-y divide-border/40">
+              {loadingStaff && staffList.length === 0 ? (
+                <div className="py-12 flex flex-col items-center gap-2 text-muted-foreground">
+                  <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
+                  <p className="text-xs">{bn ? 'মাদ্রাসার শিক্ষক ও স্টাফ তালিকা লোড হচ্ছে...' : 'Loading staff...'}</p>
+                </div>
+              ) : filteredStaff.length === 0 ? (
+                <div className="py-12 text-center text-xs text-muted-foreground px-4 space-y-1">
+                  <Briefcase className="w-8 h-8 text-muted-foreground/40 mx-auto" />
+                  <p className="font-semibold text-foreground">{bn ? 'কোনো শিক্ষক বা স্টাফ পাওয়া যায়নি' : 'No staff found'}</p>
+                  <p>{bn ? 'শিক্ষক বা স্টাফের নাম ও মোবাইল দিয়ে খুঁজুন।' : 'Search by name or phone.'}</p>
+                </div>
+              ) : (
+                filteredStaff.map((st: any) => {
+                  const staffName = (bn ? st.name_bn : (st.name_en || st.name_bn)) || (bn ? 'শিক্ষক' : 'Staff');
+                  const clean10 = normalizeTo10Digits(st.phone);
+                  const existingChat = clean10 ? chatByPhone10.get(clean10) : null;
+                  const isSelected = selectedChat && !selectedChat.isGroup && normalizeTo10Digits(selectedChat.phone) === clean10;
+
+                  return (
+                    <button
+                      key={st.id}
+                      type="button"
+                      onClick={() => handleSelectStaff(st)}
+                      className={`w-full text-left p-3 flex items-start gap-3 transition-colors hover:bg-muted/60 ${
+                        isSelected ? 'bg-emerald-500/10 dark:bg-emerald-950/30 border-l-4 border-emerald-500' : ''
+                      }`}
+                    >
+                      {/* Avatar */}
+                      <div className="relative shrink-0">
+                        {st.photo_url ? (
+                          <img
+                            src={st.photo_url}
+                            alt={staffName}
+                            className="w-10 h-10 rounded-full object-cover border border-border/60 shadow-xs"
+                            onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 flex items-center justify-center font-bold text-xs">
+                            {staffName.charAt(0) || '💼'}
+                          </div>
+                        )}
+                        {existingChat?.unreadCount ? (
+                          <span className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow-xs">
+                            {existingChat.unreadCount}
+                          </span>
+                        ) : null}
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                          <p className="text-xs font-bold text-foreground truncate">
+                            {staffName}
+                          </p>
+                          {existingChat?.lastMessageTime ? (
+                            <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
+                              {formatTime(existingChat.lastMessageTime)}
+                            </span>
+                          ) : (
+                            <Badge variant="outline" className="text-[9px] py-0 px-1.5 bg-emerald-500/10 text-emerald-700 border-emerald-500/30">
+                              {bn ? 'চ্যাট করুন' : 'Chat'}
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* Phone + Designation */}
+                        <div className="flex items-center gap-1.5 text-[11px] mb-0.5 flex-wrap">
+                          {st.phone ? (
+                            <span className="font-mono text-emerald-700 dark:text-emerald-400 font-bold text-[10px] shrink-0 flex items-center gap-0.5">
+                              <Phone className="w-2.5 h-2.5" />
+                              {formatPhoneNumber(st.phone)}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground text-[10px]">{bn ? 'ফোন নম্বর নেই' : 'No phone'}</span>
+                          )}
+
+                          {st.designation && (
+                            <Badge variant="outline" className="text-[9px] py-0 px-1.5 bg-amber-500/10 text-amber-700 border-amber-500/30 shrink-0">
+                              {st.designation}
+                            </Badge>
+                          )}
+                        </div>
+
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {existingChat?.lastMessageText || (bn ? 'বার্তা পাঠাতে ক্লিক করুন' : 'Click to send message')}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          )}
+
+          {/* 3. WhatsApp All Chats & Groups Tab */}
+          {(activeFilter === 'all' || activeFilter === 'groups') && (
+            <div className="flex-1 overflow-y-auto divide-y divide-border/40">
+              {loadingChats && chats.length === 0 ? (
+                <div className="py-12 flex flex-col items-center gap-2 text-muted-foreground">
+                  <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
+                  <p className="text-xs">{bn ? 'চ্যাট তালিকা আসছে...' : 'Loading chats...'}</p>
+                </div>
+              ) : filteredChats.length === 0 ? (
+                <div className="py-12 text-center text-xs text-muted-foreground px-4 space-y-1">
+                  <MessageSquare className="w-8 h-8 text-muted-foreground/40 mx-auto" />
+                  <p className="font-semibold text-foreground">{bn ? 'কোনো চ্যাট পাওয়া যায়নি' : 'No chats found'}</p>
+                  <p>{bn ? 'ছাত্র ও অভিভাবক ট্যাব থেকে সরাসরি শিক্ষার্থী নির্বাচন করে মেসেজ পাঠান।' : 'Select a student to start chatting.'}</p>
+                </div>
+              ) : (
+                filteredChats.map(c => {
+                  const isSelected = selectedChat?.remoteJid === c.remoteJid;
+                  const cleanLast10 = normalizeTo10Digits(c.phone);
+                  const identity = cleanLast10 ? directoryMap.get(cleanLast10) : null;
+
+                  let displayName = c.name || c.pushName || '';
+                  if (c.isGroup) {
+                    displayName = c.pushName || c.name || (bn ? 'গ্রুপ চ্যাট' : 'Group Chat');
+                  } else if (identity) {
+                    displayName = identity.title;
+                  } else if (!displayName && c.phone) {
+                    displayName = formatPhoneNumber(c.phone);
+                  }
+
+                  const photoSrc = c.profilePicUrl || identity?.photoUrl;
+
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => handleSelectChat(c)}
+                      className={`w-full text-left p-3 flex items-start gap-3 transition-colors hover:bg-muted/60 ${
+                        isSelected ? 'bg-emerald-500/10 dark:bg-emerald-950/30 border-l-4 border-emerald-500' : ''
+                      }`}
+                    >
+                      {/* Avatar */}
+                      <div className="relative shrink-0">
+                        {photoSrc ? (
+                          <img
+                            src={photoSrc}
+                            alt={displayName}
+                            className="w-10 h-10 rounded-full object-cover border border-border/60 shadow-xs"
+                            referrerPolicy="no-referrer"
+                            onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                          />
+                        ) : (
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs ${
+                            c.isGroup ? 'bg-purple-500/15 text-purple-700 dark:text-purple-300' :
+                            identity?.type === 'student' ? 'bg-blue-500/15 text-blue-700 dark:text-blue-300' :
+                            identity?.type === 'staff' ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300' :
+                            'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                          }`}>
+                            {c.isGroup ? <Users className="w-4 h-4" /> : displayName.charAt(0) || <User className="w-4 h-4" />}
+                          </div>
+                        )}
+
+                        {c.unreadCount ? (
+                          <span className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow-xs">
+                            {c.unreadCount}
+                          </span>
+                        ) : null}
+                      </div>
+
+                      {/* Chat Text Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                          <p className="text-xs font-bold text-foreground truncate flex items-center gap-1.5">
+                            {c.isGroup && <Users className="w-3.5 h-3.5 text-purple-600 shrink-0" />}
+                            <span className="truncate">{displayName}</span>
+                          </p>
+                          <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
+                            {formatTime(c.lastMessageTime)}
+                          </span>
+                        </div>
+
+                        {/* Phone number & Badges */}
+                        <div className="flex items-center gap-1.5 text-[11px] mb-0.5 flex-wrap">
+                          {!c.isGroup && c.phone && (
+                            <span className="font-mono text-emerald-700 dark:text-emerald-400 font-bold text-[10px] shrink-0 flex items-center gap-0.5">
+                              <Phone className="w-2.5 h-2.5" />
+                              {formatPhoneNumber(c.phone)}
+                            </span>
+                          )}
+
+                          {identity && (
+                            <Badge variant="outline" className={`text-[9px] py-0 px-1.5 shrink-0 ${
+                              identity.type === 'student'
+                                ? 'bg-blue-500/10 text-blue-700 border-blue-500/30'
+                                : 'bg-amber-500/10 text-amber-700 border-amber-500/30'
+                            }`}>
+                              {identity.subtitle}
+                            </Badge>
+                          )}
+
+                          {!identity && !c.isGroup && (
+                            <Badge variant="outline" className="text-[9px] py-0 px-1.5 bg-muted text-muted-foreground border-border shrink-0">
+                              {bn ? 'ব্যক্তিগত' : 'Direct'}
+                            </Badge>
+                          )}
+
+                          {c.isGroup && (
+                            <Badge variant="outline" className="text-[9px] py-0 px-1.5 bg-purple-500/10 text-purple-700 border-purple-500/30 shrink-0">
+                              {bn ? 'গ্রুপ' : 'Group'}
+                            </Badge>
+                          )}
+                        </div>
+
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {c.lastMessageText || (c.isGroup ? (bn ? 'কোনো বার্তা নেই' : 'No messages') : '—')}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          )}
         </div>
 
         {/* Center Area: Chat Window */}
         <div className={`flex-1 min-w-0 flex flex-col bg-background overflow-hidden ${selectedChat ? 'flex' : 'hidden sm:flex'}`}>
-          {selectedChat ? (
+          {selectedChat && currentRecipient ? (
             <>
               {/* Chat Header */}
-              {(() => {
-                const cleanLast10 = selectedChat.phone.slice(-10);
-                const identity = directoryMap.get(cleanLast10);
-                const isGrp = selectedChat.isGroup;
+              <div className="px-4 py-2.5 border-b bg-muted/30 flex items-center justify-between gap-3 shrink-0 min-w-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedChat(null)}
+                    className="sm:hidden p-1.5 h-8 w-8 shrink-0"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                  </Button>
 
-                let headerName = selectedChat.name || selectedChat.pushName || '';
-                if (isGrp) {
-                  headerName = selectedChat.pushName || selectedChat.name || (bn ? 'গ্রুপ চ্যাট' : 'Group Chat');
-                } else if (identity) {
-                  headerName = identity.title;
-                } else if (!headerName && selectedChat.phone) {
-                  headerName = formatPhoneNumber(selectedChat.phone);
-                }
+                  {currentRecipient.photoSrc ? (
+                    <img
+                      src={currentRecipient.photoSrc}
+                      alt={currentRecipient.headerName}
+                      onClick={() => setPreviewImageSrc(currentRecipient.photoSrc || null)}
+                      className="w-10 h-10 rounded-full object-cover border border-border/80 cursor-pointer shadow-xs shrink-0"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
+                      currentRecipient.isGrp ? 'bg-purple-500/15 text-purple-700' :
+                      currentRecipient.identity?.type === 'student' ? 'bg-blue-500/15 text-blue-700' :
+                      currentRecipient.identity?.type === 'staff' ? 'bg-amber-500/15 text-amber-700' :
+                      'bg-emerald-500/15 text-emerald-700'
+                    }`}>
+                      {currentRecipient.isGrp ? <Users className="w-4 h-4" /> : currentRecipient.headerName.charAt(0) || <User className="w-4 h-4" />}
+                    </div>
+                  )}
 
-                const photoSrc = selectedChat.profilePicUrl || identity?.photoUrl;
+                  <div className="min-w-0">
+                    <h4 className="text-xs sm:text-sm font-bold text-foreground flex items-center gap-2 truncate">
+                      <span className="truncate">{currentRecipient.headerName}</span>
+                      {currentRecipient.identity?.type === 'student' && (
+                        <Badge variant="outline" className="text-[10px] text-blue-700 bg-blue-500/10 border-blue-500/30 shrink-0">
+                          🎓 {bn ? 'শিক্ষার্থীর অভিভাবক' : 'Guardian'}
+                        </Badge>
+                      )}
+                      {currentRecipient.identity?.type === 'staff' && (
+                        <Badge variant="outline" className="text-[10px] text-amber-700 bg-amber-500/10 border-amber-500/30 shrink-0">
+                          💼 {bn ? 'শিক্ষক/স্টাফ' : 'Staff'}
+                        </Badge>
+                      )}
+                      {currentRecipient.isGrp && (
+                        <Badge variant="outline" className="text-[10px] text-purple-700 bg-purple-500/10 border-purple-500/30 shrink-0">
+                          👥 {bn ? 'গ্রুপ' : 'Group'}
+                        </Badge>
+                      )}
+                      {!currentRecipient.identity && !currentRecipient.isGrp && (
+                        <Badge variant="outline" className="text-[10px] text-amber-800 bg-amber-500/10 border-amber-500/30 shrink-0">
+                          ⚠️ {bn ? 'বহিরাগত' : 'External'}
+                        </Badge>
+                      )}
+                    </h4>
 
-                return (
-                  <div className="px-4 py-2.5 border-b bg-muted/30 flex items-center justify-between gap-3 shrink-0 min-w-0">
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedChat(null)}
-                        className="sm:hidden p-1.5 h-8 w-8 shrink-0"
-                      >
-                        <ArrowLeft className="w-4 h-4" />
-                      </Button>
-
-                      {photoSrc ? (
-                        <img
-                          src={photoSrc}
-                          alt={headerName}
-                          onClick={() => setPreviewImageSrc(photoSrc)}
-                          className="w-9 h-9 rounded-full object-cover border border-border/80 cursor-pointer shadow-xs shrink-0"
-                          referrerPolicy="no-referrer"
-                        />
+                    <p className="text-[11px] text-muted-foreground flex items-center gap-2 truncate mt-0.5">
+                      {!currentRecipient.isGrp ? (
+                        <>
+                          {currentRecipient.formattedPhone && (
+                            <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                              <Phone className="w-3 h-3 text-emerald-600" />
+                              {currentRecipient.formattedPhone}
+                            </span>
+                          )}
+                          {currentRecipient.identity?.subtitle && (
+                            <span className="text-foreground font-medium truncate">
+                              • {currentRecipient.identity.subtitle}
+                            </span>
+                          )}
+                          {currentRecipient.identity?.fatherName && (
+                            <span className="text-muted-foreground truncate hidden lg:inline">
+                              • {bn ? 'পিতা:' : 'Father:'} {currentRecipient.identity.fatherName}
+                            </span>
+                          )}
+                        </>
                       ) : (
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
-                          isGrp ? 'bg-purple-500/15 text-purple-700' : 'bg-emerald-500/15 text-emerald-700'
-                        }`}>
-                          {isGrp ? <Users className="w-4 h-4" /> : headerName.charAt(0) || <User className="w-4 h-4" />}
-                        </div>
+                        <span className="text-purple-700 font-medium">{bn ? 'সদস্যদের গ্রুপ বার্তা' : 'Group conversation'}</span>
                       )}
-
-                      <div className="min-w-0">
-                        <h4 className="text-xs sm:text-sm font-bold text-foreground flex items-center gap-2 truncate">
-                          <span className="truncate">{headerName}</span>
-                          {identity?.type === 'student' && (
-                            <Badge variant="outline" className="text-[10px] text-blue-700 bg-blue-500/10 border-blue-500/30 shrink-0">
-                              {bn ? 'শিক্ষার্থীর অভিভাবক' : 'Guardian'}
-                            </Badge>
-                          )}
-                          {isGrp && (
-                            <Badge variant="outline" className="text-[10px] text-purple-700 bg-purple-500/10 border-purple-500/30 shrink-0">
-                              {bn ? 'গ্রুপ' : 'Group'}
-                            </Badge>
-                          )}
-                        </h4>
-                        <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 truncate">
-                          {!isGrp ? (
-                            <>
-                              {selectedChat.phone && formatPhoneNumber(selectedChat.phone) ? (
-                                <>
-                                  <Phone className="w-3 h-3 text-emerald-600 shrink-0" />
-                                  <span className="font-mono font-medium">{formatPhoneNumber(selectedChat.phone)}</span>
-                                </>
-                              ) : (
-                                <span className="text-muted-foreground">{bn ? 'হোয়াটসঅ্যাপ যোগাযোগ' : 'WhatsApp Contact'}</span>
-                              )}
-                              {identity?.subtitle && <span className="text-emerald-700 font-medium truncate">({identity.subtitle})</span>}
-                            </>
-                          ) : (
-                            <span className="text-purple-700 font-medium">{bn ? 'সদস্যদের গ্রুপ বার্তা' : 'Group conversation'}</span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {/* View Profile Drawer Toggle */}
-                      <Button
-                        variant={showProfilePanel ? 'secondary' : 'outline'}
-                        size="sm"
-                        onClick={() => setShowProfilePanel(prev => !prev)}
-                        className="h-8 gap-1.5 text-xs rounded-xl"
-                      >
-                        <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
-                        <span className="hidden md:inline">{bn ? 'প্রোফাইল' : 'Profile'}</span>
-                      </Button>
-
-                      {!isGrp && selectedChat.phone && formatPhoneNumber(selectedChat.phone) && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          asChild
-                          className="h-8 gap-1.5 text-xs rounded-xl"
-                        >
-                          <a
-                            href={`https://web.whatsapp.com/send?phone=${selectedChat.phone.replace(/\D/g, '')}`}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                            <span className="hidden lg:inline">{bn ? 'WhatsApp Web' : 'Web'}</span>
-                          </a>
-                        </Button>
-                      )}
-
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => fetchMessages(selectedChat.remoteJid)}
-                        disabled={loadingMessages}
-                        className="h-8 w-8 p-0 rounded-xl"
-                      >
-                        <RefreshCw className={`w-3.5 h-3.5 ${loadingMessages ? 'animate-spin' : ''}`} />
-                      </Button>
-                    </div>
+                    </p>
                   </div>
-                );
-              })()}
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Button
+                    variant={showProfilePanel ? 'secondary' : 'outline'}
+                    size="sm"
+                    onClick={() => setShowProfilePanel(prev => !prev)}
+                    className="h-8 gap-1.5 text-xs rounded-xl"
+                  >
+                    <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="hidden md:inline">{bn ? 'প্রোফাইল' : 'Profile'}</span>
+                  </Button>
+
+                  {!currentRecipient.isGrp && selectedChat.phone && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      asChild
+                      className="h-8 gap-1.5 text-xs rounded-xl"
+                    >
+                      <a
+                        href={`https://web.whatsapp.com/send?phone=${selectedChat.phone.replace(/\D/g, '')}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span className="hidden lg:inline">{bn ? 'WhatsApp Web' : 'Web'}</span>
+                      </a>
+                    </Button>
+                  )}
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => fetchMessages(selectedChat.remoteJid)}
+                    disabled={loadingMessages}
+                    className="h-8 w-8 p-0 rounded-xl"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${loadingMessages ? 'animate-spin' : ''}`} />
+                  </Button>
+                </div>
+              </div>
 
               {/* Chat Messages Body */}
               <div className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-4 space-y-3 bg-muted/10">
@@ -1149,10 +1534,26 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
                     <p className="text-xs">{bn ? 'চ্যাট হিস্ট্রি লোড হচ্ছে...' : 'Loading chat history...'}</p>
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="py-16 text-center text-xs text-muted-foreground max-w-sm mx-auto space-y-1.5">
-                    <MessageCircle className="w-10 h-10 text-muted-foreground/30 mx-auto" />
-                    <p className="font-bold text-foreground">{bn ? 'কোনো পূর্ববর্তী বার্তা নেই' : 'No previous messages'}</p>
-                    <p>{bn ? 'নিচের ইনপুট থেকে বার্তা পাঠিয়ে সরাসরি কথোপকথন শুরু করুন।' : 'Send a message below to start chatting.'}</p>
+                  <div className="py-16 text-center text-xs text-muted-foreground max-w-sm mx-auto space-y-2">
+                    <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto">
+                      <MessageCircle className="w-6 h-6" />
+                    </div>
+                    <p className="font-bold text-sm text-foreground">
+                      {bn ? 'কোনো পূর্ববর্তী বার্তা পাওয়া যায়নি' : 'No previous messages'}
+                    </p>
+                    <p className="leading-relaxed">
+                      {selectedChat.phone ? (
+                        bn ? (
+                          <>
+                            এই নম্বরে (<span className="font-mono font-bold text-emerald-600">{formatPhoneNumber(selectedChat.phone)}</span>) এখনো কোনো চ্যাট হিস্ট্রি নেই। নিচের বক্সে লিখে সরাসরি WhatsApp বার্তা পাঠান।
+                          </>
+                        ) : (
+                          `No message history with ${formatPhoneNumber(selectedChat.phone)}. Send a message below to start chatting.`
+                        )
+                      ) : (
+                        bn ? 'নিচের ইনপুট থেকে বার্তা পাঠিয়ে সরাসরি কথোপকথন শুরু করুন।' : 'Send a message below to start chatting.'
+                      )}
+                    </p>
                   </div>
                 ) : (
                   messages.map(m => (
@@ -1236,7 +1637,7 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
 
               {/* Quick Reply Chips */}
               {canReply && (
-                <div className="px-3 py-1.5 bg-background border-t flex items-center gap-1.5 overflow-x-auto text-[11px] shrink-0 min-w-0">
+                <div className="px-3 py-1.5 bg-background border-t flex items-center gap-1.5 overflow-x-auto text-[11px] shrink-0 min-w-0 scrollbar-none">
                   <span className="text-muted-foreground shrink-0 flex items-center gap-1 text-[10px]">
                     <Sparkles className="w-3 h-3 text-amber-500" />
                     {bn ? 'কুইক রিপ্লাই:' : 'Quick:'}
@@ -1276,6 +1677,46 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
                 </div>
               )}
 
+              {/* SAFETY RECIPIENT VERIFICATION BANNER */}
+              <div className="px-3.5 py-2 bg-emerald-50 dark:bg-emerald-950/40 border-t-2 border-emerald-500/80 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span className="font-semibold text-emerald-900 dark:text-emerald-200 shrink-0">
+                    {bn ? 'বার্তা প্রাপক:' : 'Sending to:'}
+                  </span>
+                  <span className="font-bold text-foreground truncate max-w-[200px]">
+                    {currentRecipient.headerName}
+                  </span>
+                  {selectedChat.phone && (
+                    <span className="font-mono font-bold text-emerald-700 dark:text-emerald-300 shrink-0 flex items-center gap-1 bg-emerald-500/15 px-2.5 py-0.5 rounded-full text-xs">
+                      <Phone className="w-3 h-3 text-emerald-600" />
+                      {formatPhoneNumber(selectedChat.phone)}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {currentRecipient.identity ? (
+                    <Badge className={`text-[10px] py-0.5 px-2 font-medium ${
+                      currentRecipient.identity.type === 'student'
+                        ? 'bg-blue-500/20 text-blue-800 dark:text-blue-200 border-blue-500/30'
+                        : 'bg-amber-500/20 text-amber-800 dark:text-amber-200 border-amber-500/30'
+                    }`}>
+                      {currentRecipient.identity.type === 'student' ? '🎓 ' : '💼 '}
+                      {currentRecipient.identity.subtitle}
+                    </Badge>
+                  ) : currentRecipient.isGrp ? (
+                    <Badge variant="outline" className="text-[10px] bg-purple-500/15 text-purple-700 border-purple-500/30">
+                      👥 {bn ? 'গ্রুপ বার্তা' : 'Group Message'}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/30">
+                      ⚠️ {bn ? 'বহিরাগত নম্বর' : 'External Contact'}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
               {/* Chat Input Bar */}
               <div className="p-3 bg-background border-t shrink-0 min-w-0">
                 {canReply ? (
@@ -1286,7 +1727,6 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
                     }}
                     className="flex items-end gap-2 w-full min-w-0"
                   >
-                    {/* Hidden file input */}
                     <input
                       type="file"
                       ref={fileInputRef}
@@ -1295,7 +1735,6 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
                       className="hidden"
                     />
 
-                    {/* Paperclip attachment button */}
                     <Button
                       type="button"
                       variant="outline"
@@ -1346,11 +1785,11 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
               </div>
               <div className="space-y-1 max-w-sm">
                 <h4 className="font-bold text-base text-foreground">
-                  {bn ? 'একটি চ্যাট নির্বাচন করুন' : 'Select a Conversation'}
+                  {bn ? 'একটি চ্যাট বা শিক্ষার্থী নির্বাচন করুন' : 'Select a Conversation or Student'}
                 </h4>
                 <p className="text-xs leading-relaxed">
                   {bn
-                    ? 'বামপাশের তালিকা থেকে যেকোনো অভিভাবক বা নম্বরের উপর ক্লিক করে তাদের সাথে লাইভ চ্যাট দেখুন, প্রোফাইল যাচাই করুন ও ফাইল/রিপ্লাই পাঠান।'
+                    ? 'বামপাশের তালিকা থেকে "ছাত্র ও অভিভাবক" বা "শিক্ষক ও স্টাফ" ট্যাবে ক্লিক করে যেকোনো শিক্ষার্থীর সাথে ১-ক্লিকে সরাসরি নিরাপদ WhatsApp চ্যাট শুরু করুন।'
                     : 'Click any contact from the left list to start viewing messages, profiles, and sending replies.'}
                 </p>
               </div>
@@ -1359,7 +1798,7 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
         </div>
 
         {/* Right Sidebar: Profile & Identity Panel */}
-        {selectedChat && showProfilePanel && (
+        {selectedChat && showProfilePanel && currentRecipient && (
           <div className="w-80 border-l bg-card p-4 overflow-y-auto space-y-4 animate-in slide-in-from-right duration-200 shrink-0">
             <div className="flex items-center justify-between pb-2 border-b">
               <h4 className="font-bold text-sm text-foreground flex items-center gap-2">
@@ -1373,33 +1812,30 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
 
             {/* Profile Avatar & Primary info */}
             <div className="flex flex-col items-center text-center space-y-2 pt-2">
-              {(() => {
-                const photoSrc = selectedChat.profilePicUrl || activeIdentity?.photoUrl;
-                return photoSrc ? (
-                  <img
-                    src={photoSrc}
-                    alt={selectedChat.name}
-                    className="w-20 h-20 rounded-full object-cover border-2 border-primary/20 shadow-md cursor-pointer"
-                    onClick={() => setPreviewImageSrc(photoSrc)}
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <div className="w-20 h-20 rounded-full bg-emerald-500/15 text-emerald-700 flex items-center justify-center font-bold text-xl border">
-                    {selectedChat.isGroup ? <Users className="w-8 h-8" /> : (activeIdentity?.title || selectedChat.name || '?').charAt(0)}
-                  </div>
-                );
-              })()}
+              {currentRecipient.photoSrc ? (
+                <img
+                  src={currentRecipient.photoSrc}
+                  alt={currentRecipient.headerName}
+                  className="w-20 h-20 rounded-full object-cover border-2 border-primary/20 shadow-md cursor-pointer"
+                  onClick={() => setPreviewImageSrc(currentRecipient.photoSrc || null)}
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-full bg-emerald-500/15 text-emerald-700 flex items-center justify-center font-bold text-xl border">
+                  {currentRecipient.isGrp ? <Users className="w-8 h-8" /> : (currentRecipient.identity?.title || currentRecipient.headerName || '?').charAt(0)}
+                </div>
+              )}
 
               <div>
                 <h5 className="font-bold text-sm text-foreground">
-                  {activeIdentity?.title || selectedChat.name || selectedChat.pushName || (selectedChat.isGroup ? (bn ? 'গ্রুপ চ্যাট' : 'Group') : (selectedChat.phone ? formatPhoneNumber(selectedChat.phone) : 'WhatsApp Contact'))}
+                  {currentRecipient.headerName}
                 </h5>
-                {!selectedChat.isGroup && selectedChat.phone && formatPhoneNumber(selectedChat.phone) && (
+                {currentRecipient.formattedPhone && (
                   <p className="font-mono text-xs text-muted-foreground mt-0.5">
-                    {formatPhoneNumber(selectedChat.phone)}
+                    {currentRecipient.formattedPhone}
                   </p>
                 )}
-                {selectedChat.isGroup && (
+                {currentRecipient.isGrp && (
                   <Badge variant="outline" className="text-[10px] bg-purple-500/15 text-purple-700 border-purple-500/30 mt-1">
                     {bn ? 'হোয়াটসঅ্যাপ গ্রুপ' : 'WhatsApp Group'}
                   </Badge>
@@ -1408,7 +1844,7 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
             </div>
 
             {/* If Student / Guardian is Matched */}
-            {activeIdentity?.type === 'student' && (
+            {currentRecipient.identity?.type === 'student' && (
               <div className="rounded-xl border bg-muted/40 p-3 space-y-2.5 text-xs">
                 <div className="flex items-center justify-between pb-1 border-b">
                   <span className="font-semibold text-emerald-700 dark:text-emerald-400">
@@ -1422,36 +1858,36 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
                 <div className="space-y-1.5">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{bn ? 'ছাত্রের নাম:' : 'Student Name:'}</span>
-                    <span className="font-bold text-foreground">{activeIdentity.title.replace(/\s*\(.*\)$/, '')}</span>
+                    <span className="font-bold text-foreground">{currentRecipient.identity.title.replace(/\s*\(.*\)$/, '')}</span>
                   </div>
-                  {activeIdentity.rollNumber && (
+                  {currentRecipient.identity.rollNumber && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{bn ? 'রোল নং:' : 'Roll No:'}</span>
-                      <span className="font-mono font-bold text-foreground">{activeIdentity.rollNumber}</span>
+                      <span className="font-mono font-bold text-foreground">{currentRecipient.identity.rollNumber}</span>
                     </div>
                   )}
-                  {activeIdentity.divisionName && (
+                  {currentRecipient.identity.divisionName && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{bn ? 'বিভাগ / জামাত:' : 'Class / Division:'}</span>
-                      <span className="font-semibold text-foreground">{activeIdentity.divisionName}</span>
+                      <span className="font-semibold text-foreground">{currentRecipient.identity.divisionName}</span>
                     </div>
                   )}
-                  {activeIdentity.fatherName && (
+                  {currentRecipient.identity.fatherName && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{bn ? 'পিতার নাম:' : "Father's Name:"}</span>
-                      <span className="font-medium text-foreground">{activeIdentity.fatherName}</span>
+                      <span className="font-medium text-foreground">{currentRecipient.identity.fatherName}</span>
                     </div>
                   )}
-                  {activeIdentity.motherName && (
+                  {currentRecipient.identity.motherName && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{bn ? 'মাতার নাম:' : "Mother's Name:"}</span>
-                      <span className="font-medium text-foreground">{activeIdentity.motherName}</span>
+                      <span className="font-medium text-foreground">{currentRecipient.identity.motherName}</span>
                     </div>
                   )}
-                  {activeIdentity.address && (
+                  {currentRecipient.identity.address && (
                     <div className="pt-1 border-t text-[11px] text-muted-foreground">
                       <span className="font-medium">{bn ? 'ঠিকানা: ' : 'Address: '}</span>
-                      <span>{activeIdentity.address}</span>
+                      <span>{currentRecipient.identity.address}</span>
                     </div>
                   )}
                 </div>
@@ -1473,7 +1909,7 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
             )}
 
             {/* If Staff is Matched */}
-            {activeIdentity?.type === 'staff' && (
+            {currentRecipient.identity?.type === 'staff' && (
               <div className="rounded-xl border bg-muted/40 p-3 space-y-2 text-xs">
                 <div className="pb-1 border-b font-semibold text-amber-700 dark:text-amber-400">
                   💼 {bn ? 'স্টাফ / শিক্ষকের তথ্য' : 'Staff Details'}
@@ -1481,7 +1917,7 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
                 <div className="space-y-1">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{bn ? 'পদবী:' : 'Designation:'}</span>
-                    <span className="font-bold text-foreground">{activeIdentity.subtitle}</span>
+                    <span className="font-bold text-foreground">{currentRecipient.identity.subtitle}</span>
                   </div>
                 </div>
                 <div className="pt-2">
@@ -1495,7 +1931,7 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
             )}
 
             {/* If Unknown Contact */}
-            {!activeIdentity && !selectedChat.isGroup && (
+            {!currentRecipient.identity && !currentRecipient.isGrp && (
               <div className="rounded-xl border bg-muted/30 p-3 text-xs space-y-2 text-center text-muted-foreground">
                 <Info className="w-5 h-5 mx-auto text-muted-foreground/60" />
                 <p>
