@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
         .gte('created_at', fifteenMinAgo)
         .maybeSingle();
 
-      if (!stuRecord || (stuRecord.email && stuRecord.email.toLowerCase() !== email.toLowerCase())) {
+      if (!stuRecord || !stuRecord.email || !email || String(stuRecord.email).trim().toLowerCase() !== String(email).trim().toLowerCase()) {
         await logDelivery('failed', 'No matching recent admission record for student email', { code: 'FORBIDDEN' });
         return new Response(JSON.stringify({ error: "No matching admission record" }), {
           status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
