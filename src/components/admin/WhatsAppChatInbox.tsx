@@ -169,14 +169,23 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
 
       const registerPhone = (rawPhone: string, roleTitle: string) => {
         if (!rawPhone) return;
-        const clean10 = normalizeTo10Digits(rawPhone);
-        if (clean10.length === 10) {
+        const matches = String(rawPhone).match(/(?:\+?88)?01[3-9]\d{8}|\d{10,15}/g) || [rawPhone];
+        matches.forEach(p => {
+          const clean10 = normalizeTo10Digits(p);
+          const fullDigits = String(p).replace(/\D/g, '');
           const entry: MatchedIdentity = { ...identityData, title: `${studentLabel} (${roleTitle})` };
-          map.set(clean10, entry);
-          map.set(`0${clean10}`, entry);
-          map.set(`880${clean10}`, entry);
-          map.set(`880${clean10}@s.whatsapp.net`, entry);
-        }
+
+          if (clean10.length === 10) {
+            map.set(clean10, entry);
+            map.set(`0${clean10}`, entry);
+            map.set(`880${clean10}`, entry);
+            map.set(`880${clean10}@s.whatsapp.net`, entry);
+          }
+          if (fullDigits.length >= 8) {
+            map.set(fullDigits, entry);
+            map.set(`${fullDigits}@s.whatsapp.net`, entry);
+          }
+        });
       };
 
       registerPhone(s.guardian_phone, bn ? 'অভিভাবক' : 'Guardian');
@@ -187,21 +196,30 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
 
     staffList.forEach((st: any) => {
       if (st.phone) {
-        const clean10 = normalizeTo10Digits(st.phone);
+        const matches = String(st.phone).match(/(?:\+?88)?01[3-9]\d{8}|\d{10,15}/g) || [st.phone];
         const name = (bn ? st.name_bn : (st.name_en || st.name_bn)) || (bn ? 'শিক্ষক' : 'Staff');
-        if (clean10.length === 10) {
-          const entry: MatchedIdentity = {
-            type: 'staff',
-            title: name,
-            subtitle: st.designation || (bn ? 'স্টাফ/শিক্ষক' : 'Staff'),
-            photoUrl: st.photo_url || undefined,
-            recordId: st.id,
-          };
-          map.set(clean10, entry);
-          map.set(`0${clean10}`, entry);
-          map.set(`880${clean10}`, entry);
-          map.set(`880${clean10}@s.whatsapp.net`, entry);
-        }
+        const entry: MatchedIdentity = {
+          type: 'staff',
+          title: name,
+          subtitle: st.designation || (bn ? 'স্টাফ/শিক্ষক' : 'Staff'),
+          photoUrl: st.photo_url || undefined,
+          recordId: st.id,
+        };
+
+        matches.forEach(p => {
+          const clean10 = normalizeTo10Digits(p);
+          const fullDigits = String(p).replace(/\D/g, '');
+          if (clean10.length === 10) {
+            map.set(clean10, entry);
+            map.set(`0${clean10}`, entry);
+            map.set(`880${clean10}`, entry);
+            map.set(`880${clean10}@s.whatsapp.net`, entry);
+          }
+          if (fullDigits.length >= 8) {
+            map.set(fullDigits, entry);
+            map.set(`${fullDigits}@s.whatsapp.net`, entry);
+          }
+        });
       }
     });
 
@@ -238,6 +256,7 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
   const [chats, setChats] = useState<ChatItem[]>([]);
   const [loadingChats, setLoadingChats] = useState(false);
   const [selectedChat, setSelectedChat] = useState<ChatItem | null>(null);
+  const [profilePicCache, setProfilePicCache] = useState<Record<string, string>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'students' | 'staff' | 'groups'>('all');
 
@@ -288,6 +307,37 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
   // Cached WhatsApp Address Book (from Evolution API findContacts)
   const contactsMapRef = useRef<Map<string, any>>(new Map());
 
+  // Live WhatsApp Profile Picture Fetcher (On-demand with caching)
+  const fetchLiveProfilePic = async (remoteJid: string, phone?: string) => {
+    if (!serverUrl || !isEnabled || remoteJid.endsWith('@g.us')) return;
+    if (profilePicCache[remoteJid]) return;
+
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (apiKey) headers['apikey'] = apiKey;
+
+      const clean10 = phone ? normalizeTo10Digits(phone) : '';
+      const targetNumber = clean10.length === 10 ? `880${clean10}` : (phone || remoteJid);
+
+      const resp = await fetch(`${serverUrl}/chat/fetchProfilePictureUrl/${encodeURIComponent(instance)}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ number: targetNumber }),
+      });
+
+      if (resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        const pic = data?.profilePictureUrl || data?.pictureUrl || data?.url;
+        if (pic && typeof pic === 'string' && pic.startsWith('http')) {
+          setProfilePicCache(prev => ({ ...prev, [remoteJid]: pic }));
+          setChats(prev => prev.map(c => c.remoteJid === remoteJid ? { ...c, profilePicUrl: pic } : c));
+        }
+      }
+    } catch {
+      // Quiet fail if WhatsApp privacy prevents viewing picture
+    }
+  };
+
   // Fetch Chats and Contacts concurrently from Evolution API
   const fetchChats = async (silent = false) => {
     if (!serverUrl || !isEnabled) return;
@@ -321,9 +371,14 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
       if (rawContacts && Array.isArray(rawContacts) && rawContacts.length > 0) {
         const newMap = new Map<string, any>();
         rawContacts.forEach((c: any) => {
-          if (c.remoteJid) {
-            newMap.set(c.remoteJid, c);
-            const digits = c.remoteJid.replace(/@.*$/, '');
+          if (c.remoteJid) newMap.set(c.remoteJid, c);
+          if (c.id) newMap.set(c.id, c);
+          if (c.number) {
+            newMap.set(c.number, c);
+            newMap.set(`${c.number}@s.whatsapp.net`, c);
+          }
+          const digits = (c.remoteJid || c.id || '').replace(/@.*$/, '');
+          if (digits) {
             newMap.set(digits, c);
             if (digits.startsWith('880')) {
               newMap.set('0' + digits.substring(3), c);
@@ -348,20 +403,26 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
           const isGroup = jid.endsWith('@g.us');
           const isLid = jid.endsWith('@lid');
           const digits = jid.replace(/@.*$/, '');
-          const contact = cMap.get(jid) || cMap.get(digits);
+          const contact = cMap.get(jid) || cMap.get(digits) || (c.id ? cMap.get(c.id) : null);
 
           // Extract real phone number
           let rawPhone = '';
           if (isGroup) {
             rawPhone = '';
           } else if (isLid) {
-            const altJid = c.lastMessage?.key?.remoteJidAlt || c.lastMessage?.key?.participantAlt;
-            if (altJid && altJid.includes('@s.whatsapp.net')) {
-              rawPhone = altJid.replace(/@.*$/, '');
-            } else if (c.lastMessage) {
-              const txt = extractMessageText(c.lastMessage);
-              const m = txt.match(/(?:\+?88)?01[3-9]\d{8}\b/);
-              if (m) rawPhone = m[0].replace(/\D/g, '');
+            if (contact?.number && /^\d+$/.test(contact.number)) {
+              rawPhone = contact.number;
+            } else if (c.number && /^\d+$/.test(c.number)) {
+              rawPhone = c.number;
+            } else {
+              const altJid = c.lastMessage?.key?.remoteJidAlt || c.lastMessage?.key?.participantAlt || contact?.remoteJidAlt;
+              if (altJid && altJid.includes('@s.whatsapp.net')) {
+                rawPhone = altJid.replace(/@.*$/, '');
+              } else if (c.lastMessage) {
+                const txt = extractMessageText(c.lastMessage);
+                const m = txt.match(/(?:\+?88)?01[3-9]\d{8}\b/);
+                if (m) rawPhone = m[0].replace(/\D/g, '');
+              }
             }
           } else {
             rawPhone = digits;
@@ -375,6 +436,7 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
           } else {
             const candidatePush =
               (contact?.pushName && contact.pushName !== jid && contact.pushName !== digits && contact.pushName !== 'Você') ? contact.pushName :
+              (contact?.name && contact.name !== jid && contact.name !== digits && contact.name !== 'Você') ? contact.name :
               (c.pushName && c.pushName !== jid && c.pushName !== digits && c.pushName !== 'Você') ? c.pushName :
               (c.name && c.name !== jid && c.name !== digits && c.name !== 'Você') ? c.name :
               (c.lastMessage?.pushName && c.lastMessage.pushName !== jid && c.lastMessage.pushName !== digits && c.lastMessage.pushName !== 'Você') ? c.lastMessage.pushName :
@@ -527,6 +589,7 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
     setFilePreviewUrl(null);
     setMessages([]);
     fetchMessages(chat.remoteJid);
+    fetchLiveProfilePic(chat.remoteJid, chat.phone);
   };
 
   // Map 10-digit phone to existing active chat for fast lookup
@@ -866,7 +929,7 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
       headerName = formatPhoneNumber(selectedChat.phone);
     }
 
-    const photoSrc = selectedChat.profilePicUrl || identity?.photoUrl;
+    const photoSrc = profilePicCache[selectedChat.remoteJid] || selectedChat.profilePicUrl || identity?.photoUrl;
 
     return {
       identity,
@@ -876,7 +939,7 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
       phone: selectedChat.phone,
       formattedPhone: formatPhoneNumber(selectedChat.phone),
     };
-  }, [selectedChat, directoryMap, bn]);
+  }, [selectedChat, directoryMap, profilePicCache, bn]);
 
   // Canned quick replies
   const quickReplies = [
@@ -1303,7 +1366,7 @@ export default function WhatsAppChatInbox({ canReply = true }: WhatsAppChatInbox
                     displayName = formatPhoneNumber(c.phone);
                   }
 
-                  const photoSrc = c.profilePicUrl || identity?.photoUrl;
+                  const photoSrc = profilePicCache[c.remoteJid] || c.profilePicUrl || identity?.photoUrl;
 
                   return (
                     <button
