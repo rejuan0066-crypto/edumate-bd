@@ -1345,6 +1345,8 @@ const AdminSalary = () => {
       const ovOvertime = Number(record.overtime || 0);
       const ovSavings = Number(record.savings_deduction ?? savingsForNet);
       const ovDuty = Number(record.duty_deduction ?? liveCalc.duty_deduction ?? 0);
+      const ovPreJoin = Number(record.pre_join_deduction ?? liveCalc.pre_join_deduction ?? 0);
+      const ovPostResign = Number(record.post_resign_deduction ?? liveCalc.post_resign_deduction ?? 0);
       Object.assign(liveRecord, {
         manual_override: true,
         base_salary: ovBase,
@@ -1352,6 +1354,8 @@ const AdminSalary = () => {
         absence_deduction: ovAbsence,
         other_deduction: ovOther,
         duty_deduction: ovDuty,
+        pre_join_deduction: ovPreJoin,
+        post_resign_deduction: ovPostResign,
         overtime: ovOvertime,
         overtime_for_net: ovOvertime,
         earned_from_attendance: ovBase,
@@ -1360,6 +1364,7 @@ const AdminSalary = () => {
           base_salary: ovBase, bonus: manualBonus, overtime: ovOvertime, other_allowance: manualAllow,
           late_deduction: ovLate, absence_deduction: ovAbsence, advance_deduction: manualAdvance,
           other_deduction: ovOther, savings_deduction: ovSavings, duty_deduction: ovDuty,
+          pre_join_deduction: ovPreJoin, post_resign_deduction: ovPostResign,
         }),
       });
     }
@@ -1386,6 +1391,8 @@ const AdminSalary = () => {
       + Number(r.advance_deduction || 0)
       + Number(r.other_deduction || 0)
       + Number(r.duty_deduction || 0)
+      + Number(r.pre_join_deduction || 0)
+      + Number(r.post_resign_deduction || 0)
     );
   };
 
@@ -2024,6 +2031,10 @@ const AdminSalary = () => {
       late_deduction: lateDeduction,
       other_deduction: otherDeduction,
       duty_deduction: dutyDeduction,
+      pre_join_deduction: preJoinDeduction,
+      post_resign_deduction: postResignDeduction,
+      pre_join_days: preJoinDays,
+      post_resign_days: postResignDays,
       bonus,
       overtime,
       other_allowance: otherAllowance,
@@ -2217,11 +2228,14 @@ const AdminSalary = () => {
       const savingsDed = activeSavings ? activeSavings.amount : 0;
       const num = (v: any) => Number(v || 0);
       const dutyDed = num(record.duty_deduction ?? getDutyDeduction(record.staff_id).total);
+      const preJoinDed = num(record.pre_join_deduction);
+      const postResignDed = num(record.post_resign_deduction);
       const netSalary = computeManualOverrideNet({
         base_salary: record.base_salary, bonus: record.bonus, overtime: record.overtime,
         other_allowance: record.other_allowance, late_deduction: record.late_deduction,
         absence_deduction: record.absence_deduction, advance_deduction: record.advance_deduction,
         other_deduction: record.other_deduction, savings_deduction: savingsDed, duty_deduction: dutyDed,
+        pre_join_deduction: preJoinDed, post_resign_deduction: postResignDed,
       });
       // Whitelist only real columns — the dialog can be seeded from a live
       // display snapshot that carries extra computed fields.
@@ -2240,7 +2254,7 @@ const AdminSalary = () => {
         other_deduction_note: record.other_deduction_note ?? null,
         duty_deduction: dutyDed,
         savings_deduction: savingsDed,
-        earned_from_attendance: num(record.base_salary),
+        earned_from_attendance: Math.max(0, num(record.base_salary) - preJoinDed - postResignDed),
         working_days: record.working_days ?? null,
         present_days: record.present_days ?? null,
         absent_days: record.absent_days ?? null,
@@ -4155,13 +4169,15 @@ const AdminSalary = () => {
                                  const lateD = Number(displayRecord?.late_deduction || 0);
                                  const otherD = Number(displayRecord?.other_deduction || 0);
                                  const dutyD = Number(displayRecord?.duty_deduction || 0);
-                                 const earnedV = Number((displayRecord as any).earned_from_attendance || 0);
-                                 const unearnedV = isAdditive ? Math.max(0, baseV - earnedV) : 0;
-                                 const sumDed = totalDed;
-                                const expectedNet = isAdditive
-                                  ? displayNet
-                                   : Math.max(0, baseV - absD - lateD - otherD - dutyD + otV + bonusV + otherA - advD - savD);
-                                const mismatch = Math.abs(expectedNet - displayNet) > 1;
+                                  const postResignD = Number(displayRecord?.post_resign_deduction || 0);
+                                  const preJoinD = Number(displayRecord?.pre_join_deduction || 0);
+                                  const earnedV = Number((displayRecord as any).earned_from_attendance || 0);
+                                  const unearnedV = isAdditive ? Math.max(0, baseV - earnedV) : 0;
+                                  const sumDed = totalDed;
+                                  const expectedNet = isAdditive
+                                    ? displayNet
+                                    : Math.max(0, baseV - absD - lateD - otherD - dutyD - postResignD - preJoinD + otV + bonusV + otherA - advD - savD);
+                                  const mismatch = Math.abs(expectedNet - displayNet) > 1;
                                 return (
                                   <Popover>
                                     <PopoverTrigger asChild>
@@ -4183,13 +4199,15 @@ const AdminSalary = () => {
                                       </div>
                                       <div className="px-4 py-3 space-y-1.5 text-xs">
                                         {[
-                                          { lbl: bn ? 'অনুপস্থিতি' : 'Absence', v: absD, k: 'abs' },
-                                          { lbl: bn ? 'বিলম্ব (মিনিট)' : 'Late (min)', v: lateD, k: 'late' },
-                                          { lbl: bn ? 'ডিউটি শিফট' : 'Duty Shift', v: dutyD, k: 'duty' },
-                                          { lbl: bn ? 'অগ্রিম' : 'Advance', v: advD, k: 'adv' },
-                                          { lbl: bn ? 'সঞ্চয় (জমা)' : 'Savings', v: savD, k: 'sav', blue: true },
-                                          { lbl: bn ? 'ম্যানুয়াল/অন্যান্য' : 'Manual / Other', v: otherD, k: 'other' },
-                                        ].map(row => (
+                                           { lbl: bn ? 'অনুপস্থিতি' : 'Absence', v: absD, k: 'abs' },
+                                           { lbl: bn ? 'বিলম্ব (মিনিট)' : 'Late (min)', v: lateD, k: 'late' },
+                                           { lbl: bn ? 'ডিউটি শিফট' : 'Duty Shift', v: dutyD, k: 'duty' },
+                                           { lbl: bn ? 'পদত্যাগ পরবর্তী কর্তন' : 'Post-Resign Ded.', v: postResignD, k: 'post_resign' },
+                                           { lbl: bn ? 'যোগদান পূর্ববর্তী কর্তন' : 'Pre-Join Ded.', v: preJoinD, k: 'pre_join' },
+                                           { lbl: bn ? 'অগ্রিম' : 'Advance', v: advD, k: 'adv' },
+                                           { lbl: bn ? 'সঞ্চয় (জমা)' : 'Savings', v: savD, k: 'sav', blue: true },
+                                           { lbl: bn ? 'ম্যানুয়াল/অন্যান্য' : 'Manual / Other', v: otherD, k: 'other' },
+                                         ].filter(row => row.v > 0 || !['post_resign', 'pre_join'].includes(row.k)).map(row => (
                                           <div key={row.k} className="flex justify-between items-center">
                                             <span className="text-muted-foreground flex items-center gap-1">
                                               <Minus className="h-2.5 w-2.5 opacity-60" />{row.lbl}
@@ -5375,33 +5393,72 @@ const AdminSalary = () => {
                   <Textarea value={editDialog.remarks || ''} onChange={e => setEditDialog({ ...editDialog, remarks: e.target.value })} rows={2} />
                 </div>
                 {(() => {
-                  // Savings is auto-applied on save, so the preview must show it too —
-                  // otherwise the dialog net differs from the table/slip/PDF net.
                   const sav = Number(getActiveSavings(editDialog.staff_id)?.amount || 0);
                   const dutyDed = Number(editDialog.duty_deduction ?? (getDutyDeduction(editDialog.staff_id).total || 0));
+                  const preJoinDed = Number(editDialog.pre_join_deduction ?? 0);
+                  const postResignDed = Number(editDialog.post_resign_deduction ?? 0);
                   const previewNet = computeManualOverrideNet({
                     base_salary: editDialog.base_salary, bonus: editDialog.bonus,
                     overtime: editDialog.overtime, other_allowance: editDialog.other_allowance,
                     late_deduction: editDialog.late_deduction, absence_deduction: editDialog.absence_deduction,
                     advance_deduction: editDialog.advance_deduction, other_deduction: editDialog.other_deduction,
                     savings_deduction: sav, duty_deduction: dutyDed,
+                    pre_join_deduction: preJoinDed, post_resign_deduction: postResignDed,
                   });
                   return (
-                    <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg text-center">
-                      {sav > 0 && (
-                        <p className="text-[11px] text-muted-foreground mb-1">
-                          {bn ? 'জমা কর্তন' : 'Savings deduction'}: ৳{sav.toLocaleString()}
-                        </p>
+                    <div className="space-y-2">
+                      {postResignDed > 0 && (
+                        <div className="p-2.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 rounded-lg text-xs space-y-1 text-left">
+                          <div className="flex items-center gap-1.5 font-bold text-amber-800 dark:text-amber-300">
+                            <AlertCircle className="h-4 w-4 shrink-0" />
+                            <span>{bn ? 'পদত্যাগ সংক্রান্ত আনুপাতিক হিসাব' : 'Prorated Resignation'}</span>
+                          </div>
+                          <p className="text-muted-foreground text-[11px] leading-relaxed">
+                            {bn
+                              ? `এই স্টাফ পদত্যাগ করেছেন। পদত্যাগ পরবর্তী ${editDialog.post_resign_days ? editDialog.post_resign_days + ' দিনের' : ''} বেতন বাবদ ৳${postResignDed.toLocaleString()} কর্তন কার্যকর হয়েছে।`
+                              : `This staff resigned this month. Post-resignation deduction of ৳${postResignDed.toLocaleString()} applies.`}
+                          </p>
+                        </div>
                       )}
-                      {dutyDed > 0 && (
-                        <p className="text-[11px] text-muted-foreground mb-1">
-                          {bn ? 'আবাসিক ডিউটি কর্তন' : 'Residential duty deduction'}: ৳{dutyDed.toLocaleString()}
-                        </p>
+                      {preJoinDed > 0 && (
+                        <div className="p-2.5 bg-blue-50 dark:bg-blue-950/30 border border-blue-300 dark:border-blue-800 rounded-lg text-xs space-y-1 text-left">
+                          <div className="flex items-center gap-1.5 font-bold text-blue-800 dark:text-blue-300">
+                            <AlertCircle className="h-4 w-4 shrink-0" />
+                            <span>{bn ? 'যোগদান সংক্রান্ত আনুপাতিক হিসাব' : 'Prorated Joining'}</span>
+                          </div>
+                          <p className="text-muted-foreground text-[11px] leading-relaxed">
+                            {bn
+                              ? `এই স্টাফ মাসের মাঝামাঝি যোগদান করেছেন। যোগদানের পূর্ববর্তী ${editDialog.pre_join_days ? editDialog.pre_join_days + ' দিনের' : ''} বেতন বাবদ ৳${preJoinDed.toLocaleString()} কর্তন কার্যকর হয়েছে।`
+                              : `This staff joined mid-month. Pre-joining deduction of ৳${preJoinDed.toLocaleString()} applies.`}
+                          </p>
+                        </div>
                       )}
-                      <p className="text-xs text-muted-foreground">{bn ? 'নিট বেতন' : 'Net Salary'}</p>
-                      <p className="text-xl font-bold text-emerald-700 dark:text-emerald-400">
-                        ৳{previewNet.toLocaleString()}
-                      </p>
+                      <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg text-center">
+                        {sav > 0 && (
+                          <p className="text-[11px] text-muted-foreground mb-1">
+                            {bn ? 'জমা কর্তন' : 'Savings deduction'}: ৳{sav.toLocaleString()}
+                          </p>
+                        )}
+                        {dutyDed > 0 && (
+                          <p className="text-[11px] text-muted-foreground mb-1">
+                            {bn ? 'আবাসিক ডিউটি কর্তন' : 'Residential duty deduction'}: ৳{dutyDed.toLocaleString()}
+                          </p>
+                        )}
+                        {postResignDed > 0 && (
+                          <p className="text-[11px] text-amber-700 dark:text-amber-300 mb-1 font-medium">
+                            {bn ? 'পদত্যাগ পরবর্তী কর্তন' : 'Post-resignation deduction'}: ৳{postResignDed.toLocaleString()}
+                          </p>
+                        )}
+                        {preJoinDed > 0 && (
+                          <p className="text-[11px] text-blue-700 dark:text-blue-300 mb-1 font-medium">
+                            {bn ? 'যোগদান পূর্ববর্তী কর্তন' : 'Pre-joining deduction'}: ৳{preJoinDed.toLocaleString()}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground">{bn ? 'নিট বেতন' : 'Net Salary'}</p>
+                        <p className="text-xl font-bold text-emerald-700 dark:text-emerald-400">
+                          ৳{previewNet.toLocaleString()}
+                        </p>
+                      </div>
                     </div>
                   );
                 })()}
