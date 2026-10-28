@@ -28,8 +28,15 @@ Deno.serve(async (req) => {
       from_email,
       from_name,
       use_tls,
-      test_email, // optional recipient — if provided, an actual email is sent
+      test_email: requested_test_email, // optional — if provided, a test email is sent to the caller
     } = body || {};
+    // Test emails always go to the signed-in admin's own address.
+    const test_email = requested_test_email ? (guard.email || null) : null;
+    if (requested_test_email && !test_email) {
+      return new Response(JSON.stringify({ success: false, error: "Your account has no email address for the test" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     if (!smtp_host || !smtp_username || !smtp_password || !from_email) {
       return new Response(

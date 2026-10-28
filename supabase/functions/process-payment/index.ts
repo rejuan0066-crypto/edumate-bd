@@ -32,11 +32,13 @@ Deno.serve(async (req) => {
       // Accept either a Supabase JWT or a parent-portal session token in the body.
       const authHeader = req.headers.get('Authorization') || req.headers.get('authorization');
       let authed = false;
+      let callerUserId: string | null = null;
+      let parentAuthed = false;
       if (authHeader?.toLowerCase().startsWith('bearer ')) {
         const token = authHeader.replace(/^Bearer\s+/i, '').trim();
         try {
           const { data } = await supabase.auth.getClaims(token);
-          if (data?.claims?.sub) authed = true;
+          if (data?.claims?.sub) { authed = true; callerUserId = String(data.claims.sub); }
         } catch { /* fall through */ }
       }
       // Parent-portal custom session
@@ -46,13 +48,48 @@ Deno.serve(async (req) => {
           p_parent_account_id: parent_account_id,
           p_session_token: parentSessionToken,
         });
-        if (ok === true) authed = true;
+        if (ok === true) { authed = true; parentAuthed = true; }
       }
       if (!authed) {
         return new Response(JSON.stringify({ error: 'Unauthorized: payment initiation requires authentication' }), {
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
+      }
+
+      // The caller may only start payments for a student they are linked to,
+      // unless they are fee-collecting staff.
+      if (student_id) {
+        let allowedForStudent = false;
+        if (callerUserId) {
+          const { data: roles } = await supabase.from('user_roles').select('role').eq('user_id', callerUserId);
+          const roleSet = new Set((roles || []).map((r: any) => r.role));
+          if (['super_admin', 'admin', 'staff', 'accounts'].some((r) => roleSet.has(r))) allowedForStudent = true;
+          if (!allowedForStudent) {
+            const { data: own } = await supabase.from('students').select('id')
+              .eq('id', student_id).eq('user_id', callerUserId).maybeSingle();
+            if (own) allowedForStudent = true;
+          }
+          if (!allowedForStudent) {
+            const { data: pa } = await supabase.from('parent_accounts').select('id, student_id')
+              .eq('user_id', callerUserId).in('status', ['approved', 'active']);
+            if (pa && pa.length) {
+              const { data: st } = await supabase.from('students').select('id, student_id').eq('id', student_id).maybeSingle();
+              if (st && pa.some((p: any) => p.student_id === st.student_id || p.student_id === st.id)) allowedForStudent = true;
+            }
+          }
+        }
+        if (!allowedForStudent && parentAuthed && parent_account_id) {
+          const { data: pa } = await supabase.from('parent_accounts').select('student_id')
+            .eq('id', parent_account_id).maybeSingle();
+          const { data: st } = await supabase.from('students').select('id, student_id').eq('id', student_id).maybeSingle();
+          if (pa && st && (pa.student_id === st.student_id || pa.student_id === st.id)) allowedForStudent = true;
+        }
+        if (!allowedForStudent) {
+          return new Response(JSON.stringify({ error: 'Not allowed to pay for this student' }), {
+            status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
       }
     }
 
@@ -118,14 +155,14 @@ Deno.serve(async (req) => {
           .select("id, student_id, due_amount, amount")
           .in("id", fee_assignment_ids);
 
-        if (assignErr || !assignments || assignments.length === 0) {
+        if (assignErr || !assignments || assignments.length !== new Set(fee_assignment_ids).size) {
           return new Response(JSON.stringify({ error: "Invalid fee assignment IDs" }), {
             status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
 
         // Verify that assignments all belong to the student
-        if (student_id && assignments.some((a: any) => a.student_id !== student_id)) {
+        if (!student_id || assignments.some((a: any) => a.student_id !== student_id)) {
           return new Response(JSON.stringify({ error: "Fee assignments do not belong to the specified student" }), {
             status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
           });

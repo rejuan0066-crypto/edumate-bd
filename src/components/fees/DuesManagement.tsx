@@ -1,3 +1,4 @@
+import { safeRows, csvCell, safeCell } from '@/lib/spreadsheetSafe';
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -378,7 +379,7 @@ const DuesManagement = () => {
         return cells;
       })
     ];
-    const csv = '\uFEFF' + rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const csv = '\uFEFF' + rows.map(r => r.map(c => csvCell(c)).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

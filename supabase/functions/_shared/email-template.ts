@@ -9,10 +9,16 @@ export interface RenderedEmail {
   used_db_template: boolean;
 }
 
-function substitute(template: string, vars: Record<string, string | number>): string {
+function escapeHtmlValue(v: string): string {
+  return v.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
+}
+
+function substitute(template: string, vars: Record<string, string | number>, html = false): string {
   return template.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_m, key) => {
     const v = vars[key];
-    return v === undefined || v === null ? "" : String(v);
+    if (v === undefined || v === null) return "";
+    const s = String(v);
+    return html ? escapeHtmlValue(s) : s;
   });
 }
 
@@ -125,7 +131,7 @@ export async function renderEmailTemplate(
     if (!error && data && data.is_enabled !== false) {
       return {
         subject: substitute(data.subject, defaults),
-        html: substitute(data.html_body, defaults),
+        html: substitute(data.html_body, defaults, true),
         template_key: templateKey,
         used_db_template: true,
       };
@@ -137,7 +143,7 @@ export async function renderEmailTemplate(
   if (fallback) {
     return {
       subject: substitute(fallback.subject, defaults),
-      html: substitute(fallback.html, defaults),
+      html: substitute(fallback.html, defaults, true),
       template_key: templateKey,
       used_db_template: false,
     };

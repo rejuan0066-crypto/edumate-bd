@@ -1,8 +1,4 @@
-import CryptoJS from 'crypto-js';
-
-const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'fjiynfbg';
-const API_KEY = import.meta.env.VITE_CLOUDINARY_API_KEY || '127363587554279';
-const API_SECRET = import.meta.env.VITE_CLOUDINARY_API_SECRET || 'LehgK6fNg1ARbYaTwuD4cCpyrlI';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface CloudinaryUploadOptions {
   folder?: string;
@@ -19,12 +15,16 @@ export async function uploadToCloudinary(
   file: File | Blob,
   options: CloudinaryUploadOptions = {}
 ): Promise<{ url: string; secure_url: string; public_id: string; format: string }> {
-  const timestamp = Math.round(Date.now() / 1000);
-  const folder = options.folder ? `edumate-bd/${options.folder}` : 'edumate-bd/general';
-
-  // Build params string to sign in alphabetical order
-  const paramsToSign = `folder=${folder}&timestamp=${timestamp}${API_SECRET}`;
-  const signature = CryptoJS.SHA1(paramsToSign).toString();
+  // Signature is generated server-side; the Cloudinary secret never ships to the browser.
+  const { data: sig, error: sigErr } = await supabase.functions.invoke('cloudinary-sign', {
+    body: { folder: options.folder || 'general' },
+  });
+  if (sigErr || !sig?.signature) {
+    throw new Error('Cloudinary upload failed: could not sign upload');
+  }
+  const { signature, timestamp, folder, api_key: API_KEY, cloud_name: CLOUD_NAME } = sig as {
+    signature: string; timestamp: number; folder: string; api_key: string; cloud_name: string;
+  };
 
   const formData = new FormData();
   formData.append('file', file);

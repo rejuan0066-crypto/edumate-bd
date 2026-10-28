@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { useApiVerificationConfig } from '@/hooks/useApiVerification';
+import { useApiVerificationConfig, unlockApiVerification } from '@/hooks/useApiVerification';
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2, Shield, Key, Link2, MapPin, Lock, Eye, EyeOff, Plus, Trash2, Save, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -21,10 +21,11 @@ const AdminApiVerification = () => {
   const queryClient = useQueryClient();
   const { canEditItem } = usePagePermissions('/admin/api-verification');
   const navigate = useNavigate();
-  const { data: config, isLoading } = useApiVerificationConfig(unlocked);
+  const { data: config, isLoading } = useApiVerificationConfig(unlockPassword);
 
   // Password gate
-  const [unlocked, setUnlocked] = useState(false);
+  const [unlockPassword, setUnlockPassword] = useState<string | null>(null);
+  const unlocked = unlockPassword !== null;
   const [masterInput, setMasterInput] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -59,17 +60,18 @@ const AdminApiVerification = () => {
     }
   }, [config]);
 
-  const handleUnlock = () => {
+  const handleUnlock = async () => {
     if (!config) return;
-    if (!config.master_password) {
-      setUnlocked(true);
-      return;
-    }
-    if (masterInput === config.master_password) {
-      setUnlocked(true);
+    try {
+      const secrets = await unlockApiVerification(config.master_password ? masterInput : '');
+      if (!secrets) {
+        toast.error(bn ? 'ভুল পাসওয়ার্ড' : 'Wrong password');
+        return;
+      }
+      setUnlockPassword(config.master_password ? masterInput : '');
       setMasterInput('');
-    } else {
-      toast.error(bn ? 'ভুল পাসওয়ার্ড' : 'Wrong password');
+    } catch (e: any) {
+      toast.error(e?.message || (bn ? 'ভুল পাসওয়ার্ড' : 'Wrong password'));
     }
   };
 
@@ -121,7 +123,7 @@ const AdminApiVerification = () => {
       setForgotMode(false);
       setOtpSent(false);
       setOtpCode('');
-      setUnlocked(true);
+      setUnlockPassword('');
       queryClient.invalidateQueries({ queryKey: ['api-verification-config'] });
     }
   };
@@ -171,6 +173,7 @@ const AdminApiVerification = () => {
       toast.error(saveError.message);
     } else {
       toast.success(bn ? 'সেটিংস সেভ হয়েছে' : 'Settings saved');
+      if (updateData.master_password) setUnlockPassword(updateData.master_password);
       setNewMasterPassword('');
       queryClient.invalidateQueries({ queryKey: ['api-verification-config'] });
       queryClient.invalidateQueries({ queryKey: ['api-verification-enabled'] });

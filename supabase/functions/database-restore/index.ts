@@ -63,9 +63,28 @@ Deno.serve(async (req) => {
 
     const results: Record<string, { success: boolean; inserted: number; error?: string }> = {};
 
+    // Build a per-table column allowlist from the live schema so restored rows
+    // can only write columns that actually exist (and never sensitive ones).
+    const DENY_FIELDS = new Set(['created_at', 'updated_at', 'is_super_admin', 'role', 'password_hash', 'session_token', 'session_expires_at']);
+    let schemaDefs: Record<string, { properties?: Record<string, unknown> }> = {};
+    try {
+      const specRes = await fetch(`${supabaseUrl}/rest/v1/`, {
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, Accept: 'application/openapi+json' },
+      });
+      const spec = await specRes.json();
+      schemaDefs = spec?.definitions || {};
+    } catch (_e) {
+      return new Response(JSON.stringify({ error: 'Could not load table schema' }), { status: 500, headers: corsHeaders });
+    }
+
     for (const table of RESTORE_ORDER) {
       const tableData = backup[table];
       if (!tableData || !tableData.data || !Array.isArray(tableData.data) || tableData.data.length === 0) {
+        continue;
+      }
+
+      if (!schemaDefs[table]?.properties) {
+        results[table] = { success: false, inserted: 0, error: 'Unknown table schema' };
         continue;
       }
 
@@ -88,10 +107,14 @@ Deno.serve(async (req) => {
           const batch = rows.slice(i, i + batchSize);
           
           // Remove auto-generated timestamps for clean insert
-          const cleanBatch = batch.map((row: any) => {
-            const { created_at, updated_at, is_super_admin, role, ...rest } = row;
-            return rest;
-          });
+          const allowed = Object.keys(schemaDefs[table]?.properties || {}).filter((c) => !DENY_FIELDS.has(c));
+          const cleanBatch = batch
+            .filter((row: any) => row && typeof row === 'object' && !Array.isArray(row))
+            .map((row: any) => {
+              const out: Record<string, unknown> = {};
+              for (const col of allowed) if (col in row) out[col] = row[col];
+              return out;
+            });
 
           if (mode === 'merge') {
             const { error } = await supabase.from(table).upsert(cleanBatch, { onConflict: 'id', ignoreDuplicates: false });

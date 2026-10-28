@@ -83,20 +83,20 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Security: non-super_admin admins can only send test emails to their own email address
-    if (!isSuperAdmin) {
+    const body = await req.json().catch(() => ({}));
+    const { to, subject, html, template_key, audit_only } = body;
+
+    // Security: test emails may only be sent to the caller's own email address.
+    {
       const { data: callerUser } = await supabase.auth.admin.getUserById(userId);
       const callerEmail = callerUser?.user?.email?.toLowerCase()?.trim();
-      if (callerEmail && to.toLowerCase().trim() !== callerEmail) {
+      if (to && (!callerEmail || String(to).toLowerCase().trim() !== callerEmail)) {
         return new Response(JSON.stringify({
           error: "FORBIDDEN_RECIPIENT",
           message: "Test emails can only be sent to your own administrator email address.",
         }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
     }
-
-    const body = await req.json().catch(() => ({}));
-    const { to, subject, html, template_key, audit_only } = body;
 
     if (audit_only) {
       // Probe — return current configured usage (no increment)

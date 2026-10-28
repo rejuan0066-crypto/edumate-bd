@@ -160,14 +160,14 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
         win.document.write(`
           <html>
             <head>
-              <title>${displayName}</title>
+              <title>${String(displayName ?? "").replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)}</title>
               <style>
                 body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #fff; }
                 img { max-width: 100%; max-height: 100vh; object-fit: contain; }
               </style>
             </head>
             <body>
-              <img src="${targetUrl}" onload="window.print();window.close();" />
+              <img src="${String(targetUrl).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)}" onload="window.print();window.close();" />
             </body>
           </html>
         `);

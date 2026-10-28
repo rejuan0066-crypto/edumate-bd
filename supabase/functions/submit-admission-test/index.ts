@@ -9,6 +9,7 @@ interface SubmitPayload {
   attemptId: string;
   answers: Record<string, string>;
   durationSeconds: number;
+  applicantPhone: string;
 }
 
 Deno.serve(async (req) => {
@@ -17,9 +18,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { attemptId, answers, durationSeconds }: SubmitPayload = await req.json();
+    const { attemptId, answers, durationSeconds, applicantPhone }: SubmitPayload = await req.json();
 
-    if (!attemptId) {
+    if (!attemptId || typeof attemptId !== 'string' || !applicantPhone || typeof answers !== 'object' || answers === null) {
       return new Response(JSON.stringify({ error: 'attemptId required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -34,11 +35,11 @@ Deno.serve(async (req) => {
     // Load the attempt to get test_id
     const { data: attempt, error: aErr } = await supabase
       .from('admission_test_attempts')
-      .select('id, test_id, status')
+      .select('id, test_id, status, applicant_phone')
       .eq('id', attemptId)
       .maybeSingle();
 
-    if (aErr || !attempt) {
+    if (aErr || !attempt || String(attempt.applicant_phone ?? '').trim() !== String(applicantPhone).trim()) {
       return new Response(JSON.stringify({ error: 'Attempt not found' }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -96,7 +97,8 @@ Deno.serve(async (req) => {
         submitted_at: new Date().toISOString(),
         status: 'submitted',
       })
-      .eq('id', attemptId);
+      .eq('id', attemptId)
+      .neq('status', 'submitted');
 
     if (uErr) {
       return new Response(JSON.stringify({ error: uErr.message }), {

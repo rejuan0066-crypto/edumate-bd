@@ -17,6 +17,26 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
+    const raw = await req.json();
+    const cleanLabel = (v: unknown) => typeof v === "string"
+      ? v.replace(/[\r\n\t`"{}<>\[\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80)
+      : "";
+    const clampCount = (v: unknown, d: number) => {
+      const n = Math.floor(Number(v));
+      return Number.isFinite(n) ? Math.min(Math.max(n, 0), 50) : d;
+    };
+    const parsed = {
+      syllabus: typeof raw?.syllabus === "string" ? raw.syllabus.slice(0, 20000) : raw?.syllabus,
+      subject: cleanLabel(raw?.subject),
+      class_name: cleanLabel(raw?.class_name),
+      language: ["bn", "en", "ar"].includes(raw?.language) ? raw.language : "bn",
+      question_type: ["mcq", "cq", "short", "descriptive", "mixed"].includes(raw?.question_type) ? raw.question_type : "mixed",
+      mcq_count: clampCount(raw?.mcq_count ?? 5, 5),
+      short_count: clampCount(raw?.short_count ?? 3, 3),
+      cq_count: clampCount(raw?.cq_count ?? 2, 2),
+      descriptive_count: clampCount(raw?.descriptive_count ?? 0, 0),
+      difficulty: ["easy", "medium", "hard", "mixed"].includes(raw?.difficulty) ? raw.difficulty : "medium",
+    };
     const {
       syllabus,
       subject,
@@ -28,7 +48,7 @@ serve(async (req) => {
       cq_count = 2,
       descriptive_count = 0,
       difficulty = "medium", // easy | medium | hard | mixed
-    } = await req.json();
+    } = parsed;
 
     if (!syllabus || typeof syllabus !== "string" || syllabus.trim().length < 5) {
       return new Response(JSON.stringify({ error: "syllabus (topic/text) is required" }), {

@@ -1,3 +1,4 @@
+import { safeRows, csvCell, safeCell } from '@/lib/spreadsheetSafe';
 import AdminLayout from '@/components/AdminLayout';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -91,7 +92,7 @@ const AdminZakatLogs = () => {
       JSON.stringify(r.results),
     ]);
     const csv = [header, ...rowsCsv]
-      .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
+      .map((row) => row.map((v) => csvCell(v)).join(','))
       .join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);

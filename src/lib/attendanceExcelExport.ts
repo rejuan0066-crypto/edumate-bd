@@ -1,3 +1,4 @@
+import { safeRows, csvCell, safeCell } from '@/lib/spreadsheetSafe';
 import XLSX from 'xlsx-js-style';
 
 interface AttendanceExcelParams {
@@ -50,7 +51,7 @@ export const exportAttendanceExcel = ({
     ...(stats.totalLateMinutes !== undefined ? ['', bn ? 'মোট বিলম্ব' : 'Total Late', `${stats.totalLateMinutes} ${bn ? 'মিনিট' : 'Min'}`] : []),
   ]);
 
-  const ws = XLSX.utils.aoa_to_sheet(sheetData);
+  const ws = XLSX.utils.aoa_to_sheet(safeRows(sheetData));
 
   // Merge cells for header rows
   ws['!merges'] = [

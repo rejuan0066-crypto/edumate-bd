@@ -59,9 +59,22 @@ Deno.serve(async (req) => {
     const title = (conv as any)?.is_group && (conv as any)?.title
       ? `${(conv as any).title} — ${senderName}`
       : senderName;
-    const bodyText = (typeof preview === "string" && preview.trim())
-      ? preview.trim().slice(0, 140)
-      : "নতুন বার্তা এসেছে";
+    // Build the preview from the sender's latest stored message, never from request text.
+    const { data: lastMsg } = await admin
+      .from("chat_messages")
+      .select("body, attachments, created_at")
+      .eq("conversation_id", conversation_id)
+      .eq("sender_id", senderId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const recent = lastMsg && Date.now() - new Date((lastMsg as any).created_at).getTime() < 5 * 60 * 1000;
+    if (!recent) return json({ success: true, sent: 0, failed: 0 });
+    const storedBody = typeof (lastMsg as any).body === "string" ? (lastMsg as any).body.trim() : "";
+    const attCount = Array.isArray((lastMsg as any).attachments) ? (lastMsg as any).attachments.length : 0;
+    const bodyText = storedBody
+      ? storedBody.slice(0, 140)
+      : attCount ? `${attCount}টি ফাইল পাঠানো হয়েছে` : "নতুন বার্তা এসেছে";
     const link = `/admin/messages?c=${conversation_id}`;
 
     // In-app notifications (bell)
