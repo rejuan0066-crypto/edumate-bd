@@ -8,7 +8,7 @@ import { TimePicker } from '@/components/ui/time-picker';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, isSameDay, getDay } from 'date-fns';
 import { bn as bnLocale } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { parseClockMinutes, shouldApplyThursdayHalfDay } from '@/lib/thursdayHalfDay';
 import { resolveStaffShift, fetchSpecialShifts, fetchDepartmentSchedules } from '@/lib/shiftResolution';
 import { dedupeAttendanceRecords } from '@/lib/attendanceDedup';
@@ -44,6 +44,21 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
   const bn = language === 'bn';
   const qc = useQueryClient();
   const { data: instInfo } = useInstitutionInfo();
+
+  // Advance Leave & Attendance Setting
+  const { data: advanceMarkingSetting } = useQuery({
+    queryKey: ['attendance_advance_marking'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('website_settings')
+        .select('value')
+        .eq('key', 'attendance_advance_marking')
+        .maybeSingle();
+      return (data?.value as any) || null;
+    },
+  });
+  const allowAdvance = advanceMarkingSetting?.enabled === true;
+
   const [isPdfGenerating, setIsPdfGenerating] = useState(false);
   const [cursor, setCursor] = useState<Date>(new Date());
   const [records, setRecords] = useState<any[]>([]);
@@ -609,6 +624,11 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
               <span className="text-muted-foreground">{bn ? 'বিলম্ব' : 'Late'}</span>
               <b className="text-amber-700 dark:text-amber-400 tabular-nums">{fmtDuration(totalLateMins)}</b>
             </div>
+            {allowAdvance && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-[11px] font-semibold">
+                <span>✨ {bn ? 'আগাম ছুটি/হাজিরা মোড চালু' : 'Advance Mode ON'}</span>
+              </div>
+            )}
             <span className="ml-auto text-[11px] italic text-muted-foreground hidden sm:inline">
               {bn ? 'যেকোনো দিনে ক্লিক করে স্ট্যাটাস বদলান' : 'Click any day to change status'}
             </span>
@@ -640,6 +660,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                 const Icon = meta?.icon;
                  const isToday = isSameDay(d, new Date());
                  const isFuture = d > new Date();
+                 const isFutureDisabled = isFuture && !allowAdvance;
                  const isFriday = getDay(d) === 5;
                  const isSaving = savingKey === key;
                  const isOffDuty = dutyAllowedDates ? !dutyAllowedDates.has(key) : false;
@@ -648,16 +669,18 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                   <button
                     key={key}
                     type="button"
-                    disabled={isFuture || isSaving || isOffDuty}
+                    disabled={isFutureDisabled || isSaving || isOffDuty}
                     onClick={() => setActiveDateKey(key)}
                     className={`group relative aspect-square rounded-2xl border p-1.5 flex flex-col items-center justify-center text-center transition-all duration-200 hover:-translate-y-[3px] hover:shadow-lg hover:shadow-black/10 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:transform-none disabled:hover:shadow-none overflow-hidden ${
                       meta
                         ? `${meta.bg} border-transparent shadow-sm`
                         : isFriday
                           ? 'bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200/40 dark:border-emerald-800/30 border-dashed'
-                          : 'bg-muted/20 border-dashed border-border/30 hover:bg-muted/40'
+                          : isFuture && allowAdvance
+                            ? 'bg-primary/5 border-dashed border-primary/40 hover:bg-primary/10'
+                            : 'bg-muted/20 border-dashed border-border/30 hover:bg-muted/40'
                     } ${isToday ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''} ${isSaving ? 'animate-pulse' : ''}`}
-                    title={isOffDuty ? (bn ? 'এই বারে ডিউটি নেই' : 'No duty on this day') : meta ? (bn ? meta.bnLabel : meta.enLabel) : (bn ? 'অচিহ্নিত' : 'Unmarked')}
+                    title={isOffDuty ? (bn ? 'এই বারে ডিউটি নেই' : 'No duty on this day') : isFuture && allowAdvance ? (bn ? 'ভবিষ্যৎ তারিখ — আগাম ছুটি/হাজিরা দেওয়া যাবে' : 'Future date — Advance leave/attendance allowed') : meta ? (bn ? meta.bnLabel : meta.enLabel) : (bn ? 'অচিহ্নিত' : 'Unmarked')}
                   >
                     {/* Status dot indicator (top-right) */}
                     {meta && (

@@ -2796,10 +2796,11 @@ const AdminSalary = () => {
       // 5. Future-dated records
       const todayStr = new Date().toISOString().slice(0, 10);
       const future = records.filter((r: any) => r.attendance_date > todayStr);
-      if (future.length > 0) {
+      const futureNonLeave = future.filter((r: any) => r.status !== 'leave' && r.status !== 'holiday' && r.status !== 'excused');
+      if (futureNonLeave.length > 0) {
         warnings.push(bn
-          ? `${toBnDigits(future.length)} দিনের ভবিষ্যৎ তারিখের রেকর্ড আছে`
-          : `${future.length} record(s) dated in the future`);
+          ? `${toBnDigits(futureNonLeave.length)} দিনের ভবিষ্যৎ তারিখের উপস্থিতি রেকর্ড আছে`
+          : `${futureNonLeave.length} record(s) dated in the future`);
       }
 
       // 6. Records outside the selected month

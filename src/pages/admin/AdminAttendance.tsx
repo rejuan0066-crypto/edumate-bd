@@ -61,6 +61,7 @@ import { useAppTimezone } from '@/hooks/useAppTimezone';
 import { todayIsoInTz, addDaysIsoInTz, toMonthYearInTz } from '@/lib/timezone';
 import { resolveThursdayHalfCategories, isThursdayDate, isSpecialDayDate, DAY_OF_WEEK_OPTIONS, getSpecialDayDeductionRateMode, getScheduleForDay } from '@/lib/thursdayHalfDay';
 import { attendanceRecordsForDate, MISSING_ATTENDANCE_CONFLICT_OPTIONS } from '@/lib/attendanceRecords';
+import { cn } from '@/lib/utils';
 
 const STATUS_ICONS: Record<string, any> = {
   present: CheckCircle2, absent: XCircle, late: Clock,
@@ -199,6 +200,40 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     else if (staffSubTab === 'meal' && !selectedShift.startsWith('meal_')) setSelectedShift('meal_breakfast');
     else if (staffSubTab === 'fulltime' && selectedShift !== 'full_day') setSelectedShift('full_day');
   }, [staffSubTab, selectedShift]);
+
+  const [advanceSettingsOpen, setAdvanceSettingsOpen] = useState(false);
+
+  const { data: advanceMarkingSetting } = useQuery({
+    queryKey: ['attendance_advance_marking'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('website_settings')
+        .select('value')
+        .eq('key', 'attendance_advance_marking')
+        .maybeSingle();
+      return (data?.value as any) || { enabled: false, allow_future_leave: true, allow_future_attendance: true };
+    },
+  });
+
+  const saveAdvanceMarkingMutation = useMutation({
+    mutationFn: async (val: any) => {
+      const { error } = await supabase
+        .from('website_settings')
+        .upsert({ key: 'attendance_advance_marking', value: val });
+      if (error) throw error;
+      return val;
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['attendance_advance_marking'] });
+      toast.success(data?.enabled
+        ? (bn ? 'আগাম ছুটি ও হাজিরা সুবিধা চালু হয়েছে' : 'Advance leave & attendance enabled')
+        : (bn ? 'আগাম ছুটি ও হাজিরা সুবিধা বন্ধ করা হয়েছে' : 'Advance leave & attendance disabled')
+      );
+    },
+    onError: (err: any) => toast.error(err?.message || 'Error saving setting'),
+  });
+
+  const isAdvanceMarkingEnabled = advanceMarkingSetting?.enabled === true;
 
   const [qrPosterOpen, setQrPosterOpen] = useState(false);
   const [deviceManagerOpen, setDeviceManagerOpen] = useState(false);
@@ -3405,6 +3440,25 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                   <Button
                     size="sm"
                     variant="outline"
+                    className={cn(
+                      "text-xs rounded-full border shadow-sm transition-all duration-200 font-medium gap-1.5",
+                      isAdvanceMarkingEnabled
+                        ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20"
+                        : "border-primary/40 bg-primary/5 text-primary hover:bg-primary/15"
+                    )}
+                    onClick={() => setAdvanceSettingsOpen(true)}
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                    <span>{bn ? 'আগাম ছুটি/হাজিরা' : 'Advance Leave'}</span>
+                    {isAdvanceMarkingEnabled && (
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse ml-0.5" />
+                    )}
+                  </Button>
+                )}
+                {isAdmin && (
+                  <Button
+                    size="sm"
+                    variant="outline"
                     className="text-xs rounded-full border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 shadow-sm transition-all duration-200 font-medium"
                     onClick={() => setRecoveryDialogOpen(true)}
                   >
@@ -3688,6 +3742,66 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
             )}
           </CardContent>
         </Card>
+
+        {/* Future Date Notification Banner */}
+        {selectedDate > todayIsoInTz(appTz) && (
+          <div className={cn(
+            "rounded-2xl border p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs transition-all",
+            isAdvanceMarkingEnabled
+              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
+              : "border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-200"
+          )}>
+            <div className="flex items-center gap-2.5">
+              {isAdvanceMarkingEnabled ? (
+                <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0">
+                  <Sparkles className="h-4 w-4" />
+                </div>
+              ) : (
+                <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
+                  <AlertCircle className="h-4 w-4" />
+                </div>
+              )}
+              <div>
+                <p className="font-bold">
+                  {isAdvanceMarkingEnabled
+                    ? (bn ? `ভবিষ্যৎ তারিখ (${selectedDate}) — আগাম ছুটি ও হাজিরা মোড সক্রিয়` : `Future Date (${selectedDate}) — Advance Mode Active`)
+                    : (bn ? `ভবিষ্যৎ তারিখ (${selectedDate}) — আগাম ছুটি/হাজিরা দিতে সেটিং চালু করুন` : `Future Date (${selectedDate}) — Enable Advance Mode`)}
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  {isAdvanceMarkingEnabled
+                    ? (bn ? 'আপনি এই অনাগত তারিখে স্টাফ ও ছাত্রদের ছুটি (Leave) বা উপস্থিতি দিতে পারেন। বেতন ও হাজিরা শিটে তা যথাযথভাবে সংরক্ষিত হবে।' : 'You can assign leave or attendance on this future date.')
+                    : (bn ? 'অনিচ্ছাকৃত ভুল এড়াতে আগাম এন্ট্রি বর্তমানে বন্ধ। পাশের বাটন চেপে সুবিধাটি চালু করতে পারেন।' : 'Advance attendance is currently disabled. Click below to enable.')}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+              {isAdvanceMarkingEnabled ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setHolidayDialogOpen(true)}
+                  className="text-xs h-7 rounded-full border-emerald-500/40 hover:bg-emerald-500/20 gap-1 font-medium"
+                >
+                  <CalendarOff className="h-3 w-3 text-blue-600" />
+                  {bn ? 'একসাথে ছুটি দিন' : 'Bulk Leave'}
+                </Button>
+              ) : (
+                isAdmin && (
+                  <Button
+                    size="sm"
+                    onClick={() => saveAdvanceMarkingMutation.mutate({ enabled: true, allow_future_leave: true, allow_future_attendance: true })}
+                    disabled={saveAdvanceMarkingMutation.isPending}
+                    className="text-xs h-7 rounded-full btn-primary-gradient gap-1 font-medium shadow-xs"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    {bn ? 'আগাম এন্ট্রি চালু করুন' : 'Enable Advance Mode'}
+                  </Button>
+                )
+              )}
+            </div>
+          </div>
+        )}
 
         <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
           <DialogContent className="max-w-md rounded-[28px] border border-border/20 bg-background/95 p-0 backdrop-blur-xl shadow-[0_24px_80px_-16px_hsl(var(--foreground)/0.25)] overflow-hidden">
@@ -4243,6 +4357,109 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
           mode="present"
           onApplied={(firstKey) => setSelectedDate(firstKey)}
         />
+        {/* Advance Leave & Attendance Setting Dialog */}
+        <Dialog open={advanceSettingsOpen} onOpenChange={setAdvanceSettingsOpen}>
+          <DialogContent className="max-w-md rounded-2xl p-5 border shadow-2xl">
+            <DialogHeader className="pb-3 border-b">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div>
+                  <DialogTitle className="text-base font-bold">
+                    {bn ? 'আগাম ছুটি ও হাজিরা সেটিংস' : 'Advance Leave & Attendance Settings'}
+                  </DialogTitle>
+                  <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                    {bn
+                      ? 'মাসের অনাগত যেকোনো তারিখে আগাম ছুটি ও হাজিরা প্রদানের অনুমতি নিয়ন্ত্রণ করুন।'
+                      : 'Control permissions for marking advance leaves and attendance for future dates.'}
+                  </DialogDescription>
+                </div>
+              </div>
+            </DialogHeader>
+
+            <div className="py-3 space-y-4 text-xs">
+              {/* Main Switch */}
+              <div className="p-3 rounded-xl border bg-muted/20 flex items-center justify-between gap-3">
+                <div>
+                  <p className="font-bold text-foreground">
+                    {bn ? 'আগাম ছুটি ও হাজিরা প্রদানের অনুমতি দিন' : 'Allow Advance Leave & Attendance'}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    {bn
+                      ? 'চালু করলে মাসিক হাজিরা ক্যালেন্ডারে এবং দৈনিক হাজিরায় ভবিষ্যৎ তারিখের লক খুলে যাবে এবং আগাম ছুটি প্রদান করা যাবে।'
+                      : 'When enabled, future dates become clickable in attendance grids to mark leave or attendance in advance.'}
+                  </p>
+                </div>
+                <Switch
+                  checked={isAdvanceMarkingEnabled}
+                  disabled={saveAdvanceMarkingMutation.isPending}
+                  onCheckedChange={(val) => {
+                    saveAdvanceMarkingMutation.mutate({
+                      enabled: val,
+                      allow_future_leave: true,
+                      allow_future_attendance: true,
+                    });
+                  }}
+                />
+              </div>
+
+              {/* Quick Actions */}
+              <div className="space-y-2 pt-1">
+                <p className="font-semibold text-muted-foreground">
+                  {bn ? 'কুইক টুলস:' : 'Quick Tools:'}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setAdvanceSettingsOpen(false);
+                      setHolidayDialogOpen(true);
+                    }}
+                    className="h-9 text-xs justify-start gap-2 rounded-xl border-blue-500/30 hover:bg-blue-500/10 text-blue-700 dark:text-blue-300"
+                  >
+                    <CalendarOff className="h-4 w-4 text-blue-600" />
+                    <span>{bn ? 'একাধিক দিনের ছুটি দিন' : 'Bulk Advance Leave'}</span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setAdvanceSettingsOpen(false);
+                      setPresentDialogOpen(true);
+                    }}
+                    className="h-9 text-xs justify-start gap-2 rounded-xl border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                  >
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    <span>{bn ? 'একাধিক দিনের উপস্থিতি দিন' : 'Bulk Advance Present'}</span>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Salary notice */}
+              <div className="p-3 rounded-xl border border-primary/20 bg-primary/5 text-primary text-[11px] leading-relaxed flex items-start gap-2">
+                <span className="text-base shrink-0">💡</span>
+                <span>
+                  {bn
+                    ? 'মাসের শেষের দিনগুলোতে ছুটি দিলে সিস্টেমে তা বেতনসহ দিন (Paid Leave) হিসেবে গণ্য হবে। মাস শেষ হওয়ার আগেই বেতন জেনারেট করলে ১ পয়সাও বেতন কাটা যাবে না।'
+                    : 'Leaves granted for the remaining days of the month are treated as paid leaves in salary calculation.'}
+                </span>
+              </div>
+            </div>
+
+            <DialogFooter className="pt-2 border-t">
+              <Button
+                type="button"
+                className="rounded-full w-full sm:w-auto text-xs"
+                onClick={() => setAdvanceSettingsOpen(false)}
+              >
+                {bn ? 'ঠিক আছে' : 'Done'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         <AttendanceRecoveryDialog
           open={recoveryDialogOpen}
           onOpenChange={setRecoveryDialogOpen}
