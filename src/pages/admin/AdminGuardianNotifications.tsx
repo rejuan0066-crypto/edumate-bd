@@ -16,10 +16,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { toast } from '@/hooks/use-toast';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
+import { useAuth } from '@/hooks/useAuth';
+import { isAdminRole } from '@/lib/roles';
+import WhatsAppChatInbox from '@/components/admin/WhatsAppChatInbox';
 import {
   MessageSquare, Send, Users, FileText, Loader2, Phone, Mail,
   CheckCircle2, XCircle, Clock, Filter, AlertCircle, Upload,
-  Sparkles, ExternalLink, ShieldCheck, Briefcase, Megaphone, UserCheck
+  Sparkles, ExternalLink, ShieldCheck, Briefcase, Megaphone, UserCheck,
+  MessageCircle
 } from 'lucide-react';
 
 type TargetAudience = 'guardians' | 'staff' | 'custom';
@@ -161,9 +165,18 @@ const PRESET_TEMPLATES: Record<string, { bn: string; en: string; body_bn: string
 const AdminGuardianNotifications = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
+  const { role } = useAuth();
+  const isAdmin = isAdminRole(role);
+
   const { canAddItem: canAddNotify } = usePagePermissions('/admin/guardian-notify');
-  const { canAddItem: canAddNotifications } = usePagePermissions('/admin/guardian-notifications');
+  const { canAddItem: canAddNotifications, isFeatureAllowed: isNotifyFeatureAllowed } = usePagePermissions('/admin/guardian-notifications');
   const canAddItem = canAddNotify || canAddNotifications;
+
+  const { canViewPage: canViewWhatsAppChat, canAddItem: canReplyWhatsAppChat, isFeatureAllowed: isChatFeatureAllowed } = usePagePermissions('/admin/whatsapp-chat');
+
+  // Role-based permission checks for WhatsApp Inbox & Live Chat
+  const canAccessWhatsAppInbox = isAdmin || canViewWhatsAppChat || isNotifyFeatureAllowed('tab_whatsapp_inbox') || isChatFeatureAllowed('tab_chat_list');
+  const canReplyWhatsApp = isAdmin || canReplyWhatsAppChat || isNotifyFeatureAllowed('action_reply_message') || isChatFeatureAllowed('action_reply_message');
 
   const [activeTab, setActiveTab] = useState('send');
   const [channel, setChannel] = useState<'whatsapp' | 'sms' | 'email'>('whatsapp');
@@ -567,6 +580,7 @@ const AdminGuardianNotifications = () => {
             {[
               { key: 'send', icon: Send, bn: 'নতুন বার্তা পাঠান', en: 'Compose & Send' },
               { key: 'history', icon: Clock, bn: 'ডেলিভারি ইতিহাস', en: 'Delivery History' },
+              ...(canAccessWhatsAppInbox ? [{ key: 'inbox', icon: MessageCircle, bn: 'WhatsApp চ্যাট ও ইনবক্স', en: 'WhatsApp Chat & Inbox' }] : []),
             ].map(t => (
               <button
                 key={t.key}
@@ -1061,6 +1075,12 @@ const AdminGuardianNotifications = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {canAccessWhatsAppInbox && (
+            <TabsContent value="inbox" className="space-y-4 mt-4">
+              <WhatsAppChatInbox canReply={canReplyWhatsApp} />
+            </TabsContent>
+          )}
         </Tabs>
 
         {/* Preview Dialog */}

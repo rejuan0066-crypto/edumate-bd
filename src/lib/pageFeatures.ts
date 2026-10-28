@@ -166,12 +166,26 @@ export const KNOWN_PAGE_FEATURES: Record<string, SubFeatureItem[]> = {
     { key: 'action_push_notify', label_bn: 'SMS/নোটিফিকেশন পুশ বাটন', label_en: 'Push Notification Alert', type: 'action' },
   ],
 
-  // অভিভাবক নোটিফিকেশন (/admin/guardian-notify)
+  // অভিভাবক নোটিফিকেশন (/admin/guardian-notify & /admin/guardian-notifications)
   '/admin/guardian-notify': [
-    { key: 'tab_sms_send', label_bn: 'SMS প্রেরণ', label_en: 'Send SMS', type: 'tab' },
+    { key: 'tab_sms_send', label_bn: 'বার্তা প্রেরণ', label_en: 'Send Message', type: 'tab' },
+    { key: 'tab_sms_history', label_bn: 'ডেলিভারি ইতিহাস', label_en: 'Delivery History', type: 'tab' },
+    { key: 'tab_whatsapp_inbox', label_bn: 'হোয়াটসঅ্যাপ চ্যাট ও ইনবক্স', label_en: 'WhatsApp Live Chat & Inbox', type: 'tab' },
+    { key: 'action_reply_message', label_bn: 'চ্যাটে রিপ্লাই দেওয়ার বাটন', label_en: 'Reply to WhatsApp Chat', type: 'action' },
     { key: 'tab_sms_templates', label_bn: 'SMS টেমপ্লেট', label_en: 'SMS Templates', type: 'tab' },
-    { key: 'tab_sms_history', label_bn: 'প্রেরিত SMS হিস্ট্রি ও লগ', label_en: 'SMS History & Logs', type: 'tab' },
     { key: 'tab_sms_balance', label_bn: 'SMS ব্যালেন্স ও রিচার্জ', label_en: 'SMS Balance', type: 'tab' },
+  ],
+  '/admin/guardian-notifications': [
+    { key: 'tab_sms_send', label_bn: 'বার্তা প্রেরণ', label_en: 'Send Message', type: 'tab' },
+    { key: 'tab_sms_history', label_bn: 'ডেলিভারি ইতিহাস', label_en: 'Delivery History', type: 'tab' },
+    { key: 'tab_whatsapp_inbox', label_bn: 'হোয়াটসঅ্যাপ চ্যাট ও ইনবক্স', label_en: 'WhatsApp Live Chat & Inbox', type: 'tab' },
+    { key: 'action_reply_message', label_bn: 'চ্যাটে রিপ্লাই দেওয়ার বাটন', label_en: 'Reply to WhatsApp Chat', type: 'action' },
+  ],
+
+  // হোয়াটসঅ্যাপ লাইভ চ্যাট (/admin/whatsapp-chat)
+  '/admin/whatsapp-chat': [
+    { key: 'tab_chat_list', label_bn: 'চ্যাট ও বার্তা দেখার অনুমতি', label_en: 'View Chats & Messages', type: 'tab' },
+    { key: 'action_reply_message', label_bn: 'সরাসরি মেসেজ ও রিপ্লাই পাঠানো', label_en: 'Send & Reply Message', type: 'action' },
   ],
 
   // ওয়েবসাইট নিয়ন্ত্রণ (/admin/website)

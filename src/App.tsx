@@ -189,6 +189,7 @@ const AdminComplaintsRoleAudit = lazy(() => import("./pages/admin/AdminComplaint
 const AdminReceiptsRoleAudit = lazy(() => import("./pages/admin/AdminReceiptsRoleAudit"));
 const AdminStudentApprovals = lazy(() => import("./pages/admin/AdminStudentApprovals"));
 const AdminParentMessages = lazy(() => import("@/pages/admin/AdminParentMessages"));
+const AdminWhatsAppChat = lazy(() => import("@/pages/admin/AdminWhatsAppChat"));
 const AdminMessages = lazy(() => import("@/pages/admin/AdminMessages"));
 const AdminPushNotifications = lazy(() => import("@/pages/admin/AdminPushNotifications"));
 const AdminCertificates = lazy(() => import("./pages/admin/AdminCertificates"));
@@ -528,6 +529,7 @@ const App = () => (
                     <Route path="receipts-role-audit" element={<ModuleGuard menuPath="/admin/receipts-role-audit"><AdminReceiptsRoleAudit /></ModuleGuard>} />
                     <Route path="student-approvals" element={<ModuleGuard menuPath="/admin/student-approvals"><AdminStudentApprovals /></ModuleGuard>} />
                     <Route path="parent-messages" element={<ModuleGuard menuPath="/admin/parent-messages"><AdminParentMessages /></ModuleGuard>} />
+                    <Route path="whatsapp-chat" element={<ModuleGuard menuPath="/admin/whatsapp-chat"><AdminWhatsAppChat /></ModuleGuard>} />
                     <Route path="messages" element={<AdminMessages />} />
                     <Route path="push-notifications" element={<ModuleGuard menuPath="/admin/push-notifications"><AdminPushNotifications /></ModuleGuard>} />
                     <Route path="photo-tools" element={<ModuleGuard menuPath="/admin/photo-tools"><AdminPhotoTools /></ModuleGuard>} />
