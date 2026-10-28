@@ -307,12 +307,28 @@ const WhatsAppSettings = () => {
         b64 = createData?.qrcode?.base64 || createData?.base64;
         code = createData?.qrcode?.code || createData?.code;
 
-        if (!b64 && !code) {
-          const retryResp = await fetch(`${sUrl}/instance/connect/${encodeURIComponent(instance)}`, { headers });
-          const retryData = await retryResp.json().catch(() => ({}));
-          b64 = retryData?.base64 || retryData?.qrcode?.base64;
-          code = retryData?.code || retryData?.qrcode?.code;
-        }
+      }
+
+      // QR may take a few seconds to generate — retry
+      for (let i = 0; i < 4 && !b64 && !code; i++) {
+        await new Promise((r) => setTimeout(r, 2000));
+        const retryResp = await fetch(`${sUrl}/instance/connect/${encodeURIComponent(instance)}`, { headers });
+        const retryData = await retryResp.json().catch(() => ({}));
+        b64 = retryData?.base64 || retryData?.qrcode?.base64;
+        code = retryData?.code || retryData?.qrcode?.code;
+      }
+
+      // Already connected?
+      if (!b64 && !code) {
+        try {
+          const stResp = await fetch(`${sUrl}/instance/connectionState/${encodeURIComponent(instance)}`, { headers });
+          const st = await stResp.json().catch(() => ({}));
+          const state = st?.instance?.state || st?.state;
+          if (state === 'open') {
+            setQrErrorMessage(bn ? 'এই WhatsApp নম্বরটি ইতিমধ্যে সংযুক্ত আছে। নতুন করে লিংক করতে আগে লগআউট করুন।' : 'This WhatsApp number is already connected. Log out first to re-link.');
+            return;
+          }
+        } catch { /* ignore */ }
       }
 
       if (b64) {
