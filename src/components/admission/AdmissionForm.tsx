@@ -2167,81 +2167,75 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                         </Select>
                       </div>
 
-                      true ? (
-                        <div>
-                          <Label>
-                            {(() => {
-                              if (form.admitted_by_type?.startsWith('div_')) {
-                                const divId = form.admitted_by_type.replace('div_', '');
-                                const matchedDiv = divisions.find((d: any) => d.id === divId);
-                                return matchedDiv ? (bn ? `${matchedDiv.name_bn || matchedDiv.name}-এর শিক্ষক নির্বাচন` : `Teacher (${matchedDiv.name})`) : (bn ? 'ভর্তিকারী শিক্ষক নির্বাচন' : 'Select Admitting Teacher');
-                              }
-                              return bn ? 'যাচাইকারী শিক্ষক নির্বাচন' : 'Select Verifier';
-                            })()}
-                          </Label>
-                          <Select
-                            value={form.admitted_by_name || ''}
-                            onValueChange={(val) => {
-                              const selectedStaff = allActiveStaff.find((st: any) => (st.name_bn || st.name_en) === val);
-                              setForm(prev => ({
-                                ...prev,
-                                admitted_by_name: val,
-                                admitted_by_phone: selectedStaff?.phone || prev.admitted_by_phone || '',
-                                admitted_by_designation: selectedStaff?.designation || prev.admitted_by_designation || '',
-                              }));
-                            }}
-                          >
-                            <SelectTrigger className="bg-background mt-1">
-                              <SelectValue placeholder={bn ? 'শিক্ষক তালিকা থেকে নির্বাচন করুন' : 'Select Teacher'} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {allActiveStaff.length === 0 ? (
-                                <SelectItem value="none" disabled>
-                                  {bn ? 'কোনো শিক্ষক তালিকা পাওয়া যায়নি' : 'No staff found'}
+                      <div>
+                        <Label>
+                          {(() => {
+                            if (form.admitted_by_type?.startsWith('div_')) {
+                              const divId = form.admitted_by_type.replace('div_', '');
+                              const matchedDiv = divisions.find((d: any) => d.id === divId);
+                              return matchedDiv ? (bn ? `${matchedDiv.name_bn || matchedDiv.name}-এর শিক্ষক নির্বাচন` : `Teacher (${matchedDiv.name})`) : (bn ? 'যাচাইকারী শিক্ষক নির্বাচন' : 'Select Verifier');
+                            }
+                            return bn ? 'যাচাইকারী শিক্ষক নির্বাচন' : 'Select Verifier';
+                          })()}
+                        </Label>
+                        <Select
+                          value={form.admitted_by_name || ''}
+                          onValueChange={(val) => {
+                            const selectedStaff = allActiveStaff.find((st: any) => (st.name_bn || st.name_en) === val);
+                            setForm(prev => ({
+                              ...prev,
+                              admitted_by_name: val,
+                              admitted_by_phone: selectedStaff?.phone || prev.admitted_by_phone || '',
+                              admitted_by_designation: selectedStaff?.designation || prev.admitted_by_designation || '',
+                            }));
+                          }}
+                        >
+                          <SelectTrigger className="bg-background mt-1">
+                            <SelectValue placeholder={bn ? 'শিক্ষক তালিকা থেকে নির্বাচন করুন' : 'Select Teacher'} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {allActiveStaff.length === 0 ? (
+                              <SelectItem value="none" disabled>
+                                {bn ? 'কোনো শিক্ষক তালিকা পাওয়া যায়নি' : 'No staff found'}
+                              </SelectItem>
+                            ) : (
+                              allActiveStaff.map((st: any) => (
+                                <SelectItem key={st.id} value={st.name_bn || st.name_en}>
+                                  {st.name_bn || st.name_en} {st.designation ? `(${st.designation})` : ''}
                                 </SelectItem>
-                              ) : (
-                                allActiveStaff.map((st: any) => (
-                                  <SelectItem key={st.id} value={st.name_bn || st.name_en}>
-                                    {st.name_bn || st.name_en} {st.designation ? `(${st.designation})` : ''}
-                                  </SelectItem>
-                                ))
-                              )}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      ) : null}
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                      true && (
-                        <>
-                          <div>
-                            <Label>{bn ? 'যাচাইকারীর নাম' : 'Verifier Name'}</Label>
-                            <Input
-                              className="bg-background mt-1"
-                              value={form.admitted_by_name || ''}
-                              onChange={e => setForm(prev => ({ ...prev, admitted_by_name: e.target.value }))}
-                              placeholder={bn ? 'যাচাইকারীর নাম লিখুন' : 'Enter verifier name'}
-                            />
-                          </div>
-                          <div>
-                            <Label>{bn ? 'যাচাইকারীর পদবি' : 'Verifier Designation'}</Label>
-                            <Input
-                              className="bg-background mt-1"
-                              value={form.admitted_by_designation || ''}
-                              onChange={e => setForm(prev => ({ ...prev, admitted_by_designation: e.target.value }))}
-                              placeholder={bn ? 'যেমন: হিফজ শিক্ষক / সহকারী শিক্ষক' : 'e.g. Teacher'}
-                            />
-                          </div>
-                          <div className="md:col-span-2">
-                            <Label>{bn ? 'যাচাইকারীর মোবাইল নম্বর' : 'Verifier Phone'}</Label>
-                            <Input
-                              className="bg-background mt-1 font-mono"
-                              value={form.admitted_by_phone || ''}
-                              onChange={e => setForm(prev => ({ ...prev, admitted_by_phone: e.target.value }))}
-                              placeholder="017XXXXXXXX"
-                            />
-                          </div>
-                        </>
-                      )}
+                      <div>
+                        <Label>{bn ? 'যাচাইকারীর নাম' : 'Verifier Name'}</Label>
+                        <Input
+                          className="bg-background mt-1"
+                          value={form.admitted_by_name || ''}
+                          onChange={e => setForm(prev => ({ ...prev, admitted_by_name: e.target.value }))}
+                          placeholder={bn ? 'যাচাইকারীর নাম লিখুন' : 'Enter verifier name'}
+                        />
+                      </div>
+                      <div>
+                        <Label>{bn ? 'যাচাইকারীর পদবি' : 'Verifier Designation'}</Label>
+                        <Input
+                          className="bg-background mt-1"
+                          value={form.admitted_by_designation || ''}
+                          onChange={e => setForm(prev => ({ ...prev, admitted_by_designation: e.target.value }))}
+                          placeholder={bn ? 'যেমন: হিফজ শিক্ষক / সহকারী শিক্ষক' : 'e.g. Teacher'}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label>{bn ? 'যাচাইকারীর মোবাইল নম্বর' : 'Verifier Phone'}</Label>
+                        <Input
+                          className="bg-background mt-1 font-mono"
+                          value={form.admitted_by_phone || ''}
+                          onChange={e => setForm(prev => ({ ...prev, admitted_by_phone: e.target.value }))}
+                          placeholder="017XXXXXXXX"
+                        />
+                      </div>
                     </div>
                   </div>
 

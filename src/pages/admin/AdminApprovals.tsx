@@ -3420,88 +3420,83 @@ const AdminApprovals = () => {
                           </Select>
                         </div>
 
-                        true ? (
-                          <div className="space-y-1">
-                            <Label className="text-[11px] font-medium text-muted-foreground">
-                              {(() => {
-                                if (studentReferralType?.startsWith('div_')) {
-                                  const divId = studentReferralType.replace('div_', '');
-                                  const matchedDiv = allDivisions.find((d: any) => d.id === divId);
-                                  return matchedDiv ? (bn ? `${matchedDiv.name_bn || matchedDiv.name}-এর শিক্ষক নির্বাচন` : `Teacher (${matchedDiv.name})`) : (bn ? 'ভর্তিকারী শিক্ষক নির্বাচন' : 'Select Teacher');
-                                }
-                                return bn ? 'যাচাইকারী শিক্ষক নির্বাচন' : 'Select Verifier';
-                              })()}
-                            </Label>
-                            <Select
-                              value={studentReferralName}
-                              onValueChange={(val) => {
-                                const selectedStaff = allActiveStaff.find((st: any) => (st.name_bn || st.name_en) === val);
-                                setStudentReferralName(val);
-                                if (selectedStaff?.phone) setStudentReferralPhone(selectedStaff.phone);
-                                if (selectedStaff?.designation) setStudentReferralDesignation(selectedStaff.designation);
-                              }}
-                            >
-                              <SelectTrigger className="h-8 text-xs bg-background">
-                                <SelectValue placeholder={bn ? 'শিক্ষক তালিকা থেকে নির্বাচন করুন' : 'Select Teacher'} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {allActiveStaff.length === 0 ? (
-                                  <SelectItem value="none" disabled>
-                                    {bn ? 'কোনো শিক্ষক তালিকা পাওয়া যায়নি' : 'No staff found'}
+                        <div className="space-y-1">
+                          <Label className="text-[11px] font-medium text-muted-foreground">
+                            {(() => {
+                              if (studentReferralType?.startsWith('div_')) {
+                                const divId = studentReferralType.replace('div_', '');
+                                const matchedDiv = allDivisions.find((d: any) => d.id === divId);
+                                return matchedDiv ? (bn ? `${matchedDiv.name_bn || matchedDiv.name}-এর শিক্ষক নির্বাচন` : `Teacher (${matchedDiv.name})`) : (bn ? 'যাচাইকারী শিক্ষক নির্বাচন' : 'Select Verifier');
+                              }
+                              return bn ? 'যাচাইকারী শিক্ষক নির্বাচন' : 'Select Verifier';
+                            })()}
+                          </Label>
+                          <Select
+                            value={studentReferralName}
+                            onValueChange={(val) => {
+                              const selectedStaff = allActiveStaff.find((st: any) => (st.name_bn || st.name_en) === val);
+                              setStudentReferralName(val);
+                              if (selectedStaff?.phone) setStudentReferralPhone(selectedStaff.phone);
+                              if (selectedStaff?.designation) setStudentReferralDesignation(selectedStaff.designation);
+                            }}
+                          >
+                            <SelectTrigger className="h-8 text-xs bg-background">
+                              <SelectValue placeholder={bn ? 'শিক্ষক তালিকা থেকে নির্বাচন করুন' : 'Select Teacher'} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {allActiveStaff.length === 0 ? (
+                                <SelectItem value="none" disabled>
+                                  {bn ? 'কোনো শিক্ষক তালিকা পাওয়া যায়নি' : 'No staff found'}
+                                </SelectItem>
+                              ) : (
+                                allActiveStaff.map((st: any) => (
+                                  <SelectItem key={st.id} value={st.name_bn || st.name_en}>
+                                    {st.name_bn || st.name_en} {st.designation ? `(${st.designation})` : ''}
                                   </SelectItem>
-                                ) : (
-                                  allActiveStaff.map((st: any) => (
-                                    <SelectItem key={st.id} value={st.name_bn || st.name_en}>
-                                      {st.name_bn || st.name_en} {st.designation ? `(${st.designation})` : ''}
-                                    </SelectItem>
-                                  ))
-                                )}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        ) : null}
+                                ))
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
 
-                      true && (
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 border-t border-border/40">
-                          <div className="space-y-1">
-                            <Label className="text-[11px] font-medium text-muted-foreground">
-                              {bn ? 'শিক্ষকের নাম' : 'Teacher Name'}
-                            </Label>
-                            <Input
-                              value={studentReferralName}
-                              onChange={(e) => setStudentReferralName(e.target.value)}
-                              placeholder={bn ? 'শিক্ষকের নাম' : 'Enter name'}
-                              className="h-8 text-xs bg-background"
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-[11px] font-medium text-muted-foreground">
-                              {bn ? 'শিক্ষকের পদবি' : 'Teacher Designation'}
-                            </Label>
-                            <Input
-                              value={studentReferralDesignation}
-                              onChange={(e) => setStudentReferralDesignation(e.target.value)}
-                              placeholder={bn ? 'যেমন: হিফজ শিক্ষক' : 'Designation'}
-                              className="h-8 text-xs bg-background"
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-[11px] font-medium text-muted-foreground">
-                              {bn ? 'শিক্ষকের মোবাইল নম্বর' : 'Teacher Phone'}
-                            </Label>
-                            <Input
-                              value={studentReferralPhone}
-                              onChange={(e) => setStudentReferralPhone(e.target.value)}
-                              placeholder="017XXXXXXXX"
-                              className="h-8 text-xs bg-background font-mono"
-                            />
-                          </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 border-t border-border/40">
+                        <div className="space-y-1">
+                          <Label className="text-[11px] font-medium text-muted-foreground">
+                            {bn ? 'যাচাইকারীর নাম' : 'Verifier Name'}
+                          </Label>
+                          <Input
+                            value={studentReferralName}
+                            onChange={(e) => setStudentReferralName(e.target.value)}
+                            placeholder={bn ? 'নাম লিখুন' : 'Enter name'}
+                            className="h-8 text-xs bg-background"
+                          />
                         </div>
-                      )}
+                        <div className="space-y-1">
+                          <Label className="text-[11px] font-medium text-muted-foreground">
+                            {bn ? 'যাচাইকারীর পদবি' : 'Verifier Designation'}
+                          </Label>
+                          <Input
+                            value={studentReferralDesignation}
+                            onChange={(e) => setStudentReferralDesignation(e.target.value)}
+                            placeholder={bn ? 'যেমন: হিফজ শিক্ষক' : 'Designation'}
+                            className="h-8 text-xs bg-background"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[11px] font-medium text-muted-foreground">
+                            {bn ? 'যাচাইকারীর মোবাইল' : 'Verifier Phone'}
+                          </Label>
+                          <Input
+                            value={studentReferralPhone}
+                            onChange={(e) => setStudentReferralPhone(e.target.value)}
+                            placeholder="017XXXXXXXX"
+                            className="h-8 text-xs bg-background font-mono"
+                          />
+                        </div>
+                      </div>
                     </div>
 
-                    {/* 🛡️ অফিস অনুমোদন (প্রশাসনিক বিভাগ) */}
                     <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/5 p-3 space-y-3">
                       <div className="flex items-center justify-between gap-1.5 font-semibold text-xs text-foreground">
                         <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
