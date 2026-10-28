@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
     // Peek body once so we can detect dryRun (regression-test bypass) before auth.
     let bodyRaw: any = {};
     try { bodyRaw = await req.json(); } catch (_e) { bodyRaw = {}; }
-    const isDryRun = bodyRaw && bodyRaw.dryRun === "html";
+    const isDryRun = Deno.env.get("SALARY_PDF_ALLOW_DRYRUN") === "true" && bodyRaw && bodyRaw.dryRun === "html";
 
     // Validate JWT (skipped for dryRun=html — used only by regression tests
     // to inspect the rendered HTML structure without DB access).
