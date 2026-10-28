@@ -519,6 +519,9 @@ Deno.serve(async (req) => {
       const trimmedPhone = phone ? String(phone).trim() : '';
       const trimmedName = full_name ? String(full_name).trim() : '';
       const jsonHeaders = { ...corsHeaders, "Content-Type": "application/json" };
+      if (role === 'super_admin' && !callerIsSuperAdmin) {
+        return new Response(JSON.stringify({ error: "Only a super admin can create a super admin account" }), { status: 403, headers: jsonHeaders });
+      }
       const conflict = (payload: any) => new Response(JSON.stringify(payload), { status: 409, headers: jsonHeaders });
 
       // Identifiers attached to every audit/security log for this attempt
@@ -862,6 +865,12 @@ Deno.serve(async (req) => {
         await supabaseAdmin.from("user_roles").delete().eq("user_id", targetUserId);
         return new Response(JSON.stringify({ success: true }), {
           status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (newRole === 'super_admin' && !callerIsSuperAdmin) {
+        return new Response(JSON.stringify({ error: "Only a super admin can grant super admin" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
