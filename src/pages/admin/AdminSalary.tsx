@@ -287,8 +287,9 @@ const AdminSalary = () => {
   const [payCustomMessage, setPayCustomMessage] = useState<string>('');
   const [showPayMsgEdit, setShowPayMsgEdit] = useState(false);
   const [editingTemplateDept, setEditingTemplateDept] = useState<string>('general');
-  const [selectedDeptsForTemplate, setSelectedDeptsForTemplate] = useState<string[]>(['general']);
-  const [editingTemplateText, setEditingTemplateText] = useState<string>('');
+  const [selectedDeptsForTemplate, setSelectedDeptsForTemplate] = useState<string[]>([]);
+  const [applyToMultipleDepts, setApplyToMultipleDepts] = useState(false);
+  const [templatesDraft, setTemplatesDraft] = useState<Record<string, string>>({});
   const [expenseSyncModalOpen, setExpenseSyncModalOpen] = useState(false);
 
   // Pre-fetch default institution for instant synchronous salary slip printing
@@ -6093,6 +6094,11 @@ const AdminSalary = () => {
                   const isMasterEnabled = waConfig.enabled !== false;
                   const disabledDepts: string[] = Array.isArray(waConfig.disabled_departments) ? waConfig.disabled_departments : [];
                   const savedTemplates = getSetting('salary_whatsapp_templates') || {};
+                  const activeDept = SALARY_DEPARTMENTS.find(d => d.key === editingTemplateDept) || SALARY_DEPARTMENTS[0];
+                  const isCurrentDeptActive = !disabledDepts.includes(editingTemplateDept);
+                  const currentText = templatesDraft[editingTemplateDept] !== undefined
+                    ? templatesDraft[editingTemplateDept]
+                    : (savedTemplates[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general);
 
                   return (
                     <div className="space-y-4">
@@ -6124,137 +6130,88 @@ const AdminSalary = () => {
                         />
                       </div>
 
-                      {/* Multi-Select Department Selector & Individual On/Off */}
-                      <div className="space-y-2 border rounded-xl p-3 bg-muted/20">
-                        <div className="flex items-center justify-between flex-wrap gap-2">
-                          <div className="space-y-0.5">
-                            <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                              <Layers className="h-3.5 w-3.5 text-primary" />
-                              {bn ? 'বিভাগ নির্বাচন (মাল্টিপল সিলেক্ট ও অন/অফ):' : 'Select Departments (Multi-Select & On/Off):'}
-                            </Label>
-                            <p className="text-[11px] text-muted-foreground">
-                              {bn ? 'যে যে বিভাগে একই বার্তা প্রযোজ্য করতে চান তা টিক দিন এবং প্রয়োজনমতো বিভাগীয় অন/অফ সুইচ ব্যবহার করুন।' : 'Check departments to apply template and toggle department-specific notifications.'}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="h-6 text-[10px] px-2"
-                              onClick={() => setSelectedDeptsForTemplate(SALARY_DEPARTMENTS.map(d => d.key))}
-                            >
-                              {bn ? 'সকল বিভাগ' : 'Select All'}
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 text-[10px] px-2 text-muted-foreground"
-                              onClick={() => setSelectedDeptsForTemplate(['general'])}
-                            >
-                              {bn ? 'শুধু সাধারণ' : 'Reset Selection'}
-                            </Button>
-                          </div>
+                      {/* Department Switcher Tabs (Click to switch to that department's unique template) */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                            <Layers className="h-3.5 w-3.5 text-emerald-600" />
+                            {bn ? 'বিভাগ নির্বাচন করুন (আলাদা আলাদা টেমপ্লেট দেখতে ক্লিক করুন):' : 'Select Department (Click to view unique template):'}
+                          </Label>
+                          <span className="text-[11px] text-muted-foreground">
+                            {bn ? '৭টি বিভাগের পৃথক বার্তা' : '7 distinct templates'}
+                          </span>
                         </div>
 
-                        {/* Departments Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                        <div className="flex flex-wrap gap-1.5 p-1.5 bg-muted/30 rounded-xl border border-border/70">
                           {SALARY_DEPARTMENTS.map((dept) => {
-                            const isSelected = selectedDeptsForTemplate.includes(dept.key);
+                            const isCurrent = editingTemplateDept === dept.key;
                             const isDeptActive = !disabledDepts.includes(dept.key);
+                            const hasCustom = !!savedTemplates[dept.key];
 
                             return (
-                              <div
+                              <button
                                 key={dept.key}
-                                className={`flex items-center justify-between p-2 rounded-lg border transition-colors ${
-                                  isSelected
-                                    ? 'bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-400 dark:border-emerald-700 shadow-sm'
-                                    : 'bg-background hover:bg-muted/50 border-border/70'
+                                type="button"
+                                onClick={() => {
+                                  setEditingTemplateDept(dept.key);
+                                }}
+                                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 border ${
+                                  isCurrent
+                                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm font-semibold'
+                                    : 'bg-background hover:bg-muted text-foreground border-border/60'
                                 }`}
                               >
-                                <div
-                                  className="flex items-center gap-2 cursor-pointer flex-1 min-w-0 pr-2"
-                                  onClick={() => {
-                                    // Toggle multi-select
-                                    if (isSelected) {
-                                      if (selectedDeptsForTemplate.length > 1) {
-                                        setSelectedDeptsForTemplate(selectedDeptsForTemplate.filter(k => k !== dept.key));
-                                      }
-                                    } else {
-                                      setSelectedDeptsForTemplate([...selectedDeptsForTemplate, dept.key]);
-                                    }
-                                    setEditingTemplateDept(dept.key);
-                                    setEditingTemplateText(savedTemplates[dept.key] || DEFAULT_SALARY_TEMPLATES[dept.key] || DEFAULT_SALARY_TEMPLATES.general);
-                                  }}
-                                >
-                                  <Checkbox
-                                    checked={isSelected}
-                                    onCheckedChange={(checked) => {
-                                      if (checked) {
-                                        if (!selectedDeptsForTemplate.includes(dept.key)) {
-                                          setSelectedDeptsForTemplate([...selectedDeptsForTemplate, dept.key]);
-                                        }
-                                      } else {
-                                        if (selectedDeptsForTemplate.length > 1) {
-                                          setSelectedDeptsForTemplate(selectedDeptsForTemplate.filter(k => k !== dept.key));
-                                        }
-                                      }
-                                      setEditingTemplateDept(dept.key);
-                                      setEditingTemplateText(savedTemplates[dept.key] || DEFAULT_SALARY_TEMPLATES[dept.key] || DEFAULT_SALARY_TEMPLATES.general);
-                                    }}
-                                    className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
-                                  />
-                                  <div className="min-w-0">
-                                    <p className="text-xs font-semibold truncate leading-tight text-foreground">{dept.label}</p>
-                                    <p className="text-[10px] text-muted-foreground truncate">{dept.desc}</p>
-                                  </div>
-                                </div>
-
-                                {/* Dept On/Off Switch */}
-                                <div className="flex items-center gap-1.5 shrink-0 pl-1 border-l">
-                                  <span className={`text-[10px] font-mono ${isDeptActive ? 'text-emerald-700 dark:text-emerald-300 font-semibold' : 'text-muted-foreground'}`}>
-                                    {isDeptActive ? (bn ? 'অন' : 'ON') : (bn ? 'অফ' : 'OFF')}
+                                <span>{dept.shortLabel}</span>
+                                {hasCustom && (
+                                  <span className={`text-[9px] px-1 py-0.2 rounded font-mono ${isCurrent ? 'bg-emerald-800 text-emerald-100' : 'bg-primary/10 text-primary'}`}>
+                                    কাস্টম
                                   </span>
-                                  <Switch
-                                    checked={isDeptActive}
-                                    onCheckedChange={(checked) => {
-                                      const newDisabled = checked
-                                        ? disabledDepts.filter(k => k !== dept.key)
-                                        : [...disabledDepts, dept.key];
-                                      saveSettingMutation.mutate({
-                                        key: 'salary_whatsapp_settings',
-                                        value: { ...waConfig, disabled_departments: newDisabled },
-                                      });
-                                    }}
-                                    className="scale-75 origin-right"
-                                  />
-                                </div>
-                              </div>
+                                )}
+                                <span
+                                  className={`w-2 h-2 rounded-full shrink-0 ${isDeptActive ? (isCurrent ? 'bg-emerald-200' : 'bg-emerald-500') : 'bg-red-400'}`}
+                                  title={isDeptActive ? 'নোটিফিকেশন চালু' : 'নোটিফিকেশন বন্ধ'}
+                                />
+                              </button>
                             );
                           })}
                         </div>
                       </div>
 
-                      {/* Message Template Editor */}
+                      {/* Active Department Header & Department ON/OFF Switch */}
+                      <div className="flex items-center justify-between p-3 rounded-xl border bg-muted/20">
+                        <div className="min-w-0 pr-2">
+                          <h4 className="text-xs sm:text-sm font-bold text-foreground flex items-center gap-1.5 truncate">
+                            <MessageCircle className="h-4 w-4 text-emerald-600 shrink-0" />
+                            <span className="truncate">{activeDept.label}</span>
+                          </h4>
+                          <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{activeDept.desc}</p>
+                        </div>
+                        <div className="flex items-center gap-2 pl-3 border-l shrink-0">
+                          <span className={`text-[11px] font-semibold ${isCurrentDeptActive ? 'text-emerald-700 dark:text-emerald-300' : 'text-muted-foreground'}`}>
+                            {isCurrentDeptActive ? (bn ? 'নোটিশ চালু' : 'Notice ON') : (bn ? 'নোটিশ বন্ধ' : 'Notice OFF')}
+                          </span>
+                          <Switch
+                            checked={isCurrentDeptActive}
+                            onCheckedChange={(checked) => {
+                              const newDisabled = checked
+                                ? disabledDepts.filter(k => k !== editingTemplateDept)
+                                : [...disabledDepts, editingTemplateDept];
+                              saveSettingMutation.mutate({
+                                key: 'salary_whatsapp_settings',
+                                value: { ...waConfig, disabled_departments: newDisabled },
+                              });
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Message Template Editor for Active Department */}
                       <div className="space-y-2 border rounded-xl p-3 bg-card">
                         <div className="flex items-center justify-between flex-wrap gap-2">
-                          <div className="space-y-0.5">
-                            <Label className="text-xs font-bold text-foreground">
-                              {bn ? 'বার্তা টেমপ্লেট:' : 'Message Template:'}
-                            </Label>
-                            <div className="flex items-center gap-1 flex-wrap pt-0.5">
-                              <span className="text-[10px] text-muted-foreground">{bn ? 'প্রযোজ্য বিভাগসমূহ:' : 'Selected:'}</span>
-                              {selectedDeptsForTemplate.map(k => {
-                                const d = SALARY_DEPARTMENTS.find(sd => sd.key === k);
-                                return (
-                                  <Badge key={k} variant="secondary" className="text-[10px] py-0 px-1.5 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200">
-                                    {d?.shortLabel || k}
-                                  </Badge>
-                                );
-                              })}
-                            </div>
-                          </div>
+                          <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                            <Edit3 className="h-3.5 w-3.5 text-primary" />
+                            {bn ? `"${activeDept.shortLabel}" বিভাগের বার্তা টেমপ্লেট:` : `"${activeDept.shortLabel}" Message Template:`}
+                          </Label>
                           <Button
                             type="button"
                             variant="ghost"
@@ -6262,8 +6219,8 @@ const AdminSalary = () => {
                             className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground"
                             onClick={() => {
                               const def = DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general;
-                              setEditingTemplateText(def);
-                              toast.info(bn ? 'ডিফল্ট বার্তা লোড করা হয়েছে' : 'Default message loaded');
+                              setTemplatesDraft(prev => ({ ...prev, [editingTemplateDept]: def }));
+                              toast.info(bn ? `"${activeDept.shortLabel}" বিভাগের ডিফল্ট বার্তা লোড করা হয়েছে` : 'Default message loaded');
                             }}
                           >
                             <RotateCcw className="h-3 w-3 mr-1" />
@@ -6272,8 +6229,8 @@ const AdminSalary = () => {
                         </div>
 
                         <Textarea
-                          value={editingTemplateText !== '' ? editingTemplateText : (savedTemplates[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general)}
-                          onChange={(e) => setEditingTemplateText(e.target.value)}
+                          value={currentText}
+                          onChange={(e) => setTemplatesDraft(prev => ({ ...prev, [editingTemplateDept]: e.target.value }))}
                           rows={8}
                           className="text-xs font-sans leading-relaxed bg-white dark:bg-background border-border/80 focus-visible:ring-emerald-500"
                         />
@@ -6284,28 +6241,28 @@ const AdminSalary = () => {
                             <Badge
                               variant="secondary"
                               className="text-[10px] font-mono cursor-pointer hover:bg-muted"
-                              onClick={() => setEditingTemplateText(prev => `${prev || (savedTemplates[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general)} {{name}}`)}
+                              onClick={() => setTemplatesDraft(prev => ({ ...prev, [editingTemplateDept]: `${currentText} {{name}}` }))}
                             >
                               {'{{name}}'} : {bn ? 'কর্মীর নাম' : 'Name'}
                             </Badge>
                             <Badge
                               variant="secondary"
                               className="text-[10px] font-mono cursor-pointer hover:bg-muted"
-                              onClick={() => setEditingTemplateText(prev => `${prev || (savedTemplates[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general)} {{month}}`)}
+                              onClick={() => setTemplatesDraft(prev => ({ ...prev, [editingTemplateDept]: `${currentText} {{month}}` }))}
                             >
                               {'{{month}}'} : {bn ? 'মাস ও বছর' : 'Month & Year'}
                             </Badge>
                             <Badge
                               variant="secondary"
                               className="text-[10px] font-mono cursor-pointer hover:bg-muted"
-                              onClick={() => setEditingTemplateText(prev => `${prev || (savedTemplates[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general)} {{date}}`)}
+                              onClick={() => setTemplatesDraft(prev => ({ ...prev, [editingTemplateDept]: `${currentText} {{date}}` }))}
                             >
                               {'{{date}}'} : {bn ? 'পরিশোধের তারিখ' : 'Payment Date'}
                             </Badge>
                             <Badge
                               variant="secondary"
                               className="text-[10px] font-mono cursor-pointer hover:bg-muted"
-                              onClick={() => setEditingTemplateText(prev => `${prev || (savedTemplates[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general)} {{institution}}`)}
+                              onClick={() => setTemplatesDraft(prev => ({ ...prev, [editingTemplateDept]: `${currentText} {{institution}}` }))}
                             >
                               {'{{institution}}'} : {bn ? 'প্রতিষ্ঠানের নাম' : 'Institution'}
                             </Badge>
@@ -6313,27 +6270,121 @@ const AdminSalary = () => {
                         </div>
                       </div>
 
+                      {/* Optional Multi-Select: Apply this message to other departments simultaneously */}
+                      <div className="rounded-xl border p-3 bg-muted/10 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setApplyToMultipleDepts(!applyToMultipleDepts)}>
+                            <Checkbox
+                              id="applyMultiCheck"
+                              checked={applyToMultipleDepts}
+                              onCheckedChange={(c) => setApplyToMultipleDepts(!!c)}
+                            />
+                            <label htmlFor="applyMultiCheck" className="text-xs font-semibold cursor-pointer text-foreground select-none">
+                              {bn ? '🔗 এই বার্তাটি অন্যান্য বিভাগেও একসাথে প্রয়োগ করতে চান? (মাল্টিপল সিলেক্ট)' : 'Apply this template to other departments too? (Multi-Select)'}
+                            </label>
+                          </div>
+                          {applyToMultipleDepts && (
+                            <div className="flex items-center gap-1.5">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-5 text-[10px] px-1.5"
+                                onClick={() => setSelectedDeptsForTemplate(SALARY_DEPARTMENTS.map(d => d.key))}
+                              >
+                                {bn ? 'সকল বিভাগ' : 'Select All'}
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-5 text-[10px] px-1.5 text-muted-foreground"
+                                onClick={() => setSelectedDeptsForTemplate([])}
+                              >
+                                {bn ? 'ক্লিয়ার' : 'Clear'}
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+
+                        {applyToMultipleDepts && (
+                          <div className="pt-1.5 border-t space-y-2">
+                            <p className="text-[11px] text-muted-foreground">
+                              {bn
+                                ? 'নিচে যে যে বিভাগে টিক দেবেন, সেভ করার সাথে সাথে এই বার্তাটি তাদের সবার জন্য প্রযোজ্য হবে:'
+                                : 'Check departments that should also receive this exact template:'}
+                            </p>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                              {SALARY_DEPARTMENTS.map((dept) => {
+                                const isTargeted = selectedDeptsForTemplate.includes(dept.key);
+                                const isThisDept = dept.key === editingTemplateDept;
+
+                                return (
+                                  <div
+                                    key={dept.key}
+                                    className={`flex items-center gap-1.5 p-1.5 rounded-lg border text-xs cursor-pointer select-none transition-colors ${
+                                      isThisDept
+                                        ? 'bg-emerald-100/70 dark:bg-emerald-950/60 border-emerald-400 font-semibold'
+                                        : isTargeted
+                                        ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300'
+                                        : 'bg-background hover:bg-muted/40 border-border/70 text-muted-foreground'
+                                    }`}
+                                    onClick={() => {
+                                      if (isThisDept) return;
+                                      if (isTargeted) {
+                                        setSelectedDeptsForTemplate(selectedDeptsForTemplate.filter(k => k !== dept.key));
+                                      } else {
+                                        setSelectedDeptsForTemplate([...selectedDeptsForTemplate, dept.key]);
+                                      }
+                                    }}
+                                  >
+                                    <Checkbox
+                                      checked={isThisDept || isTargeted}
+                                      disabled={isThisDept}
+                                      className="h-3.5 w-3.5"
+                                    />
+                                    <span className="truncate">{dept.shortLabel}</span>
+                                    {isThisDept && <span className="text-[9px] text-emerald-700 dark:text-emerald-300 ml-auto font-normal">(বর্তমান)</span>}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
                       {/* Save Action */}
                       <div className="pt-2 flex items-center justify-between">
                         <span className="text-xs text-muted-foreground">
-                          {selectedDeptsForTemplate.length === 1
-                            ? (bn ? `১টি বিভাগ নির্বাচিত` : `1 department selected`)
-                            : (bn ? `${selectedDeptsForTemplate.length}টি বিভাগ একসাথে আপডেট হবে` : `${selectedDeptsForTemplate.length} departments will be updated together`)}
+                          {applyToMultipleDepts && selectedDeptsForTemplate.length > 0
+                            ? (bn ? `${Array.from(new Set([editingTemplateDept, ...selectedDeptsForTemplate])).length}টি বিভাগে একসাথে সেভ হবে` : `Will save to ${Array.from(new Set([editingTemplateDept, ...selectedDeptsForTemplate])).length} departments`)
+                            : (bn ? `শুধু "${activeDept.shortLabel}" বিভাগে সেভ হবে` : `Will save to "${activeDept.shortLabel}"`)}
                         </span>
                         <Button
                           className="bg-emerald-600 hover:bg-emerald-700 text-white"
                           onClick={() => {
                             const cur = getSetting('salary_whatsapp_templates') || {};
-                            const valToSave = (editingTemplateText !== '' ? editingTemplateText : (cur[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general)).trim();
+                            const valToSave = currentText.trim();
                             const updated = { ...cur };
-                            selectedDeptsForTemplate.forEach(k => {
+
+                            const targets = applyToMultipleDepts && selectedDeptsForTemplate.length > 0
+                              ? Array.from(new Set([editingTemplateDept, ...selectedDeptsForTemplate]))
+                              : [editingTemplateDept];
+
+                            targets.forEach(k => {
                               updated[k] = valToSave;
                             });
+
                             saveSettingMutation.mutate({
                               key: 'salary_whatsapp_templates',
                               value: updated,
                             });
-                            toast.success(bn ? `${selectedDeptsForTemplate.length}টি বিভাগে টেমপ্লেট সংরক্ষিত হয়েছে` : `Saved template to ${selectedDeptsForTemplate.length} departments`);
+
+                            if (targets.length > 1) {
+                              toast.success(bn ? `${targets.length}টি বিভাগে টেমপ্লেট সফলভাবে সংরক্ষিত হয়েছে` : `Saved template to ${targets.length} departments`);
+                            } else {
+                              toast.success(bn ? `"${activeDept.label}" টেমপ্লেট সংরক্ষিত হয়েছে` : `Saved template for ${activeDept.label}`);
+                            }
                           }}
                           disabled={saveSettingMutation.isPending}
                         >
@@ -6342,7 +6393,9 @@ const AdminSalary = () => {
                           ) : (
                             <CheckCircle2 className="h-4 w-4 mr-1" />
                           )}
-                          {bn ? `নির্বাচিত ${selectedDeptsForTemplate.length}টি বিভাগে সংরক্ষণ করুন` : `Save to ${selectedDeptsForTemplate.length} Departments`}
+                          {applyToMultipleDepts && selectedDeptsForTemplate.length > 0
+                            ? (bn ? `নির্বাচিত ${Array.from(new Set([editingTemplateDept, ...selectedDeptsForTemplate])).length}টি বিভাগে সংরক্ষণ করুন` : `Save to ${Array.from(new Set([editingTemplateDept, ...selectedDeptsForTemplate])).length} Departments`)
+                            : (bn ? `"${activeDept.shortLabel}" টেমপ্লেট সংরক্ষণ করুন` : `Save "${activeDept.shortLabel}" Template`)}
                         </Button>
                       </div>
                     </div>
