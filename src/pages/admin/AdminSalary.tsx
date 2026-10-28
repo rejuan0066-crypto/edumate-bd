@@ -287,6 +287,7 @@ const AdminSalary = () => {
   const [payCustomMessage, setPayCustomMessage] = useState<string>('');
   const [showPayMsgEdit, setShowPayMsgEdit] = useState(false);
   const [editingTemplateDept, setEditingTemplateDept] = useState<string>('general');
+  const [selectedDeptsForTemplate, setSelectedDeptsForTemplate] = useState<string[]>(['general']);
   const [editingTemplateText, setEditingTemplateText] = useState<string>('');
   const [expenseSyncModalOpen, setExpenseSyncModalOpen] = useState(false);
 
@@ -4749,6 +4750,11 @@ const AdminSalary = () => {
                                         onClick={() => {
                                           setPaidConfirmId(rec.id);
                                           setPayAddToExpense(getSetting('expense_location')?.auto_add_to_expenses !== false);
+                                          const waConfig = getSetting('salary_whatsapp_settings') || {};
+                                          const isMasterEnabled = waConfig.enabled !== false;
+                                          const deptKey = resolveStaffDeptKey(s);
+                                          const isDeptDisabled = Array.isArray(waConfig.disabled_departments) && waConfig.disabled_departments.includes(deptKey);
+                                          setPaySendWhatsApp(isMasterEnabled && !isDeptDisabled);
                                           setPayCustomMessage('');
                                           setShowPayMsgEdit(false);
                                         }}
@@ -6082,124 +6088,266 @@ const AdminSalary = () => {
 
               {/* WhatsApp Notice Template Tab */}
               <TabsContent value="whatsapp_template" className="space-y-4 mt-4">
-                <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 rounded-lg text-sm space-y-1">
-                  <div className="flex items-center gap-1.5 font-semibold text-emerald-800 dark:text-emerald-300">
-                    <MessageCircle className="h-4 w-4" />
-                    <span>{bn ? 'বিভাগভিত্তিক WhatsApp বেতন নোটিফিকেশন' : 'Department-wise WhatsApp Salary Notice'}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {bn
-                      ? 'বেতন পরিশোধের সময় কর্মীদের WhatsApp-এ এই বার্তা যাবে। এখানে টাকার পরিমাণ সম্পূর্ণ গোপন থাকবে। এডমিন যখন পে-স্লিপ প্রিন্ট করবেন তখন সব হিসাব শতভাগ দৃশ্যমান থাকবে।'
-                      : 'Notification sent to staff via WhatsApp upon salary disbursement. Salary amount is strictly hidden, while printed pay slips retain 100% visibility.'}
-                  </p>
-                </div>
+                {(() => {
+                  const waConfig = getSetting('salary_whatsapp_settings') || {};
+                  const isMasterEnabled = waConfig.enabled !== false;
+                  const disabledDepts: string[] = Array.isArray(waConfig.disabled_departments) ? waConfig.disabled_departments : [];
+                  const savedTemplates = getSetting('salary_whatsapp_templates') || {};
 
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">{bn ? 'বিভাগ নির্বাচন করুন:' : 'Select Department:'}</Label>
-                  <Select
-                    value={editingTemplateDept}
-                    onValueChange={(val) => {
-                      setEditingTemplateDept(val);
-                      const saved = getSetting('salary_whatsapp_templates') || {};
-                      setEditingTemplateText(saved[val] || DEFAULT_SALARY_TEMPLATES[val] || DEFAULT_SALARY_TEMPLATES.general);
-                    }}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder={bn ? 'বিভাগ বাছাই করুন' : 'Select Department'} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SALARY_DEPARTMENTS.map((dept) => (
-                        <SelectItem key={dept.key} value={dept.key}>
-                          {dept.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  return (
+                    <div className="space-y-4">
+                      {/* Master Service ON/OFF Card */}
+                      <div className="flex items-center justify-between p-3.5 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/30">
+                        <div className="space-y-0.5 pr-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-foreground">
+                              {bn ? 'WhatsApp বেতন নোটিফিকেশন সেবা' : 'WhatsApp Salary Notification Service'}
+                            </span>
+                            <Badge className={isMasterEnabled ? 'bg-emerald-600 hover:bg-emerald-700 text-white text-[10px]' : 'bg-muted text-muted-foreground text-[10px]'}>
+                              {isMasterEnabled ? (bn ? 'চালু (ON)' : 'ENABLED') : (bn ? 'বন্ধ (OFF)' : 'DISABLED')}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            {isMasterEnabled
+                              ? (bn ? '✓ সেবা চালু আছে: বেতন পরিশোধের সাথে সাথে WhatsApp নোটিশ পাঠানো যাবে।' : 'Service is ON: WhatsApp notices can be sent upon payment.')
+                              : (bn ? '✕ সেবা বন্ধ রাখা হয়েছে: বেতন পরিশোধ করলেও কোনো WhatsApp মেসেজ পাঠানো হবে না।' : 'Service is OFF: No WhatsApp notices will be sent upon payment.')}
+                          </p>
+                        </div>
+                        <Switch
+                          checked={isMasterEnabled}
+                          onCheckedChange={(checked) => {
+                            saveSettingMutation.mutate({
+                              key: 'salary_whatsapp_settings',
+                              value: { ...waConfig, enabled: checked },
+                            });
+                          }}
+                        />
+                      </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs font-semibold">{bn ? 'বার্তা টেমপ্লেট:' : 'Message Template:'}</Label>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground"
-                      onClick={() => {
-                        const def = DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general;
-                        setEditingTemplateText(def);
-                        toast.info(bn ? 'ডিফল্ট টেমপ্লেট লোড করা হয়েছে' : 'Loaded default template');
-                      }}
-                    >
-                      <RotateCcw className="h-3 w-3 mr-1" />
-                      {bn ? 'ডিফল্ট বার্তা লোড' : 'Reset to Default'}
-                    </Button>
-                  </div>
-                  <Textarea
-                    value={editingTemplateText !== '' ? editingTemplateText : (getSetting('salary_whatsapp_templates')?.[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general)}
-                    onChange={(e) => setEditingTemplateText(e.target.value)}
-                    rows={8}
-                    className="text-xs font-sans leading-relaxed bg-white dark:bg-background"
-                  />
-                  <div className="space-y-1 pt-1">
-                    <span className="text-[11px] text-muted-foreground font-medium">{bn ? 'ব্যবহারযোগ্য টোকেন (ক্লিক করে যুক্ত করুন):' : 'Available Tokens:'}</span>
-                    <div className="flex flex-wrap gap-1.5">
-                      <Badge
-                        variant="secondary"
-                        className="text-[10px] font-mono cursor-pointer hover:bg-muted"
-                        onClick={() => setEditingTemplateText(prev => `${prev || (getSetting('salary_whatsapp_templates')?.[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general)} {{name}}`)}
-                      >
-                        {'{{name}}'} : {bn ? 'কর্মীর নাম' : 'Name'}
-                      </Badge>
-                      <Badge
-                        variant="secondary"
-                        className="text-[10px] font-mono cursor-pointer hover:bg-muted"
-                        onClick={() => setEditingTemplateText(prev => `${prev || (getSetting('salary_whatsapp_templates')?.[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general)} {{month}}`)}
-                      >
-                        {'{{month}}'} : {bn ? 'মাস ও বছর' : 'Month & Year'}
-                      </Badge>
-                      <Badge
-                        variant="secondary"
-                        className="text-[10px] font-mono cursor-pointer hover:bg-muted"
-                        onClick={() => setEditingTemplateText(prev => `${prev || (getSetting('salary_whatsapp_templates')?.[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general)} {{date}}`)}
-                      >
-                        {'{{date}}'} : {bn ? 'পরিশোধের তারিখ' : 'Payment Date'}
-                      </Badge>
-                      <Badge
-                        variant="secondary"
-                        className="text-[10px] font-mono cursor-pointer hover:bg-muted"
-                        onClick={() => setEditingTemplateText(prev => `${prev || (getSetting('salary_whatsapp_templates')?.[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general)} {{institution}}`)}
-                      >
-                        {'{{institution}}'} : {bn ? 'প্রতিষ্ঠানের নাম' : 'Institution'}
-                      </Badge>
+                      {/* Multi-Select Department Selector & Individual On/Off */}
+                      <div className="space-y-2 border rounded-xl p-3 bg-muted/20">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <div className="space-y-0.5">
+                            <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                              <Layers className="h-3.5 w-3.5 text-primary" />
+                              {bn ? 'বিভাগ নির্বাচন (মাল্টিপল সিলেক্ট ও অন/অফ):' : 'Select Departments (Multi-Select & On/Off):'}
+                            </Label>
+                            <p className="text-[11px] text-muted-foreground">
+                              {bn ? 'যে যে বিভাগে একই বার্তা প্রযোজ্য করতে চান তা টিক দিন এবং প্রয়োজনমতো বিভাগীয় অন/অফ সুইচ ব্যবহার করুন।' : 'Check departments to apply template and toggle department-specific notifications.'}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-6 text-[10px] px-2"
+                              onClick={() => setSelectedDeptsForTemplate(SALARY_DEPARTMENTS.map(d => d.key))}
+                            >
+                              {bn ? 'সকল বিভাগ' : 'Select All'}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 text-[10px] px-2 text-muted-foreground"
+                              onClick={() => setSelectedDeptsForTemplate(['general'])}
+                            >
+                              {bn ? 'শুধু সাধারণ' : 'Reset Selection'}
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Departments Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                          {SALARY_DEPARTMENTS.map((dept) => {
+                            const isSelected = selectedDeptsForTemplate.includes(dept.key);
+                            const isDeptActive = !disabledDepts.includes(dept.key);
+
+                            return (
+                              <div
+                                key={dept.key}
+                                className={`flex items-center justify-between p-2 rounded-lg border transition-colors ${
+                                  isSelected
+                                    ? 'bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-400 dark:border-emerald-700 shadow-sm'
+                                    : 'bg-background hover:bg-muted/50 border-border/70'
+                                }`}
+                              >
+                                <div
+                                  className="flex items-center gap-2 cursor-pointer flex-1 min-w-0 pr-2"
+                                  onClick={() => {
+                                    // Toggle multi-select
+                                    if (isSelected) {
+                                      if (selectedDeptsForTemplate.length > 1) {
+                                        setSelectedDeptsForTemplate(selectedDeptsForTemplate.filter(k => k !== dept.key));
+                                      }
+                                    } else {
+                                      setSelectedDeptsForTemplate([...selectedDeptsForTemplate, dept.key]);
+                                    }
+                                    setEditingTemplateDept(dept.key);
+                                    setEditingTemplateText(savedTemplates[dept.key] || DEFAULT_SALARY_TEMPLATES[dept.key] || DEFAULT_SALARY_TEMPLATES.general);
+                                  }}
+                                >
+                                  <Checkbox
+                                    checked={isSelected}
+                                    onCheckedChange={(checked) => {
+                                      if (checked) {
+                                        if (!selectedDeptsForTemplate.includes(dept.key)) {
+                                          setSelectedDeptsForTemplate([...selectedDeptsForTemplate, dept.key]);
+                                        }
+                                      } else {
+                                        if (selectedDeptsForTemplate.length > 1) {
+                                          setSelectedDeptsForTemplate(selectedDeptsForTemplate.filter(k => k !== dept.key));
+                                        }
+                                      }
+                                      setEditingTemplateDept(dept.key);
+                                      setEditingTemplateText(savedTemplates[dept.key] || DEFAULT_SALARY_TEMPLATES[dept.key] || DEFAULT_SALARY_TEMPLATES.general);
+                                    }}
+                                    className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                                  />
+                                  <div className="min-w-0">
+                                    <p className="text-xs font-semibold truncate leading-tight text-foreground">{dept.label}</p>
+                                    <p className="text-[10px] text-muted-foreground truncate">{dept.desc}</p>
+                                  </div>
+                                </div>
+
+                                {/* Dept On/Off Switch */}
+                                <div className="flex items-center gap-1.5 shrink-0 pl-1 border-l">
+                                  <span className={`text-[10px] font-mono ${isDeptActive ? 'text-emerald-700 dark:text-emerald-300 font-semibold' : 'text-muted-foreground'}`}>
+                                    {isDeptActive ? (bn ? 'অন' : 'ON') : (bn ? 'অফ' : 'OFF')}
+                                  </span>
+                                  <Switch
+                                    checked={isDeptActive}
+                                    onCheckedChange={(checked) => {
+                                      const newDisabled = checked
+                                        ? disabledDepts.filter(k => k !== dept.key)
+                                        : [...disabledDepts, dept.key];
+                                      saveSettingMutation.mutate({
+                                        key: 'salary_whatsapp_settings',
+                                        value: { ...waConfig, disabled_departments: newDisabled },
+                                      });
+                                    }}
+                                    className="scale-75 origin-right"
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Message Template Editor */}
+                      <div className="space-y-2 border rounded-xl p-3 bg-card">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <div className="space-y-0.5">
+                            <Label className="text-xs font-bold text-foreground">
+                              {bn ? 'বার্তা টেমপ্লেট:' : 'Message Template:'}
+                            </Label>
+                            <div className="flex items-center gap-1 flex-wrap pt-0.5">
+                              <span className="text-[10px] text-muted-foreground">{bn ? 'প্রযোজ্য বিভাগসমূহ:' : 'Selected:'}</span>
+                              {selectedDeptsForTemplate.map(k => {
+                                const d = SALARY_DEPARTMENTS.find(sd => sd.key === k);
+                                return (
+                                  <Badge key={k} variant="secondary" className="text-[10px] py-0 px-1.5 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200">
+                                    {d?.shortLabel || k}
+                                  </Badge>
+                                );
+                              })}
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+                            onClick={() => {
+                              const def = DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general;
+                              setEditingTemplateText(def);
+                              toast.info(bn ? 'ডিফল্ট বার্তা লোড করা হয়েছে' : 'Default message loaded');
+                            }}
+                          >
+                            <RotateCcw className="h-3 w-3 mr-1" />
+                            {bn ? 'ডিফল্ট বার্তা লোড' : 'Reset to Default'}
+                          </Button>
+                        </div>
+
+                        <Textarea
+                          value={editingTemplateText !== '' ? editingTemplateText : (savedTemplates[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general)}
+                          onChange={(e) => setEditingTemplateText(e.target.value)}
+                          rows={8}
+                          className="text-xs font-sans leading-relaxed bg-white dark:bg-background border-border/80 focus-visible:ring-emerald-500"
+                        />
+
+                        <div className="space-y-1 pt-1">
+                          <span className="text-[11px] text-muted-foreground font-medium">{bn ? 'ব্যবহারযোগ্য টোকেন (ক্লিক করে যুক্ত করুন):' : 'Available Tokens:'}</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] font-mono cursor-pointer hover:bg-muted"
+                              onClick={() => setEditingTemplateText(prev => `${prev || (savedTemplates[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general)} {{name}}`)}
+                            >
+                              {'{{name}}'} : {bn ? 'কর্মীর নাম' : 'Name'}
+                            </Badge>
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] font-mono cursor-pointer hover:bg-muted"
+                              onClick={() => setEditingTemplateText(prev => `${prev || (savedTemplates[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general)} {{month}}`)}
+                            >
+                              {'{{month}}'} : {bn ? 'মাস ও বছর' : 'Month & Year'}
+                            </Badge>
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] font-mono cursor-pointer hover:bg-muted"
+                              onClick={() => setEditingTemplateText(prev => `${prev || (savedTemplates[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general)} {{date}}`)}
+                            >
+                              {'{{date}}'} : {bn ? 'পরিশোধের তারিখ' : 'Payment Date'}
+                            </Badge>
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] font-mono cursor-pointer hover:bg-muted"
+                              onClick={() => setEditingTemplateText(prev => `${prev || (savedTemplates[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general)} {{institution}}`)}
+                            >
+                              {'{{institution}}'} : {bn ? 'প্রতিষ্ঠানের নাম' : 'Institution'}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Save Action */}
+                      <div className="pt-2 flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">
+                          {selectedDeptsForTemplate.length === 1
+                            ? (bn ? `১টি বিভাগ নির্বাচিত` : `1 department selected`)
+                            : (bn ? `${selectedDeptsForTemplate.length}টি বিভাগ একসাথে আপডেট হবে` : `${selectedDeptsForTemplate.length} departments will be updated together`)}
+                        </span>
+                        <Button
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                          onClick={() => {
+                            const cur = getSetting('salary_whatsapp_templates') || {};
+                            const valToSave = (editingTemplateText !== '' ? editingTemplateText : (cur[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general)).trim();
+                            const updated = { ...cur };
+                            selectedDeptsForTemplate.forEach(k => {
+                              updated[k] = valToSave;
+                            });
+                            saveSettingMutation.mutate({
+                              key: 'salary_whatsapp_templates',
+                              value: updated,
+                            });
+                            toast.success(bn ? `${selectedDeptsForTemplate.length}টি বিভাগে টেমপ্লেট সংরক্ষিত হয়েছে` : `Saved template to ${selectedDeptsForTemplate.length} departments`);
+                          }}
+                          disabled={saveSettingMutation.isPending}
+                        >
+                          {saveSettingMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="h-4 w-4 mr-1" />
+                          )}
+                          {bn ? `নির্বাচিত ${selectedDeptsForTemplate.length}টি বিভাগে সংরক্ষণ করুন` : `Save to ${selectedDeptsForTemplate.length} Departments`}
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </div>
-
-                <div className="pt-2 flex justify-end">
-                  <Button
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                    onClick={() => {
-                      const cur = getSetting('salary_whatsapp_templates') || {};
-                      const valToSave = (editingTemplateText !== '' ? editingTemplateText : (cur[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES[editingTemplateDept] || DEFAULT_SALARY_TEMPLATES.general)).trim();
-                      saveSettingMutation.mutate({
-                        key: 'salary_whatsapp_templates',
-                        value: {
-                          ...cur,
-                          [editingTemplateDept]: valToSave,
-                        },
-                      });
-                    }}
-                    disabled={saveSettingMutation.isPending}
-                  >
-                    {saveSettingMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="h-4 w-4 mr-1" />
-                    )}
-                    {bn ? 'টেমপ্লেট সংরক্ষণ করুন' : 'Save Template'}
-                  </Button>
-                </div>
+                  );
+                })()}
               </TabsContent>
             </Tabs>
           </DialogContent>
