@@ -2320,7 +2320,7 @@ const AdminSalary = () => {
       calc_basis: calcBasis,
       earned_from_attendance: earnedFromAttendance,
       overtime_for_net: overtimeForNet,
-      deductions_deferred: !allAttendanceGiven,
+      deductions_deferred: false,
     };
   };
 
