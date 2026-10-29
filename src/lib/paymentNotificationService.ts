@@ -230,7 +230,7 @@ export const DEFAULT_SALARY_TEMPLATES: Record<string, string> = {
 
 — {{institution}}`,
 
-  // 3. অফিস ও হিসাব বিভাগ (Office & Accounts Staff)
+  // 3. সাপোর্ট স্টাফ (Support Staff - হিসাবরক্ষক, অফিস সহকারী, অপারেটর)
   support: `আসসালামু আলাইকুম {{name}}।
 {{institution}} থেকে আপনার {{month}} মাসের মাসিক বেতন পরিশোধ করা হয়েছে।
 

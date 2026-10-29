@@ -1561,26 +1561,26 @@ const AdminSalary = () => {
     const canonical = [
       {
         key: 'teacher',
-        label: bn ? 'শিক্ষা বিভাগ (মাদরাসার সকল শিক্ষক ও উস্তাদবৃন্দ)' : 'Teaching Department (Teachers)',
-        shortLabel: bn ? 'শিক্ষা বিভাগ' : 'Teachers',
+        label: bn ? 'শিক্ষক প্যানেল (মাদরাসার সকল শিক্ষক ও উস্তাদবৃন্দ)' : 'Teachers Panel',
+        shortLabel: bn ? 'শিক্ষক' : 'Teachers',
         desc: bn ? 'মাদরাসার সকল শিক্ষক ও উস্তাদবৃন্দের জন্য বার্তা' : 'For all teachers and instructors',
       },
       {
         key: 'administrative',
-        label: bn ? 'প্রশাসন বিভাগ (মুহতামিম, প্রিন্সিপাল, পরিচালক)' : 'Administration Department',
-        shortLabel: bn ? 'প্রশাসন' : 'Admin',
+        label: bn ? 'প্রশাসনিক কর্মকর্তা (মুহতামিম, প্রিন্সিপাল, পরিচালক)' : 'Administrative Staff',
+        shortLabel: bn ? 'প্রশাসনিক কর্মকর্তা' : 'Admin Staff',
         desc: bn ? 'মুহতামিম, প্রিন্সিপাল, নাজিম ও প্রশাসনিক কর্মকর্তাদের জন্য' : 'For administrative officers',
       },
       {
         key: 'support',
-        label: bn ? 'অফিস বিভাগ (হিসাবরক্ষক ও অফিস সহকারী)' : 'Office Department',
-        shortLabel: bn ? 'অফিস/হিসাব' : 'Office',
-        desc: bn ? 'হিসাবরক্ষক, ক্যাশিয়ার, অফিস সহকারী ও কম্পিউটার অপারেটরদের জন্য' : 'For accounts and office staff',
+        label: bn ? 'সাপোর্ট স্টাফ (হিসাবরক্ষক, অফিস সহকারী, অপারেটর)' : 'Support Staff',
+        shortLabel: bn ? 'সাপোর্ট স্টাফ' : 'Support Staff',
+        desc: bn ? 'হিসাবরক্ষক, ক্যাশিয়ার, অফিস সহকারী ও কম্পিউটার অপারেটরদের জন্য' : 'For support staff',
       },
       {
         key: 'general',
-        label: bn ? 'সাধারণ বিভাগ (বাবুর্চি, নিরাপত্তা প্রহরী, খাদেম)' : 'General Support Staff',
-        shortLabel: bn ? 'সাধারণ স্টাফ' : 'General Staff',
+        label: bn ? 'সহায়ক ও সাধারণ কর্মচারী (বাবুর্চি, নিরাপত্তা প্রহরী, খাদেম)' : 'General Staff',
+        shortLabel: bn ? 'সাধারণ কর্মচারী' : 'General Staff',
         desc: bn ? 'বাবুর্চি, নিরাপত্তা প্রহরী, খাদেম ও সহায়ক কর্মীদের জন্য' : 'For support service staff',
       },
     ];
