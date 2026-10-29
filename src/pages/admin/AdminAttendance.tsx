@@ -357,46 +357,51 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
 
   const dynamicStaffCategories = useMemo(() => {
     const list: string[] = [];
+    // 1. Categories actively defined in DB staff_categories (Designations/Departments page)
     staffCategoriesData.forEach(c => {
       if (c.key && !list.includes(c.key)) list.push(c.key);
     });
+
+    // 2. Also include any category actively assigned to existing staff members
+    allStaffRaw.forEach((s: any) => {
+      const k = s.staff_category;
+      if (k && !list.includes(k) && !k.startsWith('__')) list.push(k);
+    });
+
+    // 3. Saved times keys (if any configured)
     if (savedCategoryTimes && typeof savedCategoryTimes === 'object') {
       Object.keys(savedCategoryTimes).forEach(k => {
         if (k && !list.includes(k) && !k.startsWith('__')) list.push(k);
       });
     }
-    // Canonical department ordering: Administrative, Teacher, Support, General, Kitchen
-    const defaults = ['administrative', 'teacher', 'teacher_hifz', 'teacher_nurani_kitab', 'support', 'general', 'chef', 'cook'];
-    defaults.forEach(d => {
-      if (!list.includes(d)) list.push(d);
-    });
+
+    // 4. Only if database has no categories at all, use standard fallback
+    if (list.length === 0) {
+      const defaults = ['administrative', 'teacher', 'support', 'general'];
+      defaults.forEach(d => list.push(d));
+    }
     return list;
-  }, [staffCategoriesData, savedCategoryTimes]);
+  }, [staffCategoriesData, allStaffRaw, savedCategoryTimes]);
 
   const categoryLabelMap: Record<string, { bn: string; en: string }> = useMemo(() => {
     const map: Record<string, { bn: string; en: string }> = {
       administrative: { bn: 'প্রশাসন বিভাগ', en: 'Administrative Department' },
       teacher: { bn: 'শিক্ষা বিভাগ', en: 'Education Department' },
+      teacher_hifz: { bn: 'হিফজ বিভাগ', en: 'Hifz Department' },
+      teacher_nurani_kitab: { bn: 'নূরানী ও কিতাব বিভাগ', en: 'Nurani & Kitab Department' },
       support: { bn: 'অফিস বিভাগ', en: 'Office Department' },
+      office_staff: { bn: 'অফিস স্টাফ', en: 'Office Staff' },
       general: { bn: 'সাধারণ / সহায়ক বিভাগ', en: 'General Department' },
+      service_staff: { bn: 'সহায়ক কর্মী', en: 'Service Staff' },
       cook: { bn: 'রান্না বিভাগ', en: 'Kitchen Department' },
       chef: { bn: 'রান্না বিভাগ', en: 'Kitchen Department' },
     };
-    // Override / extend with DB values, normalizing legacy designation names to clean Department names
+    // Direct dynamic override from DB staff_categories (Designations & Categories page)
     staffCategoriesData.forEach(c => {
-      let bnName = c.name_bn || c.name || c.key;
-      if (c.key === 'teacher' || bnName === 'শিক্ষক') {
-        bnName = 'শিক্ষা বিভাগ';
-      } else if (c.key === 'administrative' && (bnName === 'প্রশাসনিক কর্মকর্তা' || bnName === 'প্রশাসনিক')) {
-        bnName = 'প্রশাসন বিভাগ';
-      } else if (c.key === 'support' && (bnName === 'অফিস কর্মচারী' || bnName === 'সাপোর্ট স্টাফ')) {
-        bnName = 'অফিস বিভাগ';
-      } else if (c.key === 'general' && (bnName === 'সহায়ক কর্মী' || bnName === 'সহায়ক কর্মী')) {
-        bnName = 'সাধারণ / সহায়ক বিভাগ';
-      } else if ((c.key === 'cook' || c.key === 'chef') && (bnName === 'বাবুর্চি' || bnName === 'কুক')) {
-        bnName = 'রান্না বিভাগ';
-      }
-      map[c.key] = { bn: bnName, en: c.name || c.name_bn || c.key };
+      if (!c.key) return;
+      const bnName = c.name_bn?.trim() || c.name?.trim() || map[c.key]?.bn || c.key;
+      const enName = c.name?.trim() || c.name_bn?.trim() || map[c.key]?.en || c.key;
+      map[c.key] = { bn: bnName, en: enName };
     });
     return map;
   }, [staffCategoriesData]);
