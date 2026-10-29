@@ -424,6 +424,18 @@ const AdminDesignations = () => {
         const { error } = await supabase.from('staff_categories').insert(record);
         if (error) throw error;
       }
+
+      // Sync ID format config so generator matches this prefix & start range
+      if (record.id_prefix) {
+        await supabase.from('id_format_config').upsert({
+          entity_key: record.key,
+          label: record.name_bn || record.name,
+          prefix: record.id_prefix,
+          start_serial: record.id_start_range || 1001,
+          include_year: true,
+          reset_mode: 'yearly',
+        }, { onConflict: 'entity_key' });
+      }
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['staff_categories'] }); queryClient.invalidateQueries({ queryKey: ['staff-categories-for-shift'] }); queryClient.invalidateQueries({ queryKey: ['designations-all'] }); queryClient.invalidateQueries({ queryKey: ['designations-for-form-all'] }); toast.success(catEditItem ? (bn ? 'ডিপার্টমেন্ট আপডেট হয়েছে' : 'Department updated') : (bn ? 'ডিপার্টমেন্ট যোগ হয়েছে' : 'Department added')); setCatDialogOpen(false); resetCatForm(); },
     onError: (e: any) => toast.error(e.message || 'Error'),

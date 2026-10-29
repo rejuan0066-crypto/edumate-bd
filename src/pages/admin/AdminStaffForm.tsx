@@ -766,8 +766,14 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
         if (approveOnSave || isApprovalMode) {
           updatePayload.status = 'active';
         }
+        const prevPrefix = staffCategories.find(c => c.key === prevCategory)?.id_prefix;
+        const nextPrefix = staffCategories.find(c => c.key === nextCategory)?.id_prefix;
         if (prevCategory && nextCategory && prevCategory !== nextCategory) {
-          updatePayload.staff_id = null;
+          // Only clear staff_id if the ID prefix actually changed (e.g. from TCH to ADM).
+          // If both categories share the same prefix (e.g. TCH), preserve existing staff_id!
+          if (prevPrefix && nextPrefix && prevPrefix !== nextPrefix) {
+            updatePayload.staff_id = null;
+          }
         }
 
         // If staff_id has legacy format missing year (e.g. TCH-2017), normalize it to include year
