@@ -390,24 +390,7 @@ export function sortStaffByDepartment<T extends Record<string, any>>(
   }
 
   return [...preparedList].sort((a: any, b: any) => {
-    // 1. Staff Prefix Priority (ADM: 10, TCH: 20, OFF: 30, STF: 40, RES: 50, CH: 60)
-    const prioA = getStaffPrefixPriority(a, categories);
-    const prioB = getStaffPrefixPriority(b, categories);
-
-    if (prioA !== prioB) {
-      return prioA - prioB;
-    }
-
-    // 2. staff_id (natural numeric sort within the prefix: e.g. TCH-2026-2004 ... TCH-2026-2017)
-    const idA = String(a.staff_id || '').trim();
-    const idB = String(b.staff_id || '').trim();
-    if (idA && idB && idA !== idB) {
-      return idA.localeCompare(idB, undefined, { numeric: true, sensitivity: 'base' });
-    }
-    if (idA && !idB) return -1;
-    if (!idA && idB) return 1;
-
-    // 3. salary_order (tie-breaker if staff_id is missing or identical)
+    // 1. Explicit institutional serial (salary_order: 1..18) ALWAYS comes first if set!
     const hasOrderA = typeof a.salary_order === 'number' && !isNaN(a.salary_order) && a.salary_order > 0;
     const hasOrderB = typeof b.salary_order === 'number' && !isNaN(b.salary_order) && b.salary_order > 0;
 
@@ -416,6 +399,23 @@ export function sortStaffByDepartment<T extends Record<string, any>>(
     }
     if (hasOrderA && !hasOrderB) return -1;
     if (!hasOrderA && hasOrderB) return 1;
+
+    // 2. Staff Prefix Priority (ADM: 10, TCH: 20, OFF: 30, STF: 40, RES: 50, CH: 60)
+    const prioA = getStaffPrefixPriority(a, categories);
+    const prioB = getStaffPrefixPriority(b, categories);
+
+    if (prioA !== prioB) {
+      return prioA - prioB;
+    }
+
+    // 3. staff_id (natural numeric sort within the prefix)
+    const idA = String(a.staff_id || '').trim();
+    const idB = String(b.staff_id || '').trim();
+    if (idA && idB && idA !== idB) {
+      return idA.localeCompare(idB, undefined, { numeric: true, sensitivity: 'base' });
+    }
+    if (idA && !idB) return -1;
+    if (!idA && idB) return 1;
 
     // 4. Designation sort_order
     const desigA = (a.designation || '').toLowerCase().trim();
