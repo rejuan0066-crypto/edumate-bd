@@ -210,14 +210,12 @@ export function printSalarySlipHtml(
   const existingStyle = document.getElementById('salary-slip-print-standalone-css');
   if (existingStyle) existingStyle.remove();
 
-  // 2. Extract slip HTML body content and styles
+  // 2. Extract slip HTML body content
   let bodyContent = htmlContent;
   const bodyMatch = htmlContent.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
   if (bodyMatch) {
     bodyContent = bodyMatch[1];
   }
-  const styleMatches = Array.from(htmlContent.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi));
-  const extractedStyles = styleMatches.map(m => m[1]).join('\n');
 
   // 3. Create isolated DOM element directly on document.body
   const container = document.createElement('div');
@@ -239,7 +237,7 @@ export function printSalarySlipHtml(
     }
     @page {
       size: A4 portrait;
-      margin: 8mm 10mm;
+      margin: 6mm 8mm;
     }
     @media print {
       /* CRITICAL: Hide ALL background page content (admin UI, modals, 18 cards) */
@@ -266,10 +264,12 @@ export function printSalarySlipHtml(
       #salary-slip-print-standalone {
         display: block !important;
         visibility: visible !important;
-        position: static !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
-        margin: 0 auto !important;
+        margin: 0 !important;
         padding: 0 !important;
         background: #fff !important;
         box-sizing: border-box !important;
@@ -284,14 +284,14 @@ export function printSalarySlipHtml(
         width: 100% !important;
         max-width: 100% !important;
         margin: 0 auto !important;
-        padding: 0 !important;
+        padding: 8px 12px !important;
         box-sizing: border-box !important;
         page-break-after: avoid !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
       }
       #salary-slip-print-standalone .header {
-        padding: 14px 22px !important;
+        padding: 12px 18px !important;
         width: 100% !important;
         box-sizing: border-box !important;
       }
@@ -299,30 +299,70 @@ export function printSalarySlipHtml(
         display: flex !important;
         flex-direction: row !important;
         align-items: center !important;
-        gap: 16px !important;
+        gap: 14px !important;
       }
       #salary-slip-print-standalone .slip-tag {
         position: absolute !important;
-        right: 22px !important;
-        top: 14px !important;
+        right: 18px !important;
+        top: 12px !important;
         display: block !important;
         width: auto !important;
         text-align: right !important;
       }
+      #salary-slip-print-standalone .month-bar {
+        padding: 8px 18px !important;
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+      }
+      #salary-slip-print-standalone .body {
+        padding: 12px 18px !important;
+      }
       #salary-slip-print-standalone .info-grid {
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
-        margin-bottom: 10px !important;
+        margin-bottom: 8px !important;
         border: 1px solid #cbd5e1 !important;
       }
       #salary-slip-print-standalone .info-cell:nth-child(odd) {
         border-right: 1px solid #cbd5e1 !important;
       }
+      #salary-slip-print-standalone .info-cell {
+        padding: 6px 10px !important;
+        font-size: 12px !important;
+      }
+      #salary-slip-print-standalone .col {
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 8px !important;
+      }
+      #salary-slip-print-standalone .col-head {
+        padding: 6px 12px !important;
+        font-size: 12px !important;
+      }
+      #salary-slip-print-standalone .ln {
+        padding: 5px 12px !important;
+        font-size: 11.5px !important;
+      }
+      #salary-slip-print-standalone .net-box {
+        padding: 10px 14px !important;
+        margin-top: 6px !important;
+      }
+      #salary-slip-print-standalone .words {
+        padding: 6px 10px !important;
+        font-size: 11.5px !important;
+        margin-top: 6px !important;
+      }
       #salary-slip-print-standalone .signatures {
         display: grid !important;
         grid-template-columns: 1fr 1fr 1fr !important;
-        gap: 20px !important;
-        margin-top: 32px !important;
+        gap: 16px !important;
+        margin-top: 24px !important;
+        padding: 0 4px !important;
+      }
+      #salary-slip-print-standalone .sig-space {
+        height: 42px !important;
+        min-height: 42px !important;
       }
       #salary-slip-print-standalone .watermark {
         display: none !important;
@@ -331,17 +371,31 @@ export function printSalarySlipHtml(
       #salary-slip-print-standalone .print-actions-bar {
         display: none !important;
       }
-      ${extractedStyles}
+      #salary-slip-print-standalone .footer {
+        padding: 6px 16px !important;
+        margin-top: 12px !important;
+        font-size: 9.5px !important;
+      }
     }
   `;
 
   document.head.appendChild(style);
   document.body.appendChild(container);
 
+  const prevScrollX = window.scrollX || window.pageXOffset || 0;
+  const prevScrollY = window.scrollY || window.pageYOffset || 0;
+
+  // Crucial for iOS Safari: scroll to top so WebKit doesn't push the print canvas down
+  window.scrollTo(0, 0);
+  if (document.documentElement) document.documentElement.scrollTop = 0;
+  if (document.body) document.body.scrollTop = 0;
+
   const cleanup = () => {
     try { container.remove(); } catch {}
     try { style.remove(); } catch {}
     window.removeEventListener('afterprint', cleanup);
+    // Restore scroll position
+    window.scrollTo(prevScrollX, prevScrollY);
   };
   window.addEventListener('afterprint', cleanup);
 
@@ -357,10 +411,6 @@ export function printSalarySlipHtml(
   }, 120);
 }
 
-/**
- * Shares salary slip PDF directly to WhatsApp, Bluetooth printer apps, Mail, etc.
- * Falls back cleanly to PDF file download if Web Share API is unavailable.
- */
 export async function shareSlipPdf(
   htmlContent: string,
   filename: string = 'salary-slip.pdf',
