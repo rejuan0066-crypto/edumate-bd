@@ -178,211 +178,183 @@ export async function downloadSlipAsPdf(
  * Gives mobile and desktop users direct access to the pre-rendered vector PDF.
  */
 export async function viewSlipPdfInNewTab(htmlContent: string): Promise<void> {
-  // Pre-open window synchronously to prevent iOS Safari & mobile pop-up blockers from discarding it
-  let win: Window | null = null;
-  try {
-    win = window.open('about:blank', '_blank');
-    if (win && win.document) {
-      win.document.write('<div style="font-family:system-ui,-apple-system,sans-serif;padding:30px;text-align:center;color:#334155;"><h3 style="margin-bottom:8px;">📄 বেতন স্লিপ প্রস্তুত হচ্ছে…</h3><p style="color:#64748b;font-size:13px;">মোবাইল প্রিন্ট ও AirPrint এর জন্য অপেক্ষা করুন</p></div>');
-    }
-  } catch {
-    win = null;
-  }
+  const blob = await generateSlipPdfBlob(htmlContent);
+  const blobUrl = URL.createObjectURL(blob);
 
-  try {
-    const blob = await generateSlipPdfBlob(htmlContent);
-    const blobUrl = URL.createObjectURL(blob);
-    if (win && !win.closed) {
-      win.location.href = blobUrl;
-    } else {
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    }
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 180000);
-  } catch (err) {
-    if (win && !win.closed) {
-      try { win.close(); } catch {}
-    }
-    throw err;
-  }
+  const a = document.createElement('a');
+  a.href = blobUrl;
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 180000);
 }
 
 /**
- * Triggers native mobile (Android/iOS) and desktop printing for a salary slip.
- * Uses a self-contained Blob URL with auto-print & on-screen navigation buttons,
- * falling back to an in-app printable iframe for standalone PWA mode.
+ * Triggers native mobile (iOS AirPrint / Android) and desktop printing for a salary slip.
+ * Uses DOM print isolation so the browser prints ONLY the 1-page A4 salary slip,
+ * completely hiding the background admin dashboard and avoiding multi-page blank sheets.
  */
 export function printSalarySlipHtml(
   htmlContent: string,
   staffName: string = 'staff',
   customReturnUrl?: string,
 ): void {
-  const isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
-  if (isMobile) {
-    void viewSlipPdfInNewTab(htmlContent);
-    return;
-  }
-  let printableHtml = htmlContent;
-  const appReturnUrl = customReturnUrl || (typeof window !== 'undefined' ? window.location.href : '');
+  if (typeof window === 'undefined') return;
 
-  const floatingBar = `
-    <div class="print-actions-bar no-print" style="position:fixed;bottom:20px;left:0;right:0;width:fit-content;margin:0 auto;background:#0f172a;color:#fff;padding:8px 16px;border-radius:999px;box-shadow:0 12px 30px rgba(0,0,0,0.35);display:flex;align-items:center;gap:12px;z-index:99999;font-family:system-ui,-apple-system,sans-serif;">
-      <button type="button" onclick="window.print()" style="background:#059669;color:#fff;border:none;padding:8px 18px;border-radius:999px;font-weight:700;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
-        🖨️ প্রিন্ট করুন / Print
-      </button>
-      <button type="button" id="close-slip-btn" onclick="closeSalarySlipTab(event)" ontouchend="closeSalarySlipTab(event)" style="background:rgba(255,255,255,0.18);color:#fff;border:none;padding:8px 16px;border-radius:999px;font-weight:600;font-size:13px;cursor:pointer;touch-action:manipulation;">
-        ✕ বন্ধ করুন / Close
-      </button>
-    </div>
-    <style>
-      @media print {
-        .print-actions-bar, .no-print { display: none !important; position: absolute !important; width: 0 !important; height: 0 !important; overflow: hidden !important; }
+  // 1. Clean up any previous isolated print containers
+  const existing = document.getElementById('salary-slip-print-standalone');
+  if (existing) existing.remove();
+  const existingStyle = document.getElementById('salary-slip-print-standalone-css');
+  if (existingStyle) existingStyle.remove();
+
+  // 2. Extract slip HTML body content and styles
+  let bodyContent = htmlContent;
+  const bodyMatch = htmlContent.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  if (bodyMatch) {
+    bodyContent = bodyMatch[1];
+  }
+  const styleMatches = Array.from(htmlContent.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi));
+  const extractedStyles = styleMatches.map(m => m[1]).join('\n');
+
+  // 3. Create isolated DOM element directly on document.body
+  const container = document.createElement('div');
+  container.id = 'salary-slip-print-standalone';
+  container.innerHTML = bodyContent;
+
+  // 4. Create print isolation style
+  const style = document.createElement('style');
+  style.id = 'salary-slip-print-standalone-css';
+  style.textContent = `
+    @media screen {
+      #salary-slip-print-standalone {
+        display: none !important;
+        position: absolute !important;
+        left: -9999px !important;
+        top: -9999px !important;
+        visibility: hidden !important;
       }
-    </style>
+    }
+    @page {
+      size: A4 portrait;
+      margin: 8mm 10mm;
+    }
+    @media print {
+      /* CRITICAL: Hide ALL background page content (admin UI, modals, 18 cards) */
+      body > *:not(#salary-slip-print-standalone) {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        max-height: 0 !important;
+        overflow: hidden !important;
+        opacity: 0 !important;
+      }
+      html, body {
+        background: #fff !important;
+        color: #000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 100% !important;
+        overflow: visible !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      #salary-slip-print-standalone {
+        display: block !important;
+        visibility: visible !important;
+        position: static !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+        background: #fff !important;
+        box-sizing: border-box !important;
+        page-break-after: avoid !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      #salary-slip-print-standalone .slip {
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        border: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
+        page-break-after: avoid !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      #salary-slip-print-standalone .header {
+        padding: 14px 22px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+      }
+      #salary-slip-print-standalone .head-row {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 16px !important;
+      }
+      #salary-slip-print-standalone .slip-tag {
+        position: absolute !important;
+        right: 22px !important;
+        top: 14px !important;
+        display: block !important;
+        width: auto !important;
+        text-align: right !important;
+      }
+      #salary-slip-print-standalone .info-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        margin-bottom: 10px !important;
+        border: 1px solid #cbd5e1 !important;
+      }
+      #salary-slip-print-standalone .info-cell:nth-child(odd) {
+        border-right: 1px solid #cbd5e1 !important;
+      }
+      #salary-slip-print-standalone .signatures {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr 1fr !important;
+        gap: 20px !important;
+        margin-top: 32px !important;
+      }
+      #salary-slip-print-standalone .watermark {
+        display: none !important;
+      }
+      #salary-slip-print-standalone .no-print,
+      #salary-slip-print-standalone .print-actions-bar {
+        display: none !important;
+      }
+      ${extractedStyles}
+    }
   `;
 
-  const autoPrintScript = `
-    <script>
-      (function() {
-        var returnUrl = ${JSON.stringify(appReturnUrl)};
-        var isClosing = false;
-
-        window.closeSalarySlipTab = function(e) {
-          if (e && e.preventDefault) e.preventDefault();
-          if (isClosing) return;
-          isClosing = true;
-
-          var btn = document.getElementById('close-slip-btn');
-          if (btn) {
-            btn.style.opacity = '0.7';
-            btn.innerHTML = 'বন্ধ হচ্ছে…';
-          }
-
-          // ১. ব্রাউজারের উইন্ডো সরাসরি বন্ধ করার চেষ্টা (Desktop এবং অনুমোদিত ব্রাউজারে)
-          try {
-            if (window.opener && !window.opener.closed) {
-              try { window.opener.focus(); } catch(err) {}
-            }
-            window.close();
-          } catch(err) {}
-
-          try { self.close(); } catch(err) {}
-          try {
-            var w = window.open('', '_self');
-            if (w) w.close();
-          } catch(err) {}
-
-          // ২. মোবাইল ব্রাউজারে যদি window.close কাজ না করে (iOS Safari/Android Chrome নিরাপত্তা পলিসি):
-          setTimeout(function() {
-            // ১) সরাসরি অ্যাপের রিটার্ন লিঙ্কে রিডাইরেক্ট করে ফিরে যাও (যাতে নির্দিষ্ট মাস ও বছর বহাল থাকে)
-            if (returnUrl && returnUrl !== 'about:blank' && !returnUrl.startsWith('blob:')) {
-              try {
-                window.location.replace(returnUrl);
-                return;
-              } catch(err) {}
-            }
-            // ২) যদি opener সচল থাকে, ফোকাস করার চেষ্টা করো
-            if (window.opener && !window.opener.closed) {
-              try {
-                window.opener.focus();
-                return;
-              } catch(err) {}
-            }
-            // ৩) হিস্টোরিতে আগের পেজ থাকলে ফিরে যাও
-            if (window.history && window.history.length > 1) {
-              try {
-                window.history.back();
-                return;
-              } catch(err) {}
-            }
-            if (document.referrer && document.referrer !== window.location.href) {
-              try {
-                window.location.replace(document.referrer);
-                return;
-              } catch(err) {}
-            }
-            // শেষ উপায়: ইউজারকে মোবাইলের ট্যাব বন্ধের নির্দেশনা
-            alert('অনুগ্রহ করে মোবাইল ব্রাউজারের ট্যাব লিস্ট থেকে (✕) চেপে অ্যাপে ফিরে যান।');
-            isClosing = false;
-            if (btn) {
-              btn.style.opacity = '1';
-              btn.innerHTML = '✕ বন্ধ করুন / Close';
-            }
-          }, 150);
-        };
-
-        var printed = false;
-        function runPrint() {
-          if (printed) return;
-          printed = true;
-          try {
-            window.focus();
-            window.print();
-          } catch(e) {
-            console.error('Print trigger failed', e);
-          }
-        }
-        if (document.fonts && document.fonts.ready) {
-          document.fonts.ready.then(function() {
-            setTimeout(runPrint, 300);
-          }).catch(function() {
-            setTimeout(runPrint, 600);
-          });
-        } else {
-          setTimeout(runPrint, 600);
-        }
-      })();
-    </script>
-  `;
-
-  if (printableHtml.includes('</body>')) {
-    printableHtml = printableHtml.replace('</body>', `${floatingBar}${autoPrintScript}</body>`);
-  } else {
-    printableHtml += `${floatingBar}${autoPrintScript}`;
-  }
-
-  const blob = new Blob([printableHtml], { type: 'text/html;charset=utf-8' });
-  const blobUrl = URL.createObjectURL(blob);
-
-  // Try window.open first (standard for desktop, iOS Safari, Android Chrome)
-  let printWindow: Window | null = null;
-  try {
-    printWindow = window.open(blobUrl, '_blank');
-  } catch {
-    printWindow = null;
-  }
-
-  if (printWindow) {
-    try { printWindow.focus(); } catch {}
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
-    return;
-  }
-
-  // Fallback for standalone PWA / restricted popups: printable iframe
-  const iframe = document.createElement('iframe');
-  iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:none;opacity:0;pointer-events:none;z-index:-1;';
-  iframe.src = blobUrl;
-  document.body.appendChild(iframe);
+  document.head.appendChild(style);
+  document.body.appendChild(container);
 
   const cleanup = () => {
-    try { iframe.remove(); } catch {}
-    try { URL.revokeObjectURL(blobUrl); } catch {}
+    try { container.remove(); } catch {}
+    try { style.remove(); } catch {}
+    window.removeEventListener('afterprint', cleanup);
   };
+  window.addEventListener('afterprint', cleanup);
 
-  iframe.onload = () => {
+  // Trigger print after brief delay so fonts & DOM are ready
+  setTimeout(() => {
     try {
-      iframe.contentWindow?.focus();
-      iframe.contentWindow?.print();
-    } catch {
-      void downloadSlipAsPdf(htmlContent, `salary-slip-${staffName}.pdf`);
+      window.focus();
+      window.print();
+    } catch (e) {
+      console.error('window.print failed', e);
     }
-    setTimeout(cleanup, 120000);
-  };
+    setTimeout(cleanup, 4000);
+  }, 120);
 }
 
 /**

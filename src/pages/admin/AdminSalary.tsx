@@ -3687,7 +3687,7 @@ const AdminSalary = () => {
     const fname = `salary-slip-${(staffMember.name_en || staffMember.name_bn || 'staff').replace(/\s+/g, '_')}-${selectedYear}${selectedMonth}.pdf`;
 
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
-    <meta name="viewport" content="width=794">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${bn ? 'বেতন স্লিপ' : 'Salary Slip'} - ${staffMember.name_bn}</title>
     <link rel="preload" as="font" type="font/ttf" href="${fontHref}" crossorigin="anonymous">
     <style>
@@ -3722,28 +3722,38 @@ const AdminSalary = () => {
 
       /* Mobile In-App Preview Optimization - prevents squeezed layout & overlapping labels */
       @media screen and (max-width: 650px) {
-        body { padding: 8px !important; }
-        .slip { border-radius: 12px !important; }
-        .header { padding: 14px 16px !important; }
-        .head-row { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; }
+        body { padding: 6px !important; }
+        .slip { border-radius: 12px !important; width: 100% !important; max-width: 100% !important; }
+        .header { padding: 12px 14px !important; }
+        .head-row { flex-direction: row !important; align-items: center !important; gap: 10px !important; }
+        .logo-wrap { width: 48px !important; height: 48px !important; }
+        .inst-name { font-size: 16px !important; line-height: 1.3 !important; word-break: break-word !important; }
+        .inst-meta { font-size: 10.5px !important; word-break: break-word !important; }
         .slip-tag {
           position: static !important;
           display: flex !important;
           align-items: center !important;
           justify-content: space-between !important;
           width: 100% !important;
-          margin-bottom: 10px !important;
+          margin-bottom: 8px !important;
           text-align: left !important;
         }
-        .slip-tag .badge { font-size: 11px !important; }
-        .slip-tag .id { margin-top: 0 !important; font-size: 11px !important; }
-        .month-bar { padding: 10px 16px !important; flex-direction: column !important; align-items: flex-start !important; gap: 4px !important; font-size: 12px !important; }
-        .body { padding: 14px 16px !important; }
+        .slip-tag .badge { font-size: 10.5px !important; padding: 3px 10px !important; }
+        .slip-tag .id { margin-top: 0 !important; font-size: 10px !important; }
+        .month-bar { padding: 8px 14px !important; flex-direction: column !important; align-items: flex-start !important; gap: 4px !important; font-size: 11.5px !important; }
+        .month-bar .month { font-size: 13.5px !important; }
+        .body { padding: 10px 14px !important; }
         .info-grid { grid-template-columns: 1fr !important; }
         .info-cell:nth-child(odd) { border-right: none !important; }
-        .info-cell { padding: 8px 12px !important; }
-        .signatures { grid-template-columns: 1fr !important; gap: 24px !important; margin-top: 24px !important; }
-        .footer { padding: 10px 16px !important; }
+        .info-cell { padding: 6.5px 10px !important; font-size: 12px !important; }
+        .ln { padding: 7px 10px !important; font-size: 12px !important; }
+        .net-box { padding: 10px 14px !important; flex-wrap: wrap !important; gap: 6px !important; }
+        .net-box .lbl { font-size: 12px !important; }
+        .net-box .amt { font-size: 20px !important; }
+        .words { font-size: 11.5px !important; padding: 8px 10px !important; }
+        .signatures { grid-template-columns: 1fr !important; gap: 18px !important; margin-top: 20px !important; }
+        .sig-space { height: 40px !important; min-height: 40px !important; }
+        .footer { padding: 8px 12px !important; font-size: 10px !important; }
       }
       .columns,.single-col{display:block;margin-bottom:14px}
       .col{border:1px solid #cbd5e1;border-radius:12px;overflow:hidden}
@@ -4066,39 +4076,18 @@ const AdminSalary = () => {
     }
   };
 
-  // Triggers print: on desktop, prints the preview iframe directly. On mobile, opens the dedicated 1-page PDF view or AirPrint.
-  const handlePrintSlip = async () => {
+  // Triggers print: uses DOM print isolation so browser prints ONLY the 1-page A4 salary slip (desktop, iPhone AirPrint, Android).
+  const handlePrintSlip = () => {
     if (!slipModal) return;
-    const isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
-    if (isMobile) {
-      setSlipModalLoading('view');
-      try {
-        toast.info(bn ? 'মোবাইল প্রিন্টারের জন্য ১-পাতার স্লিপ খোলা হচ্ছে…' : 'Opening 1-page slip for mobile printer…');
-        await viewSlipPdfInNewTab(slipModal.html);
-      } catch (err) {
-        console.error('Mobile PDF view failed, downloading', err);
-        await downloadSlipAsPdf(slipModal.html, slipModal.filename);
-      } finally {
-        setSlipModalLoading(null);
-      }
-      return;
-    }
-
-    try {
-      const ifr = previewIframeRef.current;
-      if (ifr && ifr.contentWindow) {
-        ifr.contentWindow.focus();
-        ifr.contentWindow.print();
-        return;
-      }
-    } catch (err) {
-      console.warn('Direct iframe print failed, falling back to standalone print', err);
-    }
     const staffHash = slipModal.staff?.id ? `#staff-${slipModal.staff.id}` : '';
     const returnUrl = typeof window !== 'undefined'
       ? `${window.location.origin}${window.location.pathname}?year=${selectedYear}&month=${selectedMonth}${staffHash}`
       : undefined;
-    printSalarySlipHtml(slipModal.html, slipModal.staff?.name_en || slipModal.staff?.name_bn, returnUrl);
+    printSalarySlipHtml(
+      slipModal.html,
+      slipModal.staff?.name_bn || slipModal.staff?.name_en || 'staff',
+      returnUrl
+    );
   };
 
   // Helper: get month name from month_year string
@@ -8223,7 +8212,7 @@ const AdminSalary = () => {
             {/* Slip Interactive Preview Body */}
             <div className="flex-1 overflow-auto p-3 sm:p-5 bg-slate-100 dark:bg-slate-950 flex justify-center items-start min-h-[350px] max-h-[75vh]">
               {slipModal && (
-                <div className="w-full max-w-[820px] bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden flex flex-col items-center">
+                <div className="w-full max-w-[820px] bg-white rounded-xl shadow-lg border border-slate-200 overflow-x-auto flex flex-col items-center">
                   <iframe
                     ref={previewIframeRef}
                     srcDoc={slipModal.html}

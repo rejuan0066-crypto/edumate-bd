@@ -127,6 +127,11 @@ function buildPrintFrame(): {
   iframe.style.cssText = 'flex:1 1 auto;width:100%;height:100%;border:0;background:#fff';
   overlay.appendChild(iframe);
 
+  // Ensure @media print isolates the overlay and hides main app background
+  const printStyle = document.createElement('style');
+  printStyle.textContent = '@media print { body > *:not([data-pwa-print-overlay]) { display: none !important; } [data-pwa-print-overlay] { position: static !important; background: #fff !important; } [data-pwa-print-overlay] > div:first-child, [data-pwa-print-overlay] > button { display: none !important; } }';
+  overlay.appendChild(printStyle);
+
   document.body.appendChild(overlay);
 
   // Push history state so Android back button closes the overlay.
@@ -265,7 +270,10 @@ export function installPwaPrintAdapter() {
   if (typeof window === 'undefined') return;
   if ((window as any).__pwaPrintAdapterInstalled) return;
 
-  const shouldPatch = isStandalonePWA() || isMobile();
+  // ONLY patch standalone PWA mode (installed home screen apps).
+  // Standard mobile browsers (iOS Safari, Android Chrome) must NOT be patched
+  // because monkey-patching window.open breaks standard tabs and triggers blank iframe printing.
+  const shouldPatch = isStandalonePWA();
   if (!shouldPatch) return;
 
   (window as any).__pwaPrintAdapterInstalled = true;
