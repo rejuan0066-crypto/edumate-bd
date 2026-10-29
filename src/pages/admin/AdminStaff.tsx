@@ -175,10 +175,10 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
     })();
   }, [role]);
 
-  // Auto-deduplicate staff names and remove redundant ghost records
+  // Auto-deduplicate staff names, repair IDs and remove redundant ghost records
   useEffect(() => {
     if (!isAdminRole(role)) return;
-    runStaffDeduplicationSync().then((res) => {
+    runStaffDeduplicationSync(true).then((res) => {
       if (res.cleanedNamesCount > 0 || res.duplicateRowsHandled > 0) {
         queryClient.invalidateQueries({ queryKey: ['staff'] });
       }

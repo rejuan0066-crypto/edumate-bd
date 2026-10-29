@@ -18,7 +18,7 @@ export function normalizeStaffName(str: string | null | undefined): string {
   if (!str) return '';
   return str
     .replace(/[:ঃ\.,\-\(\)]/g, ' ')
-    .replace(/\b(মাওলানা|মুয়াল্লিম|মুআল্লিম|হাফেজ|হাফিজ|মাষ্টার|মাস্টার|জনাব|মোঃ|মো|মুহাদ্দিস|মুফতি)\b/g, '')
+    .replace(/(?:^|\s+)(মাওলানা|মুয়াল্লিম|মুআল্লিম|হাফেজ|হাফিজ|মাষ্টার|মাস্টার|জনাব|মোঃ|মো|মুহাদ্দিস|মুফতি)(?=\s|$)/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();

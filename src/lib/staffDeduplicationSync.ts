@@ -22,6 +22,9 @@ const KNOWN_STAFF_ORIGINAL_IDS: Record<string, string> = {
   'আরিফুল ইসলাম': 'TCH-2026-2016',
   'আব্দুল কাদির তানজীদ': 'TCH-2026-2017',
   'আব্দুল কাদির তানজিদ': 'TCH-2026-2017',
+  'তানজীদ': 'TCH-2026-2017',
+  'তানজিদ': 'TCH-2026-2017',
+  'আব্দুল কাদির': 'TCH-2026-2017',
   'আসাদুল রহমান': 'STF-2026-4001',
   'কুতুব উদ্দিন': 'OFF-2026-3001',
   'তেরা মিয়া': 'OFF-2026-3002',
@@ -61,7 +64,7 @@ export async function runStaffDeduplicationSync(force: boolean = false): Promise
   }
 
   try {
-    const sessionKey = 'edumate_staff_dedup_last_run_v4';
+    const sessionKey = 'edumate_staff_dedup_last_run_v6';
     const lastRun = sessionStorage.getItem(sessionKey);
     const now = Date.now();
     if (!force && lastRun && now - Number(lastRun) < 2 * 60 * 1000) {
