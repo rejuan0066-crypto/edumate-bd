@@ -290,6 +290,9 @@ const AdminSalary = () => {
   const [selectedDeptsForTemplate, setSelectedDeptsForTemplate] = useState<string[]>([]);
   const [applyToMultipleDepts, setApplyToMultipleDepts] = useState(false);
   const [templatesDraft, setTemplatesDraft] = useState<Record<string, string>>({});
+  const [manageDeptDialogOpen, setManageDeptDialogOpen] = useState(false);
+  const [deptSearchText, setDeptSearchText] = useState('');
+  const [deptFilterKey, setDeptFilterKey] = useState('all');
   const [expenseSyncModalOpen, setExpenseSyncModalOpen] = useState(false);
 
   // Pre-fetch default institution for instant synchronous salary slip printing
@@ -1566,30 +1569,144 @@ const AdminSalary = () => {
     { key: 'general_staff', label: bn ? 'সাধারণ স্টাফ (বাবুর্চি, গার্ড, পরিচ্ছন্নতা)' : 'General Support Staff', shortLabel: bn ? 'স্টাফ/সহায়ক' : 'Support', desc: bn ? 'বাবুর্চি, নিরাপত্তা প্রহরী ও পরিচ্ছন্নতাকর্মীদের জন্য' : 'For support staff' },
   ];
 
-  const resolveStaffDeptKey = (staffMember: any): string => {
+  const resolveStaffDeptKey = useCallback((staffMember: any): string => {
     if (!staffMember) return 'general';
-    const text = `${staffMember.department || ''} ${staffMember.designation || ''} ${staffMember.category || ''} ${staffMember.role || ''}`.toLowerCase();
+    // 1. Manual assignment from salary_whatsapp_settings (100% priority)
+    const waSettings = getSetting('salary_whatsapp_settings') || {};
+    const manualDept = waSettings?.staff_departments?.[staffMember.id];
+    if (manualDept && SALARY_DEPARTMENTS.some(d => d.key === manualDept)) {
+      return manualDept;
+    }
 
-    if (text.includes('হিফজ') || text.includes('হিফয') || text.includes('কোরআন') || text.includes('কুরআন') || text.includes('hifz')) {
+    // 2. Intelligent keyword resolution:
+    const desigName = (staffMember.designation || '').trim();
+    const desigBn = getDesignation(desigName) || '';
+    const dept = (staffMember.department || '').trim();
+    const staffCat = (staffMember.staff_category || staffMember.category || '').trim();
+    const role = (staffMember.role || '').trim();
+
+    const fullText = `${dept} ${desigName} ${desigBn} ${staffCat} ${role}`.toLowerCase();
+
+    // Hifz
+    if (
+      fullText.includes('হিফজ') ||
+      fullText.includes('হিফয') ||
+      fullText.includes('কোরআন') ||
+      fullText.includes('কুরআন') ||
+      fullText.includes('hifz') ||
+      fullText.includes('quran')
+    ) {
       return 'hifz';
     }
-    if (text.includes('নূরানী') || text.includes('নুরানী') || text.includes('নাজেরা') || text.includes('নাযেরা') || text.includes('noorani')) {
+
+    // Noorani / Nazera
+    if (
+      fullText.includes('নূরানী') ||
+      fullText.includes('নুরানী') ||
+      fullText.includes('নাজেরা') ||
+      fullText.includes('নাযেরা') ||
+      fullText.includes('noorani') ||
+      fullText.includes('nazera')
+    ) {
       return 'noorani';
     }
-    if (text.includes('মুহতামিম') || text.includes('নাজিম') || text.includes('প্রিন্সিপাল') || text.includes('অধ্যক্ষ') || text.includes('পরিচালক') || text.includes('admin') || staffMember.category === 'administrative') {
+
+    // Administration
+    if (
+      fullText.includes('মুহতামিম') ||
+      fullText.includes('নাজিম') ||
+      fullText.includes('প্রিন্সিপাল') ||
+      fullText.includes('অধ্যক্ষ') ||
+      fullText.includes('উপাধ্যক্ষ') ||
+      fullText.includes('পরিচালক') ||
+      fullText.includes('superintendent') ||
+      fullText.includes('principal') ||
+      fullText.includes('admin') ||
+      staffCat === 'administrative' ||
+      staffCat === 'director'
+    ) {
       return 'administrative';
     }
-    if (text.includes('হিসাব') || text.includes('অফিস') || text.includes('কম্পিউটার') || text.includes('সহকারী') || text.includes('clerk') || text.includes('account') || staffMember.category === 'support') {
-      return 'support';
-    }
-    if (text.includes('বাবুর্চি') || text.includes('বাবুর্চী') || text.includes('কুক') || text.includes('গার্ড') || text.includes('নিরাপত্তা') || text.includes('খাদেম') || text.includes('পরিচ্ছন্ন') || staffMember.category === 'general') {
+
+    // General support staff (Cook, Guard, Peon, Cleaner, Mali, Driver)
+    if (
+      fullText.includes('বাবুর্চি') ||
+      fullText.includes('বাবুর্চী') ||
+      fullText.includes('কুক') ||
+      fullText.includes('cook') ||
+      fullText.includes('chef') ||
+      fullText.includes('রান্না') ||
+      fullText.includes('গার্ড') ||
+      fullText.includes('guard') ||
+      fullText.includes('দারোয়ান') ||
+      fullText.includes('নিরাপত্তা') ||
+      fullText.includes('security') ||
+      fullText.includes('পিয়ন') ||
+      fullText.includes('peon') ||
+      fullText.includes('খাদেম') ||
+      fullText.includes('পরিচ্ছন্ন') ||
+      fullText.includes('cleaner') ||
+      fullText.includes('ড্রাইভার') ||
+      fullText.includes('driver') ||
+      fullText.includes('মালি') ||
+      staffCat === 'chef' ||
+      staffCat === 'general'
+    ) {
       return 'general_staff';
     }
-    if (text.includes('কিতাব') || text.includes('মুহাদ্দিস') || text.includes('মুফতি') || text.includes('মুফতী') || text.includes('মাওলানা') || text.includes('উস্তাদ') || text.includes('শিক্ষক') || staffMember.category === 'teacher') {
+
+    // Office & Accounts (Support)
+    const isTeacher =
+      fullText.includes('শিক্ষক') ||
+      fullText.includes('teacher') ||
+      fullText.includes('মুআল্লিম') ||
+      fullText.includes('মুয়াল্লিম') ||
+      fullText.includes('উস্তাদ') ||
+      staffCat === 'teacher';
+
+    if (!isTeacher && (fullText.includes('সহকারী') || fullText.includes('assistant'))) {
+      return 'support';
+    }
+    if (
+      fullText.includes('হিসাব') ||
+      fullText.includes('account') ||
+      fullText.includes('ক্যাশ') ||
+      fullText.includes('cashier') ||
+      fullText.includes('অফিস') ||
+      fullText.includes('office') ||
+      fullText.includes('কম্পিউটার') ||
+      fullText.includes('computer') ||
+      fullText.includes('ডাটা') ||
+      fullText.includes('data') ||
+      fullText.includes('কেরানি') ||
+      fullText.includes('clerk') ||
+      fullText.includes('লাইব্রেরি') ||
+      fullText.includes('librarian') ||
+      staffCat === 'support'
+    ) {
+      return 'support';
+    }
+
+    // Kitab / Teaching (If teacher and not Hifz / Noorani)
+    if (
+      fullText.includes('কিতাব') ||
+      fullText.includes('kitab') ||
+      fullText.includes('মুহাদ্দিস') ||
+      fullText.includes('মুফতি') ||
+      fullText.includes('মুফতী') ||
+      fullText.includes('মাওলানা') ||
+      fullText.includes('উস্তাদ') ||
+      fullText.includes('শিক্ষক') ||
+      fullText.includes('teacher') ||
+      fullText.includes('arabic') ||
+      fullText.includes('আরবি') ||
+      staffCat === 'teacher'
+    ) {
       return 'kitab';
     }
+
     return 'general';
-  };
+  }, [settings, designationsList, bn]);
 
   // Group staff by resolved department for notification templates & inspection
   const staffByDept = useMemo(() => {
@@ -1611,7 +1728,7 @@ const AdminSalary = () => {
       }
     });
     return groups;
-  }, [staff]);
+  }, [staff, resolveStaffDeptKey]);
 
   // Days in month calculation basis helper:
   // Supports global default and per-month overrides.
@@ -6282,16 +6399,28 @@ const AdminSalary = () => {
                                     : `Staff belonging to this department (${deptStaffList.length}):`}
                                 </span>
                               </div>
-                              <span className="text-[10px] text-muted-foreground">
-                                {bn ? '💡 পদবি/বিভাগ অনুযায়ী স্বয়ংক্রিয়ভাবে নির্ধারিত' : '💡 Mapped by designation/department'}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setDeptFilterKey(editingTemplateDept);
+                                    setManageDeptDialogOpen(true);
+                                  }}
+                                  className="h-6 text-[11px] px-2 border-emerald-600/50 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 font-semibold"
+                                >
+                                  <Settings2 className="h-3 w-3 mr-1" />
+                                  {bn ? 'সকল কর্মীর বিভাগ বণ্টন করুন' : 'Assign Staff Departments'}
+                                </Button>
+                              </div>
                             </div>
 
                             {deptStaffList.length === 0 ? (
                               <p className="text-xs text-muted-foreground italic py-0.5">
                                 {bn
-                                  ? 'এই বিভাগে বর্তমানে কোনো কর্মী তালিকাভুক্ত নেই (স্টাফ তালিকায় পদবি বা বিভাগ মিললে এখানে দেখাবে)।'
-                                  : 'No staff currently mapped to this department.'}
+                                  ? 'এই বিভাগে বর্তমানে কোনো কর্মী তালিকাভুক্ত নেই। উপরে "সকল কর্মীর বিভাগ বণ্টন করুন" বাটনে ক্লিক করে যে কাউকে এই বিভাগে যুক্ত করতে পারেন।'
+                                  : 'No staff currently mapped to this department. Click "Assign Staff Departments" to add staff here.'}
                               </p>
                             ) : (
                               <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
@@ -6313,6 +6442,36 @@ const AdminSalary = () => {
                                         📱 {st.phone}
                                       </span>
                                     )}
+                                    <Select
+                                      value={resolveStaffDeptKey(st)}
+                                      onValueChange={(newDept) => {
+                                        const curWa = getSetting('salary_whatsapp_settings') || {};
+                                        const curStaffDepts = curWa.staff_departments || {};
+                                        saveSettingMutation.mutate({
+                                          key: 'salary_whatsapp_settings',
+                                          value: {
+                                            ...curWa,
+                                            staff_departments: {
+                                              ...curStaffDepts,
+                                              [st.id]: newDept,
+                                            },
+                                          },
+                                        });
+                                        const targetDept = SALARY_DEPARTMENTS.find(d => d.key === newDept);
+                                        toast.success(bn ? `${st.name_bn || st.name_en}-কে "${targetDept?.shortLabel}" বিভাগে নেওয়া হয়েছে` : 'Department updated');
+                                      }}
+                                    >
+                                      <SelectTrigger className="h-5 text-[10px] px-1.5 py-0 border-emerald-300/80 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 font-semibold w-auto min-w-[70px] gap-1 cursor-pointer">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {SALARY_DEPARTMENTS.map(d => (
+                                          <SelectItem key={d.key} value={d.key} className="text-xs">
+                                            {d.shortLabel}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
                                   </div>
                                 ))}
                               </div>
@@ -6519,6 +6678,212 @@ const AdminSalary = () => {
                 })()}
               </TabsContent>
             </Tabs>
+          </DialogContent>
+        </Dialog>
+
+        {/* Manage All Staff Departments Dialog */}
+        <Dialog open={manageDeptDialogOpen} onOpenChange={setManageDeptDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[88vh] flex flex-col p-4 sm:p-6">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Users className="h-5 w-5 text-emerald-600" />
+                {bn ? 'কর্মী ও শিক্ষকদের নোটিফিকেশন বিভাগ বণ্টন' : 'Assign Notification Departments to Staff'}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground">
+                {bn
+                  ? 'মাদরাসার যে শিক্ষক বা কর্মী যে বিভাগে দায়িত্ব পালন করেন, তাকে সেই বিভাগে নির্বাচন করে দিন। বেতন প্রদানের সময় সেই বিভাগের নোটিশ স্বয়ংক্রিয়ভাবে তার WhatsApp-এ যাবে।'
+                  : 'Assign each staff member to their specific department. WhatsApp notifications will use that department’s template.'}
+              </DialogDescription>
+            </DialogHeader>
+
+            {/* Search and Dept Filter Pills */}
+            <div className="space-y-2 pt-2 border-t">
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder={bn ? 'নাম, পদবি বা ফোন দিয়ে খুঁজুন...' : 'Search by name, designation, phone...'}
+                    value={deptSearchText}
+                    onChange={(e) => setDeptSearchText(e.target.value)}
+                    className="h-8 pl-8 text-xs bg-muted/30"
+                  />
+                </div>
+                {deptSearchText && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDeptSearchText('')}
+                    className="h-8 text-xs px-2"
+                  >
+                    {bn ? 'মুছুন' : 'Clear'}
+                  </Button>
+                )}
+              </div>
+
+              {/* Filter Tabs */}
+              <div className="flex flex-wrap gap-1 overflow-x-auto pb-1">
+                <button
+                  type="button"
+                  onClick={() => setDeptFilterKey('all')}
+                  className={`px-2 py-1 rounded-md text-[11px] font-medium border transition-colors ${
+                    deptFilterKey === 'all'
+                      ? 'bg-emerald-600 text-white border-emerald-600 font-semibold'
+                      : 'bg-background hover:bg-muted text-foreground border-border/70'
+                  }`}
+                >
+                  {bn ? 'সকল' : 'All'} ({bn ? toBnDigits(staff.length) : staff.length})
+                </button>
+                {SALARY_DEPARTMENTS.map((d) => {
+                  const c = staffByDept[d.key]?.length || 0;
+                  return (
+                    <button
+                      key={d.key}
+                      type="button"
+                      onClick={() => setDeptFilterKey(d.key)}
+                      className={`px-2 py-1 rounded-md text-[11px] font-medium border transition-colors ${
+                        deptFilterKey === d.key
+                          ? 'bg-emerald-600 text-white border-emerald-600 font-semibold'
+                          : 'bg-background hover:bg-muted text-foreground border-border/70'
+                      }`}
+                    >
+                      {d.shortLabel} ({bn ? toBnDigits(c) : c})
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Staff List Table */}
+            <div className="flex-1 overflow-y-auto border rounded-xl divide-y bg-background min-h-[220px] max-h-[50vh]">
+              {(() => {
+                const q = deptSearchText.trim().toLowerCase();
+                const filtered = (staff || []).filter((s: any) => {
+                  const currentDept = resolveStaffDeptKey(s);
+                  if (deptFilterKey !== 'all' && currentDept !== deptFilterKey) return false;
+                  if (!q) return true;
+                  const nameBn = (s.name_bn || '').toLowerCase();
+                  const nameEn = (s.name_en || '').toLowerCase();
+                  const desig = (s.designation || '').toLowerCase();
+                  const desigBn = (getDesignation(s.designation) || '').toLowerCase();
+                  const phone = (s.phone || '').toLowerCase();
+                  return nameBn.includes(q) || nameEn.includes(q) || desig.includes(q) || desigBn.includes(q) || phone.includes(q);
+                });
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className="p-6 text-center text-xs text-muted-foreground">
+                      {bn ? 'কোনো কর্মী পাওয়া যায়নি।' : 'No staff found.'}
+                    </div>
+                  );
+                }
+
+                const curWa = getSetting('salary_whatsapp_settings') || {};
+                const manualMap = curWa.staff_departments || {};
+
+                return filtered.map((s: any, idx: number) => {
+                  const currentDeptKey = resolveStaffDeptKey(s);
+                  const isManuallyOverridden = !!manualMap[s.id];
+
+                  return (
+                    <div
+                      key={s.id}
+                      className="p-2.5 flex items-center justify-between gap-3 hover:bg-muted/40 transition-colors"
+                    >
+                      <div className="min-w-0 flex items-center gap-2.5">
+                        <span className="text-[11px] text-muted-foreground w-5 text-right font-mono shrink-0">
+                          {bn ? toBnDigits(idx + 1) : idx + 1}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-foreground truncate">
+                            {bn ? (s.name_bn || s.name_en) : (s.name_en || s.name_bn)}
+                          </p>
+                          <div className="flex items-center gap-2 text-[10px] text-muted-foreground flex-wrap">
+                            <span>{getDesignation(s.designation)}</span>
+                            {s.phone && <span className="font-mono">📱 {s.phone}</span>}
+                            {isManuallyOverridden && (
+                              <span className="text-[9px] px-1 py-0.2 bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 rounded font-medium">
+                                {bn ? 'ম্যানুয়াল' : 'Manual'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Select
+                          value={currentDeptKey}
+                          onValueChange={(newDept) => {
+                            const updatedStaffDepts = {
+                              ...(curWa.staff_departments || {}),
+                              [s.id]: newDept,
+                            };
+                            saveSettingMutation.mutate({
+                              key: 'salary_whatsapp_settings',
+                              value: {
+                                ...curWa,
+                                staff_departments: updatedStaffDepts,
+                              },
+                            });
+                            const tDept = SALARY_DEPARTMENTS.find(d => d.key === newDept);
+                            toast.success(bn ? `${s.name_bn || s.name_en} ➔ "${tDept?.shortLabel}"` : 'Department changed');
+                          }}
+                        >
+                          <SelectTrigger className="h-7 text-xs font-medium bg-muted/40 border-border/80 min-w-[125px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {SALARY_DEPARTMENTS.map((d) => (
+                              <SelectItem key={d.key} value={d.key} className="text-xs">
+                                {d.label.split('(')[0].trim()}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        {isManuallyOverridden && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-[10px] px-1.5 text-muted-foreground hover:text-foreground"
+                            title={bn ? 'স্বয়ংক্রিয় ডিফল্টে ফেরত যান' : 'Reset to auto-detect'}
+                            onClick={() => {
+                              const updatedStaffDepts = { ...(curWa.staff_departments || {}) };
+                              delete updatedStaffDepts[s.id];
+                              saveSettingMutation.mutate({
+                                key: 'salary_whatsapp_settings',
+                                value: {
+                                  ...curWa,
+                                  staff_departments: updatedStaffDepts,
+                                },
+                              });
+                              toast.info(bn ? 'স্বয়ংক্রিয় ডিফল্টে রিসেট করা হয়েছে' : 'Reset to auto');
+                            }}
+                          >
+                            <RotateCcw className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+
+            <DialogFooter className="pt-2 flex items-center justify-between sm:justify-between border-t">
+              <span className="text-[11px] text-muted-foreground">
+                {bn ? '💡 পরিবর্তন সাথে সাথে সেভ হয়ে যায়' : '💡 Changes save instantly'}
+              </span>
+              <Button
+                type="button"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 text-xs"
+                onClick={() => setManageDeptDialogOpen(false)}
+              >
+                <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                {bn ? 'সম্পন্ন' : 'Done'}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
 
