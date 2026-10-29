@@ -13,7 +13,7 @@ import { Plus, Pencil, Trash2, Loader2, Search, Tag, FolderOpen, Upload, Downloa
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useState, useRef } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { checkBanglaDesignation } from '@/lib/banglaDesignationSpellCheck';
 import { validateDesignationCsv, type ImportSummary } from '@/lib/bulkDesignationImport';
