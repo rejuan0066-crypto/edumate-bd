@@ -5444,7 +5444,7 @@ const AdminSalary = () => {
                                 )}
                                 {item.primaryConfig ? (
                                   <>
-                                    {canEditItem && rec.status !== 'paid' && (
+                                    {canEditItem && (
                                     <Button 
                                       size="icon" 
                                       variant="ghost" 
