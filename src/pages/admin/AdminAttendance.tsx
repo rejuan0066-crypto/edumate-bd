@@ -28,7 +28,7 @@ import {
   CalendarDays, Users, UserCog, Search, Check, X, Clock,
   CalendarOff, Save, Settings2, Plus, Trash2, Edit2, Lock,
   CheckCircle2, XCircle, AlertCircle, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Home, Sun, Sunset, Moon, Utensils, Coffee,
-  Download, Printer, RotateCcw, Layers, QrCode, Send, Fingerprint, UserCheck, History, Sparkles, Loader2
+  Download, Printer, RotateCcw, Layers, QrCode, Send, Fingerprint, UserCheck, History, Sparkles, Loader2, Building2
 } from 'lucide-react';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { useAuth } from '@/hooks/useAuth';
@@ -309,6 +309,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   }
   const [deptShiftConfigs, setDeptShiftConfigs] = useState<Record<string, DeptShiftConfig>>({});
   const [savingCatKey, setSavingCatKey] = useState<string | null>(null);
+  const [selectedDeptTab, setSelectedDeptTab] = useState<string>('all');
   const [specialShiftDialogOpen, setSpecialShiftDialogOpen] = useState(false);
 
   // Dynamic staff categories from staff_categories table (synced with Designations page)
@@ -2535,308 +2536,393 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
               {/* Category-wise Fulltime Shift Times */}
               {entityType === 'staff' && (settingsSubTab === 'all' || settingsSubTab === 'fulltime') && (
 
-              <div className="border rounded-lg p-3 bg-muted/20 space-y-3">
-                <Label className="font-semibold flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-primary" />
-                  {bn ? 'ডিপার্টমেন্ট অনুযায়ী ফুল টাইম শিফট' : 'Fulltime Shift by Department'}
-                </Label>
-                {dynamicStaffCategories
-                  .filter(catKey => !['director', 'committee_member'].includes(catKey))
-                  .map(catKey => ({ key: catKey, label: getCategoryLabel(catKey) })).map(cat => {
-                    const cfg = getDeptConfig(cat.key);
-                    return (
-                    <div key={cat.key} className="rounded-xl border border-border/40 bg-background/60 p-3 space-y-2.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                          <p className="text-xs font-bold text-foreground truncate">{cat.label}</p>
-                        </div>
+              <div className="rounded-2xl border border-border/80 bg-muted/10 p-4 sm:p-5 space-y-5">
+                {/* Header & Department Navigation */}
+                <div className="space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-border/60 pb-3">
+                    <div>
+                      <Label className="text-base font-bold flex items-center gap-2 text-foreground">
+                        <Clock className="h-5 w-5 text-primary" />
+                        {bn ? 'ডিপার্টমেন্ট অনুযায়ী ফুল টাইম শিফট ও সেশন' : 'Fulltime Shift & Session by Department'}
+                      </Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {bn
+                          ? 'প্রতিটি ডিপার্টমেন্টের জন্য আলাদা নিয়মিত কাজের সময়, সেশনের মেয়াদ ও বিশেষ বারের সময়সূচি নির্ধারণ করুন।'
+                          : 'Set custom work hours, validity period, and special day schedules for each department.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Department Filter Tabs (Pills) */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                        {bn ? 'ডিপার্টমেন্ট নির্বাচন করুন:' : 'Select Department:'}
+                      </span>
+                      {selectedDeptTab !== 'all' && (
                         <button
                           type="button"
-                          title={bn ? 'এই ক্যাটেগরির সবার ব্যক্তিগত ওভাররাইড মুছে দিন (ক্যাটেগরি টাইম প্রযোজ্য হবে)' : 'Clear per-staff override for this category (category time will apply)'}
-                          className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 transition font-medium whitespace-nowrap"
-                          onClick={async () => {
-                            const ok = await confirm({
-                              title: bn ? 'ব্যক্তিগত ওভাররাইড রিসেট?' : 'Reset personal overrides?',
-                              description: bn
-                                ? `${cat.label} ক্যাটেগরির সব স্টাফের নিজস্ব ডিউটি টাইম মুছে যাবে এবং ক্যাটেগরি টাইম প্রযোজ্য হবে।`
-                                : `All personal duty times for ${cat.label} will be cleared and the category time will apply.`,
-                              variant: 'warning',
-                            });
-                            if (!ok) return;
-                            const { error, count } = await supabase
-                              .from('staff')
-                              .update({ duty_start_time: null, duty_end_time: null, updated_at: new Date().toISOString() }, { count: 'exact' })
-                              .eq('staff_category', cat.key);
-                            if (error) { toast.error(error.message); return; }
-                            toast.success(bn ? `${count ?? 0} জনের ওভাররাইড মুছে দেওয়া হয়েছে` : `Cleared override for ${count ?? 0} staff`);
-                            queryClient.invalidateQueries({ queryKey: ['attendance'] });
-                            queryClient.invalidateQueries({ queryKey: ['staff'] });
-                          }}
+                          onClick={() => setSelectedDeptTab('all')}
+                          className="text-[11px] text-primary hover:underline font-medium cursor-pointer"
                         >
-                          {bn ? 'ওভাররাইড রিসেট' : 'Reset overrides'}
+                          {bn ? 'সবগুলো একসাথে দেখুন' : 'View all together'}
                         </button>
-                      </div>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={selectedDeptTab === 'all' ? 'default' : 'outline'}
+                        className={`h-8 px-3 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                          selectedDeptTab === 'all'
+                            ? 'bg-primary text-primary-foreground shadow-xs'
+                            : 'bg-background hover:bg-muted text-muted-foreground border-border/60'
+                        }`}
+                        onClick={() => setSelectedDeptTab('all')}
+                      >
+                        <Layers className="h-3.5 w-3.5 mr-1" />
+                        {bn ? 'সকল ডিপার্টমেন্ট' : 'All Departments'}
+                      </Button>
 
-                      {/* Time Pickers */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label className="text-[10px] text-muted-foreground">{bn ? 'শুরু' : 'Start'}</Label>
-                          <TimePicker
-                            className="h-8 text-sm"
-                            displayFormat={timeFormat}
-                            value={cfg.start}
-                            onChange={v => updateDeptConfig(cat.key, { start: v })}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-[10px] text-muted-foreground">{bn ? 'শেষ' : 'End'}</Label>
-                          <TimePicker
-                            className="h-8 text-sm"
-                            displayFormat={timeFormat}
-                            value={cfg.end}
-                            onChange={v => updateDeptConfig(cat.key, { end: v })}
-                          />
-                        </div>
-                      </div>
+                      {dynamicStaffCategories
+                        .filter(catKey => !['director', 'committee_member'].includes(catKey))
+                        .map(catKey => {
+                          const label = getCategoryLabel(catKey);
+                          const isSelected = selectedDeptTab === catKey;
+                          return (
+                            <Button
+                              key={catKey}
+                              type="button"
+                              size="sm"
+                              variant={isSelected ? 'default' : 'outline'}
+                              className={`h-8 px-3 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-primary text-primary-foreground shadow-xs'
+                                  : 'bg-background hover:bg-muted text-foreground border-border/60'
+                              }`}
+                              onClick={() => setSelectedDeptTab(catKey)}
+                            >
+                              <Building2 className="h-3.5 w-3.5 mr-1 text-primary/80" />
+                              {label}
+                            </Button>
+                          );
+                        })}
+                    </div>
+                  </div>
+                </div>
 
-                      {/* Enhanced Department Session & Date Range */}
-                      <div className="rounded-xl border border-primary/20 bg-primary/[0.03] dark:bg-primary/[0.06] p-3 space-y-2.5">
-                        <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-primary/10 pb-2">
-                          <div className="flex items-center gap-1.5">
-                            <CalendarDays className="w-4 h-4 text-primary" />
-                            <span className="font-bold text-foreground text-xs">
-                              {bn ? 'কার্যকর সেশন ও মেয়াদকাল' : 'Effective Session & Period'}
-                            </span>
-                          </div>
-                          <Badge
-                            variant="outline"
-                            className={`text-[10px] px-2 py-0.5 font-semibold ${
-                              cfg.isOngoing
-                                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
-                                : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30'
-                            }`}
-                          >
-                            {cfg.isOngoing
-                              ? (bn ? '🟢 স্থায়ী / অনির্দিষ্টকাল চলমান' : '🟢 Permanent / Ongoing')
-                              : (bn ? '⏳ নির্দিষ্ট মেয়াদের সেশন' : '⏳ Fixed-term Session')}
-                          </Badge>
-                        </div>
-
-                        {/* Session Mode Selector: Ongoing vs Fixed Date Range */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <label
-                            className={`flex items-start gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
-                              cfg.isOngoing
-                                ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-500/40 text-emerald-900 dark:text-emerald-200 shadow-2xs'
-                                : 'bg-background hover:bg-muted/40 border-border/60 text-muted-foreground'
-                            }`}
-                          >
-                            <input
-                              type="radio"
-                              name={`session_mode_${cat.key}`}
-                              checked={cfg.isOngoing}
-                              onChange={() => updateDeptConfig(cat.key, { isOngoing: true, effectiveTo: '' })}
-                              className="mt-0.5 cursor-pointer text-emerald-600 focus:ring-emerald-500"
-                            />
-                            <div>
-                              <span className="font-semibold block">{bn ? 'স্থায়ী সময়সূচি (চলমান)' : 'Permanent (Ongoing)'}</span>
-                              <span className="text-[10px] text-muted-foreground block leading-tight">
-                                {bn ? 'কোনো সমাপ্তি তারিখ নেই, নতুন পরিবর্তন না করা পর্যন্ত স্থায়ীভাবে চলবে।' : 'No end date, active indefinitely.'}
-                              </span>
+                {/* Render Department Cards based on selectedDeptTab */}
+                {dynamicStaffCategories
+                  .filter(catKey => !['director', 'committee_member'].includes(catKey))
+                  .filter(catKey => selectedDeptTab === 'all' || selectedDeptTab === catKey)
+                  .map(catKey => ({ key: catKey, label: getCategoryLabel(catKey) }))
+                  .map(cat => {
+                    const cfg = getDeptConfig(cat.key);
+                    return (
+                      <div
+                        key={cat.key}
+                        className="rounded-xl border-2 border-border/80 bg-card p-4 sm:p-5 shadow-xs space-y-4"
+                      >
+                        {/* Department Card Header */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                              <Building2 className="h-4 w-4 text-primary" />
                             </div>
-                          </label>
-
-                          <label
-                            className={`flex items-start gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
-                              !cfg.isOngoing
-                                ? 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-500/40 text-amber-900 dark:text-amber-200 shadow-2xs'
-                                : 'bg-background hover:bg-muted/40 border-border/60 text-muted-foreground'
-                            }`}
-                          >
-                            <input
-                              type="radio"
-                              name={`session_mode_${cat.key}`}
-                              checked={!cfg.isOngoing}
-                              onChange={() => updateDeptConfig(cat.key, { isOngoing: false })}
-                              className="mt-0.5 cursor-pointer text-amber-600 focus:ring-amber-500"
-                            />
                             <div>
-                              <span className="font-semibold block">{bn ? 'নির্দিষ্ট সেশন / মেয়াদভিত্তিক' : 'Fixed Session / Date Range'}</span>
-                              <span className="text-[10px] text-muted-foreground block leading-tight">
-                                {bn ? 'গ্রীষ্মকালীন, শীতকালীন বা নির্দিষ্ট শিক্ষাবর্ষের সেশন।' : 'Seasonal or specific academic session.'}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-sm font-bold text-foreground">{cat.label}</h3>
+                                <Badge
+                                  variant="outline"
+                                  className={`text-[10px] px-2 py-0.2 font-semibold ${
+                                    cfg.isOngoing
+                                      ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
+                                      : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30'
+                                  }`}
+                                >
+                                  {cfg.isOngoing
+                                    ? (bn ? '🟢 স্থায়ী সময়সূচি' : '🟢 Permanent')
+                                    : (bn ? '⏳ নির্দিষ্ট মেয়াদী সেশন' : '⏳ Fixed Session')}
+                                </Badge>
+                              </div>
+                              <p className="text-[11px] text-muted-foreground">
+                                {bn ? 'এই ডিপার্টমেন্টের স্টাফদের ডিউটি ও হাজিরা হিসাবের নিয়ম' : 'Duty & attendance rules for this department'}
+                              </p>
                             </div>
-                          </label>
-                        </div>
-
-                        {/* Dates pickers */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                          <div>
-                            <Label className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
-                              {bn ? 'সেশন শুরুর তারিখ' : 'Session Start Date'} <span className="text-destructive">*</span>
-                            </Label>
-                            <DatePicker
-                              className="h-8 text-xs w-full bg-background mt-1"
-                              value={cfg.effectiveFrom}
-                              onChange={(d) => updateDeptConfig(cat.key, { effectiveFrom: d || '' })}
-                            />
                           </div>
-                          <div>
-                            <Label className="text-[10px] text-muted-foreground font-semibold flex items-center justify-between">
-                              <span>{bn ? 'সেশন সমাপ্তির তারিখ' : 'Session End Date'}</span>
-                              {cfg.isOngoing && (
-                                <span className="text-[9px] text-emerald-600 font-normal">{bn ? '(স্থায়ী থাকায় সমাপ্তি নেই)' : '(No end date)'}</span>
-                              )}
-                            </Label>
-                            <DatePicker
-                              className={`h-8 text-xs w-full mt-1 ${cfg.isOngoing ? 'opacity-60 bg-muted cursor-not-allowed' : 'bg-background'}`}
-                              value={cfg.effectiveTo}
-                              onChange={(d) => updateDeptConfig(cat.key, { effectiveTo: d || '' })}
-                              disabled={cfg.isOngoing}
-                              placeholder={cfg.isOngoing ? (bn ? 'চলমান (স্থায়ী)' : 'Ongoing') : (bn ? 'সমাপ্তির তারিখ নির্বাচন করুন' : 'Select end date')}
-                            />
-                          </div>
-                        </div>
 
-                        {/* Session Summary Callout */}
-                        <div className="rounded-lg bg-background/80 border border-primary/15 p-2 text-[11px] text-foreground flex items-center gap-2">
-                          <div className="h-2 w-2 rounded-full bg-primary shrink-0 animate-pulse" />
-                          <span className="leading-snug">
-                            {bn ? (
-                              <>
-                                <strong>কার্যকর বিবরণ:</strong> {cfg.effectiveFrom ? fmtDate(cfg.effectiveFrom) : 'শুরু থেকে'} হতে{' '}
-                                {cfg.isOngoing ? (
-                                  <span className="text-emerald-600 font-bold">স্থায়ীভাবে বলবৎ</span>
-                                ) : cfg.effectiveTo ? (
-                                  <span className="text-amber-600 font-bold">{fmtDate(cfg.effectiveTo)} পর্যন্ত কার্যকর</span>
-                                ) : (
-                                  <span className="text-destructive font-semibold">সমাপ্তির তারিখ নির্বাচন করুন</span>
-                                )}
-                                । এই সময়ে প্রতিদিন <strong>{cfg.start || '08:00'}</strong> থেকে <strong>{cfg.end || '17:00'}</strong> পর্যন্ত ডিউটি গণ্য হবে।
-                              </>
-                            ) : (
-                              <>
-                                <strong>Schedule status:</strong> Active from {cfg.effectiveFrom || 'start'}{' '}
-                                {cfg.isOngoing ? 'indefinitely (Permanent)' : `until ${cfg.effectiveTo || 'end'}`}. Duty hours: {cfg.start} - {cfg.end}.
-                              </>
-                            )}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Day-of-Week Specific Shift for this Department */}
-                      <div className="rounded-lg border border-border/50 bg-muted/20 p-2.5 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <span className="font-semibold text-foreground text-[11px] flex items-center gap-1">
-                              <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-500/20" />
-                              {bn ? 'বারভিত্তিক বিশেষ ডিউটি' : 'Day-Specific Duty'}
-                            </span>
-                            <p className="text-[9px] text-muted-foreground">
-                              {bn ? 'এই ডিপার্টমেন্টের জন্য নির্দিষ্ট বারে আলাদা সময়সূচি ও ফুল ডে গণ্য' : 'Day-specific hours & full-day counting'}
-                            </p>
-                          </div>
-                          <Switch
-                            checked={cfg.specialDay?.enabled === true}
-                            onCheckedChange={(c) => {
-                              const curSchedules = cfg.specialDay?.daySchedules || {
-                                4: {
-                                  start: cfg.specialDay?.start ?? '',
-                                  end: cfg.specialDay?.end || '14:00',
-                                  rateMode: cfg.specialDay?.rateMode || 'regular_duty_rate',
-                                },
-                              };
-                              updateDeptConfig(cat.key, {
-                                specialDay: {
-                                  enabled: c,
-                                  days: Object.keys(curSchedules).map(Number),
-                                  start: cfg.specialDay?.start ?? '',
-                                  end: cfg.specialDay?.end || '14:00',
-                                  rateMode: cfg.specialDay?.rateMode || 'regular_duty_rate',
-                                  daySchedules: curSchedules,
-                                },
+                          <button
+                            type="button"
+                            title={bn ? 'এই ক্যাটেগরির সবার ব্যক্তিগত ওভাররাইড মুছে দিন' : 'Clear per-staff override'}
+                            className="text-[11px] px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 transition font-medium border border-amber-500/30 whitespace-nowrap flex items-center gap-1 cursor-pointer"
+                            onClick={async () => {
+                              const ok = await confirm({
+                                title: bn ? 'ব্যক্তিগত ওভাররাইড রিসেট?' : 'Reset personal overrides?',
+                                description: bn
+                                  ? `${cat.label} ক্যাটেগরির সব স্টাফের নিজস্ব ডিউটি টাইম মুছে যাবে এবং ক্যাটেগরি টাইম প্রযোজ্য হবে।`
+                                  : `All personal duty times for ${cat.label} will be cleared and the category time will apply.`,
+                                variant: 'warning',
                               });
+                              if (!ok) return;
+                              const { error, count } = await supabase
+                                .from('staff')
+                                .update({ duty_start_time: null, duty_end_time: null, updated_at: new Date().toISOString() }, { count: 'exact' })
+                                .eq('staff_category', cat.key);
+                              if (error) { toast.error(error.message); return; }
+                              toast.success(bn ? `${count ?? 0} জনের ওভাররাইড মুছে দেওয়া হয়েছে` : `Cleared override for ${count ?? 0} staff`);
+                              queryClient.invalidateQueries({ queryKey: ['attendance'] });
+                              queryClient.invalidateQueries({ queryKey: ['staff'] });
                             }}
-                          />
+                          >
+                            <RotateCcw className="h-3 w-3" />
+                            {bn ? 'ওভাররাইড রিসেট' : 'Reset overrides'}
+                          </button>
                         </div>
 
-                        {cfg.specialDay?.enabled && (
-                          <div className="space-y-2.5 pt-1.5 border-t border-border/40">
-                            <div>
-                              <Label className="text-[10px] text-muted-foreground font-medium">
-                                {bn ? 'প্রযোজ্য বার নির্বাচন (একাধিক বার নির্বাচন করতে পারেন)' : 'Select Days of Week'}
+                        {/* ৩টি সুস্পষ্ট সেকশন */}
+                        <div className="space-y-4">
+                          {/* সেকশন ১: দৈনিক নিয়মিত সময়সূচি */}
+                          <div className="rounded-lg border border-border/70 bg-muted/20 p-3 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <span className="flex items-center justify-center h-5 w-5 rounded-full bg-primary/15 text-primary text-[11px] font-bold">
+                                ১
+                              </span>
+                              <Label className="text-xs font-bold text-foreground">
+                                {bn ? 'দৈনিক নিয়মিত সময়সূচি' : 'Daily Regular Work Schedule'}
                               </Label>
-                              <div className="mt-1 flex flex-wrap gap-1">
-                                {DAY_OF_WEEK_OPTIONS.map((dayOpt) => {
-                                  const daySchedules = cfg.specialDay?.daySchedules || {};
-                                  const isSel = dayOpt.value in daySchedules;
-                                  return (
-                                    <label
-                                      key={dayOpt.value}
-                                      className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] cursor-pointer border transition-colors ${
-                                        isSel
-                                          ? 'bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300 font-medium shadow-xs'
-                                          : 'bg-background hover:bg-muted text-muted-foreground border-border/40'
-                                      }`}
-                                    >
-                                      <Checkbox
-                                        checked={isSel}
-                                        onCheckedChange={(v) => {
-                                          const nextSchedules = { ...daySchedules };
-                                          if (v) {
-                                            nextSchedules[dayOpt.value] = {
-                                              start: cfg.specialDay?.start || '',
-                                              end: cfg.specialDay?.end || '14:00',
-                                              rateMode: cfg.specialDay?.rateMode || 'regular_duty_rate',
-                                            };
-                                          } else {
-                                            delete nextSchedules[dayOpt.value];
-                                          }
-                                          const nextDays = Object.keys(nextSchedules).map(Number);
-                                          updateDeptConfig(cat.key, {
-                                            specialDay: {
-                                              ...cfg.specialDay!,
-                                              days: nextDays,
-                                              daySchedules: nextSchedules,
-                                            },
-                                          });
-                                        }}
-                                      />
-                                      <span>{bn ? dayOpt.shortBn : dayOpt.en.slice(0, 3)}</span>
-                                    </label>
-                                  );
-                                })}
+                              <span className="text-[10px] text-muted-foreground font-normal">
+                                ({bn ? 'প্রতিদিন আসার ও যাওয়ার নির্ধারিত সময়' : 'Expected daily check-in and check-out'})
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                              <div>
+                                <Label className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
+                                  <Clock className="w-3 h-3 text-primary" /> {bn ? 'কাজের শুরুর সময়' : 'Start Time'}
+                                </Label>
+                                <TimePicker
+                                  className="h-8 text-sm bg-background mt-1"
+                                  displayFormat={timeFormat}
+                                  value={cfg.start}
+                                  onChange={v => updateDeptConfig(cat.key, { start: v })}
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
+                                  <Clock className="w-3 h-3 text-primary" /> {bn ? 'কাজের শেষের সময়' : 'End Time'}
+                                </Label>
+                                <TimePicker
+                                  className="h-8 text-sm bg-background mt-1"
+                                  displayFormat={timeFormat}
+                                  value={cfg.end}
+                                  onChange={v => updateDeptConfig(cat.key, { end: v })}
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* সেকশন ২: সেশন ও মেয়াদের ধরন */}
+                          <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/[0.03] dark:bg-emerald-950/15 p-3 space-y-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className="flex items-center justify-center h-5 w-5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold">
+                                  ২
+                                </span>
+                                <Label className="text-xs font-bold text-foreground">
+                                  {bn ? 'সেশন ও মেয়াদের ধরন' : 'Session & Validity Period'}
+                                </Label>
+                              </div>
+                              <span className="text-[10px] text-muted-foreground">
+                                {bn ? 'এই সময়সূচি কতদিন প্রযোজ্য থাকবে' : 'How long this schedule applies'}
+                              </span>
+                            </div>
+
+                            {/* Mode Segmented Buttons */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <button
+                                type="button"
+                                onClick={() => updateDeptConfig(cat.key, { isOngoing: true, effectiveTo: '' })}
+                                className={`flex items-start gap-2.5 p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
+                                  cfg.isOngoing
+                                    ? 'bg-emerald-500/15 border-emerald-500 text-emerald-950 dark:text-emerald-100 ring-1 ring-emerald-500/40 shadow-xs'
+                                    : 'bg-background hover:bg-muted border-border/70 text-muted-foreground'
+                                }`}
+                              >
+                                <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0 ${
+                                  cfg.isOngoing ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-muted-foreground/40'
+                                }`}>
+                                  {cfg.isOngoing && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+                                </div>
+                                <div>
+                                  <span className="font-bold text-xs block text-foreground">
+                                    {bn ? '🟢 স্থায়ী সময়সূচি (অনির্দিষ্টকাল চলমান)' : 'Permanent (Ongoing)'}
+                                  </span>
+                                  <span className="text-[10px] text-muted-foreground leading-tight block mt-0.5">
+                                    {bn ? 'সমাপ্তির কোনো তারিখ নেই, নতুন কোনো সেশন না আসা পর্যন্ত চলতে থাকবে।' : 'No end date, active indefinitely.'}
+                                  </span>
+                                </div>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => updateDeptConfig(cat.key, { isOngoing: false })}
+                                className={`flex items-start gap-2.5 p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
+                                  !cfg.isOngoing
+                                    ? 'bg-amber-500/15 border-amber-500 text-amber-950 dark:text-amber-100 ring-1 ring-amber-500/40 shadow-xs'
+                                    : 'bg-background hover:bg-muted border-border/70 text-muted-foreground'
+                                }`}
+                              >
+                                <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0 ${
+                                  !cfg.isOngoing ? 'border-amber-600 bg-amber-600 text-white' : 'border-muted-foreground/40'
+                                }`}>
+                                  {!cfg.isOngoing && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+                                </div>
+                                <div>
+                                  <span className="font-bold text-xs block text-foreground">
+                                    {bn ? '⏳ নির্দিষ্ট মেয়াদী সেশন' : 'Fixed-term Session'}
+                                  </span>
+                                  <span className="text-[10px] text-muted-foreground leading-tight block mt-0.5">
+                                    {bn ? 'গ্রীষ্মকালীন, শীতকালীন বা নির্দিষ্ট কোনো শিক্ষাবর্ষের সমাপ্তি তারিখসহ।' : 'Has fixed end date (e.g., academic term).'}
+                                  </span>
+                                </div>
+                              </button>
+                            </div>
+
+                            {/* Date Range Inputs */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                              <div>
+                                <Label className="text-[11px] font-semibold text-foreground flex items-center gap-1">
+                                  <CalendarDays className="h-3.5 w-3.5 text-primary" />
+                                  {bn ? 'সেশন শুরুর তারিখ' : 'Session Start Date'} <span className="text-destructive">*</span>
+                                </Label>
+                                <DatePicker
+                                  className="h-8 text-xs w-full bg-background mt-1"
+                                  value={cfg.effectiveFrom}
+                                  onChange={(d) => updateDeptConfig(cat.key, { effectiveFrom: d || '' })}
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-[11px] font-semibold text-foreground flex items-center justify-between">
+                                  <span className="flex items-center gap-1">
+                                    <CalendarDays className="h-3.5 w-3.5 text-primary" />
+                                    {bn ? 'সেশন সমাপ্তির তারিখ' : 'Session End Date'}
+                                  </span>
+                                  {cfg.isOngoing && (
+                                    <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                                      {bn ? '✓ স্থায়ী (সমাপ্তি নেই)' : 'Permanent'}
+                                    </span>
+                                  )}
+                                </Label>
+                                <DatePicker
+                                  className={`h-8 text-xs w-full mt-1 ${cfg.isOngoing ? 'opacity-60 bg-muted cursor-not-allowed' : 'bg-background'}`}
+                                  value={cfg.effectiveTo}
+                                  onChange={(d) => updateDeptConfig(cat.key, { effectiveTo: d || '' })}
+                                  disabled={cfg.isOngoing}
+                                  placeholder={cfg.isOngoing ? (bn ? 'চলমান (স্থায়ী)' : 'Ongoing') : (bn ? 'সমাপ্তির তারিখ নির্বাচন করুন' : 'Select end date')}
+                                />
                               </div>
                             </div>
 
-                            {/* Per-Day Config Cards */}
-                            {(() => {
-                              const daySchedules = cfg.specialDay?.daySchedules || {};
-                              const activeDays = DAY_OF_WEEK_OPTIONS.filter((d) => d.value in daySchedules);
-                              if (activeDays.length === 0) {
-                                return (
-                                  <p className="text-[10px] text-muted-foreground italic p-2 bg-muted/20 rounded">
-                                    {bn ? 'উপরে অন্তত একটি বার নির্বাচন করুন।' : 'Please select at least one day above.'}
+                            {/* Clean Status Callout */}
+                            <div className="rounded-lg bg-background border border-emerald-500/20 p-2.5 text-[11px] text-foreground flex items-center gap-2">
+                              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                              <span className="leading-snug">
+                                {bn ? (
+                                  <>
+                                    <strong>কার্যকর অবস্থা:</strong> {cfg.effectiveFrom ? fmtDate(cfg.effectiveFrom) : 'শুরু হতে'}{' '}
+                                    {cfg.isOngoing ? (
+                                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">স্থায়ীভাবে বলবৎ</span>
+                                    ) : cfg.effectiveTo ? (
+                                      <span className="text-amber-600 dark:text-amber-400 font-bold">{fmtDate(cfg.effectiveTo)} পর্যন্ত কার্যকর</span>
+                                    ) : (
+                                      <span className="text-destructive font-semibold">সমাপ্তির তারিখ দেওয়া হয়নি</span>
+                                    )}
+                                    । প্রতিদিন ডিউটি: <strong>{cfg.start || '08:00'}</strong> হতে <strong>{cfg.end || '17:00'}</strong> পর্যন্ত।
+                                  </>
+                                ) : (
+                                  <>
+                                    <strong>Active:</strong> From {cfg.effectiveFrom || 'start'}{' '}
+                                    {cfg.isOngoing ? 'indefinitely' : `to ${cfg.effectiveTo || 'end'}`}. Duty: {cfg.start} - {cfg.end}.
+                                  </>
+                                )}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* সেকশন ৩: বারভিত্তিক বিশেষ ডিউটি */}
+                          <div className="rounded-lg border border-amber-500/30 bg-amber-500/[0.03] dark:bg-amber-950/15 p-3 space-y-2.5">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="flex items-center justify-center h-5 w-5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 text-[11px] font-bold">
+                                  ৩
+                                </span>
+                                <div>
+                                  <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                                    {bn ? 'বারভিত্তিক বিশেষ ডিউটি (যেমন: বৃহস্পতিবার হাফ-ডে)' : 'Day-Specific Duty (e.g. Thursday Half-day)'}
+                                  </Label>
+                                  <p className="text-[10px] text-muted-foreground">
+                                    {bn ? 'সপ্তাহের নির্দিষ্ট বারে কাজ আগে শেষ হলেও পূর্ণ দিন হাজিরা গণ্য হবে' : 'Counts as full day even if duty ends earlier on selected days'}
                                   </p>
-                                );
-                              }
-                              return (
-                                <div className="space-y-2 mt-1">
-                                  {activeDays.map((dayOpt) => {
-                                    const sched = daySchedules[dayOpt.value] || { start: '', end: '14:00', rateMode: 'regular_duty_rate' };
-                                    return (
-                                      <div key={dayOpt.value} className="p-2.5 rounded-lg border border-amber-500/30 bg-amber-500/5 space-y-2">
-                                        <div className="flex items-center justify-between border-b border-amber-500/20 pb-1">
-                                          <span className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
-                                            📅 {bn ? dayOpt.bn : dayOpt.en}
-                                          </span>
-                                          <button
-                                            type="button"
-                                            className="text-[10px] text-destructive hover:underline cursor-pointer"
-                                            onClick={() => {
+                                </div>
+                              </div>
+                              <Switch
+                                checked={cfg.specialDay?.enabled === true}
+                                onCheckedChange={(c) => {
+                                  const curSchedules = cfg.specialDay?.daySchedules || {
+                                    4: {
+                                      start: cfg.specialDay?.start ?? '',
+                                      end: cfg.specialDay?.end || '14:00',
+                                      rateMode: cfg.specialDay?.rateMode || 'regular_duty_rate',
+                                    },
+                                  };
+                                  updateDeptConfig(cat.key, {
+                                    specialDay: {
+                                      enabled: c,
+                                      days: Object.keys(curSchedules).map(Number),
+                                      start: cfg.specialDay?.start ?? '',
+                                      end: cfg.specialDay?.end || '14:00',
+                                      rateMode: cfg.specialDay?.rateMode || 'regular_duty_rate',
+                                      daySchedules: curSchedules,
+                                    },
+                                  });
+                                }}
+                              />
+                            </div>
+
+                            {cfg.specialDay?.enabled && (
+                              <div className="space-y-3 pt-2 border-t border-amber-500/20">
+                                <div>
+                                  <Label className="text-[10px] text-muted-foreground font-semibold">
+                                    {bn ? 'প্রযোজ্য বার নির্বাচন করুন:' : 'Select applicable day(s):'}
+                                  </Label>
+                                  <div className="mt-1 flex flex-wrap gap-1.5">
+                                    {DAY_OF_WEEK_OPTIONS.map((dayOpt) => {
+                                      const daySchedules = cfg.specialDay?.daySchedules || {};
+                                      const isSel = dayOpt.value in daySchedules;
+                                      return (
+                                        <label
+                                          key={dayOpt.value}
+                                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs cursor-pointer border transition-colors ${
+                                            isSel
+                                              ? 'bg-amber-500/20 border-amber-500/60 text-amber-800 dark:text-amber-200 font-semibold shadow-2xs'
+                                              : 'bg-background hover:bg-muted text-muted-foreground border-border/60'
+                                          }`}
+                                        >
+                                          <Checkbox
+                                            checked={isSel}
+                                            onCheckedChange={(v) => {
                                               const nextSchedules = { ...daySchedules };
-                                              delete nextSchedules[dayOpt.value];
+                                              if (v) {
+                                                nextSchedules[dayOpt.value] = {
+                                                  start: cfg.specialDay?.start || '',
+                                                  end: cfg.specialDay?.end || '14:00',
+                                                  rateMode: cfg.specialDay?.rateMode || 'regular_duty_rate',
+                                                };
+                                              } else {
+                                                delete nextSchedules[dayOpt.value];
+                                              }
                                               const nextDays = Object.keys(nextSchedules).map(Number);
                                               updateDeptConfig(cat.key, {
                                                 specialDay: {
@@ -2846,148 +2932,205 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                                                 },
                                               });
                                             }}
-                                          >
-                                            {bn ? 'বাদ দিন' : 'Remove'}
-                                          </button>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-2">
-                                          <div>
-                                            <Label className="text-[9px] text-muted-foreground">{bn ? 'বিশেষ শুরু' : 'Special Start'}</Label>
-                                            <TimePicker
-                                              className="h-7 text-xs w-full bg-background"
-                                              displayFormat={timeFormat}
-                                              value={sched.start || ''}
-                                              placeholder={bn ? 'ডিফল্ট শুরু' : 'Default start'}
-                                              onChange={(v) => {
-                                                const nextSchedules = {
-                                                  ...daySchedules,
-                                                  [dayOpt.value]: { ...sched, start: v },
-                                                };
-                                                updateDeptConfig(cat.key, {
-                                                  specialDay: { ...cfg.specialDay!, daySchedules: nextSchedules },
-                                                });
-                                              }}
-                                            />
-                                          </div>
-                                          <div>
-                                            <Label className="text-[9px] text-muted-foreground">{bn ? 'বিশেষ শেষ (ফুল দিন)' : 'Special End (Full Day)'}</Label>
-                                            <TimePicker
-                                              className="h-7 text-xs w-full bg-background"
-                                              displayFormat={timeFormat}
-                                              value={sched.end || '14:00'}
-                                              onChange={(v) => {
-                                                const nextSchedules = {
-                                                  ...daySchedules,
-                                                  [dayOpt.value]: { ...sched, end: v || '14:00' },
-                                                };
-                                                updateDeptConfig(cat.key, {
-                                                  specialDay: { ...cfg.specialDay!, daySchedules: nextSchedules },
-                                                });
-                                              }}
-                                            />
-                                          </div>
-                                        </div>
-
-                                        <div className="space-y-1.5 pt-2 border-t border-amber-500/20">
-                                          <Label className="text-[11px] font-semibold text-foreground flex items-center gap-1">
-                                            💰 {bn ? 'বিশেষ দিনে বিলম্ব/আগাম বের হওয়ার মিনিট কর্তনের হার:' : 'Late/Early Minute Deduction Rate:'}
-                                          </Label>
-                                          <div className="space-y-1 bg-background/80 p-2 rounded-md border border-border/50">
-                                            <label className="flex items-start gap-2 text-xs cursor-pointer">
-                                              <input
-                                                type="radio"
-                                                name={`rate_mode_${cat.key}_${dayOpt.value}`}
-                                                checked={sched.rateMode !== 'special_day_rate'}
-                                                onChange={() => {
-                                                  const nextSchedules = {
-                                                    ...daySchedules,
-                                                    [dayOpt.value]: { ...sched, rateMode: 'regular_duty_rate' },
-                                                  };
-                                                  updateDeptConfig(cat.key, {
-                                                    specialDay: { ...cfg.specialDay!, daySchedules: nextSchedules as any },
-                                                  });
-                                                }}
-                                                className="mt-0.5 cursor-pointer"
-                                              />
-                                              <div>
-                                                <span className="font-medium text-foreground">{bn ? 'ডিপার্টমেন্টের নিয়মিত ডিউটি রেটে কর্তন (সুপারিশকৃত)' : 'Regular duty rate (Recommended)'}</span>
-                                                <p className="text-[10px] text-muted-foreground">{bn ? 'বিশেষ দিনেও সাধারণ দিনের প্রতি মিনিট রেট অনুযায়ী কর্তন হবে।' : 'Deducts using regular per-minute rate.'}</p>
-                                              </div>
-                                            </label>
-                                            <label className="flex items-start gap-2 text-xs cursor-pointer">
-                                              <input
-                                                type="radio"
-                                                name={`rate_mode_${cat.key}_${dayOpt.value}`}
-                                                checked={sched.rateMode === 'special_day_rate'}
-                                                onChange={() => {
-                                                  const nextSchedules = {
-                                                    ...daySchedules,
-                                                    [dayOpt.value]: { ...sched, rateMode: 'special_day_rate' },
-                                                  };
-                                                  updateDeptConfig(cat.key, {
-                                                    specialDay: { ...cfg.specialDay!, daySchedules: nextSchedules as any },
-                                                  });
-                                                }}
-                                                className="mt-0.5 cursor-pointer"
-                                              />
-                                              <div>
-                                                <span className="font-medium text-foreground">{bn ? 'বিশেষ দিনের শিফট রেটে কর্তন' : 'Special day shift rate'}</span>
-                                                <p className="text-[10px] text-muted-foreground">{bn ? 'বিশেষ দিনের মোট ডিউটি মিনিটের ভিত্তিতে কর্তন হবে।' : 'Deducts using rate calculated from special day hours.'}</p>
-                                              </div>
-                                            </label>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
+                                          />
+                                          <span>{bn ? dayOpt.bn : dayOpt.en}</span>
+                                        </label>
+                                      );
+                                    })}
+                                  </div>
                                 </div>
-                              );
-                            })()}
+
+                                {/* Per-Day Config Cards */}
+                                {(() => {
+                                  const daySchedules = cfg.specialDay?.daySchedules || {};
+                                  const activeDays = DAY_OF_WEEK_OPTIONS.filter((d) => d.value in daySchedules);
+                                  if (activeDays.length === 0) {
+                                    return (
+                                      <p className="text-[10px] text-muted-foreground italic p-2 bg-muted/20 rounded">
+                                        {bn ? 'উপরে অন্তত একটি বার নির্বাচন করুন।' : 'Please select at least one day above.'}
+                                      </p>
+                                    );
+                                  }
+                                  return (
+                                    <div className="space-y-2 mt-1">
+                                      {activeDays.map((dayOpt) => {
+                                        const sched = daySchedules[dayOpt.value] || { start: '', end: '14:00', rateMode: 'regular_duty_rate' };
+                                        return (
+                                          <div key={dayOpt.value} className="p-3 rounded-lg border border-amber-500/30 bg-background space-y-2.5">
+                                            <div className="flex items-center justify-between border-b border-border/60 pb-1.5">
+                                              <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                                                📅 {bn ? dayOpt.bn : dayOpt.en}
+                                              </span>
+                                              <button
+                                                type="button"
+                                                className="text-[10px] text-destructive hover:underline cursor-pointer font-medium"
+                                                onClick={() => {
+                                                  const nextSchedules = { ...daySchedules };
+                                                  delete nextSchedules[dayOpt.value];
+                                                  const nextDays = Object.keys(nextSchedules).map(Number);
+                                                  updateDeptConfig(cat.key, {
+                                                    specialDay: {
+                                                      ...cfg.specialDay!,
+                                                      days: nextDays,
+                                                      daySchedules: nextSchedules,
+                                                    },
+                                                  });
+                                                }}
+                                              >
+                                                {bn ? 'বাদ দিন' : 'Remove'}
+                                              </button>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-2.5">
+                                              <div>
+                                                <Label className="text-[10px] text-muted-foreground">{bn ? 'বিশেষ শুরু' : 'Special Start'}</Label>
+                                                <TimePicker
+                                                  className="h-8 text-xs w-full bg-background"
+                                                  displayFormat={timeFormat}
+                                                  value={sched.start || ''}
+                                                  placeholder={bn ? 'ডিফল্ট শুরু' : 'Default start'}
+                                                  onChange={(v) => {
+                                                    const nextSchedules = {
+                                                      ...daySchedules,
+                                                      [dayOpt.value]: { ...sched, start: v },
+                                                    };
+                                                    updateDeptConfig(cat.key, {
+                                                      specialDay: { ...cfg.specialDay!, daySchedules: nextSchedules },
+                                                    });
+                                                  }}
+                                                />
+                                              </div>
+                                              <div>
+                                                <Label className="text-[10px] text-muted-foreground">{bn ? 'বিশেষ শেষ (ফুল দিন)' : 'Special End (Full Day)'}</Label>
+                                                <TimePicker
+                                                  className="h-8 text-xs w-full bg-background"
+                                                  displayFormat={timeFormat}
+                                                  value={sched.end || '14:00'}
+                                                  onChange={(v) => {
+                                                    const nextSchedules = {
+                                                      ...daySchedules,
+                                                      [dayOpt.value]: { ...sched, end: v || '14:00' },
+                                                    };
+                                                    updateDeptConfig(cat.key, {
+                                                      specialDay: { ...cfg.specialDay!, daySchedules: nextSchedules },
+                                                    });
+                                                  }}
+                                                />
+                                              </div>
+                                            </div>
+
+                                            <div className="space-y-1.5 pt-1.5 border-t border-border/50">
+                                              <Label className="text-[11px] font-semibold text-foreground flex items-center gap-1">
+                                                💰 {bn ? 'বিশেষ দিনে বিলম্ব/আগাম বের হওয়ার মিনিট কর্তনের হার:' : 'Late/Early Deduction Rate:'}
+                                              </Label>
+                                              <div className="space-y-1.5 bg-muted/30 p-2 rounded-md border border-border/50">
+                                                <label className="flex items-start gap-2 text-xs cursor-pointer">
+                                                  <input
+                                                    type="radio"
+                                                    name={`rate_mode_${cat.key}_${dayOpt.value}`}
+                                                    checked={sched.rateMode !== 'special_day_rate'}
+                                                    onChange={() => {
+                                                      const nextSchedules = {
+                                                        ...daySchedules,
+                                                        [dayOpt.value]: { ...sched, rateMode: 'regular_duty_rate' },
+                                                      };
+                                                      updateDeptConfig(cat.key, {
+                                                        specialDay: { ...cfg.specialDay!, daySchedules: nextSchedules as any },
+                                                      });
+                                                    }}
+                                                    className="mt-0.5 cursor-pointer text-primary"
+                                                  />
+                                                  <div>
+                                                    <span className="font-semibold text-foreground">{bn ? 'ডিপার্টমেন্টের নিয়মিত ডিউটি রেটে কর্তন (সুপারিশকৃত)' : 'Regular duty rate (Recommended)'}</span>
+                                                    <p className="text-[10px] text-muted-foreground">{bn ? 'বিশেষ দিনেও সাধারণ দিনের প্রতি মিনিট রেট অনুযায়ী কর্তন হবে।' : 'Deducts using regular per-minute rate.'}</p>
+                                                  </div>
+                                                </label>
+                                                <label className="flex items-start gap-2 text-xs cursor-pointer">
+                                                  <input
+                                                    type="radio"
+                                                    name={`rate_mode_${cat.key}_${dayOpt.value}`}
+                                                    checked={sched.rateMode === 'special_day_rate'}
+                                                    onChange={() => {
+                                                      const nextSchedules = {
+                                                        ...daySchedules,
+                                                        [dayOpt.value]: { ...sched, rateMode: 'special_day_rate' },
+                                                      };
+                                                      updateDeptConfig(cat.key, {
+                                                        specialDay: { ...cfg.specialDay!, daySchedules: nextSchedules as any },
+                                                      });
+                                                    }}
+                                                    className="mt-0.5 cursor-pointer text-primary"
+                                                  />
+                                                  <div>
+                                                    <span className="font-semibold text-foreground">{bn ? 'বিশেষ দিনের শিফট রেটে কর্তন' : 'Special day shift rate'}</span>
+                                                    <p className="text-[10px] text-muted-foreground">{bn ? 'বিশেষ দিনের মোট ডিউটি মিনিটের ভিত্তিতে কর্তন হবে।' : 'Deducts using rate calculated from special day hours.'}</p>
+                                                  </div>
+                                                </label>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
+                        </div>
 
-                      {/* Individual Department Save Action */}
-                      <div className="pt-2.5 border-t border-border/40 flex items-center justify-between gap-2 bg-muted/15 -mx-3 -mb-2.5 p-3 rounded-b-xl">
-                        <p className="text-[11px] text-muted-foreground hidden sm:block">
-                          {bn ? `শুধুমাত্র ${cat.label} ডিপার্টমেন্টের সময়সূচি ও সেশন সংরক্ষণ করতে:` : `Save settings only for ${cat.label}:`}
-                        </p>
-                        <Button
-                          type="button"
-                          size="sm"
-                          className="w-full sm:w-auto h-8 px-4 text-xs font-semibold rounded-lg shadow-xs transition-all bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-1.5 active:scale-95"
-                          onClick={() => handleSaveSingleDepartment(cat.key, cat.label)}
-                          disabled={savingCatKey === cat.key || saveCategoryTimesMutation.isPending}
-                        >
-                          {savingCatKey === cat.key ? (
-                            <>
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              <span>{bn ? 'সংরক্ষণ হচ্ছে...' : 'Saving...'}</span>
-                            </>
-                          ) : (
-                            <>
-                              <Save className="h-3.5 w-3.5" />
-                              <span>{bn ? `${cat.label} সংরক্ষণ করুন` : `Save ${cat.label}`}</span>
-                            </>
-                          )}
-                        </Button>
+                        {/* Dedicated Save Button for this Department */}
+                        <div className="pt-3 border-t border-border/60 flex flex-col sm:flex-row items-center justify-between gap-3 bg-muted/20 -mx-4 sm:-mx-5 -mb-4 sm:-mb-5 p-3.5 sm:p-4 rounded-b-xl">
+                          <p className="text-xs text-muted-foreground">
+                            {bn
+                              ? `শুধুমাত্র "${cat.label}" ডিপার্টমেন্টের সময়সূচি ও সেশন সংরক্ষণ করতে:`
+                              : `Save schedule & session for "${cat.label}":`}
+                          </p>
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="w-full sm:w-auto h-9 px-5 text-xs font-bold rounded-lg shadow-sm transition-all bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
+                            onClick={() => handleSaveSingleDepartment(cat.key, cat.label)}
+                            disabled={savingCatKey === cat.key || saveCategoryTimesMutation.isPending}
+                          >
+                            {savingCatKey === cat.key ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <span>{bn ? 'সংরক্ষণ হচ্ছে...' : 'Saving...'}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Save className="h-4 w-4" />
+                                <span>{bn ? `"${cat.label}" সংরক্ষণ করুন` : `Save ${cat.label}`}</span>
+                              </>
+                            )}
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
 
-                <Button size="sm" className="w-full" onClick={() => {
-                  const visibleCategories = dynamicStaffCategories
-                    .filter(catKey => !['director', 'committee_member'].includes(catKey));
-                  const payloads: Record<string, DeptShiftConfig> = {};
-                  visibleCategories.forEach((catKey) => {
-                    payloads[catKey] = getDeptConfig(catKey);
-                  });
-                  saveCategoryTimesMutation.mutate(payloads as any);
-                }} disabled={saveCategoryTimesMutation.isPending}>
-                  <Save className="h-3 w-3 mr-1" /> {bn ? 'ডিপার্টমেন্ট শিফট সেভ করুন' : 'Save Department Shifts'}
-                </Button>
+                {/* Save All Departments Button (Visible when 'all' is selected) */}
+                {selectedDeptTab === 'all' && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="w-full h-10 text-xs font-bold rounded-xl shadow-xs"
+                    onClick={() => {
+                      const visibleCategories = dynamicStaffCategories
+                        .filter(catKey => !['director', 'committee_member'].includes(catKey));
+                      const payloads: Record<string, DeptShiftConfig> = {};
+                      visibleCategories.forEach((catKey) => {
+                        payloads[catKey] = getDeptConfig(catKey);
+                      });
+                      saveCategoryTimesMutation.mutate(payloads as any);
+                    }}
+                    disabled={saveCategoryTimesMutation.isPending}
+                  >
+                    <Save className="h-4 w-4 mr-1.5" />
+                    {bn ? 'সকল ডিপার্টমেন্টের শিফট একসাথে সংরক্ষণ করুন' : 'Save All Department Shifts'}
+                  </Button>
+                )}
 
                 {/* Special Duty Shifts Section - Displayed just like departments with saved name */}
                 <div className="pt-3 border-t border-border/50 space-y-2.5">
