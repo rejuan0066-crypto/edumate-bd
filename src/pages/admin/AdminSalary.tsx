@@ -1198,6 +1198,9 @@ const AdminSalary = () => {
       if (!existing) {
         throw new Error(bn ? 'এই মাসে কোনো বেতন রেকর্ড নেই' : 'No salary record for this month');
       }
+      if (existing.status === 'paid') {
+        throw new Error(bn ? 'পরিশোধিত বেতন পরিবর্তন বা পুনরায় হিসাব করা যাবে না' : 'Cannot recalculate a paid salary');
+      }
       const calc = calculateSalary(staffMember);
       const activeSavings = getActiveSavings(staffId);
       const savingsDed = activeSavings ? activeSavings.amount : 0;
@@ -1362,64 +1365,47 @@ const AdminSalary = () => {
     const isPaid = !!record && record.status === 'paid';
 
     if (isPaid) {
-      const savedRecord = { ...liveCalc, ...record };
+      // পরিশোধিত বেতন সম্পূর্ণভাবে লকড — এটি আর লাইভ ক্যালকুলেশনে পরিবর্তিত হবে না।
+      // যে নিট বেতন প্রদান করা হয়েছে ও খরচে রেকর্ড হয়েছে তা অপরিবর্তিত থাকবে।
+      const baseSalary = Number(record.base_salary ?? liveCalc.base_salary ?? 0);
+      const netSalary = Number(record.net_salary ?? 0);
+      const bonus = Number(record.bonus || 0);
+      const overtime = Number(record.overtime || 0);
+      const otherAllowance = Number(record.other_allowance || 0);
+      const lateDed = Number(record.late_deduction ?? 0);
+      const absDed = Number(record.absence_deduction ?? 0);
+      const advDed = Number(record.advance_deduction ?? 0);
+      const otherDed = Number(record.other_deduction ?? 0);
+      const dutyDed = Number(record.duty_deduction ?? 0);
+      const preJoinDed = Number(record.pre_join_deduction ?? 0);
+      const postResignDed = Number(record.post_resign_deduction ?? 0);
+      const savingsDed = Number(record.savings_deduction ?? activeSavingsAmount);
 
-      const baseSalary = Number(savedRecord.base_salary ?? liveCalc.base_salary ?? 0);
-      const bonus = Number(savedRecord.bonus || 0);
-      const overtime = Number(savedRecord.overtime || 0);
-      const otherAllowance = Number(savedRecord.other_allowance || 0);
-      const lateDed = Number(savedRecord.late_deduction ?? liveCalc.late_deduction ?? 0);
-      const absDed = Number(savedRecord.absence_deduction ?? liveCalc.absence_deduction ?? 0);
-      const advDed = Number(savedRecord.advance_deduction || 0);
-      const otherDed = Number(savedRecord.other_deduction ?? liveCalc.other_deduction ?? 0);
-      const dutyDed = Number(savedRecord.duty_deduction ?? liveCalc.duty_deduction ?? 0);
-      const preJoinDed = Number(savedRecord.pre_join_deduction ?? liveCalc.pre_join_deduction ?? 0);
-      const postResignDed = Number(savedRecord.post_resign_deduction ?? liveCalc.post_resign_deduction ?? 0);
-      const savingsDed = Number(savedRecord.savings_deduction ?? activeSavingsAmount);
-
-      savedRecord.base_salary = baseSalary;
-      savedRecord.bonus = bonus;
-      savedRecord.overtime = overtime;
-      savedRecord.other_allowance = otherAllowance;
-      savedRecord.late_deduction = lateDed;
-      savedRecord.absence_deduction = absDed;
-      savedRecord.advance_deduction = advDed;
-      savedRecord.other_deduction = otherDed;
-      savedRecord.duty_deduction = dutyDed;
-      savedRecord.pre_join_deduction = preJoinDed;
-      savedRecord.post_resign_deduction = postResignDed;
-      savedRecord.savings_deduction = savingsDed;
-
-      // Always guarantee mathematical consistency across table, edit dialog and slip:
-      // Net = Base + Bonus + OT + Allowance - Deductions - Advance - Savings
-      if (!savedRecord.manual_override) {
-        const consistentNet = computeManualOverrideNet({
-          base_salary: baseSalary,
-          bonus,
-          overtime,
-          other_allowance: otherAllowance,
-          late_deduction: lateDed,
-          absence_deduction: absDed,
-          advance_deduction: advDed,
-          other_deduction: otherDed,
-          savings_deduction: savingsDed,
-          duty_deduction: dutyDed,
-          pre_join_deduction: preJoinDed,
-          post_resign_deduction: postResignDed,
-        });
-        savedRecord.net_salary = consistentNet;
-        savedRecord.earned_from_attendance = Math.max(0,
-          baseSalary - lateDed - absDed - otherDed - dutyDed - preJoinDed - postResignDed
-        );
-      }
+      const savedRecord = {
+        ...record,
+        base_salary: baseSalary,
+        net_salary: netSalary, // Strict lock: exactly as paid!
+        bonus,
+        overtime,
+        other_allowance: otherAllowance,
+        late_deduction: lateDed,
+        absence_deduction: absDed,
+        advance_deduction: advDed,
+        other_deduction: otherDed,
+        duty_deduction: dutyDed,
+        pre_join_deduction: preJoinDed,
+        post_resign_deduction: postResignDed,
+        savings_deduction: savingsDed,
+        earned_from_attendance: Number(record.earned_from_attendance ?? Math.max(0, baseSalary - lateDed - absDed - otherDed - dutyDed - preJoinDed - postResignDed)),
+      };
 
       return {
         record: savedRecord,
         stats: {
           ...liveStats,
           present: Number(record.present_days ?? liveStats.present),
-          absent: Number(record.absent_days ?? liveStats.absent),
-          late: Number(record.late_days ?? liveStats.late),
+          absent: Number(record.absent_days ?? 0),
+          late: Number(record.late_days ?? 0),
         },
         isPaid: true,
         isAdditive: ((record.calc_basis ?? liveCalc.calc_basis) === 'additive'),
@@ -4802,7 +4788,7 @@ const AdminSalary = () => {
                                 )}
                                 {rec && (
                                   <>
-                                    {canEditItem && (
+                                    {canEditItem && rec.status !== 'paid' && (
                                       <Button 
                                         size="icon" 
                                         variant="ghost" 
@@ -4844,21 +4830,14 @@ const AdminSalary = () => {
                                         <Edit2 className="h-3 w-3" />
                                       </Button>
                                     )}
-                                    {canEditItem && (
+                                    {canEditItem && rec.status !== 'paid' && (
                                       <Button
                                         size="icon"
                                         variant="ghost"
                                         className="h-6 w-6 text-indigo-600 hover:bg-indigo-100/60 dark:hover:bg-indigo-900/30 disabled:opacity-40"
                                         title={bn ? 'তারিখ/যোগদান পরিবর্তনের পর শুধু এই স্টাফের বেতন পুনরায় হিসাব করুন' : 'Recalculate salary for this staff only'}
                                         disabled={recalculateSingleMutation.isPending}
-                                        onClick={() => {
-                                          if (rec.status === 'paid') {
-                                            if (!confirm(bn ? 'এই বেতনটি ইতোমধ্যে পরিশোধিত চিহ্নিত করা আছে। আপনি কি সাম্প্রতিক হাজিরা অনুযায়ী এটি পুনরায় হিসাব (Recalculate) করে ডাটাবেজে আপডেট করতে চান?' : 'This salary is marked as paid. Recalculate with latest attendance?')) {
-                                              return;
-                                            }
-                                          }
-                                          recalculateSingleMutation.mutate(s.id);
-                                        }}
+                                        onClick={() => recalculateSingleMutation.mutate(s.id)}
                                       >
                                         <RefreshCw className={`h-3 w-3 ${recalculateSingleMutation.isPending ? 'animate-spin' : ''}`} />
                                       </Button>
@@ -5460,7 +5439,7 @@ const AdminSalary = () => {
                                 )}
                                 {item.primaryConfig ? (
                                   <>
-                                    {canEditItem && (
+                                    {canEditItem && rec.status !== 'paid' && (
                                     <Button 
                                       size="icon" 
                                       variant="ghost" 
