@@ -74,6 +74,12 @@ class ErrorBoundary extends Component<Props, State> {
 
   handleRetry = () => {
     if (this.state.isChunkError || isChunkLoadError(this.state.error)) {
+      try {
+        const reloadKey = 'chunk_reload_' + window.location.pathname;
+        sessionStorage.removeItem(reloadKey);
+      } catch {
+        /* ignore */
+      }
       const url = new URL(window.location.href);
       url.searchParams.set('_r', Date.now().toString());
       window.location.replace(url.toString());
