@@ -8,7 +8,7 @@ import { usePersistentTab } from '@/hooks/usePersistentTab';
 import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
-import { sortStaffByDepartment } from '@/lib/staffOrderHelper';
+import { sortStaffByDepartment, isTeacherCategory } from '@/lib/staffOrderHelper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -355,7 +355,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       });
     }
     // Canonical department ordering: Administrative, Teacher, Support, General, Kitchen
-    const defaults = ['administrative', 'teacher', 'support', 'general', 'chef', 'cook'];
+    const defaults = ['administrative', 'teacher', 'teacher_hifz', 'teacher_nurani_kitab', 'support', 'general', 'chef', 'cook'];
     defaults.forEach(d => {
       if (!list.includes(d)) list.push(d);
     });
@@ -398,7 +398,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
 
     const base = categoryShiftTimes[catKey] || defaultCategoryTimes[catKey] || { start: '08:00', end: '17:00' };
 
-    const rawSpecial = (base as any)?.specialDay || (catKey === 'teacher' && (thursdayHalfSetting as any)?.enabled ? {
+    const rawSpecial = (base as any)?.specialDay || (isTeacherCategory(catKey) && (thursdayHalfSetting as any)?.enabled ? {
       enabled: true,
       days: (thursdayHalfSetting as any)?.days || [4],
       start: (thursdayHalfSetting as any)?.start_time || '',

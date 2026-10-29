@@ -47,15 +47,51 @@ const AdminDesignations = () => {
     queryFn: async () => {
       const { data, error } = await supabase.from('staff_categories').select('*').order('sort_order', { ascending: true });
       if (error) throw error;
-      const normalized = (data || []).map((cat: any) => {
-        if (cat.key === 'teacher' && (cat.name_bn === 'শিক্ষক' || !cat.name_bn)) {
-          // Standardize in DB to permanently resolve mismatch with Attendance
-          supabase.from('staff_categories').update({ name_bn: 'শিক্ষা বিভাগ' }).eq('id', cat.id).then(() => {});
-          return { ...cat, name_bn: 'শিক্ষা বিভাগ' };
+      const cats = [...(data || [])];
+
+      // Auto-migrate: rename 'teacher' -> 'teacher_nurani_kitab' and ensure 'teacher_hifz' exists
+      const teacherCat = cats.find((c: any) => c.key === 'teacher');
+      const nuraniKitabCat = cats.find((c: any) => c.key === 'teacher_nurani_kitab');
+      const hifzCat = cats.find((c: any) => c.key === 'teacher_hifz');
+
+      if (teacherCat && !nuraniKitabCat) {
+        await supabase.from('staff_categories').update({
+          key: 'teacher_nurani_kitab',
+          name: 'Teacher (Noorani & Kitab)',
+          name_bn: 'নূরানী ও কিতাব বিভাগ',
+        }).eq('id', teacherCat.id);
+        teacherCat.key = 'teacher_nurani_kitab';
+        teacherCat.name = 'Teacher (Noorani & Kitab)';
+        teacherCat.name_bn = 'নূরানী ও কিতাব বিভাগ';
+
+        // Cascade to designations and staff
+        await supabase.from('designations').update({ staff_category: 'teacher_nurani_kitab' }).eq('staff_category', 'teacher');
+        await supabase.from('staff').update({ staff_category: 'teacher_nurani_kitab' }).eq('staff_category', 'teacher');
+      }
+
+      if (!hifzCat) {
+        const hifzRecord = {
+          key: 'teacher_hifz',
+          name: 'Teacher (Hifz)',
+          name_bn: 'হিফজ বিভাগ',
+          color: 'emerald',
+          sort_order: 2,
+          is_active: true,
+          description: 'হিফজ ও নাজেরা বিভাগের শিক্ষকবৃন্দের জন্য',
+        };
+        const { data: inserted } = await supabase.from('staff_categories').insert(hifzRecord).select().maybeSingle();
+        if (inserted) {
+          cats.push(inserted);
         }
-        return cat;
-      });
-      return normalized;
+      }
+
+      // Map any Hifz-specific designations and staff to teacher_hifz
+      await supabase.from('designations').update({ staff_category: 'teacher_hifz' })
+        .or('name_bn.ilike.%হিফয%,name_bn.ilike.%হিফজ%,name.ilike.%hifz%');
+      await supabase.from('staff').update({ staff_category: 'teacher_hifz' })
+        .or('designation.ilike.%হিফয%,designation.ilike.%হিফজ%,designation.ilike.%hifz%');
+
+      return cats;
     },
   });
 
@@ -370,8 +406,7 @@ const AdminDesignations = () => {
     setCatEditItem(item);
     setCatKey(item.key || '');
     setCatName(item.name || '');
-    const currentNameBn = item.key === 'teacher' && (item.name_bn === 'শিক্ষক' || !item.name_bn) ? 'শিক্ষা বিভাগ' : (item.name_bn || '');
-    setCatNameBn(currentNameBn);
+    setCatNameBn(item.name_bn || '');
     setCatRoutePath(item.route_path || '');
     setCatColor(item.color || 'gray');
     setCatSortOrder(item.sort_order || 0);
@@ -387,8 +422,18 @@ const AdminDesignations = () => {
       if (!catName.trim() || !catNameBn.trim() || !catKey.trim()) throw new Error(bn ? 'নাম ও কী আবশ্যক' : 'Name and Key are required');
       if (catNameBnCheck.level === 'error') throw new Error(catNameBnCheck.message || (bn ? 'বানান যাচাই করুন' : 'Check spelling'));
       const record = { key: catKey.trim().toLowerCase().replace(/\s+/g, '_'), name: catName.trim(), name_bn: catNameBn.trim(), description: catDescription.trim() || null, route_path: catRoutePath.trim() || null, color: catColor, sort_order: catSortOrder, is_active: catIsActive, id_prefix: catIdPrefix.trim().toUpperCase() || null, id_start_range: catIdStartRange } as any;
-      if (catEditItem) { const { error } = await supabase.from('staff_categories').update(record).eq('id', catEditItem.id); if (error) throw error; }
-      else { const { error } = await supabase.from('staff_categories').insert(record); if (error) throw error; }
+      if (catEditItem) {
+        const { error } = await supabase.from('staff_categories').update(record).eq('id', catEditItem.id);
+        if (error) throw error;
+        // Cascade key change if user edited key
+        if (catEditItem.key !== record.key) {
+          await supabase.from('designations').update({ staff_category: record.key }).eq('staff_category', catEditItem.key);
+          await supabase.from('staff').update({ staff_category: record.key }).eq('staff_category', catEditItem.key);
+        }
+      } else {
+        const { error } = await supabase.from('staff_categories').insert(record);
+        if (error) throw error;
+      }
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['staff_categories'] }); queryClient.invalidateQueries({ queryKey: ['staff-categories-for-shift'] }); queryClient.invalidateQueries({ queryKey: ['designations-all'] }); queryClient.invalidateQueries({ queryKey: ['designations-for-form-all'] }); toast.success(catEditItem ? (bn ? 'ডিপার্টমেন্ট আপডেট হয়েছে' : 'Department updated') : (bn ? 'ডিপার্টমেন্ট যোগ হয়েছে' : 'Department added')); setCatDialogOpen(false); resetCatForm(); },
     onError: (e: any) => toast.error(e.message || 'Error'),
@@ -730,7 +775,7 @@ const AdminDesignations = () => {
               <DialogTitle className="flex items-center gap-2"><FolderOpen className="w-5 h-5 text-primary" /> {catEditItem ? (bn ? 'ডিপার্টমেন্ট সম্পাদনা' : 'Edit Department') : (bn ? 'নতুন ডিপার্টমেন্ট যোগ করুন' : 'Add New Department')}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 pt-2">
-              <div><Label>{bn ? 'কী (ইউনিক)' : 'Key (unique)'} <span className="text-destructive">*</span></Label><Input className="bg-background mt-1 font-mono" value={catKey} onChange={e => setCatKey(e.target.value)} placeholder="e.g. teacher" disabled={!!catEditItem} /></div>
+              <div><Label>{bn ? 'কী (ইউনিক)' : 'Key (unique)'} <span className="text-destructive">*</span></Label><Input className="bg-background mt-1 font-mono" value={catKey} onChange={e => setCatKey(e.target.value)} placeholder="e.g. teacher_nurani_kitab" /></div>
               <div>
                 <Label>{bn ? 'নাম (বাংলা)' : 'Name (Bangla)'} <span className="text-destructive">*</span></Label>
                 <Input

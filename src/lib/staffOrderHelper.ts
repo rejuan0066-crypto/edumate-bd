@@ -25,9 +25,12 @@ export interface DesignationConfig {
 export const CANONICAL_DEPARTMENT_ORDER: Record<string, number> = {
   administrative: 10,
   admin: 10,
-  teacher: 20,
-  teaching: 20,
-  academic: 20,
+  teacher_hifz: 20,
+  hifz: 20,
+  teacher_nurani_kitab: 21,
+  teacher: 22,
+  teaching: 22,
+  academic: 22,
   support: 30,
   office: 30,
   general: 40,
@@ -35,6 +38,23 @@ export const CANONICAL_DEPARTMENT_ORDER: Record<string, number> = {
   hostel: 50,
   service: 60,
   other: 90,
+};
+
+export const isTeacherCategory = (categoryKey?: string | null): boolean => {
+  if (!categoryKey) return false;
+  const k = categoryKey.toLowerCase();
+  return (
+    k === 'teacher' ||
+    k === 'teacher_nurani_kitab' ||
+    k === 'teacher_hifz' ||
+    k === 'hifz' ||
+    k.startsWith('teacher') ||
+    k.includes('nurani') ||
+    k.includes('kitab') ||
+    k === 'teaching' ||
+    k === 'academic' ||
+    k === 'education'
+  );
 };
 
 export const CANONICAL_DEPARTMENT_LABELS: Record<string, { bn: string; en: string }> = {
@@ -112,10 +132,20 @@ export function getStaffCategoryKey(
     }
   }
 
-  // 4. Check dynamic category keywords (e.g. chef, director, committee_member)
+  // 4. Check dynamic category keywords (e.g. chef, director, committee_member, teacher_hifz, teacher_nurani_kitab)
   if (isKnown('chef') && (desigLower.includes('বাবুর্চি') || desigLower.includes('cook') || desigLower.includes('chef') || dept.includes('রান্না') || dept.includes('কিচেন'))) return 'chef';
   if (isKnown('director') && (desigLower.includes('পরিচালক') || desigLower.includes('director') || dept.includes('পরিচালক'))) return 'director';
   if (isKnown('committee_member') && (desigLower.includes('কমিটি') || desigLower.includes('committee') || dept.includes('কমিটি'))) return 'committee_member';
+
+  // Hifz teacher category check
+  if ((isKnown('teacher_hifz') || isKnown('hifz')) && (desigLower.includes('হিফয') || desigLower.includes('হিফজ') || desigLower.includes('কুরআন') || desigLower.includes('কোরআন') || desigLower.includes('নাজেরা') || dept.includes('হিফজ') || dept.includes('হিফয'))) {
+    return isKnown('teacher_hifz') ? 'teacher_hifz' : 'hifz';
+  }
+
+  // Noorani & Kitab teacher category check
+  if ((isKnown('teacher_nurani_kitab') || isKnown('nurani_kitab')) && (desigLower.includes('নূরানী') || desigLower.includes('কিতাব') || desigLower.includes('মুহাদ্দিস') || desigLower.includes('সহকারী শিক্ষক') || TEACHER_KEYWORDS.some(k => desigLower.includes(k)))) {
+    return isKnown('teacher_nurani_kitab') ? 'teacher_nurani_kitab' : 'nurani_kitab';
+  }
 
   // 5. Standard designation keywords
   if (isKnown('teacher') && TEACHER_KEYWORDS.some(k => desigLower.includes(k))) return 'teacher';

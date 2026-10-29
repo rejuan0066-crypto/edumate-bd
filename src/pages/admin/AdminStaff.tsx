@@ -30,7 +30,7 @@ import PasswordStrengthMeter, { isPasswordStrongAgainst, firstFailedRuleMessage,
 import { sanitizePasswordInput } from '@/lib/passwordInput';
 import { parseEdgeError } from '@/lib/edgeError';
 import { invalidateAllStaffQueries } from '@/lib/staffQueryInvalidator';
-import { sortStaffByDepartment } from '@/lib/staffOrderHelper';
+import { sortStaffByDepartment, isTeacherCategory } from '@/lib/staffOrderHelper';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import { getStaffDisplayNames } from '@/lib/nameFormatter';
 import { runStaffDeduplicationSync } from '@/lib/staffDeduplicationSync';
@@ -54,6 +54,8 @@ const getStaffCategory = (staff: any, designationsMap: Map<string, string>, avai
     const dbCategory = designationsMap.get(designation.toLowerCase());
     if (dbCategory && isAvailable(dbCategory)) return dbCategory;
     const lower = designation.toLowerCase();
+    if (isAvailable('teacher_hifz') && (lower.includes('হিফয') || lower.includes('হিফজ') || lower.includes('hifz') || lower.includes('নাজেরা'))) return 'teacher_hifz';
+    if (isAvailable('teacher_nurani_kitab') && TEACHER_KEYWORDS.some(k => lower.includes(k))) return 'teacher_nurani_kitab';
     if (isAvailable('teacher') && TEACHER_KEYWORDS.some(k => lower.includes(k))) return 'teacher';
     if (isAvailable('administrative') && ADMIN_STAFF_KEYWORDS.some(k => lower.includes(k))) return 'administrative';
     if (isAvailable('support') && SUPPORT_STAFF_KEYWORDS.some(k => lower.includes(k))) return 'support';
@@ -64,6 +66,8 @@ const getStaffCategory = (staff: any, designationsMap: Map<string, string>, avai
   // 4. Fallback: department field
   const dept = (staff?.department || '').toLowerCase();
   if (isAvailable('general') && (dept === 'general' || dept === 'সাধারণ' || dept === 'সহায়ক')) return 'general';
+  if (isAvailable('teacher_hifz') && (dept.includes('হিফজ') || dept.includes('হিফয') || dept.includes('hifz'))) return 'teacher_hifz';
+  if (isAvailable('teacher_nurani_kitab') && (dept.includes('নূরানী') || dept.includes('কিতাব') || dept === 'teacher' || dept === 'শিক্ষক' || dept.includes('শিক্ষা'))) return 'teacher_nurani_kitab';
   if (isAvailable('teacher') && (dept === 'teacher' || dept === 'শিক্ষক' || dept.includes('শিক্ষা'))) return 'teacher';
   if (isAvailable('administrative') && (dept === 'administrative' || dept === 'প্রশাসন' || dept === 'প্রশাসনিক')) return 'administrative';
   if (isAvailable('support') && (dept === 'support' || dept === 'অফিস')) return 'support';
@@ -418,7 +422,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
     if (staffType === 'director') return s.staff_category === 'director';
     if (staffType === 'committee_member') return s.staff_category === 'committee_member';
     const category = getStaffCategory(s, designationsMap, activeCategoryKeys);
-    if (staffType === 'teacher') return category === 'teacher';
+    if (staffType === 'teacher') return isTeacherCategory(category) || isTeacherCategory(s.staff_category);
     if (staffType === 'administrative') return category === 'administrative';
     if (staffType === 'support') return category === 'support';
     if (staffType === 'staff') return category === 'general';
