@@ -355,34 +355,6 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     }
   }, [savedCategoryTimes]);
 
-  const dynamicStaffCategories = useMemo(() => {
-    const list: string[] = [];
-    // 1. Categories actively defined in DB staff_categories (Designations/Departments page)
-    staffCategoriesData.forEach(c => {
-      if (c.key && !list.includes(c.key)) list.push(c.key);
-    });
-
-    // 2. Also include any category actively assigned to existing staff members
-    allStaffRaw.forEach((s: any) => {
-      const k = s.staff_category;
-      if (k && !list.includes(k) && !k.startsWith('__')) list.push(k);
-    });
-
-    // 3. Saved times keys (if any configured)
-    if (savedCategoryTimes && typeof savedCategoryTimes === 'object') {
-      Object.keys(savedCategoryTimes).forEach(k => {
-        if (k && !list.includes(k) && !k.startsWith('__')) list.push(k);
-      });
-    }
-
-    // 4. Only if database has no categories at all, use standard fallback
-    if (list.length === 0) {
-      const defaults = ['administrative', 'teacher', 'support', 'general'];
-      defaults.forEach(d => list.push(d));
-    }
-    return list;
-  }, [staffCategoriesData, allStaffRaw, savedCategoryTimes]);
-
   const categoryLabelMap: Record<string, { bn: string; en: string }> = useMemo(() => {
     const map: Record<string, { bn: string; en: string }> = {
       administrative: { bn: 'প্রশাসন বিভাগ', en: 'Administrative Department' },
@@ -582,6 +554,34 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     return sortStaffByDepartment(base, { categories: staffCategoriesData, bn, deduplicate: true });
   }, [allStaffRaw, showCommitteeStaff, committeeInfo.ids, staffCategoriesData, bn]);
   const committeeHiddenCount = (allStaffRaw as any[]).filter((s: any) => committeeInfo.ids.has(s.id)).length;
+
+  const dynamicStaffCategories = useMemo(() => {
+    const list: string[] = [];
+    // 1. Categories actively defined in DB staff_categories (Designations/Departments page)
+    (staffCategoriesData || []).forEach(c => {
+      if (c.key && !list.includes(c.key)) list.push(c.key);
+    });
+
+    // 2. Also include any category actively assigned to existing staff members
+    (allStaffRaw as any[] || []).forEach((s: any) => {
+      const k = s.staff_category;
+      if (k && !list.includes(k) && !k.startsWith('__')) list.push(k);
+    });
+
+    // 3. Saved times keys (if any configured)
+    if (savedCategoryTimes && typeof savedCategoryTimes === 'object') {
+      Object.keys(savedCategoryTimes).forEach(k => {
+        if (k && !list.includes(k) && !k.startsWith('__')) list.push(k);
+      });
+    }
+
+    // 4. Only if database has no categories at all, use standard fallback
+    if (list.length === 0) {
+      const defaults = ['administrative', 'teacher', 'support', 'general'];
+      defaults.forEach(d => list.push(d));
+    }
+    return list;
+  }, [staffCategoriesData, allStaffRaw, savedCategoryTimes]);
 
   const toBnDigits = (str: string | number) => String(str).replace(/\d/g, (d) => '০১২৩৪৫৬৭৮৯'[+d]);
   const normalizeDaytimeCheckOut = (val?: string | null, scheduledEnd?: string | null): string => {
