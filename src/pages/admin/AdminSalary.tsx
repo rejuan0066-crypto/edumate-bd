@@ -53,7 +53,7 @@ import { downloadSlipAsPdf, downloadSheetAsPdf, printSalarySlipHtml, shareSlipPd
 import { DatePicker } from '@/components/ui/date-picker';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import {
-  Wallet, Users, Search, Save, Download, Printer, Settings2,
+  Wallet, Users, Table as TableIcon, LayoutGrid, Search, Save, Download, Printer, Settings2,
   CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Edit2, Eye,
   Calculator, Plus, Trash2, DollarSign, FileText, FolderOpen,
   PiggyBank, Landmark, RefreshCw, Minus, Share2, Camera, FileCheck2, Upload,
@@ -291,6 +291,7 @@ const AdminSalary = () => {
   const [applyToMultipleDepts, setApplyToMultipleDepts] = useState(false);
   const [templatesDraft, setTemplatesDraft] = useState<Record<string, string>>({});
   const [expenseSyncModalOpen, setExpenseSyncModalOpen] = useState(false);
+  const [mobileViewMode, setMobileViewMode] = useState<'card' | 'table'>('card');
 
   // Pre-fetch default institution for instant synchronous salary slip printing
   const { data: defaultInstData } = useQuery({
@@ -4349,13 +4350,491 @@ const AdminSalary = () => {
             {/* Salary Table */}
             <Card>
               <CardContent className="p-0">
-                <div className="relative">
+                {/* ============================================================== */}
+                {/* 1. MOBILE RESPONSIVE CARD VIEW (< md screens) */}
+                {/* ============================================================== */}
+                <div className={`${mobileViewMode === 'card' ? 'block md:hidden' : 'hidden'} divide-y divide-border/60`}>
+                  {/* Mobile Card Top Switcher Bar */}
+                  <div className="flex items-center justify-between px-3 py-2 bg-muted/40 border-b border-border/40 text-xs text-muted-foreground font-medium">
+                    <div className="flex items-center gap-1.5">
+                      <Users className="h-3.5 w-3.5 text-primary" />
+                      <span>{bn ? `মোট ${toBnDigits(filtered.length)} জন স্টাফ` : `Total ${filtered.length} staff`}</span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-[11px] gap-1 px-2.5 rounded-lg border-border/80 bg-background"
+                      onClick={() => setMobileViewMode('table')}
+                    >
+                      <TableIcon className="h-3 w-3 text-primary" />
+                      <span>{bn ? 'টেবিল ভিউ' : 'Table View'}</span>
+                    </Button>
+                  </div>
+
+                  {/* Staff Cards List */}
+                  {filtered.map((s: any, idx: number) => {
+                    const rec = getRecord(s.id);
+                    const snap = getSalaryDisplaySnapshot(s, rec);
+                    const attStats = snap.stats;
+                    const displayRecord = snap.record;
+                    const isPaid = snap.isPaid;
+                    const totalDed = getSalaryDisplayTotalDeduction(snap);
+                    const displayOvertime = Number(displayRecord.overtime || 0) + Number(displayRecord.bonus || 0);
+                    const displayNet = Number(displayRecord.net_salary || 0);
+
+                    const validation = !rec ? getAttendanceValidation(s) : null;
+                    const eligibilityReason = !rec
+                      ? (validation?.errors[0] || validation?.warnings[0] || getEligibilityReason(s))
+                      : null;
+                    const isHardBlocked = !rec && (validation?.hasErrors ?? false);
+
+                    const dKey = resolveStaffDeptKey(s);
+                    const dInfo = SALARY_DEPARTMENTS.find(d => d.key === dKey);
+                    const dutyInfo = getDutyTimeWithSource(s);
+                    const dutyDot = dutyInfo.source === 'special' ? 'text-purple-600' : 'text-emerald-600';
+                    const lastUpd = getAttendanceLastUpdated(s);
+                    const upShort = lastUpd
+                      ? formatDateInTz(lastUpd, appTz, { day: '2-digit', month: '2-digit' }) + ' ' +
+                        formatTimeInTz(lastUpd, appTz, { hour: '2-digit', minute: '2-digit', hour12: true })
+                      : '';
+
+                    return (
+                      <div key={s.id} className="p-3.5 bg-card hover:bg-muted/15 transition-colors space-y-2.5">
+                        {/* Row 1: Header - Serial, Reorder, Name, ID, Designation, Status */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-start gap-2 min-w-0">
+                            {/* Reorder Buttons & Serial */}
+                            <div className="flex items-center gap-0.5 shrink-0 bg-muted/60 rounded p-0.5 border border-border/40 mt-0.5">
+                              <button
+                                type="button"
+                                onClick={() => reorderStaffMutation.mutate({ direction: 'up', currentId: s.id })}
+                                disabled={idx === 0 || reorderStaffMutation.isPending}
+                                className="text-muted-foreground hover:text-emerald-600 disabled:opacity-30 disabled:cursor-not-allowed p-0.5"
+                                title={bn ? 'উপরে নিন' : 'Move up'}
+                              >
+                                <ChevronUp className="h-3 w-3" />
+                              </button>
+                              <span className="text-[11px] font-bold text-foreground px-1">
+                                {bn ? toBnDigits(idx + 1) : idx + 1}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => reorderStaffMutation.mutate({ direction: 'down', currentId: s.id })}
+                                disabled={idx === filtered.length - 1 || reorderStaffMutation.isPending}
+                                className="text-muted-foreground hover:text-emerald-600 disabled:opacity-30 disabled:cursor-not-allowed p-0.5"
+                                title={bn ? 'নিচে নিন' : 'Move down'}
+                              >
+                                <ChevronDown className="h-3 w-3" />
+                              </button>
+                            </div>
+
+                            <div className="min-w-0">
+                              <h4 className="font-bold text-foreground text-sm leading-tight truncate">
+                                {bn ? s.name_bn : (s.name_en || s.name_bn)}
+                              </h4>
+                              <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-[11px] text-muted-foreground">
+                                {s.staff_id && (
+                                  <span className="font-mono bg-muted/70 px-1.5 py-0.2 rounded text-[10px] font-medium text-foreground">
+                                    {s.staff_id}
+                                  </span>
+                                )}
+                                <span>•</span>
+                                <span>{getDesignation(s.designation)}</span>
+                                <span className="inline-flex items-center text-[10px] text-emerald-700 dark:text-emerald-400 font-medium">
+                                  🏷️ {dInfo?.shortLabel || dKey}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Status Badge */}
+                          <div className="shrink-0 flex flex-col items-end gap-1">
+                            {rec ? (
+                              <Badge className={rec.status === 'paid'
+                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[11px] font-medium'
+                                : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 text-[11px] font-medium'}>
+                                {rec.status === 'paid' ? (bn ? 'পরিশোধিত' : 'Paid') : (bn ? 'বকেয়া' : 'Pending')}
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[10px] text-muted-foreground">{bn ? 'জেনারেট হয়নি' : 'Not Generated'}</Badge>
+                            )}
+                            {rec && isRecordPending(rec.id) && (
+                              <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[9px]">
+                                <Clock className="w-2.5 h-2.5 mr-0.5" />
+                                {bn ? 'অনুমোদনের অপেক্ষায়' : 'Pending Approval'}
+                              </Badge>
+                            )}
+                            {eligibilityReason && !rec && (
+                              <span className={`text-[9px] leading-tight ${isHardBlocked ? 'text-red-600' : 'text-amber-600'}`}>
+                                <AlertCircle className="h-2.5 w-2.5 inline mr-0.5" />
+                                {eligibilityReason}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Row 2: Duty Time & Attendance Summary */}
+                        <div className="grid grid-cols-2 gap-2 text-xs bg-muted/30 p-2 rounded-lg border border-border/40">
+                          <div>
+                            <span className="text-[10px] text-muted-foreground block font-medium">{bn ? 'ডিউটি শিফট' : 'Duty Shift'}</span>
+                            <span className="font-semibold text-foreground text-[11px]">
+                              {bn ? toBnDigits(`${fmt(dutyInfo.start)}-${fmt(dutyInfo.end)}`) : `${fmt(dutyInfo.start)}-${fmt(dutyInfo.end)}`}
+                              <span className={`ml-1 text-[8px] ${dutyDot}`}>●</span>
+                            </span>
+                          </div>
+                          <div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] text-muted-foreground font-medium">{bn ? 'উপ/অনু/বি/ছু' : 'P/A/L/Lv'}</span>
+                              {lastUpd && (
+                                <span className="text-[8px] text-muted-foreground font-mono">{toBnDigits(upShort)}</span>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => setAttendanceDetailDialog({ staff: s, stats: attStats })}
+                              className="font-medium text-[11px] text-left hover:underline block mt-0.5"
+                              title={bn ? 'বিস্তারিত দেখুন' : 'View details'}
+                            >
+                              <span className="text-emerald-600 font-bold">{bn ? toBnDigits(attStats.present) : attStats.present}</span> /{' '}
+                              <span className="text-red-500 font-bold">{bn ? toBnDigits(attStats.absent) : attStats.absent}</span> /{' '}
+                              <span className="text-yellow-600 font-bold">{bn ? toBnDigits(attStats.late) : attStats.late}</span> /{' '}
+                              <span className="text-blue-600 font-bold">{bn ? toBnDigits(attStats.leave || 0) : (attStats.leave || 0)}</span>
+                              {attStats.halfDay > 0 && (
+                                <span className="text-[9px] text-orange-600 ml-1 font-medium">½{bn ? toBnDigits(attStats.halfDay) : attStats.halfDay}</span>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Row 3: Financial Figures Grid (মূল বেতন, মোট কর্তন, ওটি/বোনাস, জমা) */}
+                        <div className="grid grid-cols-4 gap-1.5 text-center text-xs">
+                          <div className="p-1.5 bg-muted/20 rounded border border-border/30">
+                            <span className="text-[10px] text-muted-foreground block truncate">{bn ? 'মূল বেতন' : 'Base'}</span>
+                            <span className="font-semibold text-[11px] block mt-0.5 text-foreground">
+                              ৳{bn ? toBnDigits(Number(displayRecord?.base_salary ?? getEffectiveSalary(s)).toLocaleString()) : Number(displayRecord?.base_salary ?? getEffectiveSalary(s)).toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="p-1.5 bg-muted/20 rounded border border-border/30">
+                            <span className="text-[10px] text-muted-foreground block truncate">{bn ? 'মোট কর্তন' : 'Ded.'}</span>
+                            <span className="font-semibold text-red-600 text-[11px] block mt-0.5">
+                              ৳{bn ? toBnDigits(totalDed.toLocaleString()) : totalDed.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="p-1.5 bg-muted/20 rounded border border-border/30">
+                            <span className="text-[10px] text-muted-foreground block truncate">{bn ? 'ওটি/বোনাস' : 'OT/Bonus'}</span>
+                            <span className="font-semibold text-[11px] block mt-0.5 text-foreground">
+                              ৳{bn ? toBnDigits(displayOvertime.toLocaleString()) : displayOvertime.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="p-1.5 bg-muted/20 rounded border border-border/30">
+                            <span className="text-[10px] text-blue-600 dark:text-blue-400 block truncate">{bn ? 'জমা' : 'Savings'}</span>
+                            <span className="font-semibold text-blue-600 text-[11px] block mt-0.5">
+                              ৳{bn ? toBnDigits(Number(snap.savingsDisplay || 0).toLocaleString()) : Number(snap.savingsDisplay || 0).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Row 4: Net Salary Highlight & Signed Slip */}
+                        <div className="flex items-center justify-between p-2 bg-emerald-50/70 dark:bg-emerald-950/30 rounded-lg border border-emerald-200/60 dark:border-emerald-800/40">
+                          <div>
+                            <span className="text-[10px] text-emerald-800 dark:text-emerald-300 font-medium block leading-none">{bn ? 'সর্বমোট নিট বেতন' : 'Net Salary'}</span>
+                            <span className="text-base font-extrabold text-emerald-700 dark:text-emerald-300 mt-0.5 block">
+                              {!rec && Number(attStats.total || 0) === 0 ? (
+                                <span className="text-xs font-normal text-amber-600">{bn ? 'উপস্থিতি নেই' : 'No attendance'}</span>
+                              ) : (
+                                <>৳{bn ? toBnDigits(displayNet.toLocaleString()) : displayNet.toLocaleString()}{!rec ? <span className="text-[9px] ml-0.5 opacity-60">~</span> : ''}</>
+                              )}
+                            </span>
+                          </div>
+
+                          {/* Signed Slip */}
+                          <div>
+                            {(() => {
+                              const slip = signedDocsManager.getStaffSlip(s.id);
+                              if (slip) {
+                                return (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 px-2.5 text-[11px] bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 font-semibold gap-1 rounded-full shadow-xs"
+                                    title={bn ? 'স্বাক্ষরিত স্লিপ দেখুন / ডাউনলোড করুন' : 'View / Download Signed Slip'}
+                                    onClick={() => setDirectViewStaff(s)}
+                                  >
+                                    <FileCheck2 className="h-3 w-3 text-emerald-600" />
+                                    <span>{bn ? 'স্লিপ সংরক্ষিত' : 'Slip Saved'}</span>
+                                  </Button>
+                                );
+                              }
+                              return (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 px-2.5 text-[11px] border-dashed border-slate-300 hover:border-emerald-500 hover:bg-emerald-50 text-muted-foreground font-normal gap-1 rounded-full"
+                                  title={bn ? 'স্বাক্ষর নেয়ার পর স্ক্যান বা ছবি আপলোড করুন' : 'Upload / Scan Signed Slip'}
+                                  onClick={() => setDirectUploadStaff(s)}
+                                >
+                                  <Camera className="h-3 w-3 text-slate-500" />
+                                  <span>{bn ? 'স্লিপ আপলোড' : 'Upload Slip'}</span>
+                                </Button>
+                              );
+                            })()}
+                          </div>
+                        </div>
+
+                        {/* Row 5: Action Toolbar */}
+                        <div className="flex items-center justify-between pt-1 border-t border-border/40">
+                          {!rec && canAddItem ? (
+                            <Button
+                              size="sm"
+                              variant="default"
+                              className="h-7 w-full text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
+                              disabled={generateSingleMutation.isPending || isHardBlocked}
+                              onClick={() => generateSingleMutation.mutate(s.id)}
+                            >
+                              <Calculator className="h-3.5 w-3.5" />
+                              <span>{bn ? 'বেতন হিসাব জেনারেট করুন' : 'Generate Salary'}</span>
+                            </Button>
+                          ) : rec ? (
+                            <div className="flex items-center justify-between w-full gap-1">
+                              {/* Pay / Mark Paid / Unpaid Button */}
+                              {rec.status !== 'paid' ? (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-xs font-semibold border-yellow-500 text-yellow-700 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 gap-1 px-2.5"
+                                  disabled={isRecordPending(rec.id)}
+                                  onClick={() => {
+                                    setPaidConfirmId(rec.id);
+                                    setPayAddToExpense(getSetting('expense_location')?.auto_add_to_expenses !== false);
+                                    const waConfig = getSetting('salary_whatsapp_settings') || {};
+                                    const isMasterEnabled = waConfig.enabled !== false;
+                                    const deptKey = resolveStaffDeptKey(s);
+                                    const isDeptDisabled = Array.isArray(waConfig.disabled_departments) && waConfig.disabled_departments.includes(deptKey);
+                                    setPaySendWhatsApp(isMasterEnabled && !isDeptDisabled);
+                                    setPayCustomMessage('');
+                                    setShowPayMsgEdit(false);
+                                  }}
+                                >
+                                  <Clock className="h-3 w-3 text-yellow-600" />
+                                  <span>{bn ? 'পরিশোধ' : 'Pay'}</span>
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-xs font-semibold border-emerald-500 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 gap-1 px-2.5"
+                                  disabled={isRecordPending(rec.id)}
+                                  onClick={() => setUnpaidConfirmId(rec.id)}
+                                >
+                                  <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                                  <span>{bn ? 'পরিশোধিত' : 'Paid'}</span>
+                                </Button>
+                              )}
+
+                              {/* Action Icons Group */}
+                              <div className="flex items-center gap-1">
+                                {/* Print Slip */}
+                                {isFeatureAllowed('action_payslip_print') !== false && (
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-7 w-7 text-emerald-700 hover:bg-emerald-100/60"
+                                    title={bn ? 'বেতন স্লিপ প্রিন্ট' : 'Print Slip'}
+                                    onClick={() => printSlip(s, rec)}
+                                  >
+                                    <Printer className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+
+                                {/* Edit Button (Only if unpaid) */}
+                                {canEditItem && rec.status !== 'paid' && (
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-7 w-7 text-muted-foreground hover:bg-muted"
+                                    title={bn ? 'সম্পাদনা' : 'Edit'}
+                                    onClick={() => {
+                                      const live = calculateSalary(s);
+                                      const staffResignDate = getStaffResignDate(s);
+                                      const isResigned = s?.status === 'resigned' || s?.status === 'inactive' || (s?.staff_data as any)?.status_reason === 'resigned' || !!staffResignDate || isResignedInMonth(s.id, monthYear, s.name_bn) || resignedStaffIds.has(s.id);
+
+                                      const postResignDed = Number(displayRecord.post_resign_deduction) > 0
+                                        ? Number(displayRecord.post_resign_deduction)
+                                        : Number(live.post_resign_deduction || 0);
+                                      const postResignDays = Number(displayRecord.post_resign_days) > 0
+                                        ? Number(displayRecord.post_resign_days)
+                                        : Number(live.post_resign_days || 0);
+
+                                      const preJoinDed = Number(displayRecord.pre_join_deduction) > 0
+                                        ? Number(displayRecord.pre_join_deduction)
+                                        : Number(live.pre_join_deduction || 0);
+                                      const preJoinDays = Number(displayRecord.pre_join_days) > 0
+                                        ? Number(displayRecord.pre_join_days)
+                                        : Number(live.pre_join_days || 0);
+
+                                      setEditDialog({
+                                        ...displayRecord,
+                                        id: rec.id,
+                                        staffName: s.name_bn,
+                                        staffMember: s,
+                                        isStaffResigned: isResigned,
+                                        post_resign_deduction: postResignDed,
+                                        post_resign_days: postResignDays,
+                                        pre_join_deduction: preJoinDed,
+                                        pre_join_days: preJoinDays,
+                                      });
+                                    }}
+                                  >
+                                    <Edit2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+
+                                {/* Recalculate (Only if unpaid) */}
+                                {canEditItem && rec.status !== 'paid' && (
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-7 w-7 text-indigo-600 hover:bg-indigo-100/60"
+                                    title={bn ? 'পুনরায় হিসাব' : 'Recalculate'}
+                                    disabled={recalculateSingleMutation.isPending}
+                                    onClick={() => recalculateSingleMutation.mutate(s.id)}
+                                  >
+                                    <RefreshCw className={`h-3.5 w-3.5 ${recalculateSingleMutation.isPending ? 'animate-spin' : ''}`} />
+                                  </Button>
+                                )}
+
+                                {/* WhatsApp (Only if paid) */}
+                                {rec.status === 'paid' && s.phone && (
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-7 w-7 text-emerald-600 hover:bg-emerald-100/60"
+                                    title={bn ? 'WhatsApp নোটিফিকেশন' : 'WhatsApp'}
+                                    onClick={() => {
+                                      const monthNameObj = MONTHS.find(m => m.value === selectedMonth);
+                                      const monthLabel = bn ? (monthNameObj?.bn || selectedMonth) : (monthNameObj?.en || selectedMonth);
+                                      const deptKey = resolveStaffDeptKey(s);
+                                      const savedTemplates = getSetting('salary_whatsapp_templates') || {};
+                                      const templateText = savedTemplates[deptKey] || DEFAULT_SALARY_TEMPLATES[deptKey];
+                                      const paymentDateStr = rec.paid_at ? toBanglaDigits(new Date(rec.paid_at).toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' })) : toBanglaDigits(new Date().toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' }));
+                                      const waUrl = buildWaDirectLink(s.phone, buildStaffSalaryPaymentMessage({
+                                        staffName: s.name_bn || s.name_en || 'Staff',
+                                        phone: s.phone,
+                                        monthName: monthLabel,
+                                        year: selectedYear,
+                                        paymentDate: paymentDateStr,
+                                        departmentKey: deptKey,
+                                        templateText,
+                                      }));
+                                      window.open(waUrl, '_blank');
+                                    }}
+                                  >
+                                    <MessageCircle className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+
+                                {/* Expense Link (Only if paid) */}
+                                {rec.status === 'paid' && (() => {
+                                  const staffExpense = getStaffExpense(s.id, s.name_bn || s.name_en);
+                                  if (staffExpense) {
+                                    return (
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-7 w-7 text-emerald-600 hover:text-red-600 hover:bg-red-100/60"
+                                        title={bn ? 'হিসাব থেকে বাদ দিন' : 'Remove from expense'}
+                                        disabled={removeStaffExpenseMutation.isPending}
+                                        onClick={() => removeStaffExpenseMutation.mutate({ staffId: s.id, staffName: s.name_bn || s.name_en || 'Staff' })}
+                                      >
+                                        <Landmark className="h-3.5 w-3.5" />
+                                      </Button>
+                                    );
+                                  }
+                                  if (consolidatedExpense) {
+                                    return (
+                                      <span
+                                        title={bn ? 'মাসিক একক ভাউচারে অন্তর্ভুক্ত' : 'In consolidated expense'}
+                                        className="inline-flex items-center text-blue-600 px-1 font-mono"
+                                      >
+                                        <Building2 className="h-3.5 w-3.5" />
+                                      </span>
+                                    );
+                                  }
+                                  return (
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="h-7 w-7 text-amber-600 hover:bg-emerald-100/60"
+                                      title={bn ? 'হিসাবে খরচ যোগ করুন' : 'Add to expense'}
+                                      disabled={addStaffExpenseMutation.isPending}
+                                      onClick={() => addStaffExpenseMutation.mutate({ staffId: s.id, recordId: rec.id })}
+                                    >
+                                      <Plus className="h-3.5 w-3.5" />
+                                    </Button>
+                                  );
+                                })()}
+
+                                {/* Delete / Ungenerate */}
+                                {canDeleteItem && isFeatureAllowed('action_delete_salary') !== false && (
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-7 w-7 text-red-600 hover:bg-red-100/60"
+                                    title={bn ? 'আনজেনারেট (মুছুন)' : 'Ungenerate'}
+                                    disabled={isRecordPending(rec.id)}
+                                    onClick={() => setUngenerateConfirmId(rec.id)}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Mobile Totals Footer */}
+                  {salaryRecords.length > 0 && (
+                    <div className="p-3.5 bg-muted/60 rounded-b-xl border-t border-border space-y-1.5">
+                      <div className="flex justify-between items-center text-xs font-medium">
+                        <span className="text-muted-foreground">{bn ? 'মোট মূল বেতন:' : 'Total Base:'}</span>
+                        <span className="font-semibold text-foreground">৳{bn ? toBnDigits(stats.totalBase.toLocaleString()) : stats.totalBase.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs font-medium text-red-600">
+                        <span>{bn ? 'মোট কর্তন:' : 'Total Deductions:'}</span>
+                        <span className="font-semibold">৳{bn ? toBnDigits(stats.totalDeduction.toLocaleString()) : stats.totalDeduction.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs font-medium text-blue-600">
+                        <span>{bn ? 'মোট ফান্ড জমা:' : 'Total Savings:'}</span>
+                        <span className="font-semibold">৳{bn ? toBnDigits(stats.totalSavings.toLocaleString()) : stats.totalSavings.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm font-extrabold text-emerald-700 dark:text-emerald-400 pt-1.5 border-t border-border/60">
+                        <span>{bn ? 'সর্বমোট নিট প্রদেয়:' : 'Total Net Payable:'}</span>
+                        <span>৳{bn ? toBnDigits(stats.totalNet.toLocaleString()) : stats.totalNet.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* ============================================================== */}
+                {/* 2. DESKTOP / TABLE VIEW (>= md screens or forced table mode) */}
+                {/* ============================================================== */}
+                <div className={`relative ${mobileViewMode === 'table' ? 'block' : 'hidden md:block'}`}>
                   <div className="pointer-events-none absolute right-0 top-0 bottom-2 w-10 bg-gradient-to-l from-card to-transparent rounded-r-2xl z-10" />
                   <div className="w-full overflow-x-auto scrollbar-thin pb-2 salary-table-scroll">
-                  {/* Mobile horizontal scroll hint */}
-                  <div className="flex sm:hidden items-center justify-between px-3 py-1.5 bg-muted/40 border-b border-border/40 text-[11px] text-muted-foreground font-medium">
+                  {/* Mobile horizontal scroll hint with toggle back to card view */}
+                  <div className="flex md:hidden items-center justify-between px-3 py-1.5 bg-muted/40 border-b border-border/40 text-[11px] text-muted-foreground font-medium">
                     <span>👈 {bn ? 'ডানে-বামে স্ক্রোল করুন' : 'Swipe horizontally'} 👉</span>
-                    <span>{bn ? `${toBnDigits(filtered.length)} জন স্টাফ` : `${filtered.length} staff`}</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 text-[11px] px-2 text-primary hover:bg-primary/10 gap-1"
+                      onClick={() => setMobileViewMode('card')}
+                    >
+                      <LayoutGrid className="h-3 w-3" />
+                      <span>{bn ? 'কার্ড ভিউ' : 'Card View'}</span>
+                    </Button>
                   </div>
                   <table className="w-full text-sm border-collapse whitespace-nowrap" style={{ minWidth: '1350px' }}>
 
