@@ -315,7 +315,7 @@ const AdminSalary = () => {
     slipId: string;
     monthLabel: string;
   } | null>(null);
-  const [slipModalLoading, setSlipModalLoading] = useState<'download' | 'share' | 'view' | null>(null);
+  const [slipModalLoading, setSlipModalLoading] = useState<'download' | 'share' | 'view' | 'print' | null>(null);
   const previewIframeRef = useRef<HTMLIFrameElement>(null);
 
   // Auto-refresh salary records when the auto-attendance trigger inserts new rows for this month
@@ -4076,18 +4076,55 @@ const AdminSalary = () => {
     }
   };
 
-  // Triggers print: uses DOM print isolation so browser prints ONLY the 1-page A4 salary slip (desktop, iPhone AirPrint, Android).
-  const handlePrintSlip = () => {
+  // Triggers print: on mobile, generates vector 1-page A4 PDF and opens native AirPrint / Share Sheet. On desktop, prints preview directly.
+  const handlePrintSlip = async () => {
     if (!slipModal) return;
-    const staffHash = slipModal.staff?.id ? `#staff-${slipModal.staff.id}` : '';
-    const returnUrl = typeof window !== 'undefined'
-      ? `${window.location.origin}${window.location.pathname}?year=${selectedYear}&month=${selectedMonth}${staffHash}`
-      : undefined;
-    printSalarySlipHtml(
-      slipModal.html,
-      slipModal.staff?.name_bn || slipModal.staff?.name_en || 'staff',
-      returnUrl
-    );
+    const isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+
+    if (isMobile) {
+      setSlipModalLoading('print');
+      toast.info(bn ? '১-পাতার স্লিপ প্রিন্টের জন্য প্রস্তুত হচ্ছে…' : 'Preparing 1-page slip print…');
+      try {
+        const blob = await generateSlipPdfBlob(slipModal.html);
+        const filename = slipModal.filename || `salary-slip-${slipModal.staff?.name_en || 'staff'}.pdf`;
+        const file = new File([blob], filename, { type: 'application/pdf' });
+
+        // iOS Safari / Android native Share sheet -> Tap "Print" for 100% crystal-clear AirPrint
+        if (typeof navigator !== 'undefined' && (navigator as any).canShare && (navigator as any).canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: bn ? 'বেতন স্লিপ প্রিন্ট (AirPrint)' : 'Salary Slip Print (AirPrint)',
+          });
+          return;
+        }
+
+        // Direct PDF view / download fallback
+        const blobUrl = URL.createObjectURL(blob);
+        const win = window.open(blobUrl, '_blank');
+        if (!win) {
+          await downloadSlipAsPdf(slipModal.html, filename);
+        }
+      } catch (err) {
+        console.error('Mobile PDF print trigger error:', err);
+        await downloadSlipAsPdf(slipModal.html, slipModal.filename);
+      } finally {
+        setSlipModalLoading(null);
+      }
+      return;
+    }
+
+    // On Desktop: use direct iframe print
+    try {
+      const ifr = previewIframeRef.current;
+      if (ifr && ifr.contentWindow) {
+        ifr.contentWindow.focus();
+        ifr.contentWindow.print();
+        return;
+      }
+    } catch (e) {
+      console.warn('Iframe print failed', e);
+    }
+    printSalarySlipHtml(slipModal.html, slipModal.staff?.name_bn || slipModal.staff?.name_en);
   };
 
   // Helper: get month name from month_year string
@@ -8083,10 +8120,11 @@ const AdminSalary = () => {
                 <Button
                   size="sm"
                   className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-md gap-1.5 px-3.5"
+                  disabled={slipModalLoading === 'print'}
                   onClick={handlePrintSlip}
                 >
                   <Printer className="h-4 w-4" />
-                  <span>{bn ? 'সরাসরি প্রিন্ট' : 'Print'}</span>
+                  <span>{slipModalLoading === 'print' ? (bn ? 'প্রস্তুত হচ্ছে…' : 'Preparing…') : (bn ? 'সরাসরি প্রিন্ট' : 'Print')}</span>
                 </Button>
                 <Button
                   size="sm"
@@ -8229,10 +8267,11 @@ const AdminSalary = () => {
               <Button
                 size="sm"
                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1 px-1.5 text-xs"
+                disabled={slipModalLoading === 'print'}
                 onClick={handlePrintSlip}
               >
                 <Printer className="h-3.5 w-3.5" />
-                <span>{bn ? 'প্রিন্ট' : 'Print'}</span>
+                <span>{slipModalLoading === 'print' ? (bn ? 'হচ্ছে…' : '…') : (bn ? 'প্রিন্ট' : 'Print')}</span>
               </Button>
               <Button
                 size="sm"
