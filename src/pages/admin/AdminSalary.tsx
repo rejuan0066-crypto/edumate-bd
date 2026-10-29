@@ -1987,8 +1987,11 @@ const AdminSalary = () => {
       const dayOfWeek = new Date(r.attendance_date + 'T00:00:00').getDay();
       const daySched = getScheduleForDay(effectiveSpecialSetting, dayOfWeek);
 
-      const hasPersonalDuty = !!(staffMember?.duty_start_time && staffMember?.duty_end_time) || dutyInfo.source === 'special' || dutyInfo.source === 'staff';
-      const applyThuHalf = !hasPersonalDuty && shouldApplyThursdayHalfDay({
+      // General staff profile duty times (e.g. 09:30-15:30) are their standard hours,
+      // so the Thursday half-day / early departure rule should still apply.
+      // Only a date-specific temporary special shift (source === 'special') can override it.
+      const hasSpecificSpecialShift = dutyInfo.source === 'special';
+      const applyThuHalf = !hasSpecificSpecialShift && shouldApplyThursdayHalfDay({
         setting: effectiveSpecialSetting,
         staffCategory: catKey,
         attendanceDate: r.attendance_date,

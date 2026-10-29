@@ -227,7 +227,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
     if (checkIn == null) return 0;
     let expected = dutyInfo.start;
     const overnight = dutyInfo.end <= dutyInfo.start;
-    if (!dutyInfo.hasCustomDuty && shouldApplyThursdayHalfDay({ setting: thuSetting, staffCategory: dutyInfo.category, attendanceDate: rec.attendance_date, isOvernight: overnight })) {
+    if (shouldApplyThursdayHalfDay({ setting: thuSetting, staffCategory: dutyInfo.category, attendanceDate: rec.attendance_date, isOvernight: overnight })) {
       const thuStart = parseClockMinutes(thuSetting?.start_time);
       if (thuStart && thuStart > 0 && thuStart < dutyInfo.end) expected = thuStart;
     }

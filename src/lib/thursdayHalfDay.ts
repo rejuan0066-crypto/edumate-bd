@@ -10,6 +10,8 @@
 // Keeping this logic pure lets both the salary page and the test-suite share one
 // source of truth so the "applies only to the matching department" guarantee is verified.
 
+import { isTeacherCategory } from '@/lib/staffOrderHelper';
+
 export interface SpecialDayRule {
   start?: string | null;
   end: string;
@@ -182,7 +184,15 @@ export function shouldApplyThursdayHalfDay(params: {
   const enabled = setting?.enabled === true;
   if (!enabled || isOvernight) return false;
   if (!isSpecialDayDate(attendanceDate, setting)) return false;
-  return !!staffCategory && resolveThursdayHalfCategories(setting).includes(staffCategory);
+  if (!staffCategory) return false;
+  const cats = resolveThursdayHalfCategories(setting);
+  if (cats.includes(staffCategory)) return true;
+  // If 'teacher' is in configured categories (or default fallback), any teacher category
+  // (teacher_nurani_kitab, teacher_hifz, teacher) also matches.
+  if ((cats.includes('teacher') || cats.length === 0) && (staffCategory.startsWith('teacher') || isTeacherCategory(staffCategory) && staffCategory !== 'hifz')) {
+    return true;
+  }
+  return false;
 }
 
 /** Aliases for readability */
