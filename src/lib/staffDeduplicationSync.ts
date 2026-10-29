@@ -30,7 +30,7 @@ export async function runStaffDeduplicationSync(force: boolean = false): Promise
     // 1. Fetch active staff
     const { data: staffList, error } = await supabase
       .from('staff')
-      .select('id, name_bn, name_en, staff_id, designation, department, status, created_at, deleted_at')
+      .select('id, name_bn, name_en, staff_id, staff_category, designation, department, status, created_at, deleted_at')
       .is('deleted_at', null);
 
     if (error || !staffList || staffList.length === 0) {
