@@ -24,9 +24,10 @@ const HIDDEN_IFRAME_CSS = (w: number, h: number) =>
  * Generates an A4 PORTRAIT PDF Blob from a salary-slip HTML string.
  */
 export async function generateSlipPdfBlob(htmlContent: string): Promise<Blob> {
-  // Strip <script> tags (auto-print logic) and @media screen blocks.
+  // Strip <script> tags and ANY mobile @media screen overrides so PDF is ALWAYS 100% full desktop/computer A4 layout
   let cleanHtml = htmlContent.replace(/<script>[\s\S]*?<\/script>/gi, '');
-  cleanHtml = cleanHtml.replace(/@media\s+screen\s*\{([\s\S]*?)\n\s*\}/g, '');
+  cleanHtml = cleanHtml.replace(/@media\s+screen[^{]*\{[\s\S]*?\n\s*\}\s*\}/gi, '');
+  cleanHtml = cleanHtml.replace(/@media\s+screen[^{]*\{[\s\S]*?\n\s*\}/gi, '');
 
   // A4 portrait at 96dpi: 794px x 1123px. Capture at the slip's natural width.
   const pageW = 794;
@@ -38,14 +39,31 @@ export async function generateSlipPdfBlob(htmlContent: string): Promise<Blob> {
         margin:0 !important;
         padding:0 !important;
         width:${pageW}px !important;
+        min-width:${pageW}px !important;
+        max-width:${pageW}px !important;
       }
       .slip {
         box-shadow:none !important;
         border-radius:0 !important;
+        border:none !important;
         max-width:${pageW}px !important;
         width:${pageW}px !important;
+        min-width:${pageW}px !important;
         margin:0 auto !important;
+        padding:16px 20px !important;
       }
+      .header { padding: 20px 24px !important; }
+      .head-row { display: flex !important; flex-direction: row !important; align-items: center !important; gap: 16px !important; }
+      .slip-tag { position: absolute !important; right: 24px !important; top: 20px !important; display: block !important; width: auto !important; text-align: right !important; margin-bottom: 0 !important; }
+      .month-bar { padding: 10px 24px !important; flex-direction: row !important; display: flex !important; justify-content: space-between !important; align-items: center !important; }
+      .body { padding: 18px 24px !important; }
+      .info-grid { display: grid !important; grid-template-columns: 1fr 1fr !important; margin-bottom: 14px !important; }
+      .info-cell:nth-child(odd) { border-right: 1px solid #cbd5e1 !important; }
+      .info-cell { padding: 8px 12px !important; font-size: 13px !important; }
+      .info-cell .lbl { white-space: nowrap !important; margin-right: 12px !important; flex-shrink: 0 !important; }
+      .info-cell .val { text-align: right !important; word-break: break-word !important; }
+      .signatures { display: grid !important; grid-template-columns: 1fr 1fr 1fr !important; gap: 24px !important; margin-top: 32px !important; }
+      .footer { padding: 10px 24px !important; }
       * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; color-adjust:exact !important; }
     </style>
   `;
@@ -110,8 +128,8 @@ export async function generateSlipPdfBlob(htmlContent: string): Promise<Blob> {
         const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
         const pdfWidth = 210;
         const pdfHeight = 297;
-        const marginX = 8; // mm margin on sides
-        const marginTop = 8; // mm margin on top
+        const marginX = 6; // mm margin on sides (fills full page width)
+        const marginTop = 6; // mm margin on top
 
         const availW = pdfWidth - marginX * 2;
         const availH = pdfHeight - marginTop * 2;

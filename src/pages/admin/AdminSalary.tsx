@@ -3772,7 +3772,7 @@ const AdminSalary = () => {
       .sig .role{font-weight:600;color:#475569;font-size:12px;margin-top:2px}
       .footer{background:#f1f5f9;padding:12px 28px;text-align:center;font-size:11px;color:#475569;border-top:1px solid #e2e8f0;margin-top:24px}
       .footer .gen{color:#64748b;font-size:10px;margin-top:3px}
-      @page{size:A4 portrait;margin:0}
+      @page{size:A4 portrait;margin:8mm 10mm}
       @media print{
         *,*::before,*::after{
           -webkit-print-color-adjust:exact !important;
@@ -3784,9 +3784,9 @@ const AdminSalary = () => {
           background:#fff !important;
           padding:0 !important;
           margin:0 !important;
-          width:210mm !important;
-          min-width:210mm !important;
-          max-width:210mm !important;
+          width:100% !important;
+          min-width:100% !important;
+          max-width:100% !important;
           height:auto !important;
           overflow:visible !important;
         }
@@ -3794,11 +3794,11 @@ const AdminSalary = () => {
           box-shadow:none !important;
           border-radius:0 !important;
           border:none !important;
-          width:210mm !important;
-          min-width:210mm !important;
-          max-width:210mm !important;
-          margin:0 auto !important;
-          padding:6mm 10mm !important;
+          width:100% !important;
+          min-width:100% !important;
+          max-width:100% !important;
+          margin:0 !important;
+          padding:0 !important;
           overflow:visible !important;
           height:auto !important;
           max-height:none !important;
@@ -3806,11 +3806,11 @@ const AdminSalary = () => {
           page-break-inside:avoid !important;
           break-inside:avoid !important;
         }
-        .head-row{flex-direction:row !important;align-items:center !important;gap:16px !important}
+        .head-row{display:flex !important;flex-direction:row !important;align-items:center !important;gap:16px !important}
         .slip-tag{position:absolute !important;right:22px !important;top:14px !important;display:block !important;width:auto !important;margin-bottom:0 !important;text-align:right !important}
-        .info-grid{grid-template-columns:1fr 1fr !important}
+        .info-grid{display:grid !important;grid-template-columns:1fr 1fr !important}
         .info-cell:nth-child(odd){border-right:1px solid #cbd5e1 !important}
-        .signatures{grid-template-columns:1fr 1fr 1fr !important;gap:24px !important}
+        .signatures{display:grid !important;grid-template-columns:1fr 1fr 1fr !important;gap:24px !important}
         .header::after{display:none !important}
         .watermark{display:none !important}
         .print-actions-bar,.no-print{display:none !important;visibility:hidden !important}
