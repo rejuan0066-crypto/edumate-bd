@@ -69,6 +69,27 @@ export async function runStaffDeduplicationSync(force: boolean = false): Promise
           s.name_en = targetEn;
         }
       }
+
+      // Repair any teacher whose staff_id was accidentally prefixed with STF-
+      if (
+        s.staff_id &&
+        s.staff_id.startsWith('STF-') &&
+        (s.staff_category === 'teacher_hifz' ||
+          s.staff_category === 'teacher' ||
+          s.staff_category === 'teacher_nurani_kitab' ||
+          (s.designation || '').includes('হিফয') ||
+          (s.designation || '').includes('হিফজ') ||
+          (s.designation || '').includes('শিক্ষক'))
+      ) {
+        const repairedId = s.staff_id
+          .replace(/^STF-(\d{4})-4(\d{3})$/, 'TCH-$1-2$2')
+          .replace(/^STF-/, 'TCH-');
+        const { error: idErr } = await supabase.from('staff').update({ staff_id: repairedId }).eq('id', s.id);
+        if (!idErr) {
+          cleanedNamesCount++;
+          s.staff_id = repairedId;
+        }
+      }
     }
 
     // 3. Detect duplicate rows for the same person (e.g. Maulana Farhan appearing 2 times)

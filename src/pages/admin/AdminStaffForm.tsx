@@ -145,6 +145,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
   const titleConfig = CATEGORY_TITLES[staffCategory];
   const initialStaffCategory = staffCategory !== 'all' ? staffCategory : 'general';
   const [selectedStaffCategory, setSelectedStaffCategory] = useState<string>(initialStaffCategory);
+  const [customStaffId, setCustomStaffId] = useState('');
   const [currentStep, setCurrentStep] = useState(0);
   const printRef = useRef<HTMLDivElement>(null);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
@@ -379,6 +380,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     if (!isEditMode || !existingStaff || dataLoaded) return;
     const sd = (existingStaff.staff_data as any) || {};
     setSelectedStaffCategory(existingStaff.staff_category || initialStaffCategory);
+    setCustomStaffId((existingStaff as any)?.staff_id || '');
     const cleaned = cleanStaffName(existingStaff.name_bn, existingStaff.name_en);
     const rawFirst = sd.first_name || '';
     const rawLast = sd.last_name || '';
@@ -757,27 +759,20 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
       };
 
       if (isEditMode && editId) {
-        // If the staff_category changed, clear staff_id so the BEFORE UPDATE
-        // trigger (auto_generate_staff_id) regenerates it with the new
-        // department's prefix (TCH/SUP/GEN/DIR/ADM …).
-        const prevCategory = (existingStaff as any)?.staff_category || null;
-        const nextCategory = record.staff_category;
         const updatePayload: any = { ...record };
         if (approveOnSave || isApprovalMode) {
           updatePayload.status = 'active';
         }
-        const prevPrefix = staffCategories.find(c => c.key === prevCategory)?.id_prefix;
-        const nextPrefix = staffCategories.find(c => c.key === nextCategory)?.id_prefix;
-        if (prevCategory && nextCategory && prevCategory !== nextCategory) {
-          // Only clear staff_id if the ID prefix actually changed (e.g. from TCH to ADM).
-          // If both categories share the same prefix (e.g. TCH), preserve existing staff_id!
-          if (prevPrefix && nextPrefix && prevPrefix !== nextPrefix) {
-            updatePayload.staff_id = null;
-          }
+
+        // An employee's staff_id is permanent. Never clear or overwrite automatically!
+        if (customStaffId.trim()) {
+          updatePayload.staff_id = customStaffId.trim();
+        } else if ((existingStaff as any)?.staff_id) {
+          updatePayload.staff_id = (existingStaff as any).staff_id;
         }
 
         // If staff_id has legacy format missing year (e.g. TCH-2017), normalize it to include year
-        const currentStaffId = (existingStaff as any)?.staff_id;
+        const currentStaffId = updatePayload.staff_id || (existingStaff as any)?.staff_id;
         if (currentStaffId && /^([A-Za-z]+)-(\d{4,})$/.test(currentStaffId)) {
           const match = currentStaffId.match(/^([A-Za-z]+)-(\d{4,})$/);
           if (match) {
@@ -796,10 +791,8 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
       } else {
         const insertPayload = {
           ...record,
-          // Do NOT auto-fill today's date when left blank — that caused the
-          // joining month to be wrongly prorated. Keep it null so admins must
-          // enter the real joining date explicitly.
           joining_date: joiningDate || null,
+          ...(customStaffId.trim() ? { staff_id: customStaffId.trim() } : {}),
         };
 
         if (await checkApproval('add', insertPayload as any, undefined, `নতুন কর্মী যোগ: ${fullName} (${desigLabel || ''})`)) {
@@ -1599,6 +1592,20 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
                   <FieldError field="employment_type" />
                 </div>
                 )}
+                <div>
+                  <Label className="flex items-center justify-between">
+                    <span>{bn ? 'স্টাফ আইডি নম্বর (Staff ID)' : 'Staff ID Number'}</span>
+                    <span className="text-[10px] text-muted-foreground font-normal">
+                      {isEditMode ? (bn ? 'স্থায়ী আইডি (প্রয়োজনে পরিবর্তনযোগ্য)' : 'Permanent ID (Editable)') : (bn ? 'ফাঁকা রাখলে স্বয়ংক্রিয় তৈরি হবে' : 'Auto-generated if blank')}
+                    </span>
+                  </Label>
+                  <Input
+                    className="bg-background mt-1 font-mono text-sm"
+                    value={customStaffId}
+                    onChange={(e) => setCustomStaffId(e.target.value)}
+                    placeholder={bn ? 'যেমন: TCH-2026-2001' : 'e.g. TCH-2026-2001'}
+                  />
+                </div>
                 <div>
                   <Label>{bn ? 'ডিপার্টমেন্ট' : 'Department'} <span className="text-destructive">*</span></Label>
                   <Select value={selectedStaffCategory} onValueChange={(value) => { setSelectedStaffCategory(value); setDesignation(''); }}>
