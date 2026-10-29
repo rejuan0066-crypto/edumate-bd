@@ -169,6 +169,47 @@ export function getStaffCategoryKey(
 }
 
 /**
+ * Returns numeric priority for staff prefix / department (lower = first)
+ * Priority order: ADM (10) < TCH (20) < OFF (30) < STF (40) < RES (50) < CH (60)
+ */
+export function getStaffPrefixPriority(
+  staff: any,
+  categoriesList?: DepartmentConfig[]
+): number {
+  if (!staff) return 99;
+
+  // 1. Extract prefix from staff_id if present (e.g. TCH-2026-2004 -> TCH)
+  const staffId = String(staff.staff_id || '').trim().toUpperCase();
+  const idPrefixMatch = staffId.match(/^([A-Z]+)/);
+  const idPrefix = idPrefixMatch ? idPrefixMatch[1] : '';
+
+  if (idPrefix) {
+    if (idPrefix === 'ADM' || idPrefix === 'ADMIN') return 10;
+    if (idPrefix === 'DIR') return 12;
+    if (idPrefix === 'TCH' || idPrefix === 'TEACHER') return 20;
+    if (idPrefix === 'HIFZ') return 25;
+    if (idPrefix === 'OFF' || idPrefix === 'SUP') return 30;
+    if (idPrefix === 'STF' || idPrefix === 'GEN') return 40;
+    if (idPrefix === 'RES' || idPrefix === 'HOSTEL') return 50;
+    if (idPrefix === 'CH' || idPrefix === 'CHEF' || idPrefix === 'COOK') return 60;
+  }
+
+  // 2. If no prefix in staff_id, check department / staff_category priority
+  const catKey = String(staff.staff_category || '').toLowerCase();
+  if (catKey === 'administrative' || catKey === 'admin') return 10;
+  if (isTeacherCategory(catKey)) {
+    if (catKey === 'teacher_hifz' || catKey === 'hifz') return 25;
+    return 20;
+  }
+  if (catKey === 'support' || catKey === 'office') return 30;
+  if (catKey === 'general' || catKey === 'staff') return 40;
+  if (catKey === 'residential' || catKey === 'hostel') return 50;
+  if (catKey === 'chef' || catKey === 'cook') return 60;
+
+  return 99;
+}
+
+/**
  * Returns numeric priority for department sort (lower = first)
  */
 export function getDepartmentPriority(
@@ -323,7 +364,24 @@ export function sortStaffByDepartment<T extends Record<string, any>>(
   }
 
   return [...preparedList].sort((a: any, b: any) => {
-    // 1. Explicit institutional serial (salary_order) ALWAYS defines the master attendance and staff order if set
+    // 1. Staff Prefix Priority (ADM: 10, TCH: 20, OFF: 30, STF: 40, RES: 50, CH: 60)
+    const prioA = getStaffPrefixPriority(a, categories);
+    const prioB = getStaffPrefixPriority(b, categories);
+
+    if (prioA !== prioB) {
+      return prioA - prioB;
+    }
+
+    // 2. staff_id (natural numeric sort within the prefix: e.g. TCH-2026-2004 ... TCH-2026-2017)
+    const idA = String(a.staff_id || '').trim();
+    const idB = String(b.staff_id || '').trim();
+    if (idA && idB && idA !== idB) {
+      return idA.localeCompare(idB, undefined, { numeric: true, sensitivity: 'base' });
+    }
+    if (idA && !idB) return -1;
+    if (!idA && idB) return 1;
+
+    // 3. salary_order (tie-breaker if staff_id is missing or identical)
     const hasOrderA = typeof a.salary_order === 'number' && !isNaN(a.salary_order) && a.salary_order > 0;
     const hasOrderB = typeof b.salary_order === 'number' && !isNaN(b.salary_order) && b.salary_order > 0;
 
@@ -333,17 +391,7 @@ export function sortStaffByDepartment<T extends Record<string, any>>(
     if (hasOrderA && !hasOrderB) return -1;
     if (!hasOrderA && hasOrderB) return 1;
 
-    // 2. Department order
-    const catA = getStaffCategoryKey(a, designations, knownKeys, categories);
-    const catB = getStaffCategoryKey(b, designations, knownKeys, categories);
-    const prioA = getDepartmentPriority(catA, categories);
-    const prioB = getDepartmentPriority(catB, categories);
-
-    if (prioA !== prioB) {
-      return prioA - prioB;
-    }
-
-    // 3. Designation sort_order
+    // 4. Designation sort_order
     const desigA = (a.designation || '').toLowerCase().trim();
     const desigB = (b.designation || '').toLowerCase().trim();
     const dOrderA = desigSortMap.get(desigA);
@@ -354,15 +402,6 @@ export function sortStaffByDepartment<T extends Record<string, any>>(
     }
     if (typeof dOrderA === 'number' && typeof dOrderB !== 'number') return -1;
     if (typeof dOrderA !== 'number' && typeof dOrderB === 'number') return 1;
-
-    // 4. staff_id (natural sort)
-    const idA = String(a.staff_id || '').trim();
-    const idB = String(b.staff_id || '').trim();
-    if (idA && idB && idA !== idB) {
-      return idA.localeCompare(idB, undefined, { numeric: true, sensitivity: 'base' });
-    }
-    if (idA && !idB) return -1;
-    if (!idA && idB) return 1;
 
     // 5. Name
     const nameA = String((bn ? (a.name_bn || a.name_en) : (a.name_en || a.name_bn)) || '');
