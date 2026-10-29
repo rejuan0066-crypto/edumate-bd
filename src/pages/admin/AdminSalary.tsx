@@ -4352,25 +4352,30 @@ const AdminSalary = () => {
                 <div className="relative">
                   <div className="pointer-events-none absolute right-0 top-0 bottom-2 w-10 bg-gradient-to-l from-card to-transparent rounded-r-2xl z-10" />
                   <div className="w-full overflow-x-auto scrollbar-thin pb-2 salary-table-scroll">
-                  <table className="w-full min-w-[1100px] text-sm">
+                  {/* Mobile horizontal scroll hint */}
+                  <div className="flex sm:hidden items-center justify-between px-3 py-1.5 bg-muted/40 border-b border-border/40 text-[11px] text-muted-foreground font-medium">
+                    <span>👈 {bn ? 'ডানে-বামে স্ক্রোল করুন' : 'Swipe horizontally'} 👉</span>
+                    <span>{bn ? `${toBnDigits(filtered.length)} জন স্টাফ` : `${filtered.length} staff`}</span>
+                  </div>
+                  <table className="w-full text-sm border-collapse whitespace-nowrap" style={{ minWidth: '1350px' }}>
 
                     <thead>
                       <tr className="border-b border-border/60 bg-muted/40">
-                        <th className="px-3.5 py-3 text-left text-xs font-semibold text-muted-foreground/90 uppercase tracking-wider">#</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium">{bn ? 'নাম' : 'Name'}</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium">{bn ? 'স্টাফ আইডি' : 'Staff ID'}</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium">{bn ? 'পদবি' : 'Designation'}</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'ডিউটি' : 'Duty'}</th>
-                        <th className="px-3 py-2 text-right text-xs font-medium">{bn ? 'মূল বেতন' : 'Base'}</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'উপ/অনু/বি/ছু' : 'P/A/L/Lv'}</th>
-                        <th className="px-3 py-2 text-right text-xs font-medium">{bn ? 'কর্তন' : 'Ded.'}</th>
-                        <th className="px-3 py-2 text-right text-xs font-medium">{bn ? 'ওভারটাইম/বোনাস' : 'OT/Bonus'}</th>
-                        <th className="px-3 py-2 text-right text-xs font-medium text-blue-600">{bn ? 'জমা' : 'Savings'}</th>
-                        <th className="px-3 py-2 text-right text-xs font-medium text-emerald-600">{bn ? 'নিট বেতন' : 'Net'}</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'স্ট্যাটাস' : 'Status'}</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'স্বাক্ষরিত স্লিপ' : 'Signed Slip'}</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'পেন্ডিং অবস্থা' : 'Pending Status'}</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'অ্যাকশন' : 'Actions'}</th>
+                        <th className="px-3 py-2.5 text-left text-xs font-semibold text-muted-foreground/90 uppercase tracking-wider whitespace-nowrap w-12">#</th>
+                        <th className="px-3 py-2.5 text-left text-xs font-medium whitespace-nowrap min-w-[170px]">{bn ? 'নাম' : 'Name'}</th>
+                        <th className="px-3 py-2.5 text-left text-xs font-medium whitespace-nowrap min-w-[110px]">{bn ? 'স্টাফ আইডি' : 'Staff ID'}</th>
+                        <th className="px-3 py-2.5 text-left text-xs font-medium whitespace-nowrap min-w-[150px]">{bn ? 'পদবি' : 'Designation'}</th>
+                        <th className="px-3 py-2.5 text-center text-xs font-medium whitespace-nowrap min-w-[120px]">{bn ? 'ডিউটি' : 'Duty'}</th>
+                        <th className="px-3 py-2.5 text-right text-xs font-medium whitespace-nowrap min-w-[100px]">{bn ? 'মূল বেতন' : 'Base'}</th>
+                        <th className="px-3 py-2.5 text-center text-xs font-medium whitespace-nowrap min-w-[130px]">{bn ? 'উপ/অনু/বি/ছু' : 'P/A/L/Lv'}</th>
+                        <th className="px-3 py-2.5 text-right text-xs font-medium whitespace-nowrap min-w-[95px]">{bn ? 'কর্তন' : 'Ded.'}</th>
+                        <th className="px-3 py-2.5 text-right text-xs font-medium whitespace-nowrap min-w-[110px]">{bn ? 'ওভারটাইম/বোনাস' : 'OT/Bonus'}</th>
+                        <th className="px-3 py-2.5 text-right text-xs font-medium text-blue-600 whitespace-nowrap min-w-[95px]">{bn ? 'জমা' : 'Savings'}</th>
+                        <th className="px-3 py-2.5 text-right text-xs font-medium text-emerald-600 whitespace-nowrap min-w-[105px]">{bn ? 'নিট বেতন' : 'Net'}</th>
+                        <th className="px-3 py-2.5 text-center text-xs font-medium whitespace-nowrap min-w-[95px]">{bn ? 'স্ট্যাটাস' : 'Status'}</th>
+                        <th className="px-3 py-2.5 text-center text-xs font-medium whitespace-nowrap min-w-[110px]">{bn ? 'স্বাক্ষরিত স্লিপ' : 'Signed Slip'}</th>
+                        <th className="px-3 py-2.5 text-center text-xs font-medium whitespace-nowrap min-w-[120px]">{bn ? 'পেন্ডিং অবস্থা' : 'Pending Status'}</th>
+                        <th className="px-3 py-2.5 text-center text-xs font-medium whitespace-nowrap min-w-[130px]">{bn ? 'অ্যাকশন' : 'Actions'}</th>
 
                       </tr>
                     </thead>
@@ -4394,8 +4399,8 @@ const AdminSalary = () => {
                         const isHardBlocked = !rec && (validation?.hasErrors ?? false);
 
                         return (
-                          <tr key={s.id} className="border-b border-border/40 hover:bg-muted/35 transition-colors duration-150">
-                            <td className="px-2 py-2 text-muted-foreground">
+                          <tr key={s.id} className="border-b border-border/40 hover:bg-muted/35 transition-colors duration-150 whitespace-nowrap">
+                            <td className="px-2 py-2 text-muted-foreground whitespace-nowrap">
                               <div className="flex items-center gap-1">
                                 <div className="flex flex-col">
                                   <button
@@ -4450,13 +4455,13 @@ const AdminSalary = () => {
                                 )}
                               </div>
                             </td>
-                            <td className="px-3 py-2">
-                              <p className="font-medium">{bn ? s.name_bn : (s.name_en || s.name_bn)}</p>
+                            <td className="px-3 py-2 whitespace-nowrap min-w-[160px]">
+                              <p className="font-semibold text-foreground whitespace-nowrap">{bn ? s.name_bn : (s.name_en || s.name_bn)}</p>
                             </td>
-                            <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{s.staff_id || '-'}</td>
-                            <td className="px-3 py-2">
-                              <div className="flex flex-col gap-0.5">
-                                <span className="text-muted-foreground">{getDesignation(s.designation)}</span>
+                            <td className="px-3 py-2 font-mono text-xs text-muted-foreground whitespace-nowrap min-w-[100px]">{s.staff_id || '-'}</td>
+                            <td className="px-3 py-2 whitespace-nowrap min-w-[140px]">
+                              <div className="flex flex-col gap-0.5 whitespace-nowrap">
+                                <span className="text-muted-foreground whitespace-nowrap">{getDesignation(s.designation)}</span>
                                 {(() => {
                                   const dKey = resolveStaffDeptKey(s);
                                   const dInfo = SALARY_DEPARTMENTS.find(d => d.key === dKey);
@@ -5051,10 +5056,10 @@ const AdminSalary = () => {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                <div className="overflow-x-auto scrollbar-thin">
+                  <table className="w-full text-sm border-collapse whitespace-nowrap" style={{ minWidth: '850px' }}>
                     <thead>
-                      <tr className="border-b bg-amber-50/50 dark:bg-amber-900/10">
+                      <tr className="border-b bg-amber-50/50 dark:bg-amber-900/10 whitespace-nowrap">
                         <th className="px-3 py-2 text-left text-xs font-medium">#</th>
                         <th className="px-3 py-2 text-left text-xs font-medium">{bn ? 'নাম' : 'Name'}</th>
                         <th className="px-3 py-2 text-left text-xs font-medium">{bn ? 'পদবি' : 'Designation'}</th>
@@ -5213,10 +5218,10 @@ const AdminSalary = () => {
               </div>
 
               <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                <div className="overflow-x-auto scrollbar-thin">
+                  <table className="w-full text-sm border-collapse whitespace-nowrap" style={{ minWidth: '1050px' }}>
                     <thead>
-                      <tr className="border-b bg-blue-50/50 dark:bg-blue-900/10">
+                      <tr className="border-b bg-blue-50/50 dark:bg-blue-900/10 whitespace-nowrap">
                         <th className="px-3 py-2 text-left text-xs font-medium">#</th>
                         <th className="px-3 py-2 text-left text-xs font-medium">{bn ? 'নাম' : 'Staff Name'}</th>
                         <th className="px-3 py-2 text-right text-xs font-medium">{bn ? 'মাসিক জমা' : 'Monthly'}</th>
