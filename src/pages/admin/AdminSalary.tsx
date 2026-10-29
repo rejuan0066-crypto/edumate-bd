@@ -3717,8 +3717,34 @@ const AdminSalary = () => {
       .info-cell{padding:9px 14px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;font-size:13px}
       .info-cell:last-child{border-bottom:none}
       .info-cell:nth-child(odd){border-right:1px solid #e2e8f0}
-      .info-cell .lbl{color:#475569;font-weight:600}
-      .info-cell .val{color:#0f172a;font-weight:700}
+      .info-cell .lbl{color:#475569;font-weight:600;white-space:nowrap;margin-right:12px;flex-shrink:0}
+      .info-cell .val{color:#0f172a;font-weight:700;text-align:right;word-break:break-word}
+
+      /* Mobile In-App Preview Optimization - prevents squeezed layout & overlapping labels */
+      @media screen and (max-width: 650px) {
+        body { padding: 8px !important; }
+        .slip { border-radius: 12px !important; }
+        .header { padding: 14px 16px !important; }
+        .head-row { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; }
+        .slip-tag {
+          position: static !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: space-between !important;
+          width: 100% !important;
+          margin-bottom: 10px !important;
+          text-align: left !important;
+        }
+        .slip-tag .badge { font-size: 11px !important; }
+        .slip-tag .id { margin-top: 0 !important; font-size: 11px !important; }
+        .month-bar { padding: 10px 16px !important; flex-direction: column !important; align-items: flex-start !important; gap: 4px !important; font-size: 12px !important; }
+        .body { padding: 14px 16px !important; }
+        .info-grid { grid-template-columns: 1fr !important; }
+        .info-cell:nth-child(odd) { border-right: none !important; }
+        .info-cell { padding: 8px 12px !important; }
+        .signatures { grid-template-columns: 1fr !important; gap: 24px !important; margin-top: 24px !important; }
+        .footer { padding: 10px 16px !important; }
+      }
       .columns,.single-col{display:block;margin-bottom:14px}
       .col{border:1px solid #cbd5e1;border-radius:12px;overflow:hidden}
       .col-head{padding:10px 14px;font-size:13px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#fff}
@@ -3780,6 +3806,11 @@ const AdminSalary = () => {
           page-break-inside:avoid !important;
           break-inside:avoid !important;
         }
+        .head-row{flex-direction:row !important;align-items:center !important;gap:16px !important}
+        .slip-tag{position:absolute !important;right:22px !important;top:14px !important;display:block !important;width:auto !important;margin-bottom:0 !important;text-align:right !important}
+        .info-grid{grid-template-columns:1fr 1fr !important}
+        .info-cell:nth-child(odd){border-right:1px solid #cbd5e1 !important}
+        .signatures{grid-template-columns:1fr 1fr 1fr !important;gap:24px !important}
         .header::after{display:none !important}
         .watermark{display:none !important}
         .print-actions-bar,.no-print{display:none !important;visibility:hidden !important}
@@ -4035,21 +4066,33 @@ const AdminSalary = () => {
     }
   };
 
-  // Triggers print: on desktop, prints the preview iframe directly. On mobile, opens the dedicated 210mm A4 printable window.
-  const handlePrintSlip = () => {
+  // Triggers print: on desktop, prints the preview iframe directly. On mobile, opens the dedicated 1-page PDF view or AirPrint.
+  const handlePrintSlip = async () => {
     if (!slipModal) return;
     const isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
-    if (!isMobile) {
+    if (isMobile) {
+      setSlipModalLoading('view');
       try {
-        const ifr = previewIframeRef.current;
-        if (ifr && ifr.contentWindow) {
-          ifr.contentWindow.focus();
-          ifr.contentWindow.print();
-          return;
-        }
+        toast.info(bn ? 'মোবাইল প্রিন্টারের জন্য ১-পাতার স্লিপ খোলা হচ্ছে…' : 'Opening 1-page slip for mobile printer…');
+        await viewSlipPdfInNewTab(slipModal.html);
       } catch (err) {
-        console.warn('Direct iframe print failed, falling back to standalone print', err);
+        console.error('Mobile PDF view failed, downloading', err);
+        await downloadSlipAsPdf(slipModal.html, slipModal.filename);
+      } finally {
+        setSlipModalLoading(null);
       }
+      return;
+    }
+
+    try {
+      const ifr = previewIframeRef.current;
+      if (ifr && ifr.contentWindow) {
+        ifr.contentWindow.focus();
+        ifr.contentWindow.print();
+        return;
+      }
+    } catch (err) {
+      console.warn('Direct iframe print failed, falling back to standalone print', err);
     }
     const staffHash = slipModal.staff?.id ? `#staff-${slipModal.staff.id}` : '';
     const returnUrl = typeof window !== 'undefined'

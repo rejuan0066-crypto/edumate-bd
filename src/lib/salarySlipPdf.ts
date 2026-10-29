@@ -160,19 +160,38 @@ export async function downloadSlipAsPdf(
  * Gives mobile and desktop users direct access to the pre-rendered vector PDF.
  */
 export async function viewSlipPdfInNewTab(htmlContent: string): Promise<void> {
-  const blob = await generateSlipPdfBlob(htmlContent);
-  const blobUrl = URL.createObjectURL(blob);
-  const win = window.open(blobUrl, '_blank');
-  if (!win) {
-    const a = document.createElement('a');
-    a.href = blobUrl;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+  // Pre-open window synchronously to prevent iOS Safari & mobile pop-up blockers from discarding it
+  let win: Window | null = null;
+  try {
+    win = window.open('about:blank', '_blank');
+    if (win && win.document) {
+      win.document.write('<div style="font-family:system-ui,-apple-system,sans-serif;padding:30px;text-align:center;color:#334155;"><h3 style="margin-bottom:8px;">📄 বেতন স্লিপ প্রস্তুত হচ্ছে…</h3><p style="color:#64748b;font-size:13px;">মোবাইল প্রিন্ট ও AirPrint এর জন্য অপেক্ষা করুন</p></div>');
+    }
+  } catch {
+    win = null;
   }
-  setTimeout(() => URL.revokeObjectURL(blobUrl), 180000);
+
+  try {
+    const blob = await generateSlipPdfBlob(htmlContent);
+    const blobUrl = URL.createObjectURL(blob);
+    if (win && !win.closed) {
+      win.location.href = blobUrl;
+    } else {
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 180000);
+  } catch (err) {
+    if (win && !win.closed) {
+      try { win.close(); } catch {}
+    }
+    throw err;
+  }
 }
 
 /**
@@ -185,6 +204,11 @@ export function printSalarySlipHtml(
   staffName: string = 'staff',
   customReturnUrl?: string,
 ): void {
+  const isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+  if (isMobile) {
+    void viewSlipPdfInNewTab(htmlContent);
+    return;
+  }
   let printableHtml = htmlContent;
   const appReturnUrl = customReturnUrl || (typeof window !== 'undefined' ? window.location.href : '');
 
