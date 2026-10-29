@@ -9,6 +9,7 @@ import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { sortStaffByDepartment, isTeacherCategory } from '@/lib/staffOrderHelper';
+import { runStaffDeduplicationSync } from '@/lib/staffDeduplicationSync';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -138,6 +139,16 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   const canExportAttendance = isAdmin || ((canApproveItem || canDeleteItem) && permsA.isFeatureAllowed('action_export_att') !== false);
 
   const { timeFormat, setTimeFormat } = useTimeFormat();
+
+  // Auto-sync original staff IDs and master serial order on attendance load
+  useEffect(() => {
+    if (!isAdmin) return;
+    runStaffDeduplicationSync(true).then((res) => {
+      if (res.cleanedNamesCount > 0 || res.duplicateRowsHandled > 0) {
+        queryClient.invalidateQueries({ queryKey: ['staff'] });
+      }
+    }).catch(() => {});
+  }, [isAdmin, queryClient]);
   const { tz: appTz } = useAppTimezone();
   const fmt = (t: string) => formatTimeDisplay(t, timeFormat);
   const [searchParams] = useSearchParams();

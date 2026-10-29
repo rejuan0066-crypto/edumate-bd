@@ -3,7 +3,7 @@ import { deduplicateRepeatedWords, cleanStaffName, normalizeStaffName } from './
 
 let hasRunInCurrentSession = false;
 
-// Official original Staff IDs mapped by normalized name and keywords
+// Official original Staff IDs and Serial Orders mapped by normalized name and keywords
 const KNOWN_STAFF_ORIGINAL_IDS: Record<string, string> = {
   'ফারহান হোসাইন': 'TCH-2026-2007',
   'সাইদুর রহমান': 'TCH-2026-2004',
@@ -34,6 +34,36 @@ const KNOWN_STAFF_ORIGINAL_IDS: Record<string, string> = {
   'সুলতান আহমদ': 'CH-2026-5003',
 };
 
+const KNOWN_STAFF_SALARY_ORDERS: Record<string, number> = {
+  'ফারহান হোসাইন': 1,
+  'সাইদুর রহমান': 2,
+  'মুখতার হোসাইন': 3,
+  'মঈনুল ইসলাম': 4,
+  'আবুল বাশার': 5,
+  'শাহিনুর রহমান': 6,
+  'ইমামুল ইসলাম': 7,
+  'শহীদ আহমদ': 8,
+  'আল ইয়ামিন': 9,
+  'আল-ইয়ামিন': 9,
+  'আল আমিন': 9,
+  'আল-আমিন': 9,
+  'সাইফুর রহমান': 10,
+  'কামরুল ইসলাম': 11,
+  'আরিফুল ইসলাম': 12,
+  'আব্দুল কাদির তানজীদ': 13,
+  'আব্দুল কাদির তানজিদ': 13,
+  'তানজীদ': 13,
+  'তানজিদ': 13,
+  'আব্দুল কাদির': 13,
+  'আসাদুল রহমান': 14,
+  'কুতুব উদ্দিন': 15,
+  'তেরা মিয়া': 16,
+  'তোফা মিয়া': 16,
+  'তোপা মিয়া': 16,
+  'শামিম আহমদ': 17,
+  'সুলতান আহমদ': 18,
+};
+
 function findExpectedOriginalId(nameBn: string | null | undefined): string | null {
   if (!nameBn) return null;
   const cleaned = deduplicateRepeatedWords(nameBn);
@@ -42,6 +72,19 @@ function findExpectedOriginalId(nameBn: string | null | undefined): string | nul
   for (const [key, targetId] of Object.entries(KNOWN_STAFF_ORIGINAL_IDS)) {
     if (norm.includes(key) || cleaned.includes(key)) {
       return targetId;
+    }
+  }
+  return null;
+}
+
+function findExpectedSalaryOrder(nameBn: string | null | undefined): number | null {
+  if (!nameBn) return null;
+  const cleaned = deduplicateRepeatedWords(nameBn);
+  const norm = normalizeStaffName(cleaned);
+  if (KNOWN_STAFF_SALARY_ORDERS[norm]) return KNOWN_STAFF_SALARY_ORDERS[norm];
+  for (const [key, targetOrder] of Object.entries(KNOWN_STAFF_SALARY_ORDERS)) {
+    if (norm.includes(key) || cleaned.includes(key)) {
+      return targetOrder;
     }
   }
   return null;
@@ -75,7 +118,7 @@ export async function runStaffDeduplicationSync(force: boolean = false): Promise
     // 1. Fetch active staff
     const { data: staffList, error } = await supabase
       .from('staff')
-      .select('id, name_bn, name_en, staff_id, staff_category, designation, department, status, created_at, deleted_at')
+      .select('id, name_bn, name_en, staff_id, staff_category, salary_order, designation, department, status, created_at, deleted_at')
       .is('deleted_at', null);
 
     if (error || !staffList || staffList.length === 0) {
@@ -85,7 +128,7 @@ export async function runStaffDeduplicationSync(force: boolean = false): Promise
     let cleanedNamesCount = 0;
     let duplicateRowsHandled = 0;
 
-    // 2. Fix field-level repeated words / Bengali leaking into English & Restore Original Staff IDs
+    // 2. Fix field-level repeated words / Bengali leaking into English & Restore Original Staff IDs / Orders
     for (const s of staffList) {
       const originalBn = s.name_bn || '';
       const originalEn = s.name_en || '';
@@ -115,20 +158,30 @@ export async function runStaffDeduplicationSync(force: boolean = false): Promise
         }
       }
 
-      // Restore official original Staff ID
+      // Restore official original Staff ID & Master Serial Order
       const expectedOriginalId = findExpectedOriginalId(targetBn || s.name_bn);
-      if (expectedOriginalId && s.staff_id !== expectedOriginalId) {
+      const expectedSalaryOrder = findExpectedSalaryOrder(targetBn || s.name_bn);
+
+      const needsIdUpdate = !!(expectedOriginalId && s.staff_id !== expectedOriginalId);
+      const needsOrderUpdate = !!(expectedSalaryOrder && s.salary_order !== expectedSalaryOrder);
+
+      if (needsIdUpdate || needsOrderUpdate) {
+        const updatePayload: Record<string, any> = {};
+        if (needsIdUpdate) updatePayload.staff_id = expectedOriginalId;
+        if (needsOrderUpdate) updatePayload.salary_order = expectedSalaryOrder;
+
         const { error: idRestoreErr } = await supabase
           .from('staff')
-          .update({ staff_id: expectedOriginalId })
+          .update(updatePayload)
           .eq('id', s.id);
 
         if (!idRestoreErr) {
           cleanedNamesCount++;
-          console.log(`[StaffDeduplicationSync] Restored original staff_id for "${s.name_bn}": ${s.staff_id} -> ${expectedOriginalId}`);
-          s.staff_id = expectedOriginalId;
+          console.log(`[StaffDeduplicationSync] Restored for "${s.name_bn}": ID=${expectedOriginalId}, Order=${expectedSalaryOrder}`);
+          if (needsIdUpdate) s.staff_id = expectedOriginalId!;
+          if (needsOrderUpdate) s.salary_order = expectedSalaryOrder!;
         } else {
-          console.warn(`[StaffDeduplicationSync] Failed to restore staff_id for "${s.name_bn}":`, idRestoreErr);
+          console.warn(`[StaffDeduplicationSync] Failed to restore for "${s.name_bn}":`, idRestoreErr);
         }
       } else if (
         s.staff_id &&

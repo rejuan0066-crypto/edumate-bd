@@ -96,6 +96,7 @@ export function getStaffCategoryKey(
   if (!staff) return 'general';
 
   const isKnown = (k: string) => !knownCategoryKeys || knownCategoryKeys.size === 0 || knownCategoryKeys.has(k);
+  const hasCustomKey = (k: string) => !!knownCategoryKeys && knownCategoryKeys.has(k);
 
   // 1. Direct explicit staff_category (if valid and not default 'general' fallback)
   if (staff.staff_category && staff.staff_category !== 'general' && isKnown(staff.staff_category)) {
@@ -132,26 +133,26 @@ export function getStaffCategoryKey(
     }
   }
 
-  // 4. Check dynamic category keywords (e.g. chef, director, committee_member, teacher_hifz, teacher_nurani_kitab)
-  if (isKnown('chef') && (desigLower.includes('বাবুর্চি') || desigLower.includes('cook') || desigLower.includes('chef') || dept.includes('রান্না') || dept.includes('কিচেন'))) return 'chef';
-  if (isKnown('director') && (desigLower.includes('পরিচালক') || desigLower.includes('director') || dept.includes('পরিচালক'))) return 'director';
-  if (isKnown('committee_member') && (desigLower.includes('কমিটি') || desigLower.includes('committee') || dept.includes('কমিটি'))) return 'committee_member';
+  // 4. Check dynamic category keywords ONLY if specifically registered as a category
+  if (hasCustomKey('chef') && (desigLower.includes('বাবুর্চি') || desigLower.includes('cook') || desigLower.includes('chef') || dept.includes('রান্না') || dept.includes('কিচেন'))) return 'chef';
+  if (hasCustomKey('director') && (desigLower.includes('পরিচালক') || desigLower.includes('director') || dept.includes('পরিচালক'))) return 'director';
+  if (hasCustomKey('committee_member') && (desigLower.includes('কমিটি') || desigLower.includes('committee') || dept.includes('কমিটি'))) return 'committee_member';
 
   // Hifz teacher category check
-  if ((isKnown('teacher_hifz') || isKnown('hifz')) && (desigLower.includes('হিফয') || desigLower.includes('হিফজ') || desigLower.includes('কুরআন') || desigLower.includes('কোরআন') || desigLower.includes('নাজেরা') || dept.includes('হিফজ') || dept.includes('হিফয'))) {
-    return isKnown('teacher_hifz') ? 'teacher_hifz' : 'hifz';
+  if ((hasCustomKey('teacher_hifz') || hasCustomKey('hifz')) && (desigLower.includes('হিফয') || desigLower.includes('হিফজ') || desigLower.includes('কুরআন') || desigLower.includes('কোরআন') || desigLower.includes('নাজেরা') || dept.includes('হিফজ') || dept.includes('হিফয'))) {
+    return hasCustomKey('teacher_hifz') ? 'teacher_hifz' : 'hifz';
   }
 
   // Noorani & Kitab teacher category check
-  if ((isKnown('teacher_nurani_kitab') || isKnown('nurani_kitab')) && (desigLower.includes('নূরানী') || desigLower.includes('কিতাব') || desigLower.includes('মুহাদ্দিস') || desigLower.includes('সহকারী শিক্ষক') || TEACHER_KEYWORDS.some(k => desigLower.includes(k)))) {
-    return isKnown('teacher_nurani_kitab') ? 'teacher_nurani_kitab' : 'nurani_kitab';
+  if ((hasCustomKey('teacher_nurani_kitab') || hasCustomKey('nurani_kitab')) && (desigLower.includes('নূরানী') || desigLower.includes('কিতাব') || desigLower.includes('মুহাদ্দিস') || desigLower.includes('সহকারী শিক্ষক') || TEACHER_KEYWORDS.some(k => desigLower.includes(k)))) {
+    return hasCustomKey('teacher_nurani_kitab') ? 'teacher_nurani_kitab' : 'nurani_kitab';
   }
 
   // 5. Standard designation keywords
   if (isKnown('teacher') && TEACHER_KEYWORDS.some(k => desigLower.includes(k))) return 'teacher';
   if (isKnown('administrative') && ADMIN_KEYWORDS.some(k => desigLower.includes(k))) return 'administrative';
   if (isKnown('support') && SUPPORT_KEYWORDS.some(k => desigLower.includes(k))) return 'support';
-  if (isKnown('general') && GENERAL_KEYWORDS.some(k => desigLower.includes(k))) return 'general';
+  if (isKnown('general') && (GENERAL_KEYWORDS.some(k => desigLower.includes(k)) || desigLower.includes('বাবুর্চি') || desigLower.includes('cook'))) return 'general';
 
   // 6. Standard fallback to department text
   if (isKnown('teacher') && (dept.includes('শিক্ষক') || dept.includes('শিক্ষা') || dept === 'teacher' || dept === 'teaching')) return 'teacher';
@@ -322,17 +323,7 @@ export function sortStaffByDepartment<T extends Record<string, any>>(
   }
 
   return [...preparedList].sort((a: any, b: any) => {
-    // 1. Department order
-    const catA = getStaffCategoryKey(a, designations, knownKeys);
-    const catB = getStaffCategoryKey(b, designations, knownKeys);
-    const prioA = getDepartmentPriority(catA, categories);
-    const prioB = getDepartmentPriority(catB, categories);
-
-    if (prioA !== prioB) {
-      return prioA - prioB;
-    }
-
-    // 2. salary_order (explicit custom serial)
+    // 1. Explicit institutional serial (salary_order) ALWAYS defines the master attendance and staff order if set
     const hasOrderA = typeof a.salary_order === 'number' && !isNaN(a.salary_order) && a.salary_order > 0;
     const hasOrderB = typeof b.salary_order === 'number' && !isNaN(b.salary_order) && b.salary_order > 0;
 
@@ -341,6 +332,16 @@ export function sortStaffByDepartment<T extends Record<string, any>>(
     }
     if (hasOrderA && !hasOrderB) return -1;
     if (!hasOrderA && hasOrderB) return 1;
+
+    // 2. Department order
+    const catA = getStaffCategoryKey(a, designations, knownKeys, categories);
+    const catB = getStaffCategoryKey(b, designations, knownKeys, categories);
+    const prioA = getDepartmentPriority(catA, categories);
+    const prioB = getDepartmentPriority(catB, categories);
+
+    if (prioA !== prioB) {
+      return prioA - prioB;
+    }
 
     // 3. Designation sort_order
     const desigA = (a.designation || '').toLowerCase().trim();
