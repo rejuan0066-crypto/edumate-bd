@@ -321,9 +321,8 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
       // Find the first designation matching the new category
       const matchingDesignation = designationsList.find((d: any) => d.staff_category === category);
       const newDesignation = matchingDesignation ? (bn ? matchingDesignation.name_bn : matchingDesignation.name) : null;
-      // Clearing staff_id lets the BEFORE UPDATE trigger (auto_generate_staff_id)
-      // regenerate it using the new category's prefix (TCH/SUP/GEN/DIR/ADM …).
-      const updateData: any = { staff_category: category, staff_id: null };
+      // Never clear staff_id on department change - an employee's staff_id is permanent
+      const updateData: any = { staff_category: category };
       if (newDesignation) updateData.designation = newDesignation;
 
       const staff = staffList.find((s: any) => s.id === id);
