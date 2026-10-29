@@ -47,53 +47,43 @@ const AdminDesignations = () => {
     queryFn: async () => {
       const { data, error } = await supabase.from('staff_categories').select('*').order('sort_order', { ascending: true });
       if (error) throw error;
-      const cats = [...(data || [])];
-
-      // Auto-migrate: rename 'teacher' -> 'teacher_nurani_kitab' and ensure 'teacher_hifz' exists
-      const teacherCat = cats.find((c: any) => c.key === 'teacher');
-      const nuraniKitabCat = cats.find((c: any) => c.key === 'teacher_nurani_kitab');
-      const hifzCat = cats.find((c: any) => c.key === 'teacher_hifz');
-
-      if (teacherCat && !nuraniKitabCat) {
-        await supabase.from('staff_categories').update({
-          key: 'teacher_nurani_kitab',
-          name: 'Teacher (Noorani & Kitab)',
-          name_bn: 'নূরানী ও কিতাব বিভাগ',
-        }).eq('id', teacherCat.id);
-        teacherCat.key = 'teacher_nurani_kitab';
-        teacherCat.name = 'Teacher (Noorani & Kitab)';
-        teacherCat.name_bn = 'নূরানী ও কিতাব বিভাগ';
-
-        // Cascade to designations and staff
-        await supabase.from('designations').update({ staff_category: 'teacher_nurani_kitab' }).eq('staff_category', 'teacher');
-        await supabase.from('staff').update({ staff_category: 'teacher_nurani_kitab' }).eq('staff_category', 'teacher');
-      }
-
-      if (!hifzCat) {
-        const hifzRecord = {
-          key: 'teacher_hifz',
-          name: 'Teacher (Hifz)',
-          name_bn: 'হিফজ বিভাগ',
-          color: 'emerald',
-          sort_order: 2,
-          is_active: true,
-          description: 'হিফজ ও নাজেরা বিভাগের শিক্ষকবৃন্দের জন্য',
-        };
-        const { data: inserted } = await supabase.from('staff_categories').insert(hifzRecord).select().maybeSingle();
-        if (inserted) {
-          cats.push(inserted);
+      
+      // Deduplicate by key or id if any duplicate exists in DB
+      const seen = new Set<string>();
+      const unique: any[] = [];
+      (data || []).forEach((c: any) => {
+        const k = (c.key || '').trim().toLowerCase() || c.id;
+        if (!seen.has(k)) {
+          seen.add(k);
+          unique.push(c);
         }
-      }
-
-      // Map any Hifz-specific designations and staff to teacher_hifz
-      await supabase.from('designations').update({ staff_category: 'teacher_hifz' })
-        .or('name_bn.ilike.%হিফয%,name_bn.ilike.%হিফজ%,name.ilike.%hifz%');
-      await supabase.from('staff').update({ staff_category: 'teacher_hifz' })
-        .or('designation.ilike.%হিফয%,designation.ilike.%হিফজ%,designation.ilike.%hifz%');
-
-      return cats;
+      });
+      return unique;
     },
   });
+
+  // Auto-cleanup any duplicate rows in DB having the same key
+  useEffect(() => {
+    supabase.from('staff_categories').select('id, key').then(({ data }) => {
+      if (!data || data.length === 0) return;
+      const keyMap: Record<string, string[]> = {};
+      data.forEach((c: any) => {
+        const k = (c.key || '').trim().toLowerCase();
+        if (!keyMap[k]) keyMap[k] = [];
+        keyMap[k].push(c.id);
+      });
+      Object.entries(keyMap).forEach(([k, ids]) => {
+        if (ids.length > 1) {
+          const extras = ids.slice(1);
+          extras.forEach(delId => {
+            supabase.from('staff_categories').delete().eq('id', delId).then(() => {
+              queryClient.invalidateQueries({ queryKey: ['staff_categories'] });
+            });
+          });
+        }
+      });
+    });
+  }, []);
 
   // ─── Designations ───
   const [search, setSearch] = useState('');
