@@ -70,7 +70,8 @@ const GENERAL_KEYWORDS = [
 export function getStaffCategoryKey(
   staff: any,
   designationsList?: DesignationConfig[],
-  knownCategoryKeys?: Set<string>
+  knownCategoryKeys?: Set<string>,
+  categoriesList?: DepartmentConfig[]
 ): string {
   if (!staff) return 'general';
 
@@ -93,21 +94,42 @@ export function getStaffCategoryKey(
     }
   }
 
-  // 3. Check designation keywords
+  // 3. Dynamic match against categories list (matches departments from DB staff_categories)
+  const dept = (staff.department || '').trim().toLowerCase();
   const desigLower = desig.toLowerCase();
+  if (categoriesList && categoriesList.length > 0) {
+    for (const cat of categoriesList) {
+      const cKey = cat.key;
+      const cNameBn = (cat.name_bn || '').trim().toLowerCase();
+      const cNameEn = (cat.name || '').trim().toLowerCase();
+      if (
+        (cNameBn && (dept.includes(cNameBn) || desigLower.includes(cNameBn))) ||
+        (cNameEn && (dept.includes(cNameEn) || desigLower.includes(cNameEn))) ||
+        dept === cKey.toLowerCase()
+      ) {
+        if (isKnown(cKey)) return cKey;
+      }
+    }
+  }
+
+  // 4. Check dynamic category keywords (e.g. chef, director, committee_member)
+  if (isKnown('chef') && (desigLower.includes('বাবুর্চি') || desigLower.includes('cook') || desigLower.includes('chef') || dept.includes('রান্না') || dept.includes('কিচেন'))) return 'chef';
+  if (isKnown('director') && (desigLower.includes('পরিচালক') || desigLower.includes('director') || dept.includes('পরিচালক'))) return 'director';
+  if (isKnown('committee_member') && (desigLower.includes('কমিটি') || desigLower.includes('committee') || dept.includes('কমিটি'))) return 'committee_member';
+
+  // 5. Standard designation keywords
   if (isKnown('teacher') && TEACHER_KEYWORDS.some(k => desigLower.includes(k))) return 'teacher';
   if (isKnown('administrative') && ADMIN_KEYWORDS.some(k => desigLower.includes(k))) return 'administrative';
   if (isKnown('support') && SUPPORT_KEYWORDS.some(k => desigLower.includes(k))) return 'support';
   if (isKnown('general') && GENERAL_KEYWORDS.some(k => desigLower.includes(k))) return 'general';
 
-  // 4. Fallback to department text
-  const dept = (staff.department || '').trim().toLowerCase();
+  // 6. Standard fallback to department text
   if (isKnown('teacher') && (dept.includes('শিক্ষক') || dept.includes('শিক্ষা') || dept === 'teacher' || dept === 'teaching')) return 'teacher';
   if (isKnown('administrative') && (dept.includes('প্রশাসন') || dept === 'administrative' || dept === 'admin')) return 'administrative';
   if (isKnown('support') && (dept.includes('অফিস') || dept === 'support' || dept === 'office')) return 'support';
   if (isKnown('general') && (dept.includes('সহায়ক') || dept.includes('সাধারণ') || dept === 'general')) return 'general';
 
-  // 5. If staff_category is present (even 'general'), return it
+  // 7. If staff_category is present (even 'general'), return it
   if (staff.staff_category && isKnown(staff.staff_category)) {
     return staff.staff_category;
   }

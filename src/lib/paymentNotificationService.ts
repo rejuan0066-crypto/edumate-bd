@@ -206,7 +206,19 @@ export interface StaffSalaryPaymentDetails {
 }
 
 export const DEFAULT_SALARY_TEMPLATES: Record<string, string> = {
-  // 1. শিক্ষা বিভাগ (Teachers & Instructors)
+  // 1. রান্না বিভাগ (Kitchen / Chef Staff)
+  chef: `আসসালামু আলাইকুম {{name}}।
+{{institution}} থেকে আপনার {{month}} মাসের মাসিক বেতন পরিশোধ করা হয়েছে।
+
+• পরিশোধের তারিখ: {{date}}
+
+মাদরাসার ছাত্র, শিক্ষক ও এতিম শিশুদের জন্য সময়মতো পুষ্টিকর ও হালাল খাবার প্রস্তুত এবং পাকশালার শৃঙ্খলা ও পরিষ্কার-পরিচ্ছন্নতা বজায় রাখতে আপনার অক্লান্ত মেহনতের জন্য আন্তরিক জাযাকাল্লাহু খাইরান।
+
+মাদরাসার খাদ্যসামগ্রী ও সম্পদের আমানত রক্ষা এবং শিক্ষার্থীদের প্রতি স্নেহ ও মমতা বজায় রাখার জন্য অনুরোধ রইল। আল্লাহ আপনাকে উত্তম প্রতিদান দিন।
+
+— {{institution}}`,
+
+  // 2. শিক্ষা বিভাগ (Teachers & Instructors)
   teacher: `আসসালামু আলাইকুম মুহতারাম {{name}}।
 {{institution}} থেকে আপনার {{month}} মাসের মাসিক বেতন পরিশোধ করা হয়েছে।
 
@@ -218,7 +230,7 @@ export const DEFAULT_SALARY_TEMPLATES: Record<string, string> = {
 
 — {{institution}}`,
 
-  // 2. প্রশাসন বিভাগ (Administrative Officers)
+  // 3. প্রশাসন বিভাগ (Administrative Officers)
   administrative: `আসসালামু আলাইকুম মুহতারাম {{name}}।
 {{institution}} থেকে আপনার {{month}} মাসের মাসিক সম্মানী/ভাতা পরিশোধ করা হয়েছে।
 
@@ -230,7 +242,7 @@ export const DEFAULT_SALARY_TEMPLATES: Record<string, string> = {
 
 — {{institution}}`,
 
-  // 3. সাপোর্ট স্টাফ (Support Staff - হিসাবরক্ষক, অফিস সহকারী, অপারেটর)
+  // 4. সাপোর্ট স্টাফ / অফিস কর্মচারী (Office / Accounts Staff)
   support: `আসসালামু আলাইকুম {{name}}।
 {{institution}} থেকে আপনার {{month}} মাসের মাসিক বেতন পরিশোধ করা হয়েছে।
 
@@ -242,7 +254,7 @@ export const DEFAULT_SALARY_TEMPLATES: Record<string, string> = {
 
 — {{institution}}`,
 
-  // 4. সাধারণ বিভাগ (General Support Staff: Cook, Guard, Peon, Cleaner)
+  // 5. সহায়ক কর্মী / সাধারণ কর্মচারী (General Support Staff: Cook, Guard, Peon, Cleaner)
   general: `আসসালামু আলাইকুম {{name}}।
 {{institution}} থেকে আপনার {{month}} মাসের মাসিক বেতন পরিশোধ করা হয়েছে।
 
@@ -251,6 +263,26 @@ export const DEFAULT_SALARY_TEMPLATES: Record<string, string> = {
 মাদরাসার ছাত্র ও এতিম শিশুদের আন্তরিক সেবা, পরিষ্কার-পরিচ্ছন্নতা, নিরাপত্তা ও সুষ্ঠু পরিবেশ বজায় রাখতে আপনার নিষ্ঠাপূর্ণ শ্রমের জন্য জাযাকাল্লাহু খাইরান।
 
 মাদরাসাকে নিজের পরিবার মনে করে প্রতিষ্ঠানের সম্পদ সুরক্ষা, সময়মতো দায়িত্ব পালন ও ছাত্রদের প্রতি সদয় আচরণ সবসময় বজায় রাখার জন্য অনুরোধ রইল। আল্লাহ আপনাকে উত্তম প্রতিদান দিন।
+
+— {{institution}}`,
+
+  // 6. পরিচালক (Director)
+  director: `আসসালামু আলাইকুম মুহতারাম {{name}}।
+{{institution}} থেকে আপনার {{month}} মাসের মাসিক সম্মানী/ভাতা পরিশোধ করা হয়েছে।
+
+• পরিশোধের তারিখ: {{date}}
+
+প্রতিষ্ঠানের সার্বিক উন্নয়ন, তত্ত্বাবধান ও সুষ্ঠু পরিচালনা নিশ্চিতকরণে আপনার মূল্যবান পরামর্শ, দিকনির্দেশনা ও আন্তরিক সহযোগিতার জন্য শুকরিয়া ও জাযাকাল্লাহু খাইরান।
+
+— {{institution}}`,
+
+  // 7. কমিটি সদস্য (Committee Member)
+  committee_member: `আসসালামু আলাইকুম মুহতারাম {{name}}।
+{{institution}} থেকে আপনার {{month}} মাসের সম্মানী পরিশোধ করা হয়েছে।
+
+• পরিশোধের তারিখ: {{date}}
+
+প্রতিষ্ঠানের সার্বিক অগ্রগতি ও পরিচালনায় আপনার সক্রিয় অংশগ্রহণ এবং সহযোগিতার জন্য আন্তরিক শুকরিয়া ও জাযাকাল্লাহু খাইরান।
 
 — {{institution}}`,
 

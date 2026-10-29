@@ -378,15 +378,18 @@ const AdminSalary = () => {
   const committeeInfo = useCommitteeStaffIds();
   const [showCommitteeStaff, setShowCommitteeStaff] = useState(false);
 
-  // Dynamic staff categories (for department label translation & ordering)
+  // Dynamic staff categories from DB (matches "পদবি ও ডিপার্টমেন্ট ব্যবস্থাপনা")
   const { data: staffCategoriesList = [] } = useQuery({
-    queryKey: ['staff-categories-salary'],
+    queryKey: ['staff_categories'],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('staff_categories')
-        .select('key, name, name_bn, sort_order')
-        .eq('is_active', true)
+        .select('*')
         .order('sort_order', { ascending: true });
+      if (error) {
+        console.warn('Failed to fetch staff_categories:', error);
+        return [];
+      }
       return data || [];
     },
   });
@@ -1555,57 +1558,70 @@ const AdminSalary = () => {
     return s?.setting_value as any || {};
   };
 
-  // Staff Departments derived from the site's actual schema and structure
-  // (Matches Staff Management, Designations, and staffOrderHelper)
+  // Staff Departments derived dynamically from the site's Department Management (staff_categories table)
+  // Matches "পদবি ও ডিপার্টমেন্ট ব্যবস্থাপনা" 100%
   const SALARY_DEPARTMENTS: Array<{ key: string; label: string; shortLabel: string; desc: string }> = useMemo(() => {
-    const canonical = [
+    const activeCats = (staffCategoriesList as any[]).filter((c: any) => c.is_active !== false && c.key);
+
+    if (activeCats.length > 0) {
+      return activeCats.map((cat: any) => {
+        const nameBn = (cat.name_bn || '').trim();
+        const nameEn = (cat.name || '').trim();
+        const displayName = bn ? (nameBn || nameEn || cat.key) : (nameEn || nameBn || cat.key);
+        const desc = cat.description?.trim() || (bn ? `${displayName} এর আওতাভুক্ত কর্মীদের জন্য বার্তা` : `For staff under ${displayName}`);
+        return {
+          key: cat.key,
+          label: displayName,
+          shortLabel: displayName,
+          desc,
+        };
+      });
+    }
+
+    // Fallback if staff_categories is empty or not yet loaded
+    return [
       {
         key: 'teacher',
-        label: bn ? 'শিক্ষক প্যানেল (মাদরাসার সকল শিক্ষক ও উস্তাদবৃন্দ)' : 'Teachers Panel',
-        shortLabel: bn ? 'শিক্ষক' : 'Teachers',
+        label: bn ? 'শিক্ষা বিভাগ' : 'Teachers Panel',
+        shortLabel: bn ? 'শিক্ষা বিভাগ' : 'Teachers',
         desc: bn ? 'মাদরাসার সকল শিক্ষক ও উস্তাদবৃন্দের জন্য বার্তা' : 'For all teachers and instructors',
       },
       {
         key: 'administrative',
-        label: bn ? 'প্রশাসনিক কর্মকর্তা (মুহতামিম, প্রিন্সিপাল, পরিচালক)' : 'Administrative Staff',
+        label: bn ? 'প্রশাসনিক কর্মকর্তা' : 'Administrative Staff',
         shortLabel: bn ? 'প্রশাসনিক কর্মকর্তা' : 'Admin Staff',
         desc: bn ? 'মুহতামিম, প্রিন্সিপাল, নাজিম ও প্রশাসনিক কর্মকর্তাদের জন্য' : 'For administrative officers',
       },
       {
         key: 'support',
-        label: bn ? 'সাপোর্ট স্টাফ (হিসাবরক্ষক, অফিস সহকারী, অপারেটর)' : 'Support Staff',
-        shortLabel: bn ? 'সাপোর্ট স্টাফ' : 'Support Staff',
+        label: bn ? 'অফিস কর্মচারী' : 'Support Staff',
+        shortLabel: bn ? 'অফিস কর্মচারী' : 'Support Staff',
         desc: bn ? 'হিসাবরক্ষক, ক্যাশিয়ার, অফিস সহকারী ও কম্পিউটার অপারেটরদের জন্য' : 'For support staff',
       },
       {
         key: 'general',
-        label: bn ? 'সহায়ক ও সাধারণ কর্মচারী (বাবুর্চি, নিরাপত্তা প্রহরী, খাদেম)' : 'General Staff',
-        shortLabel: bn ? 'সাধারণ কর্মচারী' : 'General Staff',
+        label: bn ? 'সহায়ক কর্মী' : 'General Staff',
+        shortLabel: bn ? 'সহায়ক কর্মী' : 'General Staff',
         desc: bn ? 'বাবুর্চি, নিরাপত্তা প্রহরী, খাদেম ও সহায়ক কর্মীদের জন্য' : 'For support service staff',
       },
     ];
-
-    // Dynamically include any custom departments configured in staff_categories
-    (staffCategoriesList as any[]).forEach((cat: any) => {
-      if (cat?.key && !canonical.some(d => d.key === cat.key)) {
-        canonical.push({
-          key: cat.key,
-          label: bn ? (cat.name_bn || cat.name) : (cat.name || cat.name_bn),
-          shortLabel: bn ? (cat.name_bn || cat.name) : (cat.name || cat.name_bn),
-          desc: bn ? `${cat.name_bn || cat.name} এর আওতাভুক্ত কর্মীদের জন্য` : `For ${cat.name || cat.name_bn}`,
-        });
-      }
-    });
-
-    return canonical;
   }, [bn, staffCategoriesList]);
 
-  // Canonical resolution using the site's master staffOrderHelper
+  // Keep editingTemplateDept aligned with available dynamic departments
+  useEffect(() => {
+    if (SALARY_DEPARTMENTS.length > 0 && !SALARY_DEPARTMENTS.some(d => d.key === editingTemplateDept)) {
+      setEditingTemplateDept(SALARY_DEPARTMENTS[0].key);
+    }
+  }, [SALARY_DEPARTMENTS, editingTemplateDept]);
+
+  // Canonical resolution using the site's master staffOrderHelper and dynamic staff_categories
   const resolveStaffDeptKey = useCallback((staffMember: any): string => {
-    if (!staffMember) return 'teacher';
-    const resolved = getStaffCategoryKey(staffMember, designationsList as any[]);
-    return resolved || 'teacher';
-  }, [designationsList]);
+    if (!staffMember) return SALARY_DEPARTMENTS[0]?.key || 'teacher';
+    const knownKeys = new Set(SALARY_DEPARTMENTS.map(d => d.key));
+    const resolved = getStaffCategoryKey(staffMember, designationsList as any[], knownKeys, staffCategoriesList as any[]);
+    if (resolved && knownKeys.has(resolved)) return resolved;
+    return SALARY_DEPARTMENTS[0]?.key || resolved || 'general';
+  }, [SALARY_DEPARTMENTS, designationsList, staffCategoriesList]);
 
   // Group staff by resolved department for notification templates & inspection
   const staffByDept = useMemo(() => {
@@ -1613,10 +1629,6 @@ const AdminSalary = () => {
     SALARY_DEPARTMENTS.forEach(d => {
       groups[d.key] = [];
     });
-    if (!groups.teacher) groups.teacher = [];
-    if (!groups.administrative) groups.administrative = [];
-    if (!groups.support) groups.support = [];
-    if (!groups.general) groups.general = [];
 
     (staff || []).forEach((s: any) => {
       const key = resolveStaffDeptKey(s);
@@ -6209,7 +6221,7 @@ const AdminSalary = () => {
                             {bn ? 'বিভাগ নির্বাচন করুন (আলাদা আলাদা টেমপ্লেট দেখতে ক্লিক করুন):' : 'Select Department (Click to view unique template):'}
                           </Label>
                           <span className="text-[11px] text-muted-foreground">
-                            {bn ? '৭টি বিভাগের পৃথক বার্তা' : '7 distinct templates'}
+                            {bn ? `${toBnDigits(SALARY_DEPARTMENTS.length)}টি বিভাগের পৃথক বার্তা` : `${SALARY_DEPARTMENTS.length} distinct templates`}
                           </span>
                         </div>
 
