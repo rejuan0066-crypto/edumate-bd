@@ -15,6 +15,11 @@ import { dedupeAttendanceRecords } from '@/lib/attendanceDedup';
 import { useAttendanceDuplicateRule } from '@/hooks/useAttendanceDuplicateRule';
 import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { downloadSheetAsPdf } from '@/lib/salarySlipPdf';
+import { useAuth } from '@/hooks/useAuth';
+import { isAdminRole } from '@/lib/roles';
+import { useApprovalWorkflow } from '@/hooks/useApprovalWorkflow';
+import { todayIsoInTz } from '@/lib/timezone';
+import { useAppTimezone } from '@/hooks/useAppTimezone';
 
 const STATUS_META: Record<string, {
   bnLabel: string; enLabel: string; icon: any;
@@ -44,6 +49,10 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
   const bn = language === 'bn';
   const qc = useQueryClient();
   const { data: instInfo } = useInstitutionInfo();
+  const { user, role } = useAuth();
+  const isAdmin = isAdminRole(role);
+  const { submitForApproval } = useApprovalWorkflow();
+  const { tz: appTz } = useAppTimezone();
 
   // Advance Leave & Attendance Setting
   const { data: advanceMarkingSetting } = useQuery({
@@ -295,6 +304,56 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
     if (extra || (newStatus !== 'late' && newStatus !== 'leave')) setOpenKey(null);
 
     setSavingKey(dateKey);
+
+    // Past date restriction: Staff users cannot edit past attendance directly without approval
+    const isPastDate = dateKey < todayIsoInTz(appTz);
+    if (isPastDate && !isAdmin) {
+      try {
+        const staffName = staff?.name_bn || staff?.name_en || 'স্টাফ';
+        const statusLabel = newStatus ? (STATUS_META[newStatus]?.bnLabel || newStatus) : (bn ? 'মুছে ফেলা' : 'Cleared');
+        const actionType = newStatus === null ? 'delete' : existing ? 'edit' : 'add';
+        const success = await submitForApproval({
+          actionType,
+          targetTable: 'attendance_records',
+          targetId: existing?.id,
+          menuPath: '/admin/staff-attendance',
+          payload: {
+            attendance_date: dateKey,
+            entity_type: 'staff',
+            entity_id: staff?.id,
+            shift: shift || 'full_day',
+            status: newStatus,
+            check_in_time: extra?.check_in_time ?? existing?.check_in_time ?? null,
+            check_out_time: extra?.check_out_time ?? existing?.check_out_time ?? null,
+            leave_type: extra?.leave_type ?? existing?.leave_type ?? null,
+            leave_reason: extra?.leave_reason ?? existing?.leave_reason ?? null,
+            name_bn: staffName,
+            previous_status: existing?.status || 'unmarked',
+          },
+          description: bn
+            ? `${dateKey} তারিখের ${staffName} এর হাজিরা "${statusLabel}" পরিবর্তনের আবেদন`
+            : `Request to change attendance of ${staffName} on ${dateKey} to ${statusLabel}`,
+        });
+
+        if (success) {
+          toast.info(
+            bn
+              ? '⏳ গত তারিখের হাজিরা পরিবর্তনের জন্য এডমিনের কাছে অনুমোদনের আবেদন পাঠানো হয়েছে। এডমিন অনুমোদন করার পর এটি কার্যকর হবে।'
+              : '⏳ Past date attendance change submitted for admin approval. It will take effect once approved.',
+            { duration: 6000 }
+          );
+        } else {
+          toast.error(bn ? 'অনুমোদনের আবেদন পাঠাতে ব্যর্থ হয়েছে' : 'Failed to submit approval request');
+        }
+      } catch (err: any) {
+        toast.error(err?.message || (bn ? 'সমস্যা হয়েছে' : 'Error occurred'));
+      } finally {
+        setSavingKey(null);
+        setRecords(prevRecords); // revert preview since pending approval
+      }
+      return;
+    }
+
     try {
       if (newStatus === null) {
         const { error } = await supabase.from('attendance_records').delete().eq('id', existing.id);
@@ -539,6 +598,17 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
         </div>
 
         <div className="px-4 py-3 space-y-3">
+          {!isAdmin && (
+            <div className="flex items-center gap-2 p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-200 text-xs">
+              <Clock className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+              <span>
+                {bn
+                  ? 'পূর্ববর্তী তারিখের হাজিরা পরিবর্তনে এডমিন অনুমোদন প্রযোজ্য হবে।'
+                  : 'Changes to past date attendance require Admin approval.'}
+              </span>
+            </div>
+          )}
+
           {/* Month nav with chips & Print/PDF actions */}
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border/40 bg-gradient-to-r from-background/80 via-muted/20 to-background/80 backdrop-blur p-2 shadow-sm">
             <div className="flex items-center gap-1.5 min-w-0">

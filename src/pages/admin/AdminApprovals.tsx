@@ -135,6 +135,12 @@ const FIELD_LABEL_MAP: Record<string, string> = {
   target_label: 'রিসেটের আওতাভুক্ত',
   count: 'মোট রেকর্ড সংখ্যা',
   date: 'তারিখ',
+  attendance_date: 'হাজিরা তারিখ',
+  previous_status: 'পূর্ববর্তী স্ট্যাটাস',
+  check_in_time: 'প্রবেশ সময়',
+  check_out_time: 'প্রস্থান সময়',
+  leave_type: 'ছুটির ধরন',
+  leave_reason: 'ছুটির কারণ',
   entity_type: 'সত্তা ধরন',
   shift: 'শিফট',
   phone: 'মোবাইল নম্বর',
@@ -1208,6 +1214,36 @@ const AdminApprovals = () => {
         if (error) throw error;
       }
       return;
+    }
+
+    if (target_table === 'attendance_records') {
+      if (cleanPayload.records && Array.isArray(cleanPayload.records)) {
+        const { error } = await supabase
+          .from('attendance_records')
+          .upsert(cleanPayload.records, { onConflict: 'attendance_date,entity_type,entity_id,shift' });
+        if (error) throw error;
+        return;
+      }
+
+      if (action_type === 'add' || action_type === 'edit') {
+        const validKeys = [
+          'attendance_date', 'entity_type', 'entity_id', 'shift', 'status',
+          'check_in_time', 'check_out_time', 'leave_type', 'leave_reason',
+          'remarks', 'recorded_by', 'updated_at'
+        ];
+        const recordPayload: Record<string, any> = {};
+        for (const k of validKeys) {
+          if (k in cleanPayload && cleanPayload[k] !== undefined) {
+            recordPayload[k] = cleanPayload[k];
+          }
+        }
+        if (target_id) recordPayload.id = target_id;
+        const { error } = await supabase
+          .from('attendance_records')
+          .upsert(recordPayload, { onConflict: 'attendance_date,entity_type,entity_id,shift' });
+        if (error) throw error;
+        return;
+      }
     }
 
     if (action_type === 'add') {

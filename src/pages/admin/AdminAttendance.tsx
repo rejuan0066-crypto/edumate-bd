@@ -1462,6 +1462,44 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
         updateData.check_in_time = null;
         updateData.check_out_time = null;
       }
+
+      // Past date restriction: Non-admin users cannot edit past attendance directly without approval
+      const isPastDate = selectedDate < todayIsoInTz(appTz);
+      if (isPastDate && !isAdmin) {
+        const entity = entities.find((e: any) => e.id === entityId);
+        const entityName = entity?.name_bn || entity?.name_en || (entityType === 'staff' ? 'স্টাফ' : 'শিক্ষার্থী');
+        const statusLabel = status === 'present' ? (bn ? 'উপস্থিত' : 'Present')
+          : status === 'absent' ? (bn ? 'অনুপস্থিত' : 'Absent')
+          : status === 'late' ? (bn ? 'বিলম্ব' : 'Late')
+          : status === 'leave' ? (bn ? 'ছুটি' : 'Leave') : status;
+
+        const actionType = existing ? 'edit' : 'add';
+        const success = await submitForApproval({
+          actionType,
+          targetTable: 'attendance_records',
+          targetId: existing?.id,
+          menuPath: targetMenuPath,
+          payload: {
+            ...updateData,
+            attendance_date: selectedDate,
+            entity_type: entityType,
+            entity_id: entityId,
+            shift: shiftVal,
+            name_bn: entityName,
+            status,
+            previous_status: existing?.status || 'unmarked',
+          },
+          description: bn
+            ? `${selectedDate} তারিখের ${entityName} এর হাজিরা "${statusLabel}" পরিবর্তনের আবেদন`
+            : `Request to change attendance of ${entityName} on ${selectedDate} to ${status}`,
+        });
+
+        if (!success) {
+          throw new Error('SUBMIT_APPROVAL_FAILED');
+        }
+        return { approvalSubmitted: true };
+      }
+
       if (existing) {
         const { error } = await supabase.from('attendance_records').update(updateData).eq('id', existing.id);
         if (error) throw error;
@@ -1474,6 +1512,10 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       }
     },
     onMutate: async ({ entityId, status, remarks, check_in_time, check_out_time, shift }) => {
+      const isPastDate = selectedDate < todayIsoInTz(appTz);
+      if (isPastDate && !isAdmin) {
+        return { isApproval: true };
+      }
       const shiftVal = shift || (isDutyTab ? 'morning' : effectiveShift);
       // Cancel any outgoing refetches so they don't overwrite optimistic update
       const queryKey = ['attendance', selectedDate, entityType, isDutyTab ? 'duty_both' : effectiveShift];
@@ -1511,12 +1553,25 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       });
       return { previousAttendance, queryKey };
     },
-    onSuccess: () => {
+    onSuccess: (result: any) => {
+      if (result?.approvalSubmitted) {
+        toast.info(
+          bn
+            ? '⏳ গত তারিখের হাজিরা পরিবর্তনের জন্য এডমিনের কাছে অনুমোদনের আবেদন পাঠানো হয়েছে। এডমিন অনুমোদন করার পর এটি কার্যকর হবে।'
+            : '⏳ Past date attendance change submitted for admin approval. It will take effect once approved.',
+          { duration: 6000 }
+        );
+        return;
+      }
       queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType] });
       queryClient.invalidateQueries({ queryKey: ['salary-attendance'] });
       queryClient.invalidateQueries({ queryKey: ['salary-duty-attendance'] });
     },
-    onError: (err, _vars, context: any) => {
+    onError: (err: any, _vars, context: any) => {
+      if (context?.isApproval) {
+        toast.error(bn ? 'অনুমোদনের আবেদন পাঠাতে ব্যর্থ হয়েছে' : 'Failed to submit approval request');
+        return;
+      }
       // Rollback UI to previous state if save fails
       if (context?.previousAttendance !== undefined) {
         queryClient.setQueryData(context.queryKey, context.previousAttendance);
@@ -1528,6 +1583,15 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
 
   // Bulk mark for duty shifts (morning or evening)
   const handleBulkMarkDuty = async (targetShift: 'morning' | 'evening', status: string = 'present') => {
+    const isPastDate = selectedDate < todayIsoInTz(appTz);
+    if (isPastDate && !isAdmin) {
+      toast.error(
+        bn
+          ? 'পূর্বের তারিখের সবার হাজিরা এক সাথে দেওয়ার অনুমতি নেই। শুধুমাত্র এডমিন পূর্বের তারিখে পরিবর্তন করতে পারেন।'
+          : 'Bulk attendance marking for past dates is restricted. Only Admins can perform this.'
+      );
+      return;
+    }
     const list = targetShift === 'morning' ? morningDutyEntities : eveningDutyEntities;
     const unmarked = list.filter((e: any) => !attendance.some((a: any) => a.entity_id === e.id && a.shift === targetShift));
     if (unmarked.length === 0) {
@@ -1561,6 +1625,14 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
   // Bulk mark all
   const bulkMutation = useMutation({
     mutationFn: async (status: string) => {
+      const isPastDate = selectedDate < todayIsoInTz(appTz);
+      if (isPastDate && !isAdmin) {
+        throw new Error(
+          bn
+            ? 'পূর্বের তারিখের সবার হাজিরা এক সাথে দেওয়ার অনুমতি নেই। শুধুমাত্র এডমিন পূর্বের তারিখে পরিবর্তন করতে পারেন।'
+            : 'Bulk attendance marking for past dates is restricted. Only Admins can perform this.'
+        );
+      }
       const shiftVal = effectiveShift;
       const unmarked = entities.filter((e: any) => !attendance.find((a: any) => a.entity_id === e.id));
       if (unmarked.length === 0) return;
@@ -3811,6 +3883,30 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                 )
               )}
             </div>
+          </div>
+        )}
+
+        {/* Past Date Notification Banner for Non-Admin Staff Users */}
+        {selectedDate < todayIsoInTz(appTz) && !isAdmin && (
+          <div className="rounded-2xl border p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs transition-all border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-200">
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
+                <Clock className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="font-bold">
+                  {bn ? `পূর্ববর্তী তারিখ (${selectedDate}) — এডমিন অনুমোদন প্রযোজ্য` : `Past Date (${selectedDate}) — Admin Approval Required`}
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  {bn
+                    ? 'স্টাফ ব্যবহারকারীদের জন্য গত তারিখের হাজিরা সরাসরি পরিবর্তন লক করা আছে। যেকোনো বাটনে ক্লিক করলে তা সরাসরি কার্যকর না হয়ে এডমিনের কাছে অনুমোদনের আবেদন যাবে।'
+                    : 'Direct editing of past attendance is restricted for staff users. Any changes will be submitted for Admin approval.'}
+                </p>
+              </div>
+            </div>
+            <Badge variant="outline" className="bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/40 text-xs font-semibold px-2.5 py-1 shrink-0">
+              {bn ? 'অনুমোদন সাপেক্ষ' : 'Approval Required'}
+            </Badge>
           </div>
         )}
 
