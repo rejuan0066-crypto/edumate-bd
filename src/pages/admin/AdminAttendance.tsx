@@ -316,10 +316,10 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     queryFn: async () => {
       const { data } = await supabase
         .from('staff_categories')
-        .select('key, name, name_bn, sort_order')
+        .select('key, name, name_bn, sort_order, id_prefix, id_start_range')
         .eq('is_active', true)
         .order('sort_order', { ascending: true });
-      return (data || []) as Array<{ key: string; name: string; name_bn: string; sort_order: number }>;
+      return (data || []) as Array<{ key: string; name: string; name_bn: string; sort_order: number; id_prefix?: string; id_start_range?: number }>;
     },
     staleTime: 0,
     refetchOnMount: 'always',

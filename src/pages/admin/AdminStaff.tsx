@@ -199,7 +199,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('staff_categories')
-        .select('key, name, name_bn, sort_order, is_active')
+        .select('key, name, name_bn, sort_order, is_active, id_prefix, id_start_range')
         .eq('is_active', true)
         .order('sort_order', { ascending: true });
       if (error) throw error;

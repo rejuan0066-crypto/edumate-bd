@@ -10,6 +10,8 @@ export interface DepartmentConfig {
   name_bn?: string;
   name?: string;
   sort_order?: number;
+  id_prefix?: string | null;
+  id_start_range?: number | null;
 }
 
 export interface DesignationConfig {
@@ -169,20 +171,44 @@ export function getStaffCategoryKey(
 }
 
 /**
- * Returns numeric priority for staff prefix / department (lower = first)
- * Priority order: ADM (10) < TCH (20) < OFF (30) < STF (40) < RES (50) < CH (60)
+ * Returns dynamic numeric priority for staff prefix / department (lower = first).
+ * 1. Checks dynamic configuration from DB (staff_categories: sort_order & id_prefix)
+ * 2. Falls back to canonical institutional prefix defaults: ADM (10) < TCH (20) < OFF (30) < STF (40) < RES (50) < CH (60)
  */
 export function getStaffPrefixPriority(
   staff: any,
   categoriesList?: DepartmentConfig[]
 ): number {
-  if (!staff) return 99;
+  if (!staff) return 999;
 
   // 1. Extract prefix from staff_id if present (e.g. TCH-2026-2004 -> TCH)
   const staffId = String(staff.staff_id || '').trim().toUpperCase();
   const idPrefixMatch = staffId.match(/^([A-Z]+)/);
   const idPrefix = idPrefixMatch ? idPrefixMatch[1] : '';
 
+  // 2. DYNAMIC LOOKUP: Match against DB staff_categories (matches id_prefix or category key)
+  if (categoriesList && categoriesList.length > 0) {
+    // 2a. Match by exact id_prefix from DB
+    if (idPrefix) {
+      const matchByPrefix = categoriesList.find(
+        (c) => c.id_prefix && c.id_prefix.trim().toUpperCase() === idPrefix
+      );
+      if (matchByPrefix && typeof matchByPrefix.sort_order === 'number' && matchByPrefix.sort_order > 0) {
+        return matchByPrefix.sort_order * 10;
+      }
+    }
+
+    // 2b. Match by staff_category key from DB
+    const catKey = String(staff.staff_category || '').trim().toLowerCase();
+    if (catKey) {
+      const matchByKey = categoriesList.find((c) => c.key.toLowerCase() === catKey);
+      if (matchByKey && typeof matchByKey.sort_order === 'number' && matchByKey.sort_order > 0) {
+        return matchByKey.sort_order * 10;
+      }
+    }
+  }
+
+  // 3. Fallback: Canonical prefix priority if DB list not yet loaded or category has no sort_order
   if (idPrefix) {
     if (idPrefix === 'ADM' || idPrefix === 'ADMIN') return 10;
     if (idPrefix === 'DIR') return 12;
@@ -194,7 +220,7 @@ export function getStaffPrefixPriority(
     if (idPrefix === 'CH' || idPrefix === 'CHEF' || idPrefix === 'COOK') return 60;
   }
 
-  // 2. If no prefix in staff_id, check department / staff_category priority
+  // 4. Fallback: Category key fallback
   const catKey = String(staff.staff_category || '').toLowerCase();
   if (catKey === 'administrative' || catKey === 'admin') return 10;
   if (isTeacherCategory(catKey)) {
@@ -206,7 +232,7 @@ export function getStaffPrefixPriority(
   if (catKey === 'residential' || catKey === 'hostel') return 50;
   if (catKey === 'chef' || catKey === 'cook') return 60;
 
-  return 99;
+  return 999;
 }
 
 /**
