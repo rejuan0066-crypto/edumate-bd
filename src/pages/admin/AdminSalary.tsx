@@ -3953,9 +3953,73 @@ const AdminSalary = () => {
     };
   };
 
+  // Scroll preservation refs for print/modal actions
+  const lastPrintedStaffIdRef = useRef<string | null>(null);
+  const savedScrollPositionRef = useRef<number | null>(null);
+
+  // Helper: restore scroll position directly to the staff card or row that was printed
+  const restoreSalaryScrollPosition = useCallback((targetStaffId?: string | null) => {
+    const staffId = targetStaffId || lastPrintedStaffIdRef.current;
+    const savedY = savedScrollPositionRef.current;
+
+    const tryRestore = () => {
+      if (staffId) {
+        const el = document.getElementById(`staff-card-${staffId}`) || document.getElementById(`staff-row-${staffId}`);
+        if (el) {
+          el.scrollIntoView({ block: 'center', behavior: 'instant' as any });
+          return true;
+        }
+      }
+      if (savedY !== null && savedY > 0) {
+        window.scrollTo({ top: savedY, behavior: 'instant' as any });
+        return true;
+      }
+      return false;
+    };
+
+    // Immediate attempt
+    tryRestore();
+
+    // Deferred backup attempt after Radix portal cleanup & unlock
+    setTimeout(tryRestore, 40);
+    setTimeout(tryRestore, 120);
+  }, []);
+
+  // Auto-scroll back to last printed staff member after print or page reload
+  useEffect(() => {
+    let targetStaffId: string | null = null;
+    const hash = window.location.hash;
+    if (hash && hash.startsWith('#staff-')) {
+      targetStaffId = hash.replace('#staff-', '');
+    }
+    if (!targetStaffId) {
+      try {
+        targetStaffId = sessionStorage.getItem('salary_scroll_staff_id');
+        if (targetStaffId) sessionStorage.removeItem('salary_scroll_staff_id');
+      } catch (e) {}
+    }
+
+    if (targetStaffId && filtered.length > 0) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`staff-card-${targetStaffId}`) || document.getElementById(`staff-row-${targetStaffId}`);
+        if (el) {
+          el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
+      }, 350);
+      return () => clearTimeout(timer);
+    }
+  }, [filtered.length]);
+
   // Open salary slip preview & print modal (instant on mobile and desktop)
   const printSlip = (staffMember: any, record: any) => {
     try {
+      lastPrintedStaffIdRef.current = staffMember?.id || null;
+      savedScrollPositionRef.current = typeof window !== 'undefined' ? (window.scrollY || document.documentElement.scrollTop || 0) : 0;
+      if (staffMember?.id) {
+        try {
+          sessionStorage.setItem('salary_scroll_staff_id', staffMember.id);
+        } catch (e) {}
+      }
       const data = buildSalarySlip(staffMember, record);
       setSlipModal({
         staff: staffMember,
@@ -3987,8 +4051,9 @@ const AdminSalary = () => {
         console.warn('Direct iframe print failed, falling back to standalone print', err);
       }
     }
+    const staffHash = slipModal.staff?.id ? `#staff-${slipModal.staff.id}` : '';
     const returnUrl = typeof window !== 'undefined'
-      ? `${window.location.origin}${window.location.pathname}?year=${selectedYear}&month=${selectedMonth}`
+      ? `${window.location.origin}${window.location.pathname}?year=${selectedYear}&month=${selectedMonth}${staffHash}`
       : undefined;
     printSalarySlipHtml(slipModal.html, slipModal.staff?.name_en || slipModal.staff?.name_bn, returnUrl);
   };
@@ -4403,7 +4468,7 @@ const AdminSalary = () => {
                       : '';
 
                     return (
-                      <div key={s.id} className="bg-card rounded-2xl border border-border/70 p-4 shadow-xs space-y-3.5 relative transition-all hover:shadow-md">
+                      <div key={s.id} id={`staff-card-${s.id}`} data-staff-id={s.id} className="bg-card rounded-2xl border border-border/70 p-4 shadow-xs space-y-3.5 relative transition-all hover:shadow-md">
                         {/* Row 1: Header - Serial, Name, Staff ID, Designation, Department, Status */}
                         <div className="flex items-start justify-between gap-2.5">
                           <div className="flex items-start gap-2.5 min-w-0 flex-1">
@@ -4901,7 +4966,7 @@ const AdminSalary = () => {
                         const isHardBlocked = !rec && (validation?.hasErrors ?? false);
 
                         return (
-                          <tr key={s.id} className="border-b border-border/40 hover:bg-muted/35 transition-colors duration-150 whitespace-nowrap">
+                          <tr key={s.id} id={`staff-row-${s.id}`} data-staff-id={s.id} className="border-b border-border/40 hover:bg-muted/35 transition-colors duration-150 whitespace-nowrap">
                             <td className="px-2 py-2 text-muted-foreground whitespace-nowrap">
                               <div className="flex items-center gap-1">
                                 <div className="flex flex-col">
@@ -7945,8 +8010,21 @@ const AdminSalary = () => {
         </Dialog>
 
         {/* Salary Slip Preview & Mobile/Desktop Print Modal */}
-        <Dialog open={!!slipModal} onOpenChange={(open) => { if (!open) setSlipModal(null); }}>
-          <DialogContent className="max-w-4xl max-h-[95vh] flex flex-col p-0 gap-0 overflow-hidden rounded-2xl border bg-background shadow-2xl">
+        <Dialog open={!!slipModal} onOpenChange={(open) => {
+          if (!open) {
+            const sid = slipModal?.staff?.id || lastPrintedStaffIdRef.current;
+            setSlipModal(null);
+            restoreSalaryScrollPosition(sid);
+          }
+        }}>
+          <DialogContent
+            onOpenAutoFocus={(e) => e.preventDefault()}
+            onCloseAutoFocus={(e) => {
+              e.preventDefault();
+              restoreSalaryScrollPosition();
+            }}
+            className="max-w-4xl max-h-[95vh] flex flex-col p-0 gap-0 overflow-hidden rounded-2xl border bg-background shadow-2xl"
+          >
             {/* Header with sticky action bar */}
             <div className="p-4 sm:p-5 border-b bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-950 text-white flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
@@ -8164,8 +8242,12 @@ const AdminSalary = () => {
               <Button
                 size="sm"
                 variant="ghost"
-                className="px-1.5 text-xs"
-                onClick={() => setSlipModal(null)}
+                className="px-2.5 text-xs font-semibold"
+                onClick={() => {
+                  const sid = slipModal?.staff?.id || lastPrintedStaffIdRef.current;
+                  setSlipModal(null);
+                  restoreSalaryScrollPosition(sid);
+                }}
               >
                 {bn ? 'বন্ধ' : 'Close'}
               </Button>
