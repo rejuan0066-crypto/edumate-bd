@@ -28,7 +28,7 @@ import {
   CalendarDays, Users, UserCog, Search, Check, X, Clock,
   CalendarOff, Save, Settings2, Plus, Trash2, Edit2, Lock,
   CheckCircle2, XCircle, AlertCircle, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Home, Sun, Sunset, Moon, Utensils, Coffee,
-  Download, Printer, RotateCcw, Layers, QrCode, Send, Fingerprint, UserCheck, History, Sparkles
+  Download, Printer, RotateCcw, Layers, QrCode, Send, Fingerprint, UserCheck, History, Sparkles, Loader2
 } from 'lucide-react';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { useAuth } from '@/hooks/useAuth';
@@ -308,6 +308,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     };
   }
   const [deptShiftConfigs, setDeptShiftConfigs] = useState<Record<string, DeptShiftConfig>>({});
+  const [savingCatKey, setSavingCatKey] = useState<string | null>(null);
   const [specialShiftDialogOpen, setSpecialShiftDialogOpen] = useState(false);
 
   // Dynamic staff categories from staff_categories table (synced with Designations page)
@@ -1170,7 +1171,10 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       const oldTimes = (savedCategoryTimes as Record<string, { start: string; end: string }>) || {};
 
       // ===== Save settings (strip transient warnings field) =====
-      const cleanTimes: Record<string, any> = {};
+      // Preserve existing categories in DB so saving one department does not delete others
+      const cleanTimes: Record<string, any> = {
+        ...(savedCategoryTimes && typeof savedCategoryTimes === 'object' ? savedCategoryTimes : {}),
+      };
       for (const [k, v] of Object.entries(deptPayloads)) {
         if (k === '__overnightWarnings') continue;
         const sp = (v as any).specialDay;
@@ -1303,6 +1307,19 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       toast.error(e?.message || (bn ? 'সেভ করা যায়নি' : 'Failed to save'));
     },
   });
+
+  const handleSaveSingleDepartment = async (catKey: string, catLabel: string) => {
+    setSavingCatKey(catKey);
+    try {
+      const cfg = getDeptConfig(catKey);
+      await saveCategoryTimesMutation.mutateAsync({ [catKey]: cfg } as any);
+      toast.success(bn ? `"${catLabel}" এর সময়সূচি ও সেশন সফলভাবে সংরক্ষিত হয়েছে` : `Shift saved for ${catLabel}`);
+    } catch (err: any) {
+      toast.error(err?.message || (bn ? 'সংরক্ষণ ব্যর্থ হয়েছে' : 'Failed to save'));
+    } finally {
+      setSavingCatKey(null);
+    }
+  };
 
   // Apply the Thursday half-day check-in/check-out window when the selected date is a
   // Thursday and the staff belongs to a configured department.
@@ -2583,40 +2600,128 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                         </div>
                       </div>
 
-                      {/* Individual Department Date Range */}
-                      <div className="rounded-lg border border-border/50 bg-muted/20 p-2 space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-foreground text-[10px] flex items-center gap-1">
-                            <CalendarDays className="w-3 h-3 text-primary" />
-                            {bn ? 'কার্যকর সময়সীমা' : 'Effective Date Range'}
-                          </span>
-                          <label className="flex items-center gap-1 text-[10px] cursor-pointer text-muted-foreground hover:text-foreground select-none">
-                            <Checkbox
+                      {/* Enhanced Department Session & Date Range */}
+                      <div className="rounded-xl border border-primary/20 bg-primary/[0.03] dark:bg-primary/[0.06] p-3 space-y-2.5">
+                        <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-primary/10 pb-2">
+                          <div className="flex items-center gap-1.5">
+                            <CalendarDays className="w-4 h-4 text-primary" />
+                            <span className="font-bold text-foreground text-xs">
+                              {bn ? 'কার্যকর সেশন ও মেয়াদকাল' : 'Effective Session & Period'}
+                            </span>
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] px-2 py-0.5 font-semibold ${
+                              cfg.isOngoing
+                                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
+                                : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30'
+                            }`}
+                          >
+                            {cfg.isOngoing
+                              ? (bn ? '🟢 স্থায়ী / অনির্দিষ্টকাল চলমান' : '🟢 Permanent / Ongoing')
+                              : (bn ? '⏳ নির্দিষ্ট মেয়াদের সেশন' : '⏳ Fixed-term Session')}
+                          </Badge>
+                        </div>
+
+                        {/* Session Mode Selector: Ongoing vs Fixed Date Range */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <label
+                            className={`flex items-start gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                              cfg.isOngoing
+                                ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-500/40 text-emerald-900 dark:text-emerald-200 shadow-2xs'
+                                : 'bg-background hover:bg-muted/40 border-border/60 text-muted-foreground'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name={`session_mode_${cat.key}`}
                               checked={cfg.isOngoing}
-                              onCheckedChange={(c) => updateDeptConfig(cat.key, { isOngoing: !!c, effectiveTo: c ? '' : cfg.effectiveTo })}
+                              onChange={() => updateDeptConfig(cat.key, { isOngoing: true, effectiveTo: '' })}
+                              className="mt-0.5 cursor-pointer text-emerald-600 focus:ring-emerald-500"
                             />
-                            <span>{bn ? 'চলমান (স্থায়ী)' : 'Ongoing'}</span>
+                            <div>
+                              <span className="font-semibold block">{bn ? 'স্থায়ী সময়সূচি (চলমান)' : 'Permanent (Ongoing)'}</span>
+                              <span className="text-[10px] text-muted-foreground block leading-tight">
+                                {bn ? 'কোনো সমাপ্তি তারিখ নেই, নতুন পরিবর্তন না করা পর্যন্ত স্থায়ীভাবে চলবে।' : 'No end date, active indefinitely.'}
+                              </span>
+                            </div>
+                          </label>
+
+                          <label
+                            className={`flex items-start gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                              !cfg.isOngoing
+                                ? 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-500/40 text-amber-900 dark:text-amber-200 shadow-2xs'
+                                : 'bg-background hover:bg-muted/40 border-border/60 text-muted-foreground'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name={`session_mode_${cat.key}`}
+                              checked={!cfg.isOngoing}
+                              onChange={() => updateDeptConfig(cat.key, { isOngoing: false })}
+                              className="mt-0.5 cursor-pointer text-amber-600 focus:ring-amber-500"
+                            />
+                            <div>
+                              <span className="font-semibold block">{bn ? 'নির্দিষ্ট সেশন / মেয়াদভিত্তিক' : 'Fixed Session / Date Range'}</span>
+                              <span className="text-[10px] text-muted-foreground block leading-tight">
+                                {bn ? 'গ্রীষ্মকালীন, শীতকালীন বা নির্দিষ্ট শিক্ষাবর্ষের সেশন।' : 'Seasonal or specific academic session.'}
+                              </span>
+                            </div>
                           </label>
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
+
+                        {/* Dates pickers */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                           <div>
-                            <Label className="text-[9px] text-muted-foreground">{bn ? 'শুরু তারিখ' : 'From Date'}</Label>
+                            <Label className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
+                              {bn ? 'সেশন শুরুর তারিখ' : 'Session Start Date'} <span className="text-destructive">*</span>
+                            </Label>
                             <DatePicker
-                              className="h-7 text-xs w-full"
+                              className="h-8 text-xs w-full bg-background mt-1"
                               value={cfg.effectiveFrom}
                               onChange={(d) => updateDeptConfig(cat.key, { effectiveFrom: d || '' })}
                             />
                           </div>
                           <div>
-                            <Label className="text-[9px] text-muted-foreground">{bn ? 'সমাপ্তির তারিখ' : 'To Date'}</Label>
+                            <Label className="text-[10px] text-muted-foreground font-semibold flex items-center justify-between">
+                              <span>{bn ? 'সেশন সমাপ্তির তারিখ' : 'Session End Date'}</span>
+                              {cfg.isOngoing && (
+                                <span className="text-[9px] text-emerald-600 font-normal">{bn ? '(স্থায়ী থাকায় সমাপ্তি নেই)' : '(No end date)'}</span>
+                              )}
+                            </Label>
                             <DatePicker
-                              className="h-7 text-xs w-full"
+                              className={`h-8 text-xs w-full mt-1 ${cfg.isOngoing ? 'opacity-60 bg-muted cursor-not-allowed' : 'bg-background'}`}
                               value={cfg.effectiveTo}
                               onChange={(d) => updateDeptConfig(cat.key, { effectiveTo: d || '' })}
                               disabled={cfg.isOngoing}
-                              placeholder={cfg.isOngoing ? (bn ? 'চলমান' : 'Ongoing') : ''}
+                              placeholder={cfg.isOngoing ? (bn ? 'চলমান (স্থায়ী)' : 'Ongoing') : (bn ? 'সমাপ্তির তারিখ নির্বাচন করুন' : 'Select end date')}
                             />
                           </div>
+                        </div>
+
+                        {/* Session Summary Callout */}
+                        <div className="rounded-lg bg-background/80 border border-primary/15 p-2 text-[11px] text-foreground flex items-center gap-2">
+                          <div className="h-2 w-2 rounded-full bg-primary shrink-0 animate-pulse" />
+                          <span className="leading-snug">
+                            {bn ? (
+                              <>
+                                <strong>কার্যকর বিবরণ:</strong> {cfg.effectiveFrom ? fmtDate(cfg.effectiveFrom) : 'শুরু থেকে'} হতে{' '}
+                                {cfg.isOngoing ? (
+                                  <span className="text-emerald-600 font-bold">স্থায়ীভাবে বলবৎ</span>
+                                ) : cfg.effectiveTo ? (
+                                  <span className="text-amber-600 font-bold">{fmtDate(cfg.effectiveTo)} পর্যন্ত কার্যকর</span>
+                                ) : (
+                                  <span className="text-destructive font-semibold">সমাপ্তির তারিখ নির্বাচন করুন</span>
+                                )}
+                                । এই সময়ে প্রতিদিন <strong>{cfg.start || '08:00'}</strong> থেকে <strong>{cfg.end || '17:00'}</strong> পর্যন্ত ডিউটি গণ্য হবে।
+                              </>
+                            ) : (
+                              <>
+                                <strong>Schedule status:</strong> Active from {cfg.effectiveFrom || 'start'}{' '}
+                                {cfg.isOngoing ? 'indefinitely (Permanent)' : `until ${cfg.effectiveTo || 'end'}`}. Duty hours: {cfg.start} - {cfg.end}.
+                              </>
+                            )}
+                          </span>
                         </div>
                       </div>
 
@@ -2841,6 +2946,32 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
                             })()}
                           </div>
                         )}
+                      </div>
+
+                      {/* Individual Department Save Action */}
+                      <div className="pt-2.5 border-t border-border/40 flex items-center justify-between gap-2 bg-muted/15 -mx-3 -mb-2.5 p-3 rounded-b-xl">
+                        <p className="text-[11px] text-muted-foreground hidden sm:block">
+                          {bn ? `শুধুমাত্র ${cat.label} ডিপার্টমেন্টের সময়সূচি ও সেশন সংরক্ষণ করতে:` : `Save settings only for ${cat.label}:`}
+                        </p>
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="w-full sm:w-auto h-8 px-4 text-xs font-semibold rounded-lg shadow-xs transition-all bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-1.5 active:scale-95"
+                          onClick={() => handleSaveSingleDepartment(cat.key, cat.label)}
+                          disabled={savingCatKey === cat.key || saveCategoryTimesMutation.isPending}
+                        >
+                          {savingCatKey === cat.key ? (
+                            <>
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              <span>{bn ? 'সংরক্ষণ হচ্ছে...' : 'Saving...'}</span>
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-3.5 w-3.5" />
+                              <span>{bn ? `${cat.label} সংরক্ষণ করুন` : `Save ${cat.label}`}</span>
+                            </>
+                          )}
+                        </Button>
                       </div>
                     </div>
                   );
