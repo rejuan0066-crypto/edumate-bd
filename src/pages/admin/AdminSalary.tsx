@@ -4351,27 +4351,31 @@ const AdminSalary = () => {
             <Card>
               <CardContent className="p-0">
                 {/* ============================================================== */}
-                {/* 1. MOBILE RESPONSIVE CARD VIEW (< md screens) */}
+                {/* 1. MODERN MOBILE RESPONSIVE CARD VIEW (< md screens) */}
                 {/* ============================================================== */}
-                <div className={`${mobileViewMode === 'card' ? 'block md:hidden' : 'hidden'} divide-y divide-border/60`}>
-                  {/* Mobile Card Top Switcher Bar */}
-                  <div className="flex items-center justify-between px-3 py-2 bg-muted/40 border-b border-border/40 text-xs text-muted-foreground font-medium">
-                    <div className="flex items-center gap-1.5">
-                      <Users className="h-3.5 w-3.5 text-primary" />
-                      <span>{bn ? `মোট ${toBnDigits(filtered.length)} জন স্টাফ` : `Total ${filtered.length} staff`}</span>
+                <div className={`${mobileViewMode === 'card' ? 'block md:hidden' : 'hidden'} p-2.5 sm:p-3 space-y-3.5 bg-muted/25 dark:bg-muted/10`}>
+                  {/* Mobile Top Header / View Switcher */}
+                  <div className="flex items-center justify-between px-3.5 py-2.5 bg-card rounded-2xl border border-border/70 shadow-xs text-xs font-semibold">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                        <Users className="h-4 w-4" />
+                      </div>
+                      <span className="text-foreground text-sm font-bold">
+                        {bn ? `মোট ${toBnDigits(filtered.length)} জন স্টাফ` : `Total ${filtered.length} staff`}
+                      </span>
                     </div>
                     <Button
                       size="sm"
                       variant="outline"
-                      className="h-7 text-[11px] gap-1 px-2.5 rounded-lg border-border/80 bg-background"
+                      className="h-8 text-xs font-semibold gap-1.5 px-3 rounded-xl border-border/80 bg-background shadow-2xs hover:bg-muted"
                       onClick={() => setMobileViewMode('table')}
                     >
-                      <TableIcon className="h-3 w-3 text-primary" />
+                      <TableIcon className="h-4 w-4 text-primary" />
                       <span>{bn ? 'টেবিল ভিউ' : 'Table View'}</span>
                     </Button>
                   </div>
 
-                  {/* Staff Cards List */}
+                  {/* Individual Elevated Staff Cards */}
                   {filtered.map((s: any, idx: number) => {
                     const rec = getRecord(s.id);
                     const snap = getSalaryDisplaySnapshot(s, rec);
@@ -4399,48 +4403,50 @@ const AdminSalary = () => {
                       : '';
 
                     return (
-                      <div key={s.id} className="p-3.5 bg-card hover:bg-muted/15 transition-colors space-y-2.5">
-                        {/* Row 1: Header - Serial, Reorder, Name, ID, Designation, Status */}
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-start gap-2 min-w-0">
-                            {/* Reorder Buttons & Serial */}
-                            <div className="flex items-center gap-0.5 shrink-0 bg-muted/60 rounded p-0.5 border border-border/40 mt-0.5">
-                              <button
-                                type="button"
-                                onClick={() => reorderStaffMutation.mutate({ direction: 'up', currentId: s.id })}
-                                disabled={idx === 0 || reorderStaffMutation.isPending}
-                                className="text-muted-foreground hover:text-emerald-600 disabled:opacity-30 disabled:cursor-not-allowed p-0.5"
-                                title={bn ? 'উপরে নিন' : 'Move up'}
-                              >
-                                <ChevronUp className="h-3 w-3" />
-                              </button>
-                              <span className="text-[11px] font-bold text-foreground px-1">
+                      <div key={s.id} className="bg-card rounded-2xl border border-border/70 p-4 shadow-xs space-y-3.5 relative transition-all hover:shadow-md">
+                        {/* Row 1: Header - Serial, Name, Staff ID, Designation, Department, Status */}
+                        <div className="flex items-start justify-between gap-2.5">
+                          <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                            {/* Serial Chip & Reorder Stepper */}
+                            <div className="flex flex-col items-center justify-center shrink-0">
+                              <span className="w-7 h-7 rounded-xl bg-primary/10 text-primary font-bold text-xs flex items-center justify-center border border-primary/20 shadow-2xs">
                                 {bn ? toBnDigits(idx + 1) : idx + 1}
                               </span>
-                              <button
-                                type="button"
-                                onClick={() => reorderStaffMutation.mutate({ direction: 'down', currentId: s.id })}
-                                disabled={idx === filtered.length - 1 || reorderStaffMutation.isPending}
-                                className="text-muted-foreground hover:text-emerald-600 disabled:opacity-30 disabled:cursor-not-allowed p-0.5"
-                                title={bn ? 'নিচে নিন' : 'Move down'}
-                              >
-                                <ChevronDown className="h-3 w-3" />
-                              </button>
+                              <div className="flex items-center gap-0.5 mt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => reorderStaffMutation.mutate({ direction: 'up', currentId: s.id })}
+                                  disabled={idx === 0 || reorderStaffMutation.isPending}
+                                  className="p-1 rounded text-muted-foreground hover:text-emerald-600 disabled:opacity-20 active:scale-95"
+                                  title={bn ? 'উপরে নিন' : 'Move up'}
+                                >
+                                  <ChevronUp className="h-4 w-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => reorderStaffMutation.mutate({ direction: 'down', currentId: s.id })}
+                                  disabled={idx === filtered.length - 1 || reorderStaffMutation.isPending}
+                                  className="p-1 rounded text-muted-foreground hover:text-emerald-600 disabled:opacity-20 active:scale-95"
+                                  title={bn ? 'নিচে নিন' : 'Move down'}
+                                >
+                                  <ChevronDown className="h-4 w-4" />
+                                </button>
+                              </div>
                             </div>
 
-                            <div className="min-w-0">
-                              <h4 className="font-bold text-foreground text-sm leading-tight truncate">
+                            {/* Name & Details */}
+                            <div className="min-w-0 flex-1">
+                              <h4 className="font-bold text-foreground text-[15px] sm:text-base leading-snug">
                                 {bn ? s.name_bn : (s.name_en || s.name_bn)}
                               </h4>
-                              <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-[11px] text-muted-foreground">
+                              <div className="flex flex-wrap items-center gap-1.5 mt-1 text-xs text-muted-foreground">
                                 {s.staff_id && (
-                                  <span className="font-mono bg-muted/70 px-1.5 py-0.2 rounded text-[10px] font-medium text-foreground">
+                                  <Badge variant="outline" className="font-mono text-[11px] px-1.5 py-0 h-5 bg-muted/60 text-foreground border-border/80">
                                     {s.staff_id}
-                                  </span>
+                                  </Badge>
                                 )}
-                                <span>•</span>
-                                <span>{getDesignation(s.designation)}</span>
-                                <span className="inline-flex items-center text-[10px] text-emerald-700 dark:text-emerald-400 font-medium">
+                                <span className="font-medium text-foreground/80">{getDesignation(s.designation)}</span>
+                                <span className="inline-flex items-center text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded-md">
                                   🏷️ {dInfo?.shortLabel || dKey}
                                 </span>
                               </div>
@@ -4448,25 +4454,33 @@ const AdminSalary = () => {
                           </div>
 
                           {/* Status Badge */}
-                          <div className="shrink-0 flex flex-col items-end gap-1">
+                          <div className="shrink-0 flex flex-col items-end gap-1.5">
                             {rec ? (
-                              <Badge className={rec.status === 'paid'
-                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[11px] font-medium'
-                                : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 text-[11px] font-medium'}>
-                                {rec.status === 'paid' ? (bn ? 'পরিশোধিত' : 'Paid') : (bn ? 'বকেয়া' : 'Pending')}
+                              <Badge className={`text-xs px-2.5 py-1 rounded-full font-semibold shadow-2xs ${
+                                rec.status === 'paid'
+                                  ? 'bg-emerald-600 text-white dark:bg-emerald-700'
+                                  : 'bg-amber-500 text-white dark:bg-amber-600'
+                              }`}>
+                                {rec.status === 'paid' ? (
+                                  <><CheckCircle2 className="h-3.5 w-3.5 mr-1 inline" />{bn ? 'পরিশোধিত' : 'Paid'}</>
+                                ) : (
+                                  <><Clock className="h-3.5 w-3.5 mr-1 inline" />{bn ? 'বকেয়া' : 'Pending'}</>
+                                )}
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="text-[10px] text-muted-foreground">{bn ? 'জেনারেট হয়নি' : 'Not Generated'}</Badge>
+                              <Badge variant="outline" className="text-xs px-2 py-0.5 text-muted-foreground border-dashed">
+                                {bn ? 'জেনারেট হয়নি' : 'Not Generated'}
+                              </Badge>
                             )}
                             {rec && isRecordPending(rec.id) && (
-                              <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[9px]">
-                                <Clock className="w-2.5 h-2.5 mr-0.5" />
-                                {bn ? 'অনুমোদনের অপেক্ষায়' : 'Pending Approval'}
+                              <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-[10px] px-1.5 py-0.5">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {bn ? 'অনুমোদনের অপেক্ষায়' : 'Pending'}
                               </Badge>
                             )}
                             {eligibilityReason && !rec && (
-                              <span className={`text-[9px] leading-tight ${isHardBlocked ? 'text-red-600' : 'text-amber-600'}`}>
-                                <AlertCircle className="h-2.5 w-2.5 inline mr-0.5" />
+                              <span className={`text-[10px] leading-tight font-medium ${isHardBlocked ? 'text-red-600' : 'text-amber-600'}`}>
+                                <AlertCircle className="h-3.5 w-3.5 inline mr-0.5" />
                                 {eligibilityReason}
                               </span>
                             )}
@@ -4474,79 +4488,88 @@ const AdminSalary = () => {
                         </div>
 
                         {/* Row 2: Duty Time & Attendance Summary */}
-                        <div className="grid grid-cols-2 gap-2 text-xs bg-muted/30 p-2 rounded-lg border border-border/40">
-                          <div>
-                            <span className="text-[10px] text-muted-foreground block font-medium">{bn ? 'ডিউটি শিফট' : 'Duty Shift'}</span>
-                            <span className="font-semibold text-foreground text-[11px]">
+                        <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 dark:bg-muted/30 p-2.5 rounded-xl border border-border/50">
+                          <div className="flex flex-col justify-center">
+                            <span className="text-[11px] text-muted-foreground font-medium flex items-center gap-1.5">
+                              <Clock className="h-4 w-4 text-emerald-600" />
+                              {bn ? 'ডিউটি শিফট' : 'Duty Shift'}
+                            </span>
+                            <span className="font-bold text-foreground text-xs mt-1 flex items-center">
                               {bn ? toBnDigits(`${fmt(dutyInfo.start)}-${fmt(dutyInfo.end)}`) : `${fmt(dutyInfo.start)}-${fmt(dutyInfo.end)}`}
-                              <span className={`ml-1 text-[8px] ${dutyDot}`}>●</span>
+                              <span className={`ml-1.5 text-[10px] ${dutyDot}`}>●</span>
                             </span>
                           </div>
-                          <div>
+                          <div className="flex flex-col justify-center border-l border-border/50 pl-2.5">
                             <div className="flex items-center justify-between">
-                              <span className="text-[10px] text-muted-foreground font-medium">{bn ? 'উপ/অনু/বি/ছু' : 'P/A/L/Lv'}</span>
-                              {lastUpd && (
-                                <span className="text-[8px] text-muted-foreground font-mono">{toBnDigits(upShort)}</span>
-                              )}
+                              <span className="text-[11px] text-muted-foreground font-medium flex items-center gap-1.5">
+                                <Calendar className="h-4 w-4 text-primary" />
+                                {bn ? 'হাজিরা (P/A/L/Lv)' : 'Attendance'}
+                              </span>
                             </div>
                             <button
+                              type="button"
                               onClick={() => setAttendanceDetailDialog({ staff: s, stats: attStats })}
-                              className="font-medium text-[11px] text-left hover:underline block mt-0.5"
-                              title={bn ? 'বিস্তারিত দেখুন' : 'View details'}
+                              className="font-bold text-xs text-left hover:underline mt-1 flex items-center flex-wrap gap-1"
+                              title={bn ? 'বিস্তারিত হাজিরা দেখুন' : 'View details'}
                             >
-                              <span className="text-emerald-600 font-bold">{bn ? toBnDigits(attStats.present) : attStats.present}</span> /{' '}
-                              <span className="text-red-500 font-bold">{bn ? toBnDigits(attStats.absent) : attStats.absent}</span> /{' '}
-                              <span className="text-yellow-600 font-bold">{bn ? toBnDigits(attStats.late) : attStats.late}</span> /{' '}
-                              <span className="text-blue-600 font-bold">{bn ? toBnDigits(attStats.leave || 0) : (attStats.leave || 0)}</span>
+                              <span className="text-emerald-600 font-extrabold">{bn ? toBnDigits(attStats.present) : attStats.present}</span>
+                              <span className="text-muted-foreground/60">/</span>
+                              <span className="text-red-500 font-extrabold">{bn ? toBnDigits(attStats.absent) : attStats.absent}</span>
+                              <span className="text-muted-foreground/60">/</span>
+                              <span className="text-yellow-600 font-extrabold">{bn ? toBnDigits(attStats.late) : attStats.late}</span>
+                              <span className="text-muted-foreground/60">/</span>
+                              <span className="text-blue-600 font-extrabold">{bn ? toBnDigits(attStats.leave || 0) : (attStats.leave || 0)}</span>
                               {attStats.halfDay > 0 && (
-                                <span className="text-[9px] text-orange-600 ml-1 font-medium">½{bn ? toBnDigits(attStats.halfDay) : attStats.halfDay}</span>
+                                <span className="text-[10px] bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300 px-1 rounded font-bold">½{bn ? toBnDigits(attStats.halfDay) : attStats.halfDay}</span>
                               )}
                             </button>
                           </div>
                         </div>
 
                         {/* Row 3: Financial Figures Grid (মূল বেতন, মোট কর্তন, ওটি/বোনাস, জমা) */}
-                        <div className="grid grid-cols-4 gap-1.5 text-center text-xs">
-                          <div className="p-1.5 bg-muted/20 rounded border border-border/30">
-                            <span className="text-[10px] text-muted-foreground block truncate">{bn ? 'মূল বেতন' : 'Base'}</span>
-                            <span className="font-semibold text-[11px] block mt-0.5 text-foreground">
+                        <div className="grid grid-cols-4 gap-2 text-center">
+                          <div className="p-2 bg-background rounded-xl border border-border/60 shadow-2xs">
+                            <span className="text-[10px] text-muted-foreground block font-medium truncate">{bn ? 'মূল বেতন' : 'Base'}</span>
+                            <span className="font-bold text-xs block mt-0.5 text-foreground">
                               ৳{bn ? toBnDigits(Number(displayRecord?.base_salary ?? getEffectiveSalary(s)).toLocaleString()) : Number(displayRecord?.base_salary ?? getEffectiveSalary(s)).toLocaleString()}
                             </span>
                           </div>
-                          <div className="p-1.5 bg-muted/20 rounded border border-border/30">
-                            <span className="text-[10px] text-muted-foreground block truncate">{bn ? 'মোট কর্তন' : 'Ded.'}</span>
-                            <span className="font-semibold text-red-600 text-[11px] block mt-0.5">
+                          <div className="p-2 bg-red-50/50 dark:bg-red-950/20 rounded-xl border border-red-200/60 dark:border-red-900/40 shadow-2xs">
+                            <span className="text-[10px] text-red-600/90 dark:text-red-400 block font-medium truncate">{bn ? 'মোট কর্তন' : 'Ded.'}</span>
+                            <span className="font-extrabold text-red-600 dark:text-red-400 text-xs block mt-0.5">
                               ৳{bn ? toBnDigits(totalDed.toLocaleString()) : totalDed.toLocaleString()}
                             </span>
                           </div>
-                          <div className="p-1.5 bg-muted/20 rounded border border-border/30">
-                            <span className="text-[10px] text-muted-foreground block truncate">{bn ? 'ওটি/বোনাস' : 'OT/Bonus'}</span>
-                            <span className="font-semibold text-[11px] block mt-0.5 text-foreground">
+                          <div className="p-2 bg-purple-50/50 dark:bg-purple-950/20 rounded-xl border border-purple-200/60 dark:border-purple-900/40 shadow-2xs">
+                            <span className="text-[10px] text-purple-700 dark:text-purple-300 block font-medium truncate">{bn ? 'ওটি/বোনাস' : 'OT/Bonus'}</span>
+                            <span className="font-bold text-purple-700 dark:text-purple-300 text-xs block mt-0.5">
                               ৳{bn ? toBnDigits(displayOvertime.toLocaleString()) : displayOvertime.toLocaleString()}
                             </span>
                           </div>
-                          <div className="p-1.5 bg-muted/20 rounded border border-border/30">
-                            <span className="text-[10px] text-blue-600 dark:text-blue-400 block truncate">{bn ? 'জমা' : 'Savings'}</span>
-                            <span className="font-semibold text-blue-600 text-[11px] block mt-0.5">
+                          <div className="p-2 bg-blue-50/50 dark:bg-blue-950/20 rounded-xl border border-blue-200/60 dark:border-blue-900/40 shadow-2xs">
+                            <span className="text-[10px] text-blue-600 dark:text-blue-400 block font-medium truncate">{bn ? 'ফান্ড জমা' : 'Savings'}</span>
+                            <span className="font-extrabold text-blue-600 dark:text-blue-400 text-xs block mt-0.5">
                               ৳{bn ? toBnDigits(Number(snap.savingsDisplay || 0).toLocaleString()) : Number(snap.savingsDisplay || 0).toLocaleString()}
                             </span>
                           </div>
                         </div>
 
                         {/* Row 4: Net Salary Highlight & Signed Slip */}
-                        <div className="flex items-center justify-between p-2 bg-emerald-50/70 dark:bg-emerald-950/30 rounded-lg border border-emerald-200/60 dark:border-emerald-800/40">
+                        <div className="flex items-center justify-between p-3 bg-gradient-to-r from-emerald-500/15 via-emerald-500/10 to-transparent dark:from-emerald-950/40 dark:via-emerald-950/20 rounded-2xl border border-emerald-500/30 shadow-2xs">
                           <div>
-                            <span className="text-[10px] text-emerald-800 dark:text-emerald-300 font-medium block leading-none">{bn ? 'সর্বমোট নিট বেতন' : 'Net Salary'}</span>
-                            <span className="text-base font-extrabold text-emerald-700 dark:text-emerald-300 mt-0.5 block">
+                            <span className="text-[11px] text-emerald-800 dark:text-emerald-300 font-semibold block leading-tight">
+                              {bn ? 'সর্বমোট নিট বেতন' : 'Net Salary'}
+                            </span>
+                            <span className="text-xl sm:text-2xl font-black text-emerald-700 dark:text-emerald-300 tracking-tight mt-0.5 block">
                               {!rec && Number(attStats.total || 0) === 0 ? (
-                                <span className="text-xs font-normal text-amber-600">{bn ? 'উপস্থিতি নেই' : 'No attendance'}</span>
+                                <span className="text-xs font-semibold text-amber-600">{bn ? 'উপস্থিতি নেই' : 'No attendance'}</span>
                               ) : (
-                                <>৳{bn ? toBnDigits(displayNet.toLocaleString()) : displayNet.toLocaleString()}{!rec ? <span className="text-[9px] ml-0.5 opacity-60">~</span> : ''}</>
+                                <>৳{bn ? toBnDigits(displayNet.toLocaleString()) : displayNet.toLocaleString()}{!rec ? <span className="text-xs ml-0.5 opacity-60">~</span> : ''}</>
                               )}
                             </span>
                           </div>
 
-                          {/* Signed Slip */}
+                          {/* Signed Slip with large touch target and icon */}
                           <div>
                             {(() => {
                               const slip = signedDocsManager.getStaffSlip(s.id);
@@ -4554,12 +4577,12 @@ const AdminSalary = () => {
                                 return (
                                   <Button
                                     size="sm"
-                                    variant="outline"
-                                    className="h-7 px-2.5 text-[11px] bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 font-semibold gap-1 rounded-full shadow-xs"
-                                    title={bn ? 'স্বাক্ষরিত স্লিপ দেখুন / ডাউনলোড করুন' : 'View / Download Signed Slip'}
+                                    variant="default"
+                                    className="h-9 px-3.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1.5 rounded-xl shadow-xs"
+                                    title={bn ? 'স্বাক্ষরিত স্লিপ দেখুন' : 'View Signed Slip'}
                                     onClick={() => setDirectViewStaff(s)}
                                   >
-                                    <FileCheck2 className="h-3 w-3 text-emerald-600" />
+                                    <FileCheck2 className="h-4 w-4" />
                                     <span>{bn ? 'স্লিপ সংরক্ষিত' : 'Slip Saved'}</span>
                                   </Button>
                                 );
@@ -4568,11 +4591,11 @@ const AdminSalary = () => {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  className="h-7 px-2.5 text-[11px] border-dashed border-slate-300 hover:border-emerald-500 hover:bg-emerald-50 text-muted-foreground font-normal gap-1 rounded-full"
-                                  title={bn ? 'স্বাক্ষর নেয়ার পর স্ক্যান বা ছবি আপলোড করুন' : 'Upload / Scan Signed Slip'}
+                                  className="h-9 px-3.5 text-xs border-2 border-dashed border-emerald-500/60 hover:bg-emerald-50 text-emerald-700 dark:text-emerald-300 font-bold gap-1.5 rounded-xl shadow-2xs"
+                                  title={bn ? 'স্বাক্ষরিত স্লিপ আপলোড করুন' : 'Upload Signed Slip'}
                                   onClick={() => setDirectUploadStaff(s)}
                                 >
-                                  <Camera className="h-3 w-3 text-slate-500" />
+                                  <Camera className="h-4 w-4 text-emerald-600" />
                                   <span>{bn ? 'স্লিপ আপলোড' : 'Upload Slip'}</span>
                                 </Button>
                               );
@@ -4580,27 +4603,27 @@ const AdminSalary = () => {
                           </div>
                         </div>
 
-                        {/* Row 5: Action Toolbar */}
-                        <div className="flex items-center justify-between pt-1 border-t border-border/40">
+                        {/* Row 5: Action Toolbar with BIGGER ICONS & 40px Touch Targets */}
+                        <div className="pt-2 border-t border-border/60">
                           {!rec && canAddItem ? (
                             <Button
-                              size="sm"
+                              size="default"
                               variant="default"
-                              className="h-7 w-full text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
+                              className="h-10 w-full text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white gap-2 rounded-xl shadow-xs"
                               disabled={generateSingleMutation.isPending || isHardBlocked}
                               onClick={() => generateSingleMutation.mutate(s.id)}
                             >
-                              <Calculator className="h-3.5 w-3.5" />
+                              <Calculator className="h-5 w-5" />
                               <span>{bn ? 'বেতন হিসাব জেনারেট করুন' : 'Generate Salary'}</span>
                             </Button>
                           ) : rec ? (
-                            <div className="flex items-center justify-between w-full gap-1">
-                              {/* Pay / Mark Paid / Unpaid Button */}
+                            <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                              {/* Pay / Paid Toggle Button */}
                               {rec.status !== 'paid' ? (
                                 <Button
                                   size="sm"
-                                  variant="outline"
-                                  className="h-7 text-xs font-semibold border-yellow-500 text-yellow-700 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 gap-1 px-2.5"
+                                  variant="default"
+                                  className="h-10 px-4 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white gap-2 rounded-xl shadow-xs flex-1 sm:flex-initial"
                                   disabled={isRecordPending(rec.id)}
                                   onClick={() => {
                                     setPaidConfirmId(rec.id);
@@ -4614,34 +4637,34 @@ const AdminSalary = () => {
                                     setShowPayMsgEdit(false);
                                   }}
                                 >
-                                  <Clock className="h-3 w-3 text-yellow-600" />
-                                  <span>{bn ? 'পরিশোধ' : 'Pay'}</span>
+                                  <Clock className="h-5 w-5" />
+                                  <span>{bn ? 'পরিশোধ করুন' : 'Mark Paid'}</span>
                                 </Button>
                               ) : (
                                 <Button
                                   size="sm"
-                                  variant="outline"
-                                  className="h-7 text-xs font-semibold border-emerald-500 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 gap-1 px-2.5"
+                                  variant="default"
+                                  className="h-10 px-4 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white gap-2 rounded-xl shadow-xs flex-1 sm:flex-initial"
                                   disabled={isRecordPending(rec.id)}
                                   onClick={() => setUnpaidConfirmId(rec.id)}
                                 >
-                                  <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                                  <CheckCircle2 className="h-5 w-5" />
                                   <span>{bn ? 'পরিশোধিত' : 'Paid'}</span>
                                 </Button>
                               )}
 
-                              {/* Action Icons Group */}
-                              <div className="flex items-center gap-1">
+                              {/* Action Buttons Group - Large 40x40px touch targets with 18-20px icons */}
+                              <div className="flex items-center gap-1.5">
                                 {/* Print Slip */}
                                 {isFeatureAllowed('action_payslip_print') !== false && (
                                   <Button
                                     size="icon"
-                                    variant="ghost"
-                                    className="h-7 w-7 text-emerald-700 hover:bg-emerald-100/60"
-                                    title={bn ? 'বেতন স্লিপ প্রিন্ট' : 'Print Slip'}
+                                    variant="outline"
+                                    className="h-10 w-10 rounded-xl bg-card hover:bg-emerald-50 hover:text-emerald-700 text-foreground border-border/80 shadow-2xs transition-transform active:scale-95"
+                                    title={bn ? 'বেতন স্লিপ প্রিন্ট ও ডাউনলোড' : 'Print Slip'}
                                     onClick={() => printSlip(s, rec)}
                                   >
-                                    <Printer className="h-3.5 w-3.5" />
+                                    <Printer className="h-5 w-5 text-emerald-600" />
                                   </Button>
                                 )}
 
@@ -4649,9 +4672,9 @@ const AdminSalary = () => {
                                 {canEditItem && rec.status !== 'paid' && (
                                   <Button
                                     size="icon"
-                                    variant="ghost"
-                                    className="h-7 w-7 text-muted-foreground hover:bg-muted"
-                                    title={bn ? 'সম্পাদনা' : 'Edit'}
+                                    variant="outline"
+                                    className="h-10 w-10 rounded-xl bg-card hover:bg-blue-50 hover:text-blue-700 text-foreground border-border/80 shadow-2xs transition-transform active:scale-95"
+                                    title={bn ? 'বেতন তথ্য সম্পাদনা' : 'Edit'}
                                     onClick={() => {
                                       const live = calculateSalary(s);
                                       const staffResignDate = getStaffResignDate(s);
@@ -4684,7 +4707,7 @@ const AdminSalary = () => {
                                       });
                                     }}
                                   >
-                                    <Edit2 className="h-3.5 w-3.5" />
+                                    <Edit2 className="h-4.5 w-4.5 text-blue-600" />
                                   </Button>
                                 )}
 
@@ -4692,13 +4715,13 @@ const AdminSalary = () => {
                                 {canEditItem && rec.status !== 'paid' && (
                                   <Button
                                     size="icon"
-                                    variant="ghost"
-                                    className="h-7 w-7 text-indigo-600 hover:bg-indigo-100/60"
-                                    title={bn ? 'পুনরায় হিসাব' : 'Recalculate'}
+                                    variant="outline"
+                                    className="h-10 w-10 rounded-xl bg-card hover:bg-indigo-50 hover:text-indigo-700 text-foreground border-border/80 shadow-2xs transition-transform active:scale-95"
+                                    title={bn ? 'পুনরায় হিসাব করুন' : 'Recalculate'}
                                     disabled={recalculateSingleMutation.isPending}
                                     onClick={() => recalculateSingleMutation.mutate(s.id)}
                                   >
-                                    <RefreshCw className={`h-3.5 w-3.5 ${recalculateSingleMutation.isPending ? 'animate-spin' : ''}`} />
+                                    <RefreshCw className={`h-4.5 w-4.5 text-indigo-600 ${recalculateSingleMutation.isPending ? 'animate-spin' : ''}`} />
                                   </Button>
                                 )}
 
@@ -4706,9 +4729,9 @@ const AdminSalary = () => {
                                 {rec.status === 'paid' && s.phone && (
                                   <Button
                                     size="icon"
-                                    variant="ghost"
-                                    className="h-7 w-7 text-emerald-600 hover:bg-emerald-100/60"
-                                    title={bn ? 'WhatsApp নোটিফিকেশন' : 'WhatsApp'}
+                                    variant="outline"
+                                    className="h-10 w-10 rounded-xl bg-emerald-50/80 hover:bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:border-emerald-800 shadow-2xs transition-transform active:scale-95"
+                                    title={bn ? 'হোয়াটসঅ্যাপে স্লিপ পাঠান' : 'Send WhatsApp'}
                                     onClick={() => {
                                       const monthNameObj = MONTHS.find(m => m.value === selectedMonth);
                                       const monthLabel = bn ? (monthNameObj?.bn || selectedMonth) : (monthNameObj?.en || selectedMonth);
@@ -4728,7 +4751,7 @@ const AdminSalary = () => {
                                       window.open(waUrl, '_blank');
                                     }}
                                   >
-                                    <MessageCircle className="h-3.5 w-3.5" />
+                                    <MessageCircle className="h-5 w-5 text-emerald-600" />
                                   </Button>
                                 )}
 
@@ -4739,13 +4762,13 @@ const AdminSalary = () => {
                                     return (
                                       <Button
                                         size="icon"
-                                        variant="ghost"
-                                        className="h-7 w-7 text-emerald-600 hover:text-red-600 hover:bg-red-100/60"
+                                        variant="outline"
+                                        className="h-10 w-10 rounded-xl bg-emerald-50 hover:bg-red-50 text-emerald-600 hover:text-red-600 border-emerald-300 hover:border-red-300 shadow-2xs transition-transform active:scale-95"
                                         title={bn ? 'হিসাব থেকে বাদ দিন' : 'Remove from expense'}
                                         disabled={removeStaffExpenseMutation.isPending}
                                         onClick={() => removeStaffExpenseMutation.mutate({ staffId: s.id, staffName: s.name_bn || s.name_en || 'Staff' })}
                                       >
-                                        <Landmark className="h-3.5 w-3.5" />
+                                        <Landmark className="h-4.5 w-4.5" />
                                       </Button>
                                     );
                                   }
@@ -4753,22 +4776,22 @@ const AdminSalary = () => {
                                     return (
                                       <span
                                         title={bn ? 'মাসিক একক ভাউচারে অন্তর্ভুক্ত' : 'In consolidated expense'}
-                                        className="inline-flex items-center text-blue-600 px-1 font-mono"
+                                        className="h-10 px-2.5 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 flex items-center font-mono text-xs font-semibold"
                                       >
-                                        <Building2 className="h-3.5 w-3.5" />
+                                        <Building2 className="h-4 w-4 mr-1" />
                                       </span>
                                     );
                                   }
                                   return (
                                     <Button
                                       size="icon"
-                                      variant="ghost"
-                                      className="h-7 w-7 text-amber-600 hover:bg-emerald-100/60"
+                                      variant="outline"
+                                      className="h-10 w-10 rounded-xl bg-amber-50/80 hover:bg-emerald-50 text-amber-700 hover:text-emerald-700 border-amber-300 hover:border-emerald-300 shadow-2xs transition-transform active:scale-95"
                                       title={bn ? 'হিসাবে খরচ যোগ করুন' : 'Add to expense'}
                                       disabled={addStaffExpenseMutation.isPending}
                                       onClick={() => addStaffExpenseMutation.mutate({ staffId: s.id, recordId: rec.id })}
                                     >
-                                      <Plus className="h-3.5 w-3.5" />
+                                      <Plus className="h-5 w-5 text-amber-600" />
                                     </Button>
                                   );
                                 })()}
@@ -4777,13 +4800,13 @@ const AdminSalary = () => {
                                 {canDeleteItem && isFeatureAllowed('action_delete_salary') !== false && (
                                   <Button
                                     size="icon"
-                                    variant="ghost"
-                                    className="h-7 w-7 text-red-600 hover:bg-red-100/60"
+                                    variant="outline"
+                                    className="h-10 w-10 rounded-xl bg-red-50/80 hover:bg-red-100 text-red-600 border-red-200 dark:bg-red-950/40 dark:border-red-900 shadow-2xs transition-transform active:scale-95"
                                     title={bn ? 'আনজেনারেট (মুছুন)' : 'Ungenerate'}
                                     disabled={isRecordPending(rec.id)}
                                     onClick={() => setUngenerateConfirmId(rec.id)}
                                   >
-                                    <Trash2 className="h-3.5 w-3.5" />
+                                    <Trash2 className="h-4.5 w-4.5" />
                                   </Button>
                                 )}
                               </div>
@@ -4794,24 +4817,24 @@ const AdminSalary = () => {
                     );
                   })}
 
-                  {/* Mobile Totals Footer */}
+                  {/* Mobile Totals Footer Card */}
                   {salaryRecords.length > 0 && (
-                    <div className="p-3.5 bg-muted/60 rounded-b-xl border-t border-border space-y-1.5">
+                    <div className="p-4 bg-card rounded-2xl border border-border/80 shadow-xs space-y-2">
                       <div className="flex justify-between items-center text-xs font-medium">
                         <span className="text-muted-foreground">{bn ? 'মোট মূল বেতন:' : 'Total Base:'}</span>
-                        <span className="font-semibold text-foreground">৳{bn ? toBnDigits(stats.totalBase.toLocaleString()) : stats.totalBase.toLocaleString()}</span>
+                        <span className="font-bold text-foreground">৳{bn ? toBnDigits(stats.totalBase.toLocaleString()) : stats.totalBase.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between items-center text-xs font-medium text-red-600">
                         <span>{bn ? 'মোট কর্তন:' : 'Total Deductions:'}</span>
-                        <span className="font-semibold">৳{bn ? toBnDigits(stats.totalDeduction.toLocaleString()) : stats.totalDeduction.toLocaleString()}</span>
+                        <span className="font-extrabold">৳{bn ? toBnDigits(stats.totalDeduction.toLocaleString()) : stats.totalDeduction.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between items-center text-xs font-medium text-blue-600">
                         <span>{bn ? 'মোট ফান্ড জমা:' : 'Total Savings:'}</span>
-                        <span className="font-semibold">৳{bn ? toBnDigits(stats.totalSavings.toLocaleString()) : stats.totalSavings.toLocaleString()}</span>
+                        <span className="font-extrabold">৳{bn ? toBnDigits(stats.totalSavings.toLocaleString()) : stats.totalSavings.toLocaleString()}</span>
                       </div>
-                      <div className="flex justify-between items-center text-sm font-extrabold text-emerald-700 dark:text-emerald-400 pt-1.5 border-t border-border/60">
+                      <div className="flex justify-between items-center text-sm font-black text-emerald-700 dark:text-emerald-400 pt-2 border-t border-border/70">
                         <span>{bn ? 'সর্বমোট নিট প্রদেয়:' : 'Total Net Payable:'}</span>
-                        <span>৳{bn ? toBnDigits(stats.totalNet.toLocaleString()) : stats.totalNet.toLocaleString()}</span>
+                        <span className="text-base font-black">৳{bn ? toBnDigits(stats.totalNet.toLocaleString()) : stats.totalNet.toLocaleString()}</span>
                       </div>
                     </div>
                   )}
