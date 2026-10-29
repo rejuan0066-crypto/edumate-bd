@@ -1198,28 +1198,36 @@ const AdminSalary = () => {
       if (!existing) {
         throw new Error(bn ? 'এই মাসে কোনো বেতন রেকর্ড নেই' : 'No salary record for this month');
       }
-      if (existing.status === 'paid') {
-        throw new Error(bn ? 'পরিশোধিত বেতন পুনরায় হিসাব করা যাবে না' : 'Cannot recalculate a paid salary');
-      }
       const calc = calculateSalary(staffMember);
       const activeSavings = getActiveSavings(staffId);
       const savingsDed = activeSavings ? activeSavings.amount : 0;
       const keptOther = Number(existing.other_deduction || 0);
-      const netSalary = Math.max(0, recomputeNetSalary(calc, {
+      const keptBonus = Number(existing.bonus || 0);
+      const keptAllow = Number(existing.other_allowance || 0);
+      const keptAdvance = Number(existing.advance_deduction || 0);
+
+      const netSalary = computeManualOverrideNet({
+        base_salary: calc.base_salary,
+        bonus: keptBonus,
         overtime: calc.overtime_for_net,
-        bonus: existing.bonus,
-        other_allowance: existing.other_allowance,
-        advance_deduction: existing.advance_deduction,
+        other_allowance: keptAllow,
+        late_deduction: calc.late_deduction,
+        absence_deduction: calc.absence_deduction,
+        advance_deduction: keptAdvance,
+        other_deduction: keptOther || calc.other_deduction,
         savings_deduction: savingsDed,
-      }) - keptOther);
+        duty_deduction: calc.duty_deduction,
+        pre_join_deduction: calc.pre_join_deduction,
+        post_resign_deduction: calc.post_resign_deduction,
+      });
       const { error } = await supabase.from('salary_records').update(stripNonDbSalaryFields({
         ...calc,
-        bonus: Number(existing.bonus || 0),
-        other_allowance: Number(existing.other_allowance || 0),
+        bonus: keptBonus,
+        other_allowance: keptAllow,
         other_allowance_note: existing.other_allowance_note ?? null,
-        advance_deduction: Number(existing.advance_deduction || 0),
+        advance_deduction: keptAdvance,
         // Manually entered extras must survive a recalculation
-        other_deduction: keptOther,
+        other_deduction: keptOther || calc.other_deduction,
         other_deduction_note: existing.other_deduction_note ?? null,
         overtime_reason: existing.overtime_reason ?? null,
         remarks: existing.remarks ?? null,
@@ -1355,6 +1363,56 @@ const AdminSalary = () => {
 
     if (isPaid) {
       const savedRecord = { ...liveCalc, ...record };
+
+      const baseSalary = Number(savedRecord.base_salary ?? liveCalc.base_salary ?? 0);
+      const bonus = Number(savedRecord.bonus || 0);
+      const overtime = Number(savedRecord.overtime || 0);
+      const otherAllowance = Number(savedRecord.other_allowance || 0);
+      const lateDed = Number(savedRecord.late_deduction ?? liveCalc.late_deduction ?? 0);
+      const absDed = Number(savedRecord.absence_deduction ?? liveCalc.absence_deduction ?? 0);
+      const advDed = Number(savedRecord.advance_deduction || 0);
+      const otherDed = Number(savedRecord.other_deduction ?? liveCalc.other_deduction ?? 0);
+      const dutyDed = Number(savedRecord.duty_deduction ?? liveCalc.duty_deduction ?? 0);
+      const preJoinDed = Number(savedRecord.pre_join_deduction ?? liveCalc.pre_join_deduction ?? 0);
+      const postResignDed = Number(savedRecord.post_resign_deduction ?? liveCalc.post_resign_deduction ?? 0);
+      const savingsDed = Number(savedRecord.savings_deduction ?? activeSavingsAmount);
+
+      savedRecord.base_salary = baseSalary;
+      savedRecord.bonus = bonus;
+      savedRecord.overtime = overtime;
+      savedRecord.other_allowance = otherAllowance;
+      savedRecord.late_deduction = lateDed;
+      savedRecord.absence_deduction = absDed;
+      savedRecord.advance_deduction = advDed;
+      savedRecord.other_deduction = otherDed;
+      savedRecord.duty_deduction = dutyDed;
+      savedRecord.pre_join_deduction = preJoinDed;
+      savedRecord.post_resign_deduction = postResignDed;
+      savedRecord.savings_deduction = savingsDed;
+
+      // Always guarantee mathematical consistency across table, edit dialog and slip:
+      // Net = Base + Bonus + OT + Allowance - Deductions - Advance - Savings
+      if (!savedRecord.manual_override) {
+        const consistentNet = computeManualOverrideNet({
+          base_salary: baseSalary,
+          bonus,
+          overtime,
+          other_allowance: otherAllowance,
+          late_deduction: lateDed,
+          absence_deduction: absDed,
+          advance_deduction: advDed,
+          other_deduction: otherDed,
+          savings_deduction: savingsDed,
+          duty_deduction: dutyDed,
+          pre_join_deduction: preJoinDed,
+          post_resign_deduction: postResignDed,
+        });
+        savedRecord.net_salary = consistentNet;
+        savedRecord.earned_from_attendance = Math.max(0,
+          baseSalary - lateDed - absDed - otherDed - dutyDed - preJoinDed - postResignDed
+        );
+      }
+
       return {
         record: savedRecord,
         stats: {
@@ -1365,7 +1423,7 @@ const AdminSalary = () => {
         },
         isPaid: true,
         isAdditive: ((record.calc_basis ?? liveCalc.calc_basis) === 'additive'),
-        savingsDisplay: Number(record.savings_deduction ?? activeSavingsAmount),
+        savingsDisplay: savingsDed,
         isLive: false,
       };
     }
@@ -2226,14 +2284,9 @@ const AdminSalary = () => {
 
     const overtimeForNet = overtime;
 
-    // জমা কর্তন ও অন্যান্য কর্তন (অগ্রিম) কেবল তখনই নিট বেতন থেকে বাদ যাবে যখন
-    // মাসের সম্পূর্ণ হাজিরা দেওয়া হয়ে গেছে (অথবা মাসটি শেষ)। চলতি মাসে হাজিরা
-    // অসম্পূর্ণ থাকলে এই কর্তনগুলো স্থগিত থাকে — বেতন জেনারেট/সেভ করার পর প্রযোজ্য হবে।
-    const nowRef = new Date();
-    const isCurrentMonthCalc = nowRef.getFullYear() === year && (nowRef.getMonth() + 1) === month;
-    const allAttendanceGiven = !isCurrentMonthCalc || (attStats.untrackedAbsentDays === 0);
-    const effAdvanceDeduction = allAttendanceGiven ? advanceDeduction : 0;
-    const effSavingsDeduction = allAttendanceGiven ? savingsDeduction : 0;
+    // জমা কর্তন ও অগ্রিম কর্তন নির্ধারিত মাসিক কর্তন — এটি সবসময় হিসাব ও প্রিভিউতে অন্তর্ভুক্ত থাকবে।
+    const effAdvanceDeduction = advanceDeduction;
+    const effSavingsDeduction = savingsDeduction;
 
     // আবাসিক ডিউটি কর্তন — রোস্টার অনুযায়ী অনুপস্থিত/বিলম্ব শিফটের জন্য।
     // এটি ঠিক একবারই নিট থেকে বাদ যায় এবং আলাদা ফিল্ড হিসেবে সংরক্ষিত হয়।
@@ -3569,25 +3622,24 @@ const AdminSalary = () => {
     ` : '';
 
     // Earned-from-attendance = live/persisted attendance result for the selected month.
-    const attendanceDeductions = Number(record.absence_deduction || 0)
-      + Number(record.late_deduction || 0)
-      + Number(record.other_deduction || 0);
-    // ম্যানুয়াল এডিটে earned_from_attendance = মূল বেতন হিসেবে রাখা হয়,
-    // তাই স্লিপে কর্তনগুলো আলাদা করে বাদ দিতে হবে — নাহলে স্লিপে কর্তন দেখা যায় না।
-    const earnedFromAttendance = record.manual_override
-      ? Math.max(0, Number(record.base_salary || 0) - attendanceDeductions)
-      : (Number.isFinite(Number(record.earned_from_attendance))
-        ? Number(record.earned_from_attendance)
-        : Math.max(0, Number(record.base_salary || 0) - attendanceDeductions));
+    const dutyDed = Number(record.duty_deduction || 0);
+    const dutyDedInfo = getDutyDeduction(staffMember.id);
+    const preJoinDed = Number(record.pre_join_deduction || 0);
+    const postResignDed = Number(record.post_resign_deduction || 0);
+    const otherDed = Number(record.other_deduction || 0);
+    const absDed = Number(record.absence_deduction || 0);
+    const lateDed = Number(record.late_deduction || 0);
+    const advDed = Number(record.advance_deduction || 0);
+
+    const attendanceDeductions = absDed + lateDed + dutyDed + preJoinDed + postResignDed + otherDed;
+    const baseSalary = Number(record.base_salary || 0);
+    const earnedFromAttendance = Math.max(0, baseSalary - attendanceDeductions);
 
     const totalAllowance = Number(record.bonus || 0) + Number(record.overtime || 0) + Number(record.other_allowance || 0);
     const totalEarnings = earnedFromAttendance + totalAllowance;
 
-    // স্লিপের কর্তন কলামে শুধুমাত্র "অতিরিক্ত" কর্তন (অগ্রিম + জমা) দেখাবে।
-    // উপস্থিতি কর্তন (absence/late/other) ইতিমধ্যে আয় থেকে বাদ গেছে — তাই ওগুলো আয়ের অংশে দেখানো হয়েছে।
-    const dutyDed = Number(record.duty_deduction || 0);
-    const dutyDedInfo = getDutyDeduction(staffMember.id);
-    const totalDed = Number(record.advance_deduction || 0) + savingsAmt + dutyDed;
+    // অতিরিক্ত কর্তন (অগ্রিম + সঞ্চয় জমা)
+    const totalDed = advDed + savingsAmt;
     const monthName = MONTHS.find(m => m.value === selectedMonth);
 
     // Per-shift breakdown for residential / extra duty
@@ -3834,29 +3886,33 @@ const AdminSalary = () => {
             <div class="col-head">${bn ? 'বেতন বিবরণ' : 'Salary Details'}</div>
             <div class="col-body">
               <!-- ১. মূল বেতন -->
-              <div class="ln" style="background:#f8fafc;font-weight:700"><span class="l">${bn ? '১। মূল বেতন' : '1. Base Salary'}</span><span class="v">৳${slipNum(Number(record.base_salary || 0))}</span></div>
+              <div class="ln" style="background:#f8fafc;font-weight:700"><span class="l">${bn ? '১। মূল বেতন' : '1. Base Salary'}</span><span class="v">৳${slipNum(baseSalary)}</span></div>
 
-              <!-- ২. উপস্থিতি ও ডিউটি কর্তন -->
-              <div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অনুপস্থিতি কর্তন' : 'Absence Deduction'} (${bn ? toBnDigits(record.absent_days || 0) : (record.absent_days || 0)} ${bn ? 'দিন' : 'd'})</span><span class="v">৳${slipNum(Number(record.absence_deduction || 0))}</span></div>
-              <div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'বিলম্ব কর্তন' : 'Late Deduction'}</span><span class="v">৳${slipNum(Number(record.late_deduction || 0))}</span></div>
+              <!-- ২. উপস্থিতি ও শিফট কর্তন -->
+              ${absDed > 0 || Number(record.absent_days || 0) > 0 ? `
+              <div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অনুপস্থিতি কর্তন' : 'Absence Deduction'} (${bn ? toBnDigits(record.absent_days || 0) : (record.absent_days || 0)} ${bn ? 'দিন' : 'd'})</span><span class="v">৳${slipNum(absDed)}</span></div>` : ''}
+              ${lateDed > 0 || Number(record.late_days || 0) > 0 ? `
+              <div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'বিলম্ব উপস্থিতি কর্তন' : 'Late Deduction'}${Number(record.late_days || 0) > 0 ? ` (${bn ? toBnDigits(record.late_days || 0) : (record.late_days || 0)} ${bn ? 'দিন' : 'd'})` : ''}</span><span class="v">৳${slipNum(lateDed)}</span></div>` : ''}
               ${dutyDed > 0 ? `<div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'আবাসিক ডিউটি কর্তন' : 'Residential Duty Deduction'} <span style="color:#64748b;font-weight:400">(${bn ? toBnDigits(dutyDedInfo.lines.length) : dutyDedInfo.lines.length} ${bn ? 'শিফট' : 'shifts'}${dutyDedInfo.absentCount ? ` • ${bn ? 'অনুপস্থিত' : 'absent'} ${bn ? toBnDigits(dutyDedInfo.absentCount) : dutyDedInfo.absentCount}` : ''}${dutyDedInfo.lateCount ? ` • ${bn ? 'বিলম্ব' : 'late'} ${bn ? toBnDigits(dutyDedInfo.lateCount) : dutyDedInfo.lateCount}` : ''})</span></span><span class="v">৳${slipNum(dutyDed)}</span></div>` : ''}
+              ${preJoinDed > 0 ? `<div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'যোগদান পূর্ববর্তী আনুপাতিক কর্তন' : 'Pre-joining Deduction'} (${bn ? toBnDigits(record.pre_join_days || 0) : (record.pre_join_days || 0)} ${bn ? 'দিন' : 'd'})</span><span class="v">৳${slipNum(preJoinDed)}</span></div>` : ''}
+              ${postResignDed > 0 ? `<div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'পদত্যাগ পরবর্তী আনুপাতিক কর্তন' : 'Post-resignation Deduction'} (${bn ? toBnDigits(record.post_resign_days || 0) : (record.post_resign_days || 0)} ${bn ? 'দিন' : 'd'})</span><span class="v">৳${slipNum(postResignDed)}</span></div>` : ''}
+              ${otherDed > 0 ? `<div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অন্যান্য কর্তন' : 'Other Deduction'}${record.other_deduction_note ? ` <span style="color:#64748b;font-weight:400">(${record.other_deduction_note})</span>` : ''}</span><span class="v">৳${slipNum(otherDed)}</span></div>` : ''}
 
-              <!-- সাবটোটাল: উপস্থিতি ভিত্তিক বেতন -->
-              <div class="ln" style="border-top:1px dashed #94a3b8;padding-top:6px;margin-top:4px;background:#f0fdf4;color:#065f46"><span class="l"><strong>${bn ? '= উপস্থিতি ভিত্তিক বেতন' : '= Earned from Attendance'}</strong></span><span class="v"><strong>৳${slipNum(earnedFromAttendance)}</strong></span></div>
+              <!-- সাবটোটাল: উপস্থিতি ভিত্তিক অর্জিত বেতন -->
+              <div class="ln" style="border-top:1px dashed #94a3b8;padding-top:6px;margin-top:4px;background:#f0fdf4;color:#065f46"><span class="l"><strong>${bn ? '= উপস্থিতি ভিত্তিক অর্জিত বেতন' : '= Earned from Attendance'}</strong></span><span class="v"><strong>৳${slipNum(earnedFromAttendance)}</strong></span></div>
 
-              <!-- ৩. অগ্রিম, অন্যান্য কর্তন ও সঞ্চয় জমা -->
-              ${Number(record.advance_deduction || 0) > 0 ? `<div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অগ্রিম কর্তন' : 'Advance Deduction'}</span><span class="v">৳${slipNum(Number(record.advance_deduction || 0))}</span></div>` : ''}
-              ${Number(record.other_deduction || 0) > 0 ? `<div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অন্যান্য কর্তন' : 'Other Deduction'}${record.other_deduction_note ? ` <span style="color:#64748b;font-weight:400">(${record.other_deduction_note})</span>` : ''}</span><span class="v">৳${slipNum(Number(record.other_deduction || 0))}</span></div>` : ''}
-              ${savingsAmt > 0 ? `<div class="ln savings" style="color:#1d4ed8;background:#eff6ff;padding:4px 6px;border-radius:4px"><span class="l" style="font-weight:600">🏦 ${bn ? 'বেতন সঞ্চয় (ডিপোজিট)' : 'Salary Savings (Deposit)'}</span><span class="v" style="font-weight:700">৳${slipNum(savingsAmt)}</span></div>` : ''}
+              <!-- ৩. বোনাস / ওভারটাইম / অন্যান্য ভাতা -->
+              ${Number(record.bonus || 0) > 0 ? `<div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'বোনাস' : 'Bonus'}</span><span class="v">৳${slipNum(Number(record.bonus || 0))}</span></div>` : ''}
+              ${Number(record.overtime || 0) > 0 ? `<div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'ওভারটাইম' : 'Overtime'}${record.overtime_reason ? ` <span style="color:#64748b;font-weight:400">(${record.overtime_reason})</span>` : ''}</span><span class="v">৳${slipNum(Number(record.overtime || 0))}</span></div>` : ''}
+              ${Number(record.other_allowance || 0) > 0 ? `<div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'অন্যান্য ডিউটি / ভাতা' : 'Other Duty / Allowance'}${record.other_allowance_note ? ` <span style="color:#64748b;font-weight:400">(${record.other_allowance_note})</span>` : ''}</span><span class="v">৳${slipNum(Number(record.other_allowance || 0))}</span></div>` : ''}
 
-              <!-- ৪. বোনাস / ওভারটাইম / ভাতা -->
-              <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'বোনাস' : 'Bonus'}</span><span class="v">৳${slipNum(Number(record.bonus || 0))}</span></div>
-              <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'ওভারটাইম' : 'Overtime'}${record.overtime_reason ? ` <span style="color:#64748b;font-weight:400">(${record.overtime_reason})</span>` : ''}</span><span class="v">৳${slipNum(Number(record.overtime || 0))}</span></div>
-              <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'অন্যান্য ডিউটি' : 'Other Duty'}${record.other_allowance_note ? ` <span style="color:#64748b;font-weight:400">(${record.other_allowance_note})</span>` : ''}</span><span class="v">৳${slipNum(Number(record.other_allowance || 0))}</span></div>
+              <!-- ৪. অগ্রিম কর্তন ও বেতন সঞ্চয় জমা -->
+              ${advDed > 0 ? `<div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অগ্রিম কর্তন' : 'Advance Deduction'}</span><span class="v">৳${slipNum(advDed)}</span></div>` : ''}
+              ${savingsAmt > 0 ? `<div class="ln savings" style="color:#1d4ed8;background:#eff6ff;padding:4px 6px;border-radius:4px"><span class="l" style="font-weight:600">🏦 ${bn ? 'বেতন সঞ্চয় (ডিপোজিট জমা)' : 'Salary Savings (Deposit)'}</span><span class="v" style="font-weight:700">৳${slipNum(savingsAmt)}</span></div>` : ''}
 
-              <!-- যাচাই লাইন hidden by request — শুধু চূড়ান্ত যোগফল দেখাও -->
+              <!-- চূড়ান্ত মোট প্রদেয় নিট বেতন -->
               <div class="ln" style="border-top:2px solid #0f172a;margin-top:6px;padding-top:8px;background:#fefce8;color:#713f12;font-weight:700">
-                <span class="l">${bn ? 'মোট বেতন (নিট প্রদেয়)' : 'Total (Net Payable)'}</span>
+                <span class="l">${bn ? 'মোট প্রদেয় নিট বেতন' : 'Total (Net Payable)'}</span>
                 <span class="v">৳${slipNum(netSalary)}</span>
               </div>
             </div>
@@ -4788,14 +4844,21 @@ const AdminSalary = () => {
                                         <Edit2 className="h-3 w-3" />
                                       </Button>
                                     )}
-                                    {canEditItem && rec.status !== 'paid' && (
+                                    {canEditItem && (
                                       <Button
                                         size="icon"
                                         variant="ghost"
                                         className="h-6 w-6 text-indigo-600 hover:bg-indigo-100/60 dark:hover:bg-indigo-900/30 disabled:opacity-40"
                                         title={bn ? 'তারিখ/যোগদান পরিবর্তনের পর শুধু এই স্টাফের বেতন পুনরায় হিসাব করুন' : 'Recalculate salary for this staff only'}
                                         disabled={recalculateSingleMutation.isPending}
-                                        onClick={() => recalculateSingleMutation.mutate(s.id)}
+                                        onClick={() => {
+                                          if (rec.status === 'paid') {
+                                            if (!confirm(bn ? 'এই বেতনটি ইতোমধ্যে পরিশোধিত চিহ্নিত করা আছে। আপনি কি সাম্প্রতিক হাজিরা অনুযায়ী এটি পুনরায় হিসাব (Recalculate) করে ডাটাবেজে আপডেট করতে চান?' : 'This salary is marked as paid. Recalculate with latest attendance?')) {
+                                              return;
+                                            }
+                                          }
+                                          recalculateSingleMutation.mutate(s.id);
+                                        }}
                                       >
                                         <RefreshCw className={`h-3 w-3 ${recalculateSingleMutation.isPending ? 'animate-spin' : ''}`} />
                                       </Button>

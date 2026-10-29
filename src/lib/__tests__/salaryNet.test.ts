@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { recomputeNetSalary } from '@/lib/salaryNet';
+import { recomputeNetSalary, computeManualOverrideNet } from '@/lib/salaryNet';
 
 /**
  * Regression suite for the salary recalculate path.
@@ -125,5 +125,37 @@ describe('recomputeNetSalary', () => {
     const calc = { net_salary: 9000, savings_deduction: 0 };
     const manual = {};
     expect(recomputeNetSalary(calc, manual)).toBe(9000);
+  });
+});
+describe('computeManualOverrideNet', () => {
+  it('correctly calculates net for user reported scenario: 8000 base, 78 late, 267 absent, 1000 savings -> 6655', () => {
+    const net = computeManualOverrideNet({
+      base_salary: 8000,
+      late_deduction: 78,
+      absence_deduction: 267,
+      savings_deduction: 1000,
+      bonus: 0,
+      overtime: 0,
+      other_allowance: 0,
+      advance_deduction: 0,
+      other_deduction: 0,
+      duty_deduction: 0,
+    });
+    expect(net).toBe(6655);
+  });
+
+  it('subtracts duty deduction, pre-join deduction and post-resign deduction exactly once', () => {
+    const net = computeManualOverrideNet({
+      base_salary: 10000,
+      bonus: 1000,
+      overtime: 500,
+      duty_deduction: 400,
+      pre_join_deduction: 600,
+      post_resign_deduction: 500,
+      late_deduction: 100,
+      absence_deduction: 200,
+      savings_deduction: 500,
+    });
+    expect(net).toBe(9200);
   });
 });
