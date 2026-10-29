@@ -380,13 +380,19 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
 
   const getDeptConfig = (catKey: string): DeptShiftConfig => {
     if (deptShiftConfigs[catKey]) return deptShiftConfigs[catKey];
+    const isTeacher = isTeacherCategory(catKey);
     const latest = departmentSchedules
-      .filter((s: any) => s.category_key === catKey)
+      .filter((s: any) => s.category_key === catKey || (isTeacher && s.category_key === 'teacher'))
       .sort((a: any, b: any) => (b.effective_from || '').localeCompare(a.effective_from || ''))[0];
 
-    const base = categoryShiftTimes[catKey] || defaultCategoryTimes[catKey] || { start: '08:00', end: '17:00' };
+    const base = categoryShiftTimes[catKey]
+      || (isTeacher ? categoryShiftTimes['teacher'] : null)
+      || defaultCategoryTimes[catKey]
+      || { start: '08:00', end: '17:00' };
 
-    const rawSpecial = (base as any)?.specialDay || (isTeacherCategory(catKey) && (thursdayHalfSetting as any)?.enabled ? {
+    const rawSpecial = (base as any)?.specialDay
+      || (isTeacher ? (categoryShiftTimes['teacher'] as any)?.specialDay : null)
+      || (isTeacher && (thursdayHalfSetting as any)?.enabled ? {
       enabled: true,
       days: (thursdayHalfSetting as any)?.days || [4],
       start: (thursdayHalfSetting as any)?.start_time || '',
@@ -568,17 +574,28 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       if (k && !list.includes(k) && !k.startsWith('__')) list.push(k);
     });
 
-    // 3. Saved times keys (if any configured)
-    if (savedCategoryTimes && typeof savedCategoryTimes === 'object') {
-      Object.keys(savedCategoryTimes).forEach(k => {
-        if (k && !list.includes(k) && !k.startsWith('__')) list.push(k);
-      });
+    // 3. If teacher_nurani_kitab or teacher_hifz exists in active categories,
+    // remove obsolete legacy generic 'teacher' ("শিক্ষা বিভাগ") to prevent duplicate cards.
+    const hasSpecificTeacherCat = list.some(k => k === 'teacher_nurani_kitab' || k === 'teacher_hifz');
+    const hasStaffWithGenericTeacher = (allStaffRaw as any[] || []).some((s: any) => s.staff_category === 'teacher');
+    const isGenericTeacherInDb = (staffCategoriesData || []).some(c => c.key === 'teacher');
+
+    if (hasSpecificTeacherCat && !hasStaffWithGenericTeacher && !isGenericTeacherInDb) {
+      const idx = list.indexOf('teacher');
+      if (idx !== -1) list.splice(idx, 1);
     }
 
     // 4. Only if database has no categories at all, use standard fallback
     if (list.length === 0) {
-      const defaults = ['administrative', 'teacher', 'support', 'general'];
-      defaults.forEach(d => list.push(d));
+      if (savedCategoryTimes && typeof savedCategoryTimes === 'object') {
+        Object.keys(savedCategoryTimes).forEach(k => {
+          if (k && !list.includes(k) && !k.startsWith('__')) list.push(k);
+        });
+      }
+      if (list.length === 0) {
+        const defaults = ['administrative', 'teacher', 'support', 'general'];
+        defaults.forEach(d => list.push(d));
+      }
     }
     return list;
   }, [staffCategoriesData, allStaffRaw, savedCategoryTimes]);
@@ -1289,15 +1306,17 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
 
   // Apply the Thursday half-day check-in/check-out window when the selected date is a
   // Thursday and the staff belongs to a configured department.
-  // NOTE: If a staff has an explicit personal duty time or date-ranged special shift, custom duty MUST NOT be overridden!
-  const applyThursdayWindow = (entity: any, base: { start: string; end: string }, isCustomDuty = false) => {
-    if (isCustomDuty || (entity?.duty_start_time && entity?.duty_end_time)) return base;
+  // Teachers get Thursday half-day regardless of custom personal profile hours.
+  // Only a date-ranged special shift overrides this.
+  const applyThursdayWindow = (entity: any, base: { start: string; end: string }, isSpecialShift = false) => {
+    if (isSpecialShift) return base;
     if (entity?.type === 'student') return base;
     const catKey = entity?.staff_category;
     if (!catKey) return base;
 
     // Check department-specific special day setting first
-    const deptSpecial = (categoryShiftTimes[catKey] as any)?.specialDay;
+    const deptSpecial = (categoryShiftTimes[catKey] as any)?.specialDay
+      || (isTeacherCategory(catKey) ? (categoryShiftTimes['teacher'] as any)?.specialDay : null);
     if (deptSpecial && deptSpecial.enabled) {
       const dayOfWeek = new Date(selectedDate + 'T00:00:00').getDay();
       const sched = getScheduleForDay(deptSpecial, dayOfWeek);
@@ -1310,11 +1329,13 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
     }
 
     // Fallback to legacy/global setting
-    const enabled = (thursdayHalfSetting as any)?.enabled === true;
-    if (!enabled) return base;
-    if (!isSpecialDayDate(selectedDate, thursdayHalfSetting as any)) return base;
-    const cats = resolveThursdayHalfCategories(thursdayHalfSetting as any);
-    if (!cats.includes(catKey)) return base;
+    const appliesThu = shouldApplyThursdayHalfDay({
+      setting: thursdayHalfSetting as any,
+      staffCategory: catKey,
+      attendanceDate: selectedDate,
+      isOvernight: false,
+    });
+    if (!appliesThu) return base;
     return {
       start: (thursdayHalfSetting as any)?.start_time || base.start,
       end: (thursdayHalfSetting as any)?.end_time || '14:00',
@@ -1336,7 +1357,7 @@ const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential' | 'meal
       categoryTimes: categoryShiftTimes,
     });
 
-    return applyThursdayWindow(entity, { start: resolved.start, end: resolved.end }, resolved.isCustomDuty);
+    return applyThursdayWindow(entity, { start: resolved.start, end: resolved.end }, resolved.source === 'special');
   };
 
   const getStaffShiftTime = (entity: any, shift?: string) => {
