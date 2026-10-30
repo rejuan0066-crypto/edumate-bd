@@ -3773,6 +3773,8 @@ const AdminSalary = () => {
       .net-box .amt{font-size:26px;font-weight:900;font-variant-numeric:tabular-nums}
       .words{margin-top:10px;padding:10px 14px;background:#f8fafc;border-left:3.5px solid #0d9488;border-radius:6px;font-size:13px;color:#1e293b;font-style:italic}
       .words strong{color:#0f766e;font-style:normal;font-weight:800}
+      .receipt-ack{margin-top:12px;padding:10px 14px;background:#f8fafc;border:1px dashed #94a3b8;border-radius:8px;font-size:12px;line-height:1.5;color:#334155}
+      .receipt-ack .ack-title{font-weight:700;color:#0f172a;margin-bottom:3px;font-size:12.5px}
       .signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-top:35px;padding:0 8px}
       .sig{text-align:center;font-size:12px;color:#475569}
       .sig-space{height:52px;min-height:52px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px}
@@ -3853,7 +3855,9 @@ const AdminSalary = () => {
         .net-box .amt{font-size:24px !important;font-weight:900 !important}
         .words{margin-top:8px !important;padding:7px 12px !important;font-size:12px !important;width:100% !important;box-sizing:border-box !important}
         .words strong{font-weight:800 !important}
-        .signatures{margin-top:auto !important;padding-top:30px !important;gap:24px !important;padding-left:8px !important;padding-right:8px !important;width:100% !important;box-sizing:border-box !important}
+        .receipt-ack{margin-top:10px !important;padding:8px 14px !important;font-size:11.5px !important;line-height:1.45 !important;border:1px dashed #64748b !important;border-radius:6px !important;background:#f8fafc !important;width:100% !important;box-sizing:border-box !important;page-break-inside:avoid !important}
+        .receipt-ack .ack-title{font-size:12px !important;font-weight:700 !important;color:#0f172a !important;margin-bottom:2px !important}
+        .signatures{margin-top:auto !important;padding-top:22px !important;gap:24px !important;padding-left:8px !important;padding-right:8px !important;width:100% !important;box-sizing:border-box !important}
         .sig{font-size:12px !important}
         .sig-space{height:52px !important;min-height:52px !important;display:flex !important;align-items:flex-end !important;justify-content:center !important;padding-bottom:4px !important}
         .sig-space img{max-height:46px !important;object-fit:contain !important}
@@ -3868,7 +3872,7 @@ const AdminSalary = () => {
       <div class="watermark"><span>${bn ? 'বেতন স্লিপ' : 'SALARY'}</span></div>
       <div class="header">
         <div class="slip-tag">
-          <div class="badge">${bn ? 'বেতন স্লিপ' : 'PAY SLIP'}</div>
+          <div class="badge">${bn ? 'অফিস ভাউচার' : 'OFFICE VOUCHER'}</div>
           <div class="id">${slipId}</div>
         </div>
         <div class="head-row">
@@ -3888,7 +3892,7 @@ const AdminSalary = () => {
 
       <div class="month-bar">
         <span>${bn ? 'বেতন মাস' : 'Salary Period'}: <span class="month">${bn ? monthName?.bn : monthName?.en} ${bn ? toBnDigits(selectedYear) : selectedYear}</span></span>
-        <span>${bn ? 'ইস্যু তারিখ' : 'Issue Date'}: <strong>${issueDate}</strong></span>
+        <span>${bn ? 'ইস্যু ও পেমেন্ট তারিখ' : 'Payment Date'}: <strong>${issueDate}</strong></span>
       </div>
 
       <div class="body">
@@ -3948,38 +3952,47 @@ const AdminSalary = () => {
         </div>
 
         <div class="net-box">
-          <span class="lbl">${bn ? 'নিট বেতন (প্রদেয়)' : 'Net Salary (Payable)'}</span>
+          <span class="lbl">${bn ? 'পরিশোধিত নিট বেতন' : 'Net Paid Amount'}</span>
           <span class="amt">৳ ${slipNum(netSalary)}</span>
         </div>
         <div class="words">${bn ? 'কথায়' : 'In Words'}: <strong>${inWords}</strong></div>
 
         ${lateDetailHtml}
 
+        <div class="receipt-ack">
+          <div class="ack-title">${bn ? 'প্রাপকের অর্থপ্রাপ্তি অঙ্গীকার ও স্বীকৃতি (Money Receipt Acknowledgement)' : 'Recipient Money Receipt Acknowledgement'}:</div>
+          <div class="ack-text">
+            ${bn 
+              ? `“আমি নিম্নস্বাক্ষরকারী স্বীকার করিতেছি যে, ${monthName?.bn || ''} ${toBnDigits(selectedYear)} মাসের যাবতীয় পাওনা বাবদ মোট নিট <strong>৳ ${slipNum(netSalary)}/- (${inWords})</strong> অত্র মাদরাসার হিসাব বিভাগ হইতে পূর্ণ বুঝিয়া পাইলাম। অত্র মাসের বেতন বাবদ মাদরাসার নিকট আমার আর কোনো বকেয়া বা দাবি নাই।”` 
+              : `“I hereby acknowledge the receipt of net salary <strong>৳ ${slipNum(netSalary)}/- (${inWords})</strong> in full settlement for the period of ${monthName?.en} ${selectedYear}. I have no further dues or claims regarding this period.”`}
+          </div>
+        </div>
+
         <div class="signatures">
           <div class="sig">
             <div class="sig-space"></div>
             <div class="line"></div>
             <div class="sig-name">${recipientName}</div>
-            <div class="role">${recipientRole}</div>
+            <div class="role">${bn ? 'অর্থ গ্রহণকারীর স্বাক্ষর ও তারিখ' : "Recipient's Signature & Date"}</div>
           </div>
           <div class="sig">
             <div class="sig-space"></div>
             <div class="line"></div>
             <div class="sig-name">${accountantName || '&nbsp;'}</div>
-            <div class="role">${accountantRole}</div>
+            <div class="role">${bn ? 'কোষাধ্যক্ষ / হিসাবরক্ষক' : accountantRole}</div>
           </div>
           <div class="sig">
             <div class="sig-space"></div>
             <div class="line"></div>
             <div class="sig-name">${approverName}</div>
-            <div class="role">${approverRole}</div>
+            <div class="role">${bn ? 'মুহতামিম / প্রিন্সিপাল' : approverRole}</div>
           </div>
         </div>
       </div>
 
       <div class="footer">
-        ${bn ? 'এটি কম্পিউটার-জেনারেটেড একটি অফিসিয়াল বেতন স্লিপ। স্বাক্ষর ছাড়াও বৈধ।' : 'This is a computer-generated official salary slip. Valid without signature.'}
-        <div class="gen">${bn ? 'জেনারেটর' : 'Generated by'}: ${instName} • ${issueDate}</div>
+        ${bn ? 'এটি প্রতিষ্ঠানের দাপ্তরিক হিসাব ও অডিট নথির জন্য সংরক্ষিত অফিস ভাউচার কপি।' : 'This is an official voucher copy archived for institutional accounts & audit records.'}
+        <div class="gen">${bn ? 'প্রতিষ্ঠান' : 'Institution'}: ${instName} • ${issueDate}</div>
       </div>
     </div>
     </body></html>`;
