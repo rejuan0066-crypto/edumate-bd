@@ -3688,7 +3688,44 @@ const AdminSalary = () => {
 
     const slipId = `VCH-${selectedYear}${selectedMonth}-${String(record.id || '001').slice(0, 6).toUpperCase()}`;
     const nothiCode = `MH/FIN/${selectedYear}/${selectedMonth}`;
-    const issueDate = new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB');
+
+    // পেমেন্ট/পরিশোধের তারিখ: রেকর্ড যদি ইতিমধ্যে পেইড হয়ে থাকে, তবে ডাটাবেজে সংরক্ষিত আসল পেমেন্ট তারিখ (paid_at / payment_date)
+    // ব্যবহার করা হবে, যাতে পরবর্তীতে যেকোনো দিন প্রিন্ট দিলেও পেমেন্টের ঐতিহাসিক তারিখ কখনো পরিবর্তন না হয়।
+    const paymentDateFormatted = (() => {
+      let d: Date | null = null;
+      const rawDate = record.paid_at || record.payment_date || (record.status === 'paid' ? (record.updated_at || record.created_at) : null);
+      if (rawDate) {
+        if (typeof rawDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
+          d = new Date(`${rawDate}T00:00:00`);
+        } else {
+          d = new Date(rawDate);
+        }
+      }
+      if (!d || isNaN(d.getTime())) {
+        d = new Date();
+      }
+
+      if (bn) {
+        const day = toBnDigits(d.getDate());
+        const month = MONTHS[d.getMonth()]?.bn || '';
+        const year = toBnDigits(d.getFullYear());
+        return `${day} ${month} ${year}`;
+      }
+      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    })();
+
+    const printDateFormatted = (() => {
+      const now = new Date();
+      if (bn) {
+        const day = toBnDigits(now.getDate());
+        const month = MONTHS[now.getMonth()]?.bn || '';
+        const year = toBnDigits(now.getFullYear());
+        return `${day} ${month} ${year}`;
+      }
+      return now.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    })();
+
+    const issueDate = paymentDateFormatted;
 
     const dutyHours = (() => {
       try {
@@ -3879,8 +3916,8 @@ const AdminSalary = () => {
         <div class="header-right">
           <div class="vch-lbl">${bn ? 'ভাউচার নম্বর:' : 'Voucher No:'}</div>
           <div class="vch-no">${slipId}</div>
-          <div class="vch-lbl" style="margin-top:3px;">${bn ? 'ইস্যু ও পেমেন্ট তারিখ:' : 'Issue & Payment Date:'}</div>
-          <div class="vch-date">${issueDate}</div>
+          <div class="vch-lbl" style="margin-top:3px;">${record.status === 'paid' ? (bn ? 'পরিশোধের তারিখ:' : 'Payment Date:') : (bn ? 'ইস্যু ও পেমেন্ট তারিখ:' : 'Issue & Payment Date:')}</div>
+          <div class="vch-date">${paymentDateFormatted}</div>
         </div>
       </div>
 
@@ -4045,7 +4082,7 @@ const AdminSalary = () => {
 
       <!-- FOOTER NOTE -->
       <div class="slip-foot-note">
-        এটি প্রতিষ্ঠানের অভ্যন্তরীণ হিসাব ও অডিট নথির জন্য সংরক্ষিত অফিস ভাউচার কপি। প্রতিষ্ঠান: ${instName} • ${issueDate}
+        এটি প্রতিষ্ঠানের অভ্যন্তরীণ হিসাব ও অডিট নথির জন্য সংরক্ষিত অফিস ভাউচার কপি। প্রতিষ্ঠান: ${instName} • পরিশোধ তারিখ: ${paymentDateFormatted} • প্রিন্ট তারিখ: ${printDateFormatted}
       </div>
     </div>
     </body></html>`;
