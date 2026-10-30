@@ -3554,10 +3554,6 @@ const AdminSalary = () => {
     const slipStats = slipSnapshot.stats;
     const leaveDays = slipStats.leave || 0;
 
-    // বিলম্ব উপস্থিতির বিস্তারিত (তারিখ • প্রবেশ → বাহির • কত মিনিট) — স্লিপে দেখানোর জন্য
-    const slipLateDetails = (slipStats.dailyBreakdown || [])
-      .filter((d: any) => ((Number(d.lateMin) || 0) + (Number(d.earlyMin) || 0)) > 0)
-      .map((d: any) => ({ date: d.date, checkIn: d.checkIn, checkOut: d.checkOut, lateMin: (Number(d.lateMin) || 0) + (Number(d.earlyMin) || 0) }));
     const fmtSlipDate = (d: string) => {
       if (!d) return '-';
       const [y, mo, da] = d.split('-');
@@ -3580,27 +3576,50 @@ const AdminSalary = () => {
       parts.push(`${bn ? toBnDigits(m) : m} ${bn ? 'মিনিট' : 'min'}`);
       return parts.join(' ');
     };
-    const lateDetailHtml = slipLateDetails.length > 0 ? `
-      <div style="margin:14px 0 0;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
-        <div style="background:#fff7ed;color:#9a3412;font-weight:700;padding:7px 12px;font-size:12px">
-          ${bn ? 'বিলম্ব উপস্থিতির বিবরণ' : 'Late Attendance Details'}
+
+    // অনুপস্থিতির বিস্তারিত (তারিখসমূহ)
+    const slipAbsentDetails = (slipStats.dailyBreakdown || [])
+      .filter((d: any) => d.status === 'absent')
+      .map((d: any) => ({ date: d.date, deduction: Number(d.deduction) || 0 }));
+
+    // বিলম্ব উপস্থিতির বিস্তারিত (তারিখ • প্রবেশ → বাহির • কত মিনিট)
+    const slipLateDetails = (slipStats.dailyBreakdown || [])
+      .filter((d: any) => ((Number(d.lateMin) || 0) + (Number(d.earlyMin) || 0)) > 0)
+      .map((d: any) => ({ date: d.date, checkIn: d.checkIn, checkOut: d.checkOut, lateMin: (Number(d.lateMin) || 0) + (Number(d.earlyMin) || 0) }));
+
+    const absentDatesText = slipAbsentDetails.map((d: any) => fmtSlipDate(d.date)).join(', ');
+    const lateDatesText = slipLateDetails.map((d: any) => `${fmtSlipDate(d.date)} (${fmtSlipMins(d.lateMin)})`).join(', ');
+
+    const attendanceDetailHtml = (slipAbsentDetails.length > 0 || slipLateDetails.length > 0) ? `
+      <div style="margin:10px 0 0;border:1px solid #cbd5e1;border-radius:10px;overflow:hidden">
+        <div style="background:#fff1f2;color:#9f1239;font-weight:800;padding:8px 14px;font-size:12.5px;border-bottom:1px solid #fecdd3;display:flex;justify-content:space-between;align-items:center;">
+          <span>📅 ${bn ? 'অনুপস্থিতি ও বিলম্ব উপস্থিতির তারিখভিত্তিক অডিট বিবরণ' : 'Absence & Late Dates Breakdown'}</span>
+          <span style="font-size:11px;font-weight:700;color:#e11d48">${bn ? 'কর্তন নিরীক্ষা' : 'Deduction Audit'}</span>
         </div>
-        <table style="width:100%;border-collapse:collapse;font-size:11px">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
           <thead>
-            <tr style="background:#f1f5f9;color:#334155">
-              <th style="border:0.5px solid #cbd5e1;padding:4px 8px;text-align:left">${bn ? 'তারিখ' : 'Date'}</th>
-              <th style="border:0.5px solid #cbd5e1;padding:4px 8px;text-align:center">${bn ? 'প্রবেশ' : 'Check-in'}</th>
-              <th style="border:0.5px solid #cbd5e1;padding:4px 8px;text-align:center">${bn ? 'বাহির' : 'Check-out'}</th>
-              <th style="border:0.5px solid #cbd5e1;padding:4px 8px;text-align:right">${bn ? 'বিলম্ব' : 'Late by'}</th>
+            <tr style="background:#f8fafc;color:#475569;border-bottom:1px solid #e2e8f0">
+              <th style="padding:6px 10px;text-align:left">${bn ? 'তারিখ' : 'Date'}</th>
+              <th style="padding:6px 10px;text-align:center">${bn ? 'স্ট্যাটাস / বিবরণ' : 'Status'}</th>
+              <th style="padding:6px 10px;text-align:center">${bn ? 'প্রবেশ – বাহির' : 'Time'}</th>
+              <th style="padding:6px 10px;text-align:right">${bn ? 'বিলম্ব / কর্তন' : 'Details'}</th>
             </tr>
           </thead>
           <tbody>
+            ${slipAbsentDetails.map((d: any) => `
+              <tr style="border-bottom:1px solid #f1f5f9;background:#fff5f5">
+                <td style="padding:6px 10px;font-weight:700;color:#dc2626">${fmtSlipDate(d.date)}</td>
+                <td style="padding:6px 10px;text-align:center"><span style="background:#fee2e2;color:#b91c1c;padding:2px 8px;border-radius:4px;font-weight:700;font-size:11px">${bn ? 'অননুমোদিত অনুপস্থিত' : 'Absent'}</span></td>
+                <td style="padding:6px 10px;text-align:center;color:#64748b">—</td>
+                <td style="padding:6px 10px;text-align:right;font-weight:700;color:#dc2626">${bn ? '১ দিন কর্তন' : '1 Day Ded.'}</td>
+              </tr>
+            `).join('')}
             ${slipLateDetails.map((d: any) => `
-              <tr>
-                <td style="border:0.5px solid #e2e8f0;padding:4px 8px">${fmtSlipDate(d.date)}</td>
-                <td style="border:0.5px solid #e2e8f0;padding:4px 8px;text-align:center">${fmtSlip12(d.checkIn)}</td>
-                <td style="border:0.5px solid #e2e8f0;padding:4px 8px;text-align:center">${fmtSlip12(d.checkOut)}</td>
-                <td style="border:0.5px solid #e2e8f0;padding:4px 8px;text-align:right;font-weight:600;color:#b45309">${fmtSlipMins(Number(d.lateMin) || 0)}</td>
+              <tr style="border-bottom:1px solid #f1f5f9;background:#fffbeb">
+                <td style="padding:6px 10px;font-weight:700;color:#b45309">${fmtSlipDate(d.date)}</td>
+                <td style="padding:6px 10px;text-align:center"><span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-weight:700;font-size:11px">${bn ? 'বিলম্ব উপস্থিতি' : 'Late'}</span></td>
+                <td style="padding:6px 10px;text-align:center;font-family:monospace;color:#334155">${fmtSlip12(d.checkIn)} – ${fmtSlip12(d.checkOut)}</td>
+                <td style="padding:6px 10px;text-align:right;font-weight:700;color:#b45309">${fmtSlipMins(Number(d.lateMin) || 0)}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -3957,7 +3976,10 @@ const AdminSalary = () => {
               <td class="lbl">${bn ? 'মাসের কর্মদিবস:' : 'Working Days:'}</td>
               <td class="val">মোট ${slipNum(record.working_days || 0)} দিন (উপস্থিত: <b class="c-green">${slipNum(record.present_days || 0)}</b> • ছুটি: <b>${slipNum(leaveDays)}</b>)</td>
               <td class="lbl">${bn ? 'অনুপস্থিতি ও বিলম্ব:' : 'Absence & Late:'}</td>
-              <td class="val">অনুপস্থিতি: <b class="c-red">${slipNum(record.absent_days || 0)} দিন</b> (কর্তন প্রযোজ্য) • বিলম্ব: <b>${slipNum(record.late_days || 0)} দিন</b></td>
+              <td class="val">
+                অনুপস্থিতি: <b class="c-red">${slipNum(record.absent_days || 0)} দিন</b>${absentDatesText ? ` <span style="font-size:12px;color:#dc2626;font-weight:700;">[তারিখ: ${absentDatesText}]</span>` : ''}
+                • বিলম্ব: <b>${slipNum(record.late_days || 0)} দিন</b>${lateDatesText ? ` <span style="font-size:12px;color:#b45309;font-weight:700;">[তারিখ: ${slipLateDetails.map((d: any) => fmtSlipDate(d.date)).join(', ')}]</span>` : ''}
+              </td>
             </tr>
           </tbody>
         </table>
@@ -4018,11 +4040,17 @@ const AdminSalary = () => {
             <table class="ledger-tbl">
               <tbody>
                 <tr>
-                  <td>১. অননুমোদিত অনুপস্থিতি কর্তন (${slipNum(record.absent_days || 0)} দিন)</td>
+                  <td>
+                    <div style="font-weight:600;">১. অননুমোদিত অনুপস্থিতি কর্তন (${slipNum(record.absent_days || 0)} দিন)</div>
+                    ${absentDatesText ? `<div style="font-size:11.5px;color:#dc2626;font-weight:700;margin-top:2px;">📅 তারিখ: ${absentDatesText}</div>` : ''}
+                  </td>
                   <td class="r ${absDed > 0 ? 'c-red font-bold' : 'muted'}">${slipNum(absDed)}</td>
                 </tr>
                 <tr>
-                  <td>২. বিলম্ব উপস্থিতি ও প্রস্থান কর্তন</td>
+                  <td>
+                    <div style="font-weight:600;">২. বিলম্ব উপস্থিতি ও প্রস্থান কর্তন</div>
+                    ${lateDatesText ? `<div style="font-size:11.5px;color:#b45309;font-weight:700;margin-top:2px;">⏱ তারিখ: ${lateDatesText}</div>` : ''}
+                  </td>
                   <td class="r ${lateDed > 0 ? 'c-red font-bold' : 'muted'}">${slipNum(lateDed)}</td>
                 </tr>
                 <tr style="${savingsAmt > 0 || finalTotalSavings > 0 ? 'background:#f0f9ff;' : ''}">
@@ -4094,7 +4122,7 @@ const AdminSalary = () => {
         </div>
       </div>
 
-      ${lateDetailHtml}
+      ${attendanceDetailHtml}
 
       <!-- SECTION 5: COMPLETE 4-TIER OFFICE APPROVAL & SIGNATURE CHAIN -->
       <div class="sig-section">
