@@ -12,11 +12,36 @@ window.addEventListener('vite:preloadError', (event) => {
     lastReload = Number(sessionStorage.getItem(reloadKey) || '0');
   } catch {}
   const now = Date.now();
-  if (now - lastReload > 10000) {
+  if (now - lastReload > 8000) {
     try {
       sessionStorage.setItem(reloadKey, String(now));
     } catch {}
     window.location.reload();
+  }
+});
+
+// Also catch unhandled dynamic import errors globally
+window.addEventListener('unhandledrejection', (event) => {
+  const msg = (event.reason?.message || String(event.reason || '')).toLowerCase();
+  if (
+    msg.includes('dynamically imported module') ||
+    msg.includes('chunkloaderror') ||
+    msg.includes('unexpected token <') ||
+    msg.includes('loading chunk')
+  ) {
+    event.preventDefault();
+    const reloadKey = 'global_chunk_error_reload';
+    let lastReload = 0;
+    try {
+      lastReload = Number(sessionStorage.getItem(reloadKey) || '0');
+    } catch {}
+    const now = Date.now();
+    if (now - lastReload > 8000) {
+      try {
+        sessionStorage.setItem(reloadKey, String(now));
+      } catch {}
+      window.location.reload();
+    }
   }
 });
 

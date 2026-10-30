@@ -27,6 +27,8 @@ const isChunkLoadError = (error: Error | null): boolean => {
     msg.includes('returned undefined') ||
     msg.includes('chunkloaderror') ||
     msg.includes('lazywithretry') ||
+    msg.includes('unexpected token') ||
+    msg.includes('loading chunk') ||
     name.includes('chunkloaderror')
   );
 };
@@ -48,26 +50,21 @@ class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught:', error, errorInfo);
 
-    // If an asset hash changed due to a new deploy, auto-reload once to fetch new manifest
+    // If an asset hash changed due to a new deploy, auto-reload IMMEDIATELY without making user wait
     if (isChunkLoadError(error)) {
-      const reloadKey = 'chunk_reload_' + window.location.pathname;
+      const reloadKey = 'chunk_reload_auto';
       let lastReload = 0;
       try {
         lastReload = Number(sessionStorage.getItem(reloadKey) || '0');
-      } catch {
-        /* ignore */
-      }
+      } catch {}
       const now = Date.now();
 
       if (now - lastReload > 8000) {
         try {
           sessionStorage.setItem(reloadKey, String(now));
-        } catch {
-          /* ignore */
-        }
-        const url = new URL(window.location.href);
-        url.searchParams.set('_upd', Date.now().toString());
-        window.location.replace(url.toString());
+        } catch {}
+        // Auto-refresh seamlessly to the newest deployed version
+        window.location.reload();
       }
     }
   }
@@ -75,14 +72,9 @@ class ErrorBoundary extends Component<Props, State> {
   handleRetry = () => {
     if (this.state.isChunkError || isChunkLoadError(this.state.error)) {
       try {
-        const reloadKey = 'chunk_reload_' + window.location.pathname;
-        sessionStorage.removeItem(reloadKey);
-      } catch {
-        /* ignore */
-      }
-      const url = new URL(window.location.href);
-      url.searchParams.set('_r', Date.now().toString());
-      window.location.replace(url.toString());
+        sessionStorage.removeItem('chunk_reload_auto');
+      } catch {}
+      window.location.reload();
       return;
     }
     this.setState({ hasError: false, error: null, isChunkError: false });
@@ -94,6 +86,31 @@ class ErrorBoundary extends Component<Props, State> {
 
       const isChunk = this.state.isChunkError;
 
+      if (isChunk) {
+        return (
+          <div className="min-h-[220px] flex flex-col items-center justify-center gap-4 p-8 text-center animate-fade-in">
+            <div className="p-3.5 rounded-2xl bg-emerald-500/10 text-emerald-600 animate-spin">
+              <RefreshCw className="w-8 h-8" />
+            </div>
+            <div className="max-w-md space-y-1.5">
+              <h3 className="text-lg font-bold text-foreground">
+                নতুন ভার্সন আপডেট নেওয়া হচ্ছে…
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                সিস্টেমের নতুন আপডেট ইন্সটল হয়েছে। পেজটি স্বয়ংক্রিয়ভাবে লোড হচ্ছে।
+              </p>
+            </div>
+            <button
+              onClick={this.handleRetry}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-semibold shadow-md hover:bg-emerald-700 transition-all active:scale-95"
+            >
+              <RefreshCw className="w-4 h-4" />
+              পেজ রিফ্রেশ করুন
+            </button>
+          </div>
+        );
+      }
+
       return (
         <div className="min-h-[220px] flex flex-col items-center justify-center gap-4 p-8 text-center">
           <div className="p-3 rounded-2xl bg-destructive/10 text-destructive">
@@ -101,12 +118,10 @@ class ErrorBoundary extends Component<Props, State> {
           </div>
           <div className="max-w-md space-y-1.5">
             <h3 className="text-lg font-bold text-foreground">
-              {isChunk ? 'নতুন ভার্সন আপডেট পাওয়া গেছে' : 'কিছু একটা সমস্যা হয়েছে'}
+              কিছু একটা সমস্যা হয়েছে
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              {isChunk
-                ? 'সিস্টেমের নতুন আপডেট ইন্সটল হয়েছে। পেজটি রিফ্রেশ করলে ঠিক হয়ে যাবে।'
-                : (this.state.error?.message || 'An unexpected error occurred')}
+              {this.state.error?.message || 'An unexpected error occurred'}
             </p>
           </div>
           <button
@@ -114,7 +129,7 @@ class ErrorBoundary extends Component<Props, State> {
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md hover:bg-primary/90 transition-all active:scale-95"
           >
             <RefreshCw className="w-4 h-4" />
-            {isChunk ? 'পেজ রিফ্রেশ করুন' : 'আবার চেষ্টা করুন'}
+            আবার চেষ্টা করুন
           </button>
         </div>
       );
