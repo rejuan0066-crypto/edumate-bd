@@ -3782,7 +3782,7 @@ const AdminSalary = () => {
       .sig .role{font-weight:600;color:#475569;font-size:12px;margin-top:2px}
       .footer{background:#f1f5f9;padding:12px 28px;text-align:center;font-size:11px;color:#475569;border-top:1px solid #e2e8f0;margin-top:24px}
       .footer .gen{color:#64748b;font-size:10px;margin-top:3px}
-      @page{size:A4 portrait;margin:4mm 8mm}
+      @page{size:A4 portrait;margin:6mm 8mm}
       @media print{
         *,*::before,*::after{
           -webkit-print-color-adjust:exact !important;
@@ -3797,7 +3797,7 @@ const AdminSalary = () => {
           width:100% !important;
           min-width:100% !important;
           max-width:100% !important;
-          height:auto !important;
+          height:100% !important;
           overflow:visible !important;
         }
         .slip{
@@ -3810,55 +3810,58 @@ const AdminSalary = () => {
           margin:0 auto !important;
           padding:0 !important;
           overflow:visible !important;
-          height:auto !important;
+          min-height:275mm !important;
           box-sizing:border-box !important;
+          display:flex !important;
+          flex-direction:column !important;
+          justify-content:space-between !important;
         }
-        .head-row{display:flex !important;flex-direction:row !important;align-items:center !important;gap:14px !important}
-        .slip-tag{position:absolute !important;right:20px !important;top:12px !important;display:block !important;width:auto !important;margin-bottom:0 !important;text-align:right !important}
+        .head-row{display:flex !important;flex-direction:row !important;align-items:center !important;gap:16px !important}
+        .slip-tag{position:absolute !important;right:24px !important;top:16px !important;display:block !important;width:auto !important;margin-bottom:0 !important;text-align:right !important}
         .info-grid{display:grid !important;grid-template-columns:1fr 1fr !important}
         .info-cell:nth-child(odd){border-right:1px solid #cbd5e1 !important}
-        .signatures{display:grid !important;grid-template-columns:1fr 1fr 1fr !important;gap:20px !important;page-break-inside:avoid !important;break-inside:avoid !important}
+        .signatures{display:grid !important;grid-template-columns:1fr 1fr 1fr !important;gap:24px !important;page-break-inside:avoid !important;break-inside:avoid !important}
         .header::after{display:none !important}
         .watermark{display:none !important}
         .print-actions-bar,.no-print{display:none !important;visibility:hidden !important}
 
-        /* Prominent & clear single-page A4 typography */
-        .header{padding:12px 20px !important;width:100% !important;box-sizing:border-box !important}
-        .logo-wrap{width:46px !important;height:46px !important;border-radius:10px !important}
-        .logo-fallback{font-size:20px !important}
-        .inst-name{font-size:19px !important;font-weight:800 !important}
-        .inst-meta{font-size:10.5px !important;line-height:1.4 !important}
-        .slip-tag{right:20px !important;top:12px !important}
-        .slip-tag .badge{padding:3.5px 11px !important;font-size:10.5px !important;font-weight:800 !important}
-        .slip-tag .id{font-size:9.5px !important;margin-top:2px !important}
-        .month-bar{padding:6px 20px !important;font-size:11.5px !important;width:100% !important;box-sizing:border-box !important}
-        .month-bar .month{font-size:13.5px !important;font-weight:800 !important}
-        .body{padding:10px 20px !important;width:100% !important;box-sizing:border-box !important}
-        .info-grid{margin-bottom:8px !important;border-radius:10px !important;border:1px solid #cbd5e1 !important;width:100% !important;box-sizing:border-box !important}
-        .info-cell{padding:5px 10px !important;font-size:11.5px !important}
+        /* Prominent & clear full-page A4 typography */
+        .header{padding:18px 26px !important;width:100% !important;box-sizing:border-box !important}
+        .logo-wrap{width:54px !important;height:54px !important;border-radius:12px !important}
+        .logo-fallback{font-size:24px !important}
+        .inst-name{font-size:22px !important;font-weight:800 !important}
+        .inst-meta{font-size:12px !important;line-height:1.45 !important}
+        .slip-tag{right:26px !important;top:16px !important}
+        .slip-tag .badge{padding:4.5px 14px !important;font-size:11.5px !important;font-weight:800 !important}
+        .slip-tag .id{font-size:10.5px !important;margin-top:3px !important}
+        .month-bar{padding:9px 26px !important;font-size:13px !important;width:100% !important;box-sizing:border-box !important}
+        .month-bar .month{font-size:15px !important;font-weight:800 !important}
+        .body{padding:16px 26px !important;width:100% !important;box-sizing:border-box !important;flex:1 !important;display:flex !important;flex-direction:column !important;justify-content:space-between !important}
+        .info-grid{margin-bottom:12px !important;border-radius:12px !important;border:1px solid #cbd5e1 !important;width:100% !important;box-sizing:border-box !important}
+        .info-cell{padding:7px 12px !important;font-size:12.5px !important}
         .info-cell .lbl{font-weight:600 !important;color:#475569 !important}
         .info-cell .val{font-weight:700 !important;color:#0f172a !important}
-        .columns,.single-col{margin-bottom:8px !important;width:100% !important;box-sizing:border-box !important}
-        .col{border-radius:10px !important;border:1px solid #cbd5e1 !important;width:100% !important;box-sizing:border-box !important}
-        .col-head{padding:6px 12px !important;font-size:12px !important;font-weight:800 !important}
-        .ln{padding:4.5px 12px !important;font-size:11.5px !important}
+        .columns,.single-col{margin-bottom:12px !important;width:100% !important;box-sizing:border-box !important}
+        .col{border-radius:12px !important;border:1px solid #cbd5e1 !important;width:100% !important;box-sizing:border-box !important}
+        .col-head{padding:8px 14px !important;font-size:13px !important;font-weight:800 !important}
+        .ln{padding:6.5px 14px !important;font-size:12.5px !important}
         .ln .l{color:#334155 !important}
         .ln .v{font-weight:700 !important}
         .col-foot{display:none !important}
-        .net-box{padding:8px 14px !important;border-radius:10px !important;margin-top:5px !important;width:100% !important;box-sizing:border-box !important;page-break-inside:avoid !important;break-inside:avoid !important}
-        .net-box .lbl{font-size:12px !important;font-weight:700 !important}
-        .net-box .amt{font-size:20px !important;font-weight:900 !important}
-        .words{margin-top:5px !important;padding:5px 10px !important;font-size:11px !important;width:100% !important;box-sizing:border-box !important}
+        .net-box{padding:12px 18px !important;border-radius:12px !important;margin-top:8px !important;width:100% !important;box-sizing:border-box !important;page-break-inside:avoid !important;break-inside:avoid !important}
+        .net-box .lbl{font-size:13px !important;font-weight:700 !important}
+        .net-box .amt{font-size:24px !important;font-weight:900 !important}
+        .words{margin-top:8px !important;padding:7px 12px !important;font-size:12px !important;width:100% !important;box-sizing:border-box !important}
         .words strong{font-weight:800 !important}
-        .signatures{margin-top:18px !important;gap:16px !important;padding:0 8px !important;width:100% !important;box-sizing:border-box !important}
-        .sig{font-size:11px !important}
-        .sig-space{height:44px !important;min-height:44px !important;display:flex !important;align-items:flex-end !important;justify-content:center !important;padding-bottom:3px !important}
-        .sig-space img{max-height:40px !important;object-fit:contain !important}
+        .signatures{margin-top:auto !important;padding-top:30px !important;gap:24px !important;padding-left:8px !important;padding-right:8px !important;width:100% !important;box-sizing:border-box !important}
+        .sig{font-size:12px !important}
+        .sig-space{height:52px !important;min-height:52px !important;display:flex !important;align-items:flex-end !important;justify-content:center !important;padding-bottom:4px !important}
+        .sig-space img{max-height:46px !important;object-fit:contain !important}
         .sig .line{border-top:1.5px solid #64748b !important;margin:0 6px !important}
-        .sig .sig-name{font-size:11.5px !important;font-weight:700 !important;color:#0f172a !important;padding-top:3px !important;min-height:16px !important}
-        .sig .role{font-size:10.5px !important;font-weight:600 !important;color:#475569 !important}
-        .footer{padding:6px 18px !important;margin-top:10px !important;font-size:9.5px !important;width:100% !important;box-sizing:border-box !important}
-        .footer .gen{font-size:8.5px !important;margin-top:2px !important}
+        .sig .sig-name{font-size:12.5px !important;font-weight:700 !important;color:#0f172a !important;padding-top:4px !important;min-height:18px !important}
+        .sig .role{font-size:11.5px !important;font-weight:600 !important;color:#475569 !important}
+        .footer{padding:10px 26px !important;margin-top:16px !important;font-size:10.5px !important;width:100% !important;box-sizing:border-box !important}
+        .footer .gen{font-size:9.5px !important;margin-top:2px !important}
       }
     </style></head><body>
     <div class="slip">
