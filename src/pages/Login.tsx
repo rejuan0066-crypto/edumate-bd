@@ -298,7 +298,7 @@ const Login = () => {
           <p className="text-sm text-muted-foreground mt-1">{t('signIn')}</p>
         </div>
 
-        <form className="space-y-5" onSubmit={handleSubmit}>
+        <form className="space-y-5" onSubmit={handleSubmit} autoComplete="off">
           <div>
             <Label className="flex items-center gap-2 mb-1.5">
               <User className="w-4 h-4" /> {t('username')}
@@ -310,7 +310,7 @@ const Login = () => {
               className="bg-background"
               type="email"
               name="email"
-              autoComplete="email"
+              autoComplete="off"
             />
           </div>
           <div>
@@ -325,7 +325,7 @@ const Login = () => {
                 placeholder="••••••••"
                 className="bg-background pr-10"
                 name="password"
-                autoComplete="current-password"
+                autoComplete="new-password"
               />
               <button
                 type="button"
