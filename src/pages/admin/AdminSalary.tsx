@@ -291,7 +291,21 @@ const AdminSalary = () => {
   const [applyToMultipleDepts, setApplyToMultipleDepts] = useState(false);
   const [templatesDraft, setTemplatesDraft] = useState<Record<string, string>>({});
   const [expenseSyncModalOpen, setExpenseSyncModalOpen] = useState(false);
-  const [mobileViewMode, setMobileViewMode] = useState<'card' | 'table'>('card');
+  const [mobileViewMode, _setMobileViewMode] = useState<'card' | 'table'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('salary_view_mode');
+      if (saved === 'card' || saved === 'table') return saved;
+      return window.innerWidth < 768 ? 'card' : 'table';
+    }
+    return 'table';
+  });
+
+  const setMobileViewMode = (mode: 'card' | 'table') => {
+    _setMobileViewMode(mode);
+    try {
+      localStorage.setItem('salary_view_mode', mode);
+    } catch (e) {}
+  };
 
   // Pre-fetch default institution for instant synchronous salary slip printing
   const { data: defaultInstData } = useQuery({
@@ -4526,34 +4540,72 @@ const AdminSalary = () => {
           </div>
         )}
 
-        {/* Main Tabs: Floating Segmented Control */}
+        {/* Main Tabs: Floating Segmented Control & View Mode Switcher */}
         <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as MainSalaryTabType)}>
-          <SegmentedTabs
-            tabs={[
-              ...(isFeatureAllowed('tab_salary_disburse') !== false ? [{ key: 'salary', label: bn ? 'বেতন তালিকা' : 'Salary Sheet', icon: Wallet }] : []),
-              ...(isFeatureAllowed('tab_bonus') !== false ? [{
-                key: 'bonus',
-                label: bn ? 'বাৎসরিক বোনাস শিট' : 'Annual Bonus Sheet',
-                icon: ((props: any) => (
-                  <span className={`inline-flex items-center font-extrabold leading-none ${props.className || ''}`}>
-                    <span>৳</span><Plus className="h-3 w-3 -ml-0.5" strokeWidth={3} />
-                  </span>
-                )) as any,
-              }] : []),
-              ...(isFeatureAllowed('tab_savings_fund') !== false ? [{
-                key: 'savings',
-                label: bn ? 'জমার তালিকা' : 'Savings Ledger',
-                icon: ((props: any) => (
-                  <span className={`inline-flex items-center font-extrabold leading-none ${props.className || ''}`}>
-                    <span>৳</span><Plus className="h-3 w-3 -ml-0.5" strokeWidth={3} />
-                  </span>
-                )) as any,
-              }] : []),
-            ]}
-            value={mainTab}
-            onChange={(v) => setMainTab(v as MainSalaryTabType)}
-            className="mb-3"
-          />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 mb-3">
+            <SegmentedTabs
+              tabs={[
+                ...(isFeatureAllowed('tab_salary_disburse') !== false ? [{ key: 'salary', label: bn ? 'বেতন তালিকা' : 'Salary Sheet', icon: Wallet }] : []),
+                ...(isFeatureAllowed('tab_bonus') !== false ? [{
+                  key: 'bonus',
+                  label: bn ? 'বাৎসরিক বোনাস শিট' : 'Annual Bonus Sheet',
+                  icon: ((props: any) => (
+                    <span className={`inline-flex items-center font-extrabold leading-none ${props.className || ''}`}>
+                      <span>৳</span><Plus className="h-3 w-3 -ml-0.5" strokeWidth={3} />
+                    </span>
+                  )) as any,
+                }] : []),
+                ...(isFeatureAllowed('tab_savings_fund') !== false ? [{
+                  key: 'savings',
+                  label: bn ? 'জমার তালিকা' : 'Savings Ledger',
+                  icon: ((props: any) => (
+                    <span className={`inline-flex items-center font-extrabold leading-none ${props.className || ''}`}>
+                      <span>৳</span><Plus className="h-3 w-3 -ml-0.5" strokeWidth={3} />
+                    </span>
+                  )) as any,
+                }] : []),
+              ]}
+              value={mainTab}
+              onChange={(v) => setMainTab(v as MainSalaryTabType)}
+              className="mb-0"
+            />
+
+            {/* View Mode Toggle: Table View vs Section Card View (Available on ALL screen sizes) */}
+            {mainTab === 'salary' && (
+              <div className="flex items-center gap-1 bg-muted/60 dark:bg-muted/30 p-1 rounded-xl border border-border/60 self-start sm:self-auto shadow-2xs">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={mobileViewMode === 'table' ? 'default' : 'ghost'}
+                  className={`h-7 px-2.5 text-xs font-semibold rounded-lg gap-1.5 transition-all ${
+                    mobileViewMode === 'table'
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                  onClick={() => setMobileViewMode('table')}
+                  title={bn ? 'টেবিল ভিউ: স্ক্রিনে এক নজরে সব তথ্য দেখুন' : 'Table View: View all data at a glance'}
+                >
+                  <TableIcon className="h-3.5 w-3.5" />
+                  <span>{bn ? 'টেবিল ভিউ' : 'Table View'}</span>
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={mobileViewMode === 'card' ? 'default' : 'ghost'}
+                  className={`h-7 px-2.5 text-xs font-semibold rounded-lg gap-1.5 transition-all ${
+                    mobileViewMode === 'card'
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                  onClick={() => setMobileViewMode('card')}
+                  title={bn ? 'কার্ড ভিউ: প্রতিটি স্টাফের আলাদা সেকশন কার্ড' : 'Card View: Individual section card for each staff'}
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                  <span>{bn ? 'কার্ড ভিউ' : 'Card View'}</span>
+                </Button>
+              </div>
+            )}
+          </div>
 
           <TabsContent value="salary">
             {/* Attendance Validation Banner */}
@@ -4608,17 +4660,17 @@ const AdminSalary = () => {
             <Card>
               <CardContent className="p-0">
                 {/* ============================================================== */}
-                {/* 1. MODERN MOBILE RESPONSIVE CARD VIEW (< md screens) */}
+                {/* 1. MODERN RESPONSIVE CARD VIEW (ALL SCREENS WHEN SELECTED) */}
                 {/* ============================================================== */}
-                <div className={`${mobileViewMode === 'card' ? 'block md:hidden' : 'hidden'} p-2.5 sm:p-3 space-y-3.5 bg-muted/25 dark:bg-muted/10`}>
-                  {/* Mobile Top Header / View Switcher */}
+                <div className={`${mobileViewMode === 'card' ? 'block' : 'hidden'} p-2.5 sm:p-3.5 space-y-3.5 bg-muted/25 dark:bg-muted/10`}>
+                  {/* Top Header / View Switcher */}
                   <div className="flex items-center justify-between px-3.5 py-2.5 bg-card rounded-2xl border border-border/70 shadow-xs text-xs font-semibold">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                         <Users className="h-4 w-4" />
                       </div>
                       <span className="text-foreground text-sm font-bold">
-                        {bn ? `মোট ${toBnDigits(filtered.length)} জন স্টাফ` : `Total ${filtered.length} staff`}
+                        {bn ? `মোট ${toBnDigits(filtered.length)} জন স্টাফ (কার্ড ভিউ)` : `Total ${filtered.length} staff (Card View)`}
                       </span>
                     </div>
                     <Button
@@ -4627,12 +4679,13 @@ const AdminSalary = () => {
                       className="h-8 text-xs font-semibold gap-1.5 px-3 rounded-xl border-border/80 bg-background shadow-2xs hover:bg-muted"
                       onClick={() => setMobileViewMode('table')}
                     >
-                      <TableIcon className="h-4 w-4 text-primary" />
-                      <span>{bn ? 'টেবিল ভিউ' : 'Table View'}</span>
+                      <TableIcon className="h-4 w-4 text-emerald-600" />
+                      <span>{bn ? 'টেবিল ভিউতে যান' : 'Table View'}</span>
                     </Button>
                   </div>
 
-                  {/* Individual Elevated Staff Cards */}
+                  {/* Individual Elevated Staff Cards in Responsive Grid */}
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5">
                   {filtered.map((s: any, idx: number) => {
                     const rec = getRecord(s.id);
                     const snap = getSalaryDisplaySnapshot(s, rec);
@@ -5073,6 +5126,7 @@ const AdminSalary = () => {
                       </div>
                     );
                   })}
+                  </div>
 
                   {/* Mobile Totals Footer Card */}
                   {salaryRecords.length > 0 && (
@@ -5098,44 +5152,46 @@ const AdminSalary = () => {
                 </div>
 
                 {/* ============================================================== */}
-                {/* 2. DESKTOP / TABLE VIEW (>= md screens or forced table mode) */}
+                {/* 2. COMPACT AUTO-FIT TABLE VIEW (ALL SCREENS WHEN SELECTED) */}
                 {/* ============================================================== */}
-                <div className={`relative ${mobileViewMode === 'table' ? 'block' : 'hidden md:block'}`}>
-                  <div className="pointer-events-none absolute right-0 top-0 bottom-2 w-10 bg-gradient-to-l from-card to-transparent rounded-r-2xl z-10" />
-                  <div className="w-full overflow-x-auto scrollbar-thin pb-2 salary-table-scroll">
-                  {/* Mobile horizontal scroll hint with toggle back to card view */}
-                  <div className="flex md:hidden items-center justify-between px-3 py-1.5 bg-muted/40 border-b border-border/40 text-[11px] text-muted-foreground font-medium">
-                    <span>👈 {bn ? 'ডানে-বামে স্ক্রোল করুন' : 'Swipe horizontally'} 👉</span>
+                <div className={`relative ${mobileViewMode === 'table' ? 'block' : 'hidden'}`}>
+                  {/* Top Bar with Card View Switcher */}
+                  <div className="flex items-center justify-between px-3.5 py-2 bg-muted/30 border-b border-border/50 text-xs font-medium">
+                    <div className="flex items-center gap-2">
+                      <TableIcon className="h-4 w-4 text-emerald-600" />
+                      <span className="text-foreground font-semibold">
+                        {bn ? `মোট ${toBnDigits(filtered.length)} জন স্টাফ (টেবিল ভিউ)` : `Total ${filtered.length} staff (Table View)`}
+                      </span>
+                    </div>
                     <Button
                       size="sm"
-                      variant="ghost"
-                      className="h-6 text-[11px] px-2 text-primary hover:bg-primary/10 gap-1"
+                      variant="outline"
+                      className="h-7 text-xs px-2.5 rounded-lg border-border/70 gap-1.5 hover:bg-background shadow-2xs"
                       onClick={() => setMobileViewMode('card')}
                     >
-                      <LayoutGrid className="h-3 w-3" />
-                      <span>{bn ? 'কার্ড ভিউ' : 'Card View'}</span>
+                      <LayoutGrid className="h-3.5 w-3.5 text-emerald-600" />
+                      <span>{bn ? 'কার্ড ভিউতে দেখুন' : 'Switch to Card View'}</span>
                     </Button>
                   </div>
-                  <table className="w-full text-sm border-collapse whitespace-nowrap" style={{ minWidth: '1350px' }}>
 
+                  <div className="w-full overflow-x-auto scrollbar-thin pb-2 salary-table-scroll">
+                  <table className="w-full text-xs border-collapse whitespace-nowrap" style={{ minWidth: '1050px' }}>
                     <thead>
-                      <tr className="border-b border-border/60 bg-muted/40">
-                        <th className="px-3 py-2.5 text-left text-xs font-semibold text-muted-foreground/90 uppercase tracking-wider whitespace-nowrap w-12">#</th>
-                        <th className="px-3 py-2.5 text-left text-xs font-medium whitespace-nowrap min-w-[170px]">{bn ? 'নাম' : 'Name'}</th>
-                        <th className="px-3 py-2.5 text-left text-xs font-medium whitespace-nowrap min-w-[110px]">{bn ? 'স্টাফ আইডি' : 'Staff ID'}</th>
-                        <th className="px-3 py-2.5 text-left text-xs font-medium whitespace-nowrap min-w-[150px]">{bn ? 'পদবি' : 'Designation'}</th>
-                        <th className="px-3 py-2.5 text-center text-xs font-medium whitespace-nowrap min-w-[120px]">{bn ? 'ডিউটি' : 'Duty'}</th>
-                        <th className="px-3 py-2.5 text-right text-xs font-medium whitespace-nowrap min-w-[100px]">{bn ? 'মূল বেতন' : 'Base'}</th>
-                        <th className="px-3 py-2.5 text-center text-xs font-medium whitespace-nowrap min-w-[130px]">{bn ? 'উপ/অনু/বি/ছু' : 'P/A/L/Lv'}</th>
-                        <th className="px-3 py-2.5 text-right text-xs font-medium whitespace-nowrap min-w-[95px]">{bn ? 'কর্তন' : 'Ded.'}</th>
-                        <th className="px-3 py-2.5 text-right text-xs font-medium whitespace-nowrap min-w-[110px]">{bn ? 'ওভারটাইম/বোনাস' : 'OT/Bonus'}</th>
-                        <th className="px-3 py-2.5 text-right text-xs font-medium text-blue-600 whitespace-nowrap min-w-[95px]">{bn ? 'জমা' : 'Savings'}</th>
-                        <th className="px-3 py-2.5 text-right text-xs font-medium text-emerald-600 whitespace-nowrap min-w-[105px]">{bn ? 'নিট বেতন' : 'Net'}</th>
-                        <th className="px-3 py-2.5 text-center text-xs font-medium whitespace-nowrap min-w-[95px]">{bn ? 'স্ট্যাটাস' : 'Status'}</th>
-                        <th className="px-3 py-2.5 text-center text-xs font-medium whitespace-nowrap min-w-[110px]">{bn ? 'স্বাক্ষরিত স্লিপ' : 'Signed Slip'}</th>
-                        <th className="px-3 py-2.5 text-center text-xs font-medium whitespace-nowrap min-w-[120px]">{bn ? 'পেন্ডিং অবস্থা' : 'Pending Status'}</th>
-                        <th className="px-3 py-2.5 text-center text-xs font-medium whitespace-nowrap min-w-[130px]">{bn ? 'অ্যাকশন' : 'Actions'}</th>
-
+                      <tr className="border-b border-border/60 bg-muted/40 text-xs">
+                        <th className="px-1.5 py-2 text-center font-semibold text-muted-foreground/90 uppercase tracking-wider whitespace-nowrap w-8">#</th>
+                        <th className="px-2 py-2 text-left font-semibold whitespace-nowrap min-w-[125px]">{bn ? 'নাম' : 'Name'}</th>
+                        <th className="px-1.5 py-2 text-left font-medium whitespace-nowrap min-w-[85px]">{bn ? 'স্টাফ আইডি' : 'Staff ID'}</th>
+                        <th className="px-2 py-2 text-left font-medium whitespace-nowrap min-w-[115px]">{bn ? 'পদবি ও বিভাগ' : 'Designation'}</th>
+                        <th className="px-1.5 py-2 text-center font-medium whitespace-nowrap min-w-[85px]">{bn ? 'ডিউটি' : 'Duty'}</th>
+                        <th className="px-2 py-2 text-right font-medium whitespace-nowrap min-w-[70px]">{bn ? 'মূল বেতন' : 'Base'}</th>
+                        <th className="px-1.5 py-2 text-center font-medium whitespace-nowrap min-w-[90px]">{bn ? 'উপ/অনু/বি/ছু' : 'P/A/L/Lv'}</th>
+                        <th className="px-1.5 py-2 text-right font-medium whitespace-nowrap min-w-[65px]">{bn ? 'কর্তন' : 'Ded.'}</th>
+                        <th className="px-1.5 py-2 text-right font-medium whitespace-nowrap min-w-[70px]">{bn ? 'ওভারটাইম/বোনাস' : 'OT/Bonus'}</th>
+                        <th className="px-1.5 py-2 text-right font-medium text-blue-600 whitespace-nowrap min-w-[65px]">{bn ? 'জমা' : 'Savings'}</th>
+                        <th className="px-2 py-2 text-right font-semibold text-emerald-600 whitespace-nowrap min-w-[85px]">{bn ? 'নিট বেতন' : 'Net'}</th>
+                        <th className="px-1.5 py-2 text-center font-medium whitespace-nowrap min-w-[80px]">{bn ? 'স্ট্যাটাস' : 'Status'}</th>
+                        <th className="px-1.5 py-2 text-center font-medium whitespace-nowrap min-w-[75px]">{bn ? 'স্বাক্ষরিত স্লিপ' : 'Signed Slip'}</th>
+                        <th className="px-2 py-2 text-center font-semibold whitespace-nowrap min-w-[120px] sticky right-0 bg-muted/95 backdrop-blur-sm z-20 shadow-[-3px_0_6px_rgba(0,0,0,0.06)]">{bn ? 'অ্যাকশন' : 'Actions'}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -5158,7 +5214,7 @@ const AdminSalary = () => {
                         const isHardBlocked = !rec && (validation?.hasErrors ?? false);
 
                         return (
-                          <tr key={s.id} id={`staff-row-${s.id}`} data-staff-id={s.id} className="border-b border-border/40 hover:bg-muted/35 transition-colors duration-150 whitespace-nowrap">
+                          <tr key={s.id} id={`staff-row-${s.id}`} data-staff-id={s.id} className="group border-b border-border/40 hover:bg-muted/35 transition-colors duration-150 whitespace-nowrap">
                             <td className="px-2 py-2 text-muted-foreground whitespace-nowrap">
                               <div className="flex items-center gap-1">
                                 <div className="flex flex-col">
@@ -5472,19 +5528,27 @@ const AdminSalary = () => {
                                 <>৳{bn ? toBnDigits(displayNet.toLocaleString()) : displayNet.toLocaleString()}{!rec ? <span className="text-[8px] ml-0.5 opacity-60">~</span> : ''}</>
                               )}
                             </td>
-                            <td className="px-3 py-2 text-center">
+                            <td className="px-1.5 py-2 text-center">
                               {rec ? (
-                                <Badge className={rec.status === 'paid'
-                                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                                  : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'}>
-                                  {rec.status === 'paid' ? (bn ? 'পরিশোধিত' : 'Paid') : (bn ? 'বকেয়া' : 'Pending')}
-                                </Badge>
+                                <div className="flex flex-col items-center gap-0.5">
+                                  <Badge className={rec.status === 'paid'
+                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px] px-1.5 py-0.5'
+                                    : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 text-[10px] px-1.5 py-0.5'}>
+                                    {rec.status === 'paid' ? (bn ? 'পরিশোধিত' : 'Paid') : (bn ? 'বকেয়া' : 'Pending')}
+                                  </Badge>
+                                  {isRecordPending(rec.id) && (
+                                    <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse text-[9px] px-1 py-0 whitespace-nowrap" title={bn ? 'অ্যাডমিন অনুমোদনের অপেক্ষায়' : 'Awaiting Admin Approval'}>
+                                      <Clock className="w-2.5 h-2.5 mr-0.5 inline" />
+                                      {bn ? 'অনুমোদন বাকি' : 'Pending'}
+                                    </Badge>
+                                  )}
+                                </div>
                               ) : (
-                                <div className="flex flex-col items-center gap-1">
-                                  <Badge variant="outline" className="text-[10px]">{bn ? 'জেনারেট হয়নি' : 'Not Generated'}</Badge>
+                                <div className="flex flex-col items-center gap-0.5">
+                                  <Badge variant="outline" className="text-[9px] px-1.5 py-0">{bn ? 'জেনারেট হয়নি' : 'Not Generated'}</Badge>
                                   {eligibilityReason && (
                                     <span
-                                      className={`text-[9px] leading-tight ${isHardBlocked ? 'text-red-600' : 'text-amber-600'}`}
+                                      className={`text-[8.5px] leading-tight ${isHardBlocked ? 'text-red-600' : 'text-amber-600'}`}
                                       title={eligibilityReason}
                                     >
                                       <AlertCircle className="h-2.5 w-2.5 inline mr-0.5" />
@@ -5494,7 +5558,7 @@ const AdminSalary = () => {
                                 </div>
                               )}
                             </td>
-                            <td className="px-2 py-2 text-center">
+                            <td className="px-1.5 py-2 text-center">
                               {(() => {
                                 const slip = signedDocsManager.getStaffSlip(s.id);
                                 if (slip) {
@@ -5502,7 +5566,7 @@ const AdminSalary = () => {
                                     <Button
                                       size="sm"
                                       variant="ghost"
-                                      className="h-6 px-2 text-[10px] bg-emerald-100 hover:bg-emerald-200 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-semibold gap-1 rounded-full shadow-sm"
+                                      className="h-6 px-1.5 text-[10px] bg-emerald-100 hover:bg-emerald-200 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-semibold gap-1 rounded-full shadow-2xs"
                                       title={bn ? 'স্বাক্ষরিত স্লিপ দেখুন / ডাউনলোড করুন' : 'View / Download Signed Slip'}
                                       onClick={() => setDirectViewStaff(s)}
                                     >
@@ -5515,7 +5579,7 @@ const AdminSalary = () => {
                                   <Button
                                     size="sm"
                                     variant="ghost"
-                                    className="h-6 px-2 text-[10px] border border-dashed border-slate-300 hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-700 text-muted-foreground font-normal gap-1 rounded-full"
+                                    className="h-6 px-1.5 text-[10px] border border-dashed border-slate-300 hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-700 text-muted-foreground font-normal gap-1 rounded-full"
                                     title={bn ? 'স্বাক্ষর নেয়ার পর স্ক্যান বা ছবি আপলোড করুন' : 'Upload / Scan Signed Slip'}
                                     onClick={() => setDirectUploadStaff(s)}
                                   >
@@ -5525,17 +5589,8 @@ const AdminSalary = () => {
                                 );
                               })()}
                             </td>
-                            <td className="px-3 py-2 text-center">
-                              {rec && isRecordPending(rec.id) && (
-                                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse text-[10px]">
-                                  <Clock className="w-3 h-3 mr-1" />
-                                  {bn ? 'অ্যাডমিন অনুমোদনের অপেক্ষায়' : 'Awaiting Admin Approval'}
-                                </Badge>
-                              )}
-                            </td>
-                            <td className="px-3 py-2 text-center">
-
-                              <div className="flex gap-1 justify-center">
+                            <td className="px-2 py-1.5 text-center sticky right-0 bg-card group-hover:bg-muted/90 backdrop-blur-sm z-10 shadow-[-3px_0_6px_rgba(0,0,0,0.06)]">
+                              <div className="flex gap-1 justify-center items-center">
                                 {!rec && canAddItem && (
                                   <Button
                                     size="icon"
@@ -5739,15 +5794,16 @@ const AdminSalary = () => {
                     </tbody>
                     {salaryRecords.length > 0 && (
                       <tfoot>
-                        <tr className="bg-muted/50 font-bold">
-                          <td colSpan={5} className="px-3 py-2">{bn ? 'মোট' : 'Total'}</td>
-                          <td className="px-3 py-2 text-right whitespace-nowrap tabular-nums">৳{bn ? toBnDigits(stats.totalBase.toLocaleString()) : stats.totalBase.toLocaleString()}</td>
-                          <td className="px-3 py-2"></td>
-                          <td className="px-3 py-2 text-right text-red-500 whitespace-nowrap tabular-nums">৳{bn ? toBnDigits(stats.totalDeduction.toLocaleString()) : stats.totalDeduction.toLocaleString()}</td>
-                          <td className="px-3 py-2"></td>
-                          <td className="px-3 py-2 text-right text-blue-600 whitespace-nowrap tabular-nums">৳{bn ? toBnDigits(stats.totalSavings.toLocaleString()) : stats.totalSavings.toLocaleString()}</td>
-                          <td className="px-3 py-2 text-right text-emerald-700 dark:text-emerald-400 whitespace-nowrap tabular-nums">৳{bn ? toBnDigits(stats.totalNet.toLocaleString()) : stats.totalNet.toLocaleString()}</td>
+                        <tr className="bg-muted/50 font-bold text-xs">
+                          <td colSpan={5} className="px-2 py-2">{bn ? 'মোট' : 'Total'}</td>
+                          <td className="px-2 py-2 text-right whitespace-nowrap tabular-nums">৳{bn ? toBnDigits(stats.totalBase.toLocaleString()) : stats.totalBase.toLocaleString()}</td>
+                          <td className="px-1.5 py-2"></td>
+                          <td className="px-1.5 py-2 text-right text-red-500 whitespace-nowrap tabular-nums">৳{bn ? toBnDigits(stats.totalDeduction.toLocaleString()) : stats.totalDeduction.toLocaleString()}</td>
+                          <td className="px-1.5 py-2"></td>
+                          <td className="px-1.5 py-2 text-right text-blue-600 whitespace-nowrap tabular-nums">৳{bn ? toBnDigits(stats.totalSavings.toLocaleString()) : stats.totalSavings.toLocaleString()}</td>
+                          <td className="px-2 py-2 text-right text-emerald-700 dark:text-emerald-400 whitespace-nowrap tabular-nums font-bold">৳{bn ? toBnDigits(stats.totalNet.toLocaleString()) : stats.totalNet.toLocaleString()}</td>
                           <td colSpan={2}></td>
+                          <td className="sticky right-0 bg-muted/90 backdrop-blur-sm z-10 shadow-[-3px_0_6px_rgba(0,0,0,0.06)]"></td>
                         </tr>
                       </tfoot>
                     )}
