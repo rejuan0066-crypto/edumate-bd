@@ -1,4 +1,5 @@
 export const FALLBACK_LOGO_URL = 'https://lwlqmvjdiqpstgbdsmxj.supabase.co/storage/v1/object/public/institution-logos/logos/1792938793636.jpeg';
+export const DEFAULT_MADRASA_BUILDING_URL = 'https://lwlqmvjdiqpstgbdsmxj.supabase.co/storage/v1/object/public/website-assets/gallery/1792871201169-7fh81.jpeg';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
@@ -392,7 +393,7 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   },
   divisions: [],
   info_links: [],
-  login_bg_image_url: '',
+  login_bg_image_url: DEFAULT_MADRASA_BUILDING_URL,
   login_bg_color: '',
   login_show_logo: true,
   login_show_institution_name: true,
@@ -442,9 +443,9 @@ const parseSettingsData = (data: any[] | null): WebsiteSettings => {
           dbVal = FALLBACK_LOGO_URL;
         }
       } else if (key === 'login_bg_image_url') {
-        // If login_bg_image_url was set to madrasa logo or dead project domain, clear it so default theme pattern shows
-        if (typeof dbVal === 'string' && (dbVal.includes('wwhunyzobtuibhvkipwk') || dbVal.includes('institution-logos') || dbVal === FALLBACK_LOGO_URL)) {
-          dbVal = '';
+        // If login_bg_image_url was set to madrasa logo or dead project domain, restore default madrasa building photo
+        if (!dbVal || (typeof dbVal === 'string' && (dbVal.includes('wwhunyzobtuibhvkipwk') || dbVal.includes('institution-logos') || dbVal === FALLBACK_LOGO_URL))) {
+          dbVal = DEFAULT_MADRASA_BUILDING_URL;
         }
       } else if (typeof dbVal === 'string' && dbVal.includes('wwhunyzobtuibhvkipwk')) {
         dbVal = typeof defaultVal === 'string' ? defaultVal : '';
@@ -468,8 +469,8 @@ const parseSettingsData = (data: any[] | null): WebsiteSettings => {
   return result;
 };
 
-const CACHE_KEY = 'website-settings-cache-v7';
-const CACHE_TIME_KEY = 'website-settings-cache-time-v7';
+const CACHE_KEY = 'website-settings-cache-v8';
+const CACHE_TIME_KEY = 'website-settings-cache-time-v8';
 
 const readCache = (): WebsiteSettings | null => {
   try {
@@ -480,6 +481,8 @@ const readCache = (): WebsiteSettings | null => {
     if (localStorage.getItem('website-settings-cache-time-v5')) localStorage.removeItem('website-settings-cache-time-v5');
     if (localStorage.getItem('website-settings-cache-v6')) localStorage.removeItem('website-settings-cache-v6');
     if (localStorage.getItem('website-settings-cache-time-v6')) localStorage.removeItem('website-settings-cache-time-v6');
+    if (localStorage.getItem('website-settings-cache-v7')) localStorage.removeItem('website-settings-cache-v7');
+    if (localStorage.getItem('website-settings-cache-time-v7')) localStorage.removeItem('website-settings-cache-time-v7');
     if (localStorage.getItem('institution-info-cache')) localStorage.removeItem('institution-info-cache');
 
     const raw = localStorage.getItem(CACHE_KEY);
@@ -491,8 +494,8 @@ const readCache = (): WebsiteSettings | null => {
     if (parsed.favicon_url && parsed.favicon_url.includes('wwhunyzobtuibhvkipwk')) {
       parsed.favicon_url = FALLBACK_LOGO_URL;
     }
-    if (parsed.login_bg_image_url && (parsed.login_bg_image_url.includes('wwhunyzobtuibhvkipwk') || parsed.login_bg_image_url.includes('institution-logos') || parsed.login_bg_image_url === FALLBACK_LOGO_URL)) {
-      parsed.login_bg_image_url = '';
+    if (!parsed.login_bg_image_url || (typeof parsed.login_bg_image_url === 'string' && (parsed.login_bg_image_url.includes('wwhunyzobtuibhvkipwk') || parsed.login_bg_image_url.includes('institution-logos') || parsed.login_bg_image_url === FALLBACK_LOGO_URL))) {
+      parsed.login_bg_image_url = DEFAULT_MADRASA_BUILDING_URL;
     }
     if (parsed.loader_logo_url && parsed.loader_logo_url.includes('wwhunyzobtuibhvkipwk')) {
       parsed.loader_logo_url = FALLBACK_LOGO_URL;
