@@ -116,7 +116,7 @@ export async function generateSlipPdfBlob(htmlContent: string): Promise<Blob> {
         const target = (iframeDoc.querySelector('.slip') as HTMLElement) || iframeDoc.body;
 
         const canvas = await html2canvas(target, {
-          scale: safeCaptureScale(target.scrollWidth || pageW, target.scrollHeight || 1123, 3),
+          scale: 2, // 2x gives ~192 DPI, perfectly crisp while keeping PDF size under 250 KB
           useCORS: true,
           allowTaint: true,
           backgroundColor: '#ffffff',
@@ -145,8 +145,9 @@ export async function generateSlipPdfBlob(htmlContent: string): Promise<Blob> {
         const offsetX = marginX + (availW - drawW) / 2;
         const offsetY = marginTop;
 
-        const imgData = canvas.toDataURL('image/png');
-        pdf.addImage(imgData, 'PNG', offsetX, offsetY, drawW, drawH);
+        // Use high-quality JPEG instead of raw PNG to prevent 20MB file bloat
+        const imgData = canvas.toDataURL('image/jpeg', 0.92);
+        pdf.addImage(imgData, 'JPEG', offsetX, offsetY, drawW, drawH, undefined, 'FAST');
 
         const blob = pdf.output('blob');
         resolve(blob);
@@ -204,47 +205,70 @@ export function printSalarySlipHtml(
 ): void {
   if (typeof window === 'undefined') return;
 
+  const baseTag = `<base href="${window.location.origin}/">`;
+  const mobilePrintBar = `
+    <div class="no-print" style="position:sticky;top:0;left:0;right:0;z-index:9999;background:#064e3b;color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 3px 12px rgba(0,0,0,0.15);margin-bottom:14px;font-family:'Kalpurush','Noto Sans Bengali',sans-serif;">
+      <div style="font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;">
+        <span>📄 বেতন স্লিপ প্রিন্ট প্রিভিউ</span>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="window.print()" style="background:#10b981;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">🖨️ প্রিন্ট করুন</button>
+        <button onclick="window.close()" style="background:rgba(255,255,255,0.18);color:#fff;border:none;padding:8px 14px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">বন্ধ করুন</button>
+      </div>
+    </div>
+  `;
+
+  // Inject auto-print script into htmlContent
+  const autoPrintScript = `
+    <script>
+      (function() {
+        var hasPrinted = false;
+        function triggerPrint() {
+          if (hasPrinted) return;
+          hasPrinted = true;
+          try {
+            window.focus();
+            window.print();
+          } catch(e) {
+            console.warn('Auto-print blocked or failed', e);
+          }
+        }
+        window.addEventListener('load', function() {
+          if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(function() {
+              setTimeout(triggerPrint, 500);
+            }).catch(function() {
+              setTimeout(triggerPrint, 700);
+            });
+          } else {
+            setTimeout(triggerPrint, 600);
+          }
+        });
+      })();
+    </script>
+  `;
+
+  let printableHtml = htmlContent;
+  if (printableHtml.includes('<head>')) {
+    printableHtml = printableHtml.replace('<head>', `<head>${baseTag}`);
+  }
+  if (printableHtml.includes('<body')) {
+    printableHtml = printableHtml.replace(/(<body[^>]*>)/i, `$1${mobilePrintBar}`);
+  } else {
+    printableHtml = mobilePrintBar + printableHtml;
+  }
+  if (printableHtml.includes('</body>')) {
+    printableHtml = printableHtml.replace('</body>', `${autoPrintScript}</body>`);
+  } else {
+    printableHtml += autoPrintScript;
+  }
+
   // Open a clean blank tab immediately on click (user gesture prevents pop-up blocking)
   let printWindow: Window | null = null;
   try {
     printWindow = window.open('', '_blank');
   } catch (e) {
     printWindow = null;
-  }
-
-  // Inject auto-print script into htmlContent
-  const autoPrintScript = `
-    <script>
-      (function() {
-        var printed = false;
-        function runPrint() {
-          if (printed) return;
-          printed = true;
-          try {
-            window.focus();
-            window.print();
-          } catch(e) {
-            console.error('Print trigger error', e);
-          }
-        }
-        if (document.fonts && document.fonts.ready) {
-          document.fonts.ready.then(function() {
-            setTimeout(runPrint, 350);
-          }).catch(function() {
-            setTimeout(runPrint, 600);
-          });
-        } else {
-          setTimeout(runPrint, 500);
-        }
-      })();
-    </script>
-  `;
-
-  let printableHtml = htmlContent;
-  if (printableHtml.includes('</body>')) {
-    printableHtml = printableHtml.replace('</body>', `${autoPrintScript}</body>`);
-  } else {
-    printableHtml += autoPrintScript;
   }
 
   if (printWindow && printWindow.document) {

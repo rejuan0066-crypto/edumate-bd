@@ -3,7 +3,7 @@ import App from "./App.tsx";
 import "./index.css";
 import { installPwaPrintAdapter } from "./lib/pwaPrintAdapter";
 
-// Auto-recover from stale chunks after a new deployment without showing errors
+// Auto-recover from stale chunks after a new deployment
 window.addEventListener('vite:preloadError', (event) => {
   event.preventDefault();
   const reloadKey = 'vite_preload_error_reload';
@@ -12,36 +12,12 @@ window.addEventListener('vite:preloadError', (event) => {
     lastReload = Number(sessionStorage.getItem(reloadKey) || '0');
   } catch {}
   const now = Date.now();
-  if (now - lastReload > 8000) {
+  // Only auto-reload once every 30 seconds to avoid reload loops
+  if (now - lastReload > 30000) {
     try {
       sessionStorage.setItem(reloadKey, String(now));
     } catch {}
     window.location.reload();
-  }
-});
-
-// Also catch unhandled dynamic import errors globally
-window.addEventListener('unhandledrejection', (event) => {
-  const msg = (event.reason?.message || String(event.reason || '')).toLowerCase();
-  if (
-    msg.includes('dynamically imported module') ||
-    msg.includes('chunkloaderror') ||
-    msg.includes('unexpected token <') ||
-    msg.includes('loading chunk')
-  ) {
-    event.preventDefault();
-    const reloadKey = 'global_chunk_error_reload';
-    let lastReload = 0;
-    try {
-      lastReload = Number(sessionStorage.getItem(reloadKey) || '0');
-    } catch {}
-    const now = Date.now();
-    if (now - lastReload > 8000) {
-      try {
-        sessionStorage.setItem(reloadKey, String(now));
-      } catch {}
-      window.location.reload();
-    }
   }
 });
 

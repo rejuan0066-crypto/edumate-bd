@@ -27,8 +27,6 @@ const isChunkLoadError = (error: Error | null): boolean => {
     msg.includes('returned undefined') ||
     msg.includes('chunkloaderror') ||
     msg.includes('lazywithretry') ||
-    msg.includes('unexpected token') ||
-    msg.includes('loading chunk') ||
     name.includes('chunkloaderror')
   );
 };
@@ -50,34 +48,26 @@ class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught:', error, errorInfo);
 
-    // If an asset hash changed due to a new deploy, auto-reload IMMEDIATELY without making user wait
+    // If an asset hash changed due to a new deploy, attempt at most ONE automatic reload per path
     if (isChunkLoadError(error)) {
-      const reloadKey = 'chunk_reload_auto';
-      let lastReload = 0;
       try {
-        lastReload = Number(sessionStorage.getItem(reloadKey) || '0');
-      } catch {}
-      const now = Date.now();
-
-      if (now - lastReload > 8000) {
-        try {
-          sessionStorage.setItem(reloadKey, String(now));
-        } catch {}
-        // Auto-refresh seamlessly to the newest deployed version
-        window.location.reload();
+        const reloadKey = 'chunk_reload_' + window.location.pathname;
+        const alreadyReloaded = sessionStorage.getItem(reloadKey);
+        if (!alreadyReloaded) {
+          sessionStorage.setItem(reloadKey, '1');
+          window.location.reload();
+        }
+      } catch {
+        /* ignore */
       }
     }
   }
 
   handleRetry = () => {
-    if (this.state.isChunkError || isChunkLoadError(this.state.error)) {
-      try {
-        sessionStorage.removeItem('chunk_reload_auto');
-      } catch {}
-      window.location.reload();
-      return;
-    }
-    this.setState({ hasError: false, error: null, isChunkError: false });
+    try {
+      sessionStorage.removeItem('chunk_reload_' + window.location.pathname);
+    } catch {}
+    window.location.reload();
   };
 
   render() {
@@ -89,20 +79,20 @@ class ErrorBoundary extends Component<Props, State> {
       if (isChunk) {
         return (
           <div className="min-h-[220px] flex flex-col items-center justify-center gap-4 p-8 text-center animate-fade-in">
-            <div className="p-3.5 rounded-2xl bg-emerald-500/10 text-emerald-600 animate-spin">
+            <div className="p-3.5 rounded-2xl bg-emerald-500/10 text-emerald-600">
               <RefreshCw className="w-8 h-8" />
             </div>
             <div className="max-w-md space-y-1.5">
               <h3 className="text-lg font-bold text-foreground">
-                নতুন ভার্সন আপডেট নেওয়া হচ্ছে…
+                নতুন ভার্সন আপডেট পাওয়া গেছে
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                সিস্টেমের নতুন আপডেট ইন্সটল হয়েছে। পেজটি স্বয়ংক্রিয়ভাবে লোড হচ্ছে।
+                সিস্টেমের নতুন আপডেট ইন্সটল হয়েছে। পেজটি রিফ্রেশ করলে ঠিক হয়ে যাবে।
               </p>
             </div>
             <button
               onClick={this.handleRetry}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-semibold shadow-md hover:bg-emerald-700 transition-all active:scale-95"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-semibold shadow-md hover:bg-emerald-700 transition-all active:scale-95 cursor-pointer"
             >
               <RefreshCw className="w-4 h-4" />
               পেজ রিফ্রেশ করুন
