@@ -204,211 +204,71 @@ export function printSalarySlipHtml(
 ): void {
   if (typeof window === 'undefined') return;
 
-  // 1. Clean up any previous isolated print containers
-  const existing = document.getElementById('salary-slip-print-standalone');
-  if (existing) existing.remove();
-  const existingStyle = document.getElementById('salary-slip-print-standalone-css');
-  if (existingStyle) existingStyle.remove();
-
-  // 2. Extract slip HTML body content
-  let bodyContent = htmlContent;
-  const bodyMatch = htmlContent.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-  if (bodyMatch) {
-    bodyContent = bodyMatch[1];
+  // Open a clean blank tab immediately on click (user gesture prevents pop-up blocking)
+  let printWindow: Window | null = null;
+  try {
+    printWindow = window.open('', '_blank');
+  } catch (e) {
+    printWindow = null;
   }
 
-  // 3. Create isolated DOM element directly on document.body
-  const container = document.createElement('div');
-  container.id = 'salary-slip-print-standalone';
-  container.innerHTML = bodyContent;
-
-  // 4. Create print isolation style
-  const style = document.createElement('style');
-  style.id = 'salary-slip-print-standalone-css';
-  style.textContent = `
-    @media screen {
-      #salary-slip-print-standalone {
-        display: none !important;
-        position: absolute !important;
-        left: -9999px !important;
-        top: -9999px !important;
-        visibility: hidden !important;
-      }
-    }
-    @page {
-      size: A4 portrait;
-      margin: 6mm 8mm;
-    }
-    @media print {
-      /* CRITICAL: Hide ALL background page content (admin UI, modals, 18 cards) */
-      body > *:not(#salary-slip-print-standalone) {
-        display: none !important;
-        visibility: hidden !important;
-        height: 0 !important;
-        max-height: 0 !important;
-        overflow: hidden !important;
-        opacity: 0 !important;
-      }
-      html, body {
-        background: #fff !important;
-        color: #000 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        width: 100% !important;
-        height: auto !important;
-        min-height: 100% !important;
-        overflow: visible !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-      }
-      #salary-slip-print-standalone {
-        display: block !important;
-        visibility: visible !important;
-        position: absolute !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        background: #fff !important;
-        box-sizing: border-box !important;
-        page-break-after: avoid !important;
-        page-break-inside: avoid !important;
-        break-inside: avoid !important;
-      }
-      #salary-slip-print-standalone .slip {
-        box-shadow: none !important;
-        border-radius: 0 !important;
-        border: none !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        margin: 0 auto !important;
-        padding: 8px 12px !important;
-        box-sizing: border-box !important;
-        page-break-after: avoid !important;
-        page-break-inside: avoid !important;
-        break-inside: avoid !important;
-      }
-      #salary-slip-print-standalone .header {
-        padding: 12px 18px !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
-      }
-      #salary-slip-print-standalone .head-row {
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: center !important;
-        gap: 14px !important;
-      }
-      #salary-slip-print-standalone .slip-tag {
-        position: absolute !important;
-        right: 18px !important;
-        top: 12px !important;
-        display: block !important;
-        width: auto !important;
-        text-align: right !important;
-      }
-      #salary-slip-print-standalone .month-bar {
-        padding: 8px 18px !important;
-        display: flex !important;
-        flex-direction: row !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-      }
-      #salary-slip-print-standalone .body {
-        padding: 12px 18px !important;
-      }
-      #salary-slip-print-standalone .info-grid {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        margin-bottom: 8px !important;
-        border: 1px solid #cbd5e1 !important;
-      }
-      #salary-slip-print-standalone .info-cell:nth-child(odd) {
-        border-right: 1px solid #cbd5e1 !important;
-      }
-      #salary-slip-print-standalone .info-cell {
-        padding: 6px 10px !important;
-        font-size: 12px !important;
-      }
-      #salary-slip-print-standalone .col {
-        border: 1px solid #cbd5e1 !important;
-        border-radius: 8px !important;
-      }
-      #salary-slip-print-standalone .col-head {
-        padding: 6px 12px !important;
-        font-size: 12px !important;
-      }
-      #salary-slip-print-standalone .ln {
-        padding: 5px 12px !important;
-        font-size: 11.5px !important;
-      }
-      #salary-slip-print-standalone .net-box {
-        padding: 10px 14px !important;
-        margin-top: 6px !important;
-      }
-      #salary-slip-print-standalone .words {
-        padding: 6px 10px !important;
-        font-size: 11.5px !important;
-        margin-top: 6px !important;
-      }
-      #salary-slip-print-standalone .signatures {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr 1fr !important;
-        gap: 16px !important;
-        margin-top: 24px !important;
-        padding: 0 4px !important;
-      }
-      #salary-slip-print-standalone .sig-space {
-        height: 42px !important;
-        min-height: 42px !important;
-      }
-      #salary-slip-print-standalone .watermark {
-        display: none !important;
-      }
-      #salary-slip-print-standalone .no-print,
-      #salary-slip-print-standalone .print-actions-bar {
-        display: none !important;
-      }
-      #salary-slip-print-standalone .footer {
-        padding: 6px 16px !important;
-        margin-top: 12px !important;
-        font-size: 9.5px !important;
-      }
-    }
+  // Inject auto-print script into htmlContent
+  const autoPrintScript = `
+    <script>
+      (function() {
+        var printed = false;
+        function runPrint() {
+          if (printed) return;
+          printed = true;
+          try {
+            window.focus();
+            window.print();
+          } catch(e) {
+            console.error('Print trigger error', e);
+          }
+        }
+        if (document.fonts && document.fonts.ready) {
+          document.fonts.ready.then(function() {
+            setTimeout(runPrint, 350);
+          }).catch(function() {
+            setTimeout(runPrint, 600);
+          });
+        } else {
+          setTimeout(runPrint, 500);
+        }
+      })();
+    </script>
   `;
 
-  document.head.appendChild(style);
-  document.body.appendChild(container);
+  let printableHtml = htmlContent;
+  if (printableHtml.includes('</body>')) {
+    printableHtml = printableHtml.replace('</body>', `${autoPrintScript}</body>`);
+  } else {
+    printableHtml += autoPrintScript;
+  }
 
-  const prevScrollX = window.scrollX || window.pageXOffset || 0;
-  const prevScrollY = window.scrollY || window.pageYOffset || 0;
-
-  // Crucial for iOS Safari: scroll to top so WebKit doesn't push the print canvas down
-  window.scrollTo(0, 0);
-  if (document.documentElement) document.documentElement.scrollTop = 0;
-  if (document.body) document.body.scrollTop = 0;
-
-  const cleanup = () => {
-    try { container.remove(); } catch {}
-    try { style.remove(); } catch {}
-    window.removeEventListener('afterprint', cleanup);
-    // Restore scroll position
-    window.scrollTo(prevScrollX, prevScrollY);
-  };
-  window.addEventListener('afterprint', cleanup);
-
-  // Trigger print after brief delay so fonts & DOM are ready
-  setTimeout(() => {
+  if (printWindow && printWindow.document) {
     try {
-      window.focus();
-      window.print();
-    } catch (e) {
-      console.error('window.print failed', e);
+      printWindow.document.open();
+      printWindow.document.write(printableHtml);
+      printWindow.document.close();
+      return;
+    } catch (err) {
+      console.warn('printWindow write failed', err);
     }
-    setTimeout(cleanup, 4000);
-  }, 120);
+  }
+
+  // Fallback: Blob URL
+  const blob = new Blob([printableHtml], { type: 'text/html;charset=utf-8' });
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = blobUrl;
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 180000);
 }
 
 export async function shareSlipPdf(
