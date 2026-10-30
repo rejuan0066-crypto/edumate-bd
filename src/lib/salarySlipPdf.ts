@@ -63,6 +63,12 @@ export async function generateSlipPdfBlob(htmlContent: string): Promise<Blob> {
       .info-cell .lbl { white-space: nowrap !important; margin-right: 12px !important; flex-shrink: 0 !important; }
       .info-cell .val { text-align: right !important; word-break: break-word !important; }
       .signatures { display: grid !important; grid-template-columns: 1fr 1fr 1fr !important; gap: 24px !important; margin-top: 32px !important; }
+      .ledger-grid { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
+      .sig-grid { display: grid !important; grid-template-columns: 1fr 1fr 1fr 1fr !important; gap: 12px !important; }
+      .net-card { display: flex !important; flex-direction: row !important; justify-content: space-between !important; align-items: center !important; }
+      .top-bar { display: flex !important; flex-direction: row !important; justify-content: space-between !important; align-items: center !important; }
+      .header-row { display: flex !important; flex-direction: row !important; justify-content: space-between !important; align-items: center !important; }
+      .header-right { border-left: 1.5px solid #cbd5e1 !important; padding-left: 14px !important; text-align: right !important; }
       .footer { padding: 10px 24px !important; }
       * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; color-adjust:exact !important; }
     </style>

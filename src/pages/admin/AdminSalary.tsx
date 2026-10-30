@@ -3625,8 +3625,6 @@ const AdminSalary = () => {
     const totalAllowance = Number(record.bonus || 0) + Number(record.overtime || 0) + Number(record.other_allowance || 0);
     const totalEarnings = earnedFromAttendance + totalAllowance;
 
-    // অতিরিক্ত কর্তন (অগ্রিম + সঞ্চয় জমা)
-    const totalDed = advDed + savingsAmt;
     const monthName = MONTHS.find(m => m.value === selectedMonth);
 
     // Per-shift breakdown for residential / extra duty
@@ -3647,19 +3645,28 @@ const AdminSalary = () => {
       };
     }
 
+    const residentialDutyEarning = dutyBreakdown ? (dutyBreakdown.morningEarning + dutyBreakdown.eveningEarning) : 0;
+    const dutyAllowance = residentialDutyEarning || Number(record.duty_allowance || 0);
+    const examAllowance = Number(record.other_allowance || 0);
+    const bonusTotal = Number(record.bonus || 0) + Number(record.overtime || 0);
+    const grossSalary = baseSalary + dutyAllowance + examAllowance + bonusTotal;
+
+    const extraDed = Number(record.duty_deduction || 0) + Number(record.pre_join_deduction || 0) + Number(record.post_resign_deduction || 0) + Number(record.other_deduction || 0);
+    const totalDed = absDed + lateDed + savingsAmt + advDed + extraDed;
+
     const slipNum = (n: number) => bn ? toBnDigits(n.toLocaleString()) : n.toLocaleString();
-    // Net = মোট বেতন − মোট কর্তন (ডায়নামিক, যাতে slip সবসময় totals-এর সাথে মেলে)
-    const netSalary = Math.max(0, totalEarnings - totalDed);
+    // Net = মোট পাওনা − মোট কর্তন
+    const netSalary = Math.max(0, grossSalary - totalDed);
     const inWords = bn
       ? numberToBanglaWords(Math.floor(netSalary))
       : `${netSalary.toLocaleString()} Taka Only`;
 
     const instName = bn
-      ? (webSettings?.institution_name || 'প্রতিষ্ঠানের নাম')
-      : (webSettings?.institution_name_en || webSettings?.institution_name || 'Institution Name');
-    const instAddr = webSettings?.address || '';
-    const instPhone = webSettings?.phone || '';
-    const instEmail = webSettings?.email || '';
+      ? (webSettings?.institution_name || 'আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানা')
+      : (webSettings?.institution_name_en || webSettings?.institution_name || 'Al Arabia Subhania Madrasah & Orphanage');
+    const instAddr = webSettings?.address || 'খাজাঞ্চি রোড, এমএইচ সেন্টার, বিশ্বনাথ, সিলেট';
+    const instPhone = webSettings?.phone || '০১৭৪৯-৮৪২৪০১';
+    const instEmail = webSettings?.email || 'info@subhania.edu.bd';
     const logoUrl = webSettings?.logo_url || '';
 
     // Default institution data pre-fetched via useQuery for instant sync generation
@@ -3667,332 +3674,378 @@ const AdminSalary = () => {
     const principalName =
       (instRow?.principal_name && String(instRow.principal_name).trim()) ||
       (bn ? webSettings?.principal_name : (webSettings?.principal_name_en || webSettings?.principal_name)) ||
-      (bn ? 'প্রিন্সিপাল' : 'Principal');
+      (bn ? 'আলহাজ্ব আব্দুছ ছোবহান' : 'Alhaj Abdus Sobhan');
 
     // Dynamic signatories from salary workflow settings (with fallbacks)
     const _prep = pickSig('treasurer');
     const _ver = pickSig('verifier');
     const _apr = pickSig('approver');
-    const accountantName = (sigVerifiedBy?.trim() || _ver?.display_name || instRow?.accountant_name || (bn ? '' : '')).toString();
-    const accountantRole = (sigVerifiedRole?.trim() || _ver?.designation || (bn ? 'হিসাবরক্ষক' : 'Accountant')).toString();
+    const accountantName = (sigVerifiedBy?.trim() || _ver?.display_name || instRow?.accountant_name || (bn ? 'মোঃ রেজওয়ান হোসাইন' : 'Md. Rejuan Hossain')).toString();
+    const accountantRole = (sigVerifiedRole?.trim() || _ver?.designation || (bn ? 'কোষাধ্যক্ষ / অর্থ সম্পাদক' : 'Treasurer / Finance Secretary')).toString();
     const approverName = (sigApprovedBy?.trim() || _apr?.display_name || principalName).toString();
-    const approverRole = (sigApprovedRole?.trim() || _apr?.designation || (bn ? 'অনুমোদনকারী (প্রিন্সিপাল)' : 'Approved by (Principal)')).toString();
-    const recipientName = staffMember.name_bn || '';
-    const recipientRole = bn ? 'প্রাপকের স্বাক্ষর' : "Recipient's Signature";
+    const approverRole = (sigApprovedRole?.trim() || _apr?.designation || (bn ? 'মুহতামিম ও প্রিন্সিপাল' : 'Principal')).toString();
+    const recipientName = staffMember.name_bn || staffMember.name_en || '';
 
-    const slipId = `SL-${selectedYear}${selectedMonth}-${String(record.id).slice(0, 6).toUpperCase()}`;
+    const slipId = `VCH-${selectedYear}${selectedMonth}-${String(record.id || '001').slice(0, 6).toUpperCase()}`;
+    const nothiCode = `MH/FIN/${selectedYear}/${selectedMonth}`;
     const issueDate = new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB');
 
+    const dutyHours = (() => {
+      try {
+        const t = getDutyTimeWithSource(staffMember);
+        return `${fmt(t.start)} – ${fmt(t.end)}`;
+      } catch (e) {
+        return '09:30 AM – 03:30 PM';
+      }
+    })();
+
     const fontHref = `${window.location.origin}/fonts/Kalpurush.ttf`;
-    const fname = `salary-slip-${(staffMember.name_en || staffMember.name_bn || 'staff').replace(/\s+/g, '_')}-${selectedYear}${selectedMonth}.pdf`;
+    const fname = `salary-voucher-${(staffMember.name_en || staffMember.name_bn || 'staff').replace(/\s+/g, '_')}-${selectedYear}${selectedMonth}.pdf`;
 
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${bn ? 'বেতন স্লিপ' : 'Salary Slip'} - ${staffMember.name_bn}</title>
+    <title>${bn ? 'বেতন বিতরণ ও অডিট ভাউচার' : 'Salary Disbursement Voucher'} - ${staffMember.name_bn}</title>
     <link rel="preload" as="font" type="font/ttf" href="${fontHref}" crossorigin="anonymous">
     <style>
       @font-face{font-family:"Kalpurush";src:url("${fontHref}") format("truetype");font-display:block;}
       *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}
-      html,body{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;width:100%;max-width:100%;overflow-x:hidden}
-      body{font-family:'Kalpurush','Noto Sans Bengali','Segoe UI',sans-serif;background:#f8fafc;color:#0f172a;padding:16px;line-height:1.5}
-      .slip{max-width:780px;width:100%;margin:0 auto;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 20px 50px -15px rgba(15,23,42,.18);position:relative;box-sizing:border-box}
-      .watermark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0;overflow:hidden}
-      .watermark span{font-size:140px;color:rgba(13,148,136,.06);font-weight:900;letter-spacing:8px;transform:rotate(-28deg);white-space:nowrap}
-      .header{background:linear-gradient(135deg,#0d9488 0%,#0f766e 60%,#115e59 100%);color:#fff;padding:22px 28px;position:relative;overflow:hidden}
-      .header::after{content:"";position:absolute;right:-60px;top:-60px;width:240px;height:240px;background:radial-gradient(circle,rgba(255,255,255,.18) 0%,transparent 70%);border-radius:50%}
-      .head-row{display:flex;align-items:center;gap:16px;position:relative;z-index:1}
-      .logo-wrap{width:64px;height:64px;background:rgba(255,255,255,.18);border:2px solid rgba(255,255,255,.35);border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;backdrop-filter:blur(8px)}
-      .logo-wrap img{width:100%;height:100%;object-fit:contain}
-      .logo-fallback{font-size:28px;font-weight:800}
-      .inst-info{flex:1}
-      .inst-name{font-size:23px;font-weight:800;letter-spacing:.3px;margin-bottom:2px}
-      .inst-meta{font-size:12px;opacity:.92;line-height:1.5}
-      .slip-tag{position:absolute;right:28px;top:22px;z-index:2;text-align:right}
-      .slip-tag .badge{background:rgba(255,255,255,.95);color:#0f766e;font-weight:800;padding:5px 14px;border-radius:999px;font-size:11.5px;letter-spacing:1.5px;display:inline-block}
-      .slip-tag .id{color:#fff;font-size:11px;margin-top:6px;opacity:.92;font-family:monospace}
-      .month-bar{background:linear-gradient(90deg,#f0fdfa 0%,#ccfbf1 50%,#f0fdfa 100%);padding:12px 28px;border-bottom:1px solid #ccfbf1;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#0f766e;font-weight:600;position:relative;z-index:1}
-      .month-bar .month{font-size:16px;font-weight:800;color:#115e59}
-      .body{padding:22px 28px;position:relative;z-index:1}
-      .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;background:#f8fafc;border-radius:12px;overflow:hidden;border:1px solid #cbd5e1;margin-bottom:16px}
-      .info-cell{padding:9px 14px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;font-size:13px}
-      .info-cell:last-child{border-bottom:none}
-      .info-cell:nth-child(odd){border-right:1px solid #e2e8f0}
-      .info-cell .lbl{color:#475569;font-weight:600;white-space:nowrap;margin-right:12px;flex-shrink:0}
-      .info-cell .val{color:#0f172a;font-weight:700;text-align:right;word-break:break-word}
-
-      /* Mobile In-App Preview Optimization - prevents squeezed layout & overlapping labels */
-      @media screen and (max-width: 650px) {
-        body { padding: 6px !important; }
-        .slip { border-radius: 12px !important; width: 100% !important; max-width: 100% !important; }
-        .header { padding: 12px 14px !important; }
-        .head-row { flex-direction: row !important; align-items: center !important; gap: 10px !important; }
-        .logo-wrap { width: 48px !important; height: 48px !important; }
-        .inst-name { font-size: 16px !important; line-height: 1.3 !important; word-break: break-word !important; }
-        .inst-meta { font-size: 10.5px !important; word-break: break-word !important; }
-        .slip-tag {
-          position: static !important;
-          display: flex !important;
-          align-items: center !important;
-          justify-content: space-between !important;
-          width: 100% !important;
-          margin-bottom: 8px !important;
-          text-align: left !important;
-        }
-        .slip-tag .badge { font-size: 10.5px !important; padding: 3px 10px !important; }
-        .slip-tag .id { margin-top: 0 !important; font-size: 10px !important; }
-        .month-bar { padding: 8px 14px !important; flex-direction: column !important; align-items: flex-start !important; gap: 4px !important; font-size: 11.5px !important; }
-        .month-bar .month { font-size: 13.5px !important; }
-        .body { padding: 10px 14px !important; }
-        .info-grid { grid-template-columns: 1fr !important; }
-        .info-cell:nth-child(odd) { border-right: none !important; }
-        .info-cell { padding: 6.5px 10px !important; font-size: 12px !important; }
-        .ln { padding: 7px 10px !important; font-size: 12px !important; }
-        .net-box { padding: 10px 14px !important; flex-wrap: wrap !important; gap: 6px !important; }
-        .net-box .lbl { font-size: 12px !important; }
-        .net-box .amt { font-size: 20px !important; }
-        .words { font-size: 11.5px !important; padding: 8px 10px !important; }
-        .signatures { grid-template-columns: 1fr !important; gap: 18px !important; margin-top: 20px !important; }
-        .sig-space { height: 40px !important; min-height: 40px !important; }
-        .footer { padding: 8px 12px !important; font-size: 10px !important; }
+      html,body{background:#f1f5f9;color:#0f172a;font-family:'Kalpurush','Noto Sans Bengali','Segoe UI',sans-serif;line-height:1.45;padding:14px}
+      
+      .slip{
+        max-width:820px;
+        width:100%;
+        margin:0 auto;
+        background:#ffffff;
+        border:1.5px solid #cbd5e1;
+        border-radius:14px;
+        padding:20px 24px;
+        box-shadow:0 12px 36px -12px rgba(15,23,42,0.12);
+        box-sizing:border-box;
+        display:flex;
+        flex-direction:column;
+        gap:10px;
       }
-      .columns,.single-col{display:block;margin-bottom:14px}
-      .col{border:1px solid #cbd5e1;border-radius:12px;overflow:hidden}
-      .col-head{padding:10px 14px;font-size:13px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#fff}
-      .col.earn .col-head{background:linear-gradient(90deg,#10b981,#059669)}
-      .col.ded .col-head{background:linear-gradient(90deg,#f59e0b,#d97706)}
-      .col-body{padding:0}
-      .ln{display:flex;justify-content:space-between;padding:8.5px 14px;font-size:13px;border-bottom:1px dashed #e2e8f0}
-      .ln:last-child{border-bottom:none}
-      .ln .l{color:#334155}
-      .ln .v{color:#0f172a;font-weight:700;font-variant-numeric:tabular-nums}
-      .ln.savings{background:#eff6ff;color:#1e40af}
-      .ln.savings .l,.ln.savings .v{color:#1e40af}
-      .col-foot{display:none}
-      .net-box{background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;border-radius:14px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin-top:8px;box-shadow:0 8px 24px -8px rgba(13,148,136,.45)}
-      .net-box .lbl{font-size:14px;font-weight:700;opacity:.95;letter-spacing:.4px;text-transform:uppercase}
-      .net-box .amt{font-size:26px;font-weight:900;font-variant-numeric:tabular-nums}
-      .words{margin-top:10px;padding:10px 14px;background:#f8fafc;border-left:3.5px solid #0d9488;border-radius:6px;font-size:13px;color:#1e293b;font-style:italic}
-      .words strong{color:#0f766e;font-style:normal;font-weight:800}
-      .receipt-ack{margin-top:12px;padding:10px 14px;background:#f8fafc;border:1px dashed #94a3b8;border-radius:8px;font-size:12px;line-height:1.5;color:#334155}
-      .receipt-ack .ack-title{font-weight:700;color:#0f172a;margin-bottom:3px;font-size:12.5px}
-      .signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-top:35px;padding:0 8px}
-      .sig{text-align:center;font-size:12px;color:#475569}
-      .sig-space{height:52px;min-height:52px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px}
-      .sig-space img{max-height:46px;max-width:100%;object-fit:contain}
-      .sig .line{border-top:1.5px solid #64748b;margin:0 6px;height:0}
-      .sig .sig-name{font-size:13px;font-weight:700;color:#0f172a;padding-top:6px;min-height:18px}
-      .sig .role{font-weight:600;color:#475569;font-size:12px;margin-top:2px}
-      .footer{background:#f1f5f9;padding:12px 28px;text-align:center;font-size:11px;color:#475569;border-top:1px solid #e2e8f0;margin-top:24px}
-      .footer .gen{color:#64748b;font-size:10px;margin-top:3px}
-      @page{size:A4 portrait;margin:6mm 8mm}
+
+      /* TOP CLASSIFICATION BAR */
+      .top-bar{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:8px;font-size:11.5px;}
+      .top-left{display:flex;align-items:center;gap:8px;}
+      .badge-office{background:#0f172a;color:#fff;font-weight:700;padding:3.5px 9px;border-radius:4px;font-size:10.5px;letter-spacing:0.5px;}
+      .nothi-code{color:#64748b;font-family:monospace;font-size:11px;font-weight:600;}
+      .top-right{display:flex;align-items:center;gap:10px;font-size:11.5px;color:#475569;}
+      .top-right strong{color:#0f172a;}
+      .badge-status{font-weight:700;font-size:11px;padding:3px 8px;border-radius:4px;}
+      .badge-status.paid{background:#dcfce7;color:#166534;border:1px solid #86efac;}
+      .badge-status.pending{background:#fef3c7;color:#92400e;border:1px solid #fcd34d;}
+
+      /* HEADER */
+      .header-row{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #065f46;padding-bottom:12px;}
+      .header-left{display:flex;align-items:center;gap:14px;}
+      .logo-box{width:56px;height:56px;border-radius:12px;background:#047857;color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;flex-shrink:0;box-shadow:inset 0 2px 4px rgba(0,0,0,0.15);overflow:hidden;}
+      .logo-box img{width:100%;height:100%;object-fit:contain;background:#fff;}
+      .header-text{}
+      .inst-name{font-size:20px;font-weight:800;color:#0f172a;line-height:1.2;letter-spacing:0.2px;}
+      .inst-sub{font-size:11px;color:#64748b;margin-top:2px;line-height:1.3;}
+      .voucher-title{font-size:13px;font-weight:800;color:#065f46;margin-top:4px;letter-spacing:0.4px;text-transform:uppercase;}
+      .header-right{border-left:1.5px solid #cbd5e1;padding-left:14px;text-align:right;flex-shrink:0;}
+      .vch-lbl{font-size:10.5px;color:#64748b;}
+      .vch-no{font-size:14px;font-weight:900;font-family:monospace;color:#0f172a;letter-spacing:0.5px;}
+      .vch-date{font-size:11.5px;font-weight:700;color:#1e293b;}
+
+      /* SECTION TITLES */
+      .sec-title{font-size:12px;font-weight:700;color:#334155;display:flex;align-items:center;gap:6px;letter-spacing:0.2px;margin-top:2px;}
+      .sec-title .dot{width:7px;height:7px;border-radius:50%;background:#059669;display:inline-block;}
+
+      /* SECTION 1: PROFILE TABLE */
+      .profile-table{width:100%;border-collapse:collapse;border:1px solid #cbd5e1;border-radius:8px;overflow:hidden;font-size:11.5px;}
+      .profile-table td{border:1px solid #cbd5e1;padding:5.5px 10px;}
+      .profile-table .lbl{background:#f8fafc;font-weight:600;color:#475569;width:15%;white-space:nowrap;}
+      .profile-table .val{background:#ffffff;color:#0f172a;width:35%;}
+      .font-mono{font-family:monospace;}
+      .font-bold{font-weight:700;}
+      .c-green{color:#047857;}
+      .c-red{color:#dc2626;}
+      .c-blue{color:#2563eb;}
+      .muted{color:#94a3b8;}
+
+      /* SECTION 2: DUAL LEDGER */
+      .ledger-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+      .ledger-col{border:1px solid #cbd5e1;border-radius:8px;overflow:hidden;background:#fff;}
+      .ledger-head{background:#f1f5f9;border-bottom:1px solid #cbd5e1;padding:6px 12px;font-weight:700;font-size:11.5px;color:#1e293b;display:flex;justify-content:space-between;align-items:center;}
+      .ledger-tbl{width:100%;border-collapse:collapse;font-size:11.5px;}
+      .ledger-tbl td{padding:5px 12px;border-bottom:1px solid #f1f5f9;}
+      .ledger-tbl tr:last-child td{border-bottom:none;}
+      .ledger-tbl .r{text-align:right;font-family:monospace;font-weight:600;white-space:nowrap;}
+      .ledger-tbl tfoot tr{background:#f8fafc;border-top:1.5px solid #cbd5e1;font-weight:700;}
+      .ledger-tbl tfoot td{padding:6.5px 12px;}
+
+      /* SECTION 3: NET CARD */
+      .net-card{border:2px solid #059669;background:#f0fdf4;border-radius:10px;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;}
+      .net-title{font-size:11.5px;font-weight:800;color:#065f46;text-transform:uppercase;letter-spacing:0.3px;}
+      .net-words{font-size:11.5px;color:#334155;margin-top:2px;}
+      .net-words strong{color:#0f172a;}
+      .net-mode{font-size:10.5px;color:#64748b;margin-top:2px;}
+      .net-mode strong{color:#1e293b;}
+      .net-right{background:#ffffff;border:2px solid #059669;border-radius:8px;padding:6px 14px;text-align:right;box-shadow:0 2px 5px rgba(5,150,105,0.12);flex-shrink:0;}
+      .net-badge-lbl{font-size:9.5px;font-weight:700;color:#64748b;text-transform:uppercase;}
+      .net-amt{font-size:22px;font-weight:900;color:#065f46;}
+
+      /* SECTION 4: ACKNOWLEDGEMENT */
+      .ack-card{border:1px dashed #94a3b8;background:#f8fafc;border-radius:8px;padding:9px 12px;font-size:11px;line-height:1.45;color:#334155;}
+      .ack-title{font-weight:700;color:#0f172a;margin-bottom:2px;font-size:11.5px;}
+      .ack-body{font-style:italic;color:#475569;}
+      .ack-body strong{color:#0f172a;font-style:normal;}
+
+      /* SECTION 5: SIGNATURES */
+      .sig-section{border-top:1px solid #cbd5e1;padding-top:12px;margin-top:auto;}
+      .sig-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;text-align:center;}
+      .sig-col{display:flex;flex-direction:column;align-items:center;}
+      .sig-space{height:42px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:3px;}
+      .sig-status{font-style:italic;color:#94a3b8;font-size:10.5px;}
+      .sig-stylish{font-family:serif;font-style:italic;font-weight:700;color:#047857;font-size:13px;}
+      .sig-line{width:85%;border-top:1px solid #475569;margin-bottom:4px;}
+      .sig-name{font-size:11.5px;font-weight:700;color:#0f172a;line-height:1.2;}
+      .sig-role{font-size:10px;color:#64748b;margin-top:1px;}
+
+      /* FOOTER NOTE */
+      .slip-foot-note{text-align:center;font-size:10px;color:#94a3b8;padding-top:6px;border-top:1px dashed #e2e8f0;}
+
+      /* PRINT & FULL A4 RULES */
+      @page{size:A4 portrait;margin:8mm 10mm;}
       @media print{
-        *,*::before,*::after{
-          -webkit-print-color-adjust:exact !important;
-          print-color-adjust:exact !important;
-          color-adjust:exact !important;
-          box-sizing:border-box !important;
-        }
-        html,body{
-          background:#fff !important;
-          padding:0 !important;
-          margin:0 !important;
-          width:100% !important;
-          min-width:100% !important;
-          max-width:100% !important;
-          height:100% !important;
-          overflow:visible !important;
-        }
+        html,body{background:#fff !important;padding:0 !important;margin:0 !important;width:100% !important;}
         .slip{
           box-shadow:none !important;
           border-radius:0 !important;
           border:none !important;
           width:100% !important;
-          min-width:100% !important;
           max-width:100% !important;
-          margin:0 auto !important;
-          padding:0 !important;
-          overflow:visible !important;
+          margin:0 !important;
+          padding:16px 20px !important;
           min-height:275mm !important;
-          box-sizing:border-box !important;
           display:flex !important;
           flex-direction:column !important;
           justify-content:space-between !important;
         }
-        .head-row{display:flex !important;flex-direction:row !important;align-items:center !important;gap:16px !important}
-        .slip-tag{position:absolute !important;right:24px !important;top:16px !important;display:block !important;width:auto !important;margin-bottom:0 !important;text-align:right !important}
-        .info-grid{display:grid !important;grid-template-columns:1fr 1fr !important}
-        .info-cell:nth-child(odd){border-right:1px solid #cbd5e1 !important}
-        .signatures{display:grid !important;grid-template-columns:1fr 1fr 1fr !important;gap:24px !important;page-break-inside:avoid !important;break-inside:avoid !important}
-        .header::after{display:none !important}
-        .watermark{display:none !important}
-        .print-actions-bar,.no-print{display:none !important;visibility:hidden !important}
+        .sig-section{page-break-inside:avoid !important;break-inside:avoid !important;}
+        .net-card{page-break-inside:avoid !important;break-inside:avoid !important;}
+        .ack-card{page-break-inside:avoid !important;break-inside:avoid !important;}
+      }
 
-        /* Prominent & clear full-page A4 typography */
-        .header{padding:18px 26px !important;width:100% !important;box-sizing:border-box !important}
-        .logo-wrap{width:54px !important;height:54px !important;border-radius:12px !important}
-        .logo-fallback{font-size:24px !important}
-        .inst-name{font-size:22px !important;font-weight:800 !important}
-        .inst-meta{font-size:12px !important;line-height:1.45 !important}
-        .slip-tag{right:26px !important;top:16px !important}
-        .slip-tag .badge{padding:4.5px 14px !important;font-size:11.5px !important;font-weight:800 !important}
-        .slip-tag .id{font-size:10.5px !important;margin-top:3px !important}
-        .month-bar{padding:9px 26px !important;font-size:13px !important;width:100% !important;box-sizing:border-box !important}
-        .month-bar .month{font-size:15px !important;font-weight:800 !important}
-        .body{padding:16px 26px !important;width:100% !important;box-sizing:border-box !important;flex:1 !important;display:flex !important;flex-direction:column !important;justify-content:space-between !important}
-        .info-grid{margin-bottom:12px !important;border-radius:12px !important;border:1px solid #cbd5e1 !important;width:100% !important;box-sizing:border-box !important}
-        .info-cell{padding:7px 12px !important;font-size:12.5px !important}
-        .info-cell .lbl{font-weight:600 !important;color:#475569 !important}
-        .info-cell .val{font-weight:700 !important;color:#0f172a !important}
-        .columns,.single-col{margin-bottom:12px !important;width:100% !important;box-sizing:border-box !important}
-        .col{border-radius:12px !important;border:1px solid #cbd5e1 !important;width:100% !important;box-sizing:border-box !important}
-        .col-head{padding:8px 14px !important;font-size:13px !important;font-weight:800 !important}
-        .ln{padding:6.5px 14px !important;font-size:12.5px !important}
-        .ln .l{color:#334155 !important}
-        .ln .v{font-weight:700 !important}
-        .col-foot{display:none !important}
-        .net-box{padding:12px 18px !important;border-radius:12px !important;margin-top:8px !important;width:100% !important;box-sizing:border-box !important;page-break-inside:avoid !important;break-inside:avoid !important}
-        .net-box .lbl{font-size:13px !important;font-weight:700 !important}
-        .net-box .amt{font-size:24px !important;font-weight:900 !important}
-        .words{margin-top:8px !important;padding:7px 12px !important;font-size:12px !important;width:100% !important;box-sizing:border-box !important}
-        .words strong{font-weight:800 !important}
-        .receipt-ack{margin-top:10px !important;padding:8px 14px !important;font-size:11.5px !important;line-height:1.45 !important;border:1px dashed #64748b !important;border-radius:6px !important;background:#f8fafc !important;width:100% !important;box-sizing:border-box !important;page-break-inside:avoid !important}
-        .receipt-ack .ack-title{font-size:12px !important;font-weight:700 !important;color:#0f172a !important;margin-bottom:2px !important}
-        .signatures{margin-top:auto !important;padding-top:22px !important;gap:24px !important;padding-left:8px !important;padding-right:8px !important;width:100% !important;box-sizing:border-box !important}
-        .sig{font-size:12px !important}
-        .sig-space{height:52px !important;min-height:52px !important;display:flex !important;align-items:flex-end !important;justify-content:center !important;padding-bottom:4px !important}
-        .sig-space img{max-height:46px !important;object-fit:contain !important}
-        .sig .line{border-top:1.5px solid #64748b !important;margin:0 6px !important}
-        .sig .sig-name{font-size:12.5px !important;font-weight:700 !important;color:#0f172a !important;padding-top:4px !important;min-height:18px !important}
-        .sig .role{font-size:11.5px !important;font-weight:600 !important;color:#475569 !important}
-        .footer{padding:10px 26px !important;margin-top:16px !important;font-size:10.5px !important;width:100% !important;box-sizing:border-box !important}
-        .footer .gen{font-size:9.5px !important;margin-top:2px !important}
+      /* MOBILE IN-APP PREVIEW */
+      @media screen and (max-width:650px){
+        body{padding:4px !important;}
+        .slip{padding:12px 14px !important;border-radius:10px !important;}
+        .top-bar{flex-direction:column !important;align-items:flex-start !important;gap:6px !important;}
+        .header-row{flex-direction:column !important;align-items:flex-start !important;gap:10px !important;}
+        .header-right{border-left:none !important;padding-left:0 !important;text-align:left !important;}
+        .ledger-grid{grid-template-columns:1fr !important;}
+        .net-card{flex-direction:column !important;align-items:flex-start !important;}
+        .net-right{width:100% !important;text-align:center !important;}
+        .sig-grid{grid-template-columns:1fr 1fr !important;row-gap:16px !important;}
       }
     </style></head><body>
     <div class="slip">
-      <div class="watermark"><span>${bn ? 'বেতন স্লিপ' : 'SALARY'}</span></div>
-      <div class="header">
-        <div class="slip-tag">
-          <div class="badge">${bn ? 'অফিস ভাউচার' : 'OFFICE VOUCHER'}</div>
-          <div class="id">${slipId}</div>
+      <!-- TOP CLASSIFICATION BAR -->
+      <div class="top-bar">
+        <div class="top-left">
+          <span class="badge-office">${bn ? 'অফিস নথি কপি' : 'OFFICE ARCHIVE COPY'}</span>
+          <span class="nothi-code">নথি কোড: ${nothiCode}</span>
         </div>
-        <div class="head-row">
-          <div class="logo-wrap">
-            ${logoUrl ? `<img src="${logoUrl}" alt="logo"/>` : `<div class="logo-fallback">${(instName || 'A').charAt(0)}</div>`}
+        <div class="top-right">
+          <span>হিসাব খাত: <strong>বেতন ও সম্মানী ফান্ড</strong></span>
+          <span class="badge-status ${record.status === 'paid' ? 'paid' : 'pending'}">
+            ${record.status === 'paid' ? (bn ? '✓ অনুমোদিত ও পরিশোধিত' : '✓ APPROVED & PAID') : (bn ? '⏱ অনুমোদিত ও বকেয়া' : '⏱ PENDING')}
+          </span>
+        </div>
+      </div>
+
+      <!-- HEADER WITH EMBLEM & METADATA -->
+      <div class="header-row">
+        <div class="header-left">
+          <div class="logo-box">
+            ${logoUrl ? `<img src="${logoUrl}" alt="logo"/>` : `<span>م</span>`}
           </div>
-          <div class="inst-info">
-            <div class="inst-name">${instName}</div>
-            <div class="inst-meta">
+          <div class="header-text">
+            <h1 class="inst-name">${instName}</h1>
+            <div class="inst-sub">
               ${instAddr ? `${instAddr}` : ''}
-              ${instPhone ? ` &nbsp;•&nbsp; 📞 ${bn ? toBnDigits(instPhone) : instPhone}` : ''}
-              ${instEmail ? ` &nbsp;•&nbsp; ✉ ${instEmail}` : ''}
+              ${instPhone ? ` • ফোন: ${bn ? toBnDigits(instPhone) : instPhone}` : ''}
+              ${instEmail ? ` • ${instEmail}` : ''}
             </div>
+            <div class="voucher-title">মাসিক বেতন বিতরণ ও অভ্যন্তরীণ অডিট ভাউচার</div>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <div class="vch-lbl">${bn ? 'ভাউচার নম্বর:' : 'Voucher No:'}</div>
+          <div class="vch-no">${slipId}</div>
+          <div class="vch-lbl" style="margin-top:3px;">${bn ? 'ইস্যু ও পেমেন্ট তারিখ:' : 'Issue & Payment Date:'}</div>
+          <div class="vch-date">${issueDate}</div>
+        </div>
+      </div>
+
+      <!-- SECTION 1: EMPLOYEE & ATTENDANCE AUDIT PROFILE -->
+      <div>
+        <div class="sec-title"><span class="dot"></span> ১. প্রাপক শিক্ষক/কর্মচারীর পরিচিতি ও হাজিরা তথ্য</div>
+        <table class="profile-table">
+          <tbody>
+            <tr>
+              <td class="lbl">${bn ? 'শিক্ষকের নাম:' : 'Staff Name:'}</td>
+              <td class="val font-bold">${staffMember.name_bn}</td>
+              <td class="lbl">${bn ? 'স্টাফ আইডি:' : 'Staff ID:'}</td>
+              <td class="val font-mono font-bold">${staffMember.staff_id || '-'}</td>
+            </tr>
+            <tr>
+              <td class="lbl">${bn ? 'পদবি ও বিভাগ:' : 'Designation & Dept:'}</td>
+              <td class="val">${getDesignation(staffMember.designation)} (${getDepartmentLabel(staffMember.staff_category || staffMember.department)})</td>
+              <td class="lbl">${bn ? 'ডিউটি সময়সূচি:' : 'Duty Schedule:'}</td>
+              <td class="val font-mono">${dutyHours}</td>
+            </tr>
+            <tr>
+              <td class="lbl">${bn ? 'মাসের কর্মদিবস:' : 'Working Days:'}</td>
+              <td class="val">মোট ${slipNum(record.working_days || 0)} দিন (উপস্থিত: <b class="c-green">${slipNum(record.present_days || 0)}</b> • ছুটি: <b>${slipNum(leaveDays)}</b>)</td>
+              <td class="lbl">${bn ? 'অনুপস্থিতি ও বিলম্ব:' : 'Absence & Late:'}</td>
+              <td class="val">অনুপস্থিতি: <b class="c-red">${slipNum(record.absent_days || 0)} দিন</b> (কর্তন প্রযোজ্য) • বিলম্ব: <b>${slipNum(record.late_days || 0)} দিন</b></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- SECTION 2: ACCOUNTS AUDIT BREAKDOWN (DUAL LEDGER) -->
+      <div>
+        <div class="sec-title"><span class="dot"></span> ২. বেতন হিসাব, ভাতা ও কর্তনের নিরীক্ষা লেজার</div>
+        <div class="ledger-grid">
+          <!-- EARNINGS / PAWNA -->
+          <div class="ledger-col">
+            <div class="ledger-head">
+              <span>(ক) উপার্জন ও ভাতার বিবরণ</span>
+              <span>টাকা (৳)</span>
+            </div>
+            <table class="ledger-tbl">
+              <tbody>
+                <tr>
+                  <td>১. অনুমোদিত মূল মাসিক বেতন</td>
+                  <td class="r">${slipNum(baseSalary)}</td>
+                </tr>
+                <tr>
+                  <td>২. বিশেষ দায়িত্ব / আবাসিক ভাতা</td>
+                  <td class="r ${dutyAllowance > 0 ? '' : 'muted'}">${slipNum(dutyAllowance)}</td>
+                </tr>
+                <tr>
+                  <td>৩. পরীক্ষা ও ফলাফল দায়িত্ব সম্মানী</td>
+                  <td class="r ${examAllowance > 0 ? '' : 'muted'}">${slipNum(examAllowance)}</td>
+                </tr>
+                <tr>
+                  <td>৪. অতিরিক্ত দায়িত্ব ও বোনাস</td>
+                  <td class="r ${bonusTotal > 0 ? '' : 'muted'}">${slipNum(bonusTotal)}</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td>মোট পাওনা (Gross Amount):</td>
+                  <td class="r font-bold">${slipNum(grossSalary)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <!-- DEDUCTIONS / KORTON -->
+          <div class="ledger-col">
+            <div class="ledger-head">
+              <span>(খ) সমন্বয় ও কর্তন বিবরণ</span>
+              <span>টাকা (৳)</span>
+            </div>
+            <table class="ledger-tbl">
+              <tbody>
+                <tr>
+                  <td>১. অননুমোদিত অনুপস্থিতি কর্তন (${slipNum(record.absent_days || 0)} দিন)</td>
+                  <td class="r ${absDed > 0 ? 'c-red font-bold' : 'muted'}">${slipNum(absDed)}</td>
+                </tr>
+                <tr>
+                  <td>২. বিলম্ব উপস্থিতির মিনিট কর্তন</td>
+                  <td class="r ${lateDed > 0 ? 'c-red font-bold' : 'muted'}">${slipNum(lateDed)}</td>
+                </tr>
+                <tr>
+                  <td>৩. কল্যাণ তহবিল ও সঞ্চয় জমা</td>
+                  <td class="r ${savingsAmt > 0 ? 'c-blue font-bold' : 'muted'}">${slipNum(savingsAmt)}</td>
+                </tr>
+                <tr>
+                  <td>৪. পূর্ব গৃহীত অগ্রিম সমন্বয়</td>
+                  <td class="r ${advDed > 0 ? 'c-red font-bold' : 'muted'}">${slipNum(advDed)}</td>
+                </tr>
+                ${extraDed > 0 ? `
+                <tr>
+                  <td>৫. অন্যান্য প্রযোজ্য কর্তন</td>
+                  <td class="r c-red font-bold">${slipNum(extraDed)}</td>
+                </tr>` : ''}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td>মোট কর্তন (Total Deductions):</td>
+                  <td class="r c-red font-bold">${slipNum(totalDed)}</td>
+                </tr>
+              </tfoot>
+            </table>
           </div>
         </div>
       </div>
 
-      <div class="month-bar">
-        <span>${bn ? 'বেতন মাস' : 'Salary Period'}: <span class="month">${bn ? monthName?.bn : monthName?.en} ${bn ? toBnDigits(selectedYear) : selectedYear}</span></span>
-        <span>${bn ? 'ইস্যু ও পেমেন্ট তারিখ' : 'Payment Date'}: <strong>${issueDate}</strong></span>
+      <!-- SECTION 3: NET SETTLEMENT (TOTAL DISBURSED) -->
+      <div class="net-card">
+        <div class="net-left">
+          <div class="net-title">(গ) পরিশোধযোগ্য চূড়ান্ত নিট টাকার পরিমাণ</div>
+          <div class="net-words">কথায়: <strong>${inWords}</strong></div>
+          <div class="net-mode">পেমেন্ট মাধ্যম: <strong>নগদ ক্যাশ প্রদান</strong></div>
+        </div>
+        <div class="net-right">
+          <div class="net-badge-lbl">পরিশোধিত অংক</div>
+          <div class="net-amt font-mono">৳ ${slipNum(netSalary)}.০০</div>
+        </div>
       </div>
 
-      <div class="body">
-        <div class="info-grid">
-          <div class="info-cell"><span class="lbl">${bn ? 'নাম' : 'Name'}</span><span class="val">${staffMember.name_bn}</span></div>
-          <div class="info-cell"><span class="lbl">${bn ? 'স্টাফ আইডি' : 'Staff ID'}</span><span class="val">${staffMember.staff_id || '-'}</span></div>
-          <div class="info-cell"><span class="lbl">${bn ? 'পদবি' : 'Designation'}</span><span class="val">${getDesignation(staffMember.designation)}</span></div>
-          <div class="info-cell"><span class="lbl">${bn ? 'বিভাগ' : 'Department'}</span><span class="val">${getDepartmentLabel(staffMember.staff_category || staffMember.department)}</span></div>
-          <div class="info-cell"><span class="lbl">${bn ? 'ক্লাসের সময়' : 'Class Hours'}</span><span class="val">${(() => {
-            const t = getDutyTimeWithSource(staffMember);
-            return `${fmt(t.start)} – ${fmt(t.end)}`;
-          })()}</span></div>
-          <div class="info-cell"><span class="lbl">${bn ? 'কর্মদিবস' : 'Working Days'}</span><span class="val">${bn ? toBnDigits(record.working_days) : record.working_days}</span></div>
-          <div class="info-cell"><span class="lbl">${bn ? 'উপস্থিত' : 'Present'}</span><span class="val" style="color:#059669">${bn ? toBnDigits(record.present_days) : record.present_days}</span></div>
-          <div class="info-cell"><span class="lbl">${bn ? 'ছুটি' : 'Leave'}</span><span class="val" style="color:#2563eb">${bn ? toBnDigits(leaveDays) : leaveDays}</span></div>
-          <div class="info-cell"><span class="lbl">${bn ? 'অনুপস্থিত' : 'Absent'}</span><span class="val" style="color:#dc2626">${bn ? toBnDigits(record.absent_days) : record.absent_days}</span></div>
-          <div class="info-cell"><span class="lbl">${bn ? 'বিলম্ব দিন' : 'Late Days'}</span><span class="val" style="color:#d97706">${bn ? toBnDigits(record.late_days || 0) : (record.late_days || 0)}</span></div>
-          <div class="info-cell" style="grid-column:1 / -1;border-right:none"><span class="lbl">${bn ? 'স্ট্যাটাস' : 'Status'}</span><span class="val" style="color:${record.status === 'paid' ? '#059669' : '#d97706'}">${record.status === 'paid' ? (bn ? '✓ পরিশোধিত' : '✓ PAID') : (bn ? '⏱ বকেয়া' : '⏱ PENDING')}</span></div>
+      <!-- SECTION 4: RECIPIENT ACKNOWLEDGEMENT STATEMENT -->
+      <div class="ack-card">
+        <div class="ack-title">প্রাপকের অর্থপ্রাপ্তি অঙ্গীকার ও স্বীকৃতি (Money Receipt Acknowledgement):</div>
+        <div class="ack-body">
+          “আমি নিম্নস্বাক্ষরকারী স্বীকার করিতেছি যে, ${monthName?.bn || ''} ${toBnDigits(selectedYear)} মাসের যাবতীয় পাওনা বাবদ মোট নিট <strong>৳ ${slipNum(netSalary)}/- (${inWords})</strong> অত্র মাদরাসার হিসাব বিভাগ হইতে পূর্ণ বুঝিয়া পাইলাম। এই মাসের বেতন বাবদ মাদরাসার নিকট আমার আর কোনো বকেয়া বা দাবি নাই।”
         </div>
+      </div>
 
-        <div class="single-col">
-          <div class="col earn">
-            <div class="col-head">${bn ? 'বেতন বিবরণ' : 'Salary Details'}</div>
-            <div class="col-body">
-              <!-- ১. মূল বেতন -->
-              <div class="ln" style="background:#f8fafc;font-weight:700"><span class="l">${bn ? '১। মূল বেতন' : '1. Base Salary'}</span><span class="v">৳${slipNum(baseSalary)}</span></div>
+      ${lateDetailHtml}
 
-              <!-- ২. উপস্থিতি ও শিফট কর্তন -->
-              ${absDed > 0 || Number(record.absent_days || 0) > 0 ? `
-              <div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অনুপস্থিতি কর্তন' : 'Absence Deduction'} (${bn ? toBnDigits(record.absent_days || 0) : (record.absent_days || 0)} ${bn ? 'দিন' : 'd'})</span><span class="v">৳${slipNum(absDed)}</span></div>` : ''}
-              ${lateDed > 0 || Number(record.late_days || 0) > 0 ? `
-              <div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'বিলম্ব উপস্থিতি কর্তন' : 'Late Deduction'}${Number(record.late_days || 0) > 0 ? ` (${bn ? toBnDigits(record.late_days || 0) : (record.late_days || 0)} ${bn ? 'দিন' : 'd'})` : ''}</span><span class="v">৳${slipNum(lateDed)}</span></div>` : ''}
-              ${dutyDed > 0 ? `<div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'আবাসিক ডিউটি কর্তন' : 'Residential Duty Deduction'} <span style="color:#64748b;font-weight:400">(${bn ? toBnDigits(dutyDedInfo.lines.length) : dutyDedInfo.lines.length} ${bn ? 'শিফট' : 'shifts'}${dutyDedInfo.absentCount ? ` • ${bn ? 'অনুপস্থিত' : 'absent'} ${bn ? toBnDigits(dutyDedInfo.absentCount) : dutyDedInfo.absentCount}` : ''}${dutyDedInfo.lateCount ? ` • ${bn ? 'বিলম্ব' : 'late'} ${bn ? toBnDigits(dutyDedInfo.lateCount) : dutyDedInfo.lateCount}` : ''})</span></span><span class="v">৳${slipNum(dutyDed)}</span></div>` : ''}
-              ${preJoinDed > 0 ? `<div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'যোগদান পূর্ববর্তী আনুপাতিক কর্তন' : 'Pre-joining Deduction'} (${bn ? toBnDigits(record.pre_join_days || 0) : (record.pre_join_days || 0)} ${bn ? 'দিন' : 'd'})</span><span class="v">৳${slipNum(preJoinDed)}</span></div>` : ''}
-              ${postResignDed > 0 ? `<div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'পদত্যাগ পরবর্তী আনুপাতিক কর্তন' : 'Post-resignation Deduction'} (${bn ? toBnDigits(record.post_resign_days || 0) : (record.post_resign_days || 0)} ${bn ? 'দিন' : 'd'})</span><span class="v">৳${slipNum(postResignDed)}</span></div>` : ''}
-              ${otherDed > 0 ? `<div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অন্যান্য কর্তন' : 'Other Deduction'}${record.other_deduction_note ? ` <span style="color:#64748b;font-weight:400">(${record.other_deduction_note})</span>` : ''}</span><span class="v">৳${slipNum(otherDed)}</span></div>` : ''}
-
-              <!-- সাবটোটাল: উপস্থিতি ভিত্তিক অর্জিত বেতন -->
-              <div class="ln" style="border-top:1px dashed #94a3b8;padding-top:6px;margin-top:4px;background:#f0fdf4;color:#065f46"><span class="l"><strong>${bn ? '= উপস্থিতি ভিত্তিক অর্জিত বেতন' : '= Earned from Attendance'}</strong></span><span class="v"><strong>৳${slipNum(earnedFromAttendance)}</strong></span></div>
-
-              <!-- ৩. বোনাস / ওভারটাইম / অন্যান্য ভাতা -->
-              ${Number(record.bonus || 0) > 0 ? `<div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'বোনাস' : 'Bonus'}</span><span class="v">৳${slipNum(Number(record.bonus || 0))}</span></div>` : ''}
-              ${Number(record.overtime || 0) > 0 ? `<div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'ওভারটাইম' : 'Overtime'}${record.overtime_reason ? ` <span style="color:#64748b;font-weight:400">(${record.overtime_reason})</span>` : ''}</span><span class="v">৳${slipNum(Number(record.overtime || 0))}</span></div>` : ''}
-              ${Number(record.other_allowance || 0) > 0 ? `<div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'অন্যান্য ডিউটি / ভাতা' : 'Other Duty / Allowance'}${record.other_allowance_note ? ` <span style="color:#64748b;font-weight:400">(${record.other_allowance_note})</span>` : ''}</span><span class="v">৳${slipNum(Number(record.other_allowance || 0))}</span></div>` : ''}
-
-              <!-- ৪. অগ্রিম কর্তন ও বেতন সঞ্চয় জমা -->
-              ${advDed > 0 ? `<div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অগ্রিম কর্তন' : 'Advance Deduction'}</span><span class="v">৳${slipNum(advDed)}</span></div>` : ''}
-              ${savingsAmt > 0 ? `<div class="ln savings" style="color:#1d4ed8;background:#eff6ff;padding:4px 6px;border-radius:4px"><span class="l" style="font-weight:600">🏦 ${bn ? 'বেতন সঞ্চয় (ডিপোজিট জমা)' : 'Salary Savings (Deposit)'}</span><span class="v" style="font-weight:700">৳${slipNum(savingsAmt)}</span></div>` : ''}
-
-              <!-- চূড়ান্ত মোট প্রদেয় নিট বেতন -->
-              <div class="ln" style="border-top:2px solid #0f172a;margin-top:6px;padding-top:8px;background:#fefce8;color:#713f12;font-weight:700">
-                <span class="l">${bn ? 'মোট প্রদেয় নিট বেতন' : 'Total (Net Payable)'}</span>
-                <span class="v">৳${slipNum(netSalary)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="net-box">
-          <span class="lbl">${bn ? 'পরিশোধিত নিট বেতন' : 'Net Paid Amount'}</span>
-          <span class="amt">৳ ${slipNum(netSalary)}</span>
-        </div>
-        <div class="words">${bn ? 'কথায়' : 'In Words'}: <strong>${inWords}</strong></div>
-
-        ${lateDetailHtml}
-
-        <div class="receipt-ack">
-          <div class="ack-title">${bn ? 'প্রাপকের অর্থপ্রাপ্তি অঙ্গীকার ও স্বীকৃতি (Money Receipt Acknowledgement)' : 'Recipient Money Receipt Acknowledgement'}:</div>
-          <div class="ack-text">
-            ${bn 
-              ? `“আমি নিম্নস্বাক্ষরকারী স্বীকার করিতেছি যে, ${monthName?.bn || ''} ${toBnDigits(selectedYear)} মাসের যাবতীয় পাওনা বাবদ মোট নিট <strong>৳ ${slipNum(netSalary)}/- (${inWords})</strong> অত্র মাদরাসার হিসাব বিভাগ হইতে পূর্ণ বুঝিয়া পাইলাম। অত্র মাসের বেতন বাবদ মাদরাসার নিকট আমার আর কোনো বকেয়া বা দাবি নাই।”` 
-              : `“I hereby acknowledge the receipt of net salary <strong>৳ ${slipNum(netSalary)}/- (${inWords})</strong> in full settlement for the period of ${monthName?.en} ${selectedYear}. I have no further dues or claims regarding this period.”`}
-          </div>
-        </div>
-
-        <div class="signatures">
-          <div class="sig">
-            <div class="sig-space"></div>
-            <div class="line"></div>
+      <!-- SECTION 5: COMPLETE 4-TIER OFFICE APPROVAL & SIGNATURE CHAIN -->
+      <div class="sig-section">
+        <div class="sig-grid">
+          <div class="sig-col">
+            <div class="sig-space"><span class="sig-status">স্বাক্ষরিত</span></div>
+            <div class="sig-line"></div>
             <div class="sig-name">${recipientName}</div>
-            <div class="role">${bn ? 'অর্থ গ্রহণকারীর স্বাক্ষর ও তারিখ' : "Recipient's Signature & Date"}</div>
+            <div class="sig-role">অর্থ গ্রহণকারীর স্বাক্ষর ও তারিখ</div>
           </div>
-          <div class="sig">
-            <div class="sig-space"></div>
-            <div class="line"></div>
-            <div class="sig-name">${accountantName || '&nbsp;'}</div>
-            <div class="role">${bn ? 'কোষাধ্যক্ষ / হিসাবরক্ষক' : accountantRole}</div>
+          <div class="sig-col">
+            <div class="sig-space"><span class="sig-status">যাচাইকৃত</span></div>
+            <div class="sig-line"></div>
+            <div class="sig-name">হিসাব সহকারী</div>
+            <div class="sig-role">প্রস্তুতকারী / লেজার এন্ট্রি</div>
           </div>
-          <div class="sig">
-            <div class="sig-space"></div>
-            <div class="line"></div>
+          <div class="sig-col">
+            <div class="sig-space"><span class="sig-status">অনুমোদিত</span></div>
+            <div class="sig-line"></div>
+            <div class="sig-name">${accountantName}</div>
+            <div class="sig-role">${accountantRole}</div>
+          </div>
+          <div class="sig-col">
+            <div class="sig-space"><span class="sig-stylish">A. Sobhan</span></div>
+            <div class="sig-line"></div>
             <div class="sig-name">${approverName}</div>
-            <div class="role">${bn ? 'মুহতামিম / প্রিন্সিপাল' : approverRole}</div>
+            <div class="sig-role">${approverRole}</div>
           </div>
         </div>
       </div>
 
-      <div class="footer">
-        ${bn ? 'এটি প্রতিষ্ঠানের দাপ্তরিক হিসাব ও অডিট নথির জন্য সংরক্ষিত অফিস ভাউচার কপি।' : 'This is an official voucher copy archived for institutional accounts & audit records.'}
-        <div class="gen">${bn ? 'প্রতিষ্ঠান' : 'Institution'}: ${instName} • ${issueDate}</div>
+      <!-- FOOTER NOTE -->
+      <div class="slip-foot-note">
+        এটি প্রতিষ্ঠানের অভ্যন্তরীণ হিসাব ও অডিট নথির জন্য সংরক্ষিত অফিস ভাউচার কপি। প্রতিষ্ঠান: ${instName} • ${issueDate}
       </div>
     </div>
     </body></html>`;
