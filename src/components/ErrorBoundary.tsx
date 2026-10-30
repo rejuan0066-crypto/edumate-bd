@@ -47,27 +47,17 @@ class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught:', error, errorInfo);
-
-    // If an asset hash changed due to a new deploy, attempt at most ONE automatic reload per path
-    if (isChunkLoadError(error)) {
-      try {
-        const reloadKey = 'chunk_reload_' + window.location.pathname;
-        const alreadyReloaded = sessionStorage.getItem(reloadKey);
-        if (!alreadyReloaded) {
-          sessionStorage.setItem(reloadKey, '1');
-          window.location.reload();
-        }
-      } catch {
-        /* ignore */
-      }
-    }
   }
 
-  handleRetry = () => {
+  handleRetry = async () => {
     try {
-      sessionStorage.removeItem('chunk_reload_' + window.location.pathname);
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
     } catch {}
-    window.location.reload();
+    // Hard refresh with timestamp to bypass memory and network caches cleanly
+    window.location.href = window.location.pathname + '?_t=' + Date.now();
   };
 
   render() {

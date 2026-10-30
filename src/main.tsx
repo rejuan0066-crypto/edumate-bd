@@ -3,22 +3,10 @@ import App from "./App.tsx";
 import "./index.css";
 import { installPwaPrintAdapter } from "./lib/pwaPrintAdapter";
 
-// Auto-recover from stale chunks after a new deployment
+// Handle Vite preload errors cleanly without unprompted page reloads
 window.addEventListener('vite:preloadError', (event) => {
   event.preventDefault();
-  const reloadKey = 'vite_preload_error_reload';
-  let lastReload = 0;
-  try {
-    lastReload = Number(sessionStorage.getItem(reloadKey) || '0');
-  } catch {}
-  const now = Date.now();
-  // Only auto-reload once every 30 seconds to avoid reload loops
-  if (now - lastReload > 30000) {
-    try {
-      sessionStorage.setItem(reloadKey, String(now));
-    } catch {}
-    window.location.reload();
-  }
+  console.warn('[vite] Preload error intercepted:', event);
 });
 
 // Patch window.open / blob downloads so receipts, salary slips, certificates,
