@@ -3590,43 +3590,6 @@ const AdminSalary = () => {
     const absentDatesText = slipAbsentDetails.map((d: any) => fmtSlipDate(d.date)).join(', ');
     const lateDatesText = slipLateDetails.map((d: any) => `${fmtSlipDate(d.date)} (${fmtSlipMins(d.lateMin)})`).join(', ');
 
-    const attendanceDetailHtml = (slipAbsentDetails.length > 0 || slipLateDetails.length > 0) ? `
-      <div style="margin:10px 0 0;border:1px solid #cbd5e1;border-radius:10px;overflow:hidden">
-        <div style="background:#fff1f2;color:#9f1239;font-weight:800;padding:8px 14px;font-size:12.5px;border-bottom:1px solid #fecdd3;display:flex;justify-content:space-between;align-items:center;">
-          <span>📅 ${bn ? 'অনুপস্থিতি ও বিলম্ব উপস্থিতির তারিখভিত্তিক অডিট বিবরণ' : 'Absence & Late Dates Breakdown'}</span>
-          <span style="font-size:11px;font-weight:700;color:#e11d48">${bn ? 'কর্তন নিরীক্ষা' : 'Deduction Audit'}</span>
-        </div>
-        <table style="width:100%;border-collapse:collapse;font-size:12px">
-          <thead>
-            <tr style="background:#f8fafc;color:#475569;border-bottom:1px solid #e2e8f0">
-              <th style="padding:6px 10px;text-align:left">${bn ? 'তারিখ' : 'Date'}</th>
-              <th style="padding:6px 10px;text-align:center">${bn ? 'স্ট্যাটাস / বিবরণ' : 'Status'}</th>
-              <th style="padding:6px 10px;text-align:center">${bn ? 'প্রবেশ – বাহির' : 'Time'}</th>
-              <th style="padding:6px 10px;text-align:right">${bn ? 'বিলম্ব / কর্তন' : 'Details'}</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${slipAbsentDetails.map((d: any) => `
-              <tr style="border-bottom:1px solid #f1f5f9;background:#fff5f5">
-                <td style="padding:6px 10px;font-weight:700;color:#dc2626">${fmtSlipDate(d.date)}</td>
-                <td style="padding:6px 10px;text-align:center"><span style="background:#fee2e2;color:#b91c1c;padding:2px 8px;border-radius:4px;font-weight:700;font-size:11px">${bn ? 'অননুমোদিত অনুপস্থিত' : 'Absent'}</span></td>
-                <td style="padding:6px 10px;text-align:center;color:#64748b">—</td>
-                <td style="padding:6px 10px;text-align:right;font-weight:700;color:#dc2626">${bn ? '১ দিন কর্তন' : '1 Day Ded.'}</td>
-              </tr>
-            `).join('')}
-            ${slipLateDetails.map((d: any) => `
-              <tr style="border-bottom:1px solid #f1f5f9;background:#fffbeb">
-                <td style="padding:6px 10px;font-weight:700;color:#b45309">${fmtSlipDate(d.date)}</td>
-                <td style="padding:6px 10px;text-align:center"><span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-weight:700;font-size:11px">${bn ? 'বিলম্ব উপস্থিতি' : 'Late'}</span></td>
-                <td style="padding:6px 10px;text-align:center;font-family:monospace;color:#334155">${fmtSlip12(d.checkIn)} – ${fmtSlip12(d.checkOut)}</td>
-                <td style="padding:6px 10px;text-align:right;font-weight:700;color:#b45309">${fmtSlipMins(Number(d.lateMin) || 0)}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    ` : '';
-
     // Earned-from-attendance = live/persisted attendance result for the selected month.
     const dutyDed = Number(record.duty_deduction || 0);
     const dutyDedInfo = getDutyDeduction(staffMember.id);
@@ -3780,7 +3743,7 @@ const AdminSalary = () => {
     <style>
       @font-face{font-family:"Kalpurush";src:url("${fontHref}") format("truetype");font-display:block;}
       *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}
-      html,body{background:#f1f5f9;color:#0f172a;font-family:'Kalpurush','Noto Sans Bengali','Segoe UI',sans-serif;line-height:1.5;padding:16px}
+      html,body{background:#f1f5f9;color:#0f172a;font-family:'Kalpurush','Noto Sans Bengali','Segoe UI',sans-serif;line-height:1.45;padding:12px}
       
       .slip{
         max-width:840px;
@@ -3788,49 +3751,48 @@ const AdminSalary = () => {
         margin:0 auto;
         background:#ffffff;
         border:1.5px solid #cbd5e1;
-        border-radius:14px;
-        padding:24px 28px;
+        border-radius:12px;
+        padding:16px 20px;
         box-shadow:0 12px 36px -12px rgba(15,23,42,0.12);
         box-sizing:border-box;
         display:flex;
         flex-direction:column;
-        gap:14px;
+        gap:8px;
       }
 
       /* TOP CLASSIFICATION BAR */
-      .top-bar{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:10px;font-size:12.5px;}
-      .top-left{display:flex;align-items:center;gap:10px;}
-      .badge-office{background:#0f172a;color:#fff;font-weight:700;padding:4px 10px;border-radius:4px;font-size:11.5px;letter-spacing:0.5px;}
-      .nothi-code{color:#64748b;font-family:monospace;font-size:12px;font-weight:600;}
-      .top-right{display:flex;align-items:center;gap:12px;font-size:12.5px;color:#475569;}
+      .top-bar{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:6px;font-size:12px;}
+      .top-left{display:flex;align-items:center;gap:8px;}
+      .badge-office{background:#0f172a;color:#fff;font-weight:700;padding:3px 8px;border-radius:4px;font-size:11px;letter-spacing:0.5px;}
+      .nothi-code{color:#64748b;font-family:monospace;font-size:11.5px;font-weight:600;}
+      .top-right{display:flex;align-items:center;gap:10px;font-size:12px;color:#475569;}
       .top-right strong{color:#0f172a;}
-      .badge-status{font-weight:700;font-size:12px;padding:3.5px 10px;border-radius:4px;}
+      .badge-status{font-weight:700;font-size:11.5px;padding:3px 8px;border-radius:4px;}
       .badge-status.paid{background:#dcfce7;color:#166534;border:1px solid #86efac;}
       .badge-status.pending{background:#fef3c7;color:#92400e;border:1px solid #fcd34d;}
 
       /* HEADER */
-      .header-row{display:flex;justify-content:space-between;align-items:center;border-bottom:2.5px solid #065f46;padding-bottom:14px;}
-      .header-left{display:flex;align-items:center;gap:16px;}
-      .logo-box{width:64px;height:64px;border-radius:14px;background:#047857;color:#fff;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;flex-shrink:0;box-shadow:inset 0 2px 4px rgba(0,0,0,0.15);overflow:hidden;}
+      .header-row{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #065f46;padding-bottom:8px;}
+      .header-left{display:flex;align-items:center;gap:14px;}
+      .logo-box{width:52px;height:52px;border-radius:10px;background:#047857;color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;flex-shrink:0;box-shadow:inset 0 2px 4px rgba(0,0,0,0.15);overflow:hidden;}
       .logo-box img{width:100%;height:100%;object-fit:contain;background:#fff;}
-      .header-text{}
-      .inst-name{font-size:23px;font-weight:800;color:#0f172a;line-height:1.2;letter-spacing:0.2px;}
-      .inst-sub{font-size:12px;color:#475569;margin-top:3px;line-height:1.4;}
-      .voucher-title{font-size:14.5px;font-weight:800;color:#065f46;margin-top:5px;letter-spacing:0.4px;text-transform:uppercase;}
-      .header-right{border-left:2px solid #cbd5e1;padding-left:16px;text-align:right;flex-shrink:0;}
-      .vch-lbl{font-size:11.5px;color:#64748b;}
-      .vch-no{font-size:15.5px;font-weight:900;font-family:monospace;color:#0f172a;letter-spacing:0.5px;margin:2px 0;}
-      .vch-date{font-size:13px;font-weight:700;color:#1e293b;}
+      .inst-name{font-size:20px;font-weight:800;color:#0f172a;line-height:1.2;letter-spacing:0.2px;}
+      .inst-sub{font-size:11px;color:#475569;margin-top:2px;line-height:1.35;}
+      .voucher-title{font-size:13px;font-weight:800;color:#065f46;margin-top:3px;letter-spacing:0.4px;text-transform:uppercase;}
+      .header-right{border-left:2px solid #cbd5e1;padding-left:12px;text-align:right;flex-shrink:0;}
+      .vch-lbl{font-size:10.5px;color:#64748b;}
+      .vch-no{font-size:14px;font-weight:900;font-family:monospace;color:#0f172a;letter-spacing:0.5px;margin:1px 0;}
+      .vch-date{font-size:12px;font-weight:700;color:#1e293b;}
 
       /* SECTION TITLES */
-      .sec-title{font-size:13.5px;font-weight:800;color:#1e293b;display:flex;align-items:center;gap:8px;letter-spacing:0.2px;margin-top:2px;margin-bottom:6px;}
-      .sec-title .dot{width:8px;height:8px;border-radius:50%;background:#059669;display:inline-block;}
+      .sec-title{font-size:12.5px;font-weight:800;color:#1e293b;display:flex;align-items:center;gap:6px;letter-spacing:0.2px;margin-top:1px;margin-bottom:4px;}
+      .sec-title .dot{width:7px;height:7px;border-radius:50%;background:#059669;display:inline-block;}
 
       /* SECTION 1: PROFILE TABLE */
-      .profile-table{width:100%;border-collapse:collapse;border:1px solid #cbd5e1;border-radius:8px;overflow:hidden;font-size:13px;}
-      .profile-table td{border:1px solid #cbd5e1;padding:7px 12px;}
-      .profile-table .lbl{background:#f8fafc;font-weight:600;color:#475569;width:16%;white-space:nowrap;font-size:12.5px;}
-      .profile-table .val{background:#ffffff;color:#0f172a;width:34%;font-size:13px;}
+      .profile-table{width:100%;border-collapse:collapse;border:1px solid #cbd5e1;border-radius:6px;overflow:hidden;font-size:12px;}
+      .profile-table td{border:1px solid #cbd5e1;padding:4.5px 8px;}
+      .profile-table .lbl{background:#f8fafc;font-weight:600;color:#475569;width:17%;white-space:nowrap;font-size:11.5px;}
+      .profile-table .val{background:#ffffff;color:#0f172a;width:33%;font-size:12px;}
       .font-mono{font-family:monospace;}
       .font-bold{font-weight:700;}
       .c-green{color:#047857;}
@@ -3839,51 +3801,51 @@ const AdminSalary = () => {
       .muted{color:#94a3b8;}
 
       /* SECTION 2: DUAL LEDGER */
-      .ledger-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-      .ledger-col{border:1px solid #cbd5e1;border-radius:10px;overflow:hidden;background:#fff;}
-      .ledger-head{background:#f1f5f9;border-bottom:1px solid #cbd5e1;padding:8px 14px;font-weight:800;font-size:13px;color:#0f172a;display:flex;justify-content:space-between;align-items:center;}
-      .ledger-tbl{width:100%;border-collapse:collapse;font-size:13px;}
-      .ledger-tbl td{padding:7px 14px;border-bottom:1px solid #f1f5f9;line-height:1.4;}
+      .ledger-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+      .ledger-col{border:1px solid #cbd5e1;border-radius:8px;overflow:hidden;background:#fff;}
+      .ledger-head{background:#f1f5f9;border-bottom:1px solid #cbd5e1;padding:5px 10px;font-weight:800;font-size:12px;color:#0f172a;display:flex;justify-content:space-between;align-items:center;}
+      .ledger-tbl{width:100%;border-collapse:collapse;font-size:12px;}
+      .ledger-tbl td{padding:4.5px 10px;border-bottom:1px solid #f1f5f9;line-height:1.35;}
       .ledger-tbl tr:last-child td{border-bottom:none;}
-      .ledger-tbl .r{text-align:right;font-family:monospace;font-weight:700;white-space:nowrap;font-size:13.5px;}
+      .ledger-tbl .r{text-align:right;font-family:monospace;font-weight:700;white-space:nowrap;font-size:12.5px;}
       .ledger-tbl tfoot tr{background:#f8fafc;border-top:1.5px solid #cbd5e1;font-weight:800;}
-      .ledger-tbl tfoot td{padding:8px 14px;font-size:13.5px;}
+      .ledger-tbl tfoot td{padding:5px 10px;font-size:12.5px;}
 
       /* SECTION 3: NET CARD */
-      .net-card{border:2px solid #059669;background:#f0fdf4;border-radius:12px;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;gap:14px;}
-      .net-title{font-size:13px;font-weight:800;color:#065f46;text-transform:uppercase;letter-spacing:0.3px;}
-      .net-words{font-size:12.5px;color:#1e293b;margin-top:3px;}
+      .net-card{border:1.5px solid #059669;background:#f0fdf4;border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+      .net-title{font-size:12px;font-weight:800;color:#065f46;text-transform:uppercase;letter-spacing:0.3px;}
+      .net-words{font-size:11.5px;color:#1e293b;margin-top:2px;}
       .net-words strong{color:#0f172a;}
-      .net-mode{font-size:11.5px;color:#475569;margin-top:3px;}
+      .net-mode{font-size:11px;color:#475569;margin-top:2px;}
       .net-mode strong{color:#1e293b;}
-      .net-right{background:#ffffff;border:2px solid #059669;border-radius:10px;padding:8px 18px;text-align:right;box-shadow:0 2px 6px rgba(5,150,105,0.14);flex-shrink:0;}
-      .net-badge-lbl{font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;}
-      .net-amt{font-size:26px;font-weight:900;color:#065f46;letter-spacing:-0.5px;}
+      .net-right{background:#ffffff;border:1.5px solid #059669;border-radius:8px;padding:6px 14px;text-align:right;box-shadow:0 2px 4px rgba(5,150,105,0.12);flex-shrink:0;}
+      .net-badge-lbl{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;}
+      .net-amt{font-size:22px;font-weight:900;color:#065f46;letter-spacing:-0.5px;}
 
       /* SECTION 4: ACKNOWLEDGEMENT */
-      .ack-card{border:1px dashed #94a3b8;background:#f8fafc;border-radius:10px;padding:12px 16px;font-size:12.5px;line-height:1.6;color:#334155;}
-      .ack-title{font-weight:800;color:#0f172a;margin-bottom:4px;font-size:13px;}
+      .ack-card{border:1px dashed #94a3b8;background:#f8fafc;border-radius:6px;padding:6px 10px;font-size:11px;line-height:1.4;color:#334155;}
+      .ack-title{font-weight:800;color:#0f172a;margin-bottom:2px;font-size:11.5px;}
       .ack-body{font-style:italic;color:#334155;}
       .ack-body strong{color:#0f172a;font-style:normal;}
 
       /* SECTION 5: SIGNATURES */
-      .sig-section{border-top:1.5px solid #cbd5e1;padding-top:14px;margin-top:auto;}
-      .sig-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;text-align:center;}
+      .sig-section{border-top:1.5px solid #cbd5e1;padding-top:8px;margin-top:auto;}
+      .sig-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;text-align:center;}
       .sig-col{display:flex;flex-direction:column;align-items:center;}
-      .sig-space{height:46px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;}
-      .sig-status{font-style:italic;color:#94a3b8;font-size:11.5px;}
-      .sig-stylish{font-family:serif;font-style:italic;font-weight:700;color:#047857;font-size:15px;}
-      .sig-line{width:88%;border-top:1.5px solid #475569;margin-bottom:5px;}
-      .sig-name{font-size:13px;font-weight:800;color:#0f172a;line-height:1.2;}
-      .sig-role{font-size:11px;color:#64748b;margin-top:2px;}
+      .sig-space{height:34px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:2px;}
+      .sig-status{font-style:italic;color:#94a3b8;font-size:11px;}
+      .sig-stylish{font-family:serif;font-style:italic;font-weight:700;color:#047857;font-size:14px;}
+      .sig-line{width:88%;border-top:1.5px solid #475569;margin-bottom:4px;}
+      .sig-name{font-size:12px;font-weight:800;color:#0f172a;line-height:1.2;}
+      .sig-role{font-size:10.5px;color:#64748b;margin-top:1px;}
 
       /* FOOTER NOTE */
-      .slip-foot-note{text-align:center;font-size:11px;color:#64748b;padding-top:8px;border-top:1px dashed #e2e8f0;}
+      .slip-foot-note{text-align:center;font-size:10px;color:#64748b;padding-top:5px;border-top:1px dashed #e2e8f0;}
 
       /* PRINT & FULL A4 RULES */
-      @page{size:A4 portrait;margin:8mm 10mm;}
+      @page{size:A4 portrait;margin:5mm 6mm;}
       @media print{
-        html,body{background:#fff !important;padding:0 !important;margin:0 !important;width:100% !important;}
+        html,body{background:#fff !important;padding:0 !important;margin:0 !important;width:100% !important;height:100% !important;overflow:hidden !important;}
         .slip{
           box-shadow:none !important;
           border-radius:0 !important;
@@ -3891,28 +3853,32 @@ const AdminSalary = () => {
           width:100% !important;
           max-width:100% !important;
           margin:0 !important;
-          padding:18px 22px !important;
-          min-height:275mm !important;
+          padding:10px 14px !important;
+          gap:6px !important;
+          height:100% !important;
+          max-height:285mm !important;
           display:flex !important;
           flex-direction:column !important;
           justify-content:space-between !important;
+          page-break-after:avoid !important;
+          page-break-inside:avoid !important;
+          break-inside:avoid !important;
         }
-        .sig-section{page-break-inside:avoid !important;break-inside:avoid !important;}
-        .net-card{page-break-inside:avoid !important;break-inside:avoid !important;}
-        .ack-card{page-break-inside:avoid !important;break-inside:avoid !important;}
+        .sig-section{page-break-inside:avoid !important;break-inside:avoid !important;margin-top:auto !important;}
+        .net-card, .ack-card, .profile-table, .ledger-col{page-break-inside:avoid !important;break-inside:avoid !important;}
       }
 
       /* MOBILE IN-APP PREVIEW */
       @media screen and (max-width:650px){
         body{padding:4px !important;}
-        .slip{padding:12px 14px !important;border-radius:10px !important;}
-        .top-bar{flex-direction:column !important;align-items:flex-start !important;gap:6px !important;}
-        .header-row{flex-direction:column !important;align-items:flex-start !important;gap:10px !important;}
+        .slip{padding:10px 12px !important;border-radius:10px !important;}
+        .top-bar{flex-direction:column !important;align-items:flex-start !important;gap:4px !important;}
+        .header-row{flex-direction:column !important;align-items:flex-start !important;gap:8px !important;}
         .header-right{border-left:none !important;padding-left:0 !important;text-align:left !important;}
         .ledger-grid{grid-template-columns:1fr !important;}
         .net-card{flex-direction:column !important;align-items:flex-start !important;}
         .net-right{width:100% !important;text-align:center !important;}
-        .sig-grid{grid-template-columns:1fr 1fr !important;row-gap:16px !important;}
+        .sig-grid{grid-template-columns:1fr 1fr !important;row-gap:12px !important;}
       }
     </style></head><body>
     <div class="slip">
@@ -3977,8 +3943,8 @@ const AdminSalary = () => {
               <td class="val">মোট ${slipNum(record.working_days || 0)} দিন (উপস্থিত: <b class="c-green">${slipNum(record.present_days || 0)}</b> • ছুটি: <b>${slipNum(leaveDays)}</b>)</td>
               <td class="lbl">${bn ? 'অনুপস্থিতি ও বিলম্ব:' : 'Absence & Late:'}</td>
               <td class="val">
-                অনুপস্থিতি: <b class="c-red">${slipNum(record.absent_days || 0)} দিন</b>${absentDatesText ? ` <span style="font-size:12px;color:#dc2626;font-weight:700;">[তারিখ: ${absentDatesText}]</span>` : ''}
-                • বিলম্ব: <b>${slipNum(record.late_days || 0)} দিন</b>${lateDatesText ? ` <span style="font-size:12px;color:#b45309;font-weight:700;">[তারিখ: ${slipLateDetails.map((d: any) => fmtSlipDate(d.date)).join(', ')}]</span>` : ''}
+                অনুপস্থিতি: <b class="c-red">${slipNum(record.absent_days || 0)} দিন</b>${absentDatesText ? ` <span style="font-size:11px;color:#dc2626;font-weight:700;">[তারিখ: ${absentDatesText}]</span>` : ''}
+                • বিলম্ব: <b>${slipNum(record.late_days || 0)} দিন</b>${slipLateDetails.length > 0 ? ` <span style="font-size:11px;color:#b45309;font-weight:700;">[তারিখ: ${slipLateDetails.map((d: any) => fmtSlipDate(d.date)).join(', ')}]</span>` : ''}
               </td>
             </tr>
           </tbody>
@@ -4042,14 +4008,18 @@ const AdminSalary = () => {
                 <tr>
                   <td>
                     <div style="font-weight:600;">১. অননুমোদিত অনুপস্থিতি কর্তন (${slipNum(record.absent_days || 0)} দিন)</div>
-                    ${absentDatesText ? `<div style="font-size:11.5px;color:#dc2626;font-weight:700;margin-top:2px;">📅 তারিখ: ${absentDatesText}</div>` : ''}
+                    ${absentDatesText ? `<div style="font-size:10.5px;color:#dc2626;font-weight:700;margin-top:1px;">📅 তারিখ: ${absentDatesText}</div>` : ''}
                   </td>
                   <td class="r ${absDed > 0 ? 'c-red font-bold' : 'muted'}">${slipNum(absDed)}</td>
                 </tr>
                 <tr>
                   <td>
                     <div style="font-weight:600;">২. বিলম্ব উপস্থিতি ও প্রস্থান কর্তন</div>
-                    ${lateDatesText ? `<div style="font-size:11.5px;color:#b45309;font-weight:700;margin-top:2px;">⏱ তারিখ: ${lateDatesText}</div>` : ''}
+                    ${slipLateDetails.length > 0 ? `
+                      <div style="font-size:10.5px;color:#b45309;font-weight:700;margin-top:1px;">
+                        ⏱ ${slipLateDetails.map((d: any) => `${fmtSlipDate(d.date)}${d.checkIn ? ` [${fmtSlip12(d.checkIn)}–${fmtSlip12(d.checkOut)}, বিলম্ব ${fmtSlipMins(d.lateMin)}]` : ` (${fmtSlipMins(d.lateMin)})`}`).join(' • ')}
+                      </div>
+                    ` : (lateDatesText ? `<div style="font-size:10.5px;color:#b45309;font-weight:700;margin-top:1px;">⏱ তারিখ: ${lateDatesText}</div>` : '')}
                   </td>
                   <td class="r ${lateDed > 0 ? 'c-red font-bold' : 'muted'}">${slipNum(lateDed)}</td>
                 </tr>
@@ -4121,8 +4091,6 @@ const AdminSalary = () => {
           “আমি নিম্নস্বাক্ষরকারী স্বীকার করিতেছি যে, ${monthName?.bn || ''} ${toBnDigits(selectedYear)} মাসের যাবতীয় পাওনা বাবদ মোট নিট <strong>৳ ${slipNum(netSalary)}/- (${inWords})</strong> অত্র মাদরাসার হিসাব বিভাগ হইতে পূর্ণ বুঝিয়া পাইলাম। এই মাসের বেতন বাবদ মাদরাসার নিকট আমার আর কোনো বকেয়া বা দাবি নাই।”
         </div>
       </div>
-
-      ${attendanceDetailHtml}
 
       <!-- SECTION 5: COMPLETE 4-TIER OFFICE APPROVAL & SIGNATURE CHAIN -->
       <div class="sig-section">
