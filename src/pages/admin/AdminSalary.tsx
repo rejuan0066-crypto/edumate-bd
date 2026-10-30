@@ -3645,14 +3645,29 @@ const AdminSalary = () => {
       };
     }
 
-    const residentialDutyEarning = dutyBreakdown ? (dutyBreakdown.morningEarning + dutyBreakdown.eveningEarning) : 0;
-    const dutyAllowance = residentialDutyEarning || Number(record.duty_allowance || 0);
-    const examAllowance = Number(record.other_allowance || 0);
-    const bonusTotal = Number(record.bonus || 0) + Number(record.overtime || 0);
-    const grossSalary = baseSalary + dutyAllowance + examAllowance + bonusTotal;
+    const bonus = Number(record.bonus || 0);
+    const overtime = Number(record.overtime || 0);
+    const otherAllowance = Number(record.other_allowance || 0);
+    const grossSalary = baseSalary + bonus + overtime + otherAllowance;
 
     const extraDed = Number(record.duty_deduction || 0) + Number(record.pre_join_deduction || 0) + Number(record.post_resign_deduction || 0) + Number(record.other_deduction || 0);
     const totalDed = absDed + lateDed + savingsAmt + advDed + extraDed;
+
+    // শিক্ষক/কর্মচারীর সর্বমোট জমাকৃত সঞ্চয় স্থিতি (Cumulative Total Savings Balance)
+    const staffSavingsGroup = (groupedSavings as any[]).find((g: any) => g.staff_id === staffMember.id);
+    const configBaseSaved = Number(staffSavingsGroup?.primaryConfig?.total_saved || 0);
+    const staffLedgerEntries = (savingsLedger as any[]).filter(
+      (l: any) => (l.staff_id === staffMember.id || l.savings_id === staffSavingsGroup?.primaryConfig?.id) &&
+                  (!l.month_year || l.month_year <= monthYear)
+    );
+    const ledgerSavedTotal = staffLedgerEntries.reduce((sum: number, l: any) => sum + Number(l.amount || 0), 0);
+    const isCurrentMonthInLedger = staffLedgerEntries.some((l: any) => l.month_year === monthYear);
+    const accumulatedFromLedger = isCurrentMonthInLedger ? ledgerSavedTotal : (ledgerSavedTotal + savingsAmt);
+    const finalTotalSavings = Math.max(
+      accumulatedFromLedger,
+      configBaseSaved,
+      Number(staffSavingsGroup?.totalSaved || 0)
+    );
 
     const slipNum = (n: number) => bn ? toBnDigits(n.toLocaleString()) : n.toLocaleString();
     // Net = মোট পাওনা − মোট কর্তন
@@ -3961,20 +3976,28 @@ const AdminSalary = () => {
             <table class="ledger-tbl">
               <tbody>
                 <tr>
-                  <td>১. অনুমোদিত মূল মাসিক বেতন</td>
+                  <td>১. মূল মাসিক বেতন</td>
                   <td class="r">${slipNum(baseSalary)}</td>
                 </tr>
                 <tr>
-                  <td>২. বিশেষ দায়িত্ব / আবাসিক ভাতা</td>
-                  <td class="r ${dutyAllowance > 0 ? '' : 'muted'}">${slipNum(dutyAllowance)}</td>
+                  <td>
+                    ২. উৎসব / বিশেষ বোনাস
+                  </td>
+                  <td class="r ${bonus > 0 ? '' : 'muted'}">${slipNum(bonus)}</td>
                 </tr>
                 <tr>
-                  <td>৩. পরীক্ষা ও ফলাফল দায়িত্ব সম্মানী</td>
-                  <td class="r ${examAllowance > 0 ? '' : 'muted'}">${slipNum(examAllowance)}</td>
+                  <td>
+                    ৩. ওভারটাইম ও অতিরিক্ত ডিউটি
+                    ${record.overtime_reason ? `<div style="font-size:10px;color:#64748b;">(${record.overtime_reason})</div>` : ''}
+                  </td>
+                  <td class="r ${overtime > 0 ? '' : 'muted'}">${slipNum(overtime)}</td>
                 </tr>
                 <tr>
-                  <td>৪. অতিরিক্ত দায়িত্ব ও বোনাস</td>
-                  <td class="r ${bonusTotal > 0 ? '' : 'muted'}">${slipNum(bonusTotal)}</td>
+                  <td>
+                    ৪. অন্যান্য ভাতা / দায়িত্ব সম্মানী
+                    ${record.other_allowance_note ? `<div style="font-size:10px;color:#64748b;">(${record.other_allowance_note})</div>` : ''}
+                  </td>
+                  <td class="r ${otherAllowance > 0 ? '' : 'muted'}">${slipNum(otherAllowance)}</td>
                 </tr>
               </tbody>
               <tfoot>
@@ -3999,21 +4022,43 @@ const AdminSalary = () => {
                   <td class="r ${absDed > 0 ? 'c-red font-bold' : 'muted'}">${slipNum(absDed)}</td>
                 </tr>
                 <tr>
-                  <td>২. বিলম্ব উপস্থিতির মিনিট কর্তন</td>
+                  <td>২. বিলম্ব উপস্থিতি ও প্রস্থান কর্তন</td>
                   <td class="r ${lateDed > 0 ? 'c-red font-bold' : 'muted'}">${slipNum(lateDed)}</td>
                 </tr>
-                <tr>
-                  <td>৩. কল্যাণ তহবিল ও সঞ্চয় জমা</td>
+                <tr style="${savingsAmt > 0 || finalTotalSavings > 0 ? 'background:#f0f9ff;' : ''}">
+                  <td>
+                    <div style="font-weight: ${savingsAmt > 0 ? '700' : 'normal'}; color: ${savingsAmt > 0 ? '#1e40af' : 'inherit'};">
+                      ৩. বেতন সঞ্চয় জমা (চলতি মাস)
+                    </div>
+                    <div style="font-size:10px; color:#1d4ed8; font-weight:700; margin-top:1px;">
+                      🏦 তহবিলে মোট সঞ্চয় জমা: ৳${slipNum(finalTotalSavings)}
+                    </div>
+                  </td>
                   <td class="r ${savingsAmt > 0 ? 'c-blue font-bold' : 'muted'}">${slipNum(savingsAmt)}</td>
                 </tr>
                 <tr>
-                  <td>৪. পূর্ব গৃহীত অগ্রিম সমন্বয়</td>
+                  <td>৪. পূর্ব গৃহীত অগ্রিম বেতন সমন্বয়</td>
                   <td class="r ${advDed > 0 ? 'c-red font-bold' : 'muted'}">${slipNum(advDed)}</td>
                 </tr>
-                ${extraDed > 0 ? `
+                ${dutyDed > 0 ? `
                 <tr>
-                  <td>৫. অন্যান্য প্রযোজ্য কর্তন</td>
-                  <td class="r c-red font-bold">${slipNum(extraDed)}</td>
+                  <td>৫. আবাসিক ডিউটি শিফট কর্তন</td>
+                  <td class="r c-red font-bold">${slipNum(dutyDed)}</td>
+                </tr>` : ''}
+                ${otherDed > 0 ? `
+                <tr>
+                  <td>${dutyDed > 0 ? '৬' : '৫'}. অন্যান্য কর্তন ${record.other_deduction_note ? `<span style="font-size:10px;color:#64748b;">(${record.other_deduction_note})</span>` : ''}</td>
+                  <td class="r c-red font-bold">${slipNum(otherDed)}</td>
+                </tr>` : ''}
+                ${preJoinDed > 0 ? `
+                <tr>
+                  <td>যোগদান পূর্ববর্তী আনুপাতিক কর্তন (${slipNum(record.pre_join_days || 0)} দিন)</td>
+                  <td class="r c-red font-bold">${slipNum(preJoinDed)}</td>
+                </tr>` : ''}
+                ${postResignDed > 0 ? `
+                <tr>
+                  <td>পদত্যাগ পরবর্তী আনুপাতিক কর্তন (${slipNum(record.post_resign_days || 0)} দিন)</td>
+                  <td class="r c-red font-bold">${slipNum(postResignDed)}</td>
                 </tr>` : ''}
               </tbody>
               <tfoot>
@@ -4033,6 +4078,7 @@ const AdminSalary = () => {
           <div class="net-title">(গ) পরিশোধযোগ্য চূড়ান্ত নিট টাকার পরিমাণ</div>
           <div class="net-words">কথায়: <strong>${inWords}</strong></div>
           <div class="net-mode">পেমেন্ট মাধ্যম: <strong>নগদ ক্যাশ প্রদান</strong></div>
+          ${finalTotalSavings > 0 ? `<div style="font-size:11px; color:#1d4ed8; font-weight:700; margin-top:3px;">🏦 শিক্ষক সঞ্চয় তহবিলে সর্বমোট জমাকৃত ব্যালেন্স: ৳ ${slipNum(finalTotalSavings)}</div>` : ''}
         </div>
         <div class="net-right">
           <div class="net-badge-lbl">পরিশোধিত অংক</div>
