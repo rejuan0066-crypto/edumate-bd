@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { GraduationCap, Lock, User, Loader2, Eye, EyeOff } from 'lucide-react';
+import { GraduationCap, Lock, User, Loader2, Eye, EyeOff, ShieldCheck, ArrowLeft, Mail } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import LanguageToggle from '@/components/LanguageToggle';
 import ForgotPasswordDialog from '@/components/ForgotPasswordDialog';
@@ -232,105 +232,157 @@ const Login = () => {
 
   const loginLogo = settings.favicon_url || settings.logo_url;
   const showLogo = settings.login_show_logo !== false;
-  const faviconShapeClass = settings.favicon_shape === 'circle' ? 'rounded-full' : settings.favicon_shape === 'rounded' ? 'rounded-xl' : 'rounded-none';
+  const faviconShapeClass = settings.favicon_shape === 'circle' ? 'rounded-full' : settings.favicon_shape === 'rounded' ? 'rounded-2xl' : 'rounded-lg';
   const showName = settings.login_show_institution_name !== false;
   const welcomeMsg = language === 'bn'
     ? (settings.login_welcome_bn || 'মাদরাসা ম্যানেজমেন্ট')
     : (settings.login_welcome_en || 'Madrasa Management');
+  const instName = language === 'bn'
+    ? (settings.login_institution_name_bn || settings.institution_name || 'আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানা')
+    : (settings.login_institution_name_en || settings.institution_name_en || 'Al-Arabia Subhania Madrasah & Eyateem Khana');
 
   const bgStyle: React.CSSProperties = settings.login_bg_image_url
     ? { backgroundImage: `url(${settings.login_bg_image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
     : settings.login_bg_color
       ? { background: settings.login_bg_color }
-      : { background: 'var(--gradient-hero)' };
+      : { background: 'radial-gradient(ellipse at 50% 20%, #064e3b 0%, #022c22 65%, #011610 100%)' };
 
   const formStyle: React.CSSProperties = {
     ...(settings.login_form_bg_color ? { backgroundColor: settings.login_form_bg_color } : {}),
-    borderRadius: `${settings.login_form_border_radius ?? 12}px`,
+    ...(settings.login_form_border_radius !== undefined ? { borderRadius: `${settings.login_form_border_radius}px` } : {}),
     ...(settings.login_form_shadow === false ? { boxShadow: 'none' } : {}),
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative" style={bgStyle}>
-      {!settings.login_bg_image_url && <div className="islamic-pattern absolute inset-0" />}
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={bgStyle}>
+      {!settings.login_bg_image_url && (
+        <div className="islamic-pattern absolute inset-0 opacity-15 pointer-events-none" />
+      )}
       {settings.login_bg_image_url && (
         <div className="absolute inset-0 bg-black/40" style={{ backdropFilter: settings.login_bg_blur ? `blur(${settings.login_bg_blur}px)` : undefined }} />
       )}
-      <div className="absolute top-4 right-4 z-10">
+
+      {/* Decorative ambient lights */}
+      <div className="absolute -top-32 -left-32 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="absolute top-5 right-5 z-20">
         <LanguageToggle />
       </div>
-      <div className="card-elevated w-full max-w-md p-8 relative z-10" style={formStyle}>
-        <div className="text-center mb-8">
+
+      <div
+        className="w-full max-w-md bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-emerald-900/10 dark:border-emerald-500/20 shadow-2xl rounded-3xl p-7 sm:p-9 relative z-10 overflow-hidden"
+        style={formStyle}
+      >
+        {/* Accent top gradient bar */}
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-600 via-amber-400 to-emerald-700" />
+
+        <div className="text-center mb-6 pt-2">
+          {/* Institution Crest */}
           {showLogo && (
-            loginLogo ? (
-              <img
-                src={loginLogo}
-                alt="Logo"
-                onError={(e) => {
-                  const img = e.currentTarget;
-                  if (!img.dataset.fallback) {
-                    img.dataset.fallback = 'true';
-                    img.src = '/loader-logo.png';
-                  }
-                }}
-                className={`w-16 h-16 ${faviconShapeClass} object-cover mx-auto mb-4 border-2 border-primary/20`}
-              />
-            ) : (
-              <div className={`w-16 h-16 ${faviconShapeClass} bg-primary mx-auto mb-4 flex items-center justify-center`}>
-                <GraduationCap className="w-9 h-9 text-primary-foreground" />
+            <div className="relative inline-flex items-center justify-center mx-auto mb-3.5 group">
+              <div className="absolute -inset-2 rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-amber-500/20 blur-md" />
+              <div className="relative w-20 h-20 rounded-2xl bg-white shadow-md border border-slate-100 p-1.5 flex items-center justify-center">
+                {loginLogo ? (
+                  <img
+                    src={loginLogo}
+                    alt="Logo"
+                    onError={(e) => {
+                      const img = e.currentTarget;
+                      if (!img.dataset.fallback) {
+                        img.dataset.fallback = 'true';
+                        img.src = '/loader-logo.png';
+                      }
+                    }}
+                    className={`w-full h-full ${faviconShapeClass} object-contain`}
+                  />
+                ) : (
+                  <div className={`w-full h-full ${faviconShapeClass} bg-emerald-800 flex items-center justify-center`}>
+                    <GraduationCap className="w-10 h-10 text-white" />
+                  </div>
+                )}
               </div>
-            )
+            </div>
           )}
+
+          {/* Portal Pill Badge */}
+          <div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/80 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-semibold mb-2.5 shadow-xs">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+              <span>{language === 'bn' ? 'দ্বীনি শিক্ষা ব্যবস্থাপনা পোর্টাল' : 'Islamic Education Portal'}</span>
+            </div>
+          </div>
+
+          {/* Institution Name */}
           {showName && (
             <h1
-              className="text-lg sm:text-xl font-display font-bold text-foreground truncate max-w-full px-2"
-              title={language === 'bn'
-                ? (settings.login_institution_name_bn || settings.institution_name)
-                : (settings.login_institution_name_en || settings.institution_name_en)}
+              className="text-lg sm:text-xl font-display font-extrabold text-slate-900 dark:text-white tracking-tight leading-snug px-1"
+              title={instName}
               style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
             >
-              {language === 'bn'
-                ? (settings.login_institution_name_bn || settings.institution_name)
-                : (settings.login_institution_name_en || settings.institution_name_en)}
+              {instName}
             </h1>
           )}
-          <p className="text-lg font-semibold text-foreground mt-1">{welcomeMsg}</p>
-          <p className="text-sm text-muted-foreground mt-1">{t('signIn')}</p>
+
+          <p className="text-sm font-bold text-emerald-800 dark:text-emerald-400 mt-1">
+            {welcomeMsg}
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            {language === 'bn' ? 'অ্যাকাউন্টে প্রবেশ করতে তথ্য দিন' : 'Enter your credentials to sign in'}
+          </p>
         </div>
 
-        <form className="space-y-5" onSubmit={handleSubmit} autoComplete="off">
+        <form className="space-y-4" onSubmit={handleSubmit} autoComplete="off">
           <div>
-            <Label className="flex items-center gap-2 mb-1.5">
-              <User className="w-4 h-4" /> {t('username')}
+            <Label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+              {t('username')}
             </Label>
-            <Input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={language === 'bn' ? 'ইমেইল এড্রেস' : 'Email address'}
-              className="bg-background"
-              type="email"
-              name="email"
-              autoComplete="off"
-            />
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-700 transition-colors">
+                <Mail className="w-4 h-4" />
+              </div>
+              <Input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={language === 'bn' ? 'ইমেইল এড্রেস লিখুন' : 'Email address'}
+                className="pl-10 h-11 sm:h-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 hover:bg-white focus:bg-white dark:bg-slate-950/50 text-sm font-medium transition-all focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/15"
+                type="email"
+                name="email"
+                autoComplete="off"
+              />
+            </div>
           </div>
+
           <div>
-            <Label className="flex items-center gap-2 mb-1.5">
-              <Lock className="w-4 h-4" /> {t('password')}
-            </Label>
-            <div className="relative">
+            <div className="flex items-center justify-between mb-1.5">
+              <Label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                {t('password')}
+              </Label>
+              <button
+                type="button"
+                onClick={() => setForgotOpen(true)}
+                className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:underline transition"
+              >
+                {t('forgotPassword')}
+              </button>
+            </div>
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-700 transition-colors">
+                <Lock className="w-4 h-4" />
+              </div>
               <Input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(sanitizePasswordInput(e.target.value))}
                 placeholder="••••••••"
-                className="bg-background pr-10"
+                className="pl-10 pr-10 h-11 sm:h-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 hover:bg-white focus:bg-white dark:bg-slate-950/50 text-sm font-medium transition-all focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/15"
                 name="password"
                 autoComplete="new-password"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((s) => !s)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
                 tabIndex={-1}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
@@ -338,25 +390,44 @@ const Login = () => {
               </button>
             </div>
           </div>
-          <div className="flex items-center justify-end text-sm">
-            <button
-              type="button"
-              onClick={() => setForgotOpen(true)}
-              className="text-xs sm:text-sm text-muted-foreground hover:text-foreground hover:underline"
-            >
-              {t('forgotPassword')}
-            </button>
-          </div>
-          <Button type="submit" className="btn-primary-gradient w-full py-5 text-base" disabled={loading}>
-            {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {t('signIn')}
+
+          <Button
+            type="submit"
+            className="w-full h-11 sm:h-12 text-base font-bold text-white rounded-xl shadow-lg transition-all active:scale-[0.99] flex items-center justify-center gap-2 border-0 mt-2"
+            style={{
+              background: 'linear-gradient(135deg, #065f46 0%, #064e3b 50%, #022c22 100%)',
+              boxShadow: '0 8px 24px -4px rgba(6, 78, 59, 0.4)',
+            }}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
+                <span>{language === 'bn' ? 'যাচাই করা হচ্ছে...' : 'Signing in...'}</span>
+              </>
+            ) : (
+              <>
+                <Lock className="w-4 h-4" />
+                <span>{t('signIn')}</span>
+              </>
+            )}
           </Button>
         </form>
 
-        <div className="mt-6 text-center">
-          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
-            ← {language === 'bn' ? 'হোমে ফিরুন' : 'Back to Home'}
-          </Link>
+        <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3 text-center">
+          <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+            <span>{language === 'bn' ? '২৫৬-বিট SSL এনক্রিপশন দ্বারা সুরক্ষিত সংযোগ' : '256-bit SSL Secure Encrypted Connection'}</span>
+          </div>
+          <div>
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-emerald-800 bg-slate-100 hover:bg-slate-200/80 px-4 py-1.5 rounded-full transition-all"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>{language === 'bn' ? 'হোম পেইজে ফিরে যান' : 'Back to Home'}</span>
+            </Link>
+          </div>
         </div>
       </div>
 
