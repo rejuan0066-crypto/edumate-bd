@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { Seo } from '@/components/Seo';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useWebsiteSettings, FALLBACK_LOGO_URL, DEFAULT_MADRASA_BUILDING_URL } from '@/hooks/useWebsiteSettings';
+import { usePrincipalOfficer } from '@/hooks/usePrincipalOfficer';
 import { format } from 'date-fns';
 import FloatingSocialIcons from '@/components/home/FloatingSocialIcons';
 import '@/styles/institutional-home.css';
@@ -87,7 +89,8 @@ const DEPT_DETAILS: Record<string, DeptDetail> = {
 
 const Home = () => {
   const [activeModalKey, setActiveModalKey] = useState<string | null>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { settings } = useWebsiteSettings();
+  const { data: principal } = usePrincipalOfficer();
 
   // Fetch live notices from Supabase
   const { data: notices = [] } = useQuery({
@@ -105,13 +108,47 @@ const Home = () => {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Dynamic institution info from settings
+  const instName = settings.institution_name || 'আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানা';
+  const instNameEn = settings.institution_name_en || 'Al-Arabia Subhania Madrasah & Eyateem Khana';
+  const logoUrl = settings.logo_url || settings.loader_logo_url || FALLBACK_LOGO_URL;
+  const heroImage = settings.hero_bg_image_url || DEFAULT_MADRASA_BUILDING_URL;
+  const heroTitle = settings.hero_title_bn || 'দ্বীনি শিক্ষা ও চারিত্রিক নৈতিকতার এক শীর্ষ বিদ্যাপীঠ';
+  const heroSubtitle = settings.hero_subtitle_bn || 'বিশুদ্ধ কুরআন তিলাওয়াত, তাজবীদ, আন্তর্জাতিক মানের হিফজুল কুরআন প্রশিক্ষণ ও ইসলামিক শিক্ষার এক আদর্শ পরিবেশ।';
+  const phone = settings.phone || '০১৭৪৯-৮৪২৪০১';
+  const email = settings.email || 'info@subhania.edu.bd';
+  const address = settings.address || 'খাজাঞ্চি রোড, এমএইচ সেন্টার, বিশ্বনাথ, সিলেট, বাংলাদেশ';
+  const regNumber = settings.registration_number || '১২৪/সিলেট';
+  const estYear = settings.established_year || '২০০৮';
+
+  // Leaders
+  const adminName = settings.admin_name || 'আলহাজ্ব আব্দুছ ছোবহান';
+  const adminTitle = settings.admin_title_bn || 'প্রতিষ্ঠাতা ও সভাপতি, ম্যানেজিং কমিটি';
+  const adminPhoto = settings.admin_photo_url;
+  const adminMessage = settings.admin_message_bn ||
+    '“অত্র অঞ্চলের ভবিষ্যৎ প্রজন্মকে সহীহ সুন্নাহ ও কুরআনের শিক্ষায় আলোকিত করার লক্ষ্যে এই প্রতিষ্ঠান যাত্রা শুরু করেছিল। আল্লাহর অশেষ রহমতে ও দ্বীনদরদী মানুষের সহযোগিতায় আজ এটি একটি সুপ্রতিষ্ঠিত দ্বীনি কেন্দ্রে রূপ নিয়েছে।”';
+
+  const principalName = principal?.principal_name || settings.principal_name || 'মাওলানা মোহাম্মদ আবুল বশর';
+  const principalTitle = principal?.principal_title_bn || settings.principal_title_bn || 'মুহতামিম ও প্রিন্সিপাল';
+  const principalPhoto = principal?.principal_photo_url || settings.principal_photo_url;
+  const principalMessage = settings.principal_message_bn ||
+    '“যোগ্য শিক্ষক মণ্ডলীর সার্বক্ষণিক তদারকি, নিয়মিত ছবক প্রদান ও আবাসিক শিক্ষার্থীদের চারিত্রিক ও আত্মিক গঠনের জন্য আমরা বদ্ধপরিকর। আমাদের লক্ষ্য প্রতিটি ছাত্রকে আদর্শ হাফেজ ও আলেম হিসেবে গড়ে তোলা।”';
+
+  // Stats
+  const statStudents = settings.stat_students || '৩৫০+';
+  const statTeachers = settings.stat_teachers || '২৫ জন';
+  const statYears = settings.stat_years || '১৮ বছর';
+
+  const announcement = settings.header_style?.topbar_announcement_bn ||
+    '২০২৬-২০২৭ শিক্ষাবর্ষের নূরানী, নাজেরা ও হিফজুল কুরআন শাখায় ভর্তি ফরম বিতরণ চলছে • এতিমখানার লিল্লাহ ফান্ডে অনুদান প্রদান করুন';
+
   const activeDept = activeModalKey ? DEPT_DETAILS[activeModalKey] : null;
 
   return (
     <div className="institutional-root">
       <Seo
-        title="আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানা — অফিশিয়াল প্রাতিষ্ঠানিক ওয়েবসাইট"
-        description="আল আরাবিয়া ছোবহানিয়া হাফিজিয়া মাদরাসার প্রাতিষ্ঠানিক হোমপোর্টাল। সহীহ কুরআন শিক্ষা, ভর্তি, পরীক্ষার ফলাফল ও দ্বীনি দিকনির্দেশনা।"
+        title={`${instName} — অফিশিয়াল প্রাতিষ্ঠানিক ওয়েবসাইট`}
+        description={`${instName} এর প্রাতিষ্ঠানিক হোমপোর্টাল। সহীহ কুরআন শিক্ষা, ভর্তি, পরীক্ষার ফলাফল ও দ্বীনি দিকনির্দেশনা।`}
         path="/"
       />
 
@@ -121,14 +158,14 @@ const Home = () => {
           <div className="top-bar-inner">
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <span className="bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</span>
-              <span className="reg-tag">বেফাক রেজি নং: ১২৪/সিলেট • স্থাপিত: ২০০৮ খ্রি.</span>
+              <span className="reg-tag">বেফাক রেজি নং: {regNumber} • স্থাপিত: {estYear} খ্রি.</span>
             </div>
             <div className="top-right">
-              <a href="tel:01749842401">
-                <i className="fas fa-phone-alt"></i> ০১৭৪৯-৮৪২৪০১
+              <a href={`tel:${phone}`}>
+                <i className="fas fa-phone-alt"></i> {phone}
               </a>
-              <a href="mailto:info@subhania.edu.bd">
-                <i className="fas fa-envelope"></i> info@subhania.edu.bd
+              <a href={`mailto:${email}`}>
+                <i className="fas fa-envelope"></i> {email}
               </a>
               <span>
                 <i className="fas fa-map-marker-alt"></i> বিশ্বনাথ, সিলেট
@@ -147,12 +184,23 @@ const Home = () => {
           <div className="header-inner">
             <Link to="/" className="brand-section">
               <div className="brand-crest">
-                <span>م</span>
+                <img
+                  src={logoUrl}
+                  alt={instName}
+                  onError={(e) => {
+                    const img = e.currentTarget;
+                    if (!img.dataset.fallback) {
+                      img.dataset.fallback = 'true';
+                      img.src = '/loader-logo.png';
+                    }
+                  }}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
               </div>
               <div className="brand-names">
-                <h1>আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানা</h1>
+                <h1>{instName}</h1>
                 <div className="arabic-title">المدرسة العربية السبحانية ودار الأيتام</div>
-                <div className="sub-tag">খাজাঞ্চি রোড, এমএইচ সেন্টার, বিশ্বনাথ, সিলেট, বাংলাদেশ</div>
+                <div className="sub-tag">{address}</div>
               </div>
             </Link>
 
@@ -173,7 +221,16 @@ const Home = () => {
       {/* 3. MULTI-LEVEL INSTITUTIONAL NAVBAR */}
       <nav className="nav-bar">
         <div className="inst-container">
-          <ul className="nav-list">
+          <div className="mobile-nav-toggle-row" style={{ display: 'none', padding: '10px 0', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ color: '#fef08a', fontWeight: 700, fontSize: '14px' }}>মেনু ও নেভিগেশন</span>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '14px' }}
+            >
+              <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i> মেনু
+            </button>
+          </div>
+          <ul className={`nav-list ${mobileMenuOpen ? 'mobile-open' : ''}`}>
             <li className="nav-item active">
               <Link to="/">
                 <i className="fas fa-home"></i> প্রচ্ছদ
@@ -283,7 +340,7 @@ const Home = () => {
             <i className="fas fa-bullhorn"></i> জরুরি বিজ্ঞপ্তি:
           </span>
           <marquee behavior="scroll" direction="left" scrollamount="4" className="ticker-content">
-            ২০২৬-২০২৭ শিক্ষাবর্ষের নূরানী, নাজেরা ও হিফজুল কুরআন শাখায় ভর্তি ফরম বিতরণ চলছে • আগামী ১৫ই নভেম্বর সাময়িক পরীক্ষা শুরু হবে • এতিমখানার লিল্লাহ ফান্ডে অনুদান প্রদান করুন
+            {announcement}
           </marquee>
         </div>
       </div>
@@ -296,14 +353,19 @@ const Home = () => {
             <div className="campus-spotlight">
               <div className="spotlight-media">
                 <img
-                  src="https://images.unsplash.com/photo-1590076215667-875d4ef2d7ee?w=1200"
-                  alt="Campus Building"
+                  src={heroImage}
+                  alt={instName}
+                  onError={(e) => {
+                    const img = e.currentTarget;
+                    if (!img.dataset.fallback) {
+                      img.dataset.fallback = 'true';
+                      img.src = DEFAULT_MADRASA_BUILDING_URL;
+                    }
+                  }}
                 />
                 <div className="spotlight-caption">
-                  <h2>দ্বীনি শিক্ষা ও চারিত্রিক নৈতিকতার এক শীর্ষ বিদ্যাপীঠ</h2>
-                  <p>
-                    বিশুদ্ধ কুরআন তিলাওয়াত, তাজবীদ, আন্তর্জাতিক মানের হিফজুল কুরআন প্রশিক্ষণ ও ইসলামিক শিক্ষার এক আদর্শ পরিবেশ।
-                  </p>
+                  <h2>{heroTitle}</h2>
+                  <p>{heroSubtitle}</p>
                 </div>
               </div>
               <div className="spotlight-strip">
@@ -403,18 +465,22 @@ const Home = () => {
         <div className="leadership-grid">
           {/* President */}
           <div className="leader-box">
-            <img
-              src="https://images.unsplash.com/photo-1544717305-2782549b5136?w=200"
-              alt="President"
-              className="leader-portrait"
-            />
+            {adminPhoto ? (
+              <img
+                src={adminPhoto}
+                alt={adminName}
+                className="leader-portrait"
+              />
+            ) : (
+              <div className="leader-portrait" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', color: '#064e3b', fontSize: '32px' }}>
+                <i className="fas fa-user-tie"></i>
+              </div>
+            )}
             <div className="leader-info-content">
               <div className="leader-tag">প্রতিষ্ঠাতা ও সভাপতি</div>
-              <div className="leader-name">আলহাজ্ব আব্দুছ ছোবহান</div>
-              <div className="leader-desig">ম্যানেজিং কমিটি, আল আরাবিয়া ছোবহানিয়া মাদরাসা</div>
-              <p className="leader-quote">
-                “অত্র অঞ্চলের ভবিষ্যৎ প্রজন্মকে সহীহ সুন্নাহ ও কুরআনের শিক্ষায় আলোকিত করার লক্ষ্যে এই প্রতিষ্ঠান যাত্রা শুরু করেছিল। আল্লাহর অশেষ রহমতে ও দ্বীনদরদী মানুষের সহযোগিতায় আজ এটি একটি সুপ্রতিষ্ঠিত দ্বীনি কেন্দ্রে রূপ নিয়েছে।”
-              </p>
+              <div className="leader-name">{adminName}</div>
+              <div className="leader-desig">{adminTitle}</div>
+              <p className="leader-quote">{adminMessage}</p>
               <Link to="/about#admin-message" className="leader-btn-more">
                 সম্পূর্ণ বাণী পড়ুন <i className="fas fa-angle-double-right"></i>
               </Link>
@@ -423,18 +489,22 @@ const Home = () => {
 
           {/* Principal */}
           <div className="leader-box">
-            <img
-              src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200"
-              alt="Principal"
-              className="leader-portrait"
-            />
+            {principalPhoto ? (
+              <img
+                src={principalPhoto}
+                alt={principalName}
+                className="leader-portrait"
+              />
+            ) : (
+              <div className="leader-portrait" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', color: '#064e3b', fontSize: '32px' }}>
+                <i className="fas fa-user-graduate"></i>
+              </div>
+            )}
             <div className="leader-info-content">
               <div className="leader-tag">মুহতামিম ও প্রিন্সিপাল</div>
-              <div className="leader-name">মাওলানা মোহাম্মদ আবুল বশর</div>
-              <div className="leader-desig">শিক্ষা ও অভ্যন্তরীণ প্রশাসন বিভাগ</div>
-              <p className="leader-quote">
-                “যোগ্য শিক্ষক মণ্ডলীর সার্বক্ষণিক তদারকি, নিয়মিত ছবক প্রদান ও আবাসিক শিক্ষার্থীদের চারিত্রিক ও আত্মিক গঠনের জন্য আমরা বদ্ধপরিকর। আমাদের লক্ষ্য প্রতিটি ছাত্রকে আদর্শ হাফেজ ও আলেম হিসেবে গড়ে তোলা।”
-              </p>
+              <div className="leader-name">{principalName}</div>
+              <div className="leader-desig">{principalTitle}</div>
+              <p className="leader-quote">{principalMessage}</p>
               <Link to="/about#principal-message" className="leader-btn-more">
                 সম্পূর্ণ বাণী পড়ুন <i className="fas fa-angle-double-right"></i>
               </Link>
@@ -632,11 +702,11 @@ const Home = () => {
             </div>
             <div className="stats-grid-2x2">
               <div className="stat-single">
-                <div className="num">৩৫০+</div>
+                <div className="num">{statStudents}</div>
                 <div className="lbl">বর্তমান শিক্ষার্থী</div>
               </div>
               <div className="stat-single">
-                <div className="num">২৫ জন</div>
+                <div className="num">{statTeachers}</div>
                 <div className="lbl">অনুমোদিত শিক্ষক</div>
               </div>
               <div className="stat-single">
@@ -644,7 +714,7 @@ const Home = () => {
                 <div className="lbl">হিফজ সমাপনী হাফেজ</div>
               </div>
               <div className="stat-single">
-                <div className="num">১৮ বছর</div>
+                <div className="num">{statYears}</div>
                 <div className="lbl">ধারাবাহিক ঐতিহ্য</div>
               </div>
             </div>
@@ -671,7 +741,7 @@ const Home = () => {
               সরাসরি মাদরাসার ব্যাংক হিসাব:
             </div>
             <div style={{ fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>
-              হিসাব নাম: আল আরাবিয়া ছোবহানিয়া মাদরাসা
+              হিসাব নাম: {instName}
             </div>
             <div style={{ fontFamily: 'monospace', fontSize: '14px', color: '#1e3a8a', fontWeight: 700 }}>
               হিসাব নং: ২০৫০ ১২৩ ৪৫৬ ৭৮৯ ০১
@@ -680,7 +750,7 @@ const Home = () => {
               ইসলামী ব্যাংক বাংলাদেশ লিমিটেড, বিশ্বনাথ শাখা, সিলেট।
             </div>
             <div style={{ marginTop: '8px', fontSize: '12px', fontWeight: 700, color: '#dc2626' }}>
-              বিকাশ / নগদ (মার্চেন্ট): ০১৭১২-৩৪৫৬৭৮
+              বিকাশ / নগদ (মার্চেন্ট): {phone}
             </div>
           </div>
         </div>
@@ -691,13 +761,13 @@ const Home = () => {
         <div className="inst-container">
           <div className="footer-columns">
             <div className="footer-col">
-              <h4>আল আরাবিয়া ছোবহানিয়া মাদরাসা</h4>
+              <h4>{instName}</h4>
               <p style={{ lineHeight: 1.6, marginBottom: '12px', color: '#94a3b8' }}>
                 বিশুদ্ধ কুরআন শিক্ষাদান ও সমাজের সুবিধাবঞ্চিত এতিম শিশুদের দ্বীনি ও নৈতিক শিক্ষায় গড়ে তোলার একটি ঐতিহ্যবাহী শীর্ষ প্রতিষ্ঠান।
               </p>
               <div style={{ color: '#e2e8f0', fontWeight: 600 }}>
                 <i className="fas fa-phone-alt" style={{ color: 'var(--gold)', marginRight: '6px' }}></i>
-                হেল্পলাইন: ০১৭৪৯-৮৪২৪০১
+                হেল্পলাইন: {phone}
               </div>
             </div>
 
@@ -754,12 +824,10 @@ const Home = () => {
             <div className="footer-col">
               <h4>দাপ্তরিক ঠিকানা</h4>
               <p style={{ color: '#94a3b8', lineHeight: 1.6, marginBottom: '10px' }}>
-                খাজাঞ্চি রোড, এমএইচ সেন্টার,
-                <br />
-                বিশ্বনাথ, সিলেট — ৩১৩১, বাংলাদেশ।
+                {address}
               </p>
               <div style={{ color: '#94a3b8' }}>
-                ইমেইল: info@subhania.edu.bd
+                ইমেইল: {email}
                 <br />
                 ওয়েব: www.subhania.edu.bd
               </div>
@@ -767,7 +835,7 @@ const Home = () => {
           </div>
 
           <div className="copyright-strip">
-            © ২০২৬ আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানা • সর্বস্বত্ব সংরক্ষিত • কারিগরি সহায়তায়: এডুমেট বিডি
+            © ২০২৬ {instName} • সর্বস্বত্ব সংরক্ষিত • কারিগরি সহায়তায়: এডুমেট বিডি
           </div>
         </div>
       </footer>
@@ -839,7 +907,7 @@ const Home = () => {
 
             <div className="modal-bottom-bar">
               <span style={{ fontSize: '12px', color: '#64748b' }}>
-                ভর্তি তথ্য ও সহায়তায়: ০১৭৪৯-৮৪২৪০১
+                ভর্তি তথ্য ও সহায়তায়: {phone}
               </span>
               <Link to="/admission" className="btn-apply-direct" onClick={() => setActiveModalKey(null)}>
                 অনলাইন আবেদন করুন <i className="fas fa-arrow-right"></i>

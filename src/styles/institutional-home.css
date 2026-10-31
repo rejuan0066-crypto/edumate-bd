@@ -292,7 +292,7 @@
 .institutional-root .spotlight-media {
   position: relative;
   height: 350px;
-  background: #022c22;
+  background: linear-gradient(135deg, #022c22 0%, #064e3b 100%);
   overflow: hidden;
 }
 .institutional-root .spotlight-media img {
@@ -914,6 +914,9 @@
 
 /* RESPONSIVE */
 @media (max-width: 900px) {
+  .institutional-root .mobile-nav-toggle-row { display: flex !important; }
+  .institutional-root .nav-list { display: none !important; }
+  .institutional-root .nav-list.mobile-open { display: flex !important; }
   .institutional-root .hero-grid,
   .institutional-root .leadership-grid,
   .institutional-root .portal-hub-row,
