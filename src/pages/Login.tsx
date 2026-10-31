@@ -249,7 +249,7 @@ const Login = () => {
         <div className="islamic-pattern absolute inset-0 opacity-15 pointer-events-none" />
       )}
       {settings.login_bg_image_url && (
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+        <div className="absolute inset-0 bg-black/45 backdrop-blur-[3px]" />
       )}
 
       {/* Language Toggle in top right */}
@@ -257,153 +257,165 @@ const Login = () => {
         <LanguageToggle />
       </div>
 
-      {/* High-Contrast Clean White Modern Card */}
+      {/* Modern Wave Card inspired by user mockup */}
       <div
-        className="w-full max-w-[420px] bg-white rounded-2xl shadow-2xl p-7 sm:p-8 border border-slate-200 text-slate-900 relative z-10"
+        className="w-full max-w-[340px] sm:max-w-[360px] bg-white rounded-[36px] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.4)] overflow-hidden relative z-10 border border-slate-100"
       >
-        <div className="text-center mb-6">
-          {/* Circular Crest Logo */}
+        {/* Top Organic Green Curved Header */}
+        <div
+          className="relative text-white text-center pt-8 pb-14 px-6 overflow-hidden"
+          style={{
+            background: 'linear-gradient(155deg, #064e3b 0%, #0d6b49 55%, #10875c 100%)',
+            borderBottomLeftRadius: '65px 45px',
+            borderBottomRightRadius: '150px 100px',
+          }}
+        >
+          {/* Subtle decorative radial circles */}
+          <div
+            className="absolute -top-10 -right-10 w-44 h-44 rounded-full pointer-events-none opacity-20"
+            style={{ background: 'radial-gradient(circle, #ffffff 0%, transparent 70%)' }}
+          />
+
+          {/* White Circular Logo Container */}
           {showLogo && (
-            <div
-              className="w-16 h-16 rounded-full p-1 bg-white shadow-md border-2 border-emerald-600/30 mx-auto mb-3 flex items-center justify-center flex-shrink-0"
-              style={{ width: '64px', height: '64px' }}
-            >
-              {loginLogo ? (
-                <img
-                  src={loginLogo}
-                  alt="Logo"
-                  onError={(e) => {
-                    const img = e.currentTarget;
-                    if (!img.dataset.fallback) {
-                      img.dataset.fallback = 'true';
-                      img.src = '/loader-logo.png';
-                    }
-                  }}
-                  className="w-full h-full rounded-full object-contain"
-                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                />
-              ) : (
-                <div className="w-full h-full rounded-full bg-emerald-800 flex items-center justify-center">
-                  <GraduationCap className="w-8 h-8 text-white" />
-                </div>
-              )}
+            <div className="relative z-10">
+              <div
+                className="w-20 h-20 rounded-full bg-white shadow-xl mx-auto mb-3 p-1.5 flex items-center justify-center flex-shrink-0"
+                style={{ width: '80px', height: '80px' }}
+              >
+                {loginLogo ? (
+                  <img
+                    src={loginLogo}
+                    alt="Logo"
+                    onError={(e) => {
+                      const img = e.currentTarget;
+                      if (!img.dataset.fallback) {
+                        img.dataset.fallback = 'true';
+                        img.src = '/loader-logo.png';
+                      }
+                    }}
+                    className="w-full h-full rounded-full object-contain"
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                  />
+                ) : (
+                  <div className="w-full h-full rounded-full bg-emerald-800 flex items-center justify-center">
+                    <GraduationCap className="w-10 h-10 text-white" />
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
-          {/* Secure Portal Pill Badge */}
-          <div className="flex justify-center mb-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-              {language === 'bn' ? 'নিরাপদ পোর্টাল সাইন ইন' : 'Secure Portal Sign In'}
-            </span>
-          </div>
-
-          {/* Institution Name */}
+          {/* Brand Name under Logo */}
           {showName && (
             <h1
-              className="text-lg sm:text-xl font-bold font-display text-slate-900 leading-snug px-1"
+              className="text-sm sm:text-base font-bold font-display text-white tracking-wide leading-snug px-2 drop-shadow-xs"
               title={instName}
               style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
             >
               {instName}
             </h1>
           )}
-
-          <p className="text-xs text-slate-500 mt-1 font-medium">
-            {language === 'bn' ? 'মাদরাসা ম্যানেজমেন্ট সিস্টেম' : 'Madrasa Management System'}
-          </p>
         </div>
 
-        {/* Form with comfortable height inputs */}
-        <form className="space-y-4" onSubmit={handleSubmit} autoComplete="off">
-          <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-700">
-              {t('username')}
-            </label>
-            <div className="relative flex items-center">
-              <div className="absolute left-3.5 text-slate-400 pointer-events-none z-20 flex items-center">
-                <User className="w-5 h-5" />
-              </div>
+        {/* Form Body on White background */}
+        <div className="px-6 sm:px-7 pt-5 pb-7 relative">
+          {/* Welcome Text */}
+          <div className="text-center mb-5">
+            <h2 className="text-xl sm:text-2xl font-black text-[#0d6b49] tracking-tight">
+              {language === 'bn' ? 'স্বাগতম' : 'welcome'}
+            </h2>
+            <p className="text-[11px] sm:text-xs text-slate-400 font-medium mt-0.5">
+              {language === 'bn' ? 'আপনার অ্যাকাউন্টে প্রবেশ করতে সাইন ইন করুন' : 'Login in to your account to continue'}
+            </p>
+          </div>
+
+          <form className="space-y-3.5" onSubmit={handleSubmit} autoComplete="off">
+            {/* Username / Email Pill Input */}
+            <div>
               <input
                 type="email"
                 name="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder={language === 'bn' ? 'ইমেইল এড্রেস লিখুন' : 'Email address'}
+                placeholder={language === 'bn' ? 'ইমেইল এড্রেস........' : 'Email........'}
                 autoComplete="off"
-                className="w-full h-12 pl-11 pr-4 rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-sm font-medium transition shadow-xs"
-                style={{ height: '48px' }}
+                className="w-full h-11 px-5 rounded-full bg-[#dceee6] border border-[#c2e2d4] text-[#064e3b] placeholder:text-[#064e3b]/55 focus:outline-none focus:ring-2 focus:ring-[#0d6b49]/30 text-xs sm:text-sm font-medium transition text-center sm:text-left"
+                style={{ height: '44px' }}
               />
             </div>
-          </div>
 
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="block text-xs font-bold text-slate-700">
-                {t('password')}
-              </label>
-              <button
-                type="button"
-                onClick={() => setForgotOpen(true)}
-                className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:underline transition"
-              >
-                {t('forgotPassword')}
-              </button>
-            </div>
+            {/* Password Pill Input */}
             <div className="relative flex items-center">
-              <div className="absolute left-3.5 text-slate-400 pointer-events-none z-20 flex items-center">
-                <Lock className="w-5 h-5" />
-              </div>
               <input
                 type={showPassword ? 'text' : 'password'}
                 name="password"
                 value={password}
                 onChange={(e) => setPassword(sanitizePasswordInput(e.target.value))}
-                placeholder="••••••••"
+                placeholder={language === 'bn' ? 'পাসওয়ার্ড........' : 'Password........'}
                 autoComplete="new-password"
-                className="w-full h-12 pl-11 pr-11 rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-sm font-medium transition shadow-xs"
-                style={{ height: '48px' }}
+                className="w-full h-11 pl-5 pr-10 rounded-full bg-[#dceee6] border border-[#c2e2d4] text-[#064e3b] placeholder:text-[#064e3b]/55 focus:outline-none focus:ring-2 focus:ring-[#0d6b49]/30 text-xs sm:text-sm font-medium transition text-center sm:text-left"
+                style={{ height: '44px' }}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((s) => !s)}
-                className="absolute right-3 text-slate-400 hover:text-slate-700 z-20 p-1 transition"
+                className="absolute right-3.5 text-[#064e3b]/60 hover:text-[#064e3b] z-20 p-1 transition"
                 tabIndex={-1}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
+
+            {/* Forgot password */}
+            <div className="text-center pt-0.5">
+              <button
+                type="button"
+                onClick={() => setForgotOpen(true)}
+                className="text-[11px] text-slate-500 hover:text-[#0d6b49] hover:underline font-medium transition"
+              >
+                {language === 'bn' ? 'পাসওয়ার্ড ভুলে গেছেন?' : 'Forgot your password?'}
+              </button>
+            </div>
+
+            {/* Pill LOGIN Button */}
+            <div className="text-center pt-1.5">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-36 sm:w-40 h-10.5 rounded-full text-white font-extrabold text-xs tracking-wider uppercase shadow-md shadow-emerald-900/25 hover:shadow-lg active:scale-95 transition-all bg-[#0d7a55] hover:bg-[#064e3b] cursor-pointer disabled:opacity-70 flex items-center justify-center mx-auto"
+                style={{ height: '42px' }}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
+                    <span>{language === 'bn' ? 'যাচাই...' : 'LOGIN...'}</span>
+                  </>
+                ) : (
+                  <span>{language === 'bn' ? 'লগইন' : 'LOGIN'}</span>
+                )}
+              </button>
+            </div>
+          </form>
+
+          {/* Back to Home Link */}
+          <div className="text-center mt-3.5 relative z-10">
+            <Link
+              to="/"
+              className="text-xs text-slate-500 hover:text-[#0d7a55] font-semibold transition inline-flex items-center gap-1"
+            >
+              <span>← {language === 'bn' ? 'মূল ওয়েবসাইটে ফিরুন' : 'Back to website'}</span>
+            </Link>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full h-12 mt-2 rounded-xl text-white font-bold text-base shadow-md hover:shadow-lg active:scale-[0.99] transition-all flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-800 cursor-pointer disabled:opacity-70"
-            style={{ height: '48px' }}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span>{language === 'bn' ? 'যাচাই করা হচ্ছে...' : 'Signing in...'}</span>
-              </>
-            ) : (
-              <>
-                <span>{t('signIn')}</span>
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </button>
-        </form>
-
-        <div className="mt-5 pt-3.5 border-t border-slate-200 text-center">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-emerald-700 transition"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>{language === 'bn' ? 'মাদরাসার মূল ওয়েবসাইটে ফিরুন' : 'Back to main website'}</span>
-          </Link>
+          {/* Bottom-Left Accent Curve (matching mockup) */}
+          <div
+            className="absolute -bottom-8 -left-8 w-20 h-20 rounded-full pointer-events-none"
+            style={{
+              background: 'linear-gradient(135deg, #10875c 0%, #064e3b 100%)',
+            }}
+          />
         </div>
       </div>
 
