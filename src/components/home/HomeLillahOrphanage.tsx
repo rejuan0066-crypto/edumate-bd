@@ -1,12 +1,27 @@
 import React from 'react';
-import { HeartHandshake, Landmark, Smartphone, PhoneCall, Sparkles, ArrowRight } from 'lucide-react';
+import { HeartHandshake, Landmark, Smartphone, ArrowRight, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 
 interface HomeLillahOrphanageProps {
   bn?: boolean;
 }
 
 export const HomeLillahOrphanage: React.FC<HomeLillahOrphanageProps> = ({ bn = true }) => {
+  const { settings } = useWebsiteSettings();
+
+  const isEnabled = Boolean(
+    settings?.donation_bank_enabled &&
+    (settings?.bank_account_number?.trim() || settings?.bank_mobile_banking?.trim())
+  );
+
+  if (!isEnabled) {
+    return null;
+  }
+
+  const instName = settings?.institution_name || 'আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানা';
+  const phone = settings?.phone || '';
+
   return (
     <section className="py-6 sm:py-8">
       <div className="container mx-auto px-4">
@@ -26,14 +41,14 @@ export const HomeLillahOrphanage: React.FC<HomeLillahOrphanageProps> = ({ bn = t
               <h3 className="text-xl sm:text-2xl font-bold text-amber-950 font-display flex items-center gap-2">
                 <HeartHandshake className="w-6 h-6 text-amber-700 shrink-0" />
                 {bn
-                  ? 'এতিমখানা ও লিল্লাহ বোর্ডিং ফান্ডে সহযোগিতা করুন'
-                  : 'Support Orphanage & Lillah Boarding Fund'}
+                  ? (settings?.donation_title_bn || 'এতিমখানা ও লিল্লাহ বোর্ডিং ফান্ডে সহযোগিতা করুন')
+                  : (settings?.donation_title_en || 'Support Orphanage & Lillah Boarding Fund')}
               </h3>
 
               <p className="text-amber-900/90 text-sm sm:text-base leading-relaxed">
                 {bn
-                  ? 'অত্র মাদরাসার এতিমখানায় বহু পিতৃহীন ও অতিদরিদ্র শিশু সম্পূর্ণ বিনামূল্যে বাসস্থান, পুষ্টিকর খাবার ও ইলমে ওহীর শিক্ষা গ্রহণ করছে। আপনার যাকাত, ফিতরা ও সদকা দিয়ে এই মাসুম শিশুদের ভবিষ্যৎ গড়তে শরিক হোন।'
-                  : 'Many orphaned and underprivileged children are studying Quran and Islamic knowledge free of cost with lodging and nourishment. Join in building their future through your Zakat, Fitra, and Sadaqah.'}
+                  ? (settings?.donation_desc_bn || 'অত্র মাদরাসার এতিমখানায় বহু পিতৃহীন ও অতিদরিদ্র শিশু সম্পূর্ণ বিনামূল্যে বাসস্থান, পুষ্টিকর খাবার ও ইলমে ওহীর শিক্ষা গ্রহণ করছে। আপনার যাকাত, ফিতরা ও সদকা দিয়ে এই মাসুম শিশুদের ভবিষ্যৎ গড়তে শরিক হোন।')
+                  : (settings?.donation_desc_en || 'Many orphaned and underprivileged children are studying Quran and Islamic knowledge free of cost with lodging and nourishment. Join in building their future through your Zakat, Fitra, and Sadaqah.')}
               </p>
 
               <div className="pt-2 flex flex-wrap gap-3">
@@ -65,37 +80,47 @@ export const HomeLillahOrphanage: React.FC<HomeLillahOrphanageProps> = ({ bn = t
                       {bn ? 'সরাসরি মাদরাসার ব্যাংক হিসাব' : 'Official Madrasah Bank Account'}
                     </div>
                     <div className="text-sm font-bold text-slate-900">
-                      {bn ? 'আল আরাবিয়া ছোবহানিয়া মাদরাসা' : 'Al-Arabia Subhania Madrasah'}
+                      {settings?.bank_account_name || instName}
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-1 text-xs sm:text-sm">
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-slate-500">{bn ? 'হিসাব নম্বর:' : 'Account No:'}</span>
-                    <span className="font-mono font-bold text-emerald-800 text-sm tracking-wider">
-                      ২০৫০ ১২৩ ৪৫৬ ৭৮৯ ০১
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between text-xs text-slate-600">
-                    <span>{bn ? 'ব্যাংক ও শাখা:' : 'Bank & Branch:'}</span>
-                    <span className="font-medium text-slate-800 text-right">
-                      {bn ? 'ইসলামী ব্যাংক বাংলাদেশ, বিশ্বনাথ শাখা' : 'Islami Bank BD, Biswanath Branch'}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between text-xs text-slate-600">
-                    <span>{bn ? 'রাউটিং নং:' : 'Routing No:'}</span>
-                    <span className="font-mono text-slate-700">125500123</span>
-                  </div>
+                  {settings?.bank_account_number && (
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-slate-500">{bn ? 'হিসাব নম্বর:' : 'Account No:'}</span>
+                      <span className="font-mono font-bold text-emerald-800 text-sm tracking-wider">
+                        {settings.bank_account_number}
+                      </span>
+                    </div>
+                  )}
+                  {settings?.bank_name && (
+                    <div className="flex items-baseline justify-between text-xs text-slate-600">
+                      <span>{bn ? 'ব্যাংক ও শাখা:' : 'Bank & Branch:'}</span>
+                      <span className="font-medium text-slate-800 text-right">
+                        {settings.bank_name}{settings?.bank_branch_name ? `, ${settings.bank_branch_name}` : ''}
+                      </span>
+                    </div>
+                  )}
+                  {settings?.bank_routing_number && (
+                    <div className="flex items-baseline justify-between text-xs text-slate-600">
+                      <span>{bn ? 'রাউটিং নং:' : 'Routing No:'}</span>
+                      <span className="font-mono text-slate-700">{settings.bank_routing_number}</span>
+                    </div>
+                  )}
                 </div>
 
-                <div className="pt-2 border-t border-amber-100 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5 font-bold text-rose-700">
-                    <Smartphone className="w-4 h-4" />
-                    <span>{bn ? 'বিকাশ / নগদ (মার্চেন্ট):' : 'bKash / Nagad:'}</span>
+                {(settings?.bank_mobile_banking || phone) && (
+                  <div className="pt-2 border-t border-amber-100 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-1.5 font-bold text-rose-700">
+                      <Smartphone className="w-4 h-4" />
+                      <span>{bn ? 'মোবাইল ব্যাংকিং:' : 'Mobile Banking:'}</span>
+                    </div>
+                    <span className="font-mono font-bold text-slate-900">
+                      {settings?.bank_mobile_banking || phone}
+                    </span>
                   </div>
-                  <span className="font-mono font-bold text-slate-900">০১৭১২-৩৪৫৬৭৮</span>
-                </div>
+                )}
               </div>
             </div>
           </div>

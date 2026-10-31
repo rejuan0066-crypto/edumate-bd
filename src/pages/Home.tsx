@@ -277,6 +277,12 @@ const Home = () => {
       ? notices[0].title_bn || notices[0].title
       : `${instName}-এ আপনাকে স্বাগতম • কুরআন ও সুন্নাহর আলোকে পরিচালিত একটি আদর্শ দ্বীনি শিক্ষা প্রতিষ্ঠান`);
 
+  // Only show bank & lillah donation banner if enabled AND real account number or mobile banking is configured
+  const showBankSection = Boolean(
+    settings?.donation_bank_enabled &&
+    (settings?.bank_account_number?.trim() || settings?.bank_mobile_banking?.trim())
+  );
+
   return (
     <div className="institutional-root">
       <Seo
@@ -689,38 +695,53 @@ const Home = () => {
       </section>
 
       {/* 10. ORPHANAGE & LILLAH SPONSORSHIP SECTION */}
-      <section className="inst-container">
-        <div className="lillah-wrap">
-          <div className="lillah-text">
-            <h3>
-              <HeartHandshake className="w-5 h-5 inline mr-1.5 text-amber-800" />
-              এতিমখানা ও লিল্লাহ বোর্ডিং ফান্ডে সহযোগিতা করুন
-            </h3>
-            <p>
-              অত্র মাদরাসার এতিমখানায় বহু পিতৃহীন ও অতিদরিদ্র শিশু সম্পূর্ণ বিনামূল্যে বাসস্থান, পুষ্টিকর খাবার ও ইলমে ওহীর শিক্ষা গ্রহণ করছে। আপনার যাকাত, ফিতরা ও সদকা দিয়ে এই মাসুম শিশুদের ভবিষ্যৎ গড়তে শরিক হোন।
-            </p>
-          </div>
+      {showBankSection && (
+        <section className="inst-container">
+          <div className="lillah-wrap">
+            <div className="lillah-text">
+              <h3>
+                <HeartHandshake className="w-5 h-5 inline mr-1.5 text-amber-800" />
+                {settings?.donation_title_bn || 'এতিমখানা ও লিল্লাহ বোর্ডিং ফান্ডে সহযোগিতা করুন'}
+              </h3>
+              <p>
+                {settings?.donation_desc_bn ||
+                  'অত্র মাদরাসার এতিমখানায় বহু পিতৃহীন ও অতিদরিদ্র শিশু সম্পূর্ণ বিনামূল্যে বাসস্থান, পুষ্টিকর খাবার ও ইলমে ওহীর শিক্ষা গ্রহণ করছে। আপনার যাকাত, ফিতরা ও সদকা দিয়ে এই মাসুম শিশুদের ভবিষ্যৎ গড়তে শরিক হোন।'}
+              </p>
+            </div>
 
-          <div className="bank-account-card">
-            <div className="bank-name">
-              <Landmark className="w-4 h-4 inline mr-1.5 text-amber-600" />
-              সরাসরি মাদরাসার ব্যাংক হিসাব:
-            </div>
-            <div style={{ fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>
-              হিসাব নাম: {instName}
-            </div>
-            <div style={{ fontFamily: 'monospace', fontSize: '14px', color: '#1e3a8a', fontWeight: 700 }}>
-              হিসাব নং: ২০৫০ ১২৩ ৪৫৬ ৭৮৯ ০১
-            </div>
-            <div style={{ fontSize: '12px', color: '#475569', marginTop: '2px' }}>
-              ইসলামী ব্যাংক বাংলাদেশ লিমিটেড, বিশ্বনাথ শাখা, সিলেট।
-            </div>
-            <div style={{ marginTop: '8px', fontSize: '12px', fontWeight: 700, color: '#dc2626' }}>
-              বিকাশ / নগদ (মার্চেন্ট): {phone}
+            <div className="bank-account-card">
+              <div className="bank-name">
+                <Landmark className="w-4 h-4 inline mr-1.5 text-amber-600" />
+                সরাসরি মাদরাসার ব্যাংক হিসাব:
+              </div>
+              <div style={{ fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>
+                হিসাব নাম: {settings?.bank_account_name?.trim() || instName}
+              </div>
+              {settings?.bank_account_number?.trim() && (
+                <div style={{ fontFamily: 'monospace', fontSize: '14px', color: '#1e3a8a', fontWeight: 700 }}>
+                  হিসাব নং: {settings.bank_account_number.trim()}
+                </div>
+              )}
+              {settings?.bank_name?.trim() && (
+                <div style={{ fontSize: '12px', color: '#475569', marginTop: '2px' }}>
+                  {settings.bank_name.trim()}
+                  {settings?.bank_branch_name?.trim() ? (', ' + settings.bank_branch_name.trim()) : ''}
+                </div>
+              )}
+              {settings?.bank_routing_number?.trim() && (
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '1px' }}>
+                  রাউটিং নং: {settings.bank_routing_number.trim()}
+                </div>
+              )}
+              {settings?.bank_mobile_banking?.trim() && (
+                <div style={{ marginTop: '8px', fontSize: '12px', fontWeight: 700, color: '#dc2626' }}>
+                  {settings.bank_mobile_banking.trim()}
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* 11. GRAND INSTITUTIONAL FOOTER */}
       <InstitutionalFooter onDepartmentSelect={(key) => handleDeptSelectById(key)} />

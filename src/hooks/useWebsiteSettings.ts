@@ -285,6 +285,18 @@ export interface WebsiteSettings {
   global_footer_font_size: number;      // pt — footer text size on prints
   signatory_edit_super_admin_only: boolean; // when true, only super_admin can edit principal/accountant/verifier
   background_style: BackgroundStyle;
+  // Official Bank & Lillah Donation Account Settings
+  donation_bank_enabled?: boolean;
+  donation_title_bn?: string;
+  donation_title_en?: string;
+  donation_desc_bn?: string;
+  donation_desc_en?: string;
+  bank_name?: string;
+  bank_account_name?: string;
+  bank_account_number?: string;
+  bank_branch_name?: string;
+  bank_routing_number?: string;
+  bank_mobile_banking?: string;
 }
 
 const DEFAULT_SETTINGS: WebsiteSettings = {
@@ -333,6 +345,17 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   stat_students: '',
   stat_teachers: '',
   stat_years: '',
+  donation_bank_enabled: false,
+  donation_title_bn: 'এতিমখানা ও লিল্লাহ বোর্ডিং ফান্ডে সহযোগিতা করুন',
+  donation_title_en: 'Support Orphanage & Lillah Boarding Fund',
+  donation_desc_bn: 'অত্র মাদরাসার এতিমখানায় বহু পিতৃহীন ও অতিদরিদ্র শিশু সম্পূর্ণ বিনামূল্যে বাসস্থান, পুষ্টিকর খাবার ও ইলমে ওহীর শিক্ষা গ্রহণ করছে। আপনার যাকাত, ফিতরা ও সদকা দিয়ে এই মাসুম শিশুদের ভবিষ্যৎ গড়তে শরিক হোন।',
+  donation_desc_en: 'Many orphaned and underprivileged children are studying Quran and Islamic knowledge free of cost with lodging and nourishment. Join in building their future through your Zakat, Fitra, and Sadaqah.',
+  bank_name: '',
+  bank_account_name: '',
+  bank_account_number: '',
+  bank_branch_name: '',
+  bank_routing_number: '',
+  bank_mobile_banking: '',
   social_links: [
     { platform: 'Facebook', url: '', icon: 'facebook' },
     { platform: 'YouTube', url: '', icon: 'youtube' },
@@ -469,8 +492,8 @@ const parseSettingsData = (data: any[] | null): WebsiteSettings => {
   return result;
 };
 
-const CACHE_KEY = 'website-settings-cache-v8';
-const CACHE_TIME_KEY = 'website-settings-cache-time-v8';
+const CACHE_KEY = 'website-settings-cache-v9';
+const CACHE_TIME_KEY = 'website-settings-cache-time-v9';
 
 const readCache = (): WebsiteSettings | null => {
   try {

@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect } from 'react';
 import { usePersistentTab } from '@/hooks/usePersistentTab';
-import { Globe, Save, Image, Type, Layout, BarChart3, Plus, Trash2, Eye, ImageIcon, Share2, PanelTop, PanelBottom, Navigation, Menu, RefreshCw, CheckCircle, AlertCircle, Database, FileText, ChevronUp, ChevronDown, EyeOff, Link2, List, SlidersHorizontal, LogIn, Loader2, GraduationCap, BookOpen, Briefcase, Search, CheckCircle2 } from 'lucide-react';
+import { Globe, Save, Image, Type, Layout, BarChart3, Plus, Trash2, Eye, ImageIcon, Share2, PanelTop, PanelBottom, Navigation, Menu, RefreshCw, CheckCircle, AlertCircle, Database, FileText, ChevronUp, ChevronDown, EyeOff, Link2, List, SlidersHorizontal, LogIn, Loader2, GraduationCap, BookOpen, Briefcase, Search, CheckCircle2, HeartHandshake, Landmark, Building2, CreditCard } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import WebsitePageBuilder from '@/components/admin/WebsitePageBuilder';
@@ -624,6 +624,9 @@ const AdminWebsite = () => {
             </TabsTrigger>
             <TabsTrigger value="content" className="text-xs py-2 px-2.5">
               <Type className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'কন্টেন্ট' : 'Content'}
+            </TabsTrigger>
+            <TabsTrigger value="donation" className="text-xs py-2 px-2.5">
+              <HeartHandshake className="w-3.5 h-3.5 mr-1 text-amber-600" /> {language === 'bn' ? 'দান ও ব্যাংক একাউন্ট' : 'Donation & Bank'}
             </TabsTrigger>
             <TabsTrigger value="gallery" className="text-xs py-2 px-2.5">
               <ImageIcon className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'গ্যালারি' : 'Gallery'}
@@ -1316,6 +1319,254 @@ const AdminWebsite = () => {
                 </div>
                 <Button className="btn-primary-gradient" onClick={() => saveSection(['about_content_bn', 'about_content_en', 'about_mission_bn', 'about_mission_en', 'about_vision_bn', 'about_vision_en', 'about_image_url'])} disabled={saving}>
                   <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'সংরক্ষণ' : 'Save'}
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Donation & Bank Account Tab */}
+          <TabsContent value="donation">
+            <div className="space-y-6">
+              {/* Status / Toggle Card */}
+              <div className="card-elevated p-5 space-y-4 border-l-4 border-l-amber-600">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <h3 className="font-display font-bold text-foreground flex items-center gap-2">
+                      <HeartHandshake className="w-5 h-5 text-amber-600" />
+                      {language === 'bn' ? 'এতিমখানা, লিল্লাহ বোর্ডিং ও ব্যাংক একাউন্ট সেটিংস' : 'Orphanage, Lillah & Bank Account Settings'}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {language === 'bn'
+                        ? 'হোমপেইজে মাদরাসার অফিসিয়াল ব্যাংক হিসাব ও লিল্লাহ বোর্ডিং দান বক্স প্রদর্শন নিয়ন্ত্রণ করুন।'
+                        : 'Manage official madrasah bank account and orphanage lillah donation box displayed on homepage.'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant={form.donation_bank_enabled ? 'default' : 'secondary'} className={form.donation_bank_enabled ? 'bg-emerald-600 hover:bg-emerald-700' : ''}>
+                      {form.donation_bank_enabled
+                        ? (language === 'bn' ? '✓ সক্রিয় (হোমপেইজে দেখাবে)' : '✓ Enabled (Visible on Home)')
+                        : (language === 'bn' ? '✕ নিষ্ক্রিয় (লুকানো থাকবে)' : '✕ Disabled (Hidden)')}
+                    </Badge>
+                    <Switch
+                      checked={Boolean(form.donation_bank_enabled)}
+                      onCheckedChange={(checked) => updateField('donation_bank_enabled', checked)}
+                    />
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-xs text-amber-900 dark:text-amber-200 space-y-1">
+                  <div className="font-semibold flex items-center gap-1.5">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                    {language === 'bn' ? 'কার্যপ্রণালী ও নিয়মাবলী:' : 'Instructions & Visibility Rules:'}
+                  </div>
+                  <ul className="list-disc list-inside space-y-0.5 text-[11.5px] opacity-90">
+                    <li>{language === 'bn' ? 'সুইচ চালু থাকলে এবং নিচে ব্যাংক হিসাব নম্বর প্রদান করা হলেই কেবল হোমপেইজে ব্যাংক বক্সটি দৃশ্যমান হবে।' : 'Only shown on the homepage when this switch is ON and account number is provided.'}</li>
+                    <li>{language === 'bn' ? 'একাউন্ট নম্বর ফাঁকা থাকলে বা সুইচ বন্ধ রাখলে কোনো ডেমো বা ভুল একাউন্ট সাইটে দেখানো হবে না।' : 'If account number is empty or switch is OFF, no fake or demo account details will be shown.'}</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Bank Account Details Card */}
+              <div className="card-elevated p-5 space-y-4">
+                <h3 className="font-display font-bold text-foreground flex items-center gap-2">
+                  <Landmark className="w-4 h-4 text-primary" />
+                  {language === 'bn' ? 'মাদরাসার অফিসিয়াল ব্যাংক হিসাবের তথ্য' : 'Official Madrasah Bank Account Details'}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label>{language === 'bn' ? 'ব্যাংকের নাম' : 'Bank Name'}</Label>
+                    <Input
+                      className="bg-background mt-1"
+                      placeholder={language === 'bn' ? 'যেমন: ইসলামী ব্যাংক বাংলাদেশ লিমিটেড' : 'e.g. Islami Bank Bangladesh Ltd'}
+                      value={form.bank_name || ''}
+                      onChange={e => updateField('bank_name', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>{language === 'bn' ? 'হিসাবের নাম (Account Name)' : 'Account Name'}</Label>
+                    <Input
+                      className="bg-background mt-1"
+                      placeholder={form.institution_name || (language === 'bn' ? 'যেমন: আল আরাবিয়া ছোবহানিয়া মাদরাসা' : 'e.g. Madrasah Name')}
+                      value={form.bank_account_name || ''}
+                      onChange={e => updateField('bank_account_name', e.target.value)}
+                    />
+                    <span className="text-[11px] text-muted-foreground">{language === 'bn' ? 'খালি রাখলে স্বয়ংক্রিয়ভাবে মাদরাসার নাম ব্যবহৃত হবে' : 'Defaults to institution name if left empty'}</span>
+                  </div>
+                  <div>
+                    <Label className="font-bold text-emerald-800 dark:text-emerald-400">
+                      {language === 'bn' ? 'হিসাব নম্বর (Account Number) *' : 'Account Number *'}
+                    </Label>
+                    <Input
+                      className="bg-background mt-1 font-mono font-bold"
+                      placeholder="যেমন: ২০৫০ ১২৩ ৪৫৬ ৭৮৯ ০১"
+                      value={form.bank_account_number || ''}
+                      onChange={e => updateField('bank_account_number', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>{language === 'bn' ? 'শাখার নাম ও ঠিকানা' : 'Branch Name & Location'}</Label>
+                    <Input
+                      className="bg-background mt-1"
+                      placeholder={language === 'bn' ? 'যেমন: বিশ্বনাথ শাখা, সিলেট' : 'e.g. Bishwanath Branch, Sylhet'}
+                      value={form.bank_branch_name || ''}
+                      onChange={e => updateField('bank_branch_name', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>{language === 'bn' ? 'রাউটিং নম্বর (ঐচ্ছিক)' : 'Routing Number (Optional)'}</Label>
+                    <Input
+                      className="bg-background mt-1 font-mono"
+                      placeholder="যেমন: ১২৫২৬০৬১৮"
+                      value={form.bank_routing_number || ''}
+                      onChange={e => updateField('bank_routing_number', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label className="font-bold text-rose-700 dark:text-rose-400">
+                      {language === 'bn' ? 'মোবাইল ব্যাংকিং (বিকাশ / নগদ / রকেট)' : 'Mobile Banking (bKash / Nagad / Rocket)'}
+                    </Label>
+                    <Input
+                      className="bg-background mt-1"
+                      placeholder={language === 'bn' ? 'যেমন: বিকাশ / নগদ (মার্চেন্ট): 01749842401' : 'e.g. bKash / Nagad (Merchant): 01749842401'}
+                      value={form.bank_mobile_banking || ''}
+                      onChange={e => updateField('bank_mobile_banking', e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Fund Title and Description Card */}
+              <div className="card-elevated p-5 space-y-4">
+                <h3 className="font-display font-bold text-foreground">
+                  {language === 'bn' ? 'ব্যানার শিরোনাম ও ফান্ড বর্ণনা' : 'Banner Title & Fund Description'}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label>{language === 'bn' ? 'শিরোনাম (বাংলা)' : 'Title (Bangla)'}</Label>
+                    <Input
+                      className="bg-background mt-1 font-semibold"
+                      value={form.donation_title_bn ?? 'এতিমখানা ও লিল্লাহ বোর্ডিং ফান্ডে সহযোগিতা করুন'}
+                      onChange={e => updateField('donation_title_bn', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>{language === 'bn' ? 'শিরোনাম (ইংরেজি)' : 'Title (English)'}</Label>
+                    <Input
+                      className="bg-background mt-1"
+                      value={form.donation_title_en ?? 'Support Orphanage & Lillah Boarding Fund'}
+                      onChange={e => updateField('donation_title_en', e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label>{language === 'bn' ? 'ফান্ড বিবরণ (বাংলা)' : 'Fund Description (Bangla)'}</Label>
+                  <Textarea
+                    className="bg-background mt-1 min-h-[90px]"
+                    value={form.donation_desc_bn ?? 'অত্র মাদরাসার এতিমখানায় বহু পিতৃহীন ও অতিদরিদ্র শিশু সম্পূর্ণ বিনামূল্যে বাসস্থান, পুষ্টিকর খাবার ও ইলমে ওহীর শিক্ষা গ্রহণ করছে। আপনার যাকাত, ফিতরা ও সদকা দিয়ে এই মাসুম শিশুদের ভবিষ্যৎ গড়তে শরিক হোন।'}
+                    onChange={e => updateField('donation_desc_bn', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>{language === 'bn' ? 'ফান্ড বিবরণ (ইংরেজি)' : 'Fund Description (English)'}</Label>
+                  <Textarea
+                    className="bg-background mt-1 min-h-[90px]"
+                    value={form.donation_desc_en ?? 'Many orphaned and underprivileged children are studying Quran and Islamic knowledge free of cost with lodging and nourishment. Join in building their future through your Zakat, Fitra, and Sadaqah.'}
+                    onChange={e => updateField('donation_desc_en', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Live Preview Card */}
+              <div className="card-elevated p-5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-display font-bold text-foreground flex items-center gap-2">
+                    <Eye className="w-4 h-4 text-emerald-600" />
+                    {language === 'bn' ? 'লাইভ প্রিভিউ (হোমপেইজে যেমন দেখাবে)' : 'Live Preview (As seen on Home)'}
+                  </h3>
+                  {!form.donation_bank_enabled && (
+                    <Badge variant="outline" className="text-amber-600 border-amber-400">
+                      {language === 'bn' ? 'সুইচ বন্ধ থাকায় এটি হোমপেইজে প্রদর্শিত হবে না' : 'Will NOT show on homepage because switch is OFF'}
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="rounded-2xl border-2 border-amber-300/80 bg-gradient-to-br from-amber-50/90 via-amber-100/40 to-yellow-50/80 p-5 sm:p-6 shadow-xs">
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
+                    <div className="lg:col-span-7 space-y-2">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-200/70 border border-amber-300 text-amber-900 text-[11px] font-bold">
+                        <HeartHandshake className="w-3.5 h-3.5 text-amber-700" />
+                        {language === 'bn' ? 'সদকায়ে জারিয়া ও লিল্লাহ ফান্ড' : 'Sadaqah Jariyah & Lillah Fund'}
+                      </div>
+                      <h4 className="text-lg sm:text-xl font-bold text-amber-950 font-display">
+                        {form.donation_title_bn || 'এতিমখানা ও লিল্লাহ বোর্ডিং ফান্ডে সহযোগিতা করুন'}
+                      </h4>
+                      <p className="text-xs sm:text-sm text-amber-900/90 leading-relaxed">
+                        {form.donation_desc_bn || 'অত্র মাদরাসার এতিমখানায় বহু পিতৃহীন ও অতিদরিদ্র শিশু সম্পূর্ণ বিনামূল্যে বাসস্থান, পুষ্টিকর খাবার ও ইলমে ওহীর শিক্ষা গ্রহণ করছে। আপনার যাকাত, ফিতরা ও সদকা দিয়ে এই মাসুম শিশুদের ভবিষ্যৎ গড়তে শরিক হোন।'}
+                      </p>
+                    </div>
+
+                    <div className="lg:col-span-5">
+                      <div className="rounded-xl border border-amber-300 bg-white/95 p-4 shadow-sm space-y-2">
+                        <div className="flex items-center gap-2 pb-2 border-b border-amber-100">
+                          <Landmark className="w-4 h-4 text-amber-600 shrink-0" />
+                          <div className="text-xs font-semibold text-amber-800">
+                            {language === 'bn' ? 'সরাসরি মাদরাসার ব্যাংক হিসাব:' : 'Official Madrasah Bank Account:'}
+                          </div>
+                        </div>
+                        <div className="text-sm font-bold text-slate-900">
+                          হিসাব নাম: {form.bank_account_name || form.institution_name || 'মাদরাসার নাম'}
+                        </div>
+                        <div className="font-mono text-sm font-bold text-blue-900">
+                          হিসাব নং: {form.bank_account_number || (language === 'bn' ? '(হিসাব নম্বর প্রবেশ করান)' : '(Enter account number)')}
+                        </div>
+                        {form.bank_name && (
+                          <div className="text-xs text-slate-600">
+                            {form.bank_name}{form.bank_branch_name ? (', ' + form.bank_branch_name) : ''}
+                          </div>
+                        )}
+                        {form.bank_routing_number && (
+                          <div className="text-[11px] text-slate-500 font-mono">
+                            রাউটিং নং: {form.bank_routing_number}
+                          </div>
+                        )}
+                        {(form.bank_mobile_banking || form.phone) && (
+                          <div className="text-xs font-bold text-rose-600 pt-1 border-t border-slate-100 mt-1">
+                            {form.bank_mobile_banking || `বিকাশ / নগদ (মার্চেন্ট): ${form.phone}`}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between pt-2">
+                <Button
+                  className="btn-primary-gradient"
+                  onClick={() =>
+                    saveSection([
+                      'donation_bank_enabled',
+                      'donation_title_bn',
+                      'donation_title_en',
+                      'donation_desc_bn',
+                      'donation_desc_en',
+                      'bank_name',
+                      'bank_account_name',
+                      'bank_account_number',
+                      'bank_branch_name',
+                      'bank_routing_number',
+                      'bank_mobile_banking',
+                    ])
+                  }
+                  disabled={saving}
+                >
+                  {saving ? (
+                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4 mr-1" />
+                  )}
+                  {language === 'bn' ? 'দান ও ব্যাংক একাউন্ট সেটিংস সংরক্ষণ' : 'Save Donation & Bank Settings'}
                 </Button>
               </div>
             </div>
