@@ -1,0 +1,942 @@
+@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Amiri:wght@700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css');
+
+.institutional-root {
+  --primary: #064e3b;          /* Forest Institutional Emerald */
+  --primary-dark: #022c22;     /* Royal Dark Emerald */
+  --primary-light: #0d6e53;
+  --gold: #b45309;             /* Prestigious Bronze-Gold */
+  --gold-light: #f59e0b;
+  --gold-bg: #fffbeb;
+  --surface: #ffffff;
+  --bg: #f8fafc;
+  --border: #e2e8f0;
+  --border-dark: #cbd5e1;
+  --text: #0f172a;
+  --text-muted: #475569;
+  --text-light: #64748b;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 12px -2px rgba(6, 78, 59, 0.08);
+  --shadow-lg: 0 12px 28px -4px rgba(6, 78, 59, 0.12);
+
+  font-family: 'Hind Siliguri', sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+.institutional-root * {
+  box-sizing: border-box;
+}
+
+.institutional-root .inst-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* 1. TOP OFFICIAL DIRECTORY BAR */
+.institutional-root .top-bar {
+  background: var(--primary-dark);
+  color: #e2e8f0;
+  font-size: 12.5px;
+  padding: 6px 0;
+  border-bottom: 2px solid var(--gold);
+}
+.institutional-root .top-bar-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.institutional-root .bismillah {
+  font-family: 'Amiri', serif;
+  font-size: 16px;
+  color: #fef08a;
+}
+.institutional-root .reg-tag {
+  background: rgba(255,255,255,0.1);
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  color: #e2e8f0;
+}
+.institutional-root .top-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.institutional-root .top-right a {
+  color: #cbd5e1;
+  text-decoration: none;
+  transition: 0.15s;
+}
+.institutional-root .top-right a:hover { color: #fff; }
+
+/* 2. GRAND INSTITUTIONAL HEADER */
+.institutional-root .site-header {
+  background: #ffffff;
+  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+}
+.institutional-root .header-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.institutional-root .brand-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-decoration: none;
+}
+.institutional-root .brand-crest {
+  width: 76px;
+  height: 76px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  border: 2px solid var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 36px;
+  box-shadow: 0 4px 12px rgba(6, 78, 59, 0.2);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.institutional-root .brand-names h1 {
+  font-size: 25px;
+  font-weight: 800;
+  color: var(--primary-dark);
+  line-height: 1.25;
+  letter-spacing: -0.3px;
+  margin: 0;
+}
+.institutional-root .brand-names .arabic-title {
+  font-family: 'Amiri', serif;
+  font-size: 18px;
+  color: var(--gold);
+  line-height: 1.2;
+}
+.institutional-root .brand-names .sub-tag {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  font-weight: 500;
+}
+.institutional-root .header-cta-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.institutional-root .btn-portal-outline {
+  border: 1.5px solid var(--primary);
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 13.5px;
+  padding: 9px 16px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+}
+.institutional-root .btn-portal-outline:hover {
+  background: var(--primary);
+  color: #fff;
+}
+.institutional-root .btn-portal-solid {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13.5px;
+  padding: 9px 18px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 6px rgba(6, 78, 59, 0.2);
+}
+.institutional-root .btn-portal-solid:hover { background: var(--primary-dark); }
+
+/* 3. MULTI-LEVEL INSTITUTIONAL NAVBAR */
+.institutional-root .nav-bar {
+  background: var(--primary);
+  border-top: 1px solid rgba(255,255,255,0.15);
+  border-bottom: 2px solid var(--primary-dark);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+}
+.institutional-root .nav-list {
+  display: flex;
+  list-style: none;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+}
+.institutional-root .nav-item {
+  position: relative;
+}
+.institutional-root .nav-item > a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 14.5px;
+  font-weight: 600;
+  padding: 13px 18px;
+  border-right: 1px solid rgba(255,255,255,0.12);
+  transition: 0.15s;
+  white-space: nowrap;
+}
+.institutional-root .nav-item.active > a,
+.institutional-root .nav-item:hover > a {
+  background: rgba(0,0,0,0.22);
+  color: #fef08a;
+}
+/* Dropdown */
+.institutional-root .dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #ffffff;
+  min-width: 230px;
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--gold);
+  box-shadow: var(--shadow-lg);
+  border-radius: 0 0 6px 6px;
+  list-style: none;
+  z-index: 101;
+  padding: 0;
+  margin: 0;
+}
+.institutional-root .nav-item:hover .dropdown-menu {
+  display: block;
+}
+.institutional-root .dropdown-menu li a {
+  display: block;
+  padding: 10px 18px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 500;
+  border-bottom: 1px solid #f1f5f9;
+  transition: 0.15s;
+  white-space: nowrap;
+}
+.institutional-root .dropdown-menu li a:hover {
+  background: #f0fdf4;
+  color: var(--primary);
+  padding-left: 22px;
+}
+
+/* 4. OFFICIAL NOTICE TICKER */
+.institutional-root .ticker-bar {
+  background: #ffffff;
+  border-bottom: 1px solid var(--border);
+  padding: 8px 0;
+}
+.institutional-root .ticker-inner {
+  display: flex;
+  align-items: center;
+}
+.institutional-root .ticker-label {
+  background: #dc2626;
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  margin-right: 14px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.institutional-root .ticker-content {
+  color: var(--text);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+/* 5. GRAND HERO / CAMPUS SPOTLIGHT ROW */
+.institutional-root .hero-wrap {
+  margin-top: 18px;
+}
+.institutional-root .hero-grid {
+  display: grid;
+  grid-template-columns: 8fr 4fr;
+  gap: 20px;
+}
+.institutional-root .campus-spotlight {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+}
+.institutional-root .spotlight-media {
+  position: relative;
+  height: 350px;
+  background: #022c22;
+  overflow: hidden;
+}
+.institutional-root .spotlight-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.85;
+}
+.institutional-root .spotlight-caption {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 26px 30px;
+  background: linear-gradient(to top, rgba(2,44,34,0.98) 0%, rgba(2,44,34,0.65) 65%, transparent 100%);
+  color: #fff;
+}
+.institutional-root .spotlight-caption h2 {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.25;
+  color: #ffffff;
+  margin: 0;
+}
+.institutional-root .spotlight-caption p {
+  font-size: 14px;
+  color: #e2e8f0;
+  margin-top: 6px;
+  max-width: 650px;
+  line-height: 1.5;
+}
+.institutional-root .spotlight-strip {
+  background: #f8fafc;
+  padding: 12px 22px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+.institutional-root .spotlight-strip .quote {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+/* NOTICE DESK CARD */
+.institutional-root .official-notice-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.institutional-root .desk-head {
+  background: #f1f5f9;
+  border-bottom: 2px solid var(--primary);
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.institutional-root .desk-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.institutional-root .desk-link {
+  font-size: 12.5px;
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+.institutional-root .desk-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  flex: 1;
+}
+.institutional-root .desk-table tr {
+  border-bottom: 1px solid #f1f5f9;
+  transition: 0.15s;
+}
+.institutional-root .desk-table tr:hover { background: #f8fafc; }
+.institutional-root .desk-table td {
+  padding: 11px 14px;
+  vertical-align: middle;
+}
+.institutional-root .col-date {
+  width: 80px;
+  font-size: 11.5px;
+  color: var(--text-light);
+  font-family: monospace;
+  font-weight: 600;
+}
+.institutional-root .col-notice-text a {
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+  line-height: 1.4;
+  display: block;
+}
+.institutional-root .col-notice-text a:hover { color: var(--primary); }
+.institutional-root .new-badge {
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: 6px;
+}
+.institutional-root .desk-foot {
+  padding: 10px 16px;
+  background: #f8fafc;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+.institutional-root .btn-all-notices {
+  display: block;
+  width: 100%;
+  background: var(--primary);
+  color: #fff;
+  padding: 7px 0;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  text-align: center;
+}
+
+/* 6. EXECUTIVE LEADERSHIP ROW */
+.institutional-root .sec-header-wrap {
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 8px;
+  margin-top: 36px;
+  margin-bottom: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.institutional-root .sec-heading {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--primary-dark);
+  position: relative;
+  margin: 0;
+}
+.institutional-root .sec-heading::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 0;
+  width: 45px;
+  height: 2px;
+  background: var(--primary);
+}
+.institutional-root .leadership-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.institutional-root .leader-box {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 22px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+.institutional-root .leader-portrait {
+  width: 100px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--border-dark);
+  background: #f1f5f9;
+  flex-shrink: 0;
+}
+.institutional-root .leader-info-content { flex: 1; }
+.institutional-root .leader-tag {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+.institutional-root .leader-name {
+  font-size: 17.5px;
+  font-weight: 800;
+  color: var(--primary-dark);
+  line-height: 1.25;
+}
+.institutional-root .leader-desig {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.institutional-root .leader-quote {
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.6;
+  text-align: justify;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.institutional-root .leader-btn-more {
+  margin-top: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--primary);
+  text-decoration: none;
+  display: inline-block;
+  cursor: pointer;
+}
+
+/* 7. ACADEMIC DEPARTMENTS DIRECTORY (CLICKABLE TO OPEN DETAILS) */
+.institutional-root .dept-interactive-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-top: 14px;
+}
+.institutional-root .dept-interactive-card {
+  background: #ffffff;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 22px 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.institutional-root .dept-interactive-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+.institutional-root .badge-dept {
+  align-self: flex-start;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+.institutional-root .dept-interactive-card h4 {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--primary-dark);
+  margin-bottom: 6px;
+}
+.institutional-root .dept-interactive-card p {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.institutional-root .dept-action-text {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 8. CAMPUS INFRASTRUCTURE & FACILITIES */
+.institutional-root .facilities-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-top: 14px;
+}
+.institutional-root .facility-box {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  transition: 0.2s;
+}
+.institutional-root .facility-box:hover {
+  border-color: var(--primary-light);
+  box-shadow: var(--shadow-sm);
+}
+.institutional-root .facility-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: #f0fdf4;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+  border: 1px solid #bbf7d0;
+}
+.institutional-root .facility-content h5 {
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.institutional-root .facility-content p {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* 9. ONLINE SERVICES & STATS ROW */
+.institutional-root .portal-hub-row {
+  margin-top: 36px;
+  display: grid;
+  grid-template-columns: 8fr 4fr;
+  gap: 20px;
+}
+.institutional-root .portal-services-box {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 22px;
+  box-shadow: var(--shadow-sm);
+}
+.institutional-root .services-btn-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 14px;
+}
+.institutional-root .service-btn-item {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 10px;
+  text-align: center;
+  text-decoration: none;
+  color: var(--text);
+  background: #fafafa;
+  transition: all 0.2s;
+}
+.institutional-root .service-btn-item:hover {
+  background: #ffffff;
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+.institutional-root .s-icon {
+  font-size: 22px;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.institutional-root .s-title {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* STATS BOX */
+.institutional-root .institutional-stats-box {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff;
+  border-radius: 8px;
+  padding: 22px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 4px 12px rgba(6, 78, 59, 0.2);
+}
+.institutional-root .stats-title {
+  font-weight: 700;
+  font-size: 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+  padding-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.institutional-root .stats-grid-2x2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 14px;
+}
+.institutional-root .stat-single {
+  border-left: 2px solid var(--gold-light);
+  padding-left: 10px;
+}
+.institutional-root .stat-single .num {
+  font-size: 24px;
+  font-weight: 800;
+  color: #fef08a;
+  line-height: 1.1;
+  font-family: monospace;
+}
+.institutional-root .stat-single .lbl {
+  font-size: 12px;
+  color: #e2e8f0;
+  margin-top: 2px;
+}
+
+/* 10. ORPHANAGE & LILLAH SPONSORSHIP (এতিমখানা লিল্লাহ ফান্ড) */
+.institutional-root .lillah-wrap {
+  margin-top: 36px;
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+  border: 1.5px solid #fde68a;
+  border-radius: 8px;
+  padding: 24px 28px;
+  display: grid;
+  grid-template-columns: 7fr 5fr;
+  gap: 24px;
+  align-items: center;
+}
+.institutional-root .lillah-text h3 {
+  font-size: 20px;
+  font-weight: 800;
+  color: #92400e;
+  margin-bottom: 6px;
+}
+.institutional-root .lillah-text p {
+  font-size: 13.5px;
+  color: #78350f;
+  line-height: 1.6;
+}
+.institutional-root .bank-account-card {
+  background: #ffffff;
+  border: 1px solid #fcd34d;
+  border-radius: 6px;
+  padding: 14px 18px;
+  font-size: 13px;
+  box-shadow: 0 2px 6px rgba(180, 83, 9, 0.08);
+}
+.institutional-root .bank-account-card .bank-name {
+  font-weight: 800;
+  color: var(--primary-dark);
+  font-size: 14px;
+}
+
+/* 11. GRAND INSTITUTIONAL FOOTER */
+.institutional-root .site-footer {
+  background: var(--primary-dark);
+  color: #cbd5e1;
+  border-top: 3px solid var(--gold);
+  margin-top: 50px;
+  padding-top: 40px;
+  font-size: 13px;
+}
+.institutional-root .footer-columns {
+  display: grid;
+  grid-template-columns: 4fr 3fr 2.5fr 2.5fr;
+  gap: 30px;
+  padding-bottom: 30px;
+}
+.institutional-root .footer-col h4 {
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 14px;
+  position: relative;
+  padding-bottom: 6px;
+}
+.institutional-root .footer-col h4::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 25px; height: 2px;
+  background: var(--gold);
+}
+.institutional-root .footer-col ul { list-style: none; padding: 0; margin: 0; }
+.institutional-root .footer-col ul li { margin-bottom: 8px; }
+.institutional-root .footer-col ul li a {
+  color: #cbd5e1;
+  text-decoration: none;
+  transition: 0.15s;
+}
+.institutional-root .footer-col ul li a:hover { color: #ffffff; text-decoration: underline; }
+.institutional-root .copyright-strip {
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding: 14px 0;
+  text-align: center;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* MODAL: DEPARTMENT DETAILS */
+.institutional-root .modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.institutional-root .modal-card,
+.institutional-root .modal-container {
+  background: #ffffff;
+  border-radius: 12px;
+  max-width: 840px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);
+  animation: modalIn 0.2s ease-out;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.96) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.institutional-root .modal-header-bar {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff;
+  padding: 18px 24px;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.institutional-root .modal-header-bar h3 { font-size: 21px; font-weight: 800; color: #fff; margin: 0; }
+.institutional-root .modal-header-bar p { font-size: 12.5px; color: #e2e8f0; margin-top: 4px; }
+.institutional-root .btn-close-x {
+  background: rgba(255,255,255,0.15);
+  border: none;
+  color: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+.institutional-root .modal-content-area { padding: 24px; }
+.institutional-root .specs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.institutional-root .spec-card {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 16px;
+}
+.institutional-root .spec-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+.institutional-root .spec-val {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+.institutional-root .syllabus-box-modal {
+  background: #ffffff;
+  border: 1px solid var(--border-dark);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+.institutional-root .syllabus-box-head {
+  background: #f1f5f9;
+  padding: 10px 16px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  border-bottom: 1px solid var(--border-dark);
+}
+.institutional-root .syllabus-box-body {
+  padding: 14px 20px;
+  font-size: 13.5px;
+}
+.institutional-root .syllabus-box-body li {
+  margin-bottom: 6px;
+  color: #334155;
+}
+.institutional-root .modal-bottom-bar {
+  background: #f8fafc;
+  border-top: 1px solid var(--border);
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+.institutional-root .btn-apply-direct {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 10px 22px;
+  border-radius: 6px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .institutional-root .hero-grid,
+  .institutional-root .leadership-grid,
+  .institutional-root .portal-hub-row,
+  .institutional-root .lillah-wrap,
+  .institutional-root .footer-columns {
+    grid-template-columns: 1fr;
+  }
+  .institutional-root .dept-interactive-grid,
+  .institutional-root .facilities-grid,
+  .institutional-root .services-btn-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .institutional-root .brand-section { flex-direction: column; align-items: flex-start; }
+  .institutional-root .header-inner { flex-direction: column; align-items: flex-start; gap: 14px; }
+  .institutional-root .nav-list { flex-direction: column; }
+  .institutional-root .nav-item > a { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .institutional-root .dropdown-menu { position: static; width: 100%; box-shadow: none; border-radius: 0; }
+}
+@media (max-width: 600px) {
+  .institutional-root .dept-interactive-grid,
+  .institutional-root .facilities-grid,
+  .institutional-root .services-btn-grid {
+    grid-template-columns: 1fr;
+  }
+  .institutional-root .specs-grid { grid-template-columns: 1fr; }
+}
