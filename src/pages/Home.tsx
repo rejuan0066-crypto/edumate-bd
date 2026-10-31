@@ -55,7 +55,6 @@ interface DeptDetail {
   duration: string;
   age: string;
   seats: string;
-  head: string;
   classes?: any[];
   syllabus: string[];
   outcome: string;
@@ -71,7 +70,6 @@ const DEPT_METADATA_MAP: Record<string, Omit<DeptDetail, 'title'>> = {
     duration: '৩ বছর মেয়াদি (নূরানি ১ম, ২য় ও ৩য় শ্রেণি)',
     age: '৪ থেকে ৮ বছর বয়সী শিশু',
     seats: '৬০ জন (আবাসিক ও অনাবাসিক)',
-    head: 'মাওলানা মোহাম্মদ আবুল বশর (বিভাগীয় প্রধান)',
     syllabus: [
       'বিশুদ্ধ মাখরাজ ও তাজবীদের সাথে আরবি হরফ ও কুরআন তিলাওয়াত।',
       'আমপারা হিফজ ও দৈনন্দিন মাসনুন দোয়া ও জরুরি মাসআলা শিক্ষা।',
@@ -90,7 +88,6 @@ const DEPT_METADATA_MAP: Record<string, Omit<DeptDetail, 'title'>> = {
     duration: '২ বছর মেয়াদি (৪র্থ ও ৫ম শ্রেণি)',
     age: '৮ থেকে ১১ বছর',
     seats: '৫০ জন (আবাসিক ও অনাবাসিক)',
-    head: 'মাওলানা আব্দুর রহমান (বিভাগীয় তত্ত্বাবধায়ক)',
     syllabus: [
       'কুরআনুল কারীম তিলাওয়াত ও অর্থসহ সহজ হাদিস মুখস্থকরণ।',
       'প্রাথমিক ফিকহ, আকাইদ ও ইসলামের মৌলিক বুনিয়াদি শিক্ষা।',
@@ -109,7 +106,6 @@ const DEPT_METADATA_MAP: Record<string, Omit<DeptDetail, 'title'>> = {
     duration: '২-৩ বছর মেয়াদি (সরফ ও নাহমেবির বর্ষ)',
     age: 'ইবতেদায়ী বা হিফজ সম্পন্নকারী',
     seats: '৪৫ জন (আবাসিক)',
-    head: 'মুফতি জুবায়ের আহমদ (প্রধান শিক্ষক, কিতাব)',
     syllabus: [
       'ইলমুস সরফ (মিযান, মুনশাইব) ও আরবি শব্দরূপ রূপান্তর।',
       'ইলমুন নাহু (নাহবেমীর) ও আরবি বাক্যগঠন বিশ্লেষণ।',
@@ -128,7 +124,6 @@ const DEPT_METADATA_MAP: Record<string, Omit<DeptDetail, 'title'>> = {
     duration: '২ থেকে ৩ বছর মেয়াদি (মেধা অনুযায়ী)',
     age: 'নাজেরা উত্তীর্ণ শিক্ষার্থী',
     seats: '৭০ জন (শতভাগ আবাসিক নিবিড় তত্ত্বাবধান)',
-    head: 'হাফেজ ক্বারী ফয়জুল ইসলাম (প্রধান হিফজ শিক্ষক)',
     syllabus: [
       'হিফজ নাজেরা ও দেখে পড়ার নিখুঁত দ্রুততা অর্জন।',
       'দৈনিক নতুন সবক (হিফজ), সাত সবক ও আমপারা রিভিশনের কঠোর অনুশাসন।',
@@ -744,25 +739,6 @@ const Home = () => {
             </div>
 
             <div className="modal-content-area">
-              {/* Classes list if available */}
-              {selectedDept.classes && selectedDept.classes.length > 0 && (
-                <div
-                  style={{
-                    marginBottom: '14px',
-                    background: '#f8fafc',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    border: '1px solid #e2e8f0',
-                    fontSize: '13px',
-                  }}
-                >
-                  <strong style={{ color: '#064e3b' }}>অন্তর্ভুক্ত শ্রেণি / জামাত: </strong>
-                  <span style={{ color: '#334155' }}>
-                    {selectedDept.classes.map((c: any) => c.name_bn || c.name).join(' • ')}
-                  </span>
-                </div>
-              )}
-
               <div className="specs-grid">
                 <div className="spec-card">
                   <div className="spec-label">
@@ -778,15 +754,9 @@ const Home = () => {
                 </div>
                 <div className="spec-card">
                   <div className="spec-label">
-                    <Users className="w-3.5 h-3.5 inline mr-1 text-amber-600" /> মোট আসন সংখ্যা
+                    <Users className="w-3.5 h-3.5 inline mr-1 text-amber-600" /> মোট আসন ও সুবিধা
                   </div>
                   <div className="spec-val">{selectedDept.seats}</div>
-                </div>
-                <div className="spec-card">
-                  <div className="spec-label">
-                    <User className="w-3.5 h-3.5 inline mr-1 text-amber-600" /> বিভাগীয় প্রধান / তত্ত্বাবধায়ক
-                  </div>
-                  <div className="spec-val">{selectedDept.head}</div>
                 </div>
               </div>
 
