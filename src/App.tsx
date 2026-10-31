@@ -383,6 +383,7 @@ const App = () => (
                   <Route path="/notices" element={<NoticePage />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/result" element={<ResultFind />} />
+                  <Route path="/results" element={<ResultFind />} />
                   <Route path="/student-info" element={<StudentInfoPage />} />
                   <Route path="/admission" element={<AdmissionPage />} />
                   <Route path="/application-tracking" element={<ApplicationTrackingPage />} />
@@ -393,6 +394,7 @@ const App = () => (
                   <Route path="/staff-application" element={<StaffApplicationPage />} />
                   <Route path="/donation" element={<DonationPage />} />
                   <Route path="/fee-payment" element={<FeePaymentPage />} />
+                  <Route path="/fees" element={<FeePaymentPage />} />
                   <Route path="/posts" element={<PostsPage />} />
                   <Route path="/photo-tools" element={<PhotoToolsPage />} />
                   <Route path="/exams" element={<OnlineExams />} />
