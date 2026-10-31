@@ -56,6 +56,9 @@ export const InstitutionalFooter = ({ onDepartmentSelect }: InstitutionalFooterP
                 <Link to="/admission">ভর্তি নির্দেশিকা ও তথ্য</Link>
               </li>
               <li>
+                <a href="/#prayer-calendar">নামাজের সময়সূচী ও ক্যালেন্ডার</a>
+              </li>
+              <li>
                 <Link to="/notices">একাডেমিক ক্যালেন্ডার ও ছুটি</Link>
               </li>
               <li>

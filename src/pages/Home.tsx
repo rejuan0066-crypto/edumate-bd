@@ -7,6 +7,8 @@ import { useWebsiteSettings, FALLBACK_LOGO_URL, DEFAULT_MADRASA_BUILDING_URL } f
 import { usePrincipalOfficer } from '@/hooks/usePrincipalOfficer';
 import { format } from 'date-fns';
 import FloatingSocialIcons from '@/components/home/FloatingSocialIcons';
+import PrayerTimesWidget from '@/components/home/PrayerTimesWidget';
+import IslamicCalendarWidget from '@/components/home/IslamicCalendarWidget';
 import InstitutionalHeader from '@/components/institutional/InstitutionalHeader';
 import InstitutionalFooter from '@/components/institutional/InstitutionalFooter';
 import {
@@ -620,6 +622,26 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      {/* 8.5. PRAYER TIMES & MONTHLY ISLAMIC CALENDAR */}
+      {settings?.sections?.prayerCalendar !== false && (
+        <section className="inst-container" id="prayer-calendar">
+          <div className="sec-header-wrap">
+            <h3 className="sec-heading">
+              <span className="mr-2">🕌</span>
+              নামাজের সময়সূচী ও মাসিক ইসলামিক ক্যালেন্ডার
+            </h3>
+            <span style={{ fontSize: '12.5px', color: '#64748b' }}>
+              দৈনন্দিন পাঁচ ওয়াক্ত নামাজের সময়, হিজরী ও বাংলা বর্ষপঞ্জি
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            <PrayerTimesWidget />
+            <IslamicCalendarWidget />
+          </div>
+        </section>
+      )}
 
       {/* 9. ONLINE SERVICES & INSTITUTIONAL STATS */}
       <section className="inst-container">

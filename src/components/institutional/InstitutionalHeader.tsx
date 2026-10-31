@@ -268,6 +268,11 @@ export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderP
                   </Link>
                 </li>
                 <li>
+                  <a href="/#prayer-calendar" onClick={() => setMobileMenuOpen(false)}>
+                    নামাজের সময়সূচী ও ক্যালেন্ডার
+                  </a>
+                </li>
+                <li>
                   <Link to="/notices" onClick={() => setMobileMenuOpen(false)}>
                     একাডেমিক ক্যালেন্ডার ও ছুটি
                   </Link>
