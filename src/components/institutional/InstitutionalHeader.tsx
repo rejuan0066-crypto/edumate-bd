@@ -85,9 +85,6 @@ export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderP
               <span>
                 <MapPin className="w-3 h-3 inline mr-1" /> বিশ্বনাথ, সিলেট
               </span>
-              <Link to="/login" style={{ color: '#fef08a', fontWeight: 700 }}>
-                <LogIn className="w-3.5 h-3.5 inline mr-1" /> লগইন
-              </Link>
             </div>
           </div>
         </div>
