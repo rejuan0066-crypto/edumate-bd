@@ -259,16 +259,19 @@ const Login = () => {
 
       {/* Modern Frosted Glass Card */}
       <div
-        className="w-full max-w-[420px] bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl border border-white/60 dark:border-white/10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] rounded-3xl p-7 sm:p-9 relative z-10 overflow-hidden"
+        className="w-full max-w-[390px] bg-white/92 dark:bg-slate-900/92 backdrop-blur-2xl border border-white/70 dark:border-white/10 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.3)] rounded-3xl p-6 sm:p-7 relative z-10 overflow-hidden"
       >
         {/* Subtle top glossy specular highlight */}
         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
 
-        <div className="text-center mb-6">
+        <div className="text-center mb-5">
           {/* Circular Crest Logo with Emerald Halo */}
           {showLogo && (
             <div className="relative inline-flex items-center justify-center mx-auto mb-3">
-              <div className="w-18 h-18 rounded-full p-1 bg-white/95 shadow-md ring-4 ring-emerald-600/15 flex items-center justify-center transition-transform hover:scale-105">
+              <div
+                className="w-16 h-16 rounded-full p-1 bg-white shadow-md ring-4 ring-emerald-600/15 flex items-center justify-center transition-transform hover:scale-105 overflow-hidden flex-shrink-0"
+                style={{ width: '64px', height: '64px' }}
+              >
                 {loginLogo ? (
                   <img
                     src={loginLogo}
@@ -281,6 +284,7 @@ const Login = () => {
                       }
                     }}
                     className="w-full h-full rounded-full object-contain"
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                   />
                 ) : (
                   <div className="w-full h-full rounded-full bg-emerald-800 flex items-center justify-center">
