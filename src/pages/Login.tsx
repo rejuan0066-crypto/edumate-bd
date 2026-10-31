@@ -345,10 +345,10 @@ const Login = () => {
           </div>
 
           <form className="space-y-4" onSubmit={handleSubmit} autoComplete="off">
-            {/* Username / Email Pill Input with Refined Spacing */}
+            {/* Username / Email Pill Input with Guaranteed Spacing */}
             <div className="relative flex items-center group">
               <div className="absolute left-5 text-emerald-800/70 pointer-events-none z-20 flex items-center justify-center">
-                <User className="w-4.5 h-4.5" />
+                <User className="w-5 h-5" />
               </div>
               <input
                 type="email"
@@ -357,15 +357,15 @@ const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={language === 'bn' ? 'ইমেইল এড্রেস লিখুন...' : 'Email address...'}
                 autoComplete="off"
-                className="w-full h-12 pl-13 pr-6 rounded-full border border-emerald-900/10 text-emerald-950 placeholder:text-emerald-800/50 hover:bg-[#c2e2d5] focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-600/15 focus:border-emerald-600 text-sm font-medium transition-all shadow-inner"
-                style={{ height: '48px', backgroundColor: '#cbe7dc' }}
+                className="w-full h-12 rounded-full border border-emerald-900/10 text-emerald-950 placeholder:text-emerald-800/50 hover:bg-[#c2e2d5] focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-600/15 focus:border-emerald-600 text-sm font-medium transition-all shadow-inner"
+                style={{ height: '48px', paddingLeft: '54px', paddingRight: '24px', backgroundColor: '#cbe7dc' }}
               />
             </div>
 
-            {/* Password Pill Input with Refined Spacing & Autofill Protection */}
+            {/* Password Pill Input with Guaranteed Spacing & Autofill Protection */}
             <div className="relative flex items-center group">
               <div className="absolute left-5 text-emerald-800/70 pointer-events-none z-20 flex items-center justify-center">
-                <Lock className="w-4.5 h-4.5" />
+                <Lock className="w-5 h-5" />
               </div>
               <input
                 type={showPassword && isManuallyTyped ? 'text' : 'password'}
@@ -388,8 +388,8 @@ const Login = () => {
                 }}
                 placeholder={language === 'bn' ? 'পাসওয়ার্ড লিখুন...' : 'Password...'}
                 autoComplete="new-password"
-                className="w-full h-12 pl-13 pr-12 rounded-full border border-emerald-900/10 text-emerald-950 placeholder:text-emerald-800/50 hover:bg-[#c2e2d5] focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-600/15 focus:border-emerald-600 text-sm font-medium transition-all shadow-inner"
-                style={{ height: '48px', backgroundColor: '#cbe7dc' }}
+                className="w-full h-12 rounded-full border border-emerald-900/10 text-emerald-950 placeholder:text-emerald-800/50 hover:bg-[#c2e2d5] focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-600/15 focus:border-emerald-600 text-sm font-medium transition-all shadow-inner"
+                style={{ height: '48px', paddingLeft: '54px', paddingRight: '54px', backgroundColor: '#cbe7dc' }}
               />
               <button
                 type="button"
@@ -398,7 +398,7 @@ const Login = () => {
                 tabIndex={-1}
                 aria-label={showPassword && isManuallyTyped ? 'Hide password' : 'Show password'}
               >
-                {showPassword && isManuallyTyped ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                {showPassword && isManuallyTyped ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
 
