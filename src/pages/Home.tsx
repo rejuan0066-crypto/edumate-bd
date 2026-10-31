@@ -89,6 +89,7 @@ const DEPT_DETAILS: Record<string, DeptDetail> = {
 
 const Home = () => {
   const [activeModalKey, setActiveModalKey] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { settings } = useWebsiteSettings();
   const { data: principal } = usePrincipalOfficer();
 
