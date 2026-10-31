@@ -19,6 +19,7 @@ import {
   Home as HomeIcon,
   ChevronDown,
   Megaphone,
+  Bell,
   CheckCircle2,
   ClipboardList,
   ChevronRight,
@@ -272,7 +273,9 @@ const Home = () => {
 
   const announcement =
     settings?.header_style?.topbar_announcement_bn ||
-    '২০২৬-২০২৭ শিক্ষাবর্ষের নূরানী, নাজেরা ও হিফজুল কুরআন শাখায় ভর্তি ফরম বিতরণ চলছে • এতিমখানার লিল্লাহ ফান্ডে অনুদান প্রদান করুন';
+    (notices.length > 0
+      ? notices[0].title_bn || notices[0].title
+      : `${instName}-এ আপনাকে স্বাগতম • কুরআন ও সুন্নাহর আলোকে পরিচালিত একটি আদর্শ দ্বীনি শিক্ষা প্রতিষ্ঠান`);
 
   return (
     <div className="institutional-root">
@@ -358,40 +361,17 @@ const Home = () => {
                       </tr>
                     ))
                   ) : (
-                    <>
-                      <tr>
-                        <td className="col-date">৩১/১০/২০২৬</td>
-                        <td className="col-notice-text">
-                          <Link to="/notices">
-                            ২০২৬-২০২৭ শিক্ষাবর্ষে নূরানী ও হিফজ শাখায় নতুন ভর্তি বিজ্ঞপ্তি <span className="new-badge">নতুন</span>
-                          </Link>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="col-date">২৫/১০/২০২৬</td>
-                        <td className="col-notice-text">
-                          <Link to="/notices">
-                            অক্টোবর ২০২৬ মাসের আবাসিক ও অনাবাসিক পরীক্ষার ফলাফল প্রকাশ
-                          </Link>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="col-date">১৮/১০/২০২৬</td>
-                        <td className="col-notice-text">
-                          <Link to="/notices">
-                            হিফজুল কুরআন সমাপনী পাগড়ী প্রদান ও বার্ষিক মাহফিল সংক্রান্ত বিজ্ঞপ্তি
-                          </Link>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="col-date">১২/১০/২০২৬</td>
-                        <td className="col-notice-text">
-                          <Link to="/notices">
-                            মাদরাসার এতিমখানা ও লিল্লাহ বোর্ডিংয়ের বার্ষিক অডিট রিপোর্ট অনুমোদন
-                          </Link>
-                        </td>
-                      </tr>
-                    </>
+                    <tr>
+                      <td colSpan={2} style={{ textAlign: 'center', padding: '36px 16px', color: '#64748b' }}>
+                        <Bell className="w-8 h-8 mx-auto mb-2 opacity-25 text-emerald-800" />
+                        <div style={{ fontSize: '13.5px', fontWeight: 600, color: '#334155' }}>
+                          বর্তমানে কোনো নতুন নোটিশ নেই
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
+                          প্রশাসনিক নোটিশ বা সার্কুলার প্রকাশিত হলে এখানে সরাসরি প্রদর্শিত হবে।
+                        </div>
+                      </td>
+                    </tr>
                   )}
                 </tbody>
               </table>
