@@ -122,6 +122,14 @@
   color: var(--gold);
   line-height: 1.2;
 }
+.institutional-root .brand-names .english-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px;
+  color: var(--gold);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  margin-top: 1px;
+}
 .institutional-root .brand-names .sub-tag {
   font-size: 12.5px;
   color: var(--text-muted);

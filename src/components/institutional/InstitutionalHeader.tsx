@@ -26,12 +26,13 @@ export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderP
   const { settings } = useWebsiteSettings();
 
   const instName = settings.institution_name || 'আল আরাবিয়া ছোবহানিয়া মাদ্রাসা ও এতিমখানা';
+  const instNameEn = settings.institution_name_en || '';
   const logoUrl = settings.logo_url || FALLBACK_LOGO_URL;
   const phone = settings.phone || '01749842401';
   const email = settings.email || 'info@subhania.edu.bd';
   const address = settings.address || 'খাজাঞ্চি রোড, এমএইচ সেন্টার, বিশ্বনাথ, সিলেট, বাংলাদেশ';
-  const estYear = settings.est_year || '২০১৮';
-  const regNumber = settings.reg_number || '১২৪/সিলেট';
+  const estYear = settings.established_year || '';
+  const regNumber = settings.registration_number || '';
 
   const { data: divisions = [] } = useQuery({
     queryKey: ['public-divisions-header'],
@@ -66,7 +67,13 @@ export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderP
           <div className="top-bar-inner">
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <span className="bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</span>
-              <span className="reg-tag">বেফাক রেজি নং: {regNumber} • স্থাপিত: {estYear} খ্রি.</span>
+              {(regNumber || estYear) && (
+                <span className="reg-tag">
+                  {regNumber ? `বেফাক রেজি নং: ${regNumber}` : ''}
+                  {regNumber && estYear ? ' • ' : ''}
+                  {estYear ? `স্থাপিত: ${estYear} খ্রি.` : ''}
+                </span>
+              )}
             </div>
             <div className="top-right">
               <a href={`tel:${phone}`}>
@@ -107,15 +114,15 @@ export const InstitutionalHeader = ({ onDepartmentSelect }: InstitutionalHeaderP
               </div>
               <div className="brand-names">
                 <h1>{instName}</h1>
-                <div className="arabic-title">المدرسة العربية السبحانية ودار الأيتام</div>
+                {instNameEn && <div className="english-title">{instNameEn}</div>}
                 <div className="sub-tag">{address}</div>
               </div>
             </Link>
 
             <div className="header-cta-group">
               <Link to="/login" className="btn-portal-outline">
-                <UserCheck className="w-4 h-4 inline mr-1.5" />
-                <span>শিক্ষক / স্টাফ পোর্টাল</span>
+                <LogIn className="w-4 h-4 inline mr-1.5" />
+                <span>লগইন</span>
               </Link>
               <Link to="/admission" className="btn-portal-solid">
                 <FileSignature className="w-4 h-4 inline mr-1.5" />
