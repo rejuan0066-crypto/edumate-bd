@@ -331,8 +331,11 @@ const Login = () => {
           </div>
 
           <form className="space-y-3.5" onSubmit={handleSubmit} autoComplete="off">
-            {/* Username / Email Pill Input */}
-            <div>
+            {/* Username / Email Pill Input with Icon */}
+            <div className="relative flex items-center">
+              <div className="absolute left-4 text-[#064e3b]/75 pointer-events-none z-20 flex items-center">
+                <User className="w-4 h-4" />
+              </div>
               <input
                 type="email"
                 name="email"
@@ -340,13 +343,16 @@ const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={language === 'bn' ? 'ইমেইল এড্রেস........' : 'Email........'}
                 autoComplete="off"
-                className="w-full h-11 px-5 rounded-full bg-[#dceee6] border border-[#c2e2d4] text-[#064e3b] placeholder:text-[#064e3b]/55 focus:outline-none focus:ring-2 focus:ring-[#0d6b49]/30 text-xs sm:text-sm font-medium transition text-center sm:text-left"
+                className="w-full h-11 pl-11 pr-5 rounded-full bg-[#dceee6] border border-[#c2e2d4] text-[#064e3b] placeholder:text-[#064e3b]/55 focus:outline-none focus:ring-2 focus:ring-[#0d6b49]/30 text-xs sm:text-sm font-medium transition"
                 style={{ height: '44px' }}
               />
             </div>
 
-            {/* Password Pill Input */}
+            {/* Password Pill Input with Icon */}
             <div className="relative flex items-center">
+              <div className="absolute left-4 text-[#064e3b]/75 pointer-events-none z-20 flex items-center">
+                <Lock className="w-4 h-4" />
+              </div>
               <input
                 type={showPassword ? 'text' : 'password'}
                 name="password"
@@ -354,7 +360,7 @@ const Login = () => {
                 onChange={(e) => setPassword(sanitizePasswordInput(e.target.value))}
                 placeholder={language === 'bn' ? 'পাসওয়ার্ড........' : 'Password........'}
                 autoComplete="new-password"
-                className="w-full h-11 pl-5 pr-10 rounded-full bg-[#dceee6] border border-[#c2e2d4] text-[#064e3b] placeholder:text-[#064e3b]/55 focus:outline-none focus:ring-2 focus:ring-[#0d6b49]/30 text-xs sm:text-sm font-medium transition text-center sm:text-left"
+                className="w-full h-11 pl-11 pr-10 rounded-full bg-[#dceee6] border border-[#c2e2d4] text-[#064e3b] placeholder:text-[#064e3b]/55 focus:outline-none focus:ring-2 focus:ring-[#0d6b49]/30 text-xs sm:text-sm font-medium transition"
                 style={{ height: '44px' }}
               />
               <button
