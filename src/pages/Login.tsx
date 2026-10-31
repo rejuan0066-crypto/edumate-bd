@@ -257,48 +257,43 @@ const Login = () => {
         <LanguageToggle />
       </div>
 
-      {/* Modern Frosted Glass Card */}
+      {/* High-Contrast Clean White Modern Card */}
       <div
-        className="w-full max-w-[390px] bg-white/92 dark:bg-slate-900/92 backdrop-blur-2xl border border-white/70 dark:border-white/10 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.3)] rounded-3xl p-6 sm:p-7 relative z-10 overflow-hidden"
+        className="w-full max-w-[420px] bg-white rounded-2xl shadow-2xl p-7 sm:p-8 border border-slate-200 text-slate-900 relative z-10"
       >
-        {/* Subtle top glossy specular highlight */}
-        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
-
-        <div className="text-center mb-5">
-          {/* Circular Crest Logo with Emerald Halo */}
+        <div className="text-center mb-6">
+          {/* Circular Crest Logo */}
           {showLogo && (
-            <div className="relative inline-flex items-center justify-center mx-auto mb-3">
-              <div
-                className="w-16 h-16 rounded-full p-1 bg-white shadow-md ring-4 ring-emerald-600/15 flex items-center justify-center transition-transform hover:scale-105 overflow-hidden flex-shrink-0"
-                style={{ width: '64px', height: '64px' }}
-              >
-                {loginLogo ? (
-                  <img
-                    src={loginLogo}
-                    alt="Logo"
-                    onError={(e) => {
-                      const img = e.currentTarget;
-                      if (!img.dataset.fallback) {
-                        img.dataset.fallback = 'true';
-                        img.src = '/loader-logo.png';
-                      }
-                    }}
-                    className="w-full h-full rounded-full object-contain"
-                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                  />
-                ) : (
-                  <div className="w-full h-full rounded-full bg-emerald-800 flex items-center justify-center">
-                    <GraduationCap className="w-8 h-8 text-white" />
-                  </div>
-                )}
-              </div>
+            <div
+              className="w-16 h-16 rounded-full p-1 bg-white shadow-md border-2 border-emerald-600/30 mx-auto mb-3 flex items-center justify-center flex-shrink-0"
+              style={{ width: '64px', height: '64px' }}
+            >
+              {loginLogo ? (
+                <img
+                  src={loginLogo}
+                  alt="Logo"
+                  onError={(e) => {
+                    const img = e.currentTarget;
+                    if (!img.dataset.fallback) {
+                      img.dataset.fallback = 'true';
+                      img.src = '/loader-logo.png';
+                    }
+                  }}
+                  className="w-full h-full rounded-full object-contain"
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+              ) : (
+                <div className="w-full h-full rounded-full bg-emerald-800 flex items-center justify-center">
+                  <GraduationCap className="w-8 h-8 text-white" />
+                </div>
+              )}
             </div>
           )}
 
           {/* Secure Portal Pill Badge */}
           <div className="flex justify-center mb-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-600/20 text-emerald-800 dark:text-emerald-300 text-[11px] font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
               {language === 'bn' ? 'নিরাপদ পোর্টাল সাইন ইন' : 'Secure Portal Sign In'}
             </span>
           </div>
@@ -306,7 +301,7 @@ const Login = () => {
           {/* Institution Name */}
           {showName && (
             <h1
-              className="text-lg sm:text-xl font-black font-display text-slate-900 dark:text-white leading-tight px-1"
+              className="text-lg sm:text-xl font-bold font-display text-slate-900 leading-snug px-1"
               title={instName}
               style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
             >
@@ -314,20 +309,20 @@ const Login = () => {
             </h1>
           )}
 
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
+          <p className="text-xs text-slate-500 mt-1 font-medium">
             {language === 'bn' ? 'মাদরাসা ম্যানেজমেন্ট সিস্টেম' : 'Madrasa Management System'}
           </p>
         </div>
 
-        {/* Modern Form */}
+        {/* Form with comfortable height inputs */}
         <form className="space-y-4" onSubmit={handleSubmit} autoComplete="off">
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+            <label className="block text-xs font-bold text-slate-700">
               {t('username')}
             </label>
             <div className="relative flex items-center">
-              <div className="absolute left-3.5 text-emerald-700 dark:text-emerald-400 pointer-events-none z-20 flex items-center">
-                <User className="w-4 h-4" />
+              <div className="absolute left-3.5 text-slate-400 pointer-events-none z-20 flex items-center">
+                <User className="w-5 h-5" />
               </div>
               <input
                 type="email"
@@ -336,27 +331,28 @@ const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={language === 'bn' ? 'ইমেইল এড্রেস লিখুন' : 'Email address'}
                 autoComplete="off"
-                className="w-full h-11.5 pl-10 pr-3.5 rounded-xl border border-slate-200/90 dark:border-slate-700/80 bg-white/95 dark:bg-slate-950/70 hover:bg-white focus:bg-white dark:focus:bg-slate-950 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 shadow-xs transition-all"
+                className="w-full h-12 pl-11 pr-4 rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-sm font-medium transition shadow-xs"
+                style={{ height: '48px' }}
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+              <label className="block text-xs font-bold text-slate-700">
                 {t('password')}
               </label>
               <button
                 type="button"
                 onClick={() => setForgotOpen(true)}
-                className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 hover:underline transition"
+                className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:underline transition"
               >
                 {t('forgotPassword')}
               </button>
             </div>
             <div className="relative flex items-center">
-              <div className="absolute left-3.5 text-emerald-700 dark:text-emerald-400 pointer-events-none z-20 flex items-center">
-                <Lock className="w-4 h-4" />
+              <div className="absolute left-3.5 text-slate-400 pointer-events-none z-20 flex items-center">
+                <Lock className="w-5 h-5" />
               </div>
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -365,16 +361,17 @@ const Login = () => {
                 onChange={(e) => setPassword(sanitizePasswordInput(e.target.value))}
                 placeholder="••••••••"
                 autoComplete="new-password"
-                className="w-full h-11.5 pl-10 pr-10 rounded-xl border border-slate-200/90 dark:border-slate-700/80 bg-white/95 dark:bg-slate-950/70 hover:bg-white focus:bg-white dark:focus:bg-slate-950 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 shadow-xs transition-all"
+                className="w-full h-12 pl-11 pr-11 rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-sm font-medium transition shadow-xs"
+                style={{ height: '48px' }}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((s) => !s)}
-                className="absolute right-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 z-20 p-1 transition"
+                className="absolute right-3 text-slate-400 hover:text-slate-700 z-20 p-1 transition"
                 tabIndex={-1}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
           </div>
@@ -382,29 +379,27 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-12 mt-2 rounded-xl text-white font-bold text-sm tracking-wide shadow-md shadow-emerald-800/25 hover:shadow-lg hover:shadow-emerald-800/40 active:scale-[0.99] transition-all flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-70"
-            style={{
-              background: 'linear-gradient(135deg, #059669 0%, #047857 50%, #064e3b 100%)',
-            }}
+            className="w-full h-12 mt-2 rounded-xl text-white font-bold text-base shadow-md hover:shadow-lg active:scale-[0.99] transition-all flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-800 cursor-pointer disabled:opacity-70"
+            style={{ height: '48px' }}
           >
             {loading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-5 h-5 animate-spin" />
                 <span>{language === 'bn' ? 'যাচাই করা হচ্ছে...' : 'Signing in...'}</span>
               </>
             ) : (
               <>
                 <span>{t('signIn')}</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                <ArrowRight className="w-4 h-4" />
               </>
             )}
           </button>
         </form>
 
-        <div className="mt-5 pt-3.5 border-t border-slate-200/60 dark:border-slate-800 text-center">
+        <div className="mt-5 pt-3.5 border-t border-slate-200 text-center">
           <Link
             to="/"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-400 transition"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-emerald-700 transition"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>{language === 'bn' ? 'মাদরাসার মূল ওয়েবসাইটে ফিরুন' : 'Back to main website'}</span>
