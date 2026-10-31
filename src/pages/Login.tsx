@@ -232,11 +232,7 @@ const Login = () => {
 
   const loginLogo = settings.favicon_url || settings.logo_url;
   const showLogo = settings.login_show_logo !== false;
-  const faviconShapeClass = settings.favicon_shape === 'circle' ? 'rounded-full' : settings.favicon_shape === 'rounded' ? 'rounded-2xl' : 'rounded-lg';
   const showName = settings.login_show_institution_name !== false;
-  const welcomeMsg = language === 'bn'
-    ? (settings.login_welcome_bn || 'মাদরাসা ম্যানেজমেন্ট')
-    : (settings.login_welcome_en || 'Madrasa Management');
   const instName = language === 'bn'
     ? (settings.login_institution_name_bn || settings.institution_name || 'আল আরাবিয়া ছোবহানিয়া মাদরাসা ও এতিমখানা')
     : (settings.login_institution_name_en || settings.institution_name_en || 'Al-Arabia Subhania Madrasah & Eyateem Khana');
@@ -254,69 +250,49 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={bgStyle}>
+    <div className="min-h-screen flex items-center justify-center p-4 relative" style={bgStyle}>
       {!settings.login_bg_image_url && (
         <div className="islamic-pattern absolute inset-0 opacity-15 pointer-events-none" />
       )}
       {settings.login_bg_image_url && (
-        <div className="absolute inset-0 bg-black/40" style={{ backdropFilter: settings.login_bg_blur ? `blur(${settings.login_bg_blur}px)` : undefined }} />
+        <div className="absolute inset-0 bg-black/45 backdrop-blur-[2px]" />
       )}
 
-      {/* Decorative ambient lights */}
-      <div className="absolute -top-32 -left-32 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="absolute top-5 right-5 z-20">
+      <div className="absolute top-4 right-4 z-20">
         <LanguageToggle />
       </div>
 
       <div
-        className="w-full max-w-md bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-emerald-900/10 dark:border-emerald-500/20 shadow-2xl rounded-3xl p-7 sm:p-9 relative z-10 overflow-hidden"
+        className="w-full max-w-sm sm:max-w-md bg-white/98 dark:bg-slate-900/98 backdrop-blur-md shadow-2xl rounded-2xl p-6 sm:p-8 border border-slate-100 dark:border-slate-800 relative z-10"
         style={formStyle}
       >
-        {/* Accent top gradient bar */}
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-600 via-amber-400 to-emerald-700" />
-
-        <div className="text-center mb-6 pt-2">
-          {/* Institution Crest */}
+        <div className="text-center mb-6">
           {showLogo && (
-            <div className="relative inline-flex items-center justify-center mx-auto mb-3.5 group">
-              <div className="absolute -inset-2 rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-amber-500/20 blur-md" />
-              <div className="relative w-20 h-20 rounded-2xl bg-white shadow-md border border-slate-100 p-1.5 flex items-center justify-center">
-                {loginLogo ? (
-                  <img
-                    src={loginLogo}
-                    alt="Logo"
-                    onError={(e) => {
-                      const img = e.currentTarget;
-                      if (!img.dataset.fallback) {
-                        img.dataset.fallback = 'true';
-                        img.src = '/loader-logo.png';
-                      }
-                    }}
-                    className={`w-full h-full ${faviconShapeClass} object-contain`}
-                  />
-                ) : (
-                  <div className={`w-full h-full ${faviconShapeClass} bg-emerald-800 flex items-center justify-center`}>
-                    <GraduationCap className="w-10 h-10 text-white" />
-                  </div>
-                )}
-              </div>
+            <div className="w-16 h-16 rounded-full mx-auto mb-3 p-1 bg-white border border-emerald-600/20 shadow-sm flex items-center justify-center">
+              {loginLogo ? (
+                <img
+                  src={loginLogo}
+                  alt="Logo"
+                  onError={(e) => {
+                    const img = e.currentTarget;
+                    if (!img.dataset.fallback) {
+                      img.dataset.fallback = 'true';
+                      img.src = '/loader-logo.png';
+                    }
+                  }}
+                  className="w-full h-full rounded-full object-contain"
+                />
+              ) : (
+                <div className="w-full h-full rounded-full bg-emerald-800 flex items-center justify-center">
+                  <GraduationCap className="w-8 h-8 text-white" />
+                </div>
+              )}
             </div>
           )}
 
-          {/* Portal Pill Badge */}
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/80 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-semibold mb-2.5 shadow-xs">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-              <span>{language === 'bn' ? 'দ্বীনি শিক্ষা ব্যবস্থাপনা পোর্টাল' : 'Islamic Education Portal'}</span>
-            </div>
-          </div>
-
-          {/* Institution Name */}
           {showName && (
             <h1
-              className="text-lg sm:text-xl font-display font-extrabold text-slate-900 dark:text-white tracking-tight leading-snug px-1"
+              className="text-base sm:text-lg font-bold font-display text-slate-800 dark:text-white leading-snug px-2"
               title={instName}
               style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
             >
@@ -324,65 +300,54 @@ const Login = () => {
             </h1>
           )}
 
-          <p className="text-sm font-bold text-emerald-800 dark:text-emerald-400 mt-1">
-            {welcomeMsg}
-          </p>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            {language === 'bn' ? 'অ্যাকাউন্টে প্রবেশ করতে তথ্য দিন' : 'Enter your credentials to sign in'}
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            {language === 'bn' ? 'মাদরাসা ম্যানেজমেন্ট পোর্টাল' : 'Madrasa Management Portal'}
           </p>
         </div>
 
         <form className="space-y-4" onSubmit={handleSubmit} autoComplete="off">
           <div>
-            <Label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+            <Label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               {t('username')}
             </Label>
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-700 transition-colors">
-                <Mail className="w-4 h-4" />
-              </div>
-              <Input
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder={language === 'bn' ? 'ইমেইল এড্রেস লিখুন' : 'Email address'}
-                className="pl-10 h-11 sm:h-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 hover:bg-white focus:bg-white dark:bg-slate-950/50 text-sm font-medium transition-all focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/15"
-                type="email"
-                name="email"
-                autoComplete="off"
-              />
-            </div>
+            <Input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={language === 'bn' ? 'ইমেইল এড্রেস' : 'Email address'}
+              className="h-11 rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 text-sm"
+              type="email"
+              name="email"
+              autoComplete="off"
+            />
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <Label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+              <Label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                 {t('password')}
               </Label>
               <button
                 type="button"
                 onClick={() => setForgotOpen(true)}
-                className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:underline transition"
+                className="text-xs text-emerald-700 hover:text-emerald-800 hover:underline transition"
               >
                 {t('forgotPassword')}
               </button>
             </div>
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-700 transition-colors">
-                <Lock className="w-4 h-4" />
-              </div>
+            <div className="relative">
               <Input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(sanitizePasswordInput(e.target.value))}
                 placeholder="••••••••"
-                className="pl-10 pr-10 h-11 sm:h-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 hover:bg-white focus:bg-white dark:bg-slate-950/50 text-sm font-medium transition-all focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/15"
+                className="h-11 rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 pr-10 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 text-sm"
                 name="password"
                 autoComplete="new-password"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((s) => !s)}
-                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 z-10 transition-colors"
                 tabIndex={-1}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
@@ -393,41 +358,28 @@ const Login = () => {
 
           <Button
             type="submit"
-            className="w-full h-11 sm:h-12 text-base font-bold text-white rounded-xl shadow-lg transition-all active:scale-[0.99] flex items-center justify-center gap-2 border-0 mt-2"
-            style={{
-              background: 'linear-gradient(135deg, #065f46 0%, #064e3b 50%, #022c22 100%)',
-              boxShadow: '0 8px 24px -4px rgba(6, 78, 59, 0.4)',
-            }}
+            className="w-full h-11 text-sm font-semibold text-white rounded-lg shadow-sm hover:shadow transition-all active:scale-[0.99] bg-emerald-700 hover:bg-emerald-800 mt-2"
             disabled={loading}
           >
             {loading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
                 <span>{language === 'bn' ? 'যাচাই করা হচ্ছে...' : 'Signing in...'}</span>
               </>
             ) : (
-              <>
-                <Lock className="w-4 h-4" />
-                <span>{t('signIn')}</span>
-              </>
+              <span>{t('signIn')}</span>
             )}
           </Button>
         </form>
 
-        <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3 text-center">
-          <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-            <span>{language === 'bn' ? '২৫৬-বিট SSL এনক্রিপশন দ্বারা সুরক্ষিত সংযোগ' : '256-bit SSL Secure Encrypted Connection'}</span>
-          </div>
-          <div>
-            <Link
-              to="/"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-emerald-800 bg-slate-100 hover:bg-slate-200/80 px-4 py-1.5 rounded-full transition-all"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>{language === 'bn' ? 'হোম পেইজে ফিরে যান' : 'Back to Home'}</span>
-            </Link>
-          </div>
+        <div className="mt-5 text-center">
+          <Link
+            to="/"
+            className="text-xs text-slate-500 hover:text-emerald-700 hover:underline inline-flex items-center gap-1 transition"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>{language === 'bn' ? 'হোম পেইজে ফিরে যান' : 'Back to Home'}</span>
+          </Link>
         </div>
       </div>
 
