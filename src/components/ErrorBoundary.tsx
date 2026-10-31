@@ -51,13 +51,21 @@ class ErrorBoundary extends Component<Props, State> {
 
   handleRetry = async () => {
     try {
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const reg of registrations) {
+          await reg.unregister();
+        }
+      }
       if ('caches' in window) {
         const keys = await caches.keys();
         await Promise.all(keys.map((k) => caches.delete(k)));
       }
+      localStorage.removeItem('app_build_id');
+      localStorage.removeItem('pwa_update_logs');
     } catch {}
     // Hard refresh with timestamp to bypass memory and network caches cleanly
-    window.location.href = window.location.pathname + '?_t=' + Date.now();
+    window.location.href = window.location.origin + window.location.pathname + '?_v=' + Date.now();
   };
 
   render() {
