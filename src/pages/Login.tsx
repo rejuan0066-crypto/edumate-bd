@@ -345,61 +345,87 @@ const Login = () => {
           </div>
 
           <form className="space-y-4" onSubmit={handleSubmit} autoComplete="off">
-            {/* Username / Email Pill Input with Guaranteed Spacing */}
-            <div className="relative flex items-center group">
-              <div className="absolute left-5 text-emerald-800/70 pointer-events-none z-20 flex items-center justify-center">
-                <User className="w-5 h-5" />
-              </div>
-              <input
-                type="email"
-                name="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder={language === 'bn' ? 'ইমেইল এড্রেস লিখুন...' : 'Email address...'}
-                autoComplete="off"
-                className="w-full h-12 rounded-full border border-emerald-900/10 text-emerald-950 placeholder:text-emerald-800/50 hover:bg-[#c2e2d5] focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-600/15 focus:border-emerald-600 text-sm font-medium transition-all shadow-inner"
-                style={{ height: '48px', paddingLeft: '54px', paddingRight: '24px', backgroundColor: '#cbe7dc' }}
+            {/* 1. Email Input with Glowing Border Beam & Focus Transition */}
+            <div className="relative p-[2px] rounded-full overflow-hidden transition-all duration-300 focus-within:shadow-[0_0_16px_rgba(16,185,129,0.45)] group">
+              {/* Rotating Conic Gradient Beam (3s linear infinite) */}
+              <div
+                className="absolute inset-[-150%] pointer-events-none z-0 opacity-70 group-focus-within:opacity-100 transition-opacity duration-300"
+                style={{
+                  background: 'conic-gradient(from 0deg, transparent 0deg, transparent 270deg, #10b981 330deg, transparent 360deg)',
+                  animation: 'spin 3s linear infinite',
+                }}
               />
+              {/* Inner Container */}
+              <div
+                className="relative z-10 w-full h-12 rounded-full flex items-center transition-all duration-300 bg-[#b2d5c8] group-focus-within:bg-white"
+                style={{ height: '48px' }}
+              >
+                <div className="absolute left-5 text-[#134e4a] group-focus-within:text-[#064e3b] pointer-events-none z-20 flex items-center justify-center transition-colors duration-300">
+                  <User className="w-5 h-5" />
+                </div>
+                <input
+                  type="email"
+                  name="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder={language === 'bn' ? 'ইমেইল.......' : 'Email.......'}
+                  autoComplete="off"
+                  className="w-full h-full px-12 rounded-full bg-transparent text-[#134e4a] group-focus-within:text-[#064e3b] placeholder:text-[#134e4a] group-focus-within:placeholder:text-[#064e3b]/50 focus:outline-none text-sm font-medium transition-all duration-300 text-center"
+                />
+              </div>
             </div>
 
-            {/* Password Pill Input with Guaranteed Spacing & Autofill Protection */}
-            <div className="relative flex items-center group">
-              <div className="absolute left-5 text-emerald-800/70 pointer-events-none z-20 flex items-center justify-center">
-                <Lock className="w-5 h-5" />
-              </div>
-              <input
-                type={showPassword && isManuallyTyped ? 'text' : 'password'}
-                name="password"
-                value={password}
-                onKeyDown={(e) => {
-                  if (['Tab', 'Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Escape'].includes(e.key)) return;
-                  setIsManuallyTyped(true);
+            {/* 2. Password Input with Glowing Border Beam & Autofill Protection */}
+            <div className="relative p-[2px] rounded-full overflow-hidden transition-all duration-300 focus-within:shadow-[0_0_16px_rgba(16,185,129,0.45)] group">
+              {/* Rotating Conic Gradient Beam (3s linear infinite) */}
+              <div
+                className="absolute inset-[-150%] pointer-events-none z-0 opacity-70 group-focus-within:opacity-100 transition-opacity duration-300"
+                style={{
+                  background: 'conic-gradient(from 0deg, transparent 0deg, transparent 270deg, #10b981 330deg, transparent 360deg)',
+                  animation: 'spin 3s linear infinite',
                 }}
-                onPaste={() => {
-                  setIsManuallyTyped(true);
-                }}
-                onChange={(e) => {
-                  const val = sanitizePasswordInput(e.target.value);
-                  if (!val) {
-                    setIsManuallyTyped(false);
-                    setShowPassword(false);
-                  }
-                  setPassword(val);
-                }}
-                placeholder={language === 'bn' ? 'পাসওয়ার্ড লিখুন...' : 'Password...'}
-                autoComplete="new-password"
-                className="w-full h-12 rounded-full border border-emerald-900/10 text-emerald-950 placeholder:text-emerald-800/50 hover:bg-[#c2e2d5] focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-600/15 focus:border-emerald-600 text-sm font-medium transition-all shadow-inner"
-                style={{ height: '48px', paddingLeft: '54px', paddingRight: '54px', backgroundColor: '#cbe7dc' }}
               />
-              <button
-                type="button"
-                onClick={handleTogglePassword}
-                className="absolute right-4 text-emerald-800/60 hover:text-emerald-950 p-1.5 rounded-full hover:bg-emerald-900/10 z-20 transition flex items-center justify-center"
-                tabIndex={-1}
-                aria-label={showPassword && isManuallyTyped ? 'Hide password' : 'Show password'}
+              {/* Inner Container */}
+              <div
+                className="relative z-10 w-full h-12 rounded-full flex items-center transition-all duration-300 bg-[#b2d5c8] group-focus-within:bg-white"
+                style={{ height: '48px' }}
               >
-                {showPassword && isManuallyTyped ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
+                <div className="absolute left-5 text-[#134e4a] group-focus-within:text-[#064e3b] pointer-events-none z-20 flex items-center justify-center transition-colors duration-300">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <input
+                  type={showPassword && isManuallyTyped ? 'text' : 'password'}
+                  name="password"
+                  value={password}
+                  onKeyDown={(e) => {
+                    if (['Tab', 'Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Escape'].includes(e.key)) return;
+                    setIsManuallyTyped(true);
+                  }}
+                  onPaste={() => {
+                    setIsManuallyTyped(true);
+                  }}
+                  onChange={(e) => {
+                    const val = sanitizePasswordInput(e.target.value);
+                    if (!val) {
+                      setIsManuallyTyped(false);
+                      setShowPassword(false);
+                    }
+                    setPassword(val);
+                  }}
+                  placeholder={language === 'bn' ? 'পাসওয়ার্ড.......' : 'Password.......'}
+                  autoComplete="new-password"
+                  className="w-full h-full pl-12 pr-12 rounded-full bg-transparent text-[#134e4a] group-focus-within:text-[#064e3b] placeholder:text-[#134e4a] group-focus-within:placeholder:text-[#064e3b]/50 focus:outline-none text-sm font-medium transition-all duration-300 text-center"
+                />
+                <button
+                  type="button"
+                  onClick={handleTogglePassword}
+                  className="absolute right-4 text-[#134e4a] group-focus-within:text-[#064e3b] hover:opacity-80 p-1.5 rounded-full z-20 transition-all duration-300 flex items-center justify-center"
+                  tabIndex={-1}
+                  aria-label={showPassword && isManuallyTyped ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword && isManuallyTyped ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
             </div>
 
             {/* Forgot password */}
