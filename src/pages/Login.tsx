@@ -346,19 +346,33 @@ const Login = () => {
 
           <form className="space-y-4" onSubmit={handleSubmit} autoComplete="off">
             {/* 1. Email Input with Glowing Border Beam & Focus Transition */}
-            <div className="relative p-[2px] rounded-full overflow-hidden transition-all duration-300 focus-within:shadow-[0_0_16px_rgba(16,185,129,0.45)] group">
+            <div
+              className="relative p-[2px] transition-all duration-300 focus-within:shadow-[0_0_16px_rgba(16,185,129,0.45)] group"
+              style={{
+                borderRadius: '26px',
+                overflow: 'hidden',
+                WebkitMaskImage: '-webkit-radial-gradient(white, black)',
+                maskImage: 'radial-gradient(white, black)',
+                isolation: 'isolate',
+                transform: 'translateZ(0)',
+              }}
+            >
               {/* Rotating Conic Gradient Beam (3s linear infinite) */}
               <div
                 className="absolute inset-[-150%] pointer-events-none z-0 opacity-70 group-focus-within:opacity-100 transition-opacity duration-300"
                 style={{
                   background: 'conic-gradient(from 0deg, transparent 0deg, transparent 270deg, #10b981 330deg, transparent 360deg)',
                   animation: 'spin 3s linear infinite',
+                  willChange: 'transform',
                 }}
               />
               {/* Inner Container */}
               <div
-                className="relative z-10 w-full h-12 rounded-full flex items-center transition-all duration-300 bg-[#b2d5c8] group-focus-within:bg-white"
-                style={{ height: '48px' }}
+                className="relative z-10 w-full flex items-center transition-all duration-300 bg-[#b2d5c8] group-focus-within:bg-white"
+                style={{
+                  height: '48px',
+                  borderRadius: '24px',
+                }}
               >
                 <div className="absolute left-5 text-[#134e4a] group-focus-within:text-[#064e3b] pointer-events-none z-20 flex items-center justify-center transition-colors duration-300">
                   <User className="w-5 h-5" />
@@ -370,25 +384,40 @@ const Login = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={language === 'bn' ? 'ইমেইল.......' : 'Email.......'}
                   autoComplete="off"
-                  className="w-full h-full px-12 rounded-full bg-transparent text-[#134e4a] group-focus-within:text-[#064e3b] placeholder:text-[#134e4a] group-focus-within:placeholder:text-[#064e3b]/50 focus:outline-none text-sm font-medium transition-all duration-300 text-center"
+                  className="w-full h-full px-12 bg-transparent text-[#134e4a] group-focus-within:text-[#064e3b] placeholder:text-[#134e4a] group-focus-within:placeholder:text-[#064e3b]/50 focus:outline-none text-sm font-medium transition-all duration-300 text-center"
+                  style={{ borderRadius: '24px' }}
                 />
               </div>
             </div>
 
             {/* 2. Password Input with Glowing Border Beam & Autofill Protection */}
-            <div className="relative p-[2px] rounded-full overflow-hidden transition-all duration-300 focus-within:shadow-[0_0_16px_rgba(16,185,129,0.45)] group">
+            <div
+              className="relative p-[2px] transition-all duration-300 focus-within:shadow-[0_0_16px_rgba(16,185,129,0.45)] group"
+              style={{
+                borderRadius: '26px',
+                overflow: 'hidden',
+                WebkitMaskImage: '-webkit-radial-gradient(white, black)',
+                maskImage: 'radial-gradient(white, black)',
+                isolation: 'isolate',
+                transform: 'translateZ(0)',
+              }}
+            >
               {/* Rotating Conic Gradient Beam (3s linear infinite) */}
               <div
                 className="absolute inset-[-150%] pointer-events-none z-0 opacity-70 group-focus-within:opacity-100 transition-opacity duration-300"
                 style={{
                   background: 'conic-gradient(from 0deg, transparent 0deg, transparent 270deg, #10b981 330deg, transparent 360deg)',
                   animation: 'spin 3s linear infinite',
+                  willChange: 'transform',
                 }}
               />
               {/* Inner Container */}
               <div
-                className="relative z-10 w-full h-12 rounded-full flex items-center transition-all duration-300 bg-[#b2d5c8] group-focus-within:bg-white"
-                style={{ height: '48px' }}
+                className="relative z-10 w-full flex items-center transition-all duration-300 bg-[#b2d5c8] group-focus-within:bg-white"
+                style={{
+                  height: '48px',
+                  borderRadius: '24px',
+                }}
               >
                 <div className="absolute left-5 text-[#134e4a] group-focus-within:text-[#064e3b] pointer-events-none z-20 flex items-center justify-center transition-colors duration-300">
                   <Lock className="w-5 h-5" />
@@ -414,7 +443,8 @@ const Login = () => {
                   }}
                   placeholder={language === 'bn' ? 'পাসওয়ার্ড.......' : 'Password.......'}
                   autoComplete="new-password"
-                  className="w-full h-full pl-12 pr-12 rounded-full bg-transparent text-[#134e4a] group-focus-within:text-[#064e3b] placeholder:text-[#134e4a] group-focus-within:placeholder:text-[#064e3b]/50 focus:outline-none text-sm font-medium transition-all duration-300 text-center"
+                  className="w-full h-full pl-12 pr-12 bg-transparent text-[#134e4a] group-focus-within:text-[#064e3b] placeholder:text-[#134e4a] group-focus-within:placeholder:text-[#064e3b]/50 focus:outline-none text-sm font-medium transition-all duration-300 text-center"
+                  style={{ borderRadius: '24px' }}
                 />
                 <button
                   type="button"
